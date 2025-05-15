@@ -49,7 +49,7 @@ message Params {
   // application unbonding period will exceed the end of its corresponding proof window close height.
   uint64 application_unbonding_period_sessions = 8 [(gogoproto.jsontag) = "application_unbonding_period_sessions"];
 
-  // The amount of npokt (pico POKT) that a compute unit should translate to when settling a session.
+  // The amount of ppokt (pico POKT) that a compute unit should translate to when settling a session.
   // DEV_NOTE: ppokt is used instead of upokt to allow for a compute unit to cost less than 1upokt
   // This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
   uint64 compute_units_to_ppokt_multiplier = 9 [(gogoproto.jsontag) = "compute_units_to_ppokt_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_ppokt_multiplier\""];
