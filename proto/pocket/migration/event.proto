@@ -68,8 +68,16 @@ message EventMorseSupplierClaimed {
   // The unstaked balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
+  // TODO_IN_THIS_COMMIT: update...
   // The hex-encoded address of the Morse account whose balance will be claimed.
-  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
+  string morse_operator_address = 3 [(gogoproto.jsontag) = "morse_operator_address"];
+
+  // TODO_IN_THIS_COMMIT: update...
+  // TODO_IN_THIS_COMMIT: use in msg handler!
+  string morse_singer_address = 6 [(gogoproto.jsontag) = "morse_singer_address"];
+
+  // TODO_IN_THIS_COMMIT: update...
+  MorseSupplierClaimSignerType claim_signer_type = 7 [(gogoproto.jsontag) = "claim_signer_type"];
 
   // The stake of the Supplier which was staked as a result of the claim.
   // This will be equivalent to the amount it had staked on Morse.

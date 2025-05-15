@@ -1855,7 +1855,9 @@ var (
 	md_EventMorseSupplierClaimed                        protoreflect.MessageDescriptor
 	fd_EventMorseSupplierClaimed_session_end_height     protoreflect.FieldDescriptor
 	fd_EventMorseSupplierClaimed_claimed_balance        protoreflect.FieldDescriptor
-	fd_EventMorseSupplierClaimed_morse_src_address      protoreflect.FieldDescriptor
+	fd_EventMorseSupplierClaimed_morse_operator_address protoreflect.FieldDescriptor
+	fd_EventMorseSupplierClaimed_morse_singer_address   protoreflect.FieldDescriptor
+	fd_EventMorseSupplierClaimed_claim_signer_type      protoreflect.FieldDescriptor
 	fd_EventMorseSupplierClaimed_claimed_supplier_stake protoreflect.FieldDescriptor
 	fd_EventMorseSupplierClaimed_supplier               protoreflect.FieldDescriptor
 )
@@ -1865,7 +1867,9 @@ func init() {
 	md_EventMorseSupplierClaimed = File_pocket_migration_event_proto.Messages().ByName("EventMorseSupplierClaimed")
 	fd_EventMorseSupplierClaimed_session_end_height = md_EventMorseSupplierClaimed.Fields().ByName("session_end_height")
 	fd_EventMorseSupplierClaimed_claimed_balance = md_EventMorseSupplierClaimed.Fields().ByName("claimed_balance")
-	fd_EventMorseSupplierClaimed_morse_src_address = md_EventMorseSupplierClaimed.Fields().ByName("morse_src_address")
+	fd_EventMorseSupplierClaimed_morse_operator_address = md_EventMorseSupplierClaimed.Fields().ByName("morse_operator_address")
+	fd_EventMorseSupplierClaimed_morse_singer_address = md_EventMorseSupplierClaimed.Fields().ByName("morse_singer_address")
+	fd_EventMorseSupplierClaimed_claim_signer_type = md_EventMorseSupplierClaimed.Fields().ByName("claim_signer_type")
 	fd_EventMorseSupplierClaimed_claimed_supplier_stake = md_EventMorseSupplierClaimed.Fields().ByName("claimed_supplier_stake")
 	fd_EventMorseSupplierClaimed_supplier = md_EventMorseSupplierClaimed.Fields().ByName("supplier")
 }
@@ -1947,9 +1951,21 @@ func (x *fastReflection_EventMorseSupplierClaimed) Range(f func(protoreflect.Fie
 			return
 		}
 	}
-	if x.MorseSrcAddress != "" {
-		value := protoreflect.ValueOfString(x.MorseSrcAddress)
-		if !f(fd_EventMorseSupplierClaimed_morse_src_address, value) {
+	if x.MorseOperatorAddress != "" {
+		value := protoreflect.ValueOfString(x.MorseOperatorAddress)
+		if !f(fd_EventMorseSupplierClaimed_morse_operator_address, value) {
+			return
+		}
+	}
+	if x.MorseSingerAddress != "" {
+		value := protoreflect.ValueOfString(x.MorseSingerAddress)
+		if !f(fd_EventMorseSupplierClaimed_morse_singer_address, value) {
+			return
+		}
+	}
+	if x.ClaimSignerType != 0 {
+		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.ClaimSignerType))
+		if !f(fd_EventMorseSupplierClaimed_claim_signer_type, value) {
 			return
 		}
 	}
@@ -1984,8 +2000,12 @@ func (x *fastReflection_EventMorseSupplierClaimed) Has(fd protoreflect.FieldDesc
 		return x.SessionEndHeight != int64(0)
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_balance":
 		return x.ClaimedBalance != nil
-	case "pocket.migration.EventMorseSupplierClaimed.morse_src_address":
-		return x.MorseSrcAddress != ""
+	case "pocket.migration.EventMorseSupplierClaimed.morse_operator_address":
+		return x.MorseOperatorAddress != ""
+	case "pocket.migration.EventMorseSupplierClaimed.morse_singer_address":
+		return x.MorseSingerAddress != ""
+	case "pocket.migration.EventMorseSupplierClaimed.claim_signer_type":
+		return x.ClaimSignerType != 0
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_supplier_stake":
 		return x.ClaimedSupplierStake != nil
 	case "pocket.migration.EventMorseSupplierClaimed.supplier":
@@ -2010,8 +2030,12 @@ func (x *fastReflection_EventMorseSupplierClaimed) Clear(fd protoreflect.FieldDe
 		x.SessionEndHeight = int64(0)
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_balance":
 		x.ClaimedBalance = nil
-	case "pocket.migration.EventMorseSupplierClaimed.morse_src_address":
-		x.MorseSrcAddress = ""
+	case "pocket.migration.EventMorseSupplierClaimed.morse_operator_address":
+		x.MorseOperatorAddress = ""
+	case "pocket.migration.EventMorseSupplierClaimed.morse_singer_address":
+		x.MorseSingerAddress = ""
+	case "pocket.migration.EventMorseSupplierClaimed.claim_signer_type":
+		x.ClaimSignerType = 0
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_supplier_stake":
 		x.ClaimedSupplierStake = nil
 	case "pocket.migration.EventMorseSupplierClaimed.supplier":
@@ -2038,9 +2062,15 @@ func (x *fastReflection_EventMorseSupplierClaimed) Get(descriptor protoreflect.F
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_balance":
 		value := x.ClaimedBalance
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "pocket.migration.EventMorseSupplierClaimed.morse_src_address":
-		value := x.MorseSrcAddress
+	case "pocket.migration.EventMorseSupplierClaimed.morse_operator_address":
+		value := x.MorseOperatorAddress
 		return protoreflect.ValueOfString(value)
+	case "pocket.migration.EventMorseSupplierClaimed.morse_singer_address":
+		value := x.MorseSingerAddress
+		return protoreflect.ValueOfString(value)
+	case "pocket.migration.EventMorseSupplierClaimed.claim_signer_type":
+		value := x.ClaimSignerType
+		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_supplier_stake":
 		value := x.ClaimedSupplierStake
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
@@ -2071,8 +2101,12 @@ func (x *fastReflection_EventMorseSupplierClaimed) Set(fd protoreflect.FieldDesc
 		x.SessionEndHeight = value.Int()
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_balance":
 		x.ClaimedBalance = value.Message().Interface().(*v1beta1.Coin)
-	case "pocket.migration.EventMorseSupplierClaimed.morse_src_address":
-		x.MorseSrcAddress = value.Interface().(string)
+	case "pocket.migration.EventMorseSupplierClaimed.morse_operator_address":
+		x.MorseOperatorAddress = value.Interface().(string)
+	case "pocket.migration.EventMorseSupplierClaimed.morse_singer_address":
+		x.MorseSingerAddress = value.Interface().(string)
+	case "pocket.migration.EventMorseSupplierClaimed.claim_signer_type":
+		x.ClaimSignerType = (MorseSupplierClaimSignerType)(value.Enum())
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_supplier_stake":
 		x.ClaimedSupplierStake = value.Message().Interface().(*v1beta1.Coin)
 	case "pocket.migration.EventMorseSupplierClaimed.supplier":
@@ -2114,8 +2148,12 @@ func (x *fastReflection_EventMorseSupplierClaimed) Mutable(fd protoreflect.Field
 		return protoreflect.ValueOfMessage(x.Supplier.ProtoReflect())
 	case "pocket.migration.EventMorseSupplierClaimed.session_end_height":
 		panic(fmt.Errorf("field session_end_height of message pocket.migration.EventMorseSupplierClaimed is not mutable"))
-	case "pocket.migration.EventMorseSupplierClaimed.morse_src_address":
-		panic(fmt.Errorf("field morse_src_address of message pocket.migration.EventMorseSupplierClaimed is not mutable"))
+	case "pocket.migration.EventMorseSupplierClaimed.morse_operator_address":
+		panic(fmt.Errorf("field morse_operator_address of message pocket.migration.EventMorseSupplierClaimed is not mutable"))
+	case "pocket.migration.EventMorseSupplierClaimed.morse_singer_address":
+		panic(fmt.Errorf("field morse_singer_address of message pocket.migration.EventMorseSupplierClaimed is not mutable"))
+	case "pocket.migration.EventMorseSupplierClaimed.claim_signer_type":
+		panic(fmt.Errorf("field claim_signer_type of message pocket.migration.EventMorseSupplierClaimed is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.migration.EventMorseSupplierClaimed"))
@@ -2134,8 +2172,12 @@ func (x *fastReflection_EventMorseSupplierClaimed) NewField(fd protoreflect.Fiel
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_balance":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "pocket.migration.EventMorseSupplierClaimed.morse_src_address":
+	case "pocket.migration.EventMorseSupplierClaimed.morse_operator_address":
 		return protoreflect.ValueOfString("")
+	case "pocket.migration.EventMorseSupplierClaimed.morse_singer_address":
+		return protoreflect.ValueOfString("")
+	case "pocket.migration.EventMorseSupplierClaimed.claim_signer_type":
+		return protoreflect.ValueOfEnum(0)
 	case "pocket.migration.EventMorseSupplierClaimed.claimed_supplier_stake":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
@@ -2218,9 +2260,16 @@ func (x *fastReflection_EventMorseSupplierClaimed) ProtoMethods() *protoiface.Me
 			l = options.Size(x.ClaimedBalance)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.MorseSrcAddress)
+		l = len(x.MorseOperatorAddress)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.MorseSingerAddress)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ClaimSignerType != 0 {
+			n += 1 + runtime.Sov(uint64(x.ClaimSignerType))
 		}
 		if x.ClaimedSupplierStake != nil {
 			l = options.Size(x.ClaimedSupplierStake)
@@ -2259,6 +2308,18 @@ func (x *fastReflection_EventMorseSupplierClaimed) ProtoMethods() *protoiface.Me
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
+		if x.ClaimSignerType != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ClaimSignerType))
+			i--
+			dAtA[i] = 0x38
+		}
+		if len(x.MorseSingerAddress) > 0 {
+			i -= len(x.MorseSingerAddress)
+			copy(dAtA[i:], x.MorseSingerAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MorseSingerAddress)))
+			i--
+			dAtA[i] = 0x32
+		}
 		if x.Supplier != nil {
 			encoded, err := options.Marshal(x.Supplier)
 			if err != nil {
@@ -2287,10 +2348,10 @@ func (x *fastReflection_EventMorseSupplierClaimed) ProtoMethods() *protoiface.Me
 			i--
 			dAtA[i] = 0x22
 		}
-		if len(x.MorseSrcAddress) > 0 {
-			i -= len(x.MorseSrcAddress)
-			copy(dAtA[i:], x.MorseSrcAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MorseSrcAddress)))
+		if len(x.MorseOperatorAddress) > 0 {
+			i -= len(x.MorseOperatorAddress)
+			copy(dAtA[i:], x.MorseOperatorAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MorseOperatorAddress)))
 			i--
 			dAtA[i] = 0x1a
 		}
@@ -2419,7 +2480,7 @@ func (x *fastReflection_EventMorseSupplierClaimed) ProtoMethods() *protoiface.Me
 				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MorseSrcAddress", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MorseOperatorAddress", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -2447,8 +2508,59 @@ func (x *fastReflection_EventMorseSupplierClaimed) ProtoMethods() *protoiface.Me
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
+				x.MorseOperatorAddress = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MorseSingerAddress", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MorseSingerAddress = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 7:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimSignerType", wireType)
+				}
+				x.ClaimSignerType = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ClaimSignerType |= MorseSupplierClaimSignerType(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			case 4:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimedSupplierStake", wireType)
@@ -2773,8 +2885,14 @@ type EventMorseSupplierClaimed struct {
 	SessionEndHeight int64 `protobuf:"varint,1,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 	// The unstaked balance which was claimed.
 	ClaimedBalance *v1beta1.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance,omitempty"`
+	// TODO_IN_THIS_COMMIT: update...
 	// The hex-encoded address of the Morse account whose balance will be claimed.
-	MorseSrcAddress string `protobuf:"bytes,3,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
+	MorseOperatorAddress string `protobuf:"bytes,3,opt,name=morse_operator_address,json=morseOperatorAddress,proto3" json:"morse_operator_address,omitempty"`
+	// TODO_IN_THIS_COMMIT: update...
+	// TODO_IN_THIS_COMMIT: use in msg handler!
+	MorseSingerAddress string `protobuf:"bytes,6,opt,name=morse_singer_address,json=morseSingerAddress,proto3" json:"morse_singer_address,omitempty"`
+	// TODO_IN_THIS_COMMIT: update...
+	ClaimSignerType MorseSupplierClaimSignerType `protobuf:"varint,7,opt,name=claim_signer_type,json=claimSignerType,proto3,enum=pocket.migration.MorseSupplierClaimSignerType" json:"claim_signer_type,omitempty"`
 	// The stake of the Supplier which was staked as a result of the claim.
 	// This will be equivalent to the amount it had staked on Morse.
 	ClaimedSupplierStake *v1beta1.Coin `protobuf:"bytes,4,opt,name=claimed_supplier_stake,json=claimedSupplierStake,proto3" json:"claimed_supplier_stake,omitempty"`
@@ -2816,11 +2934,25 @@ func (x *EventMorseSupplierClaimed) GetClaimedBalance() *v1beta1.Coin {
 	return nil
 }
 
-func (x *EventMorseSupplierClaimed) GetMorseSrcAddress() string {
+func (x *EventMorseSupplierClaimed) GetMorseOperatorAddress() string {
 	if x != nil {
-		return x.MorseSrcAddress
+		return x.MorseOperatorAddress
 	}
 	return ""
+}
+
+func (x *EventMorseSupplierClaimed) GetMorseSingerAddress() string {
+	if x != nil {
+		return x.MorseSingerAddress
+	}
+	return ""
+}
+
+func (x *EventMorseSupplierClaimed) GetClaimSignerType() MorseSupplierClaimSignerType {
+	if x != nil {
+		return x.ClaimSignerType
+	}
+	return MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED
 }
 
 func (x *EventMorseSupplierClaimed) GetClaimedSupplierStake() *v1beta1.Coin {
@@ -2923,7 +3055,7 @@ var file_pocket_migration_event_proto_rawDesc = []byte{
 	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
 	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69,
 	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x22, 0xb5, 0x03, 0x0a, 0x19, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x6f, 0x72,
+	0x69, 0x6f, 0x6e, 0x22, 0x83, 0x05, 0x0a, 0x19, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x6f, 0x72,
 	0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x65,
 	0x64, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64,
 	0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea,
@@ -2935,33 +3067,46 @@ var file_pocket_migration_event_proto_rawDesc = []byte{
 	0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x17, 0xc8, 0xde, 0x1f,
 	0x00, 0xea, 0xde, 0x1f, 0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x62, 0x61, 0x6c,
 	0x61, 0x6e, 0x63, 0x65, 0x52, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x42, 0x61, 0x6c,
-	0x61, 0x6e, 0x63, 0x65, 0x12, 0x41, 0x0a, 0x11, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x72,
-	0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x15, 0xea, 0xde, 0x1f, 0x11, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x6f, 0x0a, 0x16, 0x63, 0x6c, 0x61, 0x69, 0x6d,
-	0x65, 0x64, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x73, 0x74, 0x61, 0x6b,
-	0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f,
-	0x69, 0x6e, 0x42, 0x1e, 0xc8, 0xde, 0x1f, 0x00, 0xea, 0xde, 0x1f, 0x16, 0x63, 0x6c, 0x61, 0x69,
-	0x6d, 0x65, 0x64, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x73, 0x74, 0x61,
-	0x6b, 0x65, 0x52, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6c,
-	0x69, 0x65, 0x72, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x41, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70,
-	0x6c, 0x69, 0x65, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x70, 0x6f, 0x63,
-	0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c,
-	0x69, 0x65, 0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
-	0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0xaa, 0x01, 0xd8, 0xe2,
-	0x1e, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x6d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50,
-	0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
-	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f,
-	0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa,
-	0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d, 0x69, 0x67, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x4d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x61, 0x6e, 0x63, 0x65, 0x12, 0x50, 0x0a, 0x16, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x6f, 0x70,
+	0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x1a, 0xea, 0xde, 0x1f, 0x16, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f,
+	0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x52, 0x14, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x41,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x4a, 0x0a, 0x14, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f,
+	0x73, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x06,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xea, 0xde, 0x1f, 0x14, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f,
+	0x73, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x12,
+	0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x12, 0x71, 0x0a, 0x11, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f, 0x73, 0x69, 0x67, 0x6e,
+	0x65, 0x72, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2e, 0x2e,
+	0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x43, 0x6c,
+	0x61, 0x69, 0x6d, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x42, 0x15, 0xea,
+	0xde, 0x1f, 0x11, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x72, 0x5f,
+	0x74, 0x79, 0x70, 0x65, 0x52, 0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x53, 0x69, 0x67, 0x6e, 0x65,
+	0x72, 0x54, 0x79, 0x70, 0x65, 0x12, 0x6f, 0x0a, 0x16, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64,
+	0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62,
+	0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e,
+	0x42, 0x1e, 0xc8, 0xde, 0x1f, 0x00, 0xea, 0xde, 0x1f, 0x16, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65,
+	0x64, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x73, 0x74, 0x61, 0x6b, 0x65,
+	0x52, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x41, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69,
+	0x65, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65,
+	0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52,
+	0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0xaa, 0x01, 0xd8, 0xe2, 0x1e, 0x01,
+	0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x6d, 0x69, 0x67,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f,
+	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x6d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa, 0x02, 0x10,
+	0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0xca, 0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d, 0x69, 0x67,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x4d, 0x69, 0x67,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2984,7 +3129,8 @@ var file_pocket_migration_event_proto_goTypes = []interface{}{
 	(*EventMorseSupplierClaimed)(nil),         // 3: pocket.migration.EventMorseSupplierClaimed
 	(*v1beta1.Coin)(nil),                      // 4: cosmos.base.v1beta1.Coin
 	(*application.Application)(nil),           // 5: pocket.application.Application
-	(*shared.Supplier)(nil),                   // 6: pocket.shared.Supplier
+	(MorseSupplierClaimSignerType)(0),         // 6: pocket.migration.MorseSupplierClaimSignerType
+	(*shared.Supplier)(nil),                   // 7: pocket.shared.Supplier
 }
 var file_pocket_migration_event_proto_depIdxs = []int32{
 	4, // 0: pocket.migration.EventMorseAccountClaimed.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
@@ -2992,13 +3138,14 @@ var file_pocket_migration_event_proto_depIdxs = []int32{
 	4, // 2: pocket.migration.EventMorseApplicationClaimed.claimed_application_stake:type_name -> cosmos.base.v1beta1.Coin
 	5, // 3: pocket.migration.EventMorseApplicationClaimed.application:type_name -> pocket.application.Application
 	4, // 4: pocket.migration.EventMorseSupplierClaimed.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
-	4, // 5: pocket.migration.EventMorseSupplierClaimed.claimed_supplier_stake:type_name -> cosmos.base.v1beta1.Coin
-	6, // 6: pocket.migration.EventMorseSupplierClaimed.supplier:type_name -> pocket.shared.Supplier
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	6, // 5: pocket.migration.EventMorseSupplierClaimed.claim_signer_type:type_name -> pocket.migration.MorseSupplierClaimSignerType
+	4, // 6: pocket.migration.EventMorseSupplierClaimed.claimed_supplier_stake:type_name -> cosmos.base.v1beta1.Coin
+	7, // 7: pocket.migration.EventMorseSupplierClaimed.supplier:type_name -> pocket.shared.Supplier
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_pocket_migration_event_proto_init() }
