@@ -94,7 +94,8 @@ type MorseClaimableAccount struct {
 	// The Shannon height at which the account was claimed.
 	// This field is intended to remain empty until the account has been claimed.
 	ClaimedAtHeight int64 `protobuf:"varint,8,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height" yaml:"claimed_at_height"`
-	// TODO_IN_THIS_COMMIT: comment...
+	// Morse custodial (i.e. owner) Morse address, which owns the staked tokens of the operator.
+	// See 'pocket nodes supplier --help' for more information.
 	MorseOutputAddress string `protobuf:"bytes,9,opt,name=morse_output_address,json=morseOutputAddress,proto3" json:"morse_output_address,omitempty" yaml:"morse_output_address"`
 }
 
