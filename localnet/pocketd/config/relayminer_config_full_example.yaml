@@ -61,7 +61,7 @@ suppliers:
       # Optional.
       headers: {}
 
-      # ForwardIdentityHeaders adds Pocket-specific identity headers from the relay metadata
+      # ForwardPocketHeaders adds Pocket-specific headers from the relay metadata
       # to the HTTP request header.
       # Added headers will be:
       # - Pocket-Supplier
@@ -70,7 +70,7 @@ suppliers:
       # - Pocket-Application
       # - Pocket-Session-Start-Height
       # - Pocket-Session-End-Height
-      forward_identity_headers: true
+      forward_pocket_headers: true
 
     # Listen url, usually `http://0.0.0.0:80` (all network interfaces, port `80`).
     # The scheme in the URL is required in order to infer the server type.
@@ -82,4 +82,4 @@ suppliers:
     listen_url: http://0.0.0.0:80
     service_config:
       backend_url: http://localhost:11434
-      forward_identity_headers: false
+      forward_pocket_headers: false

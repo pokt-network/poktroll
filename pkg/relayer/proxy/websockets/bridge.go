@@ -123,13 +123,23 @@ func NewBridge(
 
 	// Forward identity headers from session and config
 	if session.Header != nil && serviceConfig.ForwardPocketHeaders {
-		// Create a minimal metadata structure to reuse our header-forwarding logic
-		meta := types.RelayRequestMetadata{
-			SessionHeader:           session.Header,
-			SupplierOperatorAddress: relayAuthenticator.GetSupplierOperatorAddresses()[0],
-		}
+		supplierOperatorAddresses := relayAuthenticator.GetSupplierOperatorAddresses()
 
-		relayer.ForwardIdentityHeaders(&header, meta)
+		if len(supplierOperatorAddresses) > 0 {
+			if len(supplierOperatorAddresses) > 1 {
+				bridgeLogger.Warn().
+					Str("supplier_operator_addresses", supplierOperatorAddresses[0]).
+					Msg("multiple supplier operator addresses found in session header, forwarding only the first one")
+			}
+
+			// Create a minimal metadata structure to reuse our header-forwarding logic
+			meta := types.RelayRequestMetadata{
+				SessionHeader:           session.Header,
+				SupplierOperatorAddress: supplierOperatorAddresses[0],
+			}
+
+			relayer.ForwardPocketHeaders(&header, meta)
+		}
 	}
 
 	// Connect to the service backend.

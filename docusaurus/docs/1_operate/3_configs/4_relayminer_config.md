@@ -5,7 +5,7 @@ sidebar_position: 4
 
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
 co-processor/sidecar that acts as the real server for querying request, building
-claims and submitting proofs.
+claims, and submitting proofs.
 
 :::tip
 
@@ -34,7 +34,7 @@ You can find a fully featured example configuration at [relayminer_config_full_e
     - [`backend_url`](#backend_url)
     - [`authentication`](#authentication)
     - [`headers`](#headers)
-    - [`forward_identity_headers`](#forward_identity_headers)
+    - [`forward_pocket_headers`](#forward_pocket_headers)
     - [`publicly_exposed_endpoints`](#publicly_exposed_endpoints)
       - [Why should one supplier have multiple `publicly_exposed_endpoints`?](#why-should-one-supplier-have-multiple-publicly_exposed_endpoints)
 - [Configuring Signing Keys](#configuring-signing-keys)
@@ -242,7 +242,7 @@ suppliers:
     listen_url: <enum{http}>://<host>
     service_config:
       backend_url: <url>
-      forward_identity_headers: <boolean>
+      forward_pocket_headers: <boolean>
       authentication:
         username: <string>
         password: <string>
@@ -309,11 +309,11 @@ that will be added to the request headers when the `RelayMiner` forwards the
 requests to the service. It can be used to add additional headers like
 `Authorization: Bearer <TOKEN>` for example.
 
-#### `forward_identity_headers`
+#### `forward_pocket_headers`
 
 _`Optional`_
 
-When `forward_identity_headers` is enabled, the following Pocket-specific headers are automatically added
+When `forward_pocket_headers` is enabled, the following Pocket-specific headers are automatically added
 to every request sent to your backend service.
 These headers help identify the Supplier, the Service, and the Application within the Pocket Network context.
 
