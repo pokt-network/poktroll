@@ -92,7 +92,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 
 	// Set the CUTTM to 1 to simplify the math
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
-	sharedParams.ComputeUnitsToPpoktMultiplier = uint64(1000)
+	sharedParams.ComputeUnitsToPpoktMultiplier = uint64(1000000)
 	err = keepers.SharedKeeper.SetParams(sdkCtx, sharedParams)
 	require.NoError(t, err)
 
