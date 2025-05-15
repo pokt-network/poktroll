@@ -45,6 +45,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			"invalid_address",
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServiceConfigs,
 			sample.AccAddress(),
@@ -59,6 +60,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			"invalid_address",
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServiceConfigs,
 			sample.AccAddress(),
@@ -73,6 +75,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServiceConfigs,
 			sample.AccAddress(),
@@ -99,6 +102,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			wrongMorsePrivKey.PubKey().Address().String(),
 			wrongMorsePrivKey,
 			testSupplierServiceConfigs,
 			sample.AccAddress(),
@@ -106,11 +110,11 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		require.NoError(t, err)
 
 		// Reset the morsePublicKey fields, leaving the "wrong" signature in place.
-		msg.MorsePublicKey = morsePrivKey.PubKey().Bytes()
+		msg.MorseSignerPublicKey = morsePrivKey.PubKey().Bytes()
 		expectedErr := migrationtypes.ErrMorseSignature.Wrapf(
 			"morseSignature (%x) is invalid for Morse address (%s)",
 			msg.GetMorseSignature(),
-			msg.GetMorseSrcAddress(),
+			msg.GetMorseSignerAddress(),
 		)
 
 		err = msg.ValidateBasic()
@@ -121,6 +125,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			[]*sharedtypes.SupplierServiceConfig{
 				{ServiceId: strings.Repeat("a", 43)}, // Invalid service ID because its too long
@@ -139,6 +144,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServiceConfigs,
 			sample.AccAddress(),

@@ -311,6 +311,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
 		shannonDestAddr,
 		shannonDestAddr,
+		morsePrivateKey.PubKey().Address().String(),
 		morsePrivateKey,
 		s.supplierServices,
 		sample.AccAddress(),
@@ -327,7 +328,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	).Error())
 
 	// Assert that the MorseClaimableAccount was NOT updated on-chain.
-	morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSrcAddress())
+	morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
 	s.Equal(int64(0), morseClaimableAccount.GetClaimedAtHeight())
 	s.Equal("", morseClaimableAccount.GetShannonDestAddress())
 

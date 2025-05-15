@@ -14,26 +14,29 @@ var (
 	_ morseClaimMessage = (*MsgClaimMorseSupplier)(nil)
 )
 
+// TODO_IN_THIS_COMMIT: update godoc...
 // NewMsgClaimMorseSupplier creates a new MsgClaimMorseSupplier.
 // If morsePrivateKey is provided (i.e. not nil), it is used to sign the message.
 func NewMsgClaimMorseSupplier(
 	shannonOwnerAddress string,
 	shannonOperatorAddress string,
-	morsePrivateKey cometcrypto.PrivKey,
+	morseOperatorAddress string,
+	morseSignerPrivateKey cometcrypto.PrivKey,
 	services []*sharedtypes.SupplierServiceConfig,
 	shannonSigningAddr string,
 ) (*MsgClaimMorseSupplier, error) {
 	msg := &MsgClaimMorseSupplier{
+		MorseOperatorAddress:   morseOperatorAddress,
 		ShannonOwnerAddress:    shannonOwnerAddress,
 		ShannonOperatorAddress: shannonOperatorAddress,
 		Services:               services,
 		ShannonSigningAddress:  shannonSigningAddr,
 	}
 
-	if morsePrivateKey != nil {
-		msg.MorsePublicKey = morsePrivateKey.PubKey().Bytes()
+	if morseSignerPrivateKey != nil {
+		msg.MorseSignerPublicKey = morseSignerPrivateKey.PubKey().Bytes()
 
-		if err := msg.SignMorseSignature(morsePrivateKey); err != nil {
+		if err := msg.SignMorseSignature(morseSignerPrivateKey); err != nil {
 			return nil, err
 		}
 	}
@@ -107,8 +110,14 @@ func (msg *MsgClaimMorseSupplier) getSigningBytes() ([]byte, error) {
 	return proto.Marshal(&signingMsg)
 }
 
-// GetMorseSrcAddress returns the morse source address associated with
+// TODO_IN_THIS_COMMIT: update...
+// GetMorseSignerAddress returns the morse source address associated with
 // the Morse public key of the given message.
-func (msg *MsgClaimMorseSupplier) GetMorseSrcAddress() string {
-	return msg.GetMorsePublicKey().Address().String()
+func (msg *MsgClaimMorseSupplier) GetMorseSignerAddress() string {
+	return msg.GetMorseSignerPublicKey().Address().String()
+}
+
+// TODO_IN_THIS_COMMIT: godoc - morseClaimMessage iface...
+func (msg *MsgClaimMorseSupplier) GetMorsePublicKey() cometcrypto.PubKey {
+	return msg.GetMorseSignerPublicKey()
 }

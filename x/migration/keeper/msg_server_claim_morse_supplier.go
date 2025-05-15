@@ -81,14 +81,14 @@ func (k msgServer) ClaimMorseSupplier(
 	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
 	morseClaimableAccount, isFound = k.GetMorseClaimableAccount(
 		sdkCtx,
-		msg.GetMorseSrcAddress(),
+		msg.GetMorseOperatorAddress(),
 	)
 	if !isFound {
 		return nil, status.Error(
 			codes.NotFound,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
 				"no morse claimable account exists with address %q",
-				msg.GetMorseSrcAddress(),
+				msg.GetMorseOperatorAddress(),
 			).Error(),
 		)
 	}
@@ -100,7 +100,7 @@ func (k msgServer) ClaimMorseSupplier(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
 				"morse address %q has already been claimed at height %d by shannon address %q",
-				msg.GetMorseSrcAddress(),
+				morseClaimableAccount.GetMorseSrcAddress(),
 				morseClaimableAccount.ClaimedAtHeight,
 				morseClaimableAccount.ShannonDestAddress,
 			).Error(),
@@ -131,16 +131,42 @@ func (k msgServer) ClaimMorseSupplier(
 		)
 	}
 
+	var claimSignerType migrationtypes.MorseSupplierClaimSignerType
+	switch msg.GetMorseSignerAddress() {
+	case morseClaimableAccount.GetMorseOutputAddress():
+		claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL
+	case morseClaimableAccount.GetMorseSrcAddress():
+		// TODO_IN_THIS_COMMIT: comment...
+		switch morseClaimableAccount.GetMorseOutputAddress() {
+		case "":
+			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR
+		default:
+			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR_NON_CUSTODIAL
+			// TODO_IN_THIS_COMMIT: comment - bypassing claimed Shannon owner check for now...
+		}
+
+	default:
+		return nil, status.Error(
+			codes.InvalidArgument,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"morse signer address (%s) doesn't match the operator (%s) or owner (%s) address",
+				msg.GetMorseSignerAddress(),
+				morseClaimableAccount.GetMorseSrcAddress(),
+				morseClaimableAccount.GetMorseOutputAddress(),
+			).Error(),
+		)
+	}
+
 	// Mint the totalTokens to the shannonDestAddress account balance.
-	// The Supplier stake is subsequently escrowed from the shannonDestAddress account balance.
+	// The Supplier stake is subsequently escrowed from the shannon_dest_address account balance.
 	// NOTE: The current supplier module's staking fee parameter will subsequently be deducted
 	// from the claimed balance.
-	if err := k.MintClaimedMorseTokens(ctx, shannonOwnerAddr, morseClaimableAccount.TotalTokens()); err != nil {
+	if err := k.MintClaimedMorseTokens(ctx, shannonOperatorAddr, morseClaimableAccount.TotalTokens()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Set ShannonDestAddress & ClaimedAtHeight (claim).
-	morseClaimableAccount.ShannonDestAddress = shannonOwnerAddr.String()
+	morseClaimableAccount.ShannonDestAddress = shannonOperatorAddr.String()
 	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
 
 	// Update the MorseClaimableAccount.
@@ -151,7 +177,7 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Query for any existing supplier stake prior to staking.
 	preClaimSupplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt())
-	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonOwnerAddr.String())
+	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonOperatorAddr.String())
 	if isFound {
 		preClaimSupplierStake = *foundSupplier.Stake
 	}
@@ -177,7 +203,9 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Emit an event which signals that the morse account has been claimed.
 	event := migrationtypes.EventMorseSupplierClaimed{
-		MorseSrcAddress:      msg.GetMorseSrcAddress(),
+		MorseSingerAddress:   msg.GetMorseSignerAddress(),
+		MorseOperatorAddress: msg.GetMorseOperatorAddress(),
+		ClaimSignerType:      claimSignerType,
 		ClaimedBalance:       claimedUnstakedBalance,
 		ClaimedSupplierStake: claimedSupplierStake,
 		SessionEndHeight:     sessionEndHeight,
@@ -196,7 +224,7 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Return the response.
 	return &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseSrcAddress:      msg.GetMorseSrcAddress(),
+		MorseSrcAddress:      msg.GetMorseSignerAddress(),
 		ClaimedBalance:       claimedUnstakedBalance,
 		ClaimedSupplierStake: claimedSupplierStake,
 		SessionEndHeight:     sessionEndHeight,
