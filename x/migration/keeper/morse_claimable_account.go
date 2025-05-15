@@ -41,17 +41,19 @@ func (k Keeper) GetMorseClaimableAccount(
 	return morseClaimableAccount, true
 }
 
-// RemoveMorseClaimableAccount removes a morseClaimableAccount from the store
-func (k Keeper) RemoveMorseClaimableAccount(
+// resetMorseClaimableAccounts removes ALL morseClaimableAccount from the store.
+func (k Keeper) resetMorseClaimableAccounts(
 	ctx context.Context,
-	address string,
-
 ) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountKeyPrefix))
-	store.Delete(migrationtypes.MorseClaimableAccountKey(
-		address,
-	))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		morseSrcAddressKey := iterator.Value()
+		store.Delete(morseSrcAddressKey)
+	}
 }
 
 // GetAllMorseClaimableAccounts returns all morseClaimableAccount

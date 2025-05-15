@@ -39,6 +39,9 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 			logger.Info(err.Error())
 			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
+
+		// Delete all existing MorseClaimableAccounts (and indices).
+		k.resetMorseClaimableAccounts(sdkCtx)
 	}
 
 	// Message handlers run during both CheckTx and DeliverTx.
