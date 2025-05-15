@@ -15,6 +15,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// MicroToPicoPOKT is the conversion factor from uPOKT (micro POKT) to pPOKT (pico POKT).
+// It is used to convert the estimated claim reward from pPOKT to uPOKT.
+const MicroToPicoPOKT = 1e6
+
 // GetNumClaimedComputeUnits returns the number of compute units for a given claim
 // as determined by the sum of the root hash.
 func (claim *Claim) GetNumClaimedComputeUnits() (numClaimedComputeUnits uint64, err error) {
@@ -55,23 +59,35 @@ func (claim *Claim) GetClaimeduPOKT(
 		return sdk.Coin{}, err
 	}
 
-	computeUnitsToTokenMultiplierRat := new(big.Rat).SetUint64(sharedParams.GetComputeUnitsToTokensMultiplier())
-
 	// CUTTM is a GLOBAL network wide parameter.
-	upoktAmountRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToTokenMultiplierRat)
+	// computeUnitsToPpoktMultiplier allows for more granular compute unit costs, down to the pPOKT level.
+	// It is used instead of a uPOKT multiplier to account for high POKT token prices
+	// which might prevent low-cost services to be set at the appropriate (sub uPOKT) price point.
+	computeUnitsToPpoktMultiplierRat := new(big.Rat).SetUint64(sharedParams.GetComputeUnitsToPpoktMultiplier())
+
+	pPoktAmountRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToPpoktMultiplierRat)
 
 	// Perform the division as late as possible to minimize precision loss.
-	upoktAmount := new(big.Int).Div(upoktAmountRat.Num(), upoktAmountRat.Denom())
-	if upoktAmount.Sign() < 0 {
+	ppoktAmount := new(big.Int).Div(pPoktAmountRat.Num(), pPoktAmountRat.Denom())
+
+	// Convert the claim's reward from pPOKT to uPOKT.
+	// This is done to ensure that the reward is always in uPOKT units,
+	// DEV_NOTE: Even though the cost of a compute unit can go as low as 1 pPOKT,
+	// a claim's reward MUST always be at least 1 uPOKT.
+	// This also avoids changing the whole codebase to use pPOKT instead of uPOKT,
+	// keeping it consistent with the existing uPOKT usage.
+	uPoktAmount := new(big.Int).Div(ppoktAmount, big.NewInt(MicroToPicoPOKT))
+
+	if uPoktAmount.Sign() < 0 {
 		return sdk.Coin{}, ErrProofInvalidClaimedAmount.Wrapf(
 			"num estimated compute units (%s) * CUTTM (%d) resulted in a negative amount: %s",
 			numEstimatedComputeUnitsRat.RatString(),
-			sharedParams.GetComputeUnitsToTokensMultiplier(),
-			upoktAmountRat,
+			sharedParams.GetComputeUnitsToPpoktMultiplier(),
+			uPoktAmount,
 		)
 	}
 
-	return sdk.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(upoktAmount)), nil
+	return sdk.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(uPoktAmount)), nil
 }
 
 // getNumEstimatedComputeUnitsRat returns the estimated claim's number of compute units

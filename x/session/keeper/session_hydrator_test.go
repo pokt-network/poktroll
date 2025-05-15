@@ -24,7 +24,7 @@ var (
 		SupplierUnbondingPeriodSessions:    1,
 		ApplicationUnbondingPeriodSessions: 1,
 		GatewayUnbondingPeriodSessions:     1,
-		ComputeUnitsToTokensMultiplier:     42,
+		ComputeUnitsToPpoktMultiplier:      42000000,
 	}
 
 	sharedParamsOpt = keepertest.WithSharedModuleParams(&testSharedParams)

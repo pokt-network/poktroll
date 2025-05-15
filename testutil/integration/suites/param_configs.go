@@ -96,7 +96,7 @@ var (
 			SupplierUnbondingPeriodSessions:    9,
 			ApplicationUnbondingPeriodSessions: 9,
 			GatewayUnbondingPeriodSessions:     9,
-			ComputeUnitsToTokensMultiplier:     420,
+			ComputeUnitsToPpoktMultiplier:      420000000,
 		},
 		DefaultParams:    sharedtypes.DefaultParams(),
 		NewParamClientFn: sharedtypes.NewQueryClient,

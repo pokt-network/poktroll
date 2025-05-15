@@ -907,10 +907,11 @@ func getClaimedUpokt(
 	numClaimedComputeUnitsRat := new(big.Rat).SetUint64(numClaimedComputeUnits)
 	numEstimatedComputeUnitsRat := new(big.Rat).Mul(difficultyMultiplierRat, numClaimedComputeUnitsRat)
 
-	computeUnitsToTokenMultiplierRat := new(big.Rat).SetUint64(sharedParams.GetComputeUnitsToTokensMultiplier())
+	computeUnitsToPpoktMultiplierRat := new(big.Rat).SetUint64(sharedParams.GetComputeUnitsToPpoktMultiplier())
 
-	claimedUpoktRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToTokenMultiplierRat)
-	claimedUpoktInt := new(big.Int).Div(claimedUpoktRat.Num(), claimedUpoktRat.Denom())
+	claimedPpoktRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToPpoktMultiplierRat)
+	claimedPpoktInt := new(big.Int).Div(claimedPpoktRat.Num(), claimedPpoktRat.Denom())
+	claimedUpoktInt := new(big.Int).Div(claimedPpoktInt, big.NewInt(prooftypes.MicroToPicoPOKT))
 
 	return cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(claimedUpoktInt))
 }

@@ -12,6 +12,7 @@ import (
 	tetsproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 func TestKeeper_IsProofRequired(t *testing.T) {
@@ -22,7 +23,8 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
 	// Set expected compute units to be below the proof requirement threshold to only
 	// exercise the probabilistic branch of the #isProofRequired() logic.
-	expectedComputeUnits := (proofParams.ProofRequirementThreshold.Amount.Uint64() - 1) / sharedParams.ComputeUnitsToTokensMultiplier
+	proofRequirementThresholdPpokt := proofParams.ProofRequirementThreshold.Amount.Uint64() * prooftypes.MicroToPicoPOKT
+	expectedComputeUnits := (proofRequirementThresholdPpokt - 1) / sharedParams.ComputeUnitsToPpoktMultiplier
 
 	var (
 		probability = types.DefaultProofRequestProbability
