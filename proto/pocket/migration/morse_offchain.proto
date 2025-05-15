@@ -127,6 +127,8 @@ message MorseValidator {
   int32 status = 4 [(gogoproto.jsontag) = "status"];
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 7 [(gogoproto.jsontag) = "tokens"];
+  // TODO_IN_THIS_COMMIT: comment...
+  bytes OutputAddress = 9 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.jsontag) = "output_address,omitempty", (gogoproto.moretags) = "yaml:\"output_address\""];
 }
 
 // MorseAccount is an analog of the Morse ProtoBaseAccount type.
