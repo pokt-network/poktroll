@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"time"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
@@ -179,6 +180,23 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 				err,
 			).Error(),
 		)
+	}
+
+	// TODO_IN_THIS_COMMIT: comment...
+	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
+		durationUntilUnstake := morseClaimableAccount.UnstakingCompletionTime.Sub(time.Now())
+
+		if durationUntilUnstake.Seconds() <= 0 {
+			// TODO_IN_THIS_COMMIT: ... unstake? move up?
+		}
+
+		// TODO_IN_THIS_COMMIT:
+		// - use a lookup table to get the est. block times per network...
+		// - use the shared params and the block time to calculate the unstake session end height...
+		// - emit an unbonding start event...
+
+		unstakeSessionEndHeight :=
+		app.UnstakeSessionEndHeight = unstakeSessionEndHeight
 	}
 
 	// Return the response.

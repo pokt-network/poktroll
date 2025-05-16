@@ -263,6 +263,23 @@ func (k msgServer) ClaimMorseSupplier(
 		)
 	}
 
+	// TODO_IN_THIS_COMMIT: comment...
+	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
+		durationUntilUnstake := morseClaimableAccount.UnstakingCompletionTime.Sub(time.Now())
+
+		if durationUntilUnstake.Seconds() <= 0 {
+			// TODO_IN_THIS_COMMIT: ... unstake? move up?
+		}
+
+		// TODO_IN_THIS_COMMIT:
+		// - use a lookup table to get the est. block times per network...
+		// - use the shared params and the block time to calculate the unstake session end height...
+		// - emit an unbonding start event...
+
+		unstakeSessionEndHeight :=
+			supplier.UnstakeSessionEndHeight = unstakeSessionEndHeight
+	}
+
 	// Return the response.
 	return &migrationtypes.MsgClaimMorseSupplierResponse{
 		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
