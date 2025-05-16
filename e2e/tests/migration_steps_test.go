@@ -285,6 +285,7 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 		"--from", s.getShannonKeyName(),
 		keyRingFlag,
 		chainIdFlag,
+		"--gas=auto",
 		"--yes",
 		"--output=json",
 		"--no-passphrase",
@@ -292,11 +293,20 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 
 	switch actorType {
 	case actorTypeApp:
-		commandStringParts = append(commandStringParts, serviceId, privKeyArmoredJSONPath)
+		commandStringParts = append(
+			commandStringParts,
+			serviceId,
+			privKeyArmoredJSONPath,
+		)
 	case actorTypeSupplier:
 		supplierStakeConfigPath := s.writeTempSupplierStakeConfig(serviceId, "")
 		morseNodeAddress := morsePrivKey.PubKey().Address().String()
-		commandStringParts = append(commandStringParts, morseNodeAddress, privKeyArmoredJSONPath, supplierStakeConfigPath)
+		commandStringParts = append(
+			commandStringParts,
+			morseNodeAddress,
+			privKeyArmoredJSONPath,
+			supplierStakeConfigPath,
+		)
 	}
 
 	res, err := s.pocketd.RunCommandOnHost("", commandStringParts...)
