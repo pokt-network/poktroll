@@ -21,6 +21,12 @@ message MorseAccountState {
 // They are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).
 // It is created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis).
 // It is updated ONLY ONCE, when it is claimed (per morse_src_address per network / re-genesis).
+//
+// The MorseClaimableAccounts onchain list can be thought of as a join table between Morse accounts and
+// Shannon accounts, where all Morse accounts (at the time of import to Shannon) are used to pre-populate
+// the join records.
+// See this mermaid entity relationship diagram for a conceptual representation:
+// https://mermaid.live/edit#pako:eNqdkl9rgzAUxb9KuE8bWNHa-ievG3spg8HehlBSc6duJilJhHXqd1_Udg8r9mEhiLkef-fccDsoFEeggPqxZqVmIpfELaG0wT0rCtVKa0g3V8dlrK5lSRjnGo0hL7v505DL-cVUTEol__Xv7Fo0rBbs0Nz0n6VGF_sL7Wl3Jbpk4Wjsle6P669X369Wfb-chZIcDtgoWRpiVQ4LbY8Y1d3GVMwQweSJ3NU--mRSIb8fmQvRfN8xr7xGlpLo4sy4D1VLYiut2rJaTJADeCBQC1ZzNwDTFedgKxSYw0jkTH-OUQanY61VrydZALW6RQ_aI2cWzyMD9J01xlWPTL4pJS4idwTawRfQdRD5UZqukyCOk3Trnh6cgKaRnwaB2_Em226TLBw8-J4AgZ-4-jZK4iROw3Adph4gr63Sz_O8TmPrwdTir3-px1bOB42So34YewWaZZvhB64o-Dg
 message MorseClaimableAccount {
   // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
   // This field is intended to remain empty until the account has been claimed.

@@ -29,21 +29,21 @@ func TestMorseClaimableAccountQuerySingle(t *testing.T) {
 		{
 			desc: "First",
 			request: &types.QueryMorseClaimableAccountRequest{
-				Address: msgs[0].MorseSrcAddress,
+				MorseAddress: msgs[0].MorseSrcAddress,
 			},
 			response: &types.QueryMorseClaimableAccountResponse{MorseClaimableAccount: msgs[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryMorseClaimableAccountRequest{
-				Address: msgs[1].MorseSrcAddress,
+				MorseAddress: msgs[1].MorseSrcAddress,
 			},
 			response: &types.QueryMorseClaimableAccountResponse{MorseClaimableAccount: msgs[1]},
 		},
 		{
 			desc: "KeyNotFound",
 			request: &types.QueryMorseClaimableAccountRequest{
-				Address: strconv.Itoa(100000),
+				MorseAddress: strconv.Itoa(100000),
 			},
 			err: status.Error(codes.NotFound, "not found"),
 		},

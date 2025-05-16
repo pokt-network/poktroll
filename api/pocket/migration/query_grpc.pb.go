@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Query_Params_FullMethodName                   = "/pocket.migration.Query/Params"
-	Query_MorseClaimableAccount_FullMethodName    = "/pocket.migration.Query/MorseClaimableAccount"
-	Query_MorseClaimableAccountAll_FullMethodName = "/pocket.migration.Query/MorseClaimableAccountAll"
+	Query_Params_FullMethodName                                 = "/pocket.migration.Query/Params"
+	Query_MorseClaimableAccount_FullMethodName                  = "/pocket.migration.Query/MorseClaimableAccount"
+	Query_MorseClaimableAccountAll_FullMethodName               = "/pocket.migration.Query/MorseClaimableAccountAll"
+	Query_MorseClaimableAccountsByShannonAddress_FullMethodName = "/pocket.migration.Query/MorseClaimableAccountsByShannonAddress"
 )
 
 // QueryClient is the client API for Query service.
@@ -35,6 +36,8 @@ type QueryClient interface {
 	// Queries a list of MorseClaimableAccount items.
 	MorseClaimableAccount(ctx context.Context, in *QueryMorseClaimableAccountRequest, opts ...grpc.CallOption) (*QueryMorseClaimableAccountResponse, error)
 	MorseClaimableAccountAll(ctx context.Context, in *QueryAllMorseClaimableAccountRequest, opts ...grpc.CallOption) (*QueryAllMorseClaimableAccountResponse, error)
+	// Queries a list of MorseClaimableAccountsByShannonAddress items.
+	MorseClaimableAccountsByShannonAddress(ctx context.Context, in *QueryMorseClaimableAccountsByShannonAddressRequest, opts ...grpc.CallOption) (*QueryMorseClaimableAccountsByShannonAddressResponse, error)
 }
 
 type queryClient struct {
@@ -75,6 +78,16 @@ func (c *queryClient) MorseClaimableAccountAll(ctx context.Context, in *QueryAll
 	return out, nil
 }
 
+func (c *queryClient) MorseClaimableAccountsByShannonAddress(ctx context.Context, in *QueryMorseClaimableAccountsByShannonAddressRequest, opts ...grpc.CallOption) (*QueryMorseClaimableAccountsByShannonAddressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryMorseClaimableAccountsByShannonAddressResponse)
+	err := c.cc.Invoke(ctx, Query_MorseClaimableAccountsByShannonAddress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
@@ -86,6 +99,8 @@ type QueryServer interface {
 	// Queries a list of MorseClaimableAccount items.
 	MorseClaimableAccount(context.Context, *QueryMorseClaimableAccountRequest) (*QueryMorseClaimableAccountResponse, error)
 	MorseClaimableAccountAll(context.Context, *QueryAllMorseClaimableAccountRequest) (*QueryAllMorseClaimableAccountResponse, error)
+	// Queries a list of MorseClaimableAccountsByShannonAddress items.
+	MorseClaimableAccountsByShannonAddress(context.Context, *QueryMorseClaimableAccountsByShannonAddressRequest) (*QueryMorseClaimableAccountsByShannonAddressResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -101,6 +116,9 @@ func (UnimplementedQueryServer) MorseClaimableAccount(context.Context, *QueryMor
 }
 func (UnimplementedQueryServer) MorseClaimableAccountAll(context.Context, *QueryAllMorseClaimableAccountRequest) (*QueryAllMorseClaimableAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MorseClaimableAccountAll not implemented")
+}
+func (UnimplementedQueryServer) MorseClaimableAccountsByShannonAddress(context.Context, *QueryMorseClaimableAccountsByShannonAddressRequest) (*QueryMorseClaimableAccountsByShannonAddressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MorseClaimableAccountsByShannonAddress not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -169,6 +187,24 @@ func _Query_MorseClaimableAccountAll_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_MorseClaimableAccountsByShannonAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryMorseClaimableAccountsByShannonAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).MorseClaimableAccountsByShannonAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_MorseClaimableAccountsByShannonAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).MorseClaimableAccountsByShannonAddress(ctx, req.(*QueryMorseClaimableAccountsByShannonAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -187,6 +223,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MorseClaimableAccountAll",
 			Handler:    _Query_MorseClaimableAccountAll_Handler,
+		},
+		{
+			MethodName: "MorseClaimableAccountsByShannonAddress",
+			Handler:    _Query_MorseClaimableAccountsByShannonAddress_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

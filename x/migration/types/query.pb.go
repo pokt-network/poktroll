@@ -106,8 +106,12 @@ func (m *QueryParamsResponse) GetParams() Params {
 	return Params{}
 }
 
+// QueryMorseClaimableAccountRequest is used to query for MorseClaimableAccounts by Morse address.
+// If the shannon_address (or claimed_at_height) for any given MorseClaimableAccount
+// is empty, it has not been claimed.
+// See the comments for MorseClaimableAccount for more context.
 type QueryMorseClaimableAccountRequest struct {
-	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	MorseAddress string `protobuf:"bytes,1,opt,name=morse_address,json=morseAddress,proto3" json:"morse_address"`
 }
 
 func (m *QueryMorseClaimableAccountRequest) Reset()         { *m = QueryMorseClaimableAccountRequest{} }
@@ -139,9 +143,9 @@ func (m *QueryMorseClaimableAccountRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryMorseClaimableAccountRequest proto.InternalMessageInfo
 
-func (m *QueryMorseClaimableAccountRequest) GetAddress() string {
+func (m *QueryMorseClaimableAccountRequest) GetMorseAddress() string {
 	if m != nil {
-		return m.Address
+		return m.MorseAddress
 	}
 	return ""
 }
@@ -186,6 +190,10 @@ func (m *QueryMorseClaimableAccountResponse) GetMorseClaimableAccount() MorseCla
 	return MorseClaimableAccount{}
 }
 
+// QueryAllMorseClaimableAccountsRequest is used to query for ALL MorseClaimableAccounts (paginated.
+// If the shannon_address (or claimed_at_height) for any given MorseClaimableAccount
+// is empty, it has not been claimed.
+// See the comments for MorseClaimableAccount for more context.
 type QueryAllMorseClaimableAccountRequest struct {
 	Pagination *query.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
@@ -274,6 +282,116 @@ func (m *QueryAllMorseClaimableAccountResponse) GetPagination() *query.PageRespo
 	return nil
 }
 
+// QueryMorseClaimableAccountRequest is used to query for MorseClaimableAccounts by Morse address.
+// If the shannon_address (or claimed_at_height) for any given MorseClaimableAccount
+// is empty, it has not been claimed.
+// See the comments for MorseClaimableAccount for more context.
+type QueryMorseClaimableAccountsByShannonAddressRequest struct {
+	// The bech32-encoded address of the Shannon account to which one or more Morse accounts were claimed.
+	ShannonAddress string             `protobuf:"bytes,1,opt,name=shannon_address,json=shannonAddress,proto3" json:"shannon_address,omitempty"`
+	Pagination     *query.PageRequest `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) Reset() {
+	*m = QueryMorseClaimableAccountsByShannonAddressRequest{}
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) String() string {
+	return proto.CompactTextString(m)
+}
+func (*QueryMorseClaimableAccountsByShannonAddressRequest) ProtoMessage() {}
+func (*QueryMorseClaimableAccountsByShannonAddressRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6dfd007cf5ed0ff6, []int{6}
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryMorseClaimableAccountsByShannonAddressRequest.Merge(m, src)
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryMorseClaimableAccountsByShannonAddressRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryMorseClaimableAccountsByShannonAddressRequest proto.InternalMessageInfo
+
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) GetShannonAddress() string {
+	if m != nil {
+		return m.ShannonAddress
+	}
+	return ""
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) GetPagination() *query.PageRequest {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+type QueryMorseClaimableAccountsByShannonAddressResponse struct {
+	// The list of MorseClaimableAccounts which where claimed by the Shannon address given in the query.
+	MorseClaimableAccounts []MorseClaimableAccount `protobuf:"bytes,1,rep,name=morse_claimable_accounts,json=morseClaimableAccounts,proto3" json:"morse_claimable_accounts"`
+	Pagination             *query.PageResponse     `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) Reset() {
+	*m = QueryMorseClaimableAccountsByShannonAddressResponse{}
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*QueryMorseClaimableAccountsByShannonAddressResponse) ProtoMessage() {}
+func (*QueryMorseClaimableAccountsByShannonAddressResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6dfd007cf5ed0ff6, []int{7}
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryMorseClaimableAccountsByShannonAddressResponse.Merge(m, src)
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryMorseClaimableAccountsByShannonAddressResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryMorseClaimableAccountsByShannonAddressResponse proto.InternalMessageInfo
+
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) GetMorseClaimableAccounts() []MorseClaimableAccount {
+	if m != nil {
+		return m.MorseClaimableAccounts
+	}
+	return nil
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) GetPagination() *query.PageResponse {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*QueryParamsRequest)(nil), "pocket.migration.QueryParamsRequest")
 	proto.RegisterType((*QueryParamsResponse)(nil), "pocket.migration.QueryParamsResponse")
@@ -281,47 +399,58 @@ func init() {
 	proto.RegisterType((*QueryMorseClaimableAccountResponse)(nil), "pocket.migration.QueryMorseClaimableAccountResponse")
 	proto.RegisterType((*QueryAllMorseClaimableAccountRequest)(nil), "pocket.migration.QueryAllMorseClaimableAccountRequest")
 	proto.RegisterType((*QueryAllMorseClaimableAccountResponse)(nil), "pocket.migration.QueryAllMorseClaimableAccountResponse")
+	proto.RegisterType((*QueryMorseClaimableAccountsByShannonAddressRequest)(nil), "pocket.migration.QueryMorseClaimableAccountsByShannonAddressRequest")
+	proto.RegisterType((*QueryMorseClaimableAccountsByShannonAddressResponse)(nil), "pocket.migration.QueryMorseClaimableAccountsByShannonAddressResponse")
 }
 
 func init() { proto.RegisterFile("pocket/migration/query.proto", fileDescriptor_6dfd007cf5ed0ff6) }
 
 var fileDescriptor_6dfd007cf5ed0ff6 = []byte{
-	// 559 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0x41, 0x6b, 0x13, 0x41,
-	0x14, 0xce, 0xd4, 0x1a, 0xe9, 0x78, 0xd1, 0xb1, 0x85, 0x10, 0xea, 0xaa, 0x4b, 0x6a, 0xb5, 0xe0,
-	0x0e, 0x4d, 0x45, 0x45, 0x11, 0x4c, 0x14, 0x05, 0x41, 0x88, 0x7b, 0xf4, 0x52, 0x26, 0xdb, 0x61,
-	0xbb, 0x64, 0x77, 0xde, 0x76, 0x67, 0xa2, 0x16, 0xf1, 0xe2, 0x41, 0xf0, 0x26, 0xf8, 0x27, 0x3c,
-	0xea, 0xbf, 0xe8, 0x45, 0x29, 0x88, 0xd0, 0x93, 0x48, 0x22, 0xf8, 0x37, 0x24, 0x33, 0x13, 0x4d,
-	0xdd, 0x4d, 0x96, 0x8a, 0x97, 0x65, 0x66, 0xde, 0xfb, 0xde, 0xf7, 0x7d, 0xf3, 0xde, 0x2c, 0x5e,
-	0x4e, 0x21, 0xe8, 0x71, 0x45, 0x93, 0x28, 0xcc, 0x98, 0x8a, 0x40, 0xd0, 0x9d, 0x3e, 0xcf, 0x76,
-	0xbd, 0x34, 0x03, 0x05, 0xe4, 0x94, 0x89, 0x7a, 0xbf, 0xa3, 0xf5, 0xd3, 0x2c, 0x89, 0x04, 0x50,
-	0xfd, 0x35, 0x49, 0xf5, 0xc5, 0x10, 0x42, 0xd0, 0x4b, 0x3a, 0x5a, 0xd9, 0xd3, 0xe5, 0x10, 0x20,
-	0x8c, 0x39, 0x65, 0x69, 0x44, 0x99, 0x10, 0xa0, 0x34, 0x5e, 0xda, 0xe8, 0x5a, 0x00, 0x32, 0x01,
-	0x49, 0xbb, 0x4c, 0x72, 0xc3, 0x48, 0x9f, 0xae, 0x77, 0xb9, 0x62, 0xeb, 0x34, 0x65, 0x61, 0x24,
-	0x74, 0xb2, 0xcd, 0x3d, 0x9b, 0x93, 0x98, 0xb2, 0x8c, 0x25, 0xe3, 0x52, 0x8d, 0x5c, 0x38, 0x81,
-	0x4c, 0xf2, 0x4d, 0x10, 0xc1, 0x36, 0x8b, 0x6c, 0x11, 0x77, 0x11, 0x93, 0xc7, 0x23, 0x9a, 0x8e,
-	0x86, 0xfa, 0x7c, 0xa7, 0xcf, 0xa5, 0x72, 0x7d, 0x7c, 0xe6, 0xd0, 0xa9, 0x4c, 0x41, 0x48, 0x4e,
-	0x6e, 0xe1, 0xaa, 0xa1, 0xa8, 0xa1, 0xf3, 0xe8, 0xd2, 0xc9, 0x66, 0xcd, 0xfb, 0xfb, 0x1e, 0x3c,
-	0x83, 0x68, 0x2f, 0xec, 0x7d, 0x3b, 0x57, 0x79, 0xff, 0xf3, 0xc3, 0x1a, 0xf2, 0x2d, 0xc4, 0xbd,
-	0x8d, 0x2f, 0xe8, 0x9a, 0x8f, 0x46, 0x2a, 0xee, 0xc6, 0x2c, 0x4a, 0x58, 0x37, 0xe6, 0xad, 0x20,
-	0x80, 0xbe, 0x50, 0x96, 0x98, 0xd4, 0xf0, 0x09, 0xb6, 0xb5, 0x95, 0x71, 0x69, 0x28, 0x16, 0xfc,
-	0xf1, 0xd6, 0x7d, 0x83, 0xb0, 0x3b, 0x0b, 0x6f, 0x25, 0x06, 0x78, 0x29, 0x29, 0x4a, 0xb0, 0x8a,
-	0x57, 0xf3, 0x8a, 0x0b, 0xeb, 0xb5, 0xe7, 0x47, 0x06, 0xfc, 0xe2, 0x5a, 0xae, 0xc0, 0x0d, 0x2d,
-	0xa5, 0x15, 0xc7, 0x33, 0xdd, 0xdc, 0xc7, 0xf8, 0x4f, 0xd7, 0xac, 0x82, 0x8b, 0x9e, 0x69, 0xb1,
-	0x37, 0x6a, 0xb1, 0x67, 0x86, 0xca, 0xb6, 0xd8, 0xeb, 0xb0, 0x90, 0x5b, 0xac, 0x3f, 0x81, 0x74,
-	0xbf, 0x22, 0xbc, 0x52, 0x42, 0x58, 0x6e, 0xff, 0xd8, 0xff, 0xb2, 0x4f, 0x1e, 0x1c, 0xb2, 0x35,
-	0x67, 0x2f, 0xb6, 0xcc, 0x96, 0x51, 0x38, 0xe9, 0xab, 0xf9, 0x71, 0x1e, 0x1f, 0xd7, 0xbe, 0xc8,
-	0x6b, 0x84, 0xab, 0x66, 0x74, 0x48, 0x23, 0xaf, 0x31, 0x3f, 0xa1, 0xf5, 0x95, 0x92, 0x2c, 0xc3,
-	0xe6, 0xd2, 0x57, 0x5f, 0x7e, 0xbc, 0x9b, 0xbb, 0x4c, 0x56, 0x69, 0x0a, 0x3d, 0x75, 0x45, 0x70,
-	0xf5, 0x0c, 0xb2, 0x9e, 0xde, 0x64, 0x10, 0xc7, 0xb9, 0xb7, 0x43, 0x3e, 0x23, 0xbc, 0x54, 0x78,
-	0x25, 0x64, 0x63, 0x0a, 0xe3, 0xac, 0x09, 0xa8, 0x5f, 0x3d, 0x1a, 0xc8, 0xaa, 0x7e, 0xa8, 0x55,
-	0xdf, 0x23, 0xed, 0x52, 0xd5, 0xe6, 0x49, 0x07, 0xe3, 0x42, 0x9b, 0xcc, 0x54, 0xa2, 0x2f, 0xec,
-	0xb3, 0x79, 0x49, 0x3e, 0x21, 0x5c, 0x2b, 0x64, 0x6b, 0xc5, 0x31, 0xb9, 0x36, 0x45, 0x5e, 0xc9,
-	0x60, 0xd7, 0xaf, 0x1f, 0x19, 0x67, 0x9d, 0xdd, 0xd1, 0xce, 0x6e, 0x92, 0x1b, 0xff, 0xea, 0xac,
-	0xdd, 0xd9, 0x1b, 0x38, 0x68, 0x7f, 0xe0, 0xa0, 0x83, 0x81, 0x83, 0xbe, 0x0f, 0x1c, 0xf4, 0x76,
-	0xe8, 0x54, 0xf6, 0x87, 0x4e, 0xe5, 0x60, 0xe8, 0x54, 0x9e, 0x34, 0xc3, 0x48, 0x6d, 0xf7, 0xbb,
-	0x5e, 0x00, 0xc9, 0x14, 0x86, 0xe7, 0x13, 0x1c, 0x6a, 0x37, 0xe5, 0xb2, 0x5b, 0xd5, 0x7f, 0xc2,
-	0x8d, 0x5f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x8c, 0x22, 0xb2, 0xab, 0xf3, 0x05, 0x00, 0x00,
+	// 689 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0xcf, 0x6b, 0x13, 0x41,
+	0x14, 0xce, 0x44, 0x0d, 0x74, 0xfc, 0xd9, 0xb1, 0x95, 0x10, 0xea, 0xb6, 0x2e, 0xfd, 0xa1, 0x05,
+	0x77, 0x68, 0x2a, 0x55, 0xf4, 0x62, 0x62, 0x55, 0x10, 0x84, 0xba, 0xde, 0x14, 0x8c, 0x93, 0xed,
+	0xb8, 0x5d, 0xba, 0xbb, 0xb3, 0xdd, 0xd9, 0xa8, 0xa1, 0xf4, 0xa2, 0x22, 0x78, 0x13, 0x3c, 0x7b,
+	0x14, 0x3c, 0xfa, 0x67, 0xf4, 0xa2, 0x54, 0x44, 0xe8, 0xa9, 0x48, 0x2a, 0x08, 0xfd, 0x2b, 0x64,
+	0x67, 0xa6, 0xda, 0x24, 0xbb, 0x5d, 0x13, 0x7b, 0x09, 0x3b, 0xf3, 0xde, 0xf7, 0xde, 0xf7, 0xbd,
+	0xf7, 0xe6, 0x05, 0x8e, 0x04, 0xcc, 0x5a, 0xa6, 0x11, 0xf6, 0x1c, 0x3b, 0x24, 0x91, 0xc3, 0x7c,
+	0xbc, 0xd2, 0xa0, 0x61, 0xd3, 0x08, 0x42, 0x16, 0x31, 0x74, 0x4a, 0x5a, 0x8d, 0x3f, 0xd6, 0xd2,
+	0x20, 0xf1, 0x1c, 0x9f, 0x61, 0xf1, 0x2b, 0x9d, 0x4a, 0x43, 0x36, 0xb3, 0x99, 0xf8, 0xc4, 0xf1,
+	0x97, 0xba, 0x1d, 0xb1, 0x19, 0xb3, 0x5d, 0x8a, 0x49, 0xe0, 0x60, 0xe2, 0xfb, 0x2c, 0x12, 0x78,
+	0xae, 0xac, 0xd3, 0x16, 0xe3, 0x1e, 0xe3, 0xb8, 0x4e, 0x38, 0x95, 0x19, 0xf1, 0xd3, 0x99, 0x3a,
+	0x8d, 0xc8, 0x0c, 0x0e, 0x88, 0xed, 0xf8, 0xc2, 0x59, 0xf9, 0x9e, 0xed, 0xa2, 0x18, 0x90, 0x90,
+	0x78, 0xbb, 0xa1, 0xc6, 0xbb, 0xcc, 0x1e, 0x0b, 0x39, 0xad, 0x31, 0xdf, 0x5a, 0x22, 0x8e, 0x0a,
+	0xa2, 0x0f, 0x41, 0x74, 0x2f, 0x4e, 0xb3, 0x20, 0xa0, 0x26, 0x5d, 0x69, 0x50, 0x1e, 0xe9, 0x26,
+	0x3c, 0xdd, 0x76, 0xcb, 0x03, 0xe6, 0x73, 0x8a, 0xae, 0xc1, 0x82, 0x4c, 0x51, 0x04, 0x63, 0xe0,
+	0xfc, 0xd1, 0x72, 0xd1, 0xe8, 0xac, 0x83, 0x21, 0x11, 0xd5, 0x81, 0xf5, 0xad, 0xd1, 0xdc, 0xc7,
+	0x5f, 0x9f, 0xa6, 0x81, 0xa9, 0x20, 0xfa, 0x43, 0x78, 0x4e, 0xc4, 0xbc, 0x1b, 0xb3, 0xb8, 0xe1,
+	0x12, 0xc7, 0x23, 0x75, 0x97, 0x56, 0x2c, 0x8b, 0x35, 0xfc, 0x48, 0x25, 0x46, 0x73, 0xf0, 0xb8,
+	0x64, 0x49, 0x16, 0x17, 0x43, 0xca, 0x65, 0xa2, 0x81, 0xea, 0xe0, 0xce, 0xd6, 0x68, 0xbb, 0xc1,
+	0x3c, 0x26, 0x8e, 0x15, 0x79, 0xd2, 0xdf, 0x00, 0xa8, 0xef, 0x17, 0x5d, 0x09, 0xb0, 0xe0, 0xb0,
+	0x97, 0xe4, 0xa0, 0xf4, 0x4c, 0x75, 0xeb, 0x49, 0x8c, 0x57, 0x3d, 0x1c, 0xcb, 0x33, 0x93, 0x63,
+	0xe9, 0x3e, 0x1c, 0x17, 0x54, 0x2a, 0xae, 0xbb, 0xaf, 0xd6, 0x5b, 0x10, 0xfe, 0xed, 0xa9, 0x62,
+	0x30, 0x69, 0xc8, 0x01, 0x30, 0xe2, 0x01, 0x30, 0xe4, 0xc8, 0xa9, 0x01, 0x30, 0x16, 0x88, 0x4d,
+	0x15, 0xd6, 0xdc, 0x83, 0xd4, 0xbf, 0x03, 0x38, 0x91, 0x91, 0x30, 0x5b, 0xfe, 0xa1, 0x83, 0x92,
+	0x8f, 0x6e, 0xb7, 0xc9, 0xca, 0xab, 0xc2, 0x66, 0xc9, 0x92, 0x0c, 0xdb, 0x74, 0x7d, 0x00, 0xb0,
+	0x9c, 0xde, 0x53, 0x5e, 0x6d, 0xde, 0x5f, 0x8a, 0x1f, 0x90, 0xaf, 0x66, 0x60, 0xb7, 0xac, 0x53,
+	0xf0, 0x24, 0x97, 0x86, 0xf6, 0x21, 0x32, 0x4f, 0xf0, 0x36, 0xff, 0x8e, 0xfa, 0xe7, 0xfb, 0xae,
+	0xff, 0xab, 0x3c, 0x9c, 0xed, 0x89, 0xa7, 0xea, 0xc6, 0x4b, 0x00, 0x8b, 0x72, 0xa6, 0xad, 0x5d,
+	0x4c, 0x8d, 0x28, 0x50, 0xaf, 0x1d, 0x19, 0x8b, 0x3b, 0xb2, 0xb3, 0x35, 0x9a, 0x1a, 0xd0, 0x3c,
+	0x93, 0xd8, 0x2d, 0x7e, 0x60, 0xed, 0x2a, 0x7f, 0x2d, 0xc0, 0x23, 0xa2, 0x0c, 0xe8, 0x35, 0x80,
+	0x05, 0xb9, 0x07, 0xd0, 0x78, 0xb7, 0x80, 0xee, 0x75, 0x53, 0x9a, 0xc8, 0xf0, 0x92, 0xd9, 0x74,
+	0xfc, 0xe2, 0xdb, 0xcf, 0x77, 0xf9, 0x0b, 0x68, 0x0a, 0x07, 0x6c, 0x39, 0xba, 0xe8, 0xd3, 0xe8,
+	0x19, 0x0b, 0x97, 0xc5, 0x21, 0x64, 0xae, 0xdb, 0xb5, 0x08, 0xd1, 0x17, 0x00, 0x87, 0x13, 0xeb,
+	0x85, 0x66, 0x53, 0x32, 0xee, 0xf7, 0x60, 0x4b, 0x97, 0x7a, 0x03, 0x29, 0xd6, 0x77, 0x04, 0xeb,
+	0x79, 0x54, 0xcd, 0x64, 0x9d, 0xd2, 0x3b, 0xbc, 0xaa, 0xe6, 0x78, 0x0d, 0x7d, 0x06, 0xb0, 0x98,
+	0x98, 0xad, 0xe2, 0xba, 0x68, 0x2e, 0x85, 0x5e, 0xc6, 0x1e, 0x2a, 0x5d, 0xee, 0x19, 0xa7, 0x94,
+	0x5d, 0x17, 0xca, 0xae, 0xa2, 0x2b, 0xfd, 0x2a, 0x43, 0xef, 0xf3, 0x70, 0xf2, 0xdf, 0x5e, 0x0d,
+	0x9a, 0xef, 0xa5, 0xf8, 0x69, 0xcb, 0xa1, 0x74, 0xf3, 0x3f, 0xa3, 0x28, 0xe5, 0x4f, 0x84, 0xf2,
+	0xc7, 0xe8, 0x51, 0xbf, 0xca, 0x79, 0xad, 0xde, 0xac, 0x75, 0xac, 0x29, 0xbc, 0xda, 0x71, 0xb1,
+	0x56, 0x5d, 0x58, 0x6f, 0x69, 0x60, 0xa3, 0xa5, 0x81, 0xcd, 0x96, 0x06, 0x7e, 0xb4, 0x34, 0xf0,
+	0x76, 0x5b, 0xcb, 0x6d, 0x6c, 0x6b, 0xb9, 0xcd, 0x6d, 0x2d, 0xf7, 0xa0, 0x6c, 0x3b, 0xd1, 0x52,
+	0xa3, 0x6e, 0x58, 0xcc, 0x4b, 0xe1, 0xf1, 0x7c, 0x0f, 0x93, 0xa8, 0x19, 0x50, 0x5e, 0x2f, 0x88,
+	0xbf, 0xfd, 0xd9, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0xf5, 0x79, 0xa7, 0x97, 0xe0, 0x08, 0x00,
+	0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -341,6 +470,8 @@ type QueryClient interface {
 	// Queries a list of MorseClaimableAccount items.
 	MorseClaimableAccount(ctx context.Context, in *QueryMorseClaimableAccountRequest, opts ...grpc.CallOption) (*QueryMorseClaimableAccountResponse, error)
 	MorseClaimableAccountAll(ctx context.Context, in *QueryAllMorseClaimableAccountRequest, opts ...grpc.CallOption) (*QueryAllMorseClaimableAccountResponse, error)
+	// Queries a list of MorseClaimableAccountsByShannonAddress items.
+	MorseClaimableAccountsByShannonAddress(ctx context.Context, in *QueryMorseClaimableAccountsByShannonAddressRequest, opts ...grpc.CallOption) (*QueryMorseClaimableAccountsByShannonAddressResponse, error)
 }
 
 type queryClient struct {
@@ -378,6 +509,15 @@ func (c *queryClient) MorseClaimableAccountAll(ctx context.Context, in *QueryAll
 	return out, nil
 }
 
+func (c *queryClient) MorseClaimableAccountsByShannonAddress(ctx context.Context, in *QueryMorseClaimableAccountsByShannonAddressRequest, opts ...grpc.CallOption) (*QueryMorseClaimableAccountsByShannonAddressResponse, error) {
+	out := new(QueryMorseClaimableAccountsByShannonAddressResponse)
+	err := c.cc.Invoke(ctx, "/pocket.migration.Query/MorseClaimableAccountsByShannonAddress", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 type QueryServer interface {
 	// Parameters queries the parameters of the module.
@@ -385,6 +525,8 @@ type QueryServer interface {
 	// Queries a list of MorseClaimableAccount items.
 	MorseClaimableAccount(context.Context, *QueryMorseClaimableAccountRequest) (*QueryMorseClaimableAccountResponse, error)
 	MorseClaimableAccountAll(context.Context, *QueryAllMorseClaimableAccountRequest) (*QueryAllMorseClaimableAccountResponse, error)
+	// Queries a list of MorseClaimableAccountsByShannonAddress items.
+	MorseClaimableAccountsByShannonAddress(context.Context, *QueryMorseClaimableAccountsByShannonAddressRequest) (*QueryMorseClaimableAccountsByShannonAddressResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
@@ -399,6 +541,9 @@ func (*UnimplementedQueryServer) MorseClaimableAccount(ctx context.Context, req 
 }
 func (*UnimplementedQueryServer) MorseClaimableAccountAll(ctx context.Context, req *QueryAllMorseClaimableAccountRequest) (*QueryAllMorseClaimableAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MorseClaimableAccountAll not implemented")
+}
+func (*UnimplementedQueryServer) MorseClaimableAccountsByShannonAddress(ctx context.Context, req *QueryMorseClaimableAccountsByShannonAddressRequest) (*QueryMorseClaimableAccountsByShannonAddressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MorseClaimableAccountsByShannonAddress not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
@@ -459,6 +604,24 @@ func _Query_MorseClaimableAccountAll_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_MorseClaimableAccountsByShannonAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryMorseClaimableAccountsByShannonAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).MorseClaimableAccountsByShannonAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pocket.migration.Query/MorseClaimableAccountsByShannonAddress",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).MorseClaimableAccountsByShannonAddress(ctx, req.(*QueryMorseClaimableAccountsByShannonAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Query_serviceDesc = _Query_serviceDesc
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "pocket.migration.Query",
@@ -475,6 +638,10 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MorseClaimableAccountAll",
 			Handler:    _Query_MorseClaimableAccountAll_Handler,
+		},
+		{
+			MethodName: "MorseClaimableAccountsByShannonAddress",
+			Handler:    _Query_MorseClaimableAccountsByShannonAddress_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -557,10 +724,10 @@ func (m *QueryMorseClaimableAccountRequest) MarshalToSizedBuffer(dAtA []byte) (i
 	_ = i
 	var l int
 	_ = l
-	if len(m.Address) > 0 {
-		i -= len(m.Address)
-		copy(dAtA[i:], m.Address)
-		i = encodeVarintQuery(dAtA, i, uint64(len(m.Address)))
+	if len(m.MorseAddress) > 0 {
+		i -= len(m.MorseAddress)
+		copy(dAtA[i:], m.MorseAddress)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.MorseAddress)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -684,6 +851,97 @@ func (m *QueryAllMorseClaimableAccountResponse) MarshalToSizedBuffer(dAtA []byte
 	return len(dAtA) - i, nil
 }
 
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ShannonAddress) > 0 {
+		i -= len(m.ShannonAddress)
+		copy(dAtA[i:], m.ShannonAddress)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.ShannonAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.MorseClaimableAccounts) > 0 {
+		for iNdEx := len(m.MorseClaimableAccounts) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.MorseClaimableAccounts[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -721,7 +979,7 @@ func (m *QueryMorseClaimableAccountRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Address)
+	l = len(m.MorseAddress)
 	if l > 0 {
 		n += 1 + l + sovQuery(uint64(l))
 	}
@@ -760,6 +1018,42 @@ func (m *QueryAllMorseClaimableAccountResponse) Size() (n int) {
 	_ = l
 	if len(m.MorseClaimableAccount) > 0 {
 		for _, e := range m.MorseClaimableAccount {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ShannonAddress)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.MorseClaimableAccounts) > 0 {
+		for _, e := range m.MorseClaimableAccounts {
 			l = e.Size()
 			n += 1 + l + sovQuery(uint64(l))
 		}
@@ -941,7 +1235,7 @@ func (m *QueryMorseClaimableAccountRequest) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseAddress", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -969,7 +1263,7 @@ func (m *QueryMorseClaimableAccountRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Address = string(dAtA[iNdEx:postIndex])
+			m.MorseAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1221,6 +1515,244 @@ func (m *QueryAllMorseClaimableAccountResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.MorseClaimableAccount = append(m.MorseClaimableAccount, MorseClaimableAccount{})
 			if err := m.MorseClaimableAccount[len(m.MorseClaimableAccount)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageResponse{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryMorseClaimableAccountsByShannonAddressRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryMorseClaimableAccountsByShannonAddressRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShannonAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ShannonAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageRequest{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryMorseClaimableAccountsByShannonAddressResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryMorseClaimableAccountsByShannonAddressResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryMorseClaimableAccountsByShannonAddressResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseClaimableAccounts", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MorseClaimableAccounts = append(m.MorseClaimableAccounts, MorseClaimableAccount{})
+			if err := m.MorseClaimableAccounts[len(m.MorseClaimableAccounts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

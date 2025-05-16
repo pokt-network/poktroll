@@ -22,12 +22,18 @@ service Query {
   }
   
   // Queries a list of MorseClaimableAccount items.
-  rpc MorseClaimableAccount    (QueryMorseClaimableAccountRequest) returns (QueryMorseClaimableAccountResponse) {
+  rpc MorseClaimableAccount    (QueryMorseClaimableAccountRequest   ) returns (QueryMorseClaimableAccountResponse   ) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account/{address}";
   
   }
   rpc MorseClaimableAccountAll (QueryAllMorseClaimableAccountRequest) returns (QueryAllMorseClaimableAccountResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account";
+  
+  }
+  
+  // Queries a list of MorseClaimableAccountsByShannonAddress items.
+  rpc MorseClaimableAccountsByShannonAddress (QueryMorseClaimableAccountsByShannonAddressRequest) returns (QueryMorseClaimableAccountsByShannonAddressResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_accounts_by_shannon_address/{shannon_address}";
   
   }
 }
@@ -41,14 +47,22 @@ message QueryParamsResponse {
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
+// QueryMorseClaimableAccountRequest is used to query for MorseClaimableAccounts by Morse address.
+// If the shannon_address (or claimed_at_height) for any given MorseClaimableAccount
+// is empty, it has not been claimed.
+// See the comments for MorseClaimableAccount for more context.
 message QueryMorseClaimableAccountRequest {
-  string address = 1;
+  string morse_address = 1 [(gogoproto.jsontag) = "morse_address"];
 }
 
 message QueryMorseClaimableAccountResponse {
   MorseClaimableAccount morseClaimableAccount = 1 [(gogoproto.nullable) = false];
 }
 
+// QueryAllMorseClaimableAccountsRequest is used to query for ALL MorseClaimableAccounts (paginated.
+// If the shannon_address (or claimed_at_height) for any given MorseClaimableAccount
+// is empty, it has not been claimed.
+// See the comments for MorseClaimableAccount for more context.
 message QueryAllMorseClaimableAccountRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
 }
@@ -56,5 +70,22 @@ message QueryAllMorseClaimableAccountRequest {
 message QueryAllMorseClaimableAccountResponse {
   repeated MorseClaimableAccount                  morseClaimableAccount = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination            = 2;
+}
+
+// QueryMorseClaimableAccountRequest is used to query for MorseClaimableAccounts by Morse address.
+// If the shannon_address (or claimed_at_height) for any given MorseClaimableAccount
+// is empty, it has not been claimed.
+// See the comments for MorseClaimableAccount for more context.
+message QueryMorseClaimableAccountsByShannonAddressRequest {
+  // The bech32-encoded address of the Shannon account to which one or more Morse accounts were claimed.
+  string shannon_address = 1;
+
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QueryMorseClaimableAccountsByShannonAddressResponse {
+  // The list of MorseClaimableAccounts which where claimed by the Shannon address given in the query.
+  repeated MorseClaimableAccount morse_claimable_accounts = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "morse_claimable_accounts"];
+  cosmos.base.query.v1beta1.PageResponse pagination       = 2;
 }
 
