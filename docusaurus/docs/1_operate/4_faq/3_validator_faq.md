@@ -3,6 +3,51 @@ sidebar_position: 3
 title: Validator FAQ
 ---
 
+## How many validators can be staked and how many validators can produce blocks? 
+
+An infinite number of validators can be staked, HOWEVER, only validators in the _active set_ will produce blocks. The size of the active set is dictated by the parameter `max_validators` which can be checked using `pocketd query params`. 
+
+### How do I become an Active Validator?
+
+Active Validators on Pocket Network are determined by the stake-weight of each validator. Only the top `N` Validator nodes by stake-weight are eligible to produce blocks. 
+
+Each block, the chain evaluates the stake-weight of all Validators and then can promote or demote validators into the active set based on that stake-weight.
+
+### TL;DR
+👀 **TL;DR — Key Points**
+- Only the top `max_validators` by total stake are active.
+- New validators with higher stake can rotate out lower-staked ones.
+- Validator selection is by bonded stake, not random.
+
+🔒 **Max Validator Cap Behavior**
+- If the active set is full (`max_validators` reached), new validators are created but inactive.
+- They’ll be evaluated at the end of each block for possible inclusion.
+
+⚖️ **Validator Set Rotation by Stake (Not Random)**
+- Cosmos SDK sorts all bonded validators by total stake.
+- Top `max_validators` are included in the active set for block signing.
+
+🚫 **Inactive Validators**
+- Validators below the threshold are not slashed or deleted.
+- They remain candidates and can still receive delegations.
+
+⏰ **When Rotation Happens**
+- The validator set is recalculated at the end of each block (`staking.EndBlocker`).
+- Any change in stake (new validator, delegation, slashing) can trigger reshuffling.
+- A new validator with higher stake replaces a lower-staked one in the next block.
+
+🧪 Example:
+Suppose `max_validators` = 10.
+```
+| Rank | Validator | Stake |
+|------|-----------|-------|
+| 10   | J         | 100   |
+| —    | New K     | 200   |
+```
+If `K` joins with more stake than `J`:
+- `K` enters the active set.
+- `J` is rotated out and becomes inactive.
+
 ## How do I delegate additional tokens to my Validator?
 
 To increase your self-delegation or allow others to delegate to your Validator, use:
