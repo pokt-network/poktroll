@@ -260,7 +260,7 @@ func checkClaimSigner(
 	// Owner claim (a.k.a custodial claim)
 	// This is the owner claiming the Morse node/servicer/supplier account
 	case outputAddr:
-		claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OWNER
+		claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER
 
 	// Operator claim
 	// May be custodial or non-custodial depending on whether the output (i.e. owner) is set
@@ -271,12 +271,12 @@ func checkClaimSigner(
 		// signer === addr === operator === owner
 		// Custodial claim: No output address is set so the operator === owner === signer
 		case "":
-			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR
+			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR
 
 		// signer === operator === addr && owner !== operator
 		// Non-custodial claim: Output address exists so the operator is claiming the account on behalf of the owner
 		default:
-			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OPERATOR
+			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR
 		}
 
 	// Signer does not match either the operator or owner address

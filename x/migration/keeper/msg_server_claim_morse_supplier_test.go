@@ -163,7 +163,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	expectedRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
 		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR,
+		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
 		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
 		ClaimedBalance: expectedClaimedUnstakedTokens.
 			Add(morseClaimableAccount.GetApplicationStake()),
@@ -184,7 +184,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	expectedEvent := &migrationtypes.EventMorseSupplierClaimed{
 		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
 		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR,
+		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
 		ClaimedBalance:       expectedClaimedUnstakedTokens,
 		ClaimedSupplierStake: supplierStake,
 		SessionEndHeight:     expectedSessionEndHeight,
