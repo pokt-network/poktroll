@@ -147,7 +147,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// The Supplier stake is subsequently escrowed from the shannon_dest_address account balance.
 	// NOTE: The current supplier module's staking fee parameter will subsequently be deducted
 	// from the claimed balance.
-	if err := k.MintClaimedMorseTokens(ctx, shannonOperatorAddr, morseClaimableAccount.TotalTokens()); err != nil {
+	if err = k.MintClaimedMorseTokens(ctx, shannonOperatorAddr, morseClaimableAccount.TotalTokens()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
