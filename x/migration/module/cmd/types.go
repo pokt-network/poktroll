@@ -166,6 +166,11 @@ func (miw *morseImportWorkspace) addSupplierStake(morseValidator *migrationtypes
 		morseClaimableAccount.MorseOutputAddress = morseValidator.OutputAddress.String()
 	}
 
+	// If the supplier is unbonding, transfer the unstaking completion time.
+	if !morseValidator.UnstakingCompletionTime.IsZero() {
+		morseClaimableAccount.UnstakingCompletionTime = morseValidator.UnstakingCompletionTime
+	}
+
 	miw.accumulatedTotalSupplierStake = miw.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
 	miw.numSuppliers++
 
@@ -183,6 +188,11 @@ func (miw *morseImportWorkspace) addAppStake(morseApplication *migrationtypes.Mo
 	morseClaimableAccount, err := miw.getAccount(morseApplication.Address.String())
 	if err != nil {
 		return err
+	}
+
+	// If the application is unbonding, transfer the unstaking completion time.
+	if !morseApplication.UnstakingCompletionTime.IsZero() {
+		morseClaimableAccount.UnstakingCompletionTime = morseApplication.UnstakingCompletionTime
 	}
 
 	morseClaimableAccount.ApplicationStake.Amount = morseClaimableAccount.ApplicationStake.Amount.Add(appStakeAmtUpokt)
