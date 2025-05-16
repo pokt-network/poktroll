@@ -1,0 +1,52 @@
+# This file is used to stake a Supplier or update an existing Supplier's information in the Pocket Network.
+# Pocket Network supports two types of staking mechanisms: custodial and non-custodial staking:
+# * Custodial staking is the default mechanism, where the owner address (i.e., the account that
+#   receives the rewards) is the same as the operator address (i.e., the address that operates
+#   the Supplier).
+# * Non-custodial staking is an advanced mechanism, where the owner address is different from
+#   the operator address. This is useful to avoid overuse of the private key of the
+#   account that owns the staked funds and receives the rewards.
+
+# The address of the supplier's owner. This address could stake a new Supplier or
+# update any of its properties excluding the operator address which is immutable.
+# The account corresponding to this address could also unstake the Suppliers it owns.
+# The owner address does not identify the Supplier in the Pocket Network; the same owner
+# account can stake multiple Suppliers.
+owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+
+# The address of the operator of the Supplier. This address operates the Supplier,
+# (i.e., signs relay responses, submits claims and proofs, updates service endpoints, etc.).
+# This address can also used to stake a new Supplier or unstake an existing one.
+# It uniquely identifies the Supplier in the Pocket Network and cannot be changed
+# once the Supplier is created.
+# The operator address is optional; if it is empty or not provided, the owner
+# address is used as the operator address.
+operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+# NB: The stake amount is exactly 1upokt greater than the value in genesis.json
+# so that the stake command causes a state change.
+stake_amount: 1000069upokt
+# If default_rev_share_percent is omitted, the owner receives 100% of the rewards.
+# default_rev_share_percent cannot be empty - it MUST either be omitted completely
+# or include at least one item.
+default_rev_share_percent:
+  # The sum of all shares MUST equal 100%. Staking will fail otherwise.
+  pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 80
+  pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 20
+services:
+  # The endpoint URL for the Anvil service is provided via the RelayMiner.
+  # The RelayMiner acts as a proxy, forwarding requests to the actual Anvil data node behind it.
+  # This setup allows for flexible and dynamic service provisioning within the network.
+  - service_id: anvil
+    endpoints:
+      - publicly_exposed_url: http://relayminer1:8545
+        rpc_type: JSON_RPC
+  - service_id: ollama
+    # Service specific rev share, if rev_share_percent is omitted for a specific
+    # service, default_rev_share_percent is used.
+    # The sum of all shares MUST equal 100%. Staking will fail otherwise.
+    rev_share_percent:
+      pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 50
+      pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 50
+    endpoints:
+      - publicly_exposed_url: http://relayminer1:8545
+        rpc_type: REST
