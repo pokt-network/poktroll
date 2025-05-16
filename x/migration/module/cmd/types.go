@@ -148,7 +148,7 @@ func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosma
 // - Sets the MorseOutputAddress if the given outputAddr is not nil
 func (miw *morseImportWorkspace) addSupplierStake(morseValidator *migrationtypes.MorseValidator) error {
 	// Retrieve the Morse supplier (aka Service/Node) account
-	morseAccount, err := miw.getAccount(morseValidator.Address.String())
+	morseClaimableAccount, err := miw.getAccount(morseValidator.Address.String())
 	if err != nil {
 		return err
 	}
@@ -158,12 +158,12 @@ func (miw *morseImportWorkspace) addSupplierStake(morseValidator *migrationtypes
 	if !ok {
 		return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", morseValidator.StakedTokens)
 	}
-	morseAccount.SupplierStake.Amount = morseAccount.SupplierStake.Amount.
+	morseClaimableAccount.SupplierStake.Amount = morseClaimableAccount.SupplierStake.Amount.
 		Add(supplierStakeAmtUpokt)
 
 	// Custodial address (i.e. output, a.k.a. owner) is optional.
 	if morseValidator.OutputAddress != nil {
-		morseAccount.MorseOutputAddress = morseValidator.OutputAddress.String()
+		morseClaimableAccount.MorseOutputAddress = morseValidator.OutputAddress.String()
 	}
 
 	miw.accumulatedTotalSupplierStake = miw.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
@@ -180,12 +180,12 @@ func (miw *morseImportWorkspace) addAppStake(morseApplication *migrationtypes.Mo
 	}
 
 	// Retrieve the Morse application (aka Validator) account
-	morseAccount, err := miw.getAccount(morseApplication.Address.String())
+	morseClaimableAccount, err := miw.getAccount(morseApplication.Address.String())
 	if err != nil {
 		return err
 	}
 
-	morseAccount.ApplicationStake.Amount = morseAccount.ApplicationStake.Amount.Add(appStakeAmtUpokt)
+	morseClaimableAccount.ApplicationStake.Amount = morseClaimableAccount.ApplicationStake.Amount.Add(appStakeAmtUpokt)
 
 	miw.accumulatedTotalAppStake = miw.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
 	miw.numApplications++
