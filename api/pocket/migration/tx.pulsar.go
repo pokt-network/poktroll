@@ -7926,16 +7926,16 @@ type MsgClaimMorseSupplier struct {
 	MorseNodeAddress string `protobuf:"bytes,3,opt,name=morse_node_address,json=morseNodeAddress,proto3" json:"morse_node_address,omitempty"`
 	// The ed25519 public key of EITHER the Morse node/supplier operator OR owner account.
 	// - MUST correspond to the private key which was used to produce the morse_signature.
-	// - MUST correspond to EITHER:
+	// - MUST correspond to ONE OF THE FOLLOWING:
 	//   - morse_node_address
 	//   - morse_output_address
 	MorsePublicKey []byte `protobuf:"bytes,7,opt,name=morse_public_key,json=morsePublicKey,proto3" json:"morse_public_key,omitempty"`
 	// The hex-encoded signature, of this message (where this field is nil).
 	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseSupplier{morse_signature: nil, ...}))
 	// - MUST match morse_public_key.
-	// - MUST be signed by EITHER
-	//   - Morse node account (i.e. operator)
-	//   - Morse output account (i.e. owner)
+	// - MUST be signed by ONE OF THE FOLLOWING:
+	//   - Morse node account (i.e. operator); if signer_is_output_address is false
+	//   - Morse output account (i.e. owner); if signer_is_output_address is true
 	MorseSignature []byte `protobuf:"bytes,4,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
 	// Set to true if the private key corresponding to the morse_output_address is producing the morse_signature.
 	// For non-custodial claiming:
