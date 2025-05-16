@@ -21,10 +21,11 @@ make docs_update_gov_params_page
 
 ## Adding a new parameter
 
-Please follow the instructions in [this guide](../../develop/developer_guide/adding_params.md) to add a new parameter.
+Please follow the instructions in [this guide](../../4_develop/developer_guide/adding_params.md) to add a new parameter.
 
 ## Parameters
 
 | Module | Field Type | Field Name | Comment |
 | ------ | ---------- | ---------- | ------- |
+
 {{.}}

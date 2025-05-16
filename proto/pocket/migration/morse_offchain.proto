@@ -68,13 +68,17 @@ message MorseAuth {
   repeated MorseAuthAccount accounts = 1 [(gogoproto.jsontag) = "accounts"];
 }
 
-// MorseAccount:
+// MorseAuthAccount:
 // * Wraps MorseAuthAccount information to conform to Morse genesis structure
-// * Represents only externally owned accounts (not module accounts)
-// * Avoids pb.Any serialization since only external accounts needed for migration
+// * Can represent EITHER an externally owned account OR a module account
 message MorseAuthAccount {
   string type = 1 [(gogoproto.jsontag) = "type"];
-  MorseAccount value = 2 [(gogoproto.jsontag) = "value"];
+
+  // MorseAccount value = 2 [(gogoproto.jsontag) = "value"];
+  reserved 2;
+
+  // value is a EITHER a JSON-encoded MorseAccount or a MorseModuleAccount.
+  bytes value = 3 [(gogoproto.jsontag) = "value", (gogoproto.casttype) = "encoding/json.RawMessage"];
 }
 
 // A wrapper around the list of Morse suppliers (aka "validators", "nodes", of "servicers").
@@ -149,4 +153,12 @@ message MorseAccount {
 // NB: All Morse account public keys will be ed25519 keys by definition.
 message MorsePublicKey {
   bytes value = 2 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
+}
+
+// MorseModuleAccount is the module account type for Morse, it wraps a MorseAccount
+// and has a unique name, which is used instead of the address.
+message MorseModuleAccount {
+  // DEV_NOTE: the JSON tag is intentionally cased contrary to convention to match the real-world Morse state export.
+  MorseAccount base_account = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "BaseAccount"];
+  string name = 2 [(gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
 }

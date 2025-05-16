@@ -1,0 +1,3 @@
+package migration
+
+// TODO_MAINNET_MIGRATION(@bryanchriswhite): Add integration-app level test coverage over MsgRecoverMorseAccount...

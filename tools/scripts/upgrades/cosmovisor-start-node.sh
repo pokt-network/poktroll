@@ -4,7 +4,7 @@ cat <<EOF
 This script runs the full node using cosmovisor and performs an upgrade after the upgrade plan is submitted on chain.
 It simulates a real network upgrade. For consensus-breaking changes, ensure the 'old' binary doesn't have these changes.
 
-Pre-requisites:
+Prerequisites:
 1. 'Old' binary
 2. 'New' binary
 3. Cosmovisor (Install: 'go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0')

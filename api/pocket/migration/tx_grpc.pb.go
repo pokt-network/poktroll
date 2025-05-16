@@ -24,6 +24,7 @@ const (
 	Msg_ClaimMorseAccount_FullMethodName            = "/pocket.migration.Msg/ClaimMorseAccount"
 	Msg_ClaimMorseApplication_FullMethodName        = "/pocket.migration.Msg/ClaimMorseApplication"
 	Msg_ClaimMorseSupplier_FullMethodName           = "/pocket.migration.Msg/ClaimMorseSupplier"
+	Msg_RecoverMorseAccount_FullMethodName          = "/pocket.migration.Msg/RecoverMorseAccount"
 )
 
 // MsgClient is the client API for Msg service.
@@ -39,6 +40,7 @@ type MsgClient interface {
 	ClaimMorseAccount(ctx context.Context, in *MsgClaimMorseAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error)
 	ClaimMorseApplication(ctx context.Context, in *MsgClaimMorseApplication, opts ...grpc.CallOption) (*MsgClaimMorseApplicationResponse, error)
 	ClaimMorseSupplier(ctx context.Context, in *MsgClaimMorseSupplier, opts ...grpc.CallOption) (*MsgClaimMorseSupplierResponse, error)
+	RecoverMorseAccount(ctx context.Context, in *MsgRecoverMorseAccount, opts ...grpc.CallOption) (*MsgRecoverMorseAccountResponse, error)
 }
 
 type msgClient struct {
@@ -99,6 +101,16 @@ func (c *msgClient) ClaimMorseSupplier(ctx context.Context, in *MsgClaimMorseSup
 	return out, nil
 }
 
+func (c *msgClient) RecoverMorseAccount(ctx context.Context, in *MsgRecoverMorseAccount, opts ...grpc.CallOption) (*MsgRecoverMorseAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgRecoverMorseAccountResponse)
+	err := c.cc.Invoke(ctx, Msg_RecoverMorseAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -112,6 +124,7 @@ type MsgServer interface {
 	ClaimMorseAccount(context.Context, *MsgClaimMorseAccount) (*MsgClaimMorseAccountResponse, error)
 	ClaimMorseApplication(context.Context, *MsgClaimMorseApplication) (*MsgClaimMorseApplicationResponse, error)
 	ClaimMorseSupplier(context.Context, *MsgClaimMorseSupplier) (*MsgClaimMorseSupplierResponse, error)
+	RecoverMorseAccount(context.Context, *MsgRecoverMorseAccount) (*MsgRecoverMorseAccountResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -133,6 +146,9 @@ func (UnimplementedMsgServer) ClaimMorseApplication(context.Context, *MsgClaimMo
 }
 func (UnimplementedMsgServer) ClaimMorseSupplier(context.Context, *MsgClaimMorseSupplier) (*MsgClaimMorseSupplierResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseSupplier not implemented")
+}
+func (UnimplementedMsgServer) RecoverMorseAccount(context.Context, *MsgRecoverMorseAccount) (*MsgRecoverMorseAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecoverMorseAccount not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -237,6 +253,24 @@ func _Msg_ClaimMorseSupplier_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_RecoverMorseAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRecoverMorseAccount)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).RecoverMorseAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_RecoverMorseAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).RecoverMorseAccount(ctx, req.(*MsgRecoverMorseAccount))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -263,6 +297,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ClaimMorseSupplier",
 			Handler:    _Msg_ClaimMorseSupplier_Handler,
+		},
+		{
+			MethodName: "RecoverMorseAccount",
+			Handler:    _Msg_RecoverMorseAccount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
