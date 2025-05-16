@@ -21,12 +21,12 @@ import (
 
 // startCmd returns the Cobra subcommand for running the relay miner.
 //
-// Responsibilities of a RelayMiner include:
-// - Handling incoming relay requests: Validate, proxy, sign, return response, etc.
-// - Computing relay difficulty: Determining reward eligible vs reward ineligible relays
-// - Monitoring block height: Submitting claim/proof messages as sessions are eligible
-// - Caching of various sorts
-// - Rate limiting incoming requests
+// RelayMiner Responsibilities:
+// - Handle incoming relay requests (validate, proxy, sign, return response)
+// - Compute relay difficulty (determine reward eligible vs reward ineligible relays)
+// - Monitor block height (submit claim/proof messages as sessions are eligible)
+// - Cache various data
+// - Rate limit incoming requests
 func startCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start --config <path-to-relay-miner-config-file>",
@@ -35,10 +35,10 @@ func startCmd() *cobra.Command {
 
 A RelayMiner is an offchain coprocessor that provides a service.
 
-Responsibilities:
-- Handle incoming relay requests: Validate, proxy, sign, return response, etc.
-- Compute relay difficulty: Determine reward eligible vs reward ineligible relays
-- Monitor block height: Submit claim/proof messages as sessions are eligible
+RelayMiner Responsibilities:
+- Handle incoming relay requests (validate, proxy, sign, return response)
+- Compute relay difficulty (determine reward eligible vs reward ineligible relays)
+- Monitor block height (submit claim/proof messages as sessions are eligible)
 - Cache various data
 - Rate limit incoming requests
 `,
@@ -62,33 +62,40 @@ Responsibilities:
 	return cmd
 }
 
-// TODO_TECHDEBT(@olshansk): Move flags into the startCmd function above.
-// This is necessary for backwards compatibility with old config files so "start"
-// is the default if not subcommand is specified.
-func startCmdFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&flagRelayMinerConfig, "config", "", "(Required) The path to the relayminer config file")
-	cmd.PersistentFlags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "(Optional) Enable or disable onchain query caching")
-}
-
 // runRelayer starts the relay miner with the provided configuration and context.
 //
-// - Handles signal interruptions
-// - Loads and parses configuration
-// - Sets up logger and dependencies
-// - Initializes and starts the relay miner
+// Responsibilities:
+// - Handle signal interruptions
+// - Load and parse configuration
+// - Set up logger and dependencies
+// - Initialize and start the relay miner
 func runRelayer(cmd *cobra.Command, _ []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
-	// Handle interrupt/kill signals asynchronously.
+	// Set up logger options
+	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
+	loggerOpts := []polylog.LoggerOption{
+		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
+		polyzero.WithOutput(os.Stderr),
+	}
+
+	// Construct logger and associate with command context
+	logger := polyzero.NewLogger(loggerOpts...)
+	ctx = logger.WithContext(ctx)
+	cmd.SetContext(ctx)
+
+	// Handle interrupt/kill signals asynchronously
 	signals.GoOnExitSignal(cancelCtx)
 
+	// Read relay miner config file
 	configContent, err := os.ReadFile(flagRelayMinerConfig)
 	if err != nil {
 		fmt.Printf("Could not read config file from: %s\n", flagRelayMinerConfig)
 		return err
 	}
 
+	// Parse relay miner configuration
 	// TODO_IMPROVE: Add logger level/output options to config.
 	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(configContent)
 	if err != nil {
@@ -96,59 +103,49 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
-	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
-		polyzero.WithOutput(os.Stderr),
-	}
-
-	// Construct logger and associate with command context.
-	logger := polyzero.NewLogger(loggerOpts...)
-	ctx = logger.WithContext(ctx)
-	cmd.SetContext(ctx)
-
+	// Log query caching status
 	if flagQueryCaching {
 		logger.Info().Msg("query caching ENABLED")
 	} else {
 		logger.Info().Msg("query caching DISABLED")
 	}
 
-	// Sets up dependencies
+	// Set up dependencies for relay miner
 	deps, err := setupRelayerDependencies(ctx, cmd, relayMinerConfig)
 	if err != nil {
-		fmt.Printf("Could not setup dependencies: %v\n", err)
+		logger.Error().Err(err).Msg("Could not setup dependencies")
 		return err
 	}
 
-	// Initialize the relay miner.
+	// Initialize the relay miner
 	relayMiner, err := relayer.NewRelayMiner(ctx, deps)
 	if err != nil {
-		fmt.Printf("Could not initialize relay miner: %v\n", err)
+		logger.Error().Err(err).Msg("Could not initialize relay miner")
 		return err
 	}
 
-	// Serve metrics if enabled.
+	// Serve metrics endpoint if enabled
 	if relayMinerConfig.Metrics.Enabled {
 		err = relayMiner.ServeMetrics(relayMinerConfig.Metrics.Addr)
 		if err != nil {
-			fmt.Printf("Could not start metrics endpoint: %v\n", err)
+			logger.Error().Err(err).Msg("Could not start metrics endpoint")
 			return err
 		}
 	}
 
-	// Serve pprof if enabled.
+	// Serve pprof endpoint if enabled
 	if relayMinerConfig.Pprof.Enabled {
 		err = relayMiner.ServePprof(ctx, relayMinerConfig.Pprof.Addr)
 		if err != nil {
-			fmt.Printf("Could not start pprof endpoint: %v\n", err)
+			logger.Error().Err(err).Msg("Could not start pprof endpoint")
 			return err
 		}
 	}
 
-	// Serve ping if enabled.
+	// Serve ping endpoint if enabled
 	if relayMinerConfig.Ping.Enabled {
 		if err = relayMiner.ServePing(ctx, "tcp", relayMinerConfig.Ping.Addr); err != nil {
-			fmt.Printf("Could not start ping endpoint: %v\n", err)
+			logger.Error().Err(err).Msg("Could not start ping endpoint")
 			return err
 		}
 	}
@@ -157,11 +154,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	logger.Info().Msg("Starting relay miner...")
 	err = relayMiner.Start(ctx)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		fmt.Printf("Could not start relay miner: %v\n", err)
+		logger.Error().Err(err).Msg("Could not start relay miner")
 		return err
 	}
 	if errors.Is(err, http.ErrServerClosed) {
-		fmt.Printf("Relay miner stopped; exiting\n")
+		logger.Info().Msg("Relay miner stopped; exiting")
 		return err
 	}
 	return nil

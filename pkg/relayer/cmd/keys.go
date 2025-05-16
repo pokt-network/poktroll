@@ -22,9 +22,13 @@ import (
 // - Converts to secp256k1 and encodes as hex
 //
 // Returns the hex-encoded private key or error.
-func getPrivateKeyHexFromKeyring(kr keyring.Keyring, address string) (string, error) {
+func getPrivateKeyHexFromKeyring(
+	kr keyring.Keyring,
+	address string,
+	passphrase string,
+) (string, error) {
 	cosmosAddr := cosmostypes.MustAccAddressFromBech32(address)
-	armoredPrivKey, err := kr.ExportPrivKeyArmorByAddress(cosmosAddr, "") // Empty passphrase
+	armoredPrivKey, err := kr.ExportPrivKeyArmorByAddress(cosmosAddr, passphrase)
 	if err != nil {
 		return "", fmt.Errorf("failed to export armored private key: %w", err)
 	}

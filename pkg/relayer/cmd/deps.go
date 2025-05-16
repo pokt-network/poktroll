@@ -34,17 +34,7 @@ import (
 // setupRelayerDependencies builds and returns the dependency tree for the relay miner.
 //
 // - Builds from leaves up, incrementally supplying each component to depinject.Config
-// - Sets up dependencies for:
-//   - Miner
-//   - EventsQueryClient
-//   - BlockClient
-//   - cosmosclient.Context
-//   - TxFactory
-//   - TxContext
-//   - TxClient
-//   - SupplierClient
-//   - RelayerProxy
-//   - RelayerSessionsManager
+// - Sets up dependencies for various things that included but not limited to query clients, tx handlers, etc..
 //
 // Returns:
 //   - deps: The dependency injection config

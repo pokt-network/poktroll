@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
@@ -17,6 +18,8 @@ import (
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
@@ -30,13 +33,17 @@ var (
 	flagRelayApp                       string // Application address
 	flagRelaySupplier                  string // Supplier address
 	flagRelayPayload                   string // Relay payload
-	flagServiceID                      string // Service ID
 	flagSupplierPublicEndpointOverride string // Optional endpoint override
 
 	// Cosmos flags for 'pocketd relayminer relay' subcommand
-	flagNodeRPCURLRelay       string
 	flagNodeGRPCURLRelay      string
 	flagNodeGRPCInsecureRelay bool
+
+	// TODO_TECHDEBT(@olshansk): Reconsider the need for this flag.
+	// This flag can theoretically be avoided because it is only used to get the height of the latest block for session generation.
+	// Passing `0` as the block height defaults to the latest height.
+	// We are keeping it to use this file as an example of an end-to-end system that leverages the shannon-sdk for example purposes.
+	flagNodeRPCURLRelay string
 )
 
 // relayCmd defines the `relay` subcommand for sending a relay as an application.
@@ -84,13 +91,11 @@ For more info, run 'relay --help'.`,
 	// Custom Flags
 	cmd.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
 	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Required) Staked Supplier address")
-	cmd.Flags().StringVar(&flagServiceID, "service-id", "", "(Required) Service ID")
 	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
-	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "http://localhost:8085", "(Optional) Override the publically exposed endpoint of the Supplier (useful for LocalNet testing)")
+	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "http://localhost:8085", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
 
 	_ = cmd.MarkFlagRequired("app")
 	_ = cmd.MarkFlagRequired("supplier")
-	_ = cmd.MarkFlagRequired("service-id")
 	_ = cmd.MarkFlagRequired("payload")
 
 	return cmd
@@ -109,7 +114,22 @@ For more info, run 'relay --help'.`,
 //
 // Returns error if any step fails.
 func runRelay(cmd *cobra.Command, args []string) error {
-	fmt.Printf("About to send a relay to %s for app %s and service ID %s\n", flagRelaySupplier, flagRelayApp, flagServiceID)
+	ctx, cancelCtx := context.WithCancel(cmd.Context())
+	defer cancelCtx() // Ensure context cancellation
+
+	// Set up logger options
+	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
+	loggerOpts := []polylog.LoggerOption{
+		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
+		polyzero.WithOutput(os.Stderr),
+	}
+
+	// Construct logger and associate with command context
+	logger := polyzero.NewLogger(loggerOpts...)
+	ctx = logger.WithContext(ctx)
+	cmd.SetContext(ctx)
+
+	logger.Info().Msgf("About to send a relay to %s for app %s", flagRelaySupplier, flagRelayApp)
 
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
@@ -120,66 +140,74 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer grpcConn.Close()
-	fmt.Printf("✅ gRPC connection initialized\n")
+	logger.Info().Msg("✅ gRPC connection initialized")
 
 	// Create a connection to the POKT full node
 	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURLRelay)
 	if err != nil {
-		fmt.Printf("❌ Error fetching block height: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error fetching block height")
 		return err
 	}
-	fmt.Printf("✅ Node status fetcher initialized\n")
+	logger.Info().Msg("✅ Node status fetcher initialized")
 
 	// Create an account client for fetching public keys
 	accountClient := sdk.AccountClient{
 		PoktNodeAccountFetcher: sdk.NewPoktNodeAccountFetcher(grpcConn),
 	}
-	fmt.Printf("✅ Account client initialized\n")
+	logger.Info().Msg("✅ Account client initialized")
 
 	// Create an application client to get application details
 	appClient := sdk.ApplicationClient{
 		QueryClient: apptypes.NewQueryClient(grpcConn),
 	}
-	app, err := appClient.GetApplication(context.Background(), flagRelayApp)
+	app, err := appClient.GetApplication(ctx, flagRelayApp)
 	if err != nil {
-		fmt.Printf("❌ Error fetching application: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error fetching application")
 		return err
 	}
-	fmt.Printf("✅ Application fetched: %v\n", app)
+	logger.Info().Msgf("✅ Application fetched: %v", app)
+
+	// Applications must have exactly can only have one service config
+	if len(app.ServiceConfigs) != 1 {
+		logger.Error().Msgf("❌ Application %s must have exactly one service config", app.Address)
+		return errors.New("application must have exactly one service config")
+	}
+	serviceId := app.ServiceConfigs[0].ServiceId
+	logger.Info().Msgf("✅ Service ID retrieved: %s", serviceId)
 
 	// Create an application ring for signing
 	ring := sdk.ApplicationRing{
 		Application:      app,
 		PublicKeyFetcher: &accountClient,
 	}
-	fmt.Printf("✅ Application ring created\n")
+	logger.Info().Msg("✅ Application ring created")
 
 	// Get the latest block height
 	blockClient := sdk.BlockClient{
 		PoktNodeStatusFetcher: nodeStatusFetcher,
 	}
-	blockHeight, err := blockClient.LatestBlockHeight(context.Background())
+	blockHeight, err := blockClient.LatestBlockHeight(ctx)
 	if err != nil {
-		fmt.Printf("❌ Error fetching block height: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error fetching block height")
 		return err
 	}
-	fmt.Printf("✅ Block height retrieved: %d\n", blockHeight)
+	logger.Info().Msgf("✅ Block height retrieved: %d", blockHeight)
 
 	// Get the current session
 	sessionClient := sdk.SessionClient{
 		PoktNodeSessionFetcher: sdk.NewPoktNodeSessionFetcher(grpcConn),
 	}
 	session, err := sessionClient.GetSession(
-		context.Background(),
+		ctx,
 		app.Address,
-		flagServiceID,
+		serviceId,
 		blockHeight,
 	)
 	if err != nil {
-		fmt.Printf("❌ Error fetching session for app %s and service ID %s: %v\n", app.Address, flagServiceID, err)
+		logger.Error().Err(err).Msgf("❌ Error fetching session for app %s and service ID %s", app.Address, serviceId)
 		return err
 	}
-	fmt.Printf("✅ Session fetched: %v\n", session)
+	logger.Info().Msgf("✅ Session fetched: %v", session)
 
 	// Select an endpoint from the session
 	sessionFilter := sdk.SessionFilter{
@@ -188,14 +216,14 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	endpoints, err := sessionFilter.FilteredEndpoints()
 	if err != nil {
-		fmt.Printf("❌ Error filtering endpoints: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error filtering endpoints")
 		return err
 	}
 	if len(endpoints) == 0 {
-		fmt.Println("❌ No endpoints available")
+		logger.Error().Msg("❌ No endpoints available")
 		return err
 	}
-	fmt.Printf("✅ Endpoints fetched: %v\n", endpoints)
+	logger.Info().Msgf("✅ Endpoints fetched: %v", endpoints)
 
 	var endpoint sdk.Endpoint
 	for _, e := range endpoints {
@@ -205,17 +233,17 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if endpoint == nil {
-		fmt.Printf("❌ No endpoint found for supplier %s in the current session\n", flagRelaySupplier)
+		logger.Error().Msgf("❌ No endpoint found for supplier %s in the current session", flagRelaySupplier)
 		return err
 	}
-	fmt.Printf("✅ Endpoint selected: %v\n", endpoint)
+	logger.Info().Msgf("✅ Endpoint selected: %v", endpoint)
 
 	// Get the endpoint URL
 	endpointUrl := endpoint.Endpoint().Url
 	// Override the endpoint URL if specified
 	if flagSupplierPublicEndpointOverride != "" {
 		endpointUrl = flagSupplierPublicEndpointOverride
-		fmt.Printf("⚠️ Using override endpoint URL: %s\n", endpointUrl)
+		logger.Warn().Msgf("⚠️ Using override endpoint URL: %s", endpointUrl)
 	}
 
 	// Prepare the JSON-RPC request payload
@@ -229,47 +257,51 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to Serialize HTTP Request for URL %s: %w", endpointUrl, err)
 	}
-	fmt.Printf("✅ JSON-RPC request payload serialized.\n")
+	logger.Info().Msg("✅ JSON-RPC request payload serialized.")
 
 	// Build a relay request
 	relayReq, err := sdk.BuildRelayRequest(endpoint, payloadBz)
 	if err != nil {
-		fmt.Printf("❌ Error building relay request: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error building relay request")
 		return err
 	}
-	fmt.Printf("✅ Relay request built.\n")
+	logger.Info().Msg("✅ Relay request built.")
+
+	// TODO_TECHDEBT(@olshansk): Retrieve the passphrase from the keyring.
+	// The initial version of this assumes the keyring is unlocked.
+	passphrase := ""
 
 	// Sign the relay request
 	clientCtx := client.GetClientContextFromCmd(cmd)
-	appPrivateKeyHex, err := getPrivateKeyHexFromKeyring(clientCtx.Keyring, app.Address)
+	appPrivateKeyHex, err := getPrivateKeyHexFromKeyring(clientCtx.Keyring, app.Address, passphrase)
 	if err != nil {
-		fmt.Printf("❌ Error getting private key: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error getting private key")
 		return err
 	}
-	fmt.Printf("✅ Retrieved private key for app %s\n", app.Address)
+	logger.Info().Msgf("✅ Retrieved private key for app %s", app.Address)
 	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
-	signedRelayReq, err := appSigner.Sign(context.Background(), relayReq, ring)
+	signedRelayReq, err := appSigner.Sign(ctx, relayReq, ring)
 	if err != nil {
-		fmt.Printf("❌ Error signing relay request: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error signing relay request")
 		return err
 	}
-	fmt.Printf("✅ Relay request signed.\n")
+	logger.Info().Msg("✅ Relay request signed.")
 
 	// Marshal the signed relay request
 	relayReqBz, err := signedRelayReq.Marshal()
 	if err != nil {
-		fmt.Printf("❌ Error marshaling relay request: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error marshaling relay request")
 		return err
 	}
-	fmt.Printf("✅ Relay request marshaled.\n")
+	logger.Info().Msg("✅ Relay request marshaled.")
 
 	// Parse the endpoint URL
 	reqUrl, err := url.Parse(endpointUrl)
 	if err != nil {
-		fmt.Printf("❌ Error parsing endpoint URL: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error parsing endpoint URL")
 		return err
 	}
-	fmt.Printf("✅ Endpoint URL parsed: %v\n", reqUrl)
+	logger.Info().Msgf("✅ Endpoint URL parsed: %v", reqUrl)
 
 	// Create the HTTP request with the relay request body
 	httpReq := &http.Request{
@@ -281,7 +313,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	// Send the request HTTP request containing the signed relay request
 	httpResp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
-		fmt.Printf("❌ Error sending relay request: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error sending relay request")
 		return err
 	}
 	defer httpResp.Body.Close()
@@ -289,50 +321,50 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	// Read the response
 	respBz, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		fmt.Printf("❌ Error reading response: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error reading response")
 		return err
 	}
-	fmt.Printf("✅ Response read %d bytes\n", len(respBz))
+	logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
 
 	// Ensure the supplier operator signature is present
 	supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
 	if supplierSignerAddress == "" {
-		fmt.Printf("❌ Supplier operator signature is missing\n")
+		logger.Error().Msg("❌ Supplier operator signature is missing")
 		return errors.New("Relay response missing supplier operator signature")
 	}
 
 	// Ensure the supplier operator address matches the expected address
 	if supplierSignerAddress != flagRelaySupplier {
-		fmt.Printf("❌ Supplier operator address %s does not match the expected address %s\n", supplierSignerAddress, flagRelaySupplier)
+		logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
 		return errors.New("Relay response supplier operator signature does not match")
 	}
 
 	// Validate the relay response
 	relayResp, err := sdk.ValidateRelayResponse(
-		context.Background(),
+		ctx,
 		sdk.SupplierAddress(supplierSignerAddress),
 		respBz,
 		&accountClient,
 	)
 	if err != nil {
-		fmt.Printf("❌ Error validating response: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error validating response")
 		return err
 	}
 	// Deserialize the relay response
 	backendHttpResponse, err := sdktypes.DeserializeHTTPResponse(relayResp.Payload)
 	if err != nil {
-		fmt.Printf("❌ Error deserializing response payload: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error deserializing response payload")
 		return err
 	}
-	fmt.Printf("✅ Backend response status code: %v\n", backendHttpResponse.StatusCode)
+	logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
 
 	var jsonMap map[string]interface{}
 	// Unmarshal the HTTP response body into jsonMap
 	if err := json.Unmarshal(backendHttpResponse.BodyBz, &jsonMap); err != nil {
-		fmt.Printf("❌ Error deserializing response payload: %v\n", err)
+		logger.Error().Err(err).Msg("❌ Error deserializing response payload")
 		return err
 	}
-	fmt.Printf("✅ Deserialized response body as JSON map: %+v\n", jsonMap)
+	logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
 
 	// If "jsonrpc" key exists, try to further deserialize "result"
 	if _, ok := jsonMap["jsonrpc"]; ok {
@@ -340,15 +372,15 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		if exists {
 			switch v := resultRaw.(type) {
 			case map[string]interface{}:
-				fmt.Printf("✅ Further deserialized 'result' (object): %+v\n", v)
+				logger.Info().Msgf("✅ Further deserialized 'result' (object): %+v", v)
 			case []interface{}:
-				fmt.Printf("✅ Further deserialized 'result' (array): %+v\n", v)
+				logger.Info().Msgf("✅ Further deserialized 'result' (array): %+v", v)
 			case string:
-				fmt.Printf("✅ Further deserialized 'result' (string): %s\n", v)
+				logger.Info().Msgf("✅ Further deserialized 'result' (string): %s", v)
 			case float64, bool, nil:
-				fmt.Printf("✅ Further deserialized 'result' (primitive): %+v\n", v)
+				logger.Info().Msgf("✅ Further deserialized 'result' (primitive): %+v", v)
 			default:
-				fmt.Printf("⚠️ 'result' is of an unhandled type: %T, value: %+v\n", v, v)
+				logger.Warn().Msgf("⚠️ 'result' is of an unhandled type: %T, value: %+v", v, v)
 			}
 		}
 	}
