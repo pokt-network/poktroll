@@ -73,6 +73,7 @@ func (k msgServer) ClaimMorseSupplier(
 	shannonOwnerAddr := cosmostypes.MustAccAddressFromBech32(msg.ShannonOwnerAddress)
 
 	// Default to the shannonOwnerAddr as the shannonOperatorAddr if not provided.
+	// The shannonOperatorAddr is where the Morse node/supplier unstaked balance will be minted to.
 	shannonOperatorAddr := shannonOwnerAddr
 	if msg.ShannonOperatorAddress != "" {
 		shannonOperatorAddr = cosmostypes.MustAccAddressFromBech32(msg.ShannonOperatorAddress)
@@ -143,12 +144,10 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 
 	// Default shannonSigningAddress to shannonOperatorAddr because the Shannon owner defaults to the operator.
-	// The shannonSigningAddress is where:
-	// - The supplier stake will be minted to and then escrowed from.
-	// - The Morse node/supplier unstaked balance will be minted to.
+	// The shannonSigningAddress is where the node/supplier stake will be minted to and then escrowed from.
 	shannonSigningAddress := shannonOperatorAddr
 	switch claimSignerType {
-	case migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL:
+	case migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER:
 		shannonSigningAddress = shannonOwnerAddr
 	}
 

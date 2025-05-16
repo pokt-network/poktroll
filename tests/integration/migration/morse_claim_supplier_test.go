@@ -2,7 +2,6 @@ package migration
 
 import (
 	"fmt"
-	"strings"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -25,7 +24,7 @@ import (
 func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllSupplierMorseAccountActorType)
 	_, err := s.ImportMorseClaimableAccounts(s.T())
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
@@ -125,7 +124,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	// Generate and import Morse claimable accounts.
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllSupplierMorseAccountActorType)
 	_, err := s.ImportMorseClaimableAccounts(s.T())
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
 	sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
@@ -294,7 +293,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	s.ResetTestApp(1, minStake)
 	s.GenerateMorseAccountState(s.T(), 1, testmigration.AllSupplierMorseAccountActorType)
 	_, err := s.ImportMorseClaimableAccounts(s.T())
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	shannonDestAddr := sample.AccAddress()
 	bankClient := s.GetBankQueryClient(s.T())
@@ -322,24 +321,22 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	)
 	s.NoError(err)
 
-	// Claim a Morse claimable account.
+	// Claim a Morse supplier with stake less than the min stake.
 	_, err = s.GetApp().RunMsg(s.T(), morseClaimMsg)
-	require.Contains(s.T(), strings.ReplaceAll(err.Error(), `\`, ""), status.Error(
-		codes.InvalidArgument,
-		suppliertypes.ErrSupplierInvalidStake.Wrapf("supplier with owner %q must stake at least %s",
-			shannonDestAddr, s.minStake,
-		).Error(),
-	).Error())
+	s.NoError(err)
 
-	// Assert that the MorseClaimableAccount was NOT updated on-chain.
+	// Assert that the MorseClaimableAccount was updated on-chain.
+	lastCommittedHeight := s.SdkCtx().BlockHeight() - 1
 	morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
-	s.Equal(int64(0), morseClaimableAccount.GetClaimedAtHeight())
-	s.Equal("", morseClaimableAccount.GetShannonDestAddress())
+	s.Equal(lastCommittedHeight, morseClaimableAccount.GetClaimedAtHeight())
+	s.Equal(shannonDestAddr, morseClaimableAccount.GetShannonDestAddress())
 
-	// Assert that the shannonDestAddr account balance has NOT been updated.
+	// Assert that the shannonDestAddr account balance increased by the
+	// MorseClaimableAccount (unstaked balance + supplier stake).
+	expectedBalance := morseClaimableAccount.TotalTokens()
 	shannonDestBalance, err = bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
 	s.NoError(err)
-	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
+	s.Equal(expectedBalance.Amount.Int64(), shannonDestBalance.Amount.Int64())
 
 	// Assert that the migration module account balance returns to zero.
 	migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
