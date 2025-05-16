@@ -1,6 +1,6 @@
 ---
 title: Migration FAQ
-sidebar_position: 9
+sidebar_position: 12
 ---
 
 ## What happens if I have a Morse node that is both a Validator and a Supplier?

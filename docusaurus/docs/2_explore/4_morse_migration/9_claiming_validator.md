@@ -53,7 +53,8 @@ Follow steps 1-5 from [Claiming Morse Account](./6_claiming_account.md)
 - Wait for the Unbonding Period (21 days)
 - [Stake as a Validator](../../1_operate/2_walkthroughs/3_validator_walkthrough.md) on Shannon
 
-**Option #3:** Special Case Migration 
+**Option #3:** Special Cases Validator Migration 
+
 _Due to the importance of Validators, special cases can be covered in the Snapshot process of the Migration_
 - Reach out to the [Pocket Network Foundation on Discord](https://discord.com/invite/pocket-network)
 - Share your address with the Pocket Network Foundation
