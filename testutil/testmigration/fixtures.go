@@ -30,6 +30,30 @@ const (
 	NumMorseAccountActorTypes
 )
 
+type MorseUnstakedActorType int
+
+const (
+	MorseEOA = MorseUnstakedActorType(iota)
+	MorseInvalidTooShort
+	MorseInvalidTooLong
+	MorseNonHex
+	MorseModule
+)
+
+type MorseSupplierActorType int
+
+const (
+	MorseSupplier = MorseSupplierActorType(iota)
+	MorseOrphanedSupplier
+)
+
+type MorseApplicationActorType int
+
+const (
+	MorseApplication = MorseApplicationActorType(iota)
+	MorseOrphanedApplication
+)
+
 // MorseAccountActorTypeDistributionFn is a function which returns a MorseAccountActorType
 // derived from the given index. It is intended to be used in conjunction with
 // MorseStateExport and MorseAccountState fixture generation logic.
@@ -101,6 +125,10 @@ type MorseMigrationFixtures struct {
 	config            MorseFixturesConfig
 	morseStateExport  *migrationtypes.MorseStateExport
 	morseAccountState *migrationtypes.MorseAccountState
+
+	morseKeysByIndex      map[uint64]cometcrypto.PrivKey
+	morseKeyIndexexByAddr map[string]uint64
+	morseKeysByAddr       map[string]cometcrypto.PrivKey
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
@@ -108,14 +136,37 @@ type MorseFixturesConfig struct {
 	ValidAccountsConfig
 	InvalidAccountsConfig
 	OrphanedActorsConfig
-	UnstakedBalancesConfig
+	UnstakedAccountBalancesConfig
 	SupplierStakesConfig
 	ApplicationStakesConfig
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-type UnstakedBalanceConfig struct {
-	NextBalanceCoin func(morseFixtures *MorseMigrationFixtures, index uint64) *cosmostypes.Coin
+type UnstakedAccountBalancesConfig struct {
+	GetBalance func(
+		index uint64,
+		actorTypeIndex uint64,
+		actorType MorseUnstakedActorType,
+		morseAccount *migrationtypes.MorseAccount,
+	) *cosmostypes.Coin
+}
+
+type SupplierStakesConfig struct {
+	GetStakedAndUnstakedBalances func(
+		index uint64,
+		actorTypeIndex uint64,
+		actorType MorseSupplierActorType,
+		supplier *migrationtypes.MorseValidator,
+	) (staked, unstaked *cosmostypes.Coin)
+}
+
+type ApplicationStakesConfig struct {
+	GetStakedAndUnstakedBalances func(
+		index uint64,
+		actorTypeIndex uint64,
+		actorType MorseApplicationActorType,
+		application *migrationtypes.MorseApplication,
+	) (staked, unstaked *cosmostypes.Coin)
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
@@ -125,9 +176,10 @@ func (mf *MorseMigrationFixtures) GetConfig() MorseFixturesConfig {
 
 // TODO_IN_THIS_COMMIT: move & godoc...
 type ValidAccountsConfig struct {
-	NumAccounts     uint64
-	NumApplications uint64
-	NumSuppliers    uint64
+	NumAccounts       uint64
+	NumApplications   uint64
+	NumSuppliers      uint64
+	NumModuleAccounts uint64
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
@@ -139,9 +191,9 @@ type OrphanedActorsConfig struct {
 
 // TODO_IN_THIS_COMMIT: move & godoc...
 type InvalidAccountsConfig struct {
-	NumTooShort   uint64
-	NumTooLong    uint64
-	NumInvalidHex uint64
+	NumAddressTooShort uint64
+	NumAddressTooLong  uint64
+	NumInvalidHex      uint64
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
@@ -155,13 +207,6 @@ func WithValidAccounts(cfg ValidAccountsConfig) MorseFixturesOption {
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-func WithOrphanedActors(cfg OrphanedActorsConfig) MorseFixturesOption {
-	return func(config MorseFixturesConfig) {
-		config.OrphanedActorsConfig = cfg
-	}
-}
-
-// TODO_IN_THIS_COMMIT: move & godoc...
 func WithInvalidAccounts(cfg InvalidAccountsConfig) MorseFixturesOption {
 	return func(config MorseFixturesConfig) {
 		config.InvalidAccountsConfig = cfg
@@ -169,13 +214,38 @@ func WithInvalidAccounts(cfg InvalidAccountsConfig) MorseFixturesOption {
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-func (mf *MorseMigrationFixtures) GetMorseStateExport() *migrationtypes.MorseStateExport {
+func WithOrphanedActors(cfg OrphanedActorsConfig) MorseFixturesOption {
+	return func(config MorseFixturesConfig) {
+		config.OrphanedActorsConfig = cfg
+	}
+}
 
+func WithUnstakedAccountBalances(cfg UnstakedAccountBalancesConfig) MorseFixturesOption {
+	return func(config MorseFixturesConfig) {
+		config.UnstakedAccountBalancesConfig = cfg
+	}
+}
+
+func WithSupplierStakes(cfg SupplierStakesConfig) MorseFixturesOption {
+	return func(config MorseFixturesConfig) {
+		config.SupplierStakesConfig = cfg
+	}
+}
+
+func WithApplicationStakes(cfg ApplicationStakesConfig) MorseFixturesOption {
+	return func(config MorseFixturesConfig) {
+		config.ApplicationStakesConfig = cfg
+	}
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (mf *MorseMigrationFixtures) GetMorseStateExport() *migrationtypes.MorseStateExport {
+	return mf.morseStateExport
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
 func (mf *MorseMigrationFixtures) GetMorseAccountState() *migrationtypes.MorseAccountState {
-
+	return mf.morseAccountState
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
@@ -199,39 +269,190 @@ func NewMorseFixtures(opts ...MorseFixturesOption) (*MorseMigrationFixtures, err
 
 // TODO_IN_THIS_COMMIT: move & godoc...
 func (mf *MorseMigrationFixtures) generate() error {
+	allActorsIndex := uint64(0)
 
+	// Auth accounts
+
+	for i := range mf.config.ValidAccountsConfig.NumAccounts {
+		if err := mf.addAccount(allActorsIndex, i, MorseEOA); err != nil {
+			return err
+		}
+		allActorsIndex++
+	}
+
+	for i := range mf.config.ValidAccountsConfig.NumModuleAccounts {
+		if err := mf.addAccount(allActorsIndex, i, MorseModule); err != nil {
+			return err
+		}
+		allActorsIndex++
+	}
+
+	for i := range mf.config.InvalidAccountsConfig.NumAddressTooShort {
+		if err := mf.addAccount(allActorsIndex, i, MorseInvalidTooShort); err != nil {
+			return err
+		}
+		allActorsIndex++
+	}
+
+	for i := range mf.config.InvalidAccountsConfig.NumAddressTooLong {
+		if err := mf.addAccount(allActorsIndex, i, MorseInvalidTooLong); err != nil {
+			return err
+		}
+		allActorsIndex++
+	}
+
+	for i := range mf.config.InvalidAccountsConfig.NumInvalidHex {
+		if err := mf.addAccount(allActorsIndex, i, MorseNonHex); err != nil {
+			return err
+		}
+		allActorsIndex++
+	}
+
+	// Application accounts
+
+	for i := range mf.config.ValidAccountsConfig.NumApplications {
+		if err := mf.addApplication(allActorsIndex, i, MorseApplication); err != nil {
+			return err
+		}
+		allActorsIndex++
+	}
+
+	for i := range mf.config.OrphanedActorsConfig.NumApplications {
+		if err := mf.addApplication(allActorsIndex, i, MorseOrphanedApplication); err != nil {
+			return err
+		}
+		allActorsIndex++
+	}
+
+	// Supplier accounts
+
+	for i := range mf.config.ValidAccountsConfig.NumSuppliers {
+		if err := mf.addSupplier(allActorsIndex, i, MorseSupplier); err != nil {
+			return err
+		}
+		allActorsIndex++
+	}
+
+	for i := range mf.config.OrphanedActorsConfig.NumSuppliers {
+		if err := mf.addSupplier(allActorsIndex, i, MorseOrphanedSupplier); err != nil {
+			return err
+		}
+		allActorsIndex++
+	}
+
+	return nil
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-func (mf *MorseMigrationFixtures) addValidAccount() error {
-	morseAccount, err := mf.GenValidMorseAccount()
+func (mf *MorseMigrationFixtures) addAccount(
+	allActorsIndex,
+	actorTypeIndex uint64,
+	accountType MorseUnstakedActorType,
+) error {
+	morseAccount, err := mf.GenMorseAccount(allActorsIndex, actorTypeIndex, accountType)
 	if err != nil {
 		return err
 	}
 
-	morseAccountJSONBz, err := cmtjson.Marshal(morseAccount)
-	if err != nil {
-		return err
+	var actorType string
+	var morseAccountJSONBz []byte
+	switch accountType {
+	case MorseModule:
+		// Marshal module
+		actorType = migrationtypes.MorseModuleAccountType
+	default:
+		actorType = migrationtypes.MorseExternallyOwnedAccountType
+	}
+
+	if accountType == MorseModule {
+		// unmarshal module
+	} else {
+		morseAccountJSONBz, err = cmtjson.Marshal(morseAccount)
+		if err != nil {
+			return err
+		}
 	}
 
 	mf.morseStateExport.AppState.Auth.Accounts = append(
 		mf.morseStateExport.AppState.Auth.Accounts,
 		&migrationtypes.MorseAuthAccount{
-			Type:  migrationtypes.MorseExternallyOwnedAccountType,
+			Type:  actorType,
 			Value: morseAccountJSONBz,
 		},
 	)
 
 	// Add the account to the morseAccountState.
-	morseClaimableAccount, err := mf.AddMorseClaimableAccount()
+	morseClaimableAccount, err := mf.AddMorseClaimableAccount(morseAccount)
 	if err != nil {
 		return err
 	}
 
-	mf.morseAccountState.Accounts[index] = morseClaimableAccount
+	mf.morseAccountState.Accounts[allActorsIndex] = morseClaimableAccount
+
+	return nil
 }
 
-// TODO_IN_THIS_COMMIT: supersede...
+func (mf *MorseMigrationFixtures) addApplication(
+	allActorsIndex,
+	actorIndex uint64,
+	applicationType MorseApplicationActorType,
+) error {
+	morseApplication, unstakedBalance, err := mf.GenMorseApplication(allActorsIndex, actorIndex, applicationType)
+	if err != nil {
+		return err
+	}
+
+	if applicationType != MorseOrphanedApplication {
+		// Add an unstaked actor with the given balance
+		_ = unstakedBalance
+	}
+
+	mf.morseStateExport.AppState.Application.Applications = append(
+		mf.morseStateExport.AppState.Application.Applications,
+		morseApplication,
+	)
+
+	morseClaimableAccount, err := mf.AddMorseClaimableAccount(morseApplication)
+	if err != nil {
+		return err
+	}
+
+	mf.morseAccountState.Accounts[allActorsIndex] = morseClaimableAccount
+
+	return nil
+}
+
+func (mf *MorseMigrationFixtures) addSupplier(
+	allActorsIndex,
+	actorIndex uint64,
+	supplierType MorseSupplierActorType,
+) error {
+	morseSupplier, unstakedBalance, err := mf.GenMorseSupplier(allActorsIndex, actorIndex, supplierType)
+	if err != nil {
+		return err
+	}
+
+	if supplierType != MorseOrphanedSupplier {
+		// Add an unstaked actor with the given balance
+		_ = unstakedBalance
+	}
+
+	mf.morseStateExport.AppState.Pos.Validators = append(
+		mf.morseStateExport.AppState.Pos.Validators,
+		morseSupplier,
+	)
+
+	morseClaimableAccount, err := mf.AddMorseClaimableAccount(morseSupplier)
+	if err != nil {
+		return err
+	}
+
+	mf.morseAccountState.Accounts[allActorsIndex] = morseClaimableAccount
+
+	return nil
+}
+
+// TODO_TECHDEBT: Remove once all tests use the new fixture generation.
 // NewMorseStateExportAndAccountStateBytes returns:
 //   - A serialized MorseStateExport.
 //     This is the JSON output of `pocket util export-genesis-for-reset`.
@@ -415,6 +636,36 @@ func GenMorseApplication(idx uint64) *migrationtypes.MorseApplication {
 	}
 }
 
+func (mf *MorseMigrationFixtures) GenMorseApplication(
+	allActorsIndex uint64,
+	actorTypeIndex uint64,
+	actorType MorseApplicationActorType,
+) (*migrationtypes.MorseApplication, *cosmostypes.Coin, error) {
+	privKey, err := mf.generateMorsePrivateKey(allActorsIndex)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pubKey := privKey.PubKey()
+
+	morseApplication := &migrationtypes.MorseApplication{
+		Address:   pubKey.Address(),
+		PublicKey: pubKey.Bytes(),
+		Jailed:    false,
+		Status:    2,
+	}
+
+	stakedBalance, unstakedBalance := mf.config.ApplicationStakesConfig.GetStakedAndUnstakedBalances(
+		allActorsIndex,
+		actorTypeIndex,
+		actorType,
+		morseApplication,
+	)
+	morseApplication.StakedTokens = fmt.Sprintf("%d", stakedBalance.Amount.Int64())
+
+	return morseApplication, unstakedBalance, nil
+}
+
 // GenMorseValidator returns a new MorseValidator fixture. The given index is used
 // to deterministically generate the validator's address and staked tokens.
 func GenMorseValidator(idx uint64) *migrationtypes.MorseValidator {
@@ -432,35 +683,87 @@ func GenMorseValidator(idx uint64) *migrationtypes.MorseValidator {
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-func (mf *MorseMigrationFixtures) GenValidMorseAccount() (*migrationtypes.MorseAccount, error) {
-	privKey, keyIndex, err := mf.nextMorsePrivateKey()
+func (mf *MorseMigrationFixtures) GenMorseAccount(
+	allActorsIndex uint64,
+	actorTypeIndex uint64,
+	actorType MorseUnstakedActorType,
+) (*migrationtypes.MorseAccount, error) {
+	privKey, err := mf.generateMorsePrivateKey(allActorsIndex)
 	if err != nil {
 		return nil, err
 	}
-
-	coins := mf.GenMorseUnstakedBalanceCoins(keyIndex)
-
 	pubKey := privKey.PubKey()
+	address := pubKey.Address()
+
+	switch actorType {
+	case MorseEOA:
+	// No-op; use the default address.
+	case MorseModule:
+		address = append(address, []byte{0x00}...)
+	case MorseInvalidTooShort:
+		address = address[:len(address)-1]
+	case MorseInvalidTooLong:
+		address = append(address, []byte{0x00}...)
+	case MorseNonHex:
+		invalidBytes := []byte("invalidhex_")
+		address = append(invalidBytes, address[len(invalidBytes):]...)
+	}
+
 	morseAccount := &migrationtypes.MorseAccount{
-		Address: pubKey.Address(),
-		Coins:   coins,
+		Address: address,
 		PubKey: &migrationtypes.MorsePublicKey{
 			Value: pubKey.Bytes(),
 		},
 	}
 
+	balance := mf.config.UnstakedAccountBalancesConfig.GetBalance(
+		allActorsIndex,
+		actorTypeIndex,
+		actorType,
+		morseAccount,
+	)
+	morseAccount.Coins = cosmostypes.NewCoins(*balance)
+
 	return morseAccount, nil
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
-func (mf *MorseMigrationFixtures) nextMorsePrivateKey() (cometcrypto.PrivKey, uint64, error) {
-	index := mf.nextKeyIndex()
-	privKey := GenMorsePrivateKey(index)
-	if err := mf.trackPrivateKey(index, privKey); err != nil {
-		return nil, index, err
+func (mf *MorseMigrationFixtures) GenMorseSupplier(
+	allActorsIndex uint64,
+	actorTypeIndex uint64,
+	actorType MorseSupplierActorType,
+) (*migrationtypes.MorseValidator, *cosmostypes.Coin, error) {
+	privKey, err := mf.generateMorsePrivateKey(allActorsIndex)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return privKey, index, nil
+	pubKey := privKey.PubKey()
+	morseValidator := &migrationtypes.MorseValidator{
+		Address:   pubKey.Address(),
+		PublicKey: pubKey.Bytes(),
+		Jailed:    false,
+		Status:    2,
+	}
+
+	stakedBalance, unstakedBalance := mf.config.SupplierStakesConfig.GetStakedAndUnstakedBalances(
+		allActorsIndex,
+		actorTypeIndex,
+		actorType,
+		morseValidator,
+	)
+	morseValidator.StakedTokens = fmt.Sprintf("%d", stakedBalance.Amount.Int64())
+
+	return morseValidator, unstakedBalance, nil
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (mf *MorseMigrationFixtures) generateMorsePrivateKey(index uint64) (cometcrypto.PrivKey, error) {
+	privKey := GenMorsePrivateKey(index)
+	if err := mf.trackPrivateKey(index, privKey); err != nil {
+		return nil, err
+	}
+
+	return privKey, nil
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...

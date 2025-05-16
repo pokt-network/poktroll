@@ -12,6 +12,7 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Implement MsgRecoverMorseAccount handler...
+	// TODO: Add an event
 	_ = sdkCtx
 
 	return &types.MsgRecoverMorseAccountResponse{}, nil
