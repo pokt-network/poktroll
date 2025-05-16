@@ -90,7 +90,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load the supplier stake config from the YAML file.
-	supplierStakeConfigPath := args[1]
+	supplierStakeConfigPath := args[2]
 	supplierStakeConfig, err := loadSupplierStakeConfigYAML(supplierStakeConfigPath)
 	if err != nil {
 		return err
@@ -116,7 +116,6 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 		shannonOwnerAddr,
 		shannonOperatorAddr,
 		morseNodeAddr,
-		"",
 		morsePrivKey,
 		supplierStakeConfig.Services,
 		shannonSigningAddr,

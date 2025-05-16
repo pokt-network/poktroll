@@ -226,7 +226,6 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 		shannonDestAddr,
 		shannonDestAddr,
 		morsePrivateKey.PubKey().Address().String(),
-		"",
 		morsePrivateKey,
 		services,
 		signingAddr,

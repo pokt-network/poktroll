@@ -316,7 +316,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 		shannonDestAddr,
 		shannonDestAddr,
 		morsePrivateKey.PubKey().Address().String(),
-		"",
 		morsePrivateKey,
 		s.supplierServices,
 		sample.AccAddress(),

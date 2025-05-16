@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -178,6 +179,7 @@ func (k msgServer) ClaimMorseSupplier(
 	supplier, err := k.supplierKeeper.StakeSupplier(ctx, logger, msgStakeSupplier)
 	if err != nil {
 		// DEV_NOTE: StakeSupplier SHOULD ALWAYS return a gRPC status error.
+		logger.Error(fmt.Sprintf(">>>> ERROR: %s", err))
 		return nil, err
 	}
 
@@ -189,7 +191,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// Emit an event which signals that the morse account has been claimed.
 	event := migrationtypes.EventMorseSupplierClaimed{
 		MorseNodeAddress:     msg.GetMorseNodeAddress(),
-		MorseOutputAddress:   msg.GetMorseOutputAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
 		ClaimSignerType:      claimSignerType,
 		ClaimedBalance:       claimedUnstakedBalance,
 		ClaimedSupplierStake: claimedSupplierStake,
@@ -209,7 +211,7 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Return the response.
 	return &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseOutputAddress:   msg.GetMorseOutputAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
 		MorseNodeAddress:     msg.GetMorseNodeAddress(),
 		ClaimSignerType:      claimSignerType,
 		ClaimedBalance:       claimedUnstakedBalance,

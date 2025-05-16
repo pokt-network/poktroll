@@ -217,7 +217,7 @@ message MsgClaimMorseApplicationResponse {
 //
 // NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the claimed balance
 message MsgClaimMorseSupplier {
-  // Next free index: 10
+  // Next free index: 9
 
   option (cosmos.msg.v1.signer) = "shannon_signing_address";
 
@@ -246,12 +246,6 @@ message MsgClaimMorseSupplier {
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
   string morse_node_address = 3 [(gogoproto.jsontag) = "morse_node_address"];
 
-  // Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
-  // - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-  // - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
-  //   See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
-  string morse_output_address = 8 [(gogoproto.jsontag) = "morse_node_address"];
-
   // The ed25519 public key of EITHER the Morse node/supplier operator OR owner account.
   // - MUST correspond to the private key which was used to produce the morse_signature.
   // - MUST correspond to EITHER:
@@ -272,7 +266,7 @@ message MsgClaimMorseSupplier {
   // - This MUST be true.
   // - The morse_public_key MUST correspond to morse_output_address.
   // - The morse_signature MUST correspond to morse_output_address.
-  bool signer_is_output_address = 9 [(gogoproto.jsontag) = "signer_is_output_address"];
+  bool signer_is_output_address = 8 [(gogoproto.jsontag) = "signer_is_output_address"];
 
   // The services this supplier is staked to provide service for.
   repeated shared.SupplierServiceConfig services = 5 [(gogoproto.jsontag) = "services"];

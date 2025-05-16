@@ -23,14 +23,12 @@ func NewMsgClaimMorseSupplier(
 	shannonOwnerAddress string,
 	shannonOperatorAddress string,
 	morseNodeAddress string,
-	morseOutputAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
 	services []*sharedtypes.SupplierServiceConfig,
 	shannonSigningAddr string,
 ) (*MsgClaimMorseSupplier, error) {
 	msg := &MsgClaimMorseSupplier{
 		MorseNodeAddress:       morseNodeAddress,
-		MorseOutputAddress:     morseOutputAddress,
 		ShannonOwnerAddress:    shannonOwnerAddress,
 		ShannonOperatorAddress: shannonOperatorAddress,
 		Services:               services,
@@ -42,6 +40,14 @@ func NewMsgClaimMorseSupplier(
 
 		if err := msg.SignMorseSignature(morsePrivateKey); err != nil {
 			return nil, err
+		}
+
+		// Assume that the morsePrivateKey corresponds to EITHER:
+		// - The morse node address (i.e. operator): leave signer_is_output_address as false
+		// - The morse output address (i.e. owner): set signer_is_output_address to true
+		// If any other private key is used, the claim message will error.
+		if msg.GetMorseSignerAddress() != morseNodeAddress {
+			msg.SignerIsOutputAddress = true
 		}
 	}
 
