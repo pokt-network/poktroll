@@ -22,6 +22,7 @@ syntax = "proto3";
 package pocket.migration;
 
 import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "pocket/migration/morse_onchain.proto";
@@ -107,6 +108,9 @@ message MorseApplication {
   int32  status = 4 [(gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 6 [(gogoproto.jsontag) = "staked_tokens"];
+
+  // TODO_IN_THIS_COMMIT: comment...
+  google.protobuf.Timestamp UnstakingCompletionTime = 8 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true, (gogoproto.jsontag) = "unstaking_time", (gogoproto.moretags) = "yaml:\"unstaking_time\""];
 }
 
 // MorseValidator is a subset of the Morse ProtoValidator type.
@@ -132,6 +136,9 @@ message MorseValidator {
 
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 7 [(gogoproto.jsontag) = "tokens"];
+
+  // TODO_IN_THIS_COMMIT: comment...
+  google.protobuf.Timestamp UnstakingCompletionTime = 8 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true, (gogoproto.jsontag) = "unstaking_time", (gogoproto.moretags) = "yaml:\"unstaking_time\""];
 
   // Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
   // Binary representation of the Morse address corresponding to a Morse account's ed25519 public key.
