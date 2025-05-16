@@ -81,7 +81,7 @@ pocketd tx migration claim-supplier \
 - The Morse output account (i.e. owner); aka `custodial`
 
 See: `pocketd tx migration claim-supplier --help` for more Shannon details.
-See: `pocket nodes supplier --help` for more Morse details.
+See: `pocket nodes --help` for more Morse details.
 
 :::
 
