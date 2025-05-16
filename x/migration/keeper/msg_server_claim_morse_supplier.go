@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -179,7 +178,6 @@ func (k msgServer) ClaimMorseSupplier(
 	supplier, err := k.supplierKeeper.StakeSupplier(ctx, logger, msgStakeSupplier)
 	if err != nil {
 		// DEV_NOTE: StakeSupplier SHOULD ALWAYS return a gRPC status error.
-		logger.Error(fmt.Sprintf(">>>> ERROR: %s", err))
 		return nil, err
 	}
 
