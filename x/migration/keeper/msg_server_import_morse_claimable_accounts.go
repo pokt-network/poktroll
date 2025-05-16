@@ -42,7 +42,7 @@ func (k msgServer) ImportMorseClaimableAccounts(
 		// - Check if allow_morse_accounts_import_overwrite is enabled
 		// - If not enabled, return an error
 		shouldOverwrite := k.GetParams(sdkCtx).AllowMorseAccountImportOverwrite
-		if shouldOverwrite {
+		if !shouldOverwrite {
 			err := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported and import overwrite is disabled")
 			logger.Info(err.Error())
 			return nil, status.Error(codes.FailedPrecondition, err.Error())
