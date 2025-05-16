@@ -25,13 +25,19 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// MorseSupplierClaimSignerType
+// - Enum for Morse supplier claim signer type
 type MorseSupplierClaimSignerType int32
 
 const (
-	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED            MorseSupplierClaimSignerType = 0
-	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR               MorseSupplierClaimSignerType = 1
+	// Unspecified signer type
+	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED MorseSupplierClaimSignerType = 0
+	// Operator signer type
+	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR MorseSupplierClaimSignerType = 1
+	// Operator non-custodial signer type
 	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR_NON_CUSTODIAL MorseSupplierClaimSignerType = 2
-	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL    MorseSupplierClaimSignerType = 3
+	// Owner non-custodial signer type
+	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL MorseSupplierClaimSignerType = 3
 )
 
 var MorseSupplierClaimSignerType_name = map[int32]string{
@@ -56,9 +62,11 @@ func (MorseSupplierClaimSignerType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_dd3531b7be3acfaa, []int{0}
 }
 
-// MorseAccountState is the onchain representation of all account state to be migrated from Morse.
-// It is NEVER persisted onchain but is a dependency of the MsgImportMorseClaimableAccount handler.
-// It's main purpose is to expose the #GetHash() method for verifying the integrity of all MorseClaimableAccounts.
+// MorseAccountState
+// - Onchain representation of all account state to be migrated from Morse
+// - NEVER persisted onchain
+// - Dependency of the MsgImportMorseClaimableAccount handler
+// - Main purpose: exposes #GetHash() for verifying integrity of all MorseClaimableAccounts
 type MorseAccountState struct {
 	Accounts []*MorseClaimableAccount `protobuf:"bytes,2,rep,name=accounts,proto3" json:"accounts" yaml:"accounts"`
 }
@@ -99,34 +107,40 @@ func (m *MorseAccountState) GetAccounts() []*MorseClaimableAccount {
 	return nil
 }
 
-// MorseClaimableAccount is the onchain (persisted) representation of a Morse
-// account which is claimable as part of the Morse -> Shannon migration.
-// They are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).
-// It is created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis).
-// It is updated ONLY ONCE, when it is claimed (per morse_src_address per network / re-genesis).
+// MorseClaimableAccount
+// - Onchain (persisted) representation of a Morse account claimable as part of Morse -> Shannon migration
+// - Created during MorseAccountState import (see: MsgImportMorseClaimableAccount)
+// - Created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis)
+// - Updated ONLY ONCE, when claimed (per morse_src_address per network / re-genesis)
 type MorseClaimableAccount struct {
-	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
-	// This field is intended to remain empty until the account has been claimed.
+	// bech32-encoded address of the Shannon account to mint claimed balance
+	// Intended to remain empty until the account is claimed
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`
-	// The hex-encoded address of the Morse account whose balance will be claimed.
+	// Hex-encoded address of the Morse account whose balance will be claimed.
+	// If this MorseClaimableAccount represents a Morse node/supplier:
+	//   - Morse non-custodial (i.e. operator) address.
+	//   - If morse_output_address is not set, this is the custodial address.
+	//   - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address"`
-	// The unstaked upokt tokens (i.e. account balance) available for claiming.
+	// Unstaked upokt tokens (account balance) available for claiming
 	UnstakedBalance types.Coin `protobuf:"bytes,5,opt,name=unstaked_balance,json=unstakedBalance,proto3" json:"unstaked_balance"`
-	// The staked tokens associated with a supplier actor which corresponds to this account address.
-	// DEV_NOTE: A few contextual notes related to Morse:
-	// - A Supplier is called a Servicer or Node (not a full node) in Morse
-	// - All Validators are Servicers, not all servicers are Validators
-	// - Automatically, the top 100 staked Servicers are validator
-	// - This only accounts for servicer stake balance transition
-	// TODO_MAINNET(@Olshansk): Develop a strategy for bootstrapping validators in Shannon by working with the cosmos ecosystem
+	// Staked tokens for supplier actor corresponding to this account address
+	// DEV_NOTE: Context for Morse:
+	// - Supplier = Servicer or Node (not a full node) in Morse
+	// - All Validators are Servicers; not all Servicers are Validators
+	// - Top 100 staked Servicers are validators (automatic)
+	// - Only accounts for servicer stake balance transition
+	// TODO_MAINNET(@Olshansk): Develop strategy for bootstrapping validators in Shannon with cosmos ecosystem
 	SupplierStake types.Coin `protobuf:"bytes,6,opt,name=supplier_stake,json=supplierStake,proto3" json:"supplier_stake"`
-	// The staked tokens associated with an application actor which corresponds to this account address.
+	// Staked tokens for application actor corresponding to this account address
 	ApplicationStake types.Coin `protobuf:"bytes,7,opt,name=application_stake,json=applicationStake,proto3" json:"application_stake"`
-	// The Shannon height at which the account was claimed.
-	// This field is intended to remain empty until the account has been claimed.
+	// Shannon height at which the account was claimed
+	// Intended to remain empty until the account is claimed
 	ClaimedAtHeight int64 `protobuf:"varint,8,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height" yaml:"claimed_at_height"`
-	// Morse custodial (i.e. owner) Morse address, which owns the staked tokens of the operator.
-	// See 'pocket nodes supplier --help' for more information.
+	// ONLY applicable to Morse node/supplier accounts.
+	// Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
+	// Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+	//  See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	MorseOutputAddress string `protobuf:"bytes,9,opt,name=morse_output_address,json=morseOutputAddress,proto3" json:"morse_output_address,omitempty" yaml:"morse_output_address"`
 }
 

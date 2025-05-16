@@ -401,18 +401,19 @@ var xxx_messageInfo_MorseApplication proto.InternalMessageInfo
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/pos/types.proto#L16
 type MorseValidator struct {
 	// Morse non-custodial (i.e. operator) address. If output_address is not set, this is the custodial address.
-	// Binary representation of the address corresponding to a Morse application's ed25519 public key.
-	// See 'pocket nodes supplier --help' for more information.
+	// Binary representation of the Morse address corresponding to a Morse node's ed25519 public key.
+	// See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	Address github_com_cometbft_cometbft_crypto.Address `protobuf:"bytes,1,opt,name=address,proto3,casttype=github.com/cometbft/cometbft/crypto.Address" json:"address" yaml:"address"`
-	// Binary representation of a Morse application's ed25519 public key.
+	// Binary representation of a Morse node's ed25519 public key.
 	PublicKey []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key" yaml:"public_key"`
 	// TODO_MAINNET_MIGRATION(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
 	Jailed bool  `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed"`
 	Status int32 `protobuf:"varint,4,opt,name=status,proto3" json:"status"`
 	// The string representation of the BigInt amount of upokt.
 	StakedTokens string `protobuf:"bytes,7,opt,name=staked_tokens,json=stakedTokens,proto3" json:"tokens"`
-	// Morse custodial (i.e. owner) Morse address, which owns the staked tokens of the operator.
-	// See 'pocket nodes supplier --help' for more information.
+	// Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+	// Binary representation of the Morse address corresponding to a Morse account's ed25519 public key.
+	// See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	OutputAddress github_com_cometbft_cometbft_crypto.Address `protobuf:"bytes,9,opt,name=output_address,json=outputAddress,proto3,casttype=github.com/cometbft/cometbft/crypto.Address" json:"output_address,omitempty" yaml:"output_address"`
 }
 

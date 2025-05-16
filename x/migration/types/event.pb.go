@@ -27,14 +27,17 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// EventImportMorseClaimableAccounts is emitted when the MorseClaimableAccounts are created on-chain.
+// EventImportMorseClaimableAccounts
+// - Emitted when MorseClaimableAccounts are created on-chain
+// - Represents import event for Morse claimable accounts
 type EventImportMorseClaimableAccounts struct {
-	// The height (on Shannon) at which the MorseAccountState was created on-chain.
+	// Shannon height at which MorseAccountState was created on-chain
 	CreatedAtHeight int64 `protobuf:"varint,1,opt,name=created_at_height,json=createdAtHeight,proto3" json:"created_at_height"`
-	// The onchain computed sha256 hash of the entire MorseAccountState containing the MorseClaimableAccounts which were imported.
+	// On-chain computed sha256 hash of the MorseAccountState
+	// - Contains all imported MorseClaimableAccounts
 	MorseAccountStateHash []byte `protobuf:"bytes,2,opt,name=morse_account_state_hash,json=morseAccountStateHash,proto3" json:"morse_account_state_hash"`
-	// Number of claimable accounts (EOAs) collected from Morse state export
-	// NOTE: Account balances include consolidated application and supplier actor stakes
+	// Number of claimable accounts (EOAs) imported from Morse state export
+	// - Account balances include consolidated application and supplier actor stakes
 	NumAccounts uint64 `protobuf:"varint,3,opt,name=num_accounts,json=numAccounts,proto3" json:"num_accounts"`
 }
 
@@ -88,15 +91,16 @@ func (m *EventImportMorseClaimableAccounts) GetNumAccounts() uint64 {
 	return 0
 }
 
-// EventMorseAccountClaimed is emitted when a MorseAccount is claimed on-chain.
+// EventMorseAccountClaimed
+// - Emitted when a MorseAccount is claimed on-chain
 type EventMorseAccountClaimed struct {
-	// The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+	// Shannon session end height in which the claim was committed
 	SessionEndHeight int64 `protobuf:"varint,1,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
-	// The unstaked balance which was claimed.
+	// Unstaked balance claimed from Morse
 	ClaimedBalance types.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
-	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
+	// bech32-encoded Shannon address to mint claimed balance
 	ShannonDestAddress string `protobuf:"bytes,3,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`
-	// The hex-encoded address of the Morse account whose balance will be claimed.
+	// Hex-encoded Morse account address whose balance was claimed
 	MorseSrcAddress string `protobuf:"bytes,4,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address"`
 }
 
@@ -157,18 +161,20 @@ func (m *EventMorseAccountClaimed) GetMorseSrcAddress() string {
 	return ""
 }
 
-// EventMorseApplicationClaimed is emitted when a MorseAccount is claimed on-chain as a staked application.
+// EventMorseApplicationClaimed
+// - Emitted when a MorseAccount is claimed on-chain as a staked application
 type EventMorseApplicationClaimed struct {
-	// The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+	// Shannon session end height in which the claim was committed
 	SessionEndHeight int64 `protobuf:"varint,1,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
-	// The unstaked balance which was claimed.
+	// Unstaked balance claimed from Morse
 	ClaimedBalance types.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
-	// The hex-encoded address of the Morse account whose balance will be claimed.
+	// Hex-encoded Morse account address whose balance was claimed
 	MorseSrcAddress string `protobuf:"bytes,3,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address"`
-	// The stake of the application which was staked as a result of the claim.
+	// Application stake claimed as a result of the claim
+	// - Equivalent to Morse application staked amount
 	ClaimedApplicationStake types.Coin `protobuf:"bytes,4,opt,name=claimed_application_stake,json=claimedApplicationStake,proto3" json:"claimed_application_stake"`
-	// The application which was staked as a result of the claim.
-	// This is equivalent to the amount it had staked on Morse.
+	// Application staked as a result of the claim
+	// - Mirrors Morse application stake
 	Application *types1.Application `protobuf:"bytes,5,opt,name=application,proto3" json:"application"`
 }
 
@@ -236,24 +242,28 @@ func (m *EventMorseApplicationClaimed) GetApplication() *types1.Application {
 	return nil
 }
 
-// EventMorseSupplierClaimed is emitted when a MorseAccount is claimed on-chain as a staked Supplier.
+// EventMorseSupplierClaimed
+// - Emitted when a MorseAccount is claimed on-chain as a staked Supplier
 type EventMorseSupplierClaimed struct {
-	// The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+	// Shannon session end height in which the claim was committed
 	SessionEndHeight int64 `protobuf:"varint,1,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
-	// The unstaked balance which was claimed.
+	// Unstaked balance claimed from Morse
 	ClaimedBalance types.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
+	// Hex-encoded Morse operator address whose balance was claimed
 	// TODO_IN_THIS_COMMIT: update...
-	// The hex-encoded address of the Morse account whose balance will be claimed.
 	MorseOperatorAddress string `protobuf:"bytes,3,opt,name=morse_operator_address,json=morseOperatorAddress,proto3" json:"morse_operator_address"`
-	// TODO_IN_THIS_COMMIT: update...
-	// TODO_IN_THIS_COMMIT: use in msg handler!
+	// TODO_IN_THIS_PR: use in msg handler!
+	// Hex-encoded Morse singer address
+	// TODO_IN_THIS_PR: update...
 	MorseSingerAddress string `protobuf:"bytes,6,opt,name=morse_singer_address,json=morseSingerAddress,proto3" json:"morse_singer_address"`
+	// Enum for Morse supplier claim signer type
 	// TODO_IN_THIS_COMMIT: update...
 	ClaimSignerType MorseSupplierClaimSignerType `protobuf:"varint,7,opt,name=claim_signer_type,json=claimSignerType,proto3,enum=pocket.migration.MorseSupplierClaimSignerType" json:"claim_signer_type"`
-	// The stake of the Supplier which was staked as a result of the claim.
-	// This will be equivalent to the amount it had staked on Morse.
+	// Supplier stake claimed as a result of the claim
+	// - Equivalent to Morse supplier staked amount
 	ClaimedSupplierStake types.Coin `protobuf:"bytes,4,opt,name=claimed_supplier_stake,json=claimedSupplierStake,proto3" json:"claimed_supplier_stake"`
-	// The Supplier which was staked as a result of the claim.
+	// Supplier staked as a result of the claim
+	// - Mirrors Morse supplier stake
 	Supplier *types2.Supplier `protobuf:"bytes,5,opt,name=supplier,proto3" json:"supplier"`
 }
 
