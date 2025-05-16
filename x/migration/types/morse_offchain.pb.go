@@ -401,7 +401,7 @@ var xxx_messageInfo_MorseApplication proto.InternalMessageInfo
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/pos/types.proto#L16
 type MorseValidator struct {
 	// Morse non-custodial (i.e. operator) address. If output_address is not set, this is the custodial address.
-	// Binary representation of the Morse address corresponding to a Morse application's ed25519 public key.
+	// Binary representation of the Morse address corresponding to a Morse node's ed25519 public key.
 	// See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	Address github_com_cometbft_cometbft_crypto.Address `protobuf:"bytes,1,opt,name=address,proto3,casttype=github.com/cometbft/cometbft/crypto.Address" json:"address" yaml:"address"`
 	// Binary representation of a Morse node's ed25519 public key.

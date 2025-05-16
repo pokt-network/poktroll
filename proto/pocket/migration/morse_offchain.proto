@@ -119,7 +119,7 @@ message MorseValidator {
   option (gogoproto.goproto_getters) = false;
 
   // Morse non-custodial (i.e. operator) address. If output_address is not set, this is the custodial address.
-  // Binary representation of the Morse address corresponding to a Morse application's ed25519 public key.
+  // Binary representation of the Morse address corresponding to a Morse node's ed25519 public key.
   // See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
   bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.moretags) = "yaml:\"address\"", (gogoproto.jsontag) = "address"];
 
