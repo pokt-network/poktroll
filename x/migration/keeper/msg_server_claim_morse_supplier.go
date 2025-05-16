@@ -131,7 +131,7 @@ func (k msgServer) ClaimMorseSupplier(
 		)
 	}
 
-	// Ensure the signer is EITHER:
+	// Ensure the signer is ONE OF THE FOLLOWING:
 	// - The Morse node address (i.e. operator)
 	// - The Morse output address (i.e. owner)
 	claimSignerType, err := checkClaimSigner(msg, &morseClaimableAccount)
@@ -219,37 +219,74 @@ func (k msgServer) ClaimMorseSupplier(
 	}, nil
 }
 
-// checkClaimSigner ensures that the msg was signed by an authorized Morse private key.
-// Compare the msg's signer to the given morseClaimableAccount's:
-//   - morse_node_address: Morse node account is claiming itself; the account remains non-custodial
-//   - morse_output_address: Morse output account (i.e. owner) is claiming the Morse node account;
-//     the account becomes custodial, under output/owner account control.
+// checkClaimSigner verifies that the msg was signed by an authorized Morse private key.
 //
-// If the Morse node is claiming itself, check whether a Morse output address exists to distinguish
-// between an operator claiming a custodial and non-custodial account.
+// It compares the msg's signer address to the morseClaimableAccount's addresses.
+
+// The signers can be found of:
+// - morse_node_address (operator; owner IFF output/owner is nil)
+// - morse_output_address (owner; operator is most likely a different offchain identity)
+//
+// morse_node_address:
+// - Morse node account is claiming itself (i.e. the operator)
+// - Account remains custodial (if output/owner is nil)
+// - Account remains non-custodial (if output/owner is non-nil)
+//
+// morse_output_address:
+// - Morse output account is claiming the Morse node account (i.e. the owner)
+// - Account remains custodial (under output/owner account control)
+//
+// If the Morse node is claiming itself, checks whether a Morse output address exists to distinguish:
+//   - Operator claiming a custodial account
+//   - Operator claiming a non-custodial account
+//
+// Returns:
+//   - claimSignerType: Enum describing the signer type
+//   - err: Error if signer is not authorized
 func checkClaimSigner(
 	msg *migrationtypes.MsgClaimMorseSupplier,
 	morseClaimableAccount *migrationtypes.MorseClaimableAccount,
 ) (claimSignerType migrationtypes.MorseSupplierClaimSignerType, err error) {
+	// node === operator if output is nil
+	// node === operator === owner if output is not nil
+	nodeAddr := morseClaimableAccount.GetMorseSrcAddress()
+	// output === owner
+	outputAddr := morseClaimableAccount.GetMorseOutputAddress()
+
+	// Check the message signer address
 	switch msg.GetMorseSignerAddress() {
-	case morseClaimableAccount.GetMorseOutputAddress():
-		claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL
-	case morseClaimableAccount.GetMorseSrcAddress():
-		// Check for a Morse output address.
-		switch morseClaimableAccount.GetMorseOutputAddress() {
+
+	// signer === owner && owner !== operator
+	// Owner claim (a.k.a custodial claim)
+	// This is the owner claiming the Morse node/servicer/supplier account
+	case outputAddr:
+		claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OWNER
+
+	// Operator claim
+	// May be custodial or non-custodial depending on whether the output (i.e. owner) is set
+	case nodeAddr:
+		// The signer of the message IS NOT the owner
+		switch outputAddr {
+
+		// signer === addr === operator === owner
+		// Custodial claim: No output address is set so the operator === owner === signer
 		case "":
-			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR
+			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR
+
+		// signer === operator === addr && owner !== operator
+		// Non-custodial claim: Output address exists so the operator is claiming the account on behalf of the owner
 		default:
-			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR_NON_CUSTODIAL
+			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OPERATOR
 		}
 
+	// Signer does not match either the operator or owner address
 	default:
 		return migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
 				"morse signer address (%s) doesn't match the operator (%s) or owner (%s) address",
 				msg.GetMorseSignerAddress(),
-				morseClaimableAccount.GetMorseSrcAddress(),
-				morseClaimableAccount.GetMorseOutputAddress(),
+				nodeAddr,
+				outputAddr,
 			)
 	}
 

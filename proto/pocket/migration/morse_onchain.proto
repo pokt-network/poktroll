@@ -75,10 +75,27 @@ message MorseClaimableAccount {
 enum MorseSupplierClaimSignerType {
   // Unspecified signer type
   MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED = 0;
-  // Operator signer type
-  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR = 1;
-  // Operator non-custodial signer type
-  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR_NON_CUSTODIAL = 2;
+
+  // signer === addr === operator === owner
+  // Non-custodial signer type
+  // - The Morse node address is NOT EMPTY (i.e. operator)
+  // - The Morse output address is EMPTY (i.e. owner)
+  // - Implies that the operator and owner are THE SAME offchain identity
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR = 1;
+
+  // signer === operator === addr && owner !== operator
+  // Custodial signer type
+  // - The Morse node address is NOT EMPTY (i.e. operator)
+  // - The Morse output address is NOT EMPTY (i.e. owner)
+  // - Implies that the operator and owner are MOST LIKELY DIFFERENT offchain identities
+  // - The operator is the one signing the supplier claim
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OPERATOR = 2;
+
+  // signer === owner && owner !== addr
   // Owner non-custodial signer type
-  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL = 3;
+  // - The Morse node address is EMPTY (i.e. operator)
+  // - The Morse output address is NOT EMPTY (i.e. owner)
+  // - Implies that the operator and owner are MOST LIKELY different offchain identities
+  // - The owner is the one signing the supplier claim
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OWNER = 3;
 }

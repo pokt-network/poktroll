@@ -81,7 +81,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 				// MorseOutputAddress: (intentionally omitted),
 				MorseNodeAddress:     morseSrcAddr,
-				ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR,
+				ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR,
 				ClaimedBalance:       expectedClaimedBalance,
 				ClaimedSupplierStake: expectedStake,
 				SessionEndHeight:     expectedSessionEndHeight,
@@ -248,7 +248,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 				// MorseOutputAddress: (intentionally omitted),
 				MorseNodeAddress:     morseNodeAddr,
-				ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR,
+				ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR,
 				ClaimedBalance:       expectedMorseClaimableAccount.GetUnstakedBalance(),
 				ClaimedSupplierStake: expectedClaimedStake,
 				SessionEndHeight:     expectedSessionEndHeight,

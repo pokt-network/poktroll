@@ -265,9 +265,9 @@ type EventMorseSupplierClaimed struct {
 	MorseOutputAddress string `protobuf:"bytes,6,opt,name=morse_output_address,json=morseOutputAddress,proto3" json:"morse_output_address"`
 	// The type of supplier claim signer, indicating which actor executed the claim
 	// and whether it was a custodial or non-custodial claim.
-	// - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR
-	// - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR_NON_CUSTODIAL
-	// - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL
+	// - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR
+	// - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OPERATOR
+	// - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OWNER
 	ClaimSignerType MorseSupplierClaimSignerType `protobuf:"varint,7,opt,name=claim_signer_type,json=claimSignerType,proto3,enum=pocket.migration.MorseSupplierClaimSignerType" json:"claim_signer_type"`
 	// Supplier stake claimed as a result of the claim
 	// - Equivalent to Morse supplier staked amount

@@ -15,10 +15,10 @@ var (
 )
 
 // NewMsgClaimMorseSupplier creates a new MsgClaimMorseSupplier.
-// If morsePrivateKey is provided (i.e. not nil), it is used to sign the message:
-// - morsePrivateKey MUST be EITHER:
-//   - The Morse node private key (i.e. operator)
-//   - The Morse output private key (i.e. owner)
+// If morsePrivateKey is provided (i.e. not nil), it is used to sign the message.
+// morsePrivateKey MUST be ONE OF THE FOLLOWING:
+//   - The Morse node private key (i.e. operator); a.k.a non-custodial
+//   - The Morse output private key (i.e. owner); a.k.a custodial
 func NewMsgClaimMorseSupplier(
 	shannonOwnerAddress string,
 	shannonOperatorAddress string,
@@ -42,7 +42,7 @@ func NewMsgClaimMorseSupplier(
 			return nil, err
 		}
 
-		// Assume that the morsePrivateKey corresponds to EITHER:
+		// Assume that the morsePrivateKey corresponds to ONE OF THE FOLLOWING:
 		// - The morse node address (i.e. operator): leave signer_is_output_address as false
 		// - The morse output address (i.e. owner): set signer_is_output_address to true
 		// If any other private key is used, the claim message will error.
@@ -121,7 +121,8 @@ func (msg *MsgClaimMorseSupplier) getSigningBytes() ([]byte, error) {
 }
 
 // GetMorseSignerAddress returns the address associated with the Morse keypair which
-// was used to sign this claim message. This address is expected to be EITHER:
+// was used to sign this claim message.
+// This address is expected to be ONE OF THE FOLLOWING:
 // - The Morse node address (i.e. operator)
 // - The Morse output address (i.e. owner)
 func (msg *MsgClaimMorseSupplier) GetMorseSignerAddress() string {

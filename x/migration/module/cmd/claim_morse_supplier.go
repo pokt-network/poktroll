@@ -25,17 +25,19 @@ func ClaimSupplierCmd() *cobra.Command {
 		Short: "Claim an onchain MorseClaimableAccount as a staked supplier account",
 		Long: `Claim an onchain MorseClaimableAccount as a staked supplier account.
 
-morse_node_address is the hex-encoded address of the Morse node account to be claimed.
-morse_private_key_export_path is the path to the Morse private key for EITHER:
-  - The Morse node account (i.e. operator)
-  - The Morse output account (i.e. owner)
+morse_node_address: Hex-encoded address of the Morse node account to be claimed
 
-The unstaked balance amount of the onchain MorseClaimableAccount will be minted to the Shannon account specified by the --from flag.
-The Shannon account will also be staked as a supplier with a stake equal to the supplier stake the MorseClaimableAccount had on Morse.
+morse_private_key_export_path: Path to the Morse private key for ONE of the following:
+  - Morse node account (operator) — non-custodial
+  - Morse output account (owner) — custodial
 
-This will construct, sign, and broadcast a tx containing a MsgClaimMorseSupplier message.
+What happens:
+  - The unstaked balance of the onchain MorseClaimableAccount will be minted to the Shannon account specified by --from
+  - The Shannon account will also be staked as a supplier with a stake equal to the supplier stake the MorseClaimableAccount had on Morse
+  - A transaction with MsgClaimMorseSupplier will be constructed, signed, and broadcast
 
-For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
+More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
+
 		RunE:    runClaimSupplier,
 		PreRunE: logger.PreRunESetup,
 	}
