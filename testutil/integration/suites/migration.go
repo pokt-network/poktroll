@@ -212,13 +212,13 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	shannonDestAddr string,
 	services []*sharedtypes.SupplierServiceConfig,
 	signingAddr string,
-) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseSupplierResponse) {
+) (expectedMorseNodeAddr string, _ *migrationtypes.MsgClaimMorseSupplierResponse) {
 	t.Helper()
 
 	morsePrivateKey := testmigration.GenMorsePrivateKey(morseAccountIdx)
-	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
+	expectedMorseNodeAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t,
-		expectedMorseSrcAddr,
+		expectedMorseNodeAddr,
 		s.accountState.Accounts[morseAccountIdx].MorseSrcAddress,
 	)
 
@@ -226,6 +226,7 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 		shannonDestAddr,
 		shannonDestAddr,
 		morsePrivateKey.PubKey().Address().String(),
+		"",
 		morsePrivateKey,
 		services,
 		signingAddr,
@@ -239,5 +240,5 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	claimSupplierRes, ok := resAny.(*migrationtypes.MsgClaimMorseSupplierResponse)
 	require.True(t, ok)
 
-	return expectedMorseSrcAddr, claimSupplierRes
+	return expectedMorseNodeAddr, claimSupplierRes
 }

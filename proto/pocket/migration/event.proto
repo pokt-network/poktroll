@@ -75,14 +75,21 @@ message EventMorseSupplierClaimed {
   // Unstaked balance claimed from Morse
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
-  // Hex-encoded Morse operator address whose balance was claimed
-  // TODO_IN_THIS_COMMIT: update...
-  string morse_operator_address = 3 [(gogoproto.jsontag) = "morse_operator_address"];
+  // The hex-encoded address of the Morse non-custodial (i.e. operator) account.
+  // - Unstaked balance was migrated 1:1
+  // - Stake was migrated 1:1 from morse_node_address to shannon_operator_address
+  // - Morse non-custodial (i.e. operator) address.
+  // If morse_output_address was not set, this is the custodial address.
+  // - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_node_address = 3 [(gogoproto.jsontag) = "morse_node_address"];
 
-  // TODO_IN_THIS_PR: use in msg handler!
-  // Hex-encoded Morse singer address
-  // TODO_IN_THIS_PR: update...
-  string morse_singer_address = 6 [(gogoproto.jsontag) = "morse_singer_address"];
+  // ONLY applicable to Morse node/supplier accounts.
+  // Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
+  // - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  // - Morse custodial (i.e. owner) address, which owned the staked tokens of the operator.
+  //   See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  string morse_output_address = 6 [(gogoproto.jsontag) = "morse_output_address"];
 
   // Enum for Morse supplier claim signer type
   // TODO_IN_THIS_COMMIT: update...

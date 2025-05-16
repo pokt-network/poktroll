@@ -21,7 +21,8 @@ message MorseAccountState {
 // MorseClaimableAccount
 // - Onchain (persisted) representation of a Morse account claimable as part of Morse -> Shannon migration
 // - Created during MorseAccountState import (see: MsgImportMorseClaimableAccount)
-// - Created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis)
+// - Created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis),
+//   unless the allow_morse_account_import_overwrite migration param is enabled
 // - Updated ONLY ONCE, when claimed (per morse_src_address per network / re-genesis)
 message MorseClaimableAccount {
   // bech32-encoded address of the Shannon account to mint claimed balance
@@ -63,8 +64,9 @@ message MorseClaimableAccount {
 
   // ONLY applicable to Morse node/supplier accounts.
   // Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
-  // Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
-  //  See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  // - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  // - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+  //   See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
   string morse_output_address = 9 [ (gogoproto.jsontag) = "morse_output_address,omitempty", (gogoproto.moretags) = "yaml:\"morse_output_address\""];
 }
 

@@ -20,7 +20,7 @@ import (
 
 func ClaimSupplierCmd() *cobra.Command {
 	claimSupplierCmd := &cobra.Command{
-		Use:   "claim-supplier [morse_operator_address] [morse_signer_key_export_path] [path_to_supplier_stake_config] --from [shannon_dest_key_name]",
+		Use:   "claim-supplier [morse_node_address] [morse_private_key_export_path] [path_to_supplier_stake_config] --from [shannon_dest_key_name]",
 		Args:  cobra.ExactArgs(3),
 		Short: "Claim an onchain MorseClaimableAccount as a staked supplier account",
 		Long: `Claim an onchain MorseClaimableAccount as a staked supplier account.
@@ -66,14 +66,14 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	morseOperatorAddr := args[0]
-	if _, err := hex.DecodeString(morseOperatorAddr); err != nil {
-		return fmt.Errorf("expected morse operating address to be hex-encoded, got: %q", morseOperatorAddr)
+	morseNodeAddr := args[0]
+	if _, err := hex.DecodeString(morseNodeAddr); err != nil {
+		return fmt.Errorf("expected morse operating address to be hex-encoded, got: %q", morseNodeAddr)
 	}
 
 	// Retrieve and validate the morse key based on the provided argument.
 	morseKeyExportPath := args[1]
-	morseSignerPrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
+	morsePrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
 	if err != nil {
 		return err
 	}
@@ -110,8 +110,9 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	msgClaimMorseSupplier, err := types.NewMsgClaimMorseSupplier(
 		shannonOwnerAddr,
 		shannonOperatorAddr,
-		morseOperatorAddr,
-		morseSignerPrivKey,
+		morseNodeAddr,
+		"",
+		morsePrivKey,
 		supplierStakeConfig.Services,
 		shannonSigningAddr,
 	)

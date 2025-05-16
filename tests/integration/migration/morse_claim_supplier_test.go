@@ -79,7 +79,9 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-				MorseSrcAddress:      morseSrcAddr,
+				// MorseOutputAddress: (intentionally omitted),
+				MorseNodeAddress:     morseSrcAddr,
+				ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR,
 				ClaimedBalance:       expectedClaimedBalance,
 				ClaimedSupplierStake: expectedStake,
 				SessionEndHeight:     expectedSessionEndHeight,
@@ -191,7 +193,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			s.NoError(err)
 
 			// Claim the MorseClaimableAccount as an existing supplier.
-			morseSrcAddr, claimSupplierRes := s.ClaimMorseSupplier(
+			morseNodeAddr, claimSupplierRes := s.ClaimMorseSupplier(
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.supplierServices,
@@ -244,7 +246,9 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-				MorseSrcAddress:      morseSrcAddr,
+				// MorseOutputAddress: (intentionally omitted),
+				MorseNodeAddress:     morseNodeAddr,
+				ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR,
 				ClaimedBalance:       expectedMorseClaimableAccount.GetUnstakedBalance(),
 				ClaimedSupplierStake: expectedClaimedStake,
 				SessionEndHeight:     expectedSessionEndHeight,
@@ -255,7 +259,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			// Assert that the MorseClaimableAccount was updated on-chain.
 			expectedMorseClaimableAccount.ShannonDestAddress = shannonDestAddr
 			expectedMorseClaimableAccount.ClaimedAtHeight = s.SdkCtx().BlockHeight() - 1
-			morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseSrcAddr)
+			morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseNodeAddr)
 			s.Equal(expectedMorseClaimableAccount, morseClaimableAccount)
 
 			// Assert that the shannonDestAddr account balance has been updated.
@@ -312,6 +316,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 		shannonDestAddr,
 		shannonDestAddr,
 		morsePrivateKey.PubKey().Address().String(),
+		"",
 		morsePrivateKey,
 		s.supplierServices,
 		sample.AccAddress(),

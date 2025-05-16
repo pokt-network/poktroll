@@ -14,29 +14,33 @@ var (
 	_ morseClaimMessage = (*MsgClaimMorseSupplier)(nil)
 )
 
-// TODO_IN_THIS_COMMIT: update godoc...
 // NewMsgClaimMorseSupplier creates a new MsgClaimMorseSupplier.
-// If morsePrivateKey is provided (i.e. not nil), it is used to sign the message.
+// If morsePrivateKey is provided (i.e. not nil), it is used to sign the message:
+// - morsePrivateKey MUST be EITHER:
+//   - The Morse node private key (i.e. operator)
+//   - The Morse output private key (i.e. owner)
 func NewMsgClaimMorseSupplier(
 	shannonOwnerAddress string,
 	shannonOperatorAddress string,
-	morseOperatorAddress string,
-	morseSignerPrivateKey cometcrypto.PrivKey,
+	morseNodeAddress string,
+	morseOutputAddress string,
+	morsePrivateKey cometcrypto.PrivKey,
 	services []*sharedtypes.SupplierServiceConfig,
 	shannonSigningAddr string,
 ) (*MsgClaimMorseSupplier, error) {
 	msg := &MsgClaimMorseSupplier{
-		MorseOperatorAddress:   morseOperatorAddress,
+		MorseNodeAddress:       morseNodeAddress,
+		MorseOutputAddress:     morseOutputAddress,
 		ShannonOwnerAddress:    shannonOwnerAddress,
 		ShannonOperatorAddress: shannonOperatorAddress,
 		Services:               services,
 		ShannonSigningAddress:  shannonSigningAddr,
 	}
 
-	if morseSignerPrivateKey != nil {
-		msg.MorseSignerPublicKey = morseSignerPrivateKey.PubKey().Bytes()
+	if morsePrivateKey != nil {
+		msg.MorsePublicKey = morsePrivateKey.PubKey().Bytes()
 
-		if err := msg.SignMorseSignature(morseSignerPrivateKey); err != nil {
+		if err := msg.SignMorseSignature(morsePrivateKey); err != nil {
 			return nil, err
 		}
 	}
@@ -110,14 +114,10 @@ func (msg *MsgClaimMorseSupplier) getSigningBytes() ([]byte, error) {
 	return proto.Marshal(&signingMsg)
 }
 
-// TODO_IN_THIS_COMMIT: update...
-// GetMorseSignerAddress returns the morse source address associated with
-// the Morse public key of the given message.
+// GetMorseSignerAddress returns the address associated with the Morse keypair which
+// was used to sign this claim message. This address is expected to be EITHER:
+// - The Morse node address (i.e. operator)
+// - The Morse output address (i.e. owner)
 func (msg *MsgClaimMorseSupplier) GetMorseSignerAddress() string {
-	return msg.GetMorseSignerPublicKey().Address().String()
-}
-
-// TODO_IN_THIS_COMMIT: godoc - morseClaimMessage iface...
-func (msg *MsgClaimMorseSupplier) GetMorsePublicKey() cometcrypto.PubKey {
-	return msg.GetMorseSignerPublicKey()
+	return msg.GetMorsePublicKey().Address().String()
 }

@@ -40,7 +40,9 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
 
-		// Delete all existing MorseClaimableAccounts (and indices).
+		// Overwriting existing MorseClaimableAccounts (and indices):
+		// - Delete all existing MorseClaimableAccounts (and indices)
+		// - Re-import from msg (continue)
 		k.resetMorseClaimableAccounts(sdkCtx)
 	}
 

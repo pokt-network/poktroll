@@ -1454,10 +1454,11 @@ func (x *MorseAccountState) GetAccounts() []*MorseClaimableAccount {
 }
 
 // MorseClaimableAccount
-// - Onchain (persisted) representation of a Morse account claimable as part of Morse -> Shannon migration
-// - Created during MorseAccountState import (see: MsgImportMorseClaimableAccount)
-// - Created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis)
-// - Updated ONLY ONCE, when claimed (per morse_src_address per network / re-genesis)
+//   - Onchain (persisted) representation of a Morse account claimable as part of Morse -> Shannon migration
+//   - Created during MorseAccountState import (see: MsgImportMorseClaimableAccount)
+//   - Created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis),
+//     unless the allow_morse_account_import_overwrite migration param is enabled
+//   - Updated ONLY ONCE, when claimed (per morse_src_address per network / re-genesis)
 type MorseClaimableAccount struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1489,9 +1490,9 @@ type MorseClaimableAccount struct {
 	ClaimedAtHeight int64 `protobuf:"varint,8,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height,omitempty"`
 	// ONLY applicable to Morse node/supplier accounts.
 	// Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
-	// Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
-	//
-	//	See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+	//   - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+	//   - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+	//     See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	MorseOutputAddress string `protobuf:"bytes,9,opt,name=morse_output_address,json=morseOutputAddress,proto3" json:"morse_output_address,omitempty"`
 }
 

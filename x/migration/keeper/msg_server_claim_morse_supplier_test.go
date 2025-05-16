@@ -148,6 +148,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		shannonDestAddr,
 		shannonDestAddr,
 		morsePrivKey.PubKey().Address().String(),
+		"",
 		morsePrivKey,
 		testSupplierServices,
 		sample.AccAddress(),
@@ -161,7 +162,9 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	sharedParams := sharedtypes.DefaultParams()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
 	expectedRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseSrcAddress:      msgClaim.GetMorseSignerAddress(),
+		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
+		MorseOutputAddress:   msgClaim.GetMorseOutputAddress(),
+		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR,
 		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
 		ClaimedBalance: expectedClaimedUnstakedTokens.
 			Add(morseClaimableAccount.GetApplicationStake()),
@@ -180,8 +183,8 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseSupplierClaimed{
-		MorseOperatorAddress: msgClaim.GetMorseOperatorAddress(),
-		MorseSingerAddress:   msgClaim.GetMorseSignerAddress(),
+		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
+		MorseOutputAddress:   msgClaim.GetMorseOutputAddress(),
 		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR,
 		ClaimedBalance:       expectedClaimedUnstakedTokens,
 		ClaimedSupplierStake: supplierStake,
@@ -230,6 +233,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		sample.AccAddress(),
 		sample.AccAddress(),
 		morsePrivKey.PubKey().Address().String(),
+		"",
 		morsePrivKey,
 		testSupplierServices,
 		sample.AccAddress(),
@@ -244,6 +248,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			sample.AccAddress(),
 			sample.AccAddress(),
 			morsePrivKey.PubKey().Address().String(),
+			"",
 			morsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
@@ -270,6 +275,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			sample.AccAddress(),
 			sample.AccAddress(),
 			nonExistentMorsePrivKey.PubKey().Address().String(),
+			"",
 			nonExistentMorsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
@@ -349,6 +355,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			sample.AccAddress(),
 			sample.AccAddress(),
 			morsePrivKey.PubKey().Address().String(),
+			"",
 			morsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
@@ -381,6 +388,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			sample.AccAddress(),
 			sample.AccAddress(),
 			morsePrivKey.PubKey().Address().String(),
+			"",
 			morsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
