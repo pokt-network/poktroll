@@ -77,8 +77,8 @@ pocketd tx migration claim-supplier \
 
 `<morse-keyfile-export>` is the path to the Morse private key for ONE OF THE FOLLOWING:
 
-- The Morse node account (i.e. operator); aka `non-custodial`
-- The Morse output account (i.e. owner); aka `custodial`
+- The Morse node account (i.e. operator); aka `custodial`
+- The Morse output account (i.e. owner); aka `non-custodial`
 
 See: `pocketd tx migration claim-supplier --help` for more Shannon details.
 See: `pocket nodes --help` for more Morse details.

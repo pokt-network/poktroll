@@ -233,8 +233,8 @@ func (k msgServer) ClaimMorseSupplier(
 // - Account remains non-custodial (if output/owner is non-nil)
 //
 // morse_output_address:
-// - Morse output account is claiming the Morse node account (i.e. the owner)
-// - Account remains custodial (under output/owner account control)
+// - Morse output/owner account is claiming the Morse node account
+// - Account remains non-custodial (under output/owner account control)
 //
 // If the Morse node is claiming itself, checks whether a Morse output address exists to distinguish:
 //   - Operator claiming a custodial account
@@ -247,34 +247,33 @@ func checkClaimSigner(
 	msg *migrationtypes.MsgClaimMorseSupplier,
 	morseClaimableAccount *migrationtypes.MorseClaimableAccount,
 ) (claimSignerType migrationtypes.MorseSupplierClaimSignerType, err error) {
-	// node === operator if output is nil
-	// node === operator === owner if output is not nil
+	// node addr === operator
 	nodeAddr := morseClaimableAccount.GetMorseSrcAddress()
-	// output === owner
+	// output addr === owner (MAY be empty)
 	outputAddr := morseClaimableAccount.GetMorseOutputAddress()
 
 	// Check the message signer address
 	switch msg.GetMorseSignerAddress() {
 
 	// signer === owner && owner !== operator
-	// Owner claim (a.k.a custodial claim)
+	// Owner claim (a.k.a non-custodial claim)
 	// This is the owner claiming the Morse node/servicer/supplier account
 	case outputAddr:
 		claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER
 
 	// Operator claim
-	// May be custodial or non-custodial depending on whether the output (i.e. owner) is set
+	// I.e., the signer of the message IS NOT the output/owner account.
+	// May be custodial or non-custodial depending on whether the output (i.e. owner) is set.
 	case nodeAddr:
-		// The signer of the message IS NOT the owner
 		switch outputAddr {
 
-		// signer === addr === operator === owner
+		// signer === node addr === operator === owner
 		// Custodial claim: No output address is set so the operator === owner === signer
 		case "":
 			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR
 
-		// signer === operator === addr && owner !== operator
-		// Non-custodial claim: Output address exists so the operator is claiming the account on behalf of the owner
+		// signer === operator === node addr && owner !== operator
+		// Non-custodial claim: Output address exists so the operator is claiming the account on behalf of the owner.
 		default:
 			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR
 		}

@@ -17,8 +17,8 @@ var (
 // NewMsgClaimMorseSupplier creates a new MsgClaimMorseSupplier.
 // If morsePrivateKey is provided (i.e. not nil), it is used to sign the message.
 // morsePrivateKey MUST be ONE OF THE FOLLOWING:
-//   - The Morse node private key (i.e. operator); a.k.a non-custodial
-//   - The Morse output private key (i.e. owner); a.k.a custodial
+//   - The Morse node private key (i.e. operator); a.k.a custodial
+//   - The Morse output private key (i.e. owner); a.k.a non-custodial
 func NewMsgClaimMorseSupplier(
 	shannonOwnerAddress string,
 	shannonOperatorAddress string,

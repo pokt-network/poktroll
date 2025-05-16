@@ -28,8 +28,8 @@ func ClaimSupplierCmd() *cobra.Command {
 morse_node_address: Hex-encoded address of the Morse node account to be claimed
 
 morse_private_key_export_path: Path to the Morse private key for ONE of the following:
-  - Morse node account (operator) — non-custodial
-  - Morse output account (owner) — custodial
+  - Morse node account (operator) — custodial
+  - Morse output account (owner) — non-custodial
 
 What happens:
   - The unstaked balance of the onchain MorseClaimableAccount will be minted to the Shannon account specified by --from
