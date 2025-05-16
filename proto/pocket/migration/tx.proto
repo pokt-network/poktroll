@@ -219,8 +219,6 @@ message MsgClaimMorseApplicationResponse {
 message MsgClaimMorseSupplier {
   // Next free index: 10
 
-  // TODO_IN_THIS_COMMIT: consider reserving renamed fields and using new indices for backwards compatibility with ALL clients (e.g. gRPC, JSON-RPC)...
-
   option (cosmos.msg.v1.signer) = "shannon_signing_address";
 
   // The bech32-encoded address of the Shannon account which is signing for this message.
@@ -286,7 +284,9 @@ message MsgClaimMorseSupplier {
 // - Reports the unstaked balance claimed, session end height, and staked supplier
 // - Includes claim signer type and signer address
 message MsgClaimMorseSupplierResponse {
-  // Next free index: 9
+  // Next free index: 10
+
+  reserved 1;
 
   // The hex-encoded address of the Morse non-custodial (i.e. operator) account.
   // - Unstaked balance will be migrated 1:1
@@ -295,18 +295,19 @@ message MsgClaimMorseSupplierResponse {
   // If morse_output_address is not set, this is the custodial address.
   // - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-  string morse_node_address = 1 [(gogoproto.jsontag) = "morse_node_address"];
+  string morse_node_address = 9 [(gogoproto.jsontag) = "morse_node_address"];
 
-  // TODO_IN_THIS_COMMIT: use in msg handler!
   // Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
   // - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
   // - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
   //   See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
   string morse_output_address = 8 [(gogoproto.jsontag) = "morse_output_address"];
 
-  // TODO_IN_THIS_COMMIT: add and use:
-  // - morse_signer_address
-  // - claim_signer_type
+  // The type of supplier claim signer, indicating which actor executed the claim
+  // and whether it was a custodial or non-custodial claim.
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR_NON_CUSTODIAL
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL
   MorseSupplierClaimSignerType claim_signer_type = 7 [(gogoproto.jsontag) = "claim_signer_type"];
 
   // The unstaked balance which was claimed.

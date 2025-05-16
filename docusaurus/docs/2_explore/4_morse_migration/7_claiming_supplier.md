@@ -62,6 +62,7 @@ Make sure to **omit `stake_amount`**.
 
 ```bash
 pocketd tx migration claim-supplier \
+  <morse-node-address> \
   pocket-account-<morse-keyfile-export>.json \
   <path-to-your-supplier-config>.yaml \
   --from=<your_shannon_address> \
@@ -69,6 +70,18 @@ pocketd tx migration claim-supplier \
   --home=~/.pocketd --keyring-backend=test --no-passphrase
 # --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 (optional)
 ```
+
+:::important
+
+`<morse-node-address>` is the hex-encoded address of the Morse node account to be claimed.
+
+`<morse-keyfile-export>` is the path to the Morse private key for EITHER:
+  - The Morse node account (i.e. operator)
+  - The Morse output account (i.e. owner)
+
+See: `pocketd tx migration claim-supplier --help` for more details.
+
+:::
 
 ### 4. Example output
 

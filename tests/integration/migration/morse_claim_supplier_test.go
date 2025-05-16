@@ -359,7 +359,3 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 		).Error(),
 	).Error())
 }
-
-// TODO_MAINNET_MIGRATION(@bryanchriswhite): Add coverage for non-custodial cases:
-// - Owner claims
-// - Operator claims (owner account has NOT been claimed)

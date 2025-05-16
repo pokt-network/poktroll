@@ -69,6 +69,9 @@ message EventMorseApplicationClaimed {
 // EventMorseSupplierClaimed
 // - Emitted when a MorseAccount is claimed on-chain as a staked Supplier
 message EventMorseSupplierClaimed {
+  // Next free index: 9
+  reserved 3;
+
   // Shannon session end height in which the claim was committed
   int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
 
@@ -82,7 +85,7 @@ message EventMorseSupplierClaimed {
   // If morse_output_address was not set, this is the custodial address.
   // - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-  string morse_node_address = 3 [(gogoproto.jsontag) = "morse_node_address"];
+  string morse_node_address = 8 [(gogoproto.jsontag) = "morse_node_address"];
 
   // ONLY applicable to Morse node/supplier accounts.
   // Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
@@ -91,8 +94,11 @@ message EventMorseSupplierClaimed {
   //   See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
   string morse_output_address = 6 [(gogoproto.jsontag) = "morse_output_address"];
 
-  // Enum for Morse supplier claim signer type
-  // TODO_IN_THIS_COMMIT: update...
+  // The type of supplier claim signer, indicating which actor executed the claim
+  // and whether it was a custodial or non-custodial claim.
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR_NON_CUSTODIAL
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL
   MorseSupplierClaimSignerType claim_signer_type = 7 [(gogoproto.jsontag) = "claim_signer_type"];
 
   // Supplier stake claimed as a result of the claim

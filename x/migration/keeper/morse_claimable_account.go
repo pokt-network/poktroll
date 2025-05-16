@@ -42,6 +42,9 @@ func (k Keeper) GetMorseClaimableAccount(
 }
 
 // resetMorseClaimableAccounts removes ALL morseClaimableAccount from the store.
+// SHOULD ONLY be called during (re-)import/overwrite of the MorseClaimableAccounts.
+// Import overwriting SHOULD ONLY be enabled on Alpha and Beta TestNets, and is
+// controlled by the `allow_morse_account_import_overwrite` migration module param.
 func (k Keeper) resetMorseClaimableAccounts(
 	ctx context.Context,
 ) {
