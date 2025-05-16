@@ -155,7 +155,9 @@ func (miw *morseImportWorkspace) addSupplierStake(
 		return err
 	}
 
-	account.MorseOutputAddress = outputAddr.String()
+	if outputAddr != nil {
+		account.MorseOutputAddress = outputAddr.String()
+	}
 	account.SupplierStake.Amount = account.SupplierStake.Amount.Add(amount)
 	return nil
 }
