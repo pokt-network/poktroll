@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"time"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
@@ -137,11 +138,67 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		morseClaimableAccount,
 	)
 
+	claimedAppStake := morseClaimableAccount.GetApplicationStake()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
+
+	currentSessionStart := sharedtypes.GetSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
+	previousSessionEnd := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStart-1)
+
 	// Query for any existing application stake prior to staking.
 	preClaimAppStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 	foundApp, isFound := k.appKeeper.GetApplication(ctx, shannonAccAddr.String())
 	if isFound {
 		preClaimAppStake = *foundApp.Stake
+	}
+	postClaimAppStake := preClaimAppStake.Add(morseClaimableAccount.GetApplicationStake())
+
+	// TODO_IN_THIS_COMMIT: comment...
+	// ... application began unbonding on Morse and the unbonding period has since elapsed...
+	// ... both stake and unstatked balance were minted to the shannonDestAddr account...
+	// ... no application was staked...
+	// - use a lookup table to get the est. block times per network...
+	// - use the shared params and the block time to calculate the unstake session end height...
+	// - emit an unbonding start event...
+	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
+		unbondedApp := &apptypes.Application{
+			Address:                 shannonAccAddr.String(),
+			Stake:                   &postClaimAppStake,
+			UnstakeSessionEndHeight: uint64(previousSessionEnd),
+			// Services:             (intentionally omitted, no services were staked),
+			// ServiceConfigHistory: (intentionally omitted, no services were staked),
+		}
+
+		durationUntilUnstake := time.Until(morseClaimableAccount.UnstakingCompletionTime)
+		if durationUntilUnstake.Seconds() <= 0 {
+			// Emit an event which signals that the claimed Morse supplier's unbonding
+			// period began on Morse, and ended while waiting to be claimed.
+			morseSupplierUnbondingEndEvent := apptypes.EventApplicationUnbondingEnd{
+				Application:        unbondedApp,
+				Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
+				SessionEndHeight:   sessionEndHeight,
+				UnbondingEndHeight: sessionEndHeight,
+			}
+			if err := sdkCtx.EventManager().EmitTypedEvent(&morseSupplierUnbondingEndEvent); err != nil {
+				return nil, status.Error(
+					codes.Internal,
+					migrationtypes.ErrMorseSupplierClaim.Wrapf(
+						"failed to emit event type %T: %v",
+						&morseSupplierUnbondingEndEvent,
+						err,
+					).Error(),
+				)
+			}
+
+			return &migrationtypes.MsgClaimMorseApplicationResponse{
+				MorseSrcAddress:         morseClaimableAccount.GetMorseSrcAddress(),
+				ClaimedBalance:          claimedUnstakedBalance,
+				ClaimedApplicationStake: claimedAppStake,
+				SessionEndHeight:        sessionEndHeight,
+				Application:             unbondedApp,
+			}, nil
+		}
 	}
 
 	// Stake (or update) the application.
@@ -157,28 +214,56 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, err
 	}
 
-	claimedAppStake := morseClaimableAccount.GetApplicationStake()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
-	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
-
 	// Emit an event which signals that the morse account has been claimed.
-	event := migrationtypes.EventMorseApplicationClaimed{
-		MorseSrcAddress:         msg.GetMorseSignerAddress(),
-		ClaimedBalance:          claimedUnstakedBalance,
-		ClaimedApplicationStake: claimedAppStake,
-		SessionEndHeight:        sessionEndHeight,
-		Application:             app,
+	events := []cosmostypes.Msg{
+		&migrationtypes.EventMorseApplicationClaimed{
+			MorseSrcAddress:         msg.GetMorseSignerAddress(),
+			ClaimedBalance:          claimedUnstakedBalance,
+			ClaimedApplicationStake: claimedAppStake,
+			SessionEndHeight:        sessionEndHeight,
+			Application:             app,
+		},
 	}
-	if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			migrationtypes.ErrMorseApplicationClaim.Wrapf(
-				"failed to emit event type %T: %v",
-				&event,
-				err,
-			).Error(),
-		)
+
+	// TODO_IN_THIS_COMMIT: comment...
+	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
+		estimatedUnstakeSessionEndHeight := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
+
+		// DEV_NOTE: SHOULD NEVER happen, the check above is the same, but in terms of time instead of block height...
+		if estimatedUnstakeSessionEndHeight < 0 {
+			return nil, status.Error(
+				codes.Internal,
+				migrationtypes.ErrMorseApplicationClaim.Wrapf(
+					"estimated unbonding height is negative (%d)",
+					estimatedUnstakeSessionEndHeight,
+				).Error(),
+			)
+		}
+
+		app.UnstakeSessionEndHeight = uint64(estimatedUnstakeSessionEndHeight)
+
+		// Emit an event which signals that the claimed Morse supplier's unbonding
+		// period began on Morse and will end on Shannon ad unbonding_end_height
+		// (i.e. estimatedUnstakeSessionEndHeight).
+		events = append(events, &apptypes.EventApplicationUnbondingBegin{
+			Application:        app,
+			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
+			SessionEndHeight:   sessionEndHeight,
+			UnbondingEndHeight: estimatedUnstakeSessionEndHeight,
+		})
+	}
+
+	for _, event := range events {
+		if err = sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				migrationtypes.ErrMorseApplicationClaim.Wrapf(
+					"failed to emit event type %T: %v",
+					&event,
+					err,
+				).Error(),
+			)
+		}
 	}
 
 	// Return the response.

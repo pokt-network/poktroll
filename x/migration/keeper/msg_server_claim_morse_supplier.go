@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"time"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -187,19 +188,21 @@ func (k msgServer) ClaimMorseSupplier(
 	postClaimSupplierStake := preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake())
 	minStake := k.supplierKeeper.GetParams(ctx).MinStake
 
+	currentSessionStart := sharedtypes.GetSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
+	previousSessionEnd := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStart-1)
+
+	// Construct in case it is already or will become unbonded immediately (i.e. below min stake).
+	unbondedSupplier := &sharedtypes.Supplier{
+		OwnerAddress:            shannonOwnerAddr.String(),
+		OperatorAddress:         shannonOperatorAddr.String(),
+		Stake:                   &postClaimSupplierStake,
+		UnstakeSessionEndHeight: uint64(previousSessionEnd),
+		// Services:             (intentionally omitted, no services were staked),
+		// ServiceConfigHistory: (intentionally omitted, no services were staked),
+	}
+
 	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
 	if postClaimSupplierStake.Amount.LT(minStake.Amount) {
-		currentSessionStart := sharedtypes.GetSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
-		previousSessionEnd := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStart-1)
-		supplier := &sharedtypes.Supplier{
-			OwnerAddress:            shannonOwnerAddr.String(),
-			OperatorAddress:         shannonOperatorAddr.String(),
-			Stake:                   &postClaimSupplierStake,
-			UnstakeSessionEndHeight: uint64(previousSessionEnd),
-			// Services:             (intentionally omitted, no services were staked),
-			// ServiceConfigHistory: (intentionally omitted, no services were staked),
-		}
-
 		// Emit an event which signals that the morse supplier has been claimed.
 		morseSupplierClaimedEvent := migrationtypes.EventMorseSupplierClaimed{
 			MorseNodeAddress:     msg.GetMorseNodeAddress(),
@@ -208,7 +211,7 @@ func (k msgServer) ClaimMorseSupplier(
 			ClaimedBalance:       morseClaimableAccount.TotalTokens(),
 			ClaimedSupplierStake: cosmostypes.Coin{},
 			SessionEndHeight:     sessionEndHeight,
-			Supplier:             supplier,
+			Supplier:             unbondedSupplier,
 		}
 		if err = sdkCtx.EventManager().EmitTypedEvent(&morseSupplierClaimedEvent); err != nil {
 			return nil, status.Error(
@@ -223,7 +226,7 @@ func (k msgServer) ClaimMorseSupplier(
 
 		// Emit an event which signals that the morse supplier was unstaked.
 		morseSupplierUnstakedEvent := suppliertypes.EventSupplierUnbondingEnd{
-			Supplier:         supplier,
+			Supplier:         unbondedSupplier,
 			Reason:           suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight: sessionEndHeight,
 			// Unstaking when claiming Suppliers below min-stake takes effect IMMEDIATELY.
@@ -234,7 +237,7 @@ func (k msgServer) ClaimMorseSupplier(
 				codes.Internal,
 				migrationtypes.ErrMorseSupplierClaim.Wrapf(
 					"failed to emit event type %T: %v",
-					&morseSupplierClaimedEvent,
+					&morseSupplierUnstakedEvent,
 					err,
 				).Error(),
 			)
@@ -251,8 +254,53 @@ func (k msgServer) ClaimMorseSupplier(
 			ClaimedBalance:       morseClaimableAccount.TotalTokens(),
 			ClaimedSupplierStake: cosmostypes.Coin{},
 			SessionEndHeight:     sessionEndHeight,
-			Supplier:             supplier,
+			Supplier:             unbondedSupplier,
 		}, nil
+	}
+
+	claimedSupplierStake := morseClaimableAccount.GetSupplierStake()
+	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
+
+	// TODO_IN_THIS_COMMIT: comment...
+	// ... supplier began unbonding on Morse and the unbonding period has since elapsed...
+	// ... unstatked balance was minted to the shannonSignerAddr account...
+	// ... stake was minted to the shannonOwnerAddr account...
+	// ... no Supplier was staked...
+	// - use a lookup table to get the est. block times per network...
+	// - use the shared params and the block time to calculate the unstake session end height...
+	// - emit an unbonding start event...
+	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
+		durationUntilUnstake := time.Until(morseClaimableAccount.UnstakingCompletionTime)
+		if durationUntilUnstake.Seconds() <= 0 {
+			// Emit an event which signals that the claimed Morse supplier's unbonding
+			// period began on Morse, and ended while waiting to be claimed.
+			morseSupplierUnbondingEndEvent := suppliertypes.EventSupplierUnbondingEnd{
+				Supplier:           unbondedSupplier,
+				Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_UNSPECIFIED,
+				SessionEndHeight:   sessionEndHeight,
+				UnbondingEndHeight: sessionEndHeight,
+			}
+			if err = sdkCtx.EventManager().EmitTypedEvent(&morseSupplierUnbondingEndEvent); err != nil {
+				return nil, status.Error(
+					codes.Internal,
+					migrationtypes.ErrMorseSupplierClaim.Wrapf(
+						"failed to emit event type %T: %v",
+						&morseSupplierUnbondingEndEvent,
+						err,
+					).Error(),
+				)
+			}
+
+			return &migrationtypes.MsgClaimMorseSupplierResponse{
+				MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+				MorseNodeAddress:     msg.GetMorseNodeAddress(),
+				ClaimSignerType:      claimSignerType,
+				ClaimedBalance:       claimedUnstakedBalance,
+				ClaimedSupplierStake: claimedSupplierStake,
+				SessionEndHeight:     sessionEndHeight,
+				Supplier:             unbondedSupplier,
+			}, nil
+		}
 	}
 
 	// Stake (or update) the supplier.
@@ -269,28 +317,58 @@ func (k msgServer) ClaimMorseSupplier(
 		return nil, err
 	}
 
-	claimedSupplierStake := morseClaimableAccount.GetSupplierStake()
-	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
-
-	// Emit an event which signals that the morse account has been claimed.
-	event := migrationtypes.EventMorseSupplierClaimed{
-		MorseNodeAddress:     msg.GetMorseNodeAddress(),
-		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       claimedUnstakedBalance,
-		ClaimedSupplierStake: claimedSupplierStake,
-		SessionEndHeight:     sessionEndHeight,
-		Supplier:             supplier,
+	events := []cosmostypes.Msg{
+		// Emit an event which signals that the morse account has been claimed.
+		&migrationtypes.EventMorseSupplierClaimed{
+			MorseNodeAddress:     msg.GetMorseNodeAddress(),
+			MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+			ClaimSignerType:      claimSignerType,
+			ClaimedBalance:       claimedUnstakedBalance,
+			ClaimedSupplierStake: claimedSupplierStake,
+			SessionEndHeight:     sessionEndHeight,
+			Supplier:             supplier,
+		},
 	}
-	if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"failed to emit event type %T: %v",
-				&event,
-				err,
-			).Error(),
-		)
+
+	// If the claimed supplier is still unbonding, emit an unbonding begin event.
+	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
+		estimatedUnstakeSessionEndHeight := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
+
+		// DEV_NOTE: SHOULD NEVER happen, the check above is the same, but in terms of time instead of block height...
+		if estimatedUnstakeSessionEndHeight < 0 {
+			return nil, status.Error(
+				codes.Internal,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"estimated unbonding height is negative (%d)",
+					estimatedUnstakeSessionEndHeight,
+				).Error(),
+			)
+		}
+
+		supplier.UnstakeSessionEndHeight = uint64(estimatedUnstakeSessionEndHeight)
+
+		// Emit an event which signals that the claimed Morse supplier's unbonding
+		// period began on Morse and will end on Shannon ad unbonding_end_height
+		// (i.e. estimatedUnstakeSessionEndHeight).
+		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
+			Supplier:           supplier,
+			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_UNSPECIFIED,
+			SessionEndHeight:   sessionEndHeight,
+			UnbondingEndHeight: estimatedUnstakeSessionEndHeight,
+		})
+	}
+
+	for _, event := range events {
+		if err = sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"failed to emit event type %T: %v",
+					&event,
+					err,
+				).Error(),
+			)
+		}
 	}
 
 	// Return the response.
