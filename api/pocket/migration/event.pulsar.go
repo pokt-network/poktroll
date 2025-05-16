@@ -2556,6 +2556,617 @@ func (x *fastReflection_EventMorseSupplierClaimed) ProtoMethods() *protoiface.Me
 	}
 }
 
+var (
+	md_EventMorseAccountRecovered                      protoreflect.MessageDescriptor
+	fd_EventMorseAccountRecovered_session_end_height   protoreflect.FieldDescriptor
+	fd_EventMorseAccountRecovered_recovered_balance    protoreflect.FieldDescriptor
+	fd_EventMorseAccountRecovered_shannon_dest_address protoreflect.FieldDescriptor
+	fd_EventMorseAccountRecovered_morse_src_address    protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_pocket_migration_event_proto_init()
+	md_EventMorseAccountRecovered = File_pocket_migration_event_proto.Messages().ByName("EventMorseAccountRecovered")
+	fd_EventMorseAccountRecovered_session_end_height = md_EventMorseAccountRecovered.Fields().ByName("session_end_height")
+	fd_EventMorseAccountRecovered_recovered_balance = md_EventMorseAccountRecovered.Fields().ByName("recovered_balance")
+	fd_EventMorseAccountRecovered_shannon_dest_address = md_EventMorseAccountRecovered.Fields().ByName("shannon_dest_address")
+	fd_EventMorseAccountRecovered_morse_src_address = md_EventMorseAccountRecovered.Fields().ByName("morse_src_address")
+}
+
+var _ protoreflect.Message = (*fastReflection_EventMorseAccountRecovered)(nil)
+
+type fastReflection_EventMorseAccountRecovered EventMorseAccountRecovered
+
+func (x *EventMorseAccountRecovered) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventMorseAccountRecovered)(x)
+}
+
+func (x *EventMorseAccountRecovered) slowProtoReflect() protoreflect.Message {
+	mi := &file_pocket_migration_event_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_EventMorseAccountRecovered_messageType fastReflection_EventMorseAccountRecovered_messageType
+var _ protoreflect.MessageType = fastReflection_EventMorseAccountRecovered_messageType{}
+
+type fastReflection_EventMorseAccountRecovered_messageType struct{}
+
+func (x fastReflection_EventMorseAccountRecovered_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventMorseAccountRecovered)(nil)
+}
+func (x fastReflection_EventMorseAccountRecovered_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventMorseAccountRecovered)
+}
+func (x fastReflection_EventMorseAccountRecovered_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventMorseAccountRecovered
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_EventMorseAccountRecovered) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventMorseAccountRecovered
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_EventMorseAccountRecovered) Type() protoreflect.MessageType {
+	return _fastReflection_EventMorseAccountRecovered_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_EventMorseAccountRecovered) New() protoreflect.Message {
+	return new(fastReflection_EventMorseAccountRecovered)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_EventMorseAccountRecovered) Interface() protoreflect.ProtoMessage {
+	return (*EventMorseAccountRecovered)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_EventMorseAccountRecovered) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventMorseAccountRecovered_session_end_height, value) {
+			return
+		}
+	}
+	if x.RecoveredBalance != nil {
+		value := protoreflect.ValueOfMessage(x.RecoveredBalance.ProtoReflect())
+		if !f(fd_EventMorseAccountRecovered_recovered_balance, value) {
+			return
+		}
+	}
+	if x.ShannonDestAddress != "" {
+		value := protoreflect.ValueOfString(x.ShannonDestAddress)
+		if !f(fd_EventMorseAccountRecovered_shannon_dest_address, value) {
+			return
+		}
+	}
+	if x.MorseSrcAddress != "" {
+		value := protoreflect.ValueOfString(x.MorseSrcAddress)
+		if !f(fd_EventMorseAccountRecovered_morse_src_address, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_EventMorseAccountRecovered) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "pocket.migration.EventMorseAccountRecovered.session_end_height":
+		return x.SessionEndHeight != int64(0)
+	case "pocket.migration.EventMorseAccountRecovered.recovered_balance":
+		return x.RecoveredBalance != nil
+	case "pocket.migration.EventMorseAccountRecovered.shannon_dest_address":
+		return x.ShannonDestAddress != ""
+	case "pocket.migration.EventMorseAccountRecovered.morse_src_address":
+		return x.MorseSrcAddress != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.migration.EventMorseAccountRecovered"))
+		}
+		panic(fmt.Errorf("message pocket.migration.EventMorseAccountRecovered does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventMorseAccountRecovered) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "pocket.migration.EventMorseAccountRecovered.session_end_height":
+		x.SessionEndHeight = int64(0)
+	case "pocket.migration.EventMorseAccountRecovered.recovered_balance":
+		x.RecoveredBalance = nil
+	case "pocket.migration.EventMorseAccountRecovered.shannon_dest_address":
+		x.ShannonDestAddress = ""
+	case "pocket.migration.EventMorseAccountRecovered.morse_src_address":
+		x.MorseSrcAddress = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.migration.EventMorseAccountRecovered"))
+		}
+		panic(fmt.Errorf("message pocket.migration.EventMorseAccountRecovered does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_EventMorseAccountRecovered) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "pocket.migration.EventMorseAccountRecovered.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
+	case "pocket.migration.EventMorseAccountRecovered.recovered_balance":
+		value := x.RecoveredBalance
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "pocket.migration.EventMorseAccountRecovered.shannon_dest_address":
+		value := x.ShannonDestAddress
+		return protoreflect.ValueOfString(value)
+	case "pocket.migration.EventMorseAccountRecovered.morse_src_address":
+		value := x.MorseSrcAddress
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.migration.EventMorseAccountRecovered"))
+		}
+		panic(fmt.Errorf("message pocket.migration.EventMorseAccountRecovered does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventMorseAccountRecovered) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "pocket.migration.EventMorseAccountRecovered.session_end_height":
+		x.SessionEndHeight = value.Int()
+	case "pocket.migration.EventMorseAccountRecovered.recovered_balance":
+		x.RecoveredBalance = value.Message().Interface().(*v1beta1.Coin)
+	case "pocket.migration.EventMorseAccountRecovered.shannon_dest_address":
+		x.ShannonDestAddress = value.Interface().(string)
+	case "pocket.migration.EventMorseAccountRecovered.morse_src_address":
+		x.MorseSrcAddress = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.migration.EventMorseAccountRecovered"))
+		}
+		panic(fmt.Errorf("message pocket.migration.EventMorseAccountRecovered does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventMorseAccountRecovered) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "pocket.migration.EventMorseAccountRecovered.recovered_balance":
+		if x.RecoveredBalance == nil {
+			x.RecoveredBalance = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.RecoveredBalance.ProtoReflect())
+	case "pocket.migration.EventMorseAccountRecovered.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message pocket.migration.EventMorseAccountRecovered is not mutable"))
+	case "pocket.migration.EventMorseAccountRecovered.shannon_dest_address":
+		panic(fmt.Errorf("field shannon_dest_address of message pocket.migration.EventMorseAccountRecovered is not mutable"))
+	case "pocket.migration.EventMorseAccountRecovered.morse_src_address":
+		panic(fmt.Errorf("field morse_src_address of message pocket.migration.EventMorseAccountRecovered is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.migration.EventMorseAccountRecovered"))
+		}
+		panic(fmt.Errorf("message pocket.migration.EventMorseAccountRecovered does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_EventMorseAccountRecovered) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "pocket.migration.EventMorseAccountRecovered.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "pocket.migration.EventMorseAccountRecovered.recovered_balance":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "pocket.migration.EventMorseAccountRecovered.shannon_dest_address":
+		return protoreflect.ValueOfString("")
+	case "pocket.migration.EventMorseAccountRecovered.morse_src_address":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.migration.EventMorseAccountRecovered"))
+		}
+		panic(fmt.Errorf("message pocket.migration.EventMorseAccountRecovered does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_EventMorseAccountRecovered) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in pocket.migration.EventMorseAccountRecovered", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_EventMorseAccountRecovered) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventMorseAccountRecovered) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_EventMorseAccountRecovered) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_EventMorseAccountRecovered) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*EventMorseAccountRecovered)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
+		if x.RecoveredBalance != nil {
+			l = options.Size(x.RecoveredBalance)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.ShannonDestAddress)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.MorseSrcAddress)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*EventMorseAccountRecovered)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.MorseSrcAddress) > 0 {
+			i -= len(x.MorseSrcAddress)
+			copy(dAtA[i:], x.MorseSrcAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MorseSrcAddress)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if len(x.ShannonDestAddress) > 0 {
+			i -= len(x.ShannonDestAddress)
+			copy(dAtA[i:], x.ShannonDestAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ShannonDestAddress)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if x.RecoveredBalance != nil {
+			encoded, err := options.Marshal(x.RecoveredBalance)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x8
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*EventMorseAccountRecovered)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventMorseAccountRecovered: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventMorseAccountRecovered: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RecoveredBalance", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.RecoveredBalance == nil {
+					x.RecoveredBalance = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.RecoveredBalance); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ShannonDestAddress", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ShannonDestAddress = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MorseSrcAddress", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -2837,6 +3448,69 @@ func (x *EventMorseSupplierClaimed) GetSupplier() *shared.Supplier {
 	return nil
 }
 
+type EventMorseAccountRecovered struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The session end height (on Shannon) in which the recovery was committed (i.e. claimed).
+	SessionEndHeight int64 `protobuf:"varint,1,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+	// The total balance which was recovered.
+	RecoveredBalance *v1beta1.Coin `protobuf:"bytes,2,opt,name=recovered_balance,json=recoveredBalance,proto3" json:"recovered_balance,omitempty"`
+	// The bech32-encoded address of the Shannon account to which the recovered balance will be minted.
+	ShannonDestAddress string `protobuf:"bytes,3,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address,omitempty"`
+	// The hex-encoded address of the Morse account whose balance and stakes have been recovered.
+	MorseSrcAddress string `protobuf:"bytes,4,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
+}
+
+func (x *EventMorseAccountRecovered) Reset() {
+	*x = EventMorseAccountRecovered{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pocket_migration_event_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventMorseAccountRecovered) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventMorseAccountRecovered) ProtoMessage() {}
+
+// Deprecated: Use EventMorseAccountRecovered.ProtoReflect.Descriptor instead.
+func (*EventMorseAccountRecovered) Descriptor() ([]byte, []int) {
+	return file_pocket_migration_event_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *EventMorseAccountRecovered) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
+func (x *EventMorseAccountRecovered) GetRecoveredBalance() *v1beta1.Coin {
+	if x != nil {
+		return x.RecoveredBalance
+	}
+	return nil
+}
+
+func (x *EventMorseAccountRecovered) GetShannonDestAddress() string {
+	if x != nil {
+		return x.ShannonDestAddress
+	}
+	return ""
+}
+
+func (x *EventMorseAccountRecovered) GetMorseSrcAddress() string {
+	if x != nil {
+		return x.MorseSrcAddress
+	}
+	return ""
+}
+
 var File_pocket_migration_event_proto protoreflect.FileDescriptor
 
 var file_pocket_migration_event_proto_rawDesc = []byte{
@@ -2950,18 +3624,41 @@ var file_pocket_migration_event_proto_rawDesc = []byte{
 	0x6c, 0x69, 0x65, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x70, 0x6f, 0x63,
 	0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c,
 	0x69, 0x65, 0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
-	0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0xaa, 0x01, 0xd8, 0xe2,
-	0x1e, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x6d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50,
-	0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
-	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f,
-	0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa,
-	0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d, 0x69, 0x67, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x4d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x22, 0xec, 0x02, 0x0a, 0x1a,
+	0x45, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e,
+	0x74, 0x52, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x65, 0x64, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x12, 0x61, 0x0a, 0x11, 0x72, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x65, 0x64, 0x5f, 0x62, 0x61,
+	0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
+	0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x19, 0xc8, 0xde, 0x1f, 0x00, 0xea, 0xde, 0x1f, 0x11,
+	0x72, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x65, 0x64, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63,
+	0x65, 0x52, 0x10, 0x72, 0x65, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x65, 0x64, 0x42, 0x61, 0x6c, 0x61,
+	0x6e, 0x63, 0x65, 0x12, 0x62, 0x0a, 0x14, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64,
+	0x65, 0x73, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x30, 0xea, 0xde, 0x1f, 0x14, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64,
+	0x65, 0x73, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x52, 0x12, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x44, 0x65, 0x73, 0x74,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x41, 0x0a, 0x11, 0x6d, 0x6f, 0x72, 0x73, 0x65,
+	0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x09, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x72,
+	0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65,
+	0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x42, 0xaa, 0x01, 0xd8, 0xe2, 0x1e,
+	0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x6d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72,
+	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b,
+	0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x6d,
+	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa, 0x02,
+	0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x4d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2976,29 +3673,31 @@ func file_pocket_migration_event_proto_rawDescGZIP() []byte {
 	return file_pocket_migration_event_proto_rawDescData
 }
 
-var file_pocket_migration_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_pocket_migration_event_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_pocket_migration_event_proto_goTypes = []interface{}{
 	(*EventImportMorseClaimableAccounts)(nil), // 0: pocket.migration.EventImportMorseClaimableAccounts
 	(*EventMorseAccountClaimed)(nil),          // 1: pocket.migration.EventMorseAccountClaimed
 	(*EventMorseApplicationClaimed)(nil),      // 2: pocket.migration.EventMorseApplicationClaimed
 	(*EventMorseSupplierClaimed)(nil),         // 3: pocket.migration.EventMorseSupplierClaimed
-	(*v1beta1.Coin)(nil),                      // 4: cosmos.base.v1beta1.Coin
-	(*application.Application)(nil),           // 5: pocket.application.Application
-	(*shared.Supplier)(nil),                   // 6: pocket.shared.Supplier
+	(*EventMorseAccountRecovered)(nil),        // 4: pocket.migration.EventMorseAccountRecovered
+	(*v1beta1.Coin)(nil),                      // 5: cosmos.base.v1beta1.Coin
+	(*application.Application)(nil),           // 6: pocket.application.Application
+	(*shared.Supplier)(nil),                   // 7: pocket.shared.Supplier
 }
 var file_pocket_migration_event_proto_depIdxs = []int32{
-	4, // 0: pocket.migration.EventMorseAccountClaimed.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
-	4, // 1: pocket.migration.EventMorseApplicationClaimed.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
-	4, // 2: pocket.migration.EventMorseApplicationClaimed.claimed_application_stake:type_name -> cosmos.base.v1beta1.Coin
-	5, // 3: pocket.migration.EventMorseApplicationClaimed.application:type_name -> pocket.application.Application
-	4, // 4: pocket.migration.EventMorseSupplierClaimed.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
-	4, // 5: pocket.migration.EventMorseSupplierClaimed.claimed_supplier_stake:type_name -> cosmos.base.v1beta1.Coin
-	6, // 6: pocket.migration.EventMorseSupplierClaimed.supplier:type_name -> pocket.shared.Supplier
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	5, // 0: pocket.migration.EventMorseAccountClaimed.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
+	5, // 1: pocket.migration.EventMorseApplicationClaimed.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
+	5, // 2: pocket.migration.EventMorseApplicationClaimed.claimed_application_stake:type_name -> cosmos.base.v1beta1.Coin
+	6, // 3: pocket.migration.EventMorseApplicationClaimed.application:type_name -> pocket.application.Application
+	5, // 4: pocket.migration.EventMorseSupplierClaimed.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
+	5, // 5: pocket.migration.EventMorseSupplierClaimed.claimed_supplier_stake:type_name -> cosmos.base.v1beta1.Coin
+	7, // 6: pocket.migration.EventMorseSupplierClaimed.supplier:type_name -> pocket.shared.Supplier
+	5, // 7: pocket.migration.EventMorseAccountRecovered.recovered_balance:type_name -> cosmos.base.v1beta1.Coin
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_pocket_migration_event_proto_init() }
@@ -3056,6 +3755,18 @@ func file_pocket_migration_event_proto_init() {
 				return nil
 			}
 		}
+		file_pocket_migration_event_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventMorseAccountRecovered); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -3063,7 +3774,7 @@ func file_pocket_migration_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pocket_migration_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
