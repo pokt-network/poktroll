@@ -118,15 +118,25 @@ message MorseValidator {
   option (gogoproto.goproto_stringer) = true;
   option (gogoproto.goproto_getters) = false;
 
-  // A binary representation of the address corresponding to a Morse application's ed25519 public key.
+  // Morse non-custodial (i.e. operator) address. If output_address is not set, this is the custodial address.
+  // Binary representation of the Morse address corresponding to a Morse node's ed25519 public key.
+  // See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
   bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.moretags) = "yaml:\"address\"", (gogoproto.jsontag) = "address"];
-  // The binary representation of a Morse application's ed25519 public key.
+
+  // Binary representation of a Morse node's ed25519 public key.
   bytes public_key = 2 [(gogoproto.moretags) = "yaml:\"public_key\"", (gogoproto.jsontag) = "public_key"];
+
   // TODO_MAINNET_MIGRATION(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
   bool jailed = 3 [(gogoproto.jsontag) = "jailed"];
   int32 status = 4 [(gogoproto.jsontag) = "status"];
+
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 7 [(gogoproto.jsontag) = "tokens"];
+
+  // Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+  // Binary representation of the Morse address corresponding to a Morse account's ed25519 public key.
+  // See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  bytes output_address = 9 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.jsontag) = "output_address,omitempty", (gogoproto.moretags) = "yaml:\"output_address\""];
 }
 
 // MorseAccount is an analog of the Morse ProtoBaseAccount type.
