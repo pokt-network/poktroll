@@ -191,7 +191,7 @@ func (k Keeper) removeSupplierServiceConfigUpdateIndexes(
 	// Create iterator for the supplier's service configs
 	supplierServiceConfigsIndexIterator := storetypes.KVStorePrefixIterator(
 		supplierServiceConfigUpdateStore,
-		types.StringKey(supplierOperatorAddress),
+		sharedtypes.StringKey(supplierOperatorAddress),
 	)
 
 	// Track all keys that need to be deleted from the supplier index

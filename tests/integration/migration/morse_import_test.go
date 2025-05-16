@@ -193,6 +193,9 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_Overwrite() 
 		require.ErrorContains(s.T(), err, expectedErr.Error())
 	})
 
+	foundMorseClaimableAccounts := s.QueryAllMorseClaimableAccounts(s.T())
+	s.Equal(s.numMorseClaimableAccounts, len(foundMorseClaimableAccounts))
+
 	// Set allow_morse_account_import_overwrite to true.
 	params.AllowMorseAccountImportOverwrite = true
 	msgUpdateParams := &migrationtypes.MsgUpdateParams{
@@ -209,5 +212,8 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_Overwrite() 
 	s.Run("overwrites when allow_morse_account_import_overwrite is true", func() {
 		_, err = s.ImportMorseClaimableAccounts(s.T())
 		require.NoError(s.T(), err)
+
+		foundMorseClaimableAccounts := s.QueryAllMorseClaimableAccounts(s.T())
+		s.Equal(s.numMorseClaimableAccounts, len(foundMorseClaimableAccounts))
 	})
 }

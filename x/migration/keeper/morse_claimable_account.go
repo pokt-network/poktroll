@@ -13,12 +13,16 @@ import (
 
 // SetMorseClaimableAccount set a specific morseClaimableAccount in the store from its index
 func (k Keeper) SetMorseClaimableAccount(ctx context.Context, morseClaimableAccount migrationtypes.MorseClaimableAccount) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountKeyPrefix))
+	// Store the MorseClaimableAccount.
+	mcaStore := k.getMorseClaimableAccountStore(ctx)
 	morseClaimableAccountBz := k.cdc.MustMarshal(&morseClaimableAccount)
-	store.Set(migrationtypes.MorseClaimableAccountKey(
+	mcaStore.Set(migrationtypes.MorseClaimableAccountKey(
 		morseClaimableAccount.MorseSrcAddress,
 	), morseClaimableAccountBz)
+
+	// Index the MorseClaimableAccount by relevant fields.
+	k.indexMorseClaimableAccountMorseOutputAddress(ctx, morseClaimableAccount)
+	k.indexMorseClaimableAccountShannonDestAddress(ctx, morseClaimableAccount)
 }
 
 // GetMorseClaimableAccount returns a morseClaimableAccount from its index
@@ -27,10 +31,8 @@ func (k Keeper) GetMorseClaimableAccount(
 	address string,
 
 ) (morseClaimableAccount migrationtypes.MorseClaimableAccount, found bool) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountKeyPrefix))
-
-	morseClaimableAccountBz := store.Get(migrationtypes.MorseClaimableAccountKey(
+	mcaStore := k.getMorseClaimableAccountStore(ctx)
+	morseClaimableAccountBz := mcaStore.Get(migrationtypes.MorseClaimableAccountKey(
 		address,
 	))
 	if morseClaimableAccountBz == nil {
@@ -41,17 +43,21 @@ func (k Keeper) GetMorseClaimableAccount(
 	return morseClaimableAccount, true
 }
 
-// RemoveMorseClaimableAccount removes a morseClaimableAccount from the store
-func (k Keeper) RemoveMorseClaimableAccount(
+// resetMorseClaimableAccounts removes ALL morseClaimableAccount from the store.
+func (k Keeper) resetMorseClaimableAccounts(
 	ctx context.Context,
-	address string,
-
 ) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountKeyPrefix))
-	store.Delete(migrationtypes.MorseClaimableAccountKey(
-		address,
-	))
+	mcaStore := k.getMorseClaimableAccountStore(ctx)
+	iterator := storetypes.KVStorePrefixIterator(mcaStore, []byte{})
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		morseSrcAddressKey := iterator.Value()
+		mcaStore.Delete(morseSrcAddressKey)
+	}
+
+	k.resetMorseClaimableAccountMorseOutputAddressIndex(ctx)
+	k.resetMorseClaimableAccountShannonDestAddressIndex(ctx)
 }
 
 // GetAllMorseClaimableAccounts returns all morseClaimableAccount
@@ -73,9 +79,8 @@ func (k Keeper) GetAllMorseClaimableAccounts(ctx context.Context) (list []migrat
 
 // HasAnyMorseClaimableAccounts returns true if there are any MorseClaimableAccounts in the store.
 func (k Keeper) HasAnyMorseClaimableAccounts(ctx context.Context) bool {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountKeyPrefix))
-	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+	mcaStore := k.getMorseClaimableAccountStore(ctx)
+	iterator := storetypes.KVStorePrefixIterator(mcaStore, []byte{})
 
 	defer iterator.Close()
 
@@ -117,4 +122,66 @@ func (k Keeper) MintClaimedMorseTokens(
 		destAddress,
 		cosmostypes.NewCoins(coinToMint),
 	)
+}
+
+// getMorseClaimableAccountStore returns a prefix.Store for the MorseClaimableAccounts.
+func (k Keeper) getMorseClaimableAccountStore(ctx context.Context) prefix.Store {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountKeyPrefix))
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (k Keeper) getMorseClaimableAccountMorseOutputAddressStore(ctx context.Context) prefix.Store {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountMorseOutputAddressKeyPrefix))
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (k Keeper) getMorseClaimableAccountShannonDestAddressStore(ctx context.Context) prefix.Store {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountShannonDestAddressKeyPrefix))
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (k Keeper) indexMorseClaimableAccountMorseOutputAddress(ctx context.Context, morseClaimableAccount migrationtypes.MorseClaimableAccount) {
+	mcaMorseOutputAddressStore := k.getMorseClaimableAccountMorseOutputAddressStore(ctx)
+
+	morseSrcAddressKey := migrationtypes.MorseClaimableAccountKey(morseClaimableAccount.GetMorseSrcAddress())
+	morseOutputAddressKey := migrationtypes.MorseClaimableAccountMorseOutputAddressKey(morseClaimableAccount)
+	mcaMorseOutputAddressStore.Set(morseOutputAddressKey, morseSrcAddressKey)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (k Keeper) indexMorseClaimableAccountShannonDestAddress(ctx context.Context, morseClaimableAccount migrationtypes.MorseClaimableAccount) {
+	shannonDestAddressStore := k.getMorseClaimableAccountShannonDestAddressStore(ctx)
+
+	morseSrcAddressKey := migrationtypes.MorseClaimableAccountKey(morseClaimableAccount.GetMorseSrcAddress())
+	shannonDestAddressKey := migrationtypes.MorseClaimableAccountShannonDestAddressKey(morseClaimableAccount)
+	shannonDestAddressStore.Set(shannonDestAddressKey, morseSrcAddressKey)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (k Keeper) resetMorseClaimableAccountMorseOutputAddressIndex(ctx context.Context) {
+	mcaMorseOutputAddressStore := k.getMorseClaimableAccountMorseOutputAddressStore(ctx)
+
+	iterator := storetypes.KVStorePrefixIterator(mcaMorseOutputAddressStore, []byte{})
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		morseSrcAddressKey := iterator.Value()
+		mcaMorseOutputAddressStore.Delete(morseSrcAddressKey)
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (k Keeper) resetMorseClaimableAccountShannonDestAddressIndex(ctx context.Context) {
+	mcaShannonDestAddressStore := k.getMorseClaimableAccountShannonDestAddressStore(ctx)
+
+	iterator := storetypes.KVStorePrefixIterator(mcaShannonDestAddressStore, []byte{})
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		morseSrcAddressKey := iterator.Value()
+		mcaShannonDestAddressStore.Delete(morseSrcAddressKey)
+	}
 }
