@@ -1406,7 +1406,11 @@ type MorseClaimableAccount struct {
 	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
 	// This field is intended to remain empty until the account has been claimed.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address,omitempty"`
-	// The hex-encoded address of the Morse account whose balance will be claimed.
+	// Hex-encoded address of the Morse account whose balance will be claimed.
+	// If this MorseClaimableAccount represents a Morse node/supplier:
+	//   - Morse non-custodial (i.e. operator) address.
+	//   - If morse_output_address is not set, this is the custodial address.
+	//   - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
 	// The unstaked upokt tokens (i.e. account balance) available for claiming.
 	UnstakedBalance *v1beta1.Coin `protobuf:"bytes,5,opt,name=unstaked_balance,json=unstakedBalance,proto3" json:"unstaked_balance,omitempty"`
@@ -1423,8 +1427,11 @@ type MorseClaimableAccount struct {
 	// The Shannon height at which the account was claimed.
 	// This field is intended to remain empty until the account has been claimed.
 	ClaimedAtHeight int64 `protobuf:"varint,8,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height,omitempty"`
-	// Morse custodial (i.e. owner) Morse address, which owns the staked tokens of the operator.
-	// See 'pocket nodes supplier --help' for more information.
+	// ONLY applicable to Morse node/supplier accounts.
+	// Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
+	// Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+	//
+	//	See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	MorseOutputAddress string `protobuf:"bytes,9,opt,name=morse_output_address,json=morseOutputAddress,proto3" json:"morse_output_address,omitempty"`
 }
 

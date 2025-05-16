@@ -6398,18 +6398,19 @@ type MorseValidator struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Morse non-custodial (i.e. operator) address. If output_address is not set, this is the custodial address.
-	// Binary representation of the address corresponding to a Morse application's ed25519 public key.
-	// See 'pocket nodes supplier --help' for more information.
+	// Binary representation of the Morse address corresponding to a Morse application's ed25519 public key.
+	// See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	Address []byte `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	// Binary representation of a Morse application's ed25519 public key.
+	// Binary representation of a Morse node's ed25519 public key.
 	PublicKey []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
 	// TODO_MAINNET_MIGRATION(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
 	Jailed bool  `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed,omitempty"`
 	Status int32 `protobuf:"varint,4,opt,name=status,proto3" json:"status,omitempty"`
 	// The string representation of the BigInt amount of upokt.
 	StakedTokens string `protobuf:"bytes,7,opt,name=staked_tokens,json=stakedTokens,proto3" json:"staked_tokens,omitempty"`
-	// Morse custodial (i.e. owner) Morse address, which owns the staked tokens of the operator.
-	// See 'pocket nodes supplier --help' for more information.
+	// Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+	// Binary representation of the Morse address corresponding to a Morse account's ed25519 public key.
+	// See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	OutputAddress []byte `protobuf:"bytes,9,opt,name=output_address,json=outputAddress,proto3" json:"output_address,omitempty"`
 }
 
