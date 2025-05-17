@@ -38,7 +38,7 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 
 require (
 	cosmossdk.io/api v0.7.6
-	cosmossdk.io/client/v2 v2.0.0-beta.8
+	cosmossdk.io/client/v2 v2.0.0-beta.4
 	cosmossdk.io/core v0.11.1
 	cosmossdk.io/depinject v1.1.0
 	cosmossdk.io/errors v1.0.1
@@ -69,14 +69,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.25.1
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/pokt-network/ring-go v0.1.0
-	// TODO_TECHDEBT: Whenever we update a protobuf in the `pocket` repo, we need to:
-	// 1. Merge in the update PR (and it's generated outputs) into `pocket` main.
-	// 2. Update the `pocket` sha in the `shannon-sdk` to reflect the new dependency.
-	// 3. Update the `shannon-sdk` sha in the `pocket` repo (here).
-	// This is creating a circular dependency whereby exporting the protobufs into a separate
-	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
-	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20250417224837-efd370a75d51
 	github.com/pokt-network/smt v0.13.0
 	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188
 	github.com/prometheus/client_golang v1.20.1
@@ -104,6 +96,7 @@ require (
 	github.com/foxcpp/go-mockdns v1.1.0
 	github.com/jhump/protoreflect v1.16.0
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/pokt-network/shannon-sdk v0.0.0-20250507195530-6ed01f8733ab
 	go.uber.org/mock v0.5.0
 	golang.org/x/term v0.29.0
 )
@@ -135,8 +128,8 @@ require (
 	github.com/bgentry/speakeasy v0.1.1-0.20220910012023-760eaf8b6816 // indirect
 	github.com/bits-and-blooms/bitset v1.8.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
-	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/bufbuild/protocompile v0.14.0 // indirect
 	github.com/bufbuild/protoplugin v0.0.0-20240323223605-e2735f6c31ee // indirect
 	github.com/bufbuild/protovalidate-go v0.6.3 // indirect
