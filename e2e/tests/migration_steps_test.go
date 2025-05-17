@@ -295,8 +295,8 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 	case actorTypeApp:
 		commandStringParts = append(
 			commandStringParts,
-			serviceId,
 			privKeyArmoredJSONPath,
+			serviceId,
 		)
 	case actorTypeSupplier:
 		supplierStakeConfigPath := s.writeTempSupplierStakeConfig(serviceId, "")
