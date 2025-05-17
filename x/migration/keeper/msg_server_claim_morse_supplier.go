@@ -189,22 +189,52 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
 	if postClaimSupplierStake.Amount.LT(minStake.Amount) {
-		// Emit an event which signals that the morse account has been claimed.
-		event := migrationtypes.EventMorseSupplierClaimed{
+		currentSessionStart := sharedtypes.GetSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
+		previousSessionEnd := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStart-1)
+		supplier := &sharedtypes.Supplier{
+			OwnerAddress:            shannonOwnerAddr.String(),
+			OperatorAddress:         shannonOperatorAddr.String(),
+			Stake:                   &postClaimSupplierStake,
+			UnstakeSessionEndHeight: uint64(previousSessionEnd),
+			// Services:             (intentionally omitted, no services were staked),
+			// ServiceConfigHistory: (intentionally omitted, no services were staked),
+		}
+
+		// Emit an event which signals that the morse supplier has been claimed.
+		morseSupplierClaimedEvent := migrationtypes.EventMorseSupplierClaimed{
 			MorseNodeAddress:     msg.GetMorseNodeAddress(),
 			MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
 			ClaimSignerType:      claimSignerType,
 			ClaimedBalance:       morseClaimableAccount.TotalTokens(),
 			ClaimedSupplierStake: cosmostypes.Coin{},
 			SessionEndHeight:     sessionEndHeight,
-			// Supplier:          (intentionally omitted, no supplier was staked),
+			Supplier:             supplier,
 		}
-		if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
+		if err = sdkCtx.EventManager().EmitTypedEvent(&morseSupplierClaimedEvent); err != nil {
 			return nil, status.Error(
 				codes.Internal,
 				migrationtypes.ErrMorseSupplierClaim.Wrapf(
 					"failed to emit event type %T: %v",
-					&event,
+					&morseSupplierClaimedEvent,
+					err,
+				).Error(),
+			)
+		}
+
+		// Emit an event which signals that the morse supplier was unstaked.
+		morseSupplierUnstakedEvent := suppliertypes.EventSupplierUnbondingEnd{
+			Supplier:         supplier,
+			Reason:           suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+			SessionEndHeight: sessionEndHeight,
+			// Unstaking when claiming Suppliers below min-stake takes effect IMMEDIATELY.
+			UnbondingEndHeight: sessionEndHeight,
+		}
+		if err = sdkCtx.EventManager().EmitTypedEvent(&morseSupplierUnstakedEvent); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"failed to emit event type %T: %v",
+					&morseSupplierClaimedEvent,
 					err,
 				).Error(),
 			)
@@ -221,7 +251,7 @@ func (k msgServer) ClaimMorseSupplier(
 			ClaimedBalance:       morseClaimableAccount.TotalTokens(),
 			ClaimedSupplierStake: cosmostypes.Coin{},
 			SessionEndHeight:     sessionEndHeight,
-			// Supplier:          (intentionally omitted, no supplier was staked),
+			Supplier:             supplier,
 		}, nil
 	}
 
