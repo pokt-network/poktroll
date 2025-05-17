@@ -62,9 +62,10 @@ type YAMLRelayMinerSupplierConfig struct {
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
 // service sub-section of the RelayMiner config file.
 type YAMLRelayMinerSupplierServiceConfig struct {
-	Authentication YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
-	BackendUrl     string                                      `yaml:"backend_url"`
-	Headers        map[string]string                           `yaml:"headers,omitempty"`
+	Authentication       YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
+	BackendUrl           string                                      `yaml:"backend_url"`
+	Headers              map[string]string                           `yaml:"headers,omitempty"`
+	ForwardPocketHeaders bool                                        `yaml:"forward_pocket_headers"`
 }
 
 // YAMLRelayMinerSupplierServiceAuthentication is the structure used to unmarshal
@@ -170,6 +171,9 @@ type RelayMinerSupplierServiceConfig struct {
 	// authentication then this field must be populated accordingly.
 	// For example: { "Authorization": "Bearer <token>" }
 	Headers map[string]string
+	// ForwardPocketHeaders toggles if headers prefixed with 'Pocket-' should be forwarded to
+	// the backend service servicing the relay requests.
+	ForwardPocketHeaders bool
 }
 
 // RelayMinerSupplierServiceAuthentication is the structure resulting from parsing
