@@ -234,15 +234,16 @@ ping:
 
 _`Optional`_
 
-Configures a `forward` server to send request to a supplier for a given
-service name. It is intended for operational use only (e.g., a relayminer
-operator may need to send requests to suppliers to verify the correctness
-of their responses going through the relayminer proxy).
-Requests forwarded via this endpoint bypass the miner, meter and session
-mechanisms.
-To prevent misuse by unauthorized users, this endpoint requires
-authentication. A token can be defined using a 32 bytes hexadecimal
-`token`.
+Configures a `forward` server to send requests to a particular supplier (i.e. operator)
+for a given service name.
+This endpoint:
+- Is intended for operational use only (e.g., a relayminer operator may need to send 
+  requests to an suppliers to verify the correctness of their responses going 
+  through the relayminer proxy)
+- Bypasses the onchain miner, meter and session mechanisms
+To prevent misuse by unauthorized users:
+- This endpoint requires authentication
+- A token can be defined using a 32 bytes hexadecimal `token`
 
 Example configuration:
 
