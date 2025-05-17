@@ -1,6 +1,11 @@
 package keeper
 
+import (
+	"github.com/pokt-network/poktroll/x/migration/types"
+)
+
 var RecoveryAllowlist = []string{
+
 	// Lost AppStakes
 	"0004c28be615053d7a59c1fc89f1541dd8a49770",
 	"002fe24c3ef210c72da347c8affe27dd8f2eab83",
@@ -2059,4 +2064,8 @@ var RecoveryAllowlist = []string{
 	"9ea35fee7695c2f639864ee38a5a448c20ae4547",
 	"319cf4360ba850d6c004910fbed197bde045fb9c",
 	"381add8cf814f45b8bf6dea56ac185c2358b8bf2",
+
+	// Module accounts
+	types.MorseModuleAccountNameDao,
+	types.MorseModuleAccountNameFeeCollector,
 }
