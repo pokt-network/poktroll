@@ -51,5 +51,5 @@ test_relay_util_100: check_path_up check_relay_util  ## Test anvil PATH behind G
 		-b
 
 .PHONY: relayminer_forward_token_gen
-relayminer_forward_token_gen:
+relayminer_forward_token_gen: ## Generate 32 bytes hexadecimal token for relayminer forward configuration.
 	@openssl rand -hex 32 | tr -d "\n"
