@@ -21,6 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -412,7 +413,7 @@ func filterTypedEvents[T proto.Message](
 }
 
 // getSingleMinedRelayCostCoin returns the cost of a relay based on the shared parameters and the service.
-// relayCost = Compute Units Per Relay (CUPR) * Compute Units To Token Multiplier (CUTTM) * relayDifficultyMultiplier
+// relayCost = Compute Units Per Relay (CUPR) * Compute Units To pPOKT Multiplier (CUTTM) * relayDifficultyMultiplier
 func getSingleMinedRelayCostCoin(
 	sharedParams *sharedtypes.Params,
 	service *sharedtypes.Service,
@@ -423,12 +424,13 @@ func getSingleMinedRelayCostCoin(
 	difficultyMultiplier := protocol.GetRelayDifficultyMultiplier(difficultyTargetHash)
 
 	// Get the estimated cost of the relay if it gets mined.
-	relayCostAmt := service.ComputeUnitsPerRelay * sharedParams.GetComputeUnitsToTokensMultiplier()
-	relayCostRat := big.NewRat(int64(relayCostAmt), 1)
-	estimatedRelayCostRat := big.NewRat(0, 1).Mul(relayCostRat, difficultyMultiplier)
-	estimatedRelayCost := big.NewInt(0).Quo(estimatedRelayCostRat.Num(), estimatedRelayCostRat.Denom())
+	relayCostPpoktAmt := service.ComputeUnitsPerRelay * sharedParams.GetComputeUnitsToPpoktMultiplier()
+	relayCostPpoktRat := big.NewRat(int64(relayCostPpoktAmt), 1)
+	estimatedRelayCostRat := big.NewRat(0, 1).Mul(relayCostPpoktRat, difficultyMultiplier)
+	estimatedRelayCostPpokt := big.NewInt(0).Quo(estimatedRelayCostRat.Num(), estimatedRelayCostRat.Denom())
+	estimatedRelayCostUpokt := new(big.Int).Div(estimatedRelayCostPpokt, big.NewInt(prooftypes.MicroToPicoPOKT))
 
-	estimatedRelayCostCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(estimatedRelayCost))
+	estimatedRelayCostCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(estimatedRelayCostUpokt))
 
 	return estimatedRelayCostCoin, nil
 }

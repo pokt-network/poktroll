@@ -134,7 +134,7 @@ func TestClaim_List(t *testing.T) {
 		SupplierUnbondingPeriodSessions:    1,
 		ApplicationUnbondingPeriodSessions: 1,
 		GatewayUnbondingPeriodSessions:     1,
-		ComputeUnitsToTokensMultiplier:     42,
+		ComputeUnitsToPpoktMultiplier:      42000000,
 	}
 
 	// TODO_HACK(@Olshansk): Due to the bug found in `networkWithClaimObjects`, this

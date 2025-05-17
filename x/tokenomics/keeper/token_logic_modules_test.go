@@ -49,7 +49,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []uint64{12, 38, 50}
-	globalComputeUnitsToTokensMultiplier := uint64(1)
+	globalComputeUnitsToPpoktMultiplier := uint64(1000000)
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
@@ -65,7 +65,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 
 	// Ensure the claim is within relay mining bounds
 	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
-	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
+	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToPpoktMultiplier / prooftypes.MicroToPicoPOKT)
 	maxClaimableAmountPerSupplier := appInitialStake.Quo(cosmosmath.NewInt(numSuppliersPerSession))
 	require.GreaterOrEqual(t, maxClaimableAmountPerSupplier.Int64(), numTokensClaimed)
 
@@ -73,9 +73,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
-	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
+	// Set compute_units_to_ppokt_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	sharedParams.ComputeUnitsToPpoktMultiplier = globalComputeUnitsToPpoktMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
@@ -202,7 +202,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 // handle all the relays completed.
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
 	// Test Parameters
-	globalComputeUnitsToTokensMultiplier := uint64(1)
+	globalComputeUnitsToPpoktMultiplier := uint64(1000000)
 	serviceComputeUnitsPerRelay := uint64(100)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
@@ -220,22 +220,22 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Set up the relays to exceed the max claimable amount
 	// Determine the max a supplier can claim
-	maxClaimableAmountPerSupplier := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
+	maxClaimableAmountPerSupplier := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToPpoktMultiplier / prooftypes.MicroToPicoPOKT)
 	// Figure out what the app's initial stake should be to cover the max claimable amount
 	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
 	appInitialStake := cosmosmath.NewInt(maxClaimableAmountPerSupplier*numSuppliersPerSession + 1)
 	// Increase the number of relay such that the supplier did "free work" and would
 	// be able to claim more than the max claimable amount.
 	numRelays *= 5
-	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
+	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToPpoktMultiplier / prooftypes.MicroToPicoPOKT)
 
 	// Retrieve the app and supplier module addresses
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
-	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
+	// Set compute_units_to_ppokt_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	sharedParams.ComputeUnitsToPpoktMultiplier = globalComputeUnitsToPpoktMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
@@ -380,11 +380,11 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []uint64{12, 38, 50}
-	globalComputeUnitsToTokensMultiplier := uint64(1)
+	globalComputeUnitsToPpoktMultiplier := uint64(1000000)
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
-	numTokensClaimed := numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier
+	numTokensClaimed := numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToPpoktMultiplier / prooftypes.MicroToPicoPOKT
 	numTokensClaimedInt := cosmosmath.NewIntFromUint64(numTokensClaimed)
 	proposerConsAddr := sample.ConsAddressBech32()
 	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
@@ -407,9 +407,9 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	tokenomicsParams.DaoRewardAddress = daoAddress.String()
 	keepers.Keeper.SetParams(ctx, tokenomicsParams)
 
-	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
+	// Set compute_units_to_ppokt_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	sharedParams.ComputeUnitsToPpoktMultiplier = globalComputeUnitsToPpoktMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 

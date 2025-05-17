@@ -25,8 +25,8 @@ const (
 	ParamGatewayUnbondingPeriodSessions       = "gateway_unbonding_period_sessions"
 
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value.
-	DefaultComputeUnitsToTokensMultiplier = 42
-	ParamComputeUnitsToTokensMultiplier   = "compute_units_to_tokens_multiplier"
+	DefaultComputeUnitsToPpoktMultiplier = 42000000
+	ParamComputeUnitsToPpoktMultiplier   = "compute_units_to_ppokt_multiplier"
 )
 
 var (
@@ -40,7 +40,7 @@ var (
 	KeySupplierUnbondingPeriodSessions                        = []byte("SupplierUnbondingPeriodSessions")
 	KeyApplicationUnbondingPeriodSessions                     = []byte("ApplicationUnbondingPeriodSessions")
 	KeyGatewayUnbondingPeriodSessions                         = []byte("GatewayUnbondingPeriodSessions")
-	KeyComputeUnitsToTokensMultiplier                         = []byte("ComputeUnitsToTokensMultiplier")
+	KeyComputeUnitsToPpoktMultiplier                          = []byte("ComputeUnitsToPpoktMultiplier")
 )
 
 // ParamKeyTable the param key table for launch module
@@ -60,7 +60,7 @@ func NewParams() Params {
 		SupplierUnbondingPeriodSessions:    DefaultSupplierUnbondingPeriodSessions,
 		ApplicationUnbondingPeriodSessions: DefaultApplicationUnbondingPeriodSessions,
 		GatewayUnbondingPeriodSessions:     DefaultGatewayUnbondingPeriodSessions,
-		ComputeUnitsToTokensMultiplier:     DefaultComputeUnitsToTokensMultiplier,
+		ComputeUnitsToPpoktMultiplier:      DefaultComputeUnitsToPpoktMultiplier,
 	}
 }
 
@@ -118,9 +118,9 @@ func (params *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			ValidateGatewayUnbondingPeriodSessions,
 		),
 		paramtypes.NewParamSetPair(
-			KeyComputeUnitsToTokensMultiplier,
-			&params.ComputeUnitsToTokensMultiplier,
-			ValidateComputeUnitsToTokensMultiplier,
+			KeyComputeUnitsToPpoktMultiplier,
+			&params.ComputeUnitsToPpoktMultiplier,
+			ValidateComputeUnitsToPpoktMultiplier,
 		),
 	}
 }
@@ -163,7 +163,7 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
-	if err := ValidateComputeUnitsToTokensMultiplier(params.ComputeUnitsToTokensMultiplier); err != nil {
+	if err := ValidateComputeUnitsToPpoktMultiplier(params.ComputeUnitsToPpoktMultiplier); err != nil {
 		return err
 	}
 
@@ -287,16 +287,16 @@ func ValidateGatewayUnbondingPeriodSessions(gatewayUnboindingPeriodSessionsAny a
 	return nil
 }
 
-// ValidateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier governance parameter.
+// ValidateComputeUnitsToPpoktMultiplier validates the ComputeUnitsToPpoktMultiplier governance parameter.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateComputeUnitsToTokensMultiplier(computeUnitsToTokensMultiplerAny any) error {
-	computeUnitsToTokensMultiplier, ok := computeUnitsToTokensMultiplerAny.(uint64)
+func ValidateComputeUnitsToPpoktMultiplier(computeUnitsToPpoktMultiplierAny any) error {
+	computeUnitsToPpoktMultiplier, ok := computeUnitsToPpoktMultiplierAny.(uint64)
 	if !ok {
-		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", computeUnitsToTokensMultiplerAny)
+		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", computeUnitsToPpoktMultiplierAny)
 	}
 
-	if computeUnitsToTokensMultiplier <= 0 {
-		return ErrSharedParamInvalid.Wrapf("invalid ComputeUnitsToTokensMultiplier: (%v)", computeUnitsToTokensMultiplier)
+	if computeUnitsToPpoktMultiplier <= 0 {
+		return ErrSharedParamInvalid.Wrapf("invalid ComputeUnitsToPpoktMultiplier: (%v)", computeUnitsToPpoktMultiplier)
 	}
 
 	return nil

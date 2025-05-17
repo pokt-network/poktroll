@@ -439,9 +439,9 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.GatewayUnbondingPeriodSessions = uint64(gatewayUnbondingPeriodSessions.value.(int64))
 		}
 
-		computeUnitsToTokensMultiplier, ok := paramsMap[sharedtypes.ParamComputeUnitsToTokensMultiplier]
+		computeUnitsToPpoktMultiplier, ok := paramsMap[sharedtypes.ParamComputeUnitsToPpoktMultiplier]
 		if ok {
-			params.ComputeUnitsToTokensMultiplier = uint64(computeUnitsToTokensMultiplier.value.(int64))
+			params.ComputeUnitsToPpoktMultiplier = uint64(computeUnitsToPpoktMultiplier.value.(int64))
 		}
 
 		assertUpdatedParams(s,

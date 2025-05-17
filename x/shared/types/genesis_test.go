@@ -28,7 +28,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					SupplierUnbondingPeriodSessions:    defaultParams.SupplierUnbondingPeriodSessions,
 					ApplicationUnbondingPeriodSessions: defaultParams.ApplicationUnbondingPeriodSessions,
 					GatewayUnbondingPeriodSessions:     defaultParams.GatewayUnbondingPeriodSessions,
-					ComputeUnitsToTokensMultiplier:     defaultParams.ComputeUnitsToTokensMultiplier,
+					ComputeUnitsToPpoktMultiplier:      defaultParams.ComputeUnitsToPpoktMultiplier,
 				},
 
 				// this line is used by starport scaffolding # types/genesis/validField
