@@ -94,7 +94,7 @@ require (
 require (
 	cosmossdk.io/x/tx v0.14.0
 	github.com/foxcpp/go-mockdns v1.1.0
-	github.com/go-chi/chi/v5 v5.1.0
+	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/jhump/protoreflect v1.17.0
 	github.com/mitchellh/mapstructure v1.5.0
@@ -251,9 +251,9 @@ require (
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/ghostiam/protogetter v0.3.9 // indirect
+	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-critic/go-critic v0.12.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.4 // indirect
-	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
