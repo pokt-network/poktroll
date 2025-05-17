@@ -222,10 +222,9 @@ func (rp *relayerProxy) Forward(ctx context.Context, serviceID string, w http.Re
 				continue
 			}
 			return err
-		} else {
-			found = true
-			break
 		}
+		found = true
+		break
 	}
 
 	if !found {
