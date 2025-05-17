@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
@@ -19,23 +20,37 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
 	defaultParams := gatewaytypes.DefaultParams()
-	require.NoError(t, k.SetParams(ctx, defaultParams))
+	require.NoError(t, k.SetInitialParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedMinStake, defaultParams.MinStake)
 
-	// Update the min relay difficulty bits
+	// Update the gateway min stake
 	updateParamMsg := &gatewaytypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      gatewaytypes.ParamMinStake,
 		AsType:    &gatewaytypes.MsgUpdateParam_AsCoin{AsCoin: &expectedMinStake},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+
+	// Assert that the onchain gateway min stake is not updated yet.
+	params := k.GetParams(ctx)
+	require.NotEqual(t, expectedMinStake, params.MinStake)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	sharedParams := sharedtypes.DefaultParams()
+	nextSessionStartHeight := currentHeight + int64(sharedParams.NumBlocksPerSession)
+	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
+
+	_, err = k.BeginBlockerActivateGatewayParams(sdkCtx)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.MinStake, res.Params.MinStake)
-	require.Equal(t, expectedMinStake.Amount, res.Params.MinStake.Amount)
+	params = k.GetParams(ctx)
+	require.NotEqual(t, expectedMinStake, params.MinStake)
+	require.Equal(t, &expectedMinStake, params.MinStake)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(gatewaytypes.KeyMinStake))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &params, string(gatewaytypes.KeyMinStake))
 }

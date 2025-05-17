@@ -46,7 +46,14 @@ message MsgUpdateParams {
 
 // MsgUpdateParamsResponse defines the response structure for executing a
 // MsgUpdateParams message.
-message MsgUpdateParamsResponse {}
+message MsgUpdateParamsResponse {
+  // params holds all the parameter values that are currently in effect.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // params_update represents the scheduled parameter update that will automatically
+  // take effect when the blockchain reaches activation_height.
+  ParamsUpdate params_update = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
 
 // MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
 message MsgUpdateParam {
@@ -68,8 +75,14 @@ message MsgUpdateParam {
 // MsgUpdateParamResponse defines the response structure for executing a
 // MsgUpdateParam message after a single param update.
 message MsgUpdateParamResponse {
-  Params params = 1;
+  // params holds all the parameter values that are currently in effect.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // params_update represents the scheduled parameter update that will automatically
+  // take effect when the blockchain reaches activation_height.
+  ParamsUpdate params_update = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
+
 
 message MsgCreateClaim {
   option (cosmos.msg.v1.signer) = "supplier_operator_address";

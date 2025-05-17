@@ -13,6 +13,10 @@ import (
 
 // UpdateParam updates a single parameter in the tokenomics module and returns
 // all active parameters.
+// * Validates the request message and authority permissions
+// * Updates the specific parameter based on its name
+// * Delegates to UpdateParams to handle validation and persistence
+// * Returns both the current parameters and the scheduled parameter update
 func (k msgServer) UpdateParam(
 	ctx context.Context,
 	msg *tokenomicstypes.MsgUpdateParam,
@@ -22,31 +26,23 @@ func (k msgServer) UpdateParam(
 		"param_name", msg.Name,
 	)
 
+	// Validate basic message structure and constraints
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if k.GetAuthority() != msg.Authority {
-		return nil, status.Error(
-			codes.PermissionDenied,
-			tokenomicstypes.ErrTokenomicsInvalidSigner.Wrapf(
-				"invalid authority; expected %s, got %s",
-				k.GetAuthority(), msg.Authority,
-			).Error(),
-		)
-	}
-
+	// Get current parameters to apply the single parameter update
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
 	case tokenomicstypes.ParamMintAllocationPercentages:
-		logger = logger.With("param_value", msg.GetAsMintAllocationPercentages())
+		logger = logger.With("mint_allocation_percentages", msg.GetAsMintAllocationPercentages())
 		params.MintAllocationPercentages = *msg.GetAsMintAllocationPercentages()
 	case tokenomicstypes.ParamDaoRewardAddress:
-		logger = logger.With("param_value", msg.GetAsString())
+		logger = logger.With("dao_reward_address", msg.GetAsString())
 		params.DaoRewardAddress = msg.GetAsString()
 	case tokenomicstypes.ParamGlobalInflationPerClaim:
-		logger = logger.With("param_value", msg.GetAsFloat())
+		logger = logger.With("global_inflation_per_claim", msg.GetAsFloat())
 		params.GlobalInflationPerClaim = msg.GetAsFloat()
 	default:
 		return nil, status.Error(
@@ -55,18 +51,24 @@ func (k msgServer) UpdateParam(
 		)
 	}
 
-	if err := params.ValidateBasic(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	// Create a full params update message and delegate to UpdateParams
+	// This ensures:
+	// * Authority validation
+	// * Parameter constraints validation
+	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
+		Authority: k.GetAuthority(),
+		Params:    params,
+	}
+	response, err := k.UpdateParams(ctx, msgUpdateParams)
+	if err != nil {
+		logger.Error(fmt.Sprintf("ERROR: %s", err))
+		return nil, err
 	}
 
-	if err := k.SetParams(ctx, params); err != nil {
-		err = fmt.Errorf("unable to set params: %w", err)
-		logger.Error(err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	updatedParams := k.GetParams(ctx)
+	// Return a response with both the current parameters and the scheduled update
+	// This allows the caller to see the current state and the scheduled change
 	return &tokenomicstypes.MsgUpdateParamResponse{
-		Params: &updatedParams,
+		Params:       response.Params,
+		ParamsUpdate: response.ParamsUpdate,
 	}, nil
 }

@@ -24,6 +24,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -105,8 +107,8 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_ApplicationQuerier_Applications(
 func (s *QueryCacheTestSuite) TestKeyValueCache_ApplicationQuerier_Params() {
 	ctx := context.Background()
 
-	// Assert that the server has not been reached yet.
-	require.Equal(s.T(), 0, s.rpcCallCount.appParams)
+	// Assert that the server has already been reached at application querier initialization.
+	require.Equal(s.T(), 1, s.rpcCallCount.appParams)
 
 	// Call the GetParams method numCalls times and assert that the server
 	// is reached only once.
@@ -154,8 +156,8 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SessionQuerier_Sessions() {
 func (s *QueryCacheTestSuite) TestKeyValueCache_SessionQuerier_Params() {
 	ctx := context.Background()
 
-	// Assert that the server has not been reached yet.
-	require.Equal(s.T(), 0, s.rpcCallCount.sessionParams)
+	// Assert that the server has already been reached at session querier initialization.
+	require.Equal(s.T(), 1, s.rpcCallCount.sessionParams)
 
 	// Call the GetParams method numCalls times and assert that the server
 	// is reached only once.
@@ -169,8 +171,10 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SessionQuerier_Params() {
 func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 	ctx := context.Background()
 
+	// Assert that the server has already been reached at shared querier initialization.
+	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
+
 	// Assert that the server has not been reached yet.
-	require.Equal(s.T(), 0, s.rpcCallCount.sharedParams)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
 	// Call the GetParams method numCalls times and assert that the server
@@ -212,7 +216,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 	// Call the GetSessionBlockFrequency method numCalls times and assert that the server
 	// is not reached again.
 	for range numCalls {
-		_, err := s.queryClients.shared.GetComputeUnitsToTokensMultiplier(ctx)
+		_, err := s.queryClients.shared.GetComputeUnitsToTokensMultiplier(ctx, 1)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
@@ -243,7 +247,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_ProofQuerier_Params() {
 	ctx := context.Background()
 
 	// Assert that the server has not been reached yet.
-	require.Equal(s.T(), 0, s.rpcCallCount.proofParams)
+	require.Equal(s.T(), 1, s.rpcCallCount.proofParams)
 
 	// Call the GetParams method numCalls times and assert that the server
 	// is reached only once.
@@ -295,30 +299,33 @@ func (s *QueryCacheTestSuite) createQueryClients(t *testing.T, deps depinject.Co
 	ctx := context.Background()
 	logger := polylog.Ctx(ctx)
 
+	blockClient := testblock.NewAnyTimeLastBlockBlockClient(t, []byte{}, 1)
+
 	// Create the CometRPC and GRPCClientConn mocks.
 	cometClientMock := s.NewCometRPC()
 	grpcClientConn := s.NewGRPCClientConn()
+	eventsParamsActivationClient := testeventsquery.NewAnyTimesEventsParamsActivationClient(t)
 
-	deps = depinject.Configs(deps, depinject.Supply(cometClientMock, logger, grpcClientConn))
+	deps = depinject.Configs(deps, depinject.Supply(cometClientMock, logger, eventsParamsActivationClient, grpcClientConn, blockClient))
 
-	queryClients.service, err = query.NewServiceQuerier(deps)
+	queryClients.service, err = query.NewServiceQuerier(ctx, deps)
 	require.NoError(t, err)
 
-	queryClients.application, err = query.NewApplicationQuerier(deps)
+	queryClients.application, err = query.NewApplicationQuerier(ctx, deps)
 	require.NoError(t, err)
 
-	queryClients.supplier, err = query.NewSupplierQuerier(deps)
+	queryClients.supplier, err = query.NewSupplierQuerier(ctx, deps)
 	require.NoError(t, err)
 
-	queryClients.shared, err = query.NewSharedQuerier(deps)
+	queryClients.shared, err = query.NewSharedQuerier(ctx, deps)
 	require.NoError(t, err)
 
 	// Supply the shared query client which the session query client depends on.
 	deps = depinject.Configs(deps, depinject.Supply(queryClients.shared))
-	queryClients.session, err = query.NewSessionQuerier(deps)
+	queryClients.session, err = query.NewSessionQuerier(ctx, deps)
 	require.NoError(t, err)
 
-	queryClients.proof, err = query.NewProofQuerier(deps)
+	queryClients.proof, err = query.NewProofQuerier(ctx, deps)
 	require.NoError(t, err)
 
 	queryClients.balance, err = query.NewBankQuerier(deps)
@@ -358,27 +365,7 @@ func (s *QueryCacheTestSuite) NewCometRPC() *mockclient.MockCometRPC {
 func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 	ctrl := gomock.NewController(s.T())
 	grpcClientConn := mockclient.NewMockClientConn(ctrl)
-
-	// Mock the Invoke method of the GRPCClientConn.
-	// This method needs to return a valid shared params response.
-	grpcClientConn.EXPECT().Invoke(
-		gomock.Any(), // ctx
-		"/pocket.shared.Query/Params",
-		gomock.Any(),
-		gomock.Any(),
-	).
-		Do(func(_ context.Context, _ string, _ any, reply any, _ ...any) {
-			// Increment the call count each time the Invoke method is called.
-			s.rpcCallCount.sharedParams++
-
-			// Return the default shared params.
-			params := sharedtypes.DefaultParams()
-
-			response, ok := reply.(*sharedtypes.QueryParamsResponse)
-			require.True(s.T(), ok)
-
-			response.Params = params
-		}).AnyTimes()
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
 
 	// Mock the Invoke method of the GRPCClientConn.
 	// This method needs to return a valid codec.Any response that will be unmarshalled
@@ -413,15 +400,77 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 	// DEV_NOTE: This mock needs to be the last one to give the other mocks a chance
 	// to catch their respective calls.
 	grpcClientConn.EXPECT().Invoke(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Do(func(_ context.Context, method string, _ any, _ any, _ ...any) {
+		Do(func(_ context.Context, method string, _ any, reply any, _ ...any) {
 			// Increment the corresponding call count each time the Invoke method is called.
 			switch method {
-			case "/pocket.application.Query/Params":
+			case "/pocket.application.Query/ParamsUpdates":
 				s.rpcCallCount.appParams++
-			case "/pocket.proof.Query/Params":
+
+				// Return the default shared params.
+				response, ok := reply.(*apptypes.QueryParamsUpdatesResponse)
+				require.True(s.T(), ok)
+				response.ParamsUpdates = []*apptypes.ParamsUpdate{
+					{
+						Params:           apptypes.DefaultParams(),
+						ActivationHeight: 1,
+					},
+				}
+			case "/pocket.proof.Query/ParamsUpdates":
 				s.rpcCallCount.proofParams++
-			case "/pocket.session.Query/Params":
+
+				// Return the default shared params.
+				response, ok := reply.(*prooftypes.QueryParamsUpdatesResponse)
+				require.True(s.T(), ok)
+				response.ParamsUpdates = []*prooftypes.ParamsUpdate{
+					{
+						Params:           prooftypes.DefaultParams(),
+						ActivationHeight: 1,
+					},
+				}
+			case "/pocket.session.Query/ParamsUpdates":
 				s.rpcCallCount.sessionParams++
+
+				// Return the default shared params.
+				response, ok := reply.(*sessiontypes.QueryParamsUpdatesResponse)
+				require.True(s.T(), ok)
+				response.ParamsUpdates = []*sessiontypes.ParamsUpdate{
+					{
+						Params:           sessiontypes.DefaultParams(),
+						ActivationHeight: 1,
+					},
+				}
+			case "/pocket.shared.Query/ParamsUpdates":
+				// Increment the call count each time the Invoke method is called.
+				s.rpcCallCount.sharedParams++
+
+				// Return the default shared params.
+				response, ok := reply.(*sharedtypes.QueryParamsUpdatesResponse)
+				require.True(s.T(), ok)
+				response.ParamsUpdates = sharedParamsHistory
+			case "/pocket.service.Query/ParamsUpdates":
+				s.rpcCallCount.serviceParams++
+
+				// Return the default shared params.
+				response, ok := reply.(*servicetypes.QueryParamsUpdatesResponse)
+				require.True(s.T(), ok)
+				response.ParamsUpdates = []*servicetypes.ParamsUpdate{
+					{
+						Params:           servicetypes.DefaultParams(),
+						ActivationHeight: 1,
+					},
+				}
+			case "/pocket.supplier.Query/ParamsUpdates":
+				s.rpcCallCount.supplierParams++
+
+				// Return the default shared params.
+				response, ok := reply.(*suppliertypes.QueryParamsUpdatesResponse)
+				require.True(s.T(), ok)
+				response.ParamsUpdates = []*suppliertypes.ParamsUpdate{
+					{
+						Params:           suppliertypes.DefaultParams(),
+						ActivationHeight: 1,
+					},
+				}
 			case "/pocket.service.Query/Service":
 				s.rpcCallCount.services++
 			case "/pocket.service.Query/RelayMiningDifficulty":
@@ -435,7 +484,7 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 			case "/cosmos.bank.v1beta1.Query/Balance":
 				s.rpcCallCount.balances++
 			default:
-				require.Failf(s.T(), "unexpected method: %s", method)
+				require.Failf(s.T(), "", "unexpected method: %s", method)
 			}
 
 		}).AnyTimes()
@@ -453,10 +502,12 @@ type rpcCallCount struct {
 	sessions   int
 
 	// pocket params calls
-	appParams     int
-	sessionParams int
-	sharedParams  int
-	proofParams   int
+	appParams      int
+	sessionParams  int
+	sharedParams   int
+	proofParams    int
+	serviceParams  int
+	supplierParams int
 
 	// cosmos-sdk calls
 	blocks   int

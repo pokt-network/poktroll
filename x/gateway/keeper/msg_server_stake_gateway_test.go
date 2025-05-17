@@ -16,6 +16,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+var sharedParamsHistory = sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
+
 func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	k, ctx := keepertest.GatewayKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
@@ -47,8 +49,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, stakeMsg.GetStake(), gateway.GetStake())
 
 	// Assert that the EventGatewayStaked event is emitted.
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	sessionEndHeight := sharedParamsHistory.GetSessionEndHeight(sdkCtx.BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&gatewaytypes.EventGatewayStaked{
 			Gateway:          gateway,

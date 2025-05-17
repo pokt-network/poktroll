@@ -2,13 +2,16 @@ package query
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
+	proto "github.com/cosmos/gogoproto/proto"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
+	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -32,10 +35,10 @@ type serviceQuerier struct {
 	// servicesMutex to protect cache access patterns for services and relay mining difficulties
 	servicesMutex sync.Mutex
 
+	// eventsParamsActivationClient is used to subscribe to service module parameters updates
+	eventsParamsActivationClient client.EventsParamsActivationClient
 	// paramsCache caches serviceQueryClient.Params query requests
 	paramsCache client.ParamsCache[servicetypes.Params]
-	// paramsMutex to protect cache access patterns for params
-	paramsMutex sync.Mutex
 }
 
 // NewServiceQuerier returns a new instance of a client.ServiceQueryClient by
@@ -44,15 +47,21 @@ type serviceQuerier struct {
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
 // - polylog.Logger
+// - client.EventsParamsActivationClient
 // - cache.KeyValueCache[sharedtypes.Service]
 // - cache.KeyValueCache[servicetypes.RelayMiningDifficulty]
-func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error) {
+// - client.ParamsCache[servicetypes.Params]
+func NewServiceQuerier(
+	ctx context.Context,
+	deps depinject.Config,
+) (client.ServiceQueryClient, error) {
 	servq := &serviceQuerier{}
 
 	if err := depinject.Inject(
 		deps,
 		&servq.clientConn,
 		&servq.logger,
+		&servq.eventsParamsActivationClient,
 		&servq.servicesCache,
 		&servq.relayMiningDifficultyCache,
 		&servq.paramsCache,
@@ -61,6 +70,22 @@ func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error)
 	}
 
 	servq.serviceQuerier = servicetypes.NewQueryClient(servq.clientConn)
+
+	// Initialize the service module cache with all existing parameters updates:
+	// - Parameters are cached as historic data, eliminating the need to invalidate the cache.
+	// - The UpdateParamsCache method ensures the querier starts with the current parameters history cached.
+	// - Future updates are automatically cached by subscribing to the eventsParamsActivationClient observable.
+	err := querycache.UpdateParamsCache(
+		ctx,
+		&servicetypes.QueryParamsUpdatesRequest{},
+		toServiceParamsUpdate,
+		servq.serviceQuerier,
+		servq.eventsParamsActivationClient,
+		servq.paramsCache,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return servq, nil
 }
@@ -154,33 +179,22 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Params, error) {
 	logger := servq.logger.With("query_client", "service", "method", "GetParams")
 
-	// Check if the service module parameters are present in the cache.
-	if params, found := servq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache HIT for service params")
-		return &params, nil
+	// Attempt to retrieve the latest parameters from the cache.
+	params, found := servq.paramsCache.GetLatest()
+	if !found {
+		logger.Debug().Msg("cache MISS for service params")
+		return nil, fmt.Errorf("expecting service params to be found in cache")
 	}
 
-	// Use mutex to prevent multiple concurrent cache updates
-	servq.paramsMutex.Lock()
-	defer servq.paramsMutex.Unlock()
+	logger.Debug().Msg("cache HIT for service params")
 
-	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
-	if params, found := servq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache HIT for service params after lock")
-		return &params, nil
+	return &params, nil
+}
+
+func toServiceParamsUpdate(protoMessage proto.Message) (*servicetypes.ParamsUpdate, bool) {
+	if event, ok := protoMessage.(*servicetypes.EventParamsActivated); ok {
+		return &event.ParamsUpdate, true
 	}
 
-	logger.Debug().Msg("cache MISS for service params")
-
-	req := servicetypes.QueryParamsRequest{}
-	res, err := retry.Call(ctx, func() (*servicetypes.QueryParamsResponse, error) {
-		return servq.serviceQuerier.Params(ctx, &req)
-	}, retry.GetStrategy(ctx))
-	if err != nil {
-		return nil, err
-	}
-
-	// Cache the parameters for future queries.
-	servq.paramsCache.Set(res.Params)
-	return &res.Params, nil
+	return nil, false
 }

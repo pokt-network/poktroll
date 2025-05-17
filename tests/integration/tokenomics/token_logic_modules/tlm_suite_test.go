@@ -165,7 +165,8 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 // session and triggers the settlement of all pending claims.
 func (s *tokenLogicModuleTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.ClaimSettlementResults) {
 	// Increment the block height to the settlement height.
-	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParams(), 1)
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
+	settlementHeight := sharedParamsHistory.GetSettlementSessionEndHeight(1)
 	s.setBlockHeight(settlementHeight)
 
 	settledPendingResults, expiredPendingResults, err := s.keepers.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))

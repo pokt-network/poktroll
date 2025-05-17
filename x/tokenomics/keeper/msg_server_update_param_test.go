@@ -3,12 +3,14 @@ package keeper_test
 import (
 	"testing"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -24,7 +26,7 @@ func TestMsgUpdateParam_UpdateMintAllocationPercentagesOnly(t *testing.T) {
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
 	defaultParams := tokenomicstypes.DefaultParams()
-	require.NoError(t, k.SetParams(ctx, defaultParams))
+	require.NoError(t, k.SetInitialParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedMintAllocationPercentages, defaultParams.MintAllocationPercentages)
@@ -35,19 +37,30 @@ func TestMsgUpdateParam_UpdateMintAllocationPercentagesOnly(t *testing.T) {
 		Name:      tokenomicstypes.ParamMintAllocationPercentages,
 		AsType:    &tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: &expectedMintAllocationPercentages},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	// Assert that the response contains the expected mint allocation percentages.
-	require.NotEqual(t, defaultParams.MintAllocationPercentages, res.Params.MintAllocationPercentages)
-	require.Equal(t, expectedMintAllocationPercentages, res.Params.MintAllocationPercentages)
+	// Assert that the onchain mint allocation percentages is not updated yet.
+	params := k.GetParams(ctx)
+	require.NotEqual(t, expectedMintAllocationPercentages, params.MintAllocationPercentages)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	sharedParams := sharedtypes.DefaultParams()
+	nextSessionStartHeight := currentHeight + int64(sharedParams.NumBlocksPerSession)
+	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
+
+	_, err = k.BeginBlockerActivateTokenomicsParams(sdkCtx)
+	require.NoError(t, err)
 
 	// Assert that the onchain mint allocation percentages is updated.
-	params := k.GetParams(ctx)
+	params = k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.MintAllocationPercentages, params.MintAllocationPercentages)
 	require.Equal(t, expectedMintAllocationPercentages, params.MintAllocationPercentages)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(tokenomicstypes.KeyMintAllocationPercentages))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &params, string(tokenomicstypes.KeyMintAllocationPercentages))
 }
 
 func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
@@ -56,7 +69,7 @@ func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
 	defaultParams := tokenomicstypes.DefaultParams()
-	require.NoError(t, k.SetParams(ctx, defaultParams))
+	require.NoError(t, k.SetInitialParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedDaoRewardAddress, defaultParams.DaoRewardAddress)
@@ -67,19 +80,31 @@ func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
 		Name:      tokenomicstypes.ParamDaoRewardAddress,
 		AsType:    &tokenomicstypes.MsgUpdateParam_AsString{AsString: expectedDaoRewardAddress},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	// Assert that the response contains the expected dao reward address.
-	require.NotEqual(t, defaultParams.DaoRewardAddress, res.Params.DaoRewardAddress)
-	require.Equal(t, expectedDaoRewardAddress, res.Params.DaoRewardAddress)
+	// Assert that the onchain dao reward address is not updated yet.
+	params := k.GetParams(ctx)
+	require.NotEqual(t, expectedDaoRewardAddress, params.DaoRewardAddress)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	sharedParams := sharedtypes.DefaultParams()
+	nextSessionStartHeight := currentHeight + int64(sharedParams.NumBlocksPerSession)
+	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
+
+	_, err = k.BeginBlockerActivateTokenomicsParams(sdkCtx)
+	require.NoError(t, err)
 
 	// Assert that the onchain dao reward address is updated.
-	params := k.GetParams(ctx)
+	params = k.GetParams(ctx)
+	// Assert that the response contains the expected dao reward address.
+	require.NotEqual(t, defaultParams.DaoRewardAddress, params.DaoRewardAddress)
 	require.Equal(t, expectedDaoRewardAddress, params.DaoRewardAddress)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(tokenomicstypes.KeyDaoRewardAddress))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &params, string(tokenomicstypes.KeyDaoRewardAddress))
 }
 
 func TestMsgUpdateParam_UpdateGlobalInflationPerClaimOnly(t *testing.T) {
@@ -88,28 +113,39 @@ func TestMsgUpdateParam_UpdateGlobalInflationPerClaimOnly(t *testing.T) {
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
 	defaultParams := tokenomicstypes.DefaultParams()
-	require.NoError(t, k.SetParams(ctx, defaultParams))
+	require.NoError(t, k.SetInitialParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedGlobalInflationPerClaim, defaultParams.GlobalInflationPerClaim)
 
-	// Update the dao reward address.
+	// Update the global inflation per claim.
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamGlobalInflationPerClaim,
 		AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: expectedGlobalInflationPerClaim},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	// Assert that the response contains the expected dao reward address.
-	require.NotEqual(t, defaultParams.GlobalInflationPerClaim, res.Params.GlobalInflationPerClaim)
-	require.Equal(t, expectedGlobalInflationPerClaim, res.Params.GlobalInflationPerClaim)
-
-	// Assert that the onchain dao reward address is updated.
+	// Assert that the onchain global inflation per claim is not yet updated.
 	params := k.GetParams(ctx)
+	require.NotEqual(t, expectedGlobalInflationPerClaim, params.GlobalInflationPerClaim)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	sharedParams := sharedtypes.DefaultParams()
+	nextSessionStartHeight := currentHeight + int64(sharedParams.NumBlocksPerSession)
+	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
+
+	_, err = k.BeginBlockerActivateTokenomicsParams(sdkCtx)
+	require.NoError(t, err)
+
+	// Assert that the onchain global inflation per claim is updated.
+	params = k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.GlobalInflationPerClaim, params.GlobalInflationPerClaim)
 	require.Equal(t, expectedGlobalInflationPerClaim, params.GlobalInflationPerClaim)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(tokenomicstypes.KeyGlobalInflationPerClaim))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &params, string(tokenomicstypes.KeyGlobalInflationPerClaim))
 }

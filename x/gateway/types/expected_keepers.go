@@ -29,4 +29,5 @@ type BankKeeper interface {
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
+	GetParamsUpdates(ctx context.Context) sharedtypes.ParamsHistory
 }

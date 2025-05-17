@@ -11,4 +11,5 @@ var (
 	ErrQuerySessionParams              = sdkerrors.Register(codespace, 5, "unable to query session params")
 	ErrQueryRetrieveService            = sdkerrors.Register(codespace, 6, "error while trying to retrieve a service")
 	ErrQueryBalanceNotFound            = sdkerrors.Register(codespace, 7, "balance not found")
+	ErrQueryProofParams                = sdkerrors.Register(codespace, 8, "unable to query proof params")
 )

@@ -133,10 +133,15 @@ func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 		SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(mockBankKeeperSendFromModuleToAccount).AnyTimes()
 
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
 	sharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	sharedKeeper.EXPECT().
 		GetParams(gomock.Any()).
 		Return(sharedtypes.DefaultParams()).
+		AnyTimes()
+	sharedKeeper.EXPECT().
+		GetParamsUpdates(gomock.Any()).
+		Return(sharedParamsHistory).
 		AnyTimes()
 
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)

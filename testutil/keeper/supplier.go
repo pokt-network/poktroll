@@ -75,13 +75,14 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 		logger,
 		authority.String(),
 	)
-	require.NoError(t, sharedKeeper.SetParams(sdkCtx, sharedtypes.DefaultParams()))
+	require.NoError(t, sharedKeeper.SetInitialParams(sdkCtx, sharedtypes.DefaultParams()))
 
 	serviceKeeper := servicekeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
+		sharedKeeper,
 		mockBankKeeper,
 	)
 
@@ -96,7 +97,7 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 	)
 
 	// Initialize params
-	require.NoError(t, supplierKeeper.SetParams(sdkCtx, types.DefaultParams()))
+	require.NoError(t, supplierKeeper.SetInitialParams(sdkCtx, types.DefaultParams()))
 
 	// Move block height to 1 to get a non zero session end height
 	ctx := SetBlockHeight(sdkCtx, 1)

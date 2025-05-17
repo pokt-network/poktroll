@@ -1,6 +1,7 @@
 package suites
 
 import (
+	"math"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -13,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -28,15 +30,24 @@ type ApplicationModuleSuite struct {
 // GetAppQueryClient constructs and returns a query client for the application
 // module of the integration app.
 func (s *ApplicationModuleSuite) GetAppQueryClient(t *testing.T) client.ApplicationQueryClient {
+	t.Helper()
+
 	appCache, err := memory.NewKeyValueCache[apptypes.Application](memory.WithNoTTL())
 	require.NoError(t, err)
 
-	appParamsCache, err := cache.NewParamsCache[apptypes.Params]()
+	appParamsCache, err := cache.NewParamsCache[apptypes.Params](memory.WithTTL(math.MaxInt64))
 	require.NoError(t, err)
 
 	logger := polyzero.NewLogger()
-	deps := depinject.Supply(s.GetApp().QueryHelper(), appCache, appParamsCache, logger)
-	appQueryClient, err := query.NewApplicationQuerier(deps)
+	ctx := s.GetApp().QueryHelper().Ctx
+	deps := depinject.Supply(
+		s.GetApp().QueryHelper(),
+		logger,
+		testeventsquery.NewAnyTimesEventsParamsActivationClient(t),
+		appCache,
+		appParamsCache,
+	)
+	appQueryClient, err := query.NewApplicationQuerier(ctx, deps)
 	require.NoError(t, err)
 
 	return appQueryClient

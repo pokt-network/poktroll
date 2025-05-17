@@ -27,7 +27,9 @@ type BankKeeper interface {
 // SharedKeeper defines the expected interface needed to retrieve shared information.
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
+	GetParamsUpdates(ctx context.Context) sharedtypes.ParamsHistory
 }
 
 // ServiceKeeper defines the expected interface for the Service module.

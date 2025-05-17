@@ -2,13 +2,16 @@ package query
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
+	proto "github.com/cosmos/gogoproto/proto"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
+	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -29,10 +32,10 @@ type appQuerier struct {
 	// Mutex to protect applicationsCache access patterns
 	applicationsMutex sync.Mutex
 
+	// eventsParamsActivationClient is used to subscribe to application parameters updates
+	eventsParamsActivationClient client.EventsParamsActivationClient
 	// paramsCache caches application.Params returned from applicationQueryClient.Params requests.
 	paramsCache client.ParamsCache[apptypes.Params]
-	// Mutex to protect paramsCache access patterns
-	paramsMutex sync.Mutex
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
@@ -40,13 +43,22 @@ type appQuerier struct {
 //
 // Required dependencies:
 // - clientCtx
-func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient, error) {
+// - polylog.Logger
+// - client.EventsParamsActivationClient
+// - client.BlockQueryClient
+// - cache.KeyValueCache[apptypes.Application]
+// - client.ParamsCache[apptypes.Params]
+func NewApplicationQuerier(
+	ctx context.Context,
+	deps depinject.Config,
+) (client.ApplicationQueryClient, error) {
 	aq := &appQuerier{}
 
 	if err := depinject.Inject(
 		deps,
 		&aq.clientConn,
 		&aq.logger,
+		&aq.eventsParamsActivationClient,
 		&aq.applicationsCache,
 		&aq.paramsCache,
 	); err != nil {
@@ -54,6 +66,22 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 	}
 
 	aq.applicationQuerier = apptypes.NewQueryClient(aq.clientConn)
+
+	// Initialize the application cache with all existing application parameters updates:
+	// - Parameters are cached as historic data, eliminating the need to invalidate the cache.
+	// - The UpdateParamsCache method ensures the querier starts with the current parameters history cached.
+	// - Future updates are automatically cached by subscribing to the eventsParamsActivationClient observable.
+	err := querycache.UpdateParamsCache(
+		ctx,
+		&apptypes.QueryParamsUpdatesRequest{},
+		toAppParamsUpdate,
+		aq.applicationQuerier,
+		aq.eventsParamsActivationClient,
+		aq.paramsCache,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return aq, nil
 }
@@ -111,37 +139,24 @@ func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Applic
 	return res.Applications, nil
 }
 
-// GetParams returns the application module parameters
+// GetParams returns the latest application module parameters
 func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 	logger := aq.logger.With("query_client", "application", "method", "GetParams")
 
-	// Check if the application module parameters are present in the cache.
-	if params, found := aq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache HIT for application params")
-		return &params, nil
+	// Attempt to retrieve the latest parameters from the cache.
+	params, found := aq.paramsCache.GetLatest()
+	if !found {
+		logger.Debug().Msg("cache MISS for application params")
+		return nil, fmt.Errorf("expecting application params to be found in cache")
+	}
+	logger.Debug().Msg("cache HIT for application params")
+	return &params, nil
+}
+
+func toAppParamsUpdate(protoMessage proto.Message) (*apptypes.ParamsUpdate, bool) {
+	if event, ok := protoMessage.(*apptypes.EventParamsActivated); ok {
+		return &event.ParamsUpdate, true
 	}
 
-	// Use mutex to prevent multiple concurrent cache updates
-	aq.paramsMutex.Lock()
-	defer aq.paramsMutex.Unlock()
-
-	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
-	if params, found := aq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache HIT for application params after lock")
-		return &params, nil
-	}
-
-	logger.Debug().Msg("cache MISS for application params")
-
-	req := apptypes.QueryParamsRequest{}
-	res, err := retry.Call(ctx, func() (*apptypes.QueryParamsResponse, error) {
-		return aq.applicationQuerier.Params(ctx, &req)
-	}, retry.GetStrategy(ctx))
-	if err != nil {
-		return nil, err
-	}
-
-	// Update the cache with the newly retrieved application module parameters.
-	aq.paramsCache.Set(res.Params)
-	return &res.Params, nil
+	return nil, false
 }

@@ -13,11 +13,11 @@ import (
 // EndBlockerUnbondSuppliers unbonds suppliers whose unbonding period has elapsed.
 func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppliers uint64, err error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding suppliers at the end of the session.
-	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(sharedParamsUpdates, currentHeight) {
 		return numUnbondedSuppliers, nil
 	}
 
@@ -50,7 +50,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			continue
 		}
 
-		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
+		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(sharedParamsUpdates, &supplier)
 
 		// If the unbonding height is ahead of the current height, the supplier
 		// stays in the unbonding state.
@@ -98,12 +98,13 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 
 		unbondingReason := suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY
-		if supplier.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+		supplierParams := k.GetParamsAtHeight(ctx, int64(supplier.UnstakeSessionEndHeight))
+		if supplier.GetStake().Amount.LT(supplierParams.MinStake.Amount) {
 			unbondingReason = suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE
 		}
 
 		// Emit an event which signals that the supplier has successfully unbonded.
-		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 		unbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
 			Supplier:           &supplier,
 			Reason:             unbondingReason,

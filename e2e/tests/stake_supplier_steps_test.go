@@ -49,8 +49,8 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 	paramsMap := paramsAnyMapFromParamsStruct(sharedParams)
 	s.sendAuthzExecToUpdateAllModuleParams(grantee, paramModuleName, paramsMap)
 
-	// Assert that the parameter values were updated.
-	s.AllModuleParamsShouldBeUpdated(paramModuleName)
+	// Assert that the parameter values were updated at the next session start.
+	s.AllModuleParamsShouldBeUpdatedAtTheNextSessionStart(paramModuleName)
 }
 
 // paramsAnyMapFromParamStruct construct a paramsAnyMap from any

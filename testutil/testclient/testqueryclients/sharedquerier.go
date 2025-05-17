@@ -10,6 +10,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+var sharedParamsHistory = sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
+
 // NewTestSharedQueryClient creates a mock of the SharedQueryClient which uses the
 // default shared module params for its implementation.
 func NewTestSharedQueryClient(
@@ -18,8 +20,8 @@ func NewTestSharedQueryClient(
 	ctrl := gomock.NewController(t)
 
 	sharedQuerier := mockclient.NewMockSharedQueryClient(ctrl)
-	params := sharedtypes.DefaultParams()
 
+	params := sharedParamsHistory.GetCurrentParams()
 	sharedQuerier.EXPECT().
 		GetParams(gomock.Any()).
 		Return(&params, nil).
@@ -29,8 +31,7 @@ func NewTestSharedQueryClient(
 		GetClaimWindowOpenHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(
 			func(ctx context.Context, queryHeight int64) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
-				return sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
+				return sharedParamsHistory.GetClaimWindowOpenHeight(queryHeight), nil
 			},
 		).
 		AnyTimes()
@@ -39,8 +40,7 @@ func NewTestSharedQueryClient(
 		GetProofWindowOpenHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(
 			func(ctx context.Context, queryHeight int64) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
-				return sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
+				return sharedParamsHistory.GetProofWindowOpenHeight(queryHeight), nil
 			},
 		).
 		AnyTimes()
@@ -49,8 +49,7 @@ func NewTestSharedQueryClient(
 		GetSessionGracePeriodEndHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(
 			func(ctx context.Context, queryHeight int64) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
-				return sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
+				return sharedParamsHistory.GetSessionGracePeriodEndHeight(queryHeight), nil
 			},
 		).
 		AnyTimes()
@@ -63,9 +62,8 @@ func NewTestSharedQueryClient(
 				sessionEndHeight int64,
 				supplierOperatorAddr string,
 			) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
 				return sharedtypes.GetEarliestSupplierClaimCommitHeight(
-					&sharedParams,
+					sharedParamsHistory,
 					sessionEndHeight,
 					[]byte{},
 					supplierOperatorAddr,
@@ -82,15 +80,27 @@ func NewTestSharedQueryClient(
 				sessionEndHeight int64,
 				supplierOperatorAddr string,
 			) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
-				return sharedtypes.GetEarliestSupplierProofCommitHeight(
-					&sharedParams,
+				return sharedtypes.GetEarliestSupplierClaimCommitHeight(
+					sharedParamsHistory,
 					sessionEndHeight,
 					[]byte{},
 					supplierOperatorAddr,
 				), nil
 			},
 		).
+		AnyTimes()
+
+	sharedQuerier.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, height int64) (*sharedtypes.Params, error) {
+			sharedParams := sharedParamsHistory.GetParamsAtHeight(height)
+			return &sharedParams, nil
+		}).
+		AnyTimes()
+
+	sharedQuerier.EXPECT().
+		GetParamsUpdates(gomock.Any()).
+		Return(sharedParamsHistory, nil).
 		AnyTimes()
 
 	return sharedQuerier

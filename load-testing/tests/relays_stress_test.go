@@ -112,10 +112,10 @@ type relaysSuite struct {
 
 	// Protocol governance params used in the test.
 	// It is queried at the beginning of the test.
-	sharedParams     *sharedtypes.Params
-	appParams        *apptypes.Params
-	proofParams      *prooftypes.Params
-	tokenomicsParams *tokenomicstypes.Params
+	sharedParamsHistory sharedtypes.ParamsHistory
+	appParams           *apptypes.Params
+	proofParams         *prooftypes.Params
+	tokenomicsParams    *tokenomicstypes.Params
 
 	testedService *sharedtypes.Service
 

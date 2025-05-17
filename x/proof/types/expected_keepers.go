@@ -50,11 +50,14 @@ type ApplicationKeeper interface {
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	SetApplication(context.Context, apptypes.Application)
 	GetParams(ctx context.Context) (params apptypes.Params)
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) apptypes.Params
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared information.
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
+	GetParamsUpdates(ctx context.Context) sharedtypes.ParamsHistory
 }
 
 // ServiceKeeper defines the expected interface for the Service module.
@@ -65,4 +68,5 @@ type ServiceKeeper interface {
 	SetService(ctx context.Context, service sharedtypes.Service)
 	SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficulty servicetypes.RelayMiningDifficulty)
 	GetParams(ctx context.Context) servicetypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) servicetypes.Params
 }

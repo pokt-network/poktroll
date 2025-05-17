@@ -59,16 +59,16 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 	tests := []struct {
 		desc              string
 		getProofMsgHeight func(
-			sharedParams *sharedtypes.Params,
+			sharedParamsHistory sharedtypes.ParamsHistory,
 			queryHeight int64,
 			supplierOperatorAddr string,
 		) int64
 	}{
 		{
 			desc: "proof message height equals supplier's earliest proof commit height",
-			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, supplierOperatorAddr string) int64 {
+			getProofMsgHeight: func(sharedParamsHistory sharedtypes.ParamsHistory, queryHeight int64, supplierOperatorAddr string) int64 {
 				return sharedtypes.GetEarliestSupplierProofCommitHeight(
-					sharedParams,
+					sharedParamsHistory,
 					queryHeight,
 					blockHeaderHash,
 					supplierOperatorAddr,
@@ -77,8 +77,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		},
 		{
 			desc: "proof message height equals proof window close height",
-			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, _ string) int64 {
-				return sharedtypes.GetProofWindowCloseHeight(sharedParams, queryHeight)
+			getProofMsgHeight: func(sharedParamsHistory sharedtypes.ParamsHistory, queryHeight int64, _ string) int64 {
+				return sharedtypes.GetProofWindowCloseHeight(sharedParamsHistory, queryHeight)
 			},
 		},
 	}
@@ -92,13 +92,13 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				keepertest.WithBlockHeight(1),
 			}
 			keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
-			sharedParams := keepers.SharedKeeper.GetParams(ctx)
+			sharedParamsUpdates := keepers.SharedKeeper.GetParamsUpdates(ctx)
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 			// Set proof keeper params to disable relay mining and always require a proof.
 			proofParams := keepers.Keeper.GetParams(ctx)
 			proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-			err := keepers.Keeper.SetParams(ctx, proofParams)
+			err := keepers.Keeper.SetInitialParams(ctx, proofParams)
 			require.NoError(t, err)
 
 			// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -167,7 +167,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			// Advance the block height to the test claim msg height.
 			claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-				&sharedParams,
+				sharedParamsUpdates,
 				sessionHeader.GetSessionEndBlockHeight(),
 				blockHeaderHash,
 				supplierOperatorAddr,
@@ -188,7 +188,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			// Advance the block height to the proof path seed height.
 			earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-				&sharedParams,
+				sharedParamsUpdates,
 				sessionHeader.GetSessionEndBlockHeight(),
 				blockHeaderHash,
 				supplierOperatorAddr,
@@ -203,7 +203,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			expectedMerkleProofPath = protocol.GetPathForProof(blockHeaderHash, sessionHeader.GetSessionId())
 
 			// Advance the block height to the test proof msg height.
-			proofMsgHeight := test.getProofMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight(), supplierOperatorAddr)
+			proofMsgHeight := test.getProofMsgHeight(sharedParamsUpdates, sessionHeader.GetSessionEndBlockHeight(), supplierOperatorAddr)
 			ctx = keepertest.SetBlockHeight(ctx, proofMsgHeight)
 
 			proofMsg := newTestProofMsg(t,
@@ -247,7 +247,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			numEstimatedComputUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
 			require.NoError(t, err)
 
-			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+			sharedParamsUpdate := sharedtypes.GetActiveParamsUpdate(sharedParamsUpdates, 1)
+			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParamsUpdate.Params, relayMiningDifficulty)
 			require.NoError(t, err)
 
 			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
@@ -274,7 +275,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Set proof keeper params to disable relaymining and always require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-	err := keepers.Keeper.SetParams(ctx, proofParams)
+	err := keepers.Keeper.SetInitialParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -340,9 +341,9 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	)
 
 	// Advance the block height to the claim window open height.
-	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := keepers.SharedKeeper.GetParamsUpdates(ctx)
 	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionHeader.GetSessionEndBlockHeight(),
 		claimWindowOpenHeightBlockHash,
 		supplierOperatorAddr,
@@ -364,12 +365,12 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	)
 
 	earliestProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionHeader.GetSessionEndBlockHeight(),
 		proofWindowOpenHeightBlockHash,
 		supplierOperatorAddr,
 	)
-	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionHeader.GetSessionEndBlockHeight())
 
 	tests := []struct {
 		desc           string
@@ -448,7 +449,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Ensure the minimum relay difficulty bits is set to zero so that test cases
 	// don't need to mine for valid relays.
-	err := keepers.Keeper.SetParams(ctx, testProofParams)
+	err := keepers.Keeper.SetInitialParams(ctx, testProofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -538,9 +539,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	)
 
 	// Advance the block height to the earliest claim commit height.
-	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := keepers.SharedKeeper.GetParamsUpdates(ctx)
 	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		validSessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
 		supplierOperatorAddr,
@@ -670,7 +671,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 			// Advance the block height to the proof path seed height.
 			earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-				&sharedParams,
+				sharedParamsUpdates,
 				msgSubmitProof.GetSessionHeader().GetSessionEndBlockHeight(),
 				blockHeaderHash,
 				msgSubmitProof.GetSupplierOperatorAddress(),
@@ -714,12 +715,12 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 		keepertest.WithBlockHeight(1),
 	}
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
-	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := keepers.SharedKeeper.GetParamsUpdates(ctx)
 
 	// Set proof keeper params to disable relay mining but never require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = 0
-	err := keepers.Keeper.SetParams(ctx, proofParams)
+	err := keepers.Keeper.SetInitialParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -787,7 +788,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 
 	// Advance the block height to the test claim msg height.
 	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
 		supplierOperatorAddr,
@@ -808,7 +809,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 
 	// Advance the block height to the proof path seed height.
 	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
 		supplierOperatorAddr,
@@ -824,7 +825,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 
 	// Advance the block height to the test proof msg height.
 	proofMsgHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
 		supplierOperatorAddr,
@@ -899,10 +900,10 @@ func createClaimAndStoreBlockHash(
 	claimRes, err := msgServer.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 
-	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := keepers.SharedKeeper.GetParamsUpdates(ctx)
 
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionStartHeight,
 	)
 
@@ -910,7 +911,7 @@ func createClaimAndStoreBlockHash(
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	earliestSupplierClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionStartHeight,
 		sdkCtx.HeaderHash(),
 		supplierOperatorAddr,

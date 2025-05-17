@@ -230,12 +230,13 @@ func setupRelayerDependencies(
 		// Setup the params caches and configure them to clear on new blocks.
 		// Some of the params (tokenomics and gateway) are not used in the RelayMiner
 		// and don't need to have a corresponding cache.
-		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithNewBlockCacheClearing),   // leaf
-		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithNewBlockCacheClearing),      // leaf
-		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing),  // leaf
-		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithNewBlockCacheClearing),    // leaf
-		config.NewSupplyParamsCacheFn[servicetypes.Params](cache.WithNewBlockCacheClearing),  // leaf
-		config.NewSupplyParamsCacheFn[suppliertypes.Params](cache.WithNewBlockCacheClearing), // leaf
+		// ParamsCache is a historical cache, so it is not cleared on new blocks.
+		config.NewSupplyParamsCacheFn[sharedtypes.Params](),   // leaf
+		config.NewSupplyParamsCacheFn[apptypes.Params](),      // leaf
+		config.NewSupplyParamsCacheFn[sessiontypes.Params](),  // leaf
+		config.NewSupplyParamsCacheFn[prooftypes.Params](),    // leaf
+		config.NewSupplyParamsCacheFn[servicetypes.Params](),  // leaf
+		config.NewSupplyParamsCacheFn[suppliertypes.Params](), // leaf
 
 		// Setup the key-value caches for pocket types and configure them to clear on new blocks.
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithNewBlockCacheClearing),                // leaf
@@ -252,6 +253,7 @@ func setupRelayerDependencies(
 		// Setup the key-value for cosmos types and configure them to clear on new blocks.
 		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithNewBlockCacheClearing), // leaf
 
+		config.NewSupplyEventsParamsActivationClientFn(),
 		config.NewSupplySharedQueryClientFn(),
 		config.NewSupplyServiceQueryClientFn(),
 		config.NewSupplyApplicationQuerierFn(),

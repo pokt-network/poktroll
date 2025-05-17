@@ -27,6 +27,14 @@ type cacheValue[T any] struct {
 	cachedAt time.Time
 }
 
+func (cv *cacheValue[T]) Value() T {
+	return cv.value
+}
+
+func (cv *cacheValue[T]) CachedAt() time.Time {
+	return cv.cachedAt
+}
+
 // NewKeyValueCache creates a new keyValueCache with the configuration generated
 // by the given option functions.
 func NewKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*keyValueCache[T], error) {

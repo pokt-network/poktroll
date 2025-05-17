@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -11,6 +12,10 @@ import (
 
 // UpdateParam updates a single parameter in the service module and returns
 // all active parameters.
+// * Validates the request message and authority permissions
+// * Updates the specific parameter based on its name
+// * Delegates to UpdateParams to handle validation and persistence
+// * Returns both the current parameters and the scheduled parameter update
 func (k msgServer) UpdateParam(
 	ctx context.Context,
 	msg *servicetypes.MsgUpdateParam,
@@ -20,28 +25,21 @@ func (k msgServer) UpdateParam(
 		"param_name", msg.Name,
 	)
 
+	// Validate basic message structure and constraints
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if k.GetAuthority() != msg.Authority {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			servicetypes.ErrServiceInvalidSigner.Wrapf(
-				"invalid authority; expected %s, got %s",
-				k.GetAuthority(), msg.Authority,
-			).Error(),
-		)
-	}
-
+	// Get current parameters to apply the single parameter update
 	params := k.GetParams(ctx)
 
+	// Update the specific parameter based on its name
 	switch msg.Name {
 	case servicetypes.ParamAddServiceFee:
-		logger = logger.With("param_value", msg.GetAsCoin())
+		logger = logger.With("add_service_fee", msg.GetAsCoin())
 		params.AddServiceFee = msg.GetAsCoin()
 	case servicetypes.ParamTargetNumRelays:
-		logger = logger.With("param_value", msg.GetAsUint64())
+		logger = logger.With("target_num_relays", msg.GetAsUint64())
 		params.TargetNumRelays = msg.GetAsUint64()
 	default:
 		return nil, status.Error(
@@ -50,20 +48,24 @@ func (k msgServer) UpdateParam(
 		)
 	}
 
-	// Perform a global validation on all params, which includes the updated param.
-	// This is needed to ensure that the updated param is valid in the context of all other params.
-	if err := params.ValidateBasic(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	// Create a full params update message and delegate to UpdateParams
+	// This ensures:
+	// * Authority validation
+	// * Parameter constraints validation
+	msgUpdateParams := &servicetypes.MsgUpdateParams{
+		Authority: k.GetAuthority(),
+		Params:    params,
+	}
+	response, err := k.UpdateParams(ctx, msgUpdateParams)
+	if err != nil {
+		logger.Error(fmt.Sprintf("ERROR: %s", err))
+		return nil, err
 	}
 
-	if err := k.SetParams(ctx, params); err != nil {
-		logger.Info("ERROR: %s", err)
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	updatedParams := k.GetParams(ctx)
-
+	// Return a response with both the current parameters and the scheduled update
+	// This allows the caller to see the current state and the scheduled change
 	return &servicetypes.MsgUpdateParamResponse{
-		Params: &updatedParams,
+		Params:       response.Params,
+		ParamsUpdate: response.ParamsUpdate,
 	}, nil
 }

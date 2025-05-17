@@ -69,8 +69,8 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 		srcApp.Address, msg.GetDestinationAddress(),
 	))
 
-	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
-	transferEndHeight := types.GetApplicationTransferHeight(&sharedParams, &srcApp)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(sdkCtx)
+	transferEndHeight := types.GetApplicationTransferHeight(sharedParamsUpdates, &srcApp)
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferBegin{
 		SourceAddress:      srcApp.GetAddress(),
 		DestinationAddress: srcApp.GetPendingTransfer().GetDestinationAddress(),

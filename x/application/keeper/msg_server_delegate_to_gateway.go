@@ -112,8 +112,8 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	logger.Info(fmt.Sprintf("Successfully delegated application to gateway for app: %+v", app))
 
 	// Emit the application redelegation event
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 	event := &apptypes.EventRedelegation{
 		Application:      &app,
 		SessionEndHeight: sessionEndHeight,

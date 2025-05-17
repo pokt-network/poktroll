@@ -1,0 +1,25 @@
+syntax = "proto3";
+package pocket.session;
+
+option go_package = "github.com/pokt-network/poktroll/x/session/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+import "pocket/session/params.proto";
+
+// EventParamsActivated is emitted when the module params update becomes effective.
+// It signals that a scheduled parameter update has been activated at the current block height,
+// indicating that new parameter values are now in effect.
+message EventParamsActivated {
+  // params_update contains the newly activated parameter values along with their
+  // activation and deactivation heights.
+  // This provides information about the parameter change that just took effect,
+  // allowing clients to adjust to the new protocol parameters.
+  pocket.session.ParamsUpdate params_update = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params_update"
+  ];
+}

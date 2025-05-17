@@ -97,14 +97,13 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	// TODO_MAINNET_MIGRATION(@red-0ne, #543): If the num_blocks_per_session param
-	// has ever been changed, this function may cause unexpected behavior for historical sessions.
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
-	sh.session.SessionNumber = sharedtypes.GetSessionNumber(&sharedParams, sh.blockHeight)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
+	sharedParams := sharedtypes.GetActiveParamsUpdate(sharedParamsUpdates, sh.blockHeight)
+	sh.session.NumBlocksPerSession = int64(sharedParams.Params.NumBlocksPerSession)
+	sh.session.SessionNumber = sharedtypes.GetSessionNumber(sharedParamsUpdates, sh.blockHeight)
 
-	sh.sessionHeader.SessionStartBlockHeight = sharedtypes.GetSessionStartHeight(&sharedParams, sh.blockHeight)
-	sh.sessionHeader.SessionEndBlockHeight = sharedtypes.GetSessionEndHeight(&sharedParams, sh.blockHeight)
+	sh.sessionHeader.SessionStartBlockHeight = sharedtypes.GetSessionStartHeight(sharedParamsUpdates, sh.blockHeight)
+	sh.sessionHeader.SessionEndBlockHeight = sharedtypes.GetSessionEndHeight(sharedParamsUpdates, sh.blockHeight)
 	return nil
 }
 
@@ -178,7 +177,8 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	// - Changes between query height and current height are properly handled
 	// Refer to the following discussion for more details:
 	// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992214953
-	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
+	sessionParams := k.GetParamsAtHeight(ctx, sh.blockHeight)
+	numSuppliersPerSession := int(sessionParams.NumSuppliersPerSession)
 
 	// Map supplier operator addresses to random weights for deterministic sorting.
 	// This ensures fair distribution when:
@@ -309,15 +309,15 @@ func (k Keeper) GetSessionId(
 	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	return GetSessionId(&sharedParams, appAddr, serviceId, blockHashBz, blockHeight)
+	sharedParamsHistory := k.sharedKeeper.GetParamsUpdates(ctx)
+	return GetSessionId(sharedParamsHistory, appAddr, serviceId, blockHashBz, blockHeight)
 }
 
 // GetSessionId returns the string and bytes representation of the sessionId for the
 // session containing blockHeight, given the shared onchain parameters, application
 // address, service ID, and block hash.
 func GetSessionId(
-	sharedParams *sharedtypes.Params,
+	sharedParamsHistory sharedtypes.ParamsHistory,
 	appAddr,
 	serviceId string,
 	blockHashBz []byte,
@@ -326,7 +326,7 @@ func GetSessionId(
 	appAddrBz := []byte(appAddr)
 	serviceIdBz := []byte(serviceId)
 
-	sessionStartHeightBz := getSessionStartBlockHeightBz(sharedParams, blockHeight)
+	sessionStartHeightBz := getSessionStartBlockHeightBz(sharedParamsHistory, blockHeight)
 	sessionIdBz = concatWithDelimiter(
 		sessionIDComponentDelimiter,
 		blockHashBz,
@@ -342,8 +342,8 @@ func GetSessionId(
 // getSessionStartBlockHeightBz returns the bytes representation of the session
 // start height for the session containing blockHeight, given the shared onchain
 // parameters.
-func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight int64) []byte {
-	sessionStartBlockHeight := sharedtypes.GetSessionStartHeight(sharedParams, blockHeight)
+func getSessionStartBlockHeightBz(sharedParamsHistory sharedtypes.ParamsHistory, blockHeight int64) []byte {
+	sessionStartBlockHeight := sharedParamsHistory.GetSessionStartHeight(blockHeight)
 	sessionStartBlockHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
 	return sessionStartBlockHeightBz

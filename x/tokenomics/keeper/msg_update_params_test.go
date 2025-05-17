@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -125,8 +126,15 @@ func TestMsgUpdateParams(t *testing.T) {
 				require.Error(t, err)
 				require.ErrorContains(t, err, test.expectedErrMsg)
 			} else {
-				require.Equal(t, &test.req.Params, updateRes.GetParams())
+				require.Equal(t, test.req.Params, updateRes.ParamsUpdate.Params)
 				require.Nil(t, err)
+
+				sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+				sdkCtx = sdkCtx.WithBlockHeight(updateRes.ParamsUpdate.ActivationHeight)
+				tokenomicsKeeper.BeginBlockerActivateTokenomicsParams(sdkCtx)
+
+				params := tokenomicsKeeper.GetParams(sdkCtx)
+				require.Equal(t, test.req.Params, params)
 			}
 		})
 	}

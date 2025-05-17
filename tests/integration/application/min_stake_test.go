@@ -103,8 +103,8 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	s.keepers.ProofKeeper.UpsertClaim(s.ctx, *claim)
 
 	// Set the current height to the claim settlement session end height.
-	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-	settlementSessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, s.getCurrentHeight())
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(s.ctx)
+	settlementSessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(sharedParamsUpdates, s.getCurrentHeight())
 	s.setBlockHeight(settlementSessionEndHeight)
 
 	// Settle pending claims; this should cause the application to be unbonded.
@@ -120,7 +120,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	s.ctx, _ = testevents.ResetEventManager(s.ctx)
 
 	// Set the current height to the unbonding session end height.
-	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
+	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(sharedParamsUpdates, expectedApp)
 	s.setBlockHeight(unbondingSessionEndHeight)
 
 	// Run app module end blockers to complete unbonding.
@@ -243,8 +243,9 @@ func (s *applicationMinStakeTestSuite) setBlockHeight(targetHeight int64) cosmos
 func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *apptypes.Application {
 	s.T().Helper()
 
-	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, s.getCurrentHeight())
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(s.ctx)
+	sharedParams := sharedtypes.GetCurrentParams(sharedParamsUpdates, s.getCurrentHeight())
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, s.getCurrentHeight())
 	relayMiningDifficulty := s.newRelayminingDifficulty()
 	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(s.T(), err)
@@ -285,8 +286,8 @@ func (s *applicationMinStakeTestSuite) newRelayminingDifficulty() servicetypes.R
 func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expectedApp *apptypes.Application) {
 	s.T().Helper()
 
-	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(s.ctx)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(sharedParamsUpdates, expectedApp)
 	sessionEndHeight := s.keepers.SharedKeeper.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:        expectedApp,
@@ -306,9 +307,9 @@ func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expecte
 func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedApp *apptypes.Application) {
 	s.T().Helper()
 
-	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
-	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(s.ctx)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(sharedParamsUpdates, expectedApp)
+	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(sharedParamsUpdates, expectedApp)
 	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 		Application:        expectedApp,
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,

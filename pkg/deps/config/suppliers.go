@@ -82,6 +82,23 @@ func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	}
 }
 
+// NewSupplyEventsParamsActivationClientFn supplies a depinject config with an
+// EventsParamsActivationClient.
+func NewSupplyEventsParamsActivationClientFn() SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		eventsParamsActivationClient, err := events.NewEventsParamsActivationClient(ctx, deps)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(eventsParamsActivationClient)), nil
+	}
+}
+
 // NewSupplyBlockClientFn supplies a depinject config with a blockClient.
 func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	return func(
@@ -259,12 +276,12 @@ func NewSupplyAccountQuerierFn() SupplierFn {
 // NewSupplyApplicationQuerierFn supplies a depinject config with an ApplicationQuerier.
 func NewSupplyApplicationQuerierFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the application querier.
-		applicationQuerier, err := query.NewApplicationQuerier(deps)
+		applicationQuerier, err := query.NewApplicationQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -277,12 +294,12 @@ func NewSupplyApplicationQuerierFn() SupplierFn {
 // NewSupplySessionQuerierFn supplies a depinject config with a SessionQuerier.
 func NewSupplySessionQuerierFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the session querier.
-		sessionQuerier, err := query.NewSessionQuerier(deps)
+		sessionQuerier, err := query.NewSessionQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -295,12 +312,12 @@ func NewSupplySessionQuerierFn() SupplierFn {
 // NewSupplySupplierQuerierFn supplies a depinject config with a SupplierQuerier.
 func NewSupplySupplierQuerierFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the supplier querier.
-		supplierQuerier, err := query.NewSupplierQuerier(deps)
+		supplierQuerier, err := query.NewSupplierQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -398,11 +415,11 @@ func NewSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) SupplierFn {
 // is supplied with the given deps and the new SharedQueryClient.
 func NewSupplySharedQueryClientFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		sharedQuerier, err := query.NewSharedQuerier(deps)
+		sharedQuerier, err := query.NewSharedQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -416,11 +433,11 @@ func NewSupplySharedQueryClientFn() SupplierFn {
 // is supplied with the given deps and the new ProofQueryClient.
 func NewSupplyProofQueryClientFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		proofQuerier, err := query.NewProofQuerier(deps)
+		proofQuerier, err := query.NewProofQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -434,11 +451,11 @@ func NewSupplyProofQueryClientFn() SupplierFn {
 // is supplied with the given deps and the new ServiceQueryClient.
 func NewSupplyServiceQueryClientFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		serviceQuerier, err := query.NewServiceQuerier(deps)
+		serviceQuerier, err := query.NewServiceQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -523,7 +540,7 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 
 // NewSupplyParamsCacheFn returns a function which constructs a ParamsCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsCache[T]]) SupplierFn {
+func NewSupplyParamsCacheFn[T any]() SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -546,13 +563,6 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 		paramsCache, err := querycache.NewParamsCache[T](memory.WithTTL(math.MaxInt64))
 		if err != nil {
 			return nil, err
-		}
-
-		// Apply the query cache options
-		for _, opt := range opts {
-			if err := opt(ctx, deps, paramsCache); err != nil {
-				return nil, err
-			}
 		}
 
 		return depinject.Configs(deps, depinject.Supply(paramsCache)), nil

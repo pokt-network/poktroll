@@ -35,10 +35,10 @@ func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
 		Add(expectedMorseClaimableAccount.GetApplicationStake()).
 		Add(expectedMorseClaimableAccount.GetSupplierStake())
 
-	s.GetSharedParams(s.T())
-	sharedParams := s.GetSharedParams(s.T())
+	s.GetSharedParamsUpdates(s.T())
+	sharedParamsUpdates := s.GetSharedParamsUpdates(s.T())
 	currentHeight := s.SdkCtx().BlockHeight()
-	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 	expectedClaimAccountRes := &migrationtypes.MsgClaimMorseAccountResponse{
 		MorseSrcAddress:  morseSrcAddr,
 		ClaimedBalance:   expectedBalance,

@@ -2,13 +2,16 @@ package query
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
+	proto "github.com/cosmos/gogoproto/proto"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
+	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -28,10 +31,10 @@ type supplierQuerier struct {
 	// suppliersMutex to protect cache access patterns for suppliers
 	suppliersMutex sync.Mutex
 
+	// eventsParamsActivationClient is used to subscribe to supplier module parameters updates
+	eventsParamsActivationClient client.EventsParamsActivationClient
 	// paramsCache caches supplier module parameters
 	paramsCache client.ParamsCache[suppliertypes.Params]
-	// paramsMutex to protect cache access patterns for params
-	paramsMutex sync.Mutex
 }
 
 // NewSupplierQuerier returns a new instance of a client.SupplierQueryClient by
@@ -40,14 +43,20 @@ type supplierQuerier struct {
 // Required dependencies:
 // - grpc.ClientConn
 // - polylog.Logger
+// - client.EventsParamsActivationClient
 // - cache.KeyValueCache[sharedtypes.Supplier]
-func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, error) {
+// - client.ParamsCache[suppliertypes.Params]
+func NewSupplierQuerier(
+	ctx context.Context,
+	deps depinject.Config,
+) (client.SupplierQueryClient, error) {
 	supq := &supplierQuerier{}
 
 	if err := depinject.Inject(
 		deps,
 		&supq.clientConn,
 		&supq.logger,
+		&supq.eventsParamsActivationClient,
 		&supq.suppliersCache,
 		&supq.paramsCache,
 	); err != nil {
@@ -55,6 +64,22 @@ func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, erro
 	}
 
 	supq.supplierQuerier = suppliertypes.NewQueryClient(supq.clientConn)
+
+	// Initialize the supplier module cache with all existing parameters updates:
+	// - Parameters are cached as historic data, eliminating the need to invalidate the cache.
+	// - The UpdateParamsCache method ensures the querier starts with the current parameters history cached.
+	// - Future updates are automatically cached by subscribing to the eventsParamsActivationClient observable.
+	err := querycache.UpdateParamsCache(
+		ctx,
+		&suppliertypes.QueryParamsUpdatesRequest{},
+		toSupplierParamsUpdate,
+		supq.supplierQuerier,
+		supq.eventsParamsActivationClient,
+		supq.paramsCache,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return supq, nil
 }
@@ -101,33 +126,22 @@ func (supq *supplierQuerier) GetSupplier(
 func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Params, error) {
 	logger := supq.logger.With("query_client", "supplier", "method", "GetParams")
 
-	// Check if the supplier module parameters are present in the cache.
-	if params, found := supq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache HIT for supplier params")
-		return &params, nil
+	// Attempt to retrieve the latest parameters from the cache.
+	params, found := supq.paramsCache.GetLatest()
+	if !found {
+		logger.Debug().Msg("cache MISS for supplier params")
+		return nil, fmt.Errorf("expecting supplier params to be found in cache")
 	}
 
-	// Use mutex to prevent multiple concurrent cache updates
-	supq.paramsMutex.Lock()
-	defer supq.paramsMutex.Unlock()
+	logger.Debug().Msg("cache HIT for supplier params")
 
-	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
-	if params, found := supq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache HIT for supplier params after lock")
-		return &params, nil
+	return &params, nil
+}
+
+func toSupplierParamsUpdate(protoMessage proto.Message) (*suppliertypes.ParamsUpdate, bool) {
+	if event, ok := protoMessage.(*suppliertypes.EventParamsActivated); ok {
+		return &event.ParamsUpdate, true
 	}
 
-	logger.Debug().Msg("cache MISS for supplier params")
-
-	req := suppliertypes.QueryParamsRequest{}
-	res, err := retry.Call(ctx, func() (*suppliertypes.QueryParamsResponse, error) {
-		return supq.supplierQuerier.Params(ctx, &req)
-	}, retry.GetStrategy(ctx))
-	if err != nil {
-		return nil, err
-	}
-
-	// Update the cache with the newly retrieved supplier module parameters.
-	supq.paramsCache.Set(res.Params)
-	return &res.Params, nil
+	return nil, false
 }

@@ -1,4 +1,5 @@
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/params_activation_client_mock.go -package=mockclient . EventsParamsActivationClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
@@ -28,7 +29,9 @@ import (
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -223,6 +226,12 @@ type EventsQueryClient interface {
 	Close()
 }
 
+// EventsParamsActivationClient is used to subscribe to chain event messages
+type EventsParamsActivationClient interface {
+	// EventsSequence returns an observable which emits new events.
+	LatestParamsUpdate() observable.Observable[proto.Message]
+}
+
 // Connection is a transport agnostic, bi-directional, message-passing interface.
 type Connection interface {
 	// Receive blocks until a message is received or an error occurs.
@@ -308,6 +317,10 @@ type SessionQueryClient interface {
 type SharedQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
+	// GetParamsAtHeight queries the chain for the shared module parameters at a given height.
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) (*sharedtypes.Params, error)
+	// GetParamsUpdates queries the chain for all the params updates that of the shared module.
+	GetParamsUpdates(ctx context.Context) (sharedtypes.ParamsHistory, error)
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
 	// The grace period is the number of blocks after the session ends during which relays
@@ -326,7 +339,7 @@ type SharedQueryClient interface {
 	// for the session that includes queryHeight can be committed for a given supplier.
 	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
 	// GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
-	GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error)
+	GetComputeUnitsToTokensMultiplier(ctx context.Context, queryHeight int64) (uint64, error)
 }
 
 // BlockQueryClient defines an interface that enables the querying of
@@ -359,6 +372,9 @@ type ProofQueryClient interface {
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
 
+	// GetParamsAtHeight queries the chain for the proof module parameters at a given height.
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) (ProofParams, error)
+
 	// GetClaim queries the chain for the full claim associatd with the (supplier, sessionId).
 	GetClaim(ctx context.Context, supplierOperatorAddress string, sessionId string) (Claim, error)
 }
@@ -380,10 +396,16 @@ type BankQueryClient interface {
 	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
 }
 
-// ParamsCache is an interface for a simple in-memory cache implementation for onchain module parameter quueries.
+// ParamsCache is an interface for a simple in-memory historical cache
+// implementation for onchain module parameter quueries.
 // It does not involve key-value pairs, but only stores a single value.
 type ParamsCache[T any] interface {
-	Get() (T, bool)
-	Set(T)
-	Clear()
+	// GetLatest returns the latest params value stored in the cache.
+	GetLatest() (T, bool)
+	// GetAtHeight returns the params values that were active at the given height.
+	GetAtHeight(height int64) (T, bool)
+	// GetAllUpdates returns all the params values update history stored in the cache.
+	GetAllUpdates() (cache.CacheValueHistory[T], bool)
+	// SetAtHeight stores a params value in the cache at the given height.
+	SetAtHeight(value T, height int64)
 }
