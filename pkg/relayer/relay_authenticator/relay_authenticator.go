@@ -48,7 +48,7 @@ type relayAuthenticator struct {
 	//
 	// It is used to:
 	// 1. Check if an incoming relay request matches a supplier hosted by the relay miner
-	// 2. Get the corrsponding keyring signing key name to sign the relay response
+	// 2. Get the corresponding keyring signing key name to sign the relay response
 	operatorAddressToSigningKeyNameMap map[string]string
 }
 
