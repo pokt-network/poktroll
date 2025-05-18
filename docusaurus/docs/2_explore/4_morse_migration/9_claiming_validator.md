@@ -8,12 +8,12 @@ sidebar_position: 9
 - [Can I claim my Morse Validator as a Shannon Validator?](#can-i-claim-my-morse-validator-as-a-shannon-validator)
 - [Background Information on Morse \& Shannon Validators](#background-information-on-morse--shannon-validators)
 - [Prerequisites](#prerequisites)
-- [Steps for "Claiming" a Shannon Validator](#steps-for-claiming-a-shannon-validator)
+- ["Claiming" a Shannon Validator](#claiming-a-shannon-validator)
   - [1. Prepare your Morse and Shannon Keys and Accounts](#1-prepare-your-morse-and-shannon-keys-and-accounts)
   - [2. Options for Claiming a Shannon Validator](#2-options-for-claiming-a-shannon-validator)
-    - [2.1 Option #1: Unstake and Restake as Validator](#21-option-1-unstake-and-restake-as-validator)
-    - [2.2 Option #2: Claim a Supplier and Restake on Shannon](#22-option-2-claim-a-supplier-and-restake-on-shannon)
-    - [2.3 Option #3: Special Cases Validator Migration](#23-option-3-special-cases-validator-migration)
+    - [Option #1: Unstake and Restake as Validator](#option-1-unstake-and-restake-as-validator)
+    - [Option #2: Claim a Supplier and Restake on Shannon](#option-2-claim-a-supplier-and-restake-on-shannon)
+    - [Option #3: Special Cases Validator Migration](#option-3-special-cases-validator-migration)
 
 ## Can I claim my Morse Validator as a Shannon Validator?
 
@@ -38,7 +38,7 @@ Validators in Shannon are also stake-weighted for election into the active pool.
 - You have a valid RPC endpoint
 - You are familiar with how to stake a native Shannon Supplier (see [supplier staking config](../../1_operate/3_configs/3_supplier_staking_config.md))
 
-## Steps for "Claiming" a Shannon Validator
+## "Claiming" a Shannon Validator
 
 ### 1. Prepare your Morse and Shannon Keys and Accounts
 
@@ -48,21 +48,21 @@ Follow steps 1-5 from [Claiming Morse Account](./6_claiming_account.md)
 
 What do I do if I have a Morse Validator (a.k.a Node, Service) that I want to migrate to Shannon as a Validator?
 
-#### 2.1 Option #1: Unstake and Restake as Validator
+#### Option #1: Unstake and Restake as Validator
 
 1. Unstake Validator on Morse or Shannon
 2. Wait for the Unbonding Period (e.g. 21 days)
 3. [Claim your Account](./6_claiming_account.md) on Shannon
 4. [Stake as a Validator](../../1_operate/2_walkthroughs/3_validator_walkthrough.md) on Shannon
 
-#### 2.2 Option #2: Claim a Supplier and Restake on Shannon
+#### Option #2: Claim a Supplier and Restake on Shannon
 
 1. [Claim your Supplier](./7_claiming_supplier.md) on Shannon
 2. Unstake Supplier on Shannon
 3. Wait for the Unbonding Period (e.g. 21 days)
 4. [Stake as a Validator](../../1_operate/2_walkthroughs/3_validator_walkthrough.md) on Shannon
 
-#### 2.3 Option #3: Special Cases Validator Migration
+#### Option #3: Special Cases Validator Migration
 
 :::important Foundation Support
 
