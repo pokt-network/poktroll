@@ -26,7 +26,7 @@ func (k Keeper) MorseClaimableAccountAll(
 	pageRes, err := query.Paginate(macStore, req.Pagination, func(key []byte, value []byte) error {
 		var morseClaimableAccount types.MorseClaimableAccount
 		if err := k.cdc.Unmarshal(value, &morseClaimableAccount); err != nil {
-			return fmt.Errorf("unmarshalling: %w", err)
+			return fmt.Errorf("unmarshalling error: %w", err)
 		}
 
 		morseClaimableAccounts = append(morseClaimableAccounts, morseClaimableAccount)
@@ -34,7 +34,7 @@ func (k Keeper) MorseClaimableAccountAll(
 	})
 
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Errorf("other: %w", err).Error())
+		return nil, status.Error(codes.Internal, fmt.Errorf("pagination error: %w", err).Error())
 	}
 
 	return &types.QueryAllMorseClaimableAccountResponse{MorseClaimableAccount: morseClaimableAccounts, Pagination: pageRes}, nil
