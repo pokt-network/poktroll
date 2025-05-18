@@ -371,13 +371,6 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 	for exportSupplierIdx, exportSupplier := range inputState.AppState.Pos.Validators {
 		supplierAddr := exportSupplier.Address.String()
 
-		// TODO_MAINNET_MIGRATION(@bryanchriswhite, @olshansk): There are suppliers
-		// present in snapshot data that stakes but no "auth" accounts. Determine:
-		// 1. Whether this case is expected or not.
-		// 2. What to do about it, if anything.
-		//
-		// HYPOTHESIS: One potential explanation for this could be non-custodial
-		// supplier stakes, depending on how Morse implemented this feature.
 		if !morseWorkspace.hasAccount(supplierAddr) {
 			logger.Logger.Warn().
 				Str("supplier_address", supplierAddr).
