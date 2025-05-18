@@ -11,7 +11,8 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-// SetMorseClaimableAccount set a specific morseClaimableAccount in the store from its index
+// Set a specific MorseClaimableAccount in the store by its index
+// - Overwrites any existing account with the same index
 func (k Keeper) SetMorseClaimableAccount(ctx context.Context, morseClaimableAccount migrationtypes.MorseClaimableAccount) {
 	// Store the MorseClaimableAccount.
 	mcaStore := k.getMorseClaimableAccountStore(ctx)
@@ -25,7 +26,9 @@ func (k Keeper) SetMorseClaimableAccount(ctx context.Context, morseClaimableAcco
 	k.indexMorseClaimableAccountShannonDestAddress(ctx, morseClaimableAccount)
 }
 
-// GetMorseClaimableAccount returns a morseClaimableAccount from its index
+// Get a MorseClaimableAccount by its index
+// - Returns (account, true) if found
+// - Returns (zero value, false) if not found
 func (k Keeper) GetMorseClaimableAccount(
 	ctx context.Context,
 	address string,
@@ -43,7 +46,10 @@ func (k Keeper) GetMorseClaimableAccount(
 	return morseClaimableAccount, true
 }
 
-// resetMorseClaimableAccounts removes ALL morseClaimableAccount from the store.
+// Remove ALL MorseClaimableAccounts from the store
+// - ONLY call during (re-)import/overwrite
+// - Overwrite import should ONLY be enabled on Alpha/Beta TestNets
+// - Controlled by `allow_morse_account_import_overwrite` migration param
 func (k Keeper) resetMorseClaimableAccounts(
 	ctx context.Context,
 ) {
@@ -60,7 +66,8 @@ func (k Keeper) resetMorseClaimableAccounts(
 	k.resetMorseClaimableAccountShannonDestAddressIndex(ctx)
 }
 
-// GetAllMorseClaimableAccounts returns all morseClaimableAccount
+// Get all MorseClaimableAccounts in the store
+// - Returns a slice of all accounts
 func (k Keeper) GetAllMorseClaimableAccounts(ctx context.Context) (list []migrationtypes.MorseClaimableAccount) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountKeyPrefix))
@@ -77,7 +84,8 @@ func (k Keeper) GetAllMorseClaimableAccounts(ctx context.Context) (list []migrat
 	return
 }
 
-// HasAnyMorseClaimableAccounts returns true if there are any MorseClaimableAccounts in the store.
+// Check if there are ANY MorseClaimableAccounts in the store
+// - Returns true if at least one account exists
 func (k Keeper) HasAnyMorseClaimableAccounts(ctx context.Context) bool {
 	mcaStore := k.getMorseClaimableAccountStore(ctx)
 	iterator := storetypes.KVStorePrefixIterator(mcaStore, []byte{})
@@ -87,8 +95,9 @@ func (k Keeper) HasAnyMorseClaimableAccounts(ctx context.Context) bool {
 	return iterator.Valid()
 }
 
-// ImportFromMorseAccountState imports the MorseClaimableAccounts from the given MorseAccountState.
-// DEV_NOTE: It assumes that the MorseAccountState has already been validated.
+// Import MorseClaimableAccounts from the given MorseAccountState
+// - Assumes MorseAccountState is already validated
+// DEV_NOTE: All imported accounts are set to unclaimed
 func (k Keeper) ImportFromMorseAccountState(
 	ctx context.Context,
 	morseAccountState *migrationtypes.MorseAccountState,
@@ -100,7 +109,9 @@ func (k Keeper) ImportFromMorseAccountState(
 	}
 }
 
-// MintClaimedMorseTokens mints the given coinToMint to the given destAddress.
+// Mint the given coinToMint to destAddress
+// - Mints to migration module account
+// - Sends minted coins to destAddress
 func (k Keeper) MintClaimedMorseTokens(
 	ctx context.Context,
 	destAddress cosmostypes.AccAddress,

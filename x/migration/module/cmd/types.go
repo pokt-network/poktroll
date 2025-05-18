@@ -144,29 +144,42 @@ func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosma
 	return nil
 }
 
-// addSupplierStake adds the given amount to the corresponding Morse account balances in the morseWorkspace.
+// addSupplierStake does two things:
+// - Adds the given amount to the corresponding Morse account balances in the morseWorkspace
+// - Sets the MorseOutputAddress if the given outputAddr is not nil
 func (miw *morseImportWorkspace) addSupplierStake(
 	addr string,
 	amount cosmosmath.Int,
 	outputAddr cometcrypto.Address,
 ) error {
-	account, err := miw.getAccount(addr)
+	// Retrieve the Morse supplier (aka Service/Node) account
+	morseAccount, err := miw.getAccount(addr)
 	if err != nil {
 		return err
 	}
 
-	account.MorseOutputAddress = outputAddr.String()
-	account.SupplierStake.Amount = account.SupplierStake.Amount.Add(amount)
+	morseAccount.MorseOutputAddress = outputAddr.String()
+	morseAccount.SupplierStake.Amount = morseAccount.SupplierStake.Amount.Add(amount)
+
+	// Custodial address (i.e. output, a.k.a. owner) is optional.
+	if outputAddr != nil {
+		morseAccount.MorseOutputAddress = outputAddr.String()
+	}
+
 	return nil
 }
 
 // addAppStake adds the given amount to the corresponding Morse account balances in the morseWorkspace.
-func (miw *morseImportWorkspace) addAppStake(addr string, amount cosmosmath.Int) error {
-	account, err := miw.getAccount(addr)
+func (miw *morseImportWorkspace) addAppStake(
+	addr string,
+	amount cosmosmath.Int,
+) error {
+	// Retrieve the Morse application (aka Validator) account
+	morseAccount, err := miw.getAccount(addr)
 	if err != nil {
 		return err
 	}
 
-	account.ApplicationStake.Amount = account.ApplicationStake.Amount.Add(amount)
+	morseAccount.ApplicationStake.Amount = morseAccount.ApplicationStake.Amount.Add(amount)
 	return nil
 }

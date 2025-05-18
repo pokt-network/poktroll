@@ -10,56 +10,67 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-// ImportMorseClaimableAccounts persists all MorseClaimableAccounts in the given
-// MorseAccountState to the KVStore.
-// This operation MAY ONLY be performed EXACTLY ONCE (per network/re-genesis),
-// and ONLY by an authorized account (i.e. PNF).
-func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrationtypes.MsgImportMorseClaimableAccounts) (*migrationtypes.MsgImportMorseClaimableAccountsResponse, error) {
+// ImportMorseClaimableAccounts
+// - Persists all MorseClaimableAccounts in the provided MorseAccountState to the KVStore.
+// - This operation MUST be performed EXACTLY ONCE per network/re-genesis.
+// - ONLY an authorized account (e.g., PNF) may execute this operation.
+// - Overwriting is only allowed if explicitly enabled in onchain governance params.
+func (k msgServer) ImportMorseClaimableAccounts(
+	ctx context.Context,
+	msg *migrationtypes.MsgImportMorseClaimableAccounts,
+) (*migrationtypes.MsgImportMorseClaimableAccountsResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	logger := sdkCtx.Logger().With("method", "ImportMorseClaimableAccounts")
 
-	// Validate the authority.
+	// Validate authority
+	// - Ensure the message is signed by the correct authority (e.g., PNF).
 	if msg.GetAuthority() != k.GetAuthority() {
 		err := migrationtypes.ErrInvalidSigner.Wrapf("invalid authority address (%s)", msg.GetAuthority())
 		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
-	// Validate the import message.
+	// Validate import message
+	// - Run basic validation for the import message.
 	if err := msg.ValidateBasic(); err != nil {
 		logger.Info(err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Check if MorseClaimableAccounts have already been imported.
+	// Check if MorseClaimableAccounts have already been imported
 	if k.HasAnyMorseClaimableAccounts(sdkCtx) {
-		// Check if allow_morse_accounts_import_overwrite is enabled and return an error if not.
+		// If already imported:
+		// - Check if allow_morse_accounts_import_overwrite is enabled
+		// - If not enabled, return an error
 		shouldOverwrite := k.GetParams(sdkCtx).AllowMorseAccountImportOverwrite
 		if !shouldOverwrite {
 			err := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported and import overwrite is disabled")
 			logger.Info(err.Error())
 			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
-
-		// Delete all existing MorseClaimableAccounts (and indices).
+		// Overwrites are enabled. Overwrite logic:
+		// - Delete all existing MorseClaimableAccounts (and indices)
+		// - Continue to re-import from msg
 		k.resetMorseClaimableAccounts(sdkCtx)
 	}
+	// DEV_NOTE: This code path is reached only if ONE OF THE FOLLOWING is true:
+	// - This is the first time MorseClaimableAccounts are being imported
+	// - This is not the first time MorseClaimableAccounts are being imported, but overwriting is enabled
 
-	// Message handlers run during both CheckTx and DeliverTx.
-	// To reduce noise and confusion, only log during DeliverTx.
+	// Only log during DeliverTx (not CheckTx) to reduce noise/confusion
 	if !sdkCtx.IsCheckTx() {
 		logger.Info("beginning importing morse claimable accounts...")
 	}
 
-	// Import MorseClaimableAccounts.
+	// Import MorseClaimableAccounts from the provided MorseAccountState
 	k.ImportFromMorseAccountState(sdkCtx, &msg.MorseAccountState)
 
-	// Message handlers run during both CheckTx and DeliverTx.
-	// To reduce noise and confusion, only log during DeliverTx.
+	// Only log during DeliverTx (not CheckTx) to reduce noise/confusion
 	if !sdkCtx.IsCheckTx() {
 		logger.Info("done importing morse claimable accounts!")
 	}
 
-	// Emit the corresponding event.
+	// Emit event for Morse claimable accounts import
+	// - Includes: block height, MorseAccountStateHash, and number of accounts
 	if err := sdkCtx.EventManager().EmitTypedEvent(
 		&migrationtypes.EventImportMorseClaimableAccounts{
 			CreatedAtHeight: sdkCtx.BlockHeight(),
@@ -72,7 +83,8 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	// Return the response.
+	// Return response
+	// - Includes: MorseAccountStateHash and number of imported accounts
 	return &migrationtypes.MsgImportMorseClaimableAccountsResponse{
 		// DEV_NOTE: The MorseAccountStateHash is validated in msg#ValidateBasic().
 		StateHash:   msg.MorseAccountStateHash,

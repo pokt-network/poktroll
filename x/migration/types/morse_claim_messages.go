@@ -18,7 +18,7 @@ type morseClaimMessage interface {
 	getSigningBytes() ([]byte, error)
 
 	GetMorsePublicKey() cmted25519.PubKey
-	GetMorseSrcAddress() string
+	GetMorseSignerAddress() string
 	GetMorseSignature() []byte
 	ValidateMorseSignature() error
 }
@@ -45,7 +45,7 @@ func validateMorseSignature(msg morseClaimMessage) error {
 		return ErrMorseSignature.Wrapf(
 			"morseSignature (%x) is invalid for Morse address (%s)",
 			msg.GetMorseSignature(),
-			msg.GetMorseSrcAddress(),
+			msg.GetMorseSignerAddress(),
 		)
 	}
 
