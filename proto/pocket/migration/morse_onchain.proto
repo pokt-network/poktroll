@@ -9,21 +9,24 @@ import "gogoproto/gogo.proto";
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
-// MorseAccountState is the onchain representation of all account state to be migrated from Morse.
-// It is NEVER persisted onchain but is a dependency of the MsgImportMorseClaimableAccount handler.
-// It's main purpose is to expose the #GetHash() method for verifying the integrity of all MorseClaimableAccounts.
+// MorseAccountState
+// - Onchain representation of all account state to be migrated from Morse
+// - NEVER persisted onchain
+// - Dependency of the MsgImportMorseClaimableAccount handler
+// - Main purpose: exposes #GetHash() for verifying integrity of all MorseClaimableAccounts
 message MorseAccountState {
   repeated MorseClaimableAccount accounts = 2 [(gogoproto.jsontag) = "accounts", (gogoproto.moretags) = "yaml:\"accounts\""];
 }
 
-// MorseClaimableAccount is the onchain (persisted) representation of a Morse
-// account which is claimable as part of the Morse -> Shannon migration.
-// They are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).
-// It is created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis).
-// It is updated ONLY ONCE, when it is claimed (per morse_src_address per network / re-genesis).
+// MorseClaimableAccount
+// - Onchain (persisted) representation of a Morse account claimable as part of Morse -> Shannon migration
+// - Created during MorseAccountState import (see: MsgImportMorseClaimableAccount)
+// - Created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis),
+//   unless the allow_morse_account_import_overwrite migration param is enabled
+// - Updated ONLY ONCE, when claimed (per morse_src_address per network / re-genesis)
 message MorseClaimableAccount {
-  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
-  // This field is intended to remain empty until the account has been claimed.
+  // bech32-encoded address of the Shannon account to mint claimed balance
+  // Intended to remain empty until the account is claimed
   string shannon_dest_address = 1 [(gogoproto.nullable) = true, (cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
 
   // Hex-encoded address of the Morse account whose balance will be claimed.
@@ -33,36 +36,66 @@ message MorseClaimableAccount {
   //   - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
   string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
 
-  // DEV_NOTE: This field was momentarily used to hold the Morse public key; however, an
-  // optimization eliminates the need for this. Reserved for backwards compatibility.
-  //
-  // The ed25519 public key of the account.
+  // DEV_NOTE: This field was temporarily used for the Morse public key
+  // - Optimization eliminated the need for this
+  // - Reserved for backwards compatibility
+  // - The ed25519 public key of the account
   // bytes public_key = 4 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
   reserved 4;
 
-  // The unstaked upokt tokens (i.e. account balance) available for claiming.
+  // Unstaked upokt tokens (account balance) available for claiming
   cosmos.base.v1beta1.Coin unstaked_balance = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "unstaked_balance"];
 
-  // The staked tokens associated with a supplier actor which corresponds to this account address.
-  // DEV_NOTE: A few contextual notes related to Morse:
-  // - A Supplier is called a Servicer or Node (not a full node) in Morse
-  // - All Validators are Servicers, not all servicers are Validators
-  // - Automatically, the top 100 staked Servicers are validator
-  // - This only accounts for servicer stake balance transition
-  // TODO_MAINNET(@Olshansk): Develop a strategy for bootstrapping validators in Shannon by working with the cosmos ecosystem
+  // Staked tokens for supplier actor corresponding to this account address
+  // DEV_NOTE: Context for Morse:
+  // - Supplier = Servicer or Node (not a full node) in Morse
+  // - All Validators are Servicers; not all Servicers are Validators
+  // - Top 100 staked Servicers are validators (automatic)
+  // - Only accounts for servicer stake balance transition
+  // TODO_MAINNET(@Olshansk): Develop strategy for bootstrapping validators in Shannon with cosmos ecosystem
   cosmos.base.v1beta1.Coin supplier_stake = 6 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "supplier_stake"];
 
-  // The staked tokens associated with an application actor which corresponds to this account address.
+  // Staked tokens for application actor corresponding to this account address
   cosmos.base.v1beta1.Coin application_stake = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "application_stake"];
 
-  // The Shannon height at which the account was claimed.
-  // This field is intended to remain empty until the account has been claimed.
+  // Shannon height at which the account was claimed
+  // Intended to remain empty until the account is claimed
   int64 claimed_at_height = 8 [(gogoproto.nullable) = true, (gogoproto.jsontag) = "claimed_at_height", (gogoproto.moretags) = "yaml:\"claimed_at_height\""];
 
   // ONLY applicable to Morse node/supplier accounts.
   // Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
-  // Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
-  //  See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  // - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  // - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+  //   See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
   string morse_output_address = 9 [ (gogoproto.jsontag) = "morse_output_address,omitempty", (gogoproto.moretags) = "yaml:\"morse_output_address\""];
 }
 
+// MorseSupplierClaimSignerType
+// - Enum for Morse supplier claim signer type
+enum MorseSupplierClaimSignerType {
+  // Unspecified signer type
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED = 0;
+
+  // signer === addr === operator === owner
+  // Custodial signer type
+  // - The Morse node address is NOT EMPTY (i.e. operator)
+  // - The Morse output address is EMPTY (i.e. owner)
+  // - Implies that the operator and owner are THE SAME offchain identity
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR = 1;
+
+  // signer === operator === addr && owner !== operator
+  // Non-custodial signer type
+  // - The Morse node address is NOT EMPTY (i.e. operator)
+  // - The Morse output address is NOT EMPTY (i.e. owner)
+  // - Implies that the operator and owner are MOST LIKELY DIFFERENT offchain identities
+  // - The operator is the one signing the supplier claim
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR = 2;
+
+  // signer === owner && owner !== addr
+  // Owner non-custodial signer type
+  // - The Morse node address is EMPTY (i.e. operator)
+  // - The Morse output address is NOT EMPTY (i.e. owner)
+  // - Implies that the operator and owner are MOST LIKELY different offchain identities
+  // - The owner is the one signing the supplier claim
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER = 3;
+}
