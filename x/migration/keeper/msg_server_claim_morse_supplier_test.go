@@ -147,6 +147,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 		shannonDestAddr,
 		shannonDestAddr,
+		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		testSupplierServices,
 		sample.AccAddress(),
@@ -160,7 +161,9 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	sharedParams := sharedtypes.DefaultParams()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
 	expectedRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseSrcAddress:      msgClaim.GetMorseSrcAddress(),
+		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
 		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
 		ClaimedBalance: expectedClaimedUnstakedTokens.
 			Add(morseClaimableAccount.GetApplicationStake()),
@@ -173,13 +176,15 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	expectedMorseAccount := morseClaimableAccount
 	expectedMorseAccount.ShannonDestAddress = shannonDestAddr
 	expectedMorseAccount.ClaimedAtHeight = ctx.BlockHeight()
-	foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.GetMorseSrcAddress())
+	foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.GetMorseSignerAddress())
 	require.True(t, found)
 	require.Equal(t, *expectedMorseAccount, foundMorseAccount)
 
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseSupplierClaimed{
-		MorseSrcAddress:      msgClaim.GetMorseSrcAddress(),
+		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
 		ClaimedBalance:       expectedClaimedUnstakedTokens,
 		ClaimedSupplierStake: supplierStake,
 		SessionEndHeight:     expectedSessionEndHeight,
@@ -226,6 +231,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 	msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 		sample.AccAddress(),
 		sample.AccAddress(),
+		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		testSupplierServices,
 		sample.AccAddress(),
@@ -239,6 +245,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		invalidClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
@@ -264,6 +271,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		invalidMsgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			nonExistentMorsePrivKey.PubKey().Address().String(),
 			nonExistentMorsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
@@ -274,7 +282,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			codes.NotFound,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
 				"no morse claimable account exists with address %q",
-				invalidMsgClaim.GetMorseSrcAddress(),
+				invalidMsgClaim.GetMorseSignerAddress(),
 			).Error(),
 		)
 
@@ -342,6 +350,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
@@ -373,6 +382,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),

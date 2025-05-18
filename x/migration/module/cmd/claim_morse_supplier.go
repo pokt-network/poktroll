@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -19,17 +20,24 @@ import (
 
 func ClaimSupplierCmd() *cobra.Command {
 	claimSupplierCmd := &cobra.Command{
-		Use:   "claim-supplier [morse_key_export_path] [path_to_supplier_stake_config] --from [shannon_dest_key_name]",
-		Args:  cobra.ExactArgs(2),
+		Use:   "claim-supplier [morse_node_address] [morse_private_key_export_path] [path_to_supplier_stake_config] --from [shannon_dest_key_name]",
+		Args:  cobra.ExactArgs(3),
 		Short: "Claim an onchain MorseClaimableAccount as a staked supplier account",
 		Long: `Claim an onchain MorseClaimableAccount as a staked supplier account.
 
-The unstaked balance amount of the onchain MorseClaimableAccount will be minted to the Shannon account specified by the --from flag.
-The Shannon account will also be staked as a supplier with a stake equal to the supplier stake the MorseClaimableAccount had on Morse.
+morse_node_address: Hex-encoded address of the Morse node account to be claimed
 
-This will construct, sign, and broadcast a tx containing a MsgClaimMorseSupplier message.
+morse_private_key_export_path: Path to the Morse private key for ONE of the following:
+  - Morse node account (operator) — custodial
+  - Morse output account (owner) — non-custodial
 
-For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
+What happens:
+  - The unstaked balance of the onchain MorseClaimableAccount will be minted to the Shannon account specified by --from
+  - The Shannon account will also be staked as a supplier with a stake equal to the supplier stake the MorseClaimableAccount had on Morse
+  - A transaction with MsgClaimMorseSupplier will be constructed, signed, and broadcast
+
+More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
+
 		RunE:    runClaimSupplier,
 		PreRunE: logger.PreRunESetup,
 	}
@@ -65,8 +73,13 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	// Retrieve and validate the morse key based on the first argument provided.
-	morseKeyExportPath := args[0]
+	morseNodeAddr := args[0]
+	if _, err := hex.DecodeString(morseNodeAddr); err != nil {
+		return fmt.Errorf("expected morse operating address to be hex-encoded, got: %q", morseNodeAddr)
+	}
+
+	// Retrieve and validate the morse key based on the provided argument.
+	morseKeyExportPath := args[1]
 	morsePrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
 	if err != nil {
 		return err
@@ -79,7 +92,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load the supplier stake config from the YAML file.
-	supplierStakeConfigPath := args[1]
+	supplierStakeConfigPath := args[2]
 	supplierStakeConfig, err := loadSupplierStakeConfigYAML(supplierStakeConfigPath)
 	if err != nil {
 		return err
@@ -87,23 +100,24 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 
 	// Check and warn if the signing account doesn't match either the configured owner or operator address.
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
-	ownerAddr := supplierStakeConfig.OwnerAddress
-	operatorAddr := supplierStakeConfig.OperatorAddress
+	shannonOwnerAddr := supplierStakeConfig.OwnerAddress
+	shannonOperatorAddr := supplierStakeConfig.OperatorAddress
 	switch shannonSigningAddr {
-	case ownerAddr, operatorAddr:
+	case shannonOwnerAddr, shannonOperatorAddr:
 		// All good.
 	default:
 		logger.Logger.Warn().
 			Str("signer_address", shannonSigningAddr).
-			Str("owner_address", ownerAddr).
-			Str("operator_address", operatorAddr).
+			Str("owner_address", shannonOwnerAddr).
+			Str("operator_address", shannonOperatorAddr).
 			Msg("signer address matches NEITHER owner NOR operator address")
 	}
 
 	// Construct a MsgClaimMorseSupplier message.
 	msgClaimMorseSupplier, err := types.NewMsgClaimMorseSupplier(
-		ownerAddr,
-		operatorAddr,
+		shannonOwnerAddr,
+		shannonOperatorAddr,
+		morseNodeAddr,
 		morsePrivKey,
 		supplierStakeConfig.Services,
 		shannonSigningAddr,
