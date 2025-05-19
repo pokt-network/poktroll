@@ -40,6 +40,15 @@ func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccoun
 	require.NoError(t, err)
 }
 
+// SetMorseAccountState sets the suite's #accountState field to the given MorseAccountState.
+func (s *MigrationModuleSuite) SetMorseAccountState(
+	t *testing.T,
+	accountState *migrationtypes.MorseAccountState,
+) {
+	require.NotNil(t, accountState)
+	s.accountState = accountState
+}
+
 // GetAccountState returns the suite's #accountState field.
 func (s *MigrationModuleSuite) GetAccountState(t *testing.T) *migrationtypes.MorseAccountState {
 	require.NotNil(t, s.accountState)

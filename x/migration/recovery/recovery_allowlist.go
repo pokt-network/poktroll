@@ -1,11 +1,6 @@
-package keeper
+package recovery
 
-import (
-	"github.com/pokt-network/poktroll/x/migration/types"
-)
-
-var RecoveryAllowlist = []string{
-
+var recoveryAllowlist = []string{
 	// Lost AppStakes
 	"0004c28be615053d7a59c1fc89f1541dd8a49770",
 	"002fe24c3ef210c72da347c8affe27dd8f2eab83",
@@ -2066,6 +2061,11 @@ var RecoveryAllowlist = []string{
 	"381add8cf814f45b8bf6dea56ac185c2358b8bf2",
 
 	// Module accounts
-	types.MorseModuleAccountNameDao,
-	types.MorseModuleAccountNameFeeCollector,
+	"dao",
+	"fee_collector",
+}
+
+// GetRecoveryAllowList returns the list of addresses that are allowed to be recovered
+func GetRecoveryAllowList() []string {
+	return recoveryAllowlist
 }

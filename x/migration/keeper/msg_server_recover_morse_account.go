@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/x/migration/recovery"
 	"github.com/pokt-network/poktroll/x/migration/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -33,7 +34,7 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 	}
 
 	// Check if the morse account is listed in the recoverable accounts list.
-	if !slices.Contains(RecoveryAllowlist, msg.GetMorseSrcAddress()) {
+	if !slices.Contains(recovery.GetRecoveryAllowList(), msg.GetMorseSrcAddress()) {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			migrationtypes.ErrMorseRecoverableAccountClaim.Wrapf(
