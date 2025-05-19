@@ -10,26 +10,27 @@ const (
 	MainNetChainId      = "pocket"
 )
 
-// TODO_IN_THIS_COMMIT: comment...
+// EstimatedBlockDurationByChainId maps chain IDs to their estimated block durations.
+//
+// - These estimates are derived from the consensus configuration for each network.
+// - Block durations are inferred by averaging the time between recent consecutive blocks.
+// - Estimations consider factors such as:
+//   - network latency
+//   - timeout_commit configuration
+//   - Consult the consensus timeout configurations for further details:
+//     https://docs.cometbft.com/v0.38/core/configuration#consensus-timeouts-explained
+//
+// | Network       | timeout_commit | Consensus Config                                                                                          |
+// |---------------|----------------|-----------------------------------------------------------------------------------------------------------|
+// | Alpha TestNet | 1m0s           | https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/testnet-alpha/config.toml#L426 |
+// | Beta TestNet  | 5m0s           | https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/testnet-beta/config.toml#L426  |
+// | MainNet       | 1m0s           | https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/mainnet/config.toml#L426       |
 var EstimatedBlockDurationByChainId = map[string]time.Duration{
 	AlphaTestNetChainId: AlphaTestNetEstimatedBlockDuration,
 	BetaTestNetChainId:  BetaTestNetEstimatedBlockDuration,
 	MainNetChainId:      MainNetEstimatedBlockDuration,
 }
 
-// TODO_IN_THIS_COMMIT: comment...
-// ... specified in the config.toml; i.e. per validator, offchain ...
-// ... times can be / were inferred by averaging the duration between recent consecutive blocks...
-// ... est_avg_block_time ≈ timeout_commit + 1s...
-// ... actual block time depends on dynamic factors like network latency, consensus outcomes, etc...
-// See: https://docs.cometbft.com/v0.38/core/configuration#consensus-timeouts-explained
-/*
-| Network       | timeout_commit | Consensus Config                                                                                          |
-|---------------|----------------|-----------------------------------------------------------------------------------------------------------|
-| Alpha TestNet | 1m0s           | https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/testnet-alpha/config.toml#L426 |
-| Beta TestNet  | 5m0s           | https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/testnet-beta/config.toml#L426  |
-| MainNet       | 1m0s           | https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/mainnet/config.toml#L426       |
-*/
 const (
 	AlphaTestNetEstimatedBlockDuration = time.Minute
 	BetaTestNetEstimatedBlockDuration  = 5 * time.Minute

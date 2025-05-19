@@ -103,7 +103,6 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		UnbondingEndHeight: sessionEndHeight,
 	}
 
-	// TODO_IN_THIS_COMMIT: cleanup...
 	// Collect events for emission. Events are appended prior to emission to allow
 	// for conditional modification prior to emission.
 	//
@@ -172,7 +171,9 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// Emit the application claim event first, an unbonding begin event MAY follow.
 	events = append(events, morseAppClaimedEvent)
 
-	// TODO_IN_THIS_COMMIT: comment...
+	// If the claimed application is still unbonding:
+	// - Set the unstake session end height on the application
+	// - Emit an unbonding begin event
 	if morseClaimableAccount.IsUnbonding() {
 		estimatedUnstakeSessionEndHeight := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
 

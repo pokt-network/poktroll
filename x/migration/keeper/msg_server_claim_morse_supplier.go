@@ -452,7 +452,7 @@ func checkClaimSigner(
 	return claimSignerType, nil
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// emitEvents emits the given events via the event manager.
 func emitEvents(ctx context.Context, events []cosmostypes.Msg) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	for _, event := range events {

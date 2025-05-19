@@ -36,8 +36,16 @@ func (m *MorseClaimableAccount) SecondsUntilUnbonded() int64 {
 	return int64(time.Until(m.UnstakingTime).Seconds())
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-// ... returns -1 if unstaking is already complete...
+// GetEstimatedUnbondingEndHeight returns the estimated block height at which the
+// MorseClaimableAccount's unbonding period will end. The estimation process includes:
+//
+// - Calculating the remaining time until unstaking is complete.
+// - Using the estimated block duration from an off-chain configuration.
+//
+// Returns:
+//
+// - The estimated block height when unbonding will end.
+// - -1 if unstaking is already complete.
 func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Context) int64 {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
@@ -45,11 +53,12 @@ func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Conte
 	// DEV_NOTE: This is an offchain config value; i.e. not queryable.
 	estimatedBlockDuration := int64(pocket.EstimatedBlockDurationByChainId[sdkCtx.ChainID()])
 
-	// TODO_IN_THIS_COMMIT: comment...
-	// ... return early if unstaking is already complete...
+	// Check if unstaking is complete:
+	//   - Calculate the remaining duration until unstaking.
+	//   - If the duration is zero or negative, the unstaking period has elapsed.
+	//   - Return -1 to indicate that unbonding is complete.
 	durationUntilUnstakeCompletion := int64(time.Until(m.UnstakingTime))
 	if durationUntilUnstakeCompletion <= 0 {
-		// The unstaking completion time has already elapsed.
 		return -1
 	}
 

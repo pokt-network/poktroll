@@ -109,7 +109,7 @@ message MorseApplication {
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 6 [(gogoproto.jsontag) = "staked_tokens"];
 
-  // TODO_IN_THIS_COMMIT: comment...
+  // The ISO 8601 UTC timestamp at which the Morse application began unbonding on Morse.
   google.protobuf.Timestamp unstaking_time = 8 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true, (gogoproto.jsontag) = "unstaking_time", (gogoproto.moretags) = "yaml:\"unstaking_time\""];
 }
 
@@ -137,7 +137,7 @@ message MorseValidator {
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 7 [(gogoproto.jsontag) = "tokens"];
 
-  // TODO_IN_THIS_COMMIT: comment...
+  // The ISO 8601 UTC timestamp at which the Morse node/supplier began unbonding on Morse.
   google.protobuf.Timestamp unstaking_time = 8 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true, (gogoproto.jsontag) = "unstaking_time", (gogoproto.moretags) = "yaml:\"unstaking_time\""];
 
   // Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
