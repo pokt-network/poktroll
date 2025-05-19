@@ -364,7 +364,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		expectedErr := status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"Morse account %q is not staked as an supplier or application, please use `pocketd tx migration claim-account` instead",
+				"Morse account %q is not staked as a supplier or application, please use `pocketd tx migration claim-account` instead",
 				nonSupplierMorseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)

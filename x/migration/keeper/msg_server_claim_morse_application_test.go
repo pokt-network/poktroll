@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	cosmosmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -71,6 +72,14 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		gomock.Eq(shannonDestAccAddr),
 		gomock.Eq(sdk.NewCoins(expectedMintCoin)),
 	).Return(nil).Times(1)
+
+	// Set the application min stake to zero so that applications can be
+	// claimed without being unstaked.
+	appParams := apptypes.DefaultParams()
+	appParams.MinStake = &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: cosmosmath.ZeroInt()}
+	appKeeper.EXPECT().GetParams(gomock.Any()).
+		Return(appParams).
+		AnyTimes()
 
 	// Simulate the application not existing.
 	appKeeper.EXPECT().GetApplication(

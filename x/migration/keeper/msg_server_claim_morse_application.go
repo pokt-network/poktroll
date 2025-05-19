@@ -41,7 +41,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 
 	// Mint the totalTokens to the shannonDestAddress account balance.
 	// The application stake is subsequently escrowed from the shannonDestAddress account balance.
-	if err := k.MintClaimedMorseTokens(ctx, shannonAccAddr, morseClaimableAccount.TotalTokens()); err != nil {
+	if err = k.MintClaimedMorseTokens(ctx, shannonAccAddr, morseClaimableAccount.TotalTokens()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -115,7 +115,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 
 	// If the claimed application stake is less than the minimum stake, the application is immediately unstaked.
 	// - All stake and unstaked tokens have already been minted to shannonDestAddr account
-	minStake := k.supplierKeeper.GetParams(ctx).MinStake
+	minStake := k.appKeeper.GetParams(ctx).MinStake
 	if postClaimAppStake.Amount.LT(minStake.Amount) {
 		// Emit the supplier claim event first, then the unbonding end event.
 		events = append(events, morseAppClaimedEvent)
@@ -226,7 +226,7 @@ func (k msgServer) CheckMorseClaimableApplicationAccount(
 	morseSrcAddress string,
 ) (*migrationtypes.MorseClaimableAccount, error) {
 	// Ensure that a MorseClaimableAccount exists and has not been claimed for the given morseSrcAddress.
-	morseClaimableAccount, err := k.CheckMorseClaimableAccount(ctx, morseSrcAddress)
+	morseClaimableAccount, err := k.CheckMorseClaimableAccount(ctx, morseSrcAddress, migrationtypes.ErrMorseApplicationClaim)
 	if err != nil {
 		return nil, err
 	}
@@ -238,8 +238,8 @@ func (k msgServer) CheckMorseClaimableApplicationAccount(
 	if !morseClaimableAccount.SupplierStake.IsZero() {
 		return nil, status.Error(
 			codes.FailedPrecondition,
-			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"Morse account %q is staked as an application, please use `pocketd tx migration claim-supplier` instead",
+			migrationtypes.ErrMorseApplicationClaim.Wrapf(
+				"Morse account %q is staked as a supplier, please use `pocketd tx migration claim-supplier` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
@@ -248,7 +248,7 @@ func (k msgServer) CheckMorseClaimableApplicationAccount(
 	if !morseClaimableAccount.ApplicationStake.IsPositive() {
 		return nil, status.Error(
 			codes.FailedPrecondition,
-			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+			migrationtypes.ErrMorseApplicationClaim.Wrapf(
 				"Morse account %q is not staked as a application or supplier, please use `pocketd tx migration claim-account` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),

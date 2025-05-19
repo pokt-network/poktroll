@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 
+	"cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
@@ -271,7 +272,7 @@ func (k msgServer) CheckMorseClaimableSupplierAccount(
 	morseSrcAddress string,
 ) (*migrationtypes.MorseClaimableAccount, error) {
 	// Ensure that a MorseClaimableAccount exists and has not been claimed for the given morseSrcAddress.
-	morseClaimableAccount, err := k.CheckMorseClaimableAccount(ctx, morseSrcAddress)
+	morseClaimableAccount, err := k.CheckMorseClaimableAccount(ctx, morseSrcAddress, migrationtypes.ErrMorseSupplierClaim)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +285,7 @@ func (k msgServer) CheckMorseClaimableSupplierAccount(
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"Morse account %q is staked as a supplier, please use `pocketd tx migration claim-application` instead",
+				"Morse account %q is staked as an application, please use `pocketd tx migration claim-application` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
@@ -294,7 +295,7 @@ func (k msgServer) CheckMorseClaimableSupplierAccount(
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"Morse account %q is not staked as an supplier or application, please use `pocketd tx migration claim-account` instead",
+				"Morse account %q is not staked as a supplier or application, please use `pocketd tx migration claim-account` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
@@ -314,6 +315,7 @@ func (k msgServer) CheckMorseClaimableSupplierAccount(
 func (k msgServer) CheckMorseClaimableAccount(
 	ctx context.Context,
 	morseSrcAddress string,
+	claimError *errors.Error,
 ) (*migrationtypes.MorseClaimableAccount, error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
@@ -356,7 +358,7 @@ func (k msgServer) CheckMorseClaimableAccount(
 	if !isFound {
 		return nil, status.Error(
 			codes.NotFound,
-			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+			claimError.Wrapf(
 				"no morse claimable account exists with address %q",
 				morseSrcAddress,
 			).Error(),
@@ -367,7 +369,7 @@ func (k msgServer) CheckMorseClaimableAccount(
 	if morseClaimableAccount.IsClaimed() {
 		return nil, status.Error(
 			codes.FailedPrecondition,
-			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+			claimError.Wrapf(
 				"morse address %q has already been claimed at height %d by shannon address %q",
 				morseClaimableAccount.GetMorseSrcAddress(),
 				morseClaimableAccount.ClaimedAtHeight,
