@@ -55,7 +55,7 @@ type Params struct {
 	// Onchain business logic requires, and ensures, that the corresponding block count of the
 	// application unbonding period will exceed the end of its corresponding proof window close height.
 	ApplicationUnbondingPeriodSessions uint64 `protobuf:"varint,8,opt,name=application_unbonding_period_sessions,json=applicationUnbondingPeriodSessions,proto3" json:"application_unbonding_period_sessions"`
-	// The amount of npokt (pico POKT) that a compute unit should translate to when settling a session.
+	// The amount of ppokt (pico POKT) that a compute unit should translate to when settling a session.
 	// DEV_NOTE: ppokt is used instead of upokt to allow for a compute unit to cost less than 1upokt
 	// This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
 	ComputeUnitsToPpoktMultiplier uint64 `protobuf:"varint,9,opt,name=compute_units_to_ppokt_multiplier,json=computeUnitsToPpoktMultiplier,proto3" json:"compute_units_to_ppokt_multiplier" yaml:"compute_units_to_ppokt_multiplier"`
