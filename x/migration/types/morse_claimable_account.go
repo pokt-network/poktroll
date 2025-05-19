@@ -26,7 +26,7 @@ func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Conte
 
 	// TODO_IN_THIS_COMMIT: comment...
 	// ... return early if unstaking is already complete...
-	durationUntilUnstakeCompletion := int64(time.Since(m.UnstakingCompletionTime))
+	durationUntilUnstakeCompletion := int64(time.Until(m.UnstakingTime))
 	if durationUntilUnstakeCompletion <= 0 {
 		// The unstaking completion time has already elapsed.
 		return -1

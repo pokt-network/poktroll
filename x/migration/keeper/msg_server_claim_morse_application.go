@@ -161,7 +161,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// - use a lookup table to get the est. block times per network...
 	// - use the shared params and the block time to calculate the unstake session end height...
 	// - emit an unbonding start event...
-	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
+	if !morseClaimableAccount.UnstakingTime.IsZero() {
 		unbondedApp := &apptypes.Application{
 			Address:                 shannonAccAddr.String(),
 			Stake:                   &postClaimAppStake,
@@ -170,7 +170,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 			// ServiceConfigHistory: (intentionally omitted, no services were staked),
 		}
 
-		durationUntilUnstake := time.Until(morseClaimableAccount.UnstakingCompletionTime)
+		durationUntilUnstake := time.Until(morseClaimableAccount.UnstakingTime)
 		if durationUntilUnstake.Seconds() <= 0 {
 			// Emit an event which signals that the claimed Morse supplier's unbonding
 			// period began on Morse, and ended while waiting to be claimed.
@@ -226,7 +226,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	}
 
 	// TODO_IN_THIS_COMMIT: comment...
-	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
+	if !morseClaimableAccount.UnstakingTime.IsZero() {
 		estimatedUnstakeSessionEndHeight := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
 
 		// DEV_NOTE: SHOULD NEVER happen, the check above is the same, but in terms of time instead of block height...

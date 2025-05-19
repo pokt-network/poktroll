@@ -269,8 +269,8 @@ func (k msgServer) ClaimMorseSupplier(
 	// - use a lookup table to get the est. block times per network...
 	// - use the shared params and the block time to calculate the unstake session end height...
 	// - emit an unbonding start event...
-	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
-		durationUntilUnstake := time.Until(morseClaimableAccount.UnstakingCompletionTime)
+	if !morseClaimableAccount.UnstakingTime.IsZero() {
+		durationUntilUnstake := time.Until(morseClaimableAccount.UnstakingTime)
 		if durationUntilUnstake.Seconds() <= 0 {
 			// Emit an event which signals that the claimed Morse supplier's unbonding
 			// period began on Morse, and ended while waiting to be claimed.
@@ -331,7 +331,7 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 
 	// If the claimed supplier is still unbonding, emit an unbonding begin event.
-	if !morseClaimableAccount.UnstakingCompletionTime.IsZero() {
+	if !morseClaimableAccount.UnstakingTime.IsZero() {
 		estimatedUnstakeSessionEndHeight := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
 
 		// DEV_NOTE: SHOULD NEVER happen, the check above is the same, but in terms of time instead of block height...
