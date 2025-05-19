@@ -287,7 +287,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	}
 }
 
-func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
+func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_BelowMinStake() {
 	// Set the min app stake param to just above the supplier stake amount.
 	minStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, testmigration.GenMorseSupplierStakeAmount(uint64(0))+1)
 	s.ResetTestApp(1, minStake)
