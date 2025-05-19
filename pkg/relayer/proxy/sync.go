@@ -164,6 +164,19 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 	defer httpResponse.Body.Close()
 
+	// If the backend service returns a 5xx error, we consider it an internal error
+	// and do not expose the error to the client.
+	if httpResponse.StatusCode >= 500 {
+		logger.Error().
+			Int("status_code", httpResponse.StatusCode).
+			Msg("backend service returned a server error")
+
+		return relayRequest, ErrRelayerProxyInternalError.Wrapf(
+			"backend service returned an error with status code %d",
+			httpResponse.StatusCode,
+		)
+	}
+
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
 	_, responseBz, err := sdktypes.SerializeHTTPResponse(httpResponse)
