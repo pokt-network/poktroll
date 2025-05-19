@@ -2,6 +2,30 @@ package recovery
 
 import "slices"
 
+// Those slices MUST reflect the addresses listed in the following spreadsheet:
+// https://docs.google.com/spreadsheets/d/1V5Ge9lFXmX1A81DNZUOfYD6GSyuYrFwdXx4Wlhcnbck/edit?gid=1220065218#gid=1220065218
+
+// IsMorseAddressRecoverable checks if a given address exists in any of the
+// allowlists for Morse address recovery.
+func IsMorseAddressRecoverable(address string) bool {
+	// Check if the address is in the recovery allowlist
+	if slices.Contains(lostAppStakesAllowlist, address) {
+		return true
+	}
+
+	// Check if the address is in the known app stakes allowlist
+	if slices.Contains(knownAppStakesAllowlist, address) {
+		return true
+	}
+
+	// Check if the address is in the module accounts allowlist
+	if slices.Contains(moduleAccountsAllowlist, address) {
+		return true
+	}
+
+	return false
+}
+
 var lostAppStakesAllowlist = []string{
 	"0004c28be615053d7a59c1fc89f1541dd8a49770",
 	"002fe24c3ef210c72da347c8affe27dd8f2eab83",
@@ -2066,28 +2090,4 @@ var knownAppStakesAllowlist = []string{
 var moduleAccountsAllowlist = []string{
 	"dao",
 	"fee_collector",
-}
-
-// TODO_FOLLOWUP: Add other list as the allowlist spreadsheet is updated
-// (e.g. invalidAddressesAllowlist, etc.)
-
-// IsMorseAddressRecoverable checks if a given address exists in any of the
-// allowlists for Morse address recovery.
-func IsMorseAddressRecoverable(address string) bool {
-	// Check if the address is in the recovery allowlist
-	if slices.Contains(lostAppStakesAllowlist, address) {
-		return true
-	}
-
-	// Check if the address is in the known app stakes allowlist
-	if slices.Contains(knownAppStakesAllowlist, address) {
-		return true
-	}
-
-	// Check if the address is in the module accounts allowlist
-	if slices.Contains(moduleAccountsAllowlist, address) {
-		return true
-	}
-
-	return false
 }
