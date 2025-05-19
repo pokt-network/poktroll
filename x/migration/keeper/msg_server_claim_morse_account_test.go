@@ -65,7 +65,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 			Add(morseAccount.GetSupplierStake()).
 			Add(morseAccount.GetApplicationStake())
 		expectedRes := &migrationtypes.MsgClaimMorseAccountResponse{
-			MorseSrcAddress:  msgClaim.GetMorseSrcAddress(),
+			MorseSrcAddress:  msgClaim.GetMorseSignerAddress(),
 			ClaimedBalance:   expectedClaimedBalance,
 			SessionEndHeight: expectedSessionEndHeight,
 		}
@@ -75,14 +75,14 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		expectedMorseAccount := morseAccount
 		expectedMorseAccount.ShannonDestAddress = msgClaim.GetShannonDestAddress()
 		expectedMorseAccount.ClaimedAtHeight = ctx.BlockHeight()
-		foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.GetMorseSrcAddress())
+		foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.GetMorseSignerAddress())
 		require.True(t, found)
 		require.Equal(t, *expectedMorseAccount, foundMorseAccount)
 
 		// Assert that an event is emitted for each claim.
 		expectedEvent := &migrationtypes.EventMorseAccountClaimed{
 			ShannonDestAddress: msgClaim.ShannonDestAddress,
-			MorseSrcAddress:    msgClaim.GetMorseSrcAddress(),
+			MorseSrcAddress:    msgClaim.GetMorseSignerAddress(),
 			ClaimedBalance:     expectedClaimedBalance,
 			SessionEndHeight:   expectedSessionEndHeight,
 		}
@@ -161,7 +161,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			codes.NotFound,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
 				"no morse claimable account exists with address %q",
-				invalidMsgClaim.GetMorseSrcAddress(),
+				invalidMsgClaim.GetMorseSignerAddress(),
 			).Error(),
 		)
 

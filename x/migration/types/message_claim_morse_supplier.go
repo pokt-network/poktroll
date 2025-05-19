@@ -16,14 +16,19 @@ var (
 
 // NewMsgClaimMorseSupplier creates a new MsgClaimMorseSupplier.
 // If morsePrivateKey is provided (i.e. not nil), it is used to sign the message.
+// morsePrivateKey MUST be ONE OF THE FOLLOWING:
+//   - The Morse node private key (i.e. operator); a.k.a custodial
+//   - The Morse output private key (i.e. owner); a.k.a non-custodial
 func NewMsgClaimMorseSupplier(
 	shannonOwnerAddress string,
 	shannonOperatorAddress string,
+	morseNodeAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
 	services []*sharedtypes.SupplierServiceConfig,
 	shannonSigningAddr string,
 ) (*MsgClaimMorseSupplier, error) {
 	msg := &MsgClaimMorseSupplier{
+		MorseNodeAddress:       morseNodeAddress,
 		ShannonOwnerAddress:    shannonOwnerAddress,
 		ShannonOperatorAddress: shannonOperatorAddress,
 		Services:               services,
@@ -35,6 +40,14 @@ func NewMsgClaimMorseSupplier(
 
 		if err := msg.SignMorseSignature(morsePrivateKey); err != nil {
 			return nil, err
+		}
+
+		// Assume that the morsePrivateKey corresponds to ONE OF THE FOLLOWING:
+		// - The morse node address (i.e. operator): leave signer_is_output_address as false
+		// - The morse output address (i.e. owner): set signer_is_output_address to true
+		// If any other private key is used, the claim message will error.
+		if msg.GetMorseSignerAddress() != morseNodeAddress {
+			msg.SignerIsOutputAddress = true
 		}
 	}
 
@@ -107,8 +120,11 @@ func (msg *MsgClaimMorseSupplier) getSigningBytes() ([]byte, error) {
 	return proto.Marshal(&signingMsg)
 }
 
-// GetMorseSrcAddress returns the morse source address associated with
-// the Morse public key of the given message.
-func (msg *MsgClaimMorseSupplier) GetMorseSrcAddress() string {
+// GetMorseSignerAddress returns the address associated with the Morse keypair which
+// was used to sign this claim message.
+// This address is expected to be ONE OF THE FOLLOWING:
+// - The Morse node address (i.e. operator)
+// - The Morse output address (i.e. owner)
+func (msg *MsgClaimMorseSupplier) GetMorseSignerAddress() string {
 	return msg.GetMorsePublicKey().Address().String()
 }

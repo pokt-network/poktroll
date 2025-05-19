@@ -85,8 +85,7 @@ func (msg *MsgClaimMorseAccount) getSigningBytes() ([]byte, error) {
 	return proto.Marshal(&signingMsg)
 }
 
-// GetMorseSrcAddress returns the morse source address associated with
-// the Morse public key of the given message.
-func (msg *MsgClaimMorseAccount) GetMorseSrcAddress() string {
+// GetMorseSignerAddress returns the morse address which was used to sign the claim message.
+func (msg *MsgClaimMorseAccount) GetMorseSignerAddress() string {
 	return msg.GetMorsePublicKey().Address().String()
 }

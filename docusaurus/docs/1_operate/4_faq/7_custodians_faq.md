@@ -5,7 +5,7 @@ title: Third-Party Custodians FAQ
 
 :::important
 
-This document was last updated on 05/14/2025.
+This document was last updated on 05/19/2025.
 
 :::
 
@@ -23,7 +23,7 @@ This document was last updated on 05/14/2025.
 - [Terminology](#terminology)
 - [Background and Action Items for Exchanges](#background-and-action-items-for-exchanges)
 - [What **IS NOT** Changing?](#what-is-not-changing)
-- [What **IS** Changing? (What You Must Do)](#what-is-changing-what-you-must-do)
+- [What **IS** Changing?)](#what-is-changing-what-you-must-do)
   - [Accounts/Wallets](#accountswallets)
   - [Token Minting on Morse](#token-minting-on-morse)
   - [Full Node Integration](#full-node-integration)
@@ -31,6 +31,7 @@ This document was last updated on 05/14/2025.
 - [Timeline](#timeline)
   - [14-Day Migration Window](#14-day-migration-window)
 - [Communication](#communication)
+
 
 ## Terminology
 
@@ -45,7 +46,7 @@ This document was last updated on 05/14/2025.
 
 ## Background and Action Items for Exchanges
 
-[Pocket Network](https://pocket.network) is migrating from Morse to Shannon (consensus-breaking, non-backwards-compatible upgrade) before the end of Q2.
+[Pocket Network](https://pocket.network) will hard-fork from Morse MainNet to Shannon MainNet on June 3, 2025 at 10 a.m. PDT. This is consensus-breaking, non-backwards-compatible upgrade. Activities for June 3, 2025 can be found [here](https://medium.com/decentralized-infrastructure/pocket-network-shannon-state-shift-day-b8c06122cb76).
 
 **Exchanges must:**
 
@@ -70,19 +71,20 @@ This document was last updated on 05/14/2025.
 
 ### Accounts/Wallets
 
-- Shannon uses the [Cosmos Cryptographic Key Scheme](https://docs.cosmos.network/main/learn/beginner/accounts).
-- New wallet required and manual claiming of tokens needed.
+- The Shannon upgrade uses the [Cosmos Cryptographic Key Scheme](https://docs.cosmos.network/main/learn/beginner/accounts).
+- A new Cosmos-based wallet is required to claim tokens. 
+- Tokens will need to be claimed manually.
 
 ### Token Minting on Morse
 
-- Snapshot block disables $POKT minting on Morse via governance transaction.
-- Morse will stop functioning (no incentive for validators).
+- $POKT token minting will stop within the same block that the snapshot is taken.
+- Morse will stop functioning as there will be no incentives for validators.
 
 ### Full Node Integration
 
 - Integrate with new client:
   - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet)
-  - Or get a Foundation-sponsored RPC endpoint from [Grove](https://portal.grove.city)
+  - or get a free Foundation-sponsored RPC endpoint from [Grove](https://portal.grove.city)
 
 ---
 
@@ -91,7 +93,7 @@ This document was last updated on 05/14/2025.
 | Action                | How-To / Links                                                                                                                                                                                         |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Create New Wallet** | - [pocketd CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli) <br/> - [Keplr Wallet](https://www.keplr.app/) <br/> - [Soothe Vault](https://trustsoothe.io/)        |
-| **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) <br/> Or get Foundation RPC endpoint from [Grove](https://portal.grove.city) (DM Jinx/Arthur in Telegram) |
+| **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) <br/> - or get a free Foundation-sponsored RPC endpoint from [Grove](https://portal.grove.city) |
 | **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account) <br/> - UI: Website with offline signing support (Coming Soon)                                                                         |
 
 :::warning TODO(Grove): Coming Soon
@@ -99,6 +101,7 @@ This document was last updated on 05/14/2025.
 - Pocket specific tutorial on using the Keplr wallet
 - Pocket specific tutorial on using the Soothe wallet
 - Pocket specific tutorial on using the Cosmos multisig wallets
+- Tutorial for token claiming website for both online and offline use cases
 - Video tutorial on claiming tokens
 
 Have ideas for other improvements? Please open an issue [here](https://github.com/pokt-network/poktroll/issues/new?template=issue.md).
@@ -127,8 +130,8 @@ Have ideas for other improvements? Please open an issue [here](https://github.co
 
 ## Communication
 
-- Each custodian should already have a Telegram group with Foundation & Grove personnel
-- For reference, these personnel are located in the US-East timezone, and may therefor have a delayed response time.
+- Each custodian should already have a Telegram group with Foundation & Grove personnel.
+- For reference, these personnel are located in the US-East timezone, and may therefore have a delayed response time.
 - Use your group to ask questions or update on progress.
 
 :::note Where to reach out?
