@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/proof"
@@ -77,7 +77,7 @@ func (s *tokenLogicModuleTestSuite) SetupTest() {
 		OwnerAddress:         s.sourceOwnerBech32,
 	}
 
-	appStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+	appStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, math.MaxInt64)
 	s.app = &apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
@@ -112,7 +112,7 @@ func (s *tokenLogicModuleTestSuite) SetupTest() {
 // and no proof request probability such that no claims require a proof.
 func (s *tokenLogicModuleTestSuite) getProofParams() *prooftypes.Params {
 	proofParams := prooftypes.DefaultParams()
-	highProofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+	highProofRequirementThreshold := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, math.MaxInt64)
 	proofParams.ProofRequirementThreshold = &highProofRequirementThreshold
 	proofParams.ProofRequestProbability = 0
 	return &proofParams

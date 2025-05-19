@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 )
 
 // Visit the pocket-network-genesis repo for the source of truth for these addresses.
@@ -38,12 +38,12 @@ const (
 // NetworkAuthzGranteeAddress is a map of network names (i.e chain-id) to their
 // respective authorization (i.e. PNF/DAO) addresses.
 var NetworkAuthzGranteeAddress = map[string]string{
-	volatile.AlphaTestNetChainId: AlphaTestNetPnfAddress,
-	volatile.BetaTestNetChainId:  BetaTestNetPnfAddress,
+	pocket.AlphaTestNetChainId: AlphaTestNetPnfAddress,
+	pocket.BetaTestNetChainId:  BetaTestNetPnfAddress,
 
 	// Grove's address is used as of #1191 to authorize updates to mainnet parameters.
 	// TODO_POST_MAINNET: Update to PNF address once the migration is complete.
-	volatile.MainNetChainId: MainnetGroveAddress,
+	pocket.MainNetChainId: MainnetGroveAddress,
 
 	// TODO_TECHDEBT: We currently use "pocket" for the local network environment,
 	// which interferes with the mainnet address. Streamline using `pocket-local` for the localnet

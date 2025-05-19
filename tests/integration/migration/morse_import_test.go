@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
@@ -23,7 +23,7 @@ const (
 	defaultNumMorseClaimableAccounts = 10
 )
 
-var defaultTestMinStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+var defaultTestMinStake = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 
 type MigrationModuleTestSuite struct {
 	suites.MigrationModuleSuite

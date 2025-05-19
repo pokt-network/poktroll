@@ -6,7 +6,7 @@ import (
 	cosmosmath "cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
@@ -122,9 +122,9 @@ func (miw *morseImportWorkspace) addAccount(addr string) error {
 	accountIdx := miw.nextIdx()
 	importAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  addr,
-		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-		SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		UnstakedBalance:  cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+		SupplierStake:    cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+		ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 	}
 	miw.accountState.Accounts = append(miw.accountState.Accounts, importAccount)
 	miw.accountIdxByAddress[addr] = uint64(accountIdx)

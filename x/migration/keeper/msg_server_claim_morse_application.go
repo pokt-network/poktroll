@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -147,7 +147,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	previousSessionEnd := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStart-1)
 
 	// Query for any existing application stake prior to staking.
-	preClaimAppStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	preClaimAppStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 	foundApp, isFound := k.appKeeper.GetApplication(ctx, shannonAccAddr.String())
 	if isFound {
 		preClaimAppStake = *foundApp.Stake

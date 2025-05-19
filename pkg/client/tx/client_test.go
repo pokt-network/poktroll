@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
@@ -531,7 +531,7 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
 	// We're using StakeApplication but it could have been any other message type.
-	appStake := types.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
+	appStake := types.NewCoin(pocket.DenomuPOKT, math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingAddr.String(), // Providing address to avoid panic from #GetSigners().
 		Stake:    &appStake,
@@ -586,10 +586,10 @@ func TestTxClient_GasConfig(t *testing.T) {
 
 		// Standard test values
 		standardGasPrices = cosmostypes.NewDecCoins(
-			cosmostypes.NewDecCoin(volatile.DenomuPOKT, math.NewInt(1000)),
+			cosmostypes.NewDecCoin(pocket.DenomuPOKT, math.NewInt(1000)),
 		)
 		standardFeeAmount = cosmostypes.NewDecCoins(
-			cosmostypes.NewDecCoin(volatile.DenomuPOKT, math.NewInt(10000)),
+			cosmostypes.NewDecCoin(pocket.DenomuPOKT, math.NewInt(10000)),
 		)
 	)
 
@@ -620,7 +620,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 				feeCoins := txBuilder.GetTx().GetFee()
 				require.Equal(t, 1, len(feeCoins))
 				require.Equal(t, "200000000", feeCoins[0].Amount.String())
-				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+				require.Equal(t, pocket.DenomuPOKT, feeCoins[0].Denom)
 			},
 		},
 		{
@@ -634,7 +634,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 				feeCoins := txBuilder.GetTx().GetFee()
 				require.Equal(t, 1, len(feeCoins))
 				require.Equal(t, "10000", feeCoins[0].Amount.String())
-				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+				require.Equal(t, pocket.DenomuPOKT, feeCoins[0].Denom)
 			},
 		},
 		{
@@ -654,7 +654,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 				feeCoins := txBuilder.GetTx().GetFee()
 				require.Equal(t, 1, len(feeCoins))
 				require.Equal(t, "150000000", feeCoins[0].Amount.String())
-				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+				require.Equal(t, pocket.DenomuPOKT, feeCoins[0].Denom)
 			},
 		},
 		{
@@ -662,7 +662,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 			options: []client.TxClientOption{
 				tx.WithSigningKeyName(testSigningKeyName),
 				tx.WithGasPrices(&cosmostypes.DecCoins{
-					cosmostypes.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(15001, 4)), // 1.5001 uPOKT
+					cosmostypes.NewDecCoinFromDec(pocket.DenomuPOKT, math.LegacyNewDecWithPrec(15001, 4)), // 1.5001 uPOKT
 				}),
 				tx.WithGasSetting(&flags.GasSetting{Gas: 1000, Simulate: false}),
 			},
@@ -672,7 +672,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 				feeCoins := txBuilder.GetTx().GetFee()
 				require.Equal(t, 1, len(feeCoins))
 				require.Equal(t, "1501", feeCoins[0].Amount.String())
-				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+				require.Equal(t, pocket.DenomuPOKT, feeCoins[0].Denom)
 			},
 		},
 		{
@@ -680,7 +680,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 			options: []client.TxClientOption{
 				tx.WithSigningKeyName(testSigningKeyName),
 				tx.WithFeeAmount(&cosmostypes.DecCoins{
-					cosmostypes.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1005, 1)), // 100.5 uPOKT
+					cosmostypes.NewDecCoinFromDec(pocket.DenomuPOKT, math.LegacyNewDecWithPrec(1005, 1)), // 100.5 uPOKT
 				}),
 			},
 			expectError: false,
@@ -688,7 +688,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 				feeCoins := txBuilder.GetTx().GetFee()
 				require.Equal(t, 1, len(feeCoins))
 				require.Equal(t, "101", feeCoins[0].Amount.String())
-				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+				require.Equal(t, pocket.DenomuPOKT, feeCoins[0].Denom)
 			},
 		},
 	}
@@ -780,7 +780,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 			if tt.validateFee != nil {
 				// Create a test message to trigger fee calculation
 				signingAddr, _ := signingKey.GetAddress()
-				appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
+				appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1000000))
 				msg := &apptypes.MsgStakeApplication{
 					Address:  signingAddr.String(),
 					Stake:    &appStake,

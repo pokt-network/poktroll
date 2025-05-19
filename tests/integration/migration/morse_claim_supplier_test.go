@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
@@ -103,7 +103,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 			migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
 			migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
 			s.NoError(err)
-			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
+			s.Equal(cosmostypes.NewCoin(pocket.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 			currentHeight := s.SdkCtx().BlockHeight()
 			serviceConfigs := expectedSupplier.GetActiveServiceConfigs(currentHeight)
@@ -270,7 +270,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
 			migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
 			s.NoError(err)
-			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
+			s.Equal(cosmostypes.NewCoin(pocket.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 			// Restore active services to the dehydrated expected Supplier.
 			currentHeight := s.SdkCtx().BlockHeight()
@@ -289,7 +289,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 
 func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	// Set the min app stake param to just above the supplier stake amount.
-	minStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, testmigration.GenMorseSupplierStakeAmount(uint64(0))+1)
+	minStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, testmigration.GenMorseSupplierStakeAmount(uint64(0))+1)
 	s.ResetTestApp(1, minStake)
 	s.GenerateMorseAccountState(s.T(), 1, testmigration.AllSupplierMorseAccountActorType)
 	_, err := s.ImportMorseClaimableAccounts(s.T())
@@ -342,7 +342,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
 	migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
 	s.NoError(err)
-	s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
+	s.Equal(cosmostypes.NewCoin(pocket.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 	// Assert that the supplier was NOT staked.
 	supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())

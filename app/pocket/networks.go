@@ -1,4 +1,4 @@
-package volatile
+package pocket
 
 import (
 	"time"
@@ -23,6 +23,5 @@ var EstimatedBlockDurationByChainId = map[string]time.Duration{
 const (
 	AlphaTestNetEstimatedBlockDuration = time.Minute
 	BetaTestNetEstimatedBlockDuration  = 5 * time.Minute
-	// TODO_MAINNET(@bryanchriswhite): Ensure that this matches
-	MainNetEstimatedBlockDuration = 10 * time.Minute
+	MainNetEstimatedBlockDuration      = time.Minute
 )

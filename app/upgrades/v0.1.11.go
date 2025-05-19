@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 )
 
 const (
@@ -52,7 +52,7 @@ var Upgrade_0_1_11 = Upgrade{
 			// - True for Alpha and Beta TestNets
 			// - False for ALL other chain IDs (e.g. MainNet)
 			switch cosmostypes.UnwrapSDKContext(ctx).ChainID() {
-			case volatile.AlphaTestNetChainId, volatile.BetaTestNetChainId:
+			case pocket.AlphaTestNetChainId, pocket.BetaTestNetChainId:
 				migrationParams.AllowMorseAccountImportOverwrite = true
 			default:
 				migrationParams.AllowMorseAccountImportOverwrite = false

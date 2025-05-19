@@ -48,7 +48,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -991,7 +991,7 @@ func fundAccount(
 	amountUpokt int64,
 ) {
 
-	fundingCoins := types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(amountUpokt)))
+	fundingCoins := types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(amountUpokt)))
 
 	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
 	require.NoError(t, err)
@@ -999,7 +999,7 @@ func fundAccount(
 	err = bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, recipientAddr, fundingCoins)
 	require.NoError(t, err)
 
-	coin := bankKeeper.SpendableCoin(ctx, recipientAddr, volatile.DenomuPOKT)
+	coin := bankKeeper.SpendableCoin(ctx, recipientAddr, pocket.DenomuPOKT)
 	require.Equal(t, coin.Amount, math.NewInt(amountUpokt))
 }
 
@@ -1013,7 +1013,7 @@ func newFaucetInitChainerFn(faucetBech32 string, faucetAmtUpokt int64) InitChain
 				Address: faucetBech32,
 				Coins: sdk.NewCoins(
 					sdk.NewInt64Coin(
-						volatile.DenomuPOKT,
+						pocket.DenomuPOKT,
 						faucetAmtUpokt,
 					),
 				),

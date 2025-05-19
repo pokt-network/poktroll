@@ -7,7 +7,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 )
 
 // IsClaimed returns true if the MorseClaimableAccount has been claimed;
@@ -22,7 +22,7 @@ func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Conte
 
 	// Retrieve the estimated block duration for the current chain from a lookup table.
 	// DEV_NOTE: This is an offchain config value; i.e. not queryable.
-	estimatedBlockDuration := int64(volatile.EstimatedBlockDurationByChainId[sdkCtx.ChainID()])
+	estimatedBlockDuration := int64(pocket.EstimatedBlockDurationByChainId[sdkCtx.ChainID()])
 
 	// TODO_IN_THIS_COMMIT: comment...
 	// ... return early if unstaking is already complete...

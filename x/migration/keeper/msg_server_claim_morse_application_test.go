@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/migration/mocks"
@@ -36,8 +36,8 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedClaimedAtHeight := int64(10)
-	unstakedBalance := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
-	applicationStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 200)
+	unstakedBalance := sdk.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	applicationStake := sdk.NewInt64Coin(pocket.DenomuPOKT, 200)
 	expectedMintCoin := unstakedBalance.Add(applicationStake)
 	expectedClaimedUnstakedTokens := expectedMintCoin.Sub(applicationStake)
 	expectedMsgStakeApp := &apptypes.MsgStakeApplication{
@@ -99,7 +99,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  unstakedBalance,
 		ApplicationStake: applicationStake,
-		SupplierStake:    sdk.NewInt64Coin(volatile.DenomuPOKT, 0),
+		SupplierStake:    sdk.NewInt64Coin(pocket.DenomuPOKT, 0),
 		// ShannonDestAddress: (intentionally omitted),
 		// ClaimedAtHeight:    (intentionally omitted),
 	}
@@ -167,8 +167,8 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 }
 
 func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
-	claimableUnstakedBalance := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
-	claimableApplicationStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 200)
+	claimableUnstakedBalance := sdk.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	claimableApplicationStake := sdk.NewInt64Coin(pocket.DenomuPOKT, 200)
 	expectedAppServiceConfig := &sharedtypes.ApplicationServiceConfig{ServiceId: "svc1"}
 
 	k, ctx := keepertest.MigrationKeeper(t)
@@ -179,7 +179,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  claimableUnstakedBalance,
 		ApplicationStake: claimableApplicationStake,
-		SupplierStake:    sdk.NewInt64Coin(volatile.DenomuPOKT, 0),
+		SupplierStake:    sdk.NewInt64Coin(pocket.DenomuPOKT, 0),
 		// ShannonDestAddress: (intentionally omitted),
 		// ClaimedAtHeight:    (intentionally omitted),
 	}

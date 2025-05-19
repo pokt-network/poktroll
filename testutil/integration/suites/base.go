@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -86,7 +86,7 @@ func (s *BaseIntegrationSuite) FundAddress(
 	addr cosmostypes.AccAddress,
 	amountUpokt int64,
 ) {
-	coinUpokt := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, amountUpokt)
+	coinUpokt := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, amountUpokt)
 	sendMsg := &banktypes.MsgSend{
 		FromAddress: s.GetApp().GetFaucetBech32(),
 		ToAddress:   addr.String(),

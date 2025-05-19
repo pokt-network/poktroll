@@ -10,7 +10,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/cmd/signals"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
@@ -267,7 +267,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		}
 
 		coin := coins[0]
-		if coin.Denom != volatile.DenomuPOKT {
+		if coin.Denom != pocket.DenomuPOKT {
 			return ErrMorseExportState.Wrapf("unsupported denom %q", coin.Denom)
 		}
 
