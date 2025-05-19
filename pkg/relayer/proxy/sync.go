@@ -44,12 +44,16 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	serviceId := meta.SessionHeader.ServiceId
 
 	// Track whether the relay completes successfully to handle reward management
-	successfulRelay := false
+	// A successful relay means that:
+	// - The relay request was processed without errors
+	// - The relay response was sent back to the client
+	// - The relay was forwarded to the miner for mining eligibility checking
+	shouldRewardRelay := false
 
 	// Define a cleanup function to handle reward management for failed relays
-	unclaimFailedRelayReward := func() {
-		if !successfulRelay {
-			// If the relay was not successful, revert any accumulated rewards.
+	unclaimOptimisticallyAccumulatedFailedRelayReward := func() {
+		if !shouldRewardRelay {
+			// If the relay was not successful, revert any optimistically accumulated rewards.
 			// This handles several failure scenarios such as:
 			// - Request validation failures
 			// - Backend connection errors
@@ -63,7 +67,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Register the cleanup function to run when this function exits.
 	// This ensures reward management happens regardless of how the function returns
 	// (regular return or error).
-	defer unclaimFailedRelayReward()
+	defer unclaimOptimisticallyAccumulatedFailedRelayReward()
 
 	// Use an optimistic relay reward accumulation (before serving) for two critical reasons:
 	//
@@ -221,7 +225,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Mark the relay as successful. This prevents the deferred reward management
 	// function from reverting the accumulated rewards.
-	successfulRelay = true
+	shouldRewardRelay = true
 	return relayRequest, nil
 }
 

@@ -353,11 +353,16 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		// We infer the behavior from the response's code and message prefix
 		expectedErrCode int32
 		expectedErrMsg  string
-		// optimisticallyAccumulatesRelayReward indicates whether the relay request
+		// shouldAccumulateRelayReward indicates whether the relay request
 		// should optimistically accumulate relay rewards.
+		//
+		// E.g.
+		// - If true, relay rewards are accumulated after basic validation
+		// - If false, relay rewards are NOT accumulated due to early failure.
+		//
 		// This is needed since early failing scenarios do not reach the accumulateRelayReward
 		// call (e.g. RelayRequest unmarshaling, ValidateBasic...)
-		optimisticallyAccumulatesRelayReward bool
+		shouldAccumulateRelayReward bool
 	}{
 		{
 			desc: "Unparsable relay request",
@@ -403,9 +408,9 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithNonStakedApplicationAddress,
 
-			expectedErrCode:                      testproxy.JSONRPCInternalErrorCode,
-			expectedErrMsg:                       "error getting ring for application address",
-			optimisticallyAccumulatesRelayReward: true,
+			expectedErrCode:             testproxy.JSONRPCInternalErrorCode,
+			expectedErrMsg:              "error getting ring for application address",
+			shouldAccumulateRelayReward: true,
 		},
 		{
 			desc: "Ring signature mismatch",
@@ -413,9 +418,9 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithRingSignatureMismatch,
 
-			expectedErrCode:                      testproxy.JSONRPCInternalErrorCode,
-			expectedErrMsg:                       "ring signature in the relay request does not match the expected one for the app",
-			optimisticallyAccumulatesRelayReward: true,
+			expectedErrCode:             testproxy.JSONRPCInternalErrorCode,
+			expectedErrMsg:              "ring signature in the relay request does not match the expected one for the app",
+			shouldAccumulateRelayReward: true,
 		},
 		{
 			desc: "Session mismatch",
@@ -423,9 +428,9 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithDifferentSession,
 
-			expectedErrCode:                      testproxy.JSONRPCInternalErrorCode,
-			expectedErrMsg:                       "session ID mismatch",
-			optimisticallyAccumulatesRelayReward: true,
+			expectedErrCode:             testproxy.JSONRPCInternalErrorCode,
+			expectedErrMsg:              "session ID mismatch",
+			shouldAccumulateRelayReward: true,
 		},
 		{
 			desc: "Invalid relay supplier",
@@ -440,9 +445,9 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			},
 			inputScenario: sendRequestWithInvalidRelaySupplier,
 
-			expectedErrCode:                      testproxy.JSONRPCInternalErrorCode,
-			expectedErrMsg:                       "supplier does not belong to session",
-			optimisticallyAccumulatesRelayReward: true,
+			expectedErrCode:             testproxy.JSONRPCInternalErrorCode,
+			expectedErrMsg:              "supplier does not belong to session",
+			shouldAccumulateRelayReward: true,
 		},
 		{
 			desc: "Relay request signature does not match the request payload",
@@ -450,9 +455,9 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithSignatureForDifferentPayload,
 
-			expectedErrCode:                      testproxy.JSONRPCInternalErrorCode,
-			expectedErrMsg:                       "invalid relay request signature or bytes",
-			optimisticallyAccumulatesRelayReward: true,
+			expectedErrCode:             testproxy.JSONRPCInternalErrorCode,
+			expectedErrMsg:              "invalid relay request signature or bytes",
+			shouldAccumulateRelayReward: true,
 		},
 		{
 			desc:                 "Successful relay",
@@ -479,9 +484,9 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			},
 			inputScenario: sendRequestWithCustomSessionHeight(blockHeight),
 
-			expectedErrCode:                      0,
-			expectedErrMsg:                       "", // Relay handled successfully
-			optimisticallyAccumulatesRelayReward: true,
+			expectedErrCode:             0,
+			expectedErrMsg:              "", // Relay handled successfully
+			shouldAccumulateRelayReward: true,
 		},
 		{
 			desc: "Failed late relay outside session grace period",
@@ -503,9 +508,9 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			// Send a request that has a late session past the grace period
 			inputScenario: sendRequestWithCustomSessionHeight(blockHeight),
 
-			expectedErrCode:                      testproxy.JSONRPCInternalErrorCode,
-			expectedErrMsg:                       "session expired", // Relay rejected by the supplier
-			optimisticallyAccumulatesRelayReward: true,
+			expectedErrCode:             testproxy.JSONRPCInternalErrorCode,
+			expectedErrMsg:              "session expired", // Relay rejected by the supplier
+			shouldAccumulateRelayReward: true,
 		},
 	}
 
@@ -533,7 +538,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		// indicates optimistic accumulation.
 		// This tests that the RelayMeter.AccumulateRelayReward is called exactly
 		// once for each relay request that should optimistically accumulate rewards
-		if test.optimisticallyAccumulatesRelayReward {
+		if test.shouldAccumulateRelayReward {
 			relayMeterAccumulateRewardCallCount := testBehavior.RelayMeterCallCount.AccumulateRelayReward
 			require.Equal(t, 1, relayMeterAccumulateRewardCallCount)
 		}
@@ -542,7 +547,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		// This is crucial to ensure that optimistically accumulated rewards are
 		// properly reverted when the relay request fails with an error code,
 		// preventing incorrect reward calculations
-		if test.optimisticallyAccumulatesRelayReward && test.expectedErrCode != 0 {
+		if test.shouldAccumulateRelayReward && test.expectedErrCode != 0 {
 			relayMeterRevertRewardCallCount := testBehavior.RelayMeterCallCount.SetNonApplicableRelayReward
 			require.Equal(t, 1, relayMeterRevertRewardCallCount)
 		}
