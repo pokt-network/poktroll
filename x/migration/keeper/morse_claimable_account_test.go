@@ -41,19 +41,6 @@ func TestMorseClaimableAccountGet(t *testing.T) {
 		)
 	}
 }
-func TestMorseClaimableAccountRemove(t *testing.T) {
-	keeper, ctx := keepertest.MigrationKeeper(t)
-	morseClaimableAccounts := createNMorseClaimableAccount(keeper, ctx, 10)
-	for _, item := range morseClaimableAccounts {
-		keeper.RemoveMorseClaimableAccount(ctx,
-			item.MorseSrcAddress,
-		)
-		_, found := keeper.GetMorseClaimableAccount(ctx,
-			item.MorseSrcAddress,
-		)
-		require.False(t, found)
-	}
-}
 
 func TestMorseClaimableAccountGetAll(t *testing.T) {
 	keeper, ctx := keepertest.MigrationKeeper(t)

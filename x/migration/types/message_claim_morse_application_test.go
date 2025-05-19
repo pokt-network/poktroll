@@ -73,7 +73,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 		expectedErr := migrationtypes.ErrMorseSignature.Wrapf(
 			"morseSignature (%x) is invalid for Morse address (%s)",
 			msg.GetMorseSignature(),
-			msg.GetMorseSrcAddress(),
+			msg.GetMorseSignerAddress(),
 		)
 
 		err = msg.ValidateBasic()
