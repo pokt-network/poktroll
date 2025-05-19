@@ -405,7 +405,7 @@ func (mf *MorseMigrationFixtures) addAccount(
 	morseAccount.Coins = cosmostypes.NewCoins(*balance)
 
 	var morseAccountJSONBz []byte
-	// Module accounts need to be marshalled differently because they have additional properties
+	// Module accounts need to be marshaled differently because they have additional properties
 	if accountType == MorseModule {
 		// Create a module account structure with name and permissions
 		morseModuleAccount := &migrationtypes.MorseModuleAccount{
