@@ -81,14 +81,14 @@ func (k msgServer) ClaimMorseSupplier(
 	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
 	morseClaimableAccount, isFound = k.GetMorseClaimableAccount(
 		sdkCtx,
-		msg.GetMorseSrcAddress(),
+		msg.GetMorseNodeAddress(),
 	)
 	if !isFound {
 		return nil, status.Error(
 			codes.NotFound,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
 				"no morse claimable account exists with address %q",
-				msg.GetMorseSrcAddress(),
+				msg.GetMorseNodeAddress(),
 			).Error(),
 		)
 	}
@@ -100,7 +100,7 @@ func (k msgServer) ClaimMorseSupplier(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
 				"morse address %q has already been claimed at height %d by shannon address %q",
-				msg.GetMorseSrcAddress(),
+				morseClaimableAccount.GetMorseSrcAddress(),
 				morseClaimableAccount.ClaimedAtHeight,
 				morseClaimableAccount.ShannonDestAddress,
 			).Error(),
@@ -131,16 +131,27 @@ func (k msgServer) ClaimMorseSupplier(
 		)
 	}
 
+	// Ensure the signer is ONE OF THE FOLLOWING:
+	// - The Morse node address (i.e. operator)
+	// - The Morse output address (i.e. owner)
+	claimSignerType, err := checkClaimSigner(msg, &morseClaimableAccount)
+	if err != nil {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			err.Error(),
+		)
+	}
+
 	// Mint the totalTokens to the shannonDestAddress account balance.
-	// The Supplier stake is subsequently escrowed from the shannonDestAddress account balance.
+	// The Supplier stake is subsequently escrowed from the shannon_dest_address account balance.
 	// NOTE: The current supplier module's staking fee parameter will subsequently be deducted
 	// from the claimed balance.
-	if err := k.MintClaimedMorseTokens(ctx, shannonOwnerAddr, morseClaimableAccount.TotalTokens()); err != nil {
+	if err = k.MintClaimedMorseTokens(ctx, shannonOperatorAddr, morseClaimableAccount.TotalTokens()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Set ShannonDestAddress & ClaimedAtHeight (claim).
-	morseClaimableAccount.ShannonDestAddress = shannonOwnerAddr.String()
+	morseClaimableAccount.ShannonDestAddress = shannonOperatorAddr.String()
 	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
 
 	// Update the MorseClaimableAccount.
@@ -151,7 +162,7 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Query for any existing supplier stake prior to staking.
 	preClaimSupplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt())
-	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonOwnerAddr.String())
+	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonOperatorAddr.String())
 	if isFound {
 		preClaimSupplierStake = *foundSupplier.Stake
 	}
@@ -177,7 +188,9 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Emit an event which signals that the morse account has been claimed.
 	event := migrationtypes.EventMorseSupplierClaimed{
-		MorseSrcAddress:      msg.GetMorseSrcAddress(),
+		MorseNodeAddress:     msg.GetMorseNodeAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+		ClaimSignerType:      claimSignerType,
 		ClaimedBalance:       claimedUnstakedBalance,
 		ClaimedSupplierStake: claimedSupplierStake,
 		SessionEndHeight:     sessionEndHeight,
@@ -196,10 +209,85 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Return the response.
 	return &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseSrcAddress:      msg.GetMorseSrcAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+		MorseNodeAddress:     msg.GetMorseNodeAddress(),
+		ClaimSignerType:      claimSignerType,
 		ClaimedBalance:       claimedUnstakedBalance,
 		ClaimedSupplierStake: claimedSupplierStake,
 		SessionEndHeight:     sessionEndHeight,
 		Supplier:             supplier,
 	}, nil
+}
+
+// checkClaimSigner verifies that the msg was signed by an authorized Morse private key.
+//
+// It compares the msg's signer address to the morseClaimableAccount's addresses.
+
+// The signers can be found of:
+// - morse_node_address (operator; owner IFF output/owner is nil)
+// - morse_output_address (owner; operator is most likely a different offchain identity)
+//
+// morse_node_address:
+// - Morse node account is claiming itself (i.e. the operator)
+// - Account remains custodial (if output/owner is nil)
+// - Account remains non-custodial (if output/owner is non-nil)
+//
+// morse_output_address:
+// - Morse output/owner account is claiming the Morse node account
+// - Account remains non-custodial (under output/owner account control)
+//
+// If the Morse node is claiming itself, checks whether a Morse output address exists to distinguish:
+//   - Operator claiming a custodial account
+//   - Operator claiming a non-custodial account
+//
+// Returns:
+//   - claimSignerType: Enum describing the signer type
+//   - err: Error if signer is not authorized
+func checkClaimSigner(
+	msg *migrationtypes.MsgClaimMorseSupplier,
+	morseClaimableAccount *migrationtypes.MorseClaimableAccount,
+) (claimSignerType migrationtypes.MorseSupplierClaimSignerType, err error) {
+	// node addr === operator
+	nodeAddr := morseClaimableAccount.GetMorseSrcAddress()
+	// output addr === owner (MAY be empty)
+	outputAddr := morseClaimableAccount.GetMorseOutputAddress()
+
+	// Check the message signer address
+	switch msg.GetMorseSignerAddress() {
+
+	// signer === owner && owner !== operator
+	// Owner claim (a.k.a non-custodial claim)
+	// This is the owner claiming the Morse node/servicer/supplier account
+	case outputAddr:
+		claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER
+
+	// Operator claim
+	// I.e., the signer of the message IS NOT the output/owner account.
+	// May be custodial or non-custodial depending on whether the output (i.e. owner) is set.
+	case nodeAddr:
+		switch outputAddr {
+
+		// signer === node addr === operator === owner
+		// Custodial claim: No output address is set so the operator === owner === signer
+		case "":
+			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR
+
+		// signer === operator === node addr && owner !== operator
+		// Non-custodial claim: Output address exists so the operator is claiming the account on behalf of the owner.
+		default:
+			claimSignerType = migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR
+		}
+
+	// Signer does not match either the operator or owner address
+	default:
+		return migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"morse signer address (%s) doesn't match the operator (%s) or owner (%s) address",
+				msg.GetMorseSignerAddress(),
+				nodeAddr,
+				outputAddr,
+			)
+	}
+
+	return claimSignerType, nil
 }
