@@ -17,6 +17,7 @@ import (
 
 // MicroToPicoPOKT is the conversion factor from uPOKT (micro POKT) to pPOKT (pico POKT).
 // It is used to convert the estimated claim reward from pPOKT to uPOKT.
+// See: https://en.wikipedia.org/wiki/Metric_prefix.
 const MicroToPicoPOKT = 1e6
 
 // GetNumClaimedComputeUnits returns the number of compute units for a given claim
@@ -72,10 +73,13 @@ func (claim *Claim) GetClaimeduPOKT(
 
 	// Convert the claim's reward from pPOKT to uPOKT.
 	// This is done to ensure that the reward is always in uPOKT units,
-	// DEV_NOTE: Even though the cost of a compute unit can go as low as 1 pPOKT,
-	// a claim's reward MUST always be at least 1 uPOKT.
-	// This also avoids changing the whole codebase to use pPOKT instead of uPOKT,
-	// keeping it consistent with the existing uPOKT usage.
+	// DEV_NOTE: Although compute unit costs can be as small as 1 pPOKT, technically
+	// a claim's reward MUST be at least 1 uPOKT.
+	// Claims and Proofs transactions and submission fees would make such low reward
+	// claims unprofitable anyway, and RelayMiners would perform profitability
+	// checks before submitting such claims.
+	// This approach also allows us to maintain consistency by using uPOKT throughout
+	// the codebase rather than introducing pPOKT as a unit in other components.
 	uPoktAmount := new(big.Int).Div(ppoktAmount, big.NewInt(MicroToPicoPOKT))
 
 	if uPoktAmount.Sign() < 0 {

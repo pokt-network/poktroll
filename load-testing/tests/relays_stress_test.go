@@ -123,7 +123,8 @@ type relaysSuite struct {
 	numRelaysSent atomic.Uint64
 	// relayRatePerApp is the rate of relay requests sent per application per second.
 	relayRatePerApp int64
-	// relayPpoktAmountCost is the amount of tokens (e.g. "ppokt") a relay request costs.
+	// relayPpoktAmountCost is the amount, in pPOKT, a relay request costs.
+	// NOTE: 1 POKT = 10^12 pPOKT. See: https://en.wikipedia.org/wiki/Metric_prefix.
 	// It is equal to the tokenomics module's `compute_units_to_ppokt_multiplier` parameter.
 	relayPpoktAmountCost int64
 
