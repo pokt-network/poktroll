@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"time"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -29,41 +28,6 @@ func (k msgServer) ClaimMorseSupplier(
 ) (*migrationtypes.MsgClaimMorseSupplierResponse, error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseSupplier")
-	waiveMorseClaimGasFees := k.GetParams(sdkCtx).WaiveMorseClaimGasFees
-
-	// Ensure that gas fees are NOT waived if one of the following is true:
-	// - The claim is invalid
-	// - Morse account has already been claimed
-	// Claiming gas fees in the cases above ensures that we prevent spamming.
-	//
-	// Rationale:
-	// 1. Morse claim txs MAY be signed by Shannon accounts which have 0upokt balances.
-	//    For this reason, gas fees are waived (in the ante handler) for txs which
-	//    contain ONLY (one or more) Morse claim messages.
-	// 2. This exposes a potential resource exhaustion vector (or at least extends the
-	//    attack surface area) where an attacker would be able to take advantage of
-	//    the fact that tx signature verification gas costs MAY be avoided under
-	//    certain conditions.
-	// 3. ALL Morse account claim message handlers therefore SHOULD ensure that
-	//    tx signature verification gas costs ARE applied if the claim is EITHER
-	//    invalid OR if the given Morse account has already been claimed. The latter
-	//    is necessary to mitigate a replay attack vector.
-	var (
-		morseClaimableAccount              migrationtypes.MorseClaimableAccount
-		isFound, isValid, isAlreadyClaimed bool
-	)
-	defer func() {
-		if waiveMorseClaimGasFees && (!isFound || !isValid || isAlreadyClaimed) {
-			// Attempt to charge the waived gas fee for invalid claims.
-			sdkCtx.GasMeter()
-			// DEV_NOTE: Assuming that the tx containing this message was signed
-			// by a non-multisig externally owned account (EOA); i.e. secp256k1,
-			// conventionally. If this assumption is violated, the "wrong" gas
-			// cost will be charged for the given key type.
-			gas := k.accountKeeper.GetParams(ctx).SigVerifyCostSecp256k1
-			sdkCtx.GasMeter().ConsumeGas(gas, "ante verify: secp256k1")
-		}
-	}()
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -80,63 +44,17 @@ func (k msgServer) ClaimMorseSupplier(
 		shannonOperatorAddr = cosmostypes.MustAccAddressFromBech32(msg.ShannonOperatorAddress)
 	}
 
-	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
-	morseClaimableAccount, isFound = k.GetMorseClaimableAccount(
-		sdkCtx,
-		msg.GetMorseNodeAddress(),
-	)
-	if !isFound {
-		return nil, status.Error(
-			codes.NotFound,
-			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"no morse claimable account exists with address %q",
-				msg.GetMorseNodeAddress(),
-			).Error(),
-		)
-	}
-
-	// Ensure that the given MorseClaimableAccount has not already been claimed.
-	if morseClaimableAccount.IsClaimed() {
-		isAlreadyClaimed = true
-		return nil, status.Error(
-			codes.FailedPrecondition,
-			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"morse address %q has already been claimed at height %d by shannon address %q",
-				morseClaimableAccount.GetMorseSrcAddress(),
-				morseClaimableAccount.ClaimedAtHeight,
-				morseClaimableAccount.ShannonDestAddress,
-			).Error(),
-		)
-	}
-
-	// ONLY allow claiming as a supplier account if the MorseClaimableAccount
-	// WAS staked as a supplier AND NOT as an application. A claim of staked POKT
-	// from Morse to Shannon SHOULD NOT allow applications or suppliers to bypass
-	// the onchain unbonding period.
-	if !morseClaimableAccount.ApplicationStake.IsZero() {
-		return nil, status.Error(
-			codes.FailedPrecondition,
-			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"Morse account %q is staked as an application, please use `pocketd tx migration claim-application` instead",
-				morseClaimableAccount.GetMorseSrcAddress(),
-			).Error(),
-		)
-	}
-
-	if !morseClaimableAccount.SupplierStake.IsPositive() {
-		return nil, status.Error(
-			codes.FailedPrecondition,
-			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"Morse account %q is not staked as an supplier or application, please use `pocketd tx migration claim-account` instead",
-				morseClaimableAccount.GetMorseSrcAddress(),
-			).Error(),
-		)
+	// Retrieve the MorseClaimableAccount for the given morseSrcAddress.
+	// If the morse claimable account does not exist, is
+	morseClaimableAccount, err := k.GetMorseClaimableSupplierAccount(ctx, msg.GetMorseNodeAddress())
+	if err != nil {
+		return nil, err
 	}
 
 	// Ensure the signer is ONE OF THE FOLLOWING:
 	// - The Morse node address (i.e. operator)
 	// - The Morse output address (i.e. owner)
-	claimSignerType, err := checkClaimSigner(msg, &morseClaimableAccount)
+	claimSignerType, err := checkClaimSigner(msg, morseClaimableAccount)
 	if err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
@@ -170,10 +88,7 @@ func (k msgServer) ClaimMorseSupplier(
 	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
 
 	// Update the MorseClaimableAccount.
-	k.SetMorseClaimableAccount(
-		sdkCtx,
-		morseClaimableAccount,
-	)
+	k.SetMorseClaimableAccount(sdkCtx, *morseClaimableAccount)
 
 	// Query for any existing supplier stake prior to staking.
 	preClaimSupplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, math.ZeroInt())
@@ -182,84 +97,80 @@ func (k msgServer) ClaimMorseSupplier(
 		preClaimSupplierStake = *foundSupplier.Stake
 	}
 
+	postClaimSupplierStake := preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake())
+
 	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
+	previousSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStartHeight-1)
 
-	postClaimSupplierStake := preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake())
-	minStake := k.supplierKeeper.GetParams(ctx).MinStake
-
-	currentSessionStart := sharedtypes.GetSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
-	previousSessionEnd := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStart-1)
-
-	// Construct in case it is already or will become unbonded immediately (i.e. below min stake).
+	// Construct unbondedSupplier for cases where it is already or will become unbonded
+	// immediately (i.e. below min stake, or if unbonding period has already elpased).
 	unbondedSupplier := &sharedtypes.Supplier{
 		OwnerAddress:            shannonOwnerAddr.String(),
 		OperatorAddress:         shannonOperatorAddr.String(),
 		Stake:                   &postClaimSupplierStake,
-		UnstakeSessionEndHeight: uint64(previousSessionEnd),
+		UnstakeSessionEndHeight: uint64(previousSessionEndHeight),
 		// Services:             (intentionally omitted, no services were staked),
 		// ServiceConfigHistory: (intentionally omitted, no services were staked),
 	}
 
-	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
-	if postClaimSupplierStake.Amount.LT(minStake.Amount) {
-		// Emit an event which signals that the morse supplier has been claimed.
-		morseSupplierClaimedEvent := migrationtypes.EventMorseSupplierClaimed{
-			MorseNodeAddress:     msg.GetMorseNodeAddress(),
-			MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-			ClaimSignerType:      claimSignerType,
-			ClaimedBalance:       morseClaimableAccount.TotalTokens(),
-			ClaimedSupplierStake: cosmostypes.Coin{},
-			SessionEndHeight:     sessionEndHeight,
-			Supplier:             unbondedSupplier,
-		}
-		if err = sdkCtx.EventManager().EmitTypedEvent(&morseSupplierClaimedEvent); err != nil {
-			return nil, status.Error(
-				codes.Internal,
-				migrationtypes.ErrMorseSupplierClaim.Wrapf(
-					"failed to emit event type %T: %v",
-					&morseSupplierClaimedEvent,
-					err,
-				).Error(),
-			)
-		}
-
-		// Emit an event which signals that the morse supplier was unstaked.
-		morseSupplierUnstakedEvent := suppliertypes.EventSupplierUnbondingEnd{
-			Supplier:         unbondedSupplier,
-			Reason:           suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
-			SessionEndHeight: sessionEndHeight,
-			// Unstaking when claiming Suppliers below min-stake takes effect IMMEDIATELY.
-			UnbondingEndHeight: sessionEndHeight,
-		}
-		if err = sdkCtx.EventManager().EmitTypedEvent(&morseSupplierUnstakedEvent); err != nil {
-			return nil, status.Error(
-				codes.Internal,
-				migrationtypes.ErrMorseSupplierClaim.Wrapf(
-					"failed to emit event type %T: %v",
-					&morseSupplierUnstakedEvent,
-					err,
-				).Error(),
-			)
-		}
-
-		// Claimed suppliers with less than the min stake are immediately unstaked.
-		// NOTE: All stake has already been minted to shannonSignerAddr account,
-		// and all unstaked tokens have already been minted to shannonOperatorAddr account.
-
-		return &migrationtypes.MsgClaimMorseSupplierResponse{
-			MorseNodeAddress:     msg.GetMorseNodeAddress(),
-			MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-			ClaimSignerType:      claimSignerType,
-			ClaimedBalance:       morseClaimableAccount.TotalTokens(),
-			ClaimedSupplierStake: cosmostypes.Coin{},
-			SessionEndHeight:     sessionEndHeight,
-			Supplier:             unbondedSupplier,
-		}, nil
+	// Construct the base response. It will be modified, as necessary, prior to returning.
+	claimMorseSupplierResponse := &migrationtypes.MsgClaimMorseSupplierResponse{
+		MorseNodeAddress:     msg.GetMorseNodeAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+		ClaimSignerType:      claimSignerType,
+		ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance(),
+		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
+		SessionEndHeight:     sessionEndHeight,
+		Supplier:             unbondedSupplier,
 	}
 
-	claimedSupplierStake := morseClaimableAccount.GetSupplierStake()
-	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
+	// Construct the base supplier claim event. It will be modified, as necessary, prior to emission.
+	// ALWAYS emit an event which signals that the morse supplier has been claimed.
+	morseSupplierClaimedEvent := migrationtypes.EventMorseSupplierClaimed{
+		MorseNodeAddress:     msg.GetMorseNodeAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+		ClaimSignerType:      claimSignerType,
+		ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance(),
+		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
+		SessionEndHeight:     sessionEndHeight,
+		Supplier:             unbondedSupplier,
+	}
+
+	// Conditionally emit an event which signals that the claimed Morse supplier's unbonding
+	// period began on Morse, and ended while waiting to be claimed.
+	morseSupplierUnbondingEndEvent := suppliertypes.EventSupplierUnbondingEnd{
+		Supplier:           unbondedSupplier,
+		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+		SessionEndHeight:   sessionEndHeight,
+		UnbondingEndHeight: sessionEndHeight,
+	}
+
+	// Collect events for emission. Events are appended prior to emission to allow
+	// for conditional modification prior to emission.
+	//
+	// Always emitted:
+	// - EventMorseSupplierClaimed
+	// Conditionally emitted:
+	// - EventSupplierUnbondingBegin
+	// - EventSupplierUnbondingEnd
+	events := make([]cosmostypes.Msg, 0)
+
+	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
+	// - All stake has already been minted to shannonSignerAddr account
+	// - All unstaked tokens have already been minted to shannonOperatorAddr account
+	minStake := k.supplierKeeper.GetParams(ctx).MinStake
+	if postClaimSupplierStake.Amount.LT(minStake.Amount) {
+		// Emit the supplier claim event first, then the unbonding end event.
+		events = append(events, &morseSupplierClaimedEvent)
+		events = append(events, &morseSupplierUnbondingEndEvent)
+		if err = emitEvents(ctx, events); err != nil {
+			return nil, err
+		}
+
+		return claimMorseSupplierResponse, nil
+	}
 
 	// TODO_IN_THIS_COMMIT: comment...
 	// ... supplier began unbonding on Morse and the unbonding period has since elapsed...
@@ -269,38 +180,15 @@ func (k msgServer) ClaimMorseSupplier(
 	// - use a lookup table to get the est. block times per network...
 	// - use the shared params and the block time to calculate the unstake session end height...
 	// - emit an unbonding start event...
-	if !morseClaimableAccount.UnstakingTime.IsZero() {
-		durationUntilUnstake := time.Until(morseClaimableAccount.UnstakingTime)
-		if durationUntilUnstake.Seconds() <= 0 {
-			// Emit an event which signals that the claimed Morse supplier's unbonding
-			// period began on Morse, and ended while waiting to be claimed.
-			morseSupplierUnbondingEndEvent := suppliertypes.EventSupplierUnbondingEnd{
-				Supplier:           unbondedSupplier,
-				Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_UNSPECIFIED,
-				SessionEndHeight:   sessionEndHeight,
-				UnbondingEndHeight: sessionEndHeight,
-			}
-			if err = sdkCtx.EventManager().EmitTypedEvent(&morseSupplierUnbondingEndEvent); err != nil {
-				return nil, status.Error(
-					codes.Internal,
-					migrationtypes.ErrMorseSupplierClaim.Wrapf(
-						"failed to emit event type %T: %v",
-						&morseSupplierUnbondingEndEvent,
-						err,
-					).Error(),
-				)
-			}
-
-			return &migrationtypes.MsgClaimMorseSupplierResponse{
-				MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-				MorseNodeAddress:     msg.GetMorseNodeAddress(),
-				ClaimSignerType:      claimSignerType,
-				ClaimedBalance:       claimedUnstakedBalance,
-				ClaimedSupplierStake: claimedSupplierStake,
-				SessionEndHeight:     sessionEndHeight,
-				Supplier:             unbondedSupplier,
-			}, nil
+	if morseClaimableAccount.HasUnbonded() {
+		// Emit the supplier claim event first, then the unbonding end event.
+		events = append(events, &morseSupplierClaimedEvent)
+		events = append(events, &morseSupplierUnbondingEndEvent)
+		if err = emitEvents(ctx, events); err != nil {
+			return nil, err
 		}
+
+		return claimMorseSupplierResponse, nil
 	}
 
 	// Stake (or update) the supplier.
@@ -317,24 +205,26 @@ func (k msgServer) ClaimMorseSupplier(
 		return nil, err
 	}
 
-	events := []cosmostypes.Msg{
-		// Emit an event which signals that the morse account has been claimed.
-		&migrationtypes.EventMorseSupplierClaimed{
-			MorseNodeAddress:     msg.GetMorseNodeAddress(),
-			MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-			ClaimSignerType:      claimSignerType,
-			ClaimedBalance:       claimedUnstakedBalance,
-			ClaimedSupplierStake: claimedSupplierStake,
-			SessionEndHeight:     sessionEndHeight,
-			Supplier:             supplier,
-		},
-	}
+	// Update the supplier claim response.
+	claimMorseSupplierResponse.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
+	claimMorseSupplierResponse.ClaimedSupplierStake = morseClaimableAccount.GetSupplierStake()
+	claimMorseSupplierResponse.Supplier = supplier
 
-	// If the claimed supplier is still unbonding, emit an unbonding begin event.
-	if !morseClaimableAccount.UnstakingTime.IsZero() {
+	// Update the supplier claim event.
+	morseSupplierClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
+	morseSupplierClaimedEvent.ClaimedSupplierStake = morseClaimableAccount.GetSupplierStake()
+	morseSupplierClaimedEvent.Supplier = supplier
+
+	// Emit the supplier claim event first, an unbonding begin event MAY follow.
+	events = append(events, &morseSupplierClaimedEvent)
+
+	// If the claimed supplier is still unbonding:
+	// - Set the unstake session end height on the supplier
+	// - Emit an unbonding begin event
+	if morseClaimableAccount.IsUnbonding() {
 		estimatedUnstakeSessionEndHeight := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
 
-		// DEV_NOTE: SHOULD NEVER happen, the check above is the same, but in terms of time instead of block height...
+		// DEV_NOTE: SHOULD NEVER happen, the check above (using #SecondsUntilUnbonded()) is the same, but in terms of time instead of block height.
 		if estimatedUnstakeSessionEndHeight < 0 {
 			return nil, status.Error(
 				codes.Internal,
@@ -350,37 +240,24 @@ func (k msgServer) ClaimMorseSupplier(
 		// Emit an event which signals that the claimed Morse supplier's unbonding
 		// period began on Morse and will end on Shannon ad unbonding_end_height
 		// (i.e. estimatedUnstakeSessionEndHeight).
-		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
+		morseSupplierUnbondingBeginEvent := suppliertypes.EventSupplierUnbondingBegin{
 			Supplier:           supplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_UNSPECIFIED,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: estimatedUnstakeSessionEndHeight,
-		})
+		}
+
+		// Emit the supplier unbonding begin event
+		// AFTER the supplier claim event.
+		events = append(events, &morseSupplierUnbondingBeginEvent)
 	}
 
-	for _, event := range events {
-		if err = sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
-			return nil, status.Error(
-				codes.Internal,
-				migrationtypes.ErrMorseSupplierClaim.Wrapf(
-					"failed to emit event type %T: %v",
-					&event,
-					err,
-				).Error(),
-			)
-		}
+	if err = emitEvents(ctx, events); err != nil {
+		return nil, err
 	}
 
 	// Return the response.
-	return &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-		MorseNodeAddress:     msg.GetMorseNodeAddress(),
-		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       claimedUnstakedBalance,
-		ClaimedSupplierStake: claimedSupplierStake,
-		SessionEndHeight:     sessionEndHeight,
-		Supplier:             supplier,
-	}, nil
+	return claimMorseSupplierResponse, nil
 }
 
 // checkClaimSigner verifies that the msg was signed by an authorized Morse private key.
@@ -454,4 +331,114 @@ func checkClaimSigner(
 	}
 
 	return claimSignerType, nil
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func emitEvents(ctx context.Context, events []cosmostypes.Msg) error {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	for _, event := range events {
+		if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
+			return status.Error(
+				codes.Internal,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"failed to emit event type %T: %v",
+					event, err,
+				).Error(),
+			)
+		}
+	}
+	return nil
+}
+
+// TODO_IN_THIS_COMMIT: godoc & move...
+func (k msgServer) GetMorseClaimableSupplierAccount(
+	ctx context.Context,
+	morseSrcAddress string,
+) (*migrationtypes.MorseClaimableAccount, error) {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+
+	waiveMorseClaimGasFeesParam := k.GetParams(sdkCtx).WaiveMorseClaimGasFees
+
+	// Ensure that gas fees are NOT waived if the Morse account has already been claimed.
+	// Claiming gas fees in this cases ensures that we prevent spamming.
+	//
+	// Rationale:
+	// 1. Morse claim txs MAY be signed by Shannon accounts which have 0upokt balances.
+	//    For this reason, gas fees are waived (in the ante handler) for txs which
+	//    contain ONLY (one or more) Morse claim messages.
+	// 2. This exposes a potential resource exhaustion vector (or at least extends the
+	//    attack surface area) where an attacker would be able to take advantage of
+	//    the fact that tx signature verification gas costs MAY be avoided under
+	//    certain conditions.
+	// 3. ALL Morse account claim message handlers therefore SHOULD ensure that
+	//    tx signature verification gas costs ARE applied if the claim is EITHER
+	//    invalid OR if the given Morse account has already been claimed. The latter
+	//    is necessary to mitigate a replay attack vector.
+	var isAlreadyClaimed bool
+	defer func() {
+		if waiveMorseClaimGasFeesParam && isAlreadyClaimed {
+			// Attempt to charge the waived gas fee for invalid claims.
+			sdkCtx.GasMeter()
+			// DEV_NOTE: Assuming that the tx containing this message was signed
+			// by a non-multisig externally owned account (EOA); i.e. secp256k1,
+			// conventionally. If this assumption is violated, the "wrong" gas
+			// cost will be charged for the given key type.
+			gas := k.accountKeeper.GetParams(ctx).SigVerifyCostSecp256k1
+			sdkCtx.GasMeter().ConsumeGas(gas, "ante verify: secp256k1")
+		}
+	}()
+
+	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
+	morseClaimableAccount, isFound := k.GetMorseClaimableAccount(
+		sdkCtx,
+		morseSrcAddress,
+	)
+	if !isFound {
+		return nil, status.Error(
+			codes.NotFound,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"no morse claimable account exists with address %q",
+				morseSrcAddress,
+			).Error(),
+		)
+	}
+
+	// Ensure that the given MorseClaimableAccount has not already been claimed.
+	if morseClaimableAccount.IsClaimed() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"morse address %q has already been claimed at height %d by shannon address %q",
+				morseClaimableAccount.GetMorseSrcAddress(),
+				morseClaimableAccount.ClaimedAtHeight,
+				morseClaimableAccount.ShannonDestAddress,
+			).Error(),
+		)
+	}
+
+	// ONLY allow claiming as a supplier account if the MorseClaimableAccount
+	// WAS staked as a supplier AND NOT as an application. A claim of staked POKT
+	// from Morse to Shannon SHOULD NOT allow applications or suppliers to bypass
+	// the onchain unbonding period.
+	if !morseClaimableAccount.ApplicationStake.IsZero() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"Morse account %q is staked as an application, please use `pocketd tx migration claim-application` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+	}
+
+	if !morseClaimableAccount.SupplierStake.IsPositive() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"Morse account %q is not staked as an supplier or application, please use `pocketd tx migration claim-account` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+	}
+
+	return &morseClaimableAccount, nil
 }

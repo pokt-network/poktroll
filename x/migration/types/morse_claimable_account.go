@@ -16,7 +16,28 @@ func (m *MorseClaimableAccount) IsClaimed() bool {
 	return m.ShannonDestAddress != "" || m.ClaimedAtHeight > 0
 }
 
+// IsUnbonding indicates that the MorseClaimableAccount began unbonding on Morse
+// but its unbonding peroid has NOT yet elapsed.
+func (m *MorseClaimableAccount) IsUnbonding() bool {
+	// DEV_NOTE: The UnstakingTime field is a time.Time type, which has a zero value of "0001-01-01T00:00:00Z" when printed as an ISO8601 string.
+	// See: https://pkg.go.dev/time#Time.IsZero
+	return !m.UnstakingTime.IsZero()
+}
+
+// HasUnbonded indicates that the MorseClaimableAccount began unbonding on Morse
+// and the unbonding period has elapsed.
+func (m *MorseClaimableAccount) HasUnbonded() bool {
+	return m.IsUnbonding() && m.SecondsUntilUnbonded() <= 0
+}
+
+// SecondsUntilUnbonded returns the number of seconds until the MorseClaimableAccount's
+// unbonding period will elapse.
+func (m *MorseClaimableAccount) SecondsUntilUnbonded() int64 {
+	return int64(time.Until(m.UnstakingTime).Seconds())
+}
+
 // TODO_IN_THIS_COMMIT: godoc...
+// ... returns -1 if unstaking is already complete...
 func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Context) int64 {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 

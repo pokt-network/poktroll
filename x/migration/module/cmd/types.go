@@ -146,29 +146,29 @@ func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosma
 // addSupplierStake does two things:
 // - Adds the given amount to the corresponding Morse account balances in the morseWorkspace
 // - Sets the MorseOutputAddress if the given outputAddr is not nil
-func (miw *morseImportWorkspace) addSupplierStake(morseValidator *migrationtypes.MorseValidator) error {
+func (miw *morseImportWorkspace) addSupplierStake(morseSupplier *migrationtypes.MorseValidator) error {
 	// Retrieve the Morse supplier (aka Service/Node) account
-	morseClaimableAccount, err := miw.getAccount(morseValidator.Address.String())
+	morseClaimableAccount, err := miw.getAccount(morseSupplier.Address.String())
 	if err != nil {
 		return err
 	}
 
 	// Update the supplier stake amount
-	supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(morseValidator.StakedTokens)
+	supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(morseSupplier.StakedTokens)
 	if !ok {
-		return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", morseValidator.StakedTokens)
+		return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", morseSupplier.StakedTokens)
 	}
 	morseClaimableAccount.SupplierStake.Amount = morseClaimableAccount.SupplierStake.Amount.
 		Add(supplierStakeAmtUpokt)
 
 	// Custodial address (i.e. output, a.k.a. owner) is optional.
-	if morseValidator.OutputAddress != nil {
-		morseClaimableAccount.MorseOutputAddress = morseValidator.OutputAddress.String()
+	if morseSupplier.OutputAddress != nil {
+		morseClaimableAccount.MorseOutputAddress = morseSupplier.OutputAddress.String()
 	}
 
 	// If the supplier is unbonding, transfer the unstaking completion time.
-	if !morseValidator.UnstakingTime.IsZero() {
-		morseClaimableAccount.UnstakingTime = morseValidator.UnstakingTime
+	if !morseSupplier.UnstakingTime.IsZero() {
+		morseClaimableAccount.UnstakingTime = morseSupplier.UnstakingTime
 	}
 
 	miw.accumulatedTotalSupplierStake = miw.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
