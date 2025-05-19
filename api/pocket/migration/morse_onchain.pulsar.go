@@ -1588,7 +1588,7 @@ type MorseClaimableAccount struct {
 	//   - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
 	//     See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	MorseOutputAddress string `protobuf:"bytes,9,opt,name=morse_output_address,json=morseOutputAddress,proto3" json:"morse_output_address,omitempty"`
-	// The ISO 8601 UTC timestamp at which the Morse actor corresponding to this account began unbonding on Morse.
+	// The ISO 8601 UTC timestamp after which the Morse node/supplier unbonding period will have elapsed.
 	UnstakingTime *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=unstaking_time,json=unstakingTime,proto3" json:"unstaking_time,omitempty"`
 }
 
