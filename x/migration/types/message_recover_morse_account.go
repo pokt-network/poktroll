@@ -8,8 +8,6 @@ import (
 
 var _ sdk.Msg = (*MsgRecoverMorseAccount)(nil)
 
-const morseAddressBzSize = 20
-
 func NewMsgRecoverMorseAccount(authority string, shannonDestAddress string, morseSrcAddress string) *MsgRecoverMorseAccount {
 	return &MsgRecoverMorseAccount{
 		Authority:          authority,
