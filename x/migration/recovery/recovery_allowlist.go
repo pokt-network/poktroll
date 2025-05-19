@@ -1,7 +1,8 @@
 package recovery
 
-var recoveryAllowlist = []string{
-	// Lost AppStakes
+import "slices"
+
+var lostAppStakesAllowlist = []string{
 	"0004c28be615053d7a59c1fc89f1541dd8a49770",
 	"002fe24c3ef210c72da347c8affe27dd8f2eab83",
 	"0050f7f2b1923faedcdf5e7cc5a63307bbf68276",
@@ -2037,8 +2038,9 @@ var recoveryAllowlist = []string{
 	"ffc5a8d140eebcc648325755b1858ed5a28f3de7",
 	"ffd9a3bedaa00e37fcbe0921602b41ecbe7d8308",
 	"fffa0c72cf41584a73945f229f0244a3b58c4fe1",
+}
 
-	// Known AppStakes
+var knownAppStakesAllowlist = []string{
 	"788813eb8f1ea807b60c67709e539185420a2338",
 	"55e7728116ed4eb8e6712f60330c5695448abc21",
 	"51332e8fd2d9d20d53a2f0d6f8dce2d0017c4d68",
@@ -2059,13 +2061,33 @@ var recoveryAllowlist = []string{
 	"9ea35fee7695c2f639864ee38a5a448c20ae4547",
 	"319cf4360ba850d6c004910fbed197bde045fb9c",
 	"381add8cf814f45b8bf6dea56ac185c2358b8bf2",
+}
 
-	// Module accounts
+var moduleAccountsAllowlist = []string{
 	"dao",
 	"fee_collector",
 }
 
-// GetRecoveryAllowList returns the list of addresses that are allowed to be recovered
-func GetRecoveryAllowList() []string {
-	return recoveryAllowlist
+// TODO_FOLLOWUP: Add other list as the allowlist spreadsheet is updated
+// (e.g. invalidAddressesAllowlist, etc.)
+
+// IsMorseAddressRecoverable checks if a given address exists in any of the
+// allowlists for Morse address recovery.
+func IsMorseAddressRecoverable(address string) bool {
+	// Check if the address is in the recovery allowlist
+	if slices.Contains(lostAppStakesAllowlist, address) {
+		return true
+	}
+
+	// Check if the address is in the known app stakes allowlist
+	if slices.Contains(knownAppStakesAllowlist, address) {
+		return true
+	}
+
+	// Check if the address is in the module accounts allowlist
+	if slices.Contains(moduleAccountsAllowlist, address) {
+		return true
+	}
+
+	return false
 }

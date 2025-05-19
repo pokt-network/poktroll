@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
@@ -34,7 +33,7 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 	}
 
 	// Check if the morse account is listed in the recoverable accounts list.
-	if !slices.Contains(recovery.GetRecoveryAllowList(), msg.GetMorseSrcAddress()) {
+	if !recovery.IsMorseAddressRecoverable(msg.GetMorseSrcAddress()) {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			migrationtypes.ErrMorseRecoverableAccountClaim.Wrapf(
