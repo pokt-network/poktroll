@@ -5,7 +5,7 @@ title: Third-Party Custodians FAQ
 
 :::important
 
-This document was last updated on 05/14/2025.
+This document was last updated on 05/19/2025.
 
 :::
 
@@ -23,7 +23,7 @@ This document was last updated on 05/14/2025.
 - [Terminology](#terminology)
 - [Background and Action Items for Exchanges](#background-and-action-items-for-exchanges)
 - [What **IS NOT** Changing?](#what-is-not-changing)
-- [What **IS** Changing? (What You Must Do)](#what-is-changing-what-you-must-do)
+- [What **IS** Changing?)](#what-is-changing-what-you-must-do)
   - [Accounts/Wallets](#accountswallets)
   - [Token Minting on Morse](#token-minting-on-morse)
   - [Full Node Integration](#full-node-integration)
@@ -31,6 +31,7 @@ This document was last updated on 05/14/2025.
 - [Timeline](#timeline)
   - [14-Day Migration Window](#14-day-migration-window)
 - [Communication](#communication)
+
 
 ## Terminology
 
@@ -45,7 +46,7 @@ This document was last updated on 05/14/2025.
 
 ## Background and Action Items for Exchanges
 
-[Pocket Network](https://pocket.network) is migrating from Morse to Shannon (consensus-breaking, non-backwards-compatible upgrade) before the end of Q2.
+[Pocket Network](https://pocket.network) Pocket Network will hard-fork from Morse MainNet to Shannon MainNet on June 3, 2025 at 10 a.m. PDT. This is consensus-breaking, non-backwards-compatible upgrade. Activities for June 3, 2025 can be found [here](https://medium.com/decentralized-infrastructure/pocket-network-shannon-state-shift-day-b8c06122cb76).
 
 **Exchanges must:**
 
