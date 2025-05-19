@@ -24,41 +24,6 @@ import (
 func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtypes.MsgClaimMorseApplication) (*migrationtypes.MsgClaimMorseApplicationResponse, error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseApplication")
-	waiveMorseClaimGasFees := k.GetParams(sdkCtx).WaiveMorseClaimGasFees
-
-	// Ensure that gas fees are NOT waived if one of the following is true:
-	// - The claim is invalid
-	// - Morse account has already been claimed
-	// Claiming gas fees in the cases above ensures that we prevent spamming.
-	//
-	// Rationale:
-	// 1. Morse claim txs MAY be signed by Shannon accounts which have 0upokt balances.
-	//    For this reason, gas fees are waived (in the ante handler) for txs which
-	//    contain ONLY (one or more) Morse claim messages.
-	// 2. This exposes a potential resource exhaustion vector (or at least extends the
-	//    attack surface area) where an attacker would be able to take advantage of
-	//    the fact that tx signature verification gas costs MAY be avoided under
-	//    certain conditions.
-	// 3. ALL Morse account claim message handlers therefore SHOULD ensure that
-	//    tx signature verification gas costs ARE applied if the claim is EITHER
-	//    invalid OR if the given Morse account has already been claimed. The latter
-	//    is necessary to mitigate a replay attack vector.
-	var (
-		morseClaimableAccount              migrationtypes.MorseClaimableAccount
-		isFound, isValid, isAlreadyClaimed bool
-	)
-	defer func() {
-		if waiveMorseClaimGasFees && (!isFound || !isValid || isAlreadyClaimed) {
-			// Attempt to charge the waived gas fee for invalid claims.
-			sdkCtx.GasMeter()
-			// DEV_NOTE: Assuming that the tx containing this message was signed
-			// by a non-multisig externally owned account (EOA); i.e. secp256k1,
-			// conventionally. If this assumption is violated, the "wrong" gas
-			// cost will be charged for the given key type.
-			gas := k.accountKeeper.GetParams(ctx).SigVerifyCostSecp256k1
-			sdkCtx.GasMeter().ConsumeGas(gas, "ante verify: secp256k1")
-		}
-	}()
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -68,57 +33,10 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// shannonDestAddress is validated in MsgClaimMorseApplication#ValidateBasic().
 	shannonAccAddr := cosmostypes.MustAccAddressFromBech32(msg.ShannonDestAddress)
 
-	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
-	morseClaimableAccount, isFound = k.GetMorseClaimableAccount(
-		sdkCtx,
-		msg.GetMorseSignerAddress(),
-	)
-	if !isFound {
-		return nil, status.Error(
-			codes.NotFound,
-			migrationtypes.ErrMorseApplicationClaim.Wrapf(
-				"no morse claimable account exists with address %q",
-				msg.GetMorseSignerAddress(),
-			).Error(),
-		)
-	}
-
-	// Ensure that the given MorseClaimableAccount has not already been claimed.
-	if morseClaimableAccount.IsClaimed() {
-		isAlreadyClaimed = true
-		return nil, status.Error(
-			codes.FailedPrecondition,
-			migrationtypes.ErrMorseApplicationClaim.Wrapf(
-				"morse address %q has already been claimed at height %d by shannon address %q",
-				msg.GetMorseSignerAddress(),
-				morseClaimableAccount.ClaimedAtHeight,
-				morseClaimableAccount.ShannonDestAddress,
-			).Error(),
-		)
-	}
-
-	// ONLY allow claiming as an application actor account if the MorseClaimableAccount
-	// WAS staked as an application AND NOT as a supplier. A claim of staked POKT
-	// from Morse to Shannon SHOULD NOT allow applications or suppliers to bypass
-	// the onchain unbonding period.
-	if !morseClaimableAccount.SupplierStake.IsZero() {
-		return nil, status.Error(
-			codes.FailedPrecondition,
-			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an supplier, please use `pocketd tx migration claim-supplier` instead",
-				morseClaimableAccount.GetMorseSrcAddress(),
-			).Error(),
-		)
-	}
-
-	if !morseClaimableAccount.ApplicationStake.IsPositive() {
-		return nil, status.Error(
-			codes.FailedPrecondition,
-			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is not staked as an application or supplier, please use `pocketd tx migration claim-account` instead",
-				morseClaimableAccount.GetMorseSrcAddress(),
-			).Error(),
-		)
+	// Retrieve the MorseClaimableAccount for the given morseSrcAddress.
+	morseClaimableAccount, err := k.CheckMorseClaimableApplicationAccount(ctx, msg.GetMorseSignerAddress())
+	if err != nil {
+		return nil, err
 	}
 
 	// Mint the totalTokens to the shannonDestAddress account balance.
@@ -132,10 +50,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
 
 	// Update the MorseClaimableAccount.
-	k.SetMorseClaimableAccount(
-		sdkCtx,
-		morseClaimableAccount,
-	)
+	k.SetMorseClaimableAccount(sdkCtx, *morseClaimableAccount)
 
 	claimedAppStake := morseClaimableAccount.GetApplicationStake()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
@@ -153,48 +68,82 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	}
 	postClaimAppStake := preClaimAppStake.Add(morseClaimableAccount.GetApplicationStake())
 
-	// TODO_IN_THIS_COMMIT: comment...
-	// ... application began unbonding on Morse and the unbonding period has since elapsed...
-	// ... both stake and unstatked balance were minted to the shannonDestAddr account...
-	// ... no application was staked...
-	// - use a lookup table to get the est. block times per network...
-	// - use the shared params and the block time to calculate the unstake session end height...
-	// - emit an unbonding start event...
+	// Construct unbonded application for cases where it is already or will become unbonded
+	// immediately (i.e. below min stake, or if unbonding period has already elpased).
+	unbondedApp := &apptypes.Application{
+		Address:                 shannonAccAddr.String(),
+		Stake:                   &postClaimAppStake,
+		UnstakeSessionEndHeight: uint64(previousSessionEndHeight),
+		// ServiceConfigs:       (intentionally omitted, no service was staked),
+	}
+
+	// Construct the base response. It will be modified, as necessary, prior to returning.
+	claimMorseAppResponse := &migrationtypes.MsgClaimMorseApplicationResponse{
+		MorseSrcAddress:         morseClaimableAccount.GetMorseSrcAddress(),
+		ClaimedBalance:          claimedUnstakedBalance,
+		ClaimedApplicationStake: claimedAppStake,
+		SessionEndHeight:        sessionEndHeight,
+		Application:             unbondedApp,
+	}
+
+	morseAppClaimedEvent := &migrationtypes.EventMorseApplicationClaimed{
+		MorseSrcAddress:         msg.GetMorseSignerAddress(),
+		ClaimedBalance:          claimedUnstakedBalance,
+		ClaimedApplicationStake: claimedAppStake,
+		SessionEndHeight:        sessionEndHeight,
+		Application:             unbondedApp,
+	}
+
+	// Conditionally emit an event which signals that the claimed Morse application's unbonding
+	// period began on Morse, and ended while waiting to be claimed.
+	morseAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
+		Application:        unbondedApp,
+		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
+		SessionEndHeight:   sessionEndHeight,
+		UnbondingEndHeight: sessionEndHeight,
+	}
+
+	// TODO_IN_THIS_COMMIT: cleanup...
+	// Collect events for emission. Events are appended prior to emission to allow
+	// for conditional modification prior to emission.
+	//
+	// Always emitted:
+	// - EventMorseApplicationClaimed
+	// Conditionally emitted:
+	// - EventApplicationUnbondingBegin
+	// - EventApplicationUnbondingEnd
+	events := make([]cosmostypes.Msg, 0)
+
+	// If the claimed application stake is less than the minimum stake, the application is immediately unstaked.
+	// - All stake and unstaked tokens have already been minted to shannonDestAddr account
+	minStake := k.supplierKeeper.GetParams(ctx).MinStake
+	if postClaimAppStake.Amount.LT(minStake.Amount) {
+		// Emit the supplier claim event first, then the unbonding end event.
+		events = append(events, morseAppClaimedEvent)
+		events = append(events, morseAppUnbondingEndEvent)
+		if err = emitEvents(ctx, events); err != nil {
+			return nil, err
+		}
+
+		return claimMorseAppResponse, nil
+	}
+
+	// This condition checks whether the MorseClaimableAccount has completed unbonding.
+	// If unbonding is complete, the following steps occur:
+	// - Since minting to shannonDestAddr has already occurred, no additional action is necessary.
+	// - A lookup table is used to estimate block times for each network.
+	// - Shared parameters and block time are utilized to calculate the unstake session end height.
+	// - Emit an event which signals that the Morse application was claimed.
+	// - Emit an event which signals that the Morse application began unbonding.
 	if morseClaimableAccount.HasUnbonded() {
-		unbondedApp := &apptypes.Application{
-			Address:                 shannonAccAddr.String(),
-			Stake:                   &postClaimAppStake,
-			UnstakeSessionEndHeight: uint64(previousSessionEndHeight),
-			// Services:             (intentionally omitted, no services were staked),
-			// ServiceConfigHistory: (intentionally omitted, no services were staked),
+		// Emit the supplier claim event first, then the unbonding end event.
+		events = append(events, morseAppClaimedEvent)
+		events = append(events, morseAppUnbondingEndEvent)
+		if err = emitEvents(ctx, events); err != nil {
+			return nil, err
 		}
 
-		// Emit an event which signals that the claimed Morse supplier's unbonding
-		// period began on Morse, and ended while waiting to be claimed.
-		morseSupplierUnbondingEndEvent := apptypes.EventApplicationUnbondingEnd{
-			Application:        unbondedApp,
-			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
-			SessionEndHeight:   sessionEndHeight,
-			UnbondingEndHeight: sessionEndHeight,
-		}
-		if err := sdkCtx.EventManager().EmitTypedEvent(&morseSupplierUnbondingEndEvent); err != nil {
-			return nil, status.Error(
-				codes.Internal,
-				migrationtypes.ErrMorseSupplierClaim.Wrapf(
-					"failed to emit event type %T: %v",
-					&morseSupplierUnbondingEndEvent,
-					err,
-				).Error(),
-			)
-		}
-
-		return &migrationtypes.MsgClaimMorseApplicationResponse{
-			MorseSrcAddress:         morseClaimableAccount.GetMorseSrcAddress(),
-			ClaimedBalance:          claimedUnstakedBalance,
-			ClaimedApplicationStake: claimedAppStake,
-			SessionEndHeight:        sessionEndHeight,
-			Application:             unbondedApp,
-		}, nil
+		return claimMorseAppResponse, nil
 	}
 
 	// Stake (or update) the application.
@@ -210,16 +159,18 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, err
 	}
 
-	// Emit an event which signals that the morse account has been claimed.
-	events := []cosmostypes.Msg{
-		&migrationtypes.EventMorseApplicationClaimed{
-			MorseSrcAddress:         msg.GetMorseSignerAddress(),
-			ClaimedBalance:          claimedUnstakedBalance,
-			ClaimedApplicationStake: claimedAppStake,
-			SessionEndHeight:        sessionEndHeight,
-			Application:             app,
-		},
-	}
+	// Update the application claim response.
+	claimMorseAppResponse.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
+	claimMorseAppResponse.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake()
+	claimMorseAppResponse.Application = app
+
+	// Update the application claim event.
+	morseAppClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
+	morseAppClaimedEvent.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake()
+	morseAppClaimedEvent.Application = app
+
+	// Emit the application claim event first, an unbonding begin event MAY follow.
+	events = append(events, morseAppClaimedEvent)
 
 	// TODO_IN_THIS_COMMIT: comment...
 	if morseClaimableAccount.IsUnbonding() {
@@ -241,33 +192,67 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		// Emit an event which signals that the claimed Morse supplier's unbonding
 		// period began on Morse and will end on Shannon ad unbonding_end_height
 		// (i.e. estimatedUnstakeSessionEndHeight).
-		events = append(events, &apptypes.EventApplicationUnbondingBegin{
+		morseAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			Application:        app,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: estimatedUnstakeSessionEndHeight,
-		})
+		}
+
+		// Emit the supplier unbonding begin event
+		// AFTER the supplier claim event.
+		events = append(events, morseAppUnbondingBeginEvent)
 	}
 
-	for _, event := range events {
-		if err = sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
-			return nil, status.Error(
-				codes.Internal,
-				migrationtypes.ErrMorseApplicationClaim.Wrapf(
-					"failed to emit event type %T: %v",
-					&event,
-					err,
-				).Error(),
-			)
-		}
+	if err = emitEvents(ctx, events); err != nil {
+		return nil, err
 	}
 
 	// Return the response.
-	return &migrationtypes.MsgClaimMorseApplicationResponse{
-		MorseSrcAddress:         msg.GetMorseSignerAddress(),
-		ClaimedBalance:          claimedUnstakedBalance,
-		ClaimedApplicationStake: claimedAppStake,
-		SessionEndHeight:        sessionEndHeight,
-		Application:             app,
-	}, nil
+	return claimMorseAppResponse, nil
+}
+
+// CheckMorseClaimableApplicationAccount attempts to retrieve a MorseClaimableAccount for the given morseSrcAddress.
+// It ensures the MorseClaimableAccount meets the following criteria:
+// - It exists on-chain
+// - It not already been claimed
+// - It has a non-zero application stake
+// - It has zero supplier stake
+// If the MorseClaimableAccount does not exist, it returns an error.
+// If the MorseClaimableAccount has already been claimed, any waived gas fees are charged and an error is returned.
+func (k msgServer) CheckMorseClaimableApplicationAccount(
+	ctx context.Context,
+	morseSrcAddress string,
+) (*migrationtypes.MorseClaimableAccount, error) {
+	// Ensure that a MorseClaimableAccount exists and has not been claimed for the given morseSrcAddress.
+	morseClaimableAccount, err := k.CheckMorseClaimableAccount(ctx, morseSrcAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	// ONLY allow claiming as a supplier account if the MorseClaimableAccount
+	// WAS staked as a supplier AND NOT as an application. A claim of staked POKT
+	// from Morse to Shannon SHOULD NOT allow applications or suppliers to bypass
+	// the onchain unbonding period.
+	if !morseClaimableAccount.SupplierStake.IsZero() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"Morse account %q is staked as an application, please use `pocketd tx migration claim-supplier` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+	}
+
+	if !morseClaimableAccount.ApplicationStake.IsPositive() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"Morse account %q is not staked as a application or supplier, please use `pocketd tx migration claim-account` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+	}
+
+	return morseClaimableAccount, nil
 }
