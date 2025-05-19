@@ -98,7 +98,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// period began on Morse, and ended while waiting to be claimed.
 	morseAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 		Application:        unbondedApp,
-		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
+		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: sessionEndHeight,
 	}
@@ -195,7 +195,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		// (i.e. estimatedUnstakeSessionEndHeight).
 		morseAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			Application:        app,
-			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
+			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: estimatedUnstakeSessionEndHeight,
 		}

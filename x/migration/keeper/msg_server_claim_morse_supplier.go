@@ -141,7 +141,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// period began on Morse, and ended while waiting to be claimed.
 	morseSupplierUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
 		Supplier:           unbondedSupplier,
-		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: sessionEndHeight,
 	}
@@ -240,7 +240,7 @@ func (k msgServer) ClaimMorseSupplier(
 		// (i.e. estimatedUnstakeSessionEndHeight).
 		morseSupplierUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 			Supplier:           supplier,
-			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_UNSPECIFIED,
+			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: estimatedUnstakeSessionEndHeight,
 		}
