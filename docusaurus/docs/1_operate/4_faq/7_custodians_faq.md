@@ -46,7 +46,7 @@ This document was last updated on 05/19/2025.
 
 ## Background and Action Items for Exchanges
 
-[Pocket Network](https://pocket.network) Pocket Network will hard-fork from Morse MainNet to Shannon MainNet on June 3, 2025 at 10 a.m. PDT. This is consensus-breaking, non-backwards-compatible upgrade. Activities for June 3, 2025 can be found [here](https://medium.com/decentralized-infrastructure/pocket-network-shannon-state-shift-day-b8c06122cb76).
+[Pocket Network](https://pocket.network) will hard-fork from Morse MainNet to Shannon MainNet on June 3, 2025 at 10 a.m. PDT. This is consensus-breaking, non-backwards-compatible upgrade. Activities for June 3, 2025 can be found [here](https://medium.com/decentralized-infrastructure/pocket-network-shannon-state-shift-day-b8c06122cb76).
 
 **Exchanges must:**
 
