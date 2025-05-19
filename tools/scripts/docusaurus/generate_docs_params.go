@@ -18,8 +18,12 @@ import (
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
-// paramField is used to hold param message field information for interpolation
-// into the param_field_row_template.md template.
+// paramField holds information about a param message field for interpolation into the param_field_row_template.md template.
+// Fields:
+// - Module: Name of the module
+// - Name: Name of the field
+// - Type: Type of the field
+// - Comment: Associated comment for the field
 type paramField struct {
 	Module  string
 	Name    string
@@ -49,14 +53,14 @@ func init() {
 
 func main() {
 	// Parse templates.
-	templs, err := template.ParseFiles(paramsDocTemplatePath, paramFieldRowTemplatePath)
+	templates, err := template.ParseFiles(paramsDocTemplatePath, paramFieldRowTemplatePath)
 	if err != nil {
 		logger.Error().Err(err).Msgf("Unable to parse template path %q", paramsDocTemplatePath)
 		os.Exit(1)
 	}
 
 	// Interpolate templates.
-	docs, err := prepareGovernanceParamsDocs(flagProtoRootPathValue, templs)
+	docs, err := prepareGovernanceParamsDocs(flagProtoRootPathValue, templates)
 	if err != nil {
 		logger.Error().Err(err).Msg("Error preparing governance params docs")
 		os.Exit(1)
@@ -71,12 +75,13 @@ func main() {
 
 }
 
-// prapareGovernanceParamsDocs recursively walks the filesystem starting from
-// protoFilesRootDir, looking for files names matching "params.proto". For each
-// matching proto file, the fields on any "Params" message types are discovered.
-// All discovered param fields are interpolated into the templates provided by
-// templs and the final output is returned.
-func prepareGovernanceParamsDocs(protoFilesRootDir string, templs *template.Template) (string, error) {
+// prepareGovernanceParamsDocs does the following:
+// - Recursively walks the filesystem starting from protoFilesRootDir
+// - Looks for files named "params.proto"
+// - For each matching proto file, discovers fields on any "Params" message types
+// - Interpolates all discovered param fields into the provided templates
+// - Returns the final output as a string
+func prepareGovernanceParamsDocs(protoFilesRootDir string, templates *template.Template) (string, error) {
 	paramsDocOutputBuf := new(bytes.Buffer)
 	paramFieldRowsOutputBuf := new(bytes.Buffer)
 	paramsFieldNodesByModule := make(map[string][]*ast.FieldNode)
@@ -109,8 +114,8 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, templs *template.Temp
 			// Extract the field's type information.
 			paramFields = append(paramFields, paramField{
 				Module:  moduleName,
-				Name:    fieldNode.Name.Val,
 				Type:    string(fieldNode.FldType.AsIdentifier()),
+				Name:    fieldNode.Name.Val,
 				Comment: comment,
 			})
 		}
@@ -126,13 +131,13 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, templs *template.Temp
 
 	for _, param := range paramFields {
 		_, paramFieldRowTemplateFileName := filepath.Split(paramFieldRowTemplatePath)
-		if err := templs.ExecuteTemplate(paramFieldRowsOutputBuf, paramFieldRowTemplateFileName, param); err != nil {
+		if err := templates.ExecuteTemplate(paramFieldRowsOutputBuf, paramFieldRowTemplateFileName, param); err != nil {
 			return "", err
 		}
 	}
 
 	_, paramsDocTemplateFileName := filepath.Split(paramsDocTemplatePath)
-	if err := templs.ExecuteTemplate(
+	if err := templates.ExecuteTemplate(
 		paramsDocOutputBuf,
 		paramsDocTemplateFileName,
 		paramFieldRowsOutputBuf.String(),
@@ -143,9 +148,9 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, templs *template.Temp
 	return paramsDocOutputBuf.String(), nil
 }
 
-// forEachMatchingFileWalkFn returns a filepath.WalkFunc which does the following:
-// 1. Iterates over files matching fileNamePattern against each file name.
-// 2. For matching files, it calls fileMatchedFn with the respective path.
+// forEachMatchingFileWalkFn returns a filepath.WalkFunc that:
+// - Iterates over files matching fileNamePattern against each file name
+// - For matching files, calls fileMatchedFn with the respective path
 func forEachMatchingFileWalkFn(
 	fileNamePattern string,
 	fileMatchedFn func(path string),
@@ -172,10 +177,11 @@ func forEachMatchingFileWalkFn(
 	}
 }
 
-// newCollectParamsFieldNodesInFileFn returns a function which receives a proto file
-// path and walks its AST to discover all fields (*ast.fieldNode) which are present
-// on any message named "Params", if present. Discovered fields are appended to the
-// []*ast.fieldNode in paramsFieldNodesByModule for the corresponding module name key.
+// newCollectParamsFieldNodesInFileFn returns a function that:
+// - Receives a proto file path
+// - Walks its AST to discover all fields (*ast.FieldNode) present on any message named "Params"
+// - Appends discovered fields to the []*ast.FieldNode in paramsFieldNodesByModule for the corresponding module name key
+
 func newCollectParamsFieldNodesInFileFn(paramsFieldNodesByModule map[string][]*ast.FieldNode) func(protoFilePath string) {
 	return func(protoFilePath string) {
 		protoFileNodes, parseErr := protoParser.ParseToAST(protoFilePath)
@@ -204,9 +210,10 @@ func newCollectParamsFieldNodesInFileFn(paramsFieldNodesByModule map[string][]*a
 	}
 }
 
-// newFilterMsgNodesVisitFn returns an ast.VisitFunc which filters out MessageNodes
-// whose name does not match the given name. When the returned visit function is passed
-// to ast.Walk(), msgNodeVisitFn will be called when a matching message node id discovered.
+// newFilterMsgNodesVisitFn returns an ast.VisitFunc that:
+// - Filters out MessageNodes whose name does not match the given name
+// - When passed to ast.Walk(), calls msgNodeVisitFn when a matching message node is discovered
+
 func newFilterMsgNodesVisitFn(name string, msgNodeVisitFn ast.VisitFunc) ast.VisitFunc {
 	return func(node ast.Node) (bool, ast.VisitFunc) {
 
@@ -226,9 +233,10 @@ func newFilterMsgNodesVisitFn(name string, msgNodeVisitFn ast.VisitFunc) ast.Vis
 	}
 }
 
-// newCollectParamFieldNodesVisitFn returns an ast.VisitFunc which collects all
-// FieldNodes discovered and appends them to the []*ast.FieldNode slice in the
-// paramsFieldNodesByModule map under the given moduleName key.
+// newCollectParamFieldNodesVisitFn returns an ast.VisitFunc that:
+// - Collects all FieldNodes discovered
+// - Appends them to the []*ast.FieldNode slice in the paramsFieldNodesByModule map under the given moduleName key
+
 func newCollectParamFieldNodesVisitFn(
 	moduleName string, paramsFieldNodesByModule map[string][]*ast.FieldNode,
 ) ast.VisitFunc {
@@ -244,7 +252,7 @@ func newCollectParamFieldNodesVisitFn(
 	}
 }
 
-// writeContentToFile writes the given content to the specified file.
+// writeContentToFile writes the given content to the specified file path.
 func writeContentToFile(file_path, content string) error {
 	file, err := os.Create(file_path)
 	if err != nil {

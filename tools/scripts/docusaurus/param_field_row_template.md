@@ -1,1 +1,1 @@
-| `{{.Module}}` | `{{.Type}}` | `{{.Name}}` | {{.Comment}} |
+| `{{.Module}}` | `{{.Name}}` | `{{.Type}}` | {{.Comment}} |
