@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	//nolint:staticcheck // SA1019 TODO_TECHDEBT: switch from protoparse to github.com/bufbuild/protocompile.
+	// More info: https://github.com/jhump/protoreflect/issues/637#issuecomment-2867273251
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/desc/protoparse/ast"
 	"github.com/spf13/cobra"

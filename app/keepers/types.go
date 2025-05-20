@@ -50,9 +50,9 @@ type Keepers struct {
 	MintKeeper            mintkeeper.Keeper
 	DistrKeeper           distrkeeper.Keeper
 	GovKeeper             *govkeeper.Keeper
-	CrisisKeeper          *crisiskeeper.Keeper //nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code.
+	CrisisKeeper          *crisiskeeper.Keeper //nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code.
 	UpgradeKeeper         *upgradekeeper.Keeper
-	ParamsKeeper          paramskeeper.Keeper //nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code.
+	ParamsKeeper          paramskeeper.Keeper //nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code.
 	AuthzKeeper           authzkeeper.Keeper
 	EvidenceKeeper        evidencekeeper.Keeper
 	FeeGrantKeeper        feegrantkeeper.Keeper

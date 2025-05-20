@@ -29,7 +29,7 @@ var (
 	_ module.AppModuleBasic      = (*AppModule)(nil)
 	_ module.AppModuleSimulation = (*AppModule)(nil)
 	_ module.HasGenesis          = (*AppModule)(nil)
-	//nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code.
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code.
 	_ module.HasInvariants       = (*AppModule)(nil)
 	_ module.HasConsensusVersion = (*AppModule)(nil)
 
