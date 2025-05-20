@@ -15,12 +15,12 @@ Feature: Morse account import and claim all account types (with fixture data)
       | name                   | value | type   |
       | min_stake              | 100   | coin   |
       | max_delegated_gateways | 7     | uint64 |
-    And all "application" module params should be updated
+    And all "application" module params should be updated at the next session start
     And the "supplier" module parameters are set as follows
       | name        | value | type |
       | min_stake   | 100   | coin |
       | staking_fee | 1     | coin |
-    And all "supplier" module params should be updated
+    And all "supplier" module params should be updated at the next session start
 
   Rule: Non-actor account claims MAY reference existing Shannon accounts
     Scenario: Morse account-holder claims as a new non-actor account

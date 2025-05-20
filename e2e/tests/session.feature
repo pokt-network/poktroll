@@ -8,12 +8,11 @@ Feature: Session Namespace
         | name                         | value                                                            | type  |
         | proof_request_probability    | 0.25                                                             | float |
         | proof_requirement_threshold  | 209                                                              | coin  |
-        | proof_missing_penalty        | 320                                                              | coin  |
-        | proof_submission_fee         | 1000000                                                          | coin  |
-    And all "proof" module params should be updated
+    And all "proof" module params should be updated at the next session start
     And the "shared" module parameters are set as follows
+        | name                               | value                                                      | type  |
         | compute_units_to_tokens_multiplier | 42                                                         | int64 |
-    And all "shared" module params should be updated
+    And all "shared" module params should be updated at the next session start
     When the supplier "supplier1" has serviced a session with "5" relays for service "anvil" for application "app1"
     And the user should wait for the "proof" module "CreateClaim" Message to be submitted
     And the user should wait for the "proof" module "ClaimCreated" tx event to be broadcast

@@ -674,8 +674,8 @@ func setBlockHeightToNextSessionStart(
 	ctx context.Context,
 	sharedKeeper suppliertypes.SharedKeeper,
 ) context.Context {
-	sharedParams := sharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := sharedKeeper.GetParamsUpdates(ctx)
 	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, currentHeight)
 	return keepertest.SetBlockHeight(ctx, nextSessionStartHeight)
 }

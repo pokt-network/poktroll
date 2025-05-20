@@ -260,17 +260,32 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockProofKeeper.EXPECT().GetAllClaims(gomock.Any()).AnyTimes()
 
 	// Mock the shared keeper
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetProofWindowCloseHeight(gomock.Any(), gomock.Any()).AnyTimes()
 	mockSharedKeeper.EXPECT().
 		GetParams(gomock.Any()).
-		Return(sharedtypes.DefaultParams()).
+		Return(sharedParamsHistory.GetCurrentParams()).
+		AnyTimes()
+	mockSharedKeeper.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, queryHeight int64) sharedtypes.Params {
+			return sharedParamsHistory.GetParamsAtHeight(queryHeight)
+		}).
+		AnyTimes()
+	mockSharedKeeper.EXPECT().
+		GetParamsUpdates(gomock.Any()).
+		Return(sharedParamsHistory).
 		AnyTimes()
 
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockSessionKeeper.EXPECT().
 		GetParams(gomock.Any()).
+		Return(sessiontypes.DefaultParams()).
+		AnyTimes()
+	mockSessionKeeper.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
 		Return(sessiontypes.DefaultParams()).
 		AnyTimes()
 
@@ -319,6 +334,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Add a block proposer address to the context
 	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
+
+	// Set the block height to 1
+	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	// Initialize params
 	require.NoError(t, k.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
@@ -419,12 +437,11 @@ func NewTokenomicsModuleKeepers(
 		logger,
 		authority.String(),
 	)
-	require.NoError(t, sharedKeeper.SetParams(sdkCtx, sharedtypes.DefaultParams()))
-
+	sharedParams := sharedtypes.DefaultParams()
 	if params, ok := cfg.moduleParams[sharedtypes.ModuleName]; ok {
-		err := sharedKeeper.SetParams(ctx, *params.(*sharedtypes.Params))
-		require.NoError(t, err)
+		sharedParams = *params.(*sharedtypes.Params)
 	}
+	require.NoError(t, sharedKeeper.SetInitialParams(sdkCtx, sharedParams))
 
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
@@ -435,12 +452,11 @@ func NewTokenomicsModuleKeepers(
 		bankKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, gatewayKeeper.SetParams(sdkCtx, gatewaytypes.DefaultParams()))
-
+	gatewayParams := gatewaytypes.DefaultParams()
 	if params, ok := cfg.moduleParams[gatewaytypes.ModuleName]; ok {
-		err := gatewayKeeper.SetParams(ctx, *params.(*gatewaytypes.Params))
-		require.NoError(t, err)
+		gatewayParams = *params.(*gatewaytypes.Params)
 	}
+	require.NoError(t, gatewayKeeper.SetInitialParams(sdkCtx, gatewayParams))
 
 	// Construct an application keeper to add apps to sessions.
 	appKeeper := appkeeper.NewKeeper(
@@ -453,12 +469,11 @@ func NewTokenomicsModuleKeepers(
 		gatewayKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, appKeeper.SetParams(sdkCtx, apptypes.DefaultParams()))
-
+	appParams := apptypes.DefaultParams()
 	if params, ok := cfg.moduleParams[apptypes.ModuleName]; ok {
-		err := appKeeper.SetParams(ctx, *params.(*apptypes.Params))
-		require.NoError(t, err)
+		appParams = *params.(*apptypes.Params)
 	}
+	require.NoError(t, appKeeper.SetInitialParams(sdkCtx, appParams))
 
 	// Construct a service keeper needed by the supplier keeper.
 	serviceKeeper := servicekeeper.NewKeeper(
@@ -466,13 +481,15 @@ func NewTokenomicsModuleKeepers(
 		runtime.NewKVStoreService(keys[servicetypes.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
+		sharedKeeper,
 		bankKeeper,
 	)
 
+	serviceParams := servicetypes.DefaultParams()
 	if params, ok := cfg.moduleParams[servicetypes.ModuleName]; ok {
-		err := serviceKeeper.SetParams(ctx, *params.(*servicetypes.Params))
-		require.NoError(t, err)
+		serviceParams = *params.(*servicetypes.Params)
 	}
+	require.NoError(t, serviceKeeper.SetInitialParams(sdkCtx, serviceParams))
 
 	// Construct a real supplier keeper to add suppliers to sessions.
 	supplierKeeper := supplierkeeper.NewKeeper(
@@ -484,12 +501,11 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 		serviceKeeper,
 	)
-	require.NoError(t, supplierKeeper.SetParams(sdkCtx, suppliertypes.DefaultParams()))
-
+	supplierParams := suppliertypes.DefaultParams()
 	if params, ok := cfg.moduleParams[suppliertypes.ModuleName]; ok {
-		err := supplierKeeper.SetParams(ctx, *params.(*suppliertypes.Params))
-		require.NoError(t, err)
+		supplierParams = *params.(*suppliertypes.Params)
 	}
+	require.NoError(t, supplierKeeper.SetInitialParams(sdkCtx, supplierParams))
 
 	// Construct a real session keeper so that sessions can be queried.
 	sessionKeeper := sessionkeeper.NewKeeper(
@@ -503,12 +519,11 @@ func NewTokenomicsModuleKeepers(
 		supplierKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, sessionKeeper.SetParams(sdkCtx, sessiontypes.DefaultParams()))
-
+	sessionParams := sessiontypes.DefaultParams()
 	if params, ok := cfg.moduleParams[sessiontypes.ModuleName]; ok {
-		err := sessionKeeper.SetParams(ctx, *params.(*sessiontypes.Params))
-		require.NoError(t, err)
+		sessionParams = *params.(*sessiontypes.Params)
 	}
+	require.NoError(t, sessionKeeper.SetInitialParams(sdkCtx, sessionParams))
 
 	// Construct a real proof keeper so that claims & proofs can be created.
 	proofKeeper := proofkeeper.NewKeeper(
@@ -523,12 +538,11 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 		serviceKeeper,
 	)
-	require.NoError(t, proofKeeper.SetParams(sdkCtx, prooftypes.DefaultParams()))
-
+	proofParams := prooftypes.DefaultParams()
 	if params, ok := cfg.moduleParams[prooftypes.ModuleName]; ok {
-		err := proofKeeper.SetParams(ctx, *params.(*prooftypes.Params))
-		require.NoError(t, err)
+		proofParams = *params.(*prooftypes.Params)
 	}
+	require.NoError(t, proofKeeper.SetInitialParams(sdkCtx, proofParams))
 
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
@@ -547,12 +561,11 @@ func NewTokenomicsModuleKeepers(
 		cfg.tokenLogicModules,
 	)
 
-	require.NoError(t, tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
-
+	tokenomicsParams := tokenomicstypes.DefaultParams()
 	if params, ok := cfg.moduleParams[tokenomicstypes.ModuleName]; ok {
-		err := tokenomicsKeeper.SetParams(ctx, *params.(*tokenomicstypes.Params))
-		require.NoError(t, err)
+		tokenomicsParams = *params.(*tokenomicstypes.Params)
 	}
+	require.NoError(t, tokenomicsKeeper.SetInitialParams(sdkCtx, tokenomicsParams))
 
 	migrationKeeper := migrationkeeper.NewKeeper(
 		cdc,
@@ -684,7 +697,7 @@ func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOptFn {
 			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 		}
 
-		if err := keepers.ProofKeeper.SetParams(ctx, proofParams); err != nil {
+		if err := keepers.ProofKeeper.SetInitialParams(ctx, proofParams); err != nil {
 			panic(err)
 		}
 

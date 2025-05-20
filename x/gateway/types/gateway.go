@@ -15,10 +15,14 @@ func (s *Gateway) IsUnbonding() bool {
 
 // GetGatewayUnbondingHeight returns the session end height at which the given
 // gateway finishes unbonding.
+// It uses the shared params effective at the time of the transfer to determine
+// when the transfer will complete.
 func GetGatewayUnbondingHeight(
-	sharedParams *sharedtypes.Params,
+	sharedParamsHistory sharedtypes.ParamsHistory,
 	gateway *Gateway,
 ) int64 {
+	// Get the shared params effective at the time of the unstake.
+	sharedParams := sharedParamsHistory.GetParamsAtHeight(int64(gateway.UnstakeSessionEndHeight))
 	gatewayUnbondingPeriodBlocks := sharedParams.GatewayUnbondingPeriodSessions * sharedParams.NumBlocksPerSession
 
 	return int64(gateway.UnstakeSessionEndHeight + gatewayUnbondingPeriodBlocks)

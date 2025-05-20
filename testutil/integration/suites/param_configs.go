@@ -56,12 +56,14 @@ type ModuleParamConfig struct {
 // this module does not support individual parameter updates (i.e. MsgUpdateParam).
 // In this case, MsgUpdateParamResponse SHOULD also be omitted.
 type ModuleParamsMessages struct {
-	MsgUpdateParams         any
-	MsgUpdateParamsResponse any
-	MsgUpdateParam          any
-	MsgUpdateParamResponse  any
-	QueryParamsRequest      any
-	QueryParamsResponse     any
+	MsgUpdateParams            any
+	MsgUpdateParamsResponse    any
+	MsgUpdateParam             any
+	MsgUpdateParamResponse     any
+	QueryParamsRequest         any
+	QueryParamsResponse        any
+	QueryParamsUpdatesRequest  any
+	QueryParamsUpdatesResponse any
 }
 
 var (
@@ -74,12 +76,14 @@ var (
 
 	SharedModuleParamConfig = ModuleParamConfig{
 		ParamsMsgs: ModuleParamsMessages{
-			MsgUpdateParams:         sharedtypes.MsgUpdateParams{},
-			MsgUpdateParamsResponse: sharedtypes.MsgUpdateParamsResponse{},
-			MsgUpdateParam:          sharedtypes.MsgUpdateParam{},
-			MsgUpdateParamResponse:  sharedtypes.MsgUpdateParamResponse{},
-			QueryParamsRequest:      sharedtypes.QueryParamsRequest{},
-			QueryParamsResponse:     sharedtypes.QueryParamsResponse{},
+			MsgUpdateParams:            sharedtypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse:    sharedtypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:             sharedtypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:     sharedtypes.MsgUpdateParamResponse{},
+			QueryParamsRequest:         sharedtypes.QueryParamsRequest{},
+			QueryParamsResponse:        sharedtypes.QueryParamsResponse{},
+			QueryParamsUpdatesRequest:  sharedtypes.QueryParamsUpdatesRequest{},
+			QueryParamsUpdatesResponse: sharedtypes.QueryParamsUpdatesResponse{},
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeUint64: sharedtypes.MsgUpdateParam_AsUint64{},

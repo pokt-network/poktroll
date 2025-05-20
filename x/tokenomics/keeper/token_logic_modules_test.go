@@ -76,13 +76,13 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
-	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	err := keepers.SharedKeeper.SetInitialParams(ctx, sharedParams)
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0
-	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	err = keepers.Keeper.SetInitialParams(ctx, tokenomicsParams)
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -236,13 +236,13 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
-	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	err := keepers.SharedKeeper.SetInitialParams(ctx, sharedParams)
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0
-	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	err = keepers.Keeper.SetInitialParams(ctx, tokenomicsParams)
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -405,12 +405,12 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Set the dao_reward_address param on the tokenomics keeper.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.DaoRewardAddress = daoAddress.String()
-	keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	keepers.Keeper.SetInitialParams(ctx, tokenomicsParams)
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
-	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	err := keepers.SharedKeeper.SetInitialParams(ctx, sharedParams)
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.

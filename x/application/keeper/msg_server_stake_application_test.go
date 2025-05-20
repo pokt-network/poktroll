@@ -52,9 +52,10 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
 
 	// Assert that the EventApplicationStaked event is emitted.
-	sharedParams := sharedtypes.DefaultParams()
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
+
 	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sessionEndHeight := sharedParamsHistory.GetSessionEndHeight(currentHeight)
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&apptypes.EventApplicationStaked{
 			Application:      stakeAppRes.GetApplication(),

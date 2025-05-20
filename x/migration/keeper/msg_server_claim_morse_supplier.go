@@ -182,8 +182,8 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 
 	claimedSupplierStake := morseClaimableAccount.GetSupplierStake()
-	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(sdkCtx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, sdkCtx.BlockHeight())
 	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
 
 	// Emit an event which signals that the morse account has been claimed.

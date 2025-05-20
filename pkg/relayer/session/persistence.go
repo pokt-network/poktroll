@@ -31,7 +31,7 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 	logger := rs.logger.With("method", "populateSessionTreeMap", "height", height)
 
 	// Retrieve the shared onchain parameters
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	sharedParamsUpdates, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to get shared params")
 		return err
@@ -69,9 +69,9 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 		// 4. Past claim window without onchain claim: Delete as it's too late to claim
 		// 5. Past proof window: Delete as the session is completely expired
 
-		claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
-		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
-		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+		claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
+		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
+		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 
 		// Create a contextual logger for this specific session
 		sessionLogger := logger.With(

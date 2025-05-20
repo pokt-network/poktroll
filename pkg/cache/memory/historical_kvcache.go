@@ -19,7 +19,7 @@ type historicalKeyValueCache[T any] struct {
 	// valuesMu is used to protect values AND valueHistories from concurrent access.
 	valuesMu sync.RWMutex
 	// valueHistories holds the cached historical values.
-	valueHistories map[string]cacheValueHistory[T]
+	valueHistories map[string]*cacheValueHistory[T]
 }
 
 // cacheValueHistory maintains:
@@ -33,7 +33,15 @@ type cacheValueHistory[T any] struct {
 	sortedDescVersions []int64
 	// versionToValueMap is a map from a version number to the cached value at
 	// that version number.
-	versionToValueMap map[int64]cacheValue[T]
+	versionToValueMap map[int64]cache.CacheValue[T]
+}
+
+func (cvh *cacheValueHistory[T]) GetSortedDescVersions() []int64 {
+	return cvh.sortedDescVersions
+}
+
+func (cvh *cacheValueHistory[T]) GetVersionToValueMap() map[int64]cache.CacheValue[T] {
+	return cvh.versionToValueMap
 }
 
 // NewHistoricalKeyValueCache creates a new historicalKeyValueCache with
@@ -53,7 +61,7 @@ func NewHistoricalKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*historic
 	}
 
 	return &historicalKeyValueCache[T]{
-		valueHistories: make(map[string]cacheValueHistory[T]),
+		valueHistories: make(map[string]*cacheValueHistory[T]),
 		config:         config,
 	}, nil
 }
@@ -82,7 +90,7 @@ func (c *historicalKeyValueCache[T]) getVersion(key string, version int64) (T, b
 		return zero, false
 	}
 
-	return cachedValue.value, true
+	return cachedValue.Value(), true
 }
 
 // GetVersionLTE retrieves the value from the cache with the given key, as of the
@@ -120,7 +128,7 @@ func (c *historicalKeyValueCache[T]) GetVersionLTE(key string, maxVersion int64)
 		return zero, false
 	}
 
-	return cachedValue.value, true
+	return cachedValue.Value(), true
 }
 
 // GetLatestVersion returns the value of the latest version of the given key.
@@ -137,6 +145,15 @@ func (c *historicalKeyValueCache[T]) GetLatestVersion(key string) (T, bool) {
 	return c.getVersion(key, version)
 }
 
+func (c *historicalKeyValueCache[T]) GetAllVersions(key string) (cache.CacheValueHistory[T], bool) {
+	c.valuesMu.RLock()
+	defer c.valuesMu.RUnlock()
+
+	valueHistory, exists := c.valueHistories[key]
+
+	return valueHistory, exists
+}
+
 // SetVersion adds or updates the historical value in the cache for the given key and version number.
 func (c *historicalKeyValueCache[T]) SetVersion(key string, value T, version int64) error {
 	c.valuesMu.Lock()
@@ -149,8 +166,8 @@ func (c *historicalKeyValueCache[T]) SetVersion(key string, value T, version int
 
 	valueHistory, exists := c.valueHistories[key]
 	if !exists {
-		versionToValueMap := make(map[int64]cacheValue[T])
-		valueHistory = cacheValueHistory[T]{
+		versionToValueMap := make(map[int64]cache.CacheValue[T])
+		valueHistory = &cacheValueHistory[T]{
 			sortedDescVersions: make([]int64, 0),
 			versionToValueMap:  versionToValueMap,
 		}
@@ -187,7 +204,7 @@ func (c *historicalKeyValueCache[T]) SetVersion(key string, value T, version int
 		}
 	}
 
-	valueHistory.versionToValueMap[version] = cacheValue[T]{
+	valueHistory.versionToValueMap[version] = &cacheValue[T]{
 		value:    value,
 		cachedAt: time.Now(),
 	}
@@ -228,9 +245,9 @@ func (c *historicalKeyValueCache[T]) evictKey() error {
 				)
 			}
 
-			if first || value.cachedAt.Before(oldestTime) {
+			if first || value.CachedAt().Before(oldestTime) {
 				oldestKey = key
-				oldestTime = value.cachedAt
+				oldestTime = value.CachedAt()
 			}
 			first = false
 		}

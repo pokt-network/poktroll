@@ -71,6 +71,12 @@ func (s *msgUpdateParamsTestSuite) TestUnauthorizedMsgUpdateParamsFails() {
 
 func (s *msgUpdateParamsTestSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 	for _, moduleName := range s.GetPocketModuleNames() {
+		// Create a fresh integration app for each test.
+		s.NewApp(s.T())
+
+		// Initialize the test accounts and create authz grants.
+		s.SetupTestAuthzAccounts(s.T())
+		s.SetupTestAuthzGrants(s.T())
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
 		s.T().Run(moduleName, func(t *testing.T) {
@@ -94,7 +100,7 @@ func (s *msgUpdateParamsTestSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 			params, err := s.QueryModuleParams(t, moduleName)
 			require.NoError(t, err)
 
-			// Assert that the module's params are updated.
+			// Assert that the module's params are not updated yet.
 			require.True(t,
 				reflect.DeepEqual(expectedParams, params),
 				"expected:\n%+v\nto deeply equal:\n%+v",

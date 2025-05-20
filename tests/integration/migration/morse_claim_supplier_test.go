@@ -27,13 +27,13 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 	_, err := s.ImportMorseClaimableAccounts(s.T())
 	require.NoError(s.T(), err)
 
-	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
+	for morseAccountIdx := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
 			shannonDestAddr := sample.AccAddress()
 			bankClient := s.GetBankQueryClient(s.T())
 			sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
-			sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
+			sharedParamsUpdatesRes, err := sharedClient.ParamsUpdates(s.SdkCtx(), &sharedtypes.QueryParamsUpdatesRequest{})
 			s.NoError(err)
 
 			// Assert that the shannonDestAddr account initially has a zero balance.
@@ -62,8 +62,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 			expectedClaimedBalance := expectedMorseClaimableAccount.GetUnstakedBalance()
 			expectedBalance := expectedClaimedBalance.Sub(*supplierStakingFee)
 
-			sharedParams := sharedParamsRes.GetParams()
-			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight()-1)
+			sharedParamsUpdates := sharedParamsUpdatesRes.GetParamsUpdates()
+			svcStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, s.SdkCtx().BlockHeight()-1)
 			serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
 				shannonDestAddr,
 				s.supplierServices,
@@ -128,9 +128,9 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	require.NoError(s.T(), err)
 
 	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
-	sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
+	sharedParamsUpdatesRes, err := sharedClient.ParamsUpdates(s.SdkCtx(), &sharedtypes.QueryParamsUpdatesRequest{})
 	s.NoError(err)
-	sharedParams := sharedParamsRes.GetParams()
+	sharedParamsUpdates := sharedParamsUpdatesRes.GetParamsUpdates()
 
 	serviceClient := s.ServiceSuite.GetServiceQueryClient(s.T())
 	serviceParams, err := serviceClient.GetParams(s.SdkCtx())
@@ -140,7 +140,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	supplierParams, err := supplierClient.GetParams(s.SdkCtx())
 	s.NoError(err)
 
-	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
+	for morseAccountIdx := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
 			// Stake an initial supplier.
@@ -167,7 +167,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				[]string{serviceName},
 			)
 
-			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight()-1)
+			svcStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, s.SdkCtx().BlockHeight()-1)
 			serviceConfig := suites.SupplierServiceConfigFromServiceIdAndOperatorAddress(serviceName, shannonDestAddr)
 			expectedServiceConfigUpdateHistory := make([]*sharedtypes.ServiceConfigUpdate, 0)
 			expectedServiceConfigUpdateHistory = append(

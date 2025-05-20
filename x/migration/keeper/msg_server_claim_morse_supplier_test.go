@@ -158,8 +158,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct and assert the expected response.
-	sharedParams := sharedtypes.DefaultParams()
-	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
+	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsHistory, ctx.BlockHeight())
 	expectedRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
 		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),

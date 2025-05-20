@@ -68,7 +68,19 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 
-	logger.Info(fmt.Sprintf("activated services for %d suppliers", numSuppliersWithActivatedServices))
+	if numSuppliersWithActivatedServices > 0 {
+		logger.Info(fmt.Sprintf("activated services for %d suppliers", numSuppliersWithActivatedServices))
+	}
+
+	effectiveParams, err := k.BeginBlockerActivateSupplierParams(ctx)
+	if err != nil {
+		logger.Error(fmt.Sprintf("could not activate supplier params due to error %v", err))
+		return err
+	}
+
+	if effectiveParams != nil {
+		logger.Info(fmt.Sprintf("activated new supplier params %v", effectiveParams))
+	}
 
 	return nil
 }

@@ -63,8 +63,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsHistory, currentHeight)
 
 	// Assert that the EventRedelegation events are emitted.
 	events := sdkCtx.EventManager().Events()
@@ -198,8 +197,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.NoError(t, err)
 
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsHistory, currentHeight)
 	expectedApp := &apptypes.Application{
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),
@@ -271,8 +269,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsHistory, currentHeight)
 	expectedApp := &apptypes.Application{
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),
@@ -412,8 +409,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 
 	// Increment the block height past the tested session's grace period and run
 	// the pruning undelegations logic again.
-	sharedParams := sharedtypes.DefaultParams()
-	afterSessionGracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, sessionEndHeight) + 1
+	afterSessionGracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(sharedParamsHistory, sessionEndHeight) + 1
 	sdkCtx = sdkCtx.WithBlockHeight(afterSessionGracePeriodEndHeight)
 	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
 
@@ -643,6 +639,5 @@ func getNumBlocksUndelegationRetentionWithDefaultParams() int64 {
 // The ring addresses slice is reconstructed by adding back the past delegated
 // gateways that have been undelegated after the target session end height.
 func getRingAddressesAtBlockWithDefaultParams(app *apptypes.Application, blockHeight int64) []string {
-	sharedParams := sharedtypes.DefaultParams()
-	return rings.GetRingAddressesAtBlock(&sharedParams, app, blockHeight)
+	return rings.GetRingAddressesAtBlock(sharedParamsHistory, app, blockHeight)
 }

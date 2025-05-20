@@ -24,6 +24,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/service/mocks"
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var (
@@ -75,18 +77,33 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 			},
 		).AnyTimes()
 
+	logger := log.NewTestLogger(t)
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
+
+	// Construct a real shared keeper.
+	sharedKeeper := sharedkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKey),
+		logger,
+		authority.String(),
+	)
+	require.NoError(t, sharedKeeper.SetInitialParams(sdkCtx, sharedtypes.DefaultParams()))
+
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
+		sharedKeeper,
 		mockBankKeeper,
 	)
 
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	sdkCtx = sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.SetInitialParams(sdkCtx, types.DefaultParams()))
+
+	ctx := SetBlockHeight(sdkCtx, 1)
 
 	return k, ctx
 }

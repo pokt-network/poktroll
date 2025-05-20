@@ -100,7 +100,7 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	currentHeight := ra.blockClient.LastBlock(ctx).Height()
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
-	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
+	sharedParamsUpdates, err := ra.sharedQuerier.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -109,7 +109,7 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	if sessionEndHeight < currentHeight {
 		// Do not process the `RelayRequest` if the session has expired and the current
 		// block height is outside the session's grace period.
-		if !sharedtypes.IsGracePeriodElapsed(sharedParams, sessionEndHeight, currentHeight) {
+		if !sharedtypes.IsGracePeriodElapsed(sharedParamsUpdates, sessionEndHeight, currentHeight) {
 			// The RelayRequest's session has expired but is still within the
 			// grace period, process it as if the session is still active.
 			return sessionEndHeight, nil

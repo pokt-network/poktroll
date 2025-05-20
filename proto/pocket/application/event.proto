@@ -5,11 +5,13 @@ option go_package = "github.com/pokt-network/poktroll/x/application/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
+import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 import "pocket/shared/service.proto";
 import "pocket/application/types.proto";
+import "pocket/application/params.proto";
 
 enum ApplicationUnbondingReason {
   APPLICATION_UNBONDING_REASON_ELECTIVE = 0;
@@ -106,4 +108,19 @@ message EventApplicationUnbondingCanceled {
   pocket.application.Application application = 1 [(gogoproto.jsontag) = "application"];
   // The end height of the session in which the unbonding was canceled.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
+}
+
+// EventParamsActivated is emitted when the module params update becomes effective.
+// It signals that a scheduled parameter update has been activated at the current block height,
+// indicating that new parameter values are now in effect.
+message EventParamsActivated {
+  // params_update contains the newly activated parameter values along with their
+  // activation and deactivation heights.
+  // This provides information about the parameter change that just took effect,
+  // allowing clients to adjust to the new protocol parameters.
+  pocket.application.ParamsUpdate params_update = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params_update"
+  ];
 }

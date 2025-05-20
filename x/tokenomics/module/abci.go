@@ -12,6 +12,27 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// BeginBlocker is called every block and handles tokenomics params related updates
+// that need to be effective at the start of the block.
+func BeginBlocker(ctx sdk.Context, k keeper.Keeper) error {
+	// Telemetry: measure the begin-block execution time following standard cosmos-sdk practices.
+	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), cosmostelemetry.MetricKeyBeginBlocker)
+
+	logger := k.Logger().With("method", "BeginBlocker")
+
+	effectiveParams, err := k.BeginBlockerActivateTokenomicsParams(ctx)
+	if err != nil {
+		logger.Error(fmt.Sprintf("could not activate tokenomics params due to error %v", err))
+		return err
+	}
+
+	if effectiveParams != nil {
+		logger.Info(fmt.Sprintf("activated new tokenomics params %v", effectiveParams))
+	}
+
+	return nil
+}
+
 // EndBlocker called at every block and settles all pending claims.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	// Telemetry: measure the end-block execution time following standard cosmos-sdk practices.

@@ -40,7 +40,14 @@ message MsgUpdateParams {
 
 // MsgUpdateParamsResponse defines the response structure for executing a
 // MsgUpdateParams message.
-message MsgUpdateParamsResponse {}
+message MsgUpdateParamsResponse {
+  // params holds all the parameter values that are currently in effect.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // params_update represents the scheduled parameter update that will automatically
+  // take effect when the blockchain reaches activation_height.
+  ParamsUpdate params_update = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
 
 message MsgStakeSupplier {
   option (cosmos.msg.v1.signer) = "signer"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
@@ -79,6 +86,11 @@ message MsgUpdateParam {
 }
 
 message MsgUpdateParamResponse {
-  Params params = 1;
+  // params holds all the parameter values that are currently in effect.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // params_update represents the scheduled parameter update that will automatically
+  // take effect when the blockchain reaches activation_height.
+  ParamsUpdate params_update = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 

@@ -328,10 +328,7 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 		// They will be emitted last, after all the late sessions have been emitted.
 		var onTimeSessions []relayer.SessionTree
 
-		// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
-		// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-		// to get the most recently (asynchronously) observed (and cached) value.
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		sharedParamsUpdates, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
 			return
@@ -351,7 +348,7 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			// before emitting the on-time sessions.
 			var lateSessions []relayer.SessionTree
 
-			claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
+			claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
 
 			// Checking for sessions to claim with <= operator,
 			// which means that it would include sessions that were supposed to be
@@ -548,11 +545,11 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 // deleteExpiredSessionTreesFn returns a function that deletes non-claimed sessions
 // that have expired.
 func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
-	expirationHeightFn func(*sharedtypes.Params, int64) int64,
+	expirationHeightFn func([]*sharedtypes.ParamsUpdate, int64) int64,
 ) func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
 	return func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
 		currentHeight := rs.blockClient.LastBlock(ctx).Height()
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		sharedParamsHistory, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
 			return
@@ -561,7 +558,7 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 		// TODO_TEST: Add tests that cover existing expired failed session trees.
 		for _, sessionTree := range failedSessionTrees {
 			sessionEndHeight := sessionTree.GetSessionHeader().GetSessionEndBlockHeight()
-			proofWindowCloseHeight := expirationHeightFn(sharedParams, sessionEndHeight)
+			proofWindowCloseHeight := expirationHeightFn(sharedParamsHistory, sessionEndHeight)
 
 			if currentHeight > proofWindowCloseHeight {
 				rs.logger.Debug().Msg("deleting expired session")

@@ -16,11 +16,11 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	logger := k.Logger().With("method", "EndBlockerUnbondApplications")
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(sdkCtx)
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding applications at the end of the session.
-	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(sharedParamsUpdates, currentHeight) {
 		return nil
 	}
 
@@ -51,7 +51,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			continue
 		}
 
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(sharedParamsUpdates, &application)
 
 		// If the unbonding height is ahead of the current height, the application
 		// stays in the unbonding state.
@@ -66,11 +66,12 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 		sdkCtx = sdk.UnwrapSDKContext(ctx)
 
 		unbondingReason := apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE
-		if application.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+		minStake := k.GetParamsAtHeight(ctx, int64(application.UnstakeSessionEndHeight)).MinStake
+		if application.GetStake().Amount.LT(minStake.Amount) {
 			unbondingReason = apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE
 		}
 
-		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 		unbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 			Application:        &application,
 			Reason:             unbondingReason,

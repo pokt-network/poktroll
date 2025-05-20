@@ -7,11 +7,12 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
+	proto "github.com/cosmos/gogoproto/proto"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
+	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/retry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
@@ -22,10 +23,10 @@ type proofQuerier struct {
 	proofQuerier prooftypes.QueryClient
 	logger       polylog.Logger
 
+	// eventsParamsActivationClient is used to subscribe to proof module parameters updates
+	eventsParamsActivationClient client.EventsParamsActivationClient
 	// paramsCache caches proofQuerier.Params requests
 	paramsCache client.ParamsCache[prooftypes.Params]
-	// paramsMutex to protect cache access patterns for params
-	paramsMutex sync.Mutex
 
 	// claimsCache caches proofQuerier.Claim requests
 	// It keys the Claims by sessionId and supplierOperatorAddress
@@ -40,15 +41,20 @@ type proofQuerier struct {
 // Required dependencies:
 // - grpc.ClientConn
 // - polylog.Logger
+// - client.EventsParamsActivationClient
 // - client.ParamsCache[prooftypes.Params]
 // - cache.KeyValueCache[prooftypes.Claim]
-func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
+func NewProofQuerier(
+	ctx context.Context,
+	deps depinject.Config,
+) (client.ProofQueryClient, error) {
 	querier := &proofQuerier{}
 
 	if err := depinject.Inject(
 		deps,
 		&querier.clientConn,
 		&querier.logger,
+		&querier.eventsParamsActivationClient,
 		&querier.paramsCache,
 		&querier.claimsCache,
 	); err != nil {
@@ -56,6 +62,22 @@ func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 	}
 
 	querier.proofQuerier = prooftypes.NewQueryClient(querier.clientConn)
+
+	// Initialize the proof module cache with all existing parameters updates:
+	// - Parameters are cached as historic data, eliminating the need to invalidate the cache.
+	// - The UpdateParamsCache method ensures the querier starts with the current parameters history cached.
+	// - Future updates are automatically cached by subscribing to the eventsParamsActivationClient observable.
+	err := querycache.UpdateParamsCache(
+		ctx,
+		&prooftypes.QueryParamsUpdatesRequest{},
+		toProofParamsUpdate,
+		querier.proofQuerier,
+		querier.eventsParamsActivationClient,
+		querier.paramsCache,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return querier, nil
 }
@@ -66,35 +88,32 @@ func (pq *proofQuerier) GetParams(
 ) (client.ProofParams, error) {
 	logger := pq.logger.With("query_client", "proof", "method", "GetParams")
 
+	// Attempt to retrieve the latest parameters from the cache.
+	params, found := pq.paramsCache.GetLatest()
+	if !found {
+		logger.Debug().Msg("cache MISS for proof params")
+		return nil, fmt.Errorf("expecting proof params to be found in cache")
+	}
+
+	logger.Debug().Msg("cache HIT for proof params")
+
+	return &params, nil
+}
+
+// GetParamsAtHeight queries & returns the proof module onchain parameters
+// that were in effect at the given block height.
+func (pq *proofQuerier) GetParamsAtHeight(ctx context.Context, height int64) (client.ProofParams, error) {
+	logger := pq.logger.With("query_client", "proof", "method", "GetParamsAtHeight")
+
 	// Get the params from the cache if they exist.
-	if params, found := pq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache HIT for proof params")
-		return &params, nil
+	params, found := pq.paramsCache.GetAtHeight(height)
+	if !found {
+		logger.Debug().Msgf("cache MISS for proof params at height: %d", height)
+		return nil, fmt.Errorf("expecting proof params to be found in cache at height %d", height)
 	}
 
-	// Use mutex to prevent multiple concurrent cache updates
-	pq.paramsMutex.Lock()
-	defer pq.paramsMutex.Unlock()
-
-	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
-	if params, found := pq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache HIT for proof params after lock")
-		return &params, nil
-	}
-
-	logger.Debug().Msg("cache MISS for proof params")
-
-	req := &prooftypes.QueryParamsRequest{}
-	res, err := retry.Call(ctx, func() (*prooftypes.QueryParamsResponse, error) {
-		return pq.proofQuerier.Params(ctx, req)
-	}, retry.GetStrategy(ctx))
-	if err != nil {
-		return nil, err
-	}
-
-	// Update the cache with the newly retrieved params.
-	pq.paramsCache.Set(res.Params)
-	return &res.Params, nil
+	logger.Debug().Msgf("cache HIT for proof params at height: %d", height)
+	return &params, nil
 }
 
 // GetClaim queries the chain for the claim associated with the given session id and supplier operator address.
@@ -144,4 +163,12 @@ func (pq *proofQuerier) GetClaim(
 // getClaimCacheKey constructs the cache key for a claim in the form of: supplierOperatorAddress/sessionId.
 func getClaimCacheKey(supplierOperatorAddress, sessionId string) string {
 	return fmt.Sprintf("%s/%s", supplierOperatorAddress, sessionId)
+}
+
+func toProofParamsUpdate(protoMessage proto.Message) (*prooftypes.ParamsUpdate, bool) {
+	if event, ok := protoMessage.(*prooftypes.EventParamsActivated); ok {
+		return &event.ParamsUpdate, true
+	}
+
+	return nil, false
 }

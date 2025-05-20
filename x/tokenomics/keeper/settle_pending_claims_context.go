@@ -46,8 +46,8 @@ type settlementContext struct {
 	relayMiningDifficultyMap map[string]servicetypes.RelayMiningDifficulty
 
 	// Cache of parameters used during the settlement process to prevent repeated KV store lookups.
-	sharedParams     sharedtypes.Params
-	tokenomicsParams tokenomicstypes.Params
+	sharedParamsHistory sharedtypes.ParamsHistory
+	tokenomicsParams    tokenomicstypes.Params
 }
 
 // NewSettlementContext creates a new settlement context with all necessary caches initialized.
@@ -71,7 +71,7 @@ func NewSettlementContext(
 
 		serviceMap:               make(map[string]*sharedtypes.Service),
 		relayMiningDifficultyMap: make(map[string]servicetypes.RelayMiningDifficulty),
-		sharedParams:             tokenomicsKeeper.sharedKeeper.GetParams(ctx),
+		sharedParamsHistory:      tokenomicsKeeper.sharedKeeper.GetParamsUpdates(ctx),
 		tokenomicsParams:         tokenomicsKeeper.GetParams(ctx),
 	}
 }
@@ -165,8 +165,8 @@ func (sctx *settlementContext) GetService(serviceId string) (*sharedtypes.Servic
 }
 
 // GetSharedParams returns the cached shared parameters used during the settlement process.
-func (sctx *settlementContext) GetSharedParams() sharedtypes.Params {
-	return sctx.sharedParams
+func (sctx *settlementContext) GetSharedParams(queryHeight int64) sharedtypes.Params {
+	return sctx.sharedParamsHistory.GetParamsAtHeight(queryHeight)
 }
 
 // GetTokenomicsParams returns the cached tokenomics parameters used during the settlement process.

@@ -21,3 +21,25 @@ message Params {
   // min_stake is the minimum stake in upokt that an application must have to remain staked.
   cosmos.base.v1beta1.Coin min_stake = 2 [(gogoproto.jsontag) = "min_stake", (gogoproto.moretags) = "yaml:\"min_stake\""];
 }
+
+// ParamsUpdate defines the parameters update along with the block height at which
+// the update is effective.
+// This mechanism enables governance to schedule parameter changes that take effect
+// at a specified future block height, providing transparency and allowing network
+// participants time to prepare for the changes.
+message ParamsUpdate {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+
+  // activation_height specifies the block height at which these parameters will become effective.
+  // Once the blockchain reaches this height, the parameters will automatically activate.
+  int64 activation_height = 2 [(gogoproto.jsontag) = "activation_height"];
+
+  // deactivation_height specifies the block height at which these parameters will no longer be effective.
+  // - For currently active parameters, this value is set to 0, indicating no scheduled deactivation.
+  // - For scheduled future updates, this will be set when another parameter update is scheduled to replace this one.
+  int64 deactivation_height = 3 [(gogoproto.jsontag) = "deactivation_height"];
+}

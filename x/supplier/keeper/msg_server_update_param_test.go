@@ -10,6 +10,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -19,7 +20,7 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
 	defaultParams := suppliertypes.DefaultParams()
-	require.NoError(t, k.SetParams(ctx, defaultParams))
+	require.NoError(t, k.SetInitialParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedMinStake, defaultParams.MinStake)
@@ -33,9 +34,24 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.MinStake, res.Params.MinStake)
-	require.Equal(t, expectedMinStake.Amount, res.Params.MinStake.Amount)
+	// Assert that the onchain min stake is not updated yet.
+	params := k.GetParams(ctx)
+	require.NotEqual(t, expectedMinStake, params.MinStake)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	sharedParams := sharedtypes.DefaultParams()
+	nextSessionStartHeight := currentHeight + int64(sharedParams.NumBlocksPerSession)
+	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
+
+	_, err = k.BeginBlockerActivateSupplierParams(sdkCtx)
+	require.NoError(t, err)
+
+	params = k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.MinStake, params.MinStake)
+	require.Equal(t, expectedMinStake.Amount, params.MinStake.Amount)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(suppliertypes.KeyMinStake))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &res.Params, string(suppliertypes.KeyMinStake))
 }

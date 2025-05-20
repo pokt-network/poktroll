@@ -8,6 +8,7 @@ option (gogoproto.stable_marshaler_all) = true;
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos_proto/cosmos.proto";
 
 import "pocket/tokenomics/params.proto";
@@ -15,10 +16,19 @@ import "pocket/tokenomics/params.proto";
 // Query defines the gRPC querier service.
 service Query {
 
-  // Parameters queries the parameters of the module.
+  // Params queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/tokenomics/params";
+  }
 
+  // ParamsAtHeight queries the parameters of the module at a given height.
+  rpc ParamsAtHeight(QueryParamsAtHeightRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/tokenomics/params/{at_height}";
+  }
+
+  // ParamsUpdates queries the parameters history of the module.
+  rpc ParamsUpdates(QueryParamsUpdatesRequest) returns (QueryParamsUpdatesResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/tokenomics/params_updates";
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -26,7 +36,33 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-
   // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // activation_height is the block height at which the params are effective.
+  // - For current parameters, this is the height at which they were activated.
+  // - For future parameters, this is the scheduled height for activation.
+  int64 activation_height = 2;
+
+  // deactivation_height is the block height at which the params are no longer effective.
+  // - For currently active params, this value is 0, indicating no scheduled deactivation.
+  // - For scheduled future updates or historical parameters, this indicates when they will be
+  //   or were replaced by another parameter update.
+  int64 deactivation_height = 3;
+}
+
+// QueryParamsAtHeightRequest is request type for the Query/ParamsAtHeight RPC method.
+message QueryParamsAtHeightRequest {
+  // height is used to query the params values at a given block height.
+  int64 at_height = 1;
+}
+
+// QueryParamsUpdatesRequest is request type for the Query/Params RPC method.
+message QueryParamsUpdatesRequest {}
+
+// QueryParamsUpdatesResponse is response type for the Query/Params RPC method.
+message QueryParamsUpdatesResponse {
+  // params updates holds all the parameters history of this module.
+  repeated ParamsUpdate params_updates = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination            = 2;
 }

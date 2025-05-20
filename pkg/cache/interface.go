@@ -1,5 +1,17 @@
 package cache
 
+import "time"
+
+type CacheValue[T any] interface {
+	Value() T
+	CachedAt() time.Time
+}
+
+type CacheValueHistory[T any] interface {
+	GetSortedDescVersions() []int64
+	GetVersionToValueMap() map[int64]CacheValue[T]
+}
+
 // KeyValueCache is a key/value store style interface for a cache of a single type.
 // It is intended to be used to cache arbitrary data, where each key uniquely indexes
 // the most recently observed version of the data associated with that key.
@@ -26,6 +38,8 @@ type HistoricalKeyValueCache[T any] interface {
 	// It returns true if a value meeting the version criteria for the given
 	// key is cached, false otherwise.
 	GetVersionLTE(key string, maxVersion int64) (T, bool)
+
+	GetAllVersions(key string) (CacheValueHistory[T], bool)
 
 	// SetVersion adds or updates a value at a specific version number.
 	SetVersion(key string, value T, version int64) error

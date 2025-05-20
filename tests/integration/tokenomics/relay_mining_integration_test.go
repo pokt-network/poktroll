@@ -87,13 +87,13 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	// A too high number would make the difficulty stay at BaseRelayDifficultyHash
 	serviceParams := keepers.ServiceKeeper.GetParams(ctx)
 	serviceParams.TargetNumRelays = 1000
-	err := keepers.ServiceKeeper.SetParams(ctx, serviceParams)
+	err := keepers.ServiceKeeper.SetInitialParams(ctx, serviceParams)
 	require.NoError(t, err)
 
 	// Set the CUTTM to 1 to simplify the math
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
 	sharedParams.ComputeUnitsToTokensMultiplier = uint64(1)
-	err = keepers.SharedKeeper.SetParams(sdkCtx, sharedParams)
+	err = keepers.SharedKeeper.SetInitialParams(sdkCtx, sharedParams)
 	require.NoError(t, err)
 
 	// Update the relay mining difficulty so there's always a difficulty to retrieve

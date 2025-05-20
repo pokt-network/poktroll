@@ -192,10 +192,13 @@ func SessionKeeper(t testing.TB, opts ...KeeperOptionFn) (keeper.Keeper, context
 	// 	opt(k)
 	// }
 
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.SetInitialParams(sdkCtx, types.DefaultParams()))
+
+	// Move block height to 1 to get a non zero session end height
+	ctx := SetBlockHeight(sdkCtx, 1)
 
 	// In prod, the hashes of all block heights are stored in the hash store while
 	// the block hashes below are hardcoded to match the hardcoded session IDs used
@@ -295,9 +298,15 @@ func defaultSharedKeeperMock(t testing.TB, params *sharedtypes.Params) types.Sha
 		*params = sharedtypes.DefaultParams()
 	}
 
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(*params)
+
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).
 		Return(*params).
 		AnyTimes()
+	mockSharedKeeper.EXPECT().GetParamsUpdates(gomock.Any()).
+		Return(sharedParamsHistory).
+		AnyTimes()
+
 	return mockSharedKeeper
 }

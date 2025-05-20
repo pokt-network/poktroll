@@ -21,7 +21,10 @@ import (
 )
 
 // Prevent strconv unused error
-var _ = strconv.IntSize
+var (
+	_                   = strconv.IntSize
+	sharedParamsHistory = sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
+)
 
 func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
@@ -59,8 +62,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		require.NoError(t, err)
 
 		// Construct and assert the expected response.
-		sharedParams := sharedtypes.DefaultParams()
-		expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
+		expectedSessionEndHeight := sharedParamsHistory.GetSessionEndHeight(ctx.BlockHeight())
 		expectedClaimedBalance := morseAccount.GetUnstakedBalance().
 			Add(morseAccount.GetSupplierStake()).
 			Add(morseAccount.GetApplicationStake())

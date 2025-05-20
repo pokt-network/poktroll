@@ -336,3 +336,37 @@ func (s *ParamsSuite) QueryModuleParams(t *testing.T, moduleName string) (params
 	paramsValue := paramsResParamsValue.Elem().FieldByName("Params")
 	return paramsValue.Interface(), err
 }
+
+// QueryModuleParamsUpdates queries the given module's parameters and returns them.
+// It is expected to be called after s.NewApp() as it depends on the app's query helper.
+func (s *ParamsSuite) QueryModuleParamsUpdates(t *testing.T, moduleName string) (params any, err error) {
+	t.Helper()
+
+	moduleCfg := ModuleParamConfigMap[moduleName]
+
+	// Construct a new param client.
+	newParamClientFn := reflect.ValueOf(moduleCfg.NewParamClientFn)
+	newParamClientFnArgs := []reflect.Value{
+		reflect.ValueOf(s.GetApp().QueryHelper()),
+	}
+	paramClient := newParamClientFn.Call(newParamClientFnArgs)[0]
+
+	// Query for the module's params updates.
+	paramsUpdatesQueryReqValue := reflect.New(reflect.TypeOf(moduleCfg.ParamsMsgs.QueryParamsUpdatesRequest))
+	callParamsUpdatesArgs := []reflect.Value{
+		reflect.ValueOf(s.GetApp().GetSdkCtx()),
+		paramsUpdatesQueryReqValue,
+	}
+	callParamsUpdatesReturnValues := paramClient.MethodByName("ParamsUpdates").Call(callParamsUpdatesArgs)
+	paramsResParamsUpdatesValue := callParamsUpdatesReturnValues[0]
+	paramUpdatesResErrValue := callParamsUpdatesReturnValues[1].Interface()
+
+	isErr := false
+	err, isErr = paramUpdatesResErrValue.(error)
+	if !isErr {
+		require.Nil(t, callParamsUpdatesReturnValues[1].Interface())
+	}
+
+	paramsValue := paramsResParamsUpdatesValue.Elem().FieldByName("ParamsUpdates")
+	return paramsValue.Interface(), err
+}
