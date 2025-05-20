@@ -260,10 +260,10 @@ func (mf *MorseMigrationFixtures) GetConfig() *MorseFixturesConfig {
 	return mf.config
 }
 
-// nextAllActorsIndex increments and returns the current index counter of the MorseMigrationFixtures.
+// nextAllAccountsIndex increments and returns the current index counter of the MorseMigrationFixtures.
 // This method is used to generate sequential indices for various entities created during the
 // fixture generation process, ensuring each entity has a unique index for deterministic generation.
-func (mf *MorseMigrationFixtures) nextAllActorsIndex() uint64 {
+func (mf *MorseMigrationFixtures) nextAllAccountsIndex() uint64 {
 	mf.currentIndex++
 	return mf.currentIndex - 1
 }
@@ -362,7 +362,7 @@ func (mf *MorseMigrationFixtures) addAccount(
 	unstakedActorType MorseUnstakedActorType,
 ) (err error) {
 	// Get the next global index for this account
-	allAccountsIndex := mf.nextAllActorsIndex()
+	allAccountsIndex := mf.nextAllAccountsIndex()
 
 	// Generate a deterministic private key for this account index
 	privKey := mf.generateMorsePrivateKey(allAccountsIndex)
@@ -457,7 +457,7 @@ func (mf *MorseMigrationFixtures) addApplication(
 	applicationType MorseApplicationActorType,
 ) error {
 	// Get the next global index for this application
-	allAccountsIndex := mf.nextAllActorsIndex()
+	allAccountsIndex := mf.nextAllAccountsIndex()
 
 	// Generate a deterministic private key for this application
 	privKey := mf.generateMorsePrivateKey(allAccountsIndex)
@@ -514,7 +514,7 @@ func (mf *MorseMigrationFixtures) addValidator(
 	validatorType MorseValidatorActorType,
 ) error {
 	// Get the next global index for this validator
-	allAccountsIndex := mf.nextAllActorsIndex()
+	allAccountsIndex := mf.nextAllAccountsIndex()
 
 	// Generate a deterministic private key for this validator
 	privKey := mf.generateMorsePrivateKey(allAccountsIndex)
