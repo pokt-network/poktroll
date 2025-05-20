@@ -154,13 +154,13 @@ type InvalidAccountsConfig struct {
 	NumNonHexAddress   uint64 // Number of accounts with addresses containing non-hexadecimal characters
 }
 
-// MorseFixturesOption defines a function that configures a MorseFixturesConfig.
+// MorseFixturesOptionFn defines a function that configures a MorseFixturesConfig.
 // This follows the functional options pattern for configuring structs.
-type MorseFixturesOption func(config *MorseFixturesConfig)
+type MorseFixturesOptionFn func(config *MorseFixturesConfig)
 
 // WithModuleAccountNameFn sets the ModuleAccountNameConfig for the fixtures.
 // It determines how module account names are generated during fixture creation.
-func WithModuleAccountNameFn(cfg ModuleAccountNameConfigFn) MorseFixturesOption {
+func WithModuleAccountNameFn(cfg ModuleAccountNameConfigFn) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.ModuleAccountNameConfigFn = cfg
 	}
@@ -168,7 +168,7 @@ func WithModuleAccountNameFn(cfg ModuleAccountNameConfigFn) MorseFixturesOption 
 
 // WithValidAccounts sets the ValidAccountsConfig for the fixtures.
 // It determines how many valid accounts of each type are generated.
-func WithValidAccounts(cfg ValidAccountsConfig) MorseFixturesOption {
+func WithValidAccounts(cfg ValidAccountsConfig) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.ValidAccountsConfig = cfg
 	}
@@ -176,7 +176,7 @@ func WithValidAccounts(cfg ValidAccountsConfig) MorseFixturesOption {
 
 // WithInvalidAccounts sets the InvalidAccountsConfig for the fixtures.
 // It determines how many invalid accounts of each type are generated.
-func WithInvalidAccounts(cfg InvalidAccountsConfig) MorseFixturesOption {
+func WithInvalidAccounts(cfg InvalidAccountsConfig) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.InvalidAccountsConfig = cfg
 	}
@@ -184,7 +184,7 @@ func WithInvalidAccounts(cfg InvalidAccountsConfig) MorseFixturesOption {
 
 // WithOrphanedActors sets the OrphanedActorsConfig for the fixtures.
 // It determines how many orphaned applications and validators are generated.
-func WithOrphanedActors(cfg OrphanedActorsConfig) MorseFixturesOption {
+func WithOrphanedActors(cfg OrphanedActorsConfig) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.OrphanedActorsConfig = cfg
 	}
@@ -192,7 +192,7 @@ func WithOrphanedActors(cfg OrphanedActorsConfig) MorseFixturesOption {
 
 // WithUnstakedAccountBalancesFn sets the UnstakedAccountBalancesConfig for the fixtures.
 // It defines how balances are determined for unstaked accounts.
-func WithUnstakedAccountBalancesFn(cfg UnstakedAccountBalancesConfigFn) MorseFixturesOption {
+func WithUnstakedAccountBalancesFn(cfg UnstakedAccountBalancesConfigFn) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.UnstakedAccountBalancesConfigFn = cfg
 	}
@@ -200,7 +200,7 @@ func WithUnstakedAccountBalancesFn(cfg UnstakedAccountBalancesConfigFn) MorseFix
 
 // WithValidatorStakesFn sets the ValidatorStakesConfig for the fixtures.
 // It defines how staked and unstaked balances are determined for validator accounts.
-func WithValidatorStakesFn(cfg ValidatorStakesConfigFn) MorseFixturesOption {
+func WithValidatorStakesFn(cfg ValidatorStakesConfigFn) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.ValidatorStakesConfigFn = cfg
 	}
@@ -208,7 +208,7 @@ func WithValidatorStakesFn(cfg ValidatorStakesConfigFn) MorseFixturesOption {
 
 // WithApplicationStakesFn sets the ApplicationStakesConfig for the fixtures.
 // It defines how staked and unstaked balances are determined for application accounts.
-func WithApplicationStakesFn(cfg ApplicationStakesConfigFn) MorseFixturesOption {
+func WithApplicationStakesFn(cfg ApplicationStakesConfigFn) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.ApplicationStakesConfigFn = cfg
 	}
@@ -217,7 +217,7 @@ func WithApplicationStakesFn(cfg ApplicationStakesConfigFn) MorseFixturesOption 
 // NewMorseFixtures creates a new MorseMigrationFixtures instance with the provided options.
 // It initializes the necessary data structures and generates test fixtures according to
 // the configuration provided through the options.
-func NewMorseFixtures(opts ...MorseFixturesOption) (*MorseMigrationFixtures, error) {
+func NewMorseFixtures(opts ...MorseFixturesOptionFn) (*MorseMigrationFixtures, error) {
 	morseFixtures := &MorseMigrationFixtures{
 		morseStateExport: &migrationtypes.MorseStateExport{
 			AppState: &migrationtypes.MorseTendermintAppState{
