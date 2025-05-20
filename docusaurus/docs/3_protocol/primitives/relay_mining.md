@@ -23,7 +23,7 @@ Relay Mining is the only solution in Web3 to incentivize read-only requests
 and solve for the problem of high volume: `how can we scale to billions or trillions
 of relays per session`.
 
-This complements the design of [Probabilistic Proofs](./probabilistic_proofs.md)
+This complements the design of [Probabilistic Proofs](probabilistic_proofs_shannon_og.md)
 to solve for all scenarios.
 
 ## Relay Sessions

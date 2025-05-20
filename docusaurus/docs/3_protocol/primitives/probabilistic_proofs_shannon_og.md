@@ -59,7 +59,7 @@ along with further research on the topic.
   - [Analogs between Model Parameters and onchain Governance Values](#analogs-between-model-parameters-and-onchain-governance-values)
   - [Parameter Analog for Penalty (`S`)](#parameter-analog-for-penalty-s)
   - [Parameter Analog for Reward (`R`)](#parameter-analog-for-reward-r)
-  - [TODO_IN_THIS_PR: Explain `p`](#todo_in_this_pr-explain-p)
+  - [TODO\_IN\_THIS\_PR: Explain `p`](#todo_in_this_pr-explain-p)
   - [Considerations during Parameter Adjustment](#considerations-during-parameter-adjustment)
     - [Selecting Optimal `p` and `S`](#selecting-optimal-p-and-s)
     - [Considerations for `Proof.ProofRequirementThreshold` an `ProofRequirementThreshold`](#considerations-for-proofproofrequirementthreshold-an-proofrequirementthreshold)
@@ -72,7 +72,7 @@ along with further research on the topic.
   - [Selecting `ProofRequirementThreshold`](#selecting-proofrequirementthreshold)
   - [Calculating `p`: `ProofRequestProbability`](#calculating-p-proofrequestprobability)
   - [Calculating `S`: `ProofMissingPenalty`](#calculating-s-proofmissingpenalty)
-- [TODO_IN_THIS_PR: Above Threshold Attack Possibility](#todo_in_this_pr-above-threshold-attack-possibility)
+- [TODO\_IN\_THIS\_PR: Above Threshold Attack Possibility](#todo_in_this_pr-above-threshold-attack-possibility)
 - [Future Work](#future-work)
 
 ## Relationship to Relay Mining
