@@ -25,6 +25,7 @@ func BenchmarkFullAppSimulation(b *testing.B) {
 	config := simcli.NewConfigFromFlags()
 	config.ChainID = SimAppChainID
 
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code. FlagEnabledValue is unused and will be removed in a future release
 	db, dir, logger, skip, err := simtestutil.SetupSimulation(config, "goleveldb-app-sim", "Simulation", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
 	if err != nil {
 		b.Fatalf("simulation setup failed: %s", err.Error())
@@ -41,6 +42,8 @@ func BenchmarkFullAppSimulation(b *testing.B) {
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = app.DefaultNodeHome
+
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code.
 	appOptions[server.FlagInvCheckPeriod] = simcli.FlagPeriodValue
 
 	bApp, err := app.New(logger, db, nil, true, appOptions, interBlockCacheOpt())
@@ -80,6 +83,7 @@ func BenchmarkInvariants(b *testing.B) {
 	config := simcli.NewConfigFromFlags()
 	config.ChainID = SimAppChainID
 
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code. FlagEnabledValue is unused and will be removed in a future release
 	db, dir, logger, skip, err := simtestutil.SetupSimulation(config, "leveldb-app-invariant-bench", "Simulation", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
 	if err != nil {
 		b.Fatalf("simulation setup failed: %s", err.Error())
@@ -89,7 +93,7 @@ func BenchmarkInvariants(b *testing.B) {
 		b.Skip("skipping benchmark application simulation")
 	}
 
-	config.AllInvariants = false
+	config.AllInvariants = false //nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code.
 
 	defer func() {
 		require.NoError(b, db.Close())
@@ -98,6 +102,8 @@ func BenchmarkInvariants(b *testing.B) {
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = app.DefaultNodeHome
+
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code.
 	appOptions[server.FlagInvCheckPeriod] = simcli.FlagPeriodValue
 
 	bApp, err := app.New(logger, db, nil, true, appOptions, interBlockCacheOpt())

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT: switch from protoparse to github.com/bufbuild/protocompile.
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/desc/protoparse/ast"
 
