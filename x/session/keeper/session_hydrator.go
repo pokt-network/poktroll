@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math/rand"
+	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
@@ -97,7 +97,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	// TODO_MAINNET(@bryanchriswhite, #543): If the num_blocks_per_session param
+	// TODO_MAINNET_MIGRATION(@red-0ne, #543): If the num_blocks_per_session param
 	// has ever been changed, this function may cause unexpected behavior for historical sessions.
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
@@ -112,11 +112,11 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error {
 	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
-	// TODO_MAINNET: In the future, we will need to validate that the Service is
+	// TODO_TECHDEBT: In the future, we will need to validate that the Service is
 	// a valid service depending on whether or not its permissioned or permissionless
 
-	if !sharedtypes.IsValidServiceId(sh.sessionHeader.ServiceId) {
-		return types.ErrSessionHydration.Wrapf("invalid service ID: %s", sh.sessionHeader.ServiceId)
+	if err := sharedtypes.IsValidServiceId(sh.sessionHeader.ServiceId); err != nil {
+		return types.ErrSessionHydration.Wrapf("%v", err.Error())
 	}
 
 	sh.sessionHeader.SessionId, sh.sessionIDBz = k.GetSessionId(
@@ -170,32 +170,51 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
+	// TODO_MAINNET: Use the number of suppliers per session used at query height (i.e. sh.blockHeight).
+	// Currently, the session is hydrated with the "current" (i.e. latest block)
+	// NumSuppliersPerSession param value.
+	// We need to account for the value at query height to ensure:
+	// - The session is hydrated with the correct historical number of suppliers
+	// - Changes between query height and current height are properly handled
+	// Refer to the following discussion for more details:
+	// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992214953
 	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
-	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
-	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
-	for _, s := range suppliers {
-		// Exclude suppliers that are inactive (i.e. currently unbonding).
-		if !s.IsActive(uint64(sh.sessionHeader.SessionEndBlockHeight), sh.sessionHeader.ServiceId) {
-			continue
+	// Map supplier operator addresses to random weights for deterministic sorting.
+	// This ensures fair distribution when:
+	// - NumCandidateSuppliers exceeds NumSuppliersPerSession
+	// - We need to randomly but fairly determine which suppliers can serve Applications
+	candidatesToRandomWeight := make(map[string]int)
+	candidateSupplierConfigs := make([]*sharedtypes.ServiceConfigUpdate, 0)
+
+	// Get an iterator of service configurations updates at the query height or earlier.
+	// This avoids unnecessary filtering during iteration and is more efficient
+	sessionSupplierServiceConfigIterator := k.supplierKeeper.GetServiceConfigUpdatesIterator(
+		ctx,
+		sh.sessionHeader.ServiceId,
+		sh.blockHeight,
+	)
+	defer sessionSupplierServiceConfigIterator.Close()
+
+	for ; sessionSupplierServiceConfigIterator.Valid(); sessionSupplierServiceConfigIterator.Next() {
+		supplierServiceConfigUpdate, err := sessionSupplierServiceConfigIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get supplier service config from iterator: %v", err))
+			return err
 		}
 
-		// NB: Allocate a new heap variable as s is a value and we're appending
-		// to a slice of  pointers; otherwise, we'd be appending new pointers to
-		// the same memory address containing the last supplier in the loop.
-		supplier := s
-		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
-		for _, supplierServiceConfig := range supplier.Services {
-			if supplierServiceConfig.ServiceId == sh.sessionHeader.ServiceId {
-				candidateSuppliers = append(candidateSuppliers, &supplier)
-				break
-			}
+		// Check if supplier is authorized to serve this service at query block height.
+		// This check is necessary because:
+		// - The iterator filters by: activationHeight <= currentHeight (sh.blockHeight)
+		// - We also need to check if its active: deactivationHeight > currentHeight (sh.blockHeight)
+		if supplierServiceConfigUpdate.IsActive(sh.blockHeight) {
+			candidateSupplierConfigs = append(candidateSupplierConfigs, supplierServiceConfigUpdate)
 		}
 	}
 
-	defer telemetry.SessionSuppliersGauge(len(candidateSuppliers), numSuppliersPerSession, sh.sessionHeader.ServiceId)
+	defer telemetry.SessionSuppliersGauge(len(candidateSupplierConfigs), numSuppliersPerSession, sh.sessionHeader.ServiceId)
 
-	if len(candidateSuppliers) == 0 {
+	if len(candidateSupplierConfigs) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
 		return types.ErrSessionSuppliersNotFound.Wrapf(
 			"could not find suppliers for service %s at height %d",
@@ -204,65 +223,70 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		)
 	}
 
-	if len(candidateSuppliers) < numSuppliersPerSession {
+	// If the number of available suppliers is less than the maximum number of
+	// possible suppliers per session, use all available suppliers.
+	if len(candidateSupplierConfigs) < numSuppliersPerSession {
 		logger.Debug(fmt.Sprintf(
 			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
-			len(candidateSuppliers),
+			len(candidateSupplierConfigs),
 			numSuppliersPerSession,
 		))
-		sh.session.Suppliers = candidateSuppliers
-	} else {
-		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, numSuppliersPerSession, sh.sessionIDBz)
+		suppliers := k.getServiceConfigsSuppliers(ctx, candidateSupplierConfigs)
+		sh.session.Suppliers = suppliers
+
+		return nil
 	}
+
+	for _, serviceConfigUpdate := range candidateSupplierConfigs {
+		supplierOperatorAddress := serviceConfigUpdate.OperatorAddress
+		candidatesToRandomWeight[supplierOperatorAddress] = generateSupplierRandomWeight(supplierOperatorAddress, sh.sessionIDBz)
+	}
+
+	sortedCandidates := sortCandidateSupplierConfigsBySupplierWeight(candidateSupplierConfigs, candidatesToRandomWeight)
+	suppliers := k.getServiceConfigsSuppliers(ctx, sortedCandidates[:numSuppliersPerSession])
+	sh.session.Suppliers = suppliers
 
 	return nil
 }
 
-// TODO_MAINNET: We are using a `Go` native implementation for a pseudo-random
-// number generator. In order for it to be language agnostic, a general purpose
-// algorithm MUST be used. pseudoRandomSelection returns a random subset of the
-// candidates.
-func pseudoRandomSelection(
-	candidates []*sharedtypes.Supplier,
-	numTarget int,
-	sessionIDBz []byte,
+// getServiceConfigsSuppliers retrieves Supplier objects for the given service config updates.
+// It takes a list of service configuration updates and resolves them to their corresponding
+// supplier objects.
+//
+// For each service config update it:
+// - Fetches the corresponding dehydrated supplier from the supplier keeper
+// - Attaches only the relevant service configuration
+// - Includes the supplier in the returned list.
+func (k Keeper) getServiceConfigsSuppliers(
+	ctx context.Context,
+	candidateServiceConfigUpdates []*sharedtypes.ServiceConfigUpdate,
 ) []*sharedtypes.Supplier {
-	// Take the first 8 bytes of sessionId to use as the seed
-	// NB: There is specific reason why `BigEndian` was chosen over `LittleEndian` in this specific context.
-	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIDBz)[:8]))
-
-	// Retrieve the indices for the candidates
-	actors := make([]*sharedtypes.Supplier, 0)
-	uniqueIndices := uniqueRandomIndices(seed, int64(len(candidates)), int64(numTarget))
-	for idx := range uniqueIndices {
-		actors = append(actors, candidates[idx])
+	logger := k.Logger().With("method", "getServiceConfigsSuppliers")
+	suppliers := make([]*sharedtypes.Supplier, 0)
+	for _, serviceConfigUpdate := range candidateServiceConfigUpdates {
+		supplier, found := k.supplierKeeper.GetDehydratedSupplier(ctx, serviceConfigUpdate.OperatorAddress)
+		if !found {
+			logger.Warn(fmt.Sprintf("should not happen: supplier %s not found", serviceConfigUpdate.OperatorAddress))
+			continue
+		}
+		supplier.Services = []*sharedtypes.SupplierServiceConfig{serviceConfigUpdate.Service}
+		suppliers = append(suppliers, &supplier)
 	}
-
-	return actors
+	return suppliers
 }
 
-// uniqueRandomIndices returns a map of `numIndices` unique random numbers less than `maxIndex`
-// seeded by `seed`.
-// panics if `numIndicies > maxIndex` since that code path SHOULD never be executed.
-// NB: A map pointing to empty structs is used to simulate set behavior.
-func uniqueRandomIndices(seed, maxIndex, numIndices int64) map[int64]struct{} {
-	// This should never happen
-	if numIndices > maxIndex {
-		panic(fmt.Sprintf("uniqueRandomIndices: numIndices (%d) is greater than maxIndex (%d)", numIndices, maxIndex))
-	}
-
-	// create a new random source with the seed
-	randSrc := rand.NewSource(seed)
-
-	// initialize a map to capture the indicesMap we'll return
-	indicesMap := make(map[int64]struct{}, maxIndex)
-
-	// The random source could potentially return duplicates, so while loop until we have enough unique indices
-	for int64(len(indicesMap)) < numIndices {
-		indicesMap[randSrc.Int63()%int64(maxIndex)] = struct{}{}
-	}
-
-	return indicesMap
+// Generate deterministic random weight for supplier:
+// 1. Combine session ID and supplier's operator address to create unique seed
+// 2. Hash the seed using SHA3-256
+// 3. Take first 8 bytes of hash as random weight
+func generateSupplierRandomWeight(supplierOperatorAddress string, sessionIDBz []byte) int {
+	candidateSeed := concatWithDelimiter(
+		sessionIDComponentDelimiter,
+		sessionIDBz,
+		[]byte(supplierOperatorAddress),
+	)
+	candidateSeedHash := sha3Hash(candidateSeed)
+	return int(binary.BigEndian.Uint64(candidateSeedHash[:8]))
 }
 
 func concatWithDelimiter(delimiter string, bz ...[]byte) []byte {
@@ -323,4 +347,37 @@ func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight 
 	sessionStartBlockHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
 	return sessionStartBlockHeightBz
+}
+
+// sortCandidateSupplierConfigsBySupplierWeight sorts the given service config
+// list by their corresponding suppliers addresses using the provided random weights map.
+func sortCandidateSupplierConfigsBySupplierWeight(
+	candidateSuppliers []*sharedtypes.ServiceConfigUpdate,
+	candidatesToRandomWeight map[string]int,
+) []*sharedtypes.ServiceConfigUpdate {
+	// Sort suppliers operator addresses deterministically based on their random weights.
+	// If weights are equal, sort by operator address to ensure consistent ordering.
+	weightedSupplierSortFn := func(serviceConfigUpdateA, serviceConfigUpdateB *sharedtypes.ServiceConfigUpdate) int {
+		// Get the pre-calculated random weights for both suppliers
+		weightA := candidatesToRandomWeight[serviceConfigUpdateA.OperatorAddress]
+		weightB := candidatesToRandomWeight[serviceConfigUpdateB.OperatorAddress]
+
+		// Calculate the difference between weights.
+		weightDiff := weightA - weightB
+
+		// If weights are equal, use operator addresses as a tiebreaker
+		// to ensure deterministic ordering.
+		if weightDiff == 0 {
+			return bytes.Compare(
+				[]byte(serviceConfigUpdateA.OperatorAddress),
+				[]byte(serviceConfigUpdateB.OperatorAddress),
+			)
+		}
+
+		// Sort based on weight difference
+		return weightDiff
+	}
+
+	slices.SortFunc(candidateSuppliers, weightedSupplierSortFn)
+	return candidateSuppliers
 }

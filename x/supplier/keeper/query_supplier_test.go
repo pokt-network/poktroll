@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -49,7 +48,12 @@ func TestSupplierQuerySingle(t *testing.T) {
 			request: &types.QueryGetSupplierRequest{
 				OperatorAddress: supplierAddr,
 			},
-			expectedErr: status.Error(codes.NotFound, fmt.Sprintf("supplier with address: \"%s\"", supplierAddr)),
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrSupplierNotFound.Wrapf(
+					"supplier with operator address: \"%s\"", supplierAddr,
+				).Error(),
+			),
 		},
 		{
 			desc:        "InvalidRequest",
@@ -75,12 +79,6 @@ func TestSupplierQuerySingle(t *testing.T) {
 func TestSupplierQueryPaginated(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
-
-	// TODO_MAINNET(@olshansk, #1033): Newer version of the CosmosSDK doesn't support maps.
-	// Decide on a direction w.r.t maps in protos based on feedback from the CosmoSDK team.
-	for _, supplier := range suppliers {
-		supplier.ServicesActivationHeightsMap = nil
-	}
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllSuppliersRequest {
 		return &types.QueryAllSuppliersRequest{

@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"context"
+	"slices"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -13,6 +15,7 @@ import (
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -51,14 +54,33 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, expectedEvent, events[0])
 
-	// Reset the events, as if a new block were created.
-	ctx, _ = testevents.ResetEventManager(ctx)
-
-	// Verify that the supplier exists
+	// Verify that the supplier:
+	// - Is staked
+	// - Has no active services yet
+	// - Has a service update scheduled for the next session
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, operatorAddr, foundSupplier.OperatorAddress)
 	require.Equal(t, int64(1000000), foundSupplier.Stake.Amount.Int64())
+	require.NotNil(t, foundSupplier.Services)
+	require.Len(t, foundSupplier.Services, 0)
+
+	serviceConfigHistory := foundSupplier.ServiceConfigHistory
+	require.Len(t, foundSupplier.ServiceConfigHistory, 1)
+	require.Equal(t, "svcId", serviceConfigHistory[0].Service.ServiceId)
+
+	// Reset the events, as if a new block were created.
+	ctx, _ = testevents.ResetEventManager(ctx)
+
+	// Activate the supplier's services
+	ctx = setBlockHeightToNextSessionStart(ctx, supplierModuleKeepers.SharedKeeper)
+	numSuppliersWithServicesActivation, err := supplierModuleKeepers.BeginBlockerActivateSupplierServices(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, numSuppliersWithServicesActivation)
+
+	// Verify that the supplier has its services activated.
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
 	require.Len(t, foundSupplier.Services, 1)
 	require.Equal(t, "svcId", foundSupplier.Services[0].ServiceId)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
@@ -72,9 +94,10 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	// funding and lookups.
 	require.Equal(t, -balanceDecrease, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 
-	// Prepare an updated supplier with the same stake and a different URL for the service
-	updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId2")
-	updateMsg.Services[0].Endpoints[0].Url = "http://localhost:8082"
+	// Prepare an updated supplier with the same stake and an additional service.
+	updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId", "svcId2")
+	updateMsg.Services[0].Endpoints[0].Url = "http://localhost:8080"
+	updateMsg.Services[1].Endpoints[0].Url = "http://localhost:8082"
 
 	// Update the staked supplier
 	_, err = srv.StakeSupplier(ctx, updateMsg)
@@ -83,10 +106,45 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, int64(1000000), foundSupplier.Stake.Amount.Int64())
+	// Ensure that the supplier new service is not active yet.
 	require.Len(t, foundSupplier.Services, 1)
-	require.Equal(t, "svcId2", foundSupplier.Services[0].ServiceId)
-	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
-	require.Equal(t, "http://localhost:8082", foundSupplier.Services[0].Endpoints[0].Url)
+	require.Len(t, foundSupplier.ServiceConfigHistory, 3)
+
+	// Check that the supplier config update contains the new service the supplier has staked for.
+	serviceConfigHistory = foundSupplier.ServiceConfigHistory
+
+	// Find the index of the new service configuration update for "svcId2".
+	newConfigIdx := slices.IndexFunc(
+		serviceConfigHistory,
+		func(serviceConfig *sharedtypes.ServiceConfigUpdate) bool {
+			// Match the service configuration with the service ID "svcId2".
+			return serviceConfig.Service.ServiceId == "svcId2"
+		},
+	)
+
+	// Verify that the service ID of the new configuration matches "svcId2".
+	require.Equal(t, "svcId2", serviceConfigHistory[newConfigIdx].Service.ServiceId)
+
+	// Ensure the new service configuration has exactly one endpoint.
+	require.Len(t, serviceConfigHistory[newConfigIdx].Service.Endpoints, 1)
+
+	// Verify that the endpoint URL of the new service configuration is correct.
+	require.Equal(t, "http://localhost:8082", serviceConfigHistory[newConfigIdx].Service.Endpoints[0].Url)
+
+	// Activate the latest supplier's services update.
+	ctx = setBlockHeightToNextSessionStart(ctx, supplierModuleKeepers.SharedKeeper)
+	numSuppliersWithServicesActivation, err = supplierModuleKeepers.BeginBlockerActivateSupplierServices(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, numSuppliersWithServicesActivation)
+
+	// Confirm that the latest service update is now active and reflected in the
+	// supplier.Services field.
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.Len(t, foundSupplier.Services, 2)
+	require.Equal(t, "svcId2", foundSupplier.Services[1].ServiceId)
+	require.Len(t, foundSupplier.Services[1].Endpoints, 1)
+	require.Equal(t, "http://localhost:8082", foundSupplier.Services[1].Endpoints[0].Url)
 }
 
 func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T) {
@@ -98,7 +156,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	operatorAddr := sample.AccAddress()
 
 	// Prepare the supplier stake message
-	stakeMsg, expectedSupplier := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId")
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId")
 
 	// Stake the supplier
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -112,10 +170,16 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	_, err = srv.StakeSupplier(ctx, updateStakeMsg)
 	require.Error(t, err)
 
+	// Activate the supplier's services
+	ctx = setBlockHeightToNextSessionStart(ctx, supplierModuleKeepers.SharedKeeper)
+	numSuppliersWithServicesActivation, err := supplierModuleKeepers.BeginBlockerActivateSupplierServices(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, numSuppliersWithServicesActivation)
+
 	// Verify the supplierFound still exists and is staked for svc1
 	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.EqualValues(t, expectedSupplier, &supplierFound)
+	require.Equal(t, supplierFound.Services[0].ServiceId, "svcId")
 
 	// Prepare the supplier stake message with an invalid service ID
 	updateStakeMsg, _ = newSupplierStakeMsg(ownerAddr, operatorAddr, 200, "svcId")
@@ -167,7 +231,6 @@ func TestMsgServer_StakeSupplier_FailLoweringStakeBelowMinStake(t *testing.T) {
 	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, int64(1000000), supplierFound.Stake.Amount.Int64())
-	require.Len(t, supplierFound.Services, 1)
 }
 
 func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T) {
@@ -203,7 +266,6 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, minStake, supplierFound.Stake.Amount.Int64())
-	require.Len(t, supplierFound.Services, 1)
 }
 
 func TestMsgServer_StakeSupplier_SuccessIncreasingStake(t *testing.T) {
@@ -239,7 +301,6 @@ func TestMsgServer_StakeSupplier_SuccessIncreasingStake(t *testing.T) {
 	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, newStake, supplierFound.Stake.Amount.Int64())
-	require.Len(t, supplierFound.Services, 1)
 }
 
 func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
@@ -286,6 +347,12 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	require.True(t, isSupplierFound)
 	require.EqualValues(t, expectedSupplier, &supplier)
 
+	// Activate the supplier's services
+	ctx = setBlockHeightToNextSessionStart(ctx, k.SharedKeeper)
+	numSuppliersWithServicesActivation, err := k.BeginBlockerActivateSupplierServices(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, numSuppliersWithServicesActivation)
+
 	// Update the supplier using the operator address as the signer and verify that it succeeds.
 	stakeMsgUpdateUrl, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 2000000, "svcId")
 	operatorUpdatedServiceUrl := "http://localhost:8081"
@@ -293,6 +360,12 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	setStakeMsgSigner(stakeMsgUpdateUrl, operatorAddr)
 	_, err = srv.StakeSupplier(ctx, stakeMsgUpdateUrl)
 	require.NoError(t, err)
+
+	// Activate the supplier's services update
+	ctx = setBlockHeightToNextSessionStart(ctx, k.SharedKeeper)
+	numSuppliersWithServicesActivation, err = k.BeginBlockerActivateSupplierServices(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, numSuppliersWithServicesActivation)
 
 	// Check that the supplier was updated
 	foundSupplier, supplierFound := k.GetSupplier(ctx, operatorAddr)
@@ -306,6 +379,12 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	setStakeMsgSigner(stakeMsgUpdateUrl, ownerAddr)
 	_, err = srv.StakeSupplier(ctx, stakeMsgUpdateUrl)
 	require.NoError(t, err)
+
+	// Activate the supplier's services update
+	ctx = setBlockHeightToNextSessionStart(ctx, k.SharedKeeper)
+	numSuppliersWithServicesActivation, err = k.BeginBlockerActivateSupplierServices(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, numSuppliersWithServicesActivation)
 
 	// Check that the supplier was updated
 	foundSupplier, supplierFound = k.GetSupplier(ctx, operatorAddr)
@@ -390,114 +469,63 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, currentHeight)
+	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(sdkCtx, currentHeight)
 
-	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(sdkCtx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, 1, len(foundSupplier.ServicesActivationHeightsMap))
+	require.Len(t, foundSupplier.ServiceConfigHistory, 1)
 	require.EqualValues(t, expectedSupplier, &foundSupplier)
 
+	latestServiceUpdate := getLatestSupplierServiceConfigUpdate(t, foundSupplier)
 	// The supplier should have the service svcId activation height set to the
 	// beginning of the next session.
-	require.Equal(t, uint64(sessionEndHeight+1), foundSupplier.ServicesActivationHeightsMap["svcId"])
+	for _, serviceUpdate := range latestServiceUpdate {
+		require.Equal(t, sessionEndHeight+1, serviceUpdate.ActivationHeight)
+	}
 
 	// The supplier should be inactive for the service until the next session.
-	require.False(t, foundSupplier.IsActive(uint64(currentHeight), "svcId"))
-	require.False(t, foundSupplier.IsActive(uint64(sessionEndHeight), "svcId"))
+	require.False(t, foundSupplier.IsActive(currentHeight, "svcId"))
+	require.False(t, foundSupplier.IsActive(sessionEndHeight, "svcId"))
 
 	// The supplier should be active for the service in the next session.
-	require.True(t, foundSupplier.IsActive(uint64(sessionEndHeight+1), "svcId"))
+	require.True(t, foundSupplier.IsActive(sessionEndHeight+1, "svcId"))
 
-	// Set the chain height to the beginning of the next session.
-	ctx = keepertest.SetBlockHeight(ctx, sessionEndHeight+1)
+	ctx = setBlockHeightToNextSessionStart(sdkCtx, supplierModuleKeepers.SharedKeeper)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight = sdkCtx.BlockHeight()
 
 	// Prepare the supplier stake message with a different service
 	updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 2000000, "svcId", "svcId2")
 	updateMsg.Signer = operatorAddr
 
 	// Update the staked supplier
-	_, err = srv.StakeSupplier(ctx, updateMsg)
+	_, err = srv.StakeSupplier(sdkCtx, updateMsg)
 	require.NoError(t, err)
 
-	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(sdkCtx, operatorAddr)
 	require.True(t, isSupplierFound)
 
 	// The supplier should reference both services.
-	require.Equal(t, 2, len(foundSupplier.ServicesActivationHeightsMap))
+	require.Equal(t, 3, len(foundSupplier.ServiceConfigHistory))
 
-	// svcId activation height should remain the same.
-	require.Equal(t, uint64(sessionEndHeight+1), foundSupplier.ServicesActivationHeightsMap["svcId"])
+	latestServiceUpdate = getLatestSupplierServiceConfigUpdate(t, foundSupplier)
 
-	// svcId2 activation height should be the beginning of the next session.
-	nextSessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, sessionEndHeight+1)
-	require.Equal(t, uint64(nextSessionEndHeight+1), foundSupplier.ServicesActivationHeightsMap["svcId2"])
+	// The latest service update should contain both services
+	require.Equal(t, 2, len(latestServiceUpdate))
+	require.Equal(t, "svcId", latestServiceUpdate[0].Service.ServiceId)
+	require.Equal(t, "svcId2", latestServiceUpdate[1].Service.ServiceId)
+
+	// Activation height should be the beginning of the next session.
+	sessionEndHeight = supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(sdkCtx, currentHeight)
+	nextSessionStartHeight := sessionEndHeight + 1
 
 	// The supplier should be active only for svcId until the end of the current session.
-	require.True(t, foundSupplier.IsActive(uint64(nextSessionEndHeight), "svcId"))
-	require.False(t, foundSupplier.IsActive(uint64(nextSessionEndHeight), "svcId2"))
+	require.True(t, foundSupplier.IsActive(sessionEndHeight, "svcId"))
+	require.False(t, foundSupplier.IsActive(sessionEndHeight, "svcId2"))
 
-	// The supplier should be active for both services in the next session.
-	require.True(t, foundSupplier.IsActive(uint64(nextSessionEndHeight+1), "svcId"))
-	require.True(t, foundSupplier.IsActive(uint64(nextSessionEndHeight+1), "svcId2"))
-}
-
-// newSupplierStakeMsg prepares and returns a MsgStakeSupplier that stakes
-// the given supplier operator address, stake amount, and service IDs.
-func newSupplierStakeMsg(
-	ownerAddr, operatorAddr string,
-	stakeAmount int64,
-	serviceIds ...string,
-) (stakeMsg *suppliertypes.MsgStakeSupplier, expectedSupplier *sharedtypes.Supplier) {
-	services := make([]*sharedtypes.SupplierServiceConfig, 0, len(serviceIds))
-	for _, serviceId := range serviceIds {
-		services = append(services, &sharedtypes.SupplierServiceConfig{
-			ServiceId: serviceId,
-			Endpoints: []*sharedtypes.SupplierEndpoint{
-				{
-					Url:     "http://localhost:8080",
-					RpcType: sharedtypes.RPCType_JSON_RPC,
-					Configs: nil,
-				},
-			},
-			RevShare: []*sharedtypes.ServiceRevenueShare{
-				{
-					Address:            ownerAddr,
-					RevSharePercentage: 100,
-				},
-			},
-		})
-	}
-
-	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(stakeAmount))
-
-	msg := &suppliertypes.MsgStakeSupplier{
-		Signer:          ownerAddr,
-		OwnerAddress:    ownerAddr,
-		OperatorAddress: operatorAddr,
-		Stake:           &initialStake,
-		Services:        services,
-	}
-
-	supplier := &sharedtypes.Supplier{
-		OwnerAddress:    ownerAddr,
-		OperatorAddress: operatorAddr,
-		Stake:           &initialStake,
-		Services:        services,
-		ServicesActivationHeightsMap: map[string]uint64{
-			services[0].GetServiceId(): 11,
-		},
-	}
-
-	return msg, supplier
-}
-
-// setStakeMsgSigner sets the signer of the given MsgStakeSupplier to the given address
-func setStakeMsgSigner(
-	msg *suppliertypes.MsgStakeSupplier,
-	signer string,
-) *suppliertypes.MsgStakeSupplier {
-	msg.Signer = signer
-	return msg
+	// The supplier should be active for both svcId and svcId2 in the next session.
+	require.True(t, foundSupplier.IsActive(nextSessionStartHeight, "svcId"))
+	require.True(t, foundSupplier.IsActive(nextSessionStartHeight, "svcId2"))
 }
 
 func TestMsgServer_StakeSupplier_FailBelowMinStake(t *testing.T) {
@@ -537,24 +565,117 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 
 	stakeMsg, expectedSupplier := newSupplierStakeMsg(addr, addr, aboveMinStake.Amount.Int64(), "svcId")
 
-	// Stake (via keeper methods) a supplier with stake below min. stake.
+	// Stake (via keeper methods) a supplier with stake below min stake.
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		addr,
+		stakeMsg.Services,
+		11,
+		sharedtypes.NoDeactivationHeight,
+	)
 	initialSupplier := sharedtypes.Supplier{
-		OwnerAddress:    addr,
-		OperatorAddress: addr,
-		Stake:           &belowMinStake,
-		Services:        stakeMsg.GetServices(),
-		ServicesActivationHeightsMap: map[string]uint64{
-			"svcId": 11,
-		},
+		OwnerAddress:         addr,
+		OperatorAddress:      addr,
+		Stake:                &belowMinStake,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
-	k.SetSupplier(ctx, initialSupplier)
+	k.SetAndIndexDehydratedSupplier(ctx, initialSupplier)
 
-	// Attempt to upstake the supplier with stake above min. stake.
+	// Attempt to upstake the supplier with stake above min stake.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	// Assert supplier is staked for above min. stake.
+	// Assert supplier is staked for above min stake.
 	supplier, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
 	require.EqualValues(t, expectedSupplier, &supplier)
+}
+
+// newSupplierStakeMsg prepares and returns a MsgStakeSupplier that stakes
+// the given supplier operator address, stake amount, and service IDs.
+func newSupplierStakeMsg(
+	ownerAddr, operatorAddr string,
+	stakeAmount int64,
+	serviceIds ...string,
+) (stakeMsg *suppliertypes.MsgStakeSupplier, expectedSupplier *sharedtypes.Supplier) {
+	services := make([]*sharedtypes.SupplierServiceConfig, 0, len(serviceIds))
+	for _, serviceId := range serviceIds {
+		services = append(services, &sharedtypes.SupplierServiceConfig{
+			ServiceId: serviceId,
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     "http://localhost:8080",
+					RpcType: sharedtypes.RPCType_JSON_RPC,
+					Configs: nil,
+				},
+			},
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            ownerAddr,
+					RevSharePercentage: 100,
+				},
+			},
+		})
+	}
+
+	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(stakeAmount))
+
+	msg := &suppliertypes.MsgStakeSupplier{
+		Signer:          ownerAddr,
+		OwnerAddress:    ownerAddr,
+		OperatorAddress: operatorAddr,
+		Stake:           &initialStake,
+		Services:        services,
+	}
+
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		operatorAddr,
+		services,
+		11,
+		sharedtypes.NoDeactivationHeight,
+	)
+	expectedSupplier = &sharedtypes.Supplier{
+		OwnerAddress:         ownerAddr,
+		OperatorAddress:      operatorAddr,
+		Stake:                &initialStake,
+		Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
+		ServiceConfigHistory: serviceConfigHistory,
+	}
+
+	return msg, expectedSupplier
+}
+
+// setStakeMsgSigner sets the signer of the given MsgStakeSupplier to the given address
+func setStakeMsgSigner(
+	msg *suppliertypes.MsgStakeSupplier,
+	signer string,
+) *suppliertypes.MsgStakeSupplier {
+	msg.Signer = signer
+	return msg
+}
+
+// getLatestSupplierServiceConfigUpdate returns the latest service config update.
+func getLatestSupplierServiceConfigUpdate(
+	t *testing.T,
+	supplier sharedtypes.Supplier,
+) []*sharedtypes.ServiceConfigUpdate {
+	require.Greater(t, len(supplier.ServiceConfigHistory), 0)
+	latestServiceConfigUpdates := make([]*sharedtypes.ServiceConfigUpdate, 0)
+	for _, serviceConfig := range supplier.ServiceConfigHistory {
+		if serviceConfig.DeactivationHeight == 0 {
+			latestServiceConfigUpdates = append(latestServiceConfigUpdates, serviceConfig)
+		}
+	}
+
+	return latestServiceConfigUpdates
+}
+
+// setBlockHeightToNextSessionStart sets the block height to the next session start height.
+func setBlockHeightToNextSessionStart(
+	ctx context.Context,
+	sharedKeeper suppliertypes.SharedKeeper,
+) context.Context {
+	sharedParams := sharedKeeper.GetParams(ctx)
+	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	return keepertest.SetBlockHeight(ctx, nextSessionStartHeight)
 }

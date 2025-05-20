@@ -13,7 +13,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 	// Telemetry: measure the end-block execution time following standard cosmos-sdk practices.
 	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), cosmostelemetry.MetricKeyEndBlocker)
 
-	if err := k.EndBlockerAutoUndelegateFromUnstakedGateways(ctx); err != nil {
+	if err := k.EndBlockerAutoUndelegateFromUnbondingGateways(ctx); err != nil {
 		return err
 	}
 

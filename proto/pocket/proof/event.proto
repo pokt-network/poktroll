@@ -1,0 +1,56 @@
+syntax = "proto3";
+package pocket.proof;
+
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos/base/v1beta1/coin.proto";
+import "gogoproto/gogo.proto";
+import "pocket/proof/types.proto";
+
+message EventClaimCreated {
+  pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
+  uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
+  uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+  cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+}
+
+// TODO_TEST: Add coverage for claim updates.
+message EventClaimUpdated {
+  pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
+  uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
+  uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+  cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+}
+
+message EventProofSubmitted {
+  pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  pocket.proof.Proof proof = 2 [(gogoproto.jsontag) = "proof"];
+  uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
+  uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
+  uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+  cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+}
+
+// TODO_TEST: Add coverage for proof updates.
+message EventProofUpdated {
+  pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  pocket.proof.Proof proof = 2 [(gogoproto.jsontag) = "proof"];
+  uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
+  uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
+  uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+  cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+}
+
+// Event emitted after a proof has been checked for validity in the proof module's
+// EndBlocker.
+message EventProofValidityChecked {
+  pocket.proof.Proof proof = 1 [(gogoproto.jsontag) = "proof"];
+  uint64 block_height = 2 [(gogoproto.jsontag) = "block_height"];
+  pocket.proof.ClaimProofStatus proof_status = 3 [(gogoproto.jsontag) = "proof_status"];
+  // reason is the string representation of the error that led to the proof being
+  // marked as invalid (e.g. "invalid closest merkle proof", "invalid relay request signature")
+  string failure_reason = 4 [(gogoproto.jsontag) = "failure_reason"];
+}

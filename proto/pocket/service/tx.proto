@@ -1,0 +1,79 @@
+syntax = "proto3";
+package pocket.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+import "pocket/service/params.proto";
+import "pocket/shared/service.proto";
+
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse );
+  rpc AddService   (MsgAddService  ) returns (MsgAddServiceResponse  );
+}
+// MsgUpdateParams is the Msg/UpdateParams request type.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+  option           (amino.name) = "pocket/x/service/MsgUpdateParams";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+
+  // params defines the x/service parameters to update.
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {}
+
+// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
+message MsgUpdateParam {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1  [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The (name, as_type) tuple must match the corresponding name and type as
+  // specified in the `Params` message in `proof/params.proto.`
+  string name = 2;
+  oneof as_type {
+    cosmos.base.v1beta1.Coin as_coin = 3 [(gogoproto.jsontag) = "as_coin"];
+    uint64 as_uint64 = 4 [(gogoproto.jsontag) = "as_uint64"];
+  }
+}
+
+// MsgUpdateParamResponse defines the response structure for executing a
+// MsgUpdateParam message after a single param update.
+message MsgUpdateParamResponse {
+  Params params = 1;
+}
+
+// MsgAddService defines a message for adding a new message to the network.
+// Services can be added by any actor in the network making them truly
+// permissionless.
+message MsgAddService {
+  option (cosmos.msg.v1.signer) = "owner_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service owner.
+  pocket.shared.Service service = 2 [(gogoproto.nullable) = false]; // The Service being added to the network
+}
+
+message MsgAddServiceResponse {
+  pocket.shared.Service service = 1;
+}
+

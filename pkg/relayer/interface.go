@@ -1,14 +1,13 @@
-//go:generate mockgen -destination=../../testutil/mockrelayer/relayer_proxy_mock.go -package=mockrelayer . RelayerProxy
-//go:generate mockgen -destination=../../testutil/mockrelayer/miner_mock.go -package=mockrelayer . Miner
-//go:generate mockgen -destination=../../testutil/mockrelayer/relayer_sessions_manager_mock.go -package=mockrelayer . RelayerSessionsManager
-//go:generate mockgen -destination=../../testutil/mockrelayer/relay_meter_mock.go -package=mockrelayer . RelayMeter
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockrelayer/relayer_proxy_mock.go -package=mockrelayer . RelayerProxy
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockrelayer/miner_mock.go -package=mockrelayer . Miner
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockrelayer/relayer_sessions_manager_mock.go -package=mockrelayer . RelayerSessionsManager
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockrelayer/relay_meter_mock.go -package=mockrelayer . RelayMeter
 
 package relayer
 
 import (
 	"context"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -58,24 +57,32 @@ type RelayerProxy interface {
 	// and its RelayResponse has been signed and successfully sent to the client.
 	ServedRelays() RelaysObservable
 
-	// VerifyRelayRequest is a shared method used by RelayServers to check the
-	// relay request signature and session validity.
-	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
-	// that should not be responsible for verifying relay requests.
+	// PingAll tests the connectivity between all the managed relay servers and their respective backend URLs.
+	PingAll(ctx context.Context) error
+}
+
+type RelayerProxyOption func(RelayerProxy)
+
+// RelayAuthenticator is the interface that authenticates the relay requests and
+// responses (i.e. verifies the relay request signature and session validity, and
+// signs the relay response).
+type RelayAuthenticator interface {
+	// VerifyRelayRequest verifies the relay request signature and session validity.
 	VerifyRelayRequest(
 		ctx context.Context,
 		relayRequest *servicetypes.RelayRequest,
 		serviceId string,
 	) error
 
-	// SignRelayResponse is a shared method used by RelayServers to sign
-	// and append the signature to the RelayResponse.
-	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
-	// that should not be responsible for signing relay responses.
+	// SignRelayResponse signs the relay response given a supplier operator address.
 	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierOperatorAddr string) error
+
+	// GetSupplierOperatorAddresses returns the supplier operator addresses that
+	// the relay authenticator can use to sign relay responses.
+	GetSupplierOperatorAddresses() []string
 }
 
-type RelayerProxyOption func(RelayerProxy)
+type RelayAuthenticatorOption func(RelayAuthenticator)
 
 // RelayServer is the interface of the advertised relay servers provided by the RelayerProxy.
 type RelayServer interface {
@@ -84,7 +91,13 @@ type RelayServer interface {
 
 	// Stop terminates the service server and returns an error if it fails.
 	Stop(ctx context.Context) error
+
+	// Ping tests the connection between the relay server and its backend URL.
+	Ping(ctx context.Context) error
 }
+
+// RelayServers aggregates a slice of RelayServer interface.
+type RelayServers []RelayServer
 
 // RelayerSessionsManager is responsible for managing the relayer's session lifecycles.
 // It handles the creation and retrieval of SMSTs (trees) for a given session, as
@@ -103,7 +116,7 @@ type RelayerSessionsManager interface {
 	// The session trees are piped through a series of map operations which progress
 	// them through the claim/proof lifecycle, broadcasting transactions to  the
 	// network as necessary.
-	Start(ctx context.Context)
+	Start(ctx context.Context) error
 
 	// Stop unsubscribes all observables from the InsertRelays observable which
 	// will close downstream observables as they drain.
@@ -131,7 +144,14 @@ type SessionTree interface {
 	// This function should be called several blocks after a session has been claimed and needs to be proven.
 	ProveClosest(path []byte) (proof *smt.SparseCompactMerkleClosestProof, err error)
 
+	// GetSMSTRoot returns the the current root hash of the SMST.
+	// It differs from GetClaimRoot in that it always returns the latest root hash
+	// of the SMST, while GetClaimRoot returns the root hash after the session tree
+	// has been flushed to create the claim.
+	GetSMSTRoot() smt.MerkleSumRoot
+
 	// GetClaimRoot returns the root hash of the SMST needed for creating the claim.
+	// It returns nil if the session tree has not been flushed yet.
 	GetClaimRoot() []byte
 
 	// GetProofBz returns the proof created by ProveClosest needed for submitting
@@ -157,11 +177,16 @@ type SessionTree interface {
 	// It returns an error if it has already been marked as such.
 	StartClaiming() error
 
-	// GetSupplierOperatorAddress returns the supplier operator address building this tree.
-	GetSupplierOperatorAddress() *cosmostypes.AccAddress
+	// GetSupplierOperatorAddress returns a stringified bech32 address of the supplier
+	// operator this sessionTree belongs to.
+	GetSupplierOperatorAddress() string
 
 	// GetTrieSpec returns the trie spec of the SMST.
 	GetTrieSpec() smt.TrieSpec
+
+	// Stop stops the session tree and closes the KVStore.
+	// Calling Stop does not calculate the root hash of the SMST.
+	Stop() error
 }
 
 // RelayMeter is an interface that keeps track of the amount of stake consumed between

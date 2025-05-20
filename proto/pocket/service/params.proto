@@ -1,0 +1,25 @@
+syntax = "proto3";
+package pocket.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+
+// Params defines the parameters for the module.
+message Params {
+  option (amino.name) = "pocket/x/service/Params";
+  option (gogoproto.equal) = true;
+
+  // The amount of uPOKT required to add a new service.
+  // This will be deducted from the signer's account balance,
+  // and transferred to the pocket network foundation.
+  cosmos.base.v1beta1.Coin add_service_fee = 1 [(gogoproto.jsontag) = "add_service_fee", (gogoproto.moretags) = "yaml:\"add_service_fee\""];
+
+  // target_num_relays is the target for the EMA of the number of relays per session.
+  // Per service, onchain relay mining difficulty will be adjusted to maintain this target.
+  uint64 target_num_relays = 2 [(gogoproto.jsontag) = "target_num_relays", (gogoproto.moretags) = "yaml:\"target_num_relays\""];
+}

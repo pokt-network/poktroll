@@ -5,9 +5,8 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
@@ -54,15 +53,15 @@ func NewClaimProofSupplierClientMap(
 	ctrl := gomock.NewController(t)
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
-	supplierOperatorAccAddress := cosmostypes.MustAccAddressFromBech32(supplierOperatorAddress)
 	supplierClientMock.EXPECT().
 		OperatorAddress().
-		Return(&supplierOperatorAccAddress).
+		Return(supplierOperatorAddress).
 		AnyTimes()
 
 	supplierClientMock.EXPECT().
 		CreateClaims(
 			gomock.Eq(ctx),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
 		Return(nil).
@@ -71,6 +70,7 @@ func NewClaimProofSupplierClientMap(
 	supplierClientMock.EXPECT().
 		SubmitProofs(
 			gomock.Eq(ctx),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
 		Return(nil).

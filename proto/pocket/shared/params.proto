@@ -1,0 +1,59 @@
+syntax = "proto3";
+package pocket.shared;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+// Params defines the parameters for the module.
+message Params {
+  option (amino.name) = "pocket/x/shared/Params";
+  option (gogoproto.equal) = true;
+
+  // num_blocks_per_session is the number of blocks between the session start & end heights.
+  uint64 num_blocks_per_session = 1 [(gogoproto.jsontag) = "num_blocks_per_session"];
+
+  // grace_period_end_offset_blocks is the number of blocks, after the session end height,
+  // during which the supplier can still service payable relays.
+  // Suppliers will need to recreate a claim for the previous session (if already created) to
+  // get paid for the additional relays.
+  uint64 grace_period_end_offset_blocks = 2 [(gogoproto.jsontag) = "grace_period_end_offset_blocks"];
+
+  // claim_window_open_offset_blocks is the number of blocks after the session grace
+  // period height, at which the claim window opens.
+  uint64 claim_window_open_offset_blocks = 3 [(gogoproto.jsontag) = "claim_window_open_offset_blocks"];
+
+  // claim_window_close_offset_blocks is the number of blocks after the claim window
+  // open height, at which the claim window closes.
+  uint64 claim_window_close_offset_blocks = 4 [(gogoproto.jsontag) = "claim_window_close_offset_blocks"];
+
+  // proof_window_open_offset_blocks is the number of blocks after the claim window
+  // close height, at which the proof window opens.
+  uint64 proof_window_open_offset_blocks = 5 [(gogoproto.jsontag) = "proof_window_open_offset_blocks"];
+
+  // proof_window_close_offset_blocks is the number of blocks after the proof window
+  // open height, at which the proof window closes.
+  uint64 proof_window_close_offset_blocks = 6 [(gogoproto.jsontag) = "proof_window_close_offset_blocks"];
+
+  // supplier_unbonding_period_sessions is the number of sessions that a supplier must wait after
+  // unstaking before their staked assets are moved to their account balance.
+  // Onchain business logic requires, and ensures, that the corresponding block count of the unbonding
+  // period will exceed the end of any active claim & proof lifecycles.
+  uint64 supplier_unbonding_period_sessions = 7 [(gogoproto.jsontag) = "supplier_unbonding_period_sessions"];
+
+  // application_unbonding_period_sessions is the number of sessions that an application must wait after
+  // unstaking before their staked assets are moved to their account balance.
+  // Onchain business logic requires, and ensures, that the corresponding block count of the
+  // application unbonding period will exceed the end of its corresponding proof window close height.
+  uint64 application_unbonding_period_sessions = 8 [(gogoproto.jsontag) = "application_unbonding_period_sessions"];
+
+  // The amount of upokt that a compute unit should translate to when settling a session.
+  // DEV_NOTE: This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
+  uint64 compute_units_to_tokens_multiplier = 9 [(gogoproto.jsontag) = "compute_units_to_tokens_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
+
+  // gateway_unbonding_period_sessions is the number of sessions that a gateway must wait after
+  // unstaking before their staked assets are moved to its account balance.
+  uint64 gateway_unbonding_period_sessions = 10 [(gogoproto.jsontag) = "gateway_unbonding_period_sessions"];
+}

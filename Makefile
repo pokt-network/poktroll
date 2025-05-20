@@ -2,8 +2,9 @@
 
 SHELL = /bin/sh
 
-POKTROLLD_HOME ?= ./localnet/poktrolld
+POCKETD_HOME ?= ./localnet/pocketd
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
+DEFAULT_POCKET_NODE_GRPC_ADDR ?= "localhost:9090"
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 PATH_URL ?= http://localhost:3000
 POCKET_ADDR_PREFIX = pokt
@@ -76,10 +77,9 @@ endif
 ### Dependencies ###
 ####################
 
-# TODO_IMPROVE(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
+# TODO_TECHDEBT(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
-install_ci_deps: ## Installs `mockgen` and other go tools
-	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
+install_ci_deps: ## Installs `golangci-lint` and other go tools
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
@@ -140,23 +140,23 @@ proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
 proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@echo "Updating all instances of cosmossdk.io/api/poktroll to github.com/pokt-network/poktroll/api/poktroll..."
-	@find ./api/poktroll/ -type f | while read -r file; do \
-		$(SED) -i 's,cosmossdk.io/api/poktroll,github.com/pokt-network/poktroll/api/poktroll,g' "$$file"; \
+	@echo "Updating all instances of cosmossdk.io/api/pocket to github.com/pokt-network/poktroll/api/pocket..."
+	@find ./api/pocket/ -type f | while read -r file; do \
+		$(SED) -i 's,cosmossdk.io/api/pocket,github.com/pokt-network/poktroll/api/pocket,g' "$$file"; \
 	done
-	@for dir in $(wildcard ./api/poktroll/*/); do \
+	@for dir in $(wildcard ./api/pocket/*/); do \
 			module=$$(basename $$dir); \
 			echo "Further processing module $$module"; \
-			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
+			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/pocket/'$$module'"' ./api/pocket/$$module | while read -r file; do \
 					echo "Modifying file: $$file"; \
-					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
+					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/pocket/'$$module'",,' "$$file"; \
 					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
 
 
 .PHONY: proto_clean
-proto_clean: ## Delete existing .pb.go or .pb.gw.go files
+proto_clean: ## Delete existing .pb.go, .pb.gw.go (avoid cleaning *.pulsar.go files here)
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 
 ## TODO_TECHDEBT(@bryanchriswhite): Investigate if / how this can be integrated with `proto_regen`
@@ -202,6 +202,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/service/types/
 	go generate ./x/proof/types/
 	go generate ./x/tokenomics/types/
+	go generate ./x/migration/types/
 	find . -name interface.go | xargs -I {} go generate {}
 
 .PHONY: go_testgen_fixtures
@@ -225,10 +226,10 @@ go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all t
 .PHONY: acc_balance_query
 acc_balance_query: ## Query the balance of the account specified (make acc_balance_query ACC=pokt...)
 	@echo "~ Balances ~"
-	poktrolld --home=$(POKTROLLD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
 	@echo "~ Spendable Balances ~"
 	@echo "Querying spendable balance for $(ACC)"
-	poktrolld --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
 .PHONY: acc_balance_query_modules
 acc_balance_query_modules: ## Query the balance of the network level module accounts
@@ -243,31 +244,29 @@ acc_balance_query_modules: ## Query the balance of the network level module acco
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
-	APP1=$$(make poktrolld_addr ACC_NAME=app1) && \
+	APP1=$$(make pocketd_addr ACC_NAME=app1) && \
 	make acc_balance_query ACC=$$APP1
 
 .PHONY: acc_balance_total_supply
 acc_balance_total_supply: ## Query the total supply of the network
-	poktrolld --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) q bank total --node $(POCKET_NODE)
 
 # NB: Ignite does not populate `pub_key` in `accounts` within `genesis.json` leading
-# to queries like this to fail: `poktrolld query account pokt1<addr> --node $(POCKET_NODE).
+# to queries like this to fail: `pocketd query account pokt1<addr> --node $(POCKET_NODE).
 # We attempted using a `tx multi-send` from the `faucet` to all accounts, but
 # that also did not solve this problem because the account itself must sign the
 # transaction for its public key to be populated in the account keeper. As such,
 # the solution is to send funds from every account in genesis to some address
-# (PNF was selected ambigously) to make sure their public keys are populated.
-# TODO_TECHDEBT: One of the accounts involved in this command always errors
-# so we need to understand why and fix it.
+# (PNF was selected ambiguously) to make sure their public keys are populated.
 .PHONY: acc_initialize_pubkeys
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
 	$(foreach addr, $(ADDRESSES),\
 		echo $(addr);\
-		poktrolld tx bank send \
+		pocketd tx bank send \
 			$(addr) $(PNF_ADDRESS) 1000upokt \
 			--yes \
-			--home=$(POKTROLLD_HOME) \
+			--home=$(POCKETD_HOME) \
 			--node $(POCKET_NODE);)
 
 ######################
@@ -276,15 +275,30 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
-	ignite account list --keyring-dir=$(POKTROLLD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
+	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
-.PHONY: ignite_poktrolld_build
-ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktrolld binary using Ignite
+.PHONY: ignite_pocketd_build
+ignite_pocketd_build: check_go_version check_ignite_version ## Build the pocketd binary using Ignite
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_openapi_gen
-ignite_openapi_gen: ## Generate the OpenAPI spec for the Ignite API
+ignite_openapi_gen: ## Generate the OpenAPI spec natively and process the output
 	ignite generate openapi --yes
+	$(MAKE) process_openapi
+
+.PHONY: ignite_openapi_gen_docker
+ignite_openapi_gen_docker: ## Generate the OpenAPI spec using Docker and process the output; workaround due to https://github.com/ignite/cli/issues/4495
+	docker build -f ./proto/Dockerfile.ignite -t ignite-openapi .
+	docker run --rm -v "$(PWD):/workspace" ignite-openapi
+	$(MAKE) process_openapi
+
+.PHONY: process_openapi
+process_openapi: ## Ensure OpenAPI JSON and YAML files are properly formatted
+	# The original command incorrectly outputs a JSON-formatted file with a .yml extension.
+	# This fixes the issue by properly converting the JSON to a valid YAML format.
+	mv docs/static/openapi.yml docs/static/openapi.json
+	yq -o=json '.' docs/static/openapi.json -I=4 > docs/static/openapi.json.tmp && mv docs/static/openapi.json.tmp docs/static/openapi.json
+	yq -P -o=yaml '.' docs/static/openapi.json > docs/static/openapi.yml
 
 ##################
 ### CI Helpers ###
@@ -313,53 +327,17 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
 	ignite version
 
-.PHONY: ignite_update_ldflags
-ignite_update_ldflags:
-	yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
-
-.PHONY: ignite_release
-ignite_release: ## Builds production binaries
-	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64
-
-.PHONY: ignite_release_extract_binaries
-ignite_release_extract_binaries: ## Extracts binaries from the release archives
-	mkdir -p release_binaries
-
-	for archive in release/*.tar.gz; do \
-		binary_name=$$(basename "$$archive" .tar.gz); \
-		tar -zxvf "$$archive" -C release_binaries "poktrolld"; \
-		mv release_binaries/poktrolld "release_binaries/$$binary_name"; \
-	done
-
-#####################
-### Documentation ###
-#####################
-
-.PHONY: go_docs
-go_docs: check_godoc ## Generate documentation for the project
-	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/poktroll/"
-	godoc -http=:6060
-
-.PHONY: docusaurus_start
-docusaurus_start: check_npm check_node ## Start the Docusaurus server
-	(cd docusaurus && npm i && npm run start)
-
-.PHONY: docs_update_gov_params_page
-docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
-	go run tools/scripts/docusaurus/generate_docs_params.go
-
 #######################
 ### Keyring Helpers ###
 #######################
 
+.PHONY: pocketd_addr
+pocketd_addr: ## Retrieve the address for an account by ACC_NAME
+	@echo $(shell pocketd --home=$(POCKETD_HOME) keys show -a $(ACC_NAME))
 
-.PHONY: poktrolld_addr
-poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
-	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
-
-.PHONY: poktrolld_key
-poktrolld_key: ## Retrieve the private key for an account by ACC_NAME
-	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys export --unsafe --unarmored-hex $(ACC_NAME))
+.PHONY: pocketd_key
+pocketd_key: ## Retrieve the private key for an account by ACC_NAME
+	@echo $(shell pocketd --home=$(POCKETD_HOME) keys export --unsafe --unarmored-hex $(ACC_NAME))
 
 ###################
 ### Act Helpers ###
@@ -388,36 +366,6 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
-
-
-###########################
-###   Release Helpers   ###
-###########################
-
-# List tags: git tag
-# Delete tag locally: git tag -d v1.2.3
-# Delete tag remotely: git push --delete origin v1.2.3
-
-.PHONY: release_tag_bug_fix
-release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
-	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
-	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. -v OFS=. '{ $$NF = sprintf("%d", $$NF + 1); print }'))
-	@git tag $(NEW_TAG)
-	@echo "New bug fix version tagged: $(NEW_TAG)"
-	@echo "Run the following commands to push the new tag:"
-	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
-
-
-.PHONY: release_tag_minor_release
-release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
-	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
-	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. '{$$2 += 1; $$3 = 0; print $$1 "." $$2 "." $$3}'))
-	@git tag $(NEW_TAG)
-	@echo "New minor release version tagged: $(NEW_TAG)"
-	@echo "Run the following commands to push the new tag:"
-	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
 
 ############################
 ### Grove Portal Helpers ###
@@ -456,3 +404,8 @@ include ./makefiles/gateways.mk
 include ./makefiles/session.mk
 include ./makefiles/claims.mk
 include ./makefiles/relay.mk
+include ./makefiles/ping.mk
+include ./makefiles/migrate.mk
+include ./makefiles/claudesync.mk
+include ./makefiles/docs.mk
+include ./makefiles/release.mk

@@ -1,0 +1,24 @@
+{
+  "MD033": {
+    "allowed_elements": [
+      "Tabs",
+      "TabItem",
+      "ReactPlayer",
+      "details",
+      "summary",
+      "div",
+      "br",
+      "img",
+      "a",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6"
+    ]
+  },
+  "MD013": false,
+  "MD046": false,
+  "MD036": false
+}

@@ -14,8 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	appmodule "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -139,22 +140,25 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	for i := 0; i < n; i++ {
 		svcId := fmt.Sprintf("svc%d", i)
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
-		supplier := sharedtypes.Supplier{
-			OwnerAddress:    sample.AccAddress(),
-			OperatorAddress: sample.AccAddress(),
-			Stake:           &stake,
-			Services: []*sharedtypes.SupplierServiceConfig{
-				{
-					ServiceId: svcId,
-					Endpoints: []*sharedtypes.SupplierEndpoint{
-						{
-							Url:     fmt.Sprintf("http://localhost:%d", i),
-							RpcType: sharedtypes.RPCType_JSON_RPC,
-						},
+		services := []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: svcId,
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     fmt.Sprintf("http://localhost:%d", i),
+						RpcType: sharedtypes.RPCType_JSON_RPC,
 					},
 				},
 			},
-			ServicesActivationHeightsMap: map[string]uint64{svcId: 0},
+		}
+		operatorAddr := sample.AccAddress()
+		serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(operatorAddr, services, 1, 0)
+		supplier := sharedtypes.Supplier{
+			OwnerAddress:         sample.AccAddress(),
+			OperatorAddress:      operatorAddr,
+			Stake:                &stake,
+			Services:             services,
+			ServiceConfigHistory: serviceConfigHistory,
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&supplier)
@@ -168,23 +172,25 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *suppliertypes.GenesisState {
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
-	for _, addr := range addresses {
-		supplier := sharedtypes.Supplier{
-			OwnerAddress:    sample.AccAddress(),
-			OperatorAddress: addr,
-			Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
-			Services: []*sharedtypes.SupplierServiceConfig{
+	services := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: "svc1",
+			Endpoints: []*sharedtypes.SupplierEndpoint{
 				{
-					ServiceId: "svc1",
-					Endpoints: []*sharedtypes.SupplierEndpoint{
-						{
-							Url:     "http://localhost:1",
-							RpcType: sharedtypes.RPCType_JSON_RPC,
-						},
-					},
+					Url:     "http://localhost:1",
+					RpcType: sharedtypes.RPCType_JSON_RPC,
 				},
 			},
-			ServicesActivationHeightsMap: map[string]uint64{"svc1": 0},
+		},
+	}
+	for _, addr := range addresses {
+		serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(addr, services, 1, 0)
+		supplier := sharedtypes.Supplier{
+			OwnerAddress:         sample.AccAddress(),
+			OperatorAddress:      addr,
+			Stake:                &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
+			Services:             services,
+			ServiceConfigHistory: serviceConfigHistory,
 		}
 		state.SupplierList = append(state.SupplierList, supplier)
 	}

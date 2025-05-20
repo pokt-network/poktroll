@@ -71,7 +71,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgStakeGateway,
-		gatewaysimulation.SimulateMsgStakeGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+		gatewaysimulation.SimulateMsgStakeGateway(am.accountKeeper, am.bankKeeper, am.gatewayKeeper),
 	))
 
 	var weightMsgUnstakeGateway int
@@ -82,7 +82,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgUnstakeGateway,
-		gatewaysimulation.SimulateMsgUnstakeGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+		gatewaysimulation.SimulateMsgUnstakeGateway(am.accountKeeper, am.bankKeeper, am.gatewayKeeper),
 	))
 
 	var weightMsgUpdateParam int
@@ -93,7 +93,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgUpdateParam,
-		gatewaysimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.keeper),
+		gatewaysimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.gatewayKeeper),
 	))
 
 	// this line is used by starport scaffolding # simapp/module/operation
@@ -108,7 +108,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgStakeGateway,
 			defaultWeightMsgStakeGateway,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				gatewaysimulation.SimulateMsgStakeGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				gatewaysimulation.SimulateMsgStakeGateway(am.accountKeeper, am.bankKeeper, am.gatewayKeeper)
 				return nil
 			},
 		),
@@ -116,7 +116,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgUnstakeGateway,
 			defaultWeightMsgUnstakeGateway,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				gatewaysimulation.SimulateMsgUnstakeGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				gatewaysimulation.SimulateMsgUnstakeGateway(am.accountKeeper, am.bankKeeper, am.gatewayKeeper)
 				return nil
 			},
 		),
@@ -124,7 +124,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgUpdateParam,
 			defaultWeightMsgUpdateParam,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				gatewaysimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.keeper)
+				gatewaysimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.gatewayKeeper)
 				return nil
 			},
 		),

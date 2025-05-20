@@ -1,0 +1,31 @@
+syntax = "proto3";
+package pocket.migration;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+// Params defines the parameters for the module.
+message Params {
+  // Next free index: 3
+
+  option (amino.name) = "pocket/x/migration/Params";
+  option (gogoproto.equal) = true;
+
+  // waive_morse_claim_gas_fees is a feature flag used to enable/disable the waiving of gas fees for txs that:
+  // - Contain exactly one secp256k1 signer
+  // - Contain at least one Morse account/actor claim messages
+  // - Do not contain any other messages other than Morse account/actor claim messages
+  bool waive_morse_claim_gas_fees = 1 [(gogoproto.jsontag) = "waive_morse_claim_gas_fees", (gogoproto.moretags) = "yaml:\"waive_morse_claim_gas_fees\""];
+
+  // allow_morse_account_import_overwrite is a feature flag which is used to enable/disable
+  // the re-importing of Morse claimable accounts by the authority.
+  // Such a re-import will:
+  // - Ignore (i.e. leave) ALL claimed destination Shannon accounts/actors
+  // - Delete ALL existing onchain MorseClaimableAccounts
+  // - Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts
+  // This is useful for testing purposes, but should be disabled in production.
+  bool allow_morse_account_import_overwrite = 2 [(gogoproto.jsontag) = "allow_morse_account_import_overwrite", (gogoproto.moretags) = "yaml:\"allow_morse_account_import_overwrite\""];
+}

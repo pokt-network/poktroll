@@ -1,0 +1,65 @@
+syntax = "proto3";
+package pocket.application;
+
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+import "pocket/application/params.proto";
+import "pocket/application/types.proto";
+
+
+// Query defines the gRPC querier service.
+service Query {
+
+  // Parameters queries the parameters of the module.
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/application/params";
+
+  }
+
+  // Queries a list of Application items.
+  rpc Application    (QueryGetApplicationRequest) returns (QueryGetApplicationResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/application/application/{address}";
+
+  }
+  rpc AllApplications (QueryAllApplicationsRequest) returns (QueryAllApplicationsResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/application/application";
+
+  }
+}
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+message QueryGetApplicationRequest {
+  string address = 1;
+}
+
+message QueryGetApplicationResponse {
+  Application application = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllApplicationsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  // TODO_MAINNET(@adshmh): rename this field to `gateway_address_delegated_to`
+  // delegatee_gateway_address, if specified, filters the application list to only include those with delegation to the specified gateway address.
+  string delegatee_gateway_address = 2;
+}
+
+message QueryAllApplicationsResponse {
+  repeated Application applications = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination  = 2;
+}
+

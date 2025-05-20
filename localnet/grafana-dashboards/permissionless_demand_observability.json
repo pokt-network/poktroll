@@ -207,7 +207,7 @@
                     "editorMode": "code",
                     "format": "time_series",
                     "rawQuery": true,
-                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/poktroll.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp\nORDER BY\n    b.timestamp;\n",
+                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/pocket.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp\nORDER BY\n    b.timestamp;\n",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -417,7 +417,7 @@
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "SELECT\n    $__timeGroup(b.\"timestamp\", '1m') AS time,\n    SUM(trim(both '\"' from ea_num_relays.value)::bigint) AS total_num_relays,\n    (ea_claim.value::json ->> 'supplier_operator_address') AS supplier_operator_address,\n    (ea_claim.value::json -> 'session_header' ->> 'service_id') AS service_id\nFROM\n    localnet.events e\nJOIN\n    localnet.event_attributes ea_num_relays ON ea_num_relays.event_id = e.id\n    AND ea_num_relays.key = 'num_relays'\nJOIN\n    localnet.event_attributes ea_claim ON ea_claim.event_id = e.id\n    AND ea_claim.key = 'claim'\nJOIN\n    localnet.blocks b ON b.id = e.block_id\nWHERE\n    e.type = 'poktroll.proof.EventClaimCreated'\n    AND b.\"timestamp\" BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    time, supplier_operator_address, service_id\nORDER BY\n    time;\n",
+                    "rawSql": "SELECT\n    $__timeGroup(b.\"timestamp\", '1m') AS time,\n    SUM(trim(both '\"' from ea_num_relays.value)::bigint) AS total_num_relays,\n    (ea_claim.value::json ->> 'supplier_operator_address') AS supplier_operator_address,\n    (ea_claim.value::json -> 'session_header' ->> 'service_id') AS service_id\nFROM\n    localnet.events e\nJOIN\n    localnet.event_attributes ea_num_relays ON ea_num_relays.event_id = e.id\n    AND ea_num_relays.key = 'num_relays'\nJOIN\n    localnet.event_attributes ea_claim ON ea_claim.event_id = e.id\n    AND ea_claim.key = 'claim'\nJOIN\n    localnet.blocks b ON b.id = e.block_id\nWHERE\n    e.type = 'pocket.proof.EventClaimCreated'\n    AND b.\"timestamp\" BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    time, supplier_operator_address, service_id\nORDER BY\n    time;\n",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -528,7 +528,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum(poktroll_relay_ema{service_id=~\"$service_id\"}) by (service_id)",
+                    "expr": "sum(pocket_relay_ema{service_id=~\"$service_id\"}) by (service_id)",
                     "instant": false,
                     "legendFormat": "__auto",
                     "range": true,
@@ -625,7 +625,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum(poktroll_relay_mining_difficulty{service_id=~\"$service_id\"}) by (service_id)",
+                    "expr": "sum(pocket_relay_mining_difficulty{service_id=~\"$service_id\"}) by (service_id)",
                     "instant": false,
                     "legendFormat": "__auto",
                     "range": true,
@@ -721,7 +721,7 @@
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "-- Average number of proofs per application\n\nWITH proofs_per_block AS (\n    SELECT\n        b.height AS block_height,\n        m.json::jsonb -> 'sessionHeader' ->> 'applicationAddress' AS application_address,\n        COUNT(m.id) AS num_proofs\n    FROM\n        localnet.messages m\n    JOIN\n        localnet.transactions t ON t.id = m.transaction_id\n    JOIN\n        localnet.blocks b ON b.id = t.block_id\n    WHERE\n        m.type_url = '/poktroll.proof.MsgSubmitProof'\n        AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        b.height, application_address\n)\n\nSELECT\n    application_address AS application,\n    AVG(num_proofs) AS avg_num_proofs\nFROM\n    proofs_per_block\nGROUP BY\n    application\nORDER BY\n    avg_num_proofs DESC;\n",
+                    "rawSql": "-- Average number of proofs per application\n\nWITH proofs_per_block AS (\n    SELECT\n        b.height AS block_height,\n        m.json::jsonb -> 'sessionHeader' ->> 'applicationAddress' AS application_address,\n        COUNT(m.id) AS num_proofs\n    FROM\n        localnet.messages m\n    JOIN\n        localnet.transactions t ON t.id = m.transaction_id\n    JOIN\n        localnet.blocks b ON b.id = t.block_id\n    WHERE\n        m.type_url = '/pocket.proof.MsgSubmitProof'\n        AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        b.height, application_address\n)\n\nSELECT\n    application_address AS application,\n    AVG(num_proofs) AS avg_num_proofs\nFROM\n    proofs_per_block\nGROUP BY\n    application\nORDER BY\n    avg_num_proofs DESC;\n",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -831,7 +831,7 @@
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "-- Average number of proofs per service\n\nWITH proofs_per_block AS (\n    SELECT\n        b.height AS block_height,\n        m.json::jsonb -> 'sessionHeader' ->> 'serviceId' AS service_id,\n        COUNT(m.id) AS num_proofs\n    FROM\n        localnet.messages m\n    JOIN\n        localnet.transactions t ON t.id = m.transaction_id\n    JOIN\n        localnet.blocks b ON b.id = t.block_id\n    WHERE\n        m.type_url = '/poktroll.proof.MsgSubmitProof'\n        AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        b.height, service_id\n)\n\nSELECT\n    service_id AS service,\n    AVG(num_proofs) AS avg_num_proofs\nFROM\n    proofs_per_block\nGROUP BY\n    service\nORDER BY\n    avg_num_proofs DESC;\n",
+                    "rawSql": "-- Average number of proofs per service\n\nWITH proofs_per_block AS (\n    SELECT\n        b.height AS block_height,\n        m.json::jsonb -> 'sessionHeader' ->> 'serviceId' AS service_id,\n        COUNT(m.id) AS num_proofs\n    FROM\n        localnet.messages m\n    JOIN\n        localnet.transactions t ON t.id = m.transaction_id\n    JOIN\n        localnet.blocks b ON b.id = t.block_id\n    WHERE\n        m.type_url = '/pocket.proof.MsgSubmitProof'\n        AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        b.height, service_id\n)\n\nSELECT\n    service_id AS service,\n    AVG(num_proofs) AS avg_num_proofs\nFROM\n    proofs_per_block\nGROUP BY\n    service\nORDER BY\n    avg_num_proofs DESC;\n",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -941,7 +941,7 @@
                     "editorMode": "code",
                     "format": "time_series",
                     "rawQuery": true,
-                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs,\n    m.json::jsonb -> 'sessionHeader' ->> 'applicationAddress' AS application_address\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/poktroll.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp, application_address\nORDER BY\n    b.timestamp;\n",
+                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs,\n    m.json::jsonb -> 'sessionHeader' ->> 'applicationAddress' AS application_address\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/pocket.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp, application_address\nORDER BY\n    b.timestamp;\n",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -1051,7 +1051,7 @@
                     "editorMode": "code",
                     "format": "time_series",
                     "rawQuery": true,
-                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs,\n    m.json::jsonb -> 'sessionHeader' ->> 'serviceId' AS service_id\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/poktroll.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp, service_id\nORDER BY\n    b.timestamp;\n",
+                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs,\n    m.json::jsonb -> 'sessionHeader' ->> 'serviceId' AS service_id\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/pocket.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp, service_id\nORDER BY\n    b.timestamp;\n",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -1161,7 +1161,7 @@
                     "editorMode": "code",
                     "format": "time_series",
                     "rawQuery": true,
-                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs,\n    m.json::jsonb ->> 'supplierOperatorAddress' AS supplier_operator_address\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/poktroll.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp, supplier_operator_address\nORDER BY\n    b.timestamp;\n",
+                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs,\n    m.json::jsonb ->> 'supplierOperatorAddress' AS supplier_operator_address\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/pocket.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp, supplier_operator_address\nORDER BY\n    b.timestamp;\n",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -1271,7 +1271,7 @@
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "-- Serviced relays (from claims)\nWITH serviced_relays AS (\n    SELECT\n        (ea_claim.value::json ->> 'supplier_operator_address') AS supplier_operator_address,\n        SUM(trim(both '\"' from ea_num_relays.value)::bigint) AS total_serviced_relays\n    FROM\n        localnet.events e\n    JOIN\n        localnet.event_attributes ea_num_relays ON ea_num_relays.event_id = e.id\n            AND ea_num_relays.key = 'num_relays'\n    JOIN\n        localnet.event_attributes ea_claim ON ea_claim.event_id = e.id\n            AND ea_claim.key = 'claim'\n    JOIN\n        localnet.blocks b ON b.id = e.block_id\n    WHERE\n        e.type = 'poktroll.proof.EventClaimCreated'\n        AND b.\"timestamp\" BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        supplier_operator_address\n),\n\n-- Estimated relays (from proofs)\nestimated_relays AS (\n    SELECT\n        (ea_proof.value::json ->> 'supplier_operator_address') AS supplier_operator_address,\n        SUM(trim(both '\"' from ea_num_relays.value)::bigint) AS total_estimated_relays\n    FROM\n        localnet.events e\n    JOIN\n        localnet.event_attributes ea_num_relays ON ea_num_relays.event_id = e.id\n            AND ea_num_relays.key = 'num_relays'\n    JOIN\n        localnet.event_attributes ea_proof ON ea_proof.event_id = e.id\n            AND ea_proof.key = 'proof'\n    JOIN\n        localnet.blocks b ON b.id = e.block_id\n    WHERE\n        e.type = 'poktroll.proof.EventProofSubmitted'\n        AND b.\"timestamp\" BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        supplier_operator_address\n)\n\n-- Combine the totals per supplier\nSELECT\n    COALESCE(s.supplier_operator_address, e.supplier_operator_address) AS supplier_operator_address,\n    COALESCE(s.total_serviced_relays, 0) AS total_serviced_relays,\n    COALESCE(e.total_estimated_relays, 0) AS total_estimated_relays\nFROM\n    serviced_relays s\nFULL OUTER JOIN\n    estimated_relays e ON s.supplier_operator_address = e.supplier_operator_address\nORDER BY\n    supplier_operator_address;\n",
+                    "rawSql": "-- Serviced relays (from claims)\nWITH serviced_relays AS (\n    SELECT\n        (ea_claim.value::json ->> 'supplier_operator_address') AS supplier_operator_address,\n        SUM(trim(both '\"' from ea_num_relays.value)::bigint) AS total_serviced_relays\n    FROM\n        localnet.events e\n    JOIN\n        localnet.event_attributes ea_num_relays ON ea_num_relays.event_id = e.id\n            AND ea_num_relays.key = 'num_relays'\n    JOIN\n        localnet.event_attributes ea_claim ON ea_claim.event_id = e.id\n            AND ea_claim.key = 'claim'\n    JOIN\n        localnet.blocks b ON b.id = e.block_id\n    WHERE\n        e.type = 'pocket.proof.EventClaimCreated'\n        AND b.\"timestamp\" BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        supplier_operator_address\n),\n\n-- Estimated relays (from proofs)\nestimated_relays AS (\n    SELECT\n        (ea_proof.value::json ->> 'supplier_operator_address') AS supplier_operator_address,\n        SUM(trim(both '\"' from ea_num_relays.value)::bigint) AS total_estimated_relays\n    FROM\n        localnet.events e\n    JOIN\n        localnet.event_attributes ea_num_relays ON ea_num_relays.event_id = e.id\n            AND ea_num_relays.key = 'num_relays'\n    JOIN\n        localnet.event_attributes ea_proof ON ea_proof.event_id = e.id\n            AND ea_proof.key = 'proof'\n    JOIN\n        localnet.blocks b ON b.id = e.block_id\n    WHERE\n        e.type = 'pocket.proof.EventProofSubmitted'\n        AND b.\"timestamp\" BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        supplier_operator_address\n)\n\n-- Combine the totals per supplier\nSELECT\n    COALESCE(s.supplier_operator_address, e.supplier_operator_address) AS supplier_operator_address,\n    COALESCE(s.total_serviced_relays, 0) AS total_serviced_relays,\n    COALESCE(e.total_estimated_relays, 0) AS total_estimated_relays\nFROM\n    serviced_relays s\nFULL OUTER JOIN\n    estimated_relays e ON s.supplier_operator_address = e.supplier_operator_address\nORDER BY\n    supplier_operator_address;\n",
                     "refId": "A",
                     "sql": {
                         "columns": [

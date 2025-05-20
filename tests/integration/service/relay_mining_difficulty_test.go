@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/integration"
@@ -200,7 +200,7 @@ func prepareSMST(
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	kvStore, err := pebble.NewKVStore("")
 	require.NoError(t, err)
-	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 	for i := uint64(0); i < numRelays; i++ {
 		// DEV_NOTE: A signed mined relay is a MinedRelay type with the appropriate

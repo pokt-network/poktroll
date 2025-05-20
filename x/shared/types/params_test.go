@@ -260,3 +260,38 @@ func TestParams_ValidateApplicationUnbondingPeriodSessions(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateGatewayUnbondingPeriodSessions(t *testing.T) {
+	tests := []struct {
+		desc                           string
+		gatewayUnbondingPeriodSessions any
+		err                            error
+	}{
+		{
+			desc:                           "invalid type",
+			gatewayUnbondingPeriodSessions: "invalid",
+			err:                            ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+		},
+		{
+			desc:                           "valid GatewayUnbondingPeriodSessions",
+			gatewayUnbondingPeriodSessions: uint64(2),
+		},
+		{
+			desc:                           "zero GatewayUnbondingPeriodSessions",
+			gatewayUnbondingPeriodSessions: uint64(0),
+			err:                            ErrSharedParamInvalid.Wrapf("invalid GatewayUnbondingPeriodSessions: (%v)", uint64(0)),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := ValidateGatewayUnbondingPeriodSessions(tt.gatewayUnbondingPeriodSessions)
+			if tt.err != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

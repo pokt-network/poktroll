@@ -8,10 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
@@ -23,18 +25,19 @@ import (
 	"github.com/pokt-network/ring-go"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/signer"
+	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
-	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	testrings "github.com/pokt-network/poktroll/testutil/testcrypto/rings"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -53,6 +56,9 @@ const JSONRPCInternalErrorCode = -32000
 type TestBehavior struct {
 	ctx context.Context
 	t   *testing.T
+
+	// signingKeyNames is the list of key names that are used to sign the relay responses
+	signingKeyNames []string
 
 	// Deps is exported so it can be used by the dependency injection framework
 	// from the pkg/relayer/proxy/proxy_test.go
@@ -82,12 +88,14 @@ func init() {
 func NewRelayerProxyTestBehavior(
 	ctx context.Context,
 	t *testing.T,
+	signingKeyNames []string,
 	behaviors ...func(*TestBehavior),
 ) *TestBehavior {
 	test := &TestBehavior{
 		ctx:             ctx,
 		t:               t,
 		proxyServersMap: make(map[string]*http.Server),
+		signingKeyNames: signingKeyNames,
 	}
 
 	for _, behavior := range behaviors {
@@ -95,6 +103,19 @@ func NewRelayerProxyTestBehavior(
 	}
 
 	return test
+}
+
+// ShutdownServiceID gracefully shuts down the http server for a given service id.
+func (t *TestBehavior) ShutdownServiceID(serviceID string) error {
+	srv, ok := t.proxyServersMap[serviceID]
+	if !ok {
+		return fmt.Errorf("shutdown service id: not found")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	return srv.Shutdown(ctx)
 }
 
 // WithRelayerProxyDependenciesForBlockHeight creates the dependencies for the relayer proxy
@@ -117,21 +138,32 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		blockClient := testblock.NewAnyTimeLastBlockBlockClient(test.t, []byte{}, blockHeight)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
-		redelegationObs, _ := channel.NewReplayObservable[*apptypes.EventRedelegation](test.ctx, 1)
-		delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(test.ctx, test.t, "", redelegationObs)
+		ringClientDeps := depinject.Supply(accountQueryClient, applicationQueryClient, sharedQueryClient)
+		ringClient := testrings.NewRingClientWithMockDependencies(test.ctx, test.t, ringClientDeps)
 
-		ringCacheDeps := depinject.Supply(accountQueryClient, applicationQueryClient, delegationClient, sharedQueryClient)
-		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, ringCacheDeps)
+		relayAuthenticatorDeps := depinject.Supply(
+			logger,
+			keyring,
+			sessionQueryClient,
+			sharedQueryClient,
+			blockClient,
+			ringClient,
+		)
+
+		opts := relay_authenticator.WithSigningKeyNames(test.signingKeyNames)
+		relayAuthenticator, err := relay_authenticator.NewRelayAuthenticator(relayAuthenticatorDeps, opts)
+		require.NoError(test.t, err)
 
 		testDeps := depinject.Configs(
-			ringCacheDeps,
+			ringClientDeps,
 			depinject.Supply(
 				logger,
-				ringCache,
+				ringClient,
 				blockClient,
 				sessionQueryClient,
 				supplierQueryClient,
 				keyring,
+				relayAuthenticator,
 			),
 		)
 
@@ -139,10 +171,17 @@ func WithRelayerProxyDependenciesForBlockHeight(
 	}
 }
 
+// WithRelayMeter creates the dependencies mocks for the relayproxy to use a relay meter.
+func WithRelayMeter() func(*TestBehavior) {
+	return func(test *TestBehavior) {
+		relayMeter := newMockRelayMeter(test.t)
+		test.Deps = depinject.Configs(test.Deps, depinject.Supply(relayMeter))
+	}
+}
+
 // WithServicesConfigMap creates the services that the relayer proxy will
-// proxy requests to.
-// It creates an HTTP server for each service and starts listening on the
-// provided host.
+// proxy requests to. It creates an HTTP server for each service and starts
+// listening on the provided host.
 func WithServicesConfigMap(
 	servicesConfigMap map[string]*config.RelayMinerServerConfig,
 ) func(*TestBehavior) {
@@ -158,13 +197,20 @@ $ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
 		}
 		for _, serviceConfig := range servicesConfigMap {
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
-				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
-				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					sendJSONRPCResponse(test.t, w)
-				})
+				// It is recommended to listen on the main Go routine to ensure
+				// that the HTTP servers created for each service are fully initialized
+				// and ready to receive requests before executing the test cases.
+				listener, err := net.Listen("tcp", supplierConfig.ServiceConfig.BackendUrl.Host)
+				require.NoError(test.t, err)
+
+				server := &http.Server{
+					Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						sendJSONRPCResponse(test.t, w)
+					}),
+				}
 
 				go func() {
-					err := server.ListenAndServe()
+					err := server.Serve(listener)
 					if err != nil && !errors.Is(err, http.ErrServerClosed) {
 						require.NoError(test.t, err)
 					}
@@ -277,6 +323,15 @@ func WithSuccessiveSessions(
 	}
 }
 
+func newMockRelayMeter(t *testing.T) relayer.RelayMeter {
+	ctrl := gomock.NewController(t)
+
+	relayMeter := mockrelayer.NewMockRelayMeter(ctrl)
+	relayMeter.EXPECT().Start(gomock.Any()).Return(nil).AnyTimes()
+
+	return relayMeter
+}
+
 // MarshalAndSend marshals the request and sends it to the provided service.
 func MarshalAndSend(
 	test *TestBehavior,
@@ -293,13 +348,6 @@ func MarshalAndSend(
 		require.FailNow(test.t, "unsupported server type")
 	}
 
-	// originHost is the endpoint that the client will retrieve from the onchain supplier record.
-	// The supplier may have multiple endpoints (e.g. for load geo-balancing, host failover, etc.).
-	// In the current test setup, we only have one endpoint per supplier, which is why we are accessing `[0]`.
-	// In a real-world scenario, the publicly exposed endpoint would reach a load balancer
-	// or a reverse proxy that would route the request to the address specified by ListenAddress.
-	originHost := servicesConfigMap[serviceEndpoint].SupplierConfigsMap[serviceId].PubliclyExposedEndpoints[0]
-
 	reqBz, err := request.Marshal()
 	require.NoError(test.t, err)
 	reader := io.NopCloser(bytes.NewReader(reqBz))
@@ -309,7 +357,6 @@ func MarshalAndSend(
 			"Content-Type": []string{"application/json"},
 		},
 		URL:  &url.URL{Scheme: scheme, Host: servicesConfigMap[serviceEndpoint].ListenAddress},
-		Host: originHost,
 		Body: reader,
 	}
 	res, err := http.DefaultClient.Do(req)
@@ -357,7 +404,7 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 func GetApplicationRingSignature(
 	t *testing.T,
 	req *servicetypes.RelayRequest,
-	appPrivateKey *secp256k1.PrivKey,
+	appPrivateKey cryptotypes.PrivKey,
 ) []byte {
 	publicKey := appPrivateKey.PubKey()
 	curve := ring_secp256k1.NewCurve()

@@ -1,0 +1,20 @@
+syntax = "proto3";
+package pocket.application;
+
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+import "pocket/application/params.proto";
+import "pocket/application/types.proto";
+
+// GenesisState defines the application module's genesis state.
+message GenesisState {
+
+  // params defines all the parameters of the module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated Application application_list = 2 [(gogoproto.nullable) = false] ;
+}
+

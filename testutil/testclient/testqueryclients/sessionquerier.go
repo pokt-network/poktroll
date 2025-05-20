@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	testsession "github.com/pokt-network/poktroll/testutil/session"

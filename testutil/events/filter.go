@@ -9,9 +9,10 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/stretchr/testify/require"
 )
 
 // FilterEvents filters allEvents, returning list of T type events whose protobuf  message type string matches protoType.

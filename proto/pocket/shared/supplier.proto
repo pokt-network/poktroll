@@ -1,0 +1,58 @@
+syntax = "proto3";
+package pocket.shared;
+
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+import "pocket/shared/service.proto";
+import "gogoproto/gogo.proto";
+
+// Supplier represents an actor in Pocket Network that provides RPC services
+message Supplier {
+  // Owner address that controls the staked funds and receives rewards by default
+  // Cannot be updated by the operator
+  string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // Operator address managing the offchain server
+  // Immutable for supplier's lifespan - requires unstake/re-stake to change.
+  // Can update supplier configs except for owner address.
+  string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // Total amount of staked uPOKT
+  cosmos.base.v1beta1.Coin stake = 3;
+
+  // List of service configurations supported by this supplier
+  repeated SupplierServiceConfig services = 4;
+
+  // Session end height when supplier initiated unstaking (0 if not unstaking)
+  uint64 unstake_session_end_height = 5;
+
+  // List of historical service configuration updates, tracking the suppliers
+  // services update and corresponding activation heights.
+  repeated ServiceConfigUpdate service_config_history = 6;
+}
+
+// ServiceConfigUpdate tracks a change in a supplier's service configurations
+// at a specific block height, enabling tracking of configuration changes over time.
+// This record helps maintain a complete history of service configs and their availability periods.
+message ServiceConfigUpdate {
+  // Operator address of the supplier corresponding to the service configuration change
+  string operator_address = 1;
+
+  // The specific service configuration that was added, modified or scheduled for removal
+  SupplierServiceConfig service = 2;
+
+  // Block height at which this service configuration became active in the network
+  int64 activation_height = 3;
+
+  // Block height at which this service configuration was deactivated (0 if still active)
+  // For service configs scheduled for deactivation:
+  // - This field stores the block height when deactivation will occur
+  // - After deactivation, the config remains in history only as needed for claim settlement
+  // - Once no longer required for settlement, the config is automatically removed by
+  //   the EndBlockerPruneSupplierServiceConfigHistory process
+  int64 deactivation_height = 4;
+}

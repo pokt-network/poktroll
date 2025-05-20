@@ -2,28 +2,31 @@ package config
 
 import (
 	"context"
-	"fmt"
+	"math"
 	"net/url"
 
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/cache"
+	"github.com/pokt-network/poktroll/pkg/cache/memory"
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
-	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
+
+// FlagQueryCaching is the flag name to enable or disable query caching.
+const FlagQueryCaching = "query-caching"
 
 // SupplierFn is a function that is used to supply a depinject config.
 type SupplierFn func(
@@ -97,25 +100,6 @@ func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	}
 }
 
-// NewSupplyDelegationClientFn returns a function which constructs a
-// DelegationClient instance and returns a new depinject.Config which is
-// supplied with the given deps and the new DelegationClient.
-func NewSupplyDelegationClientFn() SupplierFn {
-	return func(
-		ctx context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		// Requires a query client to be supplied to the deps
-		delegationClient, err := delegation.NewDelegationClient(ctx, deps)
-		if err != nil {
-			return nil, err
-		}
-
-		return depinject.Configs(deps, depinject.Supply(delegationClient)), nil
-	}
-}
-
 // NewSupplyQueryClientContextFn supplies a depinject config with a query
 //
 //	ClientContext, a GRPC client connection, and a keyring from the given queryNodeGRPCURL.
@@ -152,7 +136,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 			return nil, err
 		}
 		deps = depinject.Configs(deps, depinject.Supply(
-			querytypes.Context(queryClientCtx),
+			query.Context(queryClientCtx),
 			grpc.ClientConn(queryClientCtx),
 			queryClientCtx.Keyring,
 		))
@@ -326,48 +310,52 @@ func NewSupplySupplierQuerierFn() SupplierFn {
 	}
 }
 
-// NewSupplyRingCacheFn supplies a depinject config with a RingCache.
-func NewSupplyRingCacheFn() SupplierFn {
+// NewSupplyRingClientFn supplies a depinject config with a RingClient.
+func NewSupplyRingClientFn() SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		// Create the ring cache.
-		ringCache, err := rings.NewRingCache(deps)
+		// Create the ring client.
+		ringClient, err := rings.NewRingClient(deps)
 		if err != nil {
 			return nil, err
 		}
 
 		// Supply the ring cache to the provided deps
-		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
+		return depinject.Configs(deps, depinject.Supply(ringClient)), nil
 	}
 }
 
 // NewSupplySupplierClientsFn returns a function which constructs a
 // SupplierClientMap and returns a new depinject.Config which is
 // supplied with the given deps and the new SupplierClientMap.
-// - signingKeyNames is a list of operators signing key name corresponding to
-// the staked suppliers operator addresess.
-func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
+//   - signingKeyNames is a list of operators signing key name corresponding to
+//     the staked suppliers operator addresses.
+//   - gasSettingStr is the gas setting to use for the tx client.
+//     Options are "auto", "<integer>", or "".
+//     See: config.GetTxClientGasAndFeesOptionsFromFlags.
+func NewSupplySupplierClientsFn(signingKeyNames []string, gasSettingStr string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
-		gasPriceStr, err := cmd.Flags().GetString(cosmosflags.FlagGasPrices)
-		if err != nil {
-			return nil, err
-		}
-
-		gasPrices, err := cosmostypes.ParseDecCoins(gasPriceStr)
+		// Set up the tx client options for the suppliers.
+		txClientOptions, err := GetTxClientGasAndFeesOptionsFromFlags(cmd, gasSettingStr)
 		if err != nil {
 			return nil, err
 		}
 
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
-			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName, gasPrices)
+			txClientOptions = append(txClientOptions, tx.WithSigningKeyName(signingKeyName))
+			txClientDepinjectConfig, err := newSupplyTxClientsFn(
+				ctx,
+				deps,
+				txClientOptions...,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -381,7 +369,7 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			}
 
 			// Making sure we use addresses as keys.
-			suppliers.SupplierClients[supplierClient.OperatorAddress().String()] = supplierClient
+			suppliers.SupplierClients[supplierClient.OperatorAddress()] = supplierClient
 		}
 		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
 	}
@@ -482,28 +470,91 @@ func NewSupplyBankQuerierFn() SupplierFn {
 func newSupplyTxClientsFn(
 	ctx context.Context,
 	deps depinject.Config,
-	signingKeyName string,
-	gasPrices cosmostypes.DecCoins,
+	txClientOptions ...client.TxClientOption,
 ) (depinject.Config, error) {
-	// Ensure that the gas prices include upokt
-	for _, gasPrice := range gasPrices {
-		if gasPrice.Denom != volatile.DenomuPOKT {
-			// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
-			// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
-			return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
-		}
-	}
 
 	txClient, err := tx.NewTxClient(
 		ctx,
 		deps,
-		tx.WithSigningKeyName(signingKeyName),
-		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
-		tx.WithGasPrices(gasPrices),
+		txClientOptions...,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	return depinject.Configs(deps, depinject.Supply(txClient)), nil
+}
+
+// NewSupplyKeyValueCacheFn returns a function which constructs a KeyValueCache of type T.
+// It take a list of cache options that can be used to configure the cache.
+func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyValueCache[T]]) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		cmd *cobra.Command,
+	) (depinject.Config, error) {
+		// Check if query caching is enabled
+		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		if err != nil {
+			return nil, err
+		}
+
+		// Use a NoOpKeyValueCache if query caching is disabled
+		if !queryCachingEnabled {
+			noopParamsCache := querycache.NewNoOpKeyValueCache[T]()
+			return depinject.Configs(deps, depinject.Supply(noopParamsCache)), nil
+		}
+
+		kvCache, err := memory.NewKeyValueCache[T](memory.WithTTL(math.MaxInt64))
+		if err != nil {
+			return nil, err
+		}
+
+		// Apply the query cache options
+		for _, opt := range opts {
+			if err := opt(ctx, deps, kvCache); err != nil {
+				return nil, err
+			}
+		}
+
+		return depinject.Configs(deps, depinject.Supply(kvCache)), nil
+	}
+}
+
+// NewSupplyParamsCacheFn returns a function which constructs a ParamsCache of type T.
+// It take a list of cache options that can be used to configure the cache.
+func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsCache[T]]) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		cmd *cobra.Command,
+	) (depinject.Config, error) {
+		// Check if params caching is enabled
+		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		if err != nil {
+			return nil, err
+		}
+
+		// Use a NoOpParamsCache if query caching is disabled
+		if !queryCachingEnabled {
+			noopParamsCache := querycache.NewNoOpParamsCache[T]()
+			return depinject.Configs(deps, depinject.Supply(noopParamsCache)), nil
+		}
+
+		// TODO_TECHDEBT(red-0ne) Set ttl to block time + some buffer time when we
+		// switch to event-driven cache warming.
+		paramsCache, err := querycache.NewParamsCache[T](memory.WithTTL(math.MaxInt64))
+		if err != nil {
+			return nil, err
+		}
+
+		// Apply the query cache options
+		for _, opt := range opts {
+			if err := opt(ctx, deps, paramsCache); err != nil {
+				return nil, err
+			}
+		}
+
+		return depinject.Configs(deps, depinject.Supply(paramsCache)), nil
+	}
 }

@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
@@ -115,7 +115,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	}
 
 	go func() {
-		err = supplierClient.CreateClaims(ctx, msgClaim)
+		err = supplierClient.CreateClaims(ctx, 0, msgClaim)
 		require.NoError(t, err)
 		close(doneCh)
 	}()
@@ -189,7 +189,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	}
 
 	go func() {
-		err = supplierClient.SubmitProofs(ctx, msgProof)
+		err = supplierClient.SubmitProofs(ctx, 0, msgProof)
 		require.NoError(t, err)
 		close(doneCh)
 	}()

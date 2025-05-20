@@ -13,44 +13,10 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	}
 	supplierConfig.ServiceId = yamlSupplierConfig.ServiceId
 
-	// Supplier public endpoints
-	supplierConfig.PubliclyExposedEndpoints = []string{}
-	existingEndpoints := make(map[string]bool)
-	for _, host := range yamlSupplierConfig.ServiceConfig.PubliclyExposedEndpoints {
-		// Check if the supplier host is empty
-		if len(host) == 0 {
-			return ErrRelayMinerConfigInvalidSupplier.Wrap("empty supplier public endpoint")
-		}
-
-		// Check if the supplier public endpoint is unique
-		if _, ok := existingEndpoints[host]; ok {
-			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
-				"duplicate supplier public endpoint %s",
-				host,
-			)
-		}
-		existingEndpoints[host] = true
-
-		// Add the supplier public endpoint to the suppliers list
-		supplierConfig.PubliclyExposedEndpoints = append(
-			supplierConfig.PubliclyExposedEndpoints,
-			host,
-		)
-	}
-
 	// NB: Intentionally not verifying SigningKeyNames here.
 	// We'll copy the keys from the root config in `HydrateSuppliers` if this list is empty.
 	// `HydrateSuppliers` is a part of `pkg/relayer/config/suppliers_config_hydrator.go`.
 	supplierConfig.SigningKeyNames = yamlSupplierConfig.SigningKeyNames
-
-	// Add a default endpoint which corresponds to the supplier name if it is not
-	// already in the list
-	if _, ok := existingEndpoints[supplierConfig.ServiceId]; !ok {
-		supplierConfig.PubliclyExposedEndpoints = append(
-			supplierConfig.PubliclyExposedEndpoints,
-			supplierConfig.ServiceId,
-		)
-	}
 
 	backendUrl, err := url.Parse(yamlSupplierConfig.ServiceConfig.BackendUrl)
 	if err != nil {
@@ -73,7 +39,7 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	// by their own functions.
 	supplierConfig.ServiceConfig = &RelayMinerSupplierServiceConfig{}
 	switch backendUrl.Scheme {
-	case "http", "https":
+	case "http", "https", "ws", "wss":
 		supplierConfig.ServerType = RelayMinerServerTypeHTTP
 		if err := supplierConfig.ServiceConfig.
 			parseSupplierBackendUrl(yamlSupplierConfig.ServiceConfig); err != nil {

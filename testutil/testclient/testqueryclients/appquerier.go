@@ -7,7 +7,7 @@ import (
 	"cosmossdk.io/math"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"

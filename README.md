@@ -1,73 +1,37 @@
+<!-- markdownlint-disable MD033 -->
+<!-- markdownlint-disable MD045 -->
+
 <div align="center">
   <a href="https://www.pokt.network">
-    <img src="https://user-images.githubusercontent.com/2219004/151564884-212c0e40-3bfa-412e-a341-edb54b5f1498.jpeg" alt="Pocket Network logo" width="340"/>
+    <img src="https://github.com/user-attachments/assets/5dbddd4a-d932-4c44-8396-270f140f086a" alt="Pocket Network logo" width="340"/>
   </a>
 </div>
 
 <div>
   <a href="https://discord.gg/pokt"><img src="https://img.shields.io/discord/553741558869131266"/></a>
-  <a  href="https://github.com/pokt-network/poktroll/releases"><img src="https://img.shields.io/github/release-pre/pokt-network/poktroll.svg"/></a>
-  <a  href="https://github.com/pokt-network/poktroll/pulse"><img src="https://img.shields.io/github/contributors/pokt-network/poktroll.svg"/></a>
+  <a  href="https://github.com/pokt-network/poktroll/releases"><img src="https://img.shields.io/github/release-pre/pokt-network/pocket.svg"/></a>
+  <a  href="https://github.com/pokt-network/poktroll/pulse"><img src="https://img.shields.io/github/contributors/pokt-network/pocket.svg"/></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"/></a>
-  <a href="https://github.com/pokt-network/poktroll/pulse"><img src="https://img.shields.io/github/last-commit/pokt-network/poktroll.svg"/></a>
-  <a href="https://github.com/pokt-network/poktroll/pulls"><img src="https://img.shields.io/github/issues-pr/pokt-network/poktroll.svg"/></a>
+  <a href="https://github.com/pokt-network/poktroll/pulse"><img src="https://img.shields.io/github/last-commit/pokt-network/pocket.svg"/></a>
+  <a href="https://github.com/pokt-network/poktroll/pulls"><img src="https://img.shields.io/github/issues-pr/pokt-network/pocket.svg"/></a>
   <a href="https://github.com/pokt-network/poktroll/releases"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos-pink.svg"/></a>
-  <a href="https://github.com/pokt-network/poktroll/issues"><img src="https://img.shields.io/github/issues/pokt-network/poktroll.svg"/></a>
-  <a href="https://github.com/pokt-network/poktroll/issues"><img src="https://img.shields.io/github/issues-closed/pokt-network/poktroll.svg"/></a>
-  <a href="https://godoc.org/github.com/pokt-network/poktroll"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"/></a>
-  <a href="https://goreportcard.com/report/github.com/pokt-network/poktroll"><img src="https://goreportcard.com/badge/github.com/pokt-network/poktroll"/></a>
+  <a href="https://github.com/pokt-network/poktroll/issues"><img src="https://img.shields.io/github/issues/pokt-network/pocket.svg"/></a>
+  <a href="https://github.com/pokt-network/poktroll/issues"><img src="https://img.shields.io/github/issues-closed/pokt-network/pocket.svg"/></a>
+  <a href="https://godoc.org/github.com/pokt-network/pocket"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"/></a>
+  <a href="https://goreportcard.com/report/github.com/pokt-network/pocket"><img src="https://goreportcard.com/badge/github.com/pokt-network/pocket"/></a>
   <a href="https://golang.org"><img  src="https://img.shields.io/badge/golang-v1.23-green.svg"/></a>
   <a href="https://github.com/tools/godep" ><img src="https://img.shields.io/badge/godep-dependency-71a3d9.svg"/></a>
 </div>
 
-# poktroll <!-- omit in toc -->
+# pocket <!-- omit in toc -->
 
-**poktroll** is built using the [Cosmos SDK](https://docs.cosmos.network) and
-[CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli)
-for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
+**pocket** is the source code for [Pocket Network's](https://pokt.network/)
+[Shannon upgrade](https://docs.pokt.network/pokt-protocol/the-shannon-upgrade).
 
-- [Learn about Pocket Network](#learn-about-pocket-network)
-- [Developer Documentation](#developer-documentation)
-- [Roadmap](#roadmap)
-- [Quickstart](#quickstart)
-- [Godoc](#godoc)
-- [Have questions? Ask An PNYX](#have-questions-ask-an-pnyx)
-- [License](#license)
+For technical documentation, visit [dev.poktroll.com](https://dev.poktroll.com).
 
-## Learn about Pocket Network
-
-User friendly documentation of the Shannon upgrade is still a WIP, but there are
-a handful of (potentially outdated) resources you can reference in the meantime
-to build a better understanding of Pocket Network:
-
-- [Pocket Network official documentation](https://docs.pokt.network)
-- [[Live] Pocket Network Morse; aka v0](https://github.com/pokt-network/pocket-core)
-- [[Outdated] Pocket Network Protocol](https://github.com/pokt-network/pocket-network-protocol)
-- [[Deprecated]Pocket Network V1](https://github.com/pokt-network/pocket)
-
-## Developer Documentation
-
-The developer documentation is available at [dev.poktroll.com](https://dev.poktroll.com).
-
-## Roadmap
-
-You can view the Shannon Roadmap on [Github](https://github.com/orgs/pokt-network/projects/144?query=is%3Aopen+sort%3Aupdated-desc)
-
-## Quickstart
-
-The best way to get involved is by following the [quickstart instructions](https://dev.poktroll.com/develop/developer_guide/quickstart).
-
-## Godoc
-
-The Godoc for the source code in this can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
-
-## Have questions? Ask An PNYX
-
-You can use [PNYX](https://migration.pnyxai.com/), an AI-powered search engine that has been
-trained and indexed on the Pocket Network documentation, community calls, forums
-and much more!
-
----
+Documentation is maintained in the [docusaurus repo](./docusaurus) and is
+automatically deployed to the link above.
 
 ## License
 

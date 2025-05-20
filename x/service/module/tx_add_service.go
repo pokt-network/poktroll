@@ -1,7 +1,7 @@
 package service
 
 // TODO_MAINNET(@red-0ne): Add `UpdateService` or modify `AddService` to `UpsertService` to allow service owners
-// to update parameters of existing services. This will requiring updating `proto/poktroll/service/tx.proto` and
+// to update parameters of existing services. This will requiring updating `proto/pocket/service/tx.proto` and
 // all downstream code paths.
 import (
 	"fmt"
@@ -18,7 +18,7 @@ import (
 
 var _ = strconv.Itoa(0)
 
-// TODO_MAINNET(@red-0ne): Change `add-service` to `update-service` so the source owner can
+// TODO_POST_MAINNET(@red-0ne): Change `add-service` to `update-service` so the source owner can
 // update the compute units per relay for an existing service. Make it possible
 // to update a service (e.g. update # of compute units per relay). This will require
 // search for all variations of `AddService` in the codebase (filenames, helpers, etc...),
@@ -31,7 +31,7 @@ func CmdAddService() *cobra.Command {
 gateways and suppliers to use. The service id MUST be unique but the service name doesn't have to be.
 
 Example:
-$ poktrolld tx service add-service "svc1" "service_one" 1 --keyring-backend test --from $(SERVICE_OWNER) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd tx service add-service "svc1" "service_one" 1 --keyring-backend test --from $(SERVICE_OWNER) --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			serviceIdStr := args[0]

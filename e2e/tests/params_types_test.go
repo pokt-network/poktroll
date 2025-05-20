@@ -23,7 +23,7 @@ type paramAny struct {
 }
 
 // authzCLIGrantResponse is the JSON response struct for the authz grants query
-// CLI subcommand: `poktrolld query authz grants <granter_addr> <grantee_addr>`.
+// CLI subcommand: `pocketd query authz grants <granter_addr> <grantee_addr>`.
 // NB: `authz.QueryGrantsResponse` is not used because it seems to be incompatible
 // with the JSON response format of the authz CLI query subcommand.
 type authzCLIGrantResponse struct {

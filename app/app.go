@@ -20,6 +20,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	testdata_pulsar "github.com/cosmos/cosmos-sdk/testutil/testdata/testpb"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
@@ -37,17 +38,21 @@ import (
 	"github.com/pokt-network/poktroll/app/keepers"
 	"github.com/pokt-network/poktroll/docs"
 	"github.com/pokt-network/poktroll/telemetry"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
 const (
 	AccountAddressPrefix = "pokt"
-	// TODO_MAINNET: Rename `poktroll` to `pocket` EVERYWHERE.
-	Name = "poktroll"
+	Name                 = "pocket"
 )
 
 var (
 	// DefaultNodeHome default home directories for the application daemon
 	DefaultNodeHome string
+
+	claimMorseAcctMsgTypeUrl     = sdk.MsgTypeURL(&migrationtypes.MsgClaimMorseAccount{})
+	claimMorseAppMsgTypeUrl      = sdk.MsgTypeURL(&migrationtypes.MsgClaimMorseApplication{})
+	claimMorseSupplierMsgTypeUrl = sdk.MsgTypeURL(&migrationtypes.MsgClaimMorseSupplier{})
 )
 
 var (
@@ -70,7 +75,8 @@ type App struct {
 	sm *module.SimulationManager
 
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
-	// Ignite CLI adds keepers here when scaffolding new modules. Please move the created keeper to the `keepers` package.
+	// MUST_READ_DEV_NOTE: Ignite CLI adds keepers here when scaffolding new modules.
+	// MUST_READ_DEV_ACTION_ITEM: Please move the created keeper to the `keepers` package.
 }
 
 func init() {
@@ -214,8 +220,10 @@ func New(
 		&app.Keepers.ProofKeeper,
 		&app.Keepers.TokenomicsKeeper,
 		&app.Keepers.SharedKeeper,
+		&app.Keepers.MigrationKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
-		// Ignite CLI adds keepers here when scaffolding new modules. Please move the created keeper to the `keepers` package.
+		// MUST_READ_DEV_NOTE: Ignite CLI adds keepers here when scaffolding new modules.
+		// MUST_READ_DEV_ACTION_ITEM: Please move the created keeper to the `keepers` package.
 	); err != nil {
 		panic(err)
 	}
@@ -257,6 +265,13 @@ func New(
 	baseAppOptions = append(baseAppOptions, telemetry.InitBlockMetrics)
 
 	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
+
+	// Set a custom ante handler to waive minimum gas/fees for transactions
+	// IF the migration module's `waive_morse_claim_gas_fees` param is true.
+	// The ante handler waives fees for txs which contain ONLY morse claim
+	// messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and
+	// MsgClaimMorseSupplier), and is signed by a single secp256k1 signer.
+	app.App.BaseApp.SetAnteHandler(newMorseClaimGasFeesWaiverAnteHandlerFn(app))
 
 	// Register legacy modules
 	app.registerIBCModules()
@@ -303,7 +318,7 @@ func New(
 		return nil, err
 	}
 
-	// Set up poktroll telemetry using `app.toml` configuration options (in addition to cosmos-sdk telemetry config).
+	// Set up pocket telemetry using `app.toml` configuration options (in addition to cosmos-sdk telemetry config).
 	if err := telemetry.New(appOpts); err != nil {
 		return nil, err
 	}

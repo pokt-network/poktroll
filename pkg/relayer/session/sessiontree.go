@@ -2,19 +2,18 @@ package session
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -36,7 +35,7 @@ type sessionTree struct {
 	// supplierOperatorAddress is the address of the supplier's operator that owns this sessionTree.
 	// RelayMiner can run suppliers for many supplier operator addresses at the same time,
 	// and we need a way to group the session trees by the supplier operator address for that.
-	supplierOperatorAddress *cosmostypes.AccAddress
+	supplierOperatorAddress string
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
@@ -70,7 +69,7 @@ type sessionTree struct {
 // It returns an error if the KVStore fails to be created.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
-	supplierOperatorAddress *cosmostypes.AccAddress,
+	supplierOperatorAddress string,
 	storesDirectory string,
 	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
@@ -80,7 +79,7 @@ func NewSessionTree(
 	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
 	// use one key store. KV databases are often optimized for writing into one database. They keys can
 	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
-	storePath := filepath.Join(storesDirectory, supplierOperatorAddress.String(), sessionHeader.SessionId)
+	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
 	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
@@ -94,7 +93,7 @@ func NewSessionTree(
 
 	// Create the SMST from the KVStore and a nil value hasher so the proof would
 	// contain a non-hashed Relay that could be used to validate the proof onchain.
-	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 	logger = logger.With(
 		"store_path", storePath,
@@ -111,6 +110,79 @@ func NewSessionTree(
 		sessionMu:               &sync.Mutex{},
 		supplierOperatorAddress: supplierOperatorAddress,
 	}
+
+	return sessionTree, nil
+}
+
+// importSessionTree reconstructs a previously created session tree from its persisted state on disk.
+// This function handles two distinct scenarios:
+// 1. Importing a claimed session (claim != nil): The tree is in a read-only state with a fixed root hash
+// 2. Importing an unclaimed session (claim == nil): The tree is in a mutable state and can accept updates
+//
+// Returns a fully reconstructed SessionTree or an error if reconstruction fails
+func importSessionTree(
+	sessionSMT *prooftypes.SessionSMT,
+	claim *prooftypes.Claim,
+	storesDirectory string,
+	logger polylog.Logger,
+) (relayer.SessionTree, error) {
+	sessionId := sessionSMT.SessionHeader.SessionId
+	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
+	smtRoot := sessionSMT.SmtRoot
+	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionId)
+
+	// Verify the storage path exists - if not, the session data is missing or corrupted
+	if _, err := os.Stat(storePath); err != nil {
+		logger.Error().Err(err).Msgf("session tree store path does not exist: %q", storePath)
+		return nil, err
+	}
+
+	// Initialize the basic session tree structure with metadata
+	sessionTree := &sessionTree{
+		logger:                  logger,
+		sessionHeader:           sessionSMT.SessionHeader,
+		storePath:               storePath,
+		sessionMu:               &sync.Mutex{},
+		supplierOperatorAddress: supplierOperatorAddress,
+	}
+
+	logger = logger.With(
+		"session_id", sessionId,
+		"supplier_operator_address", supplierOperatorAddress,
+	)
+
+	// SCENARIO 1: Session has been claimed
+	// When a claim exists, the session tree is ready to be processed by the proof submission step.
+	// The tree storage is not loaded immediately as it will only be needed if proof generation is requested.
+	if claim != nil {
+		sessionTree.claimedRoot = claim.RootHash
+		sessionTree.isClaiming = true
+		logger.Info().Msgf(
+			"imported session tree with committed onchain claim - root hash: %x",
+			claim.RootHash,
+		)
+		return sessionTree, nil
+	}
+
+	// SCENARIO 2: Session has not been claimed
+	// The session is still active and mutable, so we need to reconstruct the full tree
+	// from the persisted storage to allow for additional relay updates.
+
+	// Open the existing KVStore that contains the session's merkle tree data
+	treeStore, err := pebble.NewKVStore(storePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reconstruct the SMST from the persisted KVStore data using the previously saved root as the starting point
+	trie := smt.ImportSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smtRoot, protocol.SMTValueHasher())
+
+	sessionTree.sessionSMT = trie
+	sessionTree.treeStore = treeStore
+	sessionTree.claimedRoot = nil  // explicitly set for posterity
+	sessionTree.isClaiming = false // explicitly set for posterity
+
+	logger.Info().Msg("the imported session tree with no committed onchain claim")
 
 	return sessionTree, nil
 }
@@ -141,7 +213,7 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 	// DO NOT DELETE: Uncomment this for debugging and change to .Debug logs post MainNet.
 	// count := st.sessionSMT.MustCount()
 	// sum := st.sessionSMT.MustSum()
-	// fmt.Printf("Count: %d, Sum: %d\n", count, sum)
+	// st.logger.Debug().Msgf("session tree updated and has count %d and sum %d", count, sum)
 
 	return nil
 }
@@ -175,7 +247,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return nil, err
 	}
 
-	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
+	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
 
 	// Generate the proof and cache it along with the path for which it was generated.
 	// There is no ProveClosest variant that generates a compact proof directly.
@@ -234,23 +306,28 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 
 	st.claimedRoot = st.sessionSMT.Root()
 
-	// Commit the tree to disk
-	if err := st.sessionSMT.Commit(); err != nil {
-		return nil, err
-	}
-
-	// Stop the KVStore
-	if err := st.treeStore.Stop(); err != nil {
+	if err := st.Stop(); err != nil {
 		return nil, err
 	}
 
 	st.treeStore = nil
-	st.sessionSMT = nil
 
 	return st.claimedRoot, nil
 }
 
+// GetSMSTRoot returns the root hash of the SMST.
+// This function is used to get the root hash of the SMST at any time.
+// In particular, it is used to get the root hash of the SMST before it is flushed to disk
+// for use-cases like restarting the relayer and resuming ongoing sessions.
+func (st *sessionTree) GetSMSTRoot() (smtRoot smt.MerkleSumRoot) {
+	if st.sessionSMT == nil {
+		return nil
+	}
+	return st.sessionSMT.Root()
+}
+
 // GetClaimRoot returns the root hash of the SMST needed for creating the claim.
+// It returns the root hash of the SMST only if the SMST has been flushed to disk.
 func (st *sessionTree) GetClaimRoot() []byte {
 	return st.claimedRoot
 }
@@ -298,7 +375,26 @@ func (st *sessionTree) StartClaiming() error {
 	return nil
 }
 
-// GetSupplierOperatorAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
-func (st *sessionTree) GetSupplierOperatorAddress() *cosmostypes.AccAddress {
+// GetSupplierOperatorAddress returns a stringified bech32 address of the supplier
+// operator this sessionTree belongs to.
+func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
+}
+
+// Stop the KVStore and free up the in-memory resources used by the session tree.
+// Calling Stop:
+// - DOES NOT calculate the root hash of the SMST.
+// - DOES commit the latest (current state) of the SMT to on-state storage.
+func (st *sessionTree) Stop() error {
+	if st.treeStore == nil {
+		return nil
+	}
+
+	// Commit any pending changes to the KVStore before stopping it.
+	if err := st.sessionSMT.Commit(); err != nil {
+		return err
+	}
+
+	// Store the underlying key-value store in the session tree
+	return st.treeStore.Stop()
 }

@@ -7,8 +7,8 @@ const (
 )
 
 // DefaultConfig returns the default telemetry configuration
-func DefaultConfig() PoktrollTelemetryConfig {
-	return PoktrollTelemetryConfig{
+func DefaultConfig() PocketTelemetryConfig {
+	return PocketTelemetryConfig{
 		CardinalityLevel: DefaultCardinalityLevel,
 	}
 }

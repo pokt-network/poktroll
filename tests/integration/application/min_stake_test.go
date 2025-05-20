@@ -11,12 +11,14 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
@@ -156,21 +158,29 @@ func (s *applicationMinStakeTestSuite) stakeApp() {
 
 // stakeSupplier stakes a supplier for service 1.
 func (s *applicationMinStakeTestSuite) stakeSupplier() {
-	s.keepers.SupplierKeeper.SetSupplier(s.ctx, sharedtypes.Supplier{
-		OwnerAddress:    s.supplierBech32,
-		OperatorAddress: s.supplierBech32,
-		Stake:           &suppliertypes.DefaultMinStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				ServiceId: s.serviceId,
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            s.supplierBech32,
-						RevSharePercentage: 100,
-					},
+	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: s.serviceId,
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            s.supplierBech32,
+					RevSharePercentage: 100,
 				},
 			},
 		},
+	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		s.supplierBech32,
+		supplierServiceConfigs,
+		1,
+		sharedtypes.NoDeactivationHeight,
+	)
+	s.keepers.SupplierKeeper.SetAndIndexDehydratedSupplier(s.ctx, sharedtypes.Supplier{
+		OwnerAddress:         s.supplierBech32,
+		OperatorAddress:      s.supplierBech32,
+		Stake:                &suppliertypes.DefaultMinStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: serviceConfigHistory,
 	})
 }
 
@@ -240,7 +250,10 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	require.NoError(s.T(), err)
 
 	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
-	globalInflationAmt, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin, globalInflationPerClaim)
+	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
+	require.NoError(s.T(), err)
+
+	globalInflationAmt := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin, globalInflationPerClaimRat)
 	expectedEndStake := s.appStake.Sub(expectedBurnCoin).Sub(globalInflationAmt)
 	return &apptypes.Application{
 		Address:                   s.appBech32,
@@ -316,7 +329,10 @@ func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 	expectedAppBurn := int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier)
 	expectedAppBurnCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, expectedAppBurn)
 	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
-	globalInflationCoin, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedAppBurnCoin, globalInflationPerClaim)
+	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
+	require.NoError(s.T(), err)
+
+	globalInflationCoin := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedAppBurnCoin, globalInflationPerClaimRat)
 	expectedAppBalance := s.appStake.Sub(expectedAppBurnCoin).Sub(globalInflationCoin)
 
 	appBalance := s.getAppBalance()

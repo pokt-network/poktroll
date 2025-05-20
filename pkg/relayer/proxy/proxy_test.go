@@ -3,8 +3,10 @@ package proxy_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,8 +14,10 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/foxcpp/go-mockdns"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
@@ -87,18 +91,16 @@ func init() {
 			ListenAddress: defaultRelayMinerServer,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
-					ServiceId:                defaultService,
-					ServerType:               config.RelayMinerServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier"},
+					ServiceId:  defaultService,
+					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 					SigningKeyNames: []string{supplierOperatorKeyName},
 				},
 				secondaryService: {
-					ServiceId:                secondaryService,
-					ServerType:               config.RelayMinerServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier1"},
+					ServiceId:  secondaryService,
+					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
 					},
@@ -111,9 +113,8 @@ func init() {
 			ListenAddress: secondaryRelayMinerServer,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				thirdService: {
-					ServiceId:                thirdService,
-					ServerType:               config.RelayMinerServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier2"},
+					ServiceId:  thirdService,
+					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
 					},
@@ -135,13 +136,14 @@ func init() {
 func TestRelayerProxy_StartAndStop(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
+
 	// Setup the RelayerProxy instrumented behavior
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, defaultRelayerProxyBehavior...)
 
 	// Create a RelayerProxy
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -150,6 +152,9 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	go rp.Start(ctx)
 	// Block so relayerProxy has sufficient time to start
 	time.Sleep(100 * time.Millisecond)
+
+	err = rp.PingAll(ctx)
+	require.NoError(t, err)
 
 	// Test that RelayerProxy is handling requests (ignoring the actual response content)
 	res, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/", servicesConfigMap[defaultRelayMinerServer].ListenAddress))
@@ -166,47 +171,16 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// RelayerProxy should fail to start if the signing key is not found in the keyring
-func TestRelayerProxy_InvalidSupplierOperatorKeyName(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
-
-	rp, err := proxy.NewRelayerProxy(
-		test.Deps,
-		proxy.WithSigningKeyNames([]string{"wrongKeyName"}),
-		proxy.WithServicesConfigMap(servicesConfigMap),
-	)
-	require.NoError(t, err)
-
-	err = rp.Start(ctx)
-	require.Error(t, err)
-}
-
-// RelayerProxy should fail to build if the signing key name is not provided
-func TestRelayerProxy_MissingSupplierOperatorKeyName(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
-
-	_, err := proxy.NewRelayerProxy(
-		test.Deps,
-		proxy.WithSigningKeyNames([]string{""}),
-		proxy.WithServicesConfigMap(servicesConfigMap),
-	)
-	require.Error(t, err)
-}
-
 // RelayerProxy should fail to build if the service configs are not provided
 func TestRelayerProxy_EmptyServicesConfigMap(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, defaultRelayerProxyBehavior...)
 
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(make(map[string]*config.RelayMinerServerConfig)),
 	)
 	require.Error(t, err)
@@ -238,11 +212,11 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 	}
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, unsupportedRPCTypeBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, unsupportedRPCTypeBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -273,8 +247,7 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 				defaultService: {
 					ServiceId: defaultService,
 					// The proxy is configured with an unsupported transport type
-					ServerType:               config.RelayMinerServerType(100),
-					PubliclyExposedEndpoints: []string{"supplier"},
+					ServerType: config.RelayMinerServerType(100),
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
@@ -293,11 +266,11 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 	}
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, unsupportedTransportTypeBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, unsupportedTransportTypeBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(unsupportedTransportProxy),
 	)
 	require.NoError(t, err)
@@ -316,9 +289,8 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 			ListenAddress: defaultRelayMinerServer,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
-					ServiceId:                defaultService,
-					ServerType:               config.RelayMinerServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier"},
+					ServiceId:  defaultService,
+					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
@@ -337,11 +309,11 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 	}
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, unsupportedTransportTypeBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, unsupportedTransportTypeBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(missingServicesProxy),
 	)
 	require.NoError(t, err)
@@ -529,11 +501,12 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.TODO())
 			defer cancel()
-			testBehavior := testproxy.NewRelayerProxyTestBehavior(ctx, t, test.relayerProxyBehavior...)
+
+			signingKeyNames := []string{supplierOperatorKeyName}
+			testBehavior := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, test.relayerProxyBehavior...)
 
 			rp, err := proxy.NewRelayerProxy(
 				testBehavior.Deps,
-				proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 				proxy.WithServicesConfigMap(servicesConfigMap),
 			)
 			require.NoError(t, err)
@@ -549,6 +522,459 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			cancel()
 		})
 	}
+}
+
+// RelayProxyPingAllSuite implements the suite to test the relay proxy ping
+// application logic.
+type RelayProxyPingAllSuite struct {
+	suite.Suite
+	relayerProxyBehavior []func(*testproxy.TestBehavior)
+	servicesConfigMap    map[string]*config.RelayMinerServerConfig
+}
+
+// TestRelayProxyPingAllSuite executes the RelayProxyPingAllSuite test suite.
+func TestRelayProxyPingAllSuite(t *testing.T) {
+	suite.Run(t, new(RelayProxyPingAllSuite))
+}
+
+// SetupSuite setups a single default relayminer with one supplier. The
+// default relayminer will be reused in every subsequent tests in the
+// suite.
+func (t *RelayProxyPingAllSuite) SetupSuite() {
+	pingAppPrivateKey := secp256k1.GenPrivKey()
+	defaultRelayMinerServerAddress := "127.0.0.1:8245"
+	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+		defaultService: {
+			{
+				Url:     "http://supplier1pingall:8645",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
+		},
+	}
+
+	t.servicesConfigMap = map[string]*config.RelayMinerServerConfig{
+		defaultRelayMinerServerAddress: {
+			ServerType:    config.RelayMinerServerTypeHTTP,
+			ListenAddress: defaultRelayMinerServerAddress,
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+				defaultService: {
+					ServiceId:  defaultService,
+					ServerType: config.RelayMinerServerTypeHTTP,
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						BackendUrl: &url.URL{
+							Scheme: "http",
+							Host:   "127.0.0.1:8645",
+							Path:   "/",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	t.relayerProxyBehavior = []func(*testproxy.TestBehavior){
+		testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierOperatorKeyName, 1),
+		testproxy.WithServicesConfigMap(t.servicesConfigMap),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultApplication(pingAppPrivateKey),
+		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
+		testproxy.WithRelayMeter(),
+	}
+}
+
+// TestOKPingAllWithSingleRelayServer reuses the default relayminer with one
+// supplier to test the relayproxy.PingAll method.
+func (t *RelayProxyPingAllSuite) TestOKPingAllWithSingleRelayServer() {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	testBehavoirs := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, t.relayerProxyBehavior...)
+
+	rp, err := proxy.NewRelayerProxy(
+		testBehavoirs.Deps,
+		proxy.WithServicesConfigMap(t.servicesConfigMap),
+	)
+	require.NoError(t.T(), err)
+
+	go func() {
+		if errStart := rp.Start(ctx); !errors.Is(errStart, http.ErrServerClosed) {
+			require.NoError(t.T(), errStart)
+		}
+	}()
+
+	// waiting for relayer proxy to start
+	// and perform ping request.
+	time.Sleep(100 * time.Millisecond)
+
+	err = rp.PingAll(ctx)
+	require.NoError(t.T(), err)
+
+	err = rp.Stop(ctx)
+	require.NoError(t.T(), err)
+}
+
+// TestOKPingAllWithMultipleRelayServers reuses default relayminer and
+// instantiates an additional one to test the connectivity.
+func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	firstRelayMinerAddr := "127.0.0.1:8246"
+	firstServiceName := "firstservice"
+	secondRelayMinerAddr := "127.0.0.1:8247"
+	secondServiceName := "secondservice"
+
+	newSupplierOperatorKeyName := "newSupplierKeyName"
+	pingAppPrivateKey := secp256k1.GenPrivKey()
+
+	// adding supplier endpoint.
+	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+		firstServiceName: []*sharedtypes.SupplierEndpoint{
+			{
+				Url:     "http://firstservice:8646",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
+		},
+		secondServiceName: []*sharedtypes.SupplierEndpoint{
+			{
+				Url:     "http://secondservice:8647",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
+		},
+	}
+
+	cm := map[string]*config.RelayMinerServerConfig{
+		firstRelayMinerAddr: &config.RelayMinerServerConfig{
+			ServerType:    config.RelayMinerServerTypeHTTP,
+			ListenAddress: firstRelayMinerAddr,
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+				firstServiceName: {
+					ServiceId:  firstServiceName,
+					ServerType: config.RelayMinerServerTypeHTTP,
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						BackendUrl: &url.URL{
+							Scheme: "http",
+							Host:   "127.0.0.1:8646",
+							Path:   "/",
+						},
+					},
+				},
+			},
+		},
+		secondRelayMinerAddr: &config.RelayMinerServerConfig{
+			ServerType:    config.RelayMinerServerTypeHTTP,
+			ListenAddress: secondRelayMinerAddr,
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+				secondServiceName: {
+					ServiceId:  secondServiceName,
+					ServerType: config.RelayMinerServerTypeHTTP,
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						BackendUrl: &url.URL{
+							Scheme: "http",
+							Host:   "127.0.0.1:8647",
+							Path:   "/",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	relayerProxyBehavior := []func(*testproxy.TestBehavior){
+		testproxy.WithRelayerProxyDependenciesForBlockHeight(newSupplierOperatorKeyName, 1),
+		testproxy.WithDefaultSupplier(newSupplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithServicesConfigMap(cm),
+		testproxy.WithDefaultApplication(pingAppPrivateKey),
+		testproxy.WithDefaultSessionSupplier(newSupplierOperatorKeyName, defaultService, appPrivateKey),
+		testproxy.WithRelayMeter(),
+	}
+
+	testBehavoirs := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{newSupplierOperatorKeyName}, relayerProxyBehavior...)
+
+	rp, err := proxy.NewRelayerProxy(
+		testBehavoirs.Deps,
+		proxy.WithServicesConfigMap(cm),
+	)
+	require.NoError(t.T(), err)
+
+	go func() {
+		if errStart := rp.Start(ctx); !errors.Is(errStart, http.ErrServerClosed) {
+			require.NoError(t.T(), errStart)
+		}
+	}()
+
+	// waiting for relayer proxy to start
+	// and perform ping request.
+	time.Sleep(100 * time.Millisecond)
+
+	err = rp.PingAll(ctx)
+	require.NoError(t.T(), err)
+
+	err = rp.Stop(ctx)
+	require.NoError(t.T(), err)
+}
+
+// TestNOKPingAllWithPartialFailureAtStartup test the connectivity for multiple
+// relayminer with a partial sucess/failure at startup.
+func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	failingRelayMinerAddr := "127.0.0.1:8247"
+	failingServiceName := "failingservice"
+
+	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+		failingServiceName: {
+			{
+				Url:     "http://failingservice:8647",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
+		},
+	}
+
+	cm := map[string]*config.RelayMinerServerConfig{
+		failingRelayMinerAddr: &config.RelayMinerServerConfig{
+			ListenAddress: failingRelayMinerAddr,
+			ServerType:    config.RelayMinerServerTypeHTTP,
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+				failingServiceName: &config.RelayMinerSupplierConfig{
+					ServerType: config.RelayMinerServerTypeHTTP,
+					ServiceId:  failingServiceName,
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						BackendUrl: &url.URL{
+							Scheme: "http",
+							Host:   "127.0.0.1:8647",
+							Path:   "/",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithServicesConfigMap(cm),
+	}...)
+
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, relayProxyBehavior...)
+
+	// copying the default relayminer in the test service config
+	// map for the relay proxy.
+	for k, v := range t.servicesConfigMap {
+		cm[k] = v
+	}
+
+	rp, err := proxy.NewRelayerProxy(
+		test.Deps,
+		proxy.WithServicesConfigMap(cm),
+	)
+	require.NoError(t.T(), err)
+
+	// we are explicitly shutting down a supplier to simulate a
+	// failure while testing the connectivity at startup.
+	err = test.ShutdownServiceID(failingServiceName)
+	require.NoError(t.T(), err)
+
+	// testing connectivity at startup
+	err = rp.Start(ctx)
+	require.Error(t.T(), err)
+	require.True(t.T(), strings.Contains(err.Error(), "connection refused"))
+
+	err = rp.Stop(ctx)
+	require.NoError(t.T(), err)
+}
+
+// TestNOKPingAllWithPartialFailureAfterStartup test the connectivity for multiple
+// relayminer with a partial sucess/failure at runtime.
+func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	failingRelayMinerAddr := "127.0.0.1:8248"
+	failingServiceName := "faillingservice"
+
+	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+		failingServiceName: {
+			{
+				Url:     "http://failingservice:8648",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
+		},
+	}
+
+	cm := map[string]*config.RelayMinerServerConfig{
+		failingRelayMinerAddr: &config.RelayMinerServerConfig{
+			ListenAddress: failingRelayMinerAddr,
+			ServerType:    config.RelayMinerServerTypeHTTP,
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+				failingServiceName: &config.RelayMinerSupplierConfig{
+					ServerType: config.RelayMinerServerTypeHTTP,
+					ServiceId:  failingServiceName,
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						BackendUrl: &url.URL{
+							Scheme: "http",
+							Host:   "127.0.0.1:8648",
+							Path:   "/",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithServicesConfigMap(cm),
+	}...)
+
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, relayProxyBehavior...)
+
+	// copying the default relayminer in the test service config
+	// map for the relay proxy.
+	for k, v := range t.servicesConfigMap {
+		cm[k] = v
+	}
+
+	rp, err := proxy.NewRelayerProxy(
+		test.Deps,
+		proxy.WithServicesConfigMap(cm),
+	)
+	require.NoError(t.T(), err)
+
+	go func() {
+		errStart := rp.Start(ctx)
+		if !errors.Is(errStart, http.ErrServerClosed) {
+			require.NoError(t.T(), errStart)
+		}
+	}()
+
+	// waiting for relayer proxy to start
+	// and perform ping request.
+	time.Sleep(100 * time.Millisecond)
+
+	// we are explicitly shutting down a supplier to simulate an error
+	// while testing the connectivity.
+	err = test.ShutdownServiceID(failingServiceName)
+	require.NoError(t.T(), err)
+
+	err = rp.PingAll(ctx)
+	require.Error(t.T(), err)
+	require.True(t.T(), strings.Contains(err.Error(), "connection refused"))
+
+	err = rp.Stop(ctx)
+	require.NoError(t.T(), err)
+}
+
+// TestOKPingAllDifferentEndpoint test the connectivity with different type of
+// endpoints (ipv6, domain name).
+func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	srv, err := mockdns.NewServer(map[string]mockdns.Zone{
+		"exampleservice.org.": {
+			A: []string{"127.0.0.1"},
+		},
+	}, false)
+	require.NoError(t.T(), err)
+	defer srv.Close()
+
+	srv.PatchNet(net.DefaultResolver)
+	defer mockdns.UnpatchNet(net.DefaultResolver)
+
+	relayminerDomainNameAddr := "exampleservice.org:8249"
+	domainNameServiceName := "exampleservice.org"
+
+	relayminerIPV6ServiceAddr := "localhost:8250"
+	IPV6ServiceName := "ipv6service"
+
+	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+		domainNameServiceName: {
+			{
+				Url:     "http://exampleservice.org:8649",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
+		},
+		IPV6ServiceName: {
+			{
+				Url:     "http://ipv6service:8650",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
+		},
+	}
+
+	cm := map[string]*config.RelayMinerServerConfig{
+		relayminerDomainNameAddr: &config.RelayMinerServerConfig{
+			ListenAddress: relayminerDomainNameAddr,
+			ServerType:    config.RelayMinerServerTypeHTTP,
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+				domainNameServiceName: &config.RelayMinerSupplierConfig{
+					ServerType: config.RelayMinerServerTypeHTTP,
+					ServiceId:  domainNameServiceName,
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						BackendUrl: &url.URL{
+							Scheme: "http",
+							Host:   "exampleservice.org:8649",
+							Path:   "/",
+						},
+					},
+				},
+			},
+		},
+		relayminerIPV6ServiceAddr: &config.RelayMinerServerConfig{
+			ListenAddress: relayminerIPV6ServiceAddr,
+			ServerType:    config.RelayMinerServerTypeHTTP,
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+				IPV6ServiceName: &config.RelayMinerSupplierConfig{
+					ServerType: config.RelayMinerServerTypeHTTP,
+					ServiceId:  IPV6ServiceName,
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						BackendUrl: &url.URL{
+							Scheme: "http",
+							Host:   "[::1]:8650",
+							Path:   "/",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithServicesConfigMap(cm),
+	}...)
+
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, relayProxyBehavior...)
+
+	// copying the default relayminer in the test service config
+	// map for the relay proxy.
+	for k, v := range t.servicesConfigMap {
+		cm[k] = v
+	}
+
+	rp, err := proxy.NewRelayerProxy(
+		test.Deps,
+		proxy.WithServicesConfigMap(cm),
+	)
+	require.NoError(t.T(), err)
+
+	go func() {
+		if errStart := rp.Start(ctx); !errors.Is(errStart, http.ErrServerClosed) {
+			require.NoError(t.T(), errStart)
+		}
+	}()
+
+	// waiting for relayer proxy to start
+	// and perform ping request.
+	time.Sleep(100 * time.Millisecond)
+
+	err = rp.PingAll(ctx)
+	require.NoError(t.T(), err)
+
+	err = rp.Stop(ctx)
+	require.NoError(t.T(), err)
 }
 
 func sendRequestWithUnparsableBody(

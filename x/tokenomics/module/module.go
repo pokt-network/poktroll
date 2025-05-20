@@ -19,7 +19,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	tokenomicsmodule "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
+	tokenomicsmodule "github.com/pokt-network/poktroll/api/pocket/tokenomics/module"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"

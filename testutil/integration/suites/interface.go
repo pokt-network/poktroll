@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/testutil/integration"
 )
 
@@ -18,9 +18,9 @@ type IntegrationSuite interface {
 	SetApp(*integration.App)
 	// GetApp returns the integration app from the suite.
 	GetApp() *integration.App
-	// GetPoktrollModuleNames returns the list of the names of all poktroll modules
+	// GetPocketModuleNames returns the list of the names of all pocket modules
 	// in the integration app.
-	GetPoktrollModuleNames() []string
+	GetPocketModuleNames() []string
 	// GetCosmosModuleNames returns the list of the names of all cosmos-sdk modules
 	// in the integration app.
 	GetCosmosModuleNames() []string
@@ -31,7 +31,7 @@ type IntegrationSuite interface {
 	FundAddress(t *testing.T, addr cosmostypes.AccAddress, amtUpokt int64)
 	// GetBankQueryClient constructs and returns a query client for the bank module
 	// of the integration app.
-	GetBankQueryClient() banktypes.QueryClient
+	GetBankQueryClient(t *testing.T) client.BankQueryClient
 
 	// FilterEvents returns the events from the event manager which match the given
 	// matchFn. Events are returned in reverse order, i.e. the most recent event is

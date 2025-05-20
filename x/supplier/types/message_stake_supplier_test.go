@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -292,7 +293,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						ServiceId: "TooLongId1234567890",
+						ServiceId: strings.Repeat("a", 43), // 42 is the max length hardcoded in the services module
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8080",
@@ -468,14 +469,13 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
-		// TODO_TEST: Need to add more tests around config types
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			err := test.msg.ValidateBasic()
 			if test.expectedErr != nil {
-				require.ErrorIs(t, err, test.expectedErr)
+				require.ErrorContains(t, err, test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

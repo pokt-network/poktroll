@@ -10,10 +10,11 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -86,24 +87,24 @@ func (s *tokenLogicModuleTestSuite) SetupTest() {
 	}
 
 	supplierBech32 := sample.AccAddress()
-	s.supplier = &sharedtypes.Supplier{
-		OwnerAddress:    supplierBech32,
-		OperatorAddress: supplierBech32,
-		Stake:           &suppliertypes.DefaultMinStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				ServiceId: s.service.GetId(),
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            supplierBech32,
-						RevSharePercentage: 100,
-					},
+	services := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: s.service.GetId(),
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            supplierBech32,
+					RevSharePercentage: 100,
 				},
 			},
 		},
-		ServicesActivationHeightsMap: map[string]uint64{
-			s.service.GetId(): 0,
-		},
+	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierBech32, services, 1, 0)
+	s.supplier = &sharedtypes.Supplier{
+		OwnerAddress:         supplierBech32,
+		OperatorAddress:      supplierBech32,
+		Stake:                &suppliertypes.DefaultMinStake,
+		Services:             services,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
 }
 
@@ -185,7 +186,13 @@ func (s *tokenLogicModuleTestSuite) setBlockHeight(height int64) {
 // assertNoPendingClaims asserts that no pending claims exist.
 func (s *tokenLogicModuleTestSuite) assertNoPendingClaims(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
-	pendingClaims, err := s.keepers.Keeper.GetExpiringClaims(sdkCtx)
-	require.NoError(t, err)
-	require.Zero(t, len(pendingClaims))
+	pendingClaimsIterator := s.keepers.Keeper.GetExpiringClaimsIterator(sdkCtx)
+	defer pendingClaimsIterator.Close()
+
+	numExpiringClaims := 0
+	for pendingClaimsIterator.Valid() {
+		numExpiringClaims++
+		pendingClaimsIterator.Next()
+	}
+	require.Zero(t, numExpiringClaims)
 }

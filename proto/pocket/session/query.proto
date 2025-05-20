@@ -1,0 +1,48 @@
+syntax = "proto3";
+package pocket.session;
+
+option go_package = "github.com/pokt-network/poktroll/x/session/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos_proto/cosmos.proto";
+
+import "pocket/session/params.proto";
+import "pocket/session/types.proto";
+import "pocket/shared/service.proto";
+
+// Query defines the gRPC querier service.
+service Query {
+
+  // Parameters queries the parameters of the module.
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/session/params";
+  }
+
+  // Queries the session given app_address, service and block_height.
+  rpc GetSession (QueryGetSessionRequest) returns (QueryGetSessionResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/session/get_session";
+  }
+}
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+message QueryGetSessionRequest {
+  string application_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
+  string service_id = 2; // The service ID to query the session for
+  int64 block_height = 3; // The block height to query the session for
+}
+
+message QueryGetSessionResponse {
+  Session session = 1;
+}
+

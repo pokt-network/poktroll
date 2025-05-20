@@ -67,7 +67,10 @@ func (k Keeper) Application(ctx context.Context, req *types.QueryGetApplicationR
 
 	app, found := k.GetApplication(ctx, req.Address)
 	if !found {
-		return nil, status.Error(codes.NotFound, "application not found")
+		return nil, status.Error(
+			codes.NotFound,
+			types.ErrAppNotFound.Wrapf("app address: %s", req.Address).Error(),
+		)
 	}
 
 	return &types.QueryGetApplicationResponse{Application: app}, nil

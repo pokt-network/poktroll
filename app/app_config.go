@@ -72,18 +72,21 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	applicationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/application/module"
-	gatewaymodulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"
-	proofmodulev1 "github.com/pokt-network/poktroll/api/poktroll/proof/module"
-	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
-	sessionmodulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
-	sharedmodulev1 "github.com/pokt-network/poktroll/api/poktroll/shared/module"
-	suppliermodulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier/module"
-	tokenomicsmodulev1 "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
+	applicationmodulev1 "github.com/pokt-network/poktroll/api/pocket/application/module"
+	gatewaymodulev1 "github.com/pokt-network/poktroll/api/pocket/gateway/module"
+	migrationmodulev1 "github.com/pokt-network/poktroll/api/pocket/migration/module"
+	proofmodulev1 "github.com/pokt-network/poktroll/api/pocket/proof/module"
+	servicemodulev1 "github.com/pokt-network/poktroll/api/pocket/service/module"
+	sessionmodulev1 "github.com/pokt-network/poktroll/api/pocket/session/module"
+	sharedmodulev1 "github.com/pokt-network/poktroll/api/pocket/shared/module"
+	suppliermodulev1 "github.com/pokt-network/poktroll/api/pocket/supplier/module"
+	tokenomicsmodulev1 "github.com/pokt-network/poktroll/api/pocket/tokenomics/module"
 	_ "github.com/pokt-network/poktroll/x/application/module" // import for side-effects
 	applicationmoduletypes "github.com/pokt-network/poktroll/x/application/types"
 	_ "github.com/pokt-network/poktroll/x/gateway/module" // import for side-effects
 	gatewaymoduletypes "github.com/pokt-network/poktroll/x/gateway/types"
+	_ "github.com/pokt-network/poktroll/x/migration/module" // import for side-effects
+	migrationmoduletypes "github.com/pokt-network/poktroll/x/migration/types"
 	_ "github.com/pokt-network/poktroll/x/proof/module" // import for side-effects
 	proofmoduletypes "github.com/pokt-network/poktroll/x/proof/types"
 	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects
@@ -140,6 +143,7 @@ var (
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
+		migrationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -167,11 +171,16 @@ var (
 		servicemoduletypes.ModuleName,
 		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
+		// The supplier begin blocker should be called before its dependent modules
+		// (session, proof, tokenomics) to ensure that the supplier module has activated
+		// any pending services before the dependent modules have a chance to interact
+		// with the supplier.
 		suppliermoduletypes.ModuleName,
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
+		migrationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -203,6 +212,7 @@ var (
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
+		migrationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -229,6 +239,8 @@ var (
 		{Account: sessionmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		{Account: tokenomicsmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		{Account: proofmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: migrationmoduletypes.ModuleName, Permissions: []string{authtypes.Minter}},
+		{Account: banktypes.ModuleName, Permissions: []string{authtypes.Minter}},
 		// this line is used by starport scaffolding # stargate/app/maccPerms	}
 	}
 
@@ -390,6 +402,10 @@ var (
 			{
 				Name:   sharedmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&sharedmodulev1.Module{}),
+			},
+			{
+				Name:   migrationmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&migrationmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	SimAppChainID = "poktroll-simapp"
+	SimAppChainID = "pocket-simapp"
 )
 
 var FlagEnableStreamingValue bool

@@ -1,0 +1,8 @@
+{
+  "label": "Explorers, Faucets, Wallets, and More",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "pocketd CLI documentation"
+  }
+}

@@ -11,25 +11,46 @@ func (s *Supplier) IsUnbonding() bool {
 	return s.UnstakeSessionEndHeight != SupplierNotUnstaking
 }
 
-// IsActive returns whether the supplier is allowed to serve requests for the
-// given serviceId and query height.
-// A supplier is active for a given service starting from the session following
-// the one during which the supplier staked for that service.
-// A supplier that has submitted an unstake message is active until the end of
-// the session containing the height at which unstake message was submitted.
-func (s *Supplier) IsActive(queryHeight uint64, serviceId string) bool {
-	// Service that has been staked for is not active yet.
-	if s.ServicesActivationHeightsMap[serviceId] > queryHeight {
-		return false
+// IsActive checks if the supplier is authorized to serve requests for a specific service
+// at the given block height.
+//
+// This method examines the supplier's service configuration history to determine
+// if they have an active configuration for the requested service ID at the
+// specified block height. A supplier is considered "active" for a service when:
+//  1. They have a ServiceConfigUpdate for this service ID
+//  2. That configuration is active at the given block height
+//     (activation height <= queryHeight < deactivation height)
+func (s *Supplier) IsActive(queryHeight int64, serviceId string) bool {
+	// Examine each service configuration update in the history
+	for _, serviceUpdate := range s.ServiceConfigHistory {
+		// Skip configurations for other services
+		if serviceUpdate.Service.ServiceId != serviceId {
+			continue
+		}
+
+		if serviceUpdate.IsActive(queryHeight) {
+			return true
+		}
 	}
 
-	// If the supplier is not unbonding then its UnstakeSessionEndHeight is 0,
-	// which returns true for all query heights.
-	if s.IsUnbonding() {
-		return queryHeight > s.UnstakeSessionEndHeight
-	}
+	// No active configuration was found for this service at the given height
+	return false
+}
 
-	return true
+// GetActiveServiceConfigs returns a list of all service configurations that are active
+// at the specified block height.
+//
+// This method examines the supplier's service configuration history to collect
+// all service configurations that:
+//  1. Have an activation height less than or equal to the query height
+//  2. Either have no deactivation height (0) or a deactivation height greater than the query height
+//
+// The returned configurations represent all services the supplier is authorized to provide
+// at the given block height, with their corresponding endpoints and revenue share settings.
+func (s *Supplier) GetActiveServiceConfigs(
+	queryHeight int64,
+) []*SupplierServiceConfig {
+	return GetActiveServiceConfigsFromHistory(s.ServiceConfigHistory, queryHeight)
 }
 
 // HasOwner returns whether the given address is the supplier's owner address.
@@ -44,11 +65,33 @@ func (s *Supplier) HasOperator(address string) bool {
 
 // GetSupplierUnbondingEndHeight returns the session end height at which the given
 // supplier finishes unbonding.
+//
+// This calculates the absolute block height at which the supplier's unbonding period
+// completes by adding the configured unbonding period (in sessions) to the supplier's
+// unstake session end height.
 func GetSupplierUnbondingEndHeight(
 	sharedParams *Params,
 	supplier *Supplier,
 ) int64 {
+	// Calculate the number of blocks in the unbonding period
 	supplierUnbondingPeriodBlocks := sharedParams.GetSupplierUnbondingPeriodSessions() * sharedParams.GetNumBlocksPerSession()
 
+	// Add the unbonding period to the session end height to get the final unbonding height
 	return int64(supplier.GetUnstakeSessionEndHeight() + supplierUnbondingPeriodBlocks)
+}
+
+// GetActiveServiceConfigsFromHistory filters the service configuration history
+// to find all configurations that are active at the specified block height.
+func GetActiveServiceConfigsFromHistory(
+	serviceConfigHistory []*ServiceConfigUpdate,
+	queryHeight int64,
+) []*SupplierServiceConfig {
+	activeServiceConfigs := make([]*SupplierServiceConfig, 0)
+	for _, serviceConfigUpdate := range serviceConfigHistory {
+		if serviceConfigUpdate.IsActive(queryHeight) {
+			activeServiceConfigs = append(activeServiceConfigs, serviceConfigUpdate.Service)
+		}
+	}
+
+	return activeServiceConfigs
 }

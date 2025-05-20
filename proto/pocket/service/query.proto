@@ -1,0 +1,87 @@
+syntax = "proto3";
+package pocket.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+
+import "pocket/service/params.proto";
+import "pocket/shared/service.proto";
+import "pocket/service/relay_mining_difficulty.proto";
+
+// Query defines the gRPC querier service.
+service Query {
+
+  // Parameters queries the parameters of the module.
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/params";
+
+  }
+
+  // Queries a list of Service items.
+  rpc Service    (QueryGetServiceRequest) returns (QueryGetServiceResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/service/{id}";
+
+  }
+  rpc AllServices (QueryAllServicesRequest) returns (QueryAllServicesResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/service";
+
+  }
+
+  // Queries a list of RelayMiningDifficulty items.
+  rpc RelayMiningDifficulty    (QueryGetRelayMiningDifficultyRequest) returns (QueryGetRelayMiningDifficultyResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}";
+
+  }
+  rpc RelayMiningDifficultyAll (QueryAllRelayMiningDifficultyRequest) returns (QueryAllRelayMiningDifficultyResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty";
+  }
+}
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+message QueryGetServiceRequest {
+  // TODO_IMPROVE: We could support getting services by name.
+  string id = 1;
+}
+
+message QueryGetServiceResponse {
+  pocket.shared.Service service = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllServicesRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllServicesResponse {
+  repeated pocket.shared.Service service = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryGetRelayMiningDifficultyRequest {
+  string serviceId = 1;
+}
+
+message QueryGetRelayMiningDifficultyResponse {
+  RelayMiningDifficulty relayMiningDifficulty = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllRelayMiningDifficultyRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllRelayMiningDifficultyResponse {
+  repeated RelayMiningDifficulty                  relayMiningDifficulty = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination            = 2;
+}

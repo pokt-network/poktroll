@@ -8,13 +8,14 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Poktroll",
-  tagline: "Roll the POKT",
+  title: "Pocket",
+  tagline: "Permissionless APIs",
   favicon: "img/logo.png",
 
   markdown: {
     mermaid: true,
   },
+
   themes: [
     "@docusaurus/theme-mermaid",
     [
@@ -31,7 +32,7 @@ const config = {
   ],
 
   // GitHub pages deployment config.
-  url: "https://poktroll.com/",
+  url: "https://pocket.com/",
   baseUrl: "/",
 
   // Custom domain config.
@@ -41,7 +42,7 @@ const config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "pokt-network", // Usually your GitHub org/user name (ORGANIZATION_NAME)
-  projectName: "poktroll", // Usually your repo name. (PROJECT_NAME)
+  projectName: "pocket", // Usually your repo name. (PROJECT_NAME)
   deploymentBranch: "gh-pages", // Deployment branch (DEPLOYMENT_BRANCH)
   trailingSlash: false,
 
@@ -58,12 +59,10 @@ const config = {
 
   presets: [
     [
-      // "classic",
-      "@docusaurus/preset-classic",
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          // path: "docs",
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
           sidebarCollapsible: false,
@@ -85,14 +84,13 @@ const config = {
     ({
       docs: {
         sidebar: {
-          hideable: false,
-          autoCollapseCategories: false,
+          hideable: true,
+          autoCollapseCategories: true,
         },
       },
-      // image: "img/docusaurus-social-card.jpg",
       style: "dark",
       navbar: {
-        title: "Pocket Network",
+        // title: "Pocket Network",
         logo: {
           alt: "Pocket Network Logo",
           src: "img/logo.png",
@@ -102,25 +100,29 @@ const config = {
             type: "docSidebar",
             position: "left",
             sidebarId: "operateSidebar",
-            label: "⚙️ Operate",
+            label: "⚙️ Infra Operators",
+            to: "/1_operate/",
           },
           {
             type: "docSidebar",
             position: "left",
-            sidebarId: "developSidebar",
-            label: "💻 Develop",
+            sidebarId: "toolsSidebar",
+            label: "🗺 Users & Explorers",
+            to: "/2_explore/user_guide/create-new-wallet",
           },
           {
             type: "docSidebar",
             position: "left",
             sidebarId: "protocolSidebar",
-            label: "🧠 Protocol",
+            label: "🧠 Protocol Specifications",
+            to: "/3_protocol/",
           },
           {
             type: "docSidebar",
             position: "left",
-            sidebarId: "exploreSidebar",
-            label: "🗺 Explore",
+            sidebarId: "developSidebar",
+            label: "🧑‍💻️ Core Developers",
+            to: "/4_develop/",
           },
         ],
       },
@@ -131,7 +133,7 @@ const config = {
             title: "Documentation",
             items: [
               {
-                label: "Poktroll",
+                label: "Pocket",
                 to: "/",
               },
               {
@@ -158,7 +160,7 @@ const config = {
             items: [
               {
                 label: "GitHub",
-                href: "https://github.com/pokt-network/poktroll",
+                href: "https://github.com/pokt-network/pocket",
               },
             ],
           },
@@ -174,6 +176,7 @@ const config = {
           "json",
           "makefile",
           "diff",
+          "bash",
         ],
       },
     }),

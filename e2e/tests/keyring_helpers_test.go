@@ -10,11 +10,11 @@ import (
 )
 
 // keyExistsInKeyring checks if a key with the given name exists in the keyring
-// using the `poktrolld keys show <key_name>` CLI subcommand.
+// using the `pocketd keys show <key_name>` CLI subcommand.
 func (s *suite) keyExistsInKeyring(keyName string) bool {
 	s.Helper()
 
-	// poktrolld keys show <key_name> --keyring-backend test
+	// pocketd keys show <key_name> --keyring-backend test
 	argsAndFlags := []string{
 		"keys",
 		"show",
@@ -38,11 +38,11 @@ func (s *suite) keyExistsInKeyring(keyName string) bool {
 }
 
 // addKeyToKeyring adds a new key, with the given name, to the keyring
-// using the `poktrolld keys add <key_name>` CLI subcommand.
+// using the `pocketd keys add <key_name>` CLI subcommand.
 func (s *suite) addKeyToKeyring(keyName string) {
 	s.Helper()
 
-	// poktrolld keys add <key_name> --keyring-backend test
+	// pocketd keys add <key_name> --keyring-backend test
 	argsAndFlags := []string{
 		"keys",
 		"add",

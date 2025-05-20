@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package pocket.application;
+
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
+import "gogoproto/gogo.proto";
+import "pocket/application/types.proto";
+import "pocket/application/params.proto";
+import "pocket/shared/service.proto";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams          (MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc StakeApplication      (MsgStakeApplication) returns (MsgStakeApplicationResponse);
+  rpc UnstakeApplication    (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
+  rpc DelegateToGateway     (MsgDelegateToGateway) returns (MsgDelegateToGatewayResponse);
+  rpc UndelegateFromGateway (MsgUndelegateFromGateway) returns (MsgUndelegateFromGatewayResponse);
+  rpc TransferApplication   (MsgTransferApplication) returns (MsgTransferApplicationResponse);
+  rpc UpdateParam           (MsgUpdateParam) returns (MsgUpdateParamResponse);
+}
+// MsgUpdateParams is the Msg/UpdateParams request type.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+  option           (amino.name) = "pocket/x/application/MsgUpdateParams";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // TODO_IMPROVE(#322): The requirement to provide all params is adopted from the
+  // latest Cosmos SDK version. We should look into either improving this ourselves
+  // or seeing if it is on their roadmap.
+
+  // params defines the x/application parameters to update.
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {}
+
+message MsgStakeApplication {
+  option (cosmos.msg.v1.signer) = "address";
+  string                                   address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
+  cosmos.base.v1beta1.Coin                 stake = 2; // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
+  repeated pocket.shared.ApplicationServiceConfig services = 3; // The list of services this application is staked to request service for
+
+  // TODO_POST_MAINNET: Consider allowing applications to delegate
+  // to gateways at time of staking for a better developer experience.
+  // repeated string gateway_address
+}
+
+message MsgStakeApplicationResponse {
+  pocket.application.Application application = 1;
+}
+
+message MsgUnstakeApplication {
+  option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  string address = 1;
+}
+
+message MsgUnstakeApplicationResponse {
+  pocket.application.Application application = 1;
+}
+
+message MsgDelegateToGateway {
+  option (cosmos.msg.v1.signer) = "app_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
+  string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application wants to delegate to.
+}
+
+message MsgDelegateToGatewayResponse {
+  pocket.application.Application application = 1;
+}
+
+message MsgUndelegateFromGateway {
+  option (cosmos.msg.v1.signer) = "app_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
+  string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application wants to undelegate from.
+}
+
+message MsgUndelegateFromGatewayResponse {
+  pocket.application.Application application = 1;
+}
+
+message MsgTransferApplication {
+  option (cosmos.msg.v1.signer) = "source_address";
+  string source_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string destination_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+message MsgTransferApplicationResponse {
+  pocket.application.Application application = 1;
+}
+
+message MsgUpdateParam {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1  [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  string name = 2;
+  oneof asType    {
+    uint64 as_uint64 = 3 [(gogoproto.jsontag) = "as_uint64"];
+    cosmos.base.v1beta1.Coin as_coin = 4 [(gogoproto.jsontag) = "as_coin"];
+  };
+}
+
+message MsgUpdateParamResponse {
+  Params params = 1;
+}
+

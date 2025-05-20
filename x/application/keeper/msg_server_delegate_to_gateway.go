@@ -3,16 +3,21 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
+	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// DelegateToGateway processes a message to delegate an application to a gateway.
+// This enables the application to use the gateway's services for relaying.
 func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDelegateToGateway) (*apptypes.MsgDelegateToGatewayResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
@@ -20,6 +25,8 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 		telemetry.DefaultCounterFn,
 		func() bool { return isSuccessful },
 	)
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	logger := k.Logger().With("method", "DelegateToGateway")
 	logger.Info(fmt.Sprintf("About to delegate application to gateway with msg: %+v", msg))
@@ -43,7 +50,8 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
 
 	// Check if the gateway is staked
-	if _, found := k.gatewayKeeper.GetGateway(ctx, msg.GetGatewayAddress()); !found {
+	gateway, gatewayFound := k.gatewayKeeper.GetGateway(ctx, msg.GetGatewayAddress())
+	if !gatewayFound {
 		logger.Info(fmt.Sprintf("Gateway not found with address [%s]", msg.GetGatewayAddress()))
 		return nil, status.Error(
 			codes.NotFound,
@@ -66,6 +74,18 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 		)
 	}
 
+	currentHeight := sdkCtx.BlockHeight()
+	// Ensure that the gateway is still active
+	if !gateway.IsActive(currentHeight) {
+		logger.Info(fmt.Sprintf("Gateway with address [%s] is unbonding and no longer active", msg.GetGatewayAddress()))
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			gatewaytypes.ErrGatewayIsInactive.Wrapf(
+				"gateway with address: %q", msg.GetGatewayAddress(),
+			).Error(),
+		)
+	}
+
 	// Check if the application is already delegated to the gateway
 	for _, gatewayAddr := range app.DelegateeGatewayAddresses {
 		if gatewayAddr == msg.GetGatewayAddress() {
@@ -84,12 +104,14 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, msg.GetGatewayAddress())
 	logger.Info("Successfully added delegatee public key to application")
 
+	// Remove any pending undelegations for the application to the gateway
+	k.updatePendingUndelegations(ctx, &app, msg.GetGatewayAddress(), logger)
+
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)
 	logger.Info(fmt.Sprintf("Successfully delegated application to gateway for app: %+v", app))
 
 	// Emit the application redelegation event
-	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	event := &apptypes.EventRedelegation{
@@ -98,7 +120,6 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	}
 	logger.Info(fmt.Sprintf("Emitting application redelegation event %+v", event))
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		err = fmt.Errorf("failed to emit application redelegation event: %w", err)
 		logger.Error(err.Error())
@@ -109,4 +130,35 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	return &apptypes.MsgDelegateToGatewayResponse{
 		Application: &app,
 	}, nil
+}
+
+// updatePendingUndelegations removes the given gateway address from the application's
+// pending undelegations list.
+func (k Keeper) updatePendingUndelegations(
+	ctx context.Context,
+	app *apptypes.Application,
+	gatewayAddress string,
+	logger log.Logger,
+) {
+	// Check if the application has any pending undelegations
+	if len(app.PendingUndelegations) == 0 {
+		return
+	}
+
+	for height, pendingUndelegations := range app.PendingUndelegations {
+		if gwIdx := slices.Index(pendingUndelegations.GatewayAddresses, gatewayAddress); gwIdx >= 0 {
+			// Remove the gateway address from the pending undelegations
+			pendingUndelegations.GatewayAddresses = append(
+				pendingUndelegations.GatewayAddresses[:gwIdx],
+				pendingUndelegations.GatewayAddresses[gwIdx+1:]...,
+			)
+			logger.Info(fmt.Sprintf("Removed pending undelegation for re-delegated gateway with address [%s]", gatewayAddress))
+		}
+		app.PendingUndelegations[height] = pendingUndelegations
+
+		if len(app.PendingUndelegations[height].GatewayAddresses) == 0 {
+			// If there are no more pending undelegations for this height, remove it from the application
+			delete(app.PendingUndelegations, height)
+		}
+	}
 }

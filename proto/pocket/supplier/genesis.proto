@@ -1,0 +1,20 @@
+syntax = "proto3";
+package pocket.supplier;
+
+option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+import "pocket/supplier/params.proto";
+import "pocket/shared/supplier.proto";
+
+// GenesisState defines the supplier module's genesis state.
+message GenesisState {
+
+  // params defines all the parameters of the module.
+  Params   params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated pocket.shared.Supplier supplierList = 2 [(gogoproto.nullable) = false] ;
+}
+

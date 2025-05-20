@@ -1,0 +1,20 @@
+syntax = "proto3";
+package pocket.proof;
+
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+import "pocket/proof/params.proto";
+import "pocket/proof/types.proto";
+
+// GenesisState defines the proof module's genesis state.
+message GenesisState {
+  // params defines all the parameters of the module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated Claim claim_list = 2 [(gogoproto.nullable) = false] ;
+  repeated Proof proof_list = 3 [(gogoproto.nullable) = false] ;
+}
+

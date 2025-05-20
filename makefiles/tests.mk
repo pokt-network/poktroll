@@ -6,7 +6,7 @@
 test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars for E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export PATH_URL=$(PATH_URL) && \
-	export POKTROLLD_HOME=../../$(POKTROLLD_HOME)
+	export POCKETD_HOME=../../$(POCKETD_HOME)
 
 .PHONY: test_e2e
 test_e2e: test_e2e_env ## Run all E2E tests
@@ -44,8 +44,12 @@ test_e2e_tokenomics: test_e2e_env ## Run only the E2E suite that exercises the s
 test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
+.PHONY: test_e2e_oneshot
+test_e2e_oneshot: test_e2e_env ## Run only the E2E suite that exercises the oneshot module.
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,oneshot --run=OneshotTaggedFeatures
+
 .PHONY: test_load_relays_stress_custom
-test_load_relays_stress_custom: ## Run the stress test for E2E relays using custom manifest. "loadtest_manifest_example.yaml" manifest is used by default. Set `LOAD_TEST_CUSTOM_MANIFEST` environment variable to use the different manifest.
+test_load_relays_stress_custom: ## Run the stress test for E2E relays using custom manifest. "loadtest_manifest_example.yaml" manifest is used by default. Set 'LOAD_TEST_CUSTOM_MANIFEST' environment variable to use the different manifest.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/$(LOAD_TEST_CUSTOM_MANIFEST)
@@ -67,7 +71,7 @@ test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
 
 # NB: buildmode=pie is necessary to avoid linker errors on macOS.
-# It is not compatible with `-race`, which is why it's omitted here.
+# It is not compatible with '-race', which is why it's omitted here.
 # See ref for more details: https://github.com/golang/go/issues/54482#issuecomment-1251124908
 .PHONY: test_all
 test_all: warn_flaky_tests check_go_version test_gen_fixtures ## Run all go tests showing detailed output only on failures
@@ -93,8 +97,8 @@ itest: check_go_version ## Run tests iteratively (see usage for more)
 	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
 
 # Verify there are no compile errors in pkg/relayer/miner/gen directory.
-# This is done by overriding the build tags through passing a `*.go` argument to `go test`.
-# .go files in that directory contain a `go:build ignore` directive to avoid introducing
+# This is done by overriding the build tags through passing a '*.go' argument to 'go test'.
+# .go files in that directory contain a 'go:build ignore' directive to avoid introducing
 # unintentional churn in the randomly generated fixtures.
 .PHONY: test_gen_fixtures
 test_gen_fixtures: check_go_version ## Run all go tests verbosely

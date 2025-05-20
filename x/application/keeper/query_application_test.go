@@ -47,7 +47,13 @@ func TestApplicationQuerySingle(t *testing.T) {
 			request: &types.QueryGetApplicationRequest{
 				Address: strconv.Itoa(100000),
 			},
-			expectedErr: status.Error(codes.NotFound, "application not found"),
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrAppNotFound.Wrapf(
+					"app address: %s",
+					strconv.Itoa(100000),
+				).Error(),
+			),
 		},
 		{
 			desc:        "InvalidRequest",
@@ -58,7 +64,7 @@ func TestApplicationQuerySingle(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			response, err := keeper.Application(ctx, test.request)
 			if test.expectedErr != nil {
-				require.ErrorIs(t, err, test.expectedErr)
+				require.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,

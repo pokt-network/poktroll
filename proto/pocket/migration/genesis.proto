@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package pocket.migration;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "pocket/migration/params.proto";
+import "pocket/migration/morse_onchain.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+// GenesisState defines the migration module's genesis state.
+message GenesisState {
+  
+  // params defines all the parameters of the module.
+           Params                params                    = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated MorseClaimableAccount morseClaimableAccountList = 2 [(gogoproto.nullable) = false] ;
+}
+

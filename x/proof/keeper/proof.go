@@ -91,11 +91,16 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr
 	)
 }
 
-// GetAllProofs returns all proof
-func (k Keeper) GetAllProofs(ctx context.Context) (proofs []types.Proof) {
+// GetAllProofsIterator returns an iterator for all proofs in the store
+func (k Keeper) GetAllProofsIterator(ctx context.Context) storetypes.Iterator {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofPrimaryKeyPrefix))
-	iterator := storetypes.KVStorePrefixIterator(primaryStore, []byte{})
+	return storetypes.KVStorePrefixIterator(primaryStore, []byte{})
+}
+
+// GetAllProofs returns all proofs in the store
+func (k Keeper) GetAllProofs(ctx context.Context) (proofs []types.Proof) {
+	iterator := k.GetAllProofsIterator(ctx)
 
 	defer iterator.Close()
 

@@ -23,8 +23,11 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Generate an address for the gateway.
 	addr := sample.AccAddress()
 
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(1)
+
 	// Verify that the gateway does not exist yet.
-	_, isGatewayFound := k.GetGateway(ctx, addr)
+	_, isGatewayFound := k.GetGateway(sdkCtx, addr)
 	require.False(t, isGatewayFound)
 
 	// Prepare the gateway.
@@ -35,7 +38,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Stake the gateway.
-	stakeGatewayRes, err := srv.StakeGateway(ctx, stakeMsg)
+	stakeGatewayRes, err := srv.StakeGateway(sdkCtx, stakeMsg)
 	require.NoError(t, err)
 
 	// Assert that the response contains the staked gateway.
@@ -44,7 +47,6 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, stakeMsg.GetStake(), gateway.GetStake())
 
 	// Assert that the EventGatewayStaked event is emitted.
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
@@ -55,15 +57,16 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	events := sdkCtx.EventManager().Events()
 	require.Equal(t, 1, len(events), "expected 1 event")
 	require.EqualValues(t, expectedEvent, events[0])
 
 	// Reset the events, as if a new block were created.
-	ctx, _ = testevents.ResetEventManager(ctx)
+	ctx, _ = testevents.ResetEventManager(sdkCtx)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
 
 	// Verify that the gateway exists.
-	foundGateway, isGatewayFound := k.GetGateway(ctx, addr)
+	foundGateway, isGatewayFound := k.GetGateway(sdkCtx, addr)
 	require.True(t, isGatewayFound)
 	require.Equal(t, addr, foundGateway.Address)
 	require.Equal(t, initialStake.Amount, foundGateway.Stake.Amount)
@@ -76,9 +79,9 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Update the staked gateway.
-	stakeGatewayRes, err = srv.StakeGateway(ctx, upStakeMsg)
+	stakeGatewayRes, err = srv.StakeGateway(sdkCtx, upStakeMsg)
 	require.NoError(t, err)
-	foundGateway, isGatewayFound = k.GetGateway(ctx, addr)
+	foundGateway, isGatewayFound = k.GetGateway(sdkCtx, addr)
 	require.True(t, isGatewayFound)
 	require.Equal(t, updatedStake.Amount, foundGateway.Stake.Amount)
 
@@ -96,7 +99,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	events = sdkCtx.EventManager().Events()
 	require.Equal(t, 1, len(events), "expected 1 event")
 	require.EqualValues(t, expectedEvent, events[0])
 }
@@ -162,4 +165,50 @@ func TestMsgServer_StakeGateway_FailBelowMinStake(t *testing.T) {
 	require.ErrorContains(t, err, expectedErr.Error())
 	_, isGatewayFound := k.GetGateway(ctx, addr)
 	require.False(t, isGatewayFound)
+}
+
+func TestMsgServer_StakeGateway_CancelUnbonding(t *testing.T) {
+	k, ctx := keepertest.GatewayKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(1)
+
+	// Prepare the gateway.
+	addr := sample.AccAddress()
+	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(100))
+	stakeMsg := &gatewaytypes.MsgStakeGateway{
+		Address: addr,
+		Stake:   &initialStake,
+	}
+
+	// Stake the gateway & verify that the gateway exists.
+	_, err := srv.StakeGateway(sdkCtx, stakeMsg)
+	require.NoError(t, err)
+	_, isGatewayFound := k.GetGateway(sdkCtx, addr)
+	require.True(t, isGatewayFound)
+
+	// Unbond the gateway.
+	unstakeMsg := &gatewaytypes.MsgUnstakeGateway{
+		Address: addr,
+	}
+
+	// Send the unstake message and verify that the gateway is unbonding.
+	_, err = srv.UnstakeGateway(sdkCtx, unstakeMsg)
+	require.NoError(t, err)
+	gateway, isGatewayFound := k.GetGateway(sdkCtx, addr)
+	require.True(t, isGatewayFound)
+	require.True(t, gateway.IsUnbonding())
+
+	// Attempt to restake the unbonding gateway & verify that it cancels the unbonding.
+	newStake := initialStake.AddAmount(math.NewInt(1))
+	restakeMsg := &gatewaytypes.MsgStakeGateway{
+		Address: addr,
+		Stake:   &newStake,
+	}
+	_, err = srv.StakeGateway(sdkCtx, restakeMsg)
+	gateway, isGatewayFound = k.GetGateway(sdkCtx, addr)
+	require.NoError(t, err)
+	require.True(t, isGatewayFound)
+	require.False(t, gateway.IsUnbonding())
 }

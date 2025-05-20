@@ -12,9 +12,13 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/signals"
+	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
@@ -24,13 +28,17 @@ import (
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
+	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// We're `explicitly omitting default` so the relayer crashes if these aren't specified.
-const omittedDefaultFlagValue = "explicitly omitting default"
-
-// TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to a `flags.go` file.
+// TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to the cmd/flags package.
 var (
 	// flagRelayMinerConfig is the variable containing the relay miner config filepath
 	// sourced from the `--config` flag.
@@ -70,13 +78,17 @@ for such operations.`,
 	// Cosmos flags
 	// TODO_TECHDEBT(#256): Remove unneeded cosmos flags.
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
-	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
+	// We're intentionally omitting a default value so the relayer crashes if these aren't specified.
+	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, flags.OmittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
+	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
-	cmd.Flags().String(cosmosflags.FlagChainID, "poktroll", "The network chain ID")
+	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
-	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.5, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
+	// Transactions submitted by the RelayMiner are important (i.e. responsible for claims and proofs) that we are willing to overpay on gas fees
+	// Normally, for most transactions, we default to a gas adjustment of 1.5.
+	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.7, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
+	cmd.Flags().Bool(config.FlagQueryCaching, true, "Enable or disable onchain query caching")
 
 	return cmd
 }
@@ -132,10 +144,27 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	queryCachingEnabled, err := cmd.Flags().GetBool(config.FlagQueryCaching)
+	if err != nil {
+		return fmt.Errorf("failed to get query caching flag: %w", err)
+	}
+
+	if queryCachingEnabled {
+		logger.Info().Msg("query caching enabled")
+	} else {
+		logger.Info().Msg("query caching disabled")
+	}
+
 	if relayMinerConfig.Pprof.Enabled {
 		err = relayMiner.ServePprof(ctx, relayMinerConfig.Pprof.Addr)
 		if err != nil {
 			return fmt.Errorf("failed to start pprof endpoint: %w", err)
+		}
+	}
+
+	if relayMinerConfig.Ping.Enabled {
+		if err := relayMiner.ServePing(ctx, "tcp", relayMinerConfig.Ping.Addr); err != nil {
+			return fmt.Errorf("failed to start ping endpoint: %w", err)
 		}
 	}
 
@@ -166,7 +195,7 @@ func setupRelayerDependencies(
 	// Override the config file's `QueryNodeGRPCUrl` fields
 	// with the `--grpc-addr` flag if it was specified.
 	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
-	if flagNodeGRPCURL != omittedDefaultFlagValue {
+	if flagNodeGRPCURL != flags.OmittedDefaultFlagValue {
 		parsedFlagNodeGRPCUrl, err := url.Parse(flagNodeGRPCURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
@@ -177,7 +206,7 @@ func setupRelayerDependencies(
 	// Override the config file's `QueryNodeUrl` and `txNodeRPCUrl` fields
 	// with the `--node` flag if it was specified.
 	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
-	if flagNodeRPCURL != omittedDefaultFlagValue {
+	if flagNodeRPCURL != flags.OmittedDefaultFlagValue {
 		parsedFlagNodeRPCUrl, err := url.Parse(flagNodeRPCURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse rpc query URL: %w", err)
@@ -197,8 +226,33 @@ func setupRelayerDependencies(
 		config.NewSupplyBlockClientFn(queryNodeRPCUrl),                    // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl),            // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
-		config.NewSupplyDelegationClientFn(),                              // leaf
-		config.NewSupplySharedQueryClientFn(),                             // leaf
+
+		// Setup the params caches and configure them to clear on new blocks.
+		// Some of the params (tokenomics and gateway) are not used in the RelayMiner
+		// and don't need to have a corresponding cache.
+		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithNewBlockCacheClearing),   // leaf
+		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithNewBlockCacheClearing),      // leaf
+		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing),  // leaf
+		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithNewBlockCacheClearing),    // leaf
+		config.NewSupplyParamsCacheFn[servicetypes.Params](cache.WithNewBlockCacheClearing),  // leaf
+		config.NewSupplyParamsCacheFn[suppliertypes.Params](cache.WithNewBlockCacheClearing), // leaf
+
+		// Setup the key-value caches for pocket types and configure them to clear on new blocks.
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithNewBlockCacheClearing),                // leaf
+		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithNewBlockCacheClearing), // leaf
+		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithNewBlockCacheClearing),               // leaf
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithNewBlockCacheClearing),               // leaf
+		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithNewBlockCacheClearing),                    // leaf
+		config.NewSupplyKeyValueCacheFn[query.Balance](cache.WithNewBlockCacheClearing),                      // leaf
+		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithNewBlockCacheClearing),                   // leaf
+		// The session querier returns *sessiontypes.Session, so its cache must also return pointers.
+		// This differs from other queriers which return value types.
+		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithNewBlockCacheClearing), // leaf
+
+		// Setup the key-value for cosmos types and configure them to clear on new blocks.
+		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithNewBlockCacheClearing), // leaf
+
+		config.NewSupplySharedQueryClientFn(),
 		config.NewSupplyServiceQueryClientFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySessionQuerierFn(),
@@ -208,11 +262,15 @@ func setupRelayerDependencies(
 		config.NewSupplyBankQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
 		config.NewSupplyProofQueryClientFn(),
-		config.NewSupplyRingCacheFn(),
+		config.NewSupplyRingClientFn(),
 		supplyTxFactory,
 		supplyTxContext,
-		config.NewSupplySupplierClientsFn(signingKeyNames),
-		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
+		// The RelayMiner always uses tx simulation to estimate the gas since this
+		// will be variable depending on the tx being sent.
+		// Always use the "auto" gas setting for the RelayMiner.
+		config.NewSupplySupplierClientsFn(signingKeyNames, cosmosflags.GasFlagAuto),
+		newSupplyRelayAuthenticatorFn(signingKeyNames),
+		newSupplyRelayerProxyFn(servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 
@@ -284,11 +342,33 @@ func supplyTxContext(
 	return depinject.Configs(deps, depinject.Supply(txContext)), nil
 }
 
+// newSupplyRelayAuthenticatorFn returns a function which constructs a
+// RelayAuthenticator instance and returns a new depinject.Config which
+// is supplied with the given deps and the new RelayAuthenticator.
+func newSupplyRelayAuthenticatorFn(
+	signingKeyNames []string,
+) config.SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayAuthenticator, err := relay_authenticator.NewRelayAuthenticator(
+			deps,
+			relay_authenticator.WithSigningKeyNames(signingKeyNames),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(relayAuthenticator)), nil
+	}
+}
+
 // newSupplyRelayerProxyFn returns a function which constructs a
 // RelayerProxy instance and returns a new depinject.Config which
 // is supplied with the given deps and the new RelayerProxy.
 func newSupplyRelayerProxyFn(
-	signingKeyNames []string,
 	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
 ) config.SupplierFn {
 	return func(
@@ -298,7 +378,6 @@ func newSupplyRelayerProxyFn(
 	) (depinject.Config, error) {
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,
-			proxy.WithSigningKeyNames(signingKeyNames),
 			proxy.WithServicesConfigMap(servicesConfigMap),
 		)
 		if err != nil {
@@ -319,7 +398,7 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		relayerSessionsManager, err := session.NewRelayerSessions(
-			ctx, deps,
+			deps,
 			session.WithStoresDirectory(smtStorePath),
 		)
 		if err != nil {

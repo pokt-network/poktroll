@@ -25,8 +25,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -36,6 +36,8 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	migrationkeeper "github.com/pokt-network/poktroll/x/migration/keeper"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
@@ -67,6 +69,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SharedKeeper
 	tokenomicstypes.SessionKeeper
 	tokenomicstypes.ServiceKeeper
+	tokenomicstypes.MigrationKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -134,23 +137,26 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
-	// Prepare the test supplier.
 	supplierOwnerAddr := sample.AccAddress()
+
+	// The list of services that the supplier is staking for.
+	services := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: service.Id,
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            supplierOwnerAddr,
+					RevSharePercentage: uint64(100),
+				},
+			},
+		},
+	}
+	// Prepare the test supplier.
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,
 		Stake:           &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				ServiceId: service.Id,
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            supplierOwnerAddr,
-						RevSharePercentage: uint64(100),
-					},
-				},
-			},
-		},
+		Services:        services,
 	}
 
 	sdkCtx := cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -189,15 +195,39 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Mock the supplier keeper.
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	// Mock SetSupplier.
+	// Mock SetAndIndexDehydratedSupplier.
 	mockSupplierKeeper.EXPECT().
-		SetSupplier(gomock.Any(), gomock.Any()).
+		SetAndIndexDehydratedSupplier(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		SetDehydratedSupplier(gomock.Any(), gomock.Any()).
 		AnyTimes()
 
 	// Get test supplier if the address matches.
 	mockSupplierKeeper.EXPECT().
 		GetSupplier(gomock.Any(), gomock.Eq(supplier.OperatorAddress)).
 		Return(supplier, true).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		GetDehydratedSupplier(gomock.Any(), gomock.Eq(supplier.OperatorAddress)).
+		Return(supplier, true).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		GetDehydratedSupplier(gomock.Any(), gomock.Not(supplier.OperatorAddress)).
+		Return(sharedtypes.Supplier{}, false).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		GetSupplierActiveServiceConfig(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, supplierInstance *sharedtypes.Supplier, serviceId string) []*sharedtypes.SupplierServiceConfig {
+			if supplier.OperatorAddress != supplierInstance.OperatorAddress {
+				return []*sharedtypes.SupplierServiceConfig{}
+			}
+			if serviceId != service.Id {
+				return []*sharedtypes.SupplierServiceConfig{}
+			}
+
+			return services
+		}).
 		AnyTimes()
 
 	// Mock the bank keeper.
@@ -324,6 +354,7 @@ func NewTokenomicsModuleKeepers(
 		prooftypes.StoreKey,
 		sharedtypes.StoreKey,
 		servicetypes.StoreKey,
+		migrationtypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
@@ -523,6 +554,25 @@ func NewTokenomicsModuleKeepers(
 		require.NoError(t, err)
 	}
 
+	migrationKeeper := migrationkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[migrationtypes.StoreKey]),
+		logger,
+		authority.String(),
+		accountKeeper,
+		bankKeeper,
+		sharedKeeper,
+		appKeeper,
+		supplierKeeper,
+	)
+
+	require.NoError(t, migrationKeeper.SetParams(sdkCtx, migrationtypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[migrationtypes.ModuleName]; ok {
+		err := migrationKeeper.SetParams(ctx, *params.(*migrationtypes.Params))
+		require.NoError(t, err)
+	}
+
 	keepers := TokenomicsModuleKeepers{
 		Keeper:            &tokenomicsKeeper,
 		AccountKeeper:     &accountKeeper,
@@ -533,6 +583,7 @@ func NewTokenomicsModuleKeepers(
 		SharedKeeper:      &sharedKeeper,
 		SessionKeeper:     &sessionKeeper,
 		ServiceKeeper:     &serviceKeeper,
+		MigrationKeeper:   &migrationKeeper,
 
 		Codec: cdc,
 	}
@@ -571,7 +622,7 @@ func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt
 // WithSupplier is an option to set the supplier in the tokenomics module keepers.
 func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOptFn {
 	setSupplier := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
-		keepers.SetSupplier(ctx, supplier)
+		keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 		return ctx
 	}
 	return func(cfg *tokenomicsModuleKeepersConfig) {

@@ -24,6 +24,14 @@ type YAMLRelayMinerConfig struct {
 	Pprof                  YAMLRelayMinerPprofConfig      `yaml:"pprof"`
 	SmtStorePath           string                         `yaml:"smt_store_path"`
 	Suppliers              []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
+	Ping                   YAMLRelayMinerPingConfig       `yaml:"ping"`
+}
+
+// YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
+type YAMLRelayMinerPingConfig struct {
+	Enabled bool `yaml:"enabled"`
+	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP
+	Addr string `yaml:"addr"`
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
@@ -54,10 +62,10 @@ type YAMLRelayMinerSupplierConfig struct {
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
 // service sub-section of the RelayMiner config file.
 type YAMLRelayMinerSupplierServiceConfig struct {
-	Authentication           YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
-	BackendUrl               string                                      `yaml:"backend_url"`
-	Headers                  map[string]string                           `yaml:"headers,omitempty"`
-	PubliclyExposedEndpoints []string                                    `yaml:"publicly_exposed_endpoints"`
+	Authentication       YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
+	BackendUrl           string                                      `yaml:"backend_url"`
+	Headers              map[string]string                           `yaml:"headers,omitempty"`
+	ForwardPocketHeaders bool                                        `yaml:"forward_pocket_headers"`
 }
 
 // YAMLRelayMinerSupplierServiceAuthentication is the structure used to unmarshal
@@ -83,6 +91,17 @@ type RelayMinerConfig struct {
 	Pprof                  *RelayMinerPprofConfig
 	Servers                map[string]*RelayMinerServerConfig
 	SmtStorePath           string
+	Ping                   *RelayMinerPingConfig
+}
+
+// TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
+// https://github.com/pokt-network/poktroll/pull/1037/files#r1928599958
+// RelayMinerPingConfig is the structure resulting from parsing the ping
+// server configuration.
+type RelayMinerPingConfig struct {
+	Enabled bool
+	// Addr is the address to bind to (format: hostname:port) where 'hostname' can be a DNS name or an IP
+	Addr string
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
@@ -125,10 +144,8 @@ type RelayMinerSupplierConfig struct {
 	ServiceId string
 	// ServerType is the transport protocol used by the supplier, it must match the
 	// type of the relay miner server it is associated with.
+
 	ServerType RelayMinerServerType
-	// PubliclyExposedEndpoints is a list of hosts advertised onchain by the supplier,
-	// the corresponding relay miner server will accept relay requests for these hosts.
-	PubliclyExposedEndpoints []string
 	// ServiceConfig is the config of the service that relays will be proxied to.
 	// Other supplier types may embed other fields in the future. eg. "https" may
 	// embed a TLS config.
@@ -148,16 +165,15 @@ type RelayMinerSupplierServiceConfig struct {
 	// request being proxied from the current relay miner server.
 	// If the service the relay requests are forwarded to requires basic auth
 	// then this field must be populated.
-	// TODO_TECHDEBT(@red-0ne): Pass the authentication to the service instance
-	// when the relay request is forwarded to it.
 	Authentication *RelayMinerSupplierServiceAuthentication
 	// Headers is a map of headers to be used for other authentication means.
 	// If the service the relay requests are forwarded to requires header based
 	// authentication then this field must be populated accordingly.
 	// For example: { "Authorization": "Bearer <token>" }
-	// TODO_TECHDEBT(@red-0ne): Add these headers to the forwarded request
-	// before sending it to the service instance.
 	Headers map[string]string
+	// ForwardPocketHeaders toggles if headers prefixed with 'Pocket-' should be forwarded to
+	// the backend service servicing the relay requests.
+	ForwardPocketHeaders bool
 }
 
 // RelayMinerSupplierServiceAuthentication is the structure resulting from parsing

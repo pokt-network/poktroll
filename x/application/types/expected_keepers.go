@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/application/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,GatewayKeeper,SharedKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/application/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,GatewayKeeper,SharedKeeper
 
 package types
 
@@ -30,6 +30,7 @@ type BankKeeper interface {
 // GatewayKeeper defines the expected interface needed to retrieve gateway information.
 type GatewayKeeper interface {
 	GetGateway(ctx context.Context, addr string) (gatewaytypes.Gateway, bool)
+	GetAllGateways(ctx context.Context) []gatewaytypes.Gateway
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared information.

@@ -1,0 +1,17 @@
+syntax = "proto3";
+package pocket.migration.module;
+
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos/app/v1alpha1/module.proto";
+import "gogoproto/gogo.proto";
+
+// Module is the config object for the module.
+message Module {
+  option (cosmos.app.v1alpha1.module) = {
+    go_import: "github.com/pokt-network/poktroll/x/migration"
+  };
+
+  // authority defines the custom module authority. If not set, defaults to the governance module.
+  string authority = 1;
+}

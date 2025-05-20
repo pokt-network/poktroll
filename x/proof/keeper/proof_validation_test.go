@@ -285,7 +285,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				return proof
 			},
 			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
-				"failed to unmarshal closest merkle proof: %s",
+				"failed to unmarshal sparse compact merkle closest proof: %s",
 				expectedInvalidProofUnmarshalErr,
 			),
 		},
@@ -611,10 +611,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof)
 				require.NoError(t, err)
 				var sparseMerkleClosestProof *smt.SparseMerkleClosestProof
-				sparseMerkleClosestProof, err = smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+				sparseMerkleClosestProof, err = smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
 				require.NoError(t, err)
 
-				relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
+				relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
 				relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 				relayHash := relayHashArr[:]
 
@@ -753,6 +753,9 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			proof := test.newProof(t)
+			sessionId := proof.GetSessionHeader().GetSessionId()
+			supplierOperatorAddr := proof.GetSupplierOperatorAddress()
+			foundClaim, _ := keepers.GetClaim(ctx, sessionId, supplierOperatorAddr)
 
 			// Advance the block height to the proof path seed height.
 			earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
@@ -769,8 +772,23 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 			// Advance the block height to the earliest proof commit height.
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
-			err := keepers.EnsureValidProof(ctx, proof)
-			require.ErrorContains(t, err, test.expectedErr.Error())
+
+			// A proof is valid IFF it is:
+			//   1. Well-formed; session header and other metadata
+			//   2. Has valid relay signatures
+			//   3. Satisfies the closest merkle path
+
+			// Ensure the proof is well-formed.
+			if err := keepers.EnsureWellFormedProof(ctx, proof); err != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				return
+			}
+
+			// Ensure the proof satisfies the closest merkle path and has valid relay signatures.
+			if err := keepers.EnsureValidProofSignaturesAndClosestPath(ctx, &foundClaim, proof); err != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				return
+			}
 		})
 	}
 }

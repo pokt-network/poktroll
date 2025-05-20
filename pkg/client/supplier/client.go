@@ -20,8 +20,8 @@ type supplierClient struct {
 	// signingKeyName is the name of the operator key in the keyring that will be
 	// used to sign transactions.
 	signingKeyName string
-	// signingKeyAddr is the account address of the operator key in the keyring.
-	signingKeyAddr cosmostypes.AccAddress
+	// signingKeyAddr is the bech32 address representation of the operator key in the keyring.
+	signingKeyAddr string
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex
@@ -69,6 +69,7 @@ func NewSupplierClient(
 // the transaction is included in a block or times out.
 func (sClient *supplierClient) SubmitProofs(
 	ctx context.Context,
+	timeoutHeight int64,
 	proofMsgs ...client.MsgSubmitProof,
 ) error {
 	sClient.pendingTxMu.Lock()
@@ -82,7 +83,7 @@ func (sClient *supplierClient) SubmitProofs(
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
+	_, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -113,6 +114,7 @@ func (sClient *supplierClient) SubmitProofs(
 // the transaction is included in a block or times out.
 func (sClient *supplierClient) CreateClaims(
 	ctx context.Context,
+	timeoutHeight int64,
 	claimMsgs ...client.MsgCreateClaim,
 ) error {
 	// Prevent concurrent txs with the same sequence number.
@@ -128,7 +130,7 @@ func (sClient *supplierClient) CreateClaims(
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
+	_, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -154,9 +156,9 @@ func (sClient *supplierClient) CreateClaims(
 	return <-errCh
 }
 
-// Address returns an address of the supplier client.
-func (sClient *supplierClient) OperatorAddress() *cosmostypes.AccAddress {
-	return &sClient.signingKeyAddr
+// OperatorAddress returns the bech32 string representation of the supplier operator address.
+func (sClient *supplierClient) OperatorAddress() string {
+	return sClient.signingKeyAddr
 }
 
 // validateConfigAndSetDefaults attempts to get the address from the keyring
@@ -172,7 +174,7 @@ func (sClient *supplierClient) validateConfigAndSetDefaults() error {
 		return err
 	}
 
-	sClient.signingKeyAddr = signingAddr
+	sClient.signingKeyAddr = signingAddr.String()
 
 	return nil
 }

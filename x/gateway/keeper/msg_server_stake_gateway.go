@@ -10,7 +10,6 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/gateway/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) StakeGateway(
@@ -32,6 +31,8 @@ func (k msgServer) StakeGateway(
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	wasGatewayUnbonding := false
 
 	// Retrieve the address of the gateway
 	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
@@ -67,6 +68,12 @@ func (k msgServer) StakeGateway(
 			)
 		}
 		logger.Info(fmt.Sprintf("gateway is going to escrow an additional %+v coins", coinsToEscrow))
+
+		// If the gateway has initiated an unstake action, cancel it since it is staking again.
+		if gateway.IsUnbonding() {
+			wasGatewayUnbonding = true
+			gateway.UnstakeSessionEndHeight = types.GatewayNotUnstaking
+		}
 	}
 
 	// MUST ALWAYS stake or upstake (> 0 delta).
@@ -97,15 +104,25 @@ func (k msgServer) StakeGateway(
 	k.SetGateway(ctx, gateway)
 	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
-	gatewayStakedEvent := &types.EventGatewayStaked{
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdk.UnwrapSDKContext(ctx).BlockHeight())
+	events := make([]sdk.Msg, 0)
+
+	// If gateway unbonding was canceled, emit the corresponding event.
+	if wasGatewayUnbonding {
+		events = append(events, &types.EventGatewayUnbondingCanceled{
+			Gateway:          &gateway,
+			SessionEndHeight: sessionEndHeight,
+		})
+	}
+
+	// ALWAYS emit a gateway staked event.
+	events = append(events, &types.EventGatewayStaked{
 		Gateway:          &gateway,
 		SessionEndHeight: sessionEndHeight,
-	}
-	if eventErr := sdkCtx.EventManager().EmitTypedEvent(gatewayStakedEvent); eventErr != nil {
-		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", gatewayStakedEvent, err)
+	})
+
+	if err = ctx.EventManager().EmitTypedEvents(events...); err != nil {
+		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", events, err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}

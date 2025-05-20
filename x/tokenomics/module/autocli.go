@@ -3,14 +3,14 @@ package tokenomics
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/poktroll/api/poktroll/tokenomics"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/tokenomics"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service: modulev1.Query_ServiceDesc.ServiceName,
+			Service:           modulev1.Query_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				// 				{
 				// 					RpcMethod: "Params",
@@ -19,19 +19,8 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// 					Long: `Shows all the parameters related to the tokenomics module.
 				//
 				// Example:
-				// $ poktrolld q tokenomics params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+				// $ pocketd q tokenomics params --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
 				// 				},
-				{
-					RpcMethod: "RelayMiningDifficultyAll",
-					Use:       "list-relay-mining-difficulty",
-					Short:     "List all relay-mining-difficulty",
-				},
-				{
-					RpcMethod:      "RelayMiningDifficulty",
-					Use:            "show-relay-mining-difficulty [id]",
-					Short:          "Shows a relay-mining-difficulty",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"}},
-				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

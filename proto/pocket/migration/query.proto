@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package pocket.migration;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "pocket/migration/params.proto";
+import "pocket/migration/morse_onchain.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+// Query defines the gRPC querier service.
+service Query {
+  
+  // Parameters queries the parameters of the module.
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/migration/params";
+  
+  }
+  
+  // Queries a list of MorseClaimableAccount items.
+  rpc MorseClaimableAccount    (QueryMorseClaimableAccountRequest) returns (QueryMorseClaimableAccountResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account/{address}";
+  
+  }
+  rpc MorseClaimableAccountAll (QueryAllMorseClaimableAccountRequest) returns (QueryAllMorseClaimableAccountResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account";
+  
+  }
+}
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+message QueryMorseClaimableAccountRequest {
+  string address = 1;
+}
+
+message QueryMorseClaimableAccountResponse {
+  MorseClaimableAccount morseClaimableAccount = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllMorseClaimableAccountRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllMorseClaimableAccountResponse {
+  repeated MorseClaimableAccount                  morseClaimableAccount = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination            = 2;
+}
+

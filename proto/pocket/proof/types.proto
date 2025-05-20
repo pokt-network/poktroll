@@ -1,0 +1,74 @@
+// TODO_AUTOMATE: Add a CI workflow which detects .proto files with incompatible names (i.e. same as the package).
+// NB: This file CANNOT be named "application.proto" due to an as of yet unidentified
+// issue in how cosmos-proto generates the pulsar plugin output go source code.
+
+syntax = "proto3";
+package pocket.proof;
+
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos_proto/cosmos.proto";
+
+import "pocket/session/types.proto";
+import "gogoproto/gogo.proto";
+
+message Proof {
+  // Address of the supplier's operator that submitted this proof.
+  string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // The session header of the session that this claim is for.
+  pocket.session.SessionHeader session_header = 2;
+  // The serialized SMST compacted proof from the `#ClosestProof()` method.
+  bytes closest_merkle_proof = 3;
+}
+
+// Claim is the serialized object stored onchain for claims pending to be proven
+message Claim {
+  // Address of the supplier's operator that submitted this claim.
+  string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // the address of the supplier's operator that submitted this claim
+
+  // Session header this claim is for.
+  pocket.session.SessionHeader session_header = 2;
+
+  // Root hash from smt.SMST#Root().
+  bytes root_hash = 3;
+
+  // Important: This field MUST only be set by proofKeeper#EnsureValidProofSignaturesAndClosestPath
+  ClaimProofStatus proof_validation_status = 4;
+}
+
+enum ProofRequirementReason {
+  NOT_REQUIRED = 0;
+  PROBABILISTIC = 1;
+  THRESHOLD = 2;
+}
+
+enum ClaimProofStage {
+  CLAIMED = 0;
+  PROVEN = 1;
+  SETTLED = 2;
+  EXPIRED = 3;
+}
+
+// Status of proof validation for a claim
+// Default is PENDING_VALIDATION regardless of proof requirement
+enum ClaimProofStatus {
+  PENDING_VALIDATION = 0;
+  VALIDATED = 1;
+  INVALID = 2;
+}
+
+// **************
+// OFFCHAIN TYPES
+// The messages defined below are used for offchain logic and should not be used for any onchain logic.
+// They are defined in the same file as the onchain types for convenience.
+// **************
+
+// SessionSMT is the serializable session's SMST used to persist the session's
+// state offchain by the RelayMiner.
+// It is not used for any onchain logic.
+message SessionSMT {
+  pocket.session.SessionHeader session_header = 1;
+  string supplier_operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  bytes smt_root = 3;
+}

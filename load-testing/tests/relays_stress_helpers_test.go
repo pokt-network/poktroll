@@ -37,6 +37,7 @@ import (
 	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
 	testdelays "github.com/pokt-network/poktroll/testutil/delays"
@@ -46,6 +47,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -1054,12 +1056,10 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	sendRelayRequest := func(gatewayURL, appAddr, payload string) {
 		req, err := http.NewRequest("POST", gatewayURL, strings.NewReader(payload))
 
-		// TODO_TECHDEBT(red-0ne): Use 'app-address' instead of 'X-App-Address' once PATH Gateway
-		// deprecates the X-App-Address header.
 		// This is needed by the PATH Gateway's trusted mode to identify the application
 		// that is sending the relay request.
-		req.Header.Add("X-App-Address", appAddr)
-		req.Header.Add("target-service-id", "anvil")
+		req.Header.Add("App-Address", appAddr)
+		req.Header.Add("Target-Service-Id", "anvil")
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(s, err)
 
@@ -1406,7 +1406,7 @@ func (s *relaysSuite) forEachSettlement(ctx context.Context) {
 		s.ctx,
 		typedEventsObs,
 		func(_ context.Context, _ []proto.Message) {
-			// TODO_FOLLOWUP(@red-0ne): Capture all settlement related events and use
+			// TODO_IMPROVE(@red-0ne): Capture all settlement related events and use
 			// them to calculate the expected actor balances.
 		},
 	)
@@ -1417,7 +1417,15 @@ func (s *relaysSuite) forEachSettlement(ctx context.Context) {
 func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	sharedParamsCache := querycache.NewNoOpParamsCache[sharedtypes.Params]()
+	blockhashCache := querycache.NewNoOpKeyValueCache[query.BlockHash]()
+	deps := depinject.Supply(
+		s.txContext.GetClientCtx(),
+		logger,
+		s.blockClient,
+		sharedParamsCache,
+		blockhashCache,
+	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
@@ -1437,7 +1445,15 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	appParmsCache := querycache.NewNoOpParamsCache[apptypes.Params]()
+	appsCache := querycache.NewNoOpKeyValueCache[apptypes.Application]()
+	deps := depinject.Supply(
+		s.txContext.GetClientCtx(),
+		logger,
+		s.blockClient,
+		appParmsCache,
+		appsCache,
+	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
@@ -1457,7 +1473,13 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	proofParamsCache := querycache.NewNoOpParamsCache[prooftypes.Params]()
+	deps := depinject.Supply(
+		s.txContext.GetClientCtx(),
+		logger,
+		s.blockClient,
+		proofParamsCache,
+	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
@@ -1506,7 +1528,15 @@ func (s *relaysSuite) queryTokenomicsParams(queryNodeRPCURL string) {
 func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	servicesCache := querycache.NewNoOpKeyValueCache[sharedtypes.Service]()
+	relayMiningDifficultyCache := querycache.NewNoOpKeyValueCache[servicetypes.RelayMiningDifficulty]()
+	deps := depinject.Supply(
+		s.txContext.GetClientCtx(),
+		logger,
+		s.blockClient,
+		servicesCache,
+		relayMiningDifficultyCache,
+	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)

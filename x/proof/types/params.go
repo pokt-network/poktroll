@@ -13,15 +13,12 @@ var (
 	_ client.ProofParams  = (*Params)(nil)
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	// TODO_BETA(@red-0ne): Iterate on the parameters below by adding unit suffixes and
-	// consider having the proof_requirement_threshold to be a function of the supplier's stake amount.
-
 	KeyProofRequestProbability             = []byte("ProofRequestProbability")
 	ParamProofRequestProbability           = "proof_request_probability"
 	DefaultProofRequestProbability float64 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 
 	// The probabilistic proofs paper specifies a threshold of 20 POKT.
-	// TODO_MAINNET(@Olshansk, @RawthiL): Figure out what this value should be.
+	// TODO_MAINNET_MIGRATION(@Olshansk, @RawthiL): Figure out what this value should be.
 	KeyProofRequirementThreshold     = []byte("ProofRequirementThreshold")
 	ParamProofRequirementThreshold   = "proof_requirement_threshold"
 	DefaultProofRequirementThreshold = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(20e6)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
@@ -35,8 +32,8 @@ var (
 	KeyProofSubmissionFee   = []byte("ProofSubmissionFee")
 	ParamProofSubmissionFee = "proof_submission_fee"
 	// TODO_MAINNET: Determine a sensible default value for the proof submission fee.
-	// MinProofSubmissionFee is the default and minimum fee for submitting a proof.
-	MinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
+	// DefaultMinProofSubmissionFee is the default and minimum fee for submitting a proof.
+	DefaultMinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
 )
 
 // ParamKeyTable the param key table for launch module
@@ -65,7 +62,7 @@ func DefaultParams() Params {
 		DefaultProofRequestProbability,
 		&DefaultProofRequirementThreshold,
 		&DefaultProofMissingPenalty,
-		&MinProofSubmissionFee,
+		&DefaultMinProofSubmissionFee,
 	)
 }
 
@@ -170,7 +167,7 @@ func ValidateProofMissingPenalty(proofMissingPenaltyAny any) error {
 		return ErrProofParamInvalid.Wrapf("invalid proof_missing_penalty denom: %s", proofMissingPenaltyCoin.Denom)
 	}
 
-	if proofMissingPenaltyCoin.IsZero() || proofMissingPenaltyCoin.IsNegative() {
+	if proofMissingPenaltyCoin.IsNegative() {
 		return ErrProofParamInvalid.Wrapf("invalid proof_missing_penalty amount: %s <= 0", proofMissingPenaltyCoin)
 	}
 
@@ -193,10 +190,10 @@ func ValidateProofSubmissionFee(proofSubmissionFeeAny any) error {
 		return ErrProofParamInvalid.Wrapf("invalid proof_submission_fee denom: %s", submissionFeeCoin.Denom)
 	}
 
-	if submissionFeeCoin.Amount.LT(MinProofSubmissionFee.Amount) {
+	if submissionFeeCoin.Amount.LT(DefaultMinProofSubmissionFee.Amount) {
 		return ErrProofParamInvalid.Wrapf(
 			"proof_submission_fee is below minimum value %s: got %s",
-			MinProofSubmissionFee,
+			DefaultMinProofSubmissionFee,
 			submissionFeeCoin,
 		)
 	}

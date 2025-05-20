@@ -54,6 +54,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
@@ -61,6 +62,9 @@ import (
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	gateway "github.com/pokt-network/poktroll/x/gateway/module"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	migrationkeeper "github.com/pokt-network/poktroll/x/migration/keeper"
+	migration "github.com/pokt-network/poktroll/x/migration/module"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -82,7 +86,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const appName = "poktroll-integration-app"
+const appName = "pocket-integration-app"
 
 var (
 	// faucetAmountUpokt is the number of upokt coins that the faucet account
@@ -273,6 +277,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	cosmostypes.RegisterInterfaces(registry)
 	cryptocodec.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
+	migrationtypes.RegisterInterfaces(registry)
 
 	// Prepare all the store keys
 	storeKeys := storetypes.NewKVStoreKeys(
@@ -287,6 +292,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		prooftypes.StoreKey,
 		servicetypes.StoreKey,
 		authtypes.StoreKey,
+		migrationtypes.StoreKey,
 	)
 
 	// Prepare the codec
@@ -322,6 +328,8 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		apptypes.ModuleName:        {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		suppliertypes.ModuleName:   {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		prooftypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
+		migrationtypes.ModuleName:  {authtypes.Minter},
+		servicetypes.ModuleName:    {authtypes.Minter},
 	}
 
 	// Prepare the account keeper and module
@@ -512,6 +520,28 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		supplierKeeper,
 	)
 
+	// Prepare the migration keeper and module
+	migrationKeeper := migrationkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKeys[migrationtypes.StoreKey]),
+		logger,
+		authority.String(),
+		accountKeeper,
+		bankKeeper,
+		sharedKeeper,
+		applicationKeeper,
+		supplierKeeper,
+	)
+	migrationModule := migration.NewAppModule(
+		cdc,
+		migrationKeeper,
+		accountKeeper,
+		bankKeeper,
+		sharedKeeper,
+		applicationKeeper,
+		supplierKeeper,
+	)
+
 	// Prepare the message & query routers
 	msgRouter := baseapp.NewMsgServiceRouter()
 	queryHelper := baseapp.NewQueryServerTestHelper(sdkCtx, registry)
@@ -544,6 +574,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		prooftypes.ModuleName:      proofModule,
 		authtypes.ModuleName:       authModule,
 		sessiontypes.ModuleName:    sessionModule,
+		migrationtypes.ModuleName:  migrationModule,
 	}
 
 	// Initialize the integration integrationApp
@@ -563,32 +594,11 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		opts...,
 	)
 
-	// Register the message servers
-	banktypes.RegisterMsgServer(msgRouter, bankkeeper.NewMsgServerImpl(bankKeeper))
-	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
-	servicetypes.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
-	sharedtypes.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
-	gatewaytypes.RegisterMsgServer(msgRouter, gatewaykeeper.NewMsgServerImpl(gatewayKeeper))
-	apptypes.RegisterMsgServer(msgRouter, appkeeper.NewMsgServerImpl(applicationKeeper))
-	suppliertypes.RegisterMsgServer(msgRouter, supplierkeeper.NewMsgServerImpl(supplierKeeper))
-	prooftypes.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
-	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
-	sessiontypes.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
-	authz.RegisterMsgServer(msgRouter, authzKeeper)
-
-	// Register query servers
-	banktypes.RegisterQueryServer(queryHelper, bankKeeper)
-	authz.RegisterQueryServer(queryHelper, authzKeeper)
-	tokenomicstypes.RegisterQueryServer(queryHelper, tokenomicsKeeper)
-	servicetypes.RegisterQueryServer(queryHelper, serviceKeeper)
-	sharedtypes.RegisterQueryServer(queryHelper, sharedKeeper)
-	gatewaytypes.RegisterQueryServer(queryHelper, gatewayKeeper)
-	apptypes.RegisterQueryServer(queryHelper, applicationKeeper)
-	suppliertypes.RegisterQueryServer(queryHelper, supplierKeeper)
-	prooftypes.RegisterQueryServer(queryHelper, proofKeeper)
-	// TODO_TECHDEBT: What is the query server for authtypes?
-	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
-	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
+	// Register the message & query servers.
+	configurator := module.NewConfigurator(cdc, msgRouter, queryHelper)
+	for _, mod := range integrationApp.GetModuleManager().Modules {
+		mod.(module.HasServices).RegisterServices(configurator)
+	}
 
 	// Need to go to the next block to finalize the genesis and setup.
 	// This has to be after the params are set, as the params are stored in the
@@ -899,24 +909,26 @@ func (app *App) setupDefaultActorsState(
 
 	// Prepare the onchain supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
-	defaultSupplier := sharedtypes.Supplier{
-		OwnerAddress:    supplierOperatorAddr.String(),
-		OperatorAddress: supplierOperatorAddr.String(),
-		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            sample.AccAddress(),
-						RevSharePercentage: uint64(100),
-					},
+	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{
+		{
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            sample.AccAddress(),
+					RevSharePercentage: uint64(100),
 				},
-				ServiceId: defaultService.Id,
 			},
+			ServiceId: defaultService.Id,
 		},
 	}
-	supplierKeeper.SetSupplier(app.sdkCtx, defaultSupplier)
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr.String(), supplierServiceConfigs, 1, 0)
+	defaultSupplier := sharedtypes.Supplier{
+		OperatorAddress:      supplierOperatorAddr.String(),
+		Stake:                &supplierStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: serviceConfigHistory,
+	}
 	app.DefaultSupplier = &defaultSupplier
+	supplierKeeper.SetAndIndexDehydratedSupplier(app.sdkCtx, defaultSupplier)
 
 	// Create an application account with the corresponding keys in the keyring for the application.
 	app.DefaultApplicationKeyringUid = "application"
@@ -961,6 +973,10 @@ func (app *App) setupDefaultActorsState(
 	// Commit all the changes above by finalizing, committing, and moving
 	// to the next block.
 	app.NextBlock(t)
+}
+
+func (app *App) GetModuleManager() module.Manager {
+	return app.moduleManager
 }
 
 // fundAccount mints and sends amountUpokt tokens to the given recipientAddr.

@@ -57,6 +57,9 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 	case types.ParamApplicationUnbondingPeriodSessions:
 		logger = logger.With("param_value", msg.GetAsUint64())
 		params.ApplicationUnbondingPeriodSessions = msg.GetAsUint64()
+	case types.ParamGatewayUnbondingPeriodSessions:
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.GatewayUnbondingPeriodSessions = msg.GetAsUint64()
 	case types.ParamComputeUnitsToTokensMultiplier:
 		logger = logger.With("param_value", msg.GetAsUint64())
 		params.ComputeUnitsToTokensMultiplier = msg.GetAsUint64()

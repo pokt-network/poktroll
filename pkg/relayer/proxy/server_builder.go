@@ -3,10 +3,7 @@ package proxy
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"time"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -35,19 +32,7 @@ const (
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
-	rp.OperatorAddressToSigningKeyNameMap = make(map[string]string)
-	for _, operatorSigningKeyName := range rp.signingKeyNames {
-		// Get the supplier operator address from the keyring
-		supplierOperatorKey, err := rp.keyring.Key(operatorSigningKeyName)
-		if err != nil {
-			return err
-		}
-
-		supplierOperatorAddress, err := supplierOperatorKey.GetAddress()
-		if err != nil {
-			return err
-		}
-
+	for _, supplierOperatorAddress := range rp.relayAuthenticator.GetSupplierOperatorAddresses() {
 		// TODO_MAINNET: We currently block RelayMiner from starting if at least one address
 		// is not staked or staked incorrectly. As node runners will maintain many different
 		// suppliers on one RelayMiner, and we expect them to stake and restake often - it might
@@ -58,7 +43,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 
 		// Prevent the RelayMiner from stopping by waiting until its associated supplier
 		// is staked and its onchain record retrieved.
-		supplier, err := rp.waitForSupplierToStake(ctx, supplierOperatorAddress.String())
+		supplier, err := rp.waitForSupplierToStake(ctx, supplierOperatorAddress)
 		if err != nil {
 			return err
 		}
@@ -69,17 +54,11 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// service's endpoint
 		for _, service := range supplier.Services {
 			for _, endpoint := range service.Endpoints {
-				endpointUrl, urlErr := url.Parse(endpoint.Url)
-				if urlErr != nil {
-					return urlErr
-				}
 				found := false
 				// Iterate over the server configs and check if `endpointUrl` is present
 				// in any of the server config's suppliers' service's PubliclyExposedEndpoints
 				for _, serverConfig := range rp.serverConfigs {
-					supplierService, ok := serverConfig.SupplierConfigsMap[service.ServiceId]
-					hostname := endpointUrl.Hostname()
-					if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, hostname) {
+					if _, ok := serverConfig.SupplierConfigsMap[service.ServiceId]; ok {
 						found = true
 						break
 					}
@@ -87,14 +66,13 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 
 				if !found {
 					return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
-						"service endpoint %s not handled by the relay miner",
+						"service endpoint %s not handled by the relay miner %s",
 						endpoint.Url,
+						supplierOperatorAddress,
 					)
 				}
 			}
 		}
-
-		rp.OperatorAddressToSigningKeyNameMap[supplier.OperatorAddress] = operatorSigningKeyName
 	}
 
 	var err error
@@ -117,18 +95,23 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 	for _, serverConfig := range rp.serverConfigs {
 		rp.logger.Info().Str("server host", serverConfig.ListenAddress).Msg("starting relay proxy server")
 
-		// TODO_TECHDEBT(@red-0ne): Implement a switch that handles all synchronous
-		// RPC types in one server type and asynchronous RPC types in another
-		// to create the appropriate RelayServer.
 		// Initialize the server according to the server type defined in the config file
 		switch serverConfig.ServerType {
 		case config.RelayMinerServerTypeHTTP:
-			servers[serverConfig.ListenAddress] = NewSynchronousServer(
-				rp.logger,
+			logger := rp.logger.With(
+				"server_type", "http",
+				"server_host", serverConfig.ListenAddress,
+			)
+
+			servers[serverConfig.ListenAddress] = NewHTTPServer(
+				logger,
 				serverConfig,
 				rp.servedRelaysPublishCh,
-				rp,
+				rp.relayAuthenticator,
 				rp.relayMeter,
+				rp.blockClient,
+				rp.sharedQuerier,
+				rp.sessionQuerier,
 			)
 		default:
 			return nil, ErrRelayerProxyUnsupportedTransportType

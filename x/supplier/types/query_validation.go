@@ -25,14 +25,15 @@ func (query *QueryGetSupplierRequest) ValidateBasic() error {
 
 // ValidateBasic performs basic (non-state-dependant) validation on a QueryAllSuppliersRequest.
 func (query *QueryAllSuppliersRequest) ValidateBasic() error {
-	// TODO_TECHDEBT: update function signature to receive a context.
 	logger := polylog.Ctx(context.TODO())
 
 	switch filter := query.Filter.(type) {
 	case *QueryAllSuppliersRequest_ServiceId:
 		// If the service ID is set, check if it's valid
-		if filter.ServiceId != "" && !sharedtypes.IsValidServiceId(filter.ServiceId) {
-			return ErrSupplierInvalidServiceId.Wrap("invalid empty service ID for suppliers being retrieved")
+		if filter.ServiceId != "" {
+			if err := sharedtypes.IsValidServiceId(filter.ServiceId); err != nil {
+				return ErrSupplierInvalidServiceId.Wrapf("%v", err.Error())
+			}
 		}
 
 	default:

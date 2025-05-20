@@ -11,7 +11,7 @@ func GetSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	// TODO_BETA(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
+	// TODO_MAINNET_CRITICAL(@red-0ne, #543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
 	return queryHeight - ((queryHeight - 1) % numBlocksPerSession)
 }
@@ -44,7 +44,7 @@ func GetSessionNumber(sharedParams *Params, queryHeight int64) int64 {
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	// TODO_MAINNET(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
+	// TODO_MAINNET_MIGRATION(@red-0ne, #543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
 	return ((queryHeight - 1) / numBlocksPerSession) + 1
 }
@@ -159,6 +159,11 @@ func GetNextSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
 // IsSessionEndHeight returns true if the queryHeight is the last block of the session.
 func IsSessionEndHeight(sharedParams *Params, queryHeight int64) bool {
 	return queryHeight != GetSessionEndHeight(sharedParams, queryHeight)
+}
+
+// IsSessionStartHeight returns true if the height is the first block of the session.
+func IsSessionStartHeight(sharedParams *Params, queryHeight int64) bool {
+	return queryHeight == GetSessionStartHeight(sharedParams, queryHeight)
 }
 
 // GetSessionEndToProofWindowCloseBlocks returns the total number of blocks

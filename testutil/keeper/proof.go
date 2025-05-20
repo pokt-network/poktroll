@@ -24,11 +24,12 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/proof/mocks"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
@@ -302,11 +303,14 @@ func (keepers *ProofModuleKeepers) AddServiceActors(
 ) {
 	t.Helper()
 
-	keepers.SetSupplier(ctx, sharedtypes.Supplier{
-		OperatorAddress: supplierOperatorAddr,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{ServiceId: service.Id},
-		},
+	supplierServices := []*sharedtypes.SupplierServiceConfig{
+		{ServiceId: service.Id},
+	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
+	keepers.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress:      supplierOperatorAddr,
+		Services:             supplierServices,
+		ServiceConfigHistory: serviceConfigHistory,
 	})
 
 	keepers.SetApplication(ctx, apptypes.Application{
@@ -365,4 +369,9 @@ func WithBlockHeight(height int64) ProofKeepersOpt {
 // SetBlockHeight updates the block height for the given context and returns the updated context.
 func SetBlockHeight(ctx context.Context, height int64) context.Context {
 	return sdk.UnwrapSDKContext(ctx).WithBlockHeight(height)
+}
+
+// GetBlockHeight returns the current block height for the given context.
+func GetBlockHeight(ctx context.Context) int64 {
+	return sdk.UnwrapSDKContext(ctx).BlockHeight()
 }

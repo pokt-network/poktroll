@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"

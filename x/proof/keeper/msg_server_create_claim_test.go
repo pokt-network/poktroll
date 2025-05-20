@@ -14,6 +14,7 @@ import (
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
@@ -106,11 +107,14 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			}
 			appAddr := sample.AccAddress()
 
-			keepers.SetSupplier(ctx, sharedtypes.Supplier{
-				OperatorAddress: supplierOperatorAddr,
-				Services: []*sharedtypes.SupplierServiceConfig{
-					{ServiceId: service.Id},
-				},
+			supplierServices := []*sharedtypes.SupplierServiceConfig{
+				{ServiceId: service.Id},
+			}
+			serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
+			keepers.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+				OperatorAddress:      supplierOperatorAddr,
+				Services:             supplierServices,
+				ServiceConfigHistory: serviceConfigHistory,
 			})
 
 			keepers.SetApplication(ctx, apptypes.Application{
@@ -219,11 +223,14 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	supplierOperatorAddr := sample.AccAddress()
 	appAddr := sample.AccAddress()
 
-	keepers.SetSupplier(ctx, sharedtypes.Supplier{
-		OperatorAddress: supplierOperatorAddr,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{ServiceId: service.Id},
-		},
+	supplierServices := []*sharedtypes.SupplierServiceConfig{
+		{ServiceId: service.Id},
+	}
+	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
+	keepers.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress:      supplierOperatorAddr,
+		Services:             supplierServices,
+		ServiceConfigHistory: supplierServiceConfigHistory,
 	})
 
 	keepers.SetApplication(ctx, apptypes.Application{
@@ -357,19 +364,25 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	appKeeper := keepers.ApplicationKeeper
 
 	// Add a supplier that is expected to be in the session.
-	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
-		OperatorAddress: supplierOperatorAddr,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{ServiceId: service.Id},
-		},
+	supplierServices := []*sharedtypes.SupplierServiceConfig{
+		{ServiceId: service.Id},
+	}
+	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
+	supplierKeeper.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress:      supplierOperatorAddr,
+		Services:             supplierServices,
+		ServiceConfigHistory: supplierServiceConfigHistory,
 	})
 
 	// Add a supplier that is *not* expected to be in the session.
-	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
-		OperatorAddress: wrongSupplierOperatorAddr,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{ServiceId: "nosvc1"},
-		},
+	otherServices := []*sharedtypes.SupplierServiceConfig{
+		{ServiceId: "nosvc1"},
+	}
+	wrongSupplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(wrongSupplierOperatorAddr, otherServices, 1, 0)
+	supplierKeeper.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress:      wrongSupplierOperatorAddr,
+		Services:             otherServices,
+		ServiceConfigHistory: wrongSupplierServiceConfigHistory,
 	})
 
 	// Add an application that is expected to be in the session.
@@ -562,11 +575,14 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	// supplierAddr is staked for "svc1" such that it is expected to be in the session.
 	supplierKeeper := keepers.SupplierKeeper
 	supplierAddr := sample.AccAddress()
-	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
-		OperatorAddress: supplierAddr,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{ServiceId: service.Id},
-		},
+	supplierServices := []*sharedtypes.SupplierServiceConfig{
+		{ServiceId: service.Id},
+	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddr, supplierServices, 1, 0)
+	supplierKeeper.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress:      supplierAddr,
+		Services:             supplierServices,
+		ServiceConfigHistory: serviceConfigHistory,
 	})
 
 	// Add an application that is expected to be in the session.

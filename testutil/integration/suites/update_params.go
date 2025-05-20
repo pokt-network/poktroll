@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/cases"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -45,6 +46,7 @@ var (
 		suppliertypes.ModuleName:   SupplierModuleParamConfig,
 		prooftypes.ModuleName:      ProofModuleParamConfig,
 		tokenomicstypes.ModuleName: TokenomicsModuleParamConfig,
+		migrationtypes.ModuleName:  MigrationModuleParamConfig,
 	}
 
 	// paramConfigsPath is the path, relative to the project root, to the go file
@@ -127,16 +129,16 @@ func (s *ParamsSuite) SetupTestAuthzAccounts(t *testing.T) {
 func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
 	t.Helper()
 
-	// Create authz grants for all poktroll modules' MsgUpdateParams messages.
-	s.RunAuthzGrantMsgForPoktrollModules(t,
+	// Create authz grants for all pocket modules' MsgUpdateParams messages.
+	s.RunAuthzGrantMsgForPocketModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
 		MsgUpdateParamsName,
-		s.GetPoktrollModuleNames()...,
+		s.GetPocketModuleNames()...,
 	)
 
-	// Create authz grants for all poktroll modules' MsgUpdateParam messages.
-	s.RunAuthzGrantMsgForPoktrollModules(t,
+	// Create authz grants for all pocket modules' MsgUpdateParam messages.
+	s.RunAuthzGrantMsgForPocketModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
 		MsgUpdateParamName,

@@ -1,4 +1,4 @@
-keysSecretName: poktrolld-keys
+keysSecretName: pocketd-keys
 
 securityContext:
   # Allows to run delve inside a container.

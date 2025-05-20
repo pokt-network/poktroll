@@ -1,0 +1,377 @@
+syntax = "proto3";
+
+package pocket.migration;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "pocket/shared/service.proto";
+import "pocket/migration/morse_onchain.proto";
+import "pocket/migration/params.proto";
+import "pocket/application/types.proto";
+import "pocket/shared/supplier.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+// Msg defines the Msg service.
+//
+// - Provides RPCs for migration-related operations
+// - Includes parameter updates, Morse account claims, supplier claims, and recovery
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams                 (MsgUpdateParams                ) returns (MsgUpdateParamsResponse                );
+  rpc ImportMorseClaimableAccounts (MsgImportMorseClaimableAccounts) returns (MsgImportMorseClaimableAccountsResponse);
+  rpc ClaimMorseAccount            (MsgClaimMorseAccount           ) returns (MsgClaimMorseAccountResponse           );
+  rpc ClaimMorseApplication        (MsgClaimMorseApplication       ) returns (MsgClaimMorseApplicationResponse       );
+  rpc ClaimMorseSupplier           (MsgClaimMorseSupplier          ) returns (MsgClaimMorseSupplierResponse          );
+  rpc RecoverMorseAccount          (MsgRecoverMorseAccount         ) returns (MsgRecoverMorseAccountResponse         );
+}
+// MsgUpdateParams is the Msg/UpdateParams request type.
+//
+// - Used for updating the migration module parameters via governance
+// - All parameters must be supplied
+message MsgUpdateParams {
+  // Next free index: 3
+
+  option (cosmos.msg.v1.signer) =                          "authority";
+  option           (amino.name) = "pocket/x/migration/MsgUpdateParams";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // Module parameters to update
+  // NOTE: All parameters must be supplied
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a MsgUpdateParams message.
+//
+// - Empty response on success
+message MsgUpdateParamsResponse {}
+
+// MsgImportMorseClaimableAccounts is used to:
+//
+// - Create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis)
+// - Import Morse account state derived from Morse state export
+message MsgImportMorseClaimableAccounts {
+  // Next free index: 4
+
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // Account state derived from Morse state export and `pocketd tx migration collect-morse-accounts`
+  MorseAccountState morse_account_state = 2 [(gogoproto.jsontag) = "morse_account_state", (gogoproto.nullable) = false];
+
+    // Validates the morse_account_state sha256 hash:
+  // - Transaction fails if hash doesn't match on-chain computation
+  // - Off-chain social consensus should be reached before verification
+  //
+  // Verification (high-level):
+  //   $ pocketd tx migration collect-morse-accounts $<(pocket util export-genesis-for-reset)
+  //
+  // Additional docs:
+  //   - pocket util export-genesis-for-migration --help
+  //   - pocketd tx migration collect-morse-accounts --help
+  bytes morse_account_state_hash = 3 [(gogoproto.jsontag) = "morse_account_state_hash"];
+}
+
+// MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
+//
+// - Indicates the canonical hash of the imported MorseAccountState
+// - Reports the number of claimable accounts imported
+message MsgImportMorseClaimableAccountsResponse {
+  // Next free index: 3
+
+  // On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
+  bytes state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
+
+  // Number of claimable accounts (EOAs) collected from Morse state export.
+  uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
+}
+
+// MsgClaimMorseAccount is used to:
+//
+// - Execute a claim (one-time minting of tokens on Shannon)
+// - Claim the balance of a given Morse account per on-chain MorseClaimableAccounts
+// - Mint claimed balance to the given Shannon account
+//
+// NOTE:
+// - The Shannon account specified must be the message signer
+// - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
+message MsgClaimMorseAccount {
+  // Next free index: 6
+
+  option (cosmos.msg.v1.signer) = "shannon_signing_address";
+
+  // The bech32-encoded address of the Shannon account which is signing for this message.
+  // This account is liable for any fees incurred by violating the constraints of Morse
+  // account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
+  // claim messages AND has EXACTLY ONE signer.
+  string shannon_signing_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
+
+  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
+  string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  reserved 2;
+
+  // The ed25519 public key of the morse account with morse_src_address.
+  bytes morse_public_key = 5 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey"];
+
+  // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
+  // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
+  bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
+}
+
+// MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
+//
+// - Indicates the morse_src_address of the claimed account
+// - Reports the claimed balance and commit height
+message MsgClaimMorseAccountResponse {
+  // Next free index: 4
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
+
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
+}
+
+// MsgClaimMorseApplication is used to:
+//
+// - Execute a claim (one-time minting of tokens on Shannon) of total tokens owned by a Morse account
+// - Mint claimed tokens to the given Shannon account
+// - Stake that Shannon account as an application for the given service_config and same stake amount
+message MsgClaimMorseApplication {
+  // Next free index: 7
+
+  option (cosmos.msg.v1.signer) = "shannon_signing_address";
+
+  // The bech32-encoded address of the Shannon account which is signing for this message.
+  // This account is liable for any fees incurred by violating the constraints of Morse
+  // account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
+  // claim messages AND has EXACTLY ONE signer.
+  string shannon_signing_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
+
+  // The bech32-encoded address of the Shannon account to which the claimed tokens
+  // will be minted and from which the application will be staked.
+  string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  reserved 2;
+
+  // The ed25519 public key of the morse account with morse_src_address.
+  bytes morse_public_key = 6 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey"];
+
+  // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
+  // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
+  bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
+
+  // The services this application is staked to request service for.
+  // NOTE: This is not a repeated field, as in MsgStakeApplication,
+  // because an application can only be staked for one service.
+  shared.ApplicationServiceConfig service_config = 4 [(gogoproto.jsontag) = "service_config"];
+}
+
+// MsgClaimMorseApplicationResponse is returned from MsgClaimMorseApplication.
+//
+// - Indicates the morse_src_address of the claimed account
+// - Reports the unstaked balance claimed, application stake, and commit height
+// - Returns the staked application
+message MsgClaimMorseApplicationResponse {
+  // Next free index: 6
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The unstaked balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
+
+  // The stake of the application which was staked as a result of the claim.
+  // If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
+  cosmos.base.v1beta1.Coin claimedApplicationStake = 3 [(gogoproto.jsontag) = "claimed_application_stake", (gogoproto.nullable) = false];
+
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
+
+  // The application which was staked as a result of the claim.
+  application.Application application = 5 [(gogoproto.jsontag) = "application"];
+}
+
+// MsgClaimMorseSupplier is used to:
+//
+// - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
+// - Use the on-chain MorseClaimableAccounts for verification
+// - Credit the minted tokens to the balance of the given Shannon account
+// - Automatically stake that Shannon account as a supplier
+//
+// NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the claimed balance
+message MsgClaimMorseSupplier {
+  // Next free index: 9
+
+  option (cosmos.msg.v1.signer) = "shannon_signing_address";
+
+  // The bech32-encoded address of the Shannon account which is signing for this message.
+  // This account is liable for any fees incurred by violating the constraints of Morse
+  // account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
+  // claim messages AND has EXACTLY ONE signer.
+  string shannon_signing_address = 6 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
+
+  // The bech32-encoded address of the Shannon account to which the claimed tokens
+  // will be minted and which become the supplier owner.
+  // See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
+  string shannon_owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_owner_address"];
+
+  // The bech32-encoded address of the Shannon account to which will become the supplier operator.
+  // If empty, the shannon_owner_address will be used.
+  // See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
+  string shannon_operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_operator_address"];
+
+  // The hex-encoded address of the Morse non-custodial (i.e. operator) account.
+  // - Unstaked balance will be migrated 1:1
+  // - Stake will be migrated 1:1 from morse_node_address to shannon_operator_address
+  // - Morse non-custodial (i.e. operator) address.
+  // If morse_output_address is not set, this is the custodial address.
+  // - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_node_address = 3 [(gogoproto.jsontag) = "morse_node_address"];
+
+  // The ed25519 public key of EITHER the Morse node/supplier operator OR owner account.
+  // - MUST correspond to the private key which was used to produce the morse_signature.
+  // - MUST correspond to ONE OF THE FOLLOWING:
+  //   - morse_node_address
+  //   - morse_output_address
+  bytes morse_public_key = 7 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey", (gogoproto.jsontag) = "morse_public_key"];
+
+  // The hex-encoded signature, of this message (where this field is nil).
+  // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseSupplier{morse_signature: nil, ...}))
+  // - MUST match morse_public_key.
+  // - MUST be signed by ONE OF THE FOLLOWING:
+  //   - Morse node account (i.e. operator); if signer_is_output_address is false
+  //   - Morse output account (i.e. owner); if signer_is_output_address is true
+  bytes morse_signature = 4 [(gogoproto.jsontag) = "morse_signature"];
+
+  // Set to true if the private key corresponding to the morse_output_address is producing the morse_signature.
+  // For non-custodial claiming:
+  // - This MUST be true.
+  // - The morse_public_key MUST correspond to morse_output_address.
+  // - The morse_signature MUST correspond to morse_output_address.
+  bool signer_is_output_address = 8 [(gogoproto.jsontag) = "signer_is_output_address"];
+
+  // The services this supplier is staked to provide service for.
+  repeated shared.SupplierServiceConfig services = 5 [(gogoproto.jsontag) = "services"];
+}
+
+// MsgClaimMorseSupplierResponse is returned from MsgClaimMorseSupplier.
+//
+// - Indicates the morse_operator_address of the claimed account
+// - Reports the unstaked balance claimed, session end height, and staked supplier
+// - Includes claim signer type and signer address
+message MsgClaimMorseSupplierResponse {
+  // Next free index: 10
+
+  reserved 1;
+
+  // The hex-encoded address of the Morse non-custodial (i.e. operator) account.
+  // - Unstaked balance will be migrated 1:1
+  // - Stake will be migrated 1:1 from morse_node_address to shannon_operator_address
+  // - Morse non-custodial (i.e. operator) address.
+  // If morse_output_address is not set, this is the custodial address.
+  // - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_node_address = 9 [(gogoproto.jsontag) = "morse_node_address"];
+
+  // Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
+  // - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  // - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+  //   See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  string morse_output_address = 8 [(gogoproto.jsontag) = "morse_output_address"];
+
+  // The type of supplier claim signer, indicating which actor executed the claim
+  // and whether it was a custodial or non-custodial claim.
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OPERATOR
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OWNER
+  MorseSupplierClaimSignerType claim_signer_type = 7 [(gogoproto.jsontag) = "claim_signer_type"];
+
+  // The unstaked balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance        = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_balance"       ];
+  cosmos.base.v1beta1.Coin claimed_supplier_stake = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_supplier_stake"];
+
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
+
+  // The supplier which was staked as a result of the claim.
+  shared.Supplier supplier = 5 [(gogoproto.jsontag) = "supplier"];
+}
+
+// MsgRecoverMorseAccount is used to:
+//
+// - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
+// - Credit the minted tokens to the balance of the given Shannon account
+// - Migrate unclaimable staked and liquid Morse tokens as liquid Shannon tokens
+//
+// - MAY ONLY be executed by the authority
+// - ONLY intended for use on accounts with invalid addresses and/or known lost private keys
+message MsgRecoverMorseAccount {
+  // Next free index: 4
+
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // The bech32-encoded address of the migration module authority account ("gov" module address by default).
+  // ONLY the authority, or its delegates, MAY recover Morse recoverable accounts.
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "authority"];
+
+  // The bech32-encoded address of the Shannon account to which the Morse account's stake(s) and/or
+  // balance(s) will be minted (recovered) as liquid Shannon tokens.
+  string shannon_dest_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // EITHER:
+  // - The hex-encoded address of the recoverable Morse account whose stake(s) and/or balance(s) will be recovered.
+  //   This address MAY be invalid but NEVER empty.
+  //   E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  // - The name of a Morse module account whose balance will be recovered.
+  //   E.g. "dao" or "fee-collector"
+  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
+}
+
+// MsgRecoverMorseAccountResponse is returned from MsgRecoverMorseAccount.
+//
+// - Indicates the morse_src_address of the recovered account
+// - Reports the sum of any actor stakes and unstaked balance recovered
+// - Reports the session end height in which the recovery was committed
+// - Returns the destination Shannon address
+message MsgRecoverMorseAccountResponse {
+  // Next free index: 5
+
+  // EITHER:
+  // - The hex-encoded address of the Morse account whose stake(s) and/or balances were recovered.
+  //   This address MAY be invalid but NEVER empty.
+  //   E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  // - The name of a Morse module account whose balance was recovered.
+  //   E.g. "dao" or "fee-collector"
+  string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The sum of any unstaked and staked balances which were recovered.
+  cosmos.base.v1beta1.Coin recovered_balance = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "recovered_balance"];
+
+  // The session end height (on Shannon) in which the recovery was committed (i.e. recovered).
+  int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
+
+  // The bech32-encoded address of the Shannon account to which the Morse account's stake(s) and/or
+  // balance(s) were recovered.
+  string shannon_dest_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // TODO_MAINNET_MIGRATION(@bryanchriswhite): Add shannon_dest_address to MsgRecoverMorseAccountResponse.
+}
+

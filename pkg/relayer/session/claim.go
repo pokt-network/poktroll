@@ -20,12 +20,12 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// The cumulative fees of creating a single claim, followed by submitting a single proof.
-// The value was obtained empirically by observing logs during load testing and observing
-// the claim & proof lifecycle.
-// The gas price at the time of observance was 0.01uPOKT.
-// The value is subject to change as the network parameters change.
-var ClamAndProofGasCost = sdktypes.NewInt64Coin(volatile.DenomuPOKT, 50000)
+// Cumulative (observed) gas fees for creating a single claim and submitting a single proof:
+// - Gas price at time of observance: 0.01uPOKT
+// - Value obtained empirically by observing logs during load testing
+// - Value may change as network parameters change
+// - This value is a function of the claim & proof message sizes
+var ClamAndProofGasCost = sdktypes.NewInt64Coin(volatile.DenomuPOKT, 100_000)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims
@@ -135,30 +135,17 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// The block that'll be used as a source of entropy for which branch(es) to
 	// prove should be deterministic and use onchain governance params.
 	claimsWindowOpenBlock := rs.waitForBlock(ctx, claimWindowOpenHeight)
-	// TODO_MAINNET: If a relayminer is cold-started with persisted but unclaimed ("late")
-	// sessions, the claimsWindowOpenBlock will never be observed. In this case, we should
-	// use a block query client to populate the block client replay observable at the time
-	// of block client construction. This check and failure branch can be removed once this
-	// is implemented.
 	if claimsWindowOpenBlock == nil {
 		logger.Warn().Msg("failed to observe earliest claim commit height offset seed block height")
 		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
-	claimsFlushedCh := make(chan []relayer.SessionTree)
-	defer close(claimsFlushedCh)
-	go rs.goCreateClaimRoots(
-		ctx,
-		sessionTrees,
-		failedCreateClaimsSessionsCh,
-		claimsFlushedCh,
-	)
 
 	logger = logger.With("claim_window_open_block_hash", fmt.Sprintf("%x", claimsWindowOpenBlock.Hash()))
 	logger.Info().Msg("observed earliest claim commit height offset seed block height")
 
 	// Get the earliest claim commit height for this supplier.
-	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress().String()
+	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 	earliestSupplierClaimsCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
 		sessionEndHeight,
@@ -170,11 +157,35 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	logger.Info().Msg("waiting & blocking until the earliest claim commit height for this supplier")
 
 	// Wait for the earliestSupplierClaimsCommitHeight to be reached before proceeding.
-	_ = rs.waitForBlock(ctx, earliestSupplierClaimsCommitHeight)
+	// This waiting is implemented using a goroutine and a buffered channel to enable
+	// concurrent processing that ensures:
+	// 1. The main process blocks until the required block height is observed.
+	// 2. During this waiting period, the system efficiently creates claims in parallel.
+	// 3. Execution continues only after both conditions are satisfied: the target block
+	//    height is reached AND the claims creation is complete.
 
-	logger.Info().Msg("observed earliest claim commit height")
+	// Concurrently wait for the target block height to be observed.
+	// This operation is non-blocking to allow for claims creation to proceed in parallel.
+	blockObserved := make(chan struct{}, 1)
+	go func() {
+		_ = rs.waitForBlock(ctx, earliestSupplierClaimsCommitHeight)
+		logger.Info().Msgf("observed earliest claim commit height %d", earliestSupplierClaimsCommitHeight)
 
-	return <-claimsFlushedCh
+		close(blockObserved)
+	}()
+
+	// Create claims for the given sessionTrees while waiting for the target block height.
+	// TODO_POST_MAINNET(red-0ne): Support skipping sessionTrees that have already their
+	// claim created and are ready to be proven.
+	claimsFlushed, failedClaims := rs.createClaimRoots(sessionTrees)
+	if len(failedClaims) > 0 {
+		logger.Warn().Msgf("failed to create claims for %d session trees", len(failedClaims))
+		failedCreateClaimsSessionsCh <- failedClaims
+	}
+
+	// Block until the target block height is observed.
+	<-blockObserved
+	return claimsFlushed
 }
 
 // newMapClaimSessionsFn returns a new MapFn that creates claims for the given
@@ -188,6 +199,8 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ either.SessionTrees, skip bool) {
+		// TODO_POST_MAINNET(red-0ne): Support skipping sessionTrees that have already their
+		// claim created and are ready to be proven.
 		if len(sessionTrees) == 0 {
 			return either.Success(sessionTrees), false
 		}
@@ -205,12 +218,27 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			claimMsgs[idx] = &prooftypes.MsgCreateClaim{
 				RootHash:                sessionTree.GetClaimRoot(),
 				SessionHeader:           sessionTree.GetSessionHeader(),
-				SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
+				SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
 			}
 		}
 
+		// All session trees in the batch share the same sessionEndHeight, so we
+		// can use the first one to calculate the proof window close height.
+		//
+		// TODO_REFACTOR(@red-0ne): Pass a richer type to the function instead of []SessionTrees to:
+		// - Avoid making assumptions about shared properties
+		// - Eliminate constant queries for sharedParams
+		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
+		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		if err != nil {
+			failedCreateClaimsSessionsPublishCh <- sessionTrees
+			rs.logger.Error().Err(err).Msg("failed to get shared params")
+			return either.Error[[]relayer.SessionTree](err), false
+		}
+		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
+
 		// Create claims for each supplier operator address in `sessionTrees`.
-		if err := supplierClient.CreateClaims(ctx, claimMsgs...); err != nil {
+		if err := supplierClient.CreateClaims(ctx, claimWindowCloseHeight, claimMsgs...); err != nil {
 			failedCreateClaimsSessionsPublishCh <- claimableSessionTrees
 			rs.logger.Error().Err(err).Msg("failed to create claims")
 			return either.Error[[]relayer.SessionTree](err), false
@@ -220,23 +248,11 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 	}
 }
 
-// goCreateClaimRoots creates the claim roots corresponding to the given sessionTrees,
-// then sends the successful and failed claims to their respective channels.
-// This function MUST to be run as a goroutine.
-func (rs *relayerSessionsManager) goCreateClaimRoots(
-	ctx context.Context,
+// CreateClaimRoots creates the claim roots corresponding to the given sessionTrees.
+func (rs *relayerSessionsManager) createClaimRoots(
 	sessionTrees []relayer.SessionTree,
-	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
-	claimsFlushedCh chan<- []relayer.SessionTree,
-) {
-	failedClaims := []relayer.SessionTree{}
-	flushedClaims := []relayer.SessionTree{}
+) (flushedClaims []relayer.SessionTree, failedClaims []relayer.SessionTree) {
 	for _, sessionTree := range sessionTrees {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
 		// This session should no longer be updated
 		if _, err := sessionTree.Flush(); err != nil {
 			rs.logger.Error().Err(err).Msg("failed to flush session")
@@ -247,8 +263,7 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 		flushedClaims = append(flushedClaims, sessionTree)
 	}
 
-	failSubmitProofsSessionsCh <- failedClaims
-	claimsFlushedCh <- flushedClaims
+	return flushedClaims, failedClaims
 }
 
 // payableProofsSessionTrees returns the session trees that the supplier operator
@@ -260,9 +275,9 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
 ) ([]relayer.SessionTree, error) {
-	supplierOpeartorAddress := sessionTrees[0].GetSupplierOperatorAddress().String()
+	supplierOperatorAddress := sessionTrees[0].GetSupplierOperatorAddress()
 	logger := rs.logger.With(
-		"supplier_operator_address", supplierOpeartorAddress,
+		"supplier_operator_address", supplierOperatorAddress,
 	)
 
 	proofParams, err := rs.proofQueryClient.GetParams(ctx)
@@ -270,13 +285,14 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		return nil, err
 	}
 
-	// Account for the gas cost of creating a claim and submitting a proof in addition
-	// to the ProofSubmissionFee.
-	claimAndProofSubmissionCost := proofParams.GetProofSubmissionFee().Add(ClamAndProofGasCost)
+	// Account for the gas cost of creating a claim and submitting a proof.
+	// This accounts for onchain fees (pocket specific) and gas costs (network wide).
+	proofSubmissionFee := proofParams.GetProofSubmissionFee()
+	claimAndProofSubmissionCost := proofSubmissionFee.Add(ClamAndProofGasCost)
 
 	supplierOperatorBalanceCoin, err := rs.bankQueryClient.GetBalance(
 		ctx,
-		sessionTrees[0].GetSupplierOperatorAddress().String(),
+		supplierOperatorAddress,
 	)
 	if err != nil {
 		return nil, err
@@ -311,8 +327,8 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 
 	claimableSessionTrees := []relayer.SessionTree{}
 	for _, sessionTree := range sessionTrees {
-		// If the supplier operator can afford to claim the session, add it to the
-		// claimableSessionTrees slice.
+		// Supplier CAN afford to claim the session.
+		// Add it to the claimableSessionTrees slice.
 		supplierCanAffordClaimAndProofFees := supplierOperatorBalanceCoin.IsGTE(claimAndProofSubmissionCost)
 		if supplierCanAffordClaimAndProofFees {
 			claimableSessionTrees = append(claimableSessionTrees, sessionTree)
@@ -321,7 +337,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 			continue
 		}
 
-		// At this point supplierCanAffordClaimAndProofFees is false.
+		// Supplier CANNOT afford to claim the session.
 		// Delete the session tree from the relayer sessions and the KVStore since
 		// it won't be claimed due to insufficient funds.
 		rs.removeFromRelayerSessions(sessionTree)
@@ -335,14 +351,15 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		logger.With(
 			"session_id", sessionTree.GetSessionHeader().GetSessionId(),
 			"supplier_operator_balance", supplierOperatorBalanceCoin,
-			"proof_submission_fee", claimAndProofSubmissionCost,
+			"proof_submission_fee", proofSubmissionFee,
+			"claim_and_proof_gas_cost", ClamAndProofGasCost,
 		).Warn().Msg("supplier operator cannot afford to submit proof for claim, deleting session tree")
 	}
 
 	if len(claimableSessionTrees) < len(sessionTrees) {
 		logger.Warn().Msgf(
 			"Supplier operator %q can only afford %d out of %d claims",
-			supplierOpeartorAddress, len(claimableSessionTrees), len(sessionTrees),
+			supplierOperatorAddress, len(claimableSessionTrees), len(sessionTrees),
 		)
 	}
 
