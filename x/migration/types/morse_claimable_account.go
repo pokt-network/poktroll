@@ -70,5 +70,8 @@ func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Conte
 		big.NewRat(sdkCtx.BlockHeight(), 1),
 		estimatedBlocksUntilUnstakeCompletion,
 	)
-	return estimatedUnstakeCompletionHeight.Num().Int64()
+	return new(big.Int).Div(
+		estimatedUnstakeCompletionHeight.Num(),
+		estimatedUnstakeCompletionHeight.Denom(),
+	).Int64()
 }

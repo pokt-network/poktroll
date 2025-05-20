@@ -188,7 +188,9 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 			)
 		}
 
+		// Set the application's unstake session end height.
 		app.UnstakeSessionEndHeight = uint64(estimatedUnstakeSessionEndHeight)
+		k.appKeeper.SetApplication(ctx, *app)
 
 		// Emit an event which signals that the claimed Morse supplier's unbonding
 		// period began on Morse and will end on Shannon ad unbonding_end_height

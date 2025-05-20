@@ -355,3 +355,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_BelowMinStake() {
 		).Error(),
 	).Error())
 }
+
+// TODO_IN_THIS_COMMIT:
+// - unbonding Morse supplier
+//   - still unbonding
+//   - unbonded
