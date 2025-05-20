@@ -132,7 +132,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 		{
 			name:               "recover morse account with invalid shannon destination address",
 			shannonDestAddress: invalidShannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseInvalidTooLong[1],
+			morseSrcAddress:    actorTypeToRecoverableAddress.morseEOA[0],
 			expectedError:      fmt.Errorf("invalid shannon destination address"),
 		},
 	}
