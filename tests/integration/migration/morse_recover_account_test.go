@@ -24,21 +24,6 @@ import (
 // Generate a random address that is not in the account state
 var unclaimableAddress = cometcrypto.GenPrivKey().PubKey().Address().String()
 
-// recoverableAddressesByActorType holds collections of different types of Morse addresses
-// used in recovery testing. Each field contains a list of addresses categorized by their
-// type and validity status to test different recovery scenarios.
-type recoverableAddressesByActorType struct {
-	morseEOA                 []string
-	morseModule              []string
-	morseInvalidTooLong      []string
-	morseInvalidTooShort     []string
-	morseNonHex              []string
-	morseApplication         []string
-	morseOrphanedApplication []string
-	morseValidator           []string
-	morseOrphanedValidator   []string
-}
-
 func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 	t := s.T()
 
