@@ -83,6 +83,20 @@ type MorseFixturesConfig struct {
 	ModuleAccountNameConfigFn       // Configuration for module account names
 }
 
+// GetTotalAccounts calculates the total number of accounts based on the configuration.
+func (cfg *MorseFixturesConfig) GetTotalAccounts() uint64 {
+	// Calculate the total number of accounts based on the configuration
+	return cfg.ValidAccountsConfig.NumAccounts +
+		cfg.ValidAccountsConfig.NumApplications +
+		cfg.ValidAccountsConfig.NumValidators +
+		cfg.ValidAccountsConfig.NumModuleAccounts +
+		cfg.InvalidAccountsConfig.NumAddressTooShort +
+		cfg.InvalidAccountsConfig.NumAddressTooLong +
+		cfg.InvalidAccountsConfig.NumNonHexAddress +
+		cfg.OrphanedActorsConfig.NumApplications +
+		cfg.OrphanedActorsConfig.NumValidators
+}
+
 // UnstakedAccountBalancesConfigFn is a function that returns the balance for an unstaked
 // account based on its index, actor type index, actor type, and existing account data.
 type UnstakedAccountBalancesConfigFn func(
@@ -229,15 +243,7 @@ func NewMorseFixtures(opts ...MorseFixturesOption) (*MorseMigrationFixtures, err
 		opt(morseFixtures.config)
 	}
 
-	totalAccounts := morseFixtures.config.ValidAccountsConfig.NumAccounts +
-		morseFixtures.config.ValidAccountsConfig.NumApplications +
-		morseFixtures.config.ValidAccountsConfig.NumValidators +
-		morseFixtures.config.ValidAccountsConfig.NumModuleAccounts +
-		morseFixtures.config.InvalidAccountsConfig.NumAddressTooShort +
-		morseFixtures.config.InvalidAccountsConfig.NumAddressTooLong +
-		morseFixtures.config.InvalidAccountsConfig.NumNonHexAddress +
-		morseFixtures.config.OrphanedActorsConfig.NumApplications +
-		morseFixtures.config.OrphanedActorsConfig.NumValidators
+	totalAccounts := morseFixtures.config.GetTotalAccounts()
 
 	morseFixtures.morseAccountState.Accounts = make([]*migrationtypes.MorseClaimableAccount, totalAccounts)
 
@@ -254,10 +260,10 @@ func (mf *MorseMigrationFixtures) GetConfig() *MorseFixturesConfig {
 	return mf.config
 }
 
-// NextIndex increments and returns the current index counter of the MorseMigrationFixtures.
+// nextAllActorsIndex increments and returns the current index counter of the MorseMigrationFixtures.
 // This method is used to generate sequential indices for various entities created during the
 // fixture generation process, ensuring each entity has a unique index for deterministic generation.
-func (mf *MorseMigrationFixtures) NextIndex() uint64 {
+func (mf *MorseMigrationFixtures) nextAllActorsIndex() uint64 {
 	mf.currentIndex++
 	return mf.currentIndex - 1
 }
@@ -353,35 +359,36 @@ func (mf *MorseMigrationFixtures) generate() error {
 // and accounts with invalid addresses for testing error handling.
 func (mf *MorseMigrationFixtures) addAccount(
 	actorTypeIndex uint64,
-	accountType MorseUnstakedActorType,
+	unstakedActorType MorseUnstakedActorType,
 ) (err error) {
 	// Get the next global index for this account
-	allActorsIndex := mf.NextIndex()
+	allAccountsIndex := mf.nextAllActorsIndex()
 
 	// Generate a deterministic private key for this account index
-	privKey := mf.generateMorsePrivateKey(allActorsIndex)
+	privKey := mf.generateMorsePrivateKey(allAccountsIndex)
 	pubKey := privKey.PubKey()
 	address := pubKey.Address()
 
-	// Determine the actor type and modify the address if needed based on account type
-	var actorType, moduleAccountName string
-	switch accountType {
+	// Determine the account type string and modify the address if needed based on the unstaked actor type enum.
+
+	var accountType, moduleAccountName string
+	switch unstakedActorType {
 	case MorseEOA:
-		actorType = migrationtypes.MorseExternallyOwnedAccountType
+		accountType = migrationtypes.MorseExternallyOwnedAccountType
 	case MorseModule:
-		actorType = migrationtypes.MorseModuleAccountType
+		accountType = migrationtypes.MorseModuleAccountType
 		// For module accounts, use a name-based address instead of a crypto address
-		moduleAccountName = mf.config.ModuleAccountNameConfigFn(allActorsIndex, actorTypeIndex)
+		moduleAccountName = mf.config.ModuleAccountNameConfigFn(allAccountsIndex, actorTypeIndex)
 	case MorseInvalidTooShort:
-		actorType = migrationtypes.MorseExternallyOwnedAccountType
+		accountType = migrationtypes.MorseExternallyOwnedAccountType
 		// Create an invalid address that's too short
 		address = address[:len(address)-1]
 	case MorseInvalidTooLong:
-		actorType = migrationtypes.MorseExternallyOwnedAccountType
+		accountType = migrationtypes.MorseExternallyOwnedAccountType
 		// Create an invalid address that's too long
 		address = append(address, []byte{0x00}...)
 	case MorseNonHex:
-		actorType = migrationtypes.MorseExternallyOwnedAccountType
+		accountType = migrationtypes.MorseExternallyOwnedAccountType
 		// Create an invalid address with non-hexadecimal characters
 		invalidBytes := []byte("invalidhex_")
 		address = append(invalidBytes, address[len(invalidBytes):]...)
@@ -397,16 +404,16 @@ func (mf *MorseMigrationFixtures) addAccount(
 
 	// Set the account's balance based on the configuration
 	balance := mf.config.UnstakedAccountBalancesConfigFn(
-		allActorsIndex,
+		allAccountsIndex,
 		actorTypeIndex,
-		accountType,
+		unstakedActorType,
 		morseAccount,
 	)
 	morseAccount.Coins = cosmostypes.NewCoins(*balance)
 
 	var morseAccountJSONBz []byte
 	// Module accounts need to be marshaled differently because they have additional properties
-	if accountType == MorseModule {
+	if unstakedActorType == MorseModule {
 		// Create a module account structure with name and permissions
 		morseModuleAccount := &migrationtypes.MorseModuleAccount{
 			Name:        moduleAccountName,
@@ -425,7 +432,7 @@ func (mf *MorseMigrationFixtures) addAccount(
 	mf.morseStateExport.AppState.Auth.Accounts = append(
 		mf.morseStateExport.AppState.Auth.Accounts,
 		&migrationtypes.MorseAuthAccount{
-			Type:  actorType,
+			Type:  accountType,
 			Value: morseAccountJSONBz,
 		},
 	)
@@ -437,23 +444,23 @@ func (mf *MorseMigrationFixtures) addAccount(
 	}
 
 	// Store the claimable account in the account state
-	mf.morseAccountState.Accounts[allActorsIndex] = morseClaimableAccount
+	mf.morseAccountState.Accounts[allAccountsIndex] = morseClaimableAccount
 
 	return nil
 }
 
 // addApplication creates and adds a staked application account to the Morse state export
 // and account state. This function handles both standard applications that have unstaked
-// counterparts and orphaned applications without unstaked accounts.
+// balances associated with the same address and "orphaned" applications, which don't.
 func (mf *MorseMigrationFixtures) addApplication(
 	actorIndex uint64,
 	applicationType MorseApplicationActorType,
 ) error {
 	// Get the next global index for this application
-	allActorsIndex := mf.NextIndex()
+	allAccountsIndex := mf.nextAllActorsIndex()
 
 	// Generate a deterministic private key for this application
-	privKey := mf.generateMorsePrivateKey(allActorsIndex)
+	privKey := mf.generateMorsePrivateKey(allAccountsIndex)
 	pubKey := privKey.PubKey()
 
 	// Create a new MorseApplication with basic properties
@@ -466,7 +473,7 @@ func (mf *MorseMigrationFixtures) addApplication(
 
 	// Get the staked and unstaked balances for this application from the configuration
 	stakedBalance, unstakedBalance := mf.config.ApplicationStakesConfigFn(
-		allActorsIndex,
+		allAccountsIndex,
 		actorIndex,
 		applicationType,
 		morseApplication,
@@ -486,11 +493,11 @@ func (mf *MorseMigrationFixtures) addApplication(
 	}
 
 	// Store the claimable application in the account state
-	mf.morseAccountState.Accounts[allActorsIndex] = morseClaimableAccount
+	mf.morseAccountState.Accounts[allAccountsIndex] = morseClaimableAccount
 
 	// For non-orphaned applications, also create an unstaked account counterpart
 	if applicationType != MorseOrphanedApplication {
-		if err := mf.addUnstakedAccountForStakedActor(allActorsIndex, pubKey, unstakedBalance); err != nil {
+		if err := mf.addUnstakedAccountForStakedActor(allAccountsIndex, pubKey, unstakedBalance); err != nil {
 			return err
 		}
 	}
@@ -507,10 +514,10 @@ func (mf *MorseMigrationFixtures) addValidator(
 	validatorType MorseValidatorActorType,
 ) error {
 	// Get the next global index for this validator
-	allActorsIndex := mf.NextIndex()
+	allAccountsIndex := mf.nextAllActorsIndex()
 
 	// Generate a deterministic private key for this validator
-	privKey := mf.generateMorsePrivateKey(allActorsIndex)
+	privKey := mf.generateMorsePrivateKey(allAccountsIndex)
 	pubKey := privKey.PubKey()
 
 	// Create a new MorseValidator with basic properties
@@ -523,7 +530,7 @@ func (mf *MorseMigrationFixtures) addValidator(
 
 	// Get the staked and unstaked balances for this validator from the configuration
 	stakedBalance, unstakedBalance := mf.config.ValidatorStakesConfigFn(
-		allActorsIndex,
+		allAccountsIndex,
 		actorIndex,
 		validatorType,
 		morseValidator,
@@ -543,11 +550,11 @@ func (mf *MorseMigrationFixtures) addValidator(
 	}
 
 	// Store the claimable validator in the account state
-	mf.morseAccountState.Accounts[allActorsIndex] = morseClaimableAccount
+	mf.morseAccountState.Accounts[allAccountsIndex] = morseClaimableAccount
 
 	// For non-orphaned validators, also create an unstaked account counterpart
 	if validatorType != MorseOrphanedValidator {
-		if err := mf.addUnstakedAccountForStakedActor(allActorsIndex, pubKey, unstakedBalance); err != nil {
+		if err := mf.addUnstakedAccountForStakedActor(allAccountsIndex, pubKey, unstakedBalance); err != nil {
 			return err
 		}
 	}
@@ -561,7 +568,7 @@ func (mf *MorseMigrationFixtures) addValidator(
 // This function is used to create the unstaked side of a staked actor (which has both a staked
 // and unstaked representation in the blockchain).
 func (mf *MorseMigrationFixtures) addUnstakedAccountForStakedActor(
-	allActorsIndex uint64,
+	allAccountsIndex uint64,
 	pubKey crypto.PubKey,
 	unstakedBalance *cosmostypes.Coin,
 ) error {
@@ -591,7 +598,7 @@ func (mf *MorseMigrationFixtures) addUnstakedAccountForStakedActor(
 	)
 
 	// Store the claimable account in the account state
-	mf.morseAccountState.Accounts[allActorsIndex].UnstakedBalance = *unstakedBalance
+	mf.morseAccountState.Accounts[allAccountsIndex].UnstakedBalance = *unstakedBalance
 
 	return nil
 }

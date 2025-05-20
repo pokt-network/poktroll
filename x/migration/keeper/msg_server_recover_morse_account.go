@@ -16,7 +16,7 @@ import (
 func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecoverMorseAccount) (*types.MsgRecoverMorseAccountResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// Validate morese account recovery message.
+	// Validate Morse account recovery message.
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -43,7 +43,7 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 		)
 	}
 
-	// Look up the morse account in the store.
+	// Look up the onchain Morse claimable account.
 	morseClaimableAccount, isFound := k.GetMorseClaimableAccount(
 		sdkCtx,
 		msg.GetMorseSrcAddress(),
@@ -71,10 +71,8 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 		)
 	}
 
-	// Recover any balances or stakes from the morse account.
-	recoveredBalance := morseClaimableAccount.UnstakedBalance
-	recoveredBalance = recoveredBalance.Add(morseClaimableAccount.ApplicationStake)
-	recoveredBalance = recoveredBalance.Add(morseClaimableAccount.SupplierStake)
+	// Recover any balances and/or stakes from the Morse account.
+	recoveredBalance := morseClaimableAccount.TotalTokens()
 
 	currentHeight := sdkCtx.BlockHeight()
 

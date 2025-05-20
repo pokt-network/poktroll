@@ -24,10 +24,10 @@ import (
 // Generate a random address that is not in the account state
 var unclaimableAddress = cometcrypto.GenPrivKey().PubKey().Address().String()
 
-// actorTypeToRecoverableAddress holds collections of different types of Morse addresses
+// recoverableAddressesByActorType holds collections of different types of Morse addresses
 // used in recovery testing. Each field contains a list of addresses categorized by their
 // type and validity status to test different recovery scenarios.
-type actorTypeToRecoverableAddress struct {
+type recoverableAddressesByActorType struct {
 	morseEOA                 []string
 	morseModule              []string
 	morseInvalidTooLong      []string
@@ -45,6 +45,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 	_, accountState, actorTypeToRecoverableAddress, err := initMigrationFixtures(t)
 	require.NoError(t, err)
 
+	// Valid shannon destination address to be reused in all tests
 	shannonDestAddr := sample.AccAddress()
 	invalidShannonDestAddr := "invalid_shannon_dest_address"
 
@@ -165,9 +166,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 				return account.MorseSrcAddress == test.morseSrcAddress
 			})
 			claimedAccount := accountState.Accounts[claimedAccountIdx]
-			claimedAccountBalance := claimedAccount.UnstakedBalance.
-				Add(claimedAccount.ApplicationStake).
-				Add(claimedAccount.SupplierStake)
+			claimedAccountBalance := claimedAccount.TotalTokens()
 
 			expectedRecoveryRes := &migrationtypes.MsgRecoverMorseAccountResponse{
 				ShannonDestAddress: shannonDestAddr,
@@ -201,12 +200,12 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 func initMigrationFixtures(t *testing.T) (
 	*migrationtypes.MorseStateExport,
 	*migrationtypes.MorseAccountState,
-	*actorTypeToRecoverableAddress,
+	*recoverableAddressesByActorType,
 	error,
 ) {
 	// Step 1: Configure different types of accounts for testing
 
-	// Configure valid accounts (regular accounts, applications, validators, module accounts)
+	// Configure valid accounts (regular accounts, applications, validators, module accounts).
 	validAccountsConfig := testmigration.ValidAccountsConfig{
 		NumAccounts:       3, // Standard EOA accounts
 		NumApplications:   3, // Application accounts with stake
@@ -214,15 +213,15 @@ func initMigrationFixtures(t *testing.T) (
 		NumModuleAccounts: 3, // System module accounts
 	}
 
-	// Configure accounts with invalid addresses to test error handling
+	// Configure accounts with invalid addresses to test error handling.
 	invalidAccountsConfig := testmigration.InvalidAccountsConfig{
 		NumAddressTooShort: 2, // Addresses with fewer than expected bytes
 		NumAddressTooLong:  2, // Addresses with more than expected bytes
 		NumNonHexAddress:   2, // Addresses with non-hexadecimal characters
 	}
 
-	// Configure orphaned actors (applications and validators without corresponding accounts)
-	// Used for testing recovery of unclaimed stakes
+	// Configure orphaned actors (applications and validators without corresponding accounts).
+	// Used for testing recovery of unclaimed stakes.
 	orphanedActors := testmigration.OrphanedActorsConfig{
 		NumApplications: 3, // Orphaned application actors
 		NumValidators:   3, // Orphaned validator actors
@@ -230,14 +229,14 @@ func initMigrationFixtures(t *testing.T) (
 
 	// Step 2: Initialize the recovery allowlist and address categorization structure
 
-	// The recovery allowlist will contain addresses that are eligible for recovery
+	// The recovery allowlist will contain addresses that are eligible for recovery.
 	// For testing purposes, we add an address that would be contained in the allowlist
 	// but is not actually present in the account state to simulate a recovery scenario.
 	recoveryAllowlist := []string{unclaimableAddress}
 
 	// This structure categorizes addresses by their type for focused testing
 	// Each field will track addresses of a specific type that are added to the recovery allowlist
-	actorTypeToRecoverableAddress := &actorTypeToRecoverableAddress{
+	actorTypeToRecoverableAddress := &recoverableAddressesByActorType{
 		morseEOA:                 []string{}, // Regular externally owned accounts
 		morseModule:              []string{}, // Module accounts (system accounts)
 		morseInvalidTooLong:      []string{}, // Accounts with addresses that are too long
@@ -254,8 +253,8 @@ func initMigrationFixtures(t *testing.T) (
 	// This function determines the unstaked balance for each account type
 	// It also selects specific accounts to add to the recovery allowlist for testing
 	unstakedAccountBalancesFn := func(
-		allActorsIndex, // Index across all actor types
-		actorsIndex uint64, // Index within the specific actor type
+		allAccountsIndex, // Index across all accounts types
+		actorIndex uint64, // Index within the specific actor type
 		actorType testmigration.MorseUnstakedActorType, // The type of actor being processed
 		morseAccount *migrationtypes.MorseAccount, // The account being processed
 	) *cosmostypes.Coin {
@@ -267,7 +266,7 @@ func initMigrationFixtures(t *testing.T) (
 		// If the actor type is the first module account, append it to the recovery
 		// allowlist to exercise the recovery logic for these cases.
 		case testmigration.MorseModule:
-			if actorsIndex == 0 {
+			if actorIndex == 0 {
 				actorTypeToRecoverableAddress.morseModule = append(
 					actorTypeToRecoverableAddress.morseModule,
 					morseAccount.Address.String(),
@@ -277,7 +276,7 @@ func initMigrationFixtures(t *testing.T) (
 		// If the actor type is the first valid EOA account, append it to the recovery
 		// allowlist to exercise the recovery logic for these cases.
 		case testmigration.MorseEOA:
-			if actorsIndex == 0 {
+			if actorIndex == 0 {
 				actorTypeToRecoverableAddress.morseEOA = append(
 					actorTypeToRecoverableAddress.morseEOA,
 					morseAccount.Address.String(),

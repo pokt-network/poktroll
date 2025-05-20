@@ -1,29 +1,45 @@
 package recovery
 
-import "slices"
+import (
+	"slices"
+	"sort"
+)
 
-// Those slices MUST reflect the addresses listed in the following spreadsheet:
+// These slices MUST reflect the addresses listed in the following spreadsheet:
 // https://docs.google.com/spreadsheets/d/1V5Ge9lFXmX1A81DNZUOfYD6GSyuYrFwdXx4Wlhcnbck/edit?gid=1220065218#gid=1220065218
 
 // IsMorseAddressRecoverable checks if a given address exists in any of the
 // allowlists for Morse address recovery.
 func IsMorseAddressRecoverable(address string) bool {
 	// Check if the address is in the recovery allowlist
-	if slices.Contains(lostAppStakesAllowlist, address) {
+	if listContainsTarget(lostAppStakesAllowlist, address) {
 		return true
 	}
 
 	// Check if the address is in the known app stakes allowlist
-	if slices.Contains(knownAppStakesAllowlist, address) {
+	if listContainsTarget(knownAppStakesAllowlist, address) {
 		return true
 	}
 
 	// Check if the address is in the module accounts allowlist
-	if slices.Contains(moduleAccountsAllowlist, address) {
+	if listContainsTarget(moduleAccountsAllowlist, address) {
 		return true
 	}
 
 	return false
+}
+
+// Ensure that all address slices are sorted in ascending order for use in binary search.
+func init() {
+	sort.Strings(lostAppStakesAllowlist)
+	sort.Strings(knownAppStakesAllowlist)
+	sort.Strings(moduleAccountsAllowlist)
+}
+
+// listContainsTarget uses binary search on list to determine whether target is present.
+func listContainsTarget(list []string, target string) bool {
+	_, found := slices.BinarySearch(list, target)
+	return found
 }
 
 var lostAppStakesAllowlist = []string{

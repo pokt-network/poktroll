@@ -16,5 +16,5 @@ var (
 	ErrMigrationParamInvalid        = sdkerrors.Register(ModuleName, 1106, "the provided param is invalid")
 	ErrMorseSrcAddress              = sdkerrors.Register(ModuleName, 1107, "invalid Morse source account address")
 	ErrMorseSignature               = sdkerrors.Register(ModuleName, 1108, "invalid morse signature")
-	ErrMorseRecoverableAccountClaim = sdkerrors.Register(ModuleName, 1109, "unable to claim morse recoverable account")
+	ErrMorseRecoverableAccountClaim = sdkerrors.Register(ModuleName, 1109, "unable to recover Morse account")
 )

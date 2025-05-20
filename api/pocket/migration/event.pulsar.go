@@ -3609,11 +3609,17 @@ type EventMorseAccountRecovered struct {
 
 	// The session end height (on Shannon) in which the recovery was committed (i.e. claimed).
 	SessionEndHeight int64 `protobuf:"varint,1,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
-	// The total balance which was recovered.
+	// The total balance which was recovered:
+	// - Includes both unstaked and staked balances (consolidated)
+	// - Auto-liquidates both unstaked and staked balances at once
 	RecoveredBalance *v1beta1.Coin `protobuf:"bytes,2,opt,name=recovered_balance,json=recoveredBalance,proto3" json:"recovered_balance,omitempty"`
-	// The bech32-encoded address of the Shannon account to which the recovered balance will be minted.
+	// The bech32-encoded address of the Shannon account to which the recovered balance was minted.
 	ShannonDestAddress string `protobuf:"bytes,3,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address,omitempty"`
 	// The hex-encoded address of the Morse account whose balance and stakes have been recovered.
+	// This address MUST be in the recovery allow list and could be of types such as:
+	// - Unreachable/Locked EOA, Supplier or Application address
+	// - Module account
+	// - Invalid address (too short, too long, or non-hexadecimal format)
 	MorseSrcAddress string `protobuf:"bytes,4,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
 }
 
