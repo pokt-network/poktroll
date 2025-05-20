@@ -42,12 +42,30 @@ type recoverableAddressesByActorType struct {
 func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 	t := s.T()
 
-	_, accountState, actorTypeToRecoverableAddress, err := initMigrationFixtures(t)
+	fixtures, err := initMigrationFixtures(t)
 	require.NoError(t, err)
 
 	// Valid shannon destination address to be reused in all tests
 	shannonDestAddr := sample.AccAddress()
 	invalidShannonDestAddr := "invalid_shannon_dest_address"
+
+	// Get the complete state of all Morse accounts for testing
+	accountState := fixtures.GetMorseAccountState()
+
+	// Get standard and orphaned application accounts with stake that can be recovered
+	applicationFixtures := fixtures.GetApplicationFixtures(testmigration.MorseApplication)
+	orphanedApplicationFixtures := fixtures.GetApplicationFixtures(testmigration.MorseOrphanedApplication)
+
+	// Get standard and orphaned validator accounts with stake that can be recovered
+	validatorFixtures := fixtures.GetValidatorFixtures(testmigration.MorseValidator)
+	orphanedValidatorFixtures := fixtures.GetValidatorFixtures(testmigration.MorseOrphanedValidator)
+
+	// Get the unstaked accounts grouped by their type
+	eoaFixtures := fixtures.GetUnstakedActorFixtures(testmigration.MorseEOA)
+	moduleFixtures := fixtures.GetUnstakedActorFixtures(testmigration.MorseModule)
+	addressTooLongAccountFixtures := fixtures.GetUnstakedActorFixtures(testmigration.MorseInvalidTooLong)
+	addressTooShortAccountFixtures := fixtures.GetUnstakedActorFixtures(testmigration.MorseInvalidTooShort)
+	nonHexAccountFixtures := fixtures.GetUnstakedActorFixtures(testmigration.MorseNonHex)
 
 	tests := []struct {
 		name               string
@@ -58,47 +76,47 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 		{
 			name:               "recover morse application account",
 			shannonDestAddress: shannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseApplication[0],
+			morseSrcAddress:    applicationFixtures[0].GetClaimableAccount().MorseSrcAddress,
 		},
 		{
 			name:               "recover morse validator account",
 			shannonDestAddress: shannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseValidator[0],
+			morseSrcAddress:    validatorFixtures[0].GetClaimableAccount().MorseSrcAddress,
 		},
 		{
 			name:               "recover morse EOA account",
 			shannonDestAddress: shannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseEOA[0],
+			morseSrcAddress:    eoaFixtures[0].GetClaimableAccount().MorseSrcAddress,
 		},
 		{
 			name:               "recover morse module account",
 			shannonDestAddress: shannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseModule[0],
+			morseSrcAddress:    moduleFixtures[0].GetClaimableAccount().MorseSrcAddress,
 		},
 		{
 			name:               "recover morse orphaned application account",
 			shannonDestAddress: shannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseOrphanedApplication[0],
+			morseSrcAddress:    orphanedApplicationFixtures[0].GetClaimableAccount().MorseSrcAddress,
 		},
 		{
 			name:               "recover morse orphaned validator account",
 			shannonDestAddress: shannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseOrphanedValidator[0],
+			morseSrcAddress:    orphanedValidatorFixtures[0].GetClaimableAccount().MorseSrcAddress,
 		},
 		{
 			name:               "recover morse invalid address too long",
 			shannonDestAddress: shannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseInvalidTooLong[0],
+			morseSrcAddress:    addressTooLongAccountFixtures[0].GetClaimableAccount().MorseSrcAddress,
 		},
 		{
 			name:               "recover morse invalid address too short",
 			shannonDestAddress: shannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseInvalidTooShort[0],
+			morseSrcAddress:    addressTooShortAccountFixtures[0].GetClaimableAccount().MorseSrcAddress,
 		},
 		{
 			name:               "recover morse invalid non-hex address",
 			shannonDestAddress: shannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseNonHex[0],
+			morseSrcAddress:    nonHexAccountFixtures[0].GetClaimableAccount().MorseSrcAddress,
 		},
 		{
 			name:               "recover morse invalid address not in allowlist",
@@ -132,7 +150,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 		{
 			name:               "recover morse account with invalid shannon destination address",
 			shannonDestAddress: invalidShannonDestAddr,
-			morseSrcAddress:    actorTypeToRecoverableAddress.morseEOA[0],
+			morseSrcAddress:    eoaFixtures[0].GetClaimableAccount().MorseSrcAddress,
 			expectedError:      fmt.Errorf("invalid shannon destination address"),
 		},
 	}
@@ -197,12 +215,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 //
 // This function configures accounts with specific balances and stakes to create
 // predictable test scenarios for the migration recovery process.
-func initMigrationFixtures(t *testing.T) (
-	*migrationtypes.MorseStateExport,
-	*migrationtypes.MorseAccountState,
-	*recoverableAddressesByActorType,
-	error,
-) {
+func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures, error) {
 	// Step 1: Configure different types of accounts for testing
 
 	// Configure valid accounts (regular accounts, applications, validators, module accounts).
@@ -234,20 +247,6 @@ func initMigrationFixtures(t *testing.T) (
 	// but is not actually present in the account state to simulate a recovery scenario.
 	recoveryAllowlist := []string{unclaimableAddress}
 
-	// This structure categorizes addresses by their type for focused testing
-	// Each field will track addresses of a specific type that are added to the recovery allowlist
-	actorTypeToRecoverableAddress := &recoverableAddressesByActorType{
-		morseEOA:                 []string{}, // Regular externally owned accounts
-		morseModule:              []string{}, // Module accounts (system accounts)
-		morseInvalidTooLong:      []string{}, // Accounts with addresses that are too long
-		morseInvalidTooShort:     []string{}, // Accounts with addresses that are too short
-		morseNonHex:              []string{}, // Accounts with non-hexadecimal addresses
-		morseApplication:         []string{}, // Application accounts with stakes
-		morseOrphanedApplication: []string{}, // Application accounts without corresponding base accounts
-		morseValidator:           []string{}, // Validator accounts with stakes
-		morseOrphanedValidator:   []string{}, // Validator accounts without corresponding base accounts
-	}
-
 	// Step 3: Define callback functions to customize account properties
 
 	// This function determines the unstaked balance for each account type
@@ -267,40 +266,20 @@ func initMigrationFixtures(t *testing.T) (
 		// allowlist to exercise the recovery logic for these cases.
 		case testmigration.MorseModule:
 			if actorIndex == 0 {
-				actorTypeToRecoverableAddress.morseModule = append(
-					actorTypeToRecoverableAddress.morseModule,
-					morseAccount.Address.String(),
-				)
 				recoveryAllowlist = append(recoveryAllowlist, morseAccount.Address.String())
 			}
 		// If the actor type is the first valid EOA account, append it to the recovery
 		// allowlist to exercise the recovery logic for these cases.
 		case testmigration.MorseEOA:
 			if actorIndex == 0 {
-				actorTypeToRecoverableAddress.morseEOA = append(
-					actorTypeToRecoverableAddress.morseEOA,
-					morseAccount.Address.String(),
-				)
 				recoveryAllowlist = append(recoveryAllowlist, morseAccount.Address.String())
 			}
 		// Add any invalid morse accounts to the recovery allowlist.
 		case testmigration.MorseInvalidTooLong:
-			actorTypeToRecoverableAddress.morseInvalidTooLong = append(
-				actorTypeToRecoverableAddress.morseInvalidTooLong,
-				morseAccount.Address.String(),
-			)
 			recoveryAllowlist = append(recoveryAllowlist, morseAccount.Address.String())
 		case testmigration.MorseInvalidTooShort:
-			actorTypeToRecoverableAddress.morseInvalidTooShort = append(
-				actorTypeToRecoverableAddress.morseInvalidTooShort,
-				morseAccount.Address.String(),
-			)
 			recoveryAllowlist = append(recoveryAllowlist, morseAccount.Address.String())
 		case testmigration.MorseNonHex:
-			actorTypeToRecoverableAddress.morseNonHex = append(
-				actorTypeToRecoverableAddress.morseNonHex,
-				morseAccount.Address.String(),
-			)
 			recoveryAllowlist = append(recoveryAllowlist, morseAccount.Address.String())
 		}
 
@@ -322,18 +301,6 @@ func initMigrationFixtures(t *testing.T) (
 		// If the application is the first one of its type (Application or OrphanedApplication),
 		// append it to the recovery allowlist.
 		if actorTypeIndex == 0 {
-			switch actorType {
-			case testmigration.MorseApplication:
-				actorTypeToRecoverableAddress.morseApplication = append(
-					actorTypeToRecoverableAddress.morseApplication,
-					application.Address.String(),
-				)
-			case testmigration.MorseOrphanedApplication:
-				actorTypeToRecoverableAddress.morseOrphanedApplication = append(
-					actorTypeToRecoverableAddress.morseOrphanedApplication,
-					application.Address.String(),
-				)
-			}
 			// Append the application address to the recovery allowlist.
 			recoveryAllowlist = append(recoveryAllowlist, application.Address.String())
 		}
@@ -356,18 +323,6 @@ func initMigrationFixtures(t *testing.T) (
 		// If the validator is the first one of its type (Validator or OrphanedValidator),
 		// append it to the recovery allowlist.
 		if actorTypeIndex == 0 {
-			switch actorType {
-			case testmigration.MorseValidator:
-				actorTypeToRecoverableAddress.morseValidator = append(
-					actorTypeToRecoverableAddress.morseValidator,
-					validator.Address.String(),
-				)
-			case testmigration.MorseOrphanedValidator:
-				actorTypeToRecoverableAddress.morseOrphanedValidator = append(
-					actorTypeToRecoverableAddress.morseOrphanedValidator,
-					validator.Address.String(),
-				)
-			}
 			// Append the validator address to the recovery allowlist.
 			recoveryAllowlist = append(recoveryAllowlist, validator.Address.String())
 		}
@@ -397,13 +352,9 @@ func initMigrationFixtures(t *testing.T) (
 	)
 	require.NoError(t, err)
 
-	// Step 5: Extract the state export and account state from the fixtures
-	stateExport := fixtures.GetMorseStateExport()
-	accountState := fixtures.GetMorseAccountState()
-
-	// Step 6: Register the recovery allowlist with the recovery system
+	// Step 5: Register the recovery allowlist with the recovery system
 	// This makes the selected addresses eligible for recovery in tests
 	recovery.SetRecoveryAllowlist(recoveryAllowlist)
 
-	return stateExport, accountState, actorTypeToRecoverableAddress, err
+	return fixtures, err
 }

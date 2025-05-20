@@ -54,6 +54,44 @@ const (
 	MorseOrphanedApplication
 )
 
+// actorFixture represents a fixture for a Morse actor (account, validator, or application)
+// that can be used in migration testing. It combines the actor itself with its claimable
+// account representation and private key for signing purposes.
+type actorFixture[T any] struct {
+	actor            T                                     // The Morse actor (account, validator, or application)
+	claimableAccount *migrationtypes.MorseClaimableAccount // The claimable account representation used during migration
+	privKey          cometcrypto.PrivKey                   // The private key associated with this actor
+}
+
+// GetClaimableAccount returns the MorseClaimableAccount associated with this actor fixture,
+// which contains information needed for the migration process.
+func (af *actorFixture[T]) GetClaimableAccount() *migrationtypes.MorseClaimableAccount {
+	return af.claimableAccount
+}
+
+// GetActor returns the underlying Morse actor (account, validator, or application)
+// represented by this fixture.
+func (af *actorFixture[T]) GetActor() T {
+	return af.actor
+}
+
+// GetPrivateKey returns the private key associated with this actor fixture,
+// which can be used for signing purposes.
+func (af *actorFixture[T]) GetPrivateKey() cometcrypto.PrivKey {
+	return af.privKey
+}
+
+// actorTypeGroups organizes actor fixtures by their type, allowing for easy access
+// to specific categories of actors in the test fixtures.
+type actorTypeGroups struct {
+	// Unstaked accounts grouped by type
+	unstakedAccounts map[MorseUnstakedActorType][]*actorFixture[*migrationtypes.MorseAccount]
+	// Validators grouped by type
+	validators map[MorseValidatorActorType][]*actorFixture[*migrationtypes.MorseValidator]
+	// Applications grouped by type
+	applications map[MorseApplicationActorType][]*actorFixture[*migrationtypes.MorseApplication]
+}
+
 // MorseMigrationFixtures contains the state and configuration for generating Morse migration test fixtures.
 // It maintains internal state for tracking and indexing Morse accounts, keys, and migration state.
 type MorseMigrationFixtures struct {
@@ -68,6 +106,9 @@ type MorseMigrationFixtures struct {
 
 	// Tracks the current index for generating sequential keys/accounts
 	currentIndex uint64
+
+	// actorTypeGroups organizes actor fixtures by their type
+	actorTypeGroups actorTypeGroups
 }
 
 // MorseFixturesConfig defines the configuration parameters for generating Morse migration test fixtures.
@@ -235,6 +276,11 @@ func NewMorseFixtures(opts ...MorseFixturesOptionFn) (*MorseMigrationFixtures, e
 		morseAccountState: &migrationtypes.MorseAccountState{
 			Accounts: make([]*migrationtypes.MorseClaimableAccount, 0),
 		},
+		actorTypeGroups: actorTypeGroups{
+			unstakedAccounts: make(map[MorseUnstakedActorType][]*actorFixture[*migrationtypes.MorseAccount]),
+			validators:       make(map[MorseValidatorActorType][]*actorFixture[*migrationtypes.MorseValidator]),
+			applications:     make(map[MorseApplicationActorType][]*actorFixture[*migrationtypes.MorseApplication]),
+		},
 	}
 
 	// Apply all the provided functional options to configure the fixtures
@@ -260,14 +306,6 @@ func (mf *MorseMigrationFixtures) GetConfig() *MorseFixturesConfig {
 	return mf.config
 }
 
-// nextAllAccountsIndex increments and returns the current index counter of the MorseMigrationFixtures.
-// This method is used to generate sequential indices for various entities created during the
-// fixture generation process, ensuring each entity has a unique index for deterministic generation.
-func (mf *MorseMigrationFixtures) nextAllAccountsIndex() uint64 {
-	mf.currentIndex++
-	return mf.currentIndex - 1
-}
-
 // GetMorseStateExport returns the generated Morse state export for migration testing.
 func (mf *MorseMigrationFixtures) GetMorseStateExport() *migrationtypes.MorseStateExport {
 	return mf.morseStateExport
@@ -276,6 +314,41 @@ func (mf *MorseMigrationFixtures) GetMorseStateExport() *migrationtypes.MorseSta
 // GetMorseAccountState returns the generated Morse account state for migration testing.
 func (mf *MorseMigrationFixtures) GetMorseAccountState() *migrationtypes.MorseAccountState {
 	return mf.morseAccountState
+}
+
+// GetUnstakedActorFixtures returns all unstaked actor fixtures of the specified account type.
+// This method allows test code to access unstaked account fixtures (such as EOAs, module accounts,
+// and accounts with invalid addresses) for test assertions and scenario setup.
+func (mf *MorseMigrationFixtures) GetUnstakedActorFixtures(
+	actorType MorseUnstakedActorType,
+) []*actorFixture[*migrationtypes.MorseAccount] {
+	return mf.actorTypeGroups.unstakedAccounts[actorType]
+}
+
+// GetValidatorFixtures returns all validator fixtures of the specified actor type.
+// This method allows test code to access validator fixtures (such as standard validators
+// with unstaked accounts or orphaned validators) for test assertions and scenario setup.
+func (mf *MorseMigrationFixtures) GetValidatorFixtures(
+	actorType MorseValidatorActorType,
+) []*actorFixture[*migrationtypes.MorseValidator] {
+	return mf.actorTypeGroups.validators[actorType]
+}
+
+// GetApplicationFixtures returns all application fixtures of the specified actor type.
+// This method allows test code to access application fixtures (such as standard applications
+// with unstaked accounts or orphaned applications) for test assertions and scenario setup.
+func (mf *MorseMigrationFixtures) GetApplicationFixtures(
+	actorType MorseApplicationActorType,
+) []*actorFixture[*migrationtypes.MorseApplication] {
+	return mf.actorTypeGroups.applications[actorType]
+}
+
+// nextAllAccountsIndex increments and returns the current index counter of the MorseMigrationFixtures.
+// This method is used to generate sequential indices for various entities created during the
+// fixture generation process, ensuring each entity has a unique index for deterministic generation.
+func (mf *MorseMigrationFixtures) nextAllAccountsIndex() uint64 {
+	mf.currentIndex++
+	return mf.currentIndex - 1
 }
 
 // generate creates all the fixtures defined in the configuration.
@@ -446,6 +519,19 @@ func (mf *MorseMigrationFixtures) addAccount(
 	// Store the claimable account in the account state
 	mf.morseAccountState.Accounts[allAccountsIndex] = morseClaimableAccount
 
+	// Create an unstaked account actorFixture to track this account and add it to the appropriate
+	// group in the fixtures to make it available for test assertions and scenario setup.
+	unstakedActorFixture := &actorFixture[*migrationtypes.MorseAccount]{
+		actor:            morseAccount,
+		claimableAccount: morseClaimableAccount,
+		privKey:          privKey,
+	}
+
+	mf.actorTypeGroups.unstakedAccounts[unstakedActorType] = append(
+		mf.actorTypeGroups.unstakedAccounts[unstakedActorType],
+		unstakedActorFixture,
+	)
+
 	return nil
 }
 
@@ -503,6 +589,19 @@ func (mf *MorseMigrationFixtures) addApplication(
 	}
 	// Orphaned applications don't have corresponding unstaked accounts, so we skip this step
 
+	// Create an application actorFixture to track this account and add it to the appropriate
+	// group in the fixtures to make it available for test assertions and scenario setup.
+	morseApplicationFixture := &actorFixture[*migrationtypes.MorseApplication]{
+		actor:            morseApplication,
+		claimableAccount: morseClaimableAccount,
+		privKey:          privKey,
+	}
+
+	mf.actorTypeGroups.applications[applicationType] = append(
+		mf.actorTypeGroups.applications[applicationType],
+		morseApplicationFixture,
+	)
+
 	return nil
 }
 
@@ -559,6 +658,19 @@ func (mf *MorseMigrationFixtures) addValidator(
 		}
 	}
 	// Orphaned validators don't have corresponding unstaked accounts, so we skip this step
+
+	// Create a validator actorFixture to track this account and add it to the appropriate
+	// group in the fixtures to make it available for test assertions and scenario setup.
+	validatorFixture := &actorFixture[*migrationtypes.MorseValidator]{
+		actor:            morseValidator,
+		claimableAccount: morseClaimableAccount,
+		privKey:          privKey,
+	}
+
+	mf.actorTypeGroups.validators[validatorType] = append(
+		mf.actorTypeGroups.validators[validatorType],
+		validatorFixture,
+	)
 
 	return nil
 }
