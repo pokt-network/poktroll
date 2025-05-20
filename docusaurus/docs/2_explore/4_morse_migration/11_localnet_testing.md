@@ -1,5 +1,5 @@
 ---
-title: Migration E2E Testing (TestNet Only)
+title: Migration E2E Testing (LocalNet)
 sidebar_position: 11
 ---
 
@@ -49,7 +49,7 @@ On **Shannon TestNet only** will the snapshot contain both Morse MainNet and Tes
 Use the links below to download the snapshot:
 
 | Snapshot                                                                                                                                                        | Height | Date       | Size |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|------------|------|
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ---- |
 | [morse-testnet-176966-2025-05-09.txz](https://link.storjshare.io/raw/ju4zrcq46yp6ft2hm7o4xwlkts3q/pocket-network-snapshots/morse-testnet-176966-2025-05-09.txz) | 176966 | 2025-05-09 | ~7GB |
 
 **Extract the snapshot by cop-pasting the following commands**:
