@@ -27,7 +27,6 @@ This document is a result of the [GitHub Discussion found here](https://github.c
   - [Non-Custodial Migration](#non-custodial-migration)
   - [Non-Custodial: Most Common Use Case](#non-custodial-most-common-use-case)
   - [Known Risk — Operator Uses a Different Owner](#known-risk--operator-uses-a-different-owner)
-- [Quickstart: Non-Custodial Migration](#quickstart-non-custodial-migration)
 
 ## Terminology
 
@@ -202,12 +201,3 @@ Yes. Since the operator receives the new `owner_address` off-chain, they could s
 - **Long-term:** The Pocket Network Foundation will monitor migrations. If abuse is observed, they will propose a protocol upgrade to:
   - Recover mis-claimed stakes.
   - Penalize offending accounts.
-
-## Quickstart: Non-Custodial Migration
-
-1. **Owner**:
-   - Generate a new Shannon `owner_address` (private key).
-   - Share the new `owner_address` with the Operator.
-2. **Operator**:
-   - Generate a new Shannon `operator_address`.
-   - Submit the claim using both addresses.
