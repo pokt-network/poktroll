@@ -288,15 +288,15 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 		"--yes",
 		"--output=json",
 		"--no-passphrase",
-		privKeyArmoredJSONPath,
 	}
 
 	switch actorType {
 	case actorTypeApp:
-		commandStringParts = append(commandStringParts, serviceId)
+		commandStringParts = append(commandStringParts, serviceId, privKeyArmoredJSONPath)
 	case actorTypeSupplier:
 		supplierStakeConfigPath := s.writeTempSupplierStakeConfig(serviceId, "")
-		commandStringParts = append(commandStringParts, supplierStakeConfigPath)
+		morseNodeAddress := morsePrivKey.PubKey().Address().String()
+		commandStringParts = append(commandStringParts, morseNodeAddress, privKeyArmoredJSONPath, supplierStakeConfigPath)
 	}
 
 	res, err := s.pocketd.RunCommandOnHost("", commandStringParts...)

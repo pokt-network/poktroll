@@ -32,6 +32,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // Msg defines the Msg service.
+//
+// - Provides RPCs for migration-related operations
+// - Includes parameter updates, Morse account claims, supplier claims, and recovery
 type MsgClient interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
@@ -116,6 +119,9 @@ func (c *msgClient) RecoverMorseAccount(ctx context.Context, in *MsgRecoverMorse
 // for forward compatibility
 //
 // Msg defines the Msg service.
+//
+// - Provides RPCs for migration-related operations
+// - Includes parameter updates, Morse account claims, supplier claims, and recovery
 type MsgServer interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
