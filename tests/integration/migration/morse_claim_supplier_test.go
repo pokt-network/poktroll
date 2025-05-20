@@ -27,7 +27,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 	_, err := s.ImportMorseClaimableAccounts(s.T())
 	require.NoError(s.T(), err)
 
-	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
+	for morseAccountIdx := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
 			shannonDestAddr := sample.AccAddress()
@@ -138,7 +138,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	supplierParams, err := supplierClient.GetParams(s.SdkCtx())
 	s.NoError(err)
 
-	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
+	for morseAccountIdx := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
 			// Stake an initial supplier.

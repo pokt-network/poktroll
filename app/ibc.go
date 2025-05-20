@@ -6,78 +6,64 @@ import (
 	"cosmossdk.io/core/appmodule"
 	storetypes "cosmossdk.io/store/types"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/cosmos/ibc-go/modules/capability"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	icamodule "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts"
-	icacontroller "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller"
-	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
-	icacontrollertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
-	icahost "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host"
-	icahostkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper"
-	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
-	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
-	ibcfee "github.com/cosmos/ibc-go/v8/modules/apps/29-fee"
-	ibcfeekeeper "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/keeper"
-	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
-	ibctransfer "github.com/cosmos/ibc-go/v8/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v8/modules/core"
-	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types" //nolint:staticcheck // SA1019
-	ibcconnectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
-	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
-	solomachine "github.com/cosmos/ibc-go/v8/modules/light-clients/06-solomachine"
-	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	icamodule "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts"
+	icacontroller "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller"
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/keeper"
+	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
+	icahost "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host"
+	icahostkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/keeper"
+	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
+	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
+	ibcfee "github.com/cosmos/ibc-go/v10/modules/apps/29-fee"
+
+	// ibcfeetypes "github.com/cosmos/ibc-go/v10/modules/apps/29-fee/types"
+	ibctransfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
+
+	// ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v10/modules/core"
+
+	// ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types" //nolint:staticcheck // SA1019
+	// ibcconnectiontypes "github.com/cosmos/ibc-go/v10/modules/core/03-connection/types"
+	porttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
+	solomachine "github.com/cosmos/ibc-go/v10/modules/light-clients/06-solomachine"
+	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 )
 
 // registerIBCModules register IBC keepers and non dependency inject modules.
 func (app *App) registerIBCModules() {
 	// set up non depinject support modules store keys
 	if err := app.RegisterStores(
-		storetypes.NewKVStoreKey(capabilitytypes.StoreKey),
+		// storetypes.NewKVStoreKey(capabilitytypes.StoreKey),
 		storetypes.NewKVStoreKey(ibcexported.StoreKey),
 		storetypes.NewKVStoreKey(ibctransfertypes.StoreKey),
-		storetypes.NewKVStoreKey(ibcfeetypes.StoreKey),
+		// storetypes.NewKVStoreKey(ibcfeetypes.StoreKey),
 		storetypes.NewKVStoreKey(icahosttypes.StoreKey),
 		storetypes.NewKVStoreKey(icacontrollertypes.StoreKey),
-		storetypes.NewMemoryStoreKey(capabilitytypes.MemStoreKey),
+		// storetypes.NewMemoryStoreKey(capabilitytypes.MemStoreKey),
 		storetypes.NewTransientStoreKey(paramstypes.TStoreKey),
 	); err != nil {
 		panic(err)
 	}
 
 	// register the key tables for legacy param subspaces
-	keyTable := ibcclienttypes.ParamKeyTable()
-	keyTable.RegisterParamSet(&ibcconnectiontypes.Params{})
-	app.Keepers.ParamsKeeper.Subspace(ibcexported.ModuleName).WithKeyTable(keyTable)
-	app.Keepers.ParamsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
-	app.Keepers.ParamsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
-	app.Keepers.ParamsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
-
-	// add capability keeper and ScopeToModule for ibc module
-	app.Keepers.CapabilityKeeper = capabilitykeeper.NewKeeper(
-		app.AppCodec(),
-		app.GetKey(capabilitytypes.StoreKey),
-		app.GetMemKey(capabilitytypes.MemStoreKey),
-	)
-
-	// add capability keeper and ScopeToModule for ibc module
-	scopedIBCKeeper := app.Keepers.CapabilityKeeper.ScopeToModule(ibcexported.ModuleName)
-	scopedIBCTransferKeeper := app.Keepers.CapabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
-	scopedICAControllerKeeper := app.Keepers.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
-	scopedICAHostKeeper := app.Keepers.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
+	// keyTable := ibcclienttypes.ParamKeyTable()
+	// keyTable.RegisterParamSet(&ibcconnectiontypes.Params{})
 
 	// Create IBC keeper
 	app.Keepers.IBCKeeper = ibckeeper.NewKeeper(
 		app.appCodec,
-		app.GetKey(ibcexported.StoreKey),
+		runtime.NewKVStoreService(app.GetKey(ibcexported.StoreKey)),
+		// app.GetKey(ibcexported.StoreKey),
 		app.GetSubspace(ibcexported.ModuleName),
 		app.Keepers.StakingKeeper,
 		app.Keepers.UpgradeKeeper,
@@ -91,13 +77,15 @@ func (app *App) registerIBCModules() {
 	// See: https://docs.cosmos.network/main/modules/gov#proposal-messages
 	govRouter := govv1beta1.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler)
+	// TODO_IBC_V10: per docs, recommended to add this. `NewParamChangeProposalHandler` is deprecated in v0.53.0.
+	// .AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.Keepers.GovKeeper))
 
-	app.Keepers.IBCFeeKeeper = ibcfeekeeper.NewKeeper(
-		app.appCodec, app.GetKey(ibcfeetypes.StoreKey),
-		app.Keepers.IBCKeeper.ChannelKeeper, // may be replaced with IBC middleware
-		app.Keepers.IBCKeeper.ChannelKeeper,
-		app.Keepers.IBCKeeper.PortKeeper, app.Keepers.AccountKeeper, app.Keepers.BankKeeper,
-	)
+	// app.Keepers.IBCFeeKeeper = ibcfeekeeper.NewKeeper(
+	// 	app.appCodec, app.GetKey(ibcfeetypes.StoreKey),
+	// 	app.Keepers.IBCKeeper.ChannelKeeper, // may be replaced with IBC middleware
+	// 	app.Keepers.IBCKeeper.ChannelKeeper,
+	// 	app.Keepers.IBCKeeper.PortKeeper, app.Keepers.AccountKeeper, app.Keepers.BankKeeper,
+	// )
 
 	// Create IBC transfer keeper
 	app.Keepers.TransferKeeper = ibctransferkeeper.NewKeeper(
@@ -162,10 +150,22 @@ func (app *App) registerIBCModules() {
 
 	app.Keepers.IBCKeeper.SetRouter(ibcRouter)
 
-	app.Keepers.ScopedIBCKeeper = scopedIBCKeeper
-	app.Keepers.ScopedIBCTransferKeeper = scopedIBCTransferKeeper
-	app.Keepers.ScopedICAHostKeeper = scopedICAHostKeeper
-	app.Keepers.ScopedICAControllerKeeper = scopedICAControllerKeeper
+	// New v10.2.0
+	var ibcv2TransferStack ibcapi.IBCModule
+	ibcv2TransferStack = transferv2.NewIBCModule(app.Keepers.TransferKeeper)
+	ibcv2TransferStack = ibccallbacksv2.NewIBCMiddleware(
+		transferv2.NewIBCModule(app.Keepers.TransferKeeper),
+		app.Keepers.IBCKeeper.ChannelKeeperV2,
+		wasmStackIBCHandler,
+		app.Keepers.IBCKeeper.ChannelKeeperV2,
+		maxCallbackGas,
+	)
+
+	clientKeeper := app.Keepers.IBCKeeper.ClientKeeper
+	storeProvider := app.Keepers.IBCKeeper.ClientKeeper.GetStoreProvider()
+
+	tmLightClientModule := ibctm.NewLightClientModule(appCodec, storeProvider)
+	clientKeeper.AddRoute(ibctm.ModuleName, &tmLightClientModule)
 
 	// register IBC modules
 	if err := app.RegisterModules(
@@ -188,11 +188,11 @@ func RegisterIBC(registry cdctypes.InterfaceRegistry) map[string]appmodule.AppMo
 	modules := map[string]appmodule.AppModule{
 		ibcexported.ModuleName:      ibc.AppModule{},
 		ibctransfertypes.ModuleName: ibctransfer.AppModule{},
-		ibcfeetypes.ModuleName:      ibcfee.AppModule{},
-		icatypes.ModuleName:         icamodule.AppModule{},
-		capabilitytypes.ModuleName:  capability.AppModule{},
-		ibctm.ModuleName:            ibctm.AppModule{},
-		solomachine.ModuleName:      solomachine.AppModule{},
+		// ibcfeetypes.ModuleName:      ibcfee.AppModule{},
+		icatypes.ModuleName:        icamodule.AppModule{},
+		capabilitytypes.ModuleName: capability.AppModule{},
+		ibctm.ModuleName:           ibctm.AppModule{},
+		solomachine.ModuleName:     solomachine.AppModule{},
 	}
 
 	for _, module := range modules {

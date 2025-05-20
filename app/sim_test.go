@@ -331,8 +331,6 @@ func TestAppStateDeterminism(t *testing.T) {
 	config := simcli.NewConfigFromFlags()
 	config.InitialBlockHeight = 1
 	config.ExportParamsPath = ""
-	config.OnOperation = true
-	config.AllInvariants = true
 
 	numSeeds := 3
 	numTimesToRunPerSeed := 3 // This used to be set to 5, but we've temporarily reduced it to 3 for the sake of faster CI.

@@ -41,7 +41,6 @@ func BenchmarkFullAppSimulation(b *testing.B) {
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = app.DefaultNodeHome
-	appOptions[server.FlagInvCheckPeriod] = simcli.FlagPeriodValue
 
 	bApp, err := app.New(logger, db, nil, true, appOptions, interBlockCacheOpt())
 	require.NoError(b, err)
@@ -88,8 +87,6 @@ func BenchmarkInvariants(b *testing.B) {
 	if skip {
 		b.Skip("skipping benchmark application simulation")
 	}
-
-	config.AllInvariants = false
 
 	defer func() {
 		require.NoError(b, db.Close())

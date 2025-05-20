@@ -22,18 +22,14 @@ import (
 	testdata_pulsar "github.com/cosmos/cosmos-sdk/testutil/testdata/testpb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
+	ibctypes "github.com/cosmos/ibc-go/v10/modules/core/types"
 
 	"github.com/pokt-network/poktroll/app/keepers"
 	"github.com/pokt-network/poktroll/docs"
@@ -203,9 +199,7 @@ func New(
 		&app.Keepers.MintKeeper,
 		&app.Keepers.DistrKeeper,
 		&app.Keepers.GovKeeper,
-		&app.Keepers.CrisisKeeper,
 		&app.Keepers.UpgradeKeeper,
-		&app.Keepers.ParamsKeeper,
 		&app.Keepers.AuthzKeeper,
 		&app.Keepers.EvidenceKeeper,
 		&app.Keepers.FeeGrantKeeper,
@@ -283,9 +277,6 @@ func New(
 
 	/****  Module Options ****/
 
-	// TODO_TECHDEBT: RegisterInvariants is deprecated.
-	app.ModuleManager.RegisterInvariants(app.Keepers.CrisisKeeper)
-
 	// add test gRPC service for testing gRPC queries in isolation
 	testdata_pulsar.RegisterQueryServer(app.GRPCQueryRouter(), testdata_pulsar.QueryImpl{})
 
@@ -293,10 +284,12 @@ func New(
 	//
 	// NOTE: this is not required apps that don't use the simulator for fuzz testing
 	// transactions
-	overrideModules := map[string]module.AppModuleSimulation{
-		authtypes.ModuleName: auth.NewAppModule(app.appCodec, app.Keepers.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
-	}
-	app.sm = module.NewSimulationManagerFromAppModules(app.ModuleManager.Modules, overrideModules)
+
+	// TODO_IN_THIS_PR: do we need this? uses deprecated `GetSubspace` function (params module)
+	// overrideModules := map[string]module.AppModuleSimulation{
+	// 	authtypes.ModuleName: auth.NewAppModule(app.appCodec, app.Keepers.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
+	// }
+	// app.sm = module.NewSimulationManagerFromAppModules(app.ModuleManager.Modules, overrideModules)
 
 	app.sm.RegisterStoreDecoders()
 
@@ -375,7 +368,7 @@ func (app *App) kvStoreKeys() map[string]*storetypes.KVStoreKey {
 }
 
 // GetSubspace returns a param subspace for a given module name.
-func (app *App) GetSubspace(moduleName string) paramstypes.Subspace {
+func (app *App) GetSubspace(moduleName string) ibctypes.ParamSubspace {
 	subspace, _ := app.Keepers.ParamsKeeper.GetSubspace(moduleName)
 	return subspace
 }
@@ -401,11 +394,6 @@ func (app *App) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig
 // GetIBCKeeper returns the IBC keeper.
 func (app *App) GetIBCKeeper() *ibckeeper.Keeper {
 	return app.Keepers.IBCKeeper
-}
-
-// GetCapabilityScopedKeeper returns the capability scoped keeper.
-func (app *App) GetCapabilityScopedKeeper(moduleName string) capabilitykeeper.ScopedKeeper {
-	return app.Keepers.CapabilityKeeper.ScopeToModule(moduleName)
 }
 
 // GetMaccPerms returns a copy of the module account permissions
