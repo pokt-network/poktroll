@@ -160,9 +160,9 @@ type MorseFixturesOptionFn func(config *MorseFixturesConfig)
 
 // WithModuleAccountNameFn sets the ModuleAccountNameConfig for the fixtures.
 // It determines how module account names are generated during fixture creation.
-func WithModuleAccountNameFn(cfg ModuleAccountNameConfigFn) MorseFixturesOptionFn {
+func WithModuleAccountNameFn(nameFn ModuleAccountNameConfigFn) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
-		config.ModuleAccountNameConfigFn = cfg
+		config.ModuleAccountNameConfigFn = nameFn
 	}
 }
 
@@ -192,25 +192,25 @@ func WithOrphanedActors(cfg OrphanedActorsConfig) MorseFixturesOptionFn {
 
 // WithUnstakedAccountBalancesFn sets the UnstakedAccountBalancesConfig for the fixtures.
 // It defines how balances are determined for unstaked accounts.
-func WithUnstakedAccountBalancesFn(cfg UnstakedAccountBalancesConfigFn) MorseFixturesOptionFn {
+func WithUnstakedAccountBalancesFn(balanceFn UnstakedAccountBalancesConfigFn) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
-		config.UnstakedAccountBalancesConfigFn = cfg
+		config.UnstakedAccountBalancesConfigFn = balanceFn
 	}
 }
 
 // WithValidatorStakesFn sets the ValidatorStakesConfig for the fixtures.
 // It defines how staked and unstaked balances are determined for validator accounts.
-func WithValidatorStakesFn(cfg ValidatorStakesConfigFn) MorseFixturesOptionFn {
+func WithValidatorStakesFn(stakeFn ValidatorStakesConfigFn) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
-		config.ValidatorStakesConfigFn = cfg
+		config.ValidatorStakesConfigFn = stakeFn
 	}
 }
 
 // WithApplicationStakesFn sets the ApplicationStakesConfig for the fixtures.
 // It defines how staked and unstaked balances are determined for application accounts.
-func WithApplicationStakesFn(cfg ApplicationStakesConfigFn) MorseFixturesOptionFn {
+func WithApplicationStakesFn(stakeFn ApplicationStakesConfigFn) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
-		config.ApplicationStakesConfigFn = cfg
+		config.ApplicationStakesConfigFn = stakeFn
 	}
 }
 
