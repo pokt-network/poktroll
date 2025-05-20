@@ -73,6 +73,7 @@ func (k msgServer) ClaimMorseSupplier(
 	shannonOwnerAddr := cosmostypes.MustAccAddressFromBech32(msg.ShannonOwnerAddress)
 
 	// Default to the shannonOwnerAddr as the shannonOperatorAddr if not provided.
+	// The shannonOperatorAddr is where the Morse node/supplier unstaked balance will be minted to.
 	shannonOperatorAddr := shannonOwnerAddr
 	if msg.ShannonOperatorAddress != "" {
 		shannonOperatorAddr = cosmostypes.MustAccAddressFromBech32(msg.ShannonOperatorAddress)
@@ -142,11 +143,23 @@ func (k msgServer) ClaimMorseSupplier(
 		)
 	}
 
-	// Mint the totalTokens to the shannonDestAddress account balance.
-	// The Supplier stake is subsequently escrowed from the shannon_dest_address account balance.
-	// NOTE: The current supplier module's staking fee parameter will subsequently be deducted
-	// from the claimed balance.
-	if err = k.MintClaimedMorseTokens(ctx, shannonOperatorAddr, morseClaimableAccount.TotalTokens()); err != nil {
+	// Default shannonSigningAddress to shannonOperatorAddr because the Shannon owner defaults to the operator.
+	// The shannonSigningAddress is where the node/supplier stake will be minted to and then escrowed from.
+	shannonSigningAddress := shannonOperatorAddr
+	switch claimSignerType {
+	case migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER:
+		shannonSigningAddress = shannonOwnerAddr
+	}
+
+	// Mint the Morse node/supplier's stake to the shannonSigningAddress account balance.
+	// The Supplier stake is subsequently escrowed from the shannonSigningAddress account balance.
+	// NOTE: The supplier module's staking fee parameter will be deducted from the claimed balance below.
+	if err = k.MintClaimedMorseTokens(ctx, shannonSigningAddress, morseClaimableAccount.GetSupplierStake()); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	// Mint the Morse node/supplier's unstaked balance to the shannonOperatorAddress account balance.
+	if err = k.MintClaimedMorseTokens(ctx, shannonOperatorAddr, morseClaimableAccount.GetUnstakedBalance()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -167,12 +180,86 @@ func (k msgServer) ClaimMorseSupplier(
 		preClaimSupplierStake = *foundSupplier.Stake
 	}
 
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+
+	postClaimSupplierStake := preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake())
+	minStake := k.supplierKeeper.GetParams(ctx).MinStake
+
+	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
+	if postClaimSupplierStake.Amount.LT(minStake.Amount) {
+		currentSessionStart := sharedtypes.GetSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
+		previousSessionEnd := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStart-1)
+		supplier := &sharedtypes.Supplier{
+			OwnerAddress:            shannonOwnerAddr.String(),
+			OperatorAddress:         shannonOperatorAddr.String(),
+			Stake:                   &postClaimSupplierStake,
+			UnstakeSessionEndHeight: uint64(previousSessionEnd),
+			// Services:             (intentionally omitted, no services were staked),
+			// ServiceConfigHistory: (intentionally omitted, no services were staked),
+		}
+
+		// Emit an event which signals that the morse supplier has been claimed.
+		morseSupplierClaimedEvent := migrationtypes.EventMorseSupplierClaimed{
+			MorseNodeAddress:     msg.GetMorseNodeAddress(),
+			MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+			ClaimSignerType:      claimSignerType,
+			ClaimedBalance:       morseClaimableAccount.TotalTokens(),
+			ClaimedSupplierStake: cosmostypes.Coin{},
+			SessionEndHeight:     sessionEndHeight,
+			Supplier:             supplier,
+		}
+		if err = sdkCtx.EventManager().EmitTypedEvent(&morseSupplierClaimedEvent); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"failed to emit event type %T: %v",
+					&morseSupplierClaimedEvent,
+					err,
+				).Error(),
+			)
+		}
+
+		// Emit an event which signals that the morse supplier was unstaked.
+		morseSupplierUnstakedEvent := suppliertypes.EventSupplierUnbondingEnd{
+			Supplier:         supplier,
+			Reason:           suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+			SessionEndHeight: sessionEndHeight,
+			// Unstaking when claiming Suppliers below min-stake takes effect IMMEDIATELY.
+			UnbondingEndHeight: sessionEndHeight,
+		}
+		if err = sdkCtx.EventManager().EmitTypedEvent(&morseSupplierUnstakedEvent); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"failed to emit event type %T: %v",
+					&morseSupplierClaimedEvent,
+					err,
+				).Error(),
+			)
+		}
+
+		// Claimed suppliers with less than the min stake are immediately unstaked.
+		// NOTE: All stake has already been minted to shannonSignerAddr account,
+		// and all unstaked tokens have already been minted to shannonOperatorAddr account.
+
+		return &migrationtypes.MsgClaimMorseSupplierResponse{
+			MorseNodeAddress:     msg.GetMorseNodeAddress(),
+			MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+			ClaimSignerType:      claimSignerType,
+			ClaimedBalance:       morseClaimableAccount.TotalTokens(),
+			ClaimedSupplierStake: cosmostypes.Coin{},
+			SessionEndHeight:     sessionEndHeight,
+			Supplier:             supplier,
+		}, nil
+	}
+
 	// Stake (or update) the supplier.
 	msgStakeSupplier := suppliertypes.NewMsgStakeSupplier(
-		shannonOwnerAddr.String(),
+		shannonSigningAddress.String(),
 		shannonOwnerAddr.String(),
 		shannonOperatorAddr.String(),
-		preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake()),
+		postClaimSupplierStake,
 		msg.Services,
 	)
 	supplier, err := k.supplierKeeper.StakeSupplier(ctx, logger, msgStakeSupplier)
@@ -182,8 +269,6 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 
 	claimedSupplierStake := morseClaimableAccount.GetSupplierStake()
-	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
 
 	// Emit an event which signals that the morse account has been claimed.
