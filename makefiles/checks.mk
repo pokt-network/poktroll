@@ -36,16 +36,6 @@ check_act:
 		exit 1; \
 	fi;
 
-.PHONY: check_pocketd
-# Internal helper target - check if 'pocketd' is installed
-check_pocketd:
-	{ \
-	if ( ! ( command -v pocketd >/dev/null )); then \
-		echo "Error: \'pocketd\' was not found in your PATH. Please ensure it's installed before proceeding."; \
-		exit 1; \
-	fi; \
-	}
-
 .PHONY: check_gh
 # Internal helper target - check if 'gh' is installed
 check_gh:

@@ -7,7 +7,7 @@ localnet_up: check_kubectl check_docker_ps proto_regen localnet_regenesis k8s_ki
 	tilt up
 
 .PHONY: localnet_up_quick
-localnet_up_quick: check_pocketd check_kubectl check_docker_ps k8s_kind_up ## Starts up a localnet without regenerating fixtures
+localnet_up_quick: check_kubectl check_docker_ps k8s_kind_up ## Starts up a localnet without regenerating fixtures
 	tilt up
 
 .PHONY: localnet_down
