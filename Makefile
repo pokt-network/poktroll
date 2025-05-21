@@ -322,8 +322,8 @@ ignite_check_version:
 		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
 		exit 1 ; \
 	fi ; \
-	if [ "$$(printf "v29\n$$version" | sort -V | head -n1)" != "v29" ]; then \
-		echo "Error: Version $$version is less than v29. Please update Ignite via Homebrew or make ignite_install." ; \
+	if [ "$$(printf "v28\n$$version" | sort -V | head -n1)" != "v28" ]; then \
+		echo "Error: Version $$version is less than v28. Please update Ignite via Homebrew or make ignite_install." ; \
 		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
 		exit 1 ; \
 	fi
