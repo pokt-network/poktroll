@@ -315,11 +315,11 @@ trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https:
 .PHONY: ignite_check_version
 # Internal helper target - check ignite version
 ignite_check_version:
-	@version=$$(ignite version 2>/dev/null | grep 'Ignite CLI version:' | awk '{print $$4}') ; \
+	@version=$$(ignite version 2>&1 | awk -F':' '/Ignite CLI version/ {gsub(/^[ \t]+/, "", $$2); print $$2}'); \
 	if [ "$$version" = "" ]; then \
-		echo "Error: Ignite CLI not found. Please install it via Homebrew (recommended) or make ignite_install." ; \
+		echo "Error: Ignite CLI not found."; \
+		echo "Please install it via Homebrew (recommended) or make ignite_install." ; \
 		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
-		echo "This will ensure all dependencies are properly updated." ; \
 		exit 1 ; \
 	fi ; \
 	if [ "$$(printf "v29\n$$version" | sort -V | head -n1)" != "v29" ]; then \

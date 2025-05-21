@@ -71,7 +71,7 @@ move_poktroll_to_pocket:
 	@echo "###############################################"
 
 .PHONY: localnet_regenesis
-localnet_regenesis: ignite_check_versioncheck_yq ## Regenerate the localnet genesis file
+localnet_regenesis: ignite_check_version check_yq ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
 	@set -e
