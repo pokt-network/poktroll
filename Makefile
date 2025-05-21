@@ -320,13 +320,13 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 		SUDO=""; \
 	fi; \
 	echo "Downloading Ignite CLI..."; \
-	wget https://github.com/ignite/cli/releases/download/v28.3.0/ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	wget https://github.com/ignite/cli/releases/download/v29.0.0-rc.1/ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
 	echo "Extracting Ignite CLI..."; \
-	tar -xzf ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	tar -xzf ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
 	echo "Moving Ignite CLI to /usr/local/bin..."; \
 	$$SUDO mv ignite /usr/local/bin/ignite; \
 	echo "Cleaning up..."; \
-	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	rm ignite_29.0.0-rc1_$(OS)_$(ARCH).tar.gz; \
 	ignite version
 
 #######################
