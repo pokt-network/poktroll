@@ -83,7 +83,7 @@ install_ci_deps: ## Installs `golangci-lint` and other go tools
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
-	go install github.com/bufbuild/buf/cmd/buf
+	go install github.com/bufbuild/buf@latest
 
 .PHONY: install_cosmovisor
 install_cosmovisor: ## Installs `cosmovisor`
