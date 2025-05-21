@@ -20,7 +20,6 @@ import (
 // - MinConnectTimeout: Minimum connection timeout
 // - KeepAliveTime: Keepalive interval
 // - KeepAliveTimeout: Keepalive timeout
-//
 type GRPCConfig struct {
 	HostPort          string        `yaml:"host_port"`
 	Insecure          bool          `yaml:"insecure"`
