@@ -479,6 +479,7 @@ tool (
 	github.com/cosmos/gogoproto/protoc-gen-gogo
 	github.com/golangci/golangci-lint/cmd/golangci-lint
 	github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
 	github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2
 	golang.org/x/tools/cmd/goimports
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc

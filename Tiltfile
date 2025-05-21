@@ -230,7 +230,7 @@ if localnet_config["hot-reloading"]:
     # Hot reload the pocketd binary used by the k8s cluster
     local_resource(
         "hot-reload: pocketd",
-        "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
+        "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v --path=app",
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
         resource_deps=["hot-reload: generate protobufs"],
@@ -238,7 +238,7 @@ if localnet_config["hot-reloading"]:
     # Hot reload the local pocketd binary used by the CLI
     local_resource(
         "hot-reload: pocketd - local cli",
-        "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
+        "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin --path=app",
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
         resource_deps=["hot-reload: generate protobufs"],
@@ -339,7 +339,7 @@ for x in range(localnet_config["relayminers"]["count"]):
     k8s_resource(
         "relayminer" + str(actor_number),
         labels=["suppliers"],
-        resource_deps=["validator", "anvil"],
+        resource_deps=["validator"],
         links=[
             link(
                 "http://localhost:3003/d/relayminer/relayminer?orgId=1&var-relayminer=relayminer" + str(actor_number),
@@ -432,12 +432,25 @@ for x in range(localnet_config["path_gateways"]["count"]):
         #     ),
         # ],
         # TODO_IMPROVE(@okdas): Add port forwards to grafana, pprof, like the other resources
+        # TODO_TECHDEBT(@okdas): Enable using port `3070` for consistency with path_localnet.
+        # Changing this port will make E2E start failing.
+        # See the `envoy proxy` k8s resource below for in progress work.
         port_forwards=[
                 # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
                 # https://github.com/buildwithgrove/path/blob/main/config/router.go
                 str(3068 + actor_number) + ":3069"
         ],
+        #
+        # Refhttps://docs.tilt.dev/api.html
+        # extra_pod_selectors=[{"gateway.envoyproxy.io/owning-gateway-name": "guard-envoy-gateway", "app.kubernetes.io/component": "proxy"}],
     )
+
+    # DO NOT DELETE -> E2E Tests -> Add convo with dima
+    # TODO in future -> align with port 3070
+
+    # https://docs.tilt.dev/api.html#api.k8s_resource
+    # objects
+    # extra_pod_selectors
 
     # Envoy Proxy / Gateway. Endpoint that requires authorization header (unlike 3069 - accesses path directly)
     # k8s_resource(

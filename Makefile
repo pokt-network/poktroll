@@ -135,9 +135,6 @@ help: ## Prints all the targets in all the Makefiles
 ### Proto  Helpers ####
 #######################
 
-.PHONY: proto_ignite_gen
-proto_ignite_gen: ## Generate protobuf artifacts using ignite
-	ignite generate proto-go --yes
 
 proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
 	@echo "Updating all instances of cosmossdk.io/api/pocket to github.com/pokt-network/poktroll/api/pocket..."
@@ -166,6 +163,10 @@ proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation
 	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
 	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
+
+.PHONY: proto_ignite_gen
+proto_ignite_gen: ## Generate protobuf artifacts using ignite
+	ignite generate --path=app proto-go --yes
 
 .PHONY: proto_regen
 proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
@@ -273,21 +274,18 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 ### Ignite Helpers ###
 ######################
 
+# TODO_TECHDEBT(@olshansk): Change this ti pocketd keys list
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
 .PHONY: ignite_pocketd_build
-ignite_pocketd_build: check_go_version check_ignite_version ## Build the pocketd binary using Ignite to go to the bin directory
-	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
-
-.PHONY: ignite_pocketd_build_local
-ignite_pocketd_build_local: check_go_version check_ignite_version ## Build the pocketd binary using Ignite to the current directory
-	ignite chain build --skip-proto --debug -v -o .
+ignite_pocketd_build: check_go_version check_ignite_version ## Build the pocketd binary using Ignite
+	ignite chain build --skip-proto --path=app--debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_openapi_gen
 ignite_openapi_gen: ## Generate the OpenAPI spec natively and process the output
-	ignite generate openapi --yes
+	ignite generate openapi --yes --path=app
 	$(MAKE) process_openapi
 
 .PHONY: ignite_openapi_gen_docker
