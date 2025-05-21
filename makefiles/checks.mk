@@ -138,6 +138,8 @@ check_path_up:
 		echo "  make localnet_up"; \
 		echo "########################################################################"; \
 		exit 1; \
+	else \
+		echo "✅ PATH is up and running on port 3069"; \
 	fi
 
 .PHONY: check_relay_util
