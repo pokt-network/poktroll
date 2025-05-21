@@ -447,13 +447,7 @@ for x in range(localnet_config["path_gateways"]["count"]):
         discovery_strategy="selectors-only", # Extra pod selectors didn't work without this
     )
 
-    # DO NOT DELETE -> E2E Tests -> Add convo with dima
-    # TODO in future -> align with port 3070
-
-    # https://docs.tilt.dev/api.html#api.k8s_resource
-    # objects
-    # extra_pod_selectors
-
+    # DO NOT DELETE, this is an example of how we'll turn on envoy proxy in the future
     # Envoy Proxy / Gateway. Endpoint that requires authorization header (unlike 3069 - accesses path directly)
     # k8s_resource(
     #     "path" + str(actor_number),
