@@ -230,7 +230,7 @@ if localnet_config["hot-reloading"]:
     # Hot reload the pocketd binary used by the k8s cluster
     local_resource(
         "hot-reload: pocketd",
-        "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v --path=app",
+        "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
         resource_deps=["hot-reload: generate protobufs"],
@@ -238,7 +238,7 @@ if localnet_config["hot-reloading"]:
     # Hot reload the local pocketd binary used by the CLI
     local_resource(
         "hot-reload: pocketd - local cli",
-        "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin --path=app",
+        "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
         resource_deps=["hot-reload: generate protobufs"],

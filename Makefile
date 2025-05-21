@@ -166,7 +166,7 @@ proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation
 
 .PHONY: proto_ignite_gen
 proto_ignite_gen: ## Generate protobuf artifacts using ignite
-	ignite generate --path=app proto-go --yes
+	ignite generate proto-go --yes
 
 .PHONY: proto_regen
 proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
@@ -215,7 +215,7 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 	go generate ./testutil/testkeyring/keyring.go
 
 .PHONY: go_develop
-go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
+go_develop: ignite_check_version proto_regen go_mockgen ## Generate protos and mocks
 
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all tests
@@ -274,18 +274,18 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 ### Ignite Helpers ###
 ######################
 
-# TODO_TECHDEBT(@olshansk): Change this ti pocketd keys list
+# TODO_TECHDEBT(@olshansk): Change this to pocketd keys list
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
 .PHONY: ignite_pocketd_build
-ignite_pocketd_build: check_go_version check_ignite_version ## Build the pocketd binary using Ignite
-	ignite chain build --skip-proto --path=app--debug -v -o $(shell go env GOPATH)/bin
+ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary using Ignite
+	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_openapi_gen
-ignite_openapi_gen: ## Generate the OpenAPI spec natively and process the output
-	ignite generate openapi --yes --path=app
+ignite_openapi_gen: ignite_check_version ## Generate the OpenAPI spec natively and process the output
+	ignite generate openapi --yes
 	$(MAKE) process_openapi
 
 .PHONY: ignite_openapi_gen_docker
@@ -306,10 +306,27 @@ process_openapi: ## Ensure OpenAPI JSON and YAML files are properly formatted
 ### CI Helpers ###
 ##################
 
+
 .PHONY: trigger_ci
 trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
 	git commit --allow-empty -m "Empty commit"
 	git push
+
+.PHONY: ignite_check_version
+# Internal helper target - check ignite version
+ignite_check_version:
+	@version=$$(ignite version 2>/dev/null | grep 'Ignite CLI version:' | awk '{print $$4}') ; \
+	if [ "$$version" = "" ]; then \
+		echo "Error: Ignite CLI not found. Please install it via Homebrew (recommended) or make ignite_install." ; \
+		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
+		echo "This will ensure all dependencies are properly updated." ; \
+		exit 1 ; \
+	fi ; \
+	if [ "$$(printf "v29\n$$version" | sort -V | head -n1)" != "v29" ]; then \
+		echo "Error: Version $$version is less than v29. Please update Ignite via Homebrew or make ignite_install." ; \
+		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
+		exit 1 ; \
+	fi
 
 .PHONY: ignite_install
 ignite_install: ## Install ignite. Used by CI and heighliner.

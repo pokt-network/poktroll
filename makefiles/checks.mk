@@ -14,18 +14,9 @@ check_go_version:
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
 	\
-	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -le 20 ] ; then \
-		echo "Invalid Go version. Expected 1.21.x or newer but found $$GO_VERSION"; \
+	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -le 24 ] ; then \
+		echo "Invalid Go version. Expected 1.24.x or newer but found $$GO_VERSION"; \
 		exit 1; \
-	fi
-
-.PHONY: check_ignite_version
-# Internal helper target - check ignite version
-check_ignite_version:
-	@version=$$(ignite version 2>/dev/null | grep 'Ignite CLI version:' | awk '{print $$4}') ; \
-	if [ "$$(printf "v28\n$$version" | sort -V | head -n1)" != "v28" ]; then \
-		echo "Error: Version $$version is less than v28. Exiting with error." ; \
-		exit 1 ; \
 	fi
 
 .PHONY: check_act
