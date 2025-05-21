@@ -947,15 +947,16 @@ type Params struct {
 	// application unbonding period will exceed the end of its corresponding proof window close height.
 	ApplicationUnbondingPeriodSessions uint64 `protobuf:"varint,8,opt,name=application_unbonding_period_sessions,json=applicationUnbondingPeriodSessions,proto3" json:"application_unbonding_period_sessions,omitempty"`
 	// The amount of tokens that a compute unit should translate to when settling a session.
-	// It is denominated in 1/10^compute_unit_cost_granularity uPOKT.
+	// It is denominated in fractional uPOKT (1/compute_unit_cost_granularity)
 	// DEV_NOTE: This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
 	ComputeUnitsToTokensMultiplier uint64 `protobuf:"varint,9,opt,name=compute_units_to_tokens_multiplier,json=computeUnitsToTokensMultiplier,proto3" json:"compute_units_to_tokens_multiplier,omitempty"`
 	// gateway_unbonding_period_sessions is the number of sessions that a gateway must wait after
 	// unstaking before their staked assets are moved to its account balance.
 	GatewayUnbondingPeriodSessions uint64 `protobuf:"varint,10,opt,name=gateway_unbonding_period_sessions,json=gatewayUnbondingPeriodSessions,proto3" json:"gateway_unbonding_period_sessions,omitempty"`
-	// compute_unit_cost_granularity is the exponent used to represent the smallest price of a single compute unit.
-	// It is used to convert claims cost to the base unit (uPOKT).
-	// (i.e. compute unit cost in uPOKT = compute_units_to_token_multiplier / 10^compute_unit_cost_granularity)
+	// compute_unit_cost_granularity is the fraction of the base unit (uPOKT) used
+	// to represent the smallest price of a single compute unit.
+	// It is used to convert claims rewards to the base unit (uPOKT).
+	// (i.e. compute unit cost in uPOKT = compute_units_to_token_multiplier / compute_unit_cost_granularity)
 	ComputeUnitCostGranularity uint64 `protobuf:"varint,11,opt,name=compute_unit_cost_granularity,json=computeUnitCostGranularity,proto3" json:"compute_unit_cost_granularity,omitempty"`
 }
 

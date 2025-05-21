@@ -208,8 +208,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 // handle all the relays completed.
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
 	// Test Parameters
-	globalComputeUnitsToTokensMultiplier := uint64(1000000)
 	globalComputeUnitCostGranularity := uint64(1000000)
+	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
 	serviceComputeUnitsPerRelay := uint64(100)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
@@ -397,8 +397,8 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []uint64{12, 38, 50}
-	globalComputeUnitsToTokensMultiplier := uint64(1000000)
 	globalComputeUnitCostGranularity := uint64(1000000)
+	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
