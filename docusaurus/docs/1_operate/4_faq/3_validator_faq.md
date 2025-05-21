@@ -45,6 +45,15 @@ If `K` joins with more stake than `J`:
 - `K` enters the active set.
 - `J` is rotated out and becomes inactive.
 
+## How does reward share work for Validators on Shannon?
+
+In Shannon, we are moving away from a custom \*supplier-like rev share\* imlpementation
+and defaulting to standard Cosmos best practices.
+
+Learn more about validator stake delegation [here](https://docs.cosmos.network/main/build/modules/staking#msgdelegate).
+
+You can read more about how delegation works [on the Cosmos Hub](https://hub.cosmos.network/main/delegators/delegator-faq), which follows similar patterns, or [this blog post](https://medium.com/@notional-ventures/staking-and-delegation-in-cosmos-db660154bcf9)
+
 ## How many validators can be staked and how many validators can produce blocks?
 
 An infinite number of validators can be staked, HOWEVER, only validators in the _active set_ will produce blocks. The size of the active set is dictated by the parameter `max_validators` which can be checked using `pocketd query params`.
