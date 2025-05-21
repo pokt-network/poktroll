@@ -58,7 +58,7 @@ func (claim *Claim) GetClaimeduPOKT(
 	// Calculate the fractional uPOKT amount of a single compute unit.
 	computeUnitsToUpoktMultiplierRat := new(big.Rat).SetFrac64(
 		// CUTTM is a GLOBAL network wide parameter.
-		int64(sharedParams.GetComputeUnitsToTokenMultiplier()),
+		int64(sharedParams.GetComputeUnitsToTokensMultiplier()),
 		// The uPOKT cost granularity of a single compute unit.
 		int64(sharedParams.GetComputeUnitCostGranularity()),
 	)

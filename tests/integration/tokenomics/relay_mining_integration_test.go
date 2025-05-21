@@ -92,7 +92,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 
 	// Set the CUTTM to 1 to simplify the math
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
-	sharedParams.ComputeUnitsToTokenMultiplier = uint64(1) * sharedParams.ComputeUnitCostGranularity
+	sharedParams.ComputeUnitsToTokensMultiplier = uint64(1) * sharedParams.ComputeUnitCostGranularity
 	err = keepers.SharedKeeper.SetParams(sdkCtx, sharedParams)
 	require.NoError(t, err)
 

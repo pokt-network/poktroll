@@ -69,7 +69,7 @@ type EventClaimExpired struct {
 	// compute units and the relay difficulty multiplier for the particular service.
 	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
 	// The uPOKT coin claimed to be rewarded for the work done as a function of
-	// the number of estimated compute units and the compute units to pPOKT multiplier.
+	// the number of estimated compute units and the compute units to token multiplier.
 	ClaimedUpokt *types1.Coin `protobuf:"bytes,6,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
 }
 
@@ -159,7 +159,7 @@ type EventClaimSettled struct {
 	// compute units and the relay difficulty multiplier for the particular service.
 	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
 	// The uPOKT coin claimed to be rewarded for the work done as a function of
-	// the number of estimated compute units and the compute units to pPOKT multiplier.
+	// the number of estimated compute units and the compute units to token multiplier.
 	ClaimedUpokt *types1.Coin `protobuf:"bytes,6,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
 	// SettlementResult holds mint, burn, and transfer operations on a per-claim basis.
 	SettlementResult ClaimSettlementResult `protobuf:"bytes,7,opt,name=settlement_result,json=settlementResult,proto3" json:"settlement_result"`

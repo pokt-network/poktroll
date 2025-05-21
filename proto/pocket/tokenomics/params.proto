@@ -31,7 +31,7 @@ message Params {
   // TODO_IMPROVE: Look into an opportunity to use an enum to avoid using strings throughout the codebase.
 
   // TODO_ADD: Some parameters we should consider adding next:
-  //   - Service.computeUnitsToTokenMultiplierMap
+  //   - Service.computeUnitsToTokensMultiplierMap
   //   - Application.MaxuPOKTPerRelay
   //   - Application.MinuPOKTPerRelay
   //   - Suppler.MaxuPOKTPerRelay

@@ -24,7 +24,7 @@ var (
 		SupplierUnbondingPeriodSessions:    1,
 		ApplicationUnbondingPeriodSessions: 1,
 		GatewayUnbondingPeriodSessions:     1,
-		ComputeUnitsToTokenMultiplier:      42000000,
+		ComputeUnitsToTokensMultiplier:     42000000,
 		ComputeUnitCostGranularity:         1000000,
 	}
 

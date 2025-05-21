@@ -96,7 +96,7 @@ var (
 			SupplierUnbondingPeriodSessions:    9,
 			ApplicationUnbondingPeriodSessions: 9,
 			GatewayUnbondingPeriodSessions:     9,
-			ComputeUnitsToTokenMultiplier:      42000000,
+			ComputeUnitsToTokensMultiplier:     42000000,
 			ComputeUnitCostGranularity:         1000000,
 		},
 		DefaultParams:    sharedtypes.DefaultParams(),

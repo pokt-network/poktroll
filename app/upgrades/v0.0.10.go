@@ -82,7 +82,7 @@ var Upgrade_0_0_10 = Upgrade{
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
 			sharedParams.SupplierUnbondingPeriodSessions = uint64(1)
 			sharedParams.ApplicationUnbondingPeriodSessions = uint64(1)
-			sharedParams.ComputeUnitsToTokenMultiplier = uint64(42)
+			sharedParams.ComputeUnitsToTokensMultiplier = uint64(42)
 			err = keepers.SharedKeeper.SetParams(ctx, sharedParams)
 			if err != nil {
 				return err

@@ -121,7 +121,7 @@ func (s *tokenLogicModuleTestSuite) getProofParams() *prooftypes.Params {
 // getSharedParams returns the default shared params with the CUTTM set to 1.
 func (s *tokenLogicModuleTestSuite) getSharedParams() *sharedtypes.Params {
 	sharedParams := sharedtypes.DefaultParams()
-	sharedParams.ComputeUnitsToTokenMultiplier = 1 * sharedParams.ComputeUnitCostGranularity
+	sharedParams.ComputeUnitsToTokensMultiplier = 1 * sharedParams.ComputeUnitCostGranularity
 	return &sharedParams
 }
 

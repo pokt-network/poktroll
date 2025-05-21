@@ -41,7 +41,7 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		SupplierUnbondingPeriodSessions:    uint64(unbondingPeriodSessions),
 		ApplicationUnbondingPeriodSessions: uint64(unbondingPeriodSessions),
 		GatewayUnbondingPeriodSessions:     uint64(unbondingPeriodSessions),
-		ComputeUnitsToTokenMultiplier:      sharedtypes.DefaultComputeUnitsToTokenMultiplier,
+		ComputeUnitsToTokensMultiplier:     sharedtypes.DefaultComputeUnitsToTokensMultiplier,
 		ComputeUnitCostGranularity:         sharedtypes.DefaultComputeUnitCostGranularity,
 	}
 

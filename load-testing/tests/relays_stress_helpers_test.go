@@ -1254,7 +1254,7 @@ func allAppsDelegatedToAllGateways(
 
 // getRelayAmountCost computes the relay cost from the tokenomics module.
 func (s *relaysSuite) getRelayAmountCost() int64 {
-	relayCost := s.testedService.ComputeUnitsPerRelay * s.sharedParams.ComputeUnitsToTokenMultiplier
+	relayCost := s.testedService.ComputeUnitsPerRelay * s.sharedParams.ComputeUnitsToTokensMultiplier
 
 	return int64(relayCost)
 }

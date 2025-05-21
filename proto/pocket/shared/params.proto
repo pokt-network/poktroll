@@ -52,7 +52,7 @@ message Params {
   // The amount of tokens that a compute unit should translate to when settling a session.
   // It is denominated in 1/10^compute_unit_cost_granularity uPOKT.
   // DEV_NOTE: This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
-  uint64 compute_units_to_token_multiplier = 9 [(gogoproto.jsontag) = "compute_units_to_token_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_token_multiplier\""];
+  uint64 compute_units_to_tokens_multiplier = 9 [(gogoproto.jsontag) = "compute_units_to_tokens_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
 
   // gateway_unbonding_period_sessions is the number of sessions that a gateway must wait after
   // unstaking before their staked assets are moved to its account balance.

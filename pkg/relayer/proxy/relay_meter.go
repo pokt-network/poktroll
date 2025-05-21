@@ -424,7 +424,7 @@ func getSingleMinedRelayCostCoin(
 
 	// Get the estimated cost of the relay if it gets mined.
 	computeUnitCostUpokt := new(big.Rat).SetFrac64(
-		int64(sharedParams.GetComputeUnitsToTokenMultiplier()),
+		int64(sharedParams.GetComputeUnitsToTokensMultiplier()),
 		int64(sharedParams.GetComputeUnitCostGranularity()),
 	)
 	relayCostRat := new(big.Rat).Mul(new(big.Rat).SetUint64(service.ComputeUnitsPerRelay), computeUnitCostUpokt)

@@ -24,7 +24,7 @@ var testSharedParams = sharedtypes.Params{
 	SupplierUnbondingPeriodSessions:    4,
 	ApplicationUnbondingPeriodSessions: 4,
 	GatewayUnbondingPeriodSessions:     4,
-	ComputeUnitsToTokenMultiplier:      42000000,
+	ComputeUnitsToTokensMultiplier:     42000000,
 	ComputeUnitCostGranularity:         1000000,
 }
 
@@ -358,8 +358,8 @@ func TestMsgUpdateParam_UpdateApplicationUnbondingPeriodSessions(t *testing.T) {
 	).Error())
 }
 
-func TestMsgUpdateParam_ComputeUnitsToTokenMultiplier(t *testing.T) {
-	var expectedComputeUnitsToTokenMultiplier uint64 = 5000000
+func TestMsgUpdateParam_ComputeUnitsToTokensMultiplier(t *testing.T) {
+	var expectedComputeUnitsToTokensMultiplier uint64 = 5000000
 
 	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
@@ -368,33 +368,33 @@ func TestMsgUpdateParam_ComputeUnitsToTokenMultiplier(t *testing.T) {
 	require.NoError(t, k.SetParams(ctx, testSharedParams))
 
 	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedComputeUnitsToTokenMultiplier, testSharedParams.GetComputeUnitsToTokenMultiplier())
+	require.NotEqual(t, expectedComputeUnitsToTokensMultiplier, testSharedParams.GetComputeUnitsToTokensMultiplier())
 
 	// Update the compute units to token multiplier param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamComputeUnitsToTokenMultiplier,
-		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedComputeUnitsToTokenMultiplier},
+		Name:      sharedtypes.ParamComputeUnitsToTokensMultiplier,
+		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedComputeUnitsToTokensMultiplier},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.Equal(t, expectedComputeUnitsToTokenMultiplier, res.Params.GetComputeUnitsToTokenMultiplier())
+	require.Equal(t, expectedComputeUnitsToTokensMultiplier, res.Params.GetComputeUnitsToTokensMultiplier())
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, res.Params, string(sharedtypes.KeyComputeUnitsToTokenMultiplier))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, res.Params, string(sharedtypes.KeyComputeUnitsToTokensMultiplier))
 
 	// Ensure that compute units to token multiplier that is less than 1 is not allowed.
 	updateParamMsg = &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamComputeUnitsToTokenMultiplier,
+		Name:      sharedtypes.ParamComputeUnitsToTokensMultiplier,
 		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: 0},
 	}
 	_, err = msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.EqualError(t, err, status.Error(
 		codes.InvalidArgument,
 		sharedtypes.ErrSharedParamInvalid.Wrapf(
-			"invalid ComputeUnitsToTokenMultiplier: (%d)", 0,
+			"invalid ComputeUnitsToTokensMultiplier: (%d)", 0,
 		).Error(),
 	).Error())
 }

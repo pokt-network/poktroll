@@ -46,10 +46,10 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 				AsType:    &MsgUpdateParam_AsUint64{AsUint64: 1},
 			},
 		}, {
-			desc: "invalid ComputeUnitsToTokenMultiplier",
+			desc: "invalid ComputeUnitsToTokensMultiplier",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      ParamComputeUnitsToTokenMultiplier,
+				Name:      ParamComputeUnitsToTokensMultiplier,
 				AsType:    &MsgUpdateParam_AsUint64{AsUint64: 0},
 			},
 			expectedErr: ErrSharedParamInvalid,

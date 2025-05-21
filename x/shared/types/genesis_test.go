@@ -28,7 +28,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					SupplierUnbondingPeriodSessions:    defaultParams.SupplierUnbondingPeriodSessions,
 					ApplicationUnbondingPeriodSessions: defaultParams.ApplicationUnbondingPeriodSessions,
 					GatewayUnbondingPeriodSessions:     defaultParams.GatewayUnbondingPeriodSessions,
-					ComputeUnitsToTokenMultiplier:      defaultParams.ComputeUnitsToTokenMultiplier,
+					ComputeUnitsToTokensMultiplier:     defaultParams.ComputeUnitsToTokensMultiplier,
 					ComputeUnitCostGranularity:         defaultParams.ComputeUnitCostGranularity,
 				},
 
