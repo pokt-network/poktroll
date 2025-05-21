@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -50,6 +51,20 @@ func TestMorseClaimableAccountQuerySingle(t *testing.T) {
 		{
 			desc: "InvalidRequest",
 			err:  status.Error(codes.InvalidArgument, "invalid request"),
+		},
+		{
+			desc: "Uppercase Address",
+			request: &types.QueryMorseClaimableAccountRequest{
+				Address: strings.ToUpper(msgs[0].MorseSrcAddress),
+			},
+			response: &types.QueryMorseClaimableAccountResponse{MorseClaimableAccount: msgs[0]},
+		},
+		{
+			desc: "Lowercase Address",
+			request: &types.QueryMorseClaimableAccountRequest{
+				Address: strings.ToLower(msgs[0].MorseSrcAddress),
+			},
+			response: &types.QueryMorseClaimableAccountResponse{MorseClaimableAccount: msgs[0]},
 		},
 	}
 	for _, tc := range tests {

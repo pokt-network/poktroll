@@ -8,6 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/pokt-network/poktroll/pkg/encoding"
 )
 
 // AccAddressAndPubKey returns a sample account address and public key
@@ -77,5 +79,5 @@ func AccAddressFromConsBech32(consBech32 string) string {
 // MorseAddressHex returns the hex-encoded string representation of the address
 // corresponding to a random Morse (ed25519) keypair.
 func MorseAddressHex() string {
-	return hex.EncodeToString(ConsAddress().Bytes())
+	return encoding.NormalizeMorseHexAddress(hex.EncodeToString(ConsAddress().Bytes()))
 }
