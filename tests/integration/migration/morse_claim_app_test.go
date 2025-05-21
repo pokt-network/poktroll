@@ -20,6 +20,11 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+var (
+	oneDayFromNow = time.Now().Add(24 * time.Hour)
+	oneDayAgo     = time.Now().Add(-24 * time.Hour)
+)
+
 // TestClaimMorseApplication exercises claiming of a MorseClaimableAccount as a new staked application.
 func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllApplicationMorseAccountActorType)
@@ -265,10 +270,29 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		return staked, unstaked
 	}
 	appStakesConfigFn := testmigration.WithApplicationStakesFn(appStakeAboveMinConfigFn)
+	unstakingTimeConfig := testmigration.WithUnstakingTimeConfig(testmigration.UnstakingTimeConfig{
+		ApplicationUnstakingTimeConfigFn: func(
+			_ uint64,
+			_ uint64,
+			actorType testmigration.MorseApplicationActorType,
+			_ *migrationtypes.MorseApplication,
+		) time.Time {
+			switch actorType {
+			case testmigration.MorseUnbondingApplication:
+				return oneDayFromNow
+			case testmigration.MorseUnbondedApplication:
+				return oneDayAgo
+			default:
+				// Don't set unstaking time for any other application actor types.
+				return time.Time{}
+			}
+		},
+	})
 
-	morseFixtureOpts := []testmigration.MorseFixturesOption{
+	morseFixtureOpts := []testmigration.MorseFixturesOptionFn{
 		unbondingActorsOpt,
 		appStakesConfigFn,
+		unstakingTimeConfig,
 	}
 
 	// Generate and import Morse claimable accounts.
@@ -280,15 +304,15 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 	s.NoError(err)
 
 	// DEV_NOTE: The accounts/actors are generated in the order they are defined in the UnbondingActorsConfig struct.
-	unbondingAppPrivateKey := fixtures.GenerateMorsePrivateKey(0)
-	unbondedAppPrivateKey := fixtures.GenerateMorsePrivateKey(1)
+	unbondingAppFixture := fixtures.GetApplicationFixtures(testmigration.MorseUnbondingApplication)[0]
+	unbondedAppFixture := fixtures.GetApplicationFixtures(testmigration.MorseUnbondedApplication)[0]
 
 	s.Run("unbonding application", func() {
 		shannonDestAddr := sample.AccAddress()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 			shannonDestAddr,
-			unbondingAppPrivateKey,
+			unbondingAppFixture.GetPrivateKey(),
 			s.appServiceConfig,
 			sample.AccAddress(),
 		)
@@ -392,7 +416,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 			shannonDestAddr,
-			unbondedAppPrivateKey,
+			unbondedAppFixture.GetPrivateKey(),
 			s.appServiceConfig,
 			sample.AccAddress(),
 		)
