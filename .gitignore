@@ -115,6 +115,8 @@ vultr_*.json
 # GitHub
 .secrets
 
+# Local pocketd build
+# ignite chain build --skip-proto --debug -v -o .
 pocketd
 
 # Used in 4_morse_migration/11_localnet_testing.md

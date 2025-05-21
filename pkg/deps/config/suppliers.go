@@ -6,8 +6,10 @@ import (
 	"net/url"
 
 	"cosmossdk.io/depinject"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
@@ -23,6 +25,11 @@ import (
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/pkg/relayer/miner"
+	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
+	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
+	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
 // FlagQueryCaching is the flag name to enable or disable query caching.
@@ -556,5 +563,203 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 		}
 
 		return depinject.Configs(deps, depinject.Supply(paramsCache)), nil
+	}
+}
+
+// SupplyMiner constructs a Miner instance and returns a new depinject.Config with it supplied.
+//
+// - Supplies Miner to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
+func SupplyMiner(
+	_ context.Context,
+	deps depinject.Config,
+	_ *cobra.Command,
+) (depinject.Config, error) {
+	mnr, err := miner.NewMiner(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(mnr)), nil
+}
+
+// SupplyRelayMeter constructs a RelayMeter instance and returns a new depinject.Config with it supplied.
+//
+// - Supplies RelayMeter to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
+func SupplyRelayMeter(
+	_ context.Context,
+	deps depinject.Config,
+	_ *cobra.Command,
+) (depinject.Config, error) {
+	rm, err := proxy.NewRelayMeter(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(rm)), nil
+}
+
+// SupplyTxFactory constructs a cosmostx.Factory instance and returns a new depinject.Config with it supplied.
+//
+// - Supplies TxFactory to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
+func SupplyTxFactory(
+	_ context.Context,
+	deps depinject.Config,
+	cmd *cobra.Command,
+) (depinject.Config, error) {
+	var txClientCtx txtypes.Context
+	if err := depinject.Inject(deps, &txClientCtx); err != nil {
+		return nil, err
+	}
+
+	clientCtx := cosmosclient.Context(txClientCtx)
+	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(clientFactory)), nil
+}
+
+// SupplyTxContext constructs a transaction context and returns a new depinject.Config with it supplied.
+//
+// - Supplies TxContext to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
+func SupplyTxContext(
+	_ context.Context,
+	deps depinject.Config,
+	_ *cobra.Command,
+) (depinject.Config, error) {
+	txContext, err := tx.NewTxContext(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(txContext)), nil
+}
+
+// NewSupplyRelayAuthenticatorFn returns a function which constructs a RelayAuthenticator and returns a new depinject.Config with it supplied.
+//
+// - Accepts signingKeyNames for authenticator setup
+// - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - signingKeyNames: List of signing key names
+//
+// Returns:
+//   - SupplierFn: Supplier function for dependency injection
+func NewSupplyRelayAuthenticatorFn(
+	signingKeyNames []string,
+) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayAuthenticator, err := relay_authenticator.NewRelayAuthenticator(
+			deps,
+			relay_authenticator.WithSigningKeyNames(signingKeyNames),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(relayAuthenticator)), nil
+	}
+}
+
+// newSupplyRelayerProxyFn returns a function which constructs a RelayerProxy and returns a new depinject.Config with it supplied.
+//
+// - Accepts servicesConfigMap for proxy setup
+// - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - servicesConfigMap: Map of services configuration
+//
+// Returns:
+//   - SupplierFn: Supplier function for dependency injection
+func NewSupplyRelayerProxyFn(
+	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
+) SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayerProxy, err := proxy.NewRelayerProxy(
+			deps,
+			proxy.WithServicesConfigMap(servicesConfigMap),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(relayerProxy)), nil
+	}
+}
+
+// newSupplyRelayerSessionsManagerFn returns a function which constructs a RelayerSessionsManager and returns a new depinject.Config with it supplied.
+//
+// - Accepts smtStorePath for sessions manager setup
+// - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - smtStorePath: Path to the sessions store
+//
+// Returns:
+//   - config.SupplierFn: Supplier function for dependency injection
+func NewSupplyRelayerSessionsManagerFn(smtStorePath string) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayerSessionsManager, err := session.NewRelayerSessions(
+			deps,
+			session.WithStoresDirectory(smtStorePath),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
 	}
 }
