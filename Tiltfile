@@ -339,7 +339,7 @@ for x in range(localnet_config["relayminers"]["count"]):
     k8s_resource(
         "relayminer" + str(actor_number),
         labels=["suppliers"],
-        resource_deps=["validator"],
+        resource_deps=["validator", "anvil"],
         links=[
             link(
                 "http://localhost:3003/d/relayminer/relayminer?orgId=1&var-relayminer=relayminer" + str(actor_number),
