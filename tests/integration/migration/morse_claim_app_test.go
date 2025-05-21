@@ -266,12 +266,12 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 	) (staked, unstaked *cosmostypes.Coin) {
 		staked, unstaked = new(cosmostypes.Coin), new(cosmostypes.Coin)
 		*staked = s.minStake.Add(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1))
-		*unstaked = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
+		*unstaked = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 420)
 		return staked, unstaked
 	}
-	appStakesConfigFn := testmigration.WithApplicationStakesFn(appStakeAboveMinConfigFn)
-	unstakingTimeConfig := testmigration.WithUnstakingTimeConfig(testmigration.UnstakingTimeConfig{
-		ApplicationUnstakingTimeConfigFn: func(
+	appStakesFnOpt := testmigration.WithApplicationStakesFn(appStakeAboveMinConfigFn)
+	unstakingTimeConfig := testmigration.WithUnstakingTime(testmigration.UnstakingTimeConfig{
+		ApplicationUnstakingTimeFn: func(
 			_ uint64,
 			_ uint64,
 			actorType testmigration.MorseApplicationActorType,
@@ -291,7 +291,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 
 	morseFixtureOpts := []testmigration.MorseFixturesOptionFn{
 		unbondingActorsOpt,
-		appStakesConfigFn,
+		appStakesFnOpt,
 		unstakingTimeConfig,
 	}
 

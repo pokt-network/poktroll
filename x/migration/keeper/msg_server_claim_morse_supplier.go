@@ -137,7 +137,7 @@ func (k msgServer) ClaimMorseSupplier(
 		Supplier:           unbondedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
 		SessionEndHeight:   sessionEndHeight,
-		UnbondingEndHeight: sessionEndHeight,
+		UnbondingEndHeight: previousSessionEndHeight,
 	}
 
 	// Collect events for emission. Events are appended prior to emission to allow
@@ -236,7 +236,9 @@ func (k msgServer) ClaimMorseSupplier(
 			)
 		}
 
+		// Set the supplier's unstake session end height.
 		supplier.UnstakeSessionEndHeight = uint64(estimatedUnstakeSessionEndHeight)
+		k.supplierKeeper.SetAndIndexDehydratedSupplier(ctx, *supplier)
 
 		// Emit an event which signals that the claimed Morse supplier's unbonding
 		// period began on Morse and will end on Shannon ad unbonding_end_height

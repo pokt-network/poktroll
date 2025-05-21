@@ -72,6 +72,7 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 				{
 					Url:     "http://test.example:1234",
 					RpcType: sharedtypes.RPCType_JSON_RPC,
+					//Configs: make([]*sharedtypes.ConfigOption, 0),
 				},
 			},
 			RevShare: []*sharedtypes.ServiceRevenueShare{

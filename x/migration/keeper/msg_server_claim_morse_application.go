@@ -152,7 +152,6 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		preClaimAppStake.Add(morseClaimableAccount.GetApplicationStake()),
 		[]*sharedtypes.ApplicationServiceConfig{msg.ServiceConfig},
 	)
-
 	app, err := k.appKeeper.StakeApplication(ctx, logger, msgStakeApp)
 	if err != nil {
 		// DEV_NOTE: If the error is non-nil, StakeApplication SHOULD ALWAYS return a gRPC status error.

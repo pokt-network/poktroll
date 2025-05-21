@@ -221,8 +221,8 @@ type UnbondingActorsConfig struct {
 
 // UnstakingTimeConfig holds functions that determine the unstaking time for each actor type.
 type UnstakingTimeConfig struct {
-	ApplicationUnstakingTimeConfigFn UnstakingTimeConfigFn[MorseApplicationActorType, *migrationtypes.MorseApplication]
-	ValidatorUnstakingTimeConfigFn   UnstakingTimeConfigFn[MorseValidatorActorType, *migrationtypes.MorseValidator]
+	ApplicationUnstakingTimeFn UnstakingTimeConfigFn[MorseApplicationActorType, *migrationtypes.MorseApplication]
+	ValidatorUnstakingTimeFn   UnstakingTimeConfigFn[MorseValidatorActorType, *migrationtypes.MorseValidator]
 }
 
 // UnstakingTimeConfigFn defines a function that configures the unstaking time for an actor.
@@ -302,7 +302,7 @@ func WithUnbondingActors(cfg UnbondingActorsConfig) MorseFixturesOptionFn {
 }
 
 // TODO_IN_THIS_COMMIT: godoc...
-func WithUnstakingTimeConfig(cfg UnstakingTimeConfig) MorseFixturesOptionFn {
+func WithUnstakingTime(cfg UnstakingTimeConfig) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.UnstakingTimeConfig = cfg
 	}
@@ -491,6 +491,20 @@ func (mf *MorseMigrationFixtures) generate() error {
 		}
 	}
 
+	// Generate unbonding validator accounts with both staked unstaked accounts
+	for i := range mf.config.UnbondingActorsConfig.NumValidatorsUnbondingBegan {
+		if err := mf.addValidator(i, MorseUnbondingValidator); err != nil {
+			return err
+		}
+	}
+
+	// Generate unbonded validator accounts with both staked unstaked accounts
+	for i := range mf.config.UnbondingActorsConfig.NumValidatorsUnbondingEnded {
+		if err := mf.addValidator(i, MorseUnbondedValidator); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -649,16 +663,15 @@ func (mf *MorseMigrationFixtures) addApplication(
 	}
 
 	// Set the unstaking time for unbonding and unbonded applications
-	if mf.config.UnstakingTimeConfig.ApplicationUnstakingTimeConfigFn == nil {
-		panic("UnstakingTimeConfig.ApplicationUnstakingTimeConfigFn is required when using UnbondingActorsConfig with non-zero NumApplicationsXXX")
+	if mf.config.UnstakingTimeConfig.ApplicationUnstakingTimeFn != nil {
+		unstakingTime := mf.config.UnstakingTimeConfig.ApplicationUnstakingTimeFn(
+			allAccountsIndex,
+			actorIndex,
+			applicationType,
+			morseApplication,
+		)
+		morseClaimableAccount.UnstakingTime = unstakingTime
 	}
-	unstakingTime := mf.config.UnstakingTimeConfig.ApplicationUnstakingTimeConfigFn(
-		allAccountsIndex,
-		actorIndex,
-		applicationType,
-		morseApplication,
-	)
-	morseClaimableAccount.UnstakingTime = unstakingTime
 
 	// Store the claimable application in the account state
 	mf.morseAccountState.Accounts[allAccountsIndex] = morseClaimableAccount
@@ -734,17 +747,16 @@ func (mf *MorseMigrationFixtures) addValidator(
 	}
 
 	// Set the unstaking time for unbonding and unbonded suppliers
-	if mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeConfigFn == nil {
-		panic("UnstakingTimeConfig.ValidatorUnstakingTimeConfigFn is required when using UnbondingActorsConfig with non-zero NumValidatorsXXX")
-	}
-	if mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeConfigFn != nil {
-		unstakingTime := mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeConfigFn(
-			allAccountsIndex,
-			actorIndex,
-			validatorType,
-			morseValidator,
-		)
-		morseClaimableAccount.UnstakingTime = unstakingTime
+	if mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn != nil {
+		if mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn != nil {
+			unstakingTime := mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn(
+				allAccountsIndex,
+				actorIndex,
+				validatorType,
+				morseValidator,
+			)
+			morseClaimableAccount.UnstakingTime = unstakingTime
+		}
 	}
 
 	// Store the claimable validator in the account state
