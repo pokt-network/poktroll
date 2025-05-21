@@ -83,7 +83,6 @@ install_ci_deps: ## Installs `golangci-lint` and other go tools
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
-	go install github.com/bufbuild/buf@latest
 
 .PHONY: install_cosmovisor
 install_cosmovisor: ## Installs `cosmovisor`
@@ -338,13 +337,16 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 		SUDO=""; \
 	fi; \
 	echo "Downloading Ignite CLI..."; \
-	wget https://github.com/ignite/cli/releases/download/v29.0.0-rc.1/ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
+	wget https://github.com/ignite/cli/releases/download/v28.10.0/ignite_28.10.0_$(OS)_$(ARCH).tar.gz; \
 	echo "Extracting Ignite CLI..."; \
-	tar -xzf ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
+	tar -xzf ignite_28.10.0_$(OS)_$(ARCH).tar.gz; \
 	echo "Moving Ignite CLI to /usr/local/bin..."; \
 	$$SUDO mv ignite /usr/local/bin/ignite; \
 	echo "Cleaning up..."; \
-	rm ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
+	rm ignite_28.10.0_$(OS)_$(ARCH).tar.gz; \
+	echo "Configuring ignite so it doesn't block CI by asking for tracking consent..."; \
+	mkdir -p $(HOME)/.ignite; \
+	echo '{"name":"doNotTrackMe","doNotTrack":true}' > $(HOME)/.ignite/anon_identity.json; \
 	ignite version
 
 #######################
