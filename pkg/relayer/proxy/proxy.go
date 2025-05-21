@@ -205,7 +205,7 @@ func (rp *relayerProxy) PingAll(ctx context.Context) error {
 
 // Forward iterates through all the relay servers, then tries to forward the given request.
 func (rp *relayerProxy) Forward(ctx context.Context, serviceID string, w http.ResponseWriter, req *http.Request) error {
-	found := false
+	successfullyForwardedRequest := false
 
 	for _, srv := range rp.servers {
 		if err := srv.Forward(ctx, serviceID, w, req); err != nil {
@@ -214,11 +214,11 @@ func (rp *relayerProxy) Forward(ctx context.Context, serviceID string, w http.Re
 			}
 			return err
 		}
-		found = true
+		successfullyForwardedRequest = true
 		break
 	}
 
-	if !found {
+	if !successfullyForwardedRequest {
 		return ErrRelayerProxyServiceIDNotFound
 	}
 
