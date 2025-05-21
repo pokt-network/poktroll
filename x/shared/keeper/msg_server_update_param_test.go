@@ -24,7 +24,8 @@ var testSharedParams = sharedtypes.Params{
 	SupplierUnbondingPeriodSessions:    4,
 	ApplicationUnbondingPeriodSessions: 4,
 	GatewayUnbondingPeriodSessions:     4,
-	ComputeUnitsToPpoktMultiplier:      42000000,
+	ComputeUnitsToTokenMultiplier:      42000000,
+	ComputeUnitCostGranularity:         1000000,
 }
 
 func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
@@ -357,8 +358,8 @@ func TestMsgUpdateParam_UpdateApplicationUnbondingPeriodSessions(t *testing.T) {
 	).Error())
 }
 
-func TestMsgUpdateParam_ComputeUnitsToPpoktMultiplier(t *testing.T) {
-	var expectedComputeUnitsToPpoktMultiplier uint64 = 5000000
+func TestMsgUpdateParam_ComputeUnitsToTokenMultiplier(t *testing.T) {
+	var expectedComputeUnitsToTokenMultiplier uint64 = 5000000
 
 	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
@@ -367,33 +368,74 @@ func TestMsgUpdateParam_ComputeUnitsToPpoktMultiplier(t *testing.T) {
 	require.NoError(t, k.SetParams(ctx, testSharedParams))
 
 	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedComputeUnitsToPpoktMultiplier, testSharedParams.GetComputeUnitsToPpoktMultiplier())
+	require.NotEqual(t, expectedComputeUnitsToTokenMultiplier, testSharedParams.GetComputeUnitsToTokenMultiplier())
 
-	// Update the compute units to pPOKT multiplier param
+	// Update the compute units to token multiplier param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamComputeUnitsToPpoktMultiplier,
-		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedComputeUnitsToPpoktMultiplier},
+		Name:      sharedtypes.ParamComputeUnitsToTokenMultiplier,
+		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedComputeUnitsToTokenMultiplier},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.Equal(t, expectedComputeUnitsToPpoktMultiplier, res.Params.GetComputeUnitsToPpoktMultiplier())
+	require.Equal(t, expectedComputeUnitsToTokenMultiplier, res.Params.GetComputeUnitsToTokenMultiplier())
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, res.Params, string(sharedtypes.KeyComputeUnitsToPpoktMultiplier))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, res.Params, string(sharedtypes.KeyComputeUnitsToTokenMultiplier))
 
-	// Ensure that compute units to pPOKT multiplier that is less than 1 is not allowed.
+	// Ensure that compute units to token multiplier that is less than 1 is not allowed.
 	updateParamMsg = &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamComputeUnitsToPpoktMultiplier,
+		Name:      sharedtypes.ParamComputeUnitsToTokenMultiplier,
 		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: 0},
 	}
 	_, err = msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.EqualError(t, err, status.Error(
 		codes.InvalidArgument,
 		sharedtypes.ErrSharedParamInvalid.Wrapf(
-			"invalid ComputeUnitsToPpoktMultiplier: (%d)", 0,
+			"invalid ComputeUnitsToTokenMultiplier: (%d)", 0,
+		).Error(),
+	).Error())
+}
+
+func TestMsgUpdateParam_ComputeUnitCostGranularity(t *testing.T) {
+	var expectedComputeUnitCostGranularity uint64 = 1000
+
+	k, ctx := testkeeper.SharedKeeper(t)
+	msgSrv := keeper.NewMsgServerImpl(k)
+
+	// Set the parameters.
+	require.NoError(t, k.SetParams(ctx, testSharedParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, expectedComputeUnitCostGranularity, testSharedParams.GetComputeUnitCostGranularity())
+
+	// Update the compute unit cost granularity param
+	updateParamMsg := &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamComputeUnitCostGranularity,
+		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedComputeUnitCostGranularity},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, expectedComputeUnitCostGranularity, res.Params.GetComputeUnitCostGranularity())
+
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, res.Params, string(sharedtypes.KeyComputeUnitCostGranularity))
+
+	// Ensure that compute unit cost granularity that is less than 1 is not allowed.
+	updateParamMsg = &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamComputeUnitCostGranularity,
+		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: 0},
+	}
+	_, err = msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.EqualError(t, err, status.Error(
+		codes.InvalidArgument,
+		sharedtypes.ErrSharedParamInvalid.Wrapf(
+			"invalid ComputeUnitCostGranularity: (%d)", 0,
 		).Error(),
 	).Error())
 }

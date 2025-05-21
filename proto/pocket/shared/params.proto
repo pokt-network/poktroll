@@ -49,12 +49,17 @@ message Params {
   // application unbonding period will exceed the end of its corresponding proof window close height.
   uint64 application_unbonding_period_sessions = 8 [(gogoproto.jsontag) = "application_unbonding_period_sessions"];
 
-  // The amount of ppokt (pico POKT) that a compute unit should translate to when settling a session.
-  // DEV_NOTE: ppokt is used instead of upokt to allow for a compute unit to cost less than 1upokt
-  // This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
-  uint64 compute_units_to_ppokt_multiplier = 9 [(gogoproto.jsontag) = "compute_units_to_ppokt_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_ppokt_multiplier\""];
+  // The amount of tokens that a compute unit should translate to when settling a session.
+  // It is denominated in 1/10^compute_unit_cost_granularity uPOKT.
+  // DEV_NOTE: This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
+  uint64 compute_units_to_token_multiplier = 9 [(gogoproto.jsontag) = "compute_units_to_token_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_token_multiplier\""];
 
   // gateway_unbonding_period_sessions is the number of sessions that a gateway must wait after
   // unstaking before their staked assets are moved to its account balance.
   uint64 gateway_unbonding_period_sessions = 10 [(gogoproto.jsontag) = "gateway_unbonding_period_sessions"];
+
+  // compute_unit_cost_granularity is the exponent used to represent the smallest price of a single compute unit.
+  // It is used to convert claims cost to the base unit (uPOKT).
+  // (i.e. compute unit cost in uPOKT = compute_units_to_token_multiplier / 10^compute_unit_cost_granularity)
+  uint64 compute_unit_cost_granularity = 11 [(gogoproto.jsontag) = "compute_unit_cost_granularity", (gogoproto.moretags) = "yaml:\"compute_unit_cost_granularity\""];
 }

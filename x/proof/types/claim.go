@@ -3,7 +3,7 @@ package types
 import (
 	"math/big"
 
-	"cosmossdk.io/math"
+	cosmosmath "cosmossdk.io/math"
 	"github.com/cometbft/cometbft/crypto"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
@@ -14,11 +14,6 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
-
-// MicroToPicoPOKT is the conversion factor from uPOKT (micro POKT) to pPOKT (pico POKT).
-// It is used to convert the estimated claim reward from pPOKT to uPOKT.
-// See: https://en.wikipedia.org/wiki/Metric_prefix.
-const MicroToPicoPOKT = 1e6
 
 // GetNumClaimedComputeUnits returns the number of compute units for a given claim
 // as determined by the sum of the root hash.
@@ -60,38 +55,29 @@ func (claim *Claim) GetClaimeduPOKT(
 		return sdk.Coin{}, err
 	}
 
-	// CUTTM is a GLOBAL network wide parameter.
-	// computeUnitsToPpoktMultiplier allows for more granular compute unit costs, down to the pPOKT level.
-	// It is used instead of a uPOKT multiplier to account for high POKT token prices
-	// which might prevent low-cost services to be set at the appropriate (sub uPOKT) price point.
-	computeUnitsToPpoktMultiplierRat := new(big.Rat).SetUint64(sharedParams.GetComputeUnitsToPpoktMultiplier())
+	// Calculate the fractional uPOKT amount of a single compute unit.
+	computeUnitsToUpoktMultiplierRat := new(big.Rat).SetFrac64(
+		// CUTTM is a GLOBAL network wide parameter.
+		int64(sharedParams.GetComputeUnitsToTokenMultiplier()),
+		// The uPOKT cost granularity of a single compute unit.
+		int64(sharedParams.GetComputeUnitCostGranularity()),
+	)
 
-	pPoktAmountRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToPpoktMultiplierRat)
+	upoktAmountRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToUpoktMultiplierRat)
 
 	// Perform the division as late as possible to minimize precision loss.
-	ppoktAmount := new(big.Int).Div(pPoktAmountRat.Num(), pPoktAmountRat.Denom())
+	upoktAmount := new(big.Int).Div(upoktAmountRat.Num(), upoktAmountRat.Denom())
 
-	// Convert the claim's reward from pPOKT to uPOKT.
-	// This is done to ensure that the reward is always in uPOKT units,
-	// DEV_NOTE: Although compute unit costs can be as small as 1 pPOKT, technically
-	// a claim's reward MUST be at least 1 uPOKT.
-	// Claims and Proofs transactions and submission fees would make such low reward
-	// claims unprofitable anyway, and RelayMiners would perform profitability
-	// checks before submitting such claims.
-	// This approach also allows us to maintain consistency by using uPOKT throughout
-	// the codebase rather than introducing pPOKT as a unit in other components.
-	uPoktAmount := new(big.Int).Div(ppoktAmount, big.NewInt(MicroToPicoPOKT))
-
-	if uPoktAmount.Sign() < 0 {
+	if upoktAmount.Sign() < 0 {
 		return sdk.Coin{}, ErrProofInvalidClaimedAmount.Wrapf(
-			"num estimated compute units (%s) * CUTTM (%d) resulted in a negative amount: %s",
+			"num estimated compute units (%s) * CUTTM (%s) resulted in a negative amount: %s",
 			numEstimatedComputeUnitsRat.RatString(),
-			sharedParams.GetComputeUnitsToPpoktMultiplier(),
-			uPoktAmount,
+			computeUnitsToUpoktMultiplierRat.RatString(),
+			upoktAmountRat,
 		)
 	}
 
-	return sdk.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(uPoktAmount)), nil
+	return sdk.NewCoin(volatile.DenomuPOKT, cosmosmath.NewIntFromBigInt(upoktAmount)), nil
 }
 
 // getNumEstimatedComputeUnitsRat returns the estimated claim's number of compute units

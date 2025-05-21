@@ -326,8 +326,7 @@ func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedA
 func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 	s.T().Helper()
 
-	expectedAppBurnPpokt := int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToPpoktMultiplier)
-	expectedAppBurnUpokt := expectedAppBurnPpokt / prooftypes.MicroToPicoPOKT
+	expectedAppBurnUpokt := int64(s.numRelays*s.numComputeUnitsPerRelay*sharedtypes.DefaultComputeUnitsToTokenMultiplier) / sharedtypes.DefaultComputeUnitCostGranularity
 	expectedAppBurnCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, expectedAppBurnUpokt)
 	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
