@@ -1,20 +1,22 @@
-version: v2
+# This file is auto-generated from Ignite. You can edit
+# the file content but do not change the file name or path.
+#
+# buf.gen.pulsar.yaml
+#
+version: v1
 managed:
   enabled: true
-  disable:
-    - file_option: go_package
-      module: buf.build/googleapis/googleapis
-    - file_option: go_package
-      module: buf.build/cosmos/gogo-proto
-    - file_option: go_package
-      module: buf.build/cosmos/cosmos-proto
-  override:
-    - file_option: go_package_prefix
-      value: cosmossdk.io/api
+  go_package_prefix:
+    default: cosmossdk.io/api
+    except:
+      - buf.build/googleapis/googleapis
+      - buf.build/cosmos/gogo-proto
+      - buf.build/cosmos/cosmos-proto
+    override:
 plugins:
-  - local: protoc-gen-go-pulsar
+  - name: go-pulsar
     out: ./api
     opt: paths=source_relative
-  - local: protoc-gen-go-grpc
+  - name: go-grpc
     out: ./api
     opt: paths=source_relative
