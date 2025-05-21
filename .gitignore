@@ -116,3 +116,8 @@ vultr_*.json
 .secrets
 
 pocketd
+
+# Used in 4_morse_migration/11_localnet_testing.md
+pocket_test
+pocket-account-*.json
+testing_state_export.json

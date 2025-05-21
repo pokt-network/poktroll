@@ -1,0 +1,60 @@
+{
+  "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+  "morse_account_state": {
+    "accounts": [
+      {
+        "shannon_dest_address": "",
+        "morse_src_address": "6280986B72469FE3817D9382CF52EC310F1DDDCC",
+        "unstaked_balance": {
+          "denom": "upokt",
+          "amount": "20000000000000"
+        },
+        "supplier_stake": {
+          "denom": "upokt",
+          "amount": "60000000000"
+        },
+        "application_stake": {
+          "denom": "upokt",
+          "amount": "0"
+        },
+        "claimed_at_height": "0"
+      },
+      {
+        "shannon_dest_address": "",
+        "morse_src_address": "997B833CACEB0D5F139E3BCB6FE1F4E2A3F7D02D",
+        "unstaked_balance": {
+          "denom": "upokt",
+          "amount": "20000000000000"
+        },
+        "supplier_stake": {
+          "denom": "upokt",
+          "amount": "60000000000"
+        },
+        "application_stake": {
+          "denom": "upokt",
+          "amount": "0"
+        },
+        "claimed_at_height": "0"
+      },
+      {
+        "shannon_dest_address": "",
+        "morse_src_address": "9D7BC65655E9AA38122DA324FC5C73AB417E09C6",
+        "unstaked_balance": {
+          "denom": "upokt",
+          "amount": "20000000000000"
+        },
+        "supplier_stake": {
+          "denom": "upokt",
+          "amount": "60000000000"
+        },
+        "application_stake": {
+          "denom": "upokt",
+          "amount": "0"
+        },
+        "claimed_at_height": "0",
+        "morse_output_address": "EFAD4318739151DE95AF4A0B3709291F387E8D66"
+      }
+    ]
+  },
+  "morse_account_state_hash": "FgcXc+K7W+M8Gf38t4gABCtTXGtMA201BTtfKuRsHEw="
+}
