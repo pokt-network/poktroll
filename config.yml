@@ -351,4 +351,4 @@ genesis:
         application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         compute_units_to_tokens_multiplier: 42000000 # Arbitrary value that acts as the answer to everything.
-        compute_unit_cost_granularity: 1000000
+        compute_unit_cost_granularity: 1000000 # compute_units_to_tokens_multiplier granularity corresponding to a pPOKT unit.
