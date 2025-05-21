@@ -7,14 +7,12 @@
 # NB: For mac users, you may need to install with the proper linkers: https://github.com/golang/go/issues/65940
 
 .PHONY: check_go_version
-# Internal helper target - check go version
 check_go_version:
-	@# Extract the version number from the 'go version' command.
 	@GO_VERSION=$$(go version | cut -d " " -f 3 | cut -c 3-) && \
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
 	\
-	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -le 24 ] ; then \
+	if [ "$$MAJOR_VERSION" -lt 1 ] || { [ "$$MAJOR_VERSION" -eq 1 ] && [ "$$MINOR_VERSION" -lt 24 ]; }; then \
 		echo "Invalid Go version. Expected 1.24.x or newer but found $$GO_VERSION"; \
 		exit 1; \
 	fi
