@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -278,13 +279,13 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 	_, err = s.ImportMorseClaimableAccounts(s.T())
 	s.NoError(err)
 
-	shannonDestAddr := sample.AccAddress()
-
 	// DEV_NOTE: The accounts/actors are generated in the order they are defined in the UnbondingActorsConfig struct.
 	unbondingAppPrivateKey := fixtures.GenerateMorsePrivateKey(0)
 	unbondedAppPrivateKey := fixtures.GenerateMorsePrivateKey(1)
 
 	s.Run("unbonding application", func() {
+		shannonDestAddr := sample.AccAddress()
+
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 			shannonDestAddr,
 			unbondingAppPrivateKey,
@@ -309,16 +310,46 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 
 		expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight())
 		expectedAppStake := morseClaimableAccount.GetApplicationStake()
-		unbondingApp := &apptypes.Application{
-			Address:                 shannonDestAddr,
-			Stake:                   &expectedAppStake,
-			ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
-			UnstakeSessionEndHeight: expectedUnstakeSessionEndHeight,
+		expectedApp := &apptypes.Application{
+			Address:                   shannonDestAddr,
+			Stake:                     &expectedAppStake,
+			ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
+			UnstakeSessionEndHeight:   expectedUnstakeSessionEndHeight,
+			DelegateeGatewayAddresses: make([]string, 0),
+			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		}
 
 		// Claim a Morse claimable account.
 		morseClaimRes, err := s.GetApp().RunMsg(s.T(), morseClaimMsg)
 		s.NoError(err)
+
+		// Assert that the expected events were emitted.
+		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
+			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
+			ClaimedApplicationStake: expectedAppStake,
+			SessionEndHeight:        expectedSessionEndHeight,
+			Application:             expectedApp,
+		}
+
+		expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+			Application:        expectedApp,
+			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
+			SessionEndHeight:   expectedSessionEndHeight,
+			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
+		}
+
+		morseAppClaimedEvents := events.FilterEvents[*migrationtypes.EventMorseApplicationClaimed](s.T(), s.GetEvents())
+		require.Equal(s.T(), 1, len(morseAppClaimedEvents))
+		require.Equal(s.T(), expectedMorseAppClaimEvent, morseAppClaimedEvents[0])
+
+		appUnbondingBeginEvent := events.FilterEvents[*apptypes.EventApplicationUnbondingBegin](s.T(), s.GetEvents())
+		require.Equal(s.T(), 1, len(appUnbondingBeginEvent))
+		require.Equal(s.T(), expectedAppUnbondingBeginEvent, appUnbondingBeginEvent[0])
+
+		// Nilify the following zero-value map/slice fields because they are not initialized in the TxResponse.
+		expectedApp.DelegateeGatewayAddresses = nil
+		expectedApp.PendingUndelegations = nil
 
 		// Check the Morse claim response.
 		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{
@@ -326,7 +357,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
 			ClaimedApplicationStake: morseClaimableAccount.GetApplicationStake(),
 			SessionEndHeight:        expectedSessionEndHeight,
-			Application:             unbondingApp,
+			Application:             expectedApp,
 		}
 		s.Equal(expectedMorseClaimRes, morseClaimRes)
 
@@ -338,23 +369,27 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		s.Equal(expectedMorseClaimableAccount, updatedMorseClaimableAccount)
 
 		// Assert that the application is unbonding.
-		expectedApp := apptypes.Application{
+		expectedApp = &apptypes.Application{
 			Address:                 shannonDestAddr,
 			Stake:                   &expectedAppStake,
 			ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 			UnstakeSessionEndHeight: expectedUnstakeSessionEndHeight,
-			//DelegateeGatewayAddresses: make([]string, 0),
-			//PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		}
 		appClient := s.AppSuite.GetAppQueryClient(s.T())
 		foundApp, err := appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
 		s.NoError(err)
-		s.Equal(expectedApp, foundApp)
+		s.Equal(expectedApp, &foundApp)
 
-		// TODO_IN_THIS_COMMIT: query for the application unstaked balance...
+		// Query for the application unstaked balance.
+		bankClient := s.GetBankQueryClient(s.T())
+		shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
+		s.NoError(err)
+		s.Equal(morseClaimableAccount.GetUnstakedBalance(), *shannonDestBalance)
 	})
 
 	s.Run("unbonded application", func() {
+		shannonDestAddr := sample.AccAddress()
+
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 			shannonDestAddr,
 			unbondedAppPrivateKey,
@@ -366,35 +401,86 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Retrieve the unbonding application's onchain Morse claimable account.
 		morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
 
-		// Calculate the expected unbonded session end height (current session end).
-		currentHeight := s.GetApp().GetSdkCtx().BlockHeight()
+		// Calculate the expected unbonded session end height (previous session end).
 		sharedParams := s.GetSharedParams(s.T())
-		expectedUnstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
+		currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, s.GetApp().GetSdkCtx().BlockHeight())
+		expectedUnstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStartHeight-1))
 
 		expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight())
 		expectedAppStake := morseClaimableAccount.GetApplicationStake()
-		unbondedApp := &apptypes.Application{
-			Address:                 shannonDestAddr,
-			Stake:                   &expectedAppStake,
-			ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
-			UnstakeSessionEndHeight: expectedUnstakeSessionEndHeight,
+		expectedApp := &apptypes.Application{
+			Address:                   shannonDestAddr,
+			Stake:                     &expectedAppStake,
+			UnstakeSessionEndHeight:   expectedUnstakeSessionEndHeight,
+			DelegateeGatewayAddresses: make([]string, 0),
+			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+			ServiceConfigs:            make([]*sharedtypes.ApplicationServiceConfig, 0),
 		}
 
 		// Claim a Morse claimable account.
 		morseClaimRes, err := s.GetApp().RunMsg(s.T(), morseClaimMsg)
 		s.NoError(err)
 
+		// Assert that the expected events were emitted.
+		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
+			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
+			ClaimedApplicationStake: expectedAppStake,
+			SessionEndHeight:        expectedSessionEndHeight,
+			Application:             expectedApp,
+		}
+
+		expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
+			Application:        expectedApp,
+			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
+			SessionEndHeight:   expectedSessionEndHeight,
+			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
+		}
+
+		morseAppClaimedEvents := events.FilterEvents[*migrationtypes.EventMorseApplicationClaimed](s.T(), s.GetEvents())
+		require.Equal(s.T(), 1, len(morseAppClaimedEvents))
+		require.Equal(s.T(), expectedMorseAppClaimEvent, morseAppClaimedEvents[0])
+
+		appUnbondingEndEvent := events.FilterEvents[*apptypes.EventApplicationUnbondingEnd](s.T(), s.GetEvents())
+		require.Equal(s.T(), 1, len(appUnbondingEndEvent))
+		require.Equal(s.T(), expectedAppUnbondingEndEvent, appUnbondingEndEvent[0])
+
+		// Nilify the following zero-value map/slice fields because they are not initialized in the TxResponse.
+		expectedApp.DelegateeGatewayAddresses = nil
+		expectedApp.PendingUndelegations = nil
+		expectedApp.ServiceConfigs = nil
+
 		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
 			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: morseClaimableAccount.GetApplicationStake(),
+			ClaimedApplicationStake: expectedAppStake,
 			SessionEndHeight:        expectedSessionEndHeight,
-			Application:             unbondedApp,
+			Application:             expectedApp,
 		}
 		s.Equal(expectedMorseClaimRes, morseClaimRes)
 
-		// TODO_IN_THIS_COMMIT: query for the MorseClaimableAccount...
-		// TODO_IN_THIS_COMMIT: query for the application...
-		// TODO_IN_THIS_COMMIT: query for the application unstaked balance...
+		// Assert that the morseClaimableAccount is updated on-chain.
+		expectedMorseClaimableAccount := morseClaimableAccount
+		expectedMorseClaimableAccount.ShannonDestAddress = shannonDestAddr
+		expectedMorseClaimableAccount.ClaimedAtHeight = s.SdkCtx().BlockHeight() - 1
+		updatedMorseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
+		s.Equal(expectedMorseClaimableAccount, updatedMorseClaimableAccount)
+
+		// Assert that the application was unbonded (i.e.not staked).
+		appClient := s.AppSuite.GetAppQueryClient(s.T())
+		_, err = appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
+		s.EqualError(err, status.Error(
+			codes.NotFound,
+			apptypes.ErrAppNotFound.Wrapf(
+				"app address: %s",
+				shannonDestAddr,
+			).Error(),
+		).Error())
+
+		// Query for the application unstaked balance.
+		bankClient := s.GetBankQueryClient(s.T())
+		shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
+		s.NoError(err)
+		s.Equal(morseClaimableAccount.TotalTokens(), *shannonDestBalance)
 	})
 }

@@ -89,17 +89,11 @@ func (k msgServer) ClaimMorseSupplier(
 	// Update the MorseClaimableAccount.
 	k.SetMorseClaimableAccount(sdkCtx, *morseClaimableAccount)
 
-	// Query for any existing supplier stake prior to staking.
-	preClaimSupplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, math.ZeroInt())
-	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonOperatorAddr.String())
-	if isFound {
-		preClaimSupplierStake = *foundSupplier.Stake
-	}
-
-	postClaimSupplierStake := preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake())
-
 	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	claimedSupplierStake := morseClaimableAccount.GetSupplierStake()
+	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
+
 	currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
 	previousSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStartHeight-1)
 
@@ -108,7 +102,7 @@ func (k msgServer) ClaimMorseSupplier(
 	unbondedSupplier := &sharedtypes.Supplier{
 		OwnerAddress:            shannonOwnerAddr.String(),
 		OperatorAddress:         shannonOperatorAddr.String(),
-		Stake:                   &postClaimSupplierStake,
+		Stake:                   &claimedSupplierStake,
 		UnstakeSessionEndHeight: uint64(previousSessionEndHeight),
 		// Services:             (intentionally omitted, no services were staked),
 		// ServiceConfigHistory: (intentionally omitted, no services were staked),
@@ -119,8 +113,8 @@ func (k msgServer) ClaimMorseSupplier(
 		MorseNodeAddress:     msg.GetMorseNodeAddress(),
 		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
 		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance(),
-		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
+		ClaimedBalance:       claimedUnstakedBalance,
+		ClaimedSupplierStake: claimedSupplierStake,
 		SessionEndHeight:     sessionEndHeight,
 		Supplier:             unbondedSupplier,
 	}
@@ -131,8 +125,8 @@ func (k msgServer) ClaimMorseSupplier(
 		MorseNodeAddress:     msg.GetMorseNodeAddress(),
 		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
 		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance(),
-		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
+		ClaimedBalance:       claimedUnstakedBalance,
+		ClaimedSupplierStake: claimedSupplierStake,
 		SessionEndHeight:     sessionEndHeight,
 		Supplier:             unbondedSupplier,
 	}
@@ -156,11 +150,14 @@ func (k msgServer) ClaimMorseSupplier(
 	// - EventSupplierUnbondingEnd
 	events := make([]cosmostypes.Msg, 0)
 
-	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
-	// - All stake has already been minted to shannonSignerAddr account
-	// - All unstaked tokens have already been minted to shannonOperatorAddr account
-	minStake := k.supplierKeeper.GetParams(ctx).MinStake
-	if postClaimSupplierStake.Amount.LT(minStake.Amount) {
+	// This condition checks whether the MorseClaimableAccount has completed unbonding.
+	// If unbonding is complete, the following steps occur:
+	// - Since minting to shannonOperatorAddr and shannonOwnerAddr accounts has already
+	//   occurred, no additional action is necessary.
+	// - A lookup table is used to estimate block times for each network.
+	// - Shared parameters and block time are utilized to calculate the unstake session end height.
+	// - An event signaling the unbonding's start is emitted.
+	if morseClaimableAccount.HasUnbonded() {
 		// Emit the supplier claim event first, then the unbonding end event.
 		events = append(events, morseSupplierClaimedEvent)
 		events = append(events, morseSupplierUnbondingEndEvent)
@@ -171,14 +168,20 @@ func (k msgServer) ClaimMorseSupplier(
 		return claimMorseSupplierResponse, nil
 	}
 
-	// This condition checks whether the MorseClaimableAccount has completed unbonding.
-	// If unbonding is complete, the following steps occur:
-	// - Since minting to shannonOperatorAddr and shannonOwnerAddr accounts has already
-	//   occurred, no additional action is necessary.
-	// - A lookup table is used to estimate block times for each network.
-	// - Shared parameters and block time are utilized to calculate the unstake session end height.
-	// - An event signaling the unbonding's start is emitted.
-	if morseClaimableAccount.HasUnbonded() {
+	// Query for any existing supplier stake prior to staking.
+	preClaimSupplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, math.ZeroInt())
+	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonOperatorAddr.String())
+	if isFound {
+		preClaimSupplierStake = *foundSupplier.Stake
+	}
+
+	postClaimSupplierStake := preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake())
+
+	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
+	// - All stake has already been minted to shannonSignerAddr account
+	// - All unstaked tokens have already been minted to shannonOperatorAddr account
+	minStake := k.supplierKeeper.GetParams(ctx).MinStake
+	if postClaimSupplierStake.Amount.LT(minStake.Amount) {
 		// Emit the supplier claim event first, then the unbonding end event.
 		events = append(events, morseSupplierClaimedEvent)
 		events = append(events, morseSupplierUnbondingEndEvent)
