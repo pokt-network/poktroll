@@ -359,11 +359,17 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_BelowMinStake() {
 }
 
 func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
+	// Configure fixtures to generate Morse validators which have begun unbonding on Morse:
+	// - 1 whose unbonding period HAS NOT yet elapsed
+	// - 1 whose unbonding period HAS elapsed
 	unbondingActorsOpt := testmigration.WithUnbondingActors(testmigration.UnbondingActorsConfig{
 		NumValidatorsUnbondingBegan: 1, // Number of validators to generate as having begun unbonding on Morse
 		NumValidatorsUnbondingEnded: 1, // Number of validators to generate as having unbonded on Morse while waiting to be claimed
 	})
 
+	// Configure fixtures to generate Morse validator balances:
+	// - Staked balance is 1upokt above the minimum stake (101upokt)
+	// - Unstaked balance is 420upokt ✌️
 	validatorStakesFnOpt := testmigration.WithValidatorStakesFn(func(
 		_, _ uint64,
 		_ testmigration.MorseValidatorActorType,
@@ -375,6 +381,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		return staked, unstaked
 	})
 
+	// Configure fixtures to generate unstaking times which correspond to the
+	// validator actor type (i.e. unbonding or unbonded).
 	unstakingTimeOpt := testmigration.WithUnstakingTime(testmigration.UnstakingTimeConfig{
 		ValidatorUnstakingTimeFn: func(
 			_, _ uint64,
@@ -393,14 +401,12 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		},
 	})
 
-	morseFixtureOpts := []testmigration.MorseFixturesOptionFn{
+	// Generate and import Morse claimable accounts.
+	fixtures, err := testmigration.NewMorseFixtures(
 		unbondingActorsOpt,
 		validatorStakesFnOpt,
 		unstakingTimeOpt,
-	}
-
-	// Generate and import Morse claimable accounts.
-	fixtures, err := testmigration.NewMorseFixtures(morseFixtureOpts...)
+	)
 	s.NoError(err)
 
 	s.SetMorseAccountState(s.T(), fixtures.GetMorseAccountState())

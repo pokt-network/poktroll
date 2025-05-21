@@ -228,10 +228,14 @@ type UnstakingTimeConfig struct {
 // UnstakingTimeConfigFn defines a function that configures the unstaking time for an actor.
 // The zero time.Time value (time.Time{}) indicates that the actor type is not unbonding/unbonded.
 type UnstakingTimeConfigFn[T, A any] func(
-	index uint64, // The global index of the actor
-	actorTypeIndex uint64, // The index within the actor type group
-	actorType T, // The type of actor
-	actor A, // The actor to set the unstaking time for
+	// The global index of the actor
+	index uint64,
+	// The index within the actor type group
+	actorTypeIndex uint64,
+	// The type of actor
+	actorType T,
+	// The actor to set the unstaking time for
+	actor A,
 ) time.Time
 
 // MorseFixturesOptionFn defines a function that configures a MorseFixturesConfig.
