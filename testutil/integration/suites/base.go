@@ -167,6 +167,11 @@ func (s *BaseIntegrationSuite) filterEvents(
 	return matchedEvents
 }
 
+// GetEvents returns all events from the event manager.
+func (s *BaseIntegrationSuite) GetEvents() cosmostypes.Events {
+	return s.GetApp().GetSdkCtx().EventManager().Events()
+}
+
 // newInitChainerCollectModuleNamesFn returns an InitChainerModuleFn that collects
 // the names of cosmos and pocket modules in their respective suite field slices.
 func newInitChainerCollectModuleNamesFn(suite *BaseIntegrationSuite) integration.InitChainerModuleFn {
