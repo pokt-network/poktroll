@@ -364,23 +364,20 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		NumValidatorsUnbondingEnded: 1, // Number of validators to generate as having unbonded on Morse while waiting to be claimed
 	})
 
-	// TODO_IN_THIS_COMMIT: comment...
-	supplierStakeAboveMinConfigFn := func(
-		idx uint64,
-		actorTypeIndex uint64,
-		actorType testmigration.MorseValidatorActorType,
-		validator *migrationtypes.MorseValidator,
+	validatorStakesFnOpt := testmigration.WithValidatorStakesFn(func(
+		_, _ uint64,
+		_ testmigration.MorseValidatorActorType,
+		_ *migrationtypes.MorseValidator,
 	) (staked, unstaked *cosmostypes.Coin) {
 		staked, unstaked = new(cosmostypes.Coin), new(cosmostypes.Coin)
 		*staked = s.minStake.Add(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1))
 		*unstaked = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 420)
 		return staked, unstaked
-	}
-	validatorStakesFnOpt := testmigration.WithValidatorStakesFn(supplierStakeAboveMinConfigFn)
+	})
+
 	unstakingTimeOpt := testmigration.WithUnstakingTime(testmigration.UnstakingTimeConfig{
 		ValidatorUnstakingTimeFn: func(
-			_ uint64,
-			_ uint64,
+			_, _ uint64,
 			actorType testmigration.MorseValidatorActorType,
 			_ *migrationtypes.MorseValidator,
 		) time.Time {
@@ -413,7 +410,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 	unbondingSupplierFixture := fixtures.GetValidatorFixtures(testmigration.MorseUnbondingValidator)[0]
 	unbondedSupplierFixture := fixtures.GetValidatorFixtures(testmigration.MorseUnbondedValidator)[0]
 
-	s.Run("unbonding supplier", func() {
+	s.Run("supplier unbinding began", func() {
 		shannonDestAddr := sample.AccAddress()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
@@ -554,7 +551,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		s.Equal(expectedSupplierUnstakedBalance, *shannonDestBalance)
 	})
 
-	s.Run("unbonded supplier", func() {
+	s.Run("supplier unbinding ended", func() {
 		shannonDestAddr := sample.AccAddress()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(

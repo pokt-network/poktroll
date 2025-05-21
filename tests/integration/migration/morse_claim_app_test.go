@@ -257,23 +257,20 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		NumApplicationsUnbondingEnded: 1, // Number of applications to generate as having unbonded on Morse while waiting to be claimed
 	})
 
-	// TODO_IN_THIS_COMMIT: comment...
-	appStakeAboveMinConfigFn := func(
-		idx uint64,
-		actorTypeIndex uint64,
-		actorType testmigration.MorseApplicationActorType,
-		application *migrationtypes.MorseApplication,
+	appStakesFnOpt := testmigration.WithApplicationStakesFn(func(
+		_, _ uint64,
+		_ testmigration.MorseApplicationActorType,
+		_ *migrationtypes.MorseApplication,
 	) (staked, unstaked *cosmostypes.Coin) {
 		staked, unstaked = new(cosmostypes.Coin), new(cosmostypes.Coin)
 		*staked = s.minStake.Add(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1))
 		*unstaked = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 420)
 		return staked, unstaked
-	}
-	appStakesFnOpt := testmigration.WithApplicationStakesFn(appStakeAboveMinConfigFn)
+	})
+
 	unstakingTimeConfig := testmigration.WithUnstakingTime(testmigration.UnstakingTimeConfig{
 		ApplicationUnstakingTimeFn: func(
-			_ uint64,
-			_ uint64,
+			_, _ uint64,
 			actorType testmigration.MorseApplicationActorType,
 			_ *migrationtypes.MorseApplication,
 		) time.Time {
@@ -307,7 +304,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 	unbondingAppFixture := fixtures.GetApplicationFixtures(testmigration.MorseUnbondingApplication)[0]
 	unbondedAppFixture := fixtures.GetApplicationFixtures(testmigration.MorseUnbondedApplication)[0]
 
-	s.Run("unbonding application", func() {
+	s.Run("application unbonding began", func() {
 		shannonDestAddr := sample.AccAddress()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
@@ -411,7 +408,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		s.Equal(morseClaimableAccount.GetUnstakedBalance(), *shannonDestBalance)
 	})
 
-	s.Run("unbonded application", func() {
+	s.Run("application unbonding endec", func() {
 		shannonDestAddr := sample.AccAddress()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(

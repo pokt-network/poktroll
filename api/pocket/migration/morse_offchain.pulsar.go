@@ -6491,6 +6491,7 @@ type MorseApplication struct {
 	// The string representation of the BigInt amount of upokt.
 	StakedTokens string `protobuf:"bytes,6,opt,name=staked_tokens,json=stakedTokens,proto3" json:"staked_tokens,omitempty"`
 	// The ISO 8601 UTC timestamp after which the Morse node/supplier unbonding period will have elapsed.
+	// It reflects the "unbonding completion time" of the Morse node/supplier, but is called "unstaking time" to comply with necessary Morse data structures.
 	UnstakingTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=unstaking_time,json=unstakingTime,proto3" json:"unstaking_time,omitempty"`
 }
 
@@ -6577,6 +6578,7 @@ type MorseValidator struct {
 	// The string representation of the BigInt amount of upokt.
 	StakedTokens string `protobuf:"bytes,7,opt,name=staked_tokens,json=stakedTokens,proto3" json:"staked_tokens,omitempty"`
 	// The ISO 8601 UTC timestamp after which the Morse node/supplier unbonding period will have elapsed.
+	// It reflects the "unbonding completion time" of the Morse node/supplier, but is called "unstaking time" to comply with necessary Morse data structures.
 	UnstakingTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=unstaking_time,json=unstakingTime,proto3" json:"unstaking_time,omitempty"`
 	// Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
 	// Binary representation of the Morse address corresponding to a Morse account's ed25519 public key.

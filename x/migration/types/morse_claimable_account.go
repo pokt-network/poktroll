@@ -17,7 +17,7 @@ func (m *MorseClaimableAccount) IsClaimed() bool {
 }
 
 // IsUnbonding indicates that the MorseClaimableAccount began unbonding on Morse
-// but its unbonding peroid has NOT yet elapsed.
+// but its unbonding peroid has NOT yet elapsed at the time that the Morse snapshot was taken.
 func (m *MorseClaimableAccount) IsUnbonding() bool {
 	// DEV_NOTE: The UnstakingTime field is a time.Time type, which has a zero value of "0001-01-01T00:00:00Z" when printed as an ISO8601 string.
 	// See: https://pkg.go.dev/time#Time.IsZero
@@ -25,7 +25,8 @@ func (m *MorseClaimableAccount) IsUnbonding() bool {
 }
 
 // HasUnbonded indicates that the MorseClaimableAccount began unbonding on Morse
-// and the unbonding period has elapsed.
+// and the unbonding period has elapsed. E.g., the supplier was claimed > 21 days
+// after it began unbonding.
 func (m *MorseClaimableAccount) HasUnbonded() bool {
 	return m.IsUnbonding() && m.SecondsUntilUnbonded() <= 0
 }
@@ -39,14 +40,14 @@ func (m *MorseClaimableAccount) SecondsUntilUnbonded() int64 {
 // GetEstimatedUnbondingEndHeight returns the estimated block height at which the
 // MorseClaimableAccount's unbonding period will end. The estimation process includes:
 //
+// The estimation process includes:
 // - Calculating the remaining time until unstaking is complete.
 // - Using the estimated block duration from an off-chain configuration.
 //
 // Returns:
-//
 // - The estimated block height when unbonding will end.
-// - -1 if unstaking is already complete.
-func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Context) int64 {
+// - true if the unbonding period has not yet elapsed.
+func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Context) (height int64, isUnbonded bool) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	// Retrieve the estimated block duration for the current chain from a lookup table.
@@ -59,7 +60,7 @@ func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Conte
 	//   - Return -1 to indicate that unbonding is complete.
 	durationUntilUnstakeCompletion := int64(time.Until(m.UnstakingTime))
 	if durationUntilUnstakeCompletion <= 0 {
-		return -1
+		return -1, true
 	}
 
 	// Calculated the estimated Shannon unstake session end height.
@@ -73,5 +74,5 @@ func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Conte
 	return new(big.Int).Div(
 		estimatedUnstakeCompletionHeight.Num(),
 		estimatedUnstakeCompletionHeight.Denom(),
-	).Int64()
+	).Int64(), false
 }

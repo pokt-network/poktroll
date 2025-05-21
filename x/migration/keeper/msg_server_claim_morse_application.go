@@ -175,10 +175,10 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// - Set the unstake session end height on the application
 	// - Emit an unbonding begin event
 	if morseClaimableAccount.IsUnbonding() {
-		estimatedUnstakeSessionEndHeight := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
+		estimatedUnstakeSessionEndHeight, isUnbonded := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
 
 		// DEV_NOTE: SHOULD NEVER happen, the check above is the same, but in terms of time instead of block height...
-		if estimatedUnstakeSessionEndHeight < 0 {
+		if isUnbonded {
 			return nil, status.Error(
 				codes.Internal,
 				migrationtypes.ErrMorseApplicationClaim.Wrapf(

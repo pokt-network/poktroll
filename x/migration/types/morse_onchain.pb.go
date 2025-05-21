@@ -163,6 +163,7 @@ type MorseClaimableAccount struct {
 	//   See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	MorseOutputAddress string `protobuf:"bytes,9,opt,name=morse_output_address,json=morseOutputAddress,proto3" json:"morse_output_address,omitempty" yaml:"morse_output_address"`
 	// The ISO 8601 UTC timestamp after which the Morse node/supplier unbonding period will have elapsed.
+	// It reflects the "unbonding completion time" of the Morse node/supplier, but is called "unstaking time" to comply with necessary Morse data structures.
 	UnstakingTime time.Time `protobuf:"bytes,10,opt,name=unstaking_time,json=unstakingTime,proto3,stdtime" json:"unstaking_time" yaml:"unstaking_time"`
 }
 

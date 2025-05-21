@@ -294,14 +294,14 @@ func WithApplicationStakesFn(stakeFn ApplicationStakesConfigFn) MorseFixturesOpt
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// WithUnbondingActors sets the UnbondingActorsConfig for the fixtures.
 func WithUnbondingActors(cfg UnbondingActorsConfig) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.UnbondingActorsConfig = cfg
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// WithUnstakingTime sets the UnstakingTimeConfig for the fixtures.
 func WithUnstakingTime(cfg UnstakingTimeConfig) MorseFixturesOptionFn {
 	return func(config *MorseFixturesConfig) {
 		config.UnstakingTimeConfig = cfg
