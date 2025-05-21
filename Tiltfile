@@ -440,9 +440,11 @@ for x in range(localnet_config["path_gateways"]["count"]):
                 # https://github.com/buildwithgrove/path/blob/main/config/router.go
                 str(3068 + actor_number) + ":3069"
         ],
-        #
-        # Refhttps://docs.tilt.dev/api.html
-        # extra_pod_selectors=[{"gateway.envoyproxy.io/owning-gateway-name": "guard-envoy-gateway", "app.kubernetes.io/component": "proxy"}],
+        extra_pod_selectors=[
+            {"app.kubernetes.io/instance": "path" + str(actor_number)},
+            {"app.kubernetes.io/name": "path" + str(actor_number)},
+        ],
+        discovery_strategy="selectors-only", # Extra pod selectors didn't work without this
     )
 
     # DO NOT DELETE -> E2E Tests -> Add convo with dima
