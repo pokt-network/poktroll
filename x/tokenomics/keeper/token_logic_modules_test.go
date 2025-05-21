@@ -74,7 +74,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
-	// Set compute_units_to_token_multiplier to simplify expectation calculations.
+	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
@@ -235,7 +235,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
-	// Set compute_units_to_token_multiplier to simplify expectation calculations.
+	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
@@ -410,7 +410,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	tokenomicsParams.DaoRewardAddress = daoAddress.String()
 	keepers.Keeper.SetParams(ctx, tokenomicsParams)
 
-	// Set compute_units_to_token_multiplier to simplify expectation calculations.
+	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)

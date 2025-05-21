@@ -3,7 +3,7 @@ package types
 import (
 	"math/big"
 
-	cosmosmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/crypto"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
@@ -77,7 +77,7 @@ func (claim *Claim) GetClaimeduPOKT(
 		)
 	}
 
-	return sdk.NewCoin(volatile.DenomuPOKT, cosmosmath.NewIntFromBigInt(upoktAmount)), nil
+	return sdk.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(upoktAmount)), nil
 }
 
 // getNumEstimatedComputeUnitsRat returns the estimated claim's number of compute units

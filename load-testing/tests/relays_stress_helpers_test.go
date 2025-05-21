@@ -664,7 +664,7 @@ func (s *relaysSuite) createApplicationAccount(
 func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 	currentTestDuration := s.testStartHeight + s.relayLoadDurationBlocks - currentBlockHeight
 	// Compute the cost of all relays throughout the test duration.
-	totalRelayCostDuringTestUPOKT := s.relayRatePerApp * s.relayAmountCost * currentTestDuration * blockDurationSec / int64(s.sharedParams.ComputeUnitCostGranularity)
+	totalRelayCostDuringTestUPOKT := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDurationSec / int64(s.sharedParams.ComputeUnitCostGranularity)
 	// Multiply by 2 to make sure the application does not run out of funds
 	// based on the number of relays it needs to send. Theoretically, `+1` should
 	// be enough, but probabilistic and time based mechanisms make it hard
@@ -1252,8 +1252,8 @@ func allAppsDelegatedToAllGateways(
 	return true
 }
 
-// getRelayAmountCost computes the relay cost from the tokenomics module.
-func (s *relaysSuite) getRelayAmountCost() int64 {
+// getRelayCost computes the relay cost from the tokenomics module.
+func (s *relaysSuite) getRelayCost() int64 {
 	relayCost := s.testedService.ComputeUnitsPerRelay * s.sharedParams.ComputeUnitsToTokensMultiplier
 
 	return int64(relayCost)

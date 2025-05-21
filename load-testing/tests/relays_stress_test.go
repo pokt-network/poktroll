@@ -123,10 +123,10 @@ type relaysSuite struct {
 	numRelaysSent atomic.Uint64
 	// relayRatePerApp is the rate of relay requests sent per application per second.
 	relayRatePerApp int64
-	// relayAmountCost is the amount, a relay request costs in terms of
+	// relayCoinAmountCost is the amount, a relay request costs in terms of
 	// 1/compute_unit_cost_granularity uPOkT.
 	// It is equal to compute_units_to_token_multiplier * compute_units_per_relay.
-	relayAmountCost int64
+	relayCoinAmountCost int64
 
 	// gatewayInitialCount is the number of active gateways at the start of the test.
 	gatewayInitialCount int64
@@ -339,7 +339,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.queryTestedService(loadTestParams.RPCNode)
 
 	// Get the relay cost from the tokenomics module.
-	s.relayAmountCost = s.getRelayAmountCost()
+	s.relayCoinAmountCost = s.getRelayCost()
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.

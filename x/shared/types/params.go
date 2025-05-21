@@ -26,7 +26,7 @@ const (
 
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value.
 	DefaultComputeUnitsToTokensMultiplier = 42000000
-	ParamComputeUnitsToTokensMultiplier   = "compute_units_to_token_multiplier"
+	ParamComputeUnitsToTokensMultiplier   = "compute_units_to_tokens_multiplier"
 
 	DefaultComputeUnitCostGranularity = 1000000
 	ParamComputeUnitCostGranularity   = "compute_unit_cost_granularity"
