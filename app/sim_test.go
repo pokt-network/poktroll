@@ -67,11 +67,12 @@ func BenchmarkSimulation(b *testing.B) {
 	simcli.FlagSeedValue = time.Now().Unix()
 	simcli.FlagVerboseValue = true
 	simcli.FlagCommitValue = true
-	simcli.FlagEnabledValue = true
+	simcli.FlagEnabledValue = true //nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code.
 
 	config := simcli.NewConfigFromFlags()
 	config.ChainID = SimAppChainID
 
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code. FlagEnabledValue is unused and will be removed in a future release
 	db, dir, logger, skip, err := simtestutil.SetupSimulation(config, "leveldb-app-sim", "Simulation", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
 	if skip {
 		b.Skip("skipping application simulation")
@@ -85,6 +86,8 @@ func BenchmarkSimulation(b *testing.B) {
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = app.DefaultNodeHome
+
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code.
 	appOptions[server.FlagInvCheckPeriod] = simcli.FlagPeriodValue
 
 	bApp, err := app.New(logger, db, nil, true, appOptions, fauxMerkleModeOpt, baseapp.SetChainID(SimAppChainID))
@@ -118,6 +121,7 @@ func TestAppImportExport(t *testing.T) {
 	config := simcli.NewConfigFromFlags()
 	config.ChainID = SimAppChainID
 
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code. FlagEnabledValue is unused and will be removed in a future release
 	db, dir, logger, skip, err := simtestutil.SetupSimulation(config, "leveldb-app-sim", "Simulation", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
 	if skip {
 		t.Skip("skipping application import/export simulation")
@@ -131,6 +135,8 @@ func TestAppImportExport(t *testing.T) {
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = app.DefaultNodeHome
+
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code. FlagEnabledValue is unused and will be removed in a future release
 	appOptions[server.FlagInvCheckPeriod] = simcli.FlagPeriodValue
 
 	bApp, err := app.New(logger, db, nil, true, appOptions, fauxMerkleModeOpt, baseapp.SetChainID(SimAppChainID))
@@ -166,6 +172,7 @@ func TestAppImportExport(t *testing.T) {
 
 	fmt.Printf("importing genesis...\n")
 
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code. FlagEnabledValue is unused and will be removed in a future release
 	newDB, newDir, _, _, err := simtestutil.SetupSimulation(config, "leveldb-app-sim-2", "Simulation-2", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
 	require.NoError(t, err, "simulation setup failed")
 
@@ -238,6 +245,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 	config := simcli.NewConfigFromFlags()
 	config.ChainID = SimAppChainID
 
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code. FlagEnabledValue is unused and will be removed in a future release
 	db, dir, logger, skip, err := simtestutil.SetupSimulation(config, "leveldb-app-sim", "Simulation", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
 	if skip {
 		t.Skip("skipping application simulation after import")
@@ -251,6 +259,8 @@ func TestAppSimulationAfterImport(t *testing.T) {
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = app.DefaultNodeHome
+
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code. FlagPeriodValue is unused and will be removed in a future release
 	appOptions[server.FlagInvCheckPeriod] = simcli.FlagPeriodValue
 
 	bApp, err := app.New(logger, db, nil, true, appOptions, fauxMerkleModeOpt, baseapp.SetChainID(SimAppChainID))
@@ -291,6 +301,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 
 	fmt.Printf("importing genesis...\n")
 
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code. FlagEnabledValue is unused and will be removed in a future release
 	newDB, newDir, _, _, err := simtestutil.SetupSimulation(config, "leveldb-app-sim-2", "Simulation-2", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
 	require.NoError(t, err, "simulation setup failed")
 
@@ -324,6 +335,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 }
 
 func TestAppStateDeterminism(t *testing.T) {
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code. FlagEnabledValue is unused and will be removed in a future release
 	if !simcli.FlagEnabledValue {
 		t.Skip("skipping application simulation")
 	}
@@ -331,7 +343,10 @@ func TestAppStateDeterminism(t *testing.T) {
 	config := simcli.NewConfigFromFlags()
 	config.InitialBlockHeight = 1
 	config.ExportParamsPath = ""
+
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code.
 	config.OnOperation = true
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code.
 	config.AllInvariants = true
 
 	numSeeds := 3
@@ -354,6 +369,8 @@ func TestAppStateDeterminism(t *testing.T) {
 		}
 	}
 	appOptions.SetDefault(flags.FlagHome, app.DefaultNodeHome)
+
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT(#1276): remove deprecated code. FlagPeriodValue is unused and will be removed in a future release
 	appOptions.SetDefault(server.FlagInvCheckPeriod, simcli.FlagPeriodValue)
 	if simcli.FlagVerboseValue {
 		appOptions.SetDefault(flags.FlagLogLevel, "debug")
