@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	cosmosmath "cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -58,8 +59,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	claimCommitHeight := int64(10)
 	unstakedBalance := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
 	supplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 200)
-	expectedMintCoin := unstakedBalance.Add(supplierStake)
-	expectedClaimedUnstakedTokens := expectedMintCoin.Sub(supplierStake)
+	expectedClaimedUnstakedTokens := unstakedBalance.Add(supplierStake).Sub(supplierStake)
 	expectedMsgStakeSupplier := &suppliertypes.MsgStakeSupplier{
 		Signer:          shannonDestAddr,
 		OwnerAddress:    shannonDestAddr,
@@ -80,20 +80,43 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	bankKeeper := mocks.NewMockBankKeeper(ctrl)
 	supplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
 
-	// Assert that the unstakedBalance was minted to the migration module account.
+	// Assert that tokens were minted in the following order and distribution:
+	// 1. supplierStake is minted for transfer to the owner
+	// 2. unstakedBalance is minted for transfer to the operator
 	bankKeeper.EXPECT().MintCoins(
 		gomock.Any(),
 		gomock.Eq(migrationtypes.ModuleName),
-		gomock.Eq(cosmostypes.NewCoins(expectedMintCoin)),
+		gomock.Eq(cosmostypes.NewCoins(supplierStake)),
+	).Return(nil).Times(1)
+	bankKeeper.EXPECT().MintCoins(
+		gomock.Any(),
+		gomock.Eq(migrationtypes.ModuleName),
+		gomock.Eq(cosmostypes.NewCoins(unstakedBalance)),
 	).Return(nil).Times(1)
 
-	// Assert that the unstakedBalance was transferred to the shannonDestAddr account.
+	// Assert that tokens were transferred from the migration module account:
+	// 1. unstakedBalance was transferred to the operator.
+	// 2. supplierStake was transferred to the owner.
 	bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
 		gomock.Any(),
 		gomock.Eq(migrationtypes.ModuleName),
 		gomock.Eq(shannonDestAccAddr),
-		gomock.Eq(cosmostypes.NewCoins(expectedMintCoin)),
+		gomock.Eq(cosmostypes.NewCoins(supplierStake)),
 	).Return(nil).Times(1)
+	bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
+		gomock.Any(),
+		gomock.Eq(migrationtypes.ModuleName),
+		gomock.Eq(shannonDestAccAddr),
+		gomock.Eq(cosmostypes.NewCoins(unstakedBalance)),
+	).Return(nil).Times(1)
+
+	// Set the supplier min stake to zero so that suppliers can be
+	// claimed without being unstaked.
+	supplierParams := suppliertypes.DefaultParams()
+	supplierParams.MinStake = &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: cosmosmath.ZeroInt()}
+	supplierKeeper.EXPECT().GetParams(gomock.Any()).
+		Return(supplierParams).
+		AnyTimes()
 
 	// Simulate the application not existing.
 	supplierKeeper.EXPECT().GetSupplier(
@@ -147,6 +170,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 		shannonDestAddr,
 		shannonDestAddr,
+		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		testSupplierServices,
 		sample.AccAddress(),
@@ -160,7 +184,9 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	sharedParams := sharedtypes.DefaultParams()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
 	expectedRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseSrcAddress:      msgClaim.GetMorseSrcAddress(),
+		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
 		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
 		ClaimedBalance: expectedClaimedUnstakedTokens.
 			Add(morseClaimableAccount.GetApplicationStake()),
@@ -173,13 +199,15 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	expectedMorseAccount := morseClaimableAccount
 	expectedMorseAccount.ShannonDestAddress = shannonDestAddr
 	expectedMorseAccount.ClaimedAtHeight = ctx.BlockHeight()
-	foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.GetMorseSrcAddress())
+	foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.GetMorseSignerAddress())
 	require.True(t, found)
 	require.Equal(t, *expectedMorseAccount, foundMorseAccount)
 
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseSupplierClaimed{
-		MorseSrcAddress:      msgClaim.GetMorseSrcAddress(),
+		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
+		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
 		ClaimedBalance:       expectedClaimedUnstakedTokens,
 		ClaimedSupplierStake: supplierStake,
 		SessionEndHeight:     expectedSessionEndHeight,
@@ -226,6 +254,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 	msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 		sample.AccAddress(),
 		sample.AccAddress(),
+		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		testSupplierServices,
 		sample.AccAddress(),
@@ -239,6 +268,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		invalidClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
@@ -264,6 +294,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		invalidMsgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			nonExistentMorsePrivKey.PubKey().Address().String(),
 			nonExistentMorsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
@@ -274,7 +305,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			codes.NotFound,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
 				"no morse claimable account exists with address %q",
-				invalidMsgClaim.GetMorseSrcAddress(),
+				invalidMsgClaim.GetMorseSignerAddress(),
 			).Error(),
 		)
 
@@ -342,6 +373,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),
@@ -373,6 +405,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
+			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServices,
 			sample.AccAddress(),

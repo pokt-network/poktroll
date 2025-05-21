@@ -13,68 +13,121 @@ import "pocket/migration/morse_onchain.proto";
 import "pocket/application/types.proto";
 import "pocket/shared/supplier.proto";
 
-// EventImportMorseClaimableAccounts is emitted when the MorseClaimableAccounts are created on-chain.
+// EventImportMorseClaimableAccounts
+// - Emitted when MorseClaimableAccounts are created on-chain
+// - Represents import event for Morse claimable accounts
 message EventImportMorseClaimableAccounts {
-  // The height (on Shannon) at which the MorseAccountState was created on-chain.
+  // Shannon height at which MorseAccountState was created on-chain
   int64 created_at_height = 1 [(gogoproto.jsontag) = "created_at_height"];
 
-  // The onchain computed sha256 hash of the entire MorseAccountState containing the MorseClaimableAccounts which were imported.
+  // On-chain computed sha256 hash of the MorseAccountState
+  // - Contains all imported MorseClaimableAccounts
   bytes morse_account_state_hash = 2 [(gogoproto.jsontag) = "morse_account_state_hash"];
 
-  // Number of claimable accounts (EOAs) collected from Morse state export
-  // NOTE: Account balances include consolidated application and supplier actor stakes
+  // Number of claimable accounts (EOAs) imported from Morse state export
+  // - Account balances include consolidated application and supplier actor stakes
   uint64 num_accounts = 3 [(gogoproto.jsontag) = "num_accounts"];
 }
 
-// EventMorseAccountClaimed is emitted when a MorseAccount is claimed on-chain.
+// EventMorseAccountClaimed
+// - Emitted when a MorseAccount is claimed on-chain
 message EventMorseAccountClaimed {
-  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  // Shannon session end height in which the claim was committed
   int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
 
-  // The unstaked balance which was claimed.
+  // Unstaked balance claimed from Morse
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
-  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
+  // bech32-encoded Shannon address to mint claimed balance
   string shannon_dest_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
 
-  // The hex-encoded address of the Morse account whose balance will be claimed.
+  // Hex-encoded Morse account address whose balance was claimed
   string morse_src_address = 4 [(gogoproto.jsontag) = "morse_src_address"];
 }
 
-// EventMorseApplicationClaimed is emitted when a MorseAccount is claimed on-chain as a staked application.
+// EventMorseApplicationClaimed
+// - Emitted when a MorseAccount is claimed on-chain as a staked application
 message EventMorseApplicationClaimed {
-  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  // Shannon session end height in which the claim was committed
   int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
 
-  // The unstaked balance which was claimed.
+  // Unstaked balance claimed from Morse
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
-  // The hex-encoded address of the Morse account whose balance will be claimed.
+  // Hex-encoded Morse account address whose balance was claimed
   string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
 
-  // The stake of the application which was staked as a result of the claim.
+  // Application stake claimed as a result of the claim
+  // - Equivalent to Morse application staked amount
   cosmos.base.v1beta1.Coin claimed_application_stake = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_application_stake"];
 
-  // The application which was staked as a result of the claim.
-  // This is equivalent to the amount it had staked on Morse.
+  // Application staked as a result of the claim
+  // - Mirrors Morse application stake
   application.Application application = 5 [(gogoproto.jsontag) = "application"];
 }
 
-// EventMorseSupplierClaimed is emitted when a MorseAccount is claimed on-chain as a staked Supplier.
+// EventMorseSupplierClaimed
+// - Emitted when a MorseAccount is claimed on-chain as a staked Supplier
 message EventMorseSupplierClaimed {
-  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  // Next free index: 9
+  reserved 3;
+
+  // Shannon session end height in which the claim was committed
   int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
 
-  // The unstaked balance which was claimed.
+  // Unstaked balance claimed from Morse
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
-  // The hex-encoded address of the Morse account whose balance will be claimed.
-  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
+  // The hex-encoded address of the Morse non-custodial (i.e. operator) account.
+  // - Unstaked balance was migrated 1:1
+  // - Stake was migrated 1:1 from morse_node_address to shannon_operator_address
+  // - Morse non-custodial (i.e. operator) address.
+  // If morse_output_address was not set, this is the custodial address.
+  // - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_node_address = 8 [(gogoproto.jsontag) = "morse_node_address"];
 
-  // The stake of the Supplier which was staked as a result of the claim.
-  // This will be equivalent to the amount it had staked on Morse.
+  // ONLY applicable to Morse node/supplier accounts.
+  // Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
+  // - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  // - Morse custodial (i.e. owner) address, which owned the staked tokens of the operator.
+  //   See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+  string morse_output_address = 6 [(gogoproto.jsontag) = "morse_output_address"];
+
+  // The type of supplier claim signer, indicating which actor executed the claim
+  // and whether it was a custodial or non-custodial claim.
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OPERATOR
+  // - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OWNER
+  MorseSupplierClaimSignerType claim_signer_type = 7 [(gogoproto.jsontag) = "claim_signer_type"];
+
+  // Supplier stake claimed as a result of the claim
+  // - Equivalent to Morse supplier staked amount
   cosmos.base.v1beta1.Coin claimed_supplier_stake = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_supplier_stake"];
 
-  // The Supplier which was staked as a result of the claim.
+  // Supplier staked as a result of the claim
+  // - Mirrors Morse supplier stake
   shared.Supplier supplier = 5 [(gogoproto.jsontag) = "supplier"];
+}
+
+// EventMorseAccountRecovered
+// - Emitted when a Morse account is recovered on-chain
+message EventMorseAccountRecovered {
+  // The session end height (on Shannon) in which the recovery was committed (i.e. claimed).
+  int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
+
+  // The total balance which was recovered:
+  // - Includes both unstaked and staked balances (consolidated)
+  // - Auto-liquidates both unstaked and staked balances at once
+  cosmos.base.v1beta1.Coin recovered_balance = 2 [(gogoproto.jsontag) = "recovered_balance", (gogoproto.nullable) = false];
+
+  // The bech32-encoded address of the Shannon account to which the recovered balance was minted.
+  string shannon_dest_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // The hex-encoded address of the Morse account whose balance and stakes have been recovered.
+  // This address MUST be in the recovery allow list and could be of types such as:
+  // - Unreachable/Locked EOA, Supplier or Application address
+  // - Module account
+  // - Invalid address (too short, too long, or non-hexadecimal format)
+  string morse_src_address = 4 [(gogoproto.jsontag) = "morse_src_address"];
 }

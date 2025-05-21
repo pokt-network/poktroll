@@ -40,6 +40,15 @@ func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccoun
 	require.NoError(t, err)
 }
 
+// SetMorseAccountState sets the suite's #accountState field to the given MorseAccountState.
+func (s *MigrationModuleSuite) SetMorseAccountState(
+	t *testing.T,
+	accountState *migrationtypes.MorseAccountState,
+) {
+	require.NotNil(t, accountState)
+	s.accountState = accountState
+}
+
 // GetAccountState returns the suite's #accountState field.
 func (s *MigrationModuleSuite) GetAccountState(t *testing.T) *migrationtypes.MorseAccountState {
 	require.NotNil(t, s.accountState)
@@ -212,19 +221,20 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	shannonDestAddr string,
 	services []*sharedtypes.SupplierServiceConfig,
 	signingAddr string,
-) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseSupplierResponse) {
+) (expectedMorseNodeAddr string, _ *migrationtypes.MsgClaimMorseSupplierResponse) {
 	t.Helper()
 
 	morsePrivateKey := testmigration.GenMorsePrivateKey(morseAccountIdx)
-	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
+	expectedMorseNodeAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t,
-		expectedMorseSrcAddr,
+		expectedMorseNodeAddr,
 		s.accountState.Accounts[morseAccountIdx].MorseSrcAddress,
 	)
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
 		shannonDestAddr,
 		shannonDestAddr,
+		morsePrivateKey.PubKey().Address().String(),
 		morsePrivateKey,
 		services,
 		signingAddr,
@@ -238,5 +248,5 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	claimSupplierRes, ok := resAny.(*migrationtypes.MsgClaimMorseSupplierResponse)
 	require.True(t, ok)
 
-	return expectedMorseSrcAddr, claimSupplierRes
+	return expectedMorseNodeAddr, claimSupplierRes
 }

@@ -96,6 +96,7 @@ func GetRoundRobinMorseAccountActorType(idx uint64) MorseAccountActorType {
 	return MorseAccountActorType(idx % uint64(NumMorseAccountActorTypes))
 }
 
+// TODO_TECHDEBT: Remove once all tests use the new fixture generation.
 // NewMorseStateExportAndAccountStateBytes returns:
 //   - A serialized MorseStateExport.
 //     This is the JSON output of `pocket util export-genesis-for-reset`.

@@ -1355,9 +1355,83 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// MorseAccountState is the onchain representation of all account state to be migrated from Morse.
-// It is NEVER persisted onchain but is a dependency of the MsgImportMorseClaimableAccount handler.
-// It's main purpose is to expose the #GetHash() method for verifying the integrity of all MorseClaimableAccounts.
+// MorseSupplierClaimSignerType
+// - Enum for Morse supplier claim signer type
+type MorseSupplierClaimSignerType int32
+
+const (
+	// Unspecified signer type
+	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED MorseSupplierClaimSignerType = 0
+	// signer === addr === operator === owner
+	// Custodial signer type
+	// - The Morse node address is NOT EMPTY (i.e. operator)
+	// - The Morse output address is EMPTY (i.e. owner)
+	// - Implies that the operator and owner are THE SAME offchain identity
+	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR MorseSupplierClaimSignerType = 1
+	// signer === operator === addr && owner !== operator
+	// Non-custodial signer type
+	// - The Morse node address is NOT EMPTY (i.e. operator)
+	// - The Morse output address is NOT EMPTY (i.e. owner)
+	// - Implies that the operator and owner are MOST LIKELY DIFFERENT offchain identities
+	// - The operator is the one signing the supplier claim
+	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR MorseSupplierClaimSignerType = 2
+	// signer === owner && owner !== addr
+	// Owner non-custodial signer type
+	// - The Morse node address is EMPTY (i.e. operator)
+	// - The Morse output address is NOT EMPTY (i.e. owner)
+	// - Implies that the operator and owner are MOST LIKELY different offchain identities
+	// - The owner is the one signing the supplier claim
+	MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER MorseSupplierClaimSignerType = 3
+)
+
+// Enum value maps for MorseSupplierClaimSignerType.
+var (
+	MorseSupplierClaimSignerType_name = map[int32]string{
+		0: "MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED",
+		1: "MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR",
+		2: "MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR",
+		3: "MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER",
+	}
+	MorseSupplierClaimSignerType_value = map[string]int32{
+		"MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED":                       0,
+		"MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR":     1,
+		"MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR": 2,
+		"MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER":     3,
+	}
+)
+
+func (x MorseSupplierClaimSignerType) Enum() *MorseSupplierClaimSignerType {
+	p := new(MorseSupplierClaimSignerType)
+	*p = x
+	return p
+}
+
+func (x MorseSupplierClaimSignerType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MorseSupplierClaimSignerType) Descriptor() protoreflect.EnumDescriptor {
+	return file_pocket_migration_morse_onchain_proto_enumTypes[0].Descriptor()
+}
+
+func (MorseSupplierClaimSignerType) Type() protoreflect.EnumType {
+	return &file_pocket_migration_morse_onchain_proto_enumTypes[0]
+}
+
+func (x MorseSupplierClaimSignerType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MorseSupplierClaimSignerType.Descriptor instead.
+func (MorseSupplierClaimSignerType) EnumDescriptor() ([]byte, []int) {
+	return file_pocket_migration_morse_onchain_proto_rawDescGZIP(), []int{0}
+}
+
+// MorseAccountState
+// - Onchain representation of all account state to be migrated from Morse
+// - NEVER persisted onchain
+// - Dependency of the MsgImportMorseClaimableAccount handler
+// - Main purpose: exposes #GetHash() for verifying integrity of all MorseClaimableAccounts
 type MorseAccountState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1393,18 +1467,19 @@ func (x *MorseAccountState) GetAccounts() []*MorseClaimableAccount {
 	return nil
 }
 
-// MorseClaimableAccount is the onchain (persisted) representation of a Morse
-// account which is claimable as part of the Morse -> Shannon migration.
-// They are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).
-// It is created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis).
-// It is updated ONLY ONCE, when it is claimed (per morse_src_address per network / re-genesis).
+// MorseClaimableAccount
+//   - Onchain (persisted) representation of a Morse account claimable as part of Morse -> Shannon migration
+//   - Created during MorseAccountState import (see: MsgImportMorseClaimableAccount)
+//   - Created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis),
+//     unless the allow_morse_account_import_overwrite migration param is enabled
+//   - Updated ONLY ONCE, when claimed (per morse_src_address per network / re-genesis)
 type MorseClaimableAccount struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
-	// This field is intended to remain empty until the account has been claimed.
+	// bech32-encoded address of the Shannon account to mint claimed balance
+	// Intended to remain empty until the account is claimed
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address,omitempty"`
 	// Hex-encoded address of the Morse account whose balance will be claimed.
 	// If this MorseClaimableAccount represents a Morse node/supplier:
@@ -1412,26 +1487,26 @@ type MorseClaimableAccount struct {
 	//   - If morse_output_address is not set, this is the custodial address.
 	//   - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
-	// The unstaked upokt tokens (i.e. account balance) available for claiming.
+	// Unstaked upokt tokens (account balance) available for claiming
 	UnstakedBalance *v1beta1.Coin `protobuf:"bytes,5,opt,name=unstaked_balance,json=unstakedBalance,proto3" json:"unstaked_balance,omitempty"`
-	// The staked tokens associated with a supplier actor which corresponds to this account address.
-	// DEV_NOTE: A few contextual notes related to Morse:
-	// - A Supplier is called a Servicer or Node (not a full node) in Morse
-	// - All Validators are Servicers, not all servicers are Validators
-	// - Automatically, the top 100 staked Servicers are validator
-	// - This only accounts for servicer stake balance transition
-	// TODO_MAINNET(@Olshansk): Develop a strategy for bootstrapping validators in Shannon by working with the cosmos ecosystem
+	// Staked tokens for supplier actor corresponding to this account address
+	// DEV_NOTE: Context for Morse:
+	// - Supplier = Servicer or Node (not a full node) in Morse
+	// - All Validators are Servicers; not all Servicers are Validators
+	// - Top 100 staked Servicers are validators (automatic)
+	// - Only accounts for servicer stake balance transition
+	// TODO_MAINNET(@Olshansk): Develop strategy for bootstrapping validators in Shannon with cosmos ecosystem
 	SupplierStake *v1beta1.Coin `protobuf:"bytes,6,opt,name=supplier_stake,json=supplierStake,proto3" json:"supplier_stake,omitempty"`
-	// The staked tokens associated with an application actor which corresponds to this account address.
+	// Staked tokens for application actor corresponding to this account address
 	ApplicationStake *v1beta1.Coin `protobuf:"bytes,7,opt,name=application_stake,json=applicationStake,proto3" json:"application_stake,omitempty"`
-	// The Shannon height at which the account was claimed.
-	// This field is intended to remain empty until the account has been claimed.
+	// Shannon height at which the account was claimed
+	// Intended to remain empty until the account is claimed
 	ClaimedAtHeight int64 `protobuf:"varint,8,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height,omitempty"`
 	// ONLY applicable to Morse node/supplier accounts.
 	// Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
-	// Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
-	//
-	//	See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+	//   - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+	//   - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+	//     See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
 	MorseOutputAddress string `protobuf:"bytes,9,opt,name=morse_output_address,json=morseOutputAddress,proto3" json:"morse_output_address,omitempty"`
 }
 
@@ -1567,18 +1642,37 @@ var file_pocket_migration_morse_onchain_proto_rawDesc = []byte{
 	0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x6f, 0x75, 0x74, 0x70, 0x75,
 	0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x52, 0x12, 0x6d, 0x6f, 0x72, 0x73,
 	0x65, 0x4f, 0x75, 0x74, 0x70, 0x75, 0x74, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x4a, 0x04,
-	0x08, 0x04, 0x10, 0x05, 0x42, 0xb1, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d,
-	0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x42, 0x11, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x4f, 0x6e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x50,
-	0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
-	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f,
-	0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa,
-	0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d, 0x69, 0x67, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x4d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x08, 0x04, 0x10, 0x05, 0x2a, 0xa0, 0x02, 0x0a, 0x1c, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75,
+	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x53, 0x69, 0x67, 0x6e, 0x65,
+	0x72, 0x54, 0x79, 0x70, 0x65, 0x12, 0x30, 0x0a, 0x2c, 0x4d, 0x4f, 0x52, 0x53, 0x45, 0x5f, 0x53,
+	0x55, 0x50, 0x50, 0x4c, 0x49, 0x45, 0x52, 0x5f, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x53, 0x49,
+	0x47, 0x4e, 0x45, 0x52, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43,
+	0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x42, 0x0a, 0x3e, 0x4d, 0x4f, 0x52, 0x53, 0x45,
+	0x5f, 0x53, 0x55, 0x50, 0x50, 0x4c, 0x49, 0x45, 0x52, 0x5f, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f,
+	0x53, 0x49, 0x47, 0x4e, 0x45, 0x52, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x43, 0x55, 0x53, 0x54,
+	0x4f, 0x44, 0x49, 0x41, 0x4c, 0x5f, 0x53, 0x49, 0x47, 0x4e, 0x45, 0x44, 0x5f, 0x42, 0x59, 0x5f,
+	0x4e, 0x4f, 0x44, 0x45, 0x5f, 0x41, 0x44, 0x44, 0x52, 0x10, 0x01, 0x12, 0x46, 0x0a, 0x42, 0x4d,
+	0x4f, 0x52, 0x53, 0x45, 0x5f, 0x53, 0x55, 0x50, 0x50, 0x4c, 0x49, 0x45, 0x52, 0x5f, 0x43, 0x4c,
+	0x41, 0x49, 0x4d, 0x5f, 0x53, 0x49, 0x47, 0x4e, 0x45, 0x52, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f,
+	0x4e, 0x4f, 0x4e, 0x5f, 0x43, 0x55, 0x53, 0x54, 0x4f, 0x44, 0x49, 0x41, 0x4c, 0x5f, 0x53, 0x49,
+	0x47, 0x4e, 0x45, 0x44, 0x5f, 0x42, 0x59, 0x5f, 0x4e, 0x4f, 0x44, 0x45, 0x5f, 0x41, 0x44, 0x44,
+	0x52, 0x10, 0x02, 0x12, 0x42, 0x0a, 0x3e, 0x4d, 0x4f, 0x52, 0x53, 0x45, 0x5f, 0x53, 0x55, 0x50,
+	0x50, 0x4c, 0x49, 0x45, 0x52, 0x5f, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x53, 0x49, 0x47, 0x4e,
+	0x45, 0x52, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x4e, 0x4f, 0x4e, 0x5f, 0x43, 0x55, 0x53, 0x54,
+	0x4f, 0x44, 0x49, 0x41, 0x4c, 0x5f, 0x53, 0x49, 0x47, 0x4e, 0x45, 0x44, 0x5f, 0x42, 0x59, 0x5f,
+	0x4f, 0x57, 0x4e, 0x45, 0x52, 0x10, 0x03, 0x42, 0xb1, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x14,
+	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x42, 0x11, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x4f, 0x6e, 0x63, 0x68, 0x61,
+	0x69, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b,
+	0x65, 0x74, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50,
+	0x4d, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x4d, 0x69, 0x67, 0x72,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x4d,
+	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x63, 0x6b, 0x65,
+	0x74, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74,
+	0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1593,17 +1687,19 @@ func file_pocket_migration_morse_onchain_proto_rawDescGZIP() []byte {
 	return file_pocket_migration_morse_onchain_proto_rawDescData
 }
 
+var file_pocket_migration_morse_onchain_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_pocket_migration_morse_onchain_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_pocket_migration_morse_onchain_proto_goTypes = []interface{}{
-	(*MorseAccountState)(nil),     // 0: pocket.migration.MorseAccountState
-	(*MorseClaimableAccount)(nil), // 1: pocket.migration.MorseClaimableAccount
-	(*v1beta1.Coin)(nil),          // 2: cosmos.base.v1beta1.Coin
+	(MorseSupplierClaimSignerType)(0), // 0: pocket.migration.MorseSupplierClaimSignerType
+	(*MorseAccountState)(nil),         // 1: pocket.migration.MorseAccountState
+	(*MorseClaimableAccount)(nil),     // 2: pocket.migration.MorseClaimableAccount
+	(*v1beta1.Coin)(nil),              // 3: cosmos.base.v1beta1.Coin
 }
 var file_pocket_migration_morse_onchain_proto_depIdxs = []int32{
-	1, // 0: pocket.migration.MorseAccountState.accounts:type_name -> pocket.migration.MorseClaimableAccount
-	2, // 1: pocket.migration.MorseClaimableAccount.unstaked_balance:type_name -> cosmos.base.v1beta1.Coin
-	2, // 2: pocket.migration.MorseClaimableAccount.supplier_stake:type_name -> cosmos.base.v1beta1.Coin
-	2, // 3: pocket.migration.MorseClaimableAccount.application_stake:type_name -> cosmos.base.v1beta1.Coin
+	2, // 0: pocket.migration.MorseAccountState.accounts:type_name -> pocket.migration.MorseClaimableAccount
+	3, // 1: pocket.migration.MorseClaimableAccount.unstaked_balance:type_name -> cosmos.base.v1beta1.Coin
+	3, // 2: pocket.migration.MorseClaimableAccount.supplier_stake:type_name -> cosmos.base.v1beta1.Coin
+	3, // 3: pocket.migration.MorseClaimableAccount.application_stake:type_name -> cosmos.base.v1beta1.Coin
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -1647,13 +1743,14 @@ func file_pocket_migration_morse_onchain_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pocket_migration_morse_onchain_proto_rawDesc,
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_pocket_migration_morse_onchain_proto_goTypes,
 		DependencyIndexes: file_pocket_migration_morse_onchain_proto_depIdxs,
+		EnumInfos:         file_pocket_migration_morse_onchain_proto_enumTypes,
 		MessageInfos:      file_pocket_migration_morse_onchain_proto_msgTypes,
 	}.Build()
 	File_pocket_migration_morse_onchain_proto = out.File
