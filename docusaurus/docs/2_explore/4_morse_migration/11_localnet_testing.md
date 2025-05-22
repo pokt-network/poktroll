@@ -15,25 +15,24 @@ like `pocket`, `pocketd`, `LocalNet`, etc...
 ## Table of Contents <!-- omit in toc -->
 
 - [Prerequisites](#prerequisites)
-- [Morse Setup (`pocketd`)](#morse-setup-pocketd)
+- [Morse Setup (`pocket`)](#morse-setup-pocket)
   - [Morse Account Preparation](#morse-account-preparation)
   - [Morse State Preparation](#morse-state-preparation)
 - [State Upload](#state-upload)
 - [Shannon Setup (`pocketd`)](#shannon-setup-pocketd)
   - [Shannon Account Preparation](#shannon-account-preparation)
-  - [5. Shannon Claim Suppliers](#5-shannon-claim-suppliers)
-    - [Supported Supplier Claim Flows](#supported-supplier-claim-flows)
-    - [5.1 Claim Shannon Supplier WITHOUT Output Address](#51-claim-shannon-supplier-without-output-address)
-    - [5.2 \[NOT IMPLEMENTED\] Claim WITH Output Address – Owner](#52-not-implemented-claim-with-output-address--owner)
-    - [5.3 \[NOT IMPLEMENTED\] Claim WITH Output Address – Operator](#53-not-implemented-claim-with-output-address--operator)
+  - [5. Shannon Supplier Claim](#5-shannon-supplier-claim)
+    - [5.1 Claim WITHOUT Output Address](#51-claim-without-output-address)
+    - [5.2 Claim WITH Output Address - Signed by Owner](#52-claim-with-output-address---signed-by-owner)
+    - [5.3 Claim WITH Output Address - Signed by Operator](#53-claim-with-output-address---signed-by-operator)
 
 ## Prerequisites
 
-- `pocketd` installed
 - `pocket` installed
+- `pocketd` installed
 - You know how to run a shannon `LocalNet`
 
-## Morse Setup (`pocketd`)
+## Morse Setup (`pocket`)
 
 ### Morse Account Preparation
 
@@ -165,7 +164,7 @@ pocketd query migration list-morse-claimable-account \
   --home=./localnet/pocketd
 ```
 
-Example output:
+**Example output**:
 
 ```json
 ...
@@ -208,7 +207,7 @@ pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${ADDR3_PREFIX
 pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${ADDR4_PREFIX}-claim-owner
 ```
 
-- **Export addresses:**
+**Export addresses:**
 
 ```bash
 ADDR_SUPPLIER_1=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${ADDR2_PREFIX}-claim-supplier-1 -a)
@@ -216,17 +215,17 @@ ADDR_SUPPLIER_2=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys 
 ADDR_OWNER=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${ADDR4_PREFIX}-claim-owner -a)
 ```
 
-- **Fund all accounts:**
+**Fund all accounts:**
 
 ```bash
-pocketd tx bank send pnf $ADDR_SUPPLIER_1 1000000000000upokt --home=./localnet/pocketd
-sleep 10
-pocketd tx bank send pnf $ADDR_SUPPLIER_2 1000000000000upokt --home=./localnet/pocketd
-sleep 10
-pocketd tx bank send pnf $ADDR_OWNER 1000000000000upokt --home=./localnet/pocketd
+pocketd tx bank send pnf $ADDR_SUPPLIER_1 1000000000000upokt --home=./localnet/pocketd --yes
+sleep 2
+pocketd tx bank send pnf $ADDR_SUPPLIER_2 1000000000000upokt --home=./localnet/pocketd --yes
+sleep 2
+pocketd tx bank send pnf $ADDR_OWNER 1000000000000upokt --home=./localnet/pocketd --yes
 ```
 
-- **Check balances:**
+**Check balances:**
 
 ```bash
 pocketd query bank balances $ADDR_SUPPLIER_1 --home ./localnet/pocketd
@@ -234,38 +233,18 @@ pocketd query bank balances $ADDR_SUPPLIER_2 --home ./localnet/pocketd
 pocketd query bank balances $ADDR_OWNER --home ./localnet/pocketd
 ```
 
-### 5. Shannon Claim Suppliers
+### 5. Shannon Supplier Claim
 
-#### Supported Supplier Claim Flows
-
-| Flow Type                         | Morse (`address`, `output_address`) | Shannon (`owner_address`, `operator_address`) | Claim Signer | Supported | Notes/Pre-conditions           |
-| --------------------------------- | ----------------------------------- | --------------------------------------------- | ------------ | --------- | ------------------------------ |
-| Custodial owner-operator-sign     | (`M`, `M`)                          | (`S`, `S`)                                    | `S`          | ✅        | `S` owns `M`                   |
-| Custodial owner-sign              | (`M1`, null)                        | (`S1`, null)                                  | `S1`         | ✅        | `S1` owns `M1`                 |
-| Non-custodial owner-sign          | (`M1`, `M2`)                        | (`S1`, null)                                  | `S1`         | ❌        | Must have operator             |
-| Non-custodial owner-sign          | (`M1`, `M2`)                        | (`S1`, `S2`)                                  | `S1`         | ✅        | `S1` owns `M1`, `S2` owns `M2` |
-| Non-custodial operator-sign       | (`M1`, `M2`)                        | (`S1`, `S2`)                                  | `S2`         | ✅        | `S1` owns `M1`, `S2` owns `M2` |
-| Non-custodial owner-sign          | (`M1`, null)                        | (`S1`, `S2`)                                  | `S2`         | ❌        | Not supported                  |
-| Missing operator / NA             | (null, `M2`)                        | NA                                            | NA           | ❌        | Not supported                  |
-| NA / missing owner                | NA                                  | (null, `S2`)                                  | NA           | ❌        | Not supported                  |
-| Non-custodial owner-operator-sign | (`M1`, `M2`)                        | (`S`, `S`)                                    | `S`          | ❌        | Not supported                  |
-
----
-
-#### 5.1 Claim Shannon Supplier WITHOUT Output Address
-
-- **Morse:** `operator_address` ≠ null, `output_address` = null
-- **Shannon:** `owner_address` = `operator_address`
-- **Claim as:** `owner_address` (same as operator)
+#### 5.1 Claim WITHOUT Output Address
 
 **Create config:**
 
 ```bash
-cat <<EOF > 2e26_claim_supplier_1_supplier_config.yaml
+cat <<EOF > ${ADDR2_PREFIX}_claim_supplier_1_supplier_config.yaml
 owner_address: ${ADDR_SUPPLIER_1}
 operator_address: ${ADDR_SUPPLIER_1}
 default_rev_share_percent:
-  ${ADDR_OWNER}: 100
+  ${ADDR_SUPPLIER_1}: 100
 services:
   - service_id: anvil
     endpoints:
@@ -278,11 +257,12 @@ EOF
 
 ```bash
 pocketd tx migration claim-supplier \
-  pocket-account-2e2624762bcfee4a44001543adddce0e4f4cc823.json \
-  2e26_claim_supplier_1_supplier_config.yaml \
-  --from=2e26-claim-supplier-1 \
+  ${ADDR2} pocket-account-${ADDR2}.json \
+  ${ADDR2_PREFIX}_claim_supplier_1_supplier_config.yaml \
+  --from=${ADDR2_PREFIX}-claim-supplier-1 \
   --node=http://localhost:26657 --chain-id=pocket \
-  --home=./localnet/pocketd --keyring-backend=test --no-passphrase
+  --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
+  --gas=auto --gas-adjustment=1.5 --yes
 ```
 
 **Verify onchain:**
@@ -291,30 +271,24 @@ pocketd tx migration claim-supplier \
 pocketd query supplier show-supplier $ADDR_SUPPLIER_1 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd
 ```
 
-- **Check stake:**
+**Check stake:**
 
 ```bash
 pocketd query supplier show-supplier $ADDR_SUPPLIER_1 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
-- **Check unstaked balance:**
+**Check unstaked balance:**
 
 ```bash
 pocketd query bank balance $ADDR_SUPPLIER_1 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
----
-
-#### 5.2 [NOT IMPLEMENTED] Claim WITH Output Address – Owner
-
-- **Morse:** `output_address` ≠ null & `operator_address` ≠ null
-- **Shannon:** `owner_address` ≠ `operator_address`
-- **Claim as:** `owner_address` on behalf of `output_address`
+#### 5.2 Claim WITH Output Address - Signed by Owner
 
 **Create config:**
 
 ```bash
-cat <<EOF > 80e3_claim_supplier_2_supplier_config.yaml
+cat <<EOF > ${ADDR3_PREFIX}_claim_supplier_2_supplier_config.yaml
 owner_address: ${ADDR_OWNER}
 operator_address: ${ADDR_SUPPLIER_2}
 default_rev_share_percent:
@@ -332,11 +306,12 @@ EOF
 
 ```bash
 pocketd tx migration claim-supplier \
-  pocket-account-80e3058d66ee75578b07472650483da0035febe6.json \
-  80e3_claim_supplier_2_supplier_config.yaml \
-  --from=80e3-claim-supplier-2 \
+  ${ADDR3} pocket-account-${ADDR3}.json \
+  ${ADDR3_PREFIX}_claim_supplier_2_supplier_config.yaml \
+  --from=${ADDR3_PREFIX}-claim-supplier-2 \
   --node=http://localhost:26657 --chain-id=pocket \
-  --home=./localnet/pocketd --keyring-backend=test --no-passphrase
+  --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
+  --gas=auto --gas-adjustment=1.5 --yes
 ```
 
 **Verify onchain:**
@@ -345,70 +320,16 @@ pocketd tx migration claim-supplier \
 pocketd query supplier show-supplier $ADDR_SUPPLIER_2 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd
 ```
 
-- **Check stake:**
+**Check stake:**
 
 ```bash
 pocketd query supplier show-supplier $ADDR_SUPPLIER_2 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
-- **Check owner's unstaked balance:**
+**Check owner's unstaked balance:**
 
 ```bash
 pocketd query bank balance $ADDR_OWNER upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
----
-
-#### 5.3 [NOT IMPLEMENTED] Claim WITH Output Address – Operator
-
-- **Morse:** `output_address` ≠ null & `operator_address` ≠ null
-- **Shannon:** `owner_address` = `operator_address`
-- **Claim as:** `operator_address` on behalf of `output_address`
-
-**Create config:**
-
-```bash
-cat <<EOF > 80e3_claim_supplier_2_supplier_config.yaml
-owner_address: ${ADDR_OWNER}
-operator_address: ${ADDR_SUPPLIER_2}
-default_rev_share_percent:
-  ${ADDR_OWNER}: 20
-  ${ADDR_SUPPLIER_2}: 80
-services:
-  - service_id: anvil
-    endpoints:
-      - publicly_exposed_url: http://relayminer1:8545
-        rpc_type: JSON_RPC
-EOF
-```
-
-**Claim:**
-
-```bash
-pocketd tx migration claim-supplier \
-  pocket-account-80e3058d66ee75578b07472650483da0035febe6.json \
-  80e3_claim_supplier_2_supplier_config.yaml \
-  --from=80e3-claim-supplier-2 \
-  --node=http://localhost:26657 --chain-id=pocket \
-  --home=./localnet/pocketd --keyring-backend=test --no-passphrase
-```
-
-**Verify onchain:**
-
-```bash
-pocketd query supplier show-supplier $ADDR_SUPPLIER_2 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd
-```
-
-- **Check stake:**
-
-```bash
-pocketd query supplier show-supplier $ADDR_SUPPLIER_2 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
-```
-
-- **Check owner's unstaked balance:**
-
-```bash
-pocketd query bank balance $ADDR_OWNER upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
-```
-
-</details>
+#### 5.3 Claim WITH Output Address - Signed by Operator
