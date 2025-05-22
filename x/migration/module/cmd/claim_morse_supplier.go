@@ -3,7 +3,6 @@ package cmd
 import (
 	"bufio"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -126,13 +125,10 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Serialize, as JSON, and print the MsgClaimMorseSupplier for posterity and/or confirmation.
-	msgClaimMorseSupplierJSON, err := json.MarshalIndent(msgClaimMorseSupplier, "", "  ")
-	if err != nil {
+	// Print the claim message according to the --output format.
+	if err = clientCtx.PrintProto(msgClaimMorseSupplier); err != nil {
 		return err
 	}
-
-	logger.Logger.Info().Msgf("MsgClaimMorseSupplier %s\n", string(msgClaimMorseSupplierJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
@@ -169,14 +165,17 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	}
 
 	// Sign and broadcast the claim Morse account message.
-	_, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseSupplier)
-	err, errCh := eitherErr.SyncOrAsyncError()
-	if err != nil {
+	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseSupplier)
+	if err, _ := eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 
-	// Wait for an async error, timeout, or the errCh to close on success.
-	return <-errCh
+	// Print the TxResponse according to the --output format.
+	if err = clientCtx.PrintProto(txResponse); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // loadSupplierStakeConfigYAML loads, parses, and validates the supplier stake
