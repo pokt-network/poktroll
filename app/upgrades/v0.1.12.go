@@ -43,7 +43,8 @@ var Upgrade_0_1_12 = Upgrade{
 			// Get the current shared module params
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
 
-			// Set compute_unit_cost_granularity to 1e6
+			// Set compute_unit_cost_granularity to 1e6 making compute_units_to_tokens_multiplier
+			// to be denominated in pPOKT (i.e. 1/1e6 uPOKT)
 			sharedParams.ComputeUnitCostGranularity = 1e6
 			// Maintain the compute_units_to_tokens_multiplier uPOKT value,
 			// Update it to be denominated in 1/compute_unit_cost_granularity uPOKT
