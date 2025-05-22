@@ -123,7 +123,7 @@ type relaysSuite struct {
 	numRelaysSent atomic.Uint64
 	// relayRatePerApp is the rate of relay requests sent per application per second.
 	relayRatePerApp int64
-	// relayCoinAmountCost is the amount of tokens (e.g. "upokt"), a relay request costs
+	// relayCoinAmountCost is the amount of tokens (e.g. "upokt") a relay request costs
 	// in terms of 1/compute_unit_cost_granularity uPOkT.
 	// It is equal to compute_units_to_token_multiplier * compute_units_per_relay.
 	relayCoinAmountCost int64
