@@ -56,6 +56,7 @@ func initRootCmd(
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {
+	//nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code.
 	crisis.AddModuleInitFlags(startCmd)
 }
 

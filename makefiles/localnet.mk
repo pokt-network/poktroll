@@ -3,11 +3,11 @@
 ########################
 
 .PHONY: localnet_up
-localnet_up: check_pocketd check_kubectl check_docker_ps proto_regen localnet_regenesis k8s_kind_up warn_message_acc_initialize_pubkeys ## Starts up a clean localnet
+localnet_up: check_kubectl check_docker_ps proto_regen localnet_regenesis k8s_kind_up warn_message_acc_initialize_pubkeys ## Starts up a clean localnet
 	tilt up
 
 .PHONY: localnet_up_quick
-localnet_up_quick: check_pocketd check_kubectl check_docker_ps k8s_kind_up ## Starts up a localnet without regenerating fixtures
+localnet_up_quick: check_kubectl check_docker_ps k8s_kind_up ## Starts up a localnet without regenerating fixtures
 	tilt up
 
 .PHONY: localnet_down
@@ -71,7 +71,7 @@ move_poktroll_to_pocket:
 	@echo "###############################################"
 
 .PHONY: localnet_regenesis
-localnet_regenesis: check_yq ## Regenerate the localnet genesis file
+localnet_regenesis: ignite_check_version check_yq ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
 	@set -e
