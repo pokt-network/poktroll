@@ -13,16 +13,16 @@ import (
 )
 
 const (
-	Upgrade_0_1_12_PlanName = "v0.1.12"
+	Upgrade_0_1_13_PlanName = "v0.1.13"
 )
 
-// Upgrade_0_1_12 handles the upgrade to release `v0.1.12`.
+// Upgrade_0_1_13 handles the upgrade to release `v0.1.13`.
 // This upgrade adds:
 // - the `compute_unit_cost_granularity` shared module param
 //
-// https://github.com/pokt-network/poktroll/compare/v0.1.11..v0.1.12
-var Upgrade_0_1_12 = Upgrade{
-	PlanName: Upgrade_0_1_12_PlanName,
+// https://github.com/pokt-network/poktroll/compare/v0.1.12..v0.1.13
+var Upgrade_0_1_13 = Upgrade{
+	PlanName: Upgrade_0_1_13_PlanName,
 	// No migrations in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 
@@ -33,12 +33,12 @@ var Upgrade_0_1_12 = Upgrade{
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
 		// Add new parameters by:
-		// 1. Inspecting the diff between v0.1.11...v0.1.12
+		// 1. Inspecting the diff between v0.1.12...v0.1.13
 		// 2. Manually inspect changes in ignite's config.yml
 		// 3. Update the upgrade handler here accordingly
-		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.11...v0.1.12
+		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.12...v0.1.13
 		applyNewParameters := func(ctx context.Context, logger cosmoslog.Logger) (err error) {
-			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_1_12_PlanName)
+			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_1_13_PlanName)
 
 			// Get the current shared module params
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
