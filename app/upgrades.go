@@ -59,7 +59,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_1_10,
 
 	// v0.1.11 - upgrade to add allow_morse_account_import_overwrite param.
-	upgrades.Upgrade_0_1_11,
+	// upgrades.Upgrade_0_1_11,
+
+	// v0.1.12 - upgrade to add allow_morse_account_import_overwrite param.
+	upgrades.Upgrade_0_1_12,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
