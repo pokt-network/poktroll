@@ -16,3 +16,9 @@ func NormalizeTxHashHex(txHash string) string {
 func TxHashBytesToNormalizedHex(txHash []byte) string {
 	return NormalizeTxHashHex(fmt.Sprintf("%x", txHash))
 }
+
+// NormalizeMorseHexAddress defines canonical and unambiguous representation for a
+// morse address hexadecimal string; upper-case.
+func NormalizeMorseHexAddress(morseAddress string) string {
+	return strings.ToUpper(morseAddress)
+}

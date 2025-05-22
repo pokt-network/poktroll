@@ -80,7 +80,7 @@ endif
 # TODO_TECHDEBT(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `golangci-lint` and other go tools
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
@@ -278,8 +278,12 @@ ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
 .PHONY: ignite_pocketd_build
-ignite_pocketd_build: check_go_version check_ignite_version ## Build the pocketd binary using Ignite
+ignite_pocketd_build: check_go_version check_ignite_version ## Build the pocketd binary using Ignite to go to the bin directory
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
+
+.PHONY: ignite_pocketd_build_local
+ignite_pocketd_build_local: check_go_version check_ignite_version ## Build the pocketd binary using Ignite to the current directory
+	ignite chain build --skip-proto --debug -v -o .
 
 .PHONY: ignite_openapi_gen
 ignite_openapi_gen: ## Generate the OpenAPI spec natively and process the output

@@ -6,6 +6,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
 
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -27,6 +28,8 @@ func NewMsgClaimMorseSupplier(
 	services []*sharedtypes.SupplierServiceConfig,
 	shannonSigningAddr string,
 ) (*MsgClaimMorseSupplier, error) {
+	morseNodeAddress = encoding.NormalizeMorseHexAddress(morseNodeAddress)
+
 	msg := &MsgClaimMorseSupplier{
 		MorseNodeAddress:       morseNodeAddress,
 		ShannonOwnerAddress:    shannonOwnerAddress,
@@ -126,5 +129,5 @@ func (msg *MsgClaimMorseSupplier) getSigningBytes() ([]byte, error) {
 // - The Morse node address (i.e. operator)
 // - The Morse output address (i.e. owner)
 func (msg *MsgClaimMorseSupplier) GetMorseSignerAddress() string {
-	return msg.GetMorsePublicKey().Address().String()
+	return encoding.NormalizeMorseHexAddress(msg.GetMorsePublicKey().Address().String())
 }
