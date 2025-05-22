@@ -43,6 +43,55 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	meta := relayRequest.Meta
 	serviceId := meta.SessionHeader.ServiceId
 
+	// Track whether the relay completes successfully to handle reward management
+	// A successful relay means that:
+	// - The relay request was processed without errors
+	// - The relay response was sent back to the client
+	// - The relay was forwarded to the miner for mining eligibility checking
+	shouldRewardRelay := false
+
+	// Define a cleanup function to handle reward management for failed relays
+	unclaimOptimisticallyAccumulatedFailedRelayReward := func() {
+		if !shouldRewardRelay {
+			// If the relay was not successful, revert any optimistically accumulated rewards.
+			// This handles several failure scenarios such as:
+			// - Request validation failures
+			// - Backend connection errors
+			// - Backend 5xx errors
+			if err = server.relayMeter.SetNonApplicableRelayReward(ctx, relayRequest.Meta); err != nil {
+				logger.Error().Err(err).Msg("failed to unclaim relay UPOKT")
+			}
+		}
+	}
+
+	// Register the cleanup function to run when this function exits.
+	// This ensures reward management happens regardless of how the function returns
+	// (regular return or error).
+	defer unclaimOptimisticallyAccumulatedFailedRelayReward()
+
+	// Use an optimistic relay reward accumulation (before serving) for two critical reasons:
+	//
+	// 1. Rate Limiting:
+	//    - Prevents concurrent requests from bypassing rate limits
+	//    - Ensures proper accounting when multiple requests arrive simultaneously
+	//
+	// 2. Stake Verification:
+	//    - Immediately rejects relays if the application has insufficient stake
+	//    - Avoids wasting resources on requests that can't be properly rewarded
+	//
+	// Reward accumulation is reverted automatically when:
+	//    - The relay isn't successfully completed
+	//    - The relay isn't eligible for rewards
+	//
+	// This approach prioritizes accurate accounting over optimistic processing.
+	//
+	// TODO_CONSIDERATION: Consider implementing a delay queue instead of rejecting
+	// requests when application stake is insufficient. This would allow processing
+	// once earlier requests complete and free up stake.
+	if err = server.relayMeter.AccumulateRelayReward(ctx, meta); err != nil {
+		return relayRequest, err
+	}
+
 	var serviceConfig *config.RelayMinerSupplierServiceConfig
 
 	// Get the Service and serviceUrl corresponding to the originHost.
@@ -91,14 +140,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, err
 	}
 
-	// Optimistically accumulate the relay reward before actually serving the relay.
-	// The relay price will be deducted from the application's stake before the relay is served.
-	// If the relay comes out to be not reward / volume applicable, the miner will refund the
-	// claimed price back to the application.
-	if err = server.relayMeter.AccumulateRelayReward(ctx, meta); err != nil {
-		return relayRequest, err
-	}
-
 	httpRequest, err := relayer.BuildServiceBackendRequest(relayRequest, serviceConfig)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to build the service backend request")
@@ -126,6 +167,19 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 	defer httpResponse.Body.Close()
+
+	// If the backend service returns a 5xx error, we consider it an internal error
+	// and do not expose the error to the client.
+	if httpResponse.StatusCode >= 500 {
+		logger.Error().
+			Int("status_code", httpResponse.StatusCode).
+			Msg("backend service returned a server error")
+
+		return relayRequest, ErrRelayerProxyInternalError.Wrapf(
+			"backend service returned an error with status code %d",
+			httpResponse.StatusCode,
+		)
+	}
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
@@ -164,12 +218,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 
-	relayer.RelayResponseSizeBytes.With("service_id", serviceId).
-		Observe(float64(relay.Res.Size()))
+	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
 
 	// Emit the relay to the servedRelays observable.
 	server.servedRelaysProducer <- relay
 
+	// Mark the relay as successful. This prevents the deferred reward management
+	// function from reverting the accumulated rewards.
+	shouldRewardRelay = true
 	return relayRequest, nil
 }
 

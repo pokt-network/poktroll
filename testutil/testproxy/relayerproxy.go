@@ -67,6 +67,10 @@ type TestBehavior struct {
 	// proxyServersMap is a map from ServiceId to the actual Server that handles
 	// processing of incoming RPC requests.
 	proxyServersMap map[string]*http.Server
+
+	// RelayMeterCallCount is used to track the number of times the relay meter
+	// methods are called during the test execution.
+	RelayMeterCallCount *relayMeterCallCount
 }
 
 // blockHeight is the default block height used in the tests.
@@ -154,6 +158,9 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		relayAuthenticator, err := relay_authenticator.NewRelayAuthenticator(relayAuthenticatorDeps, opts)
 		require.NoError(test.t, err)
 
+		test.RelayMeterCallCount = &relayMeterCallCount{}
+		relayMeter := newMockRelayMeterWithCallCount(test.t, test.RelayMeterCallCount)
+
 		testDeps := depinject.Configs(
 			ringClientDeps,
 			depinject.Supply(
@@ -164,6 +171,7 @@ func WithRelayerProxyDependenciesForBlockHeight(
 				supplierQueryClient,
 				keyring,
 				relayAuthenticator,
+				relayMeter,
 			),
 		)
 
@@ -328,6 +336,44 @@ func newMockRelayMeter(t *testing.T) relayer.RelayMeter {
 
 	relayMeter := mockrelayer.NewMockRelayMeter(ctrl)
 	relayMeter.EXPECT().Start(gomock.Any()).Return(nil).AnyTimes()
+
+	return relayMeter
+}
+
+// relayMeterCallCount tracks the number of calls made to each method of the RelayMeter interface.
+type relayMeterCallCount struct {
+	// AccumulateRelayReward counts the number of times AccumulateRelayReward method was called.
+	// This tracks how many relays were initially processed and optimistically accounted.
+	AccumulateRelayReward int
+
+	// SetNonApplicableRelayReward counts the number of times SetNonApplicableRelayReward method was called.
+	// This tracks how many relays were later determined to be non-applicable for rewards.
+	SetNonApplicableRelayReward int
+}
+
+// newMockRelayMeterWithCallCount creates a mock RelayMeter implementation that
+// tracks call counts for its methods.
+// It returns a RelayMeter that increments the corresponding counter in the provided
+// callCount struct whenever one of its methods is called.
+func newMockRelayMeterWithCallCount(
+	t *testing.T,
+	callCount *relayMeterCallCount,
+) relayer.RelayMeter {
+	ctrl := gomock.NewController(t)
+
+	relayMeter := mockrelayer.NewMockRelayMeter(ctrl)
+
+	relayMeter.EXPECT().Start(gomock.Any()).Return(nil).AnyTimes()
+
+	relayMeter.EXPECT().AccumulateRelayReward(gomock.Any(), gomock.Any()).
+		Do(func(ctx context.Context, meta servicetypes.RelayRequestMetadata) {
+			callCount.AccumulateRelayReward++
+		}).AnyTimes()
+
+	relayMeter.EXPECT().SetNonApplicableRelayReward(gomock.Any(), gomock.Any()).
+		Do(func(ctx context.Context, meta servicetypes.RelayRequestMetadata) {
+			callCount.SetNonApplicableRelayReward++
+		}).AnyTimes()
 
 	return relayMeter
 }
