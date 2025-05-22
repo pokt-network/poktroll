@@ -49,6 +49,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []uint64{12, 38, 50}
+	// Set the cost denomination of a single compute unit to pPOKT (i.e. 1/compute_unit_cost_granularity)
 	globalComputeUnitCostGranularity := uint64(1000000)
 	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
 	serviceComputeUnitsPerRelay := uint64(1)
@@ -208,6 +209,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 // handle all the relays completed.
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
 	// Test Parameters
+	// Set the cost denomination of a single compute unit to pPOKT (i.e. 1/compute_unit_cost_granularity)
 	globalComputeUnitCostGranularity := uint64(1000000)
 	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
 	serviceComputeUnitsPerRelay := uint64(100)
@@ -908,7 +910,12 @@ func computeShare(t *testing.T, amount *big.Rat, sharePercentage float64) cosmos
 }
 
 // getNumTokensClaimed calculates the number of tokens claimed
-func getNumTokensClaimed(numRelays, serviceComputeUnitsPerRelay, computeUnitsToTokensMultiplier, computeUnitCostGranularity uint64) int64 {
+func getNumTokensClaimed(
+	numRelays,
+	serviceComputeUnitsPerRelay,
+	computeUnitsToTokensMultiplier,
+	computeUnitCostGranularity uint64,
+) int64 {
 	computeUnitCostUpokt := new(big.Rat).SetFrac64(
 		int64(computeUnitsToTokensMultiplier),
 		int64(computeUnitCostGranularity),

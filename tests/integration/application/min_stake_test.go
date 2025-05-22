@@ -335,9 +335,11 @@ func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 
 	numComputeUnitsRat := new(big.Rat).SetInt64(int64(s.numRelays * s.numComputeUnitsPerRelay))
 
+	// Compute the expect burn
 	expectedAppBurnRat := new(big.Rat).Mul(computeUnitCostUpoktRat, numComputeUnitsRat)
 	expectedAppBurn := expectedAppBurnRat.Num().Int64() / expectedAppBurnRat.Denom().Int64()
 	expectedAppBurnCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(expectedAppBurn))
+
 	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	require.NoError(s.T(), err)

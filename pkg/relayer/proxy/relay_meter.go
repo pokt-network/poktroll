@@ -412,7 +412,21 @@ func filterTypedEvents[T proto.Message](
 }
 
 // getSingleMinedRelayCostCoin returns the cost of a relay based on the shared parameters and the service.
-// relayCost = Compute Units Per Relay (CUPR) * Compute Units To Token Multiplier (CUTTM) * relayDifficultyMultiplier / Compute Unit Cost Granularity
+//
+// relayCost =
+//
+//	relayDifficultyMultiplier *
+//	Compute Units Per Relay (CUPR) *
+//	Compute Units To Token Multiplier (CUTTM) /
+//	Compute Unit Cost Granularity
+//
+// Example:
+// 1 relayCost (in uPOKT) =
+//
+//	1000 (difficulty multiplier to get the estimated served relays) *
+//	100 (compute units per relay)
+//	42000000 (compute unit cost in pPOKT) /
+//	1000000 (convert pPOKT to uPOKT)
 func getSingleMinedRelayCostCoin(
 	sharedParams *sharedtypes.Params,
 	service *sharedtypes.Service,
@@ -422,15 +436,18 @@ func getSingleMinedRelayCostCoin(
 	difficultyTargetHash := relayMiningDifficulty.GetTargetHash()
 	difficultyMultiplier := protocol.GetRelayDifficultyMultiplier(difficultyTargetHash)
 
-	// Get the estimated cost of the relay if it gets mined.
+	// Get the cost of a single compute unit in fractional uPOKT.
 	computeUnitCostUpokt := new(big.Rat).SetFrac64(
 		int64(sharedParams.GetComputeUnitsToTokensMultiplier()),
 		int64(sharedParams.GetComputeUnitCostGranularity()),
 	)
+	// Get the cost of a single relay in fractional uPOKT.
 	relayCostRat := new(big.Rat).Mul(new(big.Rat).SetUint64(service.ComputeUnitsPerRelay), computeUnitCostUpokt)
+	// Get the estimated cost of the served relays in fractional uPOKT.
 	estimatedRelayCostRat := big.NewRat(0, 1).Mul(relayCostRat, difficultyMultiplier)
-	estimatedRelayCost := big.NewInt(0).Quo(estimatedRelayCostRat.Num(), estimatedRelayCostRat.Denom())
 
+	// Get the estimated cost of the relay if it gets mined in uPOKT.
+	estimatedRelayCost := big.NewInt(0).Quo(estimatedRelayCostRat.Num(), estimatedRelayCostRat.Denom())
 	estimatedRelayCostCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(estimatedRelayCost))
 
 	return estimatedRelayCostCoin, nil

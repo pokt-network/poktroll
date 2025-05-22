@@ -1645,7 +1645,7 @@ func (s *relaysSuite) populateWithKnownGateways() (gateways []*accountInfo) {
 	return gateways
 }
 
-// getTestTotalRelayCost computes the total relay cost for the test in uPOKT.
+// getTestTotalRelayCost computes the total relay uPOKT cost for the test given the current block height.
 func (s *relaysSuite) getTestTotalRelayCost(currentHeight int64) int64 {
 	// Test duration in blocks
 	currentTestDurationBlocks := s.testStartHeight + s.relayLoadDurationBlocks - currentHeight
