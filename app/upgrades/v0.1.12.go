@@ -20,8 +20,6 @@ const (
 // This upgrade adds:
 // - the `compute_unit_cost_granularity` shared module param
 //
-// - a corresponding authz grant
-// - new `MsgRecoverMorseAccount` message with empty message handlers (scaffolding)
 // https://github.com/pokt-network/poktroll/compare/v0.1.11..v0.1.12
 var Upgrade_0_1_12 = Upgrade{
 	PlanName: Upgrade_0_1_12_PlanName,
