@@ -115,4 +115,6 @@ vultr_*.json
 # GitHub
 .secrets
 
+# Local pocketd build
+# ignite chain build --skip-proto --debug -v -o .
 pocketd

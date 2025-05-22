@@ -17,9 +17,6 @@ jobs:
         with:
           fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
 
-      - name: install ignite
-        run: make ignite_install
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -27,6 +24,9 @@ jobs:
 
       - name: Install CI dependencies
         run: make install_ci_deps
+
+      - name: install ignite
+        run: make ignite_install
 
       # This is commented out because proto generated code is now tracked in the
       # repo so this step is skipped.
