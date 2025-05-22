@@ -18,19 +18,39 @@ This document is a result of the [GitHub Discussion found here](https://github.c
 - [Custodial vs Non-custodial Supplier Migration](#custodial-vs-non-custodial-supplier-migration)
 - [Table of Contents](#table-of-contents)
 - [Terminology](#terminology)
-  - [Custody Models](#custody-models)
   - [Address fields by chain](#address-fields-by-chain)
+  - [Custody Models](#custody-models)
 - [Background](#background)
   - [Morse Background](#morse-background)
-- [Morse -\> Shannon Migration](#morse---shannon-migration)
+- [Morse -\> Shannon Migration Types](#morse---shannon-migration-types)
   - [Custodial Migration](#custodial-migration)
   - [Non-Custodial Migration](#non-custodial-migration)
-  - [Non-Custodial: Most Common Use Case](#non-custodial-most-common-use-case)
-  - [Known Risk — Operator Uses a Different Owner](#known-risk--operator-uses-a-different-owner)
+  - [**Non-custodial #2** – owner sign](#non-custodial-2--owner-sign)
+  - [**Non-custodial #3** – operator sign](#non-custodial-3--operator-sign)
+  - [**Non-custodial #3** – operator sign - attack](#non-custodial-3--operator-sign---attack)
+  - [**Non-custodial #3** – operator vs owner sign risk tradeoffs](#non-custodial-3--operator-vs-owner-sign-risk-tradeoffs)
 
 ## Terminology
 
-full
+| Symbol             | Definition                                                                   |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `M`                | A Morse address controlled by `S` (both owner and operator)                  |
+| `M_output`         | A Morse staking (operator and/or owner) address controlled by `S_owner`      |
+| `M_operator`       | A Morse output address (owner) controlled by `S_operator` (where rewards go) |
+| `S`                | A Shannon address that owns `M` (both owner and operator)                    |
+| `S_owner`          | A Shannon owner address (of `M_output`)                                      |
+| `S_operator`       | A Shannon operator address (of `M_operator`)                                 |
+| `output_address`   | Morse term - Owner of the staked funds (where rewards and unstaked funds go) |
+| `address`          | Morse term - The Morse staking address (usually the operator address)        |
+| `owner_address`    | Shannon term - Owner of the staked funds                                     |
+| `operator_address` | Shannon term - Operator of the staked funds                                  |
+
+### Address fields by chain
+
+| Chain       | Node role                   | **Required field(s)**        | **Optional field(s)** | Who can control each field                                                       |
+| ----------- | --------------------------- | ---------------------------- | --------------------- | -------------------------------------------------------------------------------- |
+| **Morse**   | NodeRunner (a.k.a Servicer) | `address` (a.k.a `operator`) | `output_address`      | `address`: operator **and/or** owner<br/>`output_address`: owner only            |
+| **Shannon** | Supplier                    | `owner_address`              | `operator_address`    | `owner_address`: operator **and/or** owner<br/>`operator_address`: operator only |
 
 ### Custody Models
 
@@ -38,13 +58,6 @@ full
 | ----------------- | ---------------------------------------------------------- |
 | **Custodial**     | Owner of staked funds **is the same** as the node operator |
 | **Non-custodial** | Owner of staked funds **differs** from the node operator   |
-
-### Address fields by chain
-
-| Chain       | Node role (v2 name)         | **Required field(s)** | **Optional field(s)** | Who can control each field                                                       |
-| ----------- | --------------------------- | --------------------- | --------------------- | -------------------------------------------------------------------------------- |
-| **Morse**   | NodeRunner (a.k.a Servicer) | `address`             | `output_address`      | `address`: operator **and/or** owner<br/>`output_address`: owner only            |
-| **Shannon** | Supplier                    | `owner_address`       | `operator_address`    | `owner_address`: operator **and/or** owner<br/>`operator_address`: operator only |
 
 ## Background
 
@@ -76,7 +89,7 @@ Both Operator and Output Addresses can do the following:
 - Submit Stake, EditStake, Unstake, Unjail Txs
 ```
 
-## Morse -> Shannon Migration
+## Morse -> Shannon Migration Types
 
 ### Custodial Migration
 
@@ -117,87 +130,122 @@ graph TD
 
 Non-custodial migration has a few variations and can be summarized via the following table.
 
-Assumptions made based on offchain private key ownership:
+| Flow Type                              | Supported | Morse `(output_address, address)` | Shannon `(owner_address, operator_address)` | Claim Signer                | Notes                                                                                | Pre-Conditions                                                                                                                       |
+| -------------------------------------- | --------- | --------------------------------- | ------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Custodial #1** – owner-op sign       | ✅        | `(M, M)`                          | `(S, S)`                                    | `S` & `M`                   | **Same identity controls and signs** Morse & Shannon messages                        | `S` owns `M`                                                                                                                         |
+| **Custodial #2** – operator-only       | ✅        | `(null, M)`                       | `(S, null)`                                 | `S` & `M`                   | **Owner signs** with no output override                                              | `S` owns `M`                                                                                                                         |
+| **Custodial #3** – operator-only       | ✅        | `(null, M)`                       | `(S, S)`                                    | `S` & `M`                   | Same signer, no output override                                                      | `S` owns `M`                                                                                                                         |
+| **Non-custodial #1** – invalid         | ❌        | `(M_output, M_operator)`          | `(S_owner, null)`                           | -                           | Invalid because `operator_address` must be specified if `output_address` ≠ `address` | —                                                                                                                                    |
+| **Non-custodial #2** – owner sign      | ✅        | `(M_output, M_operator)`          | `(S_owner, S_operator)`                     | `S_owner` & `M_owner`       | **Owner signs** for staking addr; output addr linked off-chain to `S_owner`          | (`S_owner` owns `M_output`) && (`S_operator` owns `M_operator`) && (`M_operator` gives `S_operator` shannon staking config offchain) |
+| **Non-custodial #3** – operator sign   | ✅        | `(M_output, M_operator)`          | `(S_owner, S_operator)`                     | `S_operator` & `M_operator` | **Operator signs** for output addr; off-chain linkage to `M_operator` required       | (`S_owner` owns `M_output`) && (`S_operator` owns `M_operator`) && (`S_operator` gives `M_operator` shannon address offline)         |
+| **Non-custodial #4** – invalid         | ❌        | `(M_output, null)`                | `(S_owner, S_operator)`                     | -                           | Operator address should not be defined if no distinct output address                 | —                                                                                                                                    |
+| **Invalid** – missing shannon operator | ❌        | `(M_output, null)`                | —                                           | -                           | No operator and no output override — unsupported                                     | —                                                                                                                                    |
+| **Invalid** – missing shannon owner    | ❌        | —                                 | `(null, S_operator)`                        | -                           | Owner must be defined                                                                | —                                                                                                                                    |
+| **Non-custodial #5** – invalid         | ❌        | `(M1, M2)`                        | `(S, S)`                                    | `S`                         | Owner and operator must differ if output differs from staking address                | —                                                                                                                                    |
 
-- Owners of `(S|M)1` and `(S|M)2` are intended to be distinct offchain
-- The owner of `SX`/`MX` are the same identity offchain
-
-| Morse / Shannon-sign Description    | Morse (`output_address`, `address`) | Shannon (`owner_address`, `operator_address`) | Claim Signer | Supported | Details / Notes / Explanation                                                                                            | Pre-conditions                                                                            |
-| ----------------------------------- | ----------------------------------- | --------------------------------------------- | ------------ | --------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| custodial / owner-operator-sign     | (`M`, `M`)                          | (`S`, `S`)                                    | `S`          | ✅        | Custodial flow #1                                                                                                        | `S` owns `M`                                                                              |
-| custodial / operator-sign           | (null, `M`)                         | (`S`, null)                                   | `S`          | ✅        | Custodial flow #2                                                                                                        | `S` owns `M`                                                                              |
-| custodial / operator-sign           | (null, `M`)                         | (`S`, `S`)                                    | `S`          | ✅        | Custodial flow #3                                                                                                        | `S` owns `M`                                                                              |
-| non-custodial / owner-sign          | (`M1`, `M2`)                        | (`S1`, null)                                  | `S1`         | ❌        | MUST have a distinct `operator_address` if a distinct `output_address` exists (for backwards-simplification)             | NA                                                                                        |
-| non-custodial / owner-sign          | (`M1`, `M2`)                        | (`S1`, `S2`)                                  | `S1`         | ✅        | Non-custodial flow executed by owner (ONLY requires S1 & M1 signature)                                                   | (`S1` owns `M1`) && (`S2` owns `M2`) && (`M2` gives `S2` shannon staking config offchain) |
-| non-custodial / operator-sign       | (`M1`, `M2`)                        | (`S1`, `S2`)                                  | `S2`         | ✅        | Non-custodial flow executed by operator (ONLY requires S2 & M2 signature)                                                | (`S1` owns `M1`) && (`S2` owns `M2`) && (`S2` gives `M2` shannon address offline)         |
-| non-custodial / owner-sign          | (`M1`, null)                        | (`S1`, `S2`)                                  | `S2`         | ❌        | MUST NOT have a distinct `operator_address` if a distinct `output_address` does not exist (for backwards-simplification) | NA                                                                                        |
-| missing operator / NA               | (`M1`, null)                        | NA                                            | NA           | ❌        | Not supported because `M2` cannot be null                                                                                | NA                                                                                        |
-| NA / missing owner                  | NA                                  | (null, `S2`)                                  | NA           | ❌        | Not supported because `S1` cannot be null                                                                                | NA                                                                                        |
-| non-custodial / owner-operator-sign | (`M1`, `M2`)                        | (`S`, `S`)                                    | `S`          | ❌        | `operator_address` must be distinct from `owner_address` (for backwards-simplification)                                  | NA                                                                                        |
-
-### Non-Custodial: Most Common Use Case
-
-The table above shows all viable supported and unsupported flows.
-
-**Most common use-case:** A POKT token holder outsources staking to a node operator.
-
-| Morse / Shannon-sign Description | Morse (`output_address`, `address`) | Shannon (`owner_address`, `operator_address`) | Claim Signer | Supported | Details / Notes / Explanation                                             | Pre-conditions                                                                    |
-| -------------------------------- | ----------------------------------- | --------------------------------------------- | ------------ | --------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| non-custodial / operator-sign    | (`M1`, `M2`)                        | (`S1`, `S2`)                                  | `S2`         | ✅        | Non-custodial flow executed by operator (ONLY requires S2 & M2 signature) | (`S1` owns `M1`) && (`S2` owns `M2`) && (`S2` gives `M2` shannon address offline) |
-
-**What happens in this flow:**
-
-- Owner (`output_address` in Morse) generates a new Shannon `owner_address` (private key).
-- Owner gives the new `owner_address` to the Operator (`address` in Morse).
-- Operator generates their own Shannon `operator_address`.
-- Operator submits the claim using both addresses.
-
-**Preconditions:**
-
-- Owner controls Morse `output_address` and Shannon `owner_address`.
-- Operator controls Morse `address` and Shannon `operator_address`.
+### **Non-custodial #2** – owner sign
 
 ```mermaid
-graph TD
-    subgraph Offchain[Offchain Operations]
-        Ow["Owner (M1)<br/>(Morse 'output_address')"]
-        Op["Operator (M2)<br/>(Morse 'address')"]
+graph LR
+    subgraph Offchain[Offchain]
+        Owner["👩 Owner"]
+        Operator["👨 Operator"]
     end
 
-    subgraph Keygen[Shannon Account Gen]
-        direction LR
-        pocketd[pocketd]
-        sooth[Soothe Wallet]
-        keplr[Keplr]
+    subgraph Morse[Morse Network]
+        Servicer["Servicer<br/>(address, output_address)"]
+        M_owner["M_owner<br/>(output_address)"]
+        M_operator["M_operator<br/>(address)"]
     end
 
-    subgraph Onchain[Shannon Network Onchain]
-        SN["Claim <br/> Morse Servicer (M1, M2)<br/> as <br//>Shannon Supplier (S1, S2)"]
+    subgraph Shannon[Shannon Network]
+        Supplier["Supplier<br/>(owner_address, operator_address)"]
+        S_owner["S_owner<br/>(owner_address)"]
+        S_operator["S_operator<br/>(operator_address)"]
     end
 
-    Ow <-->|"1️⃣ Generate S1 <br/> (Shannon 'owner')"| Keygen
-    Op <-->|"2️⃣ Generate S2 <br/> (Shannon 'operator')"| Keygen
-    Ow -->|3️⃣ S1 shares <br/> S1.address with S2| Op
-    Op -->|4️⃣ Claim signed by S2 <br/> on behalf of S1| SN
+    Owner -.-|"controls"| M_owner
+    Owner -.-|"controls"| S_owner
+    Operator -.-|"controls"| M_operator
+    Operator -.-|"controls"| S_operator
+
+    Operator -->|shares supplier config<br/> | Owner
+    Owner -->|"owner signs claim <br/> (owner_address, operator_address)"| Supplier
+
+    classDef green fill:#90EE90,stroke:#228B22,stroke-width:2px,color:#000000
+    class Supplier green
 ```
 
-### Known Risk — Operator Uses a Different Owner
+### **Non-custodial #3** – operator sign
 
-**Can the operator claim the Supplier with a _different_ owner account?**
+```mermaid
+graph LR
+    subgraph Offchain[Offchain]
+        Owner["👩 Owner"]
+        Operator["👨 Operator"]
+    end
 
-Yes. Since the operator receives the new `owner_address` off-chain, they could substitute their own address when submitting the claim.
+    subgraph Morse[Morse Network]
+        Servicer["Servicer<br/>(address, output_address)"]
+        M_owner["M_owner<br/>(output_address)"]
+        M_operator["M_operator<br/>(address)"]
+    end
 
-**Trade-offs:**
+    subgraph Shannon[Shannon Network]
+        Supplier["Supplier<br/>(owner_address, operator_address)"]
+        S_owner["S_owner<br/>(owner_address)"]
+        S_operator["S_operator<br/>(operator_address)"]
+    end
+
+    Owner -.-|"controls"| M_owner
+    Owner -.-|"controls"| S_owner
+    Operator -.-|"controls"| M_operator
+    Operator -.-|"controls"| S_operator
+
+    Owner -->|share owner_address<br/> | Operator
+    Operator -->|"operator signs claim <br/> (owner_address, operator_address)"| Supplier
+
+    classDef green fill:#90EE90,stroke:#228B22,stroke-width:2px,color:#000000
+    class Supplier green
+```
+
+### **Non-custodial #3** – operator sign - attack
+
+```mermaid
+graph LR
+    subgraph Offchain[Offchain]
+        Owner["👩 Owner"]
+        Operator["😈👨😈 Operator"]
+    end
+
+    subgraph Morse[Morse Network]
+        Servicer["Servicer<br/>(address, output_address)"]
+        M_owner["M_owner<br/>(output_address)"]
+        M_operator["M_operator<br/>(address)"]
+    end
+
+    subgraph Shannon[Shannon Network]
+        Supplier["Supplier<br/>(operator_address, operator_address)"]
+        S_owner["S_owner<br/>(owner_address)"]
+        S_operator["S_operator<br/>(operator_address)"]
+    end
+
+    Owner -.-|"controls"| M_owner
+    Owner -.-|"controls"| S_owner
+    Operator -.-|"controls"| M_operator
+    Operator -.-|"controls"| S_operator
+
+    Owner -->|share owner_address<br/> | Operator
+    Operator -->|"operator signs claim <br/> BUT replaces <br/>owner_address with operator_address<br/>"| Supplier
+
+    classDef red fill:#FFB6C1,stroke:#DC143C,stroke-width:2px,color:#000000
+    class Supplier red
+```
+
+### **Non-custodial #3** – operator vs owner sign risk tradeoffs
 
 | Flow                                      | What Happens                                                                           | Owner Effort                             | Security Risk                             | UX for Owner | Supported?            |
 | ----------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------- | ------------ | --------------------- |
 | **Default (operator-led claim)**          | Owner creates `owner_address` → shares it → operator submits claim                     | **Low** (share one address)              | **Medium** – operator could swap address  | Very simple  | **Yes (recommended)** |
 | Operator generates key, gives it to owner | Operator creates key → passes private key to owner → submits claim                     | Medium                                   | **High** – private key handled insecurely | Awkward      | No                    |
 | Owner prepares full staking config        | Owner sets up both `owner_address` & `operator_address`, then hands config to operator | **High** (many owners are non-technical) | Low                                       | Difficult    | No (impractical)      |
-
-**Mitigation Strategy:**
-
-- **Short-term:** Rely on established trust between token holders and professional operators.
-- **Long-term:** The Pocket Network Foundation will monitor migrations. If abuse is observed, they will propose a protocol upgrade to:
-  - Recover mis-claimed stakes.
-  - Penalize offending accounts.

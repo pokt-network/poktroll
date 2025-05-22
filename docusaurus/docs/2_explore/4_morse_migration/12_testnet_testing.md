@@ -10,7 +10,7 @@ sidebar_position: 12
   - [1. Retrieve a Morse TestNet Snapshot](#1-retrieve-a-morse-testnet-snapshot)
   - [2. Export Morse TestNet State](#2-export-morse-testnet-state)
   - [3. Export Morse MainNet State](#3-export-morse-mainnet-state)
-  - [4. Merge Morse MainNet \& TestNet Stats](#4-merge-morse-mainnet--testnet-stats)
+  - [4. Merge Morse MainNet \& TestNet States](#4-merge-morse-mainnet--testnet-states)
   - [5. Continue the State Upload Process](#5-continue-the-state-upload-process)
 
 ---
@@ -81,7 +81,7 @@ pocket --datadir="$HOME/morse-testnet-snapshot" util export-genesis-for-reset "$
 
 Follow steps 1-2 in [State Transfer Playbook](./4_state_transfer_playbook.md) to retrieve and export the Morse MainNet snapshot.
 
-### 4. Merge Morse MainNet & TestNet Stats
+### 4. Merge Morse MainNet & TestNet States
 
 - Merge the Morse MainNet and TestNet state exports into a single file:
 
