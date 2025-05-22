@@ -7,25 +7,14 @@
 # NB: For mac users, you may need to install with the proper linkers: https://github.com/golang/go/issues/65940
 
 .PHONY: check_go_version
-# Internal helper target - check go version
 check_go_version:
-	@# Extract the version number from the 'go version' command.
 	@GO_VERSION=$$(go version | cut -d " " -f 3 | cut -c 3-) && \
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
 	\
-	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -le 20 ] ; then \
-		echo "Invalid Go version. Expected 1.21.x or newer but found $$GO_VERSION"; \
+	if [ "$$MAJOR_VERSION" -lt 1 ] || { [ "$$MAJOR_VERSION" -eq 1 ] && [ "$$MINOR_VERSION" -lt 24 ]; }; then \
+		echo "Invalid Go version. Expected 1.24.x or newer but found $$GO_VERSION"; \
 		exit 1; \
-	fi
-
-.PHONY: check_ignite_version
-# Internal helper target - check ignite version
-check_ignite_version:
-	@version=$$(ignite version 2>/dev/null | grep 'Ignite CLI version:' | awk '{print $$4}') ; \
-	if [ "$$(printf "v28\n$$version" | sort -V | head -n1)" != "v28" ]; then \
-		echo "Error: Version $$version is less than v28. Exiting with error." ; \
-		exit 1 ; \
 	fi
 
 .PHONY: check_act
@@ -138,6 +127,8 @@ check_path_up:
 		echo "  make localnet_up"; \
 		echo "########################################################################"; \
 		exit 1; \
+	else \
+		echo "✅ PATH is up and running on port 3069"; \
 	fi
 
 .PHONY: check_relay_util
