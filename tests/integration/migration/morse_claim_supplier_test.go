@@ -347,15 +347,16 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_BelowMinStake() {
 	s.Equal(cosmostypes.NewCoin(pocket.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 	// Assert that the supplier was NOT staked.
-	supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
-	_, err = supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
-	require.EqualError(s.T(), err, status.Error(
+	expectedErr := status.Error(
 		codes.NotFound,
 		suppliertypes.ErrSupplierNotFound.Wrapf(
 			"supplier with operator address: %q",
 			shannonDestAddr,
 		).Error(),
-	).Error())
+	)
+	supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
+	_, err = supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
+	require.EqualError(s.T(), err, expectedErr.Error())
 }
 
 func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
@@ -363,8 +364,11 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 	// - 1 whose unbonding period HAS NOT yet elapsed
 	// - 1 whose unbonding period HAS elapsed
 	unbondingActorsOpt := testmigration.WithUnbondingActors(testmigration.UnbondingActorsConfig{
-		NumValidatorsUnbondingBegan: 1, // Number of validators to generate as having begun unbonding on Morse
-		NumValidatorsUnbondingEnded: 1, // Number of validators to generate as having unbonded on Morse while waiting to be claimed
+		// Number of validators to generate as having begun unbonding on Morse but HAVE NOT FINISHED unbonding at the time of Claim
+		NumValidatorsUnbondingBegan: 1,
+
+		// Number of validators to generate as having unbonded on Morse and HAVE FINISHED unbonding while waiting to be claimed
+		NumValidatorsUnbondingEnded: 1,
 	})
 
 	// Configure fixtures to generate Morse validator balances:
@@ -389,13 +393,19 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 			actorType testmigration.MorseValidatorActorType,
 			_ *migrationtypes.MorseValidator,
 		) time.Time {
+
 			switch actorType {
+
+			// Unbonding
 			case testmigration.MorseUnbondingValidator:
 				return oneDayFromNow
+
+			// Unbonded
 			case testmigration.MorseUnbondedValidator:
 				return oneDayAgo
+
+			// Don't set unstaking time for any other validator actor types.
 			default:
-				// Don't set unstaking time for any other validator actor types.
 				return time.Time{}
 			}
 		},
@@ -409,42 +419,57 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 	)
 	s.NoError(err)
 
+	// Set the Morse account state and import the Morse claimable accounts.
 	s.SetMorseAccountState(s.T(), fixtures.GetMorseAccountState())
 	_, err = s.ImportMorseClaimableAccounts(s.T())
 	s.NoError(err)
 
+	// Retrieve the first unbonding supplier fixture.
 	unbondingSupplierFixture := fixtures.GetValidatorFixtures(testmigration.MorseUnbondingValidator)[0]
-	unbondedSupplierFixture := fixtures.GetValidatorFixtures(testmigration.MorseUnbondedValidator)[0]
+	unbondingSupplierAddress := unbondingSupplierFixture.GetActor().Address.String()
 
-	s.Run("supplier unbinding began", func() {
+	// Retrieve the first unbonded supplier fixture.
+	unbondedSupplierFixture := fixtures.GetValidatorFixtures(testmigration.MorseUnbondedValidator)[0]
+	unbondedSupplierAddress := unbondedSupplierFixture.GetActor().Address.String()
+
+	// 1. Prepare and submit a claim message for an unbonding supplier.
+	// 2. Verifies that the correct onchain events are emitted
+	// 3. Verifies that the supplier state is updated as expected
+	// 4. Asserts that the supplier's balance and onchain state (including unbonding status and staking fee deduction) are correct after the claim is processed.
+	s.Run("supplier unbonding began", func() {
+		// The destination address for the claim.
 		shannonDestAddr := sample.AccAddress()
 
+		// Prepare a claim message for the unbonding supplier.
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			shannonDestAddr,
 			shannonDestAddr,
-			unbondingSupplierFixture.GetActor().Address.String(),
+			unbondingSupplierAddress,
 			unbondingSupplierFixture.GetPrivateKey(),
 			s.supplierServices,
 			sample.AccAddress(),
 		)
 		s.NoError(err)
+		require.Equal(s.T(), unbondingSupplierAddress, morseClaimMsg.GetMorseSignerAddress())
 
-		// Retrieve the unbonding validator's onchain Morse claimable account.
-		morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
+		// Retrieve the unbonding supplier's onchain Morse claimable account.
+		morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), unbondingSupplierAddress)
 
 		// Calculate the expected unbonding session end height.
 		estimatedBlockDuration, ok := pocket.EstimatedBlockDurationByChainId[s.GetApp().GetSdkCtx().ChainID()]
 		require.Truef(s.T(), ok, "chain ID %s not found in EstimatedBlockDurationByChainId", s.GetApp().GetSdkCtx().ChainID())
 
+		// Calculate the current session end height and the next session start height.
 		currentHeight := s.GetApp().GetSdkCtx().BlockHeight()
 		sharedParams := s.GetSharedParams(s.T())
-		currrentSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
-		nextSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, currrentSessionEndHeight+1)
+		currentSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		nextSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, currentSessionEndHeight+1)
 		durationUntilUnstakeCompletion := int64(time.Until(morseClaimableAccount.UnstakingTime))
 		estimatedBlocksUntilUnstakeCompletion := durationUntilUnstakeCompletion / int64(estimatedBlockDuration)
 		estimatedUnstakeCompletionHeight := currentHeight + estimatedBlocksUntilUnstakeCompletion
 		expectedUnstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, estimatedUnstakeCompletionHeight))
 
+		// Calculate what the expect Supplier onchain should look like.
 		expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight())
 		expectedSupplierStake := morseClaimableAccount.GetSupplierStake()
 		expectedSupplier := &sharedtypes.Supplier{
@@ -481,7 +506,6 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 			Supplier:             expectedSupplier,
 			// MorseOutputAddress: (intentionally omitted, custodial case),
 		}
-
 		expectedSupplierUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 			Supplier:           expectedSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
@@ -489,10 +513,12 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
 		}
 
+		// Claim events
 		morseSupplierClaimedEvents := events.FilterEvents[*migrationtypes.EventMorseSupplierClaimed](s.T(), s.GetEvents())
 		require.Equal(s.T(), 1, len(morseSupplierClaimedEvents))
 		require.Equal(s.T(), expectedMorseSupplierClaimEvent, morseSupplierClaimedEvents[0])
 
+		// Unbonding begin event
 		appUnbondingBeginEvent := events.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](s.T(), s.GetEvents())
 		require.Equal(s.T(), 1, len(appUnbondingBeginEvent))
 		require.Equal(s.T(), expectedSupplierUnbondingBeginEvent, appUnbondingBeginEvent[0])
@@ -537,18 +563,22 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 			// DEV_NOTE: The services field will be empty until a service activation height elapses.
 			Services: nil,
 		}
-		appClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
-		foundSupplier, err := appClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
+
+		// Prepare clients for queries.
+		supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
+		bankClient := s.GetBankQueryClient(s.T())
+
+		// Retrieve the supplier params.
+		supplierParams, err := supplierClient.GetParams(s.SdkCtx())
+		s.NoError(err)
+
+		// Ensure the found supplier matches the expected supplier.
+		foundSupplier, err := supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
 		s.NoError(err)
 		s.Equal(expectedSupplier, &foundSupplier)
 
-		// Query for the validator unstaked balance.
-		bankClient := s.GetBankQueryClient(s.T())
+		// Ensure the found balance matches the expected balance.
 		shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
-		s.NoError(err)
-
-		supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
-		supplierParams, err := supplierClient.GetParams(s.SdkCtx())
 		s.NoError(err)
 
 		// Subtract the staking fee from the expected unstaked balance.
@@ -557,27 +587,30 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		s.Equal(expectedSupplierUnstakedBalance, *shannonDestBalance)
 	})
 
-	s.Run("supplier unbinding ended", func() {
+	s.Run("supplier unbonding ended", func() {
 		shannonDestAddr := sample.AccAddress()
 
+		// Prepare a claim message for the unbonded supplier.
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			shannonDestAddr,
 			shannonDestAddr,
-			unbondedSupplierFixture.GetActor().Address.String(),
+			unbondedSupplierAddress,
 			unbondedSupplierFixture.GetPrivateKey(),
 			s.supplierServices,
 			sample.AccAddress(),
 		)
 		s.NoError(err)
+		require.Equal(s.T(), unbondedSupplierAddress, morseClaimMsg.GetMorseSignerAddress())
 
-		// Retrieve the unbonding validator's onchain Morse claimable account.
-		morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
+		// Retrieve the unbonded supplier's onchain Morse claimable account.
+		morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), unbondedSupplierAddress)
 
 		// Calculate the expected unbonded session end height (previous session end).
 		sharedParams := s.GetSharedParams(s.T())
 		currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, s.GetApp().GetSdkCtx().BlockHeight())
 		expectedUnstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStartHeight-1))
 
+		// Calculate what the expect Supplier onchain should look like.
 		expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight())
 		expectedSupplierStake := morseClaimableAccount.GetSupplierStake()
 		expectedSupplier := &sharedtypes.Supplier{
@@ -585,8 +618,9 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 			OwnerAddress:            shannonDestAddr,
 			Stake:                   &expectedSupplierStake,
 			UnstakeSessionEndHeight: expectedUnstakeSessionEndHeight,
-			Services:                make([]*sharedtypes.SupplierServiceConfig, 0),
-			ServiceConfigHistory:    make([]*sharedtypes.ServiceConfigUpdate, 0),
+			// No ServiceConfigHistory or Services for unbonded supplier.
+			ServiceConfigHistory: make([]*sharedtypes.ServiceConfigUpdate, 0),
+			Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
 		}
 
 		// Claim a Morse claimable account.
@@ -603,7 +637,6 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 			Supplier:             expectedSupplier,
 			// MorseOutputAddress: (intentionally omitted, custodial case),
 		}
-
 		expectedSupplierUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
 			Supplier:           expectedSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
@@ -611,18 +644,21 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
 		}
 
+		// Supplier claimed event.
 		morseSupplierClaimedEvents := events.FilterEvents[*migrationtypes.EventMorseSupplierClaimed](s.T(), s.GetEvents())
 		require.Equal(s.T(), 1, len(morseSupplierClaimedEvents))
 		require.Equal(s.T(), expectedMorseSupplierClaimEvent, morseSupplierClaimedEvents[0])
 
-		appUnbondingEndEvent := events.FilterEvents[*suppliertypes.EventSupplierUnbondingEnd](s.T(), s.GetEvents())
-		require.Equal(s.T(), 1, len(appUnbondingEndEvent))
-		require.Equal(s.T(), expectedSupplierUnbondingEndEvent, appUnbondingEndEvent[0])
+		// Supplier unbonding end event.
+		supplierUnbondingEndEvents := events.FilterEvents[*suppliertypes.EventSupplierUnbondingEnd](s.T(), s.GetEvents())
+		require.Equal(s.T(), 1, len(supplierUnbondingEndEvents))
+		require.Equal(s.T(), expectedSupplierUnbondingEndEvent, supplierUnbondingEndEvents[0])
 
 		// Nilify the following zero-value map/slice fields because they are not initialized in the TxResponse.
 		expectedSupplier.ServiceConfigHistory = nil
 		expectedSupplier.Services = nil
 
+		// Check the Morse claim response.
 		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 			MorseNodeAddress:     morseClaimMsg.GetMorseSignerAddress(),
 			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
@@ -641,18 +677,18 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		updatedMorseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
 		s.Equal(expectedMorseClaimableAccount, updatedMorseClaimableAccount)
 
-		// Assert that the validator was unbonded (i.e.not staked).
-		supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
-		_, err = supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
-		s.EqualError(err, status.Error(
+		// Assert that the supplier was unbonded (i.e. not staked).
+		expectedErr := status.Error(
 			codes.NotFound,
 			suppliertypes.ErrSupplierNotFound.Wrapf(
 				"supplier with operator address: %q",
 				shannonDestAddr,
-			).Error(),
-		).Error())
+			).Error())
+		supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
+		_, err = supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
+		s.EqualError(err, expectedErr.Error())
 
-		// Query for the validator unstaked balance.
+		// Query for the supplier's unstaked balance.
 		bankClient := s.GetBankQueryClient(s.T())
 		shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
 		s.NoError(err)

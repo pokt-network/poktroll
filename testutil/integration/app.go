@@ -86,7 +86,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const ChainId = "pocket"
+const chainId = "pocket"
 
 var (
 	// faucetAmountUpokt is the number of upokt coins that the faucet account
@@ -167,7 +167,7 @@ func NewIntegrationApp(
 	basicModuleManager.RegisterInterfaces(registry)
 
 	cometHeader := cmtproto.Header{
-		ChainID: ChainId,
+		ChainID: chainId,
 		Height:  1,
 	}
 	sdkCtx = sdkCtx.
@@ -212,7 +212,7 @@ func NewIntegrationApp(
 	err := bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
 
-	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: ChainId})
+	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: chainId})
 	require.NoError(t, err, "failed to initialize chain")
 
 	bApp.SetTxEncoder(txCfg.TxEncoder())
@@ -308,11 +308,11 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	db := dbm.NewMemDB()
 
 	// Prepare the base application.
-	bApp := baseapp.NewBaseApp(ChainId, logger, db, txCfg.TxDecoder(), baseapp.SetChainID(ChainId))
+	bApp := baseapp.NewBaseApp(chainId, logger, db, txCfg.TxDecoder(), baseapp.SetChainID(chainId))
 
 	// Prepare the context
 	sdkCtx := bApp.NewUncachedContext(false, cmtproto.Header{
-		ChainID: ChainId,
+		ChainID: chainId,
 		Height:  1,
 	})
 
@@ -855,7 +855,7 @@ func (app *App) nextBlockUpdateCtx() {
 	header.Height++
 
 	headerInfo := coreheader.Info{
-		ChainID: ChainId,
+		ChainID: chainId,
 		Height:  header.Height,
 		Time:    header.Time,
 	}
