@@ -3,17 +3,28 @@ title: Migration E2E Testing (LocalNet)
 sidebar_position: 11
 ---
 
-**Goal of this document:** Manually test Supplier Claiming on LocalNet with clear, step-by-step, copy-pasteable commands.
+:::danger TODO(@bryanchriswhite) - Verify
 
-:::warning Experience required
-
-This document assumes you are a developer or operator and are familiar with concepts
-like `pocket`, `pocketd`, `LocalNet`, etc...
+1. Verify this flow E2E
+2. Add one-liners on expected checks/outputs along the way
 
 :::
 
-## Table of Contents <!-- omit in toc -->
+:::warning Read Me First
 
+- You must already know what `pocket`, `pocketd`, and `LocalNet` are.
+- If you are not a developer/operator, stop here.
+
+:::
+
+**Goal of this document:**
+
+- Manually test Supplier Claiming on LocalNet with clear, step-by-step, copy-pasteable commands.
+- This guide is **idiot-proofed**: every step is explicit, warnings are surfaced, and copy-paste actions are clearly marked.
+
+## Quick Navigation
+
+- [Quick Navigation](#quick-navigation)
 - [Prerequisites](#prerequisites)
 - [Morse Setup (`pocket`)](#morse-setup-pocket)
   - [Morse Account Preparation](#morse-account-preparation)
@@ -21,43 +32,42 @@ like `pocket`, `pocketd`, `LocalNet`, etc...
 - [State Upload](#state-upload)
 - [Shannon Setup (`pocketd`)](#shannon-setup-pocketd)
   - [Shannon Account Preparation](#shannon-account-preparation)
-  - [Shannon Supplier Claim](#shannon-supplier-claim)
-    - [5.1 Claim WITH Output Address - Signed by Owner](#51-claim-with-output-address---signed-by-owner)
-    - [Option 2: Claim WITH Output Address - Signed by Operator](#option-2-claim-with-output-address---signed-by-operator)
-    - [Option 3: Claim WITHOUT Output Address](#option-3-claim-without-output-address)
+  - [Option 1: Supplier Claim WITH Output Address - Signed by Owner](#option-1-supplier-claim-with-output-address---signed-by-owner)
+  - [Option 2: Supplier Claim WITH Output Address - Signed by Operator](#option-2-supplier-claim-with-output-address---signed-by-operator)
+  - [Option 3: Supplier Claim WITHOUT Output Address](#option-3-supplier-claim-without-output-address)
+
+---
 
 ## Prerequisites
 
-- `pocket` installed
-- `pocketd` installed
-- You know how to run a shannon `LocalNet`
+- `pocket` **must be installed**
+- `pocketd` **must be installed**
+- You **must** know how to run a shannon `LocalNet`
+- You need access to a shell with `jq`, `sed`, and `make`
 
 ## Morse Setup (`pocket`)
 
 ### Morse Account Preparation
 
-**Create 6 accounts:**
+Create 6 Accounts with these roles:
 
-1. PNF & Validator (single address for both roles for tsting purposes)
-2. Operator #1 (a.k.a supplier, operator, address, etc...)
-3. Operator #2 (a.k.a supplier, operator, address, etc...)
-4. Operator #3 (a.k.a supplier, operator, address, etc...)
-5. Owner #1 (a.k.a owner, output, etc...)
-6. Owner #2 (a.k.a owner, output, etc...)
+- (1) PNF & Validator (same address for both)
+- (2-4) Operators (suppliers)
+- (5-6) Owners (outputs)
 
 ```bash
 for i in {1..6}; do pocket accounts create --datadir ./morse_pocket_datadir; done
 ```
 
-When prompted, leave the password empty.
+_When prompted for a password, just press Enter (leave it empty)._
 
-**Verify the accounts were created**
+**Verify accounts were created:**
 
 ```bash
 pocket accounts list --datadir ./morse_pocket_datadir
 ```
 
-**Example output:**
+_You should see 6 addresses. Example:_
 
 ```text
 (0) 1c9d96c0bd1a98c90151a804f18e9ba75dae12b4
@@ -70,7 +80,7 @@ pocket accounts list --datadir ./morse_pocket_datadir
 
 **Assign addresses to variables**
 
-Run the following in your shell:
+Assign addresses to variables using the actual values (example shown below; use your real output if different):
 
 ```bash
 MORSE_ADDR_PNF="1c9d96c0bd1a98c90151a804f18e9ba75dae12b4"
@@ -81,7 +91,7 @@ MORSE_ADDR_OWNER_1="dda8fe050d21511dd3b58bf5b6d81428573bc986"
 MORSE_ADDR_OWNER_2="f761c00d797baa4a3ac9b7d7248394c412d1e047"
 ```
 
-_⚠️ Be careful as you copy-pasta things ⚠️_
+_⚠️ Double check you use the right address for each variable. Copy-paste with care!_
 
 **Export keys:**
 
@@ -93,9 +103,9 @@ pocket accounts export $MORSE_ADDR_OWNER_1 --datadir ./morse_pocket_datadir
 pocket accounts export $MORSE_ADDR_OWNER_2 --datadir ./morse_pocket_datadir
 ```
 
-Which will create a few `pocket-account-*.json` files in your current directory.
+_This creates several `pocket-account-*.json` files in your current directory._
 
-Check that they are presented by running:
+**Check files exist:**
 
 ```bash
 ls -la pocket-account*
@@ -112,7 +122,7 @@ pocket accounts show $MORSE_ADDR_OWNER_1 --datadir ./morse_pocket_datadir
 pocket accounts show $MORSE_ADDR_OWNER_2 --datadir ./morse_pocket_datadir
 ```
 
-Assign public keys to variables:
+Assign the public keys to variables using the actual values (example shown below; use your real output if different):
 
 ```bash
 MORSE_PNF_PUBKEY="765c466ba9fdd182a0e4fb1c5968aaa0a76f00caea06d0cfbfd524366c85433a"
@@ -123,17 +133,19 @@ MORSE_OWNER_PUBKEY_1="da23b83d40485c506a692804f6a50b11e4bffceb492e5e1dfda5829cab
 MORSE_OWNER_PUBKEY_2="7aa876179e5b2acd4c69dd359b075dfb9a614ac7567097fb324658f94b2563c6"
 ```
 
-_⚠️ Be careful as you copy-pasta things ⚠️_
+_⚠️ Double check all assignments!_
 
 ### Morse State Preparation
 
-Make a copy of `example_state_export.json` to `localnet_testing_state_export.json`.
+**Copy the example state file:**
 
 ```bash
-cp docusaurus/docs/2_explore/4_morse_migration/example_state_export.json localnet_testing_state_export.json
+cp \
+  docusaurus/docs/2_explore/4_morse_migration/example_state_export.json \
+  localnet_testing_state_export.json
 ```
 
-By running the following command:
+**Replace placeholder variables in the new file:**
 
 ```bash
 sed -i.bak -e "s/\"MORSE_ADDR_PNF\"/\"$MORSE_ADDR_PNF\"/g" \
@@ -159,7 +171,8 @@ pocketd tx migration collect-morse-accounts \
   --home=./localnet/pocketd
 ```
 
-And optionally inspect `localnet_testing_msg_import_morse_accounts.json`.
+- This creates `localnet_testing_msg_import_morse_accounts.json`.
+- (Optional) Inspect the file if you want to verify contents.
 
 ## State Upload
 
@@ -169,6 +182,8 @@ And optionally inspect `localnet_testing_msg_import_morse_accounts.json`.
 make localnet_up
 make acc_initialize_pubkeys
 ```
+
+_Wait for all services to be fully up before continuing._
 
 **Upload Morse state:**
 
@@ -182,7 +197,7 @@ pocketd tx migration import-morse-accounts \
   --gas=auto --gas-adjustment=1.5
 ```
 
-_⚠️ This command doesn't output anything ⚠️_
+_⚠️ This command does not output anything. If it returns to prompt, it likely succeeded._
 
 **Check claimable accounts:**
 
@@ -192,9 +207,9 @@ pocketd query migration list-morse-claimable-account \
   --home=./localnet/pocketd
 ```
 
-_⚠️ You should see **exactly 6** accounts⚠️_
+_⚠️ You should see **exactly 6** accounts in the output! If not, something is wrong._
 
-**Example output**:
+**Example output:**
 
 ```json
 ...
@@ -220,7 +235,7 @@ _⚠️ You should see **exactly 6** accounts⚠️_
 
 ### Shannon Account Preparation
 
-Create prefix variables:
+**Create prefix variables:**
 
 ```bash
 MORSE_SUPPLIER_1_PREFIX=${MORSE_ADDR_SUPPLIER_1:0:4}
@@ -230,7 +245,7 @@ MORSE_OWNER_1_PREFIX=${MORSE_ADDR_OWNER_1:0:4}
 MORSE_OWNER_2_PREFIX=${MORSE_ADDR_OWNER_2:0:4}
 ```
 
-**Create 3 new accounts:**
+**Create 5 new Shannon accounts (3 suppliers, 2 owners):**
 
 ```bash
 pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_SUPPLIER_1_PREFIX}-claim-supplier-1
@@ -250,6 +265,8 @@ SHANNON_ADDR_OWNER_1=$(pocketd --keyring-backend=test --home=./localnet/pocketd 
 SHANNON_ADDR_OWNER_2=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_OWNER_2_PREFIX}-claim-owner-2 -a)
 ```
 
+_These variables will be used in all subsequent steps._
+
 **Fund all accounts:**
 
 ```bash
@@ -259,6 +276,8 @@ pocketd tx bank send pnf $SHANNON_ADDR_SUPPLIER_3 1000000000000upokt --home=./lo
 pocketd tx bank send pnf $SHANNON_ADDR_OWNER_1 1000000000000upokt --home=./localnet/pocketd --yes --unordered --timeout-duration=5s
 pocketd tx bank send pnf $SHANNON_ADDR_OWNER_2 1000000000000upokt --home=./localnet/pocketd --yes --unordered --timeout-duration=5s
 ```
+
+_If any command fails, **stop and debug before continuing**._
 
 **Check balances:**
 
@@ -270,9 +289,11 @@ pocketd query bank balances $SHANNON_ADDR_OWNER_1 --home ./localnet/pocketd
 pocketd query bank balances $SHANNON_ADDR_OWNER_2 --home ./localnet/pocketd
 ```
 
-### Shannon Supplier Claim
+_Each account should show a balance. If not, **fix before proceeding**._
 
-#### 5.1 Claim WITH Output Address - Signed by Owner
+---
+
+### Option 1: Supplier Claim WITH Output Address - Signed by Owner
 
 **Create config:**
 
@@ -297,7 +318,7 @@ EOF
 pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_1 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
-This should error.
+_This should error (supplier doesn't exist yet)._
 
 **Check owner's unstaked balance before claim:**
 
@@ -323,6 +344,8 @@ pocketd tx migration claim-supplier \
   --gas=auto --gas-adjustment=1.5 --yes
 ```
 
+_If this fails, **do not continue** until resolved._
+
 **Verify supplier exists onchain:**
 
 ```bash
@@ -347,7 +370,9 @@ pocketd query bank balance $SHANNON_ADDR_OWNER_1 upokt -o json --node=http://127
 pocketd query bank balance $SHANNON_ADDR_OWNER_1 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
-#### Option 2: Claim WITH Output Address - Signed by Operator
+---
+
+### Option 2: Supplier Claim WITH Output Address - Signed by Operator
 
 **Create config:**
 
@@ -372,7 +397,7 @@ EOF
 pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_2 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
-This should error.
+_This should error (supplier doesn't exist yet)._.
 
 **Check owner's unstaked balance before claim:**
 
@@ -422,7 +447,9 @@ pocketd query bank balance $SHANNON_ADDR_OWNER_2 upokt -o json --node=http://127
 pocketd query bank balance $SHANNON_ADDR_SUPPLIER_2 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
-#### Option 3: Claim WITHOUT Output Address
+---
+
+### Option 3: Supplier Claim WITHOUT Output Address
 
 **Create config:**
 
