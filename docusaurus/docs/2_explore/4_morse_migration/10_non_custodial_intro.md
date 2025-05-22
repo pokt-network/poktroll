@@ -159,7 +159,7 @@ graph LR
     end
 
     subgraph Shannon[Shannon Network]
-        Supplier["Supplier<br/>(owner_address, operator_address)"]
+        Supplier["Supplier<br/>(owner, operator)"]
         S_owner["S_owner<br/>(owner_address)"]
         S_operator["S_operator<br/>(operator_address)"]
     end
@@ -192,7 +192,7 @@ graph LR
     end
 
     subgraph Shannon[Shannon Network]
-        Supplier["Supplier<br/>(owner_address, operator_address)"]
+        Supplier["Supplier<br/>(owner, operator)"]
         S_owner["S_owner<br/>(owner_address)"]
         S_operator["S_operator<br/>(operator_address)"]
     end
@@ -225,7 +225,7 @@ graph LR
     end
 
     subgraph Shannon[Shannon Network]
-        Supplier["Supplier<br/>(operator_address, operator_address)"]
+        Supplier["Supplier<br/>(operator, operator)"]
         S_owner["S_owner<br/>(owner_address)"]
         S_operator["S_operator<br/>(operator_address)"]
     end
