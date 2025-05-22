@@ -121,8 +121,8 @@ pocketd
 
 # Used in
 # See docusaurus/docs/2_explore/4_morse_migration/11_localnet_testing.md
-pocket_test
+morse_pocket_datadir
 pocket-account-*.json
-testing_state_export.json
-msg_import_morse_accounts.json
+localnet_testing_state_export.json
+localnet_testing_msg_import_morse_accounts.json
 *claim_supplier_*_supplier_config.yaml

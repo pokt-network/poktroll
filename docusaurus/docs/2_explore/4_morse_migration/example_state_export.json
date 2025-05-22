@@ -19,7 +19,7 @@
         {
           "type": "posmint/Account",
           "value": {
-            "address": "ADDR1",
+            "address": "MORSE_ADDR_PNF",
             "coins": [
               {
                 "amount": "20000000000000",
@@ -32,7 +32,7 @@
         {
           "type": "posmint/Account",
           "value": {
-            "address": "ADDR2",
+            "address": "MORSE_ADDR_SUPPLIER_1",
             "coins": [
               {
                 "amount": "20000000000000",
@@ -45,7 +45,46 @@
         {
           "type": "posmint/Account",
           "value": {
-            "address": "ADDR3",
+            "address": "MORSE_ADDR_SUPPLIER_2",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "MORSE_ADDR_SUPPLIER_3",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "MORSE_ADDR_OWNER_1",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "MORSE_ADDR_OWNER_2",
             "coins": [
               {
                 "amount": "20000000000000",
@@ -77,170 +116,170 @@
         "acl": [
           {
             "acl_key": "application/ApplicationStakeMinimum",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "application/AppUnstakingTime",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "application/BaseRelaysPerPOKT",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "application/MaxApplications",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "application/MaximumChains",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "application/ParticipationRateOn",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "application/StabilityAdjustment",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "auth/MaxMemoCharacters",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "auth/TxSigLimit",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "gov/acl",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "gov/daoOwner",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "gov/upgrade",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pocketcore/ClaimExpiration",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "auth/FeeMultipliers",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pocketcore/ReplayAttackBurnMultiplier",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/ProposerPercentage",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pocketcore/ClaimSubmissionWindow",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pocketcore/MinimumNumberOfProofs",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pocketcore/SessionNodeCount",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pocketcore/SupportedBlockchains",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/BlocksPerSession",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/DAOAllocation",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/DowntimeJailDuration",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/MaxEvidenceAge",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/MaximumChains",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/MaxJailedBlocks",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/MaxValidators",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/MinSignedPerWindow",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/RelaysToTokensMultiplier",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/SignedBlocksWindow",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/SlashFractionDoubleSign",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/SlashFractionDowntime",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/StakeDenom",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/StakeMinimum",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/UnstakingTime",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/ServicerStakeFloorMultiplier",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/ServicerStakeWeightMultiplier",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/ServicerStakeWeightCeiling",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/ServicerStakeFloorMultiplierExponent",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pocketcore/BlockByteSize",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           },
           {
             "acl_key": "pos/RelaysToTokensMultiplierMap",
-            "address": "ADDR1"
+            "address": "MORSE_ADDR_PNF"
           }
         ],
-        "dao_owner": "ADDR1",
+        "dao_owner": "MORSE_ADDR_PNF",
         "upgrade": {
           "Features": [
             "AppTransfer:128738",
@@ -304,14 +343,14 @@
       "prevState_total_power": "2952991914",
       "prevState_validator_powers": [
         {
-          "Address": "ADDR1",
+          "Address": "MORSE_ADDR_PNF",
           "Power": "902999097"
         }
       ],
-      "previous_proposer": "ADDR1",
+      "previous_proposer": "MORSE_ADDR_PNF",
       "signing_infos": {
-        "ADDR1": {
-          "address": "ADDR1",
+        "MORSE_ADDR_PNF": {
+          "address": "MORSE_ADDR_PNF",
           "index_offset": "0",
           "jailed_blocks_counter": "0",
           "jailed_until": "0001-01-01T00:00:00Z",
@@ -321,11 +360,11 @@
       },
       "validators": [
         {
-          "address": "ADDR1",
+          "address": "MORSE_ADDR_PNF",
           "chains": [],
           "jailed": false,
           "output_address": null,
-          "public_key": "PUBKEY1",
+          "public_key": "MORSE_PNF_PUBKEY",
           "reward_delegators": null,
           "service_url": "https://411.episode.one:443",
           "status": 2,
@@ -333,23 +372,35 @@
           "unstaking_time": "0001-01-01T00:00:00Z"
         },
         {
-          "address": "ADDR2",
+          "address": "MORSE_ADDR_SUPPLIER_1",
+          "chains": ["F029"],
+          "jailed": false,
+          "output_address": "MORSE_ADDR_OWNER_1",
+          "public_key": "MORSE_SUPPLIER_PUBKEY_1",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        },
+        {
+          "address": "MORSE_ADDR_SUPPLIER_2",
+          "chains": ["F029"],
+          "jailed": false,
+          "output_address": "MORSE_ADDR_OWNER_2",
+          "public_key": "MORSE_SUPPLIER_PUBKEY_2",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        },
+        {
+          "address": "MORSE_ADDR_SUPPLIER_3",
           "chains": ["F029"],
           "jailed": false,
           "output_address": null,
-          "public_key": "PUBKEY2",
-          "reward_delegators": null,
-          "service_url": "https://411.episode.one:443",
-          "status": 2,
-          "tokens": "60000000000",
-          "unstaking_time": "0001-01-01T00:00:00Z"
-        },
-        {
-          "address": "ADDR3",
-          "chains": ["F029"],
-          "jailed": false,
-          "output_address": "ADDR4",
-          "public_key": "PUBKEY3",
+          "public_key": "MORSE_SUPPLIER_PUBKEY_3",
           "reward_delegators": null,
           "service_url": "https://411.episode.one:443",
           "status": 2,
