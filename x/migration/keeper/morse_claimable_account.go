@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/runtime"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -102,6 +103,8 @@ func (k Keeper) ImportFromMorseAccountState(
 	for _, morseAccount := range morseAccountState.Accounts {
 		// DEV_NOTE: Ensure all MorseClaimableAccounts are initially unclaimed.
 		morseAccount.ClaimedAtHeight = 0
+		// DEV_NOTE: Ensure all MorseClaimableAccounts use the normalized hex address case (upper).
+		morseAccount.MorseSrcAddress = encoding.NormalizeMorseHexAddress(morseAccount.MorseSrcAddress)
 		k.SetMorseClaimableAccount(ctx, *morseAccount)
 	}
 }

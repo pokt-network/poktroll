@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -52,9 +53,10 @@ func (k Keeper) MorseClaimableAccount(
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
+	normalizedMorseAddress := encoding.NormalizeMorseHexAddress(req.Address)
 	morseClaimableAccount, found := k.GetMorseClaimableAccount(
 		ctx,
-		req.Address,
+		normalizedMorseAddress,
 	)
 	if !found {
 		return nil, status.Error(codes.NotFound, "not found")

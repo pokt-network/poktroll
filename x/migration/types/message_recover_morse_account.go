@@ -17,9 +17,13 @@ func NewMsgRecoverMorseAccount(authority string, shannonDestAddress string, mors
 }
 
 func (msg *MsgRecoverMorseAccount) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.Authority)
-	if err != nil {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
 	}
+
+	if _, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress); err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannon destination address (%s)", err)
+	}
+
 	return nil
 }

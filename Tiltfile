@@ -248,7 +248,7 @@ if localnet_config["hot-reloading"]:
 docker_build_with_restart(
     "pocketd",
     ".",
-    dockerfile_contents="""FROM golang:1.23.0
+    dockerfile_contents="""FROM golang:1.24.3
 RUN apt-get -q update && apt-get install -qyy curl jq less
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 COPY bin/pocketd /usr/local/bin/pocketd
@@ -339,7 +339,7 @@ for x in range(localnet_config["relayminers"]["count"]):
     k8s_resource(
         "relayminer" + str(actor_number),
         labels=["suppliers"],
-        resource_deps=["validator"],
+        resource_deps=["validator", "anvil"],
         links=[
             link(
                 "http://localhost:3003/d/relayminer/relayminer?orgId=1&var-relayminer=relayminer" + str(actor_number),
@@ -432,13 +432,22 @@ for x in range(localnet_config["path_gateways"]["count"]):
         #     ),
         # ],
         # TODO_IMPROVE(@okdas): Add port forwards to grafana, pprof, like the other resources
+        # TODO_TECHDEBT(@okdas): Enable using port `3070` for consistency with path_localnet.
+        # Changing this port will make E2E start failing.
+        # See the `envoy proxy` k8s resource below for in progress work.
         port_forwards=[
                 # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
                 # https://github.com/buildwithgrove/path/blob/main/config/router.go
                 str(3068 + actor_number) + ":3069"
         ],
+        extra_pod_selectors=[
+            {"app.kubernetes.io/instance": "path" + str(actor_number)},
+            {"app.kubernetes.io/name": "path" + str(actor_number)},
+        ],
+        discovery_strategy="selectors-only", # Extra pod selectors didn't work without this
     )
 
+    # DO NOT DELETE, this is an example of how we'll turn on envoy proxy in the future
     # Envoy Proxy / Gateway. Endpoint that requires authorization header (unlike 3069 - accesses path directly)
     # k8s_resource(
     #     "path" + str(actor_number),
