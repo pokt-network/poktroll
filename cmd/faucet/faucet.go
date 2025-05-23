@@ -29,6 +29,8 @@ var (
 	txClient client.TxClient
 )
 
+// TODO_IN_THIS_COMMIT: split server and client CLI commands...
+
 func FaucetCmd() *cobra.Command {
 	faucetCmd := &cobra.Command{
 		Use:   "faucet",
