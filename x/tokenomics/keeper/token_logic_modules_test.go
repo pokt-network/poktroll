@@ -17,7 +17,7 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/encoding"
@@ -93,7 +93,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
-	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
+	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
@@ -116,7 +116,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	}}
 
 	// Add a new supplier.
-	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	supplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierInitialStake)
 	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
 		supplierRevShares[0].Address,
 		services, 1, 0,
@@ -179,7 +179,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Assert that app module balance is *decreased* by the appropriate amount
 	// NB: The application module account burns the amount of uPOKT that was held in escrow
 	// on behalf of the applications which were serviced in a given session.
-	expectedAppModuleEndBalance := appModuleStartBalance.Sub(sdk.NewCoin(volatile.DenomuPOKT, appBurn))
+	expectedAppModuleEndBalance := appModuleStartBalance.Sub(sdk.NewCoin(pocket.DenomuPOKT, appBurn))
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
@@ -265,7 +265,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
-	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
+	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
@@ -288,7 +288,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	}}
 
 	// Add a new supplier.
-	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	supplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierInitialStake)
 	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
 		supplierRevShares[0].Address,
 		services, 1, 0,
@@ -340,7 +340,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Determine the expected app end stake amount and the expected app burn
 	appBurn := cosmosmath.NewInt(maxClaimableAmountPerSupplier)
-	appBurnCoin := sdk.NewCoin(volatile.DenomuPOKT, appBurn)
+	appBurnCoin := sdk.NewCoin(pocket.DenomuPOKT, appBurn)
 	expectedAppEndStakeAmount := appInitialStake.Sub(appBurn)
 
 	// Assert that `applicationAddress` staked balance has decreased by the max claimable amount
@@ -439,7 +439,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
-	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
+	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
@@ -459,7 +459,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	services := []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id, RevShare: supplierRevShares}}
 
 	// Add a new supplier.
-	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	supplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierInitialStake)
 	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
 		supplierRevShares[0].Address,
 		services, 1, 0,

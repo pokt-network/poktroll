@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/pkg/encoding"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -219,7 +219,7 @@ func (s *applicationMinStakeTestSuite) getAppBalance() *cosmostypes.Coin {
 	s.T().Helper()
 
 	appBalRes, err := s.keepers.BankKeeper.Balance(s.ctx, &banktypes.QueryBalanceRequest{
-		Address: s.appBech32, Denom: volatile.DenomuPOKT,
+		Address: s.appBech32, Denom: pocket.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
 
@@ -338,7 +338,7 @@ func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 	// Compute the expect burn
 	expectedAppBurnRat := new(big.Rat).Mul(computeUnitCostUpoktRat, numComputeUnitsRat)
 	expectedAppBurn := expectedAppBurnRat.Num().Int64() / expectedAppBurnRat.Denom().Int64()
-	expectedAppBurnCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(expectedAppBurn))
+	expectedAppBurnCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, int64(expectedAppBurn))
 
 	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)

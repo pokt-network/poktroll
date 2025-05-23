@@ -3,7 +3,7 @@ package suites
 import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -65,12 +65,12 @@ type ModuleParamsMessages struct {
 }
 
 var (
-	ValidAddServiceFeeCoin             = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000001)
-	ValidProofMissingPenaltyCoin       = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 500)
-	ValidProofSubmissionFeeCoin        = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 5000000)
-	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
-	ValidActorMinStake                 = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
-	ValidStakingFee                    = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1)
+	ValidAddServiceFeeCoin             = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000001)
+	ValidProofMissingPenaltyCoin       = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 500)
+	ValidProofSubmissionFeeCoin        = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 5000000)
+	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
+	ValidActorMinStake                 = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
+	ValidStakingFee                    = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1)
 
 	SharedModuleParamConfig = ModuleParamConfig{
 		ParamsMsgs: ModuleParamsMessages{

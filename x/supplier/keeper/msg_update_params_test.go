@@ -6,7 +6,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -15,7 +15,7 @@ func TestMsgUpdateParams(t *testing.T) {
 	params := suppliertypes.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, params))
 
-	zerouPokt := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	zerouPokt := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 
 	// default params
 	tests := []struct {

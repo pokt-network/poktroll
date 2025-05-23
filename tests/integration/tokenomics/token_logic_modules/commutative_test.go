@@ -12,7 +12,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -24,7 +24,7 @@ import (
 )
 
 // zerouPOKT is a coin with the uPOKT denom and zero amount, intended for use in test assertions.
-var zerouPOKT = types.NewInt64Coin(volatile.DenomuPOKT, 0)
+var zerouPOKT = types.NewInt64Coin(pocket.DenomuPOKT, 0)
 
 // TestTLMProcessorTestSuite asserts that the network state that results from running
 // each permutation of the default TLM processors is identical (demonstrating
@@ -156,7 +156,7 @@ func (s *tokenLogicModuleTestSuite) getBalance(t *testing.T, bech32 string) *typ
 
 	res, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
 		Address: bech32,
-		Denom:   volatile.DenomuPOKT,
+		Denom:   pocket.DenomuPOKT,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, res)

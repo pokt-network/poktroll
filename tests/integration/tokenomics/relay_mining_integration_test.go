@@ -10,7 +10,7 @@ import (
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -63,7 +63,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 			},
 		},
 	}
-	supplierStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
+	supplierStake := sdk.NewInt64Coin(pocket.DenomuPOKT, 1000)
 	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddress, supplierServiceConfigs, 1, 0)
 	supplier := sharedtypes.Supplier{
 		OperatorAddress:      supplierAddress,

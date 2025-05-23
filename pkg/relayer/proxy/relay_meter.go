@@ -11,7 +11,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -93,7 +93,7 @@ type ProxyRelayMeter struct {
 }
 
 func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
-	overservicingAllowanceCoins := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, defaultOverServicingAllowanceCoins)
+	overservicingAllowanceCoins := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, defaultOverServicingAllowanceCoins)
 	rm := &ProxyRelayMeter{
 		sessionToRelayMeterMap:      make(map[string]*sessionRelayMeter),
 		overServicingAllowanceCoins: overservicingAllowanceCoins,
@@ -345,7 +345,7 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 		)
 		relayMeter = &sessionRelayMeter{
 			app:                    app,
-			consumedCoin:           cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+			consumedCoin:           cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 			maxCoin:                supplierAppStake,
 			sessionHeader:          reqMeta.SessionHeader,
 			sharedParams:           sharedParams,
@@ -444,7 +444,7 @@ func getSingleMinedRelayCostCoin(
 
 	// Get the estimated cost of the relay if it gets mined in uPOKT.
 	estimatedRelayCost := big.NewInt(0).Quo(estimatedRelayCostRat.Num(), estimatedRelayCostRat.Denom())
-	estimatedRelayCostCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(estimatedRelayCost))
+	estimatedRelayCostCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewIntFromBigInt(estimatedRelayCost))
 
 	return estimatedRelayCostCoin, nil
 }
@@ -464,7 +464,7 @@ func getAppStakePortionPayableToSessionSupplier(
 	pendingSessions := (numBlocksUntilProofWindowCloses + numBlocksPerSession - 1) / numBlocksPerSession
 
 	appStakePerSessionSupplier := appStakePerSupplier.Quo(math.NewInt(pendingSessions))
-	appStakePerSessionSupplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, appStakePerSessionSupplier)
+	appStakePerSessionSupplierCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, appStakePerSessionSupplier)
 
 	return appStakePerSessionSupplierCoin
 }

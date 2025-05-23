@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -935,7 +935,7 @@ func fundSupplierOperatorAccount(t *testing.T, ctx context.Context, keepers *kee
 		ctx,
 		suppliertypes.ModuleName,
 		supplierOperatorAccAddr,
-		types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(100000000))),
+		types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(100000000))),
 	)
 	require.NoError(t, err)
 

@@ -10,7 +10,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/pokt-network/poktroll/app/keepers"
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 )
 
 const (
@@ -34,7 +34,7 @@ var Upgrade_0_1_7 = Upgrade{
 		keepers *keepers.Keepers,
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
-		newTokenSupplyCoins := cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomMACT, newTokenSupplyAmount))
+		newTokenSupplyCoins := cosmostypes.NewCoins(cosmostypes.NewInt64Coin(pocket.DenomMACT, newTokenSupplyAmount))
 
 		mintNewTokenTypeMACT := func(ctx context.Context) (err error) {
 			return keepers.BankKeeper.MintCoins(ctx, banktypes.ModuleName, newTokenSupplyCoins)

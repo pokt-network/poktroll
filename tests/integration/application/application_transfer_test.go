@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
@@ -173,7 +173,7 @@ func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds(
 	require.NotNil(s.T(), balance)
 
 	require.EqualValues(s.T(),
-		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appFundAmount-stakeAmount),
+		cosmostypes.NewInt64Coin(pocket.DenomuPOKT, appFundAmount-stakeAmount),
 		*balance,
 	)
 }

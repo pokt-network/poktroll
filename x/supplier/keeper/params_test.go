@@ -7,7 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -34,23 +34,23 @@ func TestParams_ValidateMinStake(t *testing.T) {
 		{
 			desc: "MinStake less than zero",
 			minStake: &cosmostypes.Coin{
-				Denom:  volatile.DenomuPOKT,
+				Denom:  pocket.DenomuPOKT,
 				Amount: math.NewInt(-1),
 			},
 			expectedErr: suppliertypes.ErrSupplierParamInvalid.Wrapf(
 				"min_stake amount must be positive: got -1%s",
-				volatile.DenomuPOKT,
+				pocket.DenomuPOKT,
 			),
 		},
 		{
 			desc: "MinStake equal to zero",
 			minStake: &cosmostypes.Coin{
-				Denom:  volatile.DenomuPOKT,
+				Denom:  pocket.DenomuPOKT,
 				Amount: math.NewInt(0),
 			},
 			expectedErr: suppliertypes.ErrSupplierParamInvalid.Wrapf(
 				"min_stake amount must be greater than 0: got 0%s",
-				volatile.DenomuPOKT,
+				pocket.DenomuPOKT,
 			),
 		},
 		{
@@ -86,18 +86,18 @@ func TestParams_ValidateStakingFee(t *testing.T) {
 		{
 			desc: "SupplierStakingFee less than zero",
 			minStake: &cosmostypes.Coin{
-				Denom:  volatile.DenomuPOKT,
+				Denom:  pocket.DenomuPOKT,
 				Amount: math.NewInt(-1),
 			},
 			expectedErr: suppliertypes.ErrSupplierParamInvalid.Wrapf(
 				"staking_fee amount must be positive: got -1%s",
-				volatile.DenomuPOKT,
+				pocket.DenomuPOKT,
 			),
 		},
 		{
 			desc: "zero SupplierStakingFee",
 			minStake: &cosmostypes.Coin{
-				Denom:  volatile.DenomuPOKT,
+				Denom:  pocket.DenomuPOKT,
 				Amount: math.NewInt(0),
 			},
 		},
