@@ -228,7 +228,7 @@ func (k msgServer) ClaimMorseSupplier(
 			return nil, status.Error(
 				codes.Internal,
 				migrationtypes.ErrMorseSupplierClaim.Wrapf(
-					"estimated unbonding height is negative (%d)",
+					"(SHOULD NEVER HAPPEN) estimated unbonding height is negative (%d)",
 					estimatedUnstakeSessionEndHeight,
 				).Error(),
 			)
@@ -454,21 +454,4 @@ func checkClaimSigner(
 	}
 
 	return claimSignerType, nil
-}
-
-// emitEvents emits the given events via the event manager.
-func emitEvents(ctx context.Context, events []cosmostypes.Msg) error {
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	for _, event := range events {
-		if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
-			return status.Error(
-				codes.Internal,
-				migrationtypes.ErrMorseSupplierClaim.Wrapf(
-					"failed to emit event type %T: %v",
-					event, err,
-				).Error(),
-			)
-		}
-	}
-	return nil
 }

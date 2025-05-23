@@ -185,7 +185,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 			return nil, status.Error(
 				codes.Internal,
 				migrationtypes.ErrMorseApplicationClaim.Wrapf(
-					"estimated unbonding height is negative (%d)",
+					"(SHOULD NEVER HAPPEN) estimated unbonding height is negative (%d)",
 					estimatedUnstakeSessionEndHeight,
 				).Error(),
 			)
