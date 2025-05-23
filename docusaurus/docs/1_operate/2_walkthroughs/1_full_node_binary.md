@@ -558,10 +558,6 @@ Initialize your node and configure it to connect to the network:
 
 ### 9. Set Up `systemd` Service
 
-:::warning `--unsafe-skip-upgrades`
-
-:::
-
 Create a `systemd` service to manage your node. You can customize the service name if you plan to run multiple nodes:
 
 ```bash
