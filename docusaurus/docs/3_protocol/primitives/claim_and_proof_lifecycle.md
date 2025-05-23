@@ -142,7 +142,7 @@ gantt
 
 ### Claim Expiration
 
-If a claim requires a proof (as determined by [Probabilistic Proofs](probabilistic_proofs.md)) and a `Supplier` fails
+If a claim requires a proof (as determined by [Probabilistic Proofs](probabilistic_proofs_shannon_og.md)) and a `Supplier` fails
 to submit a `Proof` before the `Proof Window` closes, the claim will expire and the `Supplier` will forfeit any
 rewards for the work done.
 
@@ -357,7 +357,7 @@ After the `Proof Window` opens, a `Supplier` has several blocks, a `Proof Window
 to submit a `SubmitProof` transaction containing a `Proof`. If it is submitted too
 early or too late, it will be rejected by the protocol.
 
-If a proof is required (as determined by [Probabilistic Proofs](probabilistic_proofs.md)) and a `Supplier` fails to
+If a proof is required (as determined by [Probabilistic Proofs](probabilistic_proofs_shannon_og.md)) and a `Supplier` fails to
 submit a `Proof` during the Proof Window, the Claim will expire, and the supplier will forfeit rewards for the claimed
 work done. See [Claim Expiration](#claim-expiration) for more.
 
