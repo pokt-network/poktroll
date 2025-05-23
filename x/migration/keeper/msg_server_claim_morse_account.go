@@ -49,6 +49,17 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		}
 	}()
 
+	// Ensure that morse account claiming is enabled.
+	morseAccountClaimingIsEnabled := k.GetParams(sdkCtx).MorseAccountClaimingEnabled
+	if !morseAccountClaimingIsEnabled {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"morse account claiming is currently disabled; please contact the Pocket Network team",
+			).Error(),
+		)
+	}
+
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

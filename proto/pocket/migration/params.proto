@@ -9,7 +9,7 @@ option (gogoproto.stable_marshaler_all) = true;
 
 // Params defines the parameters for the module.
 message Params {
-  // Next free index: 3
+  // Next free index: 4
 
   option (amino.name) = "pocket/x/migration/Params";
   option (gogoproto.equal) = true;
@@ -28,4 +28,8 @@ message Params {
   // - Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts
   // This is useful for testing purposes, but should be disabled in production.
   bool allow_morse_account_import_overwrite = 2 [(gogoproto.jsontag) = "allow_morse_account_import_overwrite", (gogoproto.moretags) = "yaml:\"allow_morse_account_import_overwrite\""];
+
+  // morse_account_claiming_enabled is a feature flag which is used to enable/disable the processing of Morse account/actor claim messages
+  // (i.e. `MsgClaimMorseAccount`, `MorseClaimApplication`, and `MorseClaimSupplier`).
+  bool morse_account_claiming_enabled = 3 [(gogoproto.jsontag) = "morse_account_claiming_enabled", (gogoproto.moretags) = "yaml:\"morse_account_claiming_enabled\""];
 }

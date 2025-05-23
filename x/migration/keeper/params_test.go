@@ -76,3 +76,33 @@ func TestParams_ValidateAllowMorseAccountImportOverwrite(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateNewParameter(t *testing.T) {
+	tests := []struct {
+		desc                        string
+		morseAccountClaimingEnabled any
+		expectedErr                 error
+	}{
+		{
+			desc:                        "invalid type",
+			morseAccountClaimingEnabled: "420",
+			expectedErr:                 types.ErrMigrationParamInvalid.Wrapf("invalid parameter type: string"),
+		},
+		{
+			desc:                        "valid NewParameterName",
+			morseAccountClaimingEnabled: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := types.ValidateParamIsBool(test.morseAccountClaimingEnabled)
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
