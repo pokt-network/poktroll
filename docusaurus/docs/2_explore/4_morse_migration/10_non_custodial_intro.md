@@ -132,15 +132,10 @@ Non-custodial migration has a few variations and can be summarized via the follo
 
 | Flow Type                              | Supported | Morse `(output_address, address)` | Shannon `(owner_address, operator_address)` | Claim Signer                | Notes                                                                                | Pre-Conditions                                                                                                                       |
 | -------------------------------------- | --------- | --------------------------------- | ------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Custodial #1** – owner-op sign       | ✅        | `(M, M)`                          | `(S, S)`                                    | `S` & `M`                   | **Same identity controls and signs** Morse & Shannon messages                        | `S` owns `M`                                                                                                                         |
-| **Custodial #2** – operator-only       | ✅        | `(null, M)`                       | `(S, null)`                                 | `S` & `M`                   | **Owner signs** with no output override                                              | `S` owns `M`                                                                                                                         |
-| **Custodial #3** – operator-only       | ✅        | `(null, M)`                       | `(S, S)`                                    | `S` & `M`                   | Same signer, no output override                                                      | `S` owns `M`                                                                                                                         |
 | **Non-custodial #1** – invalid         | ❌        | `(M_output, M_operator)`          | `(S_owner, null)`                           | -                           | Invalid because `operator_address` must be specified if `output_address` ≠ `address` | —                                                                                                                                    |
 | **Non-custodial #2** – owner sign      | ✅        | `(M_output, M_operator)`          | `(S_owner, S_operator)`                     | `S_owner` & `M_owner`       | **Owner signs** for staking addr; output addr linked off-chain to `S_owner`          | (`S_owner` owns `M_output`) && (`S_operator` owns `M_operator`) && (`M_operator` gives `S_operator` shannon staking config offchain) |
 | **Non-custodial #3** – operator sign   | ✅        | `(M_output, M_operator)`          | `(S_owner, S_operator)`                     | `S_operator` & `M_operator` | **Operator signs** for output addr; off-chain linkage to `M_operator` required       | (`S_owner` owns `M_output`) && (`S_operator` owns `M_operator`) && (`S_operator` gives `M_operator` shannon address offline)         |
 | **Non-custodial #4** – invalid         | ❌        | `(M_output, null)`                | `(S_owner, S_operator)`                     | -                           | Operator address should not be defined if no distinct output address                 | —                                                                                                                                    |
-| **Invalid** – missing shannon operator | ❌        | `(M_output, null)`                | —                                           | -                           | No operator and no output override — unsupported                                     | —                                                                                                                                    |
-| **Invalid** – missing shannon owner    | ❌        | —                                 | `(null, S_operator)`                        | -                           | Owner must be defined                                                                | —                                                                                                                                    |
 | **Non-custodial #5** – invalid         | ❌        | `(M1, M2)`                        | `(S, S)`                                    | `S`                         | Owner and operator must differ if output differs from staking address                | —                                                                                                                                    |
 
 ### **Non-custodial #2** – owner sign
@@ -231,7 +226,8 @@ graph LR
     end
 
     Owner -.-|"controls"| M_owner
-    Owner -.-|"controls"| S_owner
+    Owner -.-x|"does NOT control"| S_owner
+    Operator -.-|"controls"| S_owner
     Operator -.-|"controls"| M_operator
     Operator -.-|"controls"| S_operator
 
