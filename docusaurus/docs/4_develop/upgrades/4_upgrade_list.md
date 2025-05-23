@@ -27,7 +27,7 @@ For more detailed information about what upgrades are, how they work, and what c
 
 | Version                                                                    | Planned | Breaking | Requires Manual Intervention | Upgrade Height  |
 |----------------------------------------------------------------------------| :-----: |:--------:|:----------------------------:|:----------------|
-| [`v0.1.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.12) |   ✅    |    ✅    |              ❓              | TBA             |
+| [`v0.1.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.12) |   ✅    |    ❌    |              ❓              | TBA             |
 | [`v0.1.11`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.11) |   ✅    |    ✅    |              ❓              | TBA             |
 | [`v0.1.7`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.7)   |   ✅    |    ❌    |              ❓              | TBA             |
 | [`v0.1.6`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.6)   |   ✅    |    ✅    |              ❓              | TBA             |
@@ -41,8 +41,8 @@ For more detailed information about what upgrades are, how they work, and what c
 
 | Version                                                                          | Planned | Breaking | Requires Manual Intervention | Upgrade Height                                                                                                                    |
 |----------------------------------------------------------------------------------|:-------:|:--------:|:----------------------------:|:----------------------------------------------------------------------------------------------------------------------------------|
-| [`v0.1.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.12)       |    ✅    |    ✅     |             ❌                | [``](https://shannon.beta.testnet.pokt.network/poktroll/tx/) |
-| [`v0.1.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.12)       |    ✅    |    ✅     | Added to the [skip upgrade heights list](https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/testnet-beta/skip_upgrade_heights) due to a bad release archive file                           | [`14790`](https://shannon.beta.testnet.pokt.network/poktroll/tx/5A32931F4F287B9100C928F54ABEA98F896B68038335B6860E5F784423060A04) |
+| [`v0.1.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.12)       |    ❌    |    ❌     |             ❌                | [`14812`](https://shannon.beta.testnet.pokt.network/poktroll/tx/87E3C205C5991C39468FDFA969C85A98A8770754623B638033622E749378D814) |
+| [`v0.1.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.12)       |    ✅    |    ❌     | Added to the [skip upgrade heights list](https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/testnet-beta/skip_upgrade_heights) due to a bad release archive file                           | [`14790`](https://shannon.beta.testnet.pokt.network/poktroll/tx/5A32931F4F287B9100C928F54ABEA98F896B68038335B6860E5F784423060A04) |
 | [`v0.1.11`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.11)       |    ✅    |    ✅     |              ❌               | [`11100`](https://shannon.beta.testnet.pokt.network/poktroll/tx/652AA6EA6DC99FA2448B8402DE376F24058C6F48956FBBFFA67D06388899EE5E) |
 | [`v0.1.7`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.7)         |    ✅    |    ❌     |              ❌               | `6388`                                                                                                                            |
 | [`v0.1.6`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.6)         |    ✅    |    ✅     |              ❌               | `6110`                                                                                                                            |
