@@ -7,7 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
@@ -73,7 +73,7 @@ func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 		},
 		{
 			desc:                      "valid ProofRequirementThreshold",
-			proofRequirementThreshold: &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(20)},
+			proofRequirementThreshold: &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(20)},
 		},
 	}
 
@@ -145,10 +145,10 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 	if prooftypes.DefaultMinProofSubmissionFee.Amount.IsZero() {
 		// If DefaultMinProofSubmissionFee is zero, use -1 as a placeholder for testing
 		// This won't actually be used in the test since we're already at the minimum
-		belowMinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
+		belowMinProofSubmissionFee = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(0))
 	} else {
 		belowMinProofSubmissionFee = prooftypes.DefaultMinProofSubmissionFee.
-			Sub(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1)))
+			Sub(cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1)))
 	}
 
 	tests := []struct {

@@ -7,7 +7,7 @@ import (
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -541,9 +541,9 @@ func (k Keeper) slashSupplierStake(
 		))
 
 		// Set the remaining stake to 0 if the slashing amount is greater than the stake.
-		remainingStakeCoin = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
+		remainingStakeCoin = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(0))
 		// Total slashing amount is the whole supplier's stake.
-		slashingCoin = cosmostypes.NewCoin(volatile.DenomuPOKT, slashedSupplierInitialStakeCoin.Amount)
+		slashingCoin = cosmostypes.NewCoin(pocket.DenomuPOKT, slashedSupplierInitialStakeCoin.Amount)
 	}
 
 	// Since staking mints tokens to the supplier module account, to have a correct

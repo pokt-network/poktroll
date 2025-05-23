@@ -14,6 +14,7 @@ enum SupplierUnbondingReason {
   SUPPLIER_UNBONDING_REASON_UNSPECIFIED = 0;
   SUPPLIER_UNBONDING_REASON_VOLUNTARY = 1;
   SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE = 2;
+  SUPPLIER_UNBONDING_REASON_MIGRATION = 3;
 }
 
 // EventSupplierStaked is emitted when a supplier stake message is committed onchain.

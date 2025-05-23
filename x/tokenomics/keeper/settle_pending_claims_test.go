@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -186,7 +186,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
+	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
 
 	// Set the proof parameters such that s.claim requires a proof because:
 	// - proof_request_probability is 0%
@@ -230,14 +230,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Validate the supplier and tokenomics module balances.
 	supplierModuleBalRes, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
 		Address: authtypes.NewModuleAddress(suppliertypes.ModuleName).String(),
-		Denom:   volatile.DenomuPOKT,
+		Denom:   pocket.DenomuPOKT,
 	})
 	require.NoError(t, err)
 	require.Equal(t, supplierStakeAmt/2, supplierModuleBalRes.Balance.Amount.Int64())
 
 	tokenomicsModuleBalRes, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
 		Address: authtypes.NewModuleAddress(tokenomicstypes.ModuleName).String(),
-		Denom:   volatile.DenomuPOKT,
+		Denom:   pocket.DenomuPOKT,
 	})
 	require.NoError(t, err)
 	require.Equal(t, int64(0), tokenomicsModuleBalRes.Balance.Amount.Int64())
@@ -347,7 +347,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	proofParams.ProofRequestProbability = 1
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
+	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
 	proofParams.ProofMissingPenalty = &belowStakeAmountProofMissingPenalty
 	err := s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
@@ -679,7 +679,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 	// Set the proof missing penalty to be equal to the supplier's stake to make
 	// its stake below the minimum stake requirement and trigger an unstake.
-	proofParams.ProofMissingPenalty = &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStakeAmt)}
+	proofParams.ProofMissingPenalty = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(supplierStakeAmt)}
 	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
@@ -743,7 +743,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	// Validate the slashing events
 	for i, slashingEvent := range slashingEvents {
-		proofMissingPenalty := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+		proofMissingPenalty := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 		// The current slashing mechanism burns the whole supplier's stake, which
 		// means that the first ocurrence will take the whole stake.
 		if i == 0 {
@@ -912,12 +912,12 @@ func getClaimedUpokt(
 	claimedUpoktRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToTokenMultiplierRat)
 	claimedUpoktInt := new(big.Int).Div(claimedUpoktRat.Num(), claimedUpoktRat.Denom())
 
-	return cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(claimedUpoktInt))
+	return cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewIntFromBigInt(claimedUpoktInt))
 }
 
 // uPOKTCoin returns a uPOKT coin with the given amount.
 func uPOKTCoin(amount int64) cosmostypes.Coin {
-	return cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(amount))
+	return cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(amount))
 }
 
 // createTestActors sets up the necessary test actors (applications and a supplier) with

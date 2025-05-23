@@ -12,7 +12,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -253,7 +253,7 @@ func GenMorseAccount(index uint64) *migrationtypes.MorseAccount {
 	privKey := GenMorsePrivateKey(index)
 	pubKey := privKey.PubKey()
 	unstakedBalanceAmount := GenMorseUnstakedBalanceAmount(index)
-	unstakedBalance := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, unstakedBalanceAmount)
+	unstakedBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, unstakedBalanceAmount)
 
 	return &migrationtypes.MorseAccount{
 		Address: pubKey.Address(),
@@ -329,9 +329,9 @@ func GenMorseClaimableAccount(
 
 	return &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  pubKey.Address().String(),
-		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, unstakedBalanceAmount),
-		SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, supplierStakeAmount),
-		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appStakeAmount),
+		UnstakedBalance:  cosmostypes.NewInt64Coin(pocket.DenomuPOKT, unstakedBalanceAmount),
+		SupplierStake:    cosmostypes.NewInt64Coin(pocket.DenomuPOKT, supplierStakeAmount),
+		ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, appStakeAmount),
 		// ShannonDestAddress: (intentionally omitted).
 		// ClaimedAtHeight:    (intentionally omitted)
 	}, nil

@@ -8,7 +8,7 @@ import (
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -62,7 +62,7 @@ func distributeSupplierRewardsToShareHolders(
 		}
 
 		// TODO_TECHDEBT(@red-0ne): Refactor to reuse the sendRewardsToAccount helper here.
-		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, shareAmount)
+		shareAmountCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, shareAmount)
 
 		// Queue the sending of the newley minted uPOKT from the supplier module
 		// account to the supplier's shareholders.
