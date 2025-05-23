@@ -8,7 +8,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -37,6 +37,8 @@ type accQuerier struct {
 //
 // Required dependencies:
 // - clientCtx
+// - polylog.Logger
+// - cache.KeyValueCache[types.AccountI]
 func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error) {
 	aq := &accQuerier{}
 

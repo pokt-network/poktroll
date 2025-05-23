@@ -53,7 +53,7 @@ func WithGasAdjustment(gasAdjustment float64) client.TxClientOption {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// WithUnordered sets the unordered flag to true when constructing transactions.
 func WithUnordered() client.TxClientOption {
 	return func(client client.TxClient) {
 		client.(*txClient).unordered = true

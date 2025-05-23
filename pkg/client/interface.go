@@ -150,7 +150,7 @@ type TxContext interface {
 		msgs ...cosmostypes.Msg,
 	) (uint64, error)
 
-	// TODO_IN_THIS_COMMIT: comment...
+	// SetUnordered sets the unordered flag for use when constructing transactions.
 	SetUnordered(bool)
 }
 

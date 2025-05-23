@@ -136,7 +136,7 @@ func (txCtx cosmosTxContext) GetClientCtx() cosmosclient.Context {
 	return cosmosclient.Context(txCtx.clientCtx)
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// GetKeyAddress returns the address associated with the given key name, according to the configured keyring.
 func (txCtx cosmosTxContext) GetKeyAddress(keyName string) (cosmostypes.AccAddress, error) {
 	keyRecord, err := txCtx.GetKeyring().Key(keyName)
 	if err != nil {

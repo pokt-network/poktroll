@@ -27,7 +27,9 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	pocketdcmd "github.com/pokt-network/poktroll/cmd"
+	"github.com/pokt-network/poktroll/cmd/faucet"
 	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
@@ -71,7 +73,12 @@ func NewRootCmd() *cobra.Command {
 For additional documentation, see https://dev.poktroll.com/tools/user_guide/pocketd_cli
 		`,
 		SilenceErrors: true,
-		PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
+			// Set up the global logger for all CLI subcommands.
+			if err := logger.PreRunESetup(cmd, args); err != nil {
+				return err
+			}
+
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
@@ -150,6 +157,7 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	// add relayer command
 	rootCmd.AddCommand(
 		relayercmd.RelayerCmd(),
+		faucet.FaucetCmd(),
 	)
 
 	rootCmd.PersistentFlags().String(flags.FlagNetwork, flags.DefaultNetwork, flags.FlagNetworkUsage)
