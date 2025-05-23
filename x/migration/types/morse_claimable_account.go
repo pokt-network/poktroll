@@ -70,7 +70,7 @@ func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Conte
 	// Calculate the estimated Shannon unstake session end height.
 	// I.e. the end height of the session after which the claimed
 	// Shannon supplier will be unstaked.
-	estimatedBlocksUntilUnstakeCompletion := big.NewRat(int64(durationUntilUnstakeCompletion.Seconds()), int64(estimatedBlockDuration))
+	estimatedBlocksUntilUnstakeCompletion := big.NewRat(int64(durationUntilUnstakeCompletion), int64(estimatedBlockDuration))
 	estimatedUnstakeCompletionHeight := new(big.Rat).Add(
 		big.NewRat(sdkCtx.BlockHeight(), 1),
 		estimatedBlocksUntilUnstakeCompletion,
