@@ -30,6 +30,17 @@ func (k msgServer) ClaimMorseSupplier(
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseSupplier")
 
+	// Ensure that morse account claiming is enabled.
+	morseAccountClaimingIsEnabled := k.GetParams(sdkCtx).MorseAccountClaimingEnabled
+	if !morseAccountClaimingIsEnabled {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"morse account claiming is currently disabled; please contact the Pocket Network team",
+			).Error(),
+		)
+	}
+
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
