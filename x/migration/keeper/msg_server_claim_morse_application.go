@@ -52,16 +52,18 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// Update the MorseClaimableAccount.
 	k.SetMorseClaimableAccount(sdkCtx, *morseClaimableAccount)
 
+	// Retrieve the shared parameters and calculate various session height params.
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
-	claimedAppStake := morseClaimableAccount.GetApplicationStake()
-	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
-
 	currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, sdkCtx.BlockHeight())
 	previousSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStartHeight-1)
 
-	// Construct unbonded application for cases where it is already or will become unbonded
-	// immediately (i.e. below min stake, or if unbonding period has already elpased).
+	// Retrieve the staked and unstaked application balance.
+	claimedAppStake := morseClaimableAccount.GetApplicationStake()
+	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
+
+	// Construct unbonded application for cases where it is already or will become unbonded immediately
+	// E.g. below min stake, or if unbonding period has already elapsed.
 	unbondedApp := &apptypes.Application{
 		Address:                 shannonAccAddr.String(),
 		Stake:                   &claimedAppStake,
@@ -69,7 +71,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		// ServiceConfigs:       (intentionally omitted, no service was staked),
 	}
 
-	// Construct the base response. It will be modified, as necessary, prior to returning.
+	// Construct the base response.
+	// It will be modified, as necessary, prior to returning.
 	claimMorseAppResponse := &migrationtypes.MsgClaimMorseApplicationResponse{
 		MorseSrcAddress:         morseClaimableAccount.GetMorseSrcAddress(),
 		ClaimedBalance:          claimedUnstakedBalance,
@@ -78,7 +81,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		Application:             unbondedApp,
 	}
 
-	// Construct the base application claim event. It will be modified, as necessary, prior to emission.
+	// Construct the base application claim event.
+	// It will be modified, as necessary, prior to emission.
 	morseAppClaimedEvent := &migrationtypes.EventMorseApplicationClaimed{
 		MorseSrcAddress:         msg.GetMorseSignerAddress(),
 		ClaimedBalance:          claimedUnstakedBalance,
@@ -87,8 +91,9 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		Application:             unbondedApp,
 	}
 
-	// Conditionally emit an event which signals that the claimed Morse application's unbonding
-	// period began on Morse, and ended while waiting to be claimed.
+	// Construct the application unbonding end event.
+	// It will be conditionally emitted if the application unbonding period
+	// began on Morse, and ended while waiting to be claimed.
 	morseAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 		Application:        unbondedApp,
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
@@ -101,20 +106,18 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	//
 	// Always emitted:
 	// - EventMorseApplicationClaimed
+	//
 	// Conditionally emitted:
 	// - EventApplicationUnbondingBegin
 	// - EventApplicationUnbondingEnd
 	events := make([]cosmostypes.Msg, 0)
 
-	// This condition checks whether the MorseClaimableAccount has completed unbonding.
-	// If unbonding is complete, the following steps occur:
-	// - Since minting to shannonDestAddr has already occurred, no additional action is necessary.
-	// - A lookup table is used to estimate block times for each network.
-	// - Shared parameters and block time are utilized to calculate the unstake session end height.
-	// - Emit an event which signals that the Morse application was claimed.
-	// - Emit an event which signals that the Morse application began unbonding.
+	// If unbonding is complete:
+	// - No further minting is needed (already minted to shannonDestAddr)
+	// - Use a lookup table to estimate block times per network
+	// - Calculate unstake session end height using shared parameters and block time
+	// - Emit events for Morse application claimed and unbonding started
 	if morseClaimableAccount.HasUnbonded() {
-		// Emit the supplier claim event first, then the unbonding end event.
 		events = append(events, morseAppClaimedEvent)
 		events = append(events, morseAppUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
@@ -132,11 +135,10 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	}
 	postClaimAppStake := preClaimAppStake.Add(morseClaimableAccount.GetApplicationStake())
 
-	// If the claimed application stake is less than the minimum stake, the application is immediately unstaked.
-	// - All stake and unstaked tokens have already been minted to shannonDestAddr account
+	// If the claimed stake is below the minimum, the application is unstaked.
+	// Stake and tokens are already minted to shannonDestAddr.
 	minStake := k.appKeeper.GetParams(ctx).MinStake
 	if postClaimAppStake.Amount.LT(minStake.Amount) {
-		// Emit the supplier claim event first, then the unbonding end event.
 		events = append(events, morseAppClaimedEvent)
 		events = append(events, morseAppUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
@@ -168,7 +170,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	morseAppClaimedEvent.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake()
 	morseAppClaimedEvent.Application = app
 
-	// Emit the application claim event first, an unbonding begin event MAY follow.
+	// Emit the application claim event first.
+	// An unbonding begin event MAY follow.
 	events = append(events, morseAppClaimedEvent)
 
 	// If the claimed application is still unbonding:
@@ -192,7 +195,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		app.UnstakeSessionEndHeight = uint64(estimatedUnstakeSessionEndHeight)
 		k.appKeeper.SetApplication(ctx, *app)
 
-		// Emit an event which signals that the claimed Morse supplier's unbonding
+		// Emit an event which signals that the claimed Morse application's unbonding
 		// period began on Morse and will end on Shannon ad unbonding_end_height
 		// (i.e. estimatedUnstakeSessionEndHeight).
 		morseAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
@@ -202,8 +205,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 			UnbondingEndHeight: estimatedUnstakeSessionEndHeight,
 		}
 
-		// Emit the supplier unbonding begin event
-		// AFTER the supplier claim event.
+		// Emit the application unbonding begin event
+		// AFTER the application claim event.
 		events = append(events, morseAppUnbondingBeginEvent)
 	}
 

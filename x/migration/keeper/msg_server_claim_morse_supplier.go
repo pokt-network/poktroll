@@ -147,6 +147,7 @@ func (k msgServer) ClaimMorseSupplier(
 	//
 	// Always emitted:
 	// - EventMorseSupplierClaimed
+	//
 	// Conditionally emitted:
 	// - EventSupplierUnbondingBegin
 	// - EventSupplierUnbondingEnd

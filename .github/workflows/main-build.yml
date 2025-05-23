@@ -36,7 +36,7 @@ jobs:
       #   run: make proto_regen
 
       - name: Build
-        run: ignite chain build -v --debug --skip-proto --path=app
+        run: ignite chain build -v --debug --skip-proto
 
       - name: Set up Docker Buildx
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image')) || (contains(github.event.pull_request.labels.*.name, 'devnet-test-e2e'))
