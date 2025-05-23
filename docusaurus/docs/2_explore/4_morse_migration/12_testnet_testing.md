@@ -1,6 +1,6 @@
 ---
-title: Migration E2E Testing (TestNet Only)
-sidebar_position: 11
+title: Migration E2E Testing (TestNet)
+sidebar_position: 12
 ---
 
 ## Table Of Contents <!-- omit in toc -->
@@ -10,7 +10,7 @@ sidebar_position: 11
   - [1. Retrieve a Morse TestNet Snapshot](#1-retrieve-a-morse-testnet-snapshot)
   - [2. Export Morse TestNet State](#2-export-morse-testnet-state)
   - [3. Export Morse MainNet State](#3-export-morse-mainnet-state)
-  - [4. Merge Morse MainNet \& TestNet Stats](#4-merge-morse-mainnet--testnet-stats)
+  - [4. Merge Morse MainNet \& TestNet States](#4-merge-morse-mainnet--testnet-states)
   - [5. Continue the State Upload Process](#5-continue-the-state-upload-process)
 
 ---
@@ -49,7 +49,7 @@ On **Shannon TestNet only** will the snapshot contain both Morse MainNet and Tes
 Use the links below to download the snapshot:
 
 | Snapshot                                                                                                                                                        | Height | Date       | Size |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|------------|------|
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ---- |
 | [morse-testnet-176966-2025-05-09.txz](https://link.storjshare.io/raw/ju4zrcq46yp6ft2hm7o4xwlkts3q/pocket-network-snapshots/morse-testnet-176966-2025-05-09.txz) | 176966 | 2025-05-09 | ~7GB |
 
 **Extract the snapshot by cop-pasting the following commands**:
@@ -81,7 +81,7 @@ pocket --datadir="$HOME/morse-testnet-snapshot" util export-genesis-for-reset "$
 
 Follow steps 1-2 in [State Transfer Playbook](./4_state_transfer_playbook.md) to retrieve and export the Morse MainNet snapshot.
 
-### 4. Merge Morse MainNet & TestNet Stats
+### 4. Merge Morse MainNet & TestNet States
 
 - Merge the Morse MainNet and TestNet state exports into a single file:
 

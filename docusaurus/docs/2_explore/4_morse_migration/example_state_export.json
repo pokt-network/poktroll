@@ -1,0 +1,428 @@
+{
+  "app_hash": "",
+  "app_state": {
+    "application": {
+      "applications": [],
+      "exported": true,
+      "params": {
+        "app_stake_minimum": "1000000",
+        "base_relays_per_pokt": "170",
+        "max_applications": "9223372036854775807",
+        "maximum_chains": "15",
+        "participation_rate_on": false,
+        "stability_adjustment": "0",
+        "unstaking_time": "3600000000000"
+      }
+    },
+    "auth": {
+      "accounts": [
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "MORSE_ADDR_PNF",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "MORSE_ADDR_SUPPLIER_1",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "MORSE_ADDR_SUPPLIER_2",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "MORSE_ADDR_SUPPLIER_3",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "MORSE_ADDR_OWNER_1",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "MORSE_ADDR_OWNER_2",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        }
+      ],
+      "params": {
+        "fee_multipliers": {
+          "default": "1",
+          "fee_multiplier": null
+        },
+        "max_memo_characters": "75",
+        "tx_sig_limit": "8"
+      },
+      "supply": [
+        {
+          "amount": "147576951550267926499",
+          "denom": "upokt"
+        }
+      ]
+    },
+    "gov": {
+      "DAO_Tokens": "50023194072932",
+      "params": {
+        "acl": [
+          {
+            "acl_key": "application/ApplicationStakeMinimum",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "application/AppUnstakingTime",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "application/BaseRelaysPerPOKT",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "application/MaxApplications",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "application/MaximumChains",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "application/ParticipationRateOn",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "application/StabilityAdjustment",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "auth/MaxMemoCharacters",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "auth/TxSigLimit",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "gov/acl",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "gov/daoOwner",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "gov/upgrade",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pocketcore/ClaimExpiration",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "auth/FeeMultipliers",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pocketcore/ReplayAttackBurnMultiplier",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/ProposerPercentage",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pocketcore/ClaimSubmissionWindow",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pocketcore/MinimumNumberOfProofs",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pocketcore/SessionNodeCount",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pocketcore/SupportedBlockchains",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/BlocksPerSession",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/DAOAllocation",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/DowntimeJailDuration",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/MaxEvidenceAge",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/MaximumChains",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/MaxJailedBlocks",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/MaxValidators",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/MinSignedPerWindow",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/RelaysToTokensMultiplier",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/SignedBlocksWindow",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/SlashFractionDoubleSign",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/SlashFractionDowntime",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/StakeDenom",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/StakeMinimum",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/UnstakingTime",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/ServicerStakeFloorMultiplier",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/ServicerStakeWeightMultiplier",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/ServicerStakeWeightCeiling",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/ServicerStakeFloorMultiplierExponent",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pocketcore/BlockByteSize",
+            "address": "MORSE_ADDR_PNF"
+          },
+          {
+            "acl_key": "pos/RelaysToTokensMultiplierMap",
+            "address": "MORSE_ADDR_PNF"
+          }
+        ],
+        "dao_owner": "MORSE_ADDR_PNF",
+        "upgrade": {
+          "Features": [
+            "AppTransfer:128738",
+            "BLOCK:108982",
+            "CRVAL:108897",
+            "MAXCH:128738",
+            "MREL:82533",
+            "NCUST:70315",
+            "OEDIT:108973",
+            "PerChainRTTM:157695",
+            "REDUP:70315",
+            "RSCAL:82533",
+            "RewardDelegators:128738"
+          ],
+          "Height": "157178",
+          "OldUpgradeHeight": "128733",
+          "Version": "0.12.0"
+        }
+      }
+    },
+    "pocketcore": {
+      "claims": null,
+      "params": {
+        "block_byte_size": "12000000",
+        "claim_expiration": "120",
+        "minimum_number_of_proofs": "10",
+        "proof_waiting_period": "3",
+        "replay_attack_burn_multiplier": "3",
+        "session_node_count": "1",
+        "supported_blockchains": ["F029"]
+      }
+    },
+    "pos": {
+      "exported": true,
+      "missed_blocks": {},
+      "params": {
+        "dao_allocation": "8",
+        "downtime_jail_duration": "3600000000000",
+        "max_evidence_age": "120000000000",
+        "max_jailed_blocks": "37960",
+        "max_validators": "5",
+        "maximum_chains": "15",
+        "min_signed_per_window": "0.600000000000000000",
+        "proposer_allocation": "14",
+        "relays_to_tokens_multiplier": "37",
+        "relays_to_tokens_multiplier_map": {
+          "F029": "118"
+        },
+        "servicer_stake_floor_multipler": "15000000000",
+        "servicer_stake_floor_multiplier_exponent": "1.000000000000000000",
+        "servicer_stake_weight_ceiling": "60000000000",
+        "servicer_stake_weight_multipler": "3.032000000000000000",
+        "session_block_frequency": "4",
+        "signed_blocks_window": "10",
+        "slash_fraction_double_sign": "0.050000000000000000",
+        "slash_fraction_downtime": "0.000001000000000000",
+        "stake_denom": "upokt",
+        "stake_minimum": "15000000000",
+        "unstaking_time": "3600000000000"
+      },
+      "prevState_total_power": "2952991914",
+      "prevState_validator_powers": [
+        {
+          "Address": "MORSE_ADDR_PNF",
+          "Power": "902999097"
+        }
+      ],
+      "previous_proposer": "MORSE_ADDR_PNF",
+      "signing_infos": {
+        "MORSE_ADDR_PNF": {
+          "address": "MORSE_ADDR_PNF",
+          "index_offset": "0",
+          "jailed_blocks_counter": "0",
+          "jailed_until": "0001-01-01T00:00:00Z",
+          "missed_blocks_counter": "0",
+          "start_height": "176964"
+        }
+      },
+      "validators": [
+        {
+          "address": "MORSE_ADDR_PNF",
+          "chains": [],
+          "jailed": false,
+          "output_address": null,
+          "public_key": "MORSE_PNF_PUBKEY",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        },
+        {
+          "address": "MORSE_ADDR_SUPPLIER_1",
+          "chains": ["F029"],
+          "jailed": false,
+          "output_address": "MORSE_ADDR_OWNER_1",
+          "public_key": "MORSE_SUPPLIER_PUBKEY_1",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        },
+        {
+          "address": "MORSE_ADDR_SUPPLIER_2",
+          "chains": ["F029"],
+          "jailed": false,
+          "output_address": "MORSE_ADDR_OWNER_2",
+          "public_key": "MORSE_SUPPLIER_PUBKEY_2",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        },
+        {
+          "address": "MORSE_ADDR_SUPPLIER_3",
+          "chains": ["F029"],
+          "jailed": false,
+          "output_address": null,
+          "public_key": "MORSE_SUPPLIER_PUBKEY_3",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        }
+      ]
+    }
+  },
+  "chain_id": "pocket",
+  "consensus_params": {
+    "block": {
+      "max_bytes": "12000000",
+      "max_gas": "-1",
+      "time_iota_ms": "1"
+    },
+    "evidence": {
+      "max_age": "1000000"
+    },
+    "validator": {
+      "pub_key_types": ["ed25519"]
+    }
+  },
+  "genesis_time": "0001-01-01T00:00:00Z"
+}

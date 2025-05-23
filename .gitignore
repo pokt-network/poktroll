@@ -118,3 +118,11 @@ vultr_*.json
 # Local pocketd build
 # ignite chain build --skip-proto --debug -v -o .
 pocketd
+
+# Used in
+# See docusaurus/docs/2_explore/4_morse_migration/11_localnet_testing.md
+morse_pocket_datadir
+pocket-account-*.json
+localnet_testing_state_export.json
+localnet_testing_msg_import_morse_accounts.json
+*claim_supplier_*_supplier_config.yaml
