@@ -8,7 +8,7 @@ import (
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -25,7 +25,7 @@ import (
 // - Value obtained empirically by observing logs during load testing
 // - Value may change as network parameters change
 // - This value is a function of the claim & proof message sizes
-var ClamAndProofGasCost = sdktypes.NewInt64Coin(volatile.DenomuPOKT, 100_000)
+var ClamAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 100_000)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims

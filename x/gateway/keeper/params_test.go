@@ -7,7 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -35,10 +35,10 @@ func TestParams_ValidateMinStake(t *testing.T) {
 		{
 			desc: "MinStake less than zero",
 			minStake: &cosmostypes.Coin{
-				Denom:  volatile.DenomuPOKT,
+				Denom:  pocket.DenomuPOKT,
 				Amount: math.NewInt(-1),
 			},
-			expectedErr: gatewaytypes.ErrGatewayParamInvalid.Wrapf("min stake amount must be greater than zero: -1%s", volatile.DenomuPOKT),
+			expectedErr: gatewaytypes.ErrGatewayParamInvalid.Wrapf("min stake amount must be greater than zero: -1%s", pocket.DenomuPOKT),
 		},
 		{
 			desc:     "valid MinStake",

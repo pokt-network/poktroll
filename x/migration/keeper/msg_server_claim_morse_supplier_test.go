@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/migration/mocks"
@@ -57,8 +57,8 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	require.NoError(t, err)
 
 	claimCommitHeight := int64(10)
-	unstakedBalance := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
-	supplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 200)
+	unstakedBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	supplierStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 200)
 	expectedClaimedUnstakedTokens := unstakedBalance.Add(supplierStake).Sub(supplierStake)
 	expectedMsgStakeSupplier := &suppliertypes.MsgStakeSupplier{
 		Signer:          shannonDestAddr,
@@ -113,7 +113,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	// Set the supplier min stake to zero so that suppliers can be
 	// claimed without being unstaked.
 	supplierParams := suppliertypes.DefaultParams()
-	supplierParams.MinStake = &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: cosmosmath.ZeroInt()}
+	supplierParams.MinStake = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: cosmosmath.ZeroInt()}
 	supplierKeeper.EXPECT().GetParams(gomock.Any()).
 		Return(supplierParams).
 		AnyTimes()
@@ -144,7 +144,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  unstakedBalance,
-		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 		SupplierStake:    supplierStake,
 		// ShannonDestAddress: (intentionally omitted),
 		// ClaimedAtHeight:    (intentionally omitted),
@@ -219,8 +219,8 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 }
 
 func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
-	claimableUnstakedBalance := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
-	claimableSupplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 200)
+	claimableUnstakedBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
+	claimableSupplierStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 200)
 
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
@@ -229,7 +229,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  claimableUnstakedBalance,
-		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 		SupplierStake:    claimableSupplierStake,
 		// ShannonDestAddress: (intentionally omitted),
 		// ClaimedAtHeight:    (intentionally omitted),
@@ -356,15 +356,15 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		nonSupplierMorseClaimableAccount := migrationtypes.MorseClaimableAccount{
 			MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 			UnstakedBalance:  claimableUnstakedBalance,
-			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+			SupplierStake:    cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+			ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 		}
 		k.SetMorseClaimableAccount(ctx, nonSupplierMorseClaimableAccount)
 
 		expectedErr := status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"Morse account %q is not staked as an supplier or application, please use `pocketd tx migration claim-account` instead",
+				"Morse account %q is not staked as a supplier or application, please use `pocketd tx migration claim-account` instead",
 				nonSupplierMorseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
@@ -388,8 +388,8 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		nonSupplierMorseClaimableAccount := migrationtypes.MorseClaimableAccount{
 			MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 			UnstakedBalance:  claimableUnstakedBalance,
-			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100),
+			SupplierStake:    cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+			ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100),
 		}
 		k.SetMorseClaimableAccount(ctx, nonSupplierMorseClaimableAccount)
 

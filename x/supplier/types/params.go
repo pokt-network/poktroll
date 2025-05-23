@@ -4,7 +4,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 )
 
 var (
@@ -108,10 +108,10 @@ func paramAsPositiveuPOKT(paramAny any, paramName string) (*cosmostypes.Coin, er
 		return nil, ErrSupplierParamInvalid.Wrapf("missing param")
 	}
 
-	if paramCoin.Denom != volatile.DenomuPOKT {
+	if paramCoin.Denom != pocket.DenomuPOKT {
 		return nil, ErrSupplierParamInvalid.Wrapf(
 			"invalid %s denom %q; expected %q",
-			paramName, paramCoin.Denom, volatile.DenomuPOKT,
+			paramName, paramCoin.Denom, pocket.DenomuPOKT,
 		)
 	}
 

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -183,7 +183,7 @@ func (s *baseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents 
 		sendMsg := banktypes.NewMsgSend(
 			faucetAddr,
 			randomAddr,
-			cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)),
+			cosmostypes.NewCoins(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)),
 		)
 		msgs = append(msgs, sendMsg)
 	}

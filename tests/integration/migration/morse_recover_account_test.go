@@ -13,8 +13,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	events "github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/app/pocket"
+	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	"github.com/pokt-network/poktroll/x/migration/recovery"
@@ -243,7 +243,7 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 		morseAccount *migrationtypes.MorseAccount, // The account being processed
 	) *cosmostypes.Coin {
 		// All unstaked accounts get an initial balance of 1000 uPOKT
-		coin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
+		coin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
 
 		// Based on actor type, selectively add the first account of each type to the recovery allowlist
 		switch actorType {
@@ -280,8 +280,8 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 		application *migrationtypes.MorseApplication, // The application account being processed
 	) (staked, unstaked *cosmostypes.Coin) {
 		// Applications have 2000 uPOKT staked and 1000 uPOKT unstaked balances
-		stakedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 2000)
-		unstakedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
+		stakedCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 2000)
+		unstakedCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
 
 		// If the application is the first one of its type (Application or OrphanedApplication),
 		// append it to the recovery allowlist.
@@ -302,8 +302,8 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 		validator *migrationtypes.MorseValidator, // The validator account being processed
 	) (staked, unstaked *cosmostypes.Coin) {
 		// Validators have 3000 uPOKT staked and 1000 uPOKT unstaked balances
-		stakedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 3000)
-		unstakedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000)
+		stakedCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 3000)
+		unstakedCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000)
 
 		// If the validator is the first one of its type (Validator or OrphanedValidator),
 		// append it to the recovery allowlist.

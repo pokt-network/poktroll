@@ -10,7 +10,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
@@ -43,7 +43,7 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 }
 
 func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
-	var expectedProofRequirementThreshold = sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(100))
+	var expectedProofRequirementThreshold = sdk.NewCoin(pocket.DenomuPOKT, math.NewInt(100))
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -70,7 +70,7 @@ func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
 }
 
 func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
-	expectedProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(500))
+	expectedProofMissingPenalty := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(500))
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -97,7 +97,7 @@ func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
 }
 
 func TestMsgUpdateParam_UpdateProofSubmissionFeeOnly(t *testing.T) {
-	expectedProofSubmissionFee := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000001))
+	expectedProofSubmissionFee := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1000001))
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)

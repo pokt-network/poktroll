@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	cosmosmath "cosmossdk.io/math"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/cmd/signals"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
@@ -268,7 +267,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		}
 
 		coin := coins[0]
-		if coin.Denom != volatile.DenomuPOKT {
+		if coin.Denom != pocket.DenomuPOKT {
 			return ErrMorseExportState.Wrapf("unsupported denom %q", coin.Denom)
 		}
 
@@ -306,10 +305,6 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 	for exportApplicationIdx, exportApplication := range inputState.AppState.Application.Applications {
 		appAddr := exportApplication.Address.String()
 
-		// TODO_MAINNET_MIGRATION(@bryanchriswhite, @olshansk): There are applications
-		// present in snapshot data that stakes but no "auth" accounts. Determine:
-		// 1. Whether this case is expected or not.
-		// 2. What to do about it, if anything.
 		if !morseWorkspace.hasAccount(appAddr) {
 			logger.Logger.Warn().
 				Str("app_address", appAddr).
@@ -325,20 +320,12 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 		}
 
 		if exportApplication.StakedTokens != "" {
-			appStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportApplication.StakedTokens)
-			if !ok {
-				return ErrMorseExportState.Wrapf("failed to parse application stake amount %q", exportApplication.StakedTokens)
-			}
-
-			if err := morseWorkspace.addAppStake(appAddr, appStakeAmtUpokt); err != nil {
+			if err := morseWorkspace.addAppStake(exportApplication); err != nil {
 				return fmt.Errorf(
 					"adding application stake amount to account balance of address %q: %w",
 					appAddr, err,
 				)
 			}
-
-			morseWorkspace.accumulatedTotalAppStake = morseWorkspace.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
-			morseWorkspace.numApplications++
 		} else {
 			exportApplicationJSONBz, err := json.MarshalIndent(exportApplication, "", "  ")
 			if err != nil {
@@ -386,24 +373,12 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 		}
 
 		if exportSupplier.StakedTokens != "" {
-			supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportSupplier.StakedTokens)
-			if !ok {
-				return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", exportSupplier.StakedTokens)
-			}
-
-			if err := morseWorkspace.addSupplierStake(
-				supplierAddr,
-				supplierStakeAmtUpokt,
-				exportSupplier.OutputAddress,
-			); err != nil {
+			if err := morseWorkspace.addSupplierStake(exportSupplier); err != nil {
 				return fmt.Errorf(
 					"adding supplier stake amount to account balance of address %q: %w",
 					supplierAddr, err,
 				)
 			}
-
-			morseWorkspace.accumulatedTotalSupplierStake = morseWorkspace.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
-			morseWorkspace.numSuppliers++
 		} else {
 			exportSupplierJSONBz, err := json.MarshalIndent(exportSupplier, "", "  ")
 			if err != nil {

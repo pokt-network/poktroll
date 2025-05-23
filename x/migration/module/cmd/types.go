@@ -4,10 +4,9 @@ import (
 	"fmt"
 
 	cosmosmath "cosmossdk.io/math"
-	cometcrypto "github.com/cometbft/cometbft/crypto"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
@@ -123,9 +122,9 @@ func (miw *morseImportWorkspace) addAccount(addr string) error {
 	accountIdx := miw.nextIdx()
 	importAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  addr,
-		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-		SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
-		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		UnstakedBalance:  cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+		SupplierStake:    cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
+		ApplicationStake: cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
 	}
 	miw.accountState.Accounts = append(miw.accountState.Accounts, importAccount)
 	miw.accountIdxByAddress[addr] = uint64(accountIdx)
@@ -147,39 +146,59 @@ func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosma
 // addSupplierStake does two things:
 // - Adds the given amount to the corresponding Morse account balances in the morseWorkspace
 // - Sets the MorseOutputAddress if the given outputAddr is not nil
-func (miw *morseImportWorkspace) addSupplierStake(
-	addr string,
-	amount cosmosmath.Int,
-	outputAddr cometcrypto.Address,
-) error {
+func (miw *morseImportWorkspace) addSupplierStake(morseSupplier *migrationtypes.MorseValidator) error {
 	// Retrieve the Morse supplier (aka Service/Node) account
-	morseAccount, err := miw.getAccount(addr)
+	morseClaimableAccount, err := miw.getAccount(morseSupplier.Address.String())
 	if err != nil {
 		return err
 	}
 
 	// Update the supplier stake amount
-	morseAccount.SupplierStake.Amount = morseAccount.SupplierStake.Amount.Add(amount)
+	supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(morseSupplier.StakedTokens)
+	if !ok {
+		return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", morseSupplier.StakedTokens)
+	}
+	morseClaimableAccount.SupplierStake.Amount = morseClaimableAccount.SupplierStake.Amount.
+		Add(supplierStakeAmtUpokt)
 
 	// Custodial address (i.e. output, a.k.a. owner) is optional.
-	if outputAddr != nil {
-		morseAccount.MorseOutputAddress = outputAddr.String()
+	if morseSupplier.OutputAddress != nil {
+		morseClaimableAccount.MorseOutputAddress = morseSupplier.OutputAddress.String()
 	}
+
+	// If the supplier is unbonding, transfer the unstaking completion time.
+	if !morseSupplier.UnstakingTime.IsZero() {
+		morseClaimableAccount.UnstakingTime = morseSupplier.UnstakingTime
+	}
+
+	miw.accumulatedTotalSupplierStake = miw.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
+	miw.numSuppliers++
 
 	return nil
 }
 
 // addAppStake adds the given amount to the corresponding Morse account balances in the morseWorkspace.
-func (miw *morseImportWorkspace) addAppStake(
-	addr string,
-	amount cosmosmath.Int,
-) error {
+func (miw *morseImportWorkspace) addAppStake(morseApplication *migrationtypes.MorseApplication) error {
+	appStakeAmtUpokt, ok := cosmosmath.NewIntFromString(morseApplication.StakedTokens)
+	if !ok {
+		return ErrMorseExportState.Wrapf("failed to parse application stake amount %q", morseApplication.StakedTokens)
+	}
+
 	// Retrieve the Morse application (aka Validator) account
-	morseAccount, err := miw.getAccount(addr)
+	morseClaimableAccount, err := miw.getAccount(morseApplication.Address.String())
 	if err != nil {
 		return err
 	}
 
-	morseAccount.ApplicationStake.Amount = morseAccount.ApplicationStake.Amount.Add(amount)
+	// If the application is unbonding, transfer the unstaking completion time.
+	if !morseApplication.UnstakingTime.IsZero() {
+		morseClaimableAccount.UnstakingTime = morseApplication.UnstakingTime
+	}
+
+	morseClaimableAccount.ApplicationStake.Amount = morseClaimableAccount.ApplicationStake.Amount.Add(appStakeAmtUpokt)
+
+	miw.accumulatedTotalAppStake = miw.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
+	miw.numApplications++
+
 	return nil
 }
