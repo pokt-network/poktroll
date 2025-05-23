@@ -1,6 +1,6 @@
 ---
 title: Migration Data Structures
-sidebar_position: 10
+sidebar_position: 14
 ---
 
 ## Table of Contents <!-- omit in toc -->

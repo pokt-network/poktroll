@@ -23,7 +23,7 @@ This document was last updated on 05/19/2025.
 - [Terminology](#terminology)
 - [Background and Action Items for Exchanges](#background-and-action-items-for-exchanges)
 - [What **IS NOT** Changing?](#what-is-not-changing)
-- [What **IS** Changing?)](#what-is-changing-what-you-must-do)
+- [What **IS** Changing?](#what-is-changing)
   - [Accounts/Wallets](#accountswallets)
   - [Token Minting on Morse](#token-minting-on-morse)
   - [Full Node Integration](#full-node-integration)
@@ -31,7 +31,6 @@ This document was last updated on 05/19/2025.
 - [Timeline](#timeline)
   - [14-Day Migration Window](#14-day-migration-window)
 - [Communication](#communication)
-
 
 ## Terminology
 
@@ -58,11 +57,11 @@ This document was last updated on 05/19/2025.
 
 ## What **IS NOT** Changing?
 
-| Category          | Details                                                                                                                                                                                                                                                            |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Network Name      | **Pocket Network**                                                                                                                                                                                                                                                 |
-| Chain Ticker      | **$POKT**                                                                                                                                                                                                                                                          |
-| Liquidity & State | - Snapshot of Morse state during a 14-day migration window <br/> - 1:1 migration to Shannon                                                                                                                                                                        |
+| Category          | Details                                                                                                                                                                                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Network Name      | **Pocket Network**                                                                                                                                                                                                                                                    |
+| Chain Ticker      | **$POKT**                                                                                                                                                                                                                                                             |
+| Liquidity & State | - Snapshot of Morse state during a 14-day migration window <br/> - 1:1 migration to Shannon                                                                                                                                                                           |
 | Tokenomics        | - [Mint = Burn model launched April 2025](https://forum.pokt.network/t/protocol-economics-parameters-for-the-shannon-upgrade/5490) <br/> - Weekly manual burning (track at [pokt.money](https://pokt.money)) <br/> - After migration, burning will occur in real time |
 
 ---
@@ -72,7 +71,7 @@ This document was last updated on 05/19/2025.
 ### Accounts/Wallets
 
 - The Shannon upgrade uses the [Cosmos Cryptographic Key Scheme](https://docs.cosmos.network/main/learn/beginner/accounts).
-- A new Cosmos-based wallet is required to claim tokens. 
+- A new Cosmos-based wallet is required to claim tokens.
 - Tokens will need to be claimed manually.
 
 ### Token Minting on Morse
@@ -90,11 +89,11 @@ This document was last updated on 05/19/2025.
 
 ## Actions Exchanges Must Take (Pre-Migration)
 
-| Action                | How-To / Links                                                                                                                                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Create New Wallet** | - [pocketd CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli) <br/> - [Keplr Wallet](https://www.keplr.app/) <br/> - [Soothe Vault](https://trustsoothe.io/)        |
-| **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) <br/> - or get a free Foundation-sponsored RPC endpoint from [Grove](https://portal.grove.city) |
-| **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account) <br/> - UI: Website with offline signing support (Coming Soon)                                                                         |
+| Action                | How-To / Links                                                                                                                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Create New Wallet** | - [pocketd CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli) <br/> - [Keplr Wallet](https://www.keplr.app/) <br/> - [Soothe Vault](https://trustsoothe.io/) |
+| **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) <br/> - or get a free Foundation-sponsored RPC endpoint from [Grove](https://portal.grove.city)    |
+| **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account) <br/> - UI: Website with offline signing support (Coming Soon)                                     |
 
 :::warning TODO(Grove): Coming Soon
 
