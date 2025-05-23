@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
 
@@ -18,7 +18,7 @@ func NewTestBankQueryClientWithBalance(t *testing.T, balance int64) *mockclient.
 	bankQueryClientMock := mockclient.NewMockBankQueryClient(ctrl)
 	bankQueryClientMock.EXPECT().
 		GetBalance(gomock.Any(), gomock.Any()).
-		Return(&sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(balance)}, nil).
+		Return(&sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(balance)}, nil).
 		AnyTimes()
 
 	return bankQueryClientMock

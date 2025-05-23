@@ -9,7 +9,7 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 )
 
 // newAnteHandlerFn returns an AnteHandler that waives minimum gas/fees for transactions
@@ -160,5 +160,5 @@ func freeSigGasConsumer(
 // freeTxFeeChecker is a TxFeeChecker that always returns zero gas fees
 // (i.e. min gas price does not apply).
 func freeTxFeeChecker(_ cosmostypes.Context, _ cosmostypes.Tx) (cosmostypes.Coins, int64, error) {
-	return cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)), 0, nil
+	return cosmostypes.NewCoins(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)), 0, nil
 }

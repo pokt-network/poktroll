@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/encoding"
 	"github.com/pokt-network/poktroll/telemetry"
@@ -277,7 +277,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	globalInflationCoin := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin, globalInflationPerClaimRat)
 	globalInflationAmt := globalInflationCoin.Amount
 	minRequiredAppStakeAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
-	totalClaimedCoin := sdk.NewCoin(volatile.DenomuPOKT, minRequiredAppStakeAmt)
+	totalClaimedCoin := sdk.NewCoin(pocket.DenomuPOKT, minRequiredAppStakeAmt)
 
 	// get the number of pending sessions that share the application stake at claim time
 	// This is used to calculate the maximum claimable amount for the supplier within a session.
@@ -316,7 +316,7 @@ func (k Keeper) ensureClaimAmountLimits(
 
 	// Claimable amount is capped by the max claimable amount or the application allocated stake.
 	// Determine the max claimable amount for the supplier based on the application's stake in this session.
-	maxClaimableCoin := sdk.NewCoin(volatile.DenomuPOKT, maxClaimSettlementAmt)
+	maxClaimableCoin := sdk.NewCoin(pocket.DenomuPOKT, maxClaimSettlementAmt)
 
 	// Prepare and emit the event for the application being overserviced
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{

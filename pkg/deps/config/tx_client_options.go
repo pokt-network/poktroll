@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 )
@@ -82,10 +82,10 @@ func GetTxClientGasAndFeesOptionsFromFlags(cmd *cobra.Command, gasSettingStr str
 
 	// Onchain fees (i.e. gas) can only be paid in upokt.
 	for _, gasPrice := range gasPrices {
-		if gasPrice.Denom != volatile.DenomuPOKT {
+		if gasPrice.Denom != pocket.DenomuPOKT {
 			// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
 			// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
-			return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
+			return nil, fmt.Errorf("only gas prices with %s denom are supported", pocket.DenomuPOKT)
 		}
 	}
 

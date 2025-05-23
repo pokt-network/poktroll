@@ -7,7 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
@@ -73,16 +73,16 @@ func TestParams_ValidateMinStake(t *testing.T) {
 			},
 			expectedErr: types.ErrAppParamInvalid.Wrapf(
 				"invalid min_stake denom %q; expected %q",
-				"💩coin", volatile.DenomuPOKT,
+				"💩coin", pocket.DenomuPOKT,
 			),
 		},
 		{
 			desc: "MinStake less than zero",
 			minStake: &cosmostypes.Coin{
-				Denom:  volatile.DenomuPOKT,
+				Denom:  pocket.DenomuPOKT,
 				Amount: math.NewInt(-1),
 			},
-			expectedErr: types.ErrAppParamInvalid.Wrapf("invalid min_stake amount: -1%s <= 0", volatile.DenomuPOKT),
+			expectedErr: types.ErrAppParamInvalid.Wrapf("invalid min_stake amount: -1%s <= 0", pocket.DenomuPOKT),
 		},
 		{
 			desc:        "valid MinStake",

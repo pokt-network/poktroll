@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/migration/mocks"
 	"github.com/pokt-network/poktroll/x/migration/keeper"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
@@ -189,7 +189,7 @@ func mockBankKeeperMintCoins(
 	// Check for an existing balance
 	balance, ok := mapAccAddrCoins[moduleAddr.String()]
 	if !ok {
-		balance = cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0))
+		balance = cosmostypes.NewCoins(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0))
 	}
 
 	balance = balance.Add(mintCoins...)
@@ -224,7 +224,7 @@ func mockBankKeeperSendFromModuleToAccount(
 
 	recipientBalance, ok := mapAccAddrCoins[recipientAddr.String()]
 	if !ok {
-		recipientBalance = cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0))
+		recipientBalance = cosmostypes.NewCoins(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0))
 	}
 
 	recipientBalance = recipientBalance.Add(sendCoins...)

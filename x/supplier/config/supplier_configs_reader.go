@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -220,7 +220,7 @@ func (yamlStakeConfig *YAMLStakeConfig) ParseAndValidateStakeAmount() (*sdk.Coin
 		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be zero")
 	}
 
-	if stakeAmount.Denom != volatile.DenomuPOKT {
+	if stakeAmount.Denom != pocket.DenomuPOKT {
 		return nil, ErrSupplierConfigInvalidStake.Wrapf(
 			"invalid stake denom, expecting: upokt, got: %s",
 			stakeAmount.Denom,

@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -274,7 +274,7 @@ func waitSimulateIO() {
 
 // uPOKTCoin returns a pointer to a uPOKT denomination coin with the given amount.
 func uPOKTCoin(amount int64) *sdktypes.Coin {
-	return &sdktypes.Coin{Denom: volatile.DenomuPOKT, Amount: sdkmath.NewInt(amount)}
+	return &sdktypes.Coin{Denom: pocket.DenomuPOKT, Amount: sdkmath.NewInt(amount)}
 }
 
 func setupDependencies(
