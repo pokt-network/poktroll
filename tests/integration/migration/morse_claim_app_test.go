@@ -256,8 +256,11 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 	// - 1 whose unbonding period HAS NOT yet elapsed
 	// - 1 whose unbonding period HAS elapsed
 	unbondingActorsOpt := testmigration.WithUnbondingActors(testmigration.UnbondingActorsConfig{
-		NumApplicationsUnbondingBegan: 1, // Number of applications to generate as having begun unbonding on Morse
-		NumApplicationsUnbondingEnded: 1, // Number of applications to generate as having unbonded on Morse while waiting to be claimed
+		// Number of applications to generate as having begun unbonding on Morse
+		NumApplicationsUnbondingBegan: 1,
+
+		// Number of applications to generate as having unbonded on Morse while waiting to be claimed
+		NumApplicationsUnbondingEnded: 1,
 	})
 
 	// Configure fixtures to generate Morse application balances:
@@ -283,9 +286,12 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			_ *migrationtypes.MorseApplication,
 		) time.Time {
 			switch actorType {
+
 			case testmigration.MorseUnbondingApplication:
 				return oneDayFromNow
+
 			case testmigration.MorseUnbondedApplication:
+
 				return oneDayAgo
 			default:
 				// Don't set unstaking time for any other application actor types.
@@ -328,6 +334,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		estimatedBlockDuration, ok := pocket.EstimatedBlockDurationByChainId[s.GetApp().GetSdkCtx().ChainID()]
 		require.Truef(s.T(), ok, "chain ID %s not found in EstimatedBlockDurationByChainId", s.GetApp().GetSdkCtx().ChainID())
 
+		// Calculate the current session end height and the next session start height.
 		currentHeight := s.GetApp().GetSdkCtx().BlockHeight()
 		sharedParams := s.GetSharedParams(s.T())
 		durationUntilUnstakeCompletion := int64(time.Until(morseClaimableAccount.UnstakingTime))
@@ -335,6 +342,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		estimatedUnstakeCompletionHeight := currentHeight + estimatedBlocksUntilUnstakeCompletion
 		expectedUnstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, estimatedUnstakeCompletionHeight))
 
+		// Calculate what the expect Supplier onchain should look like.
 		expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight())
 		expectedAppStake := morseClaimableAccount.GetApplicationStake()
 		expectedApp := &apptypes.Application{
@@ -414,7 +422,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		s.Equal(morseClaimableAccount.GetUnstakedBalance(), *shannonDestBalance)
 	})
 
-	s.Run("application unbonding endec", func() {
+	s.Run("application unbonding ended", func() {
 		shannonDestAddr := sample.AccAddress()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
@@ -456,18 +464,15 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			SessionEndHeight:        expectedSessionEndHeight,
 			Application:             expectedApp,
 		}
-
 		expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 			Application:        expectedApp,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   expectedSessionEndHeight,
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
 		}
-
 		morseAppClaimedEvents := events.FilterEvents[*migrationtypes.EventMorseApplicationClaimed](s.T(), s.GetEvents())
 		require.Equal(s.T(), 1, len(morseAppClaimedEvents))
 		require.Equal(s.T(), expectedMorseAppClaimEvent, morseAppClaimedEvents[0])
-
 		appUnbondingEndEvent := events.FilterEvents[*apptypes.EventApplicationUnbondingEnd](s.T(), s.GetEvents())
 		require.Equal(s.T(), 1, len(appUnbondingEndEvent))
 		require.Equal(s.T(), expectedAppUnbondingEndEvent, appUnbondingEndEvent[0])
@@ -495,14 +500,15 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 
 		// Assert that the application was unbonded (i.e.not staked).
 		appClient := s.AppSuite.GetAppQueryClient(s.T())
-		_, err = appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
-		s.EqualError(err, status.Error(
+		expectedErr := status.Error(
 			codes.NotFound,
 			apptypes.ErrAppNotFound.Wrapf(
 				"app address: %s",
 				shannonDestAddr,
 			).Error(),
-		).Error())
+		)
+		_, err = appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
+		s.EqualError(err, expectedErr.Error())
 
 		// Query for the application unstaked balance.
 		bankClient := s.GetBankQueryClient(s.T())

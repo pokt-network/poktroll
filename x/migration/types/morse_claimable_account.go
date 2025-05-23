@@ -17,7 +17,7 @@ func (m *MorseClaimableAccount) IsClaimed() bool {
 }
 
 // IsUnbonding indicates that the MorseClaimableAccount began unbonding on Morse
-// but its unbonding peroid has NOT yet elapsed at the time that the Morse snapshot was taken.
+// but its unbonding period has NOT yet elapsed at the time that the Morse snapshot was taken.
 func (m *MorseClaimableAccount) IsUnbonding() bool {
 	// DEV_NOTE: The UnstakingTime field is a time.Time type, which has a zero value of "0001-01-01T00:00:00Z" when printed as an ISO8601 string.
 	// See: https://pkg.go.dev/time#Time.IsZero
@@ -52,21 +52,25 @@ func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Conte
 
 	// Retrieve the estimated block duration for the current chain from a lookup table.
 	// DEV_NOTE: This is an offchain config value; i.e. not queryable.
-	estimatedBlockDuration := int64(pocket.EstimatedBlockDurationByChainId[sdkCtx.ChainID()])
+	estimatedBlockDuration, ok := pocket.EstimatedBlockDurationByChainId[sdkCtx.ChainID()]
+	if !ok || estimatedBlockDuration == 0 {
+		// Defensive: avoid division by zero and clarify error state
+		return -1, false
+	}
 
 	// Check if unstaking is complete:
 	//   - Calculate the remaining duration until unstaking.
 	//   - If the duration is zero or negative, the unstaking period has elapsed.
 	//   - Return -1 to indicate that unbonding is complete.
-	durationUntilUnstakeCompletion := int64(time.Until(m.UnstakingTime))
+	durationUntilUnstakeCompletion := time.Until(m.UnstakingTime)
 	if durationUntilUnstakeCompletion <= 0 {
 		return -1, true
 	}
 
-	// Calculated the estimated Shannon unstake session end height.
+	// Calculate the estimated Shannon unstake session end height.
 	// I.e. the end height of the session after which the claimed
 	// Shannon supplier will be unstaked.
-	estimatedBlocksUntilUnstakeCompletion := big.NewRat(durationUntilUnstakeCompletion, estimatedBlockDuration)
+	estimatedBlocksUntilUnstakeCompletion := big.NewRat(int64(durationUntilUnstakeCompletion), int64(estimatedBlockDuration))
 	estimatedUnstakeCompletionHeight := new(big.Rat).Add(
 		big.NewRat(sdkCtx.BlockHeight(), 1),
 		estimatedBlocksUntilUnstakeCompletion,
