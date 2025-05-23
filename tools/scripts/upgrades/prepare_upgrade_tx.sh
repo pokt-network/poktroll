@@ -29,16 +29,16 @@ VERSION="$1"
 shift # Remove version from arguments
 
 RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/$VERSION"
-CHECKSUM_URL="$RELEASE_URL/release_checksum"
+# TODO_TECHDEBT: Enable checksum downloading once they are provided again
+# CHECKSUM_URL="$RELEASE_URL/release_checksum"
 OUTPUT_DIR="tools/scripts/upgrades"
 
 # Default checksum inclusion:
-# - local & alpha: false
-# - beta & main: true
+# - local, alpha, beta & main: false
 INCLUDE_CHECKSUM_ALPHA=false
-INCLUDE_CHECKSUM_BETA=true
+INCLUDE_CHECKSUM_BETA=false
 INCLUDE_CHECKSUM_LOCAL=false
-INCLUDE_CHECKSUM_MAIN=true
+INCLUDE_CHECKSUM_MAIN=false
 
 # Test-only flag: only generate for local & alpha
 TEST_ONLY=false
@@ -86,8 +86,8 @@ fi
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
-# Only download and parse checksum if not in test-only mode
-if [ "$TEST_ONLY" != true ]; then
+# Only download and parse checksum if not in test-only mode and CHECKSUM_URL is provided
+if [ "$TEST_ONLY" != true ] && [ -n "$CHECKSUM_URL" ]; then
   # Create a temporary file for the checksum
   TEMP_CHECKSUM=$(mktemp)
 

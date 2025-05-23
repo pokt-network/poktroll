@@ -147,10 +147,6 @@ func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
 // The relay reward is added optimistically, assuming that the relay will be volume / reward
 // applicable and the relay meter would remain up to date.
 func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) error {
-	// TODO_MAINNET(@adshmh): Locking the relay serving flow to ensure that the relay meter is updated
-	// might be a bottleneck since ensureRequestAppMetrics is performing multiple
-	// sequential queries to the Pocket Network node.
-	// Re-evaluate when caching and invalidation is implemented.
 	rmtr.relayMeterMu.Lock()
 	defer rmtr.relayMeterMu.Unlock()
 

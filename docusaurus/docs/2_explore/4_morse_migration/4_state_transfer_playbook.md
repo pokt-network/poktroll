@@ -77,7 +77,7 @@ pocket --datadir="$HOME/morse-mainnet-snapshot" util export-genesis-for-reset "$
 
 `MorseClaimableAccount`s imported to Shannon TestNet(s) are a merge of the Morse MainNet and TestNet state exports, for developer convenience.
 
-See [Migration Testing](./11_testing.md) for additional instructions.
+See [Migration Testing](12_testnet_testing.md) for additional instructions.
 Follow the steps there, and resume **from the next step (i.e. skip this step)**.
 
 :::

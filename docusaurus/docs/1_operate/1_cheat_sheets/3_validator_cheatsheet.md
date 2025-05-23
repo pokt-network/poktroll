@@ -1,5 +1,5 @@
 ---
-title: Validator Cheat Sheet (~15 min
+title: Validator Cheat Sheet (~15 min)
 sidebar_position: 3
 ---
 
