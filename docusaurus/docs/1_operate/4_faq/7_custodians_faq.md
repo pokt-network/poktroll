@@ -20,6 +20,43 @@ This document was last updated on 05/19/2025.
 
 ## Table of Contents <!-- omit in toc -->
 
+- Migration Red0ne's docs
+- Add keplr details + example
+- Update validator docs
+- Add keplr wallet (single or multi)
+- Show how to claim MACT or Beta Tokens
+- Add link to recoverable accounts
+- Add link to accounts we'll auto liquidate
+- Tell people to request getting auto unclaimed
+- Explain unbonding
+- Update docs with `pocketd relayminer relay`
+
+
+
+I was trying to answer some other questions I had, here are some of them:
+
+Q: Is there any on-chain concept of regions?
+A: No. There is no regionality defined on-chain in Shannon.
+
+Q: How are providers selected across regions?
+A: Selection is handled by PATH QoS logic. Gateways select the best and fastest node in-session. Region is not a factor.
+
+Q: What are the current Grove gateway regions?
+A: Same regions as before: USE (US East), SGP (Singapore), EUC (EU Central)
+
+Q: Is there a limit to how many services a supplier can stake? — -> Awaiting confirmation About this one !!!
+??: No known protocol-level hard or soft limit ?
+— There are some test suppliers staked onchain (beta testate) with ~10k service endpoints behind them.
+
+cc @fred | Grove
+
+Hope it helps. Let me know if any answer is incorrrect and I will edit it here also in order to avoid any confusion. 
+
+
+
+
+
+
 - [Terminology](#terminology)
 - [Background and Action Items for Exchanges](#background-and-action-items-for-exchanges)
 - [What **IS NOT** Changing?](#what-is-not-changing)

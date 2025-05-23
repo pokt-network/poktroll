@@ -499,6 +499,9 @@ Initialize your node and configure it to connect to the network:
     SEEDS=$(curl -s "$SEEDS_URL")
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.pocket/config/config.toml
 
+    # Get skip upgrade heights url
+    SKIP_UPGRADES_HEIGHTS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/testnet-beta/skip_upgrade_heights"
+
     # Configure external address for P2P communication
     EXTERNAL_IP=$(curl -s https://api.ipify.org)
     sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.pocket/config/config.toml
@@ -518,6 +521,9 @@ Initialize your node and configure it to connect to the network:
     SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/testnet-alpha/seeds"
     SEEDS=$(curl -s "$SEEDS_URL")
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.pocket/config/config.toml
+
+    # Get skip upgrade heights url
+    SKIP_UPGRADES_HEIGHTS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/testnet-alpha/skip_upgrade_heights"
 
     # Configure external address for P2P communication
     EXTERNAL_IP=$(curl -s https://api.ipify.org)
@@ -539,6 +545,9 @@ Initialize your node and configure it to connect to the network:
     SEEDS=$(curl -s "$SEEDS_URL")
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.pocket/config/config.toml
 
+    # Get skip upgrade heights url
+    SKIP_UPGRADES_HEIGHTS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/mainnet/skip_upgrade_heights"
+
     # Configure external address for P2P communication
     EXTERNAL_IP=$(curl -s https://api.ipify.org)
     sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.pocket/config/config.toml
@@ -549,6 +558,10 @@ Initialize your node and configure it to connect to the network:
 
 ### 9. Set Up `systemd` Service
 
+:::warning `--unsafe-skip-upgrades`
+
+:::
+
 Create a `systemd` service to manage your node. You can customize the service name if you plan to run multiple nodes:
 
 ```bash
@@ -558,6 +571,13 @@ SERVICE_NAME="cosmovisor-pocket"  # or another name like "cosmovisor-testnet"
 # Store the current username for use in the service file
 USERNAME=$(whoami)
 
+# Get skip upgrade heights
+SKIP_UPGRADE=""
+SKIP_UPGRADE_HEIGHTS=$(curl -s "$SKIP_UPGRADES_HEIGHTS_URL")
+if [ ! -z "$SKIP_UPGRADE_HEIGHTS" ]; then
+    SKIP_UPGRADES="--unsafe-skip-upgrades $SKIP_UPGRADE_HEIGHTS"
+fi
+
 sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF
 [Unit]
 Description=Cosmovisor daemon for pocketd
@@ -565,7 +585,7 @@ After=network-online.target
 
 [Service]
 User=${USERNAME}
-ExecStart=/home/${USERNAME}/.local/bin/cosmovisor run start --home=/home/${USERNAME}/.pocket
+ExecStart=/home/${USERNAME}/.local/bin/cosmovisor run start --home=/home/${USERNAME}/.pocket $SKIP_UPGRADES
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity

@@ -7,7 +7,7 @@ sidebar_position: 1
 To install `pocketd` on Linux or MacOS, run:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/install.sh | bash
 ```
 
 :::
@@ -31,7 +31,7 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/i
 Easiest, fastest way to get started that works on both Linux and MacOS.
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/install.sh | bash
 ```
 
 Verify installation:
