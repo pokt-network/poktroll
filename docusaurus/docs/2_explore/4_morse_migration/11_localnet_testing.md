@@ -473,6 +473,8 @@ EOF
 pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_3 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
+_This should error (supplier doesn't exist yet)._.
+
 **Check unstaked balance before claim:**
 
 ```bash
