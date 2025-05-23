@@ -336,9 +336,9 @@ pocketd query bank balance $SHANNON_ADDR_SUPPLIER_1 upokt -o json --node=http://
 
 ```bash
 pocketd tx migration claim-supplier \
-  ${MORSE_ADDR_OWNER_1} pocket-account-${MORSE_ADDR_OWNER_1}.json \
+  ${MORSE_ADDR_SUPPLIER_1} pocket-account-${MORSE_ADDR_OWNER_1}.json \
   ${MORSE_SUPPLIER_1_PREFIX}_claim_supplier_1_supplier_config.yaml \
-  --from=${MORSE_SUPPLIER_1_PREFIX}-claim-supplier-1 \
+  --from=${MORSE_OWNER_1_PREFIX}-claim-owner-1 \
   --node=http://localhost:26657 --chain-id=pocket \
   --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
   --gas=auto --gas-adjustment=1.5 --yes
@@ -367,7 +367,7 @@ pocketd query bank balance $SHANNON_ADDR_OWNER_1 upokt -o json --node=http://127
 **Check supplier's unstaked balance after claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_OWNER_1 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_SUPPLIER_1 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 ---
