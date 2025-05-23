@@ -61,7 +61,7 @@ Script installs dependencies, creates user, sets env vars, configures Cosmovisor
 1. **Download script:**
 
    ```bash
-   curl -O https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/installer/full-node.sh
+   curl -O https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/full-node.sh
    ```
 
 2. **Run as sudo:**
