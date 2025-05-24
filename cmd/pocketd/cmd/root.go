@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/faucet"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
@@ -138,6 +139,7 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	// add relayer command
 	rootCmd.AddCommand(
 		relayercmd.RelayerCmd(),
+		faucet.FaucetCmd(),
 	)
 
 	return rootCmd
