@@ -26,11 +26,11 @@ const (
 
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value.
 	// The default compute unit cost multiplier in pPOKT (i.e. 1/1e6 uPOKT)
-	DefaultComputeUnitsToTokensMultiplier = 42000000
+	DefaultComputeUnitsToTokensMultiplier = 42_000_000
 	ParamComputeUnitsToTokensMultiplier   = "compute_units_to_tokens_multiplier"
 
 	// The default compute unit cost granularity corresponding to 1pPOKT (i.e. 1/1e6 uPOKT)
-	DefaultComputeUnitCostGranularity = 1000000
+	DefaultComputeUnitCostGranularity = 1_000_000
 	ParamComputeUnitCostGranularity   = "compute_unit_cost_granularity"
 )
 

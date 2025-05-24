@@ -25,9 +25,9 @@ var testSharedParams = sharedtypes.Params{
 	ApplicationUnbondingPeriodSessions: 4,
 	GatewayUnbondingPeriodSessions:     4,
 	// compute units to tokens multiplier in pPOKT (i.e. 1/compute_unit_cost_granularity)
-	ComputeUnitsToTokensMultiplier: 42000000,
+	ComputeUnitsToTokensMultiplier: 42_000_000,
 	// compute unit cost granularity is 1pPOKT (i.e. 1/1e6)
-	ComputeUnitCostGranularity: 1000000,
+	ComputeUnitCostGranularity: 1_000_000,
 }
 
 func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {

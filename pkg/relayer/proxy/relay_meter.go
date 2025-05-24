@@ -421,7 +421,7 @@ func filterTypedEvents[T proto.Message](
 //
 //	1000 (difficulty multiplier to get the estimated served relays) *
 //	100 (compute units per relay)
-//	42000000 (compute unit cost in pPOKT) /
+//	42_000_000 (compute unit cost in pPOKT) /
 //	1000000 (convert pPOKT to uPOKT)
 func getSingleMinedRelayCostCoin(
 	sharedParams *sharedtypes.Params,

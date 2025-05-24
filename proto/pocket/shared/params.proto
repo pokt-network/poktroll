@@ -60,21 +60,27 @@ message Params {
 
   // compute_unit_cost_granularity is the fraction of the base unit (uPOKT) used
   // to represent the smallest price of a single compute unit.
-  // 1 uPOKT ALWAYS equals 1 compute_unit_cost_granularity, this allows for configurable
-  // compute_unit_to_tokens_multiplier (i.e. compute unit cost) denominations.
-  // Example compute_unit_cost_granularity to compute_units_to_tokens_multiplier denomination:
-  // +----------------+----------------------------------------------------------------+
-  // | compute_unit_cost_granularity | compute_units_to_tokens_multiplier denomination |
-  // +-------------------------------+-------------------------------------------------+
-  // | 1                             | uPOKT                                           |
-  // | 1000                          | nPOKT                                           |
-  // | 1000000                       | pPOKT                                           |
-  // +-------------------------------+-------------------------------------------------+
-  // It is used to convert claims rewards to the base unit (uPOKT).
-  // (i.e. compute unit cost in uPOKT = compute_units_to_token_multiplier / compute_unit_cost_granularity)
-  // DEV_NOTE: A global network parameter is used instead of an in-code constant
-  // to enable delayed params updates and and prevent affecting settling sessions
-  // from using parameters that were not in effect at the time of the session.
-  // This parameter SHOULD be set to values that are powers of 10.
+  // compute_unit_cost_granularity defines the smallest fraction of uPOKT that can represent
+  // the cost of a single compute unit.
+  //
+  // It acts as a denominator in the formula:
+  //
+  //   compute_unit_cost_in_uPOKT = compute_units_to_tokens_multiplier / compute_unit_cost_granularity
+  //
+  // This enables high-precision pricing of compute units using integer math.
+  // For example:
+  //
+  // +-------------------------------+---------------------------------------------+
+  // | compute_unit_cost_granularity | compute_units_to_tokens_multiplier unit     |
+  // +-------------------------------+---------------------------------------------+
+  // | 1                             | uPOKT                                       |
+  // | 1_000                         | nPOKT (nanoPOKT, 1e-3 uPOKT)                |
+  // | 1_000_000                     | pPOKT (picoPOKT, 1e-6 uPOKT)                |
+  // +-------------------------------+---------------------------------------------+
+  //
+  // ⚠️ Note: This value is a configurable global network parameter (not a constant).
+  // It must be a power of 10, allowing precise denomination shifts without affecting
+  // ongoing sessions. This prevents sessions from settling using parameters that
+  // were not in effect during their creation.
   uint64 compute_unit_cost_granularity = 11 [(gogoproto.jsontag) = "compute_unit_cost_granularity", (gogoproto.moretags) = "yaml:\"compute_unit_cost_granularity\""];
 }
