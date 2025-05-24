@@ -6,6 +6,10 @@ package types
 import (
 	context "context"
 	fmt "fmt"
+	io "io"
+	math "math"
+	math_bits "math/bits"
+
 	github_com_cometbft_cometbft_crypto_ed25519 "github.com/cometbft/cometbft/crypto/ed25519"
 	_ "github.com/cosmos/cosmos-proto"
 	types "github.com/cosmos/cosmos-sdk/types"
@@ -14,14 +18,12 @@ import (
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
 	proto "github.com/cosmos/gogoproto/proto"
-	types2 "github.com/pokt-network/poktroll/x/application/types"
-	types1 "github.com/pokt-network/poktroll/x/shared/types"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	io "io"
-	math "math"
-	math_bits "math/bits"
+
+	types2 "github.com/pokt-network/poktroll/x/application/types"
+	types1 "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -253,6 +255,8 @@ func (m *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 	return 0
 }
 
+// TODO_IN_THIS_PR: Re-evaluate why we have both a shannon signing address and a shannon dest address.
+//
 // MsgClaimMorseAccount is used to:
 //
 // - Execute a claim (one-time minting of tokens on Shannon)
@@ -260,13 +264,13 @@ func (m *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 // - Mint claimed balance to the given Shannon account
 //
 // NOTE:
+// - A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.
 // - The Shannon account specified must be the message signer
 // - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
 type MsgClaimMorseAccount struct {
 	// The bech32-encoded address of the Shannon account which is signing for this message.
 	// This account is liable for any fees incurred by violating the constraints of Morse
-	// account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
-	// claim messages AND has EXACTLY ONE signer.
+	// account/actor claim message fee waiving.
 	ShannonSigningAddress string `protobuf:"bytes,4,opt,name=shannon_signing_address,json=shannonSigningAddress,proto3" json:"shannon_signing_address"`
 	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`
