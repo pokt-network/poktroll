@@ -359,6 +359,13 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			UnstakeSessionEndHeight:   expectedUnstakeSessionEndHeight,
 			DelegateeGatewayAddresses: make([]string, 0),
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+			ServiceUsageMetrics:       make([]*sharedtypes.ServiceUsageMetrics, 0),
+		}
+		for _, svc := range expectedApp.ServiceConfigs {
+			expectedApp.ServiceUsageMetrics = append(
+				expectedApp.ServiceUsageMetrics,
+				&sharedtypes.ServiceUsageMetrics{ServiceId: svc.ServiceId},
+			)
 		}
 
 		// Claim a Morse claimable account.
@@ -416,6 +423,13 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			Stake:                   &expectedAppStake,
 			ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 			UnstakeSessionEndHeight: expectedUnstakeSessionEndHeight,
+			ServiceUsageMetrics:     make([]*sharedtypes.ServiceUsageMetrics, 0),
+		}
+		for _, svc := range expectedApp.ServiceConfigs {
+			expectedApp.ServiceUsageMetrics = append(
+				expectedApp.ServiceUsageMetrics,
+				&sharedtypes.ServiceUsageMetrics{ServiceId: svc.ServiceId},
+			)
 		}
 		appClient := s.AppSuite.GetAppQueryClient(s.T())
 		foundApp, err := appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
@@ -457,6 +471,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			DelegateeGatewayAddresses: make([]string, 0),
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 			ServiceConfigs:            make([]*sharedtypes.ApplicationServiceConfig, 0),
+			ServiceUsageMetrics:       make([]*sharedtypes.ServiceUsageMetrics, 0),
 		}
 
 		// Claim a Morse claimable account.
@@ -488,6 +503,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		expectedApp.DelegateeGatewayAddresses = nil
 		expectedApp.PendingUndelegations = nil
 		expectedApp.ServiceConfigs = nil
+		expectedApp.ServiceUsageMetrics = nil
 
 		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
