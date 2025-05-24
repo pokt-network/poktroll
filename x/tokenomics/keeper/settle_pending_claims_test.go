@@ -192,7 +192,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
+	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(pocket.DenomuPOKT, sdkmath.NewInt(supplierStakeAmt/2))
 
 	// Set the proof parameters such that s.claim requires a proof because:
 	// - proof_request_probability is 0%
@@ -353,7 +353,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	proofParams.ProofRequestProbability = 1
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
+	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(pocket.DenomuPOKT, sdkmath.NewInt(supplierStakeAmt/2))
 	proofParams.ProofMissingPenalty = &belowStakeAmountProofMissingPenalty
 	err := s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
@@ -685,7 +685,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 	// Set the proof missing penalty to be equal to the supplier's stake to make
 	// its stake below the minimum stake requirement and trigger an unstake.
-	proofParams.ProofMissingPenalty = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(supplierStakeAmt)}
+	proofParams.ProofMissingPenalty = &cosmostypes.Coin{Denom: pocket.DenomuPOKT, Amount: sdkmath.NewInt(supplierStakeAmt)}
 	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
@@ -994,12 +994,12 @@ func getClaimedUpokt(
 	claimedUpoktRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToTokenMultiplierRat)
 	claimedUpoktInt := new(big.Int).Div(claimedUpoktRat.Num(), claimedUpoktRat.Denom())
 
-	return cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewIntFromBigInt(claimedUpoktInt))
+	return cosmostypes.NewCoin(pocket.DenomuPOKT, sdkmath.NewIntFromBigInt(claimedUpoktInt))
 }
 
 // uPOKTCoin returns a uPOKT coin with the given amount.
 func uPOKTCoin(amount int64) cosmostypes.Coin {
-	return cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(amount))
+	return cosmostypes.NewCoin(pocket.DenomuPOKT, sdkmath.NewInt(amount))
 }
 
 // createTestActors sets up the necessary test actors (applications and a supplier) with
