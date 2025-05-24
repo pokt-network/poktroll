@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"os"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
@@ -128,12 +129,16 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	}
 
 	// Sign and broadcast the claim Morse account message.
-	_, eitherErr := txClient.SignAndBroadcast(ctx, &msgAuthzExec)
-	err, errCh := eitherErr.SyncOrAsyncError()
+	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, &msgAuthzExec)
+	if err, _ = eitherErr.SyncOrAsyncError(); err != nil {
+		return err
+	}
+
+	txResponseJSON, err := json.MarshalIndent(txResponse, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	// Wait (i.e. block) for an async error, timeout, or the errCh to close on success.
-	return <-errCh
+	logger.Logger.Info().Msg(string(txResponseJSON))
+	return nil
 }

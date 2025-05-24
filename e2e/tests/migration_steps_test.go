@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -322,6 +323,9 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 			res.Stdout,
 		)
 	}
+
+	s.Logf("waiting for 3 seconds for the claim tx to be committed...")
+	time.Sleep(time.Second * 3)
 }
 
 func (s *migrationSuite) AMorsestateexportIsWrittenTo(morseStateExportFile string) {
@@ -543,6 +547,9 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 			res.Stdout,
 		)
 	}
+
+	s.Logf("waiting for 3 seconds for the claim tx to be committed...")
+	time.Sleep(time.Second * 3)
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountExistsOnchain() {
@@ -634,6 +641,9 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 	}, " ")
 	s.TheAuthorityExecutes(importMorseAccountsCmdString)
 	s.ThePocketdBinaryShouldExitWithoutError()
+
+	time.Sleep(time.Second * 3)
+
 	s.TheMorseclaimableaccountsArePersistedOnchain()
 }
 
