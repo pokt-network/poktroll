@@ -49,7 +49,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []uint64{12, 38, 50}
-	globalComputeUnitsToTokensMultiplier := uint64(1)
+	// Set the cost denomination of a single compute unit to pPOKT (i.e. 1/compute_unit_cost_granularity)
+	globalComputeUnitCostGranularity := uint64(1000000)
+	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
@@ -65,7 +67,12 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 
 	// Ensure the claim is within relay mining bounds
 	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
-	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
+	numTokensClaimed := getNumTokensClaimed(
+		numRelays,
+		serviceComputeUnitsPerRelay,
+		globalComputeUnitsToTokensMultiplier,
+		globalComputeUnitCostGranularity,
+	)
 	maxClaimableAmountPerSupplier := appInitialStake.Quo(cosmosmath.NewInt(numSuppliersPerSession))
 	require.GreaterOrEqual(t, maxClaimableAmountPerSupplier.Int64(), numTokensClaimed)
 
@@ -202,7 +209,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 // handle all the relays completed.
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
 	// Test Parameters
-	globalComputeUnitsToTokensMultiplier := uint64(1)
+	// Set the cost denomination of a single compute unit to pPOKT (i.e. 1/compute_unit_cost_granularity)
+	globalComputeUnitCostGranularity := uint64(1000000)
+	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
 	serviceComputeUnitsPerRelay := uint64(100)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
@@ -220,14 +229,24 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Set up the relays to exceed the max claimable amount
 	// Determine the max a supplier can claim
-	maxClaimableAmountPerSupplier := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
+	maxClaimableAmountPerSupplier := getNumTokensClaimed(
+		numRelays,
+		serviceComputeUnitsPerRelay,
+		globalComputeUnitsToTokensMultiplier,
+		globalComputeUnitCostGranularity,
+	)
 	// Figure out what the app's initial stake should be to cover the max claimable amount
 	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
 	appInitialStake := cosmosmath.NewInt(maxClaimableAmountPerSupplier*numSuppliersPerSession + 1)
 	// Increase the number of relay such that the supplier did "free work" and would
 	// be able to claim more than the max claimable amount.
 	numRelays *= 5
-	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
+	numTokensClaimed := getNumTokensClaimed(
+		numRelays,
+		serviceComputeUnitsPerRelay,
+		globalComputeUnitsToTokensMultiplier,
+		globalComputeUnitCostGranularity,
+	)
 
 	// Retrieve the app and supplier module addresses
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
@@ -380,12 +399,18 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []uint64{12, 38, 50}
-	globalComputeUnitsToTokensMultiplier := uint64(1)
+	globalComputeUnitCostGranularity := uint64(1000000)
+	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
-	numTokensClaimed := numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier
-	numTokensClaimedInt := cosmosmath.NewIntFromUint64(numTokensClaimed)
+	numTokensClaimed := getNumTokensClaimed(
+		numRelays,
+		serviceComputeUnitsPerRelay,
+		globalComputeUnitsToTokensMultiplier,
+		globalComputeUnitCostGranularity,
+	)
+	numTokensClaimedInt := cosmosmath.NewIntFromUint64(uint64(numTokensClaimed))
 	proposerConsAddr := sample.ConsAddressBech32()
 	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 
@@ -882,4 +907,22 @@ func computeShare(t *testing.T, amount *big.Rat, sharePercentage float64) cosmos
 	flooredShare := new(big.Int).Quo(mintRat.Num(), mintRat.Denom())
 
 	return cosmosmath.NewIntFromBigInt(flooredShare)
+}
+
+// getNumTokensClaimed calculates the number of tokens claimed
+func getNumTokensClaimed(
+	numRelays,
+	serviceComputeUnitsPerRelay,
+	computeUnitsToTokensMultiplier,
+	computeUnitCostGranularity uint64,
+) int64 {
+	computeUnitCostUpokt := new(big.Rat).SetFrac64(
+		int64(computeUnitsToTokensMultiplier),
+		int64(computeUnitCostGranularity),
+	)
+
+	numComputeUnits := new(big.Rat).SetUint64(numRelays * serviceComputeUnitsPerRelay)
+
+	numTokensClaimedRat := new(big.Rat).Mul(numComputeUnits, computeUnitCostUpokt)
+	return numTokensClaimedRat.Num().Int64() / numTokensClaimedRat.Denom().Int64()
 }
