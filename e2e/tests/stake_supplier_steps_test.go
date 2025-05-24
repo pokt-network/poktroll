@@ -42,6 +42,7 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		ApplicationUnbondingPeriodSessions: uint64(unbondingPeriodSessions),
 		GatewayUnbondingPeriodSessions:     uint64(unbondingPeriodSessions),
 		ComputeUnitsToTokensMultiplier:     sharedtypes.DefaultComputeUnitsToTokensMultiplier,
+		ComputeUnitCostGranularity:         sharedtypes.DefaultComputeUnitCostGranularity,
 	}
 
 	// Convert params struct to the map type expected by

@@ -22,7 +22,8 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
 	// Set expected compute units to be below the proof requirement threshold to only
 	// exercise the probabilistic branch of the #isProofRequired() logic.
-	expectedComputeUnits := (proofParams.ProofRequirementThreshold.Amount.Uint64() - 1) / sharedParams.ComputeUnitsToTokensMultiplier
+	proofRequirementThresholdFractionalUpokt := proofParams.ProofRequirementThreshold.Amount.Uint64() * sharedParams.ComputeUnitCostGranularity
+	expectedComputeUnits := (proofRequirementThresholdFractionalUpokt - 1) / sharedParams.ComputeUnitsToTokensMultiplier
 
 	var (
 		probability = types.DefaultProofRequestProbability

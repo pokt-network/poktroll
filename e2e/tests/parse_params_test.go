@@ -180,6 +180,8 @@ func (s *suite) newSharedMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 			msgUpdateParams.Params.GatewayUnbondingPeriodSessions = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamComputeUnitsToTokensMultiplier:
 			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
+		case sharedtypes.ParamComputeUnitCostGranularity:
+			msgUpdateParams.Params.ComputeUnitCostGranularity = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
