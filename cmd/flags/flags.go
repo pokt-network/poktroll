@@ -21,10 +21,10 @@ const (
 	FlagNoPassphraseUsage = "attempt to use an empty passphrase to decrypt the exported Morse key file for signing"
 
 	FlagInputFile      = "input-file"
-	FlagInputFileShort = ""
-	FlagInputFileUsage = "path to the JSON file containing Morse private keys (hex-encoded) for all accounts to be migrated in bulk"
+	FlagInputFileShort = "Path to input file"
+	FlagInputFileUsage = "An absolute or relative path to an input file that can be used to read data from. This will not be overwritten."
 
 	FlagOutputFile      = "output-file"
-	FlagOutputFileShort = ""
-	FlagOutputFileUsage = "path to the output JSON file where the mapping of Morse accounts to their newly generated Shannon accounts (addresses and private keys in hex) will be written"
+	FlagOutputFileShort = "Path to output file."
+	FlagOutputFileUsage = "An absolute or relative path to an output file that can be used to write data to. Caution that this file may be updated or overwritten if it already exists."
 )

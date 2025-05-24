@@ -49,6 +49,14 @@ func (msg *MsgClaimMorseAccount) ValidateBasic() error {
 		)
 	}
 
+	// Validate the shannonDestAddress is a valid bech32 address.
+	if _, err := sdk.AccAddressFromBech32(msg.ShannonSigningAddress); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"invalid shannonDestAddress address (%s): %s",
+			msg.ShannonSigningAddress, err,
+		)
+	}
+
 	// Validate the Morse signature.
 	if err := msg.ValidateMorseSignature(); err != nil {
 		return err
