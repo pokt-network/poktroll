@@ -11,6 +11,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
@@ -166,13 +167,17 @@ func (k Keeper) createApplication(
 	_ context.Context,
 	msg *types.MsgStakeApplication,
 ) types.Application {
-	return types.Application{
+	application := types.Application{
 		Address:                   msg.Address,
 		Stake:                     msg.Stake,
 		ServiceConfigs:            msg.Services,
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
+		ServiceUsageMetrics:       make([]*sharedtypes.ServiceUsageMetrics, 0),
 	}
+	updateAppServiceUsageMetrics(&application)
+
+	return application
 }
 
 func (k Keeper) updateApplication(
@@ -201,5 +206,36 @@ func (k Keeper) updateApplication(
 	}
 	app.ServiceConfigs = msg.Services
 
+	updateAppServiceUsageMetrics(app)
+
 	return nil
+}
+
+// updateAppServiceUsageMetrics ensures that the application has usage metrics tracking for all its services
+// - Iterates through all service configs in the application
+// - Initializes metrics for newly added services with zero values
+// - Maintains existing metrics for services that already have them
+func updateAppServiceUsageMetrics(application *types.Application) {
+	for _, service := range application.ServiceConfigs {
+		serviceUsageMetricsExists := false
+		for _, serviceUsageMetrics := range application.ServiceUsageMetrics {
+			if service.ServiceId == serviceUsageMetrics.ServiceId {
+				serviceUsageMetricsExists = true
+				break
+			}
+		}
+
+		// Initialize zero metrics for newly staked services
+		// This ensures all services have tracking from the beginning
+		if !serviceUsageMetricsExists {
+			application.ServiceUsageMetrics = append(
+				application.ServiceUsageMetrics,
+				&sharedtypes.ServiceUsageMetrics{
+					ServiceId:         service.ServiceId,
+					TotalRelays:       0,
+					TotalComputeUnits: 0,
+				},
+			)
+		}
+	}
 }

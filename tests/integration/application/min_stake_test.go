@@ -262,6 +262,7 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		UnstakeSessionEndHeight:   uint64(sessionEndHeight),
+		ServiceUsageMetrics:       make([]*sharedtypes.ServiceUsageMetrics, 0),
 	}
 }
 

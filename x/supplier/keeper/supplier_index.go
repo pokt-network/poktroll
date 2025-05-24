@@ -168,6 +168,30 @@ func (k Keeper) getSupplierServiceConfigUpdates(
 	return serviceConfigUpdates
 }
 
+// indexSupplierServiceUsageMetrics stores service usage metrics for a supplier in the index
+// - Creates or updates metrics entries for each service the supplier provides
+// - Organizes metrics by supplier address and service ID for efficient retrieval
+func (k Keeper) indexSupplierServiceUsageMetrics(
+	ctx context.Context,
+	supplier sharedtypes.Supplier,
+) {
+	appServiceUsageMetricsStore := k.getSupplierServiceUsageMetricsStore(ctx)
+
+	for _, serviceUsageMetrics := range supplier.ServiceUsageMetrics {
+		appServiceUsageMetrics := &sharedtypes.SupplierServiceUsageMetrics{
+			SupplierAddress:     supplier.OperatorAddress,
+			ServiceUsageMetrics: serviceUsageMetrics,
+		}
+
+		supplierServiceUsageMetricsBz := k.cdc.MustMarshal(appServiceUsageMetrics)
+
+		appServiceUsageMetricsStore.Set(
+			types.ServiceUsageMetricsKey(supplier.OperatorAddress, serviceUsageMetrics.ServiceId),
+			supplierServiceUsageMetricsBz,
+		)
+	}
+}
+
 // removeSupplierServiceConfigUpdateIndexes removes all service configuration indexes for a supplier.
 //
 // This function is called when a supplier is completely removed from the state,
@@ -239,6 +263,24 @@ func (k Keeper) removeSupplierUnstakingHeightIndex(
 
 	supplierUnstakeKey := types.SupplierOperatorKey(supplierOperatorAddress)
 	supplierUnstakingHeightStore.Delete(supplierUnstakeKey)
+}
+
+// removeSupplierServiceUsageMetricsIndex removes all service usage metrics for a supplier
+// - Deletes all metrics entries associated with the specified supplier
+// - Called when a supplier is completely removed from state after unbonding
+// - Ensures clean state management by removing orphaned metrics data
+func (k Keeper) removeSupplierServiceUsageMetricsIndex(
+	ctx context.Context,
+	supplierOperatorAddr string,
+) {
+	supplierServiceUsageMetricsStore := k.getSupplierServiceUsageMetricsStore(ctx)
+	supplierServiceUsageMetricsIterator := k.getSupplierServiceUsageMetricsIterator(ctx, supplierOperatorAddr)
+
+	for ; supplierServiceUsageMetricsIterator.Valid(); supplierServiceUsageMetricsIterator.Next() {
+		supplierServiceUsageMetricsStore.Delete(
+			supplierServiceUsageMetricsIterator.Key(),
+		)
+	}
 }
 
 // MigrateSupplierServiceConfigIndexes migrates the supplier service config indexes

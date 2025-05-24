@@ -1,15 +1,16 @@
 package keeper
 
-// ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
-// │ 🗺️  Application Index Map                                                                     │
-// ├───────────────────────────────────────────────────────────────────────────────────────────────┤
-// │ Store (bucket)                              Key                              → Value          │
-// │───────────────────────────────────────────────────────────────────────────────────────────────│
-// │ applicationUnstakingStore                   AK                               → AK             │
-// │ applicationTransferStore                    AK                               → AK             │
-// │ delegationStore                             DK (GatewayAddr || AppAddr)      → AK             │
-// │ undelegationStore                           UK (AppAddr   || GatewayAddr)    → undelegationBz │
-// └───────────────────────────────────────────────────────────────────────────────────────────────┘
+// ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+// │ 🗺️  Application Index Map                                                                                    │
+// ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+// │ Store (bucket)                              Key                           → Value                            │
+// │──────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+// │ applicationUnstakingStore                   AK                            → AK                               │
+// │ applicationTransferStore                    AK                            → AK                               │
+// │ delegationStore                             DK (GatewayAddr || AppAddr)   → AK                               │
+// │ undelegationStore                           UK (AppAddr   || GatewayAddr) → undelegationBz                   │
+// │ serviceUsageMetricsStore                    UK (AppAddr   || ServiceId)   → applicationServiceUsageMetricsBz │
+// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 //
 // Legend
 //   ||                  : byte-level concatenation / prefix.
@@ -18,19 +19,23 @@ package keeper
 //                         = "Application/delegation/"   || gatewayAddr || appAddr.
 //   UK (UndelegationKey): types.UndelegationKey(appAddr, gatewayAddr)
 //                         = "Application/undelegation/" || appAddr     || gatewayAddr.
-//   undelegationBz       : protobuf-marshaled types.PendingUndelegation.
+//   undelegationBz      : protobuf-marshaled types.PendingUndelegation.
+//
+//   applicationServiceUsageMetricsBz : protobuf-marshaled types.ApplicationServiceUsageMetrics.
 //
 // Fast-path look-ups
 //   • Unstaking set           → iterate applicationUnstakingStore keys.          (①)
 //   • Pending transfers       → iterate applicationTransferStore keys.           (②)
 //   • Delegated apps (by GW)  → delegationStore prefix-scan GatewayAddr.         (③)
 //   • Pending undelegations   → undelegationStore prefix-scan AppAddr/Gateway.   (④)
+//   • Service usage metrics   → serviceUsageMetricsStore prefix-scan AppAddr.    (⑤)
 //
 // Index counts
 //   ① Unstaking applications
 //   ② Applications with pending transfers
 //   ③ Application ↔ Gateway delegations
 //   ④ Pending undelegations
+//   ⑤ Service usage metrics
 
 import (
 	"context"
@@ -163,6 +168,30 @@ func (k Keeper) indexApplicationUndelegations(ctx context.Context, app types.App
 	}
 }
 
+// indexApplicationServiceUsageMetrics stores service usage metrics for an application in the index
+// - Creates or updates metrics entries for each service the application uses
+// - Organizes metrics by application address and service ID for efficient retrieval
+func (k Keeper) indexApplicationServiceUsageMetrics(
+	ctx context.Context,
+	app types.Application,
+) {
+	appServiceUsageMetricsStore := k.getApplicationServiceUsageMetricsStore(ctx)
+
+	for _, serviceUsageMetrics := range app.ServiceUsageMetrics {
+		appServiceUsageMetrics := &types.ApplicationServiceUsageMetrics{
+			ApplicationAddress:  app.Address,
+			ServiceUsageMetrics: serviceUsageMetrics,
+		}
+
+		appServiceUsageMetricsBz := k.cdc.MustMarshal(appServiceUsageMetrics)
+
+		appServiceUsageMetricsStore.Set(
+			types.ServiceUsageMetricsKey(app.Address, serviceUsageMetrics.ServiceId),
+			appServiceUsageMetricsBz,
+		)
+	}
+}
+
 // Removes an application from the unstaking index.
 //
 // Usage:
@@ -248,4 +277,21 @@ func (k Keeper) removeApplicationUndelegationIndex(
 ) {
 	appDelegationStore := k.getDelegationStore(ctx)
 	appDelegationStore.Delete(undelegationKey)
+}
+
+// removeApplicationServiceUsageMetricsIndex removes all service usage metrics for an application
+// - Deletes all metrics entries associated with the specified application
+// - Called when an application is completely removed from state after unbonding
+// - Ensures clean state management by removing orphaned metrics data
+func (k Keeper) removeApplicationServiceUsageMetricsIndex(
+	ctx context.Context,
+	application types.Application,
+) {
+	appServiceUsageMetricsStore := k.getApplicationServiceUsageMetricsStore(ctx)
+
+	for _, appServiceUsageMetrics := range application.ServiceUsageMetrics {
+		appServiceUsageMetricsStore.Delete(
+			types.ServiceUsageMetricsKey(application.Address, appServiceUsageMetrics.ServiceId),
+		)
+	}
 }

@@ -48,6 +48,10 @@ message Application {
 
   // Information about pending application transfers
   PendingApplicationTransfer pending_transfer = 7;
+
+  // service_usage_metrics tracks relay volume and compute units consumed per service
+  // It is updated when claims are settled in the tokenomics module
+  repeated pocket.shared.ServiceUsageMetrics service_usage_metrics = 8;
 }
 
 // UndelegatingGatewayList is used as the Value of `pending_undelegations`.
@@ -74,4 +78,11 @@ message PendingUndelegation {
 
   // Address of the gateway that the application is undelegating from.
   string gateway_address = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+// ApplicationServiceUsageMetrics tracks service usage for a specific application
+message ApplicationServiceUsageMetrics {
+  string application_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  pocket.shared.ServiceUsageMetrics service_usage_metrics = 2;
 }

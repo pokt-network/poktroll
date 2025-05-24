@@ -57,6 +57,11 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				Address:        shannonDestAddr,
 				Stake:          &expectedStake,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
+				ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
+					{
+						ServiceId: s.appServiceConfig.ServiceId,
+					},
+				},
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{
@@ -143,6 +148,10 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				Address:        shannonDestAddr,
 				Stake:          &expectedFinalStake,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
+				ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
+					{ServiceId: "nosvc"},
+					{ServiceId: s.appServiceConfig.ServiceId},
+				},
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{

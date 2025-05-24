@@ -3,11 +3,12 @@ package keeper_test
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/big"
 	"testing"
 
 	"cosmossdk.io/depinject"
-	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -44,7 +45,12 @@ const computeUnitsPerRelay = 1
 
 var (
 	// Test settlements with claims from multiple services
-	testServiceIds   = []string{"svc1", "svc2", "svc3"}
+	testServiceIds             = []string{"svc1", "svc2", "svc3"}
+	initialServiceUsageMetrics = map[string]uint64{
+		"svc1": 50,
+		"svc2": 60,
+		// svc3 is a new service, so no initial usage metrics
+	}
 	supplierStakeAmt = 2 * suppliertypes.DefaultMinStake.Amount.Int64()
 )
 
@@ -186,7 +192,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
+	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, sdkmath.NewInt(supplierStakeAmt/2))
 
 	// Set the proof parameters such that s.claim requires a proof because:
 	// - proof_request_probability is 0%
@@ -347,7 +353,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	proofParams.ProofRequestProbability = 1
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
+	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, sdkmath.NewInt(supplierStakeAmt/2))
 	proofParams.ProofMissingPenalty = &belowStakeAmountProofMissingPenalty
 	err := s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
@@ -386,7 +392,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Slashing should have occurred without unstaking the supplier.
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
-	require.Equal(t, math.NewInt(supplierStakeAmt/2), slashedSupplier.Stake.Amount)
+	require.Equal(t, sdkmath.NewInt(supplierStakeAmt/2), slashedSupplier.Stake.Amount)
 	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
 
 	// Confirm an expiration event was emitted
@@ -679,7 +685,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 	// Set the proof missing penalty to be equal to the supplier's stake to make
 	// its stake below the minimum stake requirement and trigger an unstake.
-	proofParams.ProofMissingPenalty = &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStakeAmt)}
+	proofParams.ProofMissingPenalty = &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: sdkmath.NewInt(supplierStakeAmt)}
 	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
@@ -690,7 +696,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	//   despite having multiple expired claims for the same supplier
 	expiredClaimsMap := make(map[string]*prooftypes.Claim, numExpiredClaims)
 	for range numExpiredClaims {
-		appStake := types.NewCoin("upokt", math.NewInt(1000000))
+		appStake := types.NewCoin("upokt", sdkmath.NewInt(1000000))
 		appAddr := sample.AccAddress()
 		app := apptypes.Application{
 			Address:        appAddr,
@@ -730,7 +736,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Slashing should have occurred and the supplier is unstaked but still unbonding.
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
-	require.Equal(t, math.NewInt(0), slashedSupplier.Stake.Amount)
+	require.Equal(t, sdkmath.NewInt(0), slashedSupplier.Stake.Amount)
 	require.Equal(t, uint64(upcomingSessionEndHeight), slashedSupplier.UnstakeSessionEndHeight)
 	require.True(t, slashedSupplier.IsUnbonding())
 
@@ -781,9 +787,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	// DEV_NOTE: The slashing flow skips populating all the supplier's history for performance reasons.
 	// The slashed supplier Services property already has the relevant active service configs at the time of the claimed session end height.
-	slashedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
+	dehydratedSlashedSupplier := slashedSupplier
+	dehydratedSlashedSupplier.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
+	dehydratedSlashedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
-		Supplier:           &slashedSupplier,
+		Supplier:           &dehydratedSlashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   upcomingSessionEndHeight,
 		UnbondingEndHeight: upcomingSessionEndHeight,
@@ -803,7 +811,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	// Validate the EventSupplierUnbondingEnd event.
 	expectedUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
-		Supplier:           &slashedSupplier,
+		Supplier:           &dehydratedSlashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   upcomingSessionEndHeight,
 		UnbondingEndHeight: upcomingSessionEndHeight,
@@ -882,6 +890,80 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 	}
 }
 
+func (s *TestSuite) TestSettlePendingClaims_ServiceUsageMetrics() {
+	// Retrieve default values
+	t := s.T()
+	ctx := s.ctx
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	// All claims have the same session end height, use the first one
+	sessionEndHeight := s.claims[0].SessionHeader.SessionEndBlockHeight
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+
+	// Set the proof parameters such that s.claim DOES NOT require a proof because:
+	// - proof_request_probability is 0% AND
+	// - proof_requirement_threshold exceeds s.claim's compute units
+	proofRequirementThreshold := uPOKTCoin(math.MaxInt64)
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	err := s.keepers.ProofKeeper.SetParams(ctx, proofParams)
+	require.NoError(t, err)
+
+	// Upsert the claims
+	for _, claim := range s.claims {
+		s.keepers.UpsertClaim(ctx, claim)
+	}
+
+	// Settle pending claims after proof window closes
+	// Expectation: All claims should be claimed.
+	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+
+	// Get the supplier for the claim
+	supplier, found := s.keepers.GetSupplier(ctx, s.claims[0].SupplierOperatorAddress)
+	require.True(t, found)
+
+	for i, claim := range s.claims {
+		// Get the application for the claim
+		app, found := s.keepers.GetApplication(ctx, claim.SessionHeader.ApplicationAddress)
+		require.True(t, found)
+
+		serviceId := claim.SessionHeader.ServiceId
+
+		// Get the service usage metrics for the claim
+		serviceUsageMetrics := app.ServiceUsageMetrics[0]
+		require.NotNil(t, serviceUsageMetrics)
+
+		numEstimatedRelays, err := claim.GetNumEstimatedRelays(s.relayMiningDifficulties[i])
+		require.NoError(t, err)
+
+		numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(s.relayMiningDifficulties[i])
+		require.NoError(t, err)
+
+		// Validate that the service usage metrics were updated correctly
+		appExpectedServiceUsageMetrics := &sharedtypes.ServiceUsageMetrics{
+			ServiceId:         serviceId,
+			TotalRelays:       initialServiceUsageMetrics[serviceId] + numEstimatedRelays,
+			TotalComputeUnits: initialServiceUsageMetrics[serviceId] + numEstimatedComputeUnits,
+		}
+		require.Equal(t, appExpectedServiceUsageMetrics, serviceUsageMetrics)
+
+		// Validate that the supplier's service usage metrics were updated correctly
+		for _, supplierServiceUsageMetrics := range supplier.ServiceUsageMetrics {
+			if supplierServiceUsageMetrics.ServiceId == serviceId {
+				supplierExpectedServiceUsageMetrics := &sharedtypes.ServiceUsageMetrics{
+					ServiceId:         serviceId,
+					TotalRelays:       initialServiceUsageMetrics[serviceId] + numEstimatedRelays,
+					TotalComputeUnits: initialServiceUsageMetrics[serviceId] + numEstimatedComputeUnits,
+				}
+				require.Equal(t, supplierExpectedServiceUsageMetrics, supplierServiceUsageMetrics)
+			}
+		}
+	}
+}
+
 // getEstimatedComputeUnits returns the estimated number of compute units given
 // the number of claimed compute units and the relay mining difficulty.
 func getEstimatedComputeUnits(
@@ -912,12 +994,12 @@ func getClaimedUpokt(
 	claimedUpoktRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToTokenMultiplierRat)
 	claimedUpoktInt := new(big.Int).Div(claimedUpoktRat.Num(), claimedUpoktRat.Denom())
 
-	return cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(claimedUpoktInt))
+	return cosmostypes.NewCoin(volatile.DenomuPOKT, sdkmath.NewIntFromBigInt(claimedUpoktInt))
 }
 
 // uPOKTCoin returns a uPOKT coin with the given amount.
 func uPOKTCoin(amount int64) cosmostypes.Coin {
-	return cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(amount))
+	return cosmostypes.NewCoin(volatile.DenomuPOKT, sdkmath.NewInt(amount))
 }
 
 // createTestActors sets up the necessary test actors (applications and a supplier) with
@@ -945,7 +1027,7 @@ func (s *TestSuite) createTestActors(
 		preGeneratedAccts,
 	).String()
 
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := types.NewCoin("upokt", sdkmath.NewInt(1000000))
 
 	// Setup the test for each service:
 	// - Create and store the service in the service keeper.
@@ -985,12 +1067,19 @@ func (s *TestSuite) createTestActors(
 			Address:        appAddr,
 			Stake:          &appStake,
 			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
+			ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
+				{
+					ServiceId:         serviceId,
+					TotalRelays:       initialServiceUsageMetrics[serviceId],
+					TotalComputeUnits: initialServiceUsageMetrics[serviceId] * computeUnitsPerRelay,
+				},
+			},
 		}
 		s.keepers.SetApplication(s.ctx, app)
 	}
 
 	// Make the supplier staked for each tested service.
-	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStakeAmt))
+	supplierStake := types.NewCoin("upokt", sdkmath.NewInt(supplierStakeAmt))
 	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:         supplierOwnerAddr,
@@ -998,6 +1087,17 @@ func (s *TestSuite) createTestActors(
 		Stake:                &supplierStake,
 		Services:             supplierServiceConfigs,
 		ServiceConfigHistory: supplierServiceConfigHistory,
+		ServiceUsageMetrics:  make([]*sharedtypes.ServiceUsageMetrics, 0),
+	}
+	for serviceId, usage := range initialServiceUsageMetrics {
+		supplier.ServiceUsageMetrics = append(
+			supplier.ServiceUsageMetrics,
+			&sharedtypes.ServiceUsageMetrics{
+				ServiceId:         serviceId,
+				TotalRelays:       usage,
+				TotalComputeUnits: usage * computeUnitsPerRelay,
+			},
+		)
 	}
 	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, supplier)
 

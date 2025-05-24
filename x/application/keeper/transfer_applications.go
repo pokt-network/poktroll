@@ -50,6 +50,10 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		// Service usage metrics are stored separately from the application for efficiency,
+		// but need to be included in transfers. Hydrate them here to ensure complete transfer
+		// of all application data, including relay volume and compute unit metrics.
+		k.hydrateApplicationServiceUsageMetrics(ctx, &srcApp)
 
 		// Ignore applications that have not initiated the transfer action.
 		if !srcApp.HasPendingTransfer() {
@@ -145,6 +149,7 @@ func (k Keeper) transferApplication(
 		mergeAppDelegatees(&srcApp, &dstApp)
 		mergeAppPendingUndelegations(&srcApp, &dstApp)
 		mergeAppServiceConfigs(&srcApp, &dstApp)
+		mergeAppServiceUsageMetrics(&srcApp, &dstApp)
 
 		logger.Info(fmt.Sprintf(
 			"transferring application from %q to existing application %q",
@@ -261,5 +266,19 @@ func mergeAppServiceConfigs(srcApp, dstApp *apptypes.Application) {
 		if _, ok := serviceIDSet[srcServiceConfig.GetServiceId()]; !ok {
 			dstApp.ServiceConfigs = append(dstApp.ServiceConfigs, srcServiceConfig)
 		}
+	}
+}
+
+// mergeAppServiceUsageMetrics combines service usage metrics during application transfer
+// - Transfers all service usage history from source application to destination
+// - Adds up metrics for services that exist in both applications
+// - Ensures no service usage statistics are lost during ownership transfer
+func mergeAppServiceUsageMetrics(srcApp, dstApp *apptypes.Application) {
+	for _, srcServiceUsageMetrics := range srcApp.ServiceUsageMetrics {
+		dstApp.UpdateServiceUsageMetrics(
+			srcServiceUsageMetrics.ServiceId,
+			srcServiceUsageMetrics.TotalRelays,
+			srcServiceUsageMetrics.TotalComputeUnits,
+		)
 	}
 }

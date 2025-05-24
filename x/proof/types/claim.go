@@ -42,6 +42,25 @@ func (claim *Claim) GetNumEstimatedComputeUnits(
 	return new(big.Int).Div(numerator, denominator).Uint64(), nil
 }
 
+// GetNumEstimatedRelays returns the claim's estimated number of relays.
+func (claim *Claim) GetNumEstimatedRelays(
+	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
+) (numEstimatedRelays uint64, err error) {
+	numRelays, err := claim.GetNumRelays()
+	if err != nil {
+		return 0, err
+	}
+
+	difficultyMultiplier := protocol.GetRelayDifficultyMultiplier(relayMiningDifficulty.GetTargetHash())
+	numRelaysRat := new(big.Rat).SetUint64(numRelays)
+	numEstimatedRelaysRat := new(big.Rat).Mul(difficultyMultiplier, numRelaysRat)
+
+	numerator := numEstimatedRelaysRat.Num()
+	denominator := numEstimatedRelaysRat.Denom()
+
+	return new(big.Int).Div(numerator, denominator).Uint64(), nil
+}
+
 // GetClaimeduPOKT returns the claim's reward based on the relay mining difficulty
 // and global network parameters.
 func (claim *Claim) GetClaimeduPOKT(

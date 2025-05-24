@@ -81,6 +81,10 @@ const (
 
 	// ServiceConfigUpdateDeactivationHeightKeyPrefix is the prefix for indexing service configs by deactivation height
 	ServiceConfigUpdateDeactivationHeightKeyPrefix = "ServiceConfigUpdate/deactivation_height/"
+
+	// ServiceUsageMetricsKeyPrefix is the prefix for indexing service usage metrics by supplier
+	// - Stores the accumulated relay and compute unit metrics for each service
+	ServiceUsageMetricsKeyPrefix = "Supplier/service_usage_metrics/"
 )
 
 // SupplierOperatorKey returns the store key to retrieve a Supplier from the index fields
@@ -172,6 +176,23 @@ func ServiceConfigUpdateDeactivationHeightKey(serviceConfigUpdate sharedtypes.Se
 
 	activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
 	key = append(key, activationHeightKey...)
+
+	return key
+}
+
+// ServiceUsageMetricsKey returns the store key for supplier service usage metrics
+// - Key format: Supplier/service_usage_metrics/<OperatorAddr>/<ServiceId>/
+// - <OperatorAddr>: bech-32 or hex-encoded supplier operator address (UTF-8 bytes)
+// - <ServiceId>: unique identifier for the service (UTF-8 bytes)
+// Used to store and retrieve metrics about a supplier's service activity
+func ServiceUsageMetricsKey(operatorAddress, serviceId string) []byte {
+	var key []byte
+
+	supplierOperatorAddressKey := StringKey(operatorAddress)
+	key = append(key, supplierOperatorAddressKey...)
+
+	serviceIdKey := StringKey(serviceId)
+	key = append(key, serviceIdKey...)
 
 	return key
 }

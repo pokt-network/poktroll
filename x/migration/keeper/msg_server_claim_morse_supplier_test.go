@@ -74,6 +74,13 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		Services:                testSupplierServices,
 		ServiceConfigHistory:    sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(shannonDestAddr, testSupplierServices, 1, 0),
 		UnstakeSessionEndHeight: 0,
+		ServiceUsageMetrics:     make([]*sharedtypes.ServiceUsageMetrics, 0),
+	}
+	for _, svc := range testSupplierServices {
+		expectedSupplier.ServiceUsageMetrics = append(
+			expectedSupplier.ServiceUsageMetrics,
+			&sharedtypes.ServiceUsageMetrics{ServiceId: svc.ServiceId},
+		)
 	}
 
 	ctrl := gomock.NewController(t)

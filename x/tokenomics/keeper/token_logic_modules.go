@@ -212,8 +212,14 @@ func (k Keeper) ProcessTokenLogicModules(
 		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
 
+		// Create a dehydrated application copy without service usage metrics to add to the event.
+		// This prevents bloating the event with potentially large metrics data
+		// while preserving all other application information
+		dehydratedApplication := *application
+		dehydratedApplication.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
+
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-			Application:        application,
+			Application:        &dehydratedApplication,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -226,6 +232,22 @@ func (k Keeper) ProcessTokenLogicModules(
 			return err
 		}
 	}
+
+	numEstimatedComputeUnits, err := pendingResult.Claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+	if err != nil {
+		return err
+	}
+
+	numEstimatedRelays, err := pendingResult.Claim.GetNumEstimatedRelays(relayMiningDifficulty)
+	if err != nil {
+		return err
+	}
+
+	// Update service usage metrics for the application
+	application.UpdateServiceUsageMetrics(service.Id, numEstimatedRelays, numEstimatedComputeUnits)
+
+	// Update service usage metrics for the supplier
+	supplier.UpdateServiceUsageMetrics(service.Id, numEstimatedRelays, numEstimatedComputeUnits)
 
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite): If the application stake has dropped to (near?) zero:
 	// - Unstake it

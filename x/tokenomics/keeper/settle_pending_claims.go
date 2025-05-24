@@ -626,8 +626,11 @@ func (k Keeper) slashSupplierStake(
 			serviceConfig.DeactivationHeight = unstakeSessionEndHeight
 		}
 
+		dehydratedSupplier := *supplierToSlash
+		dehydratedSupplier.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
+
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:         supplierToSlash,
+			Supplier:         &dehydratedSupplier,
 			Reason:           suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight: unstakeSessionEndHeight,
 			// Handling unbonding for slashed suppliers:
