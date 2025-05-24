@@ -1,27 +1,30 @@
 package keeper
 
-// ┌───────────────────────────────────────────────────────────────────────────────────────┐
-// │ 🗺️  Supplier / Service-Config Index Map                                               │
-// ├───────────────────────────────────────────────────────────────────────────────────────┤
-// │ Store (bucket)                                 Key                     → Value        │
-// │───────────────────────────────────────────────────────────────────────────────────────│
-// │ serviceConfigUpdateStore                       PK                      → cfgBz        │
-// │ supplierServiceConfigUpdateStore               SupplierAddr || PK      → PK           │
-// │ serviceConfigUpdateActivationHeightStore       ActHeight || PK         → PK           │
-// │ serviceConfigUpdateDeactivationHeightStore     DeactHeight || PK       → PK           │
-// │ supplierUnstakingHeightStore                   SupplierAddr            → []byte(addr) │
-// └───────────────────────────────────────────────────────────────────────────────────────┘
+// ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+// │ 🗺️  Supplier / Service-Config Index Map                                                                       │
+// ├───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+// │ Store (bucket)                                 Key                            → Value                         │
+// │───────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+// │ serviceConfigUpdateStore                       PK                             → cfgBz                         │
+// │ supplierServiceConfigUpdateStore               SupplierAddr || PK             → PK                            │
+// │ serviceConfigUpdateActivationHeightStore       ActHeight || PK                → PK                            │
+// │ serviceConfigUpdateDeactivationHeightStore     DeactHeight || PK              → PK                            │
+// │ supplierUnstakingHeightStore                   SupplierAddr                   → []byte(addr)                  │
+// │ serviceUsageMetricsStore                       SK (SupplierAddr || ServiceId) → supplierServiceUsageMetricsBz │
+// └───────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 //
 // Legend
 //   ||          : byte-level concatenation / prefix.
-//   PK         : types.ServiceConfigUpdateKey(...).
-//   cfgBz      : protobuf-marshalled sharedtypes.ServiceConfigUpdate.
+//   PK          : types.ServiceConfigUpdateKey(...).
+//   SK          : types.ServiceUsageMetricsKey(...).
+//   cfgBz       : protobuf-marshalled sharedtypes.ServiceConfigUpdate.
 //
 // Fast-path look-ups
 //   • SupplierAddr  → supplierServiceConfigUpdateStore → [PK] → serviceConfigUpdateStore.
 //   • Height (act)  → activationHeightStore            → [PK] → serviceConfigUpdateStore.
 //   • Height (deact)→ deactivationHeightStore          → [PK] → serviceConfigUpdateStore.
 //   • Unbonding set → iterate supplierUnstakingHeightStore keys.
+//   • Service usage metrics → iterate serviceUsageMetricsStore keys.
 //
 // Index counts
 //   ① Primary data
@@ -29,6 +32,7 @@ package keeper
 //   ③ By act-height
 //   ④ By deact-height
 //   ⑤ Unstaking suppliers
+//   ⑥ Service usage metrics
 
 import (
 	"context"

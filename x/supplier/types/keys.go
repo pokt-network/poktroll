@@ -6,31 +6,35 @@ package types
 // │ Function / Constant                      Key Layout                                │
 // │────────────────────────────────────────────────────────────────────────────────────│
 // │ SupplierOperatorKey()                    Supplier/operator_address/                │
-// │                                         └── <SupplierAddr>/                        │
+// │                                          └── <SupplierAddr>/                       │
 // │                                                                                    │
 // │ SupplierUnstakingHeightKeyPrefix +       Supplier/unbonding_height/                │
-// │                                         └── <SupplierAddr>/                        │
+// │                                          └── <SupplierAddr>/                       │
 // │                                                                                    │
 // │ ServiceConfigUpdateKey()                 ServiceConfigUpdate/service_id/           │
-// │                                         └── <ServiceID>/                           │
+// │                                          └── <ServiceID>/                          │
 // │                                             <ActHeight>/                           │
 // │                                             <SupplierAddr>/                        │
 // │                                                                                    │
 // │ SupplierServiceConfigUpdateKey()         ServiceConfigUpdate/operator_address/     │
-// │                                         └── <SupplierAddr>/                        │
+// │                                          └── <SupplierAddr>/                       │
 // │                                             <ServiceID>/                           │
 // │                                             <ActHeight>/                           │
 // │                                                                                    │
 // │ ServiceConfigUpdateActivationHeightKey() ServiceConfigUpdate/activation_height/    │
-// │                                         └── <ActHeight>/                           │
+// │                                          └── <ActHeight>/                          │
 // │                                             <ServiceID>/                           │
 // │                                             <SupplierAddr>/                        │
 // │                                                                                    │
 // │ ServiceConfigUpdateDeactivationHeightKey() ServiceConfigUpdate/deactivation_height/│
-// │                                         └── <DeactHeight>/                         │
-// │                                             <ServiceID>/                           │
-// │                                             <SupplierAddr>/                        │
-// │                                             <ActHeight>/                           │
+// │                                            └── <DeactHeight>/                      │
+// │                                                <ServiceID>/                        │
+// │                                                <SupplierAddr>/                     │
+// │                                                <ActHeight>/                        │
+// │                                                                                    │
+// │ ServiceUsageMetricsKey()                   Supplier/service_usage_metrics/         │
+// │                                            └── <SupplierAddr>/                     │
+// │                                                <ServiceID>/                        │
 // └────────────────────────────────────────────────────────────────────────────────────┘
 //
 // Legend

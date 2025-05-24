@@ -64,9 +64,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				Stake:          &expectedStake,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 				ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
-					{
-						ServiceId: s.appServiceConfig.ServiceId,
-					},
+					{ServiceId: s.appServiceConfig.ServiceId},
 				},
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)

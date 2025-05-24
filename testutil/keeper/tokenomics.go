@@ -142,11 +142,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Stake:          application.Stake,
 		ServiceConfigs: application.ServiceConfigs,
 		ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
-			{
-				ServiceId:         service.Id,
-				TotalRelays:       0,
-				TotalComputeUnits: 0,
-			},
+			{ServiceId: service.Id},
 		},
 	}
 

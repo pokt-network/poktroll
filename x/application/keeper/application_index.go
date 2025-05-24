@@ -9,17 +9,19 @@ package keeper
 // │ applicationTransferStore                    AK                            → AK                               │
 // │ delegationStore                             DK (GatewayAddr || AppAddr)   → AK                               │
 // │ undelegationStore                           UK (AppAddr   || GatewayAddr) → undelegationBz                   │
-// │ serviceUsageMetricsStore                    UK (AppAddr   || ServiceId)   → applicationServiceUsageMetricsBz │
+// │ serviceUsageMetricsStore                    SK (AppAddr   || ServiceId)   → applicationServiceUsageMetricsBz │
 // └──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 //
 // Legend
-//   ||                  : byte-level concatenation / prefix.
-//   AK (ApplicationKey) : types.ApplicationKey(appAddr) = "Application/address/" || appAddr.
-//   DK (DelegationKey)  : types.DelegationKey(gatewayAddr, appAddr)
-//                         = "Application/delegation/"   || gatewayAddr || appAddr.
-//   UK (UndelegationKey): types.UndelegationKey(appAddr, gatewayAddr)
-//                         = "Application/undelegation/" || appAddr     || gatewayAddr.
-//   undelegationBz      : protobuf-marshaled types.PendingUndelegation.
+//   ||                               : byte-level concatenation / prefix.
+//   AK (ApplicationKey)              : types.ApplicationKey(appAddr) = "Application/address/" || appAddr.
+//   DK (DelegationKey)               : types.DelegationKey(gatewayAddr, appAddr)
+//                                      = "Application/delegation/"   || gatewayAddr || appAddr.
+//   UK (UndelegationKey)             : types.UndelegationKey(appAddr, gatewayAddr)
+//                                      = "Application/undelegation/" || appAddr     || gatewayAddr.
+//   SK (ServiceUsageMetricsKey)      : types.ServiceUsageMetricsKey(appAddr, serviceId)
+//                                      = "Application/serviceUsageMetrics/" || appAddr || serviceId.
+//   undelegationBz                   : protobuf-marshaled types.PendingUndelegation.
 //
 //   applicationServiceUsageMetricsBz : protobuf-marshaled types.ApplicationServiceUsageMetrics.
 //

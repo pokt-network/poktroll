@@ -230,11 +230,7 @@ func updateAppServiceUsageMetrics(application *types.Application) {
 		if !serviceUsageMetricsExists {
 			application.ServiceUsageMetrics = append(
 				application.ServiceUsageMetrics,
-				&sharedtypes.ServiceUsageMetrics{
-					ServiceId:         service.ServiceId,
-					TotalRelays:       0,
-					TotalComputeUnits: 0,
-				},
+				&sharedtypes.ServiceUsageMetrics{ServiceId: service.ServiceId},
 			)
 		}
 	}
