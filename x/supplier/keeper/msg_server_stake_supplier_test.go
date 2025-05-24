@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -533,7 +533,7 @@ func TestMsgServer_StakeSupplier_FailBelowMinStake(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*k.Keeper)
 
 	addr := sample.AccAddress()
-	supplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	supplierStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 	minStake := supplierStake.AddAmount(math.NewInt(1))
 	expectedErr := suppliertypes.ErrSupplierInvalidStake.Wrapf("supplier with owner %q must stake at least %s", addr, minStake)
 

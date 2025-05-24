@@ -29,7 +29,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
@@ -706,13 +706,13 @@ func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOptFn {
 			// Require a proof 100% of the time probabilistically speaking.
 			proofParams.ProofRequestProbability = 1
 			// Require a proof of any claim amount (i.e. anything greater than 0).
-			proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+			proofRequirementThreshold := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 		} else {
 			// Never require a proof probabilistically speaking.
 			proofParams.ProofRequestProbability = 0
 			// Require a proof for MaxInt64 claim amount (i.e. should never trigger).
-			proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+			proofRequirementThreshold := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, math.MaxInt64)
 			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 		}
 
@@ -739,7 +739,7 @@ func WithDefaultModuleBalances() func(cfg *tokenomicsModuleKeepersConfig) {
 func WithModuleAccountBalances(moduleAccountBalances map[string]int64) func(cfg *tokenomicsModuleKeepersConfig) {
 	setModuleAccountBalances := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		for moduleName, balanceCoin := range moduleAccountBalances {
-			err := keepers.MintCoins(ctx, moduleName, cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, balanceCoin)))
+			err := keepers.MintCoins(ctx, moduleName, cosmostypes.NewCoins(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, balanceCoin)))
 			if err != nil {
 				panic(err)
 			}

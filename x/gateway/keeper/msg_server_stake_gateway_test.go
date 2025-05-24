@@ -7,7 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -144,7 +144,7 @@ func TestMsgServer_StakeGateway_FailBelowMinStake(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	addr := sample.AccAddress()
-	gatewayStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	gatewayStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 	minStake := gatewayStake.AddAmount(math.NewInt(1))
 	expectedErr := gatewaytypes.ErrGatewayInvalidStake.Wrapf("gateway %q must stake at least %s", addr, minStake)
 

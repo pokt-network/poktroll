@@ -9,7 +9,7 @@ import (
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/encoding"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -94,7 +94,7 @@ func (tlm tlmGlobalMint) Process(
 	}
 
 	supplierCoinsToShareAmt := calculateAllocationAmount(newMintCoin.Amount, supplierMintAllocationRat)
-	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierCoinsToShareAmt)
+	supplierCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierCoinsToShareAmt)
 	// Send funds from the tokenomics module to the supplier module account
 	tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
 		OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER,
@@ -252,10 +252,10 @@ func sendRewardsToAccount(
 	)
 
 	coinsToAccAmt := calculateAllocationAmount(settlementCoin.Amount, allocationRat)
-	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, coinsToAccAmt)
+	coinToAcc := cosmostypes.NewCoin(pocket.DenomuPOKT, coinsToAccAmt)
 
 	if coinToAcc.IsZero() {
-		return cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+		return cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 	}
 
 	result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
@@ -289,7 +289,7 @@ func CalculateGlobalPerClaimMintInflationFromSettlementAmount(
 	if newMintRem.Cmp(big.NewInt(0)) > 0 {
 		newMintAmt.Add(newMintAmt, big.NewInt(1))
 	}
-	mintAmtCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(newMintAmt))
+	mintAmtCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewIntFromBigInt(newMintAmt))
 	return mintAmtCoin
 }
 

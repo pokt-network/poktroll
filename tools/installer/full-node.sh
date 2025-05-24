@@ -230,6 +230,7 @@ get_user_input() {
     BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/${POCKET_NETWORK_GENESIS_BRANCH}/shannon/$NETWORK"
     SEEDS_URL="$BASE_URL/seeds"
     GENESIS_URL="$BASE_URL/genesis.json"
+    SKIP_UPGRADES_HEIGHTS_URL="$BASE_URL/skip_upgrade_heights"
 
     # Download genesis.json and store it
     GENESIS_FILE="/tmp/genesis.json"
@@ -695,6 +696,21 @@ setup_systemd() {
     SERVICE_NAME="cosmovisor-${POCKET_USER}"
     print_color $YELLOW "Setting up systemd service as $SERVICE_NAME.service..."
 
+    # Try to download skip upgrade heights
+    SKIP_UPGRADES=""
+    if curl --output /dev/null --silent --head --fail "$SKIP_UPGRADES_HEIGHTS_URL"; then
+        print_color $YELLOW "Downloading skip upgrade heights from $SKIP_UPGRADES_HEIGHTS_URL"
+        SKIP_UPGRADE_HEIGHTS=$(curl -s "$SKIP_UPGRADES_HEIGHTS_URL")
+        if [ ! -z "$SKIP_UPGRADE_HEIGHTS" ]; then
+            SKIP_UPGRADES="--unsafe-skip-upgrades $SKIP_UPGRADE_HEIGHTS"
+            print_color $GREEN "Will skip upgrades at heights: $SKIP_UPGRADE_HEIGHTS"
+        else
+            print_color $YELLOW "No skip upgrade heights found"
+        fi
+    else
+        print_color $YELLOW "Skip upgrade heights file not found at $SKIP_UPGRADES_HEIGHTS_URL"
+    fi
+
     cat >/etc/systemd/system/$SERVICE_NAME.service <<EOF
 [Unit]
 Description=Cosmovisor daemon for pocketd ($POCKET_USER)
@@ -702,7 +718,7 @@ After=network-online.target
 
 [Service]
 User=$POCKET_USER
-ExecStart=/home/$POCKET_USER/.local/bin/cosmovisor run start --home=/home/$POCKET_USER/.pocket
+ExecStart=/home/$POCKET_USER/.local/bin/cosmovisor run start --home=/home/$POCKET_USER/.pocket $SKIP_UPGRADES
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity

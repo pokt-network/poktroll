@@ -48,7 +48,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -86,7 +86,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const appName = "pocket-integration-app"
+const chainId = "pocket"
 
 var (
 	// faucetAmountUpokt is the number of upokt coins that the faucet account
@@ -167,7 +167,7 @@ func NewIntegrationApp(
 	basicModuleManager.RegisterInterfaces(registry)
 
 	cometHeader := cmtproto.Header{
-		ChainID: appName,
+		ChainID: chainId,
 		Height:  1,
 	}
 	sdkCtx = sdkCtx.
@@ -212,7 +212,7 @@ func NewIntegrationApp(
 	err := bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
 
-	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: appName})
+	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: chainId})
 	require.NoError(t, err, "failed to initialize chain")
 
 	bApp.SetTxEncoder(txCfg.TxEncoder())
@@ -308,11 +308,11 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	db := dbm.NewMemDB()
 
 	// Prepare the base application.
-	bApp := baseapp.NewBaseApp(appName, logger, db, txCfg.TxDecoder(), baseapp.SetChainID(appName))
+	bApp := baseapp.NewBaseApp(chainId, logger, db, txCfg.TxDecoder(), baseapp.SetChainID(chainId))
 
 	// Prepare the context
 	sdkCtx := bApp.NewUncachedContext(false, cmtproto.Header{
-		ChainID: appName,
+		ChainID: chainId,
 		Height:  1,
 	})
 
@@ -855,7 +855,7 @@ func (app *App) nextBlockUpdateCtx() {
 	header.Height++
 
 	headerInfo := coreheader.Info{
-		ChainID: appName,
+		ChainID: chainId,
 		Height:  header.Height,
 		Time:    header.Time,
 	}
@@ -991,7 +991,7 @@ func fundAccount(
 	amountUpokt int64,
 ) {
 
-	fundingCoins := types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(amountUpokt)))
+	fundingCoins := types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(amountUpokt)))
 
 	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
 	require.NoError(t, err)
@@ -999,7 +999,7 @@ func fundAccount(
 	err = bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, recipientAddr, fundingCoins)
 	require.NoError(t, err)
 
-	coin := bankKeeper.SpendableCoin(ctx, recipientAddr, volatile.DenomuPOKT)
+	coin := bankKeeper.SpendableCoin(ctx, recipientAddr, pocket.DenomuPOKT)
 	require.Equal(t, coin.Amount, math.NewInt(amountUpokt))
 }
 
@@ -1013,7 +1013,7 @@ func newFaucetInitChainerFn(faucetBech32 string, faucetAmtUpokt int64) InitChain
 				Address: faucetBech32,
 				Coins: sdk.NewCoins(
 					sdk.NewInt64Coin(
-						volatile.DenomuPOKT,
+						pocket.DenomuPOKT,
 						faucetAmtUpokt,
 					),
 				),

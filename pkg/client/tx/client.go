@@ -19,7 +19,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"go.uber.org/multierr"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
@@ -625,7 +625,7 @@ func (txnClient *txClient) getFeeAmount(
 		// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
 		// be less than 1 unit of the feeCoins.
 		if !changeCoins.IsZero() {
-			feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+			feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1))
 		}
 
 		return feeCoins, nil
@@ -656,7 +656,7 @@ func (txnClient *txClient) getFeeAmount(
 	// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
 	// be less than 1 unit of the feeCoins.
 	if !changeCoins.IsZero() {
-		feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+		feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1))
 	}
 
 	return feeCoins, nil

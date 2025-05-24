@@ -7,7 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
@@ -59,7 +59,7 @@ func (s *ApplicationModuleSuite) StakeApp(
 
 	stakeAppMsg := apptypes.NewMsgStakeApplication(
 		appAddress,
-		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, stakeAmtUpokt),
+		cosmostypes.NewInt64Coin(pocket.DenomuPOKT, stakeAmtUpokt),
 		serviceConfigs,
 	)
 

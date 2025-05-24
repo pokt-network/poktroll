@@ -5,7 +5,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 )
 
@@ -21,19 +21,19 @@ var (
 	// TODO_MAINNET_MIGRATION(@Olshansk, @RawthiL): Figure out what this value should be.
 	KeyProofRequirementThreshold     = []byte("ProofRequirementThreshold")
 	ParamProofRequirementThreshold   = "proof_requirement_threshold"
-	DefaultProofRequirementThreshold = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(20e6)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	DefaultProofRequirementThreshold = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(20e6)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 
 	// TODO_DISCUSS: Should ProofMissingPenalty be moved to the tokenomics module?
 	KeyProofMissingPenalty   = []byte("ProofMissingPenalty")
 	ParamProofMissingPenalty = "proof_missing_penalty"
 	// As per the probabilistic proofs paper, the penalty for missing a proof is 320 POKT (i.e. 320e6 uPOKT).
-	DefaultProofMissingPenalty = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320e6)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	DefaultProofMissingPenalty = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(320e6)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 
 	KeyProofSubmissionFee   = []byte("ProofSubmissionFee")
 	ParamProofSubmissionFee = "proof_submission_fee"
 	// TODO_MAINNET: Determine a sensible default value for the proof submission fee.
 	// DefaultMinProofSubmissionFee is the default and minimum fee for submitting a proof.
-	DefaultMinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
+	DefaultMinProofSubmissionFee = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(0))
 )
 
 // ParamKeyTable the param key table for launch module
@@ -140,7 +140,7 @@ func ValidateProofRequirementThreshold(proofRequirementThresholdAny any) error {
 		return ErrProofParamInvalid.Wrap("missing proof_requirement_threshold")
 	}
 
-	if proofRequirementThresholdCoin.Denom != volatile.DenomuPOKT {
+	if proofRequirementThresholdCoin.Denom != pocket.DenomuPOKT {
 		return ErrProofParamInvalid.Wrapf("invalid proof_requirement_threshold denom: %s", proofRequirementThresholdCoin.Denom)
 	}
 
@@ -163,7 +163,7 @@ func ValidateProofMissingPenalty(proofMissingPenaltyAny any) error {
 		return ErrProofParamInvalid.Wrap("missing proof_missing_penalty")
 	}
 
-	if proofMissingPenaltyCoin.Denom != volatile.DenomuPOKT {
+	if proofMissingPenaltyCoin.Denom != pocket.DenomuPOKT {
 		return ErrProofParamInvalid.Wrapf("invalid proof_missing_penalty denom: %s", proofMissingPenaltyCoin.Denom)
 	}
 
@@ -186,7 +186,7 @@ func ValidateProofSubmissionFee(proofSubmissionFeeAny any) error {
 		return ErrProofParamInvalid.Wrap("missing proof_submission_fee")
 	}
 
-	if submissionFeeCoin.Denom != volatile.DenomuPOKT {
+	if submissionFeeCoin.Denom != pocket.DenomuPOKT {
 		return ErrProofParamInvalid.Wrapf("invalid proof_submission_fee denom: %s", submissionFeeCoin.Denom)
 	}
 

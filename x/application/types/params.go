@@ -4,7 +4,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 	KeyMinStake                        = []byte("MinStake")
 	ParamMinStake                      = "min_stake"
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value
-	DefaultMinStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000) // 1 POKT
+	DefaultMinStake = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000) // 1 POKT
 )
 
 // ParamKeyTable the param key table for launch module
@@ -86,10 +86,10 @@ func ValidateMinStake(minStakeAny any) error {
 		return ErrAppParamInvalid.Wrapf("missing min_stake")
 	}
 
-	if minStakeCoin.Denom != volatile.DenomuPOKT {
+	if minStakeCoin.Denom != pocket.DenomuPOKT {
 		return ErrAppParamInvalid.Wrapf(
 			"invalid min_stake denom %q; expected %q",
-			minStakeCoin.Denom, volatile.DenomuPOKT,
+			minStakeCoin.Denom, pocket.DenomuPOKT,
 		)
 	}
 

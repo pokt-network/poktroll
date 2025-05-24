@@ -10,7 +10,7 @@ import (
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
@@ -44,7 +44,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// Update the proof parameters to never require a proof, since this test is not
 	// submitting any proofs.
-	maxProofRequirementThreshold := sdk.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+	maxProofRequirementThreshold := sdk.NewInt64Coin(pocket.DenomuPOKT, math.MaxInt64)
 	proofParams.ProofRequirementThreshold = &maxProofRequirementThreshold
 	proofParams.ProofRequestProbability = 0
 

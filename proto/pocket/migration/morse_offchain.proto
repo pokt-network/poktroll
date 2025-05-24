@@ -22,6 +22,7 @@ syntax = "proto3";
 package pocket.migration;
 
 import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "pocket/migration/morse_onchain.proto";
@@ -94,6 +95,8 @@ message MorsePos {
 //
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/apps/apps.proto#L16
 message MorseApplication {
+  // Next free index: 9
+
   option (gogoproto.equal) = true;
   option (gogoproto.goproto_getters) = false;
 
@@ -107,6 +110,10 @@ message MorseApplication {
   int32  status = 4 [(gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 6 [(gogoproto.jsontag) = "staked_tokens"];
+
+  // The ISO 8601 UTC timestamp after which the Morse node/supplier unbonding period will have elapsed.
+  // It reflects the "unbonding completion time" of the Morse node/supplier, but is called "unstaking time" to comply with necessary Morse data structures.
+  google.protobuf.Timestamp unstaking_time = 8 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true, (gogoproto.jsontag) = "unstaking_time", (gogoproto.moretags) = "yaml:\"unstaking_time\""];
 }
 
 // MorseValidator is a subset of the Morse ProtoValidator type.
@@ -114,6 +121,8 @@ message MorseApplication {
 //
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/pos/types.proto#L16
 message MorseValidator {
+  // Next free index: 10
+
   option (gogoproto.equal) = true;
   option (gogoproto.goproto_stringer) = true;
   option (gogoproto.goproto_getters) = false;
@@ -132,6 +141,10 @@ message MorseValidator {
 
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 7 [(gogoproto.jsontag) = "tokens"];
+
+  // The ISO 8601 UTC timestamp after which the Morse node/supplier unbonding period will have elapsed.
+  // It reflects the "unbonding completion time" of the Morse node/supplier, but is called "unstaking time" to comply with necessary Morse data structures.
+  google.protobuf.Timestamp unstaking_time = 8 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true, (gogoproto.jsontag) = "unstaking_time", (gogoproto.moretags) = "yaml:\"unstaking_time\""];
 
   // Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
   // Binary representation of the Morse address corresponding to a Morse account's ed25519 public key.
