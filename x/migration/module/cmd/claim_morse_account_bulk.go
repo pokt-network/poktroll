@@ -33,9 +33,24 @@ func ClaimMorseAccountBulkCmd() *cobra.Command {
 	claimAcctBulkCmd := &cobra.Command{
 		Use:  "claim-accounts --input-file [morse_hex_keys_file] --output-file [morse_shannon_map_output_file]",
 		Args: cobra.ExactArgs(0),
-		// TODO_IN_THIS_PR: Update the example.
-		Example: "claim-accounts --input-file ./morse_hex_keys_file.json --output-file ./morse_shannon_map_output_file.json",
-		Short:   "Bulk claim unstaked balances from multiple Morse accounts to new Shannon accounts using JSON input/output files.",
+		Example: `Safe example (does not export shannon private keys in plaintext)
+$ pocketd tx migration claim-accounts \
+  --input-file ./bulk-accounts.json \
+  --output-file ./bulk-accounts-output.json \
+  --from <SIGNING-ACCOUNT> \
+  --home ./localnet/pocketd \
+  --keyring-backend test
+
+Unsafe example (exports shannon private keys in plaintext):
+$ pocketd tx migration claim-accounts \
+  --input-file ./bulk-accounts.json \
+  --output-file ./bulk-accounts-output.json \
+  --from <SIGNING-ACCOUNT> \
+  --home ./localnet/pocketd \
+  --keyring-backend test \
+  --unsafe \
+  --unarmored-json`,
+		Short: "Bulk claim unstaked balances from multiple Morse accounts to new Shannon accounts using JSON input/output files.",
 		Long: `Easily claim unstaked balances from multiple Morse accounts in bulk.
 
 This automates the batch transition and mapping of accounts from Morse to Shannon, streamlining the migration process.
@@ -295,9 +310,10 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 		}
 	}()
 
+	// TODO_IN_THIS_PR: Pick up review here.
+
 	for _, morseAccount := range morseAccounts {
 		mapping, mappingErr := mappingAccounts(cmd, morseAccount)
-
 		if mappingErr != nil {
 			// On error, break loop and return.
 			// Partial results will be written to output-file due to deferred write above.
@@ -430,34 +446,35 @@ func mappingAccounts(cmd *cobra.Command, morseAccount MorseAccountInfo) (*MorseS
 		return nil, err
 	}
 
+	// Ensure that a signing account is provided.
+	shannonSigningAddr := clientCtx.GetFromAddress().String()
+	if shannonSigningAddr == "" {
+		return nil, fmt.Errorf("missing --from signing account (it needs to be the name of the key in the keyring)")
+	}
+
+	// Prepare a new morse to shannon account mapping.
+	// The shannon account is hydrated below
 	morseShannonMapping := &MorseShannonMapping{
 		MorseAccount: morseAccount,
 	}
 
-	// Generate a secp256k1 private key
+	// Create a new Shannon account
+	// 1. Generate a secp256k1 private key
 	shannonPrivateKey := secp256k1.GenPrivKey()
-
-	// Get the Cosmos shannonAddress (bech32 format) from a public key
+	// 2. Get the Cosmos shannonAddress (bech32 format) from a public key
 	shannonAddress := sdk.AccAddress(shannonPrivateKey.PubKey().Address())
-
-	// Assign Shannon account to mapping.
+	// 3. Assign Shannon account to mapping.
 	morseShannonMapping.ShannonAccount = &ShannonAccountInfo{
 		Address:    shannonAddress,
 		PrivateKey: *shannonPrivateKey,
 	}
 
-	shannonSigningAddr := clientCtx.GetFromAddress().String()
-
-	if shannonSigningAddr == "" {
-		return nil, fmt.Errorf("missing --from value (it need to be the name of the key in the keyring)")
-	}
-
+	// Create a new claim Morse account message.
 	msgClaimMorseAccount, claimMorseAccountErr := types.NewMsgClaimMorseAccount(
 		shannonAddress.String(),
 		morseAccount.PrivateKey,
 		shannonSigningAddr,
 	)
-
 	if claimMorseAccountErr != nil {
 		morseShannonMapping.Error = claimMorseAccountErr.Error()
 		return morseShannonMapping, nil
