@@ -239,7 +239,9 @@ func defaultAppKeeperMock(t testing.TB) types.ApplicationKeeper {
 
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAppKeeper.EXPECT().GetApplication(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(getAppFn)
+	mockAppKeeper.EXPECT().GetDehydratedApplication(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(getAppFn)
 	mockAppKeeper.EXPECT().GetApplication(gomock.Any(), TestApp1Address).AnyTimes().Return(TestApp1, true)
+	mockAppKeeper.EXPECT().GetDehydratedApplication(gomock.Any(), TestApp1Address).AnyTimes().Return(TestApp1, true)
 
 	return mockAppKeeper
 }
