@@ -2,29 +2,34 @@ package faucet
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 
 	"cosmossdk.io/math"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	bank "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
-	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 )
 
+// TODO_IN_THIS_COMMIT: comment... viper env prefix... see: docs...
+const envPrefix = "FAUCET"
+
 var (
 
-	// TODO_IN_THIS_COMMIT: make this configurable; e.g. env var...
-	faucetKeyName = "faucet"
-	fundCoins     = types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(1)))
-	faucetAddress types.AccAddress
+	// TODO_IN_THIS_COMMIT: ...set via viper config/env/etc...
+	faucetKeyName string
+	sendCoins     cosmostypes.Coins
+	faucetAddress cosmostypes.AccAddress
+	feeCoins      cosmostypes.Coins
 
 	txClient client.TxClient
 )
@@ -55,10 +60,41 @@ func FaucetCmd() *cobra.Command {
 	faucetCmd.PersistentFlags().StringVar(&logger.LogLevel, flags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
 	faucetCmd.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
+	viper.SetConfigName("faucet_config")   // name of config file (without extension)
+	viper.SetConfigType("yaml")            // REQUIRED if the config file does not have the extension in the name
+	viper.AddConfigPath("$HOME/.pocket")   // call multiple times to add many search paths
+	viper.AddConfigPath("$HOME/.poktroll") // call multiple times to add many search paths
+	viper.AddConfigPath(".")               // optionally look for config in the working directory
+	err := viper.ReadInConfig()            // Find and read the config file
+	if err != nil {                        // Handle errors reading the config file
+		panic(fmt.Errorf("fatal error config file: %w", err))
+	}
+
+	// TODO_IN_THIS_COMMIT: comment...
+	viper.SetEnvPrefix(envPrefix)
+	viper.AutomaticEnv()
+
 	return faucetCmd
 }
 
 func preRunFaucet(cmd *cobra.Command, _ []string) error {
+	// TODO_IN_THIS_COMMIT: extract strings to consts...
+	faucetKeyName = viper.GetString("signing_key_name")
+
+	sendCoins = cosmostypes.NewCoins(
+		cosmostypes.NewCoin(
+			viper.GetString("send_denom"),
+			math.NewInt(viper.GetInt64("send_amount")),
+		),
+	)
+
+	feeCoins = cosmostypes.NewCoins(
+		cosmostypes.NewCoin(
+			viper.GetString("fee_denom"),
+			math.NewInt(viper.GetInt64("fee_amount")),
+		),
+	)
+
 	// Conventionally derive a cosmos-sdk client context from the cobra command
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
@@ -82,6 +118,8 @@ func preRunFaucet(cmd *cobra.Command, _ []string) error {
 	if err = cosmosclient.SetCmdClientContext(cmd, clientCtx); err != nil {
 		return err
 	}
+
+	// TODO_IN_THIS_COMMIT: fee options...
 
 	txClient, err = flags.GetTxClientFromFlags(cmd.Context(), cmd, signingKeyOpt)
 	return err
@@ -112,7 +150,7 @@ func NewFaucetServer() *http.ServeMux {
 func handleMactRequest(resWriter http.ResponseWriter, req *http.Request) {
 	recipientAddressStr := req.URL.Path[len("/mact/"):]
 
-	recipientAddress, err := types.AccAddressFromBech32(recipientAddressStr)
+	recipientAddress, err := cosmostypes.AccAddressFromBech32(recipientAddressStr)
 	if err != nil {
 		logger.Logger.Error().Err(err).Send()
 
@@ -139,8 +177,8 @@ func handleMactRequest(resWriter http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func sendMact(ctx context.Context, recipientAddress types.AccAddress) error {
-	sendMsg := bank.NewMsgSend(faucetAddress, recipientAddress, fundCoins)
+func sendMact(ctx context.Context, recipientAddress cosmostypes.AccAddress) error {
+	sendMsg := bank.NewMsgSend(faucetAddress, recipientAddress, sendCoins)
 	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, sendMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
@@ -149,7 +187,7 @@ func sendMact(ctx context.Context, recipientAddress types.AccAddress) error {
 
 	logger.Logger.Debug().Str("tx_hash", txResponse.TxHash).Send()
 
-	go func(txResponse *types.TxResponse) {
+	go func(txResponse *cosmostypes.TxResponse) {
 		select {
 		case <-ctx.Done():
 			return
