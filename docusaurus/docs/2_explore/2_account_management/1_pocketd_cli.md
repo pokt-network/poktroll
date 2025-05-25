@@ -14,19 +14,21 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
 
 ## Table of Contents <!-- omit in toc -->
 
-- [1. Install Script (Linux \& MacOS)](#1-install-script-linux--macos)
-- [2. Homebrew (MacOS only)](#2-homebrew-macos-only)
+- [Bash Install Script (Linux \& MacOS)](#bash-install-script-linux--macos)
+- [Homebrew (MacOS only)](#homebrew-macos-only)
   - [Troubleshooting Homebrew](#troubleshooting-homebrew)
-- [3. Alternative Methods](#3-alternative-methods)
+- [Alternative Methods](#alternative-methods)
   - [Using release binaries](#using-release-binaries)
   - [From Source (danger zone)](#from-source-danger-zone)
     - [Installation dependencies](#installation-dependencies)
     - [Build from source](#build-from-source)
-- [4. Windows (why!?)](#4-windows-why)
+- [Windows (why!?)](#windows-why)
+- [Publishing a new CLI release](#publishing-a-new-cli-release)
+- [8. Update the `homebrew-tap` Formula](#8-update-the-homebrew-tap-formula)
 
 ---
 
-## 1. Install Script (Linux & MacOS)
+## Bash Install Script (Linux & MacOS)
 
 Easiest, fastest way to get started that works on both Linux and MacOS.
 
@@ -43,7 +45,7 @@ pocketd --help
 
 ---
 
-## 2. Homebrew (MacOS only)
+## Homebrew (MacOS only)
 
 For MacOS users who prefer [Homebrew](https://brew.sh/).
 
@@ -75,7 +77,7 @@ The source code for the Homebrew formula can be found at [homebrew-pocketd](http
 
 ---
 
-## 3. Alternative Methods
+## Alternative Methods
 
 ### Using release binaries
 
@@ -147,7 +149,7 @@ pocketd --help
 
 ---
 
-## 4. Windows (why!?)
+## Windows (why!?)
 
 :::danger
 
@@ -157,3 +159,86 @@ pocketd --help
   :::
 
 ---
+
+## Publishing a new CLI release
+
+## 8. Update the `homebrew-tap` Formula
+
+Once the upgrade is validated, update the tap so users can install the new CLI.
+
+**Steps:**
+
+```bash
+git clone git@github.com:pokt-network/homebrew-pocketd.git
+cd homebrew-pocketd
+make tap_update_version
+git commit -am "Update pocket tap from v.X1.Y1.Z1 to v.X1.Y2.Z2"
+git push
+```
+
+**Reinstall the CLI:**
+
+```bash
+brew reinstall pocketd
+```
+
+**Or install for the first time:**
+
+```bash
+brew tap pocket-network/homebrew-pocketd
+brew install pocketd
+```
+
+See [pocketd CLI docs](../../2_explore/2_account_management/1_pocketd_cli.md) for more info.
+
+:::note
+You can review [all prior releases here](https://github.com/pokt-network/poktroll/releases).
+:::
+
+1. **Tag the release** using one of the following and follow on-screen prompts:
+
+   ```bash
+   make release_tag_bug_fix
+   # or
+   make release_tag_minor_release
+   ```
+
+2. **Publish the release** by:
+
+   - [Drafting a new release](https://github.com/pokt-network/poktroll/releases/new)
+   - Using the tag from the step above
+
+3. **Update the description in the release** by:
+
+   - Clicking `Generate release notes` in the GitHub UI
+   - Add this table **ABOVE** the auto-generated notes (below)
+
+     ```markdown
+     ## Protocol Upgrades
+
+     | Category                     | Applicable | Notes                                |
+     | ---------------------------- | ---------- | ------------------------------------ |
+     | Planned Upgrade              | ✅         | New features.                        |
+     | Consensus Breaking Change    | ✅         | Yes, see upgrade here: #1216         |
+     | Manual Intervention Required | ❓         | Cosmosvisor managed everything well. |
+
+     | Network       | Upgrade Height | Upgrade Transaction Hash | Notes |
+     | ------------- | -------------- | ------------------------ | ----- |
+     | Alpha TestNet | ⚪             | ⚪                       | ⚪    |
+     | Beta TestNet  | ⚪             | ⚪                       | ⚪    |
+     | MainNet       | ⚪             | ⚪                       | ⚪    |
+
+     **Legend**:
+
+     - ⚠️ - Warning/Caution Required
+     - ✅ - Yes
+     - ❌ - No
+     - ⚪ - Will be filled out throughout the release process / To Be Determined
+     - ❓ - Unknown / Needs Discussion
+
+     ## What's Changed
+
+     <!-- Auto-generated GitHub Release Notes continue here -->
+     ```
+
+4. **Set as a pre-release** (change to `latest release` after upgrade completes).
