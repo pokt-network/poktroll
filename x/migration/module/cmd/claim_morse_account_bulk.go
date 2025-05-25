@@ -310,8 +310,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 		}
 	}()
 
-	// TODO_IN_THIS_PR: Pick up review here.
-
+	// Loop through all EXISTING Morse accounts and map them to NEW Shannon accounts.
 	for _, morseAccount := range morseAccounts {
 		mapping, mappingErr := mappingAccounts(cmd, morseAccount)
 		if mappingErr != nil {
@@ -320,8 +319,10 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 			return mappingErr
 		}
 
+		// Append both successful and failed mappings to the batch result.
 		migrationBatchResult.Mappings = append(migrationBatchResult.Mappings, mapping)
 
+		// If there was an error, log it and continue to the next Morse account.
 		if mapping.Error != "" {
 			logger.Logger.Error().Err(mappingErr).
 				Msgf(
@@ -332,6 +333,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 			continue
 		}
 
+		// Log the successful mapping will be claimed
 		logger.Logger.Info().Msgf(
 			"mapping morse account=%s to shannon account=%s",
 			mapping.MorseAccount.Address.String(),
@@ -344,6 +346,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	tx, eitherErr := txClient.SignAndBroadcast(ctx, claimMessages...)
 	broadcastErr, broadcastErrCh := eitherErr.SyncOrAsyncError()
 
+	// Handle a successful tx broadcast.
 	if tx != nil {
 		migrationBatchResult.TxHash = tx.TxHash
 		migrationBatchResult.TxCode = tx.Code
@@ -355,11 +358,11 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	// Handle broadcast errors.
 	if broadcastErr != nil {
 		migrationBatchResult.Error = broadcastErr.Error()
 		return broadcastErr
 	}
-
 	broadcastErr = <-broadcastErrCh
 	if broadcastErr != nil {
 		migrationBatchResult.Error = broadcastErr.Error()
@@ -367,7 +370,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	}
 
 	if migrationBatchResult.Error != "" {
-		logger.Logger.Error().Msgf("error migrating morse accounts: %s - check the output file to know more about it.", migrationBatchResult.Error)
+		logger.Logger.Error().Msgf("error migrating morse accounts: %s. \n Check the output file for more details: %s", migrationBatchResult.Error, outputFilePath)
 	} else {
 		logger.Logger.Info().
 			Int("tx_messages", len(claimMessages)).
@@ -379,34 +382,36 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 }
 
 // readMorsePrivateKeysFile reads Morse private keys from the input file, validates their claimable status, and returns a list of MorseAccountInfo.
-func readMorsePrivateKeysFile(ctx context.Context, clientCtx cosmosclient.Context) ([]MorseAccountInfo, error) {
+func readMorsePrivateKeysFile(
+	ctx context.Context,
+	clientCtx cosmosclient.Context,
+) ([]MorseAccountInfo, error) {
+	// Prepare a new morse private keys slice.
+	var morsePrivateKeys []string
+	var morseAccounts []MorseAccountInfo
+
+	// Prepare a new query client.
 	queryClient := types.NewQueryClient(clientCtx)
 
-	var morsePrivateKeys []string
-
+	// Read the input file.
 	fileContents, err := os.ReadFile(inputFilePath)
 	if err != nil {
 		return nil, err
 	}
-
 	if err := json.Unmarshal(fileContents, &morsePrivateKeys); err != nil {
 		return nil, err
 	}
 
-	morseAccounts := make([]MorseAccountInfo, 0)
-
 	for _, morsePrivateKey := range morsePrivateKeys {
-		hexKey, hexErr := hex.DecodeString(morsePrivateKey)
-		if hexErr != nil {
-			return nil, hexErr
+		morseHexKey, err := hex.DecodeString(morsePrivateKey)
+		if err != nil {
+			return nil, err
 		}
-		key := ed25519.PrivKey(hexKey)
-		address := key.PubKey().Address()
-		// to upper just in case, but usually it is already uppercase by sdk; but the query type is looking specific
-		strAddress := strings.ToUpper(address.String())
+		morsePrivateKey := ed25519.PrivKey(morseHexKey)
+		morseAddress := morsePrivateKey.PubKey().Address()
+		morseAddressStr := strings.ToUpper(morseAddress.String()) // uppercase for query
 
-		req := &types.QueryMorseClaimableAccountRequest{Address: strAddress}
-
+		req := &types.QueryMorseClaimableAccountRequest{Address: morseAddressStr}
 		res, queryErr := queryClient.MorseClaimableAccount(ctx, req)
 		// if we are not able to validate the existence of the morse account, we return the error and stop the process
 		if queryErr != nil {
@@ -417,19 +422,20 @@ func readMorsePrivateKeysFile(ctx context.Context, clientCtx cosmosclient.Contex
 		if res.MorseClaimableAccount.IsClaimed() {
 			// this morse account was already claimed
 			// Ignore already-claimed Morse accounts in migration.
-			logger.Logger.Warn().Msgf("morse account %s already claimed: %v", strAddress, res.MorseClaimableAccount)
+			logger.Logger.Warn().Msgf("morse account %s already claimed: %v", morseAddressStr, res.MorseClaimableAccount)
 			continue
 		}
 
-		// Morse account is in snapshot and not yet claimed. Add to migration list.
+		// Morse account is in the snapshot and not yet claimed.
+		// Add it to migration list.
 		morseAccounts = append(morseAccounts, MorseAccountInfo{
-			PrivateKey: key,
-			Address:    address,
+			PrivateKey: morsePrivateKey,
+			Address:    morseAddress,
 		})
 	}
 
 	if len(morseAccounts) == 0 {
-		return nil, fmt.Errorf("there is not enough morse accounts to migrate, please check the logs and the input file and try again")
+		return nil, fmt.Errorf("no claimable morse accounts found in the snapshot. Check the logs and the input file before trying again.")
 	}
 
 	return morseAccounts, nil

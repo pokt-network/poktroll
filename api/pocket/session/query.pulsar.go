@@ -3,7 +3,7 @@ package session
 
 import (
 	_ "cosmossdk.io/api/amino"
-	_ "github.com/pokt-network/poktroll/api/pocket/shared"
+	_ "cosmossdk.io/api/pocket/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"

@@ -2,7 +2,7 @@
 package service
 
 import (
-	session "github.com/pokt-network/poktroll/api/pocket/session"
+	session "cosmossdk.io/api/pocket/session"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
