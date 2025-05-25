@@ -209,15 +209,6 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
 	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
 
-	// Call the GetSessionBlockFrequency method numCalls times and assert that the server
-	// is not reached again.
-	for range numCalls {
-		_, err := s.queryClients.shared.GetComputeUnitsToTokensMultiplier(ctx)
-		require.NoError(s.T(), err)
-	}
-	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
-	require.Equal(s.T(), 0, s.rpcCallCount.blocks)
-
 	supplierAddr := sample.AccAddress()
 
 	// Call the GetEarliestSupplierClaimCommitHeight method numCalls times and assert that

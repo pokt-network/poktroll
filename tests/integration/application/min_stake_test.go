@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"math/big"
 	"testing"
 
 	cosmoslog "cosmossdk.io/log"
@@ -326,8 +327,19 @@ func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedA
 func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 	s.T().Helper()
 
-	expectedAppBurn := int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier)
-	expectedAppBurnCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, expectedAppBurn)
+	// Get the compute unit cost in fractional uPOKT.
+	computeUnitCostUpoktRat := new(big.Rat).SetFrac64(
+		int64(sharedtypes.DefaultComputeUnitsToTokensMultiplier),
+		int64(sharedtypes.DefaultComputeUnitCostGranularity),
+	)
+
+	numComputeUnitsRat := new(big.Rat).SetInt64(int64(s.numRelays * s.numComputeUnitsPerRelay))
+
+	// Compute the expect burn
+	expectedAppBurnRat := new(big.Rat).Mul(computeUnitCostUpoktRat, numComputeUnitsRat)
+	expectedAppBurn := expectedAppBurnRat.Num().Int64() / expectedAppBurnRat.Denom().Int64()
+	expectedAppBurnCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, int64(expectedAppBurn))
+
 	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	require.NoError(s.T(), err)

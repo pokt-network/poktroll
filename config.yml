@@ -350,4 +350,5 @@ genesis:
         supplier_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
-        compute_units_to_tokens_multiplier: 42 # Arbitrary value that acts as the answer to everything.
+        compute_units_to_tokens_multiplier: 42_000_000 # Sets the cost of 1 compute unit to 42 uPOKT (denominated in pPOKT units).
+        compute_unit_cost_granularity: 1_000_000 # Sets compute unit pricing granularity to pPOKT (1e-6 uPOKT per unit).
