@@ -96,7 +96,10 @@ var (
 			SupplierUnbondingPeriodSessions:    9,
 			ApplicationUnbondingPeriodSessions: 9,
 			GatewayUnbondingPeriodSessions:     9,
-			ComputeUnitsToTokensMultiplier:     420,
+			// compute units to tokens multiplier in pPOKT (i.e. 1/compute_unit_cost_granularity)
+			ComputeUnitsToTokensMultiplier: 42_000_000,
+			// compute unit cost granularity is 1pPOKT (i.e. 1/1e6)
+			ComputeUnitCostGranularity: 1_000_000,
 		},
 		DefaultParams:    sharedtypes.DefaultParams(),
 		NewParamClientFn: sharedtypes.NewQueryClient,

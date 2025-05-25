@@ -273,21 +273,6 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 	), nil
 }
 
-// GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET(@red-0ne, #543): We also don't really want to use the current value of the params.
-// Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error) {
-	sharedParams, err := sq.GetParams(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return sharedParams.GetComputeUnitsToTokensMultiplier(), nil
-}
-
 // getBlockHashCacheKey constructs the cache key for a block hash by string formatting the block height.
 func getBlockHashCacheKey(height int64) string {
 	return strconv.FormatInt(height, 10)

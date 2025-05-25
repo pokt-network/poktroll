@@ -55,18 +55,24 @@ func (claim *Claim) GetClaimeduPOKT(
 		return sdk.Coin{}, err
 	}
 
-	computeUnitsToTokenMultiplierRat := new(big.Rat).SetUint64(sharedParams.GetComputeUnitsToTokensMultiplier())
+	// Calculate the fractional uPOKT amount of a single compute unit.
+	computeUnitsToUpoktMultiplierRat := new(big.Rat).SetFrac64(
+		// CUTTM is a GLOBAL network wide parameter.
+		int64(sharedParams.GetComputeUnitsToTokensMultiplier()),
+		// The uPOKT cost granularity of a single compute unit.
+		int64(sharedParams.GetComputeUnitCostGranularity()),
+	)
 
-	// CUTTM is a GLOBAL network wide parameter.
-	upoktAmountRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToTokenMultiplierRat)
+	upoktAmountRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToUpoktMultiplierRat)
 
 	// Perform the division as late as possible to minimize precision loss.
 	upoktAmount := new(big.Int).Div(upoktAmountRat.Num(), upoktAmountRat.Denom())
+
 	if upoktAmount.Sign() < 0 {
 		return sdk.Coin{}, ErrProofInvalidClaimedAmount.Wrapf(
-			"num estimated compute units (%s) * CUTTM (%d) resulted in a negative amount: %s",
+			"num estimated compute units (%s) * CUTTM (%s) resulted in a negative amount: %s",
 			numEstimatedComputeUnitsRat.RatString(),
-			sharedParams.GetComputeUnitsToTokensMultiplier(),
+			computeUnitsToUpoktMultiplierRat.RatString(),
 			upoktAmountRat,
 		)
 	}
