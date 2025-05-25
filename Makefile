@@ -192,6 +192,7 @@ go_lint: ## Run all go linters
 go_imports: check_go_version ## Run goimports on all go files
 	go run ./tools/scripts/goimports
 
+# DEV_NOTE: Add `-v` flag to `go generate` to see which files are being generated.
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
 	find . -name "*_mock.go" | xargs --no-run-if-empty rm
