@@ -135,7 +135,6 @@ help: ## Prints all the targets in all the Makefiles
 ### Proto  Helpers ####
 #######################
 
-
 proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
 	@echo "Updating all instances of cosmossdk.io/api/pocket to github.com/pokt-network/poktroll/api/pocket..."
 	@find ./api/pocket/ -type f | while read -r file; do \
