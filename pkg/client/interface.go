@@ -325,8 +325,6 @@ type SharedQueryClient interface {
 	// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 	// for the session that includes queryHeight can be committed for a given supplier.
 	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
-	// GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
-	GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error)
 }
 
 // BlockQueryClient defines an interface that enables the querying of
