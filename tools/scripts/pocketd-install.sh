@@ -4,8 +4,8 @@
 # Use with -u or --upgrade flag to force reinstallation of the latest version by removing the existing binary first.
 
 # Example Usage:
-# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/install.sh | bash
-# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/install.sh | bash -s -- --upgrade
+# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash
+# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --upgrade
 
 UPGRADE=false
 
