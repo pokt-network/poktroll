@@ -85,6 +85,6 @@ See [Recovery From Chain Halt](9_recovery_from_chain_halt.md) for more informati
 The following is a list of documentation & scripts that need to be updated on a failed upgrade:
 
 - [ ] The [upgrade list](4_upgrade_list.md) should reflect a failed upgrade and provide a range of heights that served by each version.
-- [ ] Systemd service should include`--unsafe-skip-upgrade=$upgradeHeightNumber` argument in its start command [here](https://github.com/pokt-network/poktroll/blob/main/tools/installer/full-node.sh).
+- [ ] Systemd service should include`--unsafe-skip-upgrade=$upgradeHeightNumber` argument in its start command [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/full-node.sh).
 - [ ] The [Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/pocketd/templates/StatefulSet.yaml) should point to the latest version;consider exposing via a `values.yaml` file
 - [ ] The [docker-compose](https://github.com/pokt-network/poktroll-docker-compose-example/tree/main/scripts) examples should point to the latest version
