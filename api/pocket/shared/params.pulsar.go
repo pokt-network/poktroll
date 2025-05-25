@@ -955,8 +955,28 @@ type Params struct {
 	GatewayUnbondingPeriodSessions uint64 `protobuf:"varint,10,opt,name=gateway_unbonding_period_sessions,json=gatewayUnbondingPeriodSessions,proto3" json:"gateway_unbonding_period_sessions,omitempty"`
 	// compute_unit_cost_granularity is the fraction of the base unit (uPOKT) used
 	// to represent the smallest price of a single compute unit.
-	// It is used to convert claims rewards to the base unit (uPOKT).
-	// (i.e. compute unit cost in uPOKT = compute_units_to_token_multiplier / compute_unit_cost_granularity)
+	// compute_unit_cost_granularity defines the smallest fraction of uPOKT that can represent
+	// the cost of a single compute unit.
+	//
+	// It acts as a denominator in the formula:
+	//
+	//	compute_unit_cost_in_uPOKT = compute_units_to_tokens_multiplier / compute_unit_cost_granularity
+	//
+	// This enables high-precision pricing of compute units using integer math.
+	// For example:
+	//
+	// +-------------------------------+---------------------------------------------+
+	// | compute_unit_cost_granularity | compute_units_to_tokens_multiplier unit     |
+	// +-------------------------------+---------------------------------------------+
+	// | 1                             | uPOKT                                       |
+	// | 1_000                         | nPOKT (nanoPOKT, 1e-3 uPOKT)                |
+	// | 1_000_000                     | pPOKT (picoPOKT, 1e-6 uPOKT)                |
+	// +-------------------------------+---------------------------------------------+
+	//
+	// ⚠️ Note: This value is a configurable global network parameter (not a constant).
+	// It must be a power of 10, allowing precise denomination shifts without affecting
+	// ongoing sessions. This prevents sessions from settling using parameters that
+	// were not in effect during their creation.
 	ComputeUnitCostGranularity uint64 `protobuf:"varint,11,opt,name=compute_unit_cost_granularity,json=computeUnitCostGranularity,proto3" json:"compute_unit_cost_granularity,omitempty"`
 }
 

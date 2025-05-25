@@ -19,4 +19,12 @@ const (
 
 	FlagNoPassphrase      = "no-passphrase"
 	FlagNoPassphraseUsage = "attempt to use an empty passphrase to decrypt the exported Morse key file for signing"
+
+	FlagInputFile      = "input-file"
+	FlagInputFileShort = "Path to input file"
+	FlagInputFileUsage = "An absolute or relative path to an input file that can be used to read data from. This will not be overwritten."
+
+	FlagOutputFile      = "output-file"
+	FlagOutputFileShort = "Path to output file."
+	FlagOutputFileUsage = "An absolute or relative path to an output file that can be used to write data to. Caution that this file may be updated or overwritten if it already exists."
 )
