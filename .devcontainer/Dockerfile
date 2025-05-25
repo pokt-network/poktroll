@@ -7,4 +7,4 @@ RUN curl https://get.ignite.com/cli | bash
 RUN mv ignite /usr/local/bin/
 
 # enable faster module downloading.
-ENV GOPROXY https://proxy.golang.org
+ENV GOPROXY=https://proxy.golang.org
