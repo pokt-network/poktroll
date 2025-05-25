@@ -5,8 +5,8 @@ import (
 	_ "cosmossdk.io/api/amino"
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	_ "cosmossdk.io/api/cosmos/msg/v1"
-	application "cosmossdk.io/api/pocket/application"
-	shared "cosmossdk.io/api/pocket/shared"
+	application "github.com/pokt-network/poktroll/api/pocket/application"
+	shared "github.com/pokt-network/poktroll/api/pocket/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
@@ -7600,7 +7600,6 @@ func (x *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 // - Mint claimed balance to the given Shannon account
 //
 // NOTE:
-// - A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.
 // - The Shannon account specified must be the message signer
 // - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
 type MsgClaimMorseAccount struct {
@@ -7610,7 +7609,8 @@ type MsgClaimMorseAccount struct {
 
 	// The bech32-encoded address of the Shannon account which is signing for this message.
 	// This account is liable for any fees incurred by violating the constraints of Morse
-	// account/actor claim message fee waiving.
+	// account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
+	// claim messages AND has EXACTLY ONE signer.
 	ShannonSigningAddress string `protobuf:"bytes,4,opt,name=shannon_signing_address,json=shannonSigningAddress,proto3" json:"shannon_signing_address,omitempty"`
 	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address,omitempty"`

@@ -3,7 +3,7 @@ package tokenomics
 
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
-	proof "cosmossdk.io/api/pocket/proof"
+	proof "github.com/pokt-network/poktroll/api/pocket/proof"
 	fmt "fmt"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"

@@ -260,13 +260,13 @@ func (m *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 // - Mint claimed balance to the given Shannon account
 //
 // NOTE:
-// - A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.
 // - The Shannon account specified must be the message signer
 // - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
 type MsgClaimMorseAccount struct {
 	// The bech32-encoded address of the Shannon account which is signing for this message.
 	// This account is liable for any fees incurred by violating the constraints of Morse
-	// account/actor claim message fee waiving.
+	// account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
+	// claim messages AND has EXACTLY ONE signer.
 	ShannonSigningAddress string `protobuf:"bytes,4,opt,name=shannon_signing_address,json=shannonSigningAddress,proto3" json:"shannon_signing_address"`
 	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`

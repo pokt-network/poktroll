@@ -3,7 +3,7 @@ package supplier
 
 import (
 	_ "cosmossdk.io/api/amino"
-	shared "cosmossdk.io/api/pocket/shared"
+	shared "github.com/pokt-network/poktroll/api/pocket/shared"
 	fmt "fmt"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"

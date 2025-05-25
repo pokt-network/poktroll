@@ -3,7 +3,7 @@ package application
 
 import (
 	_ "cosmossdk.io/api/cosmos/base/v1beta1"
-	_ "cosmossdk.io/api/pocket/shared"
+	_ "github.com/pokt-network/poktroll/api/pocket/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
