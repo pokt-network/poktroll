@@ -4,16 +4,19 @@
 # Use with -u or --upgrade flag to force reinstallation of the latest version by removing the existing binary first.
 
 # Example Usage:
-# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
-# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash -s -- --upgrade
+# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash
+# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --upgrade
 
 UPGRADE=false
 
 # Process command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -u|--upgrade) UPGRADE=true ;;
-        *) echo "Unknown parameter: $1"; exit 1 ;;
+    -u | --upgrade) UPGRADE=true ;;
+    *)
+        echo "Unknown parameter: $1"
+        exit 1
+        ;;
     esac
     shift
 done
@@ -37,10 +40,10 @@ install_pocketd() {
         else
             echo "🚀 Installing pocketd..."
         fi
-        
+
         # Detect OS (darwin for macOS, linux for Linux)
         OS=$(uname | tr '[:upper:]' '[:lower:]')
-        
+
         # Detect architecture and convert to expected format (amd64 or arm64)
         if [ "$(uname -m)" == "x86_64" ]; then
             ARCH="amd64"
@@ -50,32 +53,32 @@ install_pocketd() {
             echo "❌ Unsupported architecture: $(uname -m). Expected x86_64, aarch64, or arm64."
             exit 1
         fi
-        
+
         # Validate OS
         if [ "$OS" != "darwin" ] && [ "$OS" != "linux" ]; then
             echo "❌ Unsupported operating system: $OS. Expected darwin or linux."
             exit 1
         fi
-        
+
         # Construct tarball name based on detected OS and architecture
         TARBALL="pocket_${OS}_${ARCH}.tar.gz"
-        
+
         echo "🔍 Detected OS: $OS, Architecture: $ARCH"
         echo "📥 Downloading $TARBALL..."
-        
+
         # Download the appropriate tarball
         curl -LO "https://github.com/pokt-network/poktroll/releases/latest/download/${TARBALL}"
-        
+
         # Create directory for binary if it doesn't exist
         sudo mkdir -p /usr/local/bin
-        
+
         # Extract the tarball to /usr/local/bin
         echo "📦 Extracting files..."
         sudo tar -zxf "${TARBALL}" -C /usr/local/bin
-        
+
         # Make the binary executable
         sudo chmod +x /usr/local/bin/pocketd
-        
+
         # Clean up the downloaded tarball
         rm "${TARBALL}"
 
