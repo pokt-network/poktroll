@@ -322,8 +322,8 @@ ignite_check_version:
 		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
 		exit 1 ; \
 	fi ; \
-	if [ "$$(printf "v28\n$$version" | sort -V | head -n1)" != "v28" ]; then \
-		echo "Error: Version $$version is less than v28. Please update Ignite via Homebrew or make ignite_install." ; \
+	if [ "$$(printf "v29\n$$version" | sort -V | head -n1)" != "v29" ]; then \
+		echo "Error: Version $$version is less than v29. Please update Ignite via Homebrew or make ignite_install." ; \
 		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
 		exit 1 ; \
 	fi
@@ -337,13 +337,13 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 		SUDO=""; \
 	fi; \
 	echo "Downloading Ignite CLI..."; \
-	wget https://github.com/ignite/cli/releases/download/v28.10.0/ignite_28.10.0_$(OS)_$(ARCH).tar.gz; \
+	wget https://github.com/ignite/cli/releases/download/v29.0.0-rc.1/ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
 	echo "Extracting Ignite CLI..."; \
-	tar -xzf ignite_28.10.0_$(OS)_$(ARCH).tar.gz; \
+	tar -xzf ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
 	echo "Moving Ignite CLI to /usr/local/bin..."; \
 	$$SUDO mv ignite /usr/local/bin/ignite; \
 	echo "Cleaning up..."; \
-	rm ignite_28.10.0_$(OS)_$(ARCH).tar.gz; \
+	rm ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
 	echo "Configuring ignite so it doesn't block CI by asking for tracking consent..."; \
 	mkdir -p $(HOME)/.ignite; \
 	echo '{"name":"doNotTrackMe","doNotTrack":true}' > $(HOME)/.ignite/anon_identity.json; \
