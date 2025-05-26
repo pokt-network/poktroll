@@ -24,7 +24,10 @@ var (
 		SupplierUnbondingPeriodSessions:    1,
 		ApplicationUnbondingPeriodSessions: 1,
 		GatewayUnbondingPeriodSessions:     1,
-		ComputeUnitsToTokensMultiplier:     42,
+		// compute units to tokens multiplier in pPOKT (i.e. 1/compute_unit_cost_granularity)
+		ComputeUnitsToTokensMultiplier: 42_000_000,
+		// compute unit cost granularity is 1pPOKT (i.e. 1/1e6)
+		ComputeUnitCostGranularity: 1_000_000,
 	}
 
 	sharedParamsOpt = keepertest.WithSharedModuleParams(&testSharedParams)

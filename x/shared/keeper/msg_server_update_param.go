@@ -63,6 +63,9 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 	case types.ParamComputeUnitsToTokensMultiplier:
 		logger = logger.With("param_value", msg.GetAsUint64())
 		params.ComputeUnitsToTokensMultiplier = msg.GetAsUint64()
+	case types.ParamComputeUnitCostGranularity:
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ComputeUnitCostGranularity = msg.GetAsUint64()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
