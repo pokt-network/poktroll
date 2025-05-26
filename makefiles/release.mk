@@ -150,8 +150,10 @@ ignite_release_extract_binaries: ## Extracts binaries from the release archives
 	mkdir -p release_binaries
 	for archive in release/*.tar.gz; do \
 		binary_name=$$(basename "$$archive" .tar.gz); \
-		tar -zxvf "$$archive" --strip-components=2 -C release_binaries "*/pocketd"; \
-		mv release_binaries/pocketd "release_binaries/$$binary_name"; \
+		temp_dir=$$(mktemp -d); \
+		tar -zxf "$$archive" -C "$$temp_dir"; \
+		find "$$temp_dir" -name "pocketd" -type f -exec cp {} "release_binaries/$$binary_name" \; ; \
+		rm -rf "$$temp_dir"; \
 	done
 
 ########################
