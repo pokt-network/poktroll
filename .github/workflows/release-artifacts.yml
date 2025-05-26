@@ -119,48 +119,47 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # # TODO_WIP: @Olshansky testing things manually.
       # For version tag pushes
-      # - name: Build and push Docker image for tag events
-      #   if: startsWith(github.ref, 'refs/tags/v')
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     push: true
-      #     tags: ${{ steps.meta-tag.outputs.tags }}
-      #     labels: ${{ steps.meta-tag.outputs.labels }}
-      #     platforms: linux/amd64,linux/arm64
-      #     file: Dockerfile.release
-      #     cache-from: type=gha
-      #     cache-to: type=gha,mode=max
-      #     context: .
+      - name: Build and push Docker image for tag events
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-tag.outputs.tags }}
+          labels: ${{ steps.meta-tag.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.release
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
 
-      # # For main branch pushes
-      # - name: Build and push Docker image for main branch
-      #   if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     push: true
-      #     tags: ${{ steps.meta-main.outputs.tags }}
-      #     labels: ${{ steps.meta-main.outputs.labels }}
-      #     platforms: linux/amd64,linux/arm64
-      #     file: Dockerfile.release
-      #     cache-from: type=gha
-      #     cache-to: type=gha,mode=max
-      #     context: .
+      # For main branch pushes
+      - name: Build and push Docker image for main branch
+        if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-main.outputs.tags }}
+          labels: ${{ steps.meta-main.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.release
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
 
-      # # For manual workflow triggers
-      # - name: Build and push Docker image for manual workflow_dispatch
-      #   if: github.event_name == 'workflow_dispatch'
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     push: true
-      #     tags: ${{ steps.meta-manual.outputs.tags }}
-      #     labels: ${{ steps.meta-manual.outputs.labels }}
-      #     platforms: linux/amd64,linux/arm64
-      #     file: Dockerfile.release
-      #     cache-from: type=gha
-      #     cache-to: type=gha,mode=max
-      #     context: .
+      # For manual workflow triggers
+      - name: Build and push Docker image for manual workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-manual.outputs.tags }}
+          labels: ${{ steps.meta-manual.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.release
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
 
       # Only publish GitHub releases for tag events
       - name: Add release and publish binaries

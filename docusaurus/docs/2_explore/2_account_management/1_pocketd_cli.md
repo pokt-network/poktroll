@@ -26,9 +26,8 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
 - [Publishing a new `pocketd` release](#publishing-a-new-pocketd-release)
   - [1. Create a new `dev` git tag](#1-create-a-new-dev-git-tag)
   - [2. Draft a new GitHub release](#2-draft-a-new-github-release)
-  - [3. Wait 5 - 20 minutes](#3-wait-5---20-minutes)
-  - [5. Verify via `pocketd-install.sh` script](#5-verify-via-pocketd-installsh-script)
-  - [4. Update the `homebrew` tap](#4-update-the-homebrew-tap)
+  - [3. Wait for the release artifacts to be built (5 - 20 minutes)](#3-wait-for-the-release-artifacts-to-be-built-5---20-minutes)
+  - [4. Verify via the `pocketd-install.sh` script](#4-verify-via-the-pocketd-installsh-script)
 
 ---
 
@@ -169,7 +168,7 @@ pocketd --help
 
 :::warning Devs only
 
-This section is intended for core protocol developers only
+This section is intended for core protocol developers only.
 
 :::
 
@@ -197,11 +196,11 @@ git push origin $(git tag)
 
 ### 2. Draft a new GitHub release
 
-Draft a new release at [pokt-network/poktroll/releases/new](https://github.com/pokt-network/poktroll/releases/new) using the tag created in the previous step.
+Draft a new release at [pokt-network/poktroll/releases/new](https://github.com/pokt-network/poktroll/releases/new) using the tag (e.g. `v0.1.12-dev3`) created in the previous step.
 
 Make sure to mark as a `pre-release` and use the auto-generated release notes for simplicity.
 
-### 3. Wait 5 - 20 minutes
+### 3. Wait for the release artifacts to be built (5 - 20 minutes)
 
 The [release artifacts workflow](https://github.com/pokt-network/poktroll/actions/workflows/release-artifacts.yml) will automatically build and publish the release artifacts to GitHub.
 
@@ -209,28 +208,8 @@ Wait for the release artifacts to be built and published to GitHub.
 
 The artifacts will be attached an an `Asset` to your [release](https://github.com/pokt-network/poktroll/releases) once the workflow completes.
 
-### 5. Verify via `pocketd-install.sh` script
+### 4. Verify via the `pocketd-install.sh` script
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash
-```
-
-
-### 4. Update the `homebrew` tap
-
-:::warning
-
-:::
-
-```bash
-git clone git@github.com:pokt-network/homebrew-pocketd.git
-cd homebrew-pocketd
-make tap_update_version
-git commit -am "Update pocket tap from v.X1.Y1.Z1 to v.X1.Y2.Z2"
-git push
-```
-
-```bash
-brew tap pocket-network/homebrew-pocketd
-brew install pocketd
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev3 --upgrade
 ```
