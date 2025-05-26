@@ -23,8 +23,12 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
     - [Installation dependencies](#installation-dependencies)
     - [Build from source](#build-from-source)
 - [Windows (why!?)](#windows-why)
-- [Publishing a new CLI release](#publishing-a-new-cli-release)
-- [8. Update the `homebrew-tap` Formula](#8-update-the-homebrew-tap-formula)
+- [Publishing a new `pocketd` release](#publishing-a-new-pocketd-release)
+  - [1. Create a new `dev` git tag](#1-create-a-new-dev-git-tag)
+  - [2. Draft a new GitHub release](#2-draft-a-new-github-release)
+  - [3. Wait 5 - 20 minutes](#3-wait-5---20-minutes)
+  - [5. Verify via `pocketd-install.sh` script](#5-verify-via-pocketd-installsh-script)
+  - [4. Update the `homebrew` tap](#4-update-the-homebrew-tap)
 
 ---
 
@@ -156,17 +160,67 @@ pocketd --help
 - Native Windows installation is **not supported**.
 - Use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)
 - Follow the Linux install instructions above.
-  :::
+
+:::
 
 ---
 
-## Publishing a new CLI release
+## Publishing a new `pocketd` release
 
-## 8. Update the `homebrew-tap` Formula
+:::warning Devs only
 
-Once the upgrade is validated, update the tap so users can install the new CLI.
+This section is intended for core protocol developers only
 
-**Steps:**
+:::
+
+This section is intended **only for core protocol developers**.
+
+It is also only intended for for dev releases of the `pocketd` CLI.
+
+If you are publishing an official protocol upgrade accompanies by a CLI update, visit the [release procedure docs](../../4_develop//upgrades/2_release_procedure.md).
+
+:::
+
+### 1. Create a new `dev` git tag
+
+```bash
+# Clone the repository if you haven't already
+git clone git@github.com:pokt-network/poktroll.git poktroll
+cd poktroll
+
+# Create a new dev git tag and follow the on-screen instructions
+make release_tag_dev
+
+# Push the tag to GitHub
+git push origin $(git tag)
+```
+
+### 2. Draft a new GitHub release
+
+Draft a new release at [pokt-network/poktroll/releases/new](https://github.com/pokt-network/poktroll/releases/new) using the tag created in the previous step.
+
+Make sure to mark as a `pre-release` and use the auto-generated release notes for simplicity.
+
+### 3. Wait 5 - 20 minutes
+
+The [release artifacts workflow](https://github.com/pokt-network/poktroll/actions/workflows/release-artifacts.yml) will automatically build and publish the release artifacts to GitHub.
+
+Wait for the release artifacts to be built and published to GitHub.
+
+The artifacts will be attached an an `Asset` to your [release](https://github.com/pokt-network/poktroll/releases) once the workflow completes.
+
+### 5. Verify via `pocketd-install.sh` script
+
+```bash
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash
+```
+
+
+### 4. Update the `homebrew` tap
+
+:::warning
+
+:::
 
 ```bash
 git clone git@github.com:pokt-network/homebrew-pocketd.git
@@ -176,69 +230,7 @@ git commit -am "Update pocket tap from v.X1.Y1.Z1 to v.X1.Y2.Z2"
 git push
 ```
 
-**Reinstall the CLI:**
-
-```bash
-brew reinstall pocketd
-```
-
-**Or install for the first time:**
-
 ```bash
 brew tap pocket-network/homebrew-pocketd
 brew install pocketd
 ```
-
-See [pocketd CLI docs](../../2_explore/2_account_management/1_pocketd_cli.md) for more info.
-
-:::note
-You can review [all prior releases here](https://github.com/pokt-network/poktroll/releases).
-:::
-
-1. **Tag the release** using one of the following and follow on-screen prompts:
-
-   ```bash
-   make release_tag_bug_fix
-   # or
-   make release_tag_minor_release
-   ```
-
-2. **Publish the release** by:
-
-   - [Drafting a new release](https://github.com/pokt-network/poktroll/releases/new)
-   - Using the tag from the step above
-
-3. **Update the description in the release** by:
-
-   - Clicking `Generate release notes` in the GitHub UI
-   - Add this table **ABOVE** the auto-generated notes (below)
-
-     ```markdown
-     ## Protocol Upgrades
-
-     | Category                     | Applicable | Notes                                |
-     | ---------------------------- | ---------- | ------------------------------------ |
-     | Planned Upgrade              | ✅         | New features.                        |
-     | Consensus Breaking Change    | ✅         | Yes, see upgrade here: #1216         |
-     | Manual Intervention Required | ❓         | Cosmosvisor managed everything well. |
-
-     | Network       | Upgrade Height | Upgrade Transaction Hash | Notes |
-     | ------------- | -------------- | ------------------------ | ----- |
-     | Alpha TestNet | ⚪             | ⚪                       | ⚪    |
-     | Beta TestNet  | ⚪             | ⚪                       | ⚪    |
-     | MainNet       | ⚪             | ⚪                       | ⚪    |
-
-     **Legend**:
-
-     - ⚠️ - Warning/Caution Required
-     - ✅ - Yes
-     - ❌ - No
-     - ⚪ - Will be filled out throughout the release process / To Be Determined
-     - ❓ - Unknown / Needs Discussion
-
-     ## What's Changed
-
-     <!-- Auto-generated GitHub Release Notes continue here -->
-     ```
-
-4. **Set as a pre-release** (change to `latest release` after upgrade completes).
