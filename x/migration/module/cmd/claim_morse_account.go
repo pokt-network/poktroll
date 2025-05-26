@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -78,10 +77,11 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// The destination Shannon address must be the same as the signing Shannon address.
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
+	shannonDestAddr := shannonSigningAddr
 
 	// Construct a MsgClaimMorseAccount message.
-	shannonDestAddr := clientCtx.GetFromAddress().String()
 	msgClaimMorseAccount, err := types.NewMsgClaimMorseAccount(
 		shannonDestAddr,
 		morsePrivKey,
@@ -91,13 +91,10 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Serialize, as JSON, and print the MsgClaimMorseAccount for posterity and/or confirmation.
-	msgClaimMorseAcctJSON, err := json.MarshalIndent(msgClaimMorseAccount, "", "  ")
-	if err != nil {
+	// Print the claim message according to the --output format.
+	if err = clientCtx.PrintProto(msgClaimMorseAccount); err != nil {
 		return err
 	}
-
-	logger.Logger.Info().Msgf("MsgClaimMorseAccount %s\n", string(msgClaimMorseAcctJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
@@ -117,9 +114,6 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		// Terminate the confirmation prompt output line.
-		fmt.Println()
-
 		// Abort unless some affirmative confirmation is given.
 		switch string(inputLine) {
 		case "Yes", "yes", "Y", "y":
@@ -135,12 +129,15 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	}
 
 	// Sign and broadcast the claim Morse account message.
-	_, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseAccount)
-	err, errCh := eitherErr.SyncOrAsyncError()
-	if err != nil {
+	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseAccount)
+	if err, _ = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 
-	// Wait for an async error, timeout, or the errCh to close on success.
-	return <-errCh
+	// Print the TxResponse according to the --output format.
+	if err = clientCtx.PrintProto(txResponse); err != nil {
+		return err
+	}
+
+	return nil
 }

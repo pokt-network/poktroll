@@ -34,6 +34,7 @@ func TxCommands() *cobra.Command {
 
 	migrateCmd.AddCommand(cmd.CollectMorseAccountsCmd())
 	migrateCmd.AddCommand(cmd.ClaimAccountCmd())
+	migrateCmd.AddCommand(cmd.ClaimMorseAccountBulkCmd())
 	migrateCmd.AddCommand(cmd.ClaimApplicationCmd())
 	migrateCmd.AddCommand(cmd.ClaimSupplierCmd())
 	migrateCmd.AddCommand(cmd.ImportMorseAccountsCmd())

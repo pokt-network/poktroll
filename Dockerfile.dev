@@ -1,7 +1,7 @@
 # This Dockerfile is used to build container image for development purposes.
 # It intentionally contains no security features, ships with code and troubleshooting tools.
 
-FROM golang:1.24.3 as base
+FROM golang:1.24.3 AS base
 
 RUN apt update && \
     apt-get install -y \
@@ -9,7 +9,7 @@ RUN apt update && \
     curl jq yq make vim less dnsutils rsync
 
 # enable faster module downloading.
-ENV GOPROXY https://proxy.golang.org
+ENV GOPROXY=https://proxy.golang.org
 
 COPY . /pocket
 
