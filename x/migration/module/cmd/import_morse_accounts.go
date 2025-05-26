@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"os"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
@@ -134,11 +133,6 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	txResponseJSON, err := json.MarshalIndent(txResponse, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	logger.Logger.Info().Msg(string(txResponseJSON))
-	return nil
+	// Print the TxResponse according to the --output format.
+	return clientCtx.PrintProto(txResponse)
 }
