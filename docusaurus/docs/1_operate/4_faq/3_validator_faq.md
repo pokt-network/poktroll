@@ -171,3 +171,10 @@ Your Full Node must be fully synchronized before creating a Validator.
 - When setting up your validator:
   - The `commission-rate`, `commission-max-rate`, and `commission-max-change-rate` should be expressed as decimals (e.g., `0.1` for 10%)
   - Ensure you have sufficient balance for your specified amounts in `validator.json` and delegations
+
+## What keys are important for Validators?
+
+  _BE ABSOLUTELY SURE YOU HAVE THESE BACKED UP!!!_
+  - You will need your validator address key (the address you staked from)
+  - Your `priv_validator_key.json` - found in `/pocketd/config`
+  - Your `node_key.json` - found in `/pocketd/config`
