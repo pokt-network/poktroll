@@ -110,7 +110,6 @@ The following `import-morse-accounts` command can be used to import the canonica
 pocketd tx migration import-morse-accounts \
   "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" \
   --from <authorized-key-name> \
-  --grpc-addr=<shannon-network-grpc-endpoint> \
   --home <shannon-home-directory> \
   --chain-id=<shannon-chain-id> \
   --gas=auto --gas-adjustment=1.5
@@ -121,16 +120,16 @@ pocketd tx migration import-morse-accounts \
 
 ```bash
 # LocalNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pnf --grpc-addr=localhost:9090 --home=./localnet/pocketd --chain-id=pocket --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pnf --home=./localnet/pocketd --chain-id=pocket --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # Alpha TestNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-testnet-grove-rpc.alpha.poktroll.com --grpc-addr=shannon-grove-grpc.alpha.poktroll.com:443 --grpc-insecure
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-testnet-grove-rpc.alpha.poktroll.com
 
 # Beta TestNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-testnet-grove-rpc.beta.poktroll.com --grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 --grpc-insecure
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-testnet-grove-rpc.beta.poktroll.com
 
 # MainNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.mainnet.poktroll.com --grpc-addr=shannon-grove-grpc.mainnet.poktroll.com:443 --grpc-insecure
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.mainnet.poktroll.com
 ```
 
 </details>
@@ -260,7 +259,7 @@ The http/grpc configs of the `RPC_ENDPOINT` you're using may need to be configur
 If you're running it yourself in `k8s`, a workaround can be to replace this command:
 
 ```
-pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --grpc-addr=shannon-testnet-grove-grpc.alpha.poktroll.com:443 --node=https://shannon-testnet-grove-rpc.alpha.poktroll.com
+pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=https://shannon-testnet-grove-rpc.alpha.poktroll.com
 ```
 
 with
@@ -269,5 +268,5 @@ with
 
 kubectl port-forward pods/alpha-validator1-pocketd-0 26657:26657 9090:9090 -n testnet-alpha --address 0.0.0.0
 
-pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --grpc-addr=localhost:9090 --node=localhost:26657
+pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=localhost:26657
 ```

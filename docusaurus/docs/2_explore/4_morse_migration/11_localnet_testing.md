@@ -191,7 +191,6 @@ _Wait for all services to be fully up before continuing._
 pocketd tx migration import-morse-accounts \
   localnet_testing_msg_import_morse_accounts.json \
   --from=pnf \
-  --grpc-addr=localhost:9090 \
   --home=./localnet/pocketd --keyring-backend=test \
   --chain-id=pocket \
   --gas=auto --gas-adjustment=1.5

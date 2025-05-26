@@ -29,7 +29,7 @@ const (
 	FlagOutputFileUsage = "An absolute or relative path to an output file that can be used to write data to. Caution that this file may be updated or overwritten if it already exists."
 
 	FlagNetwork      = "network"
-	FlagNetworkUsage = "Sets the --node, --grpc-addr, and --chain-id flags (if applicable) based on the given network moniker (e.g. alpha, beta, main)"
+	FlagNetworkUsage = "Sets the --chain-id, --node, and --grpc-addr flags (if applicable) based on the given network moniker (e.g. alpha, beta, main)"
 	DefaultNetwork   = ""
 
 	LocalNetworkName = "local"
