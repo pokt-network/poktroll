@@ -128,12 +128,11 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	}
 
 	// Sign and broadcast the claim Morse account message.
-	_, eitherErr := txClient.SignAndBroadcast(ctx, &msgAuthzExec)
-	err, errCh := eitherErr.SyncOrAsyncError()
-	if err != nil {
+	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, &msgAuthzExec)
+	if err, _ = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 
-	// Wait (i.e. block) for an async error, timeout, or the errCh to close on success.
-	return <-errCh
+	// Print the TxResponse according to the --output format.
+	return clientCtx.PrintProto(txResponse)
 }
