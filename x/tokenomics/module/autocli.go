@@ -3,14 +3,14 @@ package tokenomics
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/poktroll/api/pocket/tokenomics"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service:           modulev1.Query_ServiceDesc.ServiceName,
+			Service:           tokenomicstypes.Query_serviceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				// 				{
 				// 					RpcMethod: "Params",
@@ -25,7 +25,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{
-			Service:              modulev1.Msg_ServiceDesc.ServiceName,
+			Service:              tokenomicstypes.Msg_serviceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command
 			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
 				// {

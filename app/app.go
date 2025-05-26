@@ -336,11 +336,17 @@ func (app *App) LegacyAmino() *codec.LegacyAmino {
 }
 
 // AppCodec returns App's app codec.
-//
-// NOTE: This is solely to be used for testing purposes as it may be desirable
-// for modules to register their own custom testing types.
+// DEV_NOTE: Do not delete this.
+// It is needed to comply with the ignite CLI; https://github.com/ignite/cli/issues/4697
 func (app *App) AppCodec() codec.Codec {
 	return app.appCodec
+}
+
+// TxConfig returns App's transaction config.
+// DEV_NOTE: Do not delete this.
+// It is needed to comply with the ignite CLI; https://github.com/ignite/cli/issues/4697
+func (app *App) TxConfig() client.TxConfig {
+	return app.txConfig
 }
 
 // GetKey returns the KVStoreKey for the provided store key.
