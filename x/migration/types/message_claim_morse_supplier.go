@@ -41,16 +41,16 @@ func NewMsgClaimMorseSupplier(
 	if morsePrivateKey != nil {
 		msg.MorsePublicKey = morsePrivateKey.PubKey().Bytes()
 
-		if err := msg.SignMorseSignature(morsePrivateKey); err != nil {
-			return nil, err
-		}
-
 		// Assume that the morsePrivateKey corresponds to ONE OF THE FOLLOWING:
 		// - The morse node address (i.e. operator): leave signer_is_output_address as false
 		// - The morse output address (i.e. owner): set signer_is_output_address to true
 		// If any other private key is used, the claim message will error.
 		if msg.GetMorseSignerAddress() != morseNodeAddress {
 			msg.SignerIsOutputAddress = true
+		}
+
+		if err := msg.SignMorseSignature(morsePrivateKey); err != nil {
+			return nil, err
 		}
 	}
 

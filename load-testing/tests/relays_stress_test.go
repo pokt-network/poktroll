@@ -123,8 +123,9 @@ type relaysSuite struct {
 	numRelaysSent atomic.Uint64
 	// relayRatePerApp is the rate of relay requests sent per application per second.
 	relayRatePerApp int64
-	// relayCoinAmountCost is the amount of tokens (e.g. "upokt") a relay request costs.
-	// It is equal to the tokenomics module's `compute_units_to_tokens_multiplier` parameter.
+	// relayCoinAmountCost is the amount of pPOKT a relay request costs
+	// (i.e. 1/compute_unit_cost_granularity uPOKT).
+	// It is equal to compute_units_to_token_multiplier * compute_units_per_relay.
 	relayCoinAmountCost int64
 
 	// gatewayInitialCount is the number of active gateways at the start of the test.

@@ -98,6 +98,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateComputeUnitsToTokensMultiplier(msg.GetAsUint64())
+	case ParamComputeUnitCostGranularity:
+		if err := msg.paramTypeIsUint64(); err != nil {
+			return err
+		}
+		return ValidateComputeUnitCostGranularity(msg.GetAsUint64())
 	default:
 		return ErrSharedParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

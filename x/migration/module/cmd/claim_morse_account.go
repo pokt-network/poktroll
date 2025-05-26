@@ -77,10 +77,11 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// The destination Shannon address must be the same as the signing Shannon address.
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
+	shannonDestAddr := shannonSigningAddr
 
 	// Construct a MsgClaimMorseAccount message.
-	shannonDestAddr := clientCtx.GetFromAddress().String()
 	msgClaimMorseAccount, err := types.NewMsgClaimMorseAccount(
 		shannonDestAddr,
 		morsePrivKey,

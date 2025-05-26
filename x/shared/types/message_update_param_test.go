@@ -53,6 +53,14 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 				AsType:    &MsgUpdateParam_AsUint64{AsUint64: 0},
 			},
 			expectedErr: ErrSharedParamInvalid,
+		}, {
+			desc: "invalid ComputeUnitCostGranularity",
+			msg: MsgUpdateParam{
+				Authority: sample.AccAddress(),
+				Name:      ParamComputeUnitCostGranularity,
+				AsType:    &MsgUpdateParam_AsUint64{AsUint64: 0},
+			},
+			expectedErr: ErrSharedParamInvalid,
 		},
 	}
 	for _, test := range tests {

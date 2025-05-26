@@ -104,23 +104,22 @@ message MsgImportMorseClaimableAccountsResponse {
 // - Mint claimed balance to the given Shannon account
 //
 // NOTE:
+// - A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.
 // - The Shannon account specified must be the message signer
 // - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
 message MsgClaimMorseAccount {
   // Next free index: 6
+  reserved 2;
 
   option (cosmos.msg.v1.signer) = "shannon_signing_address";
 
-  // The bech32-encoded address of the Shannon account which is signing for this message.
-  // This account is liable for any fees incurred by violating the constraints of Morse
-  // account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
-  // claim messages AND has EXACTLY ONE signer.
+	// The bech32-encoded address of the Shannon account which is signing for this message.
+	// This account is liable for any fees incurred by violating the constraints of Morse
+	// account/actor claim message fee waiving.
   string shannon_signing_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
 
   // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
   string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
-
-  reserved 2;
 
   // The ed25519 public key of the morse account with morse_src_address.
   bytes morse_public_key = 5 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey"];
