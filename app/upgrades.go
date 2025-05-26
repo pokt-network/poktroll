@@ -64,8 +64,8 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.12 - upgrade to enable new features.
 	// upgrades.Upgrade_0_1_12,
 
-	// v0.1.13 - upgrade to add morse_account_claiming_enabled param.
-	upgrades.Upgrade_0_1_13,
+	// v0.1.15 - upgrade to add morse_account_claiming_enabled param.
+	upgrades.Upgrade_0_1_14,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

@@ -13,17 +13,17 @@ import (
 )
 
 const (
-	Upgrade_0_1_13_PlanName = "v0.1.13"
+	Upgrade_0_1_14_PlanName = "v0.1.14"
 )
 
-// Upgrade_0_1_13 handles the upgrade to release `v0.1.13`.
+// Upgrade_0_1_14 handles the upgrade to release `v0.1.14`.
 // This upgrade adds:
 // - the `morse_account_claiming_enabled` migration module param
 //   - Set to `true` by default
 //
-// https://github.com/pokt-network/poktroll/compare/v0.1.12..v0.1.13
-var Upgrade_0_1_13 = Upgrade{
-	PlanName: Upgrade_0_1_13_PlanName,
+// https://github.com/pokt-network/poktroll/compare/v0.1.13..v0.1.14
+var Upgrade_0_1_14 = Upgrade{
+	PlanName: Upgrade_0_1_14_PlanName,
 	// No migrations in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 
@@ -34,12 +34,12 @@ var Upgrade_0_1_13 = Upgrade{
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
 		// Add new parameters by:
-		// 1. Inspecting the diff between v0.1.12...v0.1.13
+		// 1. Inspecting the diff between v0.1.13...v0.1.14
 		// 2. Manually inspect changes in ignite's config.yml
 		// 3. Update the upgrade handler here accordingly
-		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.12...v0.1.13
+		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.13...v0.1.14
 		applyNewParameters := func(ctx context.Context, logger cosmoslog.Logger) (err error) {
-			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_1_13_PlanName)
+			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_1_14_PlanName)
 
 			// Get the current migration module params
 			migrationParams := keepers.MigrationKeeper.GetParams(ctx)
