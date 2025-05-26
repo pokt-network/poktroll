@@ -52,3 +52,10 @@ func WithGasAdjustment(gasAdjustment float64) client.TxClientOption {
 		client.(*txClient).gasAdjustment = gasAdjustment
 	}
 }
+
+// TODO_IN_THIS_COMMIT: godoc...
+func WithUnordered() client.TxClientOption {
+	return func(client client.TxClient) {
+		client.(*txClient).unordered = true
+	}
+}

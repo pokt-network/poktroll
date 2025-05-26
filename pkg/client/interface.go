@@ -149,6 +149,9 @@ type TxContext interface {
 		signingKeyName string,
 		msgs ...cosmostypes.Msg,
 	) (uint64, error)
+
+	// TODO_IN_THIS_COMMIT: comment...
+	SetUnordered(bool)
 }
 
 // Block is an interface which abstracts the details of a block to its minimal

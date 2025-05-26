@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sync"
+	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
@@ -45,6 +46,9 @@ const (
 	// events where the sender address matches the interpolated address.
 	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
 	txWithSenderAddrQueryFmt = "tm.event='Tx' AND message.sender='%s'"
+
+	// TODO_IN_THIS_COMMIT: comment... 10 min max...
+	txTimeoutTimestampDelay = time.Minute * 9
 )
 
 // TODO_TECHDEBT(@bryanchriswhite): Refactor this to use the EventsReplayClient
@@ -127,6 +131,9 @@ type txClient struct {
 	// should retry in the event that it encounters an error or its connection is interrupted.
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
+
+	// TODO_IN_THIS_COMMIT: godoc...
+	unordered bool
 }
 
 type (
@@ -181,6 +188,9 @@ func NewTxClient(
 	for _, opt := range opts {
 		opt(txnClient)
 	}
+
+	// TODO_IN_THIS_COMMIT: comment and/or refactor...
+	txnClient.txCtx.SetUnordered(txnClient.unordered)
 
 	if err = txnClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err
@@ -267,11 +277,24 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
+	// TODO_TECHDEBT(@bryanchriswhite): Set a timeout timestamp which is estimated
+	// to correspond to the timeout height.
+	txBuilder.SetTimeoutTimestamp(time.Now().Add(txTimeoutTimestampDelay))
+
+	offline := false
+	txBuilder.SetUnordered(txnClient.unordered)
+	if txnClient.unordered {
+		// remove sequence number
+		// get account number
+		// set account number
+		offline = true
+	}
+
 	// sign transactions
 	err = txnClient.txCtx.SignTx(
 		txnClient.signingKeyName,
 		txBuilder,
-		false, false,
+		offline, false,
 	)
 	if err != nil {
 		return nil, either.SyncErr(err)

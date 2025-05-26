@@ -11,7 +11,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
@@ -37,6 +37,9 @@ type cosmosTxContext struct {
 	// Holds the cosmos-sdk transaction factory.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk@v0.47.5/client/tx#Factory)
 	txFactory cosmostx.Factory
+
+	// TODO_IN_THIS_COMMIT: comment...
+	unordered bool
 }
 
 // NewTxContext initializes a new cosmosTxContext with the given dependencies.
@@ -74,8 +77,24 @@ func (txCtx cosmosTxContext) SignTx(
 	txBuilder cosmosclient.TxBuilder,
 	offline, overwriteSig bool,
 ) error {
+	txFactory := txCtx.txFactory
+
+	if offline {
+		signingKeyAddr, err := txCtx.GetKeyAddress(signingKeyName)
+		if err != nil {
+			return err
+		}
+		accountRetriever := txCtx.clientCtx.AccountRetriever
+		accountNumber, _, err := accountRetriever.GetAccountNumberSequence(txCtx.GetClientCtx(), signingKeyAddr)
+		if err != nil {
+			return err
+		}
+
+		txFactory = txFactory.WithAccountNumber(accountNumber)
+	}
+
 	return authclient.SignTx(
-		txCtx.txFactory,
+		txFactory,
 		cosmosclient.Context(txCtx.clientCtx),
 		signingKeyName,
 		txBuilder,
@@ -117,6 +136,15 @@ func (txCtx cosmosTxContext) GetClientCtx() cosmosclient.Context {
 	return cosmosclient.Context(txCtx.clientCtx)
 }
 
+// TODO_IN_THIS_COMMIT: godoc & move...
+func (txCtx cosmosTxContext) GetKeyAddress(keyName string) (cosmostypes.AccAddress, error) {
+	keyRecord, err := txCtx.GetKeyring().Key(keyName)
+	if err != nil {
+		return nil, err
+	}
+	return keyRecord.GetAddress()
+}
+
 // GetSimulatedTxGas calculates the gas for the given messages using the simulation mode.
 func (txCtx cosmosTxContext) GetSimulatedTxGas(
 	ctx context.Context,
@@ -124,12 +152,7 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 	msgs ...cosmostypes.Msg,
 ) (uint64, error) {
 	clientCtx := cosmosclient.Context(txCtx.clientCtx)
-	keyRecord, err := txCtx.GetKeyring().Key(signingKeyName)
-	if err != nil {
-		return 0, err
-	}
-
-	accAddress, err := keyRecord.GetAddress()
+	accAddress, err := txCtx.GetKeyAddress(signingKeyName)
 	if err != nil {
 		return 0, err
 	}
@@ -142,8 +165,11 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 
 	txf := txCtx.txFactory.
 		WithSimulateAndExecute(true).
-		WithFromName(signingKeyName).
-		WithSequence(seq)
+		WithFromName(signingKeyName)
+
+	if !txCtx.unordered {
+		txf = txf.WithSequence(seq)
+	}
 
 	txBytes, err := txf.BuildSimTx(msgs...)
 	if err != nil {
@@ -165,4 +191,11 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 	}
 
 	return uint64(txf.GasAdjustment() * float64(simRes.GasInfo.GasUsed)), nil
+}
+
+// TODO_IN_THIS_COMMIT: comment...
+func (txCtx cosmosTxContext) SetUnordered(unordered bool) {
+	txCtx.unordered = unordered
+	txCtx.txFactory = txCtx.txFactory.WithUnordered(unordered)
+
 }
