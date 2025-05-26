@@ -48,10 +48,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			EnhanceCustomCommand: true, // only required if you want to use the custom command
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				// 				{
-				// 					RpcMethod: "UpdateParams",
-				// 					Skip:      true, // skipped because authority gated
-				// 				},
-				// 				{
 				// 					RpcMethod: "StakeApplication",
 				// 					Use:       "stake-application [stake] [services]",
 				// 					Short:     "Send a stake-application tx",
@@ -103,12 +99,63 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Transfer the application from [source app address] to [destination app address] and remove the source application",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "source_address"}, {ProtoField: "destination_address"}},
 				},
-				//{
-				//	RpcMethod:      "UpdateParam",
-				//	Use:            "update-param [name] [as-type]",
-				//	Short:          "Send a update-param tx",
-				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "name"}, {ProtoField: "asType"}},
-				//},
+				{
+					RpcMethod: "UpdateParams",
+					// Use:       "tx authz exec [path to json updating all params] --from $(AUTHORITATIVE_ADDRESS)",
+					Short: "Update all application module params",
+					// Skip:      true,
+					Long: `An authority gated tx that updates all application module params.
+
+The json file must have the following format:
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.application.MsgUpdateParams",
+        "authority": "$(GOV_ADDRESS)",
+        "params": {
+          "max_delegated_gateways": "7",
+          "min_stake":  {
+            "denom": "upokt",
+            "amount": "1000000"
+          }
+        }
+      }
+    ]
+  }
+}`,
+					Example: `
+						pocketd tx authz exec ./tools/scripts/upgrades/application_all.json --from $(AUTHORITATIVE_ADDRESS)
+					`,
+				},
+				{
+					RpcMethod: "UpdateParam",
+					// Use:       "tx authz exec [path to json updating a single param] --from $(AUTHORITATIVE_ADDRESS)",
+					Short: "Update a single application module param",
+					// Skip:           true,
+					Long: `An authority gated tx that updates a single application module param.
+
+The json file must have the following format:
+
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.application.MsgUpdateParam",
+        "authority": "$(GOV_ADDRESS)",
+        "name": "min_stake",
+        "as_coin": {
+          "denom": "upokt",
+          "amount": "1000000"
+        }
+      }
+    ]
+  }
+}`,
+					Example: `
+						pocketd tx authz exec ./tools/scripts/upgrades/application_{UPDATE_PARAM_VALUE}.json --from $(AUTHORITATIVE_ADDRESS)
+					`,
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
