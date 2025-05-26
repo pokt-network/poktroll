@@ -119,10 +119,10 @@ ignite_release_extract_binaries: ## Extracts binaries from the release archives
 	mkdir -p release_binaries
 	for archive in release/*.tar.gz; do \
 		binary_name=$$(basename "$$archive" .tar.gz); \
-		tar -zxvf "$$archive" --strip-components=2 -C release_binaries "*/pocketd"; \
+		pocketd_path=$$(tar -tzf "$$archive" | grep pocketd$$); \
+		tar -zxf "$$archive" -C release_binaries --strip-components=$$(echo "$$pocketd_path" | tr '/' '\n' | wc -l | xargs expr -1 +) "$$pocketd_path" && \
 		mv release_binaries/pocketd "release_binaries/$$binary_name"; \
 	done
-
 ########################
 ###   Act Triggers   ###
 ########################
