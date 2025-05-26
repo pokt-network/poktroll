@@ -45,7 +45,7 @@ const (
 	MainNetRPCURL      = "https://shannon-grove-rpc.mainnet.poktroll.com"
 
 	LocalNetGRPCAddr = "localhost:9090"
-	AlphaNetGRPCAddr = "shannon-testnet-grove-rrpc.alpha.poktroll.com:443"
+	AlphaNetGRPCAddr = "shannon-testnet-grove-grpc.alpha.poktroll.com:443"
 	BetaNetGRPCAddr  = "shannon-testnet-grove-grpc.beta.poktroll.com:443"
-	MainNetGRPCAddr  = "shannon-grove-rpc.mainnet.poktroll.com:443"
+	MainNetGRPCAddr  = "shannon-grove-grpc.mainnet.poktroll.com:443"
 )

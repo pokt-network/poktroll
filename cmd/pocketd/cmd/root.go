@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 
@@ -27,7 +26,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/app/pocket"
+	pocketdcmd "github.com/pokt-network/poktroll/cmd"
 	"github.com/pokt-network/poktroll/cmd/flags"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
@@ -78,7 +77,7 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			cmd.SetErr(cmd.ErrOrStderr())
 
 			// Parse the --network flag. If set, update related flags (e.g. --chain-id, --node, --grpc-addr).
-			if err = parseAndSetNetworkRelatedFlags(cmd); err != nil {
+			if err = pocketdcmd.ParseAndSetNetworkRelatedFlags(cmd); err != nil {
 				return err
 			}
 
@@ -156,58 +155,6 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	rootCmd.PersistentFlags().String(flags.FlagNetwork, flags.DefaultNetwork, flags.FlagNetworkUsage)
 
 	return rootCmd
-}
-
-// parseAndSetNetworkRelatedFlags checks if the --network flag is set (i.e. not empty-string).
-// If so, set the following flags according to their hard-coded network-specific values:
-// * --chain-id
-// * --node
-// * --grpc-addr
-func parseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
-	networkStr, err := cmd.Flags().GetString(flags.FlagNetwork)
-	if err != nil {
-		return err
-	}
-
-	switch networkStr {
-	case "":
-	// No network flag was provided, so we don't need to set any flags.
-	case flags.LocalNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.LocalNetChainId, pocket.LocalNetRPCURL, pocket.LocalNetGRPCAddr)
-	case flags.AlphaNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.AlphaTestNetChainId, pocket.AlphaTestNetRPCURL, pocket.AlphaNetGRPCAddr)
-	case flags.BetaNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.BetaTestNetChainId, pocket.BetaTestNetRPCURL, pocket.BetaNetGRPCAddr)
-	case flags.MainNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.MainNetChainId, pocket.MainNetRPCURL, pocket.MainNetGRPCAddr)
-	default:
-		return fmt.Errorf("unknown --network specified %q", networkStr)
-	}
-
-	return nil
-}
-
-// setNetworkRelatedFlags sets the following flags according to the given arguments:
-// * --chain-id
-// * --node
-// * --grpc-addr
-func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr string) error {
-	if err := cmd.Flags().Set(cosmosflags.FlagChainID, chainId); err != nil {
-		return err
-	}
-
-	if err := cmd.Flags().Set(cosmosflags.FlagNode, nodeUrl); err != nil {
-		return err
-	}
-
-	// ONLY set --grpc-addr flag if it is registered on cmd.
-	if grpcFlag := cmd.Flags().Lookup(cosmosflags.FlagGRPC); grpcFlag != nil {
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, grpcAddr); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) (err error) {
