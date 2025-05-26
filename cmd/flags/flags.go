@@ -20,6 +20,14 @@ const (
 	FlagNoPassphrase      = "no-passphrase"
 	FlagNoPassphraseUsage = "attempt to use an empty passphrase to decrypt the exported Morse key file for signing"
 
+	FlagInputFile      = "input-file"
+	FlagInputFileShort = "" // TODO_TECHDEBT: Add short flag
+	FlagInputFileUsage = "An absolute or relative path to an input file that can be used to read data from. This will not be overwritten."
+
+	FlagOutputFile      = "output-file"
+	FlagOutputFileShort = "" // TODO_TECHDEBT: Add short flag
+	FlagOutputFileUsage = "An absolute or relative path to an output file that can be used to write data to. Caution that this file may be updated or overwritten if it already exists."
+
 	FlagNetwork      = "network"
 	FlagNetworkUsage = "Sets the --node, --grpc-addr, and --chain-id flags (if applicable) based on the given network moniker (e.g. alpha, beta, main)"
 	DefaultNetwork   = ""

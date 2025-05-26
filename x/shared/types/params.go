@@ -25,8 +25,13 @@ const (
 	ParamGatewayUnbondingPeriodSessions       = "gateway_unbonding_period_sessions"
 
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value.
-	DefaultComputeUnitsToTokensMultiplier = 42
+	// The default compute unit cost multiplier in pPOKT (i.e. 1/1e6 uPOKT)
+	DefaultComputeUnitsToTokensMultiplier = 42_000_000
 	ParamComputeUnitsToTokensMultiplier   = "compute_units_to_tokens_multiplier"
+
+	// The default compute unit cost granularity corresponding to 1pPOKT (i.e. 1/1e6 uPOKT)
+	DefaultComputeUnitCostGranularity = 1_000_000
+	ParamComputeUnitCostGranularity   = "compute_unit_cost_granularity"
 )
 
 var (
@@ -41,6 +46,7 @@ var (
 	KeyApplicationUnbondingPeriodSessions                     = []byte("ApplicationUnbondingPeriodSessions")
 	KeyGatewayUnbondingPeriodSessions                         = []byte("GatewayUnbondingPeriodSessions")
 	KeyComputeUnitsToTokensMultiplier                         = []byte("ComputeUnitsToTokensMultiplier")
+	KeyComputeUnitCostGranularity                             = []byte("ComputeUnitCostGranularity")
 )
 
 // ParamKeyTable the param key table for launch module
@@ -61,6 +67,7 @@ func NewParams() Params {
 		ApplicationUnbondingPeriodSessions: DefaultApplicationUnbondingPeriodSessions,
 		GatewayUnbondingPeriodSessions:     DefaultGatewayUnbondingPeriodSessions,
 		ComputeUnitsToTokensMultiplier:     DefaultComputeUnitsToTokensMultiplier,
+		ComputeUnitCostGranularity:         DefaultComputeUnitCostGranularity,
 	}
 }
 
@@ -164,6 +171,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateComputeUnitsToTokensMultiplier(params.ComputeUnitsToTokensMultiplier); err != nil {
+		return err
+	}
+
+	if err := ValidateComputeUnitCostGranularity(params.ComputeUnitCostGranularity); err != nil {
 		return err
 	}
 
@@ -289,14 +300,29 @@ func ValidateGatewayUnbondingPeriodSessions(gatewayUnboindingPeriodSessionsAny a
 
 // ValidateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier governance parameter.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateComputeUnitsToTokensMultiplier(computeUnitsToTokensMultiplerAny any) error {
-	computeUnitsToTokensMultiplier, ok := computeUnitsToTokensMultiplerAny.(uint64)
+func ValidateComputeUnitsToTokensMultiplier(computeUnitsToTokensMultiplierAny any) error {
+	ComputeUnitsToTokensMultiplier, ok := computeUnitsToTokensMultiplierAny.(uint64)
 	if !ok {
-		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", computeUnitsToTokensMultiplerAny)
+		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", computeUnitsToTokensMultiplierAny)
 	}
 
-	if computeUnitsToTokensMultiplier <= 0 {
-		return ErrSharedParamInvalid.Wrapf("invalid ComputeUnitsToTokensMultiplier: (%v)", computeUnitsToTokensMultiplier)
+	if ComputeUnitsToTokensMultiplier <= 0 {
+		return ErrSharedParamInvalid.Wrapf("invalid ComputeUnitsToTokensMultiplier: (%v)", ComputeUnitsToTokensMultiplier)
+	}
+
+	return nil
+}
+
+// ValidateComputeUnitCostGranularity validates the ComputeUnitCostGranularity governance parameter.
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateComputeUnitCostGranularity(computeUnitCostGranularityAny any) error {
+	computeUnitCostGranularity, ok := computeUnitCostGranularityAny.(uint64)
+	if !ok {
+		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", computeUnitCostGranularityAny)
+	}
+
+	if computeUnitCostGranularity <= 0 {
+		return ErrSharedParamInvalid.Wrapf("invalid ComputeUnitCostGranularity: (%v)", computeUnitCostGranularity)
 	}
 
 	return nil
