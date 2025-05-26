@@ -1,9 +1,9 @@
 ---
 title: Tokenomics Resources
-sidebar_position: 2
+sidebar_position: 1
 ---
 
-# Tokenomics Resources <!-- omit in toc -->
+## Tokenomics Resources <!-- omit in toc -->
 
 :::warning
 
