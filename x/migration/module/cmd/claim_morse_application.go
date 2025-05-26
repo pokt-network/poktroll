@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -102,13 +101,10 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Serialize, as JSON, and print the MsgClaimMorseApplication for posterity and/or confirmation.
-	msgClaimMorseAppJSON, err := json.MarshalIndent(msgClaimMorseApplication, "", "  ")
-	if err != nil {
+	// Print the claim message according to the --output format.
+	if err = clientCtx.PrintProto(msgClaimMorseApplication); err != nil {
 		return err
 	}
-
-	logger.Logger.Info().Msgf("MsgClaimMorseApplication %s\n", string(msgClaimMorseAppJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
@@ -127,9 +123,6 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		// Terminate the confirmation prompt output line.
-		fmt.Println()
-
 		// Abort unless some affirmative confirmation is given.
 		switch string(inputLine) {
 		case "Yes", "yes", "Y", "y":
@@ -145,12 +138,15 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 	}
 
 	// Sign and broadcast the claim Morse account message.
-	_, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseApplication)
-	err, errCh := eitherErr.SyncOrAsyncError()
-	if err != nil {
+	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseApplication)
+	if err, _ = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 
-	// Wait for an async error, timeout, or the errCh to close on success.
-	return <-errCh
+	// Print the TxResponse according to the --output format.
+	if err = clientCtx.PrintProto(txResponse); err != nil {
+		return err
+	}
+
+	return nil
 }
