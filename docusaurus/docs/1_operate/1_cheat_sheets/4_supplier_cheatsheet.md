@@ -122,7 +122,7 @@ pocketd keys add supplier
 ### 2. Prepare your environment
 
 ```bash
-cat << 🚀 > ./testrc
+cat << 🚀 > ~/.pocketrc
 export SUPPLIER_ADDR=$(pocketd keys show supplier -a)
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --yes"
 export BETA_NODE_FLAGS="--network=beta"
