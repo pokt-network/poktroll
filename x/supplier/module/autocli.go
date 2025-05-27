@@ -3,14 +3,14 @@ package supplier
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/poktroll/api/pocket/supplier"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service:              modulev1.Query_ServiceDesc.ServiceName,
+			Service:              suppliertypes.Query_serviceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command (for backwards compatibility)
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				// {
@@ -60,7 +60,7 @@ Returns details include things like:
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{
-			Service:              modulev1.Msg_ServiceDesc.ServiceName,
+			Service:              suppliertypes.Msg_serviceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command (for backwards compatibility)
 			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
 				//{

@@ -19,6 +19,7 @@ sidebar_position: 3
   - [Create Validator Account](#create-validator-account)
   - [Set Up Environment](#set-up-environment)
   - [Fund Validator Account](#fund-validator-account)
+  - [Back up Keys 🔑](#back-up-keys-)
 - [Configure Validator](#configure-validator)
   - [Get Validator PubKey](#get-validator-pubkey)
   - [Create Validator JSON](#create-validator-json)
@@ -95,6 +96,18 @@ pkd_beta_tx tx bank send faucet_beta $ADDR 6900000000042upokt
 ```
 
 :::
+
+### Back up Keys 🔑
+
+:::warning 
+
+Before you proceed ensure you have securely backed up your keys!!! Losing validator keys will result in SLASHING!
+
+:::
+
+- Back up your `validator` address key
+- Back up your `priv_validator_key.json` - used to sign blocks. Found in `/pocketd/config/`
+- Back up your `node_key.json` - used for P2P. Found in `/pocketd/config/`
 
 ## Configure Validator
 

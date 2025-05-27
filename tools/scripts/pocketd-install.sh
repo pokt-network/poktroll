@@ -6,13 +6,27 @@
 # Example Usage:
 # curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash
 # curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --upgrade
+# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev1
+# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev1 --upgrade
 
 UPGRADE=false
+TAG=""
 
 # Process command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-    -u | --upgrade) UPGRADE=true ;;
+    -u | --upgrade)
+        UPGRADE=true
+        ;;
+    --tag)
+        if [[ -n $2 && $2 != -* ]]; then
+            TAG="$2"
+            shift
+        else
+            echo "❌ Error: --tag requires a value."
+            exit 1
+        fi
+        ;;
     *)
         echo "Unknown parameter: $1"
         exit 1
@@ -63,11 +77,20 @@ install_pocketd() {
         # Construct tarball name based on detected OS and architecture
         TARBALL="pocket_${OS}_${ARCH}.tar.gz"
 
+        # Determine download base URL
+        if [[ -n "$TAG" ]]; then
+            BASE_URL="https://github.com/pokt-network/poktroll/releases/download/${TAG}"
+            echo "🔖 Using tag: $TAG"
+        else
+            BASE_URL="https://github.com/pokt-network/poktroll/releases/latest/download"
+            echo "🔖 Using latest release"
+        fi
+
         echo "🔍 Detected OS: $OS, Architecture: $ARCH"
-        echo "📥 Downloading $TARBALL..."
+        echo "📥 Downloading ${BASE_URL}/${TARBALL}"
 
         # Download the appropriate tarball
-        curl -LO "https://github.com/pokt-network/poktroll/releases/latest/download/${TARBALL}"
+        curl -LO "${BASE_URL}/${TARBALL}"
 
         # Create directory for binary if it doesn't exist
         sudo mkdir -p /usr/local/bin

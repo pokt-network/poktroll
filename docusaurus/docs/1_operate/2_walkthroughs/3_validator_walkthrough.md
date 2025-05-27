@@ -19,6 +19,7 @@ See the [Validator Cheat Sheet](../1_cheat_sheets/3_validator_cheatsheet.md) if 
   - [2.1. Create the Validator Account](#21-create-the-validator-account)
   - [2.2. Prepare your environment](#22-prepare-your-environment)
   - [2.3. Fund the Validator Account](#23-fund-the-validator-account)
+  - [2.4. Back up Keys 🔑](#24-back-up-keys-)
 - [3. Get the Validator's Public Key](#3-get-the-validators-public-key)
 - [4. Create the Validator JSON File](#4-create-the-validator-json-file)
 - [5. Create the Validator](#5-create-the-validator)
@@ -128,6 +129,19 @@ pkd_beta_tx tx bank send faucet_beta $ADDR 6900000000042upokt
 ```
 
 :::
+
+### 2.4. Back up Keys 🔑
+
+:::warning 
+
+Before you proceed ensure you have securely backed up your keys!!! Losing validator keys will result in SLASHING!
+
+:::
+
+- Back up your `validator` address key
+- Back up your `priv_validator_key.json` - used to sign blocks. Found in `/pocketd/config/`
+- Back up your `node_key.json` - used for P2P. Found in `/pocketd/config/`
+
 
 ## 3. Get the Validator's Public Key
 

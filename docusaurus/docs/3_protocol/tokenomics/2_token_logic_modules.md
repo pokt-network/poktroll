@@ -1,9 +1,9 @@
 ---
 title: Token Logic Modules
-sidebar_position: 1
+sidebar_position: 2
 ---
 
-# Token Logic Modules <!-- omit in toc -->
+## Token Logic Modules <!-- omit in toc -->
 
 - [Introduction](#introduction)
 - [Background: Max Claimable Amount](#background-max-claimable-amount)
@@ -20,7 +20,7 @@ sidebar_position: 1
 
 :::warning
 
-This is an active WIP and the [resources here](./resources.md) are the best starting references to learn more.
+This is an active WIP and the [resources here](1_resources.md) are the best starting references to learn more.
 
 In particular:
 
@@ -332,7 +332,7 @@ sequenceDiagram
 
 _Solving the above problem is non-trivial_.
 
-See the [resources](./resources.md) for more information on the long-term game-theoretic solutions.
+See the [resources](1_resources.md) for more information on the long-term game-theoretic solutions.
 
 In the meantime, the interim manual approach described below is a stepping stone
 do things that don't scale in the short term, but can be easily automated, while
