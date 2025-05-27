@@ -22,6 +22,7 @@ const (
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
 // - the `compute_unit_cost_granularity` shared module param
+// - the `morse_account_claiming_enabled` migration module param
 //
 // https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 var Upgrade_NEXT = Upgrade{
@@ -48,7 +49,8 @@ var Upgrade_NEXT = Upgrade{
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
 
 			// Set compute_unit_cost_granularity to 1e6 making compute_units_to_tokens_multiplier
-			// to be denominated in pPOKT (i.e. 1/1e6 uPOKT)
+			// to be denominated in pPOKT (i.e. 1/1e6 uPOKT).
+			// Recall that pico (p) is 1e-12 and micro (u) is 1e-6.
 			sharedParams.ComputeUnitCostGranularity = 1e6
 			// Maintain the compute_units_to_tokens_multiplier uPOKT value,
 			// Update it to be denominated in 1/compute_unit_cost_granularity uPOKT
