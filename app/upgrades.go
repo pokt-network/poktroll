@@ -62,13 +62,7 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_1_11,
 
 	// v0.1.12 - upgrade to add allow_morse_account_import_overwrite param.
-	// upgrades.Upgrade_0_1_12,
-
-	// v0.1.13 - upgrade to add support for compute_unit_cost_granularity.
-	// upgrades.Upgrade_0_1_13,
-
-	// v0.1.14 - upgrade to add morse_account_claiming_enabled param.
-	upgrades.Upgrade_0_1_14,
+	upgrades.Upgrade_0_1_12,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
