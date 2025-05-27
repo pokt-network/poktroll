@@ -39,34 +39,42 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-// setNetworkRelatedFlags sets the following flags according to the given arguments:
+// setNetworkRelatedFlags sets the following flags according to the given arguments
+// ONLY if they have not already been set:
 // * --chain-id
 // * --node
 // * --grpc-addr
 //
 // DEV_NOTE: --grpc-insecure is also set, but ONLY for LocalNet.
 func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr string) error {
-	if err := cmd.Flags().Set(cosmosflags.FlagChainID, chainId); err != nil {
-		return err
+	if !cmd.Flags().Changed(cosmosflags.FlagChainID) {
+		if err := cmd.Flags().Set(cosmosflags.FlagChainID, chainId); err != nil {
+			return err
+		}
 	}
 
-	if err := cmd.Flags().Set(cosmosflags.FlagNode, nodeUrl); err != nil {
-		return err
+	if !cmd.Flags().Changed(cosmosflags.FlagNode) {
+		if err := cmd.Flags().Set(cosmosflags.FlagNode, nodeUrl); err != nil {
+			return err
+		}
 	}
 
 	// ONLY set --grpc-addr flag if it is registered on cmd.
 	if grpcFlag := cmd.Flags().Lookup(cosmosflags.FlagGRPC); grpcFlag != nil {
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, grpcAddr); err != nil {
-			return err
+		if !cmd.Flags().Changed(cosmosflags.FlagGRPC) {
+			if err := cmd.Flags().Set(cosmosflags.FlagGRPC, grpcAddr); err != nil {
+				return err
+			}
 		}
 	}
 
 	// Also set --grpc-insecure flag, but ONLY for LocalNet.
 	if chainId == pocket.LocalNetChainId {
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, "true"); err != nil {
-			return err
+		if !cmd.Flags().Changed(cosmosflags.FlagGRPCInsecure) {
+			if err := cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, "true"); err != nil {
+				return err
+			}
 		}
-
 	}
 
 	return nil
