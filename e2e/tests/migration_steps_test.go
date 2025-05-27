@@ -5,7 +5,6 @@ package e2e
 import (
 	"fmt"
 	"math/rand"
-	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -432,25 +431,14 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	)
 
 	switch {
-	// DEV_NOTE: The `import-morse-accounts` subcommand requires additional flags
-	// whose values are environment specific: --grpc-addr and --from.
+	// DEV_NOTE: The `import-morse-accounts` subcommand requires additional flags.
 	case strings.Contains(commandStr, "import-morse-accounts"):
-		rpcURL, err := url.Parse(defaultRPCURL)
-		require.NoError(s, err)
-
-		grpcAddrFlagString := fmt.Sprintf(
-			"--grpc-addr=%s:%d",
-			rpcURL.Hostname(),
-			defaultGRPCPort,
-		)
-		grpcAddrFlagParts := strings.Split(grpcAddrFlagString, "=")
 		commandStringParts = append(commandStringParts,
 			"--from", "pnf",
 			keyRingFlag,
 			chainIdFlag,
 			"--gas", "1000000",
 		)
-		commandStringParts = append(commandStringParts, grpcAddrFlagParts...)
 		results, err = s.pocketd.RunCommandOnHost("", commandStringParts...)
 	default:
 		results, err = s.pocketd.RunCommand(commandStringParts...)

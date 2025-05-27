@@ -25,10 +25,10 @@ Pocket Network using the `pocketd` command-line interface (CLI).
 
 Before initiating the transaction, you must specify the node endpoint you'll be interacting with.
 
-For testing purposes, you can use the provided TestNet node:
+For testing purposes, you can use the provided Beta TestNet node:
 
 ```bash
---node=https://testnet-validated-validator-rpc.poktroll.com/
+--network=beta
 ```
 
 On MainNet, ensure you're connected to a trusted full node, validator, or other client on the network.
@@ -40,19 +40,19 @@ sender's address or key name, the recipient's address, and the amount to send.
 
 ```sh
 pocketd tx bank send [from_key_or_address] [to_address] [amount] \
-    --node=<node_endpoint> [additional_flags]
+    --network=<network> [additional_flags]
 ```
 
 - Replace `[from_key_or_address]` with your wallet name or address
 - Replace `[to_address]` with the recipient's address
 - Replace `[amount]` with the amount you wish to send, including the denomination (e.g., 1000upokt)
-- Replace `<node_endpoint>` with the node endpoint URL
+- Replace `<network>` with the network name (e.g., `local`, `alpha`, `beta`, `main`)
 
 For example, the following command sends `1000upokt` from `myWallet` to `pokt1recipientaddress420`:
 
 ```bash
 pocketd tx bank send myWallet pokt1recipientaddress420 1000upokt \
-    --node=https://testnet-validated-validator-rpc.poktroll.com/
+    --network=<network>
 ```
 
 ## Step 3: Confirming the Transaction

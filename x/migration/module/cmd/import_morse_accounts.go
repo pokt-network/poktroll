@@ -32,8 +32,8 @@ For more help information, see:
 
 For more documentation, refer to: https://dev.poktroll.com/operate/morse_migration/roadmap`,
 		Example: `
-	pocketd tx migration import-morse-accounts $HOME/morse-snapshot/msg_morse_import_accounts_166819_2025-04-29.json --from=pnf --grpc-addr=localhost:9090 --home ./localnet/pocketd
-	pocketd tx migration import-morse-accounts $HOME/morse-snapshot/msg_morse_import_accounts_166819_2025-04-29.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.beta.poktroll.com`,
+	pocketd tx migration import-morse-accounts $HOME/morse-snapshot/msg_morse_import_accounts_166819_2025-04-29.json --from=pnf --home ./localnet/pocketd
+	pocketd tx migration import-morse-accounts $HOME/morse-snapshot/msg_morse_import_accounts_166819_2025-04-29.json --from=pnf`,
 		Args:    cobra.ExactArgs(1),
 		RunE:    runImportMorseAccounts,
 		PreRunE: logger.PreRunESetup,
@@ -41,12 +41,6 @@ For more documentation, refer to: https://dev.poktroll.com/operate/morse_migrati
 
 	// Add Cosmos SDK standard flags to the command
 	cosmosflags.AddTxFlagsToCmd(importMorseAcctsCmd)
-
-	// DEV_NOTE: This is required by the TxClient.
-	// Despite this being a "tx" command, the TxClient still "queries" for its own TxResult events.
-	// We're intentionally omitting a default so the user is forced to specify it correctly due to the importance of the command.
-	importMorseAcctsCmd.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
-	importMorseAcctsCmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 
 	importMorseAcctsCmd.Flags().String(flags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
 	importMorseAcctsCmd.Flags().String(flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)

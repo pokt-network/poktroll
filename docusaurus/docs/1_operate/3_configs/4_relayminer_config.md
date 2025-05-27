@@ -318,13 +318,13 @@ to every request sent to your backend service.
 These headers help identify the Supplier, the Service, and the Application within the Pocket Network context.
 
 | Header                      | Description                                                          |
-|-----------------------------|----------------------------------------------------------------------|
+| --------------------------- | -------------------------------------------------------------------- |
 | Pocket-Supplier             | The address of the Supplier operator that is forwarding the request. |
 | Pocket-Service              | The on-chain Service Id for which the Supplier is staked.            |
 | Pocket-Session-Id           | The unique Session Id associated with the current relay session.     |
 | Pocket-Application          | The address of the Application making the request.                   |
 | Pocket-Session-Start-Height | The block height at which the current session began.                 |
-| Pocket-Session-End-Height   | The block height at which the current session will end.              | 
+| Pocket-Session-End-Height   | The block height at which the current session will end.              |
 
 ## Configuring Signing Keys
 
@@ -481,7 +481,7 @@ result in `Supplier` slashing if the `Proof` is required.
 The following command can be used to check the balance of a `Supplier` operator:
 
 ```bash
-pocketd query bank balance <supplier_operator_address> upokt --node https://shannon-testnet-grove-rpc.beta.poktroll.com
+pocketd query bank balance <supplier_operator_address> upokt --network=<newtork> #e.g. local, alpha, beta, main
 ```
 
 Which output would look like:
@@ -504,7 +504,7 @@ balance:
 The following command can be used to check the current `proof_submission_fee`:
 
 ```bash
-pocketd query proof params --node https://shannon-testnet-grove-rpc.beta.poktroll.com
+pocketd query proof params --network=<network> #e.g. local, alpha, beta, main
 ```
 
 Which output would look like:

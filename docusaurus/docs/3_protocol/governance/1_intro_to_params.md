@@ -48,7 +48,7 @@ This distinction is critical when making on-chain parameter changes in either sy
 To query the number of suppliers per session, use the following command:
 
 ```bash
-pocketd query session params --node https://shannon-grove-rpc.mainnet.poktroll.com
+pocketd query session params --network=<networ> #e.g. local, alpha, beta, main
 ```
 
 To update the number of suppliers per session, you needs to create a new file with the transaction like so:
@@ -73,7 +73,7 @@ cat << 🚀 > /tmp/update_suppliers_per_session
 Followed by running:
 
 ```bash
-pocketd tx authz exec /tmp/update_suppliers_per_session --from grove_mainnet_genesis --yes
+pocketd tx authz exec /tmp/update_suppliers_per_session --from grove_mainnet_genesis --yes --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ### Example: Block Size Change
@@ -115,7 +115,7 @@ For convenience, we have put it in `tools/scripts/params/consensus_block_size_6m
 To check the current consensus parameters (before and after the change), use this command:
 
 ```bash
-pocketd query consensus params
+pocketd query consensus params --network=<network> #e.g. local, alpha, beta, main
 ```
 
 Before the upgrade:
@@ -130,7 +130,7 @@ params:
 To submit the transaction that increases the block size:
 
 ```bash
-pocketd tx authz exec tools/scripts/params/consensus_block_size_6mb.json --from pnf --yes
+pocketd tx authz exec tools/scripts/params/consensus_block_size_6mb.json --from pnf --yes --network=<network> #e.g. local, alpha, beta, main
 ```
 
 After the upgrade:

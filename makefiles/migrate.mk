@@ -27,7 +27,7 @@ import_morse_accounts: check_go_version check_from_key_name ## Run the migration
 		echo "WARNING: SHANNON_GRPC_ADDR environment variable is not set. Defaulting to $(DEFAULT_POCKET_NODE_GRPC_ADDR)"; \
 		export SHANNON_GRPC_ADDR=$(DEFAULT_POCKET_NODE_GRPC_ADDR); \
 	fi; \
-	pocketd tx migration import-morse-accounts "$(MORSE_ACCOUNT_STATE_PATH)" --from=$(FROM_KEY_NAME) --grpc-addr=$(SHANNON_GRPC_ADDR)
+	pocketd tx migration import-morse-accounts "$(MORSE_ACCOUNT_STATE_PATH)" --from=$(FROM_KEY_NAME)
 
 #################################################
 ### Migration Account/Stake-holder Operations ###

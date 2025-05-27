@@ -95,7 +95,7 @@ pocketd tx staking \
   delegate $VALIDATOR_ADDR <amount> \
   --from <delegator_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 Example with specific parameters:
@@ -105,7 +105,7 @@ pocketd tx staking \
   delegate $VALIDATOR_ADDR 1000000upokt \
   --from <your_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 ## How do I unbond (undelegate) tokens from my Validator?
@@ -117,7 +117,7 @@ pocketd tx staking \
   unbond $VALIDATOR_ADDR <amount> \
   --from <delegator_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 Example with specific parameters:
@@ -127,7 +127,7 @@ pocketd tx staking \
   unbond $VALIDATOR_ADDR 500000upokt \
   --from <your_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 :::note Unbonding lock period
