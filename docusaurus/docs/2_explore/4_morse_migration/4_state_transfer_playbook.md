@@ -153,16 +153,16 @@ pocketd query migration show-morse-claimable-account <morse-address>
 
 ```bash
 # LocalNet
-pocketd query migration list-morse-claimable-account --network local
+pocketd query migration list-morse-claimable-account --network=local
 
 # Alpha TestNet
-pocketd query migration list-morse-claimable-account --network alpha
+pocketd query migration list-morse-claimable-account --network=alpha
 
 # Beta TestNet
-pocketd query migration list-morse-claimable-account --network beta
+pocketd query migration list-morse-claimable-account --network=beta
 
 # MainNet
-pocketd query migration list-morse-claimable-account --network main
+pocketd query migration list-morse-claimable-account --network=main
 ```
 
 </details>
@@ -240,7 +240,7 @@ pocketd tx authz grant \
   --msg-type="/pocket.migration.MsgImportMorseClaimableAccounts" \
   --from pnf_alpha \
   --expiration 16725225600 \
-  --network <network> \
+  --network=<network> \
   --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \
   --home=$HOME/.pocket_prod
 ```
@@ -257,15 +257,14 @@ The http/grpc configs of the `RPC_ENDPOINT` you're using may need to be configur
 
 If you're running it yourself in `k8s`, a workaround can be to replace this command:
 
-```
+```bash
 pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --network=alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
 with
 
 ```bash
-
 kubectl port-forward pods/alpha-validator1-pocketd-0 26657:26657 9090:9090 -n testnet-alpha --address 0.0.0.0
 
-pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=localhost:26657
+pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --network=alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=localhost:26657
 ```

@@ -59,7 +59,7 @@ In this example, the command to add a new service is executed as follows, return
 However, the service does not appear in the list of services when querying the full node.
 
 ```bash
-pocketd tx service add-service "svc1" "service1" 1 --from $SUPPLIER_ADDRESS --network beta
+pocketd tx service add-service "svc1" "service1" 1 --from $SUPPLIER_ADDRESS --network=beta
 ```
 
 The TX hash is returned by the above command:
@@ -73,7 +73,7 @@ To investigate this issue, the following command is used to get the details of t
 ```bash
 pocketd query tx \
 --type=hash 9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B \
---network beta
+--network=beta
 ```
 
 Which shows the following log entry:
@@ -103,7 +103,7 @@ TestNet at this point. Please consider updating with a new one!
 ```bash
 pocketd query tx \
 --type=hash 9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B \
---network beta \
+--network=beta \
  --output json | jq .raw_log
 ```
 

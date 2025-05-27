@@ -20,7 +20,7 @@ pocketd tx service --help
 To query for all services on Beta TestNet, you would run:
 
 ```bash
-pocketd query service all-services --network beta --output json | jq
+pocketd query service all-services --network=beta --output json | jq
 ```
 
 And expect a response of the following format:

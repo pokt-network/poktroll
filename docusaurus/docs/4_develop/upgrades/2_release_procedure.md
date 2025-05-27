@@ -296,7 +296,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 
    ```bash
    # Get the current height
-   CURRENT_HEIGHT=$(pocketd status --network ${NETWORK} | jq '.sync_info.latest_block_height' | tr -d '"')
+   CURRENT_HEIGHT=$(pocketd status --network=${NETWORK} | jq '.sync_info.latest_block_height' | tr -d '"')
    # Add 5 blocks (arbitrary, adjust as needed)
    UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
    # Update the JSON
@@ -325,13 +325,13 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 4. Verify the upgrade is planned onchain:
 
    ```bash
-   pocketd query upgrade plan --network ${NETWORK}
+   pocketd query upgrade plan --network=${NETWORK}
    ```
 
 5. Watch the transaction (using the TX_HASH from step 3):
 
    ```bash
-   watch -n 5 "pocketd query tx --type=hash ${TX_HASH} --network ${NETWORK}"
+   watch -n 5 "pocketd query tx --type=hash ${TX_HASH} --network=${NETWORK}"
    ```
 
 6. Verify node version aligns with what's in `<UPGRADE_TX_JSON>`:

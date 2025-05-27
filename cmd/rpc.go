@@ -10,7 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/cmd/flags"
 )
 
-// ParseAndSetNetworkRelatedFlags checks if the --network flag is set (i.e. not empty-string).
+// ParseAndSetNetworkRelatedFlags checks if the --network=flag is set (i.e. not empty-string).
 // If so, set the following flags according to their hard-coded network-specific values:
 // * --chain-id
 // * --node
@@ -33,7 +33,7 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 	case flags.MainNetworkName:
 		return setNetworkRelatedFlags(cmd, pocket.MainNetChainId, pocket.MainNetRPCURL, pocket.MainNetGRPCAddr)
 	default:
-		return fmt.Errorf("unknown --network specified %q", networkStr)
+		return fmt.Errorf("unknown --network=specified %q", networkStr)
 	}
 
 	return nil

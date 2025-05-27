@@ -328,7 +328,7 @@ Let's do the same thing for the `shannon_application`:
 pocketd \
   tx bank send \
   faucet $SHANNON_APPLICATION 420000000000069upokt \
-  --network local \
+  --network=local \
   --home=./localnet/pocketd
 ```
 
@@ -413,7 +413,7 @@ pocketd \
   --config shannon_supplier_config.yaml \
   --keyring-backend test \
   --from shannon_supplier \
-  --network local \
+  --network=local \
   --home=./localnet/pocketd \
   --yes
 ```
@@ -421,7 +421,7 @@ pocketd \
 And verify that the supplier is now staked with:
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_SUPPLIER --network local
+pocketd query supplier show-supplier $SHANNON_SUPPLIER --network=local
 ```
 
 ### 3.4 Prepare the RelayMiner configuration
@@ -525,7 +525,7 @@ pocketd --home=./localnet/pocketd \
 And verify that the application is now staked with:
 
 ```bash
-pocketd query application show-application $SHANNON_APPLICATION --network local
+pocketd query application show-application $SHANNON_APPLICATION --network=local
 ```
 
 You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATION` is now staked as an app:

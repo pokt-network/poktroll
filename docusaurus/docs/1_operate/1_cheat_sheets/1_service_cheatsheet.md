@@ -52,7 +52,7 @@ Use the `add-service` command to create a new service like so:
 ```bash
 pocketd tx service add-service \
     ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
-    --fees 300upokt --from ${SERVICE_OWNER} --network beta
+    --fees 300upokt --from ${SERVICE_OWNER} --network=beta
 ```
 
 For example, assuming you have an account with the name $USER (`pocketd keys show $USER -a`), you can run the following for Beta TestNet:
@@ -61,7 +61,7 @@ For example, assuming you have an account with the name $USER (`pocketd keys sho
 pocketd tx service add-service \
    "svc-$USER" "service description for $USER" 13 \
    --fees 300upokt --from $USER \
-   --network beta 
+   --network=beta
 ```
 
 ### 2. Query for the Service
@@ -76,7 +76,7 @@ For example:
 
 ```bash
 pocketd query service show-service "svc-$USER" \
- --network beta --output json | jq
+ --network=beta --output json | jq
 ```
 
 ### 3. What do I do next?

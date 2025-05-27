@@ -31,7 +31,7 @@ For more details on the staking process, please refer to the supplier staking do
 https://dev.poktroll.com/operate/configs/supplier_staking_config
 
 Example:
-$ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backend test  --from $(OWNER_ADDRESS) --network <network> --home $(POCKETD_HOME)`,
+$ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backend test  --from $(OWNER_ADDRESS) --network=<network> --home $(POCKETD_HOME)`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {

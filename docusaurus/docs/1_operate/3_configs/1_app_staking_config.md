@@ -30,7 +30,7 @@ pocketd tx application stake-application \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from application1 \
-  --network <network> #e.g. local, alpha, beta, main
+  --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ## Configuration

@@ -44,7 +44,7 @@ sudo systemctl restart cosmovisor.service
 Using pocketd:
 
 ```bash
-pocketd query block --type=height --network local
+pocketd query block --type=height --network=local
 ```
 
 Or, using curl:

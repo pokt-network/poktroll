@@ -29,7 +29,7 @@ pocketd tx gateway stake-gateway \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from gateway1 \
-  --network <network> #e.g. local, alpha, beta, main
+  --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ## Configuration
