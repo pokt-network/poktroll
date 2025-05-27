@@ -202,14 +202,14 @@ pocketd query application show-application $APP_ADDR $NODE_FLAGS
 ### EVM Example
 
 ```bash
-    pocketd relayminer relay \
-        --app=pokt12fj3xlqg6d20fl4ynuejfqd3fkqmq25rs3yf7g \
-        --supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
-        --keyring-backend="$POCKET_TEST_KEYRING_BACKEND" --home="$POCKET_HOME_PROD" \
-        --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
-        --grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
-        --grpc-insecure=false \
-        --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
+pocketd relayminer relay \
+    --app=pokt12fj3xlqg6d20fl4ynuejfqd3fkqmq25rs3yf7g \
+    --supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
+    --keyring-backend="$POCKET_TEST_KEYRING_BACKEND" --home="$POCKET_HOME_PROD" \
+    --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
+    --grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
+    --grpc-insecure=false \
+    --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 ```
 
 ## `PATH` Gateway Setup

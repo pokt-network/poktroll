@@ -31,6 +31,7 @@ Stake an onchain `Supplier` and run an offchain `RelayMiner` in less than an hou
   - [(Optional) Start the anvil node](#optional-start-the-anvil-node)
   - [1. Configure the RelayMiner](#1-configure-the-relayminer)
   - [2. Start the RelayMiner](#2-start-the-relayminer)
+  - [3. Test the RelayMiner](#3-test-the-relayminer)
 
 ## High Level Architecture Diagram
 
@@ -188,24 +189,27 @@ For more details on supplier configurations, see the full [supplier config docs]
 
 ### 1. Get your public URL
 
+Retrieve your external IP:
+
 ```bash
 EXTERNAL_IP=$(curl -4 ifconfig.me/ip)
 ```
 
-- Pick a public port (e.g. 8545) and open it:
+Pick a public port to open (e.g. 8545):
 
 ```bash
 sudo ufw allow 8545/tcp
 ```
 
-- Your public URL: `http://$EXTERNAL_IP:8545`
+Your supplier will be accessible at:
+
+```bash
+echo http://${EXTERNAL_IP}:8545
+```
 
 ### 2. Configure your Supplier
 
-:::important
-The example uses `service_id: anvil`.
-Use your own service_id or [create a new one](1_service_cheatsheet.md).
-:::
+Prepare the stake supplier config:
 
 ```bash
 cat <<🚀 > /tmp/stake_supplier_config.yaml
@@ -222,7 +226,16 @@ services:
 🚀
 ```
 
+:::warning Replace `service_id`
+
+The example uses `service_id: anvil`.
+Use your own service_id or [create a new one](1_service_cheatsheet.md).
+
+:::
+
 ### 3. Stake your Supplier
+
+Submit the staking transaction:
 
 ```bash
 pocketd tx supplier stake-supplier \
@@ -230,7 +243,7 @@ pocketd tx supplier stake-supplier \
   --from=$SUPPLIER_ADDR $TX_PARAM_FLAGS $BETA_NODE_FLAGS
 ```
 
-Check status:
+And check the status onchain:
 
 ```bash
 pocketd query supplier show-supplier $SUPPLIER_ADDR $BETA_NODE_FLAGS
@@ -266,6 +279,8 @@ curl -X POST http://127.0.0.1:8546 \
 
 ### 1. Configure the RelayMiner
 
+Prepare the RelayMiner (i.e. the offchain co-processor) config:
+
 ```bash
 cat <<🚀 > /tmp/relayminer_config.yaml
 default_signing_key_names:
@@ -291,10 +306,54 @@ pprof:
 
 ### 2. Start the RelayMiner
 
+Start the RelayMiner (i.e. the offchain co-processor) server:
+
 ```bash
 pocketd \
-  relayminer \
+  relayminer start \
   --grpc-insecure=false \
   --log_level=debug \
   --config=/tmp/relayminer_config.yaml
 ```
+
+### 3. Test the RelayMiner
+
+After following the instructions in the [Gateway cheatsheet](5_gateway_cheatsheet.md), you can use your `Application` to send a relay request to your supplier assuming it is staked for the same service:
+
+```bash
+pocketd relayminer relay \
+  --app=pokt12fj3xlqg6d20fl4ynuejfqd3fkqmq25rs3yf7g \
+  --supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
+  --node=$BETA_RPC_URL \
+  --grpc-addr=$BETA_GRPC_URL \
+  --grpc-insecure=false \
+  --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
+```
+
+<details>
+<summary>*tl;dr staking an application for `anvil`*</summary>
+
+```bash
+# Create an application
+pocketd keys add application
+
+
+# Fund it (faucet or other)
+
+# Prepare the stake config
+cat <<🚀 > /tmp/stake_app_config.yaml
+stake_amount: 100000000upokt
+service_ids:
+  - "anvil"
+🚀
+
+# Stake it
+pocketd tx application stake-application \
+  --config=/tmp/stake_app_config.yaml \
+  --from=$(pocketd keys show application -a) $TX_PARAM_FLAGS $BETA_NODE_FLAGS
+
+# Check status
+pocketd query application show-application $(pocketd keys show application -a) $BETA_NODE_FLAGS
+```
+
+</details>

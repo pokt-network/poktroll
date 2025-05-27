@@ -459,7 +459,7 @@ EOF
 Start the RelayMiner locally:
 
 ```bash
-pocketd relayminer \
+pocketd relayminer start \
   --config ./shannon_relayminer_config.yaml \
   --keyring-backend test \
   --home=./localnet/pocketd
