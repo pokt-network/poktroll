@@ -29,7 +29,7 @@ curl -X POST https://shannon-grove-rpc.mainnet.poktroll.com/block
 Using the `pocketd` binary:
 
 ```bash
-pocketd query block --type=height 69 --node=https://shannon-grove-rpc.mainnet.poktroll.com
+pocketd query block --type=height 69 --network main
 ```
 
 ## MainNet Genesis

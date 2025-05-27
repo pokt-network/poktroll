@@ -192,7 +192,7 @@ pocketd tx migration import-morse-accounts \
   localnet_testing_msg_import_morse_accounts.json \
   --from=pnf \
   --home=./localnet/pocketd --keyring-backend=test \
-  --chain-id=pocket \
+  --network=local \
   --gas=auto --gas-adjustment=1.5
 ```
 
@@ -202,7 +202,7 @@ _⚠️ This command does not output anything. If it returns to prompt, it likel
 
 ```bash
 pocketd query migration list-morse-claimable-account \
-  -o json --node=tcp://127.0.0.1:26657 \
+  -o json --network=local \
   --home=./localnet/pocketd
 ```
 
@@ -314,7 +314,7 @@ EOF
 **Check stake before claim:**
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_1 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
+pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_1 -o json --network=local --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
 _This should error (supplier doesn't exist yet)._
@@ -322,13 +322,13 @@ _This should error (supplier doesn't exist yet)._
 **Check owner's unstaked balance before claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_OWNER_1 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_OWNER_1 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 **Check supplier's unstaked balance before claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_SUPPLIER_1 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_SUPPLIER_1 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 **Submit the onchain claim:**
@@ -338,7 +338,7 @@ pocketd tx migration claim-supplier \
   ${MORSE_ADDR_SUPPLIER_1} pocket-account-${MORSE_ADDR_OWNER_1}.json \
   ${MORSE_SUPPLIER_1_PREFIX}_claim_supplier_1_supplier_config.yaml \
   --from=${MORSE_OWNER_1_PREFIX}-claim-owner-1 \
-  --node=http://localhost:26657 --chain-id=pocket \
+  --network=local \
   --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
   --gas=auto --gas-adjustment=1.5 --yes
 ```
@@ -348,25 +348,25 @@ _If this fails, **do not continue** until resolved._
 **Verify supplier exists onchain:**
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_1 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd
+pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_1 -o json --network=local --home=./localnet/pocketd
 ```
 
 **Check stake after claim:**
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_1 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
+pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_1 -o json --network=local --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
 **Check owner's unstaked balance after claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_OWNER_1 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_OWNER_1 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 **Check supplier's unstaked balance after claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_SUPPLIER_1 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_SUPPLIER_1 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 ---
@@ -393,7 +393,7 @@ EOF
 **Check stake before claim:**
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_2 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
+pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_2 -o json --network=local --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
 _This should error (supplier doesn't exist yet)._.
@@ -401,13 +401,13 @@ _This should error (supplier doesn't exist yet)._.
 **Check owner's unstaked balance before claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_OWNER_2 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_OWNER_2 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 **Check supplier's unstaked balance before claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_SUPPLIER_2 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_SUPPLIER_2 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 **Submit the onchain claim:**
@@ -417,7 +417,7 @@ pocketd tx migration claim-supplier \
   ${MORSE_ADDR_SUPPLIER_2} pocket-account-${MORSE_ADDR_SUPPLIER_2}.json \
   ${MORSE_SUPPLIER_2_PREFIX}_claim_supplier_2_supplier_config.yaml \
   --from=${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2 \
-  --node=http://localhost:26657 --chain-id=pocket \
+  --network=local \
   --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
   --gas=auto --gas-adjustment=1.5 --yes
 ```
@@ -425,25 +425,25 @@ pocketd tx migration claim-supplier \
 **Verify supplier exists onchain:**
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_2 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd
+pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_2 -o json --network=local --home=./localnet/pocketd
 ```
 
 **Check stake after claim:**
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_2 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
+pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_2 -o json --network=local --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
 **Check owner's unstaked balance after claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_OWNER_2 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_OWNER_2 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 **Check supplier's unstaked balance after claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_SUPPLIER_2 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_SUPPLIER_2 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 ---
@@ -469,7 +469,7 @@ EOF
 **Check stake before claim:**
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_3 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
+pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_3 -o json --network=local --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
 _This should error (supplier doesn't exist yet)._.
@@ -477,7 +477,7 @@ _This should error (supplier doesn't exist yet)._.
 **Check unstaked balance before claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_SUPPLIER_3 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_SUPPLIER_3 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
 
 **Submit the onchain claim:**
@@ -487,7 +487,7 @@ pocketd tx migration claim-supplier \
   ${MORSE_ADDR_SUPPLIER_3} pocket-account-${MORSE_ADDR_SUPPLIER_3}.json \
   ${MORSE_SUPPLIER_3_PREFIX}_claim_supplier_3_supplier_config.yaml \
   --from=${MORSE_SUPPLIER_3_PREFIX}-claim-supplier-3 \
-  --node=http://localhost:26657 --chain-id=pocket \
+  --network=local \
   --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
   --gas=auto --gas-adjustment=1.5 --yes
 ```
@@ -495,17 +495,17 @@ pocketd tx migration claim-supplier \
 **Verify supplier exists onchain:**
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_3 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd
+pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_3 -o json --network=local --home=./localnet/pocketd
 ```
 
 **Check stake after claim:**
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_3 -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.supplier.stake.amount'
+pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_3 -o json --network=local --home=./localnet/pocketd | jq '.supplier.stake.amount'
 ```
 
 **Check unstaked balance after claim:**
 
 ```bash
-pocketd query bank balance $SHANNON_ADDR_SUPPLIER_3 upokt -o json --node=http://127.0.0.1:26657 --home=./localnet/pocketd | jq '.balance.amount'
+pocketd query bank balance $SHANNON_ADDR_SUPPLIER_3 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```

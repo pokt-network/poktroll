@@ -66,11 +66,11 @@ This output indicates that the wallet address holds 8999 `upokt` tokens.
 
 ## Accessing non-local environments
 
-You must provide the `--node` flag to access non LocalNet environments.
+You must provide the `--network` flag to access non LocalNet environments.
 
-For example, to check a balance on TestNet, you would use the following command:
+For example, to check a balance on Beta TestNet, you would use the following command:
 
 ```sh
 pocketd query bank balance [address] upokt \
-  --node=https://testnet-validated-validator-rpc.poktroll.com
+  --network=beta
 ```

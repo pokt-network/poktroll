@@ -23,20 +23,13 @@ The `stake-gateway` transaction submission command accepts a `--config` flag
 that points to a `yaml` configuration file that defines the `stake_amount` the
 `Gateway` is willing to lock.
 
-:::warning
-
-TestNet is not ready as of writing this documentation, so you may
-need to adjust the command below appropriately.
-
-:::
-
 ```bash
 pocketd tx gateway stake-gateway \
   --home=./pocket \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from gateway1 \
-  --node tcp://pocket-node:26657
+  --network <network> #e.g. local, alpha, beta, main
 ```
 
 ## Configuration

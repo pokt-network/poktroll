@@ -111,7 +111,7 @@ pocketd tx migration import-morse-accounts \
   "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" \
   --from <authorized-key-name> \
   --home <shannon-home-directory> \
-  --chain-id=<shannon-chain-id> \
+  --network=<shannon-network-name> \
   --gas=auto --gas-adjustment=1.5
 ```
 
@@ -120,16 +120,16 @@ pocketd tx migration import-morse-accounts \
 
 ```bash
 # LocalNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pnf --home=./localnet/pocketd --chain-id=pocket --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pnf --home=./localnet/pocketd --network=local --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # Alpha TestNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-testnet-grove-rpc.alpha.poktroll.com
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --home=~/.pocket_prod --network=alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # Beta TestNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-testnet-grove-rpc.beta.poktroll.com
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --home=~/.pocket_prod --network=beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # MainNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.mainnet.poktroll.com
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh --home=~/.pocket_prod --network=main --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
 </details>
@@ -153,16 +153,16 @@ pocketd query migration show-morse-claimable-account <morse-address>
 
 ```bash
 # LocalNet
-pocketd query migration list-morse-claimable-account --node http://localhost:26657
+pocketd query migration list-morse-claimable-account --network local
 
 # Alpha TestNet
-pocketd query migration list-morse-claimable-account --node https://shannon-grove-rpc.alpha.poktroll.com
+pocketd query migration list-morse-claimable-account --network alpha
 
 # Beta TestNet
-pocketd query migration list-morse-claimable-account --node https://shannon-grove-rpc.beta.poktroll.com
+pocketd query migration list-morse-claimable-account --network beta
 
 # MainNet
-pocketd query migration list-morse-claimable-account --node https://shannon-grove-rpc.mainnet.poktroll.com
+pocketd query migration list-morse-claimable-account --network main
 ```
 
 </details>
@@ -240,9 +240,8 @@ pocketd tx authz grant \
   --msg-type="/pocket.migration.MsgImportMorseClaimableAccounts" \
   --from pnf_alpha \
   --expiration 16725225600 \
-  --chain-id pocket-alpha \
+  --network <network> \
   --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \
-  --node=http://localhost:26657 \
   --home=$HOME/.pocket_prod
 ```
 
@@ -259,7 +258,7 @@ The http/grpc configs of the `RPC_ENDPOINT` you're using may need to be configur
 If you're running it yourself in `k8s`, a workaround can be to replace this command:
 
 ```
-pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=https://shannon-testnet-grove-rpc.alpha.poktroll.com
+pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --network=alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
 with

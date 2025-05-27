@@ -32,7 +32,7 @@ The `x/gov` module account is the default configured "authority" for all cosmos-
 No one has access to this address, but the grants it has provided to other accounts can be queried like so:
 
 ```bash
-pocketd query authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node https://shannon-grove-rpc.mainnet.poktroll.com
+pocketd query authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --network main
 ```
 
 #### `PNF` Account Grantee
@@ -40,7 +40,7 @@ pocketd query authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32
 The authorizations which the `x/gov` module account has granted to the `PNF` account can be queried like so:
 
 ```bash
-pocketd query authz grants-by-grantee pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv --node https://shannon-grove-rpc.mainnet.poktroll.com
+pocketd query authz grants-by-grantee pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv --network main
 ```
 
 ## Examples
@@ -69,6 +69,6 @@ pocketd tx authz grant \
   "pocket.migration.MsgUpdateParams" \
   --from pnf \
   --expiration 16725225600 \
-  --chain-id pocket \
+  --network main \
   --gas auto
 ```

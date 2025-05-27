@@ -20,7 +20,7 @@ pocketd query supplier -h
 Then, you can query for all services like so:
 
 ```bash
-pocketd query supplier list-suppliers --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
+pocketd query supplier list-suppliers --network beta --output json | jq
 ```
 
 See [Non-Custodial Staking](https://dev.poktroll.com/operate/configs/supplier_staking_config#non-custodial-staking) for more information about supplier owner vs operator and non-custodial staking.

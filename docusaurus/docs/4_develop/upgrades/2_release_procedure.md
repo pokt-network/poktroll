@@ -288,7 +288,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
    ```bash
    export RPC_ENDPOINT=https://shannon-testnet-grove-rpc.alpha.poktroll.com
    export UPGRADE_TX_JSON="tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json"
-   export NETWORK=pocket-alpha
+   export NETWORK=alpha
    export FROM_ACCOUNT=pnf_alpha
    ```
 
@@ -296,7 +296,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 
    ```bash
    # Get the current height
-   CURRENT_HEIGHT=$(pocketd status --node ${RPC_ENDPOINT} | jq '.sync_info.latest_block_height' | tr -d '"')
+   CURRENT_HEIGHT=$(pocketd status --network ${NETWORK} | jq '.sync_info.latest_block_height' | tr -d '"')
    # Add 5 blocks (arbitrary, adjust as needed)
    UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
    # Update the JSON
@@ -310,7 +310,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
    ```bash
    pocketd \
      --keyring-backend="test" --home="~/.pocket" \
-     --fees=300upokt --chain-id=${NETWORK} --node ${RPC_ENDPOINT} \
+     --fees=300upokt --network=${NETWORK} \
      tx authz exec ${UPGRADE_TX_JSON} --from=${FROM_ACCOUNT}
    ```
 
@@ -325,13 +325,13 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 4. Verify the upgrade is planned onchain:
 
    ```bash
-   pocketd query upgrade plan --node ${RPC_ENDPOINT}
+   pocketd query upgrade plan --network ${NETWORK}
    ```
 
 5. Watch the transaction (using the TX_HASH from step 3):
 
    ```bash
-   watch -n 5 "pocketd query tx --type=hash ${TX_HASH} --node ${RPC_ENDPOINT}"
+   watch -n 5 "pocketd query tx --type=hash ${TX_HASH} --network ${NETWORK}"
    ```
 
 6. Verify node version aligns with what's in `<UPGRADE_TX_JSON>`:
@@ -392,7 +392,7 @@ See [pocketd CLI docs](../../2_explore/2_account_management/1_pocketd_cli.md) fo
 Repeat [Step 7: Submit the Upgrade Onchain](#7-submit-the-upgrade-on-alpha-testnet) with the appropriate parameters for Beta and MainNet:
 
 - Use the correct `<RPC_ENDPOINT>` for Beta or MainNet
-- Use the correct `<NETWORK>`, (`pocket-beta` for Beta or `pocket` for MainNet)
+- Use the correct `<NETWORK>`, (`beta` for Beta or `main` for MainNet)
 - Use the correct `<UPGRADE_TX_JSON>` (e.g., `upgrade_tx_v0.1.2_beta.json` or `upgrade_tx_v0.1.2_main.json`)
 - Use the correct sender account for each network
 

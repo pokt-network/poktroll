@@ -24,20 +24,13 @@ The `stake-application` transaction submission command accepts a `--config` flag
 that points to a `yaml` configuration file that defines the `stake_amount` and
 `service_ids` which the `Application` is allowed to use.
 
-:::warning
-
-TestNet is not ready as of writing this documentation, so you may
-need to adjust the command below appropriately.
-
-:::
-
 ```bash
 pocketd tx application stake-application \
   --home=./pocket \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from application1 \
-  --node tcp://pocket-node:26657
+  --network <network> #e.g. local, alpha, beta, main
 ```
 
 ## Configuration

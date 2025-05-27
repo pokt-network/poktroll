@@ -76,9 +76,8 @@ the process of interacting with the Shannon network:
 We recommend you put these in your `~/.bashrc` file:
 
 ```bash
-export BETA_NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
-export BETA_NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
-export TX_PARAM_FLAGS="--fees 200000upokt --chain-id=<CHAIN_ID>" # pocket_beta, pocket
+export QUERY_FLAGS="--network=<NETWORK>" # e.g. local, alpha, beta, main
+export TX_PARAM_FLAGS="--from validator --fees 200000upokt --network=<NETWORK>"
 export ADDR=$(pocketd keys show validator -a)
 export VALIDATOR_ADDR=$(pocketd keys show validator -a --bech val)
 ```
@@ -116,7 +115,7 @@ pocketd tx bank send <SOURCE ADDRESS> $ADDR <AMOUNT_TO_STAKE>upokt $TX_PARAM_FLA
 Afterwards, you can query the balance using the following command:
 
 ```bash
-pocketd query bank balances $ADDR $NODE_FLAGS
+pocketd query bank balances $ADDR $QUERY_FLAGS
 ```
 
 :::tip
@@ -156,7 +155,7 @@ Create a JSON file named `validator.json` with the content below while make thes
 - You can optionally fill in `"identity"`, `"website"`, `"security"`, and `"details"`.
 
 ```bash
-cat << 'EOF' > validator.json
+cat << 🚀 > validator.json
 {
   "pubkey": {
     "@type": "/cosmos.crypto.ed25519.PubKey",
@@ -173,7 +172,7 @@ cat << 'EOF' > validator.json
   "commission-max-change-rate": "0.010000000000000000",
   "min-self-delegation": "1"
 }
-EOF
+🚀
 ```
 
 ## 5. Create the Validator
@@ -181,7 +180,7 @@ EOF
 Run the following command to create the validator:
 
 ```bash
-pocketd tx staking create-validator ./validator.json --from=validator $TX_PARAM_FLAGS
+pocketd tx staking create-validator ./validator.json $TX_PARAM_FLAGS
 ```
 
 This command uses the `validator.json` file to submit the `create-validator` transaction.
@@ -189,14 +188,14 @@ This command uses the `validator.json` file to submit the `create-validator` tra
 Example with all parameters specified:
 
 ```bash
-pocketd tx staking create-validator ~/validator.json --from=validator --chain-id=<CHAIN_ID> --fees 200000upokt
+pocketd tx staking create-validator ~/validator.json $TX_PARAM_FLAGS
 ```
 
 Some of the parameters you can configure include:
 
 - `~/validator.json`: The path to your validator JSON file.
 - `--from=validator`: Specifies the local key to sign the transaction.
-- `--chain-id=<your-chain-id>`: Replace `<your-chain-id>` with the chain ID of the network you are joining (e.g., `pocket-beta` for testnet, `pocket` for mainnet).
+- `--network=<network>`: Replace `<network>` with the name of the network you are joining (e.g., `beta` for testnet, `main` for mainnet).
 - `--fees 20000upokt`: Transaction fees currently configured on both beta and mainnet.
 
 After running the command, you should see a transaction confirmation with an output hash.
@@ -206,7 +205,7 @@ After running the command, you should see a transaction confirmation with an out
 To verify that your Validator has been successfully created, run:
 
 ```bash
-pocketd query staking validator $VALIDATOR_ADDR
+pocketd query staking validator $VALIDATOR_ADDR $QUERY_FLAGS
 ```
 
 This command displays information about your Validator, including status, tokens staked, commission rates, and more.

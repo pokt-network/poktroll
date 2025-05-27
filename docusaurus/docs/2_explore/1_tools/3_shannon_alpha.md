@@ -32,7 +32,7 @@ curl -X POST https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com/block
 Using the `pocketd` binary:
 
 ```bash
-pocketd query block --type=height 1 --node https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
+pocketd query block --type=height 1 --network alpha
 ```
 
 ## Alpha Genesis

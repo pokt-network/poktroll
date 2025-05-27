@@ -205,7 +205,7 @@ you can click in the top left corner to view its [grafana dashboard](http://loca
 You can query the status of the blockchain using `pocketd` by running:
 
 ```bash
-pocketd status --node=tcp://127.0.0.1:26657 | jq
+pocketd status --network=local | jq
 ```
 
 Alternatively, you use the [CometBFT](https://github.com/cometbft/cometbft) status directly at:
@@ -305,7 +305,7 @@ You can send some uPOKT to your `shannon_supplier` by running:
 pocketd \
   tx bank send \
   faucet $SHANNON_SUPPLIER 420000000000069upokt \
-  --node tcp://127.0.0.1:26657 \
+  --network=local \
   --home=./localnet/pocketd
 ```
 
@@ -328,7 +328,7 @@ Let's do the same thing for the `shannon_application`:
 pocketd \
   tx bank send \
   faucet $SHANNON_APPLICATION 420000000000069upokt \
-  --node tcp://127.0.0.1:26657 \
+  --network local \
   --home=./localnet/pocketd
 ```
 
@@ -391,7 +391,7 @@ You can learn more about our [supplier configs here](../../1_operate/3_configs/3
 The following is an example config to get you started:
 
 ```bash
-cat <<EOF >> shannon_supplier_config.yaml
+cat <<🚀 >> shannon_supplier_config.yaml
 owner_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
 operator_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
 stake_amount: 1000069upokt
@@ -400,7 +400,7 @@ services:
     endpoints:
       - publicly_exposed_url: http://localhost:6942
         rpc_type: JSON_RPC
-EOF
+🚀
 ```
 
 ### 3.4 Stake the new Supplier
@@ -413,7 +413,7 @@ pocketd \
   --config shannon_supplier_config.yaml \
   --keyring-backend test \
   --from shannon_supplier \
-  --node tcp://127.0.0.1:26657 \
+  --network local \
   --home=./localnet/pocketd \
   --yes
 ```
@@ -421,7 +421,7 @@ pocketd \
 And verify that the supplier is now staked with:
 
 ```bash
-pocketd query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:26657
+pocketd query supplier show-supplier $SHANNON_SUPPLIER --network local
 ```
 
 ### 3.4 Prepare the RelayMiner configuration
@@ -433,7 +433,7 @@ You can learn more about our [relay miner configs here](../../1_operate/3_config
 The following is an example config to get you started:
 
 ```bash
-cat <<EOF >> shannon_relayminer_config.yaml
+cat <<🚀 >> shannon_relayminer_config.yaml
 default_signing_key_names: [ "shannon_supplier" ]
 smt_store_path: $HOME/.pocket/smt
 metrics:
@@ -451,7 +451,7 @@ suppliers:
 pprof:
   enabled: false
   addr: localhost:6060
-EOF
+🚀
 ```
 
 ### 3.5 Start the RelayMiner locally
@@ -518,14 +518,14 @@ pocketd --home=./localnet/pocketd \
   --config shannon_app_config.yaml \
   --keyring-backend test \
   --from shannon_application \
-  --node tcp://127.0.0.1:26657 \
+  --network=local \
   --yes
 ```
 
 And verify that the application is now staked with:
 
 ```bash
-pocketd query application show-application $SHANNON_APPLICATION --node tcp://127.0.0.1:26657
+pocketd query application show-application $SHANNON_APPLICATION --network local
 ```
 
 You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATION` is now staked as an app:
