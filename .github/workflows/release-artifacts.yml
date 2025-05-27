@@ -48,6 +48,7 @@ jobs:
         run: |
           make ignite_update_ldflags
           make ignite_release
+          make ignite_release_repackage
           make ignite_release_extract_binaries
           make cosmovisor_cross_compile
 

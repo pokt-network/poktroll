@@ -13,7 +13,6 @@ info:
 paths:
   /cosmos.auth.v1beta1.Msg/UpdateParams:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Msg
       summary: |-
@@ -21,10 +20,7 @@ paths:
         parameters. The authority defaults to the x/gov module account.
       operationId: EvidenceMsg_UpdateParams
       parameters:
-        - description: |-
-            MsgUpdateParams is the Msg/UpdateParams request type.
-
-            Since: cosmos-sdk 0.47
+        - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
           in: body
           required: true
@@ -189,7 +185,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.bank.v1beta1.Msg/SetSendEnabled:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Msg
       summary: |-
@@ -205,8 +200,6 @@ paths:
             Only entries to add/update/delete need to be included.
             Existing SendEnabled entries that are not included in this
             message are left unchanged.
-
-            Since: cosmos-sdk 0.47
           name: body
           in: body
           required: true
@@ -223,7 +216,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.bank.v1beta1.Msg/UpdateParams:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Msg
       summary: |-
@@ -231,10 +223,7 @@ paths:
         The authority is defined in the keeper.
       operationId: EvidenceMsg_UpdateParamsMixin70
       parameters:
-        - description: |-
-            MsgUpdateParams is the Msg/UpdateParams request type.
-
-            Since: cosmos-sdk 0.47
+        - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
           in: body
           required: true
@@ -245,6 +234,28 @@ paths:
           description: A successful response.
           schema:
             $ref: '#/definitions/cosmos.bank.v1beta1.MsgUpdateParamsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos.benchmark.v1.Msg/LoadTest:
+    post:
+      tags:
+        - Msg
+      summary: LoadTest defines a method for executing a sequence of load test operations.
+      operationId: EvidenceMsg_LoadTest
+      parameters:
+        - description: MsgLoadTestOps defines a message containing a sequence of load test operations.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/cosmos.benchmark.v1.MsgLoadTest'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.benchmark.v1.MsgLoadTestResponse'
         default:
           description: An unexpected error response.
           schema:
@@ -321,13 +332,12 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.consensus.v1.Msg/UpdateParams:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Msg
       summary: |-
         UpdateParams defines a governance operation for updating the x/consensus module parameters.
         The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin83
+      operationId: EvidenceMsg_UpdateParamsMixin85
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -344,20 +354,60 @@ paths:
           description: An unexpected error response.
           schema:
             $ref: '#/definitions/google.rpc.Status'
+  /cosmos.counter.v1.Msg/IncreaseCount:
+    post:
+      tags:
+        - Msg
+      summary: IncreaseCount increments the counter by the specified amount.
+      operationId: EvidenceMsg_IncreaseCount
+      parameters:
+        - description: MsgIncreaseCounter defines a count Msg service counter.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/cosmos.counter.v1.MsgIncreaseCounter'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.counter.v1.MsgIncreaseCountResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos.counter.v1.Query/GetCount:
+    post:
+      tags:
+        - Query
+      summary: GetCount queries the parameters of x/Counter module.
+      operationId: EvidenceQuery_GetCount
+      parameters:
+        - description: QueryGetCountRequest defines the request type for querying x/mock count.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/cosmos.counter.v1.QueryGetCountRequest'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.counter.v1.QueryGetCountResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
   /cosmos.crisis.v1beta1.Msg/UpdateParams:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Msg
       summary: |-
         UpdateParams defines a governance operation for updating the x/crisis module
         parameters. The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin85
+      operationId: EvidenceMsg_UpdateParamsMixin89
       parameters:
-        - description: |-
-            MsgUpdateParams is the Msg/UpdateParams request type.
-
-            Since: cosmos-sdk 0.47
+        - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
           in: body
           required: true
@@ -396,7 +446,7 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.distribution.v1beta1.Msg/CommunityPoolSpend:
     post:
-      description: 'Since: cosmos-sdk 0.47'
+      description: 'WARNING: This method will fail if an external community pool is used.'
       tags:
         - Msg
       summary: |-
@@ -410,8 +460,6 @@ paths:
             MsgCommunityPoolSpend defines a message for sending tokens from the community
             pool to another account. This message is typically executed via a governance
             proposal with the governance module being the executing authority.
-
-            Since: cosmos-sdk 0.47
           name: body
           in: body
           required: true
@@ -428,7 +476,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.distribution.v1beta1.Msg/DepositValidatorRewardsPool:
     post:
-      description: 'Since: cosmos-sdk 0.50'
       tags:
         - Msg
       summary: |-
@@ -439,8 +486,6 @@ paths:
         - description: |-
             DepositValidatorRewardsPool defines the request structure to provide
             additional rewards to delegators from a specific validator.
-
-            Since: cosmos-sdk 0.50
           name: body
           in: body
           required: true
@@ -457,6 +502,7 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.distribution.v1beta1.Msg/FundCommunityPool:
     post:
+      description: 'WARNING: This method will fail if an external community pool is used.'
       tags:
         - Msg
       summary: |-
@@ -509,18 +555,14 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.distribution.v1beta1.Msg/UpdateParams:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Msg
       summary: |-
         UpdateParams defines a governance operation for updating the x/distribution
         module parameters. The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin96
+      operationId: EvidenceMsg_UpdateParamsMixin100
       parameters:
-        - description: |-
-            MsgUpdateParams is the Msg/UpdateParams request type.
-
-            Since: cosmos-sdk 0.47
+        - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
           in: body
           required: true
@@ -641,16 +683,12 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.feegrant.v1beta1.Msg/PruneAllowances:
     post:
-      description: Since cosmos-sdk 0.50
       tags:
         - Msg
       summary: PruneAllowances prunes expired fee allowances, currently up to 75 at a time.
       operationId: EvidenceMsg_PruneAllowances
       parameters:
-        - description: |-
-            MsgPruneAllowances prunes expired fee allowances.
-
-            Since cosmos-sdk 0.50
+        - description: MsgPruneAllowances prunes expired fee allowances.
           name: body
           in: body
           required: true
@@ -691,16 +729,12 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.gov.v1.Msg/CancelProposal:
     post:
-      description: 'Since: cosmos-sdk 0.50'
       tags:
         - Msg
       summary: CancelProposal defines a method to cancel governance proposal
       operationId: EvidenceMsg_CancelProposal
       parameters:
-        - description: |-
-            MsgCancelProposal is the Msg/CancelProposal request type.
-
-            Since: cosmos-sdk 0.50
+        - description: MsgCancelProposal is the Msg/CancelProposal request type.
           name: body
           in: body
           required: true
@@ -789,18 +823,14 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.gov.v1.Msg/UpdateParams:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Msg
       summary: |-
         UpdateParams defines a governance operation for updating the x/gov module
         parameters. The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin109
+      operationId: EvidenceMsg_UpdateParamsMixin116
       parameters:
-        - description: |-
-            MsgUpdateParams is the Msg/UpdateParams request type.
-
-            Since: cosmos-sdk 0.47
+        - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
           in: body
           required: true
@@ -864,7 +894,7 @@ paths:
       tags:
         - Msg
       summary: Deposit defines a method to add deposit on a specific proposal.
-      operationId: EvidenceMsg_DepositMixin113
+      operationId: EvidenceMsg_DepositMixin120
       parameters:
         - description: MsgDeposit defines a message to submit a deposit to an existing proposal.
           name: body
@@ -886,7 +916,7 @@ paths:
       tags:
         - Msg
       summary: SubmitProposal defines a method to create new proposal given a content.
-      operationId: EvidenceMsg_SubmitProposalMixin113
+      operationId: EvidenceMsg_SubmitProposalMixin120
       parameters:
         - description: |-
             MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary
@@ -910,7 +940,7 @@ paths:
       tags:
         - Msg
       summary: Vote defines a method to add a vote on a specific proposal.
-      operationId: EvidenceMsg_VoteMixin113
+      operationId: EvidenceMsg_VoteMixin120
       parameters:
         - description: MsgVote defines a message to cast a vote.
           name: body
@@ -929,16 +959,12 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.gov.v1beta1.Msg/VoteWeighted:
     post:
-      description: 'Since: cosmos-sdk 0.43'
       tags:
         - Msg
       summary: VoteWeighted defines a method to add a weighted vote on a specific proposal.
-      operationId: EvidenceMsg_VoteWeightedMixin113
+      operationId: EvidenceMsg_VoteWeightedMixin120
       parameters:
-        - description: |-
-            MsgVoteWeighted defines a message to cast a vote.
-
-            Since: cosmos-sdk 0.43
+        - description: MsgVoteWeighted defines a message to cast a vote.
           name: body
           in: body
           required: true
@@ -1024,7 +1050,7 @@ paths:
       tags:
         - Msg
       summary: Exec executes a proposal.
-      operationId: EvidenceMsg_ExecMixin117
+      operationId: EvidenceMsg_ExecMixin124
       parameters:
         - description: MsgExec is the Msg/Exec request type.
           name: body
@@ -1068,7 +1094,7 @@ paths:
       tags:
         - Msg
       summary: SubmitProposal submits a new proposal.
-      operationId: EvidenceMsg_SubmitProposalMixin117
+      operationId: EvidenceMsg_SubmitProposalMixin124
       parameters:
         - description: MsgSubmitProposal is the Msg/SubmitProposal request type.
           name: body
@@ -1222,7 +1248,7 @@ paths:
       tags:
         - Msg
       summary: Vote allows a voter to vote on a proposal.
-      operationId: EvidenceMsg_VoteMixin117
+      operationId: EvidenceMsg_VoteMixin124
       parameters:
         - description: MsgVote is the Msg/Vote request type.
           name: body
@@ -1263,18 +1289,14 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.mint.v1beta1.Msg/UpdateParams:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Msg
       summary: |-
         UpdateParams defines a governance operation for updating the x/mint module
         parameters. The authority is defaults to the x/gov module account.
-      operationId: EvidenceMsg_UpdateParamsMixin122
+      operationId: EvidenceMsg_UpdateParamsMixin129
       parameters:
-        - description: |-
-            MsgUpdateParams is the Msg/UpdateParams request type.
-
-            Since: cosmos-sdk 0.47
+        - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
           in: body
           required: true
@@ -1294,7 +1316,7 @@ paths:
       tags:
         - Msg
       summary: Send defines a method to send a nft from one account to another account.
-      operationId: EvidenceMsg_SendMixin128
+      operationId: EvidenceMsg_SendMixin135
       parameters:
         - description: MsgSend represents a message to send a nft from one account to another account.
           name: body
@@ -1307,6 +1329,133 @@ paths:
           description: A successful response.
           schema:
             $ref: '#/definitions/cosmos.nft.v1beta1.MsgSendResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos.protocolpool.v1.Msg/CancelContinuousFund:
+    post:
+      tags:
+        - Msg
+      summary: CancelContinuousFund defines a method for cancelling continuous fund.
+      operationId: EvidenceMsg_CancelContinuousFund
+      parameters:
+        - description: MsgCancelContinuousFund defines a message to cancel continuous funds for a specific recipient.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgCancelContinuousFund'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgCancelContinuousFundResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos.protocolpool.v1.Msg/CommunityPoolSpend:
+    post:
+      tags:
+        - Msg
+      summary: |-
+        CommunityPoolSpend defines a governance operation for sending tokens from
+        the community pool in the x/protocolpool module to another account, which
+        could be the governance module itself. The authority is defined in the
+        keeper.
+      operationId: EvidenceMsg_CommunityPoolSpendMixin140
+      parameters:
+        - description: |-
+            MsgCommunityPoolSpend defines a message for sending tokens from the community
+            pool to another account. This message is typically executed via a governance
+            proposal with the governance module being the executing authority.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgCommunityPoolSpend'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgCommunityPoolSpendResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos.protocolpool.v1.Msg/CreateContinuousFund:
+    post:
+      tags:
+        - Msg
+      summary: |-
+        CreateContinuousFund defines a method to distribute a percentage of funds to an address continuously.
+        This ContinuousFund can be indefinite or run until a given expiry time.
+        Funds come from validator block rewards from x/distribution, but may also come from
+        any user who funds the ProtocolPoolEscrow module account directly through x/bank.
+      operationId: EvidenceMsg_CreateContinuousFund
+      parameters:
+        - description: MsgCreateContinuousFund defines a message for adding continuous funds.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgCreateContinuousFund'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgCreateContinuousFundResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos.protocolpool.v1.Msg/FundCommunityPool:
+    post:
+      tags:
+        - Msg
+      summary: |-
+        FundCommunityPool defines a method to allow an account to directly
+        fund the community pool.
+      operationId: EvidenceMsg_FundCommunityPoolMixin140
+      parameters:
+        - description: |-
+            MsgFundCommunityPool allows an account to directly
+            fund the community pool.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgFundCommunityPool'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgFundCommunityPoolResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos.protocolpool.v1.Msg/UpdateParams:
+    post:
+      tags:
+        - Msg
+      summary: |-
+        UpdateParams defines a governance operation for updating the x/protocolpool module parameters.
+        The authority is defined in the keeper.
+      operationId: EvidenceMsg_UpdateParamsMixin140
+      parameters:
+        - description: MsgUpdateParams is the Msg/UpdateParams request type.
+          name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgUpdateParams'
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.MsgUpdateParamsResponse'
         default:
           description: An unexpected error response.
           schema:
@@ -1337,18 +1486,14 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.slashing.v1beta1.Msg/UpdateParams:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Msg
       summary: |-
         UpdateParams defines a governance operation for updating the x/slashing module
         parameters. The authority defaults to the x/gov module account.
-      operationId: EvidenceMsg_UpdateParamsMixin135
+      operationId: EvidenceMsg_UpdateParamsMixin146
       parameters:
-        - description: |-
-            MsgUpdateParams is the Msg/UpdateParams request type.
-
-            Since: cosmos-sdk 0.47
+        - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
           in: body
           required: true
@@ -1391,7 +1536,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.staking.v1beta1.Msg/CancelUnbondingDelegation:
     post:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Msg
       summary: |-
@@ -1399,8 +1543,7 @@ paths:
         and delegate back to previous validator.
       operationId: EvidenceMsg_CancelUnbondingDelegation
       parameters:
-        - description: 'Since: cosmos-sdk 0.46'
-          name: body
+        - name: body
           in: body
           required: true
           schema:
@@ -1517,13 +1660,9 @@ paths:
       summary: |-
         UpdateParams defines an operation for updating the x/staking module
         parameters.
-        Since: cosmos-sdk 0.47
-      operationId: EvidenceMsg_UpdateParamsMixin140
+      operationId: EvidenceMsg_UpdateParamsMixin151
       parameters:
-        - description: |-
-            MsgUpdateParams is the Msg/UpdateParams request type.
-
-            Since: cosmos-sdk 0.47
+        - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
           in: body
           required: true
@@ -1582,7 +1721,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.upgrade.v1beta1.Msg/CancelUpgrade:
     post:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Msg
       summary: |-
@@ -1590,10 +1728,7 @@ paths:
         approved software upgrade.
       operationId: EvidenceMsg_CancelUpgrade
       parameters:
-        - description: |-
-            MsgCancelUpgrade is the Msg/CancelUpgrade request type.
-
-            Since: cosmos-sdk 0.46
+        - description: MsgCancelUpgrade is the Msg/CancelUpgrade request type.
           name: body
           in: body
           required: true
@@ -1610,16 +1745,12 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.upgrade.v1beta1.Msg/SoftwareUpgrade:
     post:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Msg
       summary: SoftwareUpgrade is a governance operation for initiating a software upgrade.
       operationId: EvidenceMsg_SoftwareUpgrade
       parameters:
-        - description: |-
-            MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.
-
-            Since: cosmos-sdk 0.46
+        - description: MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.
           name: body
           in: body
           required: true
@@ -1636,7 +1767,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.vesting.v1beta1.Msg/CreatePeriodicVestingAccount:
     post:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Msg
       summary: |-
@@ -1647,8 +1777,6 @@ paths:
         - description: |-
             MsgCreateVestingAccount defines a message that enables creating a vesting
             account.
-
-            Since: cosmos-sdk 0.46
           name: body
           in: body
           required: true
@@ -1665,7 +1793,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos.vesting.v1beta1.Msg/CreatePermanentLockedAccount:
     post:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Msg
       summary: |-
@@ -1676,8 +1803,6 @@ paths:
         - description: |-
             MsgCreatePermanentLockedAccount defines a message that enables creating a permanent
             locked account.
-
-            Since: cosmos-sdk 0.46
           name: body
           in: body
           required: true
@@ -1720,7 +1845,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/auth/v1beta1/account_info/{address}:
     get:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Query
       summary: AccountInfo queries account info which is common to all account types.
@@ -1745,8 +1869,6 @@ paths:
       description: |-
         When called from another module, this query might consume a high amount of
         gas if the pagination field is incorrectly set.
-
-        Since: cosmos-sdk 0.43
       tags:
         - Query
       summary: Accounts returns all the existing accounts.
@@ -1784,10 +1906,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -1822,7 +1941,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/auth/v1beta1/address_by_id/{id}:
     get:
-      description: 'Since: cosmos-sdk 0.46.2'
       tags:
         - Query
       summary: AccountAddressByID returns account address based on account number.
@@ -1841,10 +1959,7 @@ paths:
           required: true
         - type: string
           format: uint64
-          description: |-
-            account_id is the account number of the address to be queried.
-
-            Since: cosmos-sdk 0.47
+          description: account_id is the account number of the address to be queried.
           name: account_id
           in: query
       responses:
@@ -1858,7 +1973,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/auth/v1beta1/bech32:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Query
       summary: Bech32Prefix queries bech32Prefix
@@ -1874,7 +1988,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/auth/v1beta1/bech32/{address_bytes}:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Query
       summary: AddressBytesToString converts Account Address bytes to string
@@ -1896,7 +2009,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/auth/v1beta1/bech32/{address_string}:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Query
       summary: AddressStringToBytes converts Address string to bytes
@@ -1917,7 +2029,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/auth/v1beta1/module_accounts:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Query
       summary: ModuleAccounts returns all the existing module accounts.
@@ -2015,10 +2126,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -2032,7 +2140,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/authz/v1beta1/grants/grantee/{grantee}:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Query
       summary: GranteeGrants returns a list of `GrantAuthorization` by grantee.
@@ -2074,10 +2181,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -2091,7 +2195,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/authz/v1beta1/grants/granter/{granter}:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Query
       summary: GranterGrants returns list of `GrantAuthorization`, granted by granter.
@@ -2133,10 +2236,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -2195,17 +2295,11 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
         - type: boolean
-          description: |-
-            resolve_denom is the flag to resolve the denom into a human-readable form from the metadata.
-
-            Since: cosmos-sdk 0.50
+          description: resolve_denom is the flag to resolve the denom into a human-readable form from the metadata.
           name: resolve_denom
           in: query
       responses:
@@ -2247,8 +2341,6 @@ paths:
       description: |-
         When called from another module, this query might consume a high amount of
         gas if the pagination field is incorrectly set.
-
-        Since: cosmos-sdk 0.46
       tags:
         - Query
       summary: |-
@@ -2256,7 +2348,8 @@ paths:
         denomination.
       operationId: EvidenceQuery_DenomOwners
       parameters:
-        - type: string
+        - pattern: .+
+          type: string
           description: denom defines the coin denomination to query all account holders for.
           name: denom
           in: path
@@ -2293,10 +2386,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -2310,7 +2400,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/bank/v1beta1/denom_owners_by_query:
     get:
-      description: 'Since: cosmos-sdk 0.50.3'
       tags:
         - Query
       summary: |-
@@ -2354,10 +2443,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -2410,10 +2496,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -2432,7 +2515,8 @@ paths:
       summary: DenomMetadata queries the client metadata of a given coin denomination.
       operationId: EvidenceQuery_DenomMetadata
       parameters:
-        - type: string
+        - pattern: .+
+          type: string
           description: denom is the coin denom to query the metadata for.
           name: denom
           in: path
@@ -2487,8 +2571,6 @@ paths:
         This query only returns denominations that have specific SendEnabled settings.
         Any denomination that does not have a specific setting will use the default
         params.default_send_enabled, and will not be returned by this query.
-
-        Since: cosmos-sdk 0.47
       tags:
         - Query
       summary: SendEnabled queries for SendEnabled entries.
@@ -2533,10 +2615,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -2553,8 +2632,6 @@ paths:
       description: |-
         When called from another module, this query might consume a high amount of
         gas if the pagination field is incorrectly set.
-
-        Since: cosmos-sdk 0.46
       tags:
         - Query
       summary: |-
@@ -2599,10 +2676,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -2619,8 +2693,6 @@ paths:
       description: |-
         When called from another module, this query might consume a high amount of
         gas if the pagination field is incorrectly set.
-
-        Since: cosmos-sdk 0.47
       tags:
         - Query
       summary: |-
@@ -2688,10 +2760,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -2891,7 +2960,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/base/tendermint/v1beta1/abci_query:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Service
       summary: |-
@@ -3028,10 +3096,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -3087,10 +3152,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -3107,7 +3169,7 @@ paths:
       tags:
         - Query
       summary: Account returns account permissions.
-      operationId: EvidenceQuery_AccountsMixin79
+      operationId: EvidenceQuery_AccountsMixin81
       parameters:
         - type: string
           format: byte
@@ -3141,10 +3203,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -3161,7 +3220,7 @@ paths:
       tags:
         - Query
       summary: Account returns account permissions.
-      operationId: EvidenceQuery_AccountMixin79
+      operationId: EvidenceQuery_AccountMixin81
       parameters:
         - type: string
           name: address
@@ -3196,7 +3255,7 @@ paths:
       tags:
         - Query
       summary: Params queries the parameters of x/consensus module.
-      operationId: EvidenceQuery_ParamsMixin82
+      operationId: EvidenceQuery_ParamsMixin84
       responses:
         "200":
           description: A successful response.
@@ -3208,6 +3267,7 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/distribution/v1beta1/community_pool:
     get:
+      description: 'WARNING: This query will fail if an external community pool is used.'
       tags:
         - Query
       summary: CommunityPool queries the community pool coins.
@@ -3317,7 +3377,7 @@ paths:
       tags:
         - Query
       summary: Params queries params of the distribution module.
-      operationId: EvidenceQuery_ParamsMixin95
+      operationId: EvidenceQuery_ParamsMixin99
       responses:
         "200":
           description: A successful response.
@@ -3444,10 +3504,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -3455,6 +3512,40 @@ paths:
           description: A successful response.
           schema:
             $ref: '#/definitions/cosmos.distribution.v1beta1.QueryValidatorSlashesResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos/epochs/v1beta1/current_epoch:
+    get:
+      tags:
+        - Query
+      summary: CurrentEpoch provide current epoch of specified identifier
+      operationId: EvidenceQuery_CurrentEpoch
+      parameters:
+        - type: string
+          name: identifier
+          in: query
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.epochs.v1beta1.QueryCurrentEpochResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos/epochs/v1beta1/epochs:
+    get:
+      tags:
+        - Query
+      summary: EpochInfos provide running epochInfos
+      operationId: EvidenceQuery_EpochInfos
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.epochs.v1beta1.QueryEpochInfosResponse'
         default:
           description: An unexpected error response.
           schema:
@@ -3498,10 +3589,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -3521,10 +3609,7 @@ paths:
       operationId: EvidenceQuery_Evidence
       parameters:
         - type: string
-          description: |-
-            hash defines the evidence hash of the requested evidence.
-
-            Since: cosmos-sdk 0.47
+          description: hash defines the evidence hash of the requested evidence.
           name: hash
           in: path
           required: true
@@ -3613,10 +3698,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -3630,7 +3712,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/feegrant/v1beta1/issued/{granter}:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Query
       summary: AllowancesByGranter returns all the grants given by an address
@@ -3672,10 +3753,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -3707,7 +3785,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the gov module.
-      operationId: EvidenceQuery_ParamsMixin108
+      operationId: EvidenceQuery_ParamsMixin115
       parameters:
         - type: string
           description: |-
@@ -3797,10 +3875,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -3879,10 +3954,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -3988,10 +4060,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4035,7 +4104,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the gov module.
-      operationId: EvidenceQuery_ParamsMixin112
+      operationId: EvidenceQuery_ParamsMixin119
       parameters:
         - type: string
           description: |-
@@ -4058,7 +4127,7 @@ paths:
       tags:
         - Query
       summary: Proposals queries all proposals based on given status.
-      operationId: EvidenceQuery_ProposalsMixin112
+      operationId: EvidenceQuery_ProposalsMixin119
       parameters:
         - enum:
             - PROPOSAL_STATUS_UNSPECIFIED
@@ -4125,10 +4194,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4145,7 +4211,7 @@ paths:
       tags:
         - Query
       summary: Proposal queries proposal details based on ProposalID.
-      operationId: EvidenceQuery_ProposalMixin112
+      operationId: EvidenceQuery_ProposalMixin119
       parameters:
         - type: string
           format: uint64
@@ -4167,7 +4233,7 @@ paths:
       tags:
         - Query
       summary: Deposits queries all deposits of a single proposal.
-      operationId: EvidenceQuery_DepositsMixin112
+      operationId: EvidenceQuery_DepositsMixin119
       parameters:
         - type: string
           format: uint64
@@ -4207,10 +4273,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4227,7 +4290,7 @@ paths:
       tags:
         - Query
       summary: Deposit queries single deposit information based on proposalID, depositor address.
-      operationId: EvidenceQuery_DepositMixin112
+      operationId: EvidenceQuery_DepositMixin119
       parameters:
         - type: string
           format: uint64
@@ -4254,7 +4317,7 @@ paths:
       tags:
         - Query
       summary: TallyResult queries the tally of a proposal vote.
-      operationId: EvidenceQuery_TallyResultMixin112
+      operationId: EvidenceQuery_TallyResultMixin119
       parameters:
         - type: string
           format: uint64
@@ -4276,7 +4339,7 @@ paths:
       tags:
         - Query
       summary: Votes queries votes of a given proposal.
-      operationId: EvidenceQuery_VotesMixin112
+      operationId: EvidenceQuery_VotesMixin119
       parameters:
         - type: string
           format: uint64
@@ -4316,10 +4379,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4336,7 +4396,7 @@ paths:
       tags:
         - Query
       summary: Vote queries voted information based on proposalID, voterAddr.
-      operationId: EvidenceQuery_VoteMixin112
+      operationId: EvidenceQuery_VoteMixin119
       parameters:
         - type: string
           format: uint64
@@ -4425,10 +4485,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4484,10 +4541,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4544,10 +4598,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4582,7 +4633,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/group/v1/groups:
     get:
-      description: 'Since: cosmos-sdk 0.47.1'
       tags:
         - Query
       summary: Groups queries all groups in state.
@@ -4620,10 +4670,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4679,10 +4726,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4738,10 +4782,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4758,7 +4799,7 @@ paths:
       tags:
         - Query
       summary: Proposal queries a proposal based on proposal id.
-      operationId: EvidenceQuery_ProposalMixin116
+      operationId: EvidenceQuery_ProposalMixin123
       parameters:
         - type: string
           format: uint64
@@ -4785,7 +4826,7 @@ paths:
         which might not be final. On the other hand, if the proposal is final,
         then it simply returns the `final_tally_result` state stored in the
         proposal itself.
-      operationId: EvidenceQuery_TallyResultMixin116
+      operationId: EvidenceQuery_TallyResultMixin123
       parameters:
         - type: string
           format: uint64
@@ -4846,10 +4887,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4933,10 +4971,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -4992,10 +5027,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -5042,7 +5074,7 @@ paths:
       tags:
         - Query
       summary: Params returns the total set of minting parameters.
-      operationId: EvidenceQuery_ParamsMixin121
+      operationId: EvidenceQuery_ParamsMixin128
       responses:
         "200":
           description: A successful response.
@@ -5057,7 +5089,7 @@ paths:
       tags:
         - Query
       summary: Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721
-      operationId: EvidenceQuery_BalanceMixin127
+      operationId: EvidenceQuery_BalanceMixin134
       parameters:
         - type: string
           description: owner is the owner address of the nft
@@ -5117,10 +5149,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -5202,10 +5231,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -5297,7 +5323,7 @@ paths:
       summary: |-
         Params queries a specific parameter of a module, given its subspace and
         key.
-      operationId: EvidenceQuery_ParamsMixin130
+      operationId: EvidenceQuery_ParamsMixin137
       parameters:
         - type: string
           description: subspace defines the module to query the parameter for.
@@ -5318,7 +5344,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/params/v1beta1/subspaces:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Query
       summary: Subspaces queries for all registered subspaces and all keys for a subspace.
@@ -5332,12 +5357,78 @@ paths:
           description: An unexpected error response.
           schema:
             $ref: '#/definitions/google.rpc.Status'
+  /cosmos/protocolpool/v1/community_pool:
+    get:
+      tags:
+        - Query
+      summary: CommunityPool queries the community pool coins.
+      operationId: EvidenceQuery_CommunityPoolMixin139
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.QueryCommunityPoolResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos/protocolpool/v1/continuous_funds:
+    get:
+      tags:
+        - Query
+      summary: ContinuousFunds queries all continuous funds in the store.
+      operationId: EvidenceQuery_ContinuousFunds
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.QueryContinuousFundsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos/protocolpool/v1/continuous_funds/{recipient}:
+    get:
+      tags:
+        - Query
+      summary: ContinuousFund queries a continuous fund by the recipient is is associated with.
+      operationId: EvidenceQuery_ContinuousFund
+      parameters:
+        - type: string
+          description: recipient is the recipient address to query unclaimed budget amount for.
+          name: recipient
+          in: path
+          required: true
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.QueryContinuousFundResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
+  /cosmos/protocolpool/v1/params:
+    get:
+      tags:
+        - Query
+      summary: Params returns the total set of x/protocolpool parameters.
+      operationId: EvidenceQuery_ParamsMixin139
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/cosmos.protocolpool.v1.QueryParamsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/google.rpc.Status'
   /cosmos/slashing/v1beta1/params:
     get:
       tags:
         - Query
       summary: Params queries the parameters of slashing module
-      operationId: EvidenceQuery_ParamsMixin133
+      operationId: EvidenceQuery_ParamsMixin144
       responses:
         "200":
           description: A successful response.
@@ -5386,10 +5477,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -5469,10 +5557,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -5539,10 +5624,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -5603,10 +5685,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -5628,7 +5707,7 @@ paths:
       summary: |-
         DelegatorValidators queries all validators info for given delegator
         address.
-      operationId: EvidenceQuery_DelegatorValidatorsMixin138
+      operationId: EvidenceQuery_DelegatorValidatorsMixin149
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5667,10 +5746,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -5737,7 +5813,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the staking parameters.
-      operationId: EvidenceQuery_ParamsMixin138
+      operationId: EvidenceQuery_ParamsMixin149
       responses:
         "200":
           description: A successful response.
@@ -5808,10 +5884,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -5891,10 +5964,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -6007,10 +6077,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -6024,7 +6091,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/tx/v1beta1/decode:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Service
       summary: TxDecode decodes the transaction.
@@ -6033,8 +6099,6 @@ paths:
         - description: |-
             TxDecodeRequest is the request type for the Service.TxDecode
             RPC method.
-
-            Since: cosmos-sdk 0.47
           name: body
           in: body
           required: true
@@ -6051,7 +6115,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/tx/v1beta1/decode/amino:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Service
       summary: TxDecodeAmino decodes an Amino transaction from encoded bytes to JSON.
@@ -6060,8 +6123,6 @@ paths:
         - description: |-
             TxDecodeAminoRequest is the request type for the Service.TxDecodeAmino
             RPC method.
-
-            Since: cosmos-sdk 0.47
           name: body
           in: body
           required: true
@@ -6078,7 +6139,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/tx/v1beta1/encode:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Service
       summary: TxEncode encodes the transaction.
@@ -6087,8 +6147,6 @@ paths:
         - description: |-
             TxEncodeRequest is the request type for the Service.TxEncode
             RPC method.
-
-            Since: cosmos-sdk 0.47
           name: body
           in: body
           required: true
@@ -6105,7 +6163,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/tx/v1beta1/encode/amino:
     post:
-      description: 'Since: cosmos-sdk 0.47'
       tags:
         - Service
       summary: TxEncodeAmino encodes an Amino transaction from JSON to encoded bytes.
@@ -6114,8 +6171,6 @@ paths:
         - description: |-
             TxEncodeAminoRequest is the request type for the Service.TxEncodeAmino
             RPC method.
-
-            Since: cosmos-sdk 0.47
           name: body
           in: body
           required: true
@@ -6203,10 +6258,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
         - enum:
@@ -6240,8 +6292,6 @@ paths:
           description: |-
             query defines the transaction event query that is proxied to Tendermint's
             TxSearch RPC method. The query must be valid.
-
-            Since cosmos-sdk 0.50
           name: query
           in: query
       responses:
@@ -6278,7 +6328,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/tx/v1beta1/txs/block/{height}:
     get:
-      description: 'Since: cosmos-sdk 0.45.2'
       tags:
         - Service
       summary: GetBlockWithTxs fetches a block with decoded txs.
@@ -6322,10 +6371,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -6381,7 +6427,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/upgrade/v1beta1/authority:
     get:
-      description: 'Since: cosmos-sdk 0.46'
       tags:
         - Query
       summary: Returns the account with authority to conduct upgrades
@@ -6412,7 +6457,6 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
   /cosmos/upgrade/v1beta1/module_versions:
     get:
-      description: 'Since: cosmos-sdk 0.43'
       tags:
         - Query
       summary: ModuleVersions queries the list of module versions from state.
@@ -6655,7 +6699,7 @@ paths:
       tags:
         - Msg
       summary: UpdateParams defines a rpc handler for MsgUpdateParams.
-      operationId: FeeMsg_UpdateParamsMixin179
+      operationId: FeeMsg_UpdateParamsMixin189
       parameters:
         - name: body
           in: body
@@ -6697,7 +6741,7 @@ paths:
       tags:
         - Msg
       summary: UpdateParams defines a rpc handler for MsgUpdateParams.
-      operationId: FeeMsg_UpdateParamsMixin187
+      operationId: FeeMsg_UpdateParamsMixin197
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -7928,7 +7972,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the ICA host submodule.
-      operationId: FeeQuery_ParamsMixin178
+      operationId: FeeQuery_ParamsMixin188
       responses:
         "200":
           description: A successful response.
@@ -8088,7 +8132,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the ibc-transfer module.
-      operationId: FeeQuery_ParamsMixin185
+      operationId: FeeQuery_ParamsMixin195
       responses:
         "200":
           description: A successful response.
@@ -9539,9 +9583,9 @@ paths:
       operationId: GithubCompoktNetworkpoktrollMsg_ClaimMorseAccount
       parameters:
         - description: |-
-            MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),
-            of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts,
-            to the balance of the given Shannon account.
+            - Execute a claim (one-time minting of tokens on Shannon)
+            - Claim the balance of a given Morse account per on-chain MorseClaimableAccounts
+            - Mint claimed balance to the given Shannon account
 
             NOTE:
             - The Shannon account specified must be the message signer
@@ -9569,10 +9613,9 @@ paths:
       operationId: GithubCompoktNetworkpoktrollMsg_ClaimMorseApplication
       parameters:
         - description: |-
-            MsgClaimMorseApplication is used to execute a claim (one-time minting of tokens on Shannon),
-            of the total tokens owned by the given Morse account, according to the on-chain MorseClaimableAccounts,
-            to the balance of the given Shannon account, followed by staking that Shannon account as an application
-            for the given service_config and the same stake amount as on Morse.
+            - Execute a claim (one-time minting of tokens on Shannon) of total tokens owned by a Morse account
+            - Mint claimed tokens to the given Shannon account
+            - Stake that Shannon account as an application for the given service_config and same stake amount
 
             Next free index: 7
           name: body
@@ -9596,10 +9639,14 @@ paths:
       operationId: GithubCompoktNetworkpoktrollMsg_ClaimMorseSupplier
       parameters:
         - description: |-
-            NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the
-            claimed balance.
+            - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
+            - Use the on-chain MorseClaimableAccounts for verification
+            - Credit the minted tokens to the balance of the given Shannon account
+            - Automatically stake that Shannon account as a supplier
 
-            Next free index: 8
+            NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the claimed balance
+
+            Next free index: 9
           name: body
           in: body
           required: true
@@ -9621,7 +9668,8 @@ paths:
       operationId: GithubCompoktNetworkpoktrollMsg_ImportMorseClaimableAccounts
       parameters:
         - description: |-
-            MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis).
+            - Create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis)
+            - Import Morse account state derived from Morse state export
 
             Next free index: 4
           name: body
@@ -9645,12 +9693,12 @@ paths:
       operationId: GithubCompoktNetworkpoktrollMsg_RecoverMorseAccount
       parameters:
         - description: |-
-            MsgRecoverMorseAccount is used to:
             - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
             - Credit the minted tokens to the balance of the given Shannon account
             - Migrate unclaimable staked and liquid Morse tokens as liquid Shannon tokens
-            It MAY ONLY be executed by the authority, and is ONLY intended for use
-            on accounts with invalid addresses and/or known lost private keys.
+
+            - MAY ONLY be executed by the authority
+            - ONLY intended for use on accounts with invalid addresses and/or known lost private keys
 
             Next free index: 4
           name: body
@@ -9678,6 +9726,9 @@ paths:
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
+
+            - Used for updating the migration module parameters via governance
+            - All parameters must be supplied
 
             Next free index: 3
           name: body
@@ -11177,19 +11228,13 @@ paths:
             $ref: '#/definitions/google.rpc.Status'
 definitions:
   cosmos.auth.v1beta1.AddressBytesToStringResponse:
-    description: |-
-      AddressBytesToStringResponse is the response type for AddressString rpc method.
-
-      Since: cosmos-sdk 0.46
+    description: AddressBytesToStringResponse is the response type for AddressString rpc method.
     type: object
     properties:
       address_string:
         type: string
   cosmos.auth.v1beta1.AddressStringToBytesResponse:
-    description: |-
-      AddressStringToBytesResponse is the response type for AddressBytes rpc method.
-
-      Since: cosmos-sdk 0.46
+    description: AddressStringToBytesResponse is the response type for AddressBytes rpc method.
     type: object
     properties:
       address_bytes:
@@ -11213,19 +11258,13 @@ definitions:
         type: string
         format: uint64
   cosmos.auth.v1beta1.Bech32PrefixResponse:
-    description: |-
-      Bech32PrefixResponse is the response type for Bech32Prefix rpc method.
-
-      Since: cosmos-sdk 0.46
+    description: Bech32PrefixResponse is the response type for Bech32Prefix rpc method.
     type: object
     properties:
       bech32_prefix:
         type: string
   cosmos.auth.v1beta1.MsgUpdateParams:
-    description: |-
-      MsgUpdateParams is the Msg/UpdateParams request type.
-
-      Since: cosmos-sdk 0.47
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
     properties:
       authority:
@@ -11241,8 +11280,6 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
-
-      Since: cosmos-sdk 0.47
     type: object
   cosmos.auth.v1beta1.Params:
     description: Params defines the parameters for the auth module.
@@ -11264,17 +11301,13 @@ definitions:
         type: string
         format: uint64
   cosmos.auth.v1beta1.QueryAccountAddressByIDResponse:
-    description: 'Since: cosmos-sdk 0.46.2'
     type: object
     title: QueryAccountAddressByIDResponse is the response type for AccountAddressByID rpc method
     properties:
       account_address:
         type: string
   cosmos.auth.v1beta1.QueryAccountInfoResponse:
-    description: |-
-      QueryAccountInfoResponse is the Query/AccountInfo response type.
-
-      Since: cosmos-sdk 0.47
+    description: QueryAccountInfoResponse is the Query/AccountInfo response type.
     type: object
     properties:
       info:
@@ -11288,10 +11321,7 @@ definitions:
         description: account defines the account of the corresponding address.
         $ref: '#/definitions/google.protobuf.Any'
   cosmos.auth.v1beta1.QueryAccountsResponse:
-    description: |-
-      QueryAccountsResponse is the response type for the Query/Accounts RPC method.
-
-      Since: cosmos-sdk 0.43
+    description: QueryAccountsResponse is the response type for the Query/Accounts RPC method.
     type: object
     properties:
       accounts:
@@ -11310,10 +11340,7 @@ definitions:
       account:
         $ref: '#/definitions/google.protobuf.Any'
   cosmos.auth.v1beta1.QueryModuleAccountsResponse:
-    description: |-
-      QueryModuleAccountsResponse is the response type for the Query/ModuleAccounts RPC method.
-
-      Since: cosmos-sdk 0.46
+    description: QueryModuleAccountsResponse is the response type for the Query/ModuleAccounts RPC method.
     type: object
     properties:
       accounts:
@@ -11509,6 +11536,11 @@ definitions:
     description: PositionalArgDescriptor describes a positional argument.
     type: object
     properties:
+      optional:
+        description: |-
+          optional makes the last positional parameter optional.
+          Note: It is mutually exclusive with varargs.
+        type: boolean
       proto_field:
         description: |-
           proto_field specifies the proto field to use as the positional arg. Any
@@ -11518,7 +11550,7 @@ definitions:
         description: |-
           varargs makes a positional parameter a varargs parameter. This can only be
           applied to last positional parameter and the proto_field must a repeated
-          field.
+          field. Note: It is mutually exclusive with optional.
         type: boolean
   cosmos.autocli.v1.RpcCommandOptions:
     description: |-
@@ -11545,6 +11577,13 @@ definitions:
         type: object
         additionalProperties:
           $ref: '#/definitions/cosmos.autocli.v1.FlagOptions'
+      gov_proposal:
+        description: |-
+          gov_proposal specifies whether autocli should generate a gov proposal transaction for this rpc method.
+          Normally autocli generates a transaction containing the message and broadcast it.
+          However, when true, autocli generates a proposal transaction containing the message and broadcast it.
+          This option is ineffective for query commands.
+        type: boolean
       long:
         description: long is the long message shown in the 'help <this-command>' output.
         type: string
@@ -11591,6 +11630,12 @@ definitions:
     description: ServiceCommandDescriptor describes a CLI command based on a protobuf service.
     type: object
     properties:
+      enhance_custom_command:
+        description: |-
+          enhance_custom_commands specifies whether to skip the service when generating commands, if a custom command already
+          exists, or enhance the existing command. If set to true, the custom command will be enhanced with the services from
+          gRPC. otherwise when a custom command exists, no commands will be generated for the service.
+        type: boolean
       rpc_command_options:
         description: |-
           rpc_command_options are options for commands generated from rpc methods.
@@ -11606,6 +11651,9 @@ definitions:
           the command from. It can be left empty if sub_commands are used instead
           which may be the case if a module provides multiple tx and/or query services.
         type: string
+      short:
+        description: short is an optional parameter used to override the short description of the auto generated command.
+        type: string
       sub_commands:
         description: |-
           sub_commands is a map of optional sub-commands for this command based on
@@ -11619,8 +11667,6 @@ definitions:
       DenomOwner defines structure representing an account that owns or holds a
       particular denominated token. It contains the account address and account
       balance of the denominated token.
-
-      Since: cosmos-sdk 0.46
     type: object
     properties:
       address:
@@ -11686,28 +11732,20 @@ definitions:
           displayed in clients.
         type: string
       name:
-        description: 'Since: cosmos-sdk 0.43'
         type: string
         title: 'name defines the name of the token (eg: Cosmos Atom)'
       symbol:
         description: |-
           symbol is the token symbol usually shown on exchanges (eg: ATOM). This can
           be the same as the display.
-
-          Since: cosmos-sdk 0.43
         type: string
       uri:
-        description: |-
-          URI to a document (on or off-chain) that contains additional information. Optional.
-
-          Since: cosmos-sdk 0.46
+        description: URI to a document (on or off-chain) that contains additional information. Optional.
         type: string
       uri_hash:
         description: |-
           URIHash is a sha256 hash of a document pointed by URI. It's used to verify that
           the document didn't change. Optional.
-
-          Since: cosmos-sdk 0.46
         type: string
   cosmos.bank.v1beta1.MsgMultiSend:
     description: MsgMultiSend represents an arbitrary multi-in, multi-out send message.
@@ -11752,8 +11790,6 @@ definitions:
       Only entries to add/update/delete need to be included.
       Existing SendEnabled entries that are not included in this
       message are left unchanged.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       authority:
@@ -11775,16 +11811,10 @@ definitions:
         items:
           type: string
   cosmos.bank.v1beta1.MsgSetSendEnabledResponse:
-    description: |-
-      MsgSetSendEnabledResponse defines the Msg/SetSendEnabled response type.
-
-      Since: cosmos-sdk 0.47
+    description: MsgSetSendEnabledResponse defines the Msg/SetSendEnabled response type.
     type: object
   cosmos.bank.v1beta1.MsgUpdateParams:
-    description: |-
-      MsgUpdateParams is the Msg/UpdateParams request type.
-
-      Since: cosmos-sdk 0.47
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
     properties:
       authority:
@@ -11800,8 +11830,6 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
-
-      Since: cosmos-sdk 0.47
     type: object
   cosmos.bank.v1beta1.Output:
     description: Output models transaction outputs.
@@ -11872,10 +11900,7 @@ definitions:
         description: metadata describes and provides all the client information for the requested token.
         $ref: '#/definitions/cosmos.bank.v1beta1.Metadata'
   cosmos.bank.v1beta1.QueryDenomOwnersByQueryResponse:
-    description: |-
-      QueryDenomOwnersByQueryResponse defines the RPC response of a DenomOwnersByQuery RPC query.
-
-      Since: cosmos-sdk 0.50.3
+    description: QueryDenomOwnersByQueryResponse defines the RPC response of a DenomOwnersByQuery RPC query.
     type: object
     properties:
       denom_owners:
@@ -11887,10 +11912,7 @@ definitions:
         description: pagination defines the pagination in the response.
         $ref: '#/definitions/cosmos.base.query.v1beta1.PageResponse'
   cosmos.bank.v1beta1.QueryDenomOwnersResponse:
-    description: |-
-      QueryDenomOwnersResponse defines the RPC response of a DenomOwners RPC query.
-
-      Since: cosmos-sdk 0.46
+    description: QueryDenomOwnersResponse defines the RPC response of a DenomOwners RPC query.
     type: object
     properties:
       denom_owners:
@@ -11924,10 +11946,7 @@ definitions:
         description: params provides the parameters of the bank module.
         $ref: '#/definitions/cosmos.bank.v1beta1.Params'
   cosmos.bank.v1beta1.QuerySendEnabledResponse:
-    description: |-
-      QuerySendEnabledResponse defines the RPC response of a SendEnable query.
-
-      Since: cosmos-sdk 0.47
+    description: QuerySendEnabledResponse defines the RPC response of a SendEnable query.
     type: object
     properties:
       pagination:
@@ -11944,8 +11963,6 @@ definitions:
     description: |-
       QuerySpendableBalanceByDenomResponse defines the gRPC response structure for
       querying an account's spendable balance for a specific denom.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       balance:
@@ -11955,8 +11972,6 @@ definitions:
     description: |-
       QuerySpendableBalancesResponse defines the gRPC response structure for querying
       an account's spendable balances.
-
-      Since: cosmos-sdk 0.46
     type: object
     properties:
       balances:
@@ -11982,10 +11997,7 @@ definitions:
       method
     properties:
       pagination:
-        description: |-
-          pagination defines the pagination in the response.
-
-          Since: cosmos-sdk 0.43
+        description: pagination defines the pagination in the response.
         $ref: '#/definitions/cosmos.base.query.v1beta1.PageResponse'
       supply:
         type: array
@@ -12066,10 +12078,7 @@ definitions:
         description: Log contains the log information from message or handler execution.
         type: string
       msg_responses:
-        description: |-
-          msg_responses contains the Msg handler responses type packed in Anys.
-
-          Since: cosmos-sdk 0.46
+        description: msg_responses contains the Msg handler responses type packed in Anys.
         type: array
         items:
           type: object
@@ -12109,8 +12118,6 @@ definitions:
           these events include those emitted by processing all the messages and those
           emitted from the ante. Whereas Logs contains the events, with
           additional metadata, emitted only by processing the messages.
-
-          Since: cosmos-sdk 0.42.11, 0.44.5, 0.45
         type: array
         items:
           type: object
@@ -12550,7 +12557,6 @@ definitions:
       block_id:
         $ref: '#/definitions/tendermint.types.BlockID'
       sdk_block:
-        title: 'Since: cosmos-sdk 0.47'
         $ref: '#/definitions/cosmos.base.tendermint.v1beta1.Block'
   cosmos.base.tendermint.v1beta1.GetLatestBlockResponse:
     description: GetLatestBlockResponse is the response type for the Query/GetLatestBlock RPC method.
@@ -12562,7 +12568,6 @@ definitions:
       block_id:
         $ref: '#/definitions/tendermint.types.BlockID'
       sdk_block:
-        title: 'Since: cosmos-sdk 0.47'
         $ref: '#/definitions/cosmos.base.tendermint.v1beta1.Block'
   cosmos.base.tendermint.v1beta1.GetLatestValidatorSetResponse:
     description: GetLatestValidatorSetResponse is the response type for the Query/GetValidatorSetByHeight RPC method.
@@ -12740,7 +12745,6 @@ definitions:
         type: string
       cosmos_sdk_version:
         type: string
-        title: 'Since: cosmos-sdk 0.43'
       git_commit:
         type: string
       go_version:
@@ -12773,6 +12777,50 @@ definitions:
         type: string
       denom:
         type: string
+  cosmos.benchmark.v1.MsgLoadTest:
+    description: MsgLoadTestOps defines a message containing a sequence of load test operations.
+    type: object
+    properties:
+      caller:
+        type: string
+        format: byte
+      ops:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/cosmos.benchmark.v1.Op'
+  cosmos.benchmark.v1.MsgLoadTestResponse:
+    description: MsgLoadTestResponse defines a message containing the results of a load test operation.
+    type: object
+    properties:
+      total_errors:
+        type: string
+        format: uint64
+      total_time:
+        type: string
+        format: uint64
+  cosmos.benchmark.v1.Op:
+    description: Op is a message describing a benchmark operation.
+    type: object
+    properties:
+      actor:
+        type: string
+      delete:
+        type: boolean
+      exists:
+        type: boolean
+      iterations:
+        type: integer
+        format: int64
+      key_length:
+        type: string
+        format: uint64
+      seed:
+        type: string
+        format: uint64
+      value_length:
+        type: string
+        format: uint64
   cosmos.circuit.v1.AccountResponse:
     description: AccountResponse is the response type for the Query/Account RPC method.
     type: object
@@ -12918,7 +12966,6 @@ definitions:
     type: object
     properties:
       abci:
-        title: 'Since: cosmos-sdk 0.50'
         $ref: '#/definitions/tendermint.types.ABCIParams'
       authority:
         description: authority is the address that controls the module (defaults to x/gov unless overwritten).
@@ -12950,11 +12997,37 @@ definitions:
           Please note that `params.version` is not populated in this response, it is
           tracked separately in the x/upgrade module.
         $ref: '#/definitions/tendermint.types.ConsensusParams'
+  cosmos.counter.v1.MsgIncreaseCountResponse:
+    description: MsgIncreaseCountResponse is the Msg/Counter response type.
+    type: object
+    properties:
+      new_count:
+        description: new_count is the number of times the counter was incremented.
+        type: string
+        format: int64
+  cosmos.counter.v1.MsgIncreaseCounter:
+    description: MsgIncreaseCounter defines a count Msg service counter.
+    type: object
+    properties:
+      count:
+        description: count is the number of times to increment the counter.
+        type: string
+        format: int64
+      signer:
+        description: signer is the address that controls the module (defaults to x/gov unless overwritten).
+        type: string
+  cosmos.counter.v1.QueryGetCountRequest:
+    description: QueryGetCountRequest defines the request type for querying x/mock count.
+    type: object
+  cosmos.counter.v1.QueryGetCountResponse:
+    description: QueryGetCountResponse defines the response type for querying x/mock count.
+    type: object
+    properties:
+      total_count:
+        type: string
+        format: int64
   cosmos.crisis.v1beta1.MsgUpdateParams:
-    description: |-
-      MsgUpdateParams is the Msg/UpdateParams request type.
-
-      Since: cosmos-sdk 0.47
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
     properties:
       authority:
@@ -12967,8 +13040,6 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
-
-      Since: cosmos-sdk 0.47
     type: object
   cosmos.crisis.v1beta1.MsgVerifyInvariant:
     description: MsgVerifyInvariant represents a message to verify a particular invariance.
@@ -13018,8 +13089,6 @@ definitions:
       MsgCommunityPoolSpend defines a message for sending tokens from the community
       pool to another account. This message is typically executed via a governance
       proposal with the governance module being the executing authority.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       amount:
@@ -13036,15 +13105,11 @@ definitions:
     description: |-
       MsgCommunityPoolSpendResponse defines the response to executing a
       MsgCommunityPoolSpend message.
-
-      Since: cosmos-sdk 0.47
     type: object
   cosmos.distribution.v1beta1.MsgDepositValidatorRewardsPool:
     description: |-
       DepositValidatorRewardsPool defines the request structure to provide
       additional rewards to delegators from a specific validator.
-
-      Since: cosmos-sdk 0.50
     type: object
     properties:
       amount:
@@ -13060,8 +13125,6 @@ definitions:
     description: |-
       MsgDepositValidatorRewardsPoolResponse defines the response to executing a
       MsgDepositValidatorRewardsPool message.
-
-      Since: cosmos-sdk 0.50
     type: object
   cosmos.distribution.v1beta1.MsgFundCommunityPool:
     description: |-
@@ -13095,10 +13158,7 @@ definitions:
       type.
     type: object
   cosmos.distribution.v1beta1.MsgUpdateParams:
-    description: |-
-      MsgUpdateParams is the Msg/UpdateParams request type.
-
-      Since: cosmos-sdk 0.47
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
     properties:
       authority:
@@ -13114,8 +13174,6 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
-
-      Since: cosmos-sdk 0.47
     type: object
   cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward:
     description: |-
@@ -13135,7 +13193,6 @@ definitions:
     properties:
       amount:
         type: array
-        title: 'Since: cosmos-sdk 0.46'
         items:
           type: object
           $ref: '#/definitions/cosmos.base.v1beta1.Coin'
@@ -13155,7 +13212,6 @@ definitions:
     properties:
       amount:
         type: array
-        title: 'Since: cosmos-sdk 0.46'
         items:
           type: object
           $ref: '#/definitions/cosmos.base.v1beta1.Coin'
@@ -13332,6 +13388,89 @@ definitions:
       validator_period:
         type: string
         format: uint64
+  cosmos.epochs.v1beta1.EpochInfo:
+    description: |-
+      EpochInfo is a struct that describes the data going into
+      a timer defined by the x/epochs module.
+    type: object
+    properties:
+      current_epoch:
+        description: |-
+          current_epoch is the current epoch number, or in other words,
+          how many times has the timer 'ticked'.
+          The first tick (current_epoch=1) is defined as
+          the first block whose blocktime is greater than the EpochInfo start_time.
+        type: string
+        format: int64
+      current_epoch_start_height:
+        type: string
+        format: int64
+        title: |-
+          current_epoch_start_height is the block height at which the current epoch
+          started. (The block height at which the timer last ticked)
+      current_epoch_start_time:
+        description: |-
+          current_epoch_start_time describes the start time of the current timer
+          interval. The interval is (current_epoch_start_time,
+          current_epoch_start_time + duration] When the timer ticks, this is set to
+          current_epoch_start_time = last_epoch_start_time + duration only one timer
+          tick for a given identifier can occur per block.
+
+          NOTE! The current_epoch_start_time may diverge significantly from the
+          wall-clock time the epoch began at. Wall-clock time of epoch start may be
+          >> current_epoch_start_time. Suppose current_epoch_start_time = 10,
+          duration = 5. Suppose the chain goes offline at t=14, and comes back online
+          at t=30, and produces blocks at every successive time. (t=31, 32, etc.)
+          * The t=30 block will start the epoch for (10, 15]
+          * The t=31 block will start the epoch for (15, 20]
+          * The t=32 block will start the epoch for (20, 25]
+          * The t=33 block will start the epoch for (25, 30]
+          * The t=34 block will start the epoch for (30, 35]
+          * The **t=36** block will start the epoch for (35, 40]
+        type: string
+        format: date-time
+      duration:
+        description: |-
+          duration is the time in between epoch ticks.
+          In order for intended behavior to be met, duration should
+          be greater than the chains expected block time.
+          Duration must be non-zero.
+        type: string
+      epoch_counting_started:
+        description: |-
+          epoch_counting_started is a boolean, that indicates whether this
+          epoch timer has began yet.
+        type: boolean
+      identifier:
+        description: identifier is a unique reference to this particular timer.
+        type: string
+      start_time:
+        description: |-
+          start_time is the time at which the timer first ever ticks.
+          If start_time is in the future, the epoch will not begin until the start
+          time.
+        type: string
+        format: date-time
+  cosmos.epochs.v1beta1.QueryCurrentEpochResponse:
+    description: |-
+      QueryCurrentEpochResponse defines the gRPC response structure for
+      querying an epoch by its identifier.
+    type: object
+    properties:
+      current_epoch:
+        type: string
+        format: int64
+  cosmos.epochs.v1beta1.QueryEpochInfosResponse:
+    description: |-
+      QueryEpochInfosRequest defines the gRPC response structure for
+      querying all epoch info.
+    type: object
+    properties:
+      epochs:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/cosmos.epochs.v1beta1.EpochInfo'
   cosmos.evidence.v1beta1.MsgSubmitEvidence:
     description: |-
       MsgSubmitEvidence represents a message that supports submitting arbitrary
@@ -13406,20 +13545,14 @@ definitions:
     description: MsgGrantAllowanceResponse defines the Msg/GrantAllowanceResponse response type.
     type: object
   cosmos.feegrant.v1beta1.MsgPruneAllowances:
-    description: |-
-      MsgPruneAllowances prunes expired fee allowances.
-
-      Since cosmos-sdk 0.50
+    description: MsgPruneAllowances prunes expired fee allowances.
     type: object
     properties:
       pruner:
         description: pruner is the address of the user pruning expired allowances.
         type: string
   cosmos.feegrant.v1beta1.MsgPruneAllowancesResponse:
-    description: |-
-      MsgPruneAllowancesResponse defines the Msg/PruneAllowancesResponse response type.
-
-      Since cosmos-sdk 0.50
+    description: MsgPruneAllowancesResponse defines the Msg/PruneAllowancesResponse response type.
     type: object
   cosmos.feegrant.v1beta1.MsgRevokeAllowance:
     description: MsgRevokeAllowance removes any existing Allowance from Granter to Grantee.
@@ -13442,10 +13575,7 @@ definitions:
         description: allowance is a allowance granted for grantee by granter.
         $ref: '#/definitions/cosmos.feegrant.v1beta1.Grant'
   cosmos.feegrant.v1beta1.QueryAllowancesByGranterResponse:
-    description: |-
-      QueryAllowancesByGranterResponse is the response type for the Query/AllowancesByGranter RPC method.
-
-      Since: cosmos-sdk 0.46
+    description: QueryAllowancesByGranterResponse is the response type for the Query/AllowancesByGranter RPC method.
     type: object
     properties:
       allowances:
@@ -13505,10 +13635,7 @@ definitions:
           type: object
           $ref: '#/definitions/cosmos.base.v1beta1.Coin'
   cosmos.gov.v1.MsgCancelProposal:
-    description: |-
-      MsgCancelProposal is the Msg/CancelProposal request type.
-
-      Since: cosmos-sdk 0.50
+    description: MsgCancelProposal is the Msg/CancelProposal request type.
     type: object
     properties:
       proposal_id:
@@ -13522,8 +13649,6 @@ definitions:
     description: |-
       MsgCancelProposalResponse defines the response structure for executing a
       MsgCancelProposal message.
-
-      Since: cosmos-sdk 0.50
     type: object
     properties:
       canceled_height:
@@ -13580,7 +13705,6 @@ definitions:
     type: object
     properties:
       expedited:
-        description: 'Since: cosmos-sdk 0.50'
         type: boolean
         title: expedited defines if the proposal is expedited or not
       initial_deposit:
@@ -13602,14 +13726,10 @@ definitions:
         description: proposer is the account address of the proposer.
         type: string
       summary:
-        description: 'Since: cosmos-sdk 0.47'
         type: string
         title: summary is the summary of the proposal
       title:
-        description: |-
-          title is the title of the proposal.
-
-          Since: cosmos-sdk 0.47
+        description: title is the title of the proposal.
         type: string
   cosmos.gov.v1.MsgSubmitProposalResponse:
     description: MsgSubmitProposalResponse defines the Msg/SubmitProposal response type.
@@ -13620,10 +13740,7 @@ definitions:
         type: string
         format: uint64
   cosmos.gov.v1.MsgUpdateParams:
-    description: |-
-      MsgUpdateParams is the Msg/UpdateParams request type.
-
-      Since: cosmos-sdk 0.47
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
     properties:
       authority:
@@ -13639,8 +13756,6 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
-
-      Since: cosmos-sdk 0.47
     type: object
   cosmos.gov.v1.MsgVote:
     description: MsgVote defines a message to cast a vote.
@@ -13686,10 +13801,7 @@ definitions:
     description: MsgVoteWeightedResponse defines the Msg/VoteWeighted response type.
     type: object
   cosmos.gov.v1.Params:
-    description: |-
-      Params defines the parameters for the x/gov module.
-
-      Since: cosmos-sdk 0.47
+    description: Params defines the parameters for the x/gov module.
     type: object
     properties:
       burn_proposal_deposit_prevote:
@@ -13708,16 +13820,10 @@ definitions:
           type: object
           $ref: '#/definitions/cosmos.base.v1beta1.Coin'
       expedited_threshold:
-        description: |-
-          Minimum proportion of Yes votes for proposal to pass. Default value: 0.67.
-
-          Since: cosmos-sdk 0.50
+        description: 'Minimum proportion of Yes votes for proposal to pass. Default value: 0.67.'
         type: string
       expedited_voting_period:
-        description: |-
-          Duration of the voting period of an expedited proposal.
-
-          Since: cosmos-sdk 0.50
+        description: Duration of the voting period of an expedited proposal.
         type: string
       max_deposit_period:
         description: |-
@@ -13735,8 +13841,6 @@ definitions:
           The ratio representing the proportion of the deposit value minimum that must be met when making a deposit.
           Default value: 0.01. Meaning that for a chain with a min_deposit of 100stake, a deposit of 1stake would be
           required.
-
-          Since: cosmos-sdk 0.50
         type: string
       min_initial_deposit_ratio:
         description: The ratio representing the proportion of the deposit value that must be paid at proposal submission.
@@ -13745,14 +13849,9 @@ definitions:
         description: |-
           The address which will receive (proposal_cancel_ratio * deposit) proposal deposits.
           If empty, the (proposal_cancel_ratio * deposit) proposal deposits will be burned.
-
-          Since: cosmos-sdk 0.50
         type: string
       proposal_cancel_ratio:
-        description: |-
-          The cancel ratio which will not be returned back to the depositors when a proposal is cancelled.
-
-          Since: cosmos-sdk 0.50
+        description: The cancel ratio which will not be returned back to the depositors when a proposal is cancelled.
         type: string
       quorum:
         description: |-
@@ -13779,11 +13878,9 @@ definitions:
         type: string
         format: date-time
       expedited:
-        description: 'Since: cosmos-sdk 0.50'
         type: boolean
         title: expedited defines if the proposal is expedited
       failed_reason:
-        description: 'Since: cosmos-sdk 0.50'
         type: string
         title: failed_reason defines the reason why the proposal failed
       final_tally_result:
@@ -13809,7 +13906,6 @@ definitions:
           the recommended format of the metadata is to be found here:
           https://docs.cosmos.network/v0.47/modules/gov#proposal-3
       proposer:
-        description: 'Since: cosmos-sdk 0.47'
         type: string
         title: proposer is the address of the proposal sumbitter
       status:
@@ -13820,11 +13916,9 @@ definitions:
         type: string
         format: date-time
       summary:
-        description: 'Since: cosmos-sdk 0.47'
         type: string
         title: summary is a short summary of the proposal
       title:
-        description: 'Since: cosmos-sdk 0.47'
         type: string
         title: title is the title of the proposal
       total_deposit:
@@ -13901,10 +13995,7 @@ definitions:
           deposit_params defines the parameters related to deposit.
         $ref: '#/definitions/cosmos.gov.v1.DepositParams'
       params:
-        description: |-
-          params defines all the paramaters of x/gov module.
-
-          Since: cosmos-sdk 0.47
+        description: params defines all the paramaters of x/gov module.
         $ref: '#/definitions/cosmos.gov.v1.Params'
       tally_params:
         description: |-
@@ -14154,10 +14245,7 @@ definitions:
     description: MsgVoteResponse defines the Msg/Vote response type.
     type: object
   cosmos.gov.v1beta1.MsgVoteWeighted:
-    description: |-
-      MsgVoteWeighted defines a message to cast a vote.
-
-      Since: cosmos-sdk 0.43
+    description: MsgVoteWeighted defines a message to cast a vote.
     type: object
     properties:
       options:
@@ -14174,10 +14262,7 @@ definitions:
         description: voter is the voter address for the proposal.
         type: string
   cosmos.gov.v1beta1.MsgVoteWeightedResponse:
-    description: |-
-      MsgVoteWeightedResponse defines the Msg/VoteWeighted response type.
-
-      Since: cosmos-sdk 0.43
+    description: MsgVoteWeightedResponse defines the Msg/VoteWeighted response type.
     type: object
   cosmos.gov.v1beta1.Proposal:
     description: Proposal defines the core field members of a governance proposal.
@@ -14375,10 +14460,7 @@ definitions:
           other cases, this field will default to VOTE_OPTION_UNSPECIFIED.
         $ref: '#/definitions/cosmos.gov.v1beta1.VoteOption'
       options:
-        description: |-
-          options is the weighted vote options.
-
-          Since: cosmos-sdk 0.43
+        description: options is the weighted vote options.
         type: array
         items:
           type: object
@@ -14415,10 +14497,7 @@ definitions:
         description: Duration of the voting period.
         type: string
   cosmos.gov.v1beta1.WeightedVoteOption:
-    description: |-
-      WeightedVoteOption defines a unit of vote for vote split.
-
-      Since: cosmos-sdk 0.43
+    description: WeightedVoteOption defines a unit of vote for vote split.
     type: object
     properties:
       option:
@@ -14700,16 +14779,10 @@ definitions:
         items:
           type: string
       summary:
-        description: |-
-          summary is the summary of the proposal.
-
-          Since: cosmos-sdk 0.47
+        description: summary is the summary of the proposal.
         type: string
       title:
-        description: |-
-          title is the title of the proposal.
-
-          Since: cosmos-sdk 0.47
+        description: title is the title of the proposal.
         type: string
   cosmos.group.v1.MsgSubmitProposalResponse:
     description: MsgSubmitProposalResponse is the Msg/SubmitProposal response type.
@@ -14926,11 +14999,9 @@ definitions:
         type: string
         format: date-time
       summary:
-        description: 'Since: cosmos-sdk 0.47'
         type: string
         title: summary is a short summary of the proposal
       title:
-        description: 'Since: cosmos-sdk 0.47'
         type: string
         title: title is the title of the proposal
       voting_period_end:
@@ -15060,10 +15131,7 @@ definitions:
         description: pagination defines the pagination in the response.
         $ref: '#/definitions/cosmos.base.query.v1beta1.PageResponse'
   cosmos.group.v1.QueryGroupsResponse:
-    description: |-
-      QueryGroupsResponse is the Query/Groups response type.
-
-      Since: cosmos-sdk 0.47.1
+    description: QueryGroupsResponse is the Query/Groups response type.
     type: object
     properties:
       groups:
@@ -15193,10 +15261,7 @@ definitions:
       - VOTE_OPTION_NO
       - VOTE_OPTION_NO_WITH_VETO
   cosmos.mint.v1beta1.MsgUpdateParams:
-    description: |-
-      MsgUpdateParams is the Msg/UpdateParams request type.
-
-      Since: cosmos-sdk 0.47
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
     properties:
       authority:
@@ -15212,8 +15277,6 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
-
-      Since: cosmos-sdk 0.47
     type: object
   cosmos.mint.v1beta1.Params:
     description: Params defines the parameters for the x/mint module.
@@ -15414,8 +15477,6 @@ definitions:
     description: |-
       QuerySubspacesResponse defines the response types for querying for all
       registered subspaces and all keys for a subspace.
-
-      Since: cosmos-sdk 0.46
     type: object
     properties:
       subspaces:
@@ -15427,8 +15488,6 @@ definitions:
     description: |-
       Subspace defines a parameter subspace name and all the keys that exist for
       the subspace.
-
-      Since: cosmos-sdk 0.46
     type: object
     properties:
       keys:
@@ -15437,6 +15496,181 @@ definitions:
           type: string
       subspace:
         type: string
+  cosmos.protocolpool.v1.ContinuousFund:
+    description: ContinuousFund defines the fields of continuous fund proposal.
+    type: object
+    properties:
+      expiry:
+        description: Optional, if expiry is set, removes the state object when expired.
+        type: string
+        format: date-time
+      percentage:
+        description: Percentage is the percentage of funds to be allocated from Community pool.
+        type: string
+      recipient:
+        description: Recipient is the address string of the account receiving funds.
+        type: string
+  cosmos.protocolpool.v1.MsgCancelContinuousFund:
+    description: MsgCancelContinuousFund defines a message to cancel continuous funds for a specific recipient.
+    type: object
+    properties:
+      authority:
+        description: Authority is the account address of authority.
+        type: string
+      recipient:
+        description: Recipient is the account address string of the recipient whose funds are to be cancelled.
+        type: string
+  cosmos.protocolpool.v1.MsgCancelContinuousFundResponse:
+    description: |-
+      MsgCancelContinuousFundResponse defines the response to executing a
+      MsgCancelContinuousFund message.
+    type: object
+    properties:
+      canceled_height:
+        description: CanceledHeight defines the canceled block height.
+        type: string
+        format: uint64
+      canceled_time:
+        description: CanceledTime is the canceled time.
+        type: string
+        format: date-time
+      recipient:
+        description: Recipient is the account address string of the recipient whose funds are cancelled.
+        type: string
+  cosmos.protocolpool.v1.MsgCommunityPoolSpend:
+    description: |-
+      MsgCommunityPoolSpend defines a message for sending tokens from the community
+      pool to another account. This message is typically executed via a governance
+      proposal with the governance module being the executing authority.
+    type: object
+    properties:
+      amount:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/cosmos.base.v1beta1.Coin'
+      authority:
+        description: Authority is the address that controls the module (defaults to x/gov unless overwritten).
+        type: string
+      recipient:
+        type: string
+  cosmos.protocolpool.v1.MsgCommunityPoolSpendResponse:
+    description: |-
+      MsgCommunityPoolSpendResponse defines the response to executing a
+      MsgCommunityPoolSpend message.
+    type: object
+  cosmos.protocolpool.v1.MsgCreateContinuousFund:
+    description: MsgCreateContinuousFund defines a message for adding continuous funds.
+    type: object
+    properties:
+      authority:
+        description: Authority is the address that controls the module (defaults to x/gov unless overwritten).
+        type: string
+      expiry:
+        description: Optional, if expiry is set, removes the state object when expired.
+        type: string
+        format: date-time
+      percentage:
+        description: Percentage is the percentage of funds to be allocated from Community pool.
+        type: string
+      recipient:
+        description: Recipient address of the account receiving funds.
+        type: string
+  cosmos.protocolpool.v1.MsgCreateContinuousFundResponse:
+    description: |-
+      MsgCreateContinuousFundResponse defines the response to executing a
+      MsgCreateContinuousFund message.
+    type: object
+  cosmos.protocolpool.v1.MsgFundCommunityPool:
+    description: |-
+      MsgFundCommunityPool allows an account to directly
+      fund the community pool.
+    type: object
+    properties:
+      amount:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/cosmos.base.v1beta1.Coin'
+      depositor:
+        type: string
+  cosmos.protocolpool.v1.MsgFundCommunityPoolResponse:
+    description: MsgFundCommunityPoolResponse defines the Msg/FundCommunityPool response type.
+    type: object
+  cosmos.protocolpool.v1.MsgUpdateParams:
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
+    type: object
+    properties:
+      authority:
+        description: authority is the address that controls the module (defaults to x/gov unless overwritten).
+        type: string
+      params:
+        description: |-
+          params defines the x/protocolpool parameters to update.
+
+          NOTE: All parameters must be supplied.
+        $ref: '#/definitions/cosmos.protocolpool.v1.Params'
+  cosmos.protocolpool.v1.MsgUpdateParamsResponse:
+    description: |-
+      MsgUpdateParamsResponse defines the response structure for executing a
+      MsgUpdateParams message.
+    type: object
+  cosmos.protocolpool.v1.Params:
+    description: Params defines the parameters for the protocolpool module.
+    type: object
+    properties:
+      distribution_frequency:
+        description: |-
+          DistributionFrequency is the frequency (in terms of blocks) that funds are distributed out from the
+          x/protocolpool module.
+        type: string
+        format: uint64
+      enabled_distribution_denoms:
+        description: |-
+          EnabledDistributionDenoms lists the denoms that are allowed to be distributed.
+          This is to avoid spending time distributing undesired tokens to continuous funds and budgets.
+        type: array
+        items:
+          type: string
+  cosmos.protocolpool.v1.QueryCommunityPoolResponse:
+    description: |-
+      QueryCommunityPoolResponse is the response type for the Query/CommunityPool
+      RPC method.
+    type: object
+    properties:
+      pool:
+        description: pool defines community pool's coins.
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/cosmos.base.v1beta1.Coin'
+  cosmos.protocolpool.v1.QueryContinuousFundResponse:
+    description: |-
+      QueryUnclaimedBudgetResponse is the response type for the Query/ContinuousFund
+      RPC method.
+    type: object
+    properties:
+      continuous_fund:
+        description: ContinuousFunds is the given continuous fund returned in the query.
+        $ref: '#/definitions/cosmos.protocolpool.v1.ContinuousFund'
+  cosmos.protocolpool.v1.QueryContinuousFundsResponse:
+    description: |-
+      QueryUnclaimedBudgetResponse is the response type for the Query/ContinuousFunds
+      RPC method.
+    type: object
+    properties:
+      continuous_funds:
+        description: ContinuousFunds defines all continuous funds in state.
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/cosmos.protocolpool.v1.ContinuousFund'
+  cosmos.protocolpool.v1.QueryParamsResponse:
+    description: QueryParamsResponse is the response type for the Query/Params RPC method.
+    type: object
+    properties:
+      params:
+        $ref: '#/definitions/cosmos.protocolpool.v1.Params'
   cosmos.slashing.v1beta1.MsgUnjail:
     type: object
     title: MsgUnjail defines the Msg/Unjail request type
@@ -15447,10 +15681,7 @@ definitions:
     type: object
     title: MsgUnjailResponse defines the Msg/Unjail response type
   cosmos.slashing.v1beta1.MsgUpdateParams:
-    description: |-
-      MsgUpdateParams is the Msg/UpdateParams request type.
-
-      Since: cosmos-sdk 0.47
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
     properties:
       authority:
@@ -15466,8 +15697,6 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
-
-      Since: cosmos-sdk 0.47
     type: object
   cosmos.slashing.v1beta1.Params:
     description: Params represents the parameters used for by the slashing module.
@@ -15674,7 +15903,6 @@ definitions:
         type: string
         format: date-time
   cosmos.staking.v1beta1.MsgCancelUnbondingDelegation:
-    description: 'Since: cosmos-sdk 0.46'
     type: object
     title: MsgCancelUnbondingDelegation defines the SDK message for performing a cancel unbonding delegation for delegator
     properties:
@@ -15690,7 +15918,6 @@ definitions:
       validator_address:
         type: string
   cosmos.staking.v1beta1.MsgCancelUnbondingDelegationResponse:
-    description: 'Since: cosmos-sdk 0.46'
     type: object
     title: MsgCancelUnbondingDelegationResponse
   cosmos.staking.v1beta1.MsgCreateValidator:
@@ -15770,17 +15997,13 @@ definitions:
     type: object
     properties:
       amount:
-        description: 'Since: cosmos-sdk 0.50'
         title: amount returns the amount of undelegated coins
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
       completion_time:
         type: string
         format: date-time
   cosmos.staking.v1beta1.MsgUpdateParams:
-    description: |-
-      MsgUpdateParams is the Msg/UpdateParams request type.
-
-      Since: cosmos-sdk 0.47
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
     properties:
       authority:
@@ -15796,8 +16019,6 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
-
-      Since: cosmos-sdk 0.47
     type: object
   cosmos.staking.v1beta1.Params:
     description: Params defines the parameters for the x/staking module.
@@ -16138,10 +16359,7 @@ definitions:
         description: jailed defined whether the validator has been jailed from bonded status or not.
         type: boolean
       min_self_delegation:
-        description: |-
-          min_self_delegation is the validator's self declared minimum self delegation.
-
-          Since: cosmos-sdk 0.46
+        description: min_self_delegation is the validator's self declared minimum self delegation.
         type: string
       operator_address:
         description: operator_address defines the address of the validator's operator; bech encoded in JSON.
@@ -16200,7 +16418,6 @@ definitions:
     type: object
     title: ListenEndBlockResponse is the response type for the ListenEndBlock RPC method
   cosmos.store.v1beta1.StoreKVPair:
-    description: 'Since: cosmos-sdk 0.43'
     type: object
     title: |-
       StoreKVPair is a KVStore KVPair used for listening to state changes (Sets and Deletes)
@@ -16294,8 +16511,6 @@ definitions:
 
           This field is ignored if the chain didn't enable tips, i.e. didn't add the
           `TipDecorator` in its posthandler.
-
-          Since: cosmos-sdk 0.46
         $ref: '#/definitions/cosmos.tx.v1beta1.Tip'
   cosmos.tx.v1beta1.BroadcastMode:
     description: |-
@@ -16359,21 +16574,21 @@ definitions:
       granter:
         type: string
         title: |-
-          if set, the fee payer (either the first signer or the value of the payer field) requests that a fee grant be used
-          to pay fees instead of the fee payer's own balance. If an appropriate fee grant does not exist or the chain does
-          not support fee grants, this will fail
+          if set, the fee payer (either the first signer or the value of the payer
+          field) requests that a fee grant be used to pay fees instead of the fee
+          payer's own balance. If an appropriate fee grant does not exist or the
+          chain does not support fee grants, this will fail
       payer:
         description: |-
-          if unset, the first signer is responsible for paying the fees. If set, the specified account must pay the fees.
-          the payer must be a tx signer (and thus have signed this field in AuthInfo).
-          setting this field does *not* change the ordering of required signers for the transaction.
+          if unset, the first signer is responsible for paying the fees. If set, the
+          specified account must pay the fees. the payer must be a tx signer (and
+          thus have signed this field in AuthInfo). setting this field does *not*
+          change the ordering of required signers for the transaction.
         type: string
   cosmos.tx.v1beta1.GetBlockWithTxsResponse:
     description: |-
       GetBlockWithTxsResponse is the response type for the Service.GetBlockWithTxs
       method.
-
-      Since: cosmos-sdk 0.45.2
     type: object
     properties:
       block:
@@ -16510,10 +16725,7 @@ definitions:
           Deprecated. Send raw tx bytes instead.
         $ref: '#/definitions/cosmos.tx.v1beta1.Tx'
       tx_bytes:
-        description: |-
-          tx_bytes is the raw transaction.
-
-          Since: cosmos-sdk 0.43
+        description: tx_bytes is the raw transaction.
         type: string
         format: byte
   cosmos.tx.v1beta1.SimulateResponse:
@@ -16529,10 +16741,7 @@ definitions:
         description: result is the result of the simulation.
         $ref: '#/definitions/cosmos.base.abci.v1beta1.Result'
   cosmos.tx.v1beta1.Tip:
-    description: |-
-      Tip is the tip used for meta-transactions.
-
-      Since: cosmos-sdk 0.46
+    description: Tip is the tip used for meta-transactions.
     type: object
     properties:
       amount:
@@ -16582,7 +16791,8 @@ definitions:
         description: |-
           memo is any arbitrary note/comment to be added to the transaction.
           WARNING: in clients, any publicly exposed text should not be called memo,
-          but should be called `note` instead (see https://github.com/cosmos/cosmos-sdk/issues/9122).
+          but should be called `note` instead (see
+          https://github.com/cosmos/cosmos-sdk/issues/9122).
         type: string
       messages:
         description: |-
@@ -16607,17 +16817,41 @@ definitions:
           type: object
           $ref: '#/definitions/google.protobuf.Any'
       timeout_height:
+        description: |-
+          timeout_height is the block height after which this transaction will not
+          be processed by the chain.
         type: string
         format: uint64
-        title: |-
-          timeout is the block height after which this transaction will not
-          be processed by the chain
+      timeout_timestamp:
+        description: |-
+          timeout_timestamp is the block time after which this transaction will not
+          be processed by the chain.
+
+          Note, if unordered=true this value MUST be set
+          and will act as a short-lived TTL in which the transaction is deemed valid
+          and kept in memory to prevent duplicates.
+        type: string
+        format: date-time
+      unordered:
+        description: |-
+          unordered, when set to true, indicates that the transaction signer(s)
+          intend for the transaction to be evaluated and executed in an un-ordered
+          fashion. Specifically, the account's nonce will NOT be checked or
+          incremented, which allows for fire-and-forget as well as concurrent
+          transaction execution.
+
+          Note, when set to true, the existing 'timeout_timestamp' value must
+          be set and will be used to correspond to a timestamp in which the transaction is deemed
+          valid.
+
+          When true, the sequence value MUST be 0, and any transaction with unordered=true and a non-zero sequence value will
+          be rejected.
+          External services that make assumptions about sequence values may need to be updated because of this.
+        type: boolean
   cosmos.tx.v1beta1.TxDecodeAminoRequest:
     description: |-
       TxDecodeAminoRequest is the request type for the Service.TxDecodeAmino
       RPC method.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       amino_binary:
@@ -16627,8 +16861,6 @@ definitions:
     description: |-
       TxDecodeAminoResponse is the response type for the Service.TxDecodeAmino
       RPC method.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       amino_json:
@@ -16637,8 +16869,6 @@ definitions:
     description: |-
       TxDecodeRequest is the request type for the Service.TxDecode
       RPC method.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       tx_bytes:
@@ -16649,8 +16879,6 @@ definitions:
     description: |-
       TxDecodeResponse is the response type for the
       Service.TxDecode method.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       tx:
@@ -16660,8 +16888,6 @@ definitions:
     description: |-
       TxEncodeAminoRequest is the request type for the Service.TxEncodeAmino
       RPC method.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       amino_json:
@@ -16670,8 +16896,6 @@ definitions:
     description: |-
       TxEncodeAminoResponse is the response type for the Service.TxEncodeAmino
       RPC method.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       amino_binary:
@@ -16681,8 +16905,6 @@ definitions:
     description: |-
       TxEncodeRequest is the request type for the Service.TxEncode
       RPC method.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       tx:
@@ -16692,8 +16914,6 @@ definitions:
     description: |-
       TxEncodeResponse is the response type for the
       Service.TxEncode method.
-
-      Since: cosmos-sdk 0.47
     type: object
     properties:
       tx_bytes:
@@ -16701,10 +16921,7 @@ definitions:
         type: string
         format: byte
   cosmos.upgrade.v1beta1.ModuleVersion:
-    description: |-
-      ModuleVersion specifies a module and its consensus version.
-
-      Since: cosmos-sdk 0.43
+    description: ModuleVersion specifies a module and its consensus version.
     type: object
     properties:
       name:
@@ -16715,26 +16932,17 @@ definitions:
         format: uint64
         title: consensus version of the app module
   cosmos.upgrade.v1beta1.MsgCancelUpgrade:
-    description: |-
-      MsgCancelUpgrade is the Msg/CancelUpgrade request type.
-
-      Since: cosmos-sdk 0.46
+    description: MsgCancelUpgrade is the Msg/CancelUpgrade request type.
     type: object
     properties:
       authority:
         description: authority is the address that controls the module (defaults to x/gov unless overwritten).
         type: string
   cosmos.upgrade.v1beta1.MsgCancelUpgradeResponse:
-    description: |-
-      MsgCancelUpgradeResponse is the Msg/CancelUpgrade response type.
-
-      Since: cosmos-sdk 0.46
+    description: MsgCancelUpgradeResponse is the Msg/CancelUpgrade response type.
     type: object
   cosmos.upgrade.v1beta1.MsgSoftwareUpgrade:
-    description: |-
-      MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.
-
-      Since: cosmos-sdk 0.46
+    description: MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.
     type: object
     properties:
       authority:
@@ -16744,10 +16952,7 @@ definitions:
         description: plan is the upgrade plan.
         $ref: '#/definitions/cosmos.upgrade.v1beta1.Plan'
   cosmos.upgrade.v1beta1.MsgSoftwareUpgradeResponse:
-    description: |-
-      MsgSoftwareUpgradeResponse is the Msg/SoftwareUpgrade response type.
-
-      Since: cosmos-sdk 0.46
+    description: MsgSoftwareUpgradeResponse is the Msg/SoftwareUpgrade response type.
     type: object
   cosmos.upgrade.v1beta1.Plan:
     description: Plan specifies information about a planned upgrade and when it should occur.
@@ -16796,7 +17001,6 @@ definitions:
         type: string
         format: int64
   cosmos.upgrade.v1beta1.QueryAuthorityResponse:
-    description: 'Since: cosmos-sdk 0.46'
     type: object
     title: QueryAuthorityResponse is the response type for Query/Authority
     properties:
@@ -16815,8 +17019,6 @@ definitions:
     description: |-
       QueryModuleVersionsResponse is the response type for the Query/ModuleVersions
       RPC method.
-
-      Since: cosmos-sdk 0.43
     type: object
     properties:
       module_versions:
@@ -16834,13 +17036,10 @@ definitions:
       upgraded_consensus_state:
         type: string
         format: byte
-        title: 'Since: cosmos-sdk 0.43'
   cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount:
     description: |-
       MsgCreateVestingAccount defines a message that enables creating a vesting
       account.
-
-      Since: cosmos-sdk 0.46
     type: object
     properties:
       from_address:
@@ -16860,15 +17059,11 @@ definitions:
     description: |-
       MsgCreateVestingAccountResponse defines the Msg/CreatePeriodicVestingAccount
       response type.
-
-      Since: cosmos-sdk 0.46
     type: object
   cosmos.vesting.v1beta1.MsgCreatePermanentLockedAccount:
     description: |-
       MsgCreatePermanentLockedAccount defines a message that enables creating a permanent
       locked account.
-
-      Since: cosmos-sdk 0.46
     type: object
     properties:
       amount:
@@ -16881,10 +17076,7 @@ definitions:
       to_address:
         type: string
   cosmos.vesting.v1beta1.MsgCreatePermanentLockedAccountResponse:
-    description: |-
-      MsgCreatePermanentLockedAccountResponse defines the Msg/CreatePermanentLockedAccount response type.
-
-      Since: cosmos-sdk 0.46
+    description: MsgCreatePermanentLockedAccountResponse defines the Msg/CreatePermanentLockedAccount response type.
     type: object
   cosmos.vesting.v1beta1.MsgCreateVestingAccount:
     description: |-
@@ -19624,11 +19816,13 @@ definitions:
         description: params holds all the parameters of this module.
         $ref: '#/definitions/pocket.gateway.Params'
   pocket.migration.MorseAccountState:
-    description: |-
-      MorseAccountState is the onchain representation of all account state to be migrated from Morse.
-      It is NEVER persisted onchain but is a dependency of the MsgImportMorseClaimableAccount handler.
-      It's main purpose is to expose the #GetHash() method for verifying the integrity of all MorseClaimableAccounts.
     type: object
+    title: |-
+      MorseAccountState
+      - Onchain representation of all account state to be migrated from Morse
+      - NEVER persisted onchain
+      - Dependency of the MsgImportMorseClaimableAccount handler
+      - Main purpose: exposes #GetHash() for verifying integrity of all MorseClaimableAccounts
     properties:
       accounts:
         type: array
@@ -19636,49 +19830,100 @@ definitions:
           type: object
           $ref: '#/definitions/pocket.migration.MorseClaimableAccount'
   pocket.migration.MorseClaimableAccount:
-    description: |-
-      MorseClaimableAccount is the onchain (persisted) representation of a Morse
-      account which is claimable as part of the Morse -> Shannon migration.
-      They are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).
-      It is created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis).
-      It is updated ONLY ONCE, when it is claimed (per morse_src_address per network / re-genesis).
+    description: 'Next free index: 11'
     type: object
+    title: |-
+      MorseClaimableAccount
+      - Onchain (persisted) representation of a Morse account claimable as part of Morse -> Shannon migration
+      - Created during MorseAccountState import (see: MsgImportMorseClaimableAccount)
+      - Created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis),
+        unless the allow_morse_account_import_overwrite migration param is enabled
+      - Updated ONLY ONCE, when claimed (per morse_src_address per network / re-genesis)
     properties:
       application_stake:
-        description: The staked tokens associated with an application actor which corresponds to this account address.
+        title: Staked tokens for application actor corresponding to this account address
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
       claimed_at_height:
-        description: |-
-          The Shannon height at which the account was claimed.
-          This field is intended to remain empty until the account has been claimed.
         type: string
         format: int64
+        title: |-
+          Shannon height at which the account was claimed
+          Intended to remain empty until the account is claimed
+      morse_output_address:
+        description: |-
+          ONLY applicable to Morse node/supplier accounts.
+          Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
+          - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+          - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+            See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+        type: string
       morse_src_address:
-        description: The hex-encoded address of the Morse account whose balance will be claimed.
+        description: |-
+          Hex-encoded address of the Morse account whose balance will be claimed.
+          If this MorseClaimableAccount represents a Morse node/supplier:
+            - Morse non-custodial (i.e. operator) address.
+            - If morse_output_address is not set, this is the custodial address.
+            - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
         type: string
       shannon_dest_address:
-        description: |-
-          The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
-          This field is intended to remain empty until the account has been claimed.
         type: string
+        title: |-
+          bech32-encoded address of the Shannon account to mint claimed balance
+          Intended to remain empty until the account is claimed
       supplier_stake:
         title: |-
-          The staked tokens associated with a supplier actor which corresponds to this account address.
-          DEV_NOTE: A few contextual notes related to Morse:
-          - A Supplier is called a Servicer or Node (not a full node) in Morse
-          - All Validators are Servicers, not all servicers are Validators
-          - Automatically, the top 100 staked Servicers are validator
-          - This only accounts for servicer stake balance transition
-          TODO_MAINNET(@Olshansk): Develop a strategy for bootstrapping validators in Shannon by working with the cosmos ecosystem
+          Staked tokens for supplier actor corresponding to this account address
+          DEV_NOTE: Context for Morse:
+          - Supplier = Servicer or Node (not a full node) in Morse
+          - All Validators are Servicers; not all Servicers are Validators
+          - Top 100 staked Servicers are validators (automatic)
+          - Only accounts for servicer stake balance transition
+          TODO_MAINNET(@Olshansk): Develop strategy for bootstrapping validators in Shannon with cosmos ecosystem
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
       unstaked_balance:
-        description: The unstaked upokt tokens (i.e. account balance) available for claiming.
+        title: Unstaked upokt tokens (account balance) available for claiming
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
+      unstaking_time:
+        description: |-
+          The ISO 8601 UTC timestamp after which the Morse node/supplier unbonding period will have elapsed.
+          It reflects the "unbonding completion time" of the Morse node/supplier, but is called "unstaking time" to comply with necessary Morse data structures.
+        type: string
+        format: date-time
+  pocket.migration.MorseSupplierClaimSignerType:
+    description: |-
+      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED: Unspecified signer type
+       - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR: signer === addr === operator === owner
+      Custodial signer type
+      - The Morse node address is NOT EMPTY (i.e. operator)
+      - The Morse output address is EMPTY (i.e. owner)
+      - Implies that the operator and owner are THE SAME offchain identity
+       - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR: signer === operator === addr && owner !== operator
+      Non-custodial signer type
+      - The Morse node address is NOT EMPTY (i.e. operator)
+      - The Morse output address is NOT EMPTY (i.e. owner)
+      - Implies that the operator and owner are MOST LIKELY DIFFERENT offchain identities
+      - The operator is the one signing the supplier claim
+       - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER: signer === owner && owner !== addr
+      Owner non-custodial signer type
+      - The Morse node address is EMPTY (i.e. operator)
+      - The Morse output address is NOT EMPTY (i.e. owner)
+      - Implies that the operator and owner are MOST LIKELY different offchain identities
+      - The owner is the one signing the supplier claim
+    type: string
+    title: |-
+      MorseSupplierClaimSignerType
+      - Enum for Morse supplier claim signer type
+    default: MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED
+    enum:
+      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED
+      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR
+      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR
+      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER
   pocket.migration.MsgClaimMorseAccount:
     description: |-
-      MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),
-      of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts,
-      to the balance of the given Shannon account.
+      - Execute a claim (one-time minting of tokens on Shannon)
+      - Claim the balance of a given Morse account per on-chain MorseClaimableAccounts
+      - Mint claimed balance to the given Shannon account
 
       NOTE:
       - The Shannon account specified must be the message signer
@@ -19686,6 +19931,7 @@ definitions:
 
       Next free index: 6
     type: object
+    title: 'MsgClaimMorseAccount is used to:'
     properties:
       morse_public_key:
         description: The ed25519 public key of the morse account with morse_src_address.
@@ -19710,8 +19956,9 @@ definitions:
   pocket.migration.MsgClaimMorseAccountResponse:
     description: |-
       MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
-      It indicates the morse_src_address of the account which was claimed, the total
-      balance claimed, and the height at which the claim was committed.
+
+      - Indicates the morse_src_address of the claimed account
+      - Reports the claimed balance and commit height
 
       Next free index: 4
     type: object
@@ -19730,13 +19977,13 @@ definitions:
         format: int64
   pocket.migration.MsgClaimMorseApplication:
     description: |-
-      MsgClaimMorseApplication is used to execute a claim (one-time minting of tokens on Shannon),
-      of the total tokens owned by the given Morse account, according to the on-chain MorseClaimableAccounts,
-      to the balance of the given Shannon account, followed by staking that Shannon account as an application
-      for the given service_config and the same stake amount as on Morse.
+      - Execute a claim (one-time minting of tokens on Shannon) of total tokens owned by a Morse account
+      - Mint claimed tokens to the given Shannon account
+      - Stake that Shannon account as an application for the given service_config and same stake amount
 
       Next free index: 7
     type: object
+    title: 'MsgClaimMorseApplication is used to:'
     properties:
       morse_public_key:
         description: The ed25519 public key of the morse account with morse_src_address.
@@ -19769,8 +20016,10 @@ definitions:
   pocket.migration.MsgClaimMorseApplicationResponse:
     description: |-
       MsgClaimMorseApplicationResponse is returned from MsgClaimMorseApplication.
-      It indicates the morse_src_address of the account which was claimed, the unstaked
-      balance claimed, the application stake, and the height at which the claim was committed.
+
+      - Indicates the morse_src_address of the claimed account
+      - Reports the unstaked balance claimed, application stake, and commit height
+      - Returns the staked application
 
       Next free index: 6
     type: object
@@ -19795,26 +20044,46 @@ definitions:
         format: int64
   pocket.migration.MsgClaimMorseSupplier:
     description: |-
-      NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the
-      claimed balance.
-
-      Next free index: 8
-    type: object
-    title: |-
-      MsgClaimMorseSupplier is used to:
       - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
       - Use the on-chain MorseClaimableAccounts for verification
       - Credit the minted tokens to the balance of the given Shannon account
       - Automatically stake that Shannon account as a supplier
+
+      NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the claimed balance
+
+      Next free index: 9
+    type: object
+    title: 'MsgClaimMorseSupplier is used to:'
     properties:
+      morse_node_address:
+        type: string
+        title: |-
+          The hex-encoded address of the Morse non-custodial (i.e. operator) account.
+          - Unstaked balance will be migrated 1:1
+          - Stake will be migrated 1:1 from morse_node_address to shannon_operator_address
+          - Morse non-custodial (i.e. operator) address.
+          If morse_output_address is not set, this is the custodial address.
+          - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+          E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
       morse_public_key:
-        description: The ed25519 public key of the morse account with morse_src_address.
         type: string
         format: byte
+        title: |-
+          The ed25519 public key of EITHER the Morse node/supplier operator OR owner account.
+          - MUST correspond to the private key which was used to produce the morse_signature.
+          - MUST correspond to ONE OF THE FOLLOWING:
+            - morse_node_address
+            - morse_output_address
       morse_signature:
-        description: 'TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_signature`.'
         type: string
         format: byte
+        title: |-
+          The hex-encoded signature, of this message (where this field is nil).
+          I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseSupplier{morse_signature: nil, ...}))
+          - MUST match morse_public_key.
+          - MUST be signed by ONE OF THE FOLLOWING:
+            - Morse node account (i.e. operator); if signer_is_output_address is false
+            - Morse output account (i.e. owner); if signer_is_output_address is true
       services:
         description: The services this supplier is staked to provide service for.
         type: array
@@ -19840,27 +20109,55 @@ definitions:
           account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
           claim messages AND has EXACTLY ONE signer.
         type: string
+      signer_is_output_address:
+        description: |-
+          Set to true if the private key corresponding to the morse_output_address is producing the morse_signature.
+          For non-custodial claiming:
+          - This MUST be true.
+          - The morse_public_key MUST correspond to morse_output_address.
+          - The morse_signature MUST correspond to morse_output_address.
+        type: boolean
   pocket.migration.MsgClaimMorseSupplierResponse:
-    description: 'Next free index: 6'
-    type: object
-    title: |-
+    description: |-
       MsgClaimMorseSupplierResponse is returned from MsgClaimMorseSupplier.
-      It indicates:
-      - The morse_src_address of the claimed account
-      - The unstaked balance claimed
-      - The session end height in which the claim was committed
-      - The staked supplier
+
+      - Indicates the morse_operator_address of the claimed account
+      - Reports the unstaked balance claimed, session end height, and staked supplier
+      - Includes claim signer type and signer address
+
+      Next free index: 10
+    type: object
     properties:
+      claim_signer_type:
+        title: |-
+          The type of supplier claim signer, indicating which actor executed the claim
+          and whether it was a custodial or non-custodial claim.
+          - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR
+          - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OPERATOR
+          - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OWNER
+        $ref: '#/definitions/pocket.migration.MorseSupplierClaimSignerType'
       claimed_balance:
         description: The unstaked balance which was claimed.
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
       claimed_supplier_stake:
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
-      morse_src_address:
+      morse_node_address:
         type: string
         title: |-
-          The hex-encoded address of the Morse account whose balance was claimed.
+          The hex-encoded address of the Morse non-custodial (i.e. operator) account.
+          - Unstaked balance will be migrated 1:1
+          - Stake will be migrated 1:1 from morse_node_address to shannon_operator_address
+          - Morse non-custodial (i.e. operator) address.
+          If morse_output_address is not set, this is the custodial address.
+          - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
           E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+      morse_output_address:
+        description: |-
+          Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
+          - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+          - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
+            See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
+        type: string
       session_end_height:
         description: The session end height (on Shannon) in which the claim was committed (i.e. claimed).
         type: string
@@ -19870,28 +20167,39 @@ definitions:
         $ref: '#/definitions/pocket.shared.Supplier'
   pocket.migration.MsgImportMorseClaimableAccounts:
     description: |-
-      MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis).
+      - Create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis)
+      - Import Morse account state derived from Morse state export
 
       Next free index: 4
     type: object
+    title: 'MsgImportMorseClaimableAccounts is used to:'
     properties:
       authority:
         description: authority is the address that controls the module (defaults to x/gov unless overwritten).
         type: string
       morse_account_state:
-        description: the account state derived from the Morse state export and the `pocketd tx migration collect-morse-accounts` command.
+        title: Account state derived from Morse state export and `pocketd tx migration collect-morse-accounts`
         $ref: '#/definitions/pocket.migration.MorseAccountState'
       morse_account_state_hash:
+        description: |-
+          Verification (high-level):
+            $ pocketd tx migration collect-morse-accounts $<(pocket util export-genesis-for-reset)
+
+          Additional docs:
+            - pocket util export-genesis-for-migration --help
+            - pocketd tx migration collect-morse-accounts --help
         type: string
         format: byte
         title: |-
-          Additional documentation:
-          - pocket util export-genesis-for-migration --help
-          - pocketd tx migration collect-morse-accounts --help
+          Validates the morse_account_state sha256 hash:
+          - Transaction fails if hash doesn't match on-chain computation
+          - Off-chain social consensus should be reached before verification
   pocket.migration.MsgImportMorseClaimableAccountsResponse:
     description: |-
       MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
-      It indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.
+
+      - Indicates the canonical hash of the imported MorseAccountState
+      - Reports the number of claimable accounts imported
 
       Next free index: 3
     type: object
@@ -19906,15 +20214,16 @@ definitions:
         format: byte
   pocket.migration.MsgRecoverMorseAccount:
     description: |-
-      MsgRecoverMorseAccount is used to:
       - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
       - Credit the minted tokens to the balance of the given Shannon account
       - Migrate unclaimable staked and liquid Morse tokens as liquid Shannon tokens
-      It MAY ONLY be executed by the authority, and is ONLY intended for use
-      on accounts with invalid addresses and/or known lost private keys.
+
+      - MAY ONLY be executed by the authority
+      - ONLY intended for use on accounts with invalid addresses and/or known lost private keys
 
       Next free index: 4
     type: object
+    title: 'MsgRecoverMorseAccount is used to:'
     properties:
       authority:
         description: |-
@@ -19936,14 +20245,16 @@ definitions:
           balance(s) will be minted (recovered) as liquid Shannon tokens.
         type: string
   pocket.migration.MsgRecoverMorseAccountResponse:
-    description: 'Next free index: 5'
-    type: object
-    title: |-
+    description: |-
       MsgRecoverMorseAccountResponse is returned from MsgRecoverMorseAccount.
-      It indicates:
-      - The morse_src_address of the recovered account
-      - The sum of any actor stakes and unstaked balance recovered
-      - The session end height in which the recovery was committed
+
+      - Indicates the morse_src_address of the recovered account
+      - Reports the sum of any actor stakes and unstaked balance recovered
+      - Reports the session end height in which the recovery was committed
+      - Returns the destination Shannon address
+
+      Next free index: 5
+    type: object
     properties:
       morse_src_address:
         type: string
@@ -19970,6 +20281,9 @@ definitions:
     description: |-
       MsgUpdateParams is the Msg/UpdateParams request type.
 
+      - Used for updating the migration module parameters via governance
+      - All parameters must be supplied
+
       Next free index: 3
     type: object
     properties:
@@ -19977,12 +20291,15 @@ definitions:
         description: authority is the address that controls the module (defaults to x/gov unless overwritten).
         type: string
       params:
-        description: 'NOTE: All parameters must be supplied.'
+        title: |-
+          Module parameters to update
+          NOTE: All parameters must be supplied
         $ref: '#/definitions/pocket.migration.Params'
   pocket.migration.MsgUpdateParamsResponse:
     description: |-
-      MsgUpdateParamsResponse defines the response structure for executing a
-      MsgUpdateParams message.
+      MsgUpdateParamsResponse defines the response structure for executing a MsgUpdateParams message.
+
+      - Empty response on success
     type: object
   pocket.migration.Params:
     description: |-
@@ -20570,9 +20887,38 @@ definitions:
           period height, at which the claim window opens.
         type: string
         format: uint64
+      compute_unit_cost_granularity:
+        description: |-
+          compute_unit_cost_granularity is the fraction of the base unit (uPOKT) used
+          to represent the smallest price of a single compute unit.
+          compute_unit_cost_granularity defines the smallest fraction of uPOKT that can represent
+          the cost of a single compute unit.
+
+          It acts as a denominator in the formula:
+
+            compute_unit_cost_in_uPOKT = compute_units_to_tokens_multiplier / compute_unit_cost_granularity
+
+          This enables high-precision pricing of compute units using integer math.
+          For example:
+
+          +-------------------------------+---------------------------------------------+
+          | compute_unit_cost_granularity | compute_units_to_tokens_multiplier unit     |
+          +-------------------------------+---------------------------------------------+
+          | 1                             | uPOKT                                       |
+          | 1_000                         | nPOKT (nanoPOKT, 1e-3 uPOKT)                |
+          | 1_000_000                     | pPOKT (picoPOKT, 1e-6 uPOKT)                |
+          +-------------------------------+---------------------------------------------+
+
+          ⚠️ Note: This value is a configurable global network parameter (not a constant).
+          It must be a power of 10, allowing precise denomination shifts without affecting
+          ongoing sessions. This prevents sessions from settling using parameters that
+          were not in effect during their creation.
+        type: string
+        format: uint64
       compute_units_to_tokens_multiplier:
         description: |-
-          The amount of upokt that a compute unit should translate to when settling a session.
+          The amount of tokens that a compute unit should translate to when settling a session.
+          It is denominated in fractional uPOKT (1/compute_unit_cost_granularity)
           DEV_NOTE: This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
         type: string
         format: uint64
