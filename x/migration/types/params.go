@@ -16,6 +16,11 @@ var (
 	KeyAllowMorseAccountImportOverwrite     = []byte("AllowMorseAccountImportOverwrite")
 	ParamAllowMorseAccountImportOverwrite   = "allow_morse_account_import_overwrite"
 	DefaultAllowMorseAccountImportOverwrite = false
+
+	// MorseAccountClaimingEnabled
+	KeyMorseAccountClaimingEnabled    = []byte("MorseAccountClaimingEnabled")
+	ParamMorseAccountClaimingEnabled  = "morse_account_claiming_enabled"
+	DefaultMorseAccountClamingEnabled = true
 )
 
 // ParamKeyTable the param key table for launch module
@@ -25,12 +30,14 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams(
-	waiveMorseClaimGasFees bool,
-	allowMorseAccountImportOverwrite bool,
+	waiveMorseClaimGasFees,
+	allowMorseAccountImportOverwrite,
+	morseAccountClaimingEnabled bool,
 ) Params {
 	return Params{
 		WaiveMorseClaimGasFees:           waiveMorseClaimGasFees,
 		AllowMorseAccountImportOverwrite: allowMorseAccountImportOverwrite,
+		MorseAccountClaimingEnabled:      morseAccountClaimingEnabled,
 	}
 }
 
@@ -39,6 +46,7 @@ func DefaultParams() Params {
 	return NewParams(
 		DefaultWaiveMorseClaimGasFees,
 		DefaultAllowMorseAccountImportOverwrite,
+		DefaultMorseAccountClamingEnabled,
 	)
 }
 
@@ -53,6 +61,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(
 			KeyAllowMorseAccountImportOverwrite,
 			&p.AllowMorseAccountImportOverwrite,
+			ValidateParamIsBool,
+		),
+		paramtypes.NewParamSetPair(
+			KeyMorseAccountClaimingEnabled,
+			&p.MorseAccountClaimingEnabled,
 			ValidateParamIsBool,
 		),
 	}

@@ -25,7 +25,25 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseApplication")
 
-	if err := msg.ValidateBasic(); err != nil {
+	var (
+		morseClaimableAccount     *migrationtypes.MorseClaimableAccount
+		isFound, isAlreadyClaimed bool
+		err                       error
+	)
+	defer k.deferAdjustWaivedGasFees(ctx, &isFound, &isAlreadyClaimed)()
+
+	// Ensure that morse account claiming is enabled.
+	morseAccountClaimingIsEnabled := k.GetParams(sdkCtx).MorseAccountClaimingEnabled
+	if !morseAccountClaimingIsEnabled {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"morse account claiming is currently disabled; please contact the Pocket Network team",
+			).Error(),
+		)
+	}
+
+	if err = msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -34,7 +52,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	shannonAccAddr := cosmostypes.MustAccAddressFromBech32(msg.ShannonDestAddress)
 
 	// Retrieve the MorseClaimableAccount for the given morseSrcAddress.
-	morseClaimableAccount, err := k.CheckMorseClaimableApplicationAccount(ctx, msg.GetMorseSignerAddress())
+	morseClaimableAccount, err = k.CheckMorseClaimableApplicationAccount(ctx, msg.GetMorseSignerAddress())
 	if err != nil {
 		return nil, err
 	}
