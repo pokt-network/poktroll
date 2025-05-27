@@ -30,7 +30,25 @@ func (k msgServer) ClaimMorseSupplier(
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseSupplier")
 
-	if err := msg.ValidateBasic(); err != nil {
+	var (
+		morseClaimableAccount     *migrationtypes.MorseClaimableAccount
+		isFound, isAlreadyClaimed bool
+		err                       error
+	)
+	defer k.deferAdjustWaivedGasFees(ctx, &isFound, &isAlreadyClaimed)()
+
+	// Ensure that morse account claiming is enabled.
+	morseAccountClaimingIsEnabled := k.GetParams(sdkCtx).MorseAccountClaimingEnabled
+	if !morseAccountClaimingIsEnabled {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"morse account claiming is currently disabled; please contact the Pocket Network team",
+			).Error(),
+		)
+	}
+
+	if err = msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -46,7 +64,7 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 
 	// Retrieve the MorseClaimableAccount for the given morseSrcAddress.
-	morseClaimableAccount, err := k.checkMorseClaimableSupplierAccount(ctx, msg.GetMorseNodeAddress())
+	morseClaimableAccount, err = k.checkMorseClaimableSupplierAccount(ctx, msg.GetMorseNodeAddress())
 	if err != nil {
 		return nil, err
 	}
@@ -320,37 +338,6 @@ func (k msgServer) CheckMorseClaimableAccount(
 	claimError *errors.Error,
 ) (*migrationtypes.MorseClaimableAccount, error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-
-	waiveMorseClaimGasFeesParam := k.GetParams(sdkCtx).WaiveMorseClaimGasFees
-
-	// Ensure that gas fees are NOT waived if the Morse account has already been claimed.
-	// Claiming gas fees in this cases ensures that we prevent spamming.
-	//
-	// Rationale:
-	// 1. Morse claim txs MAY be signed by Shannon accounts which have 0upokt balances.
-	//    For this reason, gas fees are waived (in the ante handler) for txs which
-	//    contain ONLY (one or more) Morse claim messages.
-	// 2. This exposes a potential resource exhaustion vector (or at least extends the
-	//    attack surface area) where an attacker would be able to take advantage of
-	//    the fact that tx signature verification gas costs MAY be avoided under
-	//    certain conditions.
-	// 3. ALL Morse account claim message handlers therefore SHOULD ensure that
-	//    tx signature verification gas costs ARE applied if the claim is EITHER
-	//    invalid OR if the given Morse account has already been claimed. The latter
-	//    is necessary to mitigate a replay attack vector.
-	var isAlreadyClaimed bool
-	defer func() {
-		if waiveMorseClaimGasFeesParam && isAlreadyClaimed {
-			// Attempt to charge the waived gas fee for invalid claims.
-			sdkCtx.GasMeter()
-			// DEV_NOTE: Assuming that the tx containing this message was signed
-			// by a non-multisig externally owned account (EOA); i.e. secp256k1,
-			// conventionally. If this assumption is violated, the "wrong" gas
-			// cost will be charged for the given key type.
-			gas := k.accountKeeper.GetParams(ctx).SigVerifyCostSecp256k1
-			sdkCtx.GasMeter().ConsumeGas(gas, "ante verify: secp256k1")
-		}
-	}()
 
 	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
 	morseClaimableAccount, isFound := k.GetMorseClaimableAccount(
