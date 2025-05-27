@@ -108,7 +108,7 @@ func TestNewFaucet(t *testing.T) {
 	testRecipientAddress := cosmostypes.MustAccAddressFromBech32(sample.AccAddress())
 	//expectedBalanceErr := query.ErrQueryBalanceNotFound.Wrapf("address: %s", testRecipientAddress)
 	ctrl := gomock.NewController(t)
-	bankQueryClient := mockclient.NewMockBankQueryClient(ctrl)
+	bankQueryClient := mockclient.NewMockBankGRPCQueryClient(ctrl)
 	//bankQueryClient.EXPECT().
 	//	GetBalances(gomock.Any(), gomock.Eq(testRecipientAddress)).
 	//	Return(nil, expectedBalanceErr)

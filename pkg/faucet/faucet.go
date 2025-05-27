@@ -91,7 +91,14 @@ func (srv *Server) GetSigningAddress() string {
 
 // GetBalances queries for the onchain balances of the given address.
 func (srv *Server) GetBalances(ctx context.Context, address string) (cosmostypes.Coins, error) {
-	return srv.config.bankQueryClient.GetBalances(ctx, address)
+	balancesRes, err := srv.config.bankQueryClient.AllBalances(ctx, &banktypes.QueryAllBalancesRequest{
+		Address: address,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return balancesRes.Balances, nil
 }
 
 // newHandleDenomRequest is a handler factory function that returns a new HTTP handler

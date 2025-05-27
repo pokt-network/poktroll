@@ -1,12 +1,15 @@
 package faucet
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strings"
 
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 )
@@ -44,7 +47,7 @@ type Config struct {
 	// bankQueryClient is the bank query client used by the faucet server to query balances.
 	// It is configured via a FaucetOptionFn (WithBankQueryClient) and SHOULD NOT be included
 	// in the config file. If it is, it will be ignored.
-	bankQueryClient client.BankQueryClient `mapstructure:"-"`
+	bankQueryClient bankGRPCQueryClient `mapstructure:"-"`
 }
 
 // FaucetOptionFn is a function that receives the faucet for configuration.
@@ -160,8 +163,13 @@ func WithTxClient(txClient client.TxClient) FaucetOptionFn {
 	}
 }
 
+// TODO_IN_THIS_COMMIT: godoc & move...
+type bankGRPCQueryClient interface {
+	AllBalances(ctx context.Context, in *banktypes.QueryAllBalancesRequest, opts ...grpc.CallOption) (*banktypes.QueryAllBalancesResponse, error)
+}
+
 // WithBankQueryClient sets the faucet server's bank query client.
-func WithBankQueryClient(bankQueryClient client.BankQueryClient) FaucetOptionFn {
+func WithBankQueryClient(bankQueryClient bankGRPCQueryClient) FaucetOptionFn {
 	return func(faucet *Server) {
 		faucet.config.bankQueryClient = bankQueryClient
 	}

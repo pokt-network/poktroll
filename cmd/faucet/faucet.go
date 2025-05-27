@@ -4,18 +4,16 @@ import (
 	"context"
 	"strings"
 
-	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/cmd/signals"
-	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/faucet"
 )
@@ -37,7 +35,7 @@ var (
 
 	// bankQueryClient is used by the faucet server to query for the existence and/or balance of accounts.
 	// It is initialized in preRunServe.
-	bankQueryClient client.BankQueryClient
+	bankQueryClient banktypes.QueryClient
 )
 
 func FaucetCmd() *cobra.Command {
@@ -166,15 +164,7 @@ func preRunServe(cmd *cobra.Command, _ []string) (err error) {
 	}
 
 	// Construct the account query client and dependencies.
-	balanceCache, err := memory.NewKeyValueCache[query.Balance]()
-	if err != nil {
-		return err
-	}
-	deps := depinject.Supply(&clientCtx, logger.Logger, balanceCache)
-	bankQueryClient, err = query.NewBankQuerier(deps)
-	if err != nil {
-		return err
-	}
+	bankQueryClient = banktypes.NewQueryClient(clientCtx)
 
 	return nil
 }
