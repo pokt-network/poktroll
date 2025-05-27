@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -53,7 +54,7 @@ var (
 // - See TODO_IMPROVE for planned enhancements
 func relayCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "relay --app <app> --supplier <supplier> --service-id <service-id> --payload <payload> [--supplier-public-endpoint-override <url>]",
+		Use:   "relay --app <app> --supplier <supplier> --payload <payload> [--supplier-public-endpoint-override <url>]",
 		Short: "Send a relay as an application to a particular supplier",
 		Long: `Send a test relay to a Supplier's RelayMiner from a staked Application.
 
@@ -71,15 +72,26 @@ Callouts:
 
 For more info, run 'relay --help'.`,
 		Example: `
-  ./pocketd relayminer relay \
+
+  # LocalNet example with an endpoint override
+  $ pocketd relayminer relay \
     --app=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 \
     --supplier=pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj \
-    --service-id=anvil \
     --node=tcp://127.0.0.1:26657 \
     --grpc-addr=localhost:9090 \
     --grpc-insecure=true \
     --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}" \
-    --supplier-public-endpoint-override=http://localhost:8085`,
+    --supplier-public-endpoint-override=http://localhost:8085
+
+  # Beta example for a real service
+  pocketd relayminer relay \
+	--app=pokt12fj3xlqg6d20fl4ynuejfqd3fkqmq25rs3yf7g \
+	--supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
+	--node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
+	--grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
+	--grpc-insecure=false \
+	--payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
+`,
 		RunE: runRelay,
 	}
 
@@ -87,15 +99,15 @@ For more info, run 'relay --help'.`,
 	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (defaults to LocalNet)")
 	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (defaults to LocalNet)")
 	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options (defaults to true for LocalNet)")
+	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 
 	// Custom Flags
 	cmd.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
-	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Required) Staked Supplier address")
 	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
-	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "http://localhost:8085", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
+	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
+	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
 
 	_ = cmd.MarkFlagRequired("app")
-	_ = cmd.MarkFlagRequired("supplier")
 	_ = cmd.MarkFlagRequired("payload")
 
 	return cmd
@@ -129,7 +141,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	ctx = logger.WithContext(ctx)
 	cmd.SetContext(ctx)
 
-	logger.Info().Msgf("About to send a relay to %s for app %s", flagRelaySupplier, flagRelayApp)
+	logger.Info().Msgf("About to send a relay to supplier '%s' for app '%s'", flagRelaySupplier, flagRelayApp)
 
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
@@ -137,10 +149,11 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		Insecure: flagNodeGRPCInsecureRelay,
 	})
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error connecting to gRPC")
 		return err
 	}
 	defer grpcConn.Close()
-	logger.Info().Msg("✅ gRPC connection initialized")
+	logger.Info().Msgf("✅ gRPC connection initialized: %v", grpcConn)
 
 	// Create a connection to the POKT full node
 	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURLRelay)
@@ -160,6 +173,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	appClient := sdk.ApplicationClient{
 		QueryClient: apptypes.NewQueryClient(grpcConn),
 	}
+	logger.Info().Msg("✅ Application client initialized")
+
 	app, err := appClient.GetApplication(ctx, flagRelayApp)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error fetching application")
@@ -173,7 +188,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		return errors.New("application must have exactly one service config")
 	}
 	serviceId := app.ServiceConfigs[0].ServiceId
-	logger.Info().Msgf("✅ Service ID retrieved: %s", serviceId)
+	logger.Info().Msgf("✅ Service identified: '%s'", serviceId)
 
 	// Create an application ring for signing
 	ring := sdk.ApplicationRing{
@@ -226,17 +241,23 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	logger.Info().Msgf("✅ Endpoints fetched: %v", endpoints)
 
 	var endpoint sdk.Endpoint
-	for _, e := range endpoints {
-		if string(e.Supplier()) == flagRelaySupplier {
-			endpoint = e
-			break
+	if flagRelaySupplier != "" {
+		logger.Info().Msgf("✅ Supplier specified: '%s'", flagRelaySupplier)
+		for _, e := range endpoints {
+			if string(e.Supplier()) == flagRelaySupplier {
+				endpoint = e
+				logger.Info().Msgf("✅ Endpoint for supplier '%s' selected: %v", flagRelaySupplier, endpoint)
+				break
+			}
 		}
+		if endpoint == nil {
+			logger.Error().Msgf("❌ No endpoint found for supplier %s in the current session", flagRelaySupplier)
+			return err
+		}
+	} else {
+		endpoint = endpoints[rand.Intn(len(endpoints))]
+		logger.Info().Msgf("✅ No supplier specified, randomly selected endpoint: %v", endpoint)
 	}
-	if endpoint == nil {
-		logger.Error().Msgf("❌ No endpoint found for supplier %s in the current session", flagRelaySupplier)
-		return err
-	}
-	logger.Info().Msgf("✅ Endpoint selected: %v", endpoint)
 
 	// Get the endpoint URL
 	endpointUrl := endpoint.Endpoint().Url
@@ -334,7 +355,9 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 
 	// Ensure the supplier operator address matches the expected address
-	if supplierSignerAddress != flagRelaySupplier {
+	if flagRelaySupplier == "" {
+		logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
+	} else if supplierSignerAddress != flagRelaySupplier {
 		logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
 		return errors.New("Relay response supplier operator signature does not match")
 	}

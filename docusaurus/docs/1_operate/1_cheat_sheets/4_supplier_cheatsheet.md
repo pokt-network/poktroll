@@ -1,26 +1,24 @@
 ---
 sidebar_position: 4
-title: Supplier & RelayMiner Cheat Sheet
+title: Supplier & RelayMiner Cheat Sheet (~25 minutes)
 ---
 
 import ReactPlayer from "react-player";
 
-**🖨 🍝 Quickstart: Run a `RelayMiner` after staking a `Supplier` on Pocket Network**
+:::warning 🖨 🍝 with Scripted Abstractions 🍝 🖨
 
-:::warning
-This is copy-paste scripting. No deep explanations here.
+Stake an onchain `Supplier` and run an offchain `RelayMiner` in less than an hour, without deep explanations.
 
-TODO(@olshansk): Add a Supplier walkthrough.
 :::
 
 ---
 
 ## Table of Contents <!-- omit in toc -->
 
-- [High Level Diagram: Supplier \& RelayMiner](#high-level-diagram-supplier--relayminer)
-- [Video Walkthrough](#video-walkthrough)
+- [High Level Architecture Diagram](#high-level-architecture-diagram)
+- [20 Minute Video Walkthrough](#20-minute-video-walkthrough)
 - [Prerequisites](#prerequisites)
-  - [What will you do?](#what-will-you-do)
+  - [What will you do in this cheatsheet?](#what-will-you-do-in-this-cheatsheet)
 - [Account Setup](#account-setup)
   - [1. Create Supplier account](#1-create-supplier-account)
   - [2. Prepare your environment](#2-prepare-your-environment)
@@ -34,7 +32,7 @@ TODO(@olshansk): Add a Supplier walkthrough.
   - [1. Configure the RelayMiner](#1-configure-the-relayminer)
   - [2. Start the RelayMiner](#2-start-the-relayminer)
 
-## High Level Diagram: Supplier & RelayMiner
+## High Level Architecture Diagram
 
 ```mermaid
 flowchart TB
@@ -55,23 +53,24 @@ flowchart TB
     subgraph Operator["Operator (Offchain)"]
         direction TB
         CP["RelayMiner<br>Co-processor"]
-        subgraph BS["Backend Data or Service Server"]
+        subgraph BS["Backend Service"]
             SRV["Server"]
-            DB2[(Database)]:::databaseClass
+            SRC["Open Service"]:::databaseClass
+            DB2[(Open Database)]:::databaseClass
         end
     end
 
 
     %% User flow
-    User -->|"Signed Relay<br>Request"| CP
-    CP -->|"Data/Service<br>Request"| SRV
-    SRV --> DB2
-    DB2 --> SRV
-    SRV -->|"Data/Service<br>Response"| CP
-    CP -->|"Signed Relay<br>Response"| User
+    User -->|"Signed Relay<br>**Request**"| CP
+    CP -->|"Data/Service<br>**Request**"| SRV
+    SRV -.- DB2
+    SRV -.- SRC
+    SRV -->|"Data/Service<br>**Response**"| CP
+    CP -->|"Signed Relay<br>**Response**"| User
 
     %% Connection between RelayMiner and Blockchain
-    CP <-..-> SC
+    CP -..- SC
     DB --- SC
     DB --- SCN
 
@@ -88,9 +87,7 @@ flowchart TB
     class Operator relayMinerClass;
 ```
 
-## Video Walkthrough
-
-~20 min walkthrough using this cheatsheet:
+## 20 Minute Video Walkthrough
 
 <ReactPlayer
   playing={false}
@@ -101,15 +98,26 @@ flowchart TB
 ## Prerequisites
 
 - [Install `pocketd` CLI](../../2_explore/2_account_management/1_pocketd_cli.md)
-- [Create/fund account](../../2_explore/2_account_management/2_create_new_account_cli.md)
+- [Create and fund account](../../2_explore/2_account_management/2_create_new_account_cli.md)
 - [Stake or find a `service`](1_service_cheatsheet.md)
-- [Check hardware requirements](../4_faq/6_hardware_requirements.md)
+- [Review hardware requirements](../4_faq/6_hardware_requirements.md)
 
-### What will you do?
+:::note Optional Vultr Setup
 
-- Stake a `Supplier` (onchain API record)
-- Deploy a `RelayMiner` (offchain coprocessor)
-- Serve relays and claim rewards
+The instructions on this page assume you have experience maintaining backend services.
+
+You can reference the [Vultr Playbook](../5_playbooks/1_vultr.md) for a quick guide on how to set up a server with Vultr.
+
+:::
+
+### What will you do in this cheatsheet?
+
+1. Stake a `Supplier` (i.e. onchain record)
+2. Deploy a `RelayMiner` (i.e. offchain coprocessor)
+3. Serve relays
+4. Claim rewards
+5. Submit proofs
+6. Earn rewards for onchain services
 
 ## Account Setup
 
@@ -121,8 +129,10 @@ pocketd keys add supplier
 
 ### 2. Prepare your environment
 
+Create the following environment variables:
+
 ```bash
-cat > ~/.pocketrc << 'EOF'
+cat > ~/.pocketrc << EOF
 export SUPPLIER_ADDR=$(pocketd keys show supplier -a)
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --yes"
 export BETA_NODE_FLAGS="--chain-id=pocket-beta --node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
@@ -131,6 +141,8 @@ export BETA_GRPC_URL="https://shannon-testnet-grove-grpc.beta.poktroll.com:443"
 EOF
 ```
 
+And source them in your shell:
+
 ```bash
 echo "source ~/.pocketrc" >> ~/.profile
 source ~/.profile
@@ -138,29 +150,41 @@ source ~/.profile
 
 ### 3. Fund the Supplier account
 
+1. Retrieve your Supplier address:
+
+   ```bash
+   echo "Supplier address: $SUPPLIER_ADDR"
+   ```
+
+2. Fund your account by going to [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/).
+
+3. Check balance:
+
+   ```bash
+   pocketd query bank balances $SUPPLIER_ADDR $BETA_NODE_FLAGS
+   ```
+
+:::tip 🌿 Grove employees only
+
+<details>
+
+<summary>`pkd` helpers</summary>
+
 ```bash
-echo "Supplier address: $SUPPLIER_ADDR"
+# Fund your account
+pkd_beta_fund $SUPPLIER_ADDR
+
+# Check balance
+pkd_beta_query bank balances $SUPPLIER_ADDR
 ```
 
-- Go to [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) and fund your account.
-
-Check balance:
-
-```bash
-pocketd query bank balances $SUPPLIER_ADDR $BETA_NODE_FLAGS
-```
-
-:::tip watch and wait
-
-```bash
-watch -n 5 "pocketd query bank balances $SUPPLIER_ADDR $BETA_NODE_FLAGS"
-```
+</details>
 
 :::
 
 ## Supplier Configuration
 
-See [Supplier config docs](../3_configs/3_supplier_staking_config.md) for all options.
+For more details on supplier configurations, see the full [supplier config docs](../3_configs/3_supplier_staking_config.md).
 
 ### 1. Get your public URL
 
