@@ -106,7 +106,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
 				},
-				RootHash: tooShortSMSTRoot(), // root hash too short
+				RootHash: tooShortSMSTRoot(t), // root hash too short
 			},
 			expectedErr: types.ErrProofInvalidClaimRootHash,
 		},
@@ -121,12 +121,12 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
 				},
-				RootHash: tooLongSMSTRoot(), // root hash too long
+				RootHash: tooLongSMSTRoot(t), // root hash too long
 			},
 			expectedErr: types.ErrProofInvalidClaimRootHash,
 		},
 		{
-			desc: "valid operator address, session start height, session ID, service and valid root hash but with 0 relays count",
+			desc: "valid operator address, session start height, session ID, service and valid root hash length but with 0 relays count",
 			msg: types.MsgCreateClaim{
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
@@ -136,12 +136,12 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
 				},
-				RootHash: testproof.SmstRootWithSumAndCount(0, 1), // Valid root hash but zero count
+				RootHash: testproof.RandSmstRootWithSumAndCount(t, 1, 0), // Valid root hash but length zero count (invalid content)
 			},
 			expectedErr: types.ErrProofInvalidClaimRootHash,
 		},
 		{
-			desc: "valid operator address, session start height, session ID, service and valid root hash but with zero compute units",
+			desc: "valid operator address, session start height, session ID, service and valid root hash length but with zero compute units",
 			msg: types.MsgCreateClaim{
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
@@ -151,7 +151,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
 				},
-				RootHash: testproof.SmstRootWithSumAndCount(1, 0), // Valid root hash but zero sum
+				RootHash: testproof.RandSmstRootWithSumAndCount(t, 0, 1), // Valid root hash length but zero sum (invalid content)
 			},
 			expectedErr: types.ErrProofInvalidClaimRootHash,
 		},
@@ -166,7 +166,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
 				},
-				RootHash: testproof.SmstRootWithSumAndCount(1, 1), // Valid root hash
+				RootHash: testproof.RandSmstRootWithSumAndCount(t, 1, 1), // Valid root hash
 			},
 			expectedErr: nil,
 		},
@@ -185,17 +185,17 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 
 // tooShortSMSTRoot returns a valid SMST root with the given sum and count but
 // reduces the size to be one byte shorter than the expected size.
-func tooShortSMSTRoot() []byte {
-	return testproof.SmstRootWithSumAndCount(1, 1)[:protocol.TrieRootSumSize-1]
+func tooShortSMSTRoot(t *testing.T) []byte {
+	return testproof.RandSmstRootWithSumAndCount(t, 1, 1)[:protocol.TrieRootSize-1]
 }
 
 // tooLongSMSTRoot returns a valid SMST root with the given sum and count but adds
 // an extra byte to make it longer than the expected size.
-func tooLongSMSTRoot() []byte {
-	smstRoot := testproof.SmstRootWithSumAndCount(1, 1)
+func tooLongSMSTRoot(t *testing.T) []byte {
+	smstRoot := testproof.RandSmstRootWithSumAndCount(t, 1, 1)
 
 	// Append an extra byte to make it longer than the expected size
-	longRoot := make([]byte, protocol.TrieRootSumSize+1)
+	longRoot := make([]byte, protocol.TrieRootSize+1)
 	copy(longRoot, smstRoot)
 	return longRoot
 }

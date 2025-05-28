@@ -589,7 +589,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimIgnored_WhenHasZeroSum() {
 	require.Equal(t, uint64(0), settledResults.GetNumClaims()) // 0 claims settled
 	require.Equal(t, uint64(0), expiredResults.GetNumClaims()) // 0 claims expired
 
-	// Validate that one claim still remains.
+	// Validate that the zero sum claim was deleted and no claims remain.
 	claims := s.keepers.GetAllClaims(ctx)
 	require.Equal(t, 0, len(claims))
 }

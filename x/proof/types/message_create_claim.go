@@ -37,12 +37,12 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 		return ErrProofInvalidSessionHeader.Wrapf("session header is nil")
 	}
 	if err := sessionHeader.ValidateBasic(); err != nil {
-		return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %v", err)
+		return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", err)
 	}
 
 	// Validate the root hash
 	if len(msg.RootHash) != protocol.TrieRootSize {
-		return ErrProofInvalidClaimRootHash.Wrapf("expecting root hash to be %d bytes, got %d bytes", protocol.TrieRootSumSize, len(msg.RootHash))
+		return ErrProofInvalidClaimRootHash.Wrapf("expecting root hash to be %d bytes, got %d bytes", protocol.TrieRootSize, len(msg.RootHash))
 	}
 
 	// Get the Merkle root from the root hash to validate the claim's relays and compute units.
@@ -50,20 +50,20 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 
 	count, err := merkleRoot.Count()
 	if err != nil {
-		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root %v count due to: %v", msg.RootHash, err)
+		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root (hex) %x count due to: %s", msg.RootHash, err)
 	}
 
 	if count == 0 {
-		return ErrProofInvalidClaimRootHash.Wrapf("has zero count in Merkle root %v", msg.RootHash)
+		return ErrProofInvalidClaimRootHash.Wrapf("has zero count in Merkle (hex) root %x", msg.RootHash)
 	}
 
 	sum, err := merkleRoot.Sum()
 	if err != nil {
-		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root %v sum due to: %v", msg.RootHash, err)
+		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root (hex) %x sum due to: %s", msg.RootHash, err)
 	}
 
 	if sum == 0 {
-		return ErrProofInvalidClaimRootHash.Wrapf("has zero sum in Merkle root %v", msg.RootHash)
+		return ErrProofInvalidClaimRootHash.Wrapf("has zero sum in Merkle root (hex) %x", msg.RootHash)
 	}
 
 	return nil

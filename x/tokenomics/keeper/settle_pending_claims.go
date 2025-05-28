@@ -81,6 +81,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			))
 
 			// TODO_CONSIDERATION: Treat this claim as expired, since it has no relays.
+			// This would result in the Supplier being slashed for submitting a claim with 0 relays.
 			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 			continue
 		}
@@ -100,6 +101,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			))
 
 			// TODO_CONSIDERATION: Treat this claim as expired, since it has no compute units.
+			// This would result in the Supplier being slashed for submitting a claim with 0 compute units.
 			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 			continue
 		}
