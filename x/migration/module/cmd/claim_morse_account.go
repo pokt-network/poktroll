@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
-	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
