@@ -34,7 +34,7 @@ const (
 
 	FlagFaucetBaseURL      = "base-url"
 	FlagFaucetBaseURLUsage = "The base URL of the Pocket Network Faucet"
-	// TODO_IN_THIS_COMMIT: Update this to the production URL once known.
+	// TODO_UP_NEXT(@bryanchriswhite): Update this to the production URL once known.
 	DefaultFaucetBaseURL = "https://faucet.pokt.network"
 
 	FaucetConfigPath        = "faucet-config-path"

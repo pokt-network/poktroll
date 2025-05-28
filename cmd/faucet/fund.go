@@ -12,7 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/cmd/logger"
 )
 
-// TODO_IN_THIS_COMMIT: update the baseURL example once the default baseURL is known.
+// TODO_UP_NEXT(@bryanchriswhite): update the baseURL example once the default baseURL is known.
 // fundURLFmt is the canonical fund URL format for a given denom and recipient address.
 // The placeholders are intended to be interpolated in the following order:
 //   - baseURL: Fully-qualified URL to the faucet server (e.g. https://faucet.pokt.network)
@@ -29,7 +29,7 @@ func FundCmd() *cobra.Command {
 		Short: "Request tokens of a given denom be sent to a recipient address.",
 		Long: `Request tokens of a given denom be sent to a recipient address.
 
-// TODO_IN_THIS_COMMIT: update docs URL once known.
+// TODO_UP_NEXT(@bryanchriswhite): update docs URL once known.
 For more information, see: https://dev.poktroll.com/operate/faucet`,
 		Example: `pocketd faucet fund pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 upokt
 pocketd faucet fund pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 mact --base-url=http://localhost:8080`,

@@ -29,7 +29,7 @@ func ServeCmd() *cobra.Command {
 The faucet server is a REST API that allows users to request tokens of a given denom be sent to a recipient address.
 
 For more information, see: https://dev.poktroll.com/operate/faucet
-// TODO_IN_THIS_COMMIT: update docs URL once known.`,
+// TODO_UP_NEXT(@bryanchriswhite): update docs URL once known.`,
 		Example: `pocketd faucet serve --listen-address 0.0.0.0:8080 --config ./faucet_config.yaml # Using a config file
 
 # Using environment variables:
