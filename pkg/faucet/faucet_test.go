@@ -48,7 +48,6 @@ var (
 func TestMain(m *testing.M) {
 	cmd.InitSDKConfig()
 
-	// TODO_IN_THIS_COMMIT: comment...
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 	// ABSOLUTELY REQUIRED; otherwise, keyring can't (un)marshal...
@@ -76,12 +75,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-// TODO_IN_THIS_COMMIT: add coverage for:
-// - [ ] concurrent requests
-// - [ ] create_account_only
-//   - account already exists
-//   - account doesn't exist
-
 func TestNewFaucet(t *testing.T) {
 	// Ensure the CLI logger is set up.
 	logger.LogOutput = flags.DefaultLogOutput
@@ -95,7 +88,6 @@ func TestNewFaucet(t *testing.T) {
 		testSigningKeyName,
 		testListenAddress,
 		[]string{testSendMACT, testSendUPOKT},
-		//[]string{testFeeUPOKT},
 		false,
 	)
 	require.NoError(t, err)
@@ -106,12 +98,8 @@ func TestNewFaucet(t *testing.T) {
 	txClient := newTxClientMock(t, signAndBroadcastSuccess, 2)
 
 	testRecipientAddress := cosmostypes.MustAccAddressFromBech32(sample.AccAddress())
-	//expectedBalanceErr := query.ErrQueryBalanceNotFound.Wrapf("address: %s", testRecipientAddress)
 	ctrl := gomock.NewController(t)
 	bankQueryClient := mockclient.NewMockBankGRPCQueryClient(ctrl)
-	//bankQueryClient.EXPECT().
-	//	GetBalances(gomock.Any(), gomock.Eq(testRecipientAddress)).
-	//	Return(nil, expectedBalanceErr)
 
 	faucet, err := faucet.NewFaucetServer(
 		ctx,
@@ -178,10 +166,12 @@ func TestNewFaucet(t *testing.T) {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: move...
+// signAndBroadcastFn is a function which signs and broadcasts the given msgs.
 type signAndBroadcastFn func(context.Context, ...cosmostypes.Msg) (*cosmostypes.TxResponse, either.AsyncError)
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// newSignAndBroadcastSuccess returns a signAndBroadcastFn which will append
+// the given msgs to the given sendTxs slice and return a successful
+// cosmostypes.TxResponse.
 func newSignAndBroadcastSuccess(t *testing.T, sendTxs *[][]cosmostypes.Msg) signAndBroadcastFn {
 	t.Helper()
 
@@ -201,7 +191,8 @@ func newSignAndBroadcastSuccess(t *testing.T, sendTxs *[][]cosmostypes.Msg) sign
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// newTxClientMock returns a mock client.TxClient which implements the given
+// signAndBroadcastFn and expects it to be called times times.
 func newTxClientMock(t *testing.T, signAndBroadcast signAndBroadcastFn, times int) client.TxClient {
 	t.Helper()
 

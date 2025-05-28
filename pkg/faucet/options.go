@@ -25,11 +25,11 @@ type Config struct {
 
 	// SupportedSendCoins is a list of cosmos-sdk coin strings (i.e. amount + denom)
 	// which the faucet server will send when a user requests tokens of that denomination.
-	SupportedSendCoins []string `mapstructure:"send_tokens"`
+	SupportedSendCoins []string `mapstructure:"supported_send_coinss"`
 
 	// CreateAccountsOnly determines whether the faucet will service all requests (when false),
 	// or only those for recipient addresses which do not already exist onchain (when true).
-	CreateAccountsOnly bool `mapstructure:"create_account_only"`
+	CreateAccountsOnly bool `mapstructure:"create_accounts_only"`
 
 	// ListenAddress is the network address that the faucet HTTP server will listen on.
 	// It is expected to be in the form of "host:port".
@@ -163,7 +163,7 @@ func WithTxClient(txClient client.TxClient) FaucetOptionFn {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// bankGRPCQueryClient is an interface to the protobuf generated bank module gRPC query client which exposes the necessary methods for the faucet.
 type bankGRPCQueryClient interface {
 	AllBalances(ctx context.Context, in *banktypes.QueryAllBalancesRequest, opts ...grpc.CallOption) (*banktypes.QueryAllBalancesResponse, error)
 }

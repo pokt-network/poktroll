@@ -32,6 +32,15 @@ const (
 	FlagNetworkUsage = "Sets the --chain-id, --node, and --grpc-addr flags (if applicable) based on the given network moniker (e.g. local, alpha, beta, main)"
 	DefaultNetwork   = ""
 
+	FlagFaucetBaseURL      = "faucet-base-url"
+	FlagFaucetBaseURLUsage = "The base URL of the Pocket Network Faucet"
+	// TODO_IN_THIS_COMMIT: Update this to the production URL once known.
+	DefaultFaucetBaseURL = "https://faucet.pokt.network"
+
+	FaucetConfigPath        = "faucet-config-path"
+	FaucetConfigPathUsage   = "Path to the faucet config yaml file ($HOME/.{pocket,poktroll} and PWD are searched by default)"
+	DefaultFaucetConfigPath = ""
+
 	LocalNetworkName = "local"
 	AlphaNetworkName = "alpha"
 	BetaNetworkName  = "beta"

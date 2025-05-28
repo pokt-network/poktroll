@@ -81,21 +81,28 @@ func setViperConfig() error {
 	viper.SetConfigName("faucet_config")
 	viper.SetConfigType("yaml")
 
-	// call multiple times to add many search paths
-	viper.AddConfigPath("$HOME/.pocket")
-	viper.AddConfigPath("$HOME/.poktroll")
-	viper.AddConfigPath(".")
+	// If the faucet config path is provided, use it instead of searching.
+	if faucetConfigPath != flags.DefaultFaucetConfigPath {
+		viper.SetConfigFile(faucetConfigPath)
+	} else {
+		// call multiple times to add many search paths
+		viper.AddConfigPath("$HOME/.pocket")
+		viper.AddConfigPath("$HOME/.poktroll")
+		viper.AddConfigPath(".")
+	}
 
 	// Find and read the config file
 	return viper.ReadInConfig()
 }
 
 // setViperDefaults sets default values for the following required viper config values:
-// - signing_key_name
-// - send_tokens
 // - listen_address
+// - signing_key_name
+// - supported_send_coins
+// - create_accounts_only
 func setViperDefaults() {
-	viper.SetDefault("signing_key_name", "faucet")
-	viper.SetDefault("send_tokens", "1mact")
 	viper.SetDefault("listen_address", "")
+	viper.SetDefault("signing_key_name", "faucet")
+	viper.SetDefault("supported_send_coins", "1mact")
+	viper.SetDefault("create_accounts_only", "false")
 }

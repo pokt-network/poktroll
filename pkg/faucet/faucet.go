@@ -136,7 +136,6 @@ func (srv *Server) newHandleDenomRequest(ctx context.Context, denom string) http
 
 		// If the address doesn't exist onchain, send it tokens.
 		if err = srv.SendDenom(ctx, logger, denom, recipientAddress); err != nil {
-			// TODO_IN_THIS_COMMIT: not all error cases are 400 Bad Request...
 			respondBadRequest(res, err)
 			return
 		}
@@ -221,7 +220,7 @@ func (srv *Server) SendDenom(
 	return nil
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// respondBadRequest sends a 400 Bad Request response to the given http.ResponseWriter and logs the given error.
 func respondBadRequest(res http.ResponseWriter, err error) {
 	logger.Logger.Error().Err(err).Send()
 
@@ -232,7 +231,7 @@ func respondBadRequest(res http.ResponseWriter, err error) {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// respondInternalError sends a 500 Internal Server Error response to the given http.ResponseWriter and logs the given error.
 func respondInternalError(logger polylog.Logger, res http.ResponseWriter, err error) {
 	logger.Error().Err(err).Send()
 
@@ -242,7 +241,7 @@ func respondInternalError(logger polylog.Logger, res http.ResponseWriter, err er
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// respondNotModified sends a 304 Not Modified response to the given http.ResponseWriter and logs the given recipientAddress.
 func respondNotModified(logger polylog.Logger, res http.ResponseWriter, recipientAddress string) {
 	res.WriteHeader(http.StatusNotModified)
 	if _, err := fmt.Fprintf(res, "address %s already exists onchain", recipientAddress); err != nil {

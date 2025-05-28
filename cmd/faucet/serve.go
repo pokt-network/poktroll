@@ -18,19 +18,33 @@ import (
 	"github.com/pokt-network/poktroll/pkg/faucet"
 )
 
+var faucetConfigPath string
+
 func ServeCmd() *cobra.Command {
 	serveCmd := &cobra.Command{
-		Use: "serve",
-		// TODO_IN_THIS_COMMIT: ...
-		//Short:,
-		//Long:,
-		//Example:,
+		Use:   "serve",
+		Short: "Start a Pocket Network faucet server.",
+		Long: `Start a Pocket Network faucet server.
+
+The faucet server is a REST API that allows users to request tokens of a given denom be sent to a recipient address.
+
+For more information, see: https://dev.poktroll.com/operate/faucet
+// TODO_IN_THIS_COMMIT: update docs URL once known.`,
+		Example: `pocketd faucet serve --listen-address 0.0.0.0:8080 --config ./faucet_config.yaml # Using a config file
+
+# Using environment variables:
+FAUCET_LISTEN_ADDRESS=0.0.0.0:8080 \
+FAUCET_SUPPORTED_SEND_TOKENS_="100upokt,1mact" \
+FAUCET_SIGNING_KEY_NAME=faucet \
+pocketd faucet serve`,
 		PreRunE: preRunServe,
 		RunE:    runServe,
 	}
 
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
 	cosmosflags.AddTxFlagsToCmd(serveCmd)
+
+	serveCmd.Flags().StringVar(&faucetConfigPath, flags.FaucetConfigPath, flags.DefaultFaucetConfigPath, flags.FaucetConfigPathUsage)
 
 	return serveCmd
 }
