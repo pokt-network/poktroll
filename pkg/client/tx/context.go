@@ -38,7 +38,7 @@ type cosmosTxContext struct {
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk@v0.47.5/client/tx#Factory)
 	txFactory cosmostx.Factory
 
-	// TODO_IN_THIS_COMMIT: comment...
+	// unordered is a flag which indicates whether the transactions should be sent unordered.
 	unordered bool
 }
 
@@ -136,7 +136,7 @@ func (txCtx cosmosTxContext) GetClientCtx() cosmosclient.Context {
 	return cosmosclient.Context(txCtx.clientCtx)
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// GetKeyAddress returns the address of the given key name, according to the configured keyring.
 func (txCtx cosmosTxContext) GetKeyAddress(keyName string) (cosmostypes.AccAddress, error) {
 	keyRecord, err := txCtx.GetKeyring().Key(keyName)
 	if err != nil {
@@ -193,7 +193,7 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 	return uint64(txf.GasAdjustment() * float64(simRes.GasInfo.GasUsed)), nil
 }
 
-// TODO_IN_THIS_COMMIT: comment...
+// SetUnordered sets the unordered flag on the transaction factory.
 func (txCtx cosmosTxContext) SetUnordered(unordered bool) {
 	txCtx.unordered = unordered
 	txCtx.txFactory = txCtx.txFactory.WithUnordered(unordered)

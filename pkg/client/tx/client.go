@@ -47,7 +47,8 @@ const (
 	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
 	txWithSenderAddrQueryFmt = "tm.event='Tx' AND message.sender='%s'"
 
-	// TODO_IN_THIS_COMMIT: comment... 10 min max...
+	// MUST set a timeout when using unordered transactions. 10 minutes is the maximum, use 9 for safety.
+	// See: https://docs.cosmos.network/v0.53/build/architecture/adr-070-unordered-account
 	txTimeoutTimestampDelay = time.Minute * 9
 )
 
@@ -132,7 +133,7 @@ type txClient struct {
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
 
-	// TODO_IN_THIS_COMMIT: godoc...
+	// unordered is a flag which indicates whether the transactions should be sent unordered.
 	unordered bool
 }
 
@@ -189,7 +190,7 @@ func NewTxClient(
 		opt(txnClient)
 	}
 
-	// TODO_IN_THIS_COMMIT: comment and/or refactor...
+	// Set the unordered flag on the client context.
 	txnClient.txCtx.SetUnordered(txnClient.unordered)
 
 	if err = txnClient.validateConfigAndSetDefaults(); err != nil {
