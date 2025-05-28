@@ -282,20 +282,14 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 	// to correspond to the timeout height.
 	txBuilder.SetTimeoutTimestamp(time.Now().Add(txTimeoutTimestampDelay))
 
-	offline := false
+	offline := txnClient.txCtx.GetClientCtx().Offline
 	txBuilder.SetUnordered(txnClient.unordered)
-	if txnClient.unordered {
-		// remove sequence number
-		// get account number
-		// set account number
-		offline = true
-	}
 
 	// sign transactions
 	err = txnClient.txCtx.SignTx(
 		txnClient.signingKeyName,
 		txBuilder,
-		offline, false,
+		offline, false, txnClient.unordered,
 	)
 	if err != nil {
 		return nil, either.SyncErr(err)

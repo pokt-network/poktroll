@@ -75,11 +75,14 @@ func (txCtx cosmosTxContext) GetKeyring() cosmoskeyring.Keyring {
 func (txCtx cosmosTxContext) SignTx(
 	signingKeyName string,
 	txBuilder cosmosclient.TxBuilder,
-	offline, overwriteSig bool,
+	offline, overwriteSig, unordered bool,
 ) error {
 	txFactory := txCtx.txFactory
 
-	if offline {
+	// Account number MUST be set for unordered transactions.
+	// ONLY query for the account number if offline is false; otherwise,
+	// it should be set explicitly via the --account-number` flag.
+	if unordered && !offline {
 		signingKeyAddr, err := txCtx.GetKeyAddress(signingKeyName)
 		if err != nil {
 			return err

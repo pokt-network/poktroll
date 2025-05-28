@@ -123,7 +123,7 @@ type TxContext interface {
 	SignTx(
 		keyName string,
 		txBuilder cosmosclient.TxBuilder,
-		offline, overwriteSig bool,
+		offline, overwriteSig, unordered bool,
 	) error
 
 	// EncodeTx takes a transaction builder and encodes it, returning its byte representation.
