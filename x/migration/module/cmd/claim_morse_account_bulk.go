@@ -259,7 +259,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Read Morse private keys from file.
-	morseAccounts, err := readMorsePrivateKeysFile(ctx, clientCtx)
+	morseAccounts, err := readMorseAccountsPrivateKeysFile(ctx, clientCtx)
 	if err != nil {
 		return err
 	}
@@ -381,8 +381,8 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-// readMorsePrivateKeysFile reads Morse private keys from the input file, validates their claimable status, and returns a list of MorseAccountInfo.
-func readMorsePrivateKeysFile(
+// readMorseAccountsPrivateKeysFile reads Morse private keys from the input file, validates their claimable status, and returns a list of MorseAccountInfo.
+func readMorseAccountsPrivateKeysFile(
 	ctx context.Context,
 	clientCtx cosmosclient.Context,
 ) ([]MorseAccountInfo, error) {

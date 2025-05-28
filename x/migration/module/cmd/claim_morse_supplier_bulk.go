@@ -7,9 +7,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	cosmossdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/poktroll/cmd/flags"
+
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	cosmosquery "github.com/cosmos/cosmos-sdk/types/query"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
@@ -19,28 +23,44 @@ import (
 )
 
 var (
-	outputAddress     string
-	all               bool
-	nodes             []string
 	nodesFile         string
 	stakeTemplateFile string
+	simulation        bool // I try to use --dry-run, but it collides with a cosmos-sdk flag
 )
+
+// this hold any claimable account that is under MorseOutputAddress
+// on custodial same node, on non-custodial another account.
+var ownerAddressMap = map[string]*types.MorseClaimableAccount{}
 
 func ClaimSupplierBulkCmd() *cobra.Command {
 	claimSuppliersCmd := &cobra.Command{
-		Use:   "claim-suppliers --from [shannon_dest_key_name] --output-address [morse_output_address]",
+		Use:   "claim-suppliers --from [shannon_dest_key_name]",
 		Args:  cobra.ExactArgs(0),
 		Short: "Claim many onchain MorseClaimableAccount as a staked supplier accounts> Claim multiple on-chain MorseClaimableAccounts as staked supplier accounts.",
 		Long: `Claim multiple on-chain MorseClaimableAccounts as staked supplier accounts.
 
 Flags:
---from - Specify the Shannon account that will sign the migration transaction.
---output-address - Provide the Morse output account used for the migration transaction.
---all - (Default: false) If true, claims all MorseClaimableAccounts associated with the specified Morse output address.
---nodes - Comma-separated list of Morse node addresses.
---nodes-file - Path to a file listing Morse node addresses.
---skip-verification - (Default: false) If true, skips verification of MorseClaimableAccounts before claiming.
+--nodes - Operator keys json list
 --stake-template-file - Path to a stake template file detailing services, reward shares, etc. The owner, operator, and stake amount are automatically sourced from ClaimableAccounts.
+--simulate - (Default: false) If true, the transaction will be simulated but not broadcasted.
+--output-file - (Default: migration_output.json) Path to a file where the migration result will be written.
+--unsafe
+--unarmored-json 
+
+{
+	"migrated_map": [
+		{
+			morse: {address:"", private_key:""},
+			shannon: {address:"", private_key:""}
+		}
+	],
+	"owner_address_not_claimed_yet": ["address1", "address2", "...", "addressN"],
+	"error": "",
+	"tx_hash": "",
+	"tx_code": 0,
+}
+
+// I need to generate the shannon private keys for every operator - why? because olshansky fuck on me about me previous cli cmd :'(
 
 YAML template:
 owner_address: [DEDUCTED SHANNON OWNER ADDRESS] - no need to set
@@ -71,29 +91,12 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 		PreRunE: logger.PreRunESetup,
 	}
 
-	// TODO: move all this flag and descriptions into reusable variables at flags.go file?
-	claimSuppliersCmd.Flags().StringVarP(
-		&outputAddress,
-		"output-address",
-		"",
-		"",
-		"Provide the Morse output account used for the migration transaction.",
-	)
-
 	claimSuppliersCmd.Flags().BoolVarP(
-		&all,
-		"all",
+		&simulation,
+		"simulate",
 		"",
 		false,
-		"If true, claims all MorseClaimableAccounts associated with the specified Morse output address.",
-	)
-
-	claimSuppliersCmd.Flags().StringSliceVarP(
-		&nodes,
-		"nodes",
-		"",
-		[]string{},
-		"Comma-separated list of Morse node addresses.",
+		"If true, the transaction will be simulated but not broadcasted.",
 	)
 
 	claimSuppliersCmd.Flags().StringVarP(
@@ -101,7 +104,7 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 		"nodes-file",
 		"",
 		"",
-		"Path to a file listing Morse node addresses.",
+		"Path to a file listing Morse node keys",
 	)
 
 	claimSuppliersCmd.Flags().StringVarP(
@@ -112,18 +115,40 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 		"Path to a stake template file detailing services, reward shares, etc. The owner, operator, and stake amount are automatically sourced from ClaimableAccounts.",
 	)
 
+	claimSuppliersCmd.Flags().StringVarP(
+		&outputFilePath, // declared at claim_morse_account_bulk.go - Should it be somewhere else?
+		flags.FlagOutputFile,
+		flags.FlagOutputFileShort,
+		"",
+		"Path to a file where the migration result will be written.",
+	)
+
+	// Prepare the unsafe flag.
+	claimSuppliersCmd.Flags().BoolVarP(
+		&unsafe,
+		"unsafe",
+		"",
+		false,
+		"unsafe operation, do not auto-load the shannon account private keys into the keyring",
+	)
+
+	// Prepare the unarmored JSON flag.
+	claimSuppliersCmd.Flags().BoolVarP(
+		&unarmoredJSON,
+		"unarmored-json",
+		"",
+		false,
+		"unarmored JSON output file, this is useful for the migration of operators into a shannon keyring for later use",
+	)
+
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
 	cosmosflags.AddTxFlagsToCmd(claimSuppliersCmd)
 
 	return claimSuppliersCmd
 }
 
-// runClaimSupplier performs the following sequence:
-// - Load the Morse private key from the morse_key_export_path argument (arg 0).
-// - Load and validate the supplier service staking config from the path_to_supplier_stake_config argument pointing to a local config file (arg 1).
-// - Sign and broadcast the MsgClaimMorseSupplier message using the Shannon key named by the `--from` flag.
-// - Wait until the tx is committed onchain for either a synchronous or asynchronous error.
-func runClaimSuppliers(cmd *cobra.Command, args []string) error {
+// runClaimSuppliers runs the claim suppliers command.
+func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
 	// Conventionally derive a cosmos-sdk client context from the cobra command.
@@ -133,34 +158,257 @@ func runClaimSuppliers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	shannonSigningAddr := clientCtx.GetFromAddress().String()
+	if shannonSigningAddr == "" {
+		return fmt.Errorf("no shannon signing address provided using --from")
+	}
+
 	// Load the supplier stake config template from the YAML file.
 	// lets fail faster if something here is wrong (missing file for example)
 	logger.Logger.Info().Msgf("Loading stake template file: %s", stakeTemplateFile)
-	_, templateError := loadTemplateSupplierStakeConfigYAML(stakeTemplateFile)
+	templateSupplierStakeConfig, templateError := loadTemplateSupplierStakeConfigYAML(stakeTemplateFile)
 	if templateError != nil {
 		return templateError
 	}
 
-	logger.Logger.Info().Msgf("Loading output address: %s", outputAddress)
-	_, morseOutputError := loadMorseClaimableAccount(ctx, clientCtx, outputAddress)
-	if morseOutputError != nil {
-		return morseOutputError
+	// Prepare the migration batch result.
+	migrationBatchResult := MigrationBatchResult{
+		Mappings: make([]*MorseShannonMapping, 0),
+		Error:    "",
+		TxHash:   "",
 	}
 
-	_, morseNodesError := loadMorseNodes(ctx, clientCtx)
-	if morseNodesError != nil {
-		return morseNodesError
+	// Clean up keyring if tx results in an error.
+	defer func() {
+		if migrationBatchResult.Error == "" {
+			return
+		}
+		for _, morseToShannonMapping := range migrationBatchResult.Mappings {
+			shannonAddr := morseToShannonMapping.ShannonAccount.Address.String()
+			keyringErr := clientCtx.Keyring.Delete(shannonAddr)
+			if keyringErr != nil {
+				logger.Logger.Error().Err(keyringErr).
+					Msgf(
+						"failed to delete private key for shannon address '%s' associated with morse account '%s'. Please check the logs and try again",
+						shannonAddr,
+						hex.EncodeToString(morseToShannonMapping.MorseAccount.Address),
+					)
+			}
+		}
+	}()
+
+	// Write output JSON file-to --output-file path.
+	defer func() {
+		outputJSON, _ := json.MarshalIndent(migrationBatchResult, "", "  ")
+		logger.Logger.Info().Msgf("writing migration output JSON to %s", outputFilePath)
+		writeErr := os.WriteFile(outputFilePath, outputJSON, 0644)
+		if writeErr != nil {
+			logger.Logger.Error().Err(writeErr).
+				Msgf("output file content printed due to error writing file to %s", outputFilePath)
+			println(outputJSON)
+		}
+	}()
+
+	nodeMorseKeys, nodeMorseKeysErr := readMorseNodesPrivateKeysFile(nodesFile)
+	if nodeMorseKeysErr != nil {
+		return nodeMorseKeysErr
 	}
 
-	// if --all then load all claimable accounts and get claimable accounts back
+	if len(nodeMorseKeys) == 0 {
+		return fmt.Errorf("no morse nodes found in the file. Check the logs and the input file before trying again")
+	}
 
-	// if !skipVerification then load all the claimable accounts and verify them
+	// Prepare the claimMessages slice.
+	claimMessages := make([]cosmossdk.Msg, 0)
 
-	// 2. need to
+	for i := range nodeMorseKeys {
+		morseNode := nodeMorseKeys[i]
+		// this will ensure the morse output address is not empty, which means is a node
+		claimableMorseNode, morseNodeError := loadMorseClaimableAccount(
+			ctx, clientCtx,
+			hex.EncodeToString(morseNode.Address),
+			true,
+		)
+		if morseNodeError != nil {
+			return morseNodeError
+		}
 
-	// iterate over claimable
+		if ownerAddressMap[claimableMorseNode.MorseOutputAddress] == nil {
+			// non-custodial
+			if claimableMorseNode.MorseOutputAddress != claimableMorseNode.MorseSrcAddress {
+				// let's load it
+				// this will ensure morse output address is already claimed on shannon
+				claimableMorseAccount, morseAccountError := loadMorseClaimableAccount(
+					ctx, clientCtx,
+					claimableMorseNode.MorseOutputAddress,
+					false,
+				)
+				if morseAccountError != nil {
+					return morseAccountError
+				}
+				// add this to the map for a later query avoiding more network calls
+				ownerAddressMap[claimableMorseNode.MorseOutputAddress] = claimableMorseAccount
+			} else {
+				// custodial
+				ownerAddressMap[claimableMorseNode.MorseOutputAddress] = claimableMorseNode
+			}
+		}
+
+		// Create a new Shannon account
+		// 1. Generate a secp256k1 private key
+		shannonPrivateKey := secp256k1.GenPrivKey()
+		// 2. Get the Cosmos shannonAddress (bech32 format) from a public key
+		shannonAddress := cosmossdk.AccAddress(shannonPrivateKey.PubKey().Address())
+		// 3. Get Shannon address to register on keyring and build stake configuration
+		shannonOperatorAddress := shannonAddress.String()
+		// 3. Store the relationship for the operator address between morse and shannon accounts
+		morseShannonMapping := MorseShannonMapping{
+			MorseAccount: MorseAccountInfo{
+				Address:    morseNode.Address,
+				PrivateKey: morseNode.PrivateKey,
+			},
+			ShannonAccount: &ShannonAccountInfo{
+				Address:    shannonAddress,
+				PrivateKey: *shannonPrivateKey,
+			},
+		}
+
+		// TODO: add owner dynamically here somehow to the default_rev_share or per service rev_share...
+		//  I dont like the idea of need to set the owner because that restrict to only import nodes from specific output_address
+		//  so I want to add them to complete the requirement of 100%
+		supplierStakeConfig, supplierStakeConfigErr := buildSupplierStakeConfig(
+			// this needs to be claimed as a protocol rule
+			ownerAddressMap[claimableMorseNode.MorseOutputAddress].ShannonDestAddress,
+			shannonOperatorAddress,
+			templateSupplierStakeConfig,
+		)
+
+		if supplierStakeConfigErr != nil {
+			return supplierStakeConfigErr
+		}
+
+		// Construct a MsgClaimMorseSupplier message.
+		msgClaimMorseSupplier, msgErr := types.NewMsgClaimMorseSupplier(
+			supplierStakeConfig.OwnerAddress,
+			supplierStakeConfig.OperatorAddress,
+			claimableMorseNode.MorseSrcAddress,
+			morseNode.PrivateKey, // morse operator private key
+			supplierStakeConfig.Services,
+			shannonSigningAddr,
+		)
+		if msgErr != nil {
+			return msgErr
+		}
+
+		// Import a Shannon private key into a keyring.
+
+		keyringErr := clientCtx.Keyring.ImportPrivKeyHex(
+			shannonOperatorAddress,
+			hex.EncodeToString(morseShannonMapping.ShannonAccount.PrivateKey.Key),
+			"secp256k1",
+		)
+		if keyringErr != nil {
+			logger.Logger.Error().Msg("failed to import private key for shannon account, please check the logs and try again")
+			return keyringErr
+		}
+
+		// For debugging: record migration message attempted.
+		morseShannonMapping.MigrationMsg = msgClaimMorseSupplier
+		// append to the list of messages that will be delivery on the transaction
+		claimMessages = append(claimMessages, msgClaimMorseSupplier)
+		// append the relationship to the migration result
+		migrationBatchResult.Mappings = append(migrationBatchResult.Mappings, &morseShannonMapping)
+	}
+
+	// Construct a tx client.
+	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	if err != nil {
+		return err
+	}
+
+	if simulation {
+		logger.Logger.Info().Msgf(
+			"--simulate=true - tx will be broadcasted, please check %s file for more details.",
+			outputFilePath,
+		)
+		return nil
+	}
+
+	// Sign and broadcast the claim Morse account message.
+	tx, eitherErr := txClient.SignAndBroadcast(ctx, claimMessages...)
+	broadcastErr, broadcastErrCh := eitherErr.SyncOrAsyncError()
+
+	// Handle a successful tx broadcast.
+	if tx != nil {
+		migrationBatchResult.TxHash = tx.TxHash
+		migrationBatchResult.TxCode = tx.Code
+
+		if tx.Code != 0 {
+			txError := fmt.Errorf("%s", tx.RawLog)
+			migrationBatchResult.Error = tx.RawLog
+			return txError
+		}
+	}
+
+	// Handle broadcast errors.
+	if broadcastErr != nil {
+		migrationBatchResult.Error = broadcastErr.Error()
+		return broadcastErr
+	}
+	broadcastErr = <-broadcastErrCh
+	if broadcastErr != nil {
+		migrationBatchResult.Error = broadcastErr.Error()
+		return broadcastErr
+	}
+
+	if migrationBatchResult.Error != "" {
+		logger.Logger.Error().Msgf("error migrating morse suppliers: %s. \n Check the output file for more details: %s", migrationBatchResult.Error, outputFilePath)
+	} else {
+		logger.Logger.Info().
+			Int("tx_messages", len(claimMessages)).
+			Str("tx_hash", migrationBatchResult.TxHash).
+			Msg("morse suppliers migration tx delivered successfully")
+	}
 
 	return nil
+}
+
+// readMorseNodesPrivateKeysFile reads Morse private keys from the nodes-file, validates their claimable status, and his output address is claimed.
+func readMorseNodesPrivateKeysFile(nodesFile string) ([]MorseAccountInfo, error) {
+	// Prepare a new morse private keys slice.
+	var morsePrivateKeys []string
+	var morseAccounts []MorseAccountInfo
+
+	// Read the input file.
+	fileContents, fileContentErr := os.ReadFile(nodesFile)
+	if fileContentErr != nil {
+		return nil, fileContentErr
+	}
+	if err := json.Unmarshal(fileContents, &morsePrivateKeys); err != nil {
+		return nil, err
+	}
+
+	if len(morsePrivateKeys) == 0 {
+		return nil, fmt.Errorf("no morse private keys found in the file. Check the logs and the input file before trying again")
+	}
+
+	for _, morsePrivateKeyStr := range morsePrivateKeys {
+		morseHexKey, hexKeyErr := hex.DecodeString(morsePrivateKeyStr)
+		if hexKeyErr != nil {
+			return nil, hexKeyErr
+		}
+		morsePrivateKey := ed25519.PrivKey(morseHexKey)
+		morseAddress := morsePrivateKey.PubKey().Address()
+
+		// Morse account is in the snapshot and not yet claimed.
+		// Add it to a migration list.
+		morseAccounts = append(morseAccounts, MorseAccountInfo{
+			PrivateKey: morsePrivateKey,
+			Address:    morseAddress,
+		})
+	}
+
+	return morseAccounts, nil
 }
 
 // loadTemplateSupplierStakeConfigYAML loads, parses, and validates the supplier stake
@@ -186,6 +434,10 @@ func loadTemplateSupplierStakeConfigYAML(configYAMLPath string) (*config.YAMLSta
 		return nil, err
 	}
 
+	if len(yamlStakeConfig.Services) == 0 {
+		return nil, fmt.Errorf("no services provided in the template")
+	}
+
 	return &yamlStakeConfig, nil
 }
 
@@ -201,6 +453,7 @@ func loadMorseClaimableAccount(
 	ctx context.Context,
 	clientCtx cosmosclient.Context,
 	address string,
+	shouldBeNode bool,
 ) (*types.MorseClaimableAccount, error) {
 	if _, err := hex.DecodeString(address); err != nil {
 		return nil, fmt.Errorf("expected morse operating address to be hex-encoded, got: %q", address)
@@ -215,8 +468,9 @@ func loadMorseClaimableAccount(
 		return nil, queryErr
 	}
 
-	// exists at snapshot but could or not be claimed yet
-	if !res.MorseClaimableAccount.IsClaimed() {
+	if shouldBeNode && res.MorseClaimableAccount.MorseOutputAddress == "" {
+		return nil, fmt.Errorf("morse account %s if not a node account: %v", address, res.MorseClaimableAccount)
+	} else if res.MorseClaimableAccount.MorseOutputAddress == "" && !res.MorseClaimableAccount.IsClaimed() {
 		// morse account (unstaked) need to be claimed before attempting to claim them as supplier in shannon.
 		return nil, fmt.Errorf("morse account %s if not claimed yet: %v", address, res.MorseClaimableAccount)
 	}
@@ -224,91 +478,46 @@ func loadMorseClaimableAccount(
 	return &res.MorseClaimableAccount, nil
 }
 
-func loadMorseNodes(
-	ctx context.Context,
-	clientCtx cosmosclient.Context,
-) ([]*types.MorseClaimableAccount, error) {
-	addressToLoad := make([]string, 0)
-	claimableNodes := make([]*types.MorseClaimableAccount, 0)
-
-	if all {
-		queryClient := types.NewQueryClient(clientCtx)
-
-		var (
-			pageKey []byte
-		)
-		for {
-			req := &types.QueryAllMorseClaimableAccountRequest{
-				Pagination: &cosmosquery.PageRequest{
-					Key:        pageKey,
-					Limit:      10000, // TODO: maybe allow this to be configurable?
-					CountTotal: false,
-				},
-			}
-			res, err := queryClient.MorseClaimableAccountAll(ctx, req)
-			if err != nil {
-				return nil, err
-			}
-
-			for i := range res.MorseClaimableAccount {
-				// check if the MorseOutputAddress == outputAddress
-				//  and also is already claimed, otherwise if output address match but is not claimed,
-				//  return an error
-				claimableNodes = append(claimableNodes, &res.MorseClaimableAccount[i])
-			}
-
-			// If the next page key is nil or empty, we've retrieved all pages
-			if res.Pagination == nil || len(res.Pagination.NextKey) == 0 {
-				break
-			}
-			pageKey = res.Pagination.NextKey
-		}
-	} else {
-		// load the nodes from the param or file
-		// fail if no one is set, and --all is false
-		if len(nodes) == 0 && nodesFile == "" {
-			return nil, fmt.Errorf("no nodes provided. please provide at least one node address using --nodes or --nodes-file. alternative use --all to claim all nodes associated with the output address")
-		}
-
-		if nodes != nil && len(nodes) > 0 {
-			// deconstruct on it to avoid modifying by any kind the original input
-			addressToLoad = append(addressToLoad, nodes...)
-		}
-
-		if nodesFile != "" {
-			info, err := os.Stat(nodesFile)
-			if err != nil {
-				return nil, err
-			}
-			if info.IsDir() {
-				return nil, fmt.Errorf("nodes file %s is a directory", nodesFile)
-			}
-
-			// read the file as a JSON []string
-			fileContent, err := os.ReadFile(nodesFile)
-			if err != nil {
-				return nil, err
-			}
-
-			var readNodes []string
-			if err = json.Unmarshal(fileContent, &readNodes); err != nil {
-				return nil, err
-			}
-			addressToLoad = append(addressToLoad, readNodes...)
-		}
-
-		// TODO: figure out if there is a way to speed up this process by doing a single query instead of one per address
-		//  * an option will be to query them in batches
-		//  * another option will be to query them in parallel (goroutines or any job library if there is any in the project)
-		for _, address := range addressToLoad {
-			morseClaimableAccount, queryErr := loadMorseClaimableAccount(ctx, clientCtx, address)
-			if queryErr != nil {
-				return nil, queryErr
-			}
-
-			claimableNodes = append(claimableNodes, morseClaimableAccount)
-		}
+func buildSupplierStakeConfig(
+	owner string,
+	operator string,
+	templateSupplierStakeConfig *config.YAMLStakeConfig,
+) (*config.SupplierStakeConfig, error) {
+	if owner == "" {
+		return nil, fmt.Errorf("owner address is required")
+	}
+	if operator == "" {
+		return nil, fmt.Errorf("operator address is required")
 	}
 
-	return claimableNodes, nil
+	yamlStakeConfig := *templateSupplierStakeConfig // clone to avoid mistakes using the template.
+	yamlStakeConfig.OwnerAddress = owner
+	yamlStakeConfig.OperatorAddress = operator
+
+	// Validate the owner and operator addresses.
+	err := yamlStakeConfig.ValidateAndNormalizeAddresses(logger.Logger)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate the default revenue share map.
+	defaultRevShareMap, err := yamlStakeConfig.ValidateAndNormalizeDefaultRevShare()
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate and parse the service configs.
+	supplierServiceConfigs, err := yamlStakeConfig.ValidateAndParseServiceConfigs(defaultRevShareMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config.SupplierStakeConfig{
+		OwnerAddress:    yamlStakeConfig.OwnerAddress,
+		OperatorAddress: yamlStakeConfig.OperatorAddress,
+		Services:        supplierServiceConfigs,
+		// StakeAmount: (intentionally omitted),
+		// The stake amount is determined by the sum of any existing supplier stake
+		// and the supplier stake amount of the associated MorseClaimableAccount.
+	}, nil
 }
