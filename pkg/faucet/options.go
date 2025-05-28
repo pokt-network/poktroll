@@ -25,7 +25,7 @@ type Config struct {
 
 	// SupportedSendCoins is a list of cosmos-sdk coin strings (i.e. amount + denom)
 	// which the faucet server will send when a user requests tokens of that denomination.
-	SupportedSendCoins []string `mapstructure:"supported_send_coinss"`
+	SupportedSendCoins []string `mapstructure:"supported_send_coins"`
 
 	// CreateAccountsOnly determines whether the faucet will service all requests (when false),
 	// or only those for recipient addresses which do not already exist onchain (when true).

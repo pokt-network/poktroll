@@ -93,7 +93,7 @@ func preRunServe(cmd *cobra.Command, _ []string) (err error) {
 func runServe(cmd *cobra.Command, _ []string) error {
 	logger.Logger.Info().
 		Str("signing_key_name", faucetCfg.SigningKeyName).
-		Str("send_coins", strings.Join(faucetCfg.SupportedSendCoins, ",")).
+		Str("supported_send_coins", strings.Join(faucetCfg.SupportedSendCoins, ",")).
 		Msgf("Listening on %s", faucetCfg.ListenAddress)
 
 	cmdContext, cmdCancel := context.WithCancel(cmd.Context())
