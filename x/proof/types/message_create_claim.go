@@ -2,7 +2,9 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/smt"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -39,9 +41,28 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 	}
 
 	// Validate the root hash
-	// TODO_IMPROVE: Only checking to make sure a non-nil hash was provided for now, but we can validate the length as well.
-	if len(msg.RootHash) == 0 {
-		return ErrProofInvalidClaimRootHash.Wrapf("%v", msg.RootHash)
+	if len(msg.RootHash) != protocol.TrieRootSize {
+		return ErrProofInvalidClaimRootHash.Wrapf("expecting root hash to be %d bytes, got %d bytes", protocol.TrieRootSumSize, len(msg.RootHash))
+	}
+
+	merkleRoot := smt.MerkleSumRoot(msg.RootHash)
+
+	count, err := merkleRoot.Count()
+	if err != nil {
+		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root %v count due to: %v", msg.RootHash, err)
+	}
+
+	if count == 0 {
+		return ErrProofInvalidClaimRootHash.Wrapf("zero count in Merkle root %v", msg.RootHash)
+	}
+
+	sum, err := merkleRoot.Sum()
+	if err != nil {
+		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root %v sum due to: %v", msg.RootHash, err)
+	}
+
+	if sum == 0 {
+		return ErrProofInvalidClaimRootHash.Wrapf("zero sum in Merkle root %v", msg.RootHash)
 	}
 
 	return nil

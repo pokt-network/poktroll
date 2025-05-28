@@ -73,11 +73,35 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
+		// Ensure that the number of relays claimed is greater than 0.
+		if numClaimRelays == 0 {
+			logger.Error(fmt.Sprintf(
+				"claim for session ID %q has 0 relays, skipping settlement",
+				sessionId,
+			))
+
+			// TODO_CONSIDERATION: Treat this claim as expired, since it has no relays.
+			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
+			continue
+		}
+
 		// DEV_NOTE: We are assuming that (numClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay)
 		// because this code path is only reached if that has already been validated.
 		numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 		if err != nil {
 			return settledResults, expiredResults, err
+		}
+
+		// Ensure that the number of compute units claimed is greater than 0.
+		if numClaimComputeUnits == 0 {
+			logger.Error(fmt.Sprintf(
+				"claim for session ID %q has 0 compute units, skipping settlement",
+				sessionId,
+			))
+
+			// TODO_CONSIDERATION: Treat this claim as expired, since it has no compute units.
+			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
+			continue
 		}
 
 		// Get the relay mining difficulty for the service that this claim is for.

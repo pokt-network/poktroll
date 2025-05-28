@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"math/big"
 	"testing"
@@ -543,6 +544,54 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
 	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+}
+
+func (s *TestSuite) TestSettlePendingClaims_ClaimIgnored_WhenHasZeroSum() {
+	// Retrieve default values
+	t := s.T()
+	ctx := s.ctx
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	// Use a single claim for this test
+	claim := s.claims[0]
+
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
+
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(t, err)
+
+	// Set the sum bytes of the claim's root hash to 0 to indicate a zero-sum claim.
+	binary.BigEndian.PutUint64(claim.RootHash[protocol.TrieHasherSize:], 0)
+
+	// Set the proof parameters such that s.claim DOES NOT require a proof because:
+	// - proof_request_probability is 0% AND
+	// - proof_requirement_threshold exceeds s.claim's compute units
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
+	require.NoError(t, err)
+
+	// Upsert the claim only (not the proof)
+	s.keepers.UpsertClaim(ctx, claim)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	s.keepers.ValidateSubmittedProofs(sdkCtx)
+
+	// Settle pending claims after proof window closes
+	// Expectation: All (1) claims should be ignored.
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
+	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+
+	// Check that no claims were settled or expired.
+	require.Equal(t, uint64(0), settledResults.GetNumClaims()) // 0 claims settled
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims()) // 0 claims expired
+
+	// Validate that one claim still remains.
+	claims := s.keepers.GetAllClaims(ctx)
+	require.Equal(t, 0, len(claims))
 }
 
 func (s *TestSuite) TestSettlePendingClaims_DoesNotSettle_BeforeProofWindowCloses() {
