@@ -11,7 +11,6 @@ import (
 
 var (
 	testSupportedSendCoins = []string{testSendUPOKT, testSendMACT}
-	testFeeCoins           = []string{testFeeUPOKT}
 )
 
 func TestNewConfig_SupportedCoins(t *testing.T) {
@@ -24,17 +23,6 @@ func TestNewConfig_SupportedCoins(t *testing.T) {
 	require.Equal(t, testSendUPOKT, supportedSendCoins[1].String())
 	require.Equal(t, testSendMACT, supportedSendCoins[0].String())
 }
-
-//func TestNewConfig_FeeCoins(t *testing.T) {
-//	config := &faucet.Config{
-//		FeeCoins: []string{testFeeUPOKT, "123xyz"},
-//	}
-//
-//	feeCoins := config.GetFeeCoins()
-//	require.Equal(t, 2, len(feeCoins))
-//	require.Equal(t, testFeeUPOKT, feeCoins[0].String())
-//	require.Equal(t, "123xyz", feeCoins[1].String())
-//}
 
 func TestNewConfig_LoadSigningKey(t *testing.T) {
 	config := &faucet.Config{
@@ -52,7 +40,6 @@ func TestNewConfig(t *testing.T) {
 		testSigningKeyName,
 		testListenAddress,
 		[]string{"1mact", "100000000000upokt"},
-		//[]string{"1upokt"},
 		false,
 	)
 	require.NoError(t, err)
@@ -76,7 +63,6 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 				SigningKeyName:     "",
 				ListenAddress:      testListenAddress,
 				SupportedSendCoins: testSupportedSendCoins,
-				//FeeCoins:           testFeeCoins,
 				CreateAccountsOnly: false,
 			},
 			expectedErr: fmt.Errorf("signing key name MUST be set"),
@@ -87,7 +73,6 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      "",
 				SupportedSendCoins: testSupportedSendCoins,
-				//FeeCoins:           testFeeCoins,
 				CreateAccountsOnly: false,
 			},
 			expectedErr: fmt.Errorf("listen address MUST be in the form of host:port (e.g. 127.0.0.1:42069)"),
@@ -98,7 +83,6 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      "scheme://host:42069",
 				SupportedSendCoins: testSupportedSendCoins,
-				//FeeCoins:           testFeeCoins,
 				CreateAccountsOnly: false,
 			},
 			expectedErr: fmt.Errorf("listen address MUST be in the form of host:port (e.g. 127.0.0.1:42069)"),
@@ -109,7 +93,6 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      testListenAddress,
 				SupportedSendCoins: []string{"123"},
-				//FeeCoins:           testFeeCoins,
 				CreateAccountsOnly: false,
 			},
 			expectedErr: fmt.Errorf("unable to parse send coins"),
@@ -120,7 +103,6 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      testListenAddress,
 				SupportedSendCoins: []string{"xyz"},
-				//FeeCoins:           testFeeCoins,
 				CreateAccountsOnly: false,
 			},
 			expectedErr: fmt.Errorf("unable to parse send coins"),
@@ -131,7 +113,6 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      testListenAddress,
 				SupportedSendCoins: testSupportedSendCoins,
-				//FeeCoins:           []string{"123"},
 				CreateAccountsOnly: false,
 			},
 			expectedErr: fmt.Errorf("unable to parse fee coins"),
@@ -142,7 +123,6 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      testListenAddress,
 				SupportedSendCoins: testSupportedSendCoins,
-				//FeeCoins:           []string{"xyz"},
 				CreateAccountsOnly: false,
 			},
 			expectedErr: fmt.Errorf("unable to parse fee coins"),
