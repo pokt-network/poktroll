@@ -53,7 +53,7 @@ func WithGasAdjustment(gasAdjustment float64) client.TxClientOption {
 	}
 }
 
-// WithUnordered sets the unordered flag to true when constructing transactions.
+// WithUnordered configures the client to send transactions unordered.
 func WithUnordered() client.TxClientOption {
 	return func(client client.TxClient) {
 		client.(*txClient).unordered = true

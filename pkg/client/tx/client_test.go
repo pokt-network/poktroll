@@ -715,7 +715,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 					Return(uint64(100000), nil).AnyTimes()
 
 				// Other required methods to pass validation
-				txCtxMock.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				txCtxMock.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil).AnyTimes()
 				txCtxMock.EXPECT().EncodeTx(gomock.Any()).
 					Return([]byte("test-tx"), nil).AnyTimes()
