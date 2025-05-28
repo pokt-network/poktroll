@@ -31,8 +31,7 @@ This will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount 
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
 		// Example: TODO_MAINNET_CRITICAL(@bryanchriswhite): Add a few examples,
-		RunE:    runClaimAccount,
-		PreRunE: logger.PreRunESetup,
+		RunE: runClaimAccount,
 	}
 
 	// Add a string flag for providing a passphrase to decrypt the Morse keyfile.

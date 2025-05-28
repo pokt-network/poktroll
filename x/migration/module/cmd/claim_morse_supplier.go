@@ -37,8 +37,7 @@ What happens:
 
 More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 
-		RunE:    runClaimSupplier,
-		PreRunE: logger.PreRunESetup,
+		RunE: runClaimSupplier,
 	}
 
 	// Add a string flag for providing a passphrase to decrypt the Morse keyfile.
