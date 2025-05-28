@@ -45,6 +45,7 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 		return ErrProofInvalidClaimRootHash.Wrapf("expecting root hash to be %d bytes, got %d bytes", protocol.TrieRootSumSize, len(msg.RootHash))
 	}
 
+	// Get the Merkle root from the root hash to validate the claim's relays and compute units.
 	merkleRoot := smt.MerkleSumRoot(msg.RootHash)
 
 	count, err := merkleRoot.Count()
@@ -53,7 +54,7 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 	}
 
 	if count == 0 {
-		return ErrProofInvalidClaimRootHash.Wrapf("zero count in Merkle root %v", msg.RootHash)
+		return ErrProofInvalidClaimRootHash.Wrapf("has zero count in Merkle root %v", msg.RootHash)
 	}
 
 	sum, err := merkleRoot.Sum()
@@ -62,7 +63,7 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 	}
 
 	if sum == 0 {
-		return ErrProofInvalidClaimRootHash.Wrapf("zero sum in Merkle root %v", msg.RootHash)
+		return ErrProofInvalidClaimRootHash.Wrapf("has zero sum in Merkle root %v", msg.RootHash)
 	}
 
 	return nil
