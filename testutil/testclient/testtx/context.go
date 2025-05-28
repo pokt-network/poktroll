@@ -225,7 +225,7 @@ func NewBaseTxContext(
 	txCtxMock.EXPECT().SignTx(
 		gomock.Eq(signingKeyName),
 		gomock.AssignableToTypeOf(txCtx.NewTxBuilder()),
-		gomock.Eq(false), gomock.Eq(false),
+		gomock.Eq(false), gomock.Eq(false), gomock.Eq(false),
 	).DoAndReturn(txCtx.SignTx).AnyTimes()
 	txCtxMock.EXPECT().EncodeTx(gomock.Any()).
 		DoAndReturn(
@@ -236,6 +236,8 @@ func NewBaseTxContext(
 				return expectedTx.Bytes(), nil
 			},
 		).AnyTimes()
+	txCtxMock.EXPECT().SetUnordered(gomock.Any()).AnyTimes()
+	txCtxMock.EXPECT().GetClientCtx().AnyTimes()
 
 	return txCtxMock
 }
@@ -274,6 +276,8 @@ func NewAnyTimesTxTxContext(
 	require.NoError(t, err)
 	txCtxMock := mockclient.NewMockTxContext(ctrl)
 	txCtxMock.EXPECT().GetKeyring().Return(keyring).AnyTimes()
+	txCtxMock.EXPECT().SetUnordered(gomock.Any()).AnyTimes()
+	txCtxMock.EXPECT().GetClientCtx().AnyTimes()
 
 	return txCtxMock, txCtx
 }
@@ -305,6 +309,9 @@ func NewMockTxBuilder(ctrl *gomock.Controller) *mockclient.MockTxBuilder {
 
 	txBuilder.EXPECT().SetTimeoutHeight(gomock.Any()).AnyTimes()
 	txBuilder.EXPECT().SetGasLimit(gomock.Any()).AnyTimes()
+
+	txBuilder.EXPECT().SetUnordered(gomock.Any()).AnyTimes()
+	txBuilder.EXPECT().SetTimeoutTimestamp(gomock.Any()).AnyTimes()
 
 	return txBuilder
 }
