@@ -191,7 +191,7 @@ func NewTxClient(
 	}
 
 	// Set the unordered flag on the client context.
-	txnClient.txCtx.SetUnordered(txnClient.unordered)
+	txnClient.txCtx = txnClient.txCtx.WithUnordered(txnClient.unordered)
 
 	if err = txnClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err

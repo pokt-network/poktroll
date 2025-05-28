@@ -150,8 +150,8 @@ type TxContext interface {
 		msgs ...cosmostypes.Msg,
 	) (uint64, error)
 
-	// SetUnordered configures the client to send transactions unordered.
-	SetUnordered(bool)
+	// WithUnordered returns a copy of the transaction context with the unordered flag set.
+	WithUnordered(bool) TxContext
 }
 
 // Block is an interface which abstracts the details of a block to its minimal
