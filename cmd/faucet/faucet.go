@@ -51,7 +51,7 @@ func FaucetCmd() *cobra.Command {
 	return faucetCmd
 }
 
-// Setup viper reads viper config values from the following sources in order of precendence (highest to lowest):
+// Setup viper reads viper config values from the following sources in order of precedence (highest to lowest):
 // 1. Explicit viper.Set() calls
 // 2. Bound flags (not currently in use)
 // 3. Environment variables
