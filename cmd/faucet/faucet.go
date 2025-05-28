@@ -1,6 +1,8 @@
 package faucet
 
 import (
+	"errors"
+
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -92,7 +94,16 @@ func setViperConfig() error {
 	}
 
 	// Find and read the config file
-	return viper.ReadInConfig()
+	err := viper.ReadInConfig()
+	switch {
+	// It's okay if the config file doesn't exist.
+	// Configuration MAY be done via environment variables instead.
+	// We will rely on the faucet.Config validation later.
+	case errors.As(err, &viper.ConfigFileNotFoundError{}):
+		return nil
+	default:
+		return err
+	}
 }
 
 // setViperDefaults sets default values for the following required viper config values:
