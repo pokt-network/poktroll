@@ -31,8 +31,8 @@ func FundCmd() *cobra.Command {
 
 // TODO_UP_NEXT(@bryanchriswhite): update docs URL once known.
 For more information, see: https://dev.poktroll.com/operate/faucet`,
-		Example: `pocketd faucet fund pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 upokt
-pocketd faucet fund pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 mact --base-url=http://localhost:8080`,
+		Example: `pocketd faucet fund upokt pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+pocketd faucet fund mact pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 --base-url=http://localhost:8080`,
 		RunE: runFund,
 	}
 
