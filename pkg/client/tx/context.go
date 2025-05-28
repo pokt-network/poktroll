@@ -196,9 +196,9 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 	return uint64(txf.GasAdjustment() * float64(simRes.GasInfo.GasUsed)), nil
 }
 
-// SetUnordered sets the unordered flag on the transaction factory.
-func (txCtx cosmosTxContext) SetUnordered(unordered bool) {
+// WithUnordered returns a copy of the transaction context with the unordered flag set.
+func (txCtx cosmosTxContext) WithUnordered(unordered bool) client.TxContext {
 	txCtx.unordered = unordered
 	txCtx.txFactory = txCtx.txFactory.WithUnordered(unordered)
-
+	return txCtx
 }

@@ -236,7 +236,7 @@ func NewBaseTxContext(
 				return expectedTx.Bytes(), nil
 			},
 		).AnyTimes()
-	txCtxMock.EXPECT().SetUnordered(gomock.Any()).AnyTimes()
+	txCtxMock.EXPECT().WithUnordered(gomock.Any()).Return(txCtxMock).AnyTimes()
 	txCtxMock.EXPECT().GetClientCtx().AnyTimes()
 
 	return txCtxMock
@@ -276,7 +276,7 @@ func NewAnyTimesTxTxContext(
 	require.NoError(t, err)
 	txCtxMock := mockclient.NewMockTxContext(ctrl)
 	txCtxMock.EXPECT().GetKeyring().Return(keyring).AnyTimes()
-	txCtxMock.EXPECT().SetUnordered(gomock.Any()).AnyTimes()
+	txCtxMock.EXPECT().WithUnordered(gomock.Any()).Return(txCtxMock).AnyTimes()
 	txCtxMock.EXPECT().GetClientCtx().AnyTimes()
 
 	return txCtxMock, txCtx
