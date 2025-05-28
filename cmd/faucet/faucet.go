@@ -46,10 +46,6 @@ func FaucetCmd() *cobra.Command {
 	faucetCmd.PersistentFlags().StringVar(&logger.LogLevel, flags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
 	faucetCmd.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
-	if err := setupViper(); err != nil {
-		panic(err)
-	}
-
 	return faucetCmd
 }
 

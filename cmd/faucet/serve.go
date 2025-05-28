@@ -55,6 +55,10 @@ pocketd faucet serve`,
 // - constructs a tx client for use in the faucet
 // - constructs a bank query client for use in the faucet
 func preRunServe(cmd *cobra.Command, _ []string) (err error) {
+	if err = setupViper(); err != nil {
+		panic(err)
+	}
+
 	// Conventionally derive a cosmos-sdk client context from the cobra command
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
