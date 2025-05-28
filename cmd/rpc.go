@@ -25,13 +25,13 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 	case "":
 	// No network flag was provided, so we don't need to set any flags.
 	case flags.LocalNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.LocalNetChainId, pocket.LocalNetRPCURL, pocket.LocalNetGRPCAddr)
+		return setNetworkRelatedFlags(cmd, pocket.LocalNetChainId, pocket.LocalNetRPCURL, pocket.LocalNetGRPCAddr, pocket.LocalNetFaucetBaseURL)
 	case flags.AlphaNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.AlphaTestNetChainId, pocket.AlphaTestNetRPCURL, pocket.AlphaNetGRPCAddr)
+		return setNetworkRelatedFlags(cmd, pocket.AlphaTestNetChainId, pocket.AlphaTestNetRPCURL, pocket.AlphaNetGRPCAddr, pocket.AlphaTestNetFaucetBaseURL)
 	case flags.BetaNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.BetaTestNetChainId, pocket.BetaTestNetRPCURL, pocket.BetaNetGRPCAddr)
+		return setNetworkRelatedFlags(cmd, pocket.BetaTestNetChainId, pocket.BetaTestNetRPCURL, pocket.BetaNetGRPCAddr, pocket.BetaTestNetFaucetBaseURL)
 	case flags.MainNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.MainNetChainId, pocket.MainNetRPCURL, pocket.MainNetGRPCAddr)
+		return setNetworkRelatedFlags(cmd, pocket.MainNetChainId, pocket.MainNetRPCURL, pocket.MainNetGRPCAddr, pocket.MainNetFaucetBaseURL)
 	default:
 		return fmt.Errorf("unknown --network specified %q", networkStr)
 	}
@@ -44,9 +44,10 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 // * --chain-id
 // * --node
 // * --grpc-addr
+// * --base-url
 //
 // DEV_NOTE: --grpc-insecure is also set, but ONLY for LocalNet.
-func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr string) error {
+func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr, faucetBaseUrl string) error {
 	if !cmd.Flags().Changed(cosmosflags.FlagChainID) {
 		if err := cmd.Flags().Set(cosmosflags.FlagChainID, chainId); err != nil {
 			return err
@@ -63,6 +64,15 @@ func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr strin
 	if grpcFlag := cmd.Flags().Lookup(cosmosflags.FlagGRPC); grpcFlag != nil {
 		if !cmd.Flags().Changed(cosmosflags.FlagGRPC) {
 			if err := cmd.Flags().Set(cosmosflags.FlagGRPC, grpcAddr); err != nil {
+				return err
+			}
+		}
+	}
+
+	// ONLY set --faucet-base-url flag if it is registered on cmd.
+	if grpcFlag := cmd.Flags().Lookup(flags.FlagFaucetBaseURL); grpcFlag != nil {
+		if !cmd.Flags().Changed(flags.FlagFaucetBaseURL) {
+			if err := cmd.Flags().Set(flags.FlagFaucetBaseURL, faucetBaseUrl); err != nil {
 				return err
 			}
 		}

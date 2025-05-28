@@ -32,7 +32,7 @@ func FundCmd() *cobra.Command {
 // TODO_IN_THIS_COMMIT: update docs URL once known.
 For more information, see: https://dev.poktroll.com/operate/faucet`,
 		Example: `pocketd faucet fund pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 upokt
-pocketd faucet fund pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 mact`,
+pocketd faucet fund pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 mact --base-url=http://localhost:8080`,
 		RunE: runFund,
 	}
 
