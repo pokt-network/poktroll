@@ -91,6 +91,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 						// {ProtoField: "computeUnitsPerRelay"},
 					},
 				},
+				{
+					RpcMethod:      "DeleteService",
+					Use:            "delete-service [owner-address] [service-id] [last-session-end-height]",
+					Short:          "Send a delete_service tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "owner_address"}, {ProtoField: "service_id"}, {ProtoField: "last_session_end_height"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},

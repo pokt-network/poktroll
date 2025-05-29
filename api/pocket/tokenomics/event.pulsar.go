@@ -2,17 +2,18 @@
 package tokenomics
 
 import (
-	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
-	proof "github.com/pokt-network/poktroll/api/pocket/proof"
 	fmt "fmt"
-	runtime "github.com/cosmos/cosmos-proto/runtime"
-	_ "github.com/cosmos/gogoproto/gogoproto"
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoiface "google.golang.org/protobuf/runtime/protoiface"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
 	reflect "reflect"
 	sync "sync"
+
+	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
+	runtime "github.com/cosmos/cosmos-proto/runtime"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proof "github.com/pokt-network/poktroll/api/pocket/proof"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoiface "google.golang.org/protobuf/runtime/protoiface"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 var (

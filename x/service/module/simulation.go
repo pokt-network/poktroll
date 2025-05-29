@@ -65,6 +65,21 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		weightMsgAddService,
 		servicesimulation.SimulateMsgAddService(am.accountKeeper, am.bankKeeper, am.keeper),
 	))
+	const (
+		opWeightMsgDeleteService          = "op_weight_msg_service"
+		defaultWeightMsgDeleteService int = 100
+	)
+
+	var weightMsgDeleteService int
+	simState.AppParams.GetOrGenerate(opWeightMsgDeleteService, &weightMsgDeleteService, nil,
+		func(_ *rand.Rand) {
+			weightMsgDeleteService = defaultWeightMsgDeleteService
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgDeleteService,
+		servicesimulation.SimulateMsgDeleteService(am.authKeeper, am.bankKeeper, am.keeper, simState.TxConfig),
+	))
 
 	// this line is used by starport scaffolding # simapp/module/operation
 
