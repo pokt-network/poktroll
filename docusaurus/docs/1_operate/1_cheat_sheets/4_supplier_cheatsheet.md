@@ -40,52 +40,84 @@ flowchart TB
     %% Set default styling for all nodes
     classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px,color:black;
 
-    %% Define custom classes
-    classDef userClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:black;
-    classDef blockchainClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:black;
-    classDef relayMinerClass fill:#fff8e1,stroke:#ff8f00,stroke-width:2px,color:black;
-    classDef databaseClass fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:black;
-    classDef supplierRecordsClass fill:#bbdefb,stroke:#1976d2,stroke-width:2px,color:black;
-
     %% Position User at top
     User([User]):::userClass
 
-    %% Position RelayMiner on left and Blockchain on right
-    subgraph Operator["Operator (Offchain)"]
+    %% Gateway layer - GREEN background
+    subgraph Gateway["🌿 Grove Gateway (Offchain)"]
         direction TB
-        CP["RelayMiner<br>Co-processor"]
-        subgraph BS["Backend Service"]
-            SRV["Server"]
-            SRC["Open Service"]:::databaseClass
-            DB2[(Open Database)]:::databaseClass
+        SSDK1["Shannon SDK"]:::gatewayClass
+        PSDK["PATH SDK"]:::gatewayClass
+        PATHC{{"PATH Config File"}}:::configClass
+        GATEWAYKEY[["Gateway Private Key"]]:::keyClass
+        APPKEY1[["App Private Key(s)"]]:::keyClass
+    end
+
+    %% pocketd CLI layer - ORANGE background
+    %% subgraph pocketd["pocketd CLI (Offchain)"]
+    %%     direction TB
+    %%     SSDK2["Shannon SDK"]:::pocketdClass
+    %%     KEYSTORE[("Keystore Database")]:::dbClass
+    %% end
+
+    %% Blockchain layer - BLUE background
+    subgraph Blockchain["🌀 Pocket Network (Onchain)"]
+        direction LR
+        subgraph Records["Network State"]
+            APPDB[("Application Registry")]:::dbClass
+            GWDB[("Gateway Registry")]:::dbClass
+            SUPDB[("Supplier Registry")]:::dbClass
+
+            APPCONFIG1{{"App Config 1"}}:::configClass
+            APPCONFIGN{{"App Config N"}}:::configClass
+            GWCONFIG{{"Gateway Config"}}:::configClass
         end
     end
 
-
-    %% User flow
-    User -->|"Signed Relay<br>**Request**"| CP
-    CP -->|"Data/Service<br>**Request**"| SRV
-    SRV -.- DB2
-    SRV -.- SRC
-    SRV -->|"Data/Service<br>**Response**"| CP
-    CP -->|"Signed Relay<br>**Response**"| User
-
-    %% Connection between RelayMiner and Blockchain
-    CP -..- SC
-    DB --- SC
-    DB --- SCN
-
-
-    subgraph Blockchain["Pocket Network (Onchain)"]
+    %% Supplier layer
+    subgraph Suppliers["Suppliers"]
         direction TB
-        DB[(All Supplier Records)]:::supplierRecordsClass
-        SCN[["Supplier Config N"]]
-        SC[["Supplier Config 1"]]
+        S1["Supplier Node 1"]:::supplierClass
+        SN["Supplier Node N"]:::supplierClass
+        SUPKEY1[["Supplier Private Key"]]:::keyClass
+        SUPKEYN[["Supplier Private Key"]]:::keyClass
     end
 
+    %% Connections
+    %% User <-->|"RPC Request/Response"| pocketd
+    User <-->|"RPC Request/Response"| Gateway
+
+    Gateway -.->|"References"| GWCONFIG
+    Gateway -.->|"References"| APPCONFIGN
+    %% pocketd -.->|"References"| APPCONFIG1
+
+    %% pocketd <-->|"Signed Relay Request/Response"| Suppliers
+    Suppliers <-->|"Signed Relay Request/Response"| Gateway
+
+    %% Connect configs to databases
+    APPCONFIG1 --- APPDB
+    APPCONFIGN --- APPDB
+    GWCONFIG --- GWDB
+
+    %% Connect keys to suppliers
+    S1 --- SUPKEY1
+    SN --- SUPKEYN
+
+    %% Define custom classes with specified colors
+    classDef userClass fill:#f0f0f0,stroke:#333,stroke-width:2px,color:black;
+    classDef gatewayClass fill:#e8f5e8,stroke:#4caf50,stroke-width:2px,color:black;
+    classDef pocketdClass fill:#fff3e0,stroke:#ff8f00,stroke-width:2px,color:black;
+    classDef blockchainClass fill:#e3f2fd,stroke:#2196f3,stroke-width:2px,color:black;
+    classDef supplierClass fill:#fff3e0,stroke:#ff9800,stroke-width:2px,color:black;
+    classDef keyClass fill:#ffebee,stroke:#d32f2f,stroke-width:1px,color:black;
+    classDef configClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px,color:black;
+    classDef dbClass fill:#e0f2f1,stroke:#00695c,stroke-width:1px,color:black;
+
     %% Apply classes to subgraphs
-    class Blockchain blockchainClass;
-    class Operator relayMinerClass;
+    class Blockchain blockchainClass
+    class Gateway gatewayClass
+    class Suppliers supplierClass
+
 ```
 
 ## 20 Minute Video Walkthrough
@@ -137,8 +169,10 @@ cat > ~/.pocketrc << EOF
 export SUPPLIER_ADDR=$(pocketd keys show supplier -a)
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --yes"
 export BETA_NODE_FLAGS="--chain-id=pocket-beta --node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export BETA_NETWORK="pocket-beta"
 export BETA_RPC_URL="https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export BETA_GRPC_URL="https://shannon-testnet-grove-grpc.beta.poktroll.com:443"
+export BETA_GRPC_URL_RAW="shannon-testnet-grove-grpc.beta.poktroll.com:443"
 EOF
 ```
 
@@ -313,19 +347,22 @@ pocketd \
   relayminer start \
   --grpc-insecure=false \
   --log_level=debug \
-  --config=/tmp/relayminer_config.yaml
+  --config=/tmp/relayminer_config.yaml \
+  --chain-id=$BETA_NETWORK
 ```
 
 ### 3. Test the RelayMiner
 
 After following the instructions in the [Gateway cheatsheet](5_gateway_cheatsheet.md), you can use your `Application` to send a relay request to your supplier assuming it is staked for the same service:
 
+The following is an example of a relay request to an Anvil (i.e. EVM) node:
+
 ```bash
 pocketd relayminer relay \
-  --app=pokt12fj3xlqg6d20fl4ynuejfqd3fkqmq25rs3yf7g \
-  --supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
+  --app=$APP_ADDR \
+  --supplier=$SUPPLIER_ADDR \
   --node=$BETA_RPC_URL \
-  --grpc-addr=$BETA_GRPC_URL \
+  --grpc-addr=$BETA_GRPC_URL_RAW \
   --grpc-insecure=false \
   --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 ```
@@ -333,26 +370,35 @@ pocketd relayminer relay \
 <details>
 <summary>*tl;dr staking an application for `anvil`*</summary>
 
+**Create an application:**
+
 ```bash
-# Create an application
 pocketd keys add application
+```
 
+Fund it (faucet or other).
 
-# Fund it (faucet or other)
+**Prepare the stake config:**
 
-# Prepare the stake config
+```bash
 cat <<🚀 > /tmp/stake_app_config.yaml
 stake_amount: 100000000upokt
 service_ids:
   - "anvil"
 🚀
+```
 
-# Stake it
+**Stake it:**
+
+```bash
 pocketd tx application stake-application \
   --config=/tmp/stake_app_config.yaml \
   --from=$(pocketd keys show application -a) $TX_PARAM_FLAGS $BETA_NODE_FLAGS
+```
 
-# Check status
+**Check the staking status:**
+
+```bash
 pocketd query application show-application $(pocketd keys show application -a) $BETA_NODE_FLAGS
 ```
 

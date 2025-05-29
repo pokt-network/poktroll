@@ -30,7 +30,84 @@ Stake an onchain `Application`, delegate to an onchain `Gateway`, and run an off
 
 ## High Level Architecture Diagram
 
-TODO_IN_THIS_PR
+```mermaid
+flowchart TB
+    %% Set default styling for all nodes
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px,color:black;
+
+    %% Define custom classes with specified colors
+    classDef userClass fill:#f0f0f0,stroke:#333,stroke-width:2px,color:black;
+    classDef gatewayClass fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:black;
+    classDef pocketdClass fill:#fff3e0,stroke:#ff8f00,stroke-width:2px,color:black;
+    classDef blockchainClass fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:black;
+    classDef supplierClass fill:#f5f5f5,stroke:#616161,stroke-width:2px,color:black;
+    classDef keyClass fill:#ffebee,stroke:#d32f2f,stroke-width:1px,color:black;
+    classDef configClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px,color:black;
+    classDef dbClass fill:#e0f2f1,stroke:#00695c,stroke-width:1px,color:black;
+
+    %% Position User at top
+    User([User]):::userClass
+
+    %% Gateway layer - GREEN background
+    subgraph Gateway["🌿 Grove Gateway (Offchain)"]
+        direction TB
+        SSDK1["Shannon SDK"]:::gatewayClass
+        PSDK["PATH SDK"]:::gatewayClass
+        PATHC{{"PATH Config File"}}:::configClass
+        GATEWAYKEY[["Gateway Private Key"]]:::keyClass
+        APPKEY1[["App Private Key(s)"]]:::keyClass
+    end
+
+    %% pocketd CLI layer - ORANGE background
+    %% subgraph pocketd["pocketd CLI (Offchain)"]
+    %%     direction TB
+    %%     SSDK2["Shannon SDK"]:::pocketdClass
+    %%     KEYSTORE[("Keystore Database")]:::dbClass
+    %% end
+
+    %% Blockchain layer - BLUE background
+    subgraph Blockchain["🌀 Pocket Network (Onchain)"]
+        direction LR
+        subgraph Records["Network State"]
+            APPDB[("Application Registry")]:::dbClass
+            GWDB[("Gateway Registry")]:::dbClass
+            SUPDB[("Supplier Registry")]:::dbClass
+
+            APPCONFIG1{{"App Config 1"}}:::configClass
+            APPCONFIGN{{"App Config N"}}:::configClass
+            GWCONFIG{{"Gateway Config"}}:::configClass
+        end
+    end
+
+    %% Supplier layer
+    subgraph Suppliers["Suppliers"]
+        direction TB
+        S1["Supplier Node 1"]:::supplierClass
+        SN["Supplier Node N"]:::supplierClass
+        SUPKEY1[["Supplier Private Key"]]:::keyClass
+        SUPKEYN[["Supplier Private Key"]]:::keyClass
+    end
+
+    %% Connections
+    %% User <-->|"RPC Request/Response"| pocketd
+    User <-->|"RPC Request/Response"| Gateway
+
+    Gateway -.->|"References"| GWCONFIG
+    Gateway -.->|"References"| APPCONFIGN
+    %% pocketd -.->|"References"| APPCONFIG1
+
+    %% pocketd <-->|"Signed Relay Request/Response"| Suppliers
+    Suppliers <-->|"Signed Relay Request/Response"| Gateway
+
+    %% Connect configs to databases
+    APPCONFIG1 --- APPDB
+    APPCONFIGN --- APPDB
+    GWCONFIG --- GWDB
+
+    %% Connect keys to suppliers
+    S1 --- SUPKEY1
+    SN --- SUPKEYN
+```
 
 ## 30 Minute Video Walkthrough
 
