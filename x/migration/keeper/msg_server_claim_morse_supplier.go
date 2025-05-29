@@ -80,6 +80,64 @@ func (k msgServer) ClaimMorseSupplier(
 		)
 	}
 
+	if msg.SignerIsOutputAddress {
+		// checks:
+		// if the morse sign is done by the output address, then we want to protect the operator, which requires
+		// the operator to first claim the node account using MsgClaimMorseAccount
+		if morseClaimableAccount.IsClaimed() {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"Operator Morse account %q need to be claimed first",
+					morseClaimableAccount.GetMorseSrcAddress(),
+				).Error(),
+			)
+		}
+		// if it is claimed,
+		// then we validate the msg.ShannonOperatorAddress is the expected one base on the MsgClaimMorseAccount
+		if msg.ShannonOperatorAddress != morseClaimableAccount.ShannonDestAddress {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"Operator Morse account %q is bound to Shannon address %q, but the msg contains a different one: %q",
+					morseClaimableAccount.GetMorseSrcAddress(),
+					morseClaimableAccount.ShannonDestAddress,
+					msg.ShannonOperatorAddress,
+				).Error(),
+			)
+		}
+	} else {
+		// this means who is running the morse signature is the operator, using the morse private key of the node.
+		// then we need to check the morse output address is properly claimed and shannon owner address match with
+		// the one on the message
+		morseOutputAddressClaimableAccount, outputAddressErr := k.checkMorseClaimableSupplierAccount(ctx, morseClaimableAccount.GetMorseOutputAddress())
+		if outputAddressErr != nil {
+			return nil, outputAddressErr
+		}
+
+		if !morseOutputAddressClaimableAccount.IsClaimed() {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"Owner Morse account %q need to be claimed first",
+					morseClaimableAccount.GetMorseSrcAddress(),
+				).Error(),
+			)
+		}
+
+		if msg.ShannonOwnerAddress != morseOutputAddressClaimableAccount.GetMorseSrcAddress() {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"Owner Morse account %q is bound to Shannon address %q, but the msg contains a different one: %q",
+					morseClaimableAccount.GetMorseOutputAddress(),
+					morseOutputAddressClaimableAccount.ShannonDestAddress,
+					msg.ShannonOwnerAddress,
+				).Error(),
+			)
+		}
+	}
+
 	// Default shannonSigningAddress to shannonOperatorAddr because the Shannon owner defaults to the operator.
 	// The shannonSigningAddress is where the node/supplier stake will be minted to and then escrowed from.
 	shannonSigningAddress := shannonOperatorAddr
