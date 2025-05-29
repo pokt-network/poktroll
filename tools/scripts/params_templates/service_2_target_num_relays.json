@@ -1,0 +1,12 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.service.MsgUpdateParam",
+        "authority": "",
+        "name": "target_num_relays",
+        "as_uint64": ""
+      }
+    ]
+  }
+}

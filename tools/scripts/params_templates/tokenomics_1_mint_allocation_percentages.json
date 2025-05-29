@@ -1,0 +1,18 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.tokenomics.MsgUpdateParam",
+        "authority": "",
+        "name": "mint_allocation_percentages",
+        "as_mint_allocation_percentages": {
+          "dao": "",
+          "proposer": "",
+          "supplier": "",
+          "source_owner": "",
+          "application": ""
+        }
+      }
+    ]
+  }
+}

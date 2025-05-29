@@ -1,0 +1,15 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.proof.MsgUpdateParam",
+        "authority": "",
+        "name": "proof_submission_fee",
+        "as_coin": {
+          "denom": "upokt",
+          "amount": ""
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.shared.MsgUpdateParam",
+        "authority": "",
+        "name": "claim_window_open_offset_blocks",
+        "as_int64": ""
+      }
+    ]
+  }
+}

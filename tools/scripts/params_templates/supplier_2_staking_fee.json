@@ -1,0 +1,15 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.supplier.MsgUpdateParam",
+        "authority": "",
+        "name": "staking_fee",
+        "as_coin": {
+          "amount": "",
+          "denom": "upokt"
+        }
+      }
+    ]
+  }
+}

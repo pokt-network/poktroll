@@ -1,0 +1,12 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.application.MsgUpdateParam",
+        "authority": "",
+        "name": "max_delegated_gateways",
+        "as_uint64": ""
+      }
+    ]
+  }
+}

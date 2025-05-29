@@ -1,0 +1,12 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.shared.MsgUpdateParam",
+        "authority": "",
+        "name": "application_unbonding_period_sessions",
+        "as_int64": ""
+      }
+    ]
+  }
+}

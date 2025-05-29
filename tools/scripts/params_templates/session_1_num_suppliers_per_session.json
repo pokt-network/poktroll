@@ -1,0 +1,12 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.session.MsgUpdateParam",
+        "authority": "",
+        "name": "num_suppliers_per_session",
+        "as_uint64": ""
+      }
+    ]
+  }
+}

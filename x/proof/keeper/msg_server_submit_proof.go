@@ -128,7 +128,7 @@ func (k msgServer) SubmitProof(
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
-	numEstimatedComputUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+	numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
 
 	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
@@ -147,7 +147,7 @@ func (k msgServer) SubmitProof(
 				Proof:                    proof,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
-				NumEstimatedComputeUnits: numEstimatedComputUnits,
+				NumEstimatedComputeUnits: numEstimatedComputeUnits,
 				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)
@@ -158,7 +158,7 @@ func (k msgServer) SubmitProof(
 				Proof:                    proof,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
-				NumEstimatedComputeUnits: numEstimatedComputUnits,
+				NumEstimatedComputeUnits: numEstimatedComputeUnits,
 				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)

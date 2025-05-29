@@ -1,0 +1,17 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.service.MsgUpdateParams",
+        "authority": "",
+        "params": {
+          "add_service_fee": {
+            "denom": "upokt",
+            "amount": ""
+          },
+          "target_num_relays": ""
+        }
+      }
+    ]
+  }
+}

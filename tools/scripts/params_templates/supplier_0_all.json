@@ -1,0 +1,20 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.supplier.MsgUpdateParams",
+        "authority": "",
+        "params": {
+          "min_stake": {
+            "denom": "upokt",
+            "amount": ""
+          },
+          "staking_fee": {
+            "denom": "upokt",
+            "amount": ""
+          }
+        }
+      }
+    ]
+  }
+}

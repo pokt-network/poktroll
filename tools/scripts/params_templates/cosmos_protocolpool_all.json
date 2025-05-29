@@ -1,0 +1,35 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.application.MsgUpdateParams",
+        "authority": "",
+        "params": {
+          "TODO"
+        }
+      }
+    ]
+  }
+}
+
+  /cosmos.auth.v1beta1.Msg/UpdateParams:
+  /cosmos.bank.v1beta1.Msg/UpdateParams:
+  /cosmos.consensus.v1.Msg/UpdateParams:
+  /cosmos.crisis.v1beta1.Msg/UpdateParams:
+  /cosmos.distribution.v1beta1.Msg/UpdateParams:
+  /cosmos.gov.v1.Msg/UpdateParams:
+  /cosmos.mint.v1beta1.Msg/UpdateParams:
+  /cosmos.protocolpool.v1.Msg/UpdateParams:
+  /cosmos.slashing.v1beta1.Msg/UpdateParams:
+  /cosmos.staking.v1beta1.Msg/UpdateParams:
+
+
+  - 1 file for each one
+  - update with params for each one
+
+
+  - user experience is:
+  -> getonchain params
+  -> put into a .json
+  -> modify the param you want
+  -> show which command to run to reupdate

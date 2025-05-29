@@ -1,0 +1,12 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.proof.MsgUpdateParam",
+        "authority": "",
+        "name": "proof_request_probability",
+        "as_float": ""
+      }
+    ]
+  }
+}

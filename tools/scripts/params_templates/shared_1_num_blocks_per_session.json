@@ -1,0 +1,12 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.shared.MsgUpdateParam",
+        "authority": "",
+        "name": "num_blocks_per_session",
+        "as_int64": ""
+      }
+    ]
+  }
+}

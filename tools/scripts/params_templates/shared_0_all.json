@@ -1,0 +1,22 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.shared.MsgUpdateParams",
+        "authority": "",
+        "params": {
+          "num_blocks_per_session": "",
+          "grace_period_end_offset_blocks": "",
+          "claim_window_open_offset_blocks": "",
+          "claim_window_close_offset_blocks": "",
+          "proof_window_open_offset_blocks": "",
+          "proof_window_close_offset_blocks": "",
+          "supplier_unbonding_period_sessions": "",
+          "application_unbonding_period_sessions": "",
+          "gateway_unbonding_period_sessions": "",
+          "compute_units_to_tokens_multiplier": ""
+        }
+      }
+    ]
+  }
+}
