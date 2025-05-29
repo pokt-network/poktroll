@@ -425,6 +425,9 @@ func runRelay(cmd *cobra.Command, args []string) error {
 // If a supplier is specified but not in the session, try to fetch it directly.
 // TODO_UPNEXT(@olshansk): Add support for sending a relay to a supplier that is not in the session.
 // This will require starting a relayminer in debug mode to avoid validating the session header.
+// NOTE: This function is currently unused. Linters such as staticcheck will flag it as U1000 (unused code).
+//
+//nolint:unused // TODO_WIP(@olshansk): keeping it here for an upcoming iteration to streamline debugging.
 func querySupplier(
 	logger polylog.Logger,
 	grpcConn *grpc.ClientConn,
