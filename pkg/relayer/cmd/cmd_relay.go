@@ -22,6 +22,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // TODO_IMPROVE(@olshansk): Add more configurations & flags to make testing easier and more extensible:
@@ -255,12 +257,18 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		appClient := sdk.ApplicationClient{
-			QueryClient: apptypes.NewQueryClient(grpcConn),
+		logger.Warn().Msgf("⚠️ Supplier %s specified but not in session. Going to try to fetch it directly...", flagRelaySupplier)
+		supplierClient := sdk.SupplierClient{
+			QueryClient: suppliertypes.NewQueryClient(grpcConn),
 		}
-		logger.Info().Msg("✅ Application client initialized")
-
-		// No endpoint found
+		var supplier sharedtypes.Supplier
+		supplier, err = supplierClient.GetSupplier(ctx, flagRelaySupplier)
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error fetching supplier")
+			return err
+		}
+		logger.Info().Msgf("✅ Supplier fetched successfully: %v", supplier)
+		logger.Warn().Msgf("⚠️ Since the supplier %s was not in the session, there's no guarantee it will service the request.", flagRelaySupplier)
 	} else {
 		endpoint = endpoints[rand.Intn(len(endpoints))]
 		logger.Info().Msgf("✅ No supplier specified, randomly selected endpoint: %v", endpoint)
