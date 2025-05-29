@@ -34,7 +34,7 @@ This guide will walk you through creating a new wallet on the Pocket Network.
 - [Prerequisites: Install `pocketd`](#prerequisites-install-pocketd)
 - [Creating a new wallet Wallet](#creating-a-new-wallet-wallet)
 - [Backing Up Your Wallet](#backing-up-your-wallet)
-  - [🔑 HD Derivation Path](#-hd-derivation-path)
+- [🔑 HD Derivation Path](#-hd-derivation-path)
 
 ## What is a keyring backend?
 
@@ -89,7 +89,7 @@ Here are some tips for securely backing up your mnemonic phrase:
 - Consider using a password manager to store it digitally, ensuring the service is reputable and secure.
 - Avoid storing it in plaintext on your computer or online services prone to hacking.
 
-### 🔑 HD Derivation Path
+## 🔑 HD Derivation Path
 
 `pocketd` supports [BIP-0044](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)-compatible HD wallets, with `POKT` registered under `coin_type = 635` (`path_component = 0x8000027b`). This assignment is defined in [SLIP-0044](https://github.com/satoshilabs/slips/blob/master/slip-0044.md).
 
