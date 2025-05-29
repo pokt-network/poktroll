@@ -77,6 +77,7 @@ func InitSDKConfig() {
 // we have an added check to return early in case the config has already been set to the expected value.
 func checkOrInitSDKConfig() {
 	config := sdk.GetConfig()
+	config.SetCoinType(app.CoinType)
 
 	// Check if the config is already set with the correct prefixes
 	if config.GetBech32AccountAddrPrefix() == app.AccountAddressPrefix {
