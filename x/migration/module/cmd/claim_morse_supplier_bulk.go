@@ -56,7 +56,7 @@ Flags:
 --simulate - (Default: false) If true, the transaction will be simulated but not broadcasted.
 --output-file - (Default: migration_output.json) Path to a file where the migration result will be written.
 --unsafe - (Default: false) allow the usage of --unarmored-json flag
---unarmored-json - (Default: false) allow JSON marshalling of the migration result to include morse/shannon private keys on it.
+--unarmored-json - (Default: false) allow JSON marshaling of the migration result to include morse/shannon private keys on it.
 
 {
   "mappings": [
@@ -103,14 +103,12 @@ services:
         rpc_type: JSON_RPC
 	rev_share_percent:
       <DELEGATOR_REWARDS_SHANNON_ADDRESS>: 90
-	  [DEDUCTED SHANNON OWNER ADDRESS]: 100 - $DELEGATOR_REWARDS_SHANNON_ADDRESS = 10
+	  [DEDUCTED SHANNON OWNER ADDRESS]: [DEDUCTED OWNER SHARE - NO NEED TO INCLUDE] -> 100 - $DELEGATOR_REWARDS_SHANNON_ADDRESS = 10
   - service_id: "eth"
     endpoints:
       - publicly_exposed_url: https://rm1.somewhere.com
         rpc_type: JSON_RPC
-	rev_share_percent:
-      <DELEGATOR_REWARDS_SHANNON_ADDRESS>: 90
-	  [DEDUCTED SHANNON OWNER ADDRESS]: 100 - $DELEGATOR_REWARDS_SHANNON_ADDRESS = 10
+	rev_share_percent: [FILLED WITH VALUES AT default_rev_share_percent] because is empty.
 
 More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 
@@ -589,7 +587,7 @@ func enforce100Percent(owner string, revShareMap map[string]uint64) (map[string]
 
 	for address, share := range revShareMap {
 		totalShare += share
-		if strings.ToLower(address) == strings.ToLower(owner) {
+		if strings.EqualFold(address, owner) {
 			ownerFound = true
 		}
 	}
