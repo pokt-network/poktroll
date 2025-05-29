@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/telemetry"
 )
 
@@ -77,6 +78,7 @@ func InitSDKConfig() {
 // we have an added check to return early in case the config has already been set to the expected value.
 func checkOrInitSDKConfig() {
 	config := sdk.GetConfig()
+	config.SetCoinType(pocket.CoinTypePOKT)
 
 	// Check if the config is already set with the correct prefixes
 	if config.GetBech32AccountAddrPrefix() == app.AccountAddressPrefix {
