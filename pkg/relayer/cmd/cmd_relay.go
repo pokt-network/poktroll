@@ -18,10 +18,12 @@ import (
 	sdk "github.com/pokt-network/shannon-sdk"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -254,21 +256,13 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		}
 		if endpoint == nil {
 			logger.Error().Msgf("❌ No endpoint found for supplier %s in the current session", flagRelaySupplier)
-			return err
 		}
-
-		logger.Warn().Msgf("⚠️ Supplier %s specified but not in session. Going to try to fetch it directly...", flagRelaySupplier)
-		supplierClient := sdk.SupplierClient{
-			QueryClient: suppliertypes.NewQueryClient(grpcConn),
-		}
-		var supplier sharedtypes.Supplier
-		supplier, err = supplierClient.GetSupplier(ctx, flagRelaySupplier)
+		endpoint, err = querySupplier(logger, grpcConn, ctx, serviceId, flagRelaySupplier)
 		if err != nil {
-			logger.Error().Err(err).Msg("❌ Error fetching supplier")
+			logger.Error().Err(err).Msg("❌ No endpoint found and could not fetch supplier directly")
 			return err
 		}
-		logger.Info().Msgf("✅ Supplier fetched successfully: %v", supplier)
-		logger.Warn().Msgf("⚠️ Since the supplier %s was not in the session, there's no guarantee it will service the request.", flagRelaySupplier)
+		logger.Info().Msgf("✅ Supplier %s fetched successfully and using endpoint %v", flagRelaySupplier, endpoint)
 	} else {
 		endpoint = endpoints[rand.Intn(len(endpoints))]
 		logger.Info().Msgf("✅ No supplier specified, randomly selected endpoint: %v", endpoint)
@@ -424,4 +418,75 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// If a supplier is specified but not in the session, try to fetch it directly.
+func querySupplier(
+	logger polylog.Logger,
+	grpcConn *grpc.ClientConn,
+	ctx context.Context,
+	serviceId string,
+	supplierAddr string,
+) (sdk.Endpoint, error) {
+	logger.Warn().Msgf("⚠️ Supplier %s specified but not in session. Going to try to fetch it directly...", flagRelaySupplier)
+	supplierClient := sdk.SupplierClient{
+		QueryClient: suppliertypes.NewQueryClient(grpcConn),
+	}
+	supplier, err := supplierClient.GetSupplier(ctx, supplierAddr)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error fetching supplier")
+		return nil, err
+	}
+	logger.Info().Msgf("✅ Supplier fetched successfully: %v", supplier)
+	logger.Warn().Msgf("⚠️ Since the supplier %s was not in the session, there's no guarantee it will service the request.", flagRelaySupplier)
+
+	for _, serviceConfig := range supplier.Services {
+		if serviceConfig.ServiceId == serviceId {
+			supplierEndpoint := serviceConfig.Endpoints[0]
+
+			// Compose struct with Header, Supplier, Endpoint to comply with interface
+			endpoint := &supplierEndpointWithHeader{
+				// Supplier is not in the session, so we can't populate the header
+				header: sessiontypes.SessionHeader{
+					ApplicationAddress:      flagRelayApp,
+					ServiceId:               serviceId,
+					SessionId:               "",
+					SessionStartBlockHeight: 0,
+					SessionEndBlockHeight:   0,
+				},
+				supplier: sdk.SupplierAddress(flagRelaySupplier),
+				endpoint: *supplierEndpoint,
+			}
+
+			logger.Info().Msgf("✅ Endpoint for service ID '%s' selected: %v", serviceId, endpoint)
+			return sdk.Endpoint(endpoint), nil
+		}
+	}
+	return nil, errors.New("No endpoint found")
+}
+
+// Struct to comply with interface requiring Header, Supplier, and Endpoint fields
+// Used for relay endpoint assignment when supplier is fetched directly
+// Header type is assumed to be interface{}; adjust as needed for actual type
+// Supplier and Endpoint types are inferred from sdk and sharedtypes
+// TODO_TECHDEBT(@olshansk): Remove this once the shannon-sdk is updated to have
+// a struct that implements the Endpoint interface.
+var _ sdk.Endpoint = (*supplierEndpointWithHeader)(nil)
+
+type supplierEndpointWithHeader struct {
+	header   sessiontypes.SessionHeader
+	supplier sdk.SupplierAddress
+	endpoint sharedtypes.SupplierEndpoint
+}
+
+func (e *supplierEndpointWithHeader) Header() sessiontypes.SessionHeader {
+	return e.header
+}
+
+func (e *supplierEndpointWithHeader) Supplier() sdk.SupplierAddress {
+	return e.supplier
+}
+
+func (e *supplierEndpointWithHeader) Endpoint() sharedtypes.SupplierEndpoint {
+	return e.endpoint
 }
