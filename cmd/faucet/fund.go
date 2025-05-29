@@ -12,10 +12,9 @@ import (
 	"github.com/pokt-network/poktroll/cmd/logger"
 )
 
-// TODO_UP_NEXT(@bryanchriswhite): update the baseURL example once the default baseURL is known.
 // fundURLFmt is the canonical fund URL format for a given denom and recipient address.
 // The placeholders are intended to be interpolated in the following order:
-//   - baseURL: Fully-qualified URL to the faucet server (e.g. https://faucet.pokt.network)
+//   - baseURL: Fully-qualified URL to the faucet server (e.g. https://shannon-testnet-grove-faucet.beta.poktroll.com)
 //   - denom: the denom to fund (e.g. upokt)
 //   - recipientAddress: the recipient address to fund (e.g. 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288)
 const fundURLFmt = "%s/%s/%s"
