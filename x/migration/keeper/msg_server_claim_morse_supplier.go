@@ -84,7 +84,7 @@ func (k msgServer) ClaimMorseSupplier(
 		// checks:
 		// if the morse sign is done by the output address, then we want to protect the operator, which requires
 		// the operator to first claim the node account using MsgClaimMorseAccount
-		if morseClaimableAccount.IsClaimed() {
+		if !morseClaimableAccount.IsClaimed() {
 			return nil, status.Error(
 				codes.FailedPrecondition,
 				migrationtypes.ErrMorseSupplierClaim.Wrapf(
@@ -125,7 +125,7 @@ func (k msgServer) ClaimMorseSupplier(
 			)
 		}
 
-		if msg.ShannonOwnerAddress != morseOutputAddressClaimableAccount.GetMorseSrcAddress() {
+		if msg.ShannonOwnerAddress != morseOutputAddressClaimableAccount.GetShannonDestAddress() {
 			return nil, status.Error(
 				codes.FailedPrecondition,
 				migrationtypes.ErrMorseSupplierClaim.Wrapf(
