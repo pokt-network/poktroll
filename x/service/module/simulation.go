@@ -78,7 +78,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgDeleteService,
-		servicesimulation.SimulateMsgDeleteService(am.authKeeper, am.bankKeeper, am.keeper, simState.TxConfig),
+		servicesimulation.SimulateMsgDeleteService(am.bankKeeper, am.keeper, simState.TxConfig),
 	))
 
 	// this line is used by starport scaffolding # simapp/module/operation

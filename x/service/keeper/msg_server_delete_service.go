@@ -7,9 +7,9 @@ import (
 )
 
 func (k msgServer) DeleteService(ctx context.Context, msg *types.MsgDeleteService) (*types.MsgDeleteServiceResponse, error) {
-	if _, err := k.addressCodec.StringToBytes(msg.Creator); err != nil {
-		return nil, errorsmod.Wrap(err, "invalid authority address")
-	}
+	//if _, err := k.addressCodec.StringToBytes(msg.Creator); err != nil {
+	//	return nil, errorsmod.Wrap(err, "invalid authority address")
+	//}
 
 	// TODO: Handle the message
 

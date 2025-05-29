@@ -13,7 +13,6 @@ import (
 )
 
 func SimulateMsgDeleteService(
-	ak types.AuthKeeper,
 	bk types.BankKeeper,
 	k keeper.Keeper,
 	txGen client.TxConfig,
