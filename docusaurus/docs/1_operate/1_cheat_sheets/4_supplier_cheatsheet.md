@@ -168,12 +168,11 @@ Create the following environment variables:
 cat > ~/.pocketrc << EOF
 export SUPPLIER_ADDR=$(pocketd keys show supplier -a)
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --yes"
-export BETA_NODE_FLAGS="--chain-id=pocket-beta --node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export BETA_NODE_FLAGS="--network=beta"
 export BETA_NETWORK="pocket-beta"
 export BETA_RPC_URL="https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export BETA_GRPC_URL="https://shannon-testnet-grove-grpc.beta.poktroll.com:443"
 export BETA_GRPC_URL_RAW="shannon-testnet-grove-grpc.beta.poktroll.com:443"
-EOF
 ```
 
 And source them in your shell:

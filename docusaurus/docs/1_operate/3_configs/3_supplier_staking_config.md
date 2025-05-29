@@ -45,7 +45,7 @@ pocketd tx supplier stake-supplier \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from supplier1 \
-  --node tcp://pocket-node:26657
+  --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ## Staking types

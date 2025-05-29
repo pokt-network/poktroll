@@ -27,4 +27,13 @@ const (
 	FlagOutputFile      = "output-file"
 	FlagOutputFileShort = "" // TODO_TECHDEBT: Add short flag
 	FlagOutputFileUsage = "An absolute or relative path to an output file that can be used to write data to. Caution that this file may be updated or overwritten if it already exists."
+
+	FlagNetwork      = "network"
+	FlagNetworkUsage = "Sets the --chain-id, --node, and --grpc-addr flags (if applicable) based on the given network moniker (e.g. local, alpha, beta, main)"
+	DefaultNetwork   = ""
+
+	LocalNetworkName = "local"
+	AlphaNetworkName = "alpha"
+	BetaNetworkName  = "beta"
+	MainNetworkName  = "main"
 )

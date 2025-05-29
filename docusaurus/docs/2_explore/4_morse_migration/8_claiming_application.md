@@ -57,7 +57,7 @@ pocketd tx migration claim-application \
   pocket-account-<morse-keyfile-export>.json \
   <service_id> \
   --from=<your_shannon_address> \
-  --node=${RPC_ENDPOINT} --chain-id=pocket-<network> \
+  --network=<network> \
   --home=~/.pocketd --keyring-backend=test --no-passphrase
 # --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 (optional)
 ```
@@ -80,7 +80,7 @@ Confirm MsgClaimMorseApplication: y/[n]: y
 ### 5. Verify your Shannon application
 
 ```bash
-pocketd query application <your_shannon_address> --node=${RPC_ENDPOINT}
+pocketd query application <your_shannon_address> --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ### 6. What happened?

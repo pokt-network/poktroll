@@ -488,11 +488,8 @@ Initialize your node and configure it to connect to the network:
 <Tabs groupId="network">
   <TabItem value="testnet-beta" label="Testnet Beta" default>
     ```bash
-    # Extract chain-id from existing genesis
-    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.pocket/config/genesis.json)
-
     # Initialize the node with your chosen moniker (node name)
-    pocketd init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.pocket
+    pocketd init "YourNodeMoniker" --network=beta --home=$HOME/.pocket
 
     # Get seeds from the official repository
     SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/testnet-beta/seeds"
@@ -512,10 +509,8 @@ Initialize your node and configure it to connect to the network:
   <TabItem value="testnet-alpha" label="Testnet Alpha">
     ```bash
     # Extract chain-id from existing genesis
-    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.pocket/config/genesis.json)
-
     # Initialize the node with your chosen moniker (node name)
-    pocketd init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.pocket
+    pocketd init "YourNodeMoniker" --network=alpha --home=$HOME/.pocket
 
     # Get seeds from the official repository
     SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/testnet-alpha/seeds"
@@ -534,11 +529,8 @@ Initialize your node and configure it to connect to the network:
 
   <TabItem value="mainnet" label="Mainnet">
     ```bash
-    # Extract chain-id from existing genesis
-    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.pocket/config/genesis.json)
-
     # Initialize the node with your chosen moniker (node name)
-    pocketd init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.pocket
+    pocketd init "YourNodeMoniker" --network=main --home=$HOME/.pocket
 
     # Get seeds from the official repository
     SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/mainnet/seeds"

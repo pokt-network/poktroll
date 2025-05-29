@@ -66,7 +66,7 @@ pocketd tx migration claim-supplier \
   pocket-account-<morse-keyfile-export>.json \
   <path-to-your-supplier-config>.yaml \
   --from=<your_shannon_address> \
-  --node=${RPC_ENDPOINT} --chain-id=pocket-<network> \
+  --network=<network> \
   --home=~/.pocketd --keyring-backend=test --no-passphrase
 # --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 (optional)
 ```
@@ -118,7 +118,7 @@ Confirm MsgClaimMorseSupplier: y/[n]: y
 ### 5. Verify your Shannon supplier
 
 ```bash
-pocketd query supplier <your_shannon_address> --node=${RPC_ENDPOINT}
+pocketd query supplier <your_shannon_address> --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ### 6. What happened?

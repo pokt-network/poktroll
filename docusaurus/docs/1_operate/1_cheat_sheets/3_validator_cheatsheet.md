@@ -57,9 +57,8 @@ Set environment variables:
 
 ```bash
 cat << 'EOT' > ~/.pocketrc
-export BETA_NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
-export BETA_NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
-export TX_PARAM_FLAGS="--fees 200000upokt --chain-id=<CHAIN_ID>" # pocket-alpha, pocket-beta, pocket
+export QUERY_FLAGS="--network=<NETWORK>" # local, alpha, beta, main
+export TX_PARAM_FLAGS="--fees 200000upokt --network=<NETWORK>" # local, alpha, beta, main
 export ADDR=$(pocketd keys show validator -a)
 export VALIDATOR_ADDR=$(pocketd keys show validator -a --bech val)
 EOT
@@ -93,7 +92,7 @@ pocketd query bank balances $ADDR
 Know someone at [Grove](https://grove.city) on Beta TestNet? Ask them to run:
 
 ```bash
-pkd_beta_tx tx bank send faucet_beta $ADDR 6900000000042upokt [$BETA_NODE_FLAGS]
+pkd_beta_tx tx bank send faucet_beta $ADDR 6900000000042upokt
 ```
 
 :::
@@ -161,7 +160,7 @@ EOF
 Register your validator:
 
 ```bash
-pocketd tx staking create-validator ./validator.json --from=validator $TX_PARAM_FLAGS [$BETA_NODE_FLAGS]
+pocketd tx staking create-validator ./validator.json --from=validator $TX_PARAM_FLAGS
 ```
 
 ### Check Validator Status
@@ -169,5 +168,5 @@ pocketd tx staking create-validator ./validator.json --from=validator $TX_PARAM_
 Check your validator status:
 
 ```bash
-pocketd query staking validator $VALIDATOR_ADDR [$BETA_NODE_FLAGS]
+pocketd query staking validator $VALIDATOR_ADDR $QUERY_FLAGS
 ```
