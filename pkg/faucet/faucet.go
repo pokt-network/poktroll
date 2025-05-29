@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 
@@ -22,9 +21,8 @@ const denomPathFmt = "/%s/"
 // by address and denomination, by broadcasting bank send transactions onchain
 // using a dedicated "faucet" account.
 type Server struct {
-	config   *Config
-	listener net.Listener
-	httpMux  *http.ServeMux
+	config  *Config
+	httpMux *http.ServeMux
 }
 
 // NewFaucetServer returns a new Server instance, configured according to the provided options.
@@ -71,10 +69,8 @@ func (srv *Server) Serve(ctx context.Context) error {
 	}
 
 	go func(httpServer *http.Server) {
-		select {
-		case <-ctx.Done():
-			_ = httpServer.Shutdown(context.Background())
-		}
+		<-ctx.Done()
+		_ = httpServer.Shutdown(context.Background())
 	}(httpServer)
 
 	err := httpServer.ListenAndServe()
