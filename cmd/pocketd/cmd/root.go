@@ -75,7 +75,7 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
 			// Set up the global logger for all CLI subcommands.
-			if err := logger.PreRunESetup(cmd, args); err != nil {
+			if err = logger.PreRunESetup(cmd, args); err != nil {
 				return err
 			}
 
