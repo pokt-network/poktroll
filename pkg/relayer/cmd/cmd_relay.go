@@ -254,6 +254,13 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Error().Msgf("❌ No endpoint found for supplier %s in the current session", flagRelaySupplier)
 			return err
 		}
+
+		appClient := sdk.ApplicationClient{
+			QueryClient: apptypes.NewQueryClient(grpcConn),
+		}
+		logger.Info().Msg("✅ Application client initialized")
+
+		// No endpoint found
 	} else {
 		endpoint = endpoints[rand.Intn(len(endpoints))]
 		logger.Info().Msgf("✅ No supplier specified, randomly selected endpoint: %v", endpoint)
