@@ -35,16 +35,6 @@ flowchart TB
     %% Set default styling for all nodes
     classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px,color:black;
 
-    %% Define custom classes with specified colors
-    classDef userClass fill:#f0f0f0,stroke:#333,stroke-width:2px,color:black;
-    classDef gatewayClass fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:black;
-    classDef pocketdClass fill:#fff3e0,stroke:#ff8f00,stroke-width:2px,color:black;
-    classDef blockchainClass fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:black;
-    classDef supplierClass fill:#f5f5f5,stroke:#616161,stroke-width:2px,color:black;
-    classDef keyClass fill:#ffebee,stroke:#d32f2f,stroke-width:1px,color:black;
-    classDef configClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px,color:black;
-    classDef dbClass fill:#e0f2f1,stroke:#00695c,stroke-width:1px,color:black;
-
     %% Position User at top
     User([User]):::userClass
 
@@ -107,6 +97,21 @@ flowchart TB
     %% Connect keys to suppliers
     S1 --- SUPKEY1
     SN --- SUPKEYN
+
+    %% Define custom classes with specified colors
+    classDef userClass fill:#f0f0f0,stroke:#333,stroke-width:2px,color:black;
+    classDef gatewayClass fill:#e8f5e8,stroke:#4caf50,stroke-width:2px,color:black;
+    classDef pocketdClass fill:#fff3e0,stroke:#ff8f00,stroke-width:2px,color:black;
+    classDef blockchainClass fill:#e3f2fd,stroke:#2196f3,stroke-width:2px,color:black;
+    classDef supplierClass fill:#fff3e0,stroke:#ff9800,stroke-width:2px,color:black;
+    classDef keyClass fill:#ffebee,stroke:#d32f2f,stroke-width:1px,color:black;
+    classDef configClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px,color:black;
+    classDef dbClass fill:#e0f2f1,stroke:#00695c,stroke-width:1px,color:black;
+
+    %% Apply classes to subgraphs
+    class Blockchain blockchainClass
+    class Gateway gatewayClass
+    class Suppliers supplierClass
 ```
 
 ## 30 Minute Video Walkthrough
@@ -162,6 +167,7 @@ export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --yes
 export BETA_NODE_FLAGS="--network=beta"
 export BETA_RPC_URL="https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export BETA_GRPC_URL="https://shannon-testnet-grove-grpc.beta.poktroll.com:443"
+export BETA_GRPC_URL_RAW="shannon-testnet-grove-grpc.beta.poktroll.com:443"
 EOF
 ```
 
@@ -276,18 +282,27 @@ pocketd query application show-application $APP_ADDR $NODE_FLAGS
 
 ## Send a test relay
 
+You can run `pocketd relayminer relay --help` to use a helper utility to send a test relay from your staked `application`.
+
 ### EVM Example
 
 ```bash
 pocketd relayminer relay \
-    --app=pokt12fj3xlqg6d20fl4ynuejfqd3fkqmq25rs3yf7g \
-    --supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
-    --keyring-backend="$POCKET_TEST_KEYRING_BACKEND" --home="$POCKET_HOME_PROD" \
-    --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
-    --grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
+    --app=${APP_ADDR} \
+    --node=${BETA_RPC_URL} \
+    --grpc-addr=${BETA_GRPC_URL_RAW} \
     --grpc-insecure=false \
+    --keyring-backend="$POCKET_TEST_KEYRING_BACKEND" --home="$POCKET_HOME_PROD" \
     --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 ```
+
+:::warning Optional: Specify a supplier
+
+You can specify a supplier by using the `--supplier=<SUPPLIER_ADDR>` flag.
+
+Note that it will fail if the specified supplier is not in the session at the time of the relay.
+
+:::
 
 ## `PATH` Gateway Setup
 

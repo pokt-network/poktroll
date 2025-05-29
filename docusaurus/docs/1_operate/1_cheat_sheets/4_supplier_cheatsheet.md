@@ -352,7 +352,9 @@ pocketd \
 
 ### 3. Test the RelayMiner
 
-After following the instructions in the [Gateway cheatsheet](5_gateway_cheatsheet.md), you can use your `Application` to send a relay request to your supplier assuming it is staked for the same service:
+After following the instructions in the [Gateway cheatsheet](5_gateway_cheatsheet.md).
+
+You will need a staked `Application` to send a relay request to your supplier assuming it is staked for the same service:
 
 The following is an example of a relay request to an Anvil (i.e. EVM) node:
 
@@ -366,8 +368,14 @@ pocketd relayminer relay \
   --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 ```
 
+:::warning Specifying a supplier
+
+The request will fail if the specified supplier is not in the session at the time of the relay.
+
+:::
+
 <details>
-<summary>*tl;dr staking an application for `anvil`*</summary>
+<summary>*tl;dr example staking an application for `anvil`*</summary>
 
 **Create an application:**
 

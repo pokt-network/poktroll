@@ -256,13 +256,15 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		}
 		if endpoint == nil {
 			logger.Error().Msgf("❌ No endpoint found for supplier %s in the current session", flagRelaySupplier)
-		}
-		endpoint, err = querySupplier(logger, grpcConn, ctx, serviceId, flagRelaySupplier)
-		if err != nil {
-			logger.Error().Err(err).Msg("❌ No endpoint found and could not fetch supplier directly")
 			return err
 		}
-		logger.Info().Msgf("✅ Supplier %s fetched successfully and using endpoint %v", flagRelaySupplier, endpoint)
+		// TODO_UPNEXT(@olshansk): Add support for sending a relay to a supplier that is not in the session.
+		// endpoint, err = querySupplier(logger, grpcConn, ctx, serviceId, flagRelaySupplier)
+		// if err != nil {
+		// 	logger.Error().Err(err).Msg("❌ No endpoint found and could not fetch supplier directly")
+		// 	return err
+		// }
+		// logger.Info().Msgf("✅ Supplier %s fetched successfully and using endpoint %v", flagRelaySupplier, endpoint)
 	} else {
 		endpoint = endpoints[rand.Intn(len(endpoints))]
 		logger.Info().Msgf("✅ No supplier specified, randomly selected endpoint: %v", endpoint)
@@ -421,6 +423,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 }
 
 // If a supplier is specified but not in the session, try to fetch it directly.
+// TODO_UPNEXT(@olshansk): Add support for sending a relay to a supplier that is not in the session.
+// This will require starting a relayminer in debug mode to avoid validating the session header.
 func querySupplier(
 	logger polylog.Logger,
 	grpcConn *grpc.ClientConn,
