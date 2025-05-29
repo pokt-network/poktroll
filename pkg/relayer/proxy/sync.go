@@ -214,7 +214,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, clientError
 	}
 
-	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("OLSH2 relay request served successfully")
+	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("relay request served successfully")
 
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 
