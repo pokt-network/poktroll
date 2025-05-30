@@ -35,17 +35,28 @@ const (
 	flagMorsePrivateKeysFileDesc = "Path to a file containing Morse private keys (hex-encoded) for all accounts to be migrated in bulk."
 )
 
-// ownerAddressMap maps Morse output addresses to MorseClaimableAccounts.
+// ownerAddressToMClaimableAccountMap maps Morse output addresses to MorseClaimableAccounts.
 // - Holds any claimable account associated with a MorseOutputAddress.
-// - For custodial: the same node.
-// - For non-custodial: another account.
-var ownerAddressMap = map[string]*types.MorseClaimableAccount{}
+// - For custodial: the claimable account has the same address.
+// - For non-custodial: the claimable account has a different address.
+// TODO_IN_THIS_PR: Why is this a global field?
+var ownerAddressToMClaimableAccountMap = map[string]*types.MorseClaimableAccount{}
 
 // ClaimSupplierBulkCmd returns the cobra command for bulk-claiming Morse nodes as Shannon Suppliers.
 func ClaimSupplierBulkCmd() *cobra.Command {
 	claimSuppliersCmd := &cobra.Command{
-		Use:   "claim-suppliers --stake-template-file=[stake_template_file] --morse-private-keys-file=[morse_private_keys_file] --output-file=[morse_to_shannon_mapping_file] --from=[shannon_dest_key_name]",
-		Args:  cobra.ExactArgs(0),
+		Use:  "claim-suppliers --stake-template-file=[stake_template_file] --morse-private-keys-file=[morse_private_keys_file] --output-file=[morse_to_shannon_mapping_file] --from=[shannon_dest_key_name]",
+		Args: cobra.ExactArgs(0),
+		Example: `The following example shows how to claim many Morse nodes as Shannon Suppliers on LocalNet:
+
+$ pocketd tx migration claim-suppliers \
+	  --from=signer \
+	  --morse-private-keys-file=./morse_private_keys.json \
+	  --stake-template-file=./supplier-stake-template.yaml \
+	  --output-file=./supplier_output.json \
+	  --home=./localnet/pocketd --keyring-backend=test \
+	  --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+`,
 		Short: "Claim many onchain MorseClaimableAccount as staked Supplier accounts.",
 		Long: `
 Claim many onchain MorseClaimableAccounts as staked Supplier accounts.
@@ -67,7 +78,16 @@ Additional options:
 2. Enables exporting unarmored (plain) JSON output with sensitive keys.
 
 
-Input File example: YAML staking template for bulk claiming:
+Example input Morse private keys file:
+
+[
+	"<MORSE_PRIVATE_KEY_1>",
+	"<MORSE_PRIVATE_KEY_2>",
+	...
+	"<MORSE_PRIVATE_KEY_N>"
+]
+
+Example input staking template file:
 
 '''yaml
 # Supplier Claim Example (with placeholders and clear comments)
@@ -98,10 +118,7 @@ services:
 # 	rev_share_percent commented out; defaults to default_rev_share_percent above
 '''
 
-TODO_IN_THIS_PR: How should the private keys be structured in the input file?
-
-
-Output File example: Morse to Shannon Supplier Migration Result
+Example output Morse to Shannon Supplier Migration Result:
 
 {
   "mappings": [
@@ -254,20 +271,21 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		}
 		morseOutputAddress := claimableMorseNode.MorseOutputAddress
 
-		// Populate ownerAddressMap if not already present
 		custodial := false
-		if ownerAddressMap[morseOutputAddress] == nil {
+		// TODO_IN_THIS_PR: What if we have the same owner address for multiple Morse nodes?
+		// Populate ownerAddressMap if not already present
+		if ownerAddressToMClaimableAccountMap[morseOutputAddress] == nil {
 			if claimableMorseNode.MorseOutputAddress != claimableMorseNode.MorseSrcAddress {
 				// Non-custodial: load and cache MorseClaimableAccount for output address
 				claimableMorseAccount, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress, false)
 				if morseAccountError != nil {
 					return morseAccountError
 				}
-				ownerAddressMap[morseOutputAddress] = claimableMorseAccount
+				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseAccount
 			} else {
 				// Custodial: use the current MorseClaimableAccount
 				custodial = true
-				ownerAddressMap[morseOutputAddress] = claimableMorseNode
+				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseNode
 			}
 		}
 
@@ -290,14 +308,18 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		}
 
 		// Determine the owner address for the supplier stake config.
-		ownerAddress := ownerAddressMap[morseOutputAddress].ShannonDestAddress
+		var shannonOwnerAddress string
 		if custodial {
-			ownerAddress = morseShannonMapping.ShannonAccount.Address.String()
+			// Custodial: use the same address for owner and operator
+			shannonOwnerAddress = morseShannonMapping.ShannonAccount.Address.String()
+		} else {
+			// Non-custodial: use the MorseSrcAddress as the owner address
+			shannonOwnerAddress = ownerAddressToMClaimableAccountMap[morseOutputAddress].MorseSrcAddress
 		}
 
 		// Build the supplier stake config for this migration.
 		supplierStakeConfig, supplierStakeConfigErr := buildSupplierStakeConfig(
-			ownerAddress,
+			shannonOwnerAddress,
 			shannonOperatorAddress,
 			templateSupplierStakeConfig,
 		)
@@ -306,16 +328,16 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		}
 
 		// Construct a MsgClaimMorseSupplier message for this migration.
-		msgClaimMorseSupplier, msgErr := types.NewMsgClaimMorseSupplier(
+		msgClaimMorseSupplier, claimSupplierMsgErr := types.NewMsgClaimMorseSupplier(
 			supplierStakeConfig.OwnerAddress,
 			supplierStakeConfig.OperatorAddress,
-			claimableMorseNode.MorseSrcAddress,
-			morseNodeAccount.PrivateKey, // morse operator private key
+			claimableMorseNode.MorseSrcAddress, // TODO_IN_THIS_PR: Can this be morseNodeAccount.Address?
+			morseNodeAccount.PrivateKey,        // morse operator private key
 			supplierStakeConfig.Services,
 			shannonSigningAddr,
 		)
-		if msgErr != nil {
-			return msgErr
+		if claimSupplierMsgErr != nil {
+			return claimSupplierMsgErr
 		}
 
 		// Import the generated Shannon private key into the keyring.
@@ -473,7 +495,7 @@ func queryMorseClaimableAccount(
 	ctx context.Context,
 	clientCtx cosmosclient.Context,
 	morseAddress string,
-	shouldBeNode bool,
+	shouldBeNode bool, // TODO_IN_THIS_PR: Consider renaming filterForNode
 ) (*types.MorseClaimableAccount, error) {
 	// Ensure the Morse address is hex-encoded.
 	if _, err := hex.DecodeString(morseAddress); err != nil {
