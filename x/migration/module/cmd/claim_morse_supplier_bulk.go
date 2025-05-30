@@ -35,13 +35,6 @@ const (
 	flagMorsePrivateKeysFileDesc = "Path to a file containing Morse private keys (hex-encoded) for all accounts to be migrated in bulk."
 )
 
-// ownerAddressToMClaimableAccountMap maps Morse output addresses to MorseClaimableAccounts.
-// - Holds any claimable account associated with a MorseOutputAddress.
-// - For custodial: the claimable account has the same address.
-// - For non-custodial: the claimable account has a different address.
-// TODO_IN_THIS_PR: Why is this a global field?
-var ownerAddressToMClaimableAccountMap = map[string]*types.MorseClaimableAccount{}
-
 // ClaimSupplierBulkCmd returns the cobra command for bulk-claiming Morse nodes as Shannon Suppliers.
 func ClaimSupplierBulkCmd() *cobra.Command {
 	claimSuppliersCmd := &cobra.Command{
@@ -260,26 +253,46 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	// Prepare the slice of claim messages for the bulk claim transaction.
 	claimMessages := make([]cosmossdk.Msg, 0)
 
+	// ownerAddressToMClaimableAccountMap maps Morse output addresses to MorseClaimableAccounts.
+	// - Holds any claimable account associated with a MorseOutputAddress.
+	// - For custodial: the claimable account has the same address.
+	// - For non-custodial: the claimable account has a different address.
+	ownerAddressToMClaimableAccountMap := map[string]*types.MorseClaimableAccount{}
+
 	// Iterate over each Morse node private key to process migration.
 	for _, morseNodeAccount := range morseNodeAccounts {
 		morseNodeAddress := hex.EncodeToString(morseNodeAccount.Address)
 
 		// Ensure the Morse output address is not empty (i.e., is a node)
-		claimableMorseNode, morseNodeError := queryMorseClaimableAccount(ctx, clientCtx, morseNodeAddress, true)
+		claimableMorseNode, isNode, morseNodeError := queryMorseClaimableAccount(ctx, clientCtx, morseNodeAddress)
 		if morseNodeError != nil {
 			return morseNodeError
 		}
+		if !isNode {
+			return fmt.Errorf("morse node address '%s' is not a node", morseNodeAddress)
+		}
 		morseOutputAddress := claimableMorseNode.MorseOutputAddress
 
-		custodial := false
-		// TODO_IN_THIS_PR: What if we have the same owner address for multiple Morse nodes?
-		// Populate ownerAddressMap if not already present
+		// the right way to know if a node is custodial or not
+		custodial := strings.EqualFold(morseOutputAddress, morseNodeAddress)
+
+		if custodial {
+			ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseNode
+		}
+
+		// Populate the ownerAddressMap if not already present
 		if ownerAddressToMClaimableAccountMap[morseOutputAddress] == nil {
 			if claimableMorseNode.MorseOutputAddress != claimableMorseNode.MorseSrcAddress {
 				// Non-custodial: load and cache MorseClaimableAccount for output address
-				claimableMorseAccount, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress, false)
+				claimableMorseAccount, outputAddressIsNode, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress)
 				if morseAccountError != nil {
 					return morseAccountError
+				}
+				if outputAddressIsNode {
+					// TODO_IN_THIS_PR: I was not able to reproduce this case (missing keys with this scenario),
+					//  but I found them in testnet, maybe not a mainnet case?
+					//  in any case please @olshansky think about this and let me know.
+					return fmt.Errorf("morse output address '%s' is a node", morseOutputAddress)
 				}
 				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseAccount
 			} else {
@@ -331,8 +344,8 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		msgClaimMorseSupplier, claimSupplierMsgErr := types.NewMsgClaimMorseSupplier(
 			supplierStakeConfig.OwnerAddress,
 			supplierStakeConfig.OperatorAddress,
-			claimableMorseNode.MorseSrcAddress, // TODO_IN_THIS_PR: Can this be morseNodeAccount.Address?
-			morseNodeAccount.PrivateKey,        // morse operator private key
+			morseNodeAddress,            // TODO_IN_THIS_PR: Can this be morseNodeAccount.Address?
+			morseNodeAccount.PrivateKey, // morse operator private key
 			supplierStakeConfig.Services,
 			shannonSigningAddr,
 		)
@@ -476,12 +489,21 @@ func loadTemplateSupplierStakeConfigYAML(configYAMLPath string) (*config.YAMLSta
 		return nil, fmt.Errorf("no services provided in the template")
 	}
 
-	// TODO_IN_THIS_PR: Should we validate the things we want to omit from the template?
+	if yamlStakeConfig.OwnerAddress != "" {
+		return nil, fmt.Errorf("owner address should not be set in the template")
+	}
+
+	if yamlStakeConfig.OperatorAddress != "" {
+		return nil, fmt.Errorf("operator address should not be set in the template")
+	}
+
+	if yamlStakeConfig.StakeAmount != "" {
+		return nil, fmt.Errorf("stake amount should not be set in the template")
+	}
 
 	return &yamlStakeConfig, nil
 }
 
-// TODO_IN_THIS_PR: It'll be easier to understand if this function:
 // - Returns the claimable morse account
 // - Returns a boolean indicating if the account is a node or an account
 //
@@ -489,17 +511,15 @@ func loadTemplateSupplierStakeConfigYAML(configYAMLPath string) (*config.YAMLSta
 // onchain state and checks if its a node (staked) or an account (unstaked).
 //
 // - morseAddress: hex-encoded Morse address to query.
-// - shouldBeNode: if true, ensures the account is a staked onchain node (validator/servicer).
-// - Returns: MorseClaimableAccount or error if not found or invalid.
+// - Returns: MorseClaimableAccount, isNode flag, or error if not found or invalid.
 func queryMorseClaimableAccount(
 	ctx context.Context,
 	clientCtx cosmosclient.Context,
 	morseAddress string,
-	shouldBeNode bool, // TODO_IN_THIS_PR: Consider renaming filterForNode
-) (*types.MorseClaimableAccount, error) {
+) (*types.MorseClaimableAccount, bool, error) {
 	// Ensure the Morse address is hex-encoded.
 	if _, err := hex.DecodeString(morseAddress); err != nil {
-		return nil, fmt.Errorf("expected morse operating address to be hex-encoded, got: %q", morseAddress)
+		return nil, false, fmt.Errorf("expected morse operating address to be hex-encoded, got: %q", morseAddress)
 	}
 
 	// Prepare a new query client for MorseClaimableAccount.
@@ -510,22 +530,14 @@ func queryMorseClaimableAccount(
 	res, queryErr := queryClient.MorseClaimableAccount(ctx, req)
 	if queryErr != nil {
 		// Stop and return error if the Morse account cannot be validated.
-		return nil, queryErr
+		return nil, false, queryErr
 	}
 
 	morseOutputAddress := res.MorseClaimableAccount.MorseOutputAddress
 
-	// TODO_IN_THIS_PR: What about a staked node without an output address?
-	if morseOutputAddress == "" && shouldBeNode {
-		return nil, fmt.Errorf("morse account %s is not a node account: %v", morseAddress, res.MorseClaimableAccount)
-	}
+	isNode := morseOutputAddress != ""
 
-	if morseOutputAddress == "" && !res.MorseClaimableAccount.IsClaimed() {
-		// Unstaked Morse accounts must be claimed before supplier migration.
-		return nil, fmt.Errorf("morse account %s is not claimed yet: %v", morseAddress, res.MorseClaimableAccount)
-	}
-
-	return &res.MorseClaimableAccount, nil
+	return &res.MorseClaimableAccount, isNode, nil
 }
 
 // buildSupplierStakeConfig creates and validates a new Shannon SupplierStakeConfig.
