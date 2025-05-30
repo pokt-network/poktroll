@@ -15,6 +15,27 @@ pocketd query service --help
 pocketd tx service --help
 ```
 
+### How do I create or update a service?
+
+Use the `setup-service` command which supports both creating new services and updating existing ones:
+
+```bash
+pocketd tx service setup-service --help
+```
+
+**Command format:**
+```bash
+pocketd tx service setup-service <service_id> <service_name> [compute_units_per_relay] [service_owner] --from <signer>
+```
+
+:::tip Key points
+
+- For new services: The signer pays the service fee and can specify a different owner
+- For updates: Only the current service owner can update the service (no additional fee)
+- Service ownership can be transferred during updates
+
+:::
+
 ### How do I query for all existing onchain Services?
 
 To query for all services on Beta TestNet, you would run:
