@@ -785,13 +785,6 @@ func (mf *MorseMigrationFixtures) addValidator(
 
 	// For non-custodial validators, also create an unstaked owner account.
 	case MorseNonCustodialValidator:
-		//morseOwnerFixture, err := mf.addAccount(actorIndex, MorseNonCustodialOwnerAccount)
-		//if err != nil {
-		//	return err
-		//}
-		//morseClaimableAccount.MorseOutputAddress = morseOwnerFixture.GetAddress()
-		// TODO_IN_THIS_COMMIT: mf.addAccount increments it...
-		//allAccountsIndex++
 		// DEV_NOTE: Assumes that the previous account index belongs to the Morse owner (unstaked) account.
 		morseOwnerPrivKey := mf.generateMorsePrivateKey(allAccountsIndex - 1)
 		morseClaimableAccount.MorseOutputAddress = morseOwnerPrivKey.PubKey().Address().String()

@@ -898,8 +898,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 		updatedMorseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
 		s.Equal(expectedMorseClaimableAccount, updatedMorseClaimableAccount)
 
-		// TODO_IN_THIS_COMMIT: update comments...
-		// Assert that the validator is unbonding.
+		// Assert that the validator is staked.
 		expectedSupplier = &sharedtypes.Supplier{
 			OperatorAddress: shannonOperatorAddr,
 			OwnerAddress:    shannonOwnerAddr,
