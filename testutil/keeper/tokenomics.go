@@ -698,8 +698,8 @@ func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOptFn {
 // WithDefaultModuleBalances mints an arbitrary amount of uPOKT to the respective modules.
 func WithDefaultModuleBalances() func(cfg *tokenomicsModuleKeepersConfig) {
 	return WithModuleAccountBalances(map[string]int64{
-		apptypes.ModuleName:      1000000000000,
-		suppliertypes.ModuleName: 1000000000000,
+		apptypes.ModuleName:      1_000_000_000_000,
+		suppliertypes.ModuleName: 1_000_000_000_000,
 	})
 }
 

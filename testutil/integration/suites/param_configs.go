@@ -65,9 +65,9 @@ type ModuleParamsMessages struct {
 }
 
 var (
-	ValidAddServiceFeeCoin             = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000001)
+	ValidAddServiceFeeCoin             = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1_000_000_001)
 	ValidProofMissingPenaltyCoin       = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 500)
-	ValidProofSubmissionFeeCoin        = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 5000000)
+	ValidProofSubmissionFeeCoin        = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 5_000_000)
 	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 	ValidActorMinStake                 = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 	ValidStakingFee                    = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1)

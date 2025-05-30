@@ -15,7 +15,7 @@ import (
 )
 
 func TestMsgUpdateParam_UpdateAddServiceFeeOnly(t *testing.T) {
-	expectedAddServiceFee := &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(1000000001)}
+	expectedAddServiceFee := &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(1_000_000_001)}
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)

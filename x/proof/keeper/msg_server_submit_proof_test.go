@@ -935,11 +935,11 @@ func fundSupplierOperatorAccount(t *testing.T, ctx context.Context, keepers *kee
 		ctx,
 		suppliertypes.ModuleName,
 		supplierOperatorAccAddr,
-		types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(100000000))),
+		types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(1_000_000_000))),
 	)
 	require.NoError(t, err)
 
 	coin := keepers.SpendableCoins(ctx, supplierOperatorAccAddr)
-	require.Equal(t, coin[0].Amount, math.NewInt(100000000))
+	require.Equal(t, coin[0].Amount, math.NewInt(1_000_000_000))
 
 }

@@ -13,7 +13,7 @@ var (
 	KeyMinStake   = []byte("MinStake")
 	ParamMinStake = "min_stake"
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value.
-	DefaultMinStake = cosmostypes.NewInt64Coin("upokt", 1000000) // 1 POKT
+	DefaultMinStake = cosmostypes.NewInt64Coin("upokt", 1_000_000) // 1 POKT
 	KeyStakingFee   = []byte("StakingFee")
 	ParamStakingFee = "staking_fee"
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value.
