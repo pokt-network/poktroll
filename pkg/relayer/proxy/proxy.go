@@ -142,9 +142,9 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 
 		// Ensure that each backing data node responds to a ping request
 		// (at least) before continuing operation.
-		if err := server.Ping(ctx); err != nil {
-			return err
-		}
+		//if err := server.Ping(ctx); err != nil {
+		//	return err
+		//}
 
 		startGroup.Go(func() error { return server.Start(ctx) })
 	}
