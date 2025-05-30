@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: Service Creation (~ 5 min)
+title: Service Management (~ 5 min)
 ---
 
 <!-- TODO(@olshansky):
@@ -21,14 +21,14 @@ Visit the [Service FAQ](../4_faq/1_service_faq.md) for more information about in
 
 - [Introduction](#introduction)
 - [Prerequisites](#prerequisites)
-- [How do I create a new service?](#how-do-i-create-a-new-service)
-  - [1. Add a Service](#1-add-a-service)
+- [How do I create or update a service?](#how-do-i-create-or-update-a-service)
+  - [1. Setup a Service](#1-setup-a-service)
   - [2. Query for the Service](#2-query-for-the-service)
   - [3. What do I do next?](#3-what-do-i-do-next)
 
 ## Introduction
 
-This page will walk you through creating an onchain Service.
+This page will walk you through creating and updating onchain Services.
 
 To learn more about what a Service is, or how it works, see the [Protocol Documentation](../../protocol/).
 
@@ -37,7 +37,7 @@ To learn more about what a Service is, or how it works, see the [Protocol Docume
 1. Install the [pocketd CLI](../../2_explore/2_account_management/1_pocketd_cli.md).
 2. [Create and fund a new account](../../2_explore/2_account_management/2_create_new_account_cli.md) before you begin.
 
-## How do I create a new service?
+## How do I create or update a service?
 
 :::info Service Limitations
 
@@ -45,21 +45,47 @@ Service IDs are limited to `42` chars and descriptions are limited to `169` char
 
 :::
 
-### 1. Add a Service
+### 1. Setup a Service
 
-Use the `add-service` command to create a new service like so:
+Use the `setup-service` command to create a new service or update an existing one like so:
 
 ```bash
-pocketd tx service add-service \
-    ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
-    --fees 300upokt --from ${SERVICE_OWNER} --network=beta
+pocketd tx service setup-service \
+    ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} ${OWNER_ADDRESS} \
+    --fees 300upokt --from ${SIGNER} --network=beta
 ```
+
+:::tip Service Creation vs Update
+
+- **Creating a new service**: Requires payment of the service fee from the signer's account
+- **Updating an existing service**: No additional fee required, but only the current service owner can update it
+- **Ownership transfer**: The service owner can transfer ownership to another address during an update
+
+:::
 
 For example, assuming you have an account with the name $USER (`pocketd keys show $USER -a`), you can run the following for Beta TestNet:
 
+**Create a new service:**
 ```bash
-pocketd tx service add-service \
+pocketd tx service setup-service \
    "svc-$USER" "service description for $USER" 13 \
+   --fees 300upokt --from $USER \
+   --network=beta
+```
+
+**Update an existing service:**
+```bash
+pocketd tx service setup-service \
+   "svc-$USER" "updated service description" 20 \
+   --fees 300upokt --from $USER \
+   --network=beta
+```
+
+**Create a service for another owner:**
+```bash
+# Create a service where the signer ($USER) pays the fee but a different address owns the service
+pocketd tx service setup-service \
+   "svc-$USER" "service description" 13 $(TARGET_OWNER_ADDRESS) \
    --fees 300upokt --from $USER \
    --network=beta
 ```

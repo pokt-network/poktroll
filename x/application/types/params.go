@@ -17,7 +17,7 @@ var (
 	KeyMinStake                        = []byte("MinStake")
 	ParamMinStake                      = "min_stake"
 	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value
-	DefaultMinStake = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000) // 1 POKT
+	DefaultMinStake = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1_000_000) // 1 POKT
 )
 
 // ParamKeyTable the param key table for launch module

@@ -11,7 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-func SimulateMsgAddService(
+func SimulateMsgSetupService(
 	ak types.AccountKeeper,
 	bk types.BankKeeper,
 	k keeper.Keeper,
@@ -19,8 +19,8 @@ func SimulateMsgAddService(
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
-		msg := &types.MsgAddService{
-			OwnerAddress: simAccount.Address.String(),
+		msg := &types.MsgSetupService{
+			Signer: simAccount.Address.String(),
 		}
 
 		// TODO_TECHDEBT: Handling the AddService simulation

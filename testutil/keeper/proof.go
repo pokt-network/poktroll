@@ -280,7 +280,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		Codec: cdc,
 	}
 
-	moduleBaseMint := sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+	moduleBaseMint := sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(690_000_000_000_000_042)))
 	err := bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
 

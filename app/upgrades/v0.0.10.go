@@ -33,7 +33,7 @@ var Upgrade_0_0_10 = Upgrade{
 			// Add application min stake
 			// Validate with: `pocketd q application params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			appParams := keepers.ApplicationKeeper.GetParams(ctx)
-			newMinStakeApp := cosmostypes.NewCoin("upokt", math.NewInt(100000000))
+			newMinStakeApp := cosmostypes.NewCoin("upokt", math.NewInt(1_000_000))
 			appParams.MinStake = &newMinStakeApp
 			err = keepers.ApplicationKeeper.SetParams(ctx, appParams)
 			if err != nil {
@@ -43,7 +43,7 @@ var Upgrade_0_0_10 = Upgrade{
 			// Add supplier min stake
 			// Validate with: `pocketd q supplier params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			supplierParams := keepers.SupplierKeeper.GetParams(ctx)
-			newMinStakeSupplier := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+			newMinStakeSupplier := cosmostypes.NewCoin("upokt", math.NewInt(1_000_000))
 			supplierParams.MinStake = &newMinStakeSupplier
 			err = keepers.SupplierKeeper.SetParams(ctx, supplierParams)
 			if err != nil {
@@ -53,7 +53,7 @@ var Upgrade_0_0_10 = Upgrade{
 			// Add gateway min stake
 			// Validate with: `pocketd q gateway params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			gatewayParams := keepers.GatewayKeeper.GetParams(ctx)
-			newMinStakeGW := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+			newMinStakeGW := cosmostypes.NewCoin("upokt", math.NewInt(1_000_000))
 			gatewayParams.MinStake = &newMinStakeGW
 			err = keepers.GatewayKeeper.SetParams(ctx, gatewayParams)
 			if err != nil {
@@ -62,9 +62,9 @@ var Upgrade_0_0_10 = Upgrade{
 
 			// Adjust proof module parameters
 			// Validate with: `pocketd q proof params --node=https://testnet-validated-validator-rpc.poktroll.com/`
-			newProofRequirementThreshold := cosmostypes.NewCoin("upokt", math.NewInt(20000000))
-			newProofMissingPenalty := cosmostypes.NewCoin("upokt", math.NewInt(320000000))
-			newProofSubmissionFee := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+			newProofRequirementThreshold := cosmostypes.NewCoin("upokt", math.NewInt(20_000_000))
+			newProofMissingPenalty := cosmostypes.NewCoin("upokt", math.NewInt(32_000_000))
+			newProofSubmissionFee := cosmostypes.NewCoin("upokt", math.NewInt(1_000_000))
 			proofParams := prooftypes.NewParams(
 				0.25,
 				&newProofRequirementThreshold,

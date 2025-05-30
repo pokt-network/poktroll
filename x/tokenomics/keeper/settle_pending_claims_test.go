@@ -79,7 +79,7 @@ func (s *TestSuite) SetupTest() {
 	t := s.T()
 
 	moduleBalancesOpt := keepertest.WithModuleAccountBalances(map[string]int64{
-		apptypes.ModuleName:      1000000000,
+		apptypes.ModuleName:      1_000_000_000,
 		suppliertypes.ModuleName: supplierStakeAmt,
 	})
 	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil, moduleBalancesOpt)

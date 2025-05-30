@@ -941,7 +941,7 @@ func (app *App) setupDefaultActorsState(
 	)
 
 	// Prepare the onchain application
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := types.NewCoin("upokt", math.NewInt(1_000_000))
 	defaultApplication := apptypes.Application{
 		Address: applicationAddr.String(),
 		Stake:   &appStake,
@@ -957,7 +957,7 @@ func (app *App) setupDefaultActorsState(
 	// TODO_IMPROVE: The setup above does not to proper "staking" of the suppliers and applications.
 	// This can result in the module accounts balance going negative. Giving them a baseline balance
 	// to start with to avoid this issue. There is opportunity to improve this in the future.
-	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690_000_000_000_000_042)))
 	err := bankKeeper.MintCoins(app.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
 	err = bankKeeper.MintCoins(app.sdkCtx, apptypes.ModuleName, moduleBaseMint)
@@ -968,7 +968,7 @@ func (app *App) setupDefaultActorsState(
 	// #FundAddress() method and remove the need for this.
 	//
 	// Fund the supplier operator account to be able to submit proofs
-	fundAccount(t, app.sdkCtx, bankKeeper, supplierOperatorAddr, 100000000)
+	fundAccount(t, app.sdkCtx, bankKeeper, supplierOperatorAddr, 1_000_000_000)
 
 	// Commit all the changes above by finalizing, committing, and moving
 	// to the next block.

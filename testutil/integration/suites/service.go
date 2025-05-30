@@ -22,8 +22,8 @@ type ServiceModuleSuite struct {
 	BaseIntegrationSuite
 }
 
-// AddService adds an on-chain service.
-func (s *ServiceModuleSuite) AddService(
+// SetupService adds or updates an on-chain service.
+func (s *ServiceModuleSuite) SetupService(
 	t *testing.T,
 	serviceId,
 	ownerAddress string,
@@ -31,15 +31,15 @@ func (s *ServiceModuleSuite) AddService(
 ) {
 	t.Helper()
 
-	msgAddService := servicetypes.MsgAddService{
-		OwnerAddress: ownerAddress,
+	msgSetupService := servicetypes.MsgSetupService{
+		Signer: ownerAddress,
 		Service: sharedtypes.Service{
 			Id:                   serviceId,
 			OwnerAddress:         ownerAddress,
 			ComputeUnitsPerRelay: computeUnitsPerRelay,
 		},
 	}
-	_, err := s.GetApp().RunMsg(t, &msgAddService)
+	_, err := s.GetApp().RunMsg(t, &msgSetupService)
 	require.NoError(t, err)
 }
 

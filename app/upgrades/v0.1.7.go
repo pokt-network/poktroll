@@ -16,7 +16,7 @@ import (
 const (
 	Upgrade_0_1_7_PlanName = "v0.1.7"
 
-	newTokenSupplyAmount = int64(100000000000) // 100B
+	newTokenSupplyAmount = int64(100_000_000_000_000_000) // 100B
 )
 
 // Upgrade_0_1_7 handles the upgrade to release `v0.1.7`.

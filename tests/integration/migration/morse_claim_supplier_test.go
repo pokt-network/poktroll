@@ -153,7 +153,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			// Create a service which is different from the one which the claim re-stakes for.
 			svcOwnerAddr := cosmostypes.MustAccAddressFromBech32(sample.AccAddress())
 			s.FundAddress(s.T(), svcOwnerAddr, serviceParams.GetAddServiceFee().Amount.Int64()+1)
-			s.ServiceSuite.AddService(s.T(), serviceName, svcOwnerAddr.String(), 1)
+			s.ServiceSuite.SetupService(s.T(), serviceName, svcOwnerAddr.String(), 1)
 
 			// Set the supplier's initial stake equal to the MorseClaimableAccount's supplier stake
 			// to ensure that the stakeOffset which is applied in the testMorseClaimSupplierCases stake

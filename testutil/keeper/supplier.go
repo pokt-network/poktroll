@@ -62,7 +62,7 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 		Do(func(ctx context.Context, addr sdk.AccAddress, module string, coins sdk.Coins) {
 			supplierBalanceMap[addr.String()] -= coins[0].Amount.Int64()
 		})
-	mockBankKeeper.EXPECT().SpendableCoins(gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes().
 		Do(func(ctx context.Context, module string, addr sdk.AccAddress, coins sdk.Coins) {
 			supplierBalanceMap[addr.String()] += coins[0].Amount.Int64()

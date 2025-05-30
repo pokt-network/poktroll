@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	appFundAmount = int64(100000000)
-	stakeAmount   = int64(10000000)
+	appFundAmount = int64(100_000_000)
+	stakeAmount   = int64(1_000_000)
 
 	service1Id = "svc1"
 	service2Id = "svc2"
