@@ -84,27 +84,54 @@ func (k msgServer) ClaimMorseSupplier(
 	// The shannonSigningAddress is where the node/supplier stake will be minted to and then escrowed from.
 	shannonSigningAddress := shannonOperatorAddr
 	switch claimSignerType {
-	// ## Non-custodial owner claim:
+
+	// ## NON-CUSTODIAL OWNER CLAIM ##
 	// The Morse owner/output account is signing the claim.
 	case migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER:
 		shannonSigningAddress = shannonOwnerAddr
-	// ## Non-custodial operator claim:
+
+	// ## NON-CUSTODIAL OPERATOR CLAIM ##
 	// The Morse node/operator account is signing the claim.
-	// This requires that:
+	// This requires (i.e. pre-requisite) that:
 	// 1. The Morse owner/output account has already been claimed.
-	// 2. The claimed onchain Morse owner/output Shannon address matches the supplier claim Shannon owner address.
+	// 2. The claimed onchain Morse owner Shannon address matches the supplier claim Shannon owner address.
 	case migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR:
-		// Retrieve the Morse claimable account for the Morse owner address.
+		// Retrieve the Morse owner claimable account for the Morse owner address.
 		morseOwnerAddress := morseNodeClaimableAccount.GetMorseOutputAddress()
+
+		// Retrieve the Morse owner claimable account.
 		morseOwnerClaimableAccount, isMorseOwnerFound := k.GetMorseClaimableAccount(ctx, morseOwnerAddress)
 		if !isMorseOwnerFound {
-			// DEV_NOTE: This SHOULD NEVER happen. If this occurs, it indicates that the
-			// Morse owner account was not included (or somehow removed from) the list of
-			// imported Morse claimable accounts.
+			// DEV_NOTE: THIS SHOULD NEVER HAPPEN.
+			// If this occurs, it indicates that either:
+			// 1. The Morse owner account was not included in the list of imported Morse claimable accounts.
+			// 2. The Morse owner account was somehow removed from the list of imported Morse claimable accounts.
 			return nil, status.Error(
 				codes.Internal,
 				migrationtypes.ErrMorseSupplierClaim.Wrapf(
-					"(SHOULD NEVER HAPPEN) morse claimable account for owner address (%s) not found",
+					"(SHOULD NEVER HAPPEN) could not find morse claimable account for owner address (%s)",
+					morseOwnerAddress,
+				).Error(),
+			)
+		}
+
+		// Ensure that the Morse owner account has already been claimed before migrating the Morse node/supplier to a Shannon account.
+		if !morseOwnerClaimableAccount.IsClaimed() {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"morse owner address (%s) MUST be claimed BEFORE migrating the Morse node/supplier to a Shannon Supplier account",
+					morseOwnerAddress,
+				).Error(),
+			)
+		}
+
+		// Ensure that the Morse owner account has not already been claimed.
+		if morseOwnerClaimableAccount.IsClaimed() && morseOwnerClaimableAccount.ShannonDestAddress == "" {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"(SHOULD NEVER HAPPEN) The shannon address of an already claimed Morse owner account (%s) should not be empty",
 					morseOwnerAddress,
 				).Error(),
 			)
@@ -116,9 +143,9 @@ func (k msgServer) ClaimMorseSupplier(
 			return nil, status.Error(
 				codes.FailedPrecondition,
 				migrationtypes.ErrMorseSupplierClaim.Wrapf(
-					"morse owner address (%s) MUST be claimed before morse node (%s) can be claimed",
-					morseOwnerAddress,
-					msg.GetMorseNodeAddress(),
+					"the Shannon owner address on the Morse supplier (%s) claim MUST match the Shannon dest address of the already claimed Morse owner account (%s)",
+					msg.GetShannonOwnerAddress(),
+					morseOwnerClaimableAccount.GetShannonDestAddress(),
 				).Error(),
 			)
 		}

@@ -779,13 +779,15 @@ func (mf *MorseMigrationFixtures) addValidator(
 	}
 
 	switch validatorType {
+
 	// For orphaned validators, no unstaked account is needed; bypass the default case.
 	case MorseOrphanedValidator:
 		// No-op
 
 	// For non-custodial validators, also create an unstaked owner account.
 	case MorseNonCustodialValidator:
-		// DEV_NOTE: Assumes that the previous account index belongs to the Morse owner (unstaked) account.
+		// DEV_NOTE: IMPLICIT ASSUMPTION that the previous account index belongs to the Morse owner (unstaked) account.
+		// This is a safe assumption because the Morse owner account is always created before the Morse validator account.
 		morseOwnerPrivKey := mf.generateMorsePrivateKey(allAccountsIndex - 1)
 		morseClaimableAccount.MorseOutputAddress = morseOwnerPrivKey.PubKey().Address().String()
 

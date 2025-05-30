@@ -709,7 +709,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 
 	// Configure fixtures to generate Morse balances:
 	// - Validator stake is 1upokt above the minimum stake (101upokt)
-	// - Validator unstaked balance is 420upokt ✌️
+	// - Validator unstaked balance is 420upokt ✌️🌿🚬
 	// - Validator owner unstaked balance is 9001upokt
 	validatorStakesFnOpt := testmigration.WithValidatorStakesFn(func(
 		_, _ uint64,
@@ -722,6 +722,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 		return staked, unstaked
 	})
 
+	// Generate a Morse owner account with 9001upokt.
 	var morseOwnerAccountIndex uint64
 	ownerAccountBalanceOpt := testmigration.WithUnstakedAccountBalancesFn(func(
 		allAccountsIndex, _ uint64,
@@ -777,11 +778,12 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 	morseOwnerClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseOwnerAddress)
 	require.NotNil(s.T(), morseOwnerClaimableAccount)
 
+	// Non-custodial claim before owner account has been claimed (error).
 	// 1. Submit an operator-signed claim message for a non-custodial supplier
-	//    prior to owner account claiming (i.e. should error).
+	//    PRIOR to owner account claiming (i.e. should error).
 	// 2. Asserts that the supplier IS NOT staked.
 	// 3. Asserts that the prospective supplier's balance DOES NOT change.
-	s.Run("before owner account has been claimed (error)", func() {
+	s.Run("Non-custodial supplier claim before owner account has been claimed (error)", func() {
 		// Attempt to claim the Morse node/operator claimable account.
 		_, err = s.GetApp().RunMsg(s.T(), morseClaimMsg)
 		expectedErr := status.Error(
@@ -819,14 +821,16 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 		s.Zero(balance.Amount.Int64())
 	})
 
-	// Claim owner account so that the operator may now claim the supplier.
+	// Morse owner claims its Morse account (independent of the supplier)
+	// This is a prerequisite for the operator to claim the supplier.
 	s.ClaimMorseAccount(s.T(), morseOwnerAccountIndex, shannonOwnerAddr, shannonOwnerAddr)
 
+	// Non-custodial supplier claim after owner account has been claimed (success).
 	// 1. Submit an operator-signed claim message for a non-custodial supplier.
 	// 2. Verifies that the correct onchain events are emitted
 	// 3. Verifies that the supplier state is updated as expected
 	// 4. Asserts that the supplier's balance and onchain state (including unbonding status and staking fee deduction) are correct after the claim is processed.
-	s.Run("after owner account has been claimed (success)", func() {
+	s.Run("Non-custodial supplier claim after owner account has been claimed (success)", func() {
 		// Calculate the current session end height and the next session start height.
 		currentHeight := s.GetApp().GetSdkCtx().BlockHeight()
 		sharedParams := s.GetSharedParams(s.T())
