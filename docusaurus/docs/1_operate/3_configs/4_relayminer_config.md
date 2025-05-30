@@ -237,13 +237,13 @@ _`Optional`_
 Configures a `forward` server to send requests to a particular supplier (i.e. operator)
 for a given service name.
 This endpoint:
+- Is expecting an address formatted as `host:port`
 - Is intended for operational use only (e.g., a relayminer operator may need to send 
   requests to an suppliers to verify the correctness of their responses going 
   through the relayminer proxy)
-- Bypasses the onchain miner, meter and session mechanisms
-To prevent misuse by unauthorized users:
-- This endpoint requires authentication
-- A token can be defined using a 32 bytes hexadecimal `token`
+- Bypasses the onchain miner, meter and session mechanisms to prevent misuse by unauthorized users:
+    - Requires authentication
+    - A token can be defined using a 32 bytes hexadecimal `token`
 
 Example configuration:
 
