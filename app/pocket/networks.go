@@ -48,4 +48,9 @@ const (
 	AlphaNetGRPCAddr = "shannon-testnet-grove-grpc.alpha.poktroll.com:443"
 	BetaNetGRPCAddr  = "shannon-testnet-grove-grpc.beta.poktroll.com:443"
 	MainNetGRPCAddr  = "shannon-grove-grpc.mainnet.poktroll.com:443"
+
+	LocalNetFaucetBaseURL     = "http://localhost:8080"
+	AlphaTestNetFaucetBaseURL = "https://shannon-testnet-grove-faucet.alpha.poktroll.com"
+	BetaTestNetFaucetBaseURL  = "https://shannon-testnet-grove-faucet.beta.poktroll.com"
+	MainNetFaucetBaseURL      = "https://shannon-grove-faucet.mainnet.poktroll.com"
 )

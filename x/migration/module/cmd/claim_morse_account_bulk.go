@@ -98,8 +98,7 @@ Example output file format:
 }
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
-		RunE:    runBulkClaimAccount,
-		PreRunE: logger.PreRunESetup,
+		RunE: runBulkClaimAccount,
 	}
 
 	// Prepare the input file path flag.

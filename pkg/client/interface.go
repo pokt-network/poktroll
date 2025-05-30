@@ -10,6 +10,7 @@
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/bank_query_client_mock.go -package=mockclient . BankQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/bank_grpc_query_client_mock.go -package=mockclient . BankGRPCQueryClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
@@ -28,6 +29,8 @@ import (
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -379,6 +382,10 @@ type ServiceQueryClient interface {
 type BankQueryClient interface {
 	// GetBalance queries the chain for the uPOKT balance of the account provided
 	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
+}
+
+type BankGRPCQueryClient interface {
+	AllBalances(ctx context.Context, in *banktypes.QueryAllBalancesRequest, opts ...grpc.CallOption) (*banktypes.QueryAllBalancesResponse, error)
 }
 
 // ParamsCache is an interface for a simple in-memory cache implementation for onchain module parameter quueries.

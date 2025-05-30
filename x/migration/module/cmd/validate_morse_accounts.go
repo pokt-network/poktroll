@@ -28,7 +28,6 @@ func ValidateMorseAccountsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "validate-morse-accounts [msg-import-morse_accounts-path] [morse-src_address-to_check, ...]",
 		Args:    cobra.MinimumNArgs(1),
-		PreRunE: logger.PreRunESetup,
 		RunE:    runValidateMorseAccounts,
 		PostRun: signals.ExitWithCodeIfNonZero,
 		Short:   "Validate and inspect the morse account state contained within a given MsgImportMorseClaimableAccount JSON file",
