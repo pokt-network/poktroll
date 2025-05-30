@@ -72,7 +72,7 @@ func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr, fauc
 		}
 	}
 
-	if grpcFlag := cmd.Flags().Lookup(flags.FlagFaucetBaseURL); grpcFlag != nil {
+	if faucetBaseURLFlag := cmd.Flags().Lookup(flags.FlagFaucetBaseURL); faucetBaseURLFlag != nil {
 		if !cmd.Flags().Changed(flags.FlagFaucetBaseURL) {
 			if err := cmd.Flags().Set(flags.FlagFaucetBaseURL, faucetBaseUrl); err != nil {
 				return err
