@@ -84,8 +84,15 @@ func (k msgServer) ClaimMorseSupplier(
 	// The shannonSigningAddress is where the node/supplier stake will be minted to and then escrowed from.
 	shannonSigningAddress := shannonOperatorAddr
 	switch claimSignerType {
+	// ## Non-custodial owner claim:
+	// The Morse owner/output account is signing the claim.
 	case migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER:
 		shannonSigningAddress = shannonOwnerAddr
+	// ## Non-custodial operator claim:
+	// The Morse node/operator account is signing the claim.
+	// This requires that:
+	// 1. The Morse owner/output account has already been claimed.
+	// 2. The claimed onchain Morse owner/output Shannon address matches the supplier claim Shannon owner address.
 	case migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR:
 		// Retrieve the Morse claimable account for the Morse owner address.
 		morseOwnerAddress := morseNodeClaimableAccount.GetMorseOutputAddress()
