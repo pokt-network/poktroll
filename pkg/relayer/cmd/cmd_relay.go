@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,10 +18,14 @@ import (
 	sdk "github.com/pokt-network/shannon-sdk"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // TODO_IMPROVE(@olshansk): Add more configurations & flags to make testing easier and more extensible:
@@ -53,7 +58,7 @@ var (
 // - See TODO_IMPROVE for planned enhancements
 func relayCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "relay --app <app> --supplier <supplier> --service-id <service-id> --payload <payload> [--supplier-public-endpoint-override <url>]",
+		Use:   "relay --app <app> --supplier <supplier> --payload <payload> [--supplier-public-endpoint-override <url>]",
 		Short: "Send a relay as an application to a particular supplier",
 		Long: `Send a test relay to a Supplier's RelayMiner from a staked Application.
 
@@ -71,15 +76,26 @@ Callouts:
 
 For more info, run 'relay --help'.`,
 		Example: `
-  ./pocketd relayminer relay \
+
+  # LocalNet example with an endpoint override
+  $ pocketd relayminer relay \
     --app=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 \
     --supplier=pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj \
-    --service-id=anvil \
     --node=tcp://127.0.0.1:26657 \
     --grpc-addr=localhost:9090 \
     --grpc-insecure=true \
     --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}" \
-    --supplier-public-endpoint-override=http://localhost:8085`,
+    --supplier-public-endpoint-override=http://localhost:8085
+
+  # Beta example for a real service
+  pocketd relayminer relay \
+	--app=pokt12fj3xlqg6d20fl4ynuejfqd3fkqmq25rs3yf7g \
+	--supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
+	--node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
+	--grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
+	--grpc-insecure=false \
+	--payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
+`,
 		RunE: runRelay,
 	}
 
@@ -87,15 +103,15 @@ For more info, run 'relay --help'.`,
 	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (defaults to LocalNet)")
 	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (defaults to LocalNet)")
 	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options (defaults to true for LocalNet)")
+	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 
 	// Custom Flags
 	cmd.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
-	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Required) Staked Supplier address")
 	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
-	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "http://localhost:8085", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
+	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
+	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
 
 	_ = cmd.MarkFlagRequired("app")
-	_ = cmd.MarkFlagRequired("supplier")
 	_ = cmd.MarkFlagRequired("payload")
 
 	return cmd
@@ -129,7 +145,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	ctx = logger.WithContext(ctx)
 	cmd.SetContext(ctx)
 
-	logger.Info().Msgf("About to send a relay to %s for app %s", flagRelaySupplier, flagRelayApp)
+	logger.Info().Msgf("About to send a relay to supplier '%s' for app '%s'", flagRelaySupplier, flagRelayApp)
 
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
@@ -137,10 +153,11 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		Insecure: flagNodeGRPCInsecureRelay,
 	})
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error connecting to gRPC")
 		return err
 	}
 	defer grpcConn.Close()
-	logger.Info().Msg("✅ gRPC connection initialized")
+	logger.Info().Msgf("✅ gRPC connection initialized: %v", grpcConn)
 
 	// Create a connection to the POKT full node
 	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURLRelay)
@@ -160,6 +177,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	appClient := sdk.ApplicationClient{
 		QueryClient: apptypes.NewQueryClient(grpcConn),
 	}
+	logger.Info().Msg("✅ Application client initialized")
+
 	app, err := appClient.GetApplication(ctx, flagRelayApp)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error fetching application")
@@ -173,7 +192,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		return errors.New("application must have exactly one service config")
 	}
 	serviceId := app.ServiceConfigs[0].ServiceId
-	logger.Info().Msgf("✅ Service ID retrieved: %s", serviceId)
+	logger.Info().Msgf("✅ Service identified: '%s'", serviceId)
 
 	// Create an application ring for signing
 	ring := sdk.ApplicationRing{
@@ -226,17 +245,30 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	logger.Info().Msgf("✅ Endpoints fetched: %v", endpoints)
 
 	var endpoint sdk.Endpoint
-	for _, e := range endpoints {
-		if string(e.Supplier()) == flagRelaySupplier {
-			endpoint = e
-			break
+	if flagRelaySupplier != "" {
+		logger.Info().Msgf("✅ Supplier specified: '%s'", flagRelaySupplier)
+		for _, e := range endpoints {
+			if string(e.Supplier()) == flagRelaySupplier {
+				endpoint = e
+				logger.Info().Msgf("✅ Endpoint for supplier '%s' selected: %v", flagRelaySupplier, endpoint)
+				break
+			}
 		}
+		if endpoint == nil {
+			logger.Error().Msgf("❌ No endpoint found for supplier %s in the current session", flagRelaySupplier)
+			return err
+		}
+		// TODO_UPNEXT(@olshansk): Add support for sending a relay to a supplier that is not in the session.
+		// endpoint, err = querySupplier(logger, grpcConn, ctx, serviceId, flagRelaySupplier)
+		// if err != nil {
+		// 	logger.Error().Err(err).Msg("❌ No endpoint found and could not fetch supplier directly")
+		// 	return err
+		// }
+		// logger.Info().Msgf("✅ Supplier %s fetched successfully and using endpoint %v", flagRelaySupplier, endpoint)
+	} else {
+		endpoint = endpoints[rand.Intn(len(endpoints))]
+		logger.Info().Msgf("✅ No supplier specified, randomly selected endpoint: %v", endpoint)
 	}
-	if endpoint == nil {
-		logger.Error().Msgf("❌ No endpoint found for supplier %s in the current session", flagRelaySupplier)
-		return err
-	}
-	logger.Info().Msgf("✅ Endpoint selected: %v", endpoint)
 
 	// Get the endpoint URL
 	endpointUrl := endpoint.Endpoint().Url
@@ -334,7 +366,9 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 
 	// Ensure the supplier operator address matches the expected address
-	if supplierSignerAddress != flagRelaySupplier {
+	if flagRelaySupplier == "" {
+		logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
+	} else if supplierSignerAddress != flagRelaySupplier {
 		logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
 		return errors.New("Relay response supplier operator signature does not match")
 	}
@@ -386,4 +420,80 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// If a supplier is specified but not in the session, try to fetch it directly.
+// TODO_UPNEXT(@olshansk): Add support for sending a relay to a supplier that is not in the session.
+// This will require starting a relayminer in debug mode to avoid validating the session header.
+// NOTE: This function is currently unused. Linters such as staticcheck will flag it as U1000 (unused code).
+//
+//nolint:unused // TODO_WIP(@olshansk): keeping it here for an upcoming iteration to streamline debugging.
+func querySupplier(
+	logger polylog.Logger,
+	grpcConn *grpc.ClientConn,
+	ctx context.Context,
+	serviceId string,
+	supplierAddr string,
+) (sdk.Endpoint, error) {
+	logger.Warn().Msgf("⚠️ Supplier %s specified but not in session. Going to try to fetch it directly...", flagRelaySupplier)
+	supplierClient := sdk.SupplierClient{
+		QueryClient: suppliertypes.NewQueryClient(grpcConn),
+	}
+	supplier, err := supplierClient.GetSupplier(ctx, supplierAddr)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error fetching supplier")
+		return nil, err
+	}
+	logger.Info().Msgf("✅ Supplier fetched successfully: %v", supplier)
+	logger.Warn().Msgf("⚠️ Since the supplier %s was not in the session, there's no guarantee it will service the request.", flagRelaySupplier)
+
+	for _, serviceConfig := range supplier.Services {
+		if serviceConfig.ServiceId == serviceId {
+			supplierEndpoint := serviceConfig.Endpoints[0]
+
+			// Compose struct with Header, Supplier, Endpoint to comply with interface
+			endpoint := &supplierEndpointWithHeader{
+				// Supplier is not in the session, so we can't populate the header
+				header: sessiontypes.SessionHeader{
+					ApplicationAddress:      flagRelayApp,
+					ServiceId:               serviceId,
+					SessionId:               "",
+					SessionStartBlockHeight: 0,
+					SessionEndBlockHeight:   0,
+				},
+				supplier: sdk.SupplierAddress(flagRelaySupplier),
+				endpoint: *supplierEndpoint,
+			}
+
+			logger.Info().Msgf("✅ Endpoint for service ID '%s' selected: %v", serviceId, endpoint)
+			return sdk.Endpoint(endpoint), nil
+		}
+	}
+	return nil, errors.New("No endpoint found")
+}
+
+// Struct to comply with interface requiring Header, Supplier, and Endpoint fields
+// Used for relay endpoint assignment when supplier is fetched directly
+// Header type is assumed to be interface{}; adjust as needed for actual type
+// Supplier and Endpoint types are inferred from sdk and sharedtypes
+// TODO_TECHDEBT(@olshansk): Remove this once the shannon-sdk is updated to have
+// a struct that implements the Endpoint interface.
+var _ sdk.Endpoint = (*supplierEndpointWithHeader)(nil)
+
+type supplierEndpointWithHeader struct {
+	header   sessiontypes.SessionHeader
+	supplier sdk.SupplierAddress
+	endpoint sharedtypes.SupplierEndpoint
+}
+
+func (e *supplierEndpointWithHeader) Header() sessiontypes.SessionHeader {
+	return e.header
+}
+
+func (e *supplierEndpointWithHeader) Supplier() sdk.SupplierAddress {
+	return e.supplier
+}
+
+func (e *supplierEndpointWithHeader) Endpoint() sharedtypes.SupplierEndpoint {
+	return e.endpoint
 }

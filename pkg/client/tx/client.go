@@ -285,6 +285,12 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 	offline := txnClient.txCtx.GetClientCtx().Offline
 	txBuilder.SetUnordered(txnClient.unordered)
 
+	// Override offline mode if unordered is set in order to prevent populating
+	// the sequence number. The account number WILL still be queried in TxContext#SignTx().
+	if txnClient.unordered {
+		offline = true
+	}
+
 	// sign transactions
 	err = txnClient.txCtx.SignTx(
 		txnClient.signingKeyName,
