@@ -11,15 +11,19 @@ This guide demonstrates common Vultr API operations for managing virtual machine
   - [Whitelist your IP](#whitelist-your-ip)
   - [API Key](#api-key)
 - [Managing Instances](#managing-instances)
-  - [Creating an Instance](#creating-an-instance)
-  - [Get Instance Details](#get-instance-details)
+  - [Create the Vultr Instance](#create-the-vultr-instance)
+  - [Retrieve the Vultr Instance Configuration](#retrieve-the-vultr-instance-configuration)
   - [Environment Setup](#environment-setup)
   - [Connect to Your Instance](#connect-to-your-instance)
   - [Delete Instance](#delete-instance)
-- [\[OPTIONAL\] Exploring Available Resources](#optional-exploring-available-resources)
-  - [List Available Plans](#list-available-plans)
-  - [List Available Operating Systems](#list-available-operating-systems)
+- [\[Optional\] Prepare your instance for Pocket](#optional-prepare-your-instance-for-pocket)
+  - [Install `pocketd`](#install-pocketd)
+  - [Import or create an account](#import-or-create-an-account)
+  - [Run a full node](#run-a-full-node)
 - [Additional Resources](#additional-resources)
+  - [Explore Available Plans](#explore-available-plans)
+  - [Explore Available Operating Systems](#explore-available-operating-systems)
+  - [Additional Links](#additional-links)
 
 ## Prerequisites
 
@@ -36,12 +40,16 @@ You must whitelist your IP address with Vultr.
 
 3. Update the `Access Control` list with `{IPv4_OUTPUT_ABOVE}/32` and click `Add`.
 
+:::important IP Whitelist
+
 <details>
   <summary>Screenshot Example</summary>
 
 ![Image](https://github.com/user-attachments/assets/d7b93a18-7423-43f8-adfb-bdb3bf8239ac)
 
 </details>
+
+:::
 
 ### API Key
 
@@ -51,23 +59,9 @@ Obtain your API key from [my.vultr.com/settings/#settingsapi](https://my.vultr.c
 export VULTR_API_KEY="your-api-key-here"
 ```
 
-:::important IP Whitelist
-
-:::
-
 ## Managing Instances
 
-### Creating an Instance
-
-:::warning Update command
-
-Make sure to replace the following placeholders:
-
-- `YOUR_INSTANCE_NAME`
-- `YOUR_HOST_NAME`
-- Optionally, list of tags
-
-:::
+### Create the Vultr Instance
 
 The command below creates a new instance with the following parameters:
 
@@ -83,26 +77,34 @@ curl "https://api.vultr.com/v2/instances" \
   --data '{
     "region" : "sea",
     "plan" : "vc2-6c-16gb",
-    "label" : "YOUR_INSTANCE_NAME",
+    "label" : "${REPLACE_ME_WITH_SOME_INSTANCE_NAME}",
     "os_id" : 2136,
     "backups" : "disabled",
-    "hostname": "YOUR_HOST_NAME",
-    "tags": ["personal", "test", "cli", "YOUR_HOST_NAME"]
+    "hostname": "${REPLACE_ME_WITH_SOME_HOST_NAME}",
+    "tags": ["personal", "test", "cli", "${REPLACE_ME_WITH_SOME_LABEL}"]
   }' \
   > vultr_create.json
 ```
 
-### Get Instance Details
+**⚠️ Update all the params starting with `REPLACE_ME_` above ⚠️**
+
+### Retrieve the Vultr Instance Configuration
+
+Check the instance status at [my.vultr.com/subs/?id=VULTR_INSTANCE_ID](https://my.vultr.com/subs/?id=VULTR_INSTANCE_ID).
 
 ```bash
-VULTR_INSTANCE_ID=$(cat vultr_create.json | jq -r '.instance.id')
+export VULTR_INSTANCE_ID=$(cat vultr_create.json | jq -r '.instance.id')
 
+echo "##############\nVisit your instance at https://my.vultr.com/subs/?id=${VULTR_INSTANCE_ID} \n##############"
+```
+
+And get the instance details:
+
+```bash
 curl "https://api.vultr.com/v2/instances/${VULTR_INSTANCE_ID}" \
   -X GET \
   -H "Authorization: Bearer ${VULTR_API_KEY}" \
   > vultr_get.json
-
-echo "###\nVisit your instance at https://my.vultr.com/subs/?id=${VULTR_INSTANCE_ID} \n###\n"
 ```
 
 ### Environment Setup
@@ -123,7 +125,9 @@ Connect to your instance:
 ssh root@$VULTR_INSTANCE_IP
 ```
 
-Password is in `vultr_create.json` under `instance.default_password`. To copy password to clipboard:
+Using the password is in `vultr_create.json` under `instance.default_password`.
+
+To copy password to clipboard:
 
 ```bash
 cat vultr_create.json | jq -r '.instance.default_password' | pbcopy
@@ -137,9 +141,41 @@ curl "https://api.vultr.com/v2/instances/${VULTR_INSTANCE_ID}" \
   -H "Authorization: Bearer ${VULTR_API_KEY}"
 ```
 
-## [OPTIONAL] Exploring Available Resources
+## [Optional] Prepare your instance for Pocket
 
-### List Available Plans
+### Install `pocketd`
+
+```bash
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev1 --upgrade
+```
+
+### Import or create an account
+
+Export a key from your local machine:
+
+```bash
+pkd keys export {key-name} --unsafe --unarmored-hex
+```
+
+And import it into your instance:
+
+```bash
+pocket keys import {key-name} {hex-priv-key}
+```
+
+Or create a new one:
+
+```bash
+pocket keys add {key-name}
+```
+
+### Run a full node
+
+See the instructions in the [full node cheatsheet](../1_cheat_sheets/2_full_node_cheatsheet.md).
+
+## Additional Resources
+
+### Explore Available Plans
 
 Get the list of available plans:
 
@@ -156,7 +192,7 @@ And explore the JSON by running:
 cat vultr_plans.json | jq
 ```
 
-### List Available Operating Systems
+### Explore Available Operating Systems
 
 Get the list of available operating systems:
 
@@ -173,7 +209,7 @@ And explore the JSON by running:
 cat vultr_os.json | jq
 ```
 
-## Additional Resources
+### Additional Links
 
 - Vultr API Documentation: [vultr.com/api/](https://www.vultr.com/api)
 - Vultr CLI GitHub Repository: [github.com/vultr/vultr-cli](https://github.com/vultr/vultr-cli)
