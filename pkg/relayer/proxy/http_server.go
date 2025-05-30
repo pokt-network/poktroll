@@ -79,9 +79,9 @@ func NewHTTPServer(
 	// Create the HTTP server.
 	httpServer := &http.Server{
 		// TODO_IMPROVE: Make timeouts configurable.
-		IdleTimeout:  60 * time.Second,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60000 * time.Second,
+		ReadTimeout:  10000 * time.Second,
+		WriteTimeout: 10000 * time.Second,
 	}
 
 	return &relayMinerHTTPServer{
