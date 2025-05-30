@@ -29,7 +29,7 @@ import (
 // - Rate limit incoming requests
 func startCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "start --config <path-to-relay-miner-config-file>",
+		Use:   "start --config <path-to-relay-miner-config-file> --chain-id <chain-id>",
 		Short: "Start a RelayMiner",
 		Long: `Start a RelayMiner Process.
 
@@ -58,6 +58,11 @@ RelayMiner Responsibilities:
 	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
 	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.7, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
+
+	// Required flags
+	_ = cmd.MarkFlagRequired("config")
+	// TODO_TECHDEBT(@olshansk): Consider making this part of the relay miner config file or erroring in a more user-friendly way.
+	_ = cmd.MarkFlagRequired(cosmosflags.FlagChainID)
 
 	return cmd
 }
