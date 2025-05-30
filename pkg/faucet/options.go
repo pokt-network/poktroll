@@ -14,58 +14,69 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 )
 
-// Config is the configuration for a faucet server.
-// It is loaded via viper and therefore can be provided via:
-// - config file, conforming to this structure (mapstructure tags as keys)
-// - environment variables, prefixed with "FAUCET_" (e.g. FAUCET_SIGNING_KEY_NAME)
-type Config struct {
-	// SigningKeyName is the name of the key to use for signing transactions.
-	// This key is expected to be present in the keyring.
+// FaucetConfig defines the configuration for a faucet server.
+// Loaded via viper. Can be provided through:
+// - A config file matching this structure (uses mapstructure tags as keys)
+// - Environment variables, prefixed with "FAUCET_" (e.g. FAUCET_SIGNING_KEY_NAME)
+type FaucetConfig struct {
+
+	// ############################################################
+	// ### Public Configs - Settable via config file or env ###
+	// ############################################################
+
+	// SigningKeyName specifies the key (by name) used to sign transactions.
+	// - Must exist in the keyring.
 	SigningKeyName string `mapstructure:"signing_key_name"`
 
-	// SupportedSendCoins is a list of cosmos-sdk coin strings (i.e. amount + denom)
-	// which the faucet server will send when a user requests tokens of that denomination.
+	// SupportedSendCoins lists cosmos-sdk coin strings (amount + denom).
+	// - Specifies which coins the faucet can send to users.
 	SupportedSendCoins []string `mapstructure:"supported_send_coins"`
 
-	// CreateAccountsOnly determines whether the faucet will service all requests (when false),
-	// or only those for recipient addresses which do not already exist onchain (when true).
+	// CreateAccountsOnly controls faucet behavior:
+	// - true: Only service requests for accounts not yet on-chain (i.e. new accounts without an onchain public key)
+	// - false: Service all requests (i.e. do not reject requests from any)
 	CreateAccountsOnly bool `mapstructure:"create_accounts_only"`
 
-	// ListenAddress is the network address that the faucet HTTP server will listen on.
-	// It is expected to be in the form of "host:port".
+	// ListenAddress specifies the network address for the faucet HTTP server.
+	// - Format: "host:port"
 	ListenAddress string `mapstructure:"listen_address"`
 
-	// signingAddress is the address of the signing key. It initialized in the NewConfig.
-	// It SHOULD NOT be included in the config file, will be ignored if it is.
+	// ############################################################
+	// ### Internal Configs - Ignored if present in config file ###
+	// ############################################################
+
+	// signingAddress holds the address of the signing key.
+	// - Initialized in NewConfig
+	// - Ignored if present in config file
 	signingAddress cosmostypes.AccAddress `mapstructure:"-"`
 
-	// txClient is the tx client used by the faucet server to sign and broadcast transactions.
-	// It is configured via a FaucetOptionFn (WithTxClient) and SHOULD NOT be included in the
-	// config file. If it is, it will be ignored.
+	// txClient is used by the faucet to sign and broadcast transactions.
+	// - Set via FaucetOptionFn (WithTxClient)
+	// - Ignored if present in config file
 	txClient client.TxClient `mapstructure:"-"`
 
-	// bankQueryClient is the bank query client used by the faucet server to query balances.
-	// It is configured via a FaucetOptionFn (WithBankQueryClient) and SHOULD NOT be included
-	// in the config file. If it is, it will be ignored.
+	// bankQueryClient is used by the faucet to query account balances.
+	// - Set via FaucetOptionFn (WithBankQueryClient)
+	// - Ignored if present in config file
 	bankQueryClient bankGRPCQueryClient `mapstructure:"-"`
 }
 
-// FaucetOptionFn is a function that receives the faucet for configuration.
+// FaucetOptionFn defines a function that configures a faucet server instance.
 type FaucetOptionFn func(server *Server)
 
-// NewConfig constructs a new faucet server configuration from the given arguments.
-func NewConfig(
+// NewFaucetConfig creates a new faucet server configuration from the provided arguments.
+func NewFaucetConfig(
 	clientCtx cosmosclient.Context,
 	signingKeyName string,
 	listenAddress string,
 	sendTokens []string,
 	createAccountOnly bool,
-) (*Config, error) {
+) (*FaucetConfig, error) {
 	if len(sendTokens) == 0 {
 		return nil, fmt.Errorf("send tokens MUST contain at least one token (e.g. 1upokt)")
 	}
 
-	config := &Config{
+	config := &FaucetConfig{
 		SigningKeyName:     signingKeyName,
 		ListenAddress:      listenAddress,
 		SupportedSendCoins: sendTokens,
@@ -83,15 +94,16 @@ func NewConfig(
 	return config, nil
 }
 
-// Validate performs validation of the faucet server configuration:
-// - SigningKeyName MUST be set
-// - SupportedSendCoins MUST be set with at least one valid coin string (e.g. "1upokt")
-// - ListenAddress MUST be set with a valid host:port format
-func (config *Config) Validate() error {
+// Validate checks faucet server configuration for correctness and minimum requirements:
+// - SigningKeyName must be set
+// - SupportedSendCoins must include at least one valid coin string (e.g. "1upokt")
+// - ListenAddress must be a valid "host:port" string
+func (config *FaucetConfig) Validate() error {
 	if config.SigningKeyName == "" {
 		return fmt.Errorf("signing key name MUST be set")
 	}
 
+	// At least one valid & support coin token must be specified.
 	if err := config.validateSupportedSendCoins(config.SupportedSendCoins); err != nil {
 		return err
 	}
@@ -102,28 +114,28 @@ func (config *Config) Validate() error {
 	return nil
 }
 
-// GetSupportedSendCoins returns the configured supported_send_coins as a cosmos-sdk coins object.
-func (config *Config) GetSupportedSendCoins() cosmostypes.Coins {
+// GetSupportedSendCoins returns SupportedSendCoins as a cosmos-sdk Coins object.
+func (config *FaucetConfig) GetSupportedSendCoins() cosmostypes.Coins {
 	sendCoins, _ := cosmostypes.ParseCoinsNormalized(strings.Join(config.SupportedSendCoins, ","))
 	return sendCoins
 }
 
 // GetSigningAddress returns the address of the configured signing key.
-func (config *Config) GetSigningAddress() cosmostypes.AccAddress {
+func (config *FaucetConfig) GetSigningAddress() cosmostypes.AccAddress {
 	return config.signingAddress
 }
 
-// validateSupportedSendCoins ensures that the configured supported_send_coins are
-// valid such that there's no possibility that they return an error when parsing later.
-func (config *Config) validateSupportedSendCoins(supportedSendTokens []string) error {
+// validateSupportedSendCoins checks that SupportedSendCoins are valid coin strings.
+// - Ensures no parsing errors will occur when used later.
+func (config *FaucetConfig) validateSupportedSendCoins(supportedSendTokens []string) error {
 	if _, err := cosmostypes.ParseCoinsNormalized(strings.Join(supportedSendTokens, ",")); err != nil {
 		return fmt.Errorf("unable to parse send coins %w", err)
 	}
 	return nil
 }
 
-// validateListenAddress ensures that the configured listen_address conforms to the expected "host:port" format.
-func (config *Config) validateListenAddress(listenAddress string) error {
+// validateListenAddress checks that ListenAddress matches the "host:port" format.
+func (config *FaucetConfig) validateListenAddress(listenAddress string) error {
 	// Ensure that the listen address is the expected format.
 	if _, _, err := net.SplitHostPort(listenAddress); err != nil {
 		return fmt.Errorf("listen address MUST be in the form of host:port (e.g. 127.0.0.1:42069)")
@@ -131,8 +143,9 @@ func (config *Config) validateListenAddress(listenAddress string) error {
 	return nil
 }
 
-// LoadSigningKey loads the key from the keyring provided by the given client context, using the configured signing_key_name.
-func (config *Config) LoadSigningKey(clientCtx cosmosclient.Context) error {
+// LoadSigningKey loads the signing key from the keyring in the given client context.
+// - Uses the configured SigningKeyName.
+func (config *FaucetConfig) LoadSigningKey(clientCtx cosmosclient.Context) error {
 	// Load the faucet key, by name, from the keyring.
 	// NOTE: DOES respect the --keyring-backend and --home flags.
 	keyRecord, err := clientCtx.Keyring.Key(config.SigningKeyName)
@@ -149,21 +162,22 @@ func (config *Config) LoadSigningKey(clientCtx cosmosclient.Context) error {
 	return nil
 }
 
-// WithConfig sets the faucet server configuration.
-func WithConfig(config *Config) FaucetOptionFn {
+// WithConfig sets the faucet server's configuration object.
+func WithConfig(config *FaucetConfig) FaucetOptionFn {
 	return func(faucet *Server) {
 		faucet.config = config
 	}
 }
 
-// WithTxClient sets the faucet server's transaction client.
+// WithTxClient sets the faucet server's transaction (tx) client.
 func WithTxClient(txClient client.TxClient) FaucetOptionFn {
 	return func(faucet *Server) {
 		faucet.config.txClient = txClient
 	}
 }
 
-// bankGRPCQueryClient is an interface to the protobuf generated bank module gRPC query client which exposes the necessary methods for the faucet.
+// bankGRPCQueryClient defines the interface to the bank module's gRPC query client.
+// - Exposes only the methods required by the faucet.
 type bankGRPCQueryClient interface {
 	AllBalances(ctx context.Context, in *banktypes.QueryAllBalancesRequest, opts ...grpc.CallOption) (*banktypes.QueryAllBalancesResponse, error)
 }

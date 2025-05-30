@@ -21,22 +21,21 @@ const (
 	denomRouteRecipientAddressParamName = "recipient_address"
 )
 
-// denomRouteTemplate is the chi route template used for all denomination routes:
-// I.e.: /{denom}/{recipient_address}
+// denomRouteTemplate defines the HTTP route for denomination funding requests.
+// Format: /{denom}/{recipient_address}
 var denomRouteTemplate = fmt.Sprintf("/{%s}/{%s}", denomRouteDenomParamName, denomRouteRecipientAddressParamName)
 
-// Server is an HTTP server that responds to funding requests, parameterized
-// by address and denomination, by broadcasting bank send transactions onchain
-// using a dedicated "faucet" account.
+// Server handles HTTP funding requests by broadcasting onchain bank send transactions
+// using a dedicated faucet account.
 type Server struct {
-	config  *Config
+	config  *FaucetConfig
 	handler *chi.Mux
 }
 
-// NewFaucetServer returns a new Server instance, configured according to the provided options.
+// NewFaucetServer constructs a new Server using the provided options.
 func NewFaucetServer(ctx context.Context, opts ...FaucetOptionFn) (*Server, error) {
 	faucet := &Server{
-		config:  new(Config),
+		config:  new(FaucetConfig),
 		handler: chi.NewRouter(),
 	}
 
@@ -50,8 +49,7 @@ func NewFaucetServer(ctx context.Context, opts ...FaucetOptionFn) (*Server, erro
 	return faucet, nil
 }
 
-// Serve starts the HTTP server that responds to funding requests.
-// It is a blocking operation that will not return until the given context is canceled.
+// Serve starts the HTTP server and blocks until the context is canceled.
 func (srv *Server) Serve(ctx context.Context) error {
 	httpServer := &http.Server{
 		Addr:    srv.config.ListenAddress,
@@ -70,12 +68,12 @@ func (srv *Server) Serve(ctx context.Context) error {
 	return err
 }
 
-// GetSigningAddress returns the address of the faucet's configured signing key.
+// GetSigningAddress returns the faucet's current signing address as a string.
 func (srv *Server) GetSigningAddress() string {
 	return srv.config.signingAddress.String()
 }
 
-// GetBalances queries for the onchain balances of the given address.
+// GetBalances queries the onchain balances for the specified address.
 func (srv *Server) GetBalances(ctx context.Context, address string) (cosmostypes.Coins, error) {
 	balancesRes, err := srv.config.bankQueryClient.AllBalances(ctx, &banktypes.QueryAllBalancesRequest{
 		Address: address,
@@ -87,9 +85,8 @@ func (srv *Server) GetBalances(ctx context.Context, address string) (cosmostypes
 	return balancesRes.Balances, nil
 }
 
-// newHandleDenomPOSTRequest is a handler factory function that returns a new HTTP handler
-// which responds to funding requests for the given denomination.
-// The context is expected to be cancelled when the server is shut down.
+// newHandleDenomPOSTRequest returns an HTTP handler for POST funding requests for a denomination.
+// Context is canceled when the server shuts down.
 func (srv *Server) newHandleDenomPOSTRequest(ctx context.Context) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		denom := chi.URLParam(req, denomRouteDenomParamName)
@@ -164,11 +161,9 @@ func (srv *Server) newHandleDenomPOSTRequest(ctx context.Context) http.HandlerFu
 	}
 }
 
-// shouldSendToRecipient indicates whether the faucet should send tokens to the given recipient address.
-// When create_accounts_only is false:
-// - ALWAYS returns true
-// When create_accounts_only is true:
-// - ONLY return true IF the recipient address does NOT already exist onchain (i.e. has no balances)
+// shouldSendToRecipient determines if the faucet should send tokens to recipientAddress.
+// - If CreateAccountsOnly is false: always returns true.
+// - If CreateAccountsOnly is true: returns true only if the address does not exist onchain (no balances).
 func (srv *Server) shouldSendToRecipient(ctx context.Context, recipientAddress cosmostypes.AccAddress) (bool, error) {
 	if srv.config.CreateAccountsOnly {
 		_, err := srv.GetBalances(ctx, recipientAddress.String())
@@ -187,10 +182,10 @@ func (srv *Server) shouldSendToRecipient(ctx context.Context, recipientAddress c
 	return true, nil
 }
 
-// SendDenom sends tokens of the given denomination to the given recipient address.
-// The amount of tokens sent is determined by the faucet's supported_send_coins configuration.
-// It ONLY ensures that the send TX passed the CheckTx ABCI method (i.e. made it into the mempool).
-// It DOES NOT wait for the TX to be committed AND there is a possibility that the TX will fail.
+// SendDenom sends tokens of the specified denom to recipientAddress.
+// - Amount is determined by SupportedSendCoins config.
+// - Only checks that the TX passed CheckTx (entered mempool); does not wait for commit.
+// - TX may still fail after being accepted into the mempool.
 func (srv *Server) SendDenom(
 	ctx context.Context,
 	logger polylog.Logger,
@@ -215,7 +210,7 @@ func (srv *Server) SendDenom(
 	}
 
 	logger = logger.With("tx_hash", txResponse.TxHash)
-	logger.Debug().Msg("transaction sent")
+	logger.Info().Msg("transaction sent")
 
 	go func(
 		ctx context.Context,
@@ -229,7 +224,7 @@ func (srv *Server) SendDenom(
 			if asyncErr != nil {
 				logger.Error().Err(asyncErr).Msg("transaction failed")
 			} else {
-				logger.Debug().Msg("transaction succeeded")
+				logger.Info().Msg("transaction succeeded")
 			}
 			return
 		}
@@ -238,7 +233,7 @@ func (srv *Server) SendDenom(
 	return txResponse, nil
 }
 
-// respondAccepted sends a 202 Accepted response to the given http.ResponseWriter.
+// respondAccepted writes a 202 Accepted response with the provided message.
 func respondAccepted(logger polylog.Logger, res http.ResponseWriter, msg string) {
 	// Send a accepted response (202).
 	res.WriteHeader(http.StatusAccepted)
@@ -247,7 +242,7 @@ func respondAccepted(logger polylog.Logger, res http.ResponseWriter, msg string)
 	}
 }
 
-// respondBadRequest sends a 400 Bad Request response to the given http.ResponseWriter and logs the given error.
+// respondBadRequest writes a 400 Bad Request response and logs the error.
 func respondBadRequest(logger polylog.Logger, res http.ResponseWriter, err error) {
 	logger.Error().Err(err).Send()
 
@@ -258,7 +253,7 @@ func respondBadRequest(logger polylog.Logger, res http.ResponseWriter, err error
 	}
 }
 
-// respondInternalError sends a 500 Internal Server Error response to the given http.ResponseWriter and logs the given error.
+// respondInternalError writes a 500 Internal Server Error response and logs the error.
 func respondInternalError(logger polylog.Logger, res http.ResponseWriter, err error) {
 	logger.Error().Err(err).Send()
 
@@ -268,7 +263,7 @@ func respondInternalError(logger polylog.Logger, res http.ResponseWriter, err er
 	}
 }
 
-// respondNotModified sends a 304 Not Modified response to the given http.ResponseWriter and logs the given recipientAddress.
+// respondNotModified writes a 304 Not Modified response and logs the recipient address.
 func respondNotModified(logger polylog.Logger, res http.ResponseWriter, recipientAddress string) {
 	res.WriteHeader(http.StatusNotModified)
 	if _, err := fmt.Fprintf(res, "address %s already exists onchain", recipientAddress); err != nil {
@@ -276,7 +271,7 @@ func respondNotModified(logger polylog.Logger, res http.ResponseWriter, recipien
 	}
 }
 
-// respondNotFound sends a 404 Not Found response to the given http.ResponseWriter and logs the given error.
+// respondNotFound writes a 404 Not Found response and logs the error.
 func respondNotFound(logger polylog.Logger, res http.ResponseWriter, err error) {
 	logger.Error().Err(err).Send()
 	res.WriteHeader(http.StatusNotFound)

@@ -22,7 +22,7 @@ const (
 var (
 	// faucetCfg is used to configure the faucet server.
 	// It is initialized in preRunServe.
-	faucetCfg *faucet.Config
+	faucetCfg *faucet.FaucetConfig
 
 	// txClient is used by the faucet server to send transactions.
 	// It is initialized in preRunServe.

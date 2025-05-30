@@ -23,15 +23,26 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 
 	switch networkStr {
 	case "":
-	// No network flag was provided, so we don't need to set any flags.
+		// No network flag was provided, so we don't need to set any flags.
+		// Noop
+		return nil
+
+	// LocalNet
 	case flags.LocalNetworkName:
 		return setNetworkRelatedFlags(cmd, pocket.LocalNetChainId, pocket.LocalNetRPCURL, pocket.LocalNetGRPCAddr, pocket.LocalNetFaucetBaseURL)
+
+	// AlphaNet
 	case flags.AlphaNetworkName:
 		return setNetworkRelatedFlags(cmd, pocket.AlphaTestNetChainId, pocket.AlphaTestNetRPCURL, pocket.AlphaNetGRPCAddr, pocket.AlphaTestNetFaucetBaseURL)
+
+	// Beta TestNet
 	case flags.BetaNetworkName:
 		return setNetworkRelatedFlags(cmd, pocket.BetaTestNetChainId, pocket.BetaTestNetRPCURL, pocket.BetaNetGRPCAddr, pocket.BetaTestNetFaucetBaseURL)
+
+	// MainNet
 	case flags.MainNetworkName:
 		return setNetworkRelatedFlags(cmd, pocket.MainNetChainId, pocket.MainNetRPCURL, pocket.MainNetGRPCAddr, pocket.MainNetFaucetBaseURL)
+
 	default:
 		return fmt.Errorf("unknown --network specified %q", networkStr)
 	}
