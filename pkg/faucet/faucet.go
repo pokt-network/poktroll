@@ -16,7 +16,14 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-const denomPathFmt = "/%s/"
+const (
+	denomRouteDenomParamName            = "denom"
+	denomRouteRecipientAddressParamName = "recipient_address"
+)
+
+// denomRouteTemplate is the chi route template used for all denomination routes:
+// I.e.: /{denom}/{recipient_address}
+var denomRouteTemplate = fmt.Sprintf("/{%s}/{%s}", denomRouteDenomParamName, denomRouteRecipientAddressParamName)
 
 // Server is an HTTP server that responds to funding requests, parameterized
 // by address and denomination, by broadcasting bank send transactions onchain
@@ -37,13 +44,8 @@ func NewFaucetServer(ctx context.Context, opts ...FaucetOptionFn) (*Server, erro
 		opt(faucet)
 	}
 
-	//for _, sendCoin := range faucet.config.GetSupportedSendCoins() {
-	handleDenomRequest := faucet.newHandleDenomRequest(ctx)
-	// TODO_IN_THIS_COMMIT: promote to a const.
-	// TODO_IN_THIS_COMMIT: extract param names to own consts.
-	denomPathRouteTemplate := "/{denom}/{recipient_address}"
-	faucet.handler.Post(denomPathRouteTemplate, handleDenomRequest)
-	//}
+	handleDenomRequest := faucet.newHandleDenomPOSTRequest(ctx)
+	faucet.handler.Post(denomRouteTemplate, handleDenomRequest)
 
 	return faucet, nil
 }
@@ -85,15 +87,14 @@ func (srv *Server) GetBalances(ctx context.Context, address string) (cosmostypes
 	return balancesRes.Balances, nil
 }
 
-// newHandleDenomRequest is a handler factory function that returns a new HTTP handler
+// newHandleDenomPOSTRequest is a handler factory function that returns a new HTTP handler
 // which responds to funding requests for the given denomination.
-func (srv *Server) newHandleDenomRequest(ctx context.Context) http.HandlerFunc {
+// The context is expected to be cancelled when the server is shut down.
+func (srv *Server) newHandleDenomPOSTRequest(ctx context.Context) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		// TDOO_IN_THIS_COMMIT: Promote to a const.
-		denom := chi.URLParam(req, "denom")
+		denom := chi.URLParam(req, denomRouteDenomParamName)
 
-		// TODO_IN_THIS_COMMIT: update comments...
-		// Add routes for each supported denomination:
+		// Respond to the following routes for each supported denomination:
 		// - Denomination as configured (e.g. "uPOKT")
 		// - Uppercase denomination (e.g. "UPOKT")
 		// - Lowercase denomination (e.g. "upokt")
@@ -113,15 +114,12 @@ func (srv *Server) newHandleDenomRequest(ctx context.Context) http.HandlerFunc {
 			}
 		}
 		if sendCoin == nil {
-			// TODO_IN_THIS_COMMIT:
-			// - Return a 404 error
-			// - include the unsupported denom in the body
+			respondNotFound(logger.Logger, res, fmt.Errorf("unsupported denom %q", denom))
 		}
 
 		logger := logger.Logger.With("denom", sendCoin.Denom)
 
-		// TDOO_IN_THIS_COMMIT: Promote to a const.
-		recipientAddressStr := chi.URLParam(req, "recipient_address")
+		recipientAddressStr := chi.URLParam(req, denomRouteRecipientAddressParamName)
 		recipientAddress, err := cosmostypes.AccAddressFromBech32(recipientAddressStr)
 		if err != nil {
 			respondBadRequest(logger, res, err)
@@ -274,6 +272,15 @@ func respondInternalError(logger polylog.Logger, res http.ResponseWriter, err er
 func respondNotModified(logger polylog.Logger, res http.ResponseWriter, recipientAddress string) {
 	res.WriteHeader(http.StatusNotModified)
 	if _, err := fmt.Fprintf(res, "address %s already exists onchain", recipientAddress); err != nil {
+		logger.Error().Err(err).Send()
+	}
+}
+
+// respondNotFound sends a 404 Not Found response to the given http.ResponseWriter and logs the given error.
+func respondNotFound(logger polylog.Logger, res http.ResponseWriter, err error) {
+	logger.Error().Err(err).Send()
+	res.WriteHeader(http.StatusNotFound)
+	if _, err := fmt.Fprintf(res, "not found"); err != nil {
 		logger.Error().Err(err).Send()
 	}
 }
