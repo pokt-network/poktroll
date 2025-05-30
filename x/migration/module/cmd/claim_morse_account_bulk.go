@@ -379,12 +379,11 @@ func readMorseAccountsPrivateKeysFile(
 			return nil, queryErr
 		}
 
-		// TODO_IN_THIS_PR: Why are we skipping this? Don't we want to migrate suppliers that have been claimed?
-
 		// Check if the Morse account is already claimed.
 		if res.MorseClaimableAccount.IsClaimed() {
 			// Ignore already-claimed Morse accounts during the bulk supplier migration.
-			logger.Logger.Warn().Msgf("morse account %s already claimed: %v", morseAddressStr, res.MorseClaimableAccount)
+			// This is intentional behaviour assuming a human error of not removing a key from the input-file that has already been claimed.
+			logger.Logger.Warn().Msgf("Skipping accounts with morse address (%s) because it has already been claimed: %v", morseAddressStr, res.MorseClaimableAccount)
 			continue
 		}
 

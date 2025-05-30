@@ -273,10 +273,9 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		}
 		morseOutputAddress := claimableMorseNode.MorseOutputAddress
 
-		// the right way to know if a node is custodial or not
-		custodial := strings.EqualFold(morseOutputAddress, morseNodeAddress)
-
-		if custodial {
+		// the right way to know if a node is isCustodial or not
+		isCustodial := strings.EqualFold(morseOutputAddress, morseNodeAddress)
+		if isCustodial {
 			ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseNode
 		}
 
@@ -289,15 +288,13 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 					return morseAccountError
 				}
 				if outputAddressIsNode {
-					// TODO_IN_THIS_PR: I was not able to reproduce this case (missing keys with this scenario),
-					//  but I found them in testnet, maybe not a mainnet case?
-					//  in any case please @olshansky think about this and let me know.
-					return fmt.Errorf("morse output address '%s' is a node", morseOutputAddress)
+					// TODO_TECHDEBT(@olshansky): Re-evaluate if/how this can happen and tackle it separately.
+					return fmt.Errorf("the bulk claim tool does not have support for non-custodial nodes when the morse output address '%s' is a node", morseOutputAddress)
 				}
 				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseAccount
 			} else {
 				// Custodial: use the current MorseClaimableAccount
-				custodial = true
+				isCustodial = true
 				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseNode
 			}
 		}
@@ -322,7 +319,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 
 		// Determine the owner address for the supplier stake config.
 		var shannonOwnerAddress string
-		if custodial {
+		if isCustodial {
 			// Custodial: use the same address for owner and operator
 			shannonOwnerAddress = morseShannonMapping.ShannonAccount.Address.String()
 		} else {
@@ -344,7 +341,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		msgClaimMorseSupplier, claimSupplierMsgErr := types.NewMsgClaimMorseSupplier(
 			supplierStakeConfig.OwnerAddress,
 			supplierStakeConfig.OperatorAddress,
-			morseNodeAddress,            // TODO_IN_THIS_PR: Can this be morseNodeAccount.Address?
+			morseNodeAddress,
 			morseNodeAccount.PrivateKey, // morse operator private key
 			supplierStakeConfig.Services,
 			shannonSigningAddr,
@@ -574,10 +571,12 @@ func buildSupplierStakeConfig(
 		return nil, err
 	}
 
-	// TODO_IN_THIS_PR: Why do we need this if we're already doing 'yamlStakeConfig.ValidateAndNormalizeDefaultRevShare'
-	// === TODO_IN_THIS_PR start: Can we remove this? ===
+	// ===== Start TECHDEBT codeblock =====
+	// TODO_TECHDEBT(#1372): Re-evaluate this codeblock.
+	// See the discussion here: https://github.com/pokt-network/poktroll/pull/1386#discussion_r2115168813
+
 	if len(yamlStakeConfig.DefaultRevSharePercent) != 0 {
-		if yamlStakeConfig.DefaultRevSharePercent, err = enforce100Percent(ownerAddress, defaultRevShareMap); err != nil {
+		if yamlStakeConfig.DefaultRevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, defaultRevShareMap); err != nil {
 			return nil, err
 		}
 	}
@@ -587,12 +586,12 @@ func buildSupplierStakeConfig(
 			service.RevSharePercent = defaultRevShareMap
 			continue
 		}
-		service.RevSharePercent, err = enforce100Percent(ownerAddress, service.RevSharePercent)
+		service.RevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, service.RevSharePercent)
 		if err != nil {
 			return nil, err
 		}
 	}
-	// === TODO_IN_THIS_PR end: Can we remove this? ===
+	// ===== End TECHDEBT codeblock =====
 
 	// Validate and parse the service configs.
 	supplierServiceConfigs, err := yamlStakeConfig.ValidateAndParseServiceConfigs(defaultRevShareMap)
@@ -611,12 +610,11 @@ func buildSupplierStakeConfig(
 	}, nil
 }
 
-// TODO_IN_THIS_PR: Can we remove this?
-// enforce100Percent ensures that the sum of revenue shares in revShareMap equals 100%.
+// updateRevShareMapToFullAllocation ensures that the sum of revenue shares in revShareMap equals 100%.
 // - Adds or adjusts the owner's share if necessary.
 // - If the owner isn't present, it's added to balance the total to 100%.
 // - Returns: updated map or error.
-func enforce100Percent(owner string, revShareMap map[string]uint64) (map[string]uint64, error) {
+func updateRevShareMapToFullAllocation(owner string, revShareMap map[string]uint64) (map[string]uint64, error) {
 	totalShare := uint64(0)
 	ownerFound := false
 
