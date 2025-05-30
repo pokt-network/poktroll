@@ -695,3 +695,247 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		s.Equal(morseClaimableAccount.TotalTokens(), *shannonDestBalance)
 	})
 }
+
+// TestClaimMorseOperatorClaimedNonCustodialSupplier performs the following sequence:
+// 1. Generate onchain fixtures for 1 non-custodial Morse node/operator and owner.
+// 2. Attempt to claim the non-custodial supplier (should error).
+// 3. Claim the non-custodial Morse owner account.
+// 4. Retry the same non-custodial supplier claim (should succeed).
+func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupplier() {
+	// Configure fixtures to generate 1 non-custodial Morse validators:
+	validAccountsOpt := testmigration.WithValidAccounts(testmigration.ValidAccountsConfig{
+		NumNonCustodialValidators: 1,
+	})
+
+	// Configure fixtures to generate Morse balances:
+	// - Validator stake is 1upokt above the minimum stake (101upokt)
+	// - Validator unstaked balance is 420upokt ✌️
+	// - Validator owner unstaked balance is 9001upokt
+	validatorStakesFnOpt := testmigration.WithValidatorStakesFn(func(
+		_, _ uint64,
+		validatorType testmigration.MorseValidatorActorType,
+		_ *migrationtypes.MorseValidator,
+	) (staked, unstaked *cosmostypes.Coin) {
+		staked, unstaked = new(cosmostypes.Coin), new(cosmostypes.Coin)
+		*staked = s.minStake.Add(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1))
+		*unstaked = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 420)
+		return staked, unstaked
+	})
+
+	var morseOwnerAccountIndex uint64
+	ownerAccountBalanceOpt := testmigration.WithUnstakedAccountBalancesFn(func(
+		allAccountsIndex, _ uint64,
+		_ testmigration.MorseUnstakedActorType,
+		_ *migrationtypes.MorseAccount,
+	) (unstaked *cosmostypes.Coin) {
+		morseOwnerAccountIndex = allAccountsIndex
+		unstaked = new(cosmostypes.Coin)
+		*unstaked = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 9001)
+		return unstaked
+	})
+
+	// Generate and import Morse claimable accounts.
+	fixtures, err := testmigration.NewMorseFixtures(
+		validAccountsOpt,
+		validatorStakesFnOpt,
+		ownerAccountBalanceOpt,
+	)
+	s.NoError(err)
+
+	// Set the Morse account state and import the Morse claimable accounts.
+	s.SetMorseAccountState(s.T(), fixtures.GetMorseAccountState())
+	_, err = s.ImportMorseClaimableAccounts(s.T())
+	s.NoError(err)
+
+	// Retrieve the first non-custodial supplier fixture.
+	nonCustodialSupplierFixture := fixtures.GetValidatorFixtures(testmigration.MorseNonCustodialValidator)[0]
+	nonCustodialSupplierAddress := nonCustodialSupplierFixture.GetActor().Address.String()
+
+	// Generate new Shannon operator and owner addresses.
+	shannonOperatorAddr := sample.AccAddress()
+	shannonOwnerAddr := sample.AccAddress()
+
+	// Prepare a claim message for the unbonding supplier.
+	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
+		shannonOwnerAddr,
+		shannonOperatorAddr,
+		nonCustodialSupplierAddress,
+		nonCustodialSupplierFixture.GetPrivateKey(),
+		s.supplierServices,
+		sample.AccAddress(),
+	)
+	s.NoError(err)
+	require.Equal(s.T(), nonCustodialSupplierAddress, morseClaimMsg.GetMorseSignerAddress())
+
+	// Retrieve the claiming Morse supplier's node/operator claimable account.
+	morseOperatorClaimableAccount := s.QueryMorseClaimableAccount(s.T(), nonCustodialSupplierAddress)
+	morseOperatorAddress := morseOperatorClaimableAccount.GetMorseSrcAddress()
+
+	// Retrieve the claiming Morse supplier's owner claimable account.
+	morseOwnerAddress := morseOperatorClaimableAccount.GetMorseOutputAddress()
+	require.NotEmpty(s.T(), morseOwnerAddress)
+	morseOwnerClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseOwnerAddress)
+	require.NotNil(s.T(), morseOwnerClaimableAccount)
+
+	// 1. Submit an operator-signed claim message for a non-custodial supplier
+	//    prior to owner account claiming (i.e. should error).
+	// 2. Asserts that the supplier IS NOT staked.
+	// 3. Asserts that the prospective supplier's balance DOES NOT change.
+	s.Run("before owner account has been claimed (error)", func() {
+		// Attempt to claim the Morse node/operator claimable account.
+		_, err = s.GetApp().RunMsg(s.T(), morseClaimMsg)
+		expectedErr := status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"morse owner address (%s) MUST be claimed before morse node (%s) can be claimed",
+				morseOwnerAddress,
+				morseOperatorAddress,
+			).Error(),
+		)
+		s.ErrorContains(err, expectedErr.Error())
+
+		// Assert that the morseOperatorClaimableAccount is NOT updated onchain.
+		refreshedMorseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
+		s.Equal(morseOperatorClaimableAccount, refreshedMorseClaimableAccount)
+
+		// Prepare clients for queries.
+		supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
+		bankClient := s.GetBankQueryClient(s.T())
+
+		// Ensure the found supplier matches the expected supplier.
+		_, err = supplierClient.GetSupplier(s.SdkCtx(), shannonOperatorAddr)
+		expectedErr = status.Error(
+			codes.NotFound,
+			suppliertypes.ErrSupplierNotFound.Wrapf(
+				"supplier with operator address: %q",
+				shannonOperatorAddr,
+			).Error(),
+		)
+		s.ErrorContains(err, expectedErr.Error())
+
+		// Ensure the Shannon operator account has a zero balance.
+		balance, err := bankClient.GetBalance(s.SdkCtx(), shannonOperatorAddr)
+		s.NoError(err)
+		s.Zero(balance.Amount.Int64())
+	})
+
+	// Claim owner account so that the operator may now claim the supplier.
+	s.ClaimMorseAccount(s.T(), morseOwnerAccountIndex, shannonOwnerAddr, shannonOwnerAddr)
+
+	// 1. Submit an operator-signed claim message for a non-custodial supplier.
+	// 2. Verifies that the correct onchain events are emitted
+	// 3. Verifies that the supplier state is updated as expected
+	// 4. Asserts that the supplier's balance and onchain state (including unbonding status and staking fee deduction) are correct after the claim is processed.
+	s.Run("after owner account has been claimed (success)", func() {
+		// Calculate the current session end height and the next session start height.
+		currentHeight := s.GetApp().GetSdkCtx().BlockHeight()
+		sharedParams := s.GetSharedParams(s.T())
+		currentSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		nextSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, currentSessionEndHeight+1)
+
+		// Calculate what the expect Supplier onchain should look like.
+		expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight())
+		expectedSupplierStake := morseOperatorClaimableAccount.GetSupplierStake()
+		expectedSupplier := &sharedtypes.Supplier{
+			OperatorAddress: shannonOperatorAddr,
+			OwnerAddress:    shannonOwnerAddr,
+			Stake:           &expectedSupplierStake,
+			ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+				{
+					OperatorAddress:    shannonOperatorAddr,
+					Service:            s.supplierServices[0],
+					ActivationHeight:   nextSessionStartHeight,
+					DeactivationHeight: 0,
+				},
+			},
+			// DEV_NOTE: The services field will be empty until a service activation height elapses.
+			Services: make([]*sharedtypes.SupplierServiceConfig, 0),
+		}
+
+		// Claim a Morse claimable account.
+		morseClaimRes, err := s.GetApp().RunMsg(s.T(), morseClaimMsg)
+		s.NoError(err)
+
+		// Nilify the following zero-value map/slice fields because they are not initialized in the TxResponse.
+		expectedSupplier.ServiceConfigHistory[0].Service.Endpoints[0].Configs = make([]*sharedtypes.ConfigOption, 0)
+
+		// Assert that the expected events were emitted.
+		expectedMorseSupplierClaimEvent := &migrationtypes.EventMorseSupplierClaimed{
+			SessionEndHeight:     expectedSessionEndHeight,
+			ClaimedBalance:       morseOperatorClaimableAccount.GetUnstakedBalance(),
+			MorseNodeAddress:     nonCustodialSupplierFixture.GetActor().Address.String(),
+			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR,
+			ClaimedSupplierStake: expectedSupplierStake,
+			Supplier:             expectedSupplier,
+			MorseOutputAddress:   morseOwnerAddress,
+		}
+
+		// Claim events
+		morseSupplierClaimedEvents := events.FilterEvents[*migrationtypes.EventMorseSupplierClaimed](s.T(), s.GetEvents())
+		require.Equal(s.T(), 1, len(morseSupplierClaimedEvents))
+		require.Equal(s.T(), expectedMorseSupplierClaimEvent, morseSupplierClaimedEvents[0])
+
+		// Nilify the following zero-value map/slice fields because they are not initialized in the TxResponse.
+		expectedSupplier.Services = nil
+		expectedSupplier.ServiceConfigHistory[0].Service.Endpoints[0].Configs = nil
+
+		// Check the Morse claim response.
+		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{
+			MorseNodeAddress:     morseClaimMsg.GetMorseSignerAddress(),
+			ClaimedBalance:       morseOperatorClaimableAccount.GetUnstakedBalance(),
+			ClaimedSupplierStake: morseOperatorClaimableAccount.GetSupplierStake(),
+			Supplier:             expectedSupplier,
+			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR,
+			SessionEndHeight:     expectedSessionEndHeight,
+			MorseOutputAddress:   morseOwnerAddress,
+		}
+		s.Equal(expectedMorseClaimRes, morseClaimRes)
+
+		// Assert that the morseOperatorClaimableAccount is updated on-chain.
+		expectedMorseClaimableAccount := morseOperatorClaimableAccount
+		expectedMorseClaimableAccount.ShannonDestAddress = shannonOperatorAddr
+		expectedMorseClaimableAccount.ClaimedAtHeight = s.SdkCtx().BlockHeight() - 1
+		updatedMorseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSignerAddress())
+		s.Equal(expectedMorseClaimableAccount, updatedMorseClaimableAccount)
+
+		// TODO_IN_THIS_COMMIT: update comments...
+		// Assert that the validator is unbonding.
+		expectedSupplier = &sharedtypes.Supplier{
+			OperatorAddress: shannonOperatorAddr,
+			OwnerAddress:    shannonOwnerAddr,
+			Stake:           &expectedSupplierStake,
+			ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+				{
+					OperatorAddress:    shannonOperatorAddr,
+					Service:            s.supplierServices[0],
+					ActivationHeight:   nextSessionStartHeight,
+					DeactivationHeight: 0,
+				},
+			},
+			// DEV_NOTE: The services field will be empty until a service activation height elapses.
+			Services: nil,
+		}
+
+		// Prepare clients for queries.
+		supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
+		bankClient := s.GetBankQueryClient(s.T())
+
+		// Retrieve the supplier params.
+		supplierParams, err := supplierClient.GetParams(s.SdkCtx())
+		s.NoError(err)
+
+		// Ensure the found supplier matches the expected supplier.
+		foundSupplier, err := supplierClient.GetSupplier(s.SdkCtx(), shannonOperatorAddr)
+		s.NoError(err)
+		s.Equal(expectedSupplier, &foundSupplier)
+
+		// Ensure the found balance matches the expected balance.
+		shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonOperatorAddr)
+		s.NoError(err)
+
+		// Subtract the staking fee from the expected unstaked balance.
+		supplierStakingFee := supplierParams.GetStakingFee()
+		expectedSupplierUnstakedBalance := morseOperatorClaimableAccount.GetUnstakedBalance().Sub(*supplierStakingFee)
+		s.Equal(expectedSupplierUnstakedBalance, *shannonDestBalance)
+	})
+}
