@@ -69,14 +69,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect
 	github.com/hashicorp/go-metrics v0.5.4
 	github.com/pokt-network/ring-go v0.1.0
-	// TODO_TECHDEBT: Whenever we update a protobuf in the `pocket` repo, we need to:
-	// 1. Merge in the update PR (and it's generated outputs) into `pocket` main.
-	// 2. Update the `pocket` sha in the `shannon-sdk` to reflect the new dependency.
-	// 3. Update the `shannon-sdk` sha in the `pocket` repo (here).
-	// This is creating a circular dependency whereby exporting the protobufs into a separate
-	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
-	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20250521165933-64d83f85e7e3
 	github.com/pokt-network/smt v0.13.0
 	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188
 	github.com/prometheus/client_golang v1.22.0
@@ -104,9 +96,19 @@ require (
 	github.com/foxcpp/go-mockdns v1.1.0
 	github.com/jhump/protoreflect v1.17.0
 	github.com/mitchellh/mapstructure v1.5.0
+	// TODO_TECHDEBT: Whenever we update a protobuf in the `pocket` repo, we need to:
+	// 1. Merge in the update PR (and it's generated outputs) into `pocket` main.
+	// 2. Update the `pocket` sha in the `shannon-sdk` to reflect the new dependency.
+	// 3. Update the `shannon-sdk` sha in the `pocket` repo (here).
+	// This is creating a circular dependency whereby exporting the protobufs into a separate
+	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
+	// a hard blocker.
+	github.com/pokt-network/shannon-sdk v0.0.0-20250529214913-363101e08c43
 	go.uber.org/mock v0.5.2
 	golang.org/x/term v0.32.0
 )
+
+require github.com/go-chi/chi/v5 v5.2.1
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
@@ -246,7 +248,6 @@ require (
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/ghostiam/protogetter v0.3.9 // indirect
-	github.com/go-chi/chi/v5 v5.2.1 // indirect
 	github.com/go-critic/go-critic v0.12.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.4 // indirect
 	github.com/go-kit/log v0.2.1 // indirect

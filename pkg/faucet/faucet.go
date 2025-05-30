@@ -9,6 +9,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/go-chi/chi/v5"
 
 	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/pkg/client/query"
@@ -22,40 +23,27 @@ const denomPathFmt = "/%s/"
 // using a dedicated "faucet" account.
 type Server struct {
 	config  *Config
-	httpMux *http.ServeMux
+	handler *chi.Mux
 }
 
 // NewFaucetServer returns a new Server instance, configured according to the provided options.
 func NewFaucetServer(ctx context.Context, opts ...FaucetOptionFn) (*Server, error) {
 	faucet := &Server{
 		config:  new(Config),
-		httpMux: http.NewServeMux(),
+		handler: chi.NewRouter(),
 	}
 
 	for _, opt := range opts {
 		opt(faucet)
 	}
 
-	// Add routes for each supported denomination:
-	// - Denomination as configured (e.g. "uPOKT")
-	// - Uppercase denomination (e.g. "UPOKT")
-	// - Lowercase denomination (e.g. "upokt")
-	for _, sendCoin := range faucet.config.GetSupportedSendCoins() {
-		denomPath := fmt.Sprintf(denomPathFmt, sendCoin.Denom)
-		denomPathUpper := fmt.Sprintf(denomPathFmt, strings.ToUpper(sendCoin.Denom))
-		denomPathLower := fmt.Sprintf(denomPathFmt, strings.ToLower(sendCoin.Denom))
-
-		handleDenomRequest := faucet.newHandleDenomRequest(ctx, sendCoin.Denom)
-		faucet.httpMux.HandleFunc(denomPath, handleDenomRequest)
-
-		// Don't add duplicate routes.
-		if denomPathUpper != denomPath {
-			faucet.httpMux.HandleFunc(denomPathUpper, handleDenomRequest)
-		}
-		if denomPathLower != denomPath {
-			faucet.httpMux.HandleFunc(denomPathLower, handleDenomRequest)
-		}
-	}
+	//for _, sendCoin := range faucet.config.GetSupportedSendCoins() {
+	handleDenomRequest := faucet.newHandleDenomRequest(ctx)
+	// TODO_IN_THIS_COMMIT: promote to a const.
+	// TODO_IN_THIS_COMMIT: extract param names to own consts.
+	denomPathRouteTemplate := "/{denom}/{recipient_address}"
+	faucet.handler.Post(denomPathRouteTemplate, handleDenomRequest)
+	//}
 
 	return faucet, nil
 }
@@ -65,7 +53,7 @@ func NewFaucetServer(ctx context.Context, opts ...FaucetOptionFn) (*Server, erro
 func (srv *Server) Serve(ctx context.Context) error {
 	httpServer := &http.Server{
 		Addr:    srv.config.ListenAddress,
-		Handler: srv.httpMux,
+		Handler: srv.handler,
 	}
 
 	go func(httpServer *http.Server) {
@@ -99,22 +87,48 @@ func (srv *Server) GetBalances(ctx context.Context, address string) (cosmostypes
 
 // newHandleDenomRequest is a handler factory function that returns a new HTTP handler
 // which responds to funding requests for the given denomination.
-func (srv *Server) newHandleDenomRequest(ctx context.Context, denom string) http.HandlerFunc {
+func (srv *Server) newHandleDenomRequest(ctx context.Context) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		// Extract the recipient address from the URL path.
-		denomPath := fmt.Sprintf(denomPathFmt, denom)
-		recipientAddressStr := req.URL.Path[len(denomPath):]
+		// TDOO_IN_THIS_COMMIT: Promote to a const.
+		denom := chi.URLParam(req, "denom")
+
+		// TODO_IN_THIS_COMMIT: update comments...
+		// Add routes for each supported denomination:
+		// - Denomination as configured (e.g. "uPOKT")
+		// - Uppercase denomination (e.g. "UPOKT")
+		// - Lowercase denomination (e.g. "upokt")
+		sendCoin := new(cosmostypes.Coin)
+		for _, supportedSendCoin := range srv.config.GetSupportedSendCoins() {
+			switch supportedSendCoin.Denom {
+			case strings.ToUpper(denom):
+				fallthrough
+			case strings.ToLower(denom):
+				fallthrough
+			case denom:
+				*sendCoin = supportedSendCoin
+			}
+
+			if sendCoin != nil {
+				break
+			}
+		}
+		if sendCoin == nil {
+			// TODO_IN_THIS_COMMIT:
+			// - Return a 404 error
+			// - include the unsupported denom in the body
+		}
+
+		logger := logger.Logger.With("denom", sendCoin.Denom)
+
+		// TDOO_IN_THIS_COMMIT: Promote to a const.
+		recipientAddressStr := chi.URLParam(req, "recipient_address")
 		recipientAddress, err := cosmostypes.AccAddressFromBech32(recipientAddressStr)
 		if err != nil {
-			logger.Logger.Error().Err(err).Send()
-			res.WriteHeader(http.StatusBadRequest)
-			if _, err = res.Write([]byte(err.Error())); err != nil {
-				logger.Logger.Error().Err(err).Send()
-			}
+			respondBadRequest(logger, res, err)
 			return
 		}
 
-		logger := logger.Logger.With("recipient_address", recipientAddress)
+		logger = logger.With("recipient_address", recipientAddress)
 
 		// Check if the recipient address already exists onchain.
 		shouldSend, queryErr := srv.shouldSendToRecipient(req.Context(), recipientAddress)
@@ -131,12 +145,20 @@ func (srv *Server) newHandleDenomRequest(ctx context.Context, denom string) http
 		}
 
 		// If the address doesn't exist onchain, send it tokens.
-		if err = srv.SendDenom(ctx, logger, denom, recipientAddress); err != nil {
-			respondBadRequest(res, err)
+		txResponse, sendErr := srv.SendDenom(ctx, logger, denom, recipientAddress)
+		if sendErr != nil {
+			respondBadRequest(logger, res, sendErr)
 			return
 		}
 
-		// Send empty success response (200).
+		// If CheckTx fails, return a 400 Bad Request response with the tx log.
+		if txResponse.Code != 0 {
+			respondBadRequest(logger, res, errors.New(txResponse.RawLog))
+			return
+		}
+
+		// Send accepted response with tx hash (202).
+		respondAccepted(logger, res, txResponse.TxHash)
 		if _, err = res.Write([]byte{}); err != nil {
 			logger.Error().Err(err).Send()
 			return
@@ -169,15 +191,17 @@ func (srv *Server) shouldSendToRecipient(ctx context.Context, recipientAddress c
 
 // SendDenom sends tokens of the given denomination to the given recipient address.
 // The amount of tokens sent is determined by the faucet's supported_send_coins configuration.
+// It ONLY ensures that the send TX passed the CheckTx ABCI method (i.e. made it into the mempool).
+// It DOES NOT wait for the TX to be committed AND there is a possibility that the TX will fail.
 func (srv *Server) SendDenom(
 	ctx context.Context,
 	logger polylog.Logger,
 	denom string,
 	recipientAddress cosmostypes.AccAddress,
-) error {
+) (*cosmostypes.TxResponse, error) {
 	isDenomSupported, denomCoin := srv.config.GetSupportedSendCoins().Find(denom)
 	if !isDenomSupported {
-		return fmt.Errorf("denom %q not supported", denom)
+		return nil, fmt.Errorf("denom %q not supported", denom)
 	}
 
 	sendMsg := banktypes.NewMsgSend(
@@ -189,7 +213,7 @@ func (srv *Server) SendDenom(
 	txResponse, eitherErr := srv.config.txClient.SignAndBroadcast(ctx, sendMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logger = logger.With("tx_hash", txResponse.TxHash)
@@ -213,17 +237,26 @@ func (srv *Server) SendDenom(
 		}
 	}(ctx, txResponse, errCh)
 
-	return nil
+	return txResponse, nil
+}
+
+// respondAccepted sends a 202 Accepted response to the given http.ResponseWriter.
+func respondAccepted(logger polylog.Logger, res http.ResponseWriter, msg string) {
+	// Send a accepted response (202).
+	res.WriteHeader(http.StatusAccepted)
+	if _, err := res.Write([]byte(msg)); err != nil {
+		logger.Error().Err(err).Send()
+	}
 }
 
 // respondBadRequest sends a 400 Bad Request response to the given http.ResponseWriter and logs the given error.
-func respondBadRequest(res http.ResponseWriter, err error) {
-	logger.Logger.Error().Err(err).Send()
+func respondBadRequest(logger polylog.Logger, res http.ResponseWriter, err error) {
+	logger.Error().Err(err).Send()
 
 	// Send a bad request response (400).
 	res.WriteHeader(http.StatusBadRequest)
 	if _, err = res.Write([]byte(err.Error())); err != nil {
-		logger.Logger.Error().Err(err).Send()
+		logger.Error().Err(err).Send()
 	}
 }
 
@@ -241,6 +274,6 @@ func respondInternalError(logger polylog.Logger, res http.ResponseWriter, err er
 func respondNotModified(logger polylog.Logger, res http.ResponseWriter, recipientAddress string) {
 	res.WriteHeader(http.StatusNotModified)
 	if _, err := fmt.Fprintf(res, "address %s already exists onchain", recipientAddress); err != nil {
-		logger.Error().Err(err).Str("recipient_address", recipientAddress).Send()
+		logger.Error().Err(err).Send()
 	}
 }

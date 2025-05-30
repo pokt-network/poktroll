@@ -72,13 +72,13 @@ func sendFundRequest(denom string, recipientAddress cosmostypes.AccAddress) erro
 		Str("recipient_address", recipientAddress.String()).
 		Msg("sending fund request")
 
-	httpRes, err := http.DefaultClient.Get(fundURL)
+	httpRes, err := http.DefaultClient.Post(fundURL, "text/json", nil)
 	if err != nil {
 		return err
 	}
 
 	switch httpRes.StatusCode {
-	case http.StatusOK:
+	case http.StatusAccepted:
 		return nil
 	case http.StatusNotModified:
 		logger.Logger.Warn().
@@ -92,6 +92,9 @@ func sendFundRequest(denom string, recipientAddress cosmostypes.AccAddress) erro
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = httpRes.Body.Close()
+	}()
 
 	bodyStr := string(bodyBytes)
 	return fmt.Errorf("unexpected response status code %d; body: %q", httpRes.StatusCode, bodyStr)

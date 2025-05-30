@@ -107,26 +107,6 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 			},
 			expectedErr: fmt.Errorf("unable to parse send coins"),
 		},
-		{
-			desc: "invalid fee coins (missing denom)",
-			config: &faucet.Config{
-				SigningKeyName:     testSigningKeyName,
-				ListenAddress:      testListenAddress,
-				SupportedSendCoins: testSupportedSendCoins,
-				CreateAccountsOnly: false,
-			},
-			expectedErr: fmt.Errorf("unable to parse fee coins"),
-		},
-		{
-			desc: "invalid fee coins (missing amount)",
-			config: &faucet.Config{
-				SigningKeyName:     testSigningKeyName,
-				ListenAddress:      testListenAddress,
-				SupportedSendCoins: testSupportedSendCoins,
-				CreateAccountsOnly: false,
-			},
-			expectedErr: fmt.Errorf("unable to parse fee coins"),
-		},
 	}
 
 	for _, test := range testCases {
