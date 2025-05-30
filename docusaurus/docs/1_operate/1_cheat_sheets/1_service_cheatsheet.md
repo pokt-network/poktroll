@@ -84,7 +84,6 @@ pocketd query service show-service "svc-$USER" \
 
 _TODO(@olshansk): Coming soon..._
 
-
 ## How do I update an existing service `compute_units_per_relay`?
 
 Use the `add-service` command to modify the `compute_units_per_relay` for an existing service.
