@@ -64,7 +64,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.12 - upgrade to add allow_morse_account_import_overwrite param.
 	// upgrades.Upgrade_0_1_12,
 
-	// v0.1.13 - upgrade to add support for compute_unit_cost_granularity.
+	// v0.1.13 - upgrade to:
+	// - add morse_account_claiming_enabled migration module param
+	// - add compute_unit_cost_granularity shared module param
+	// - fix chain halt caused by zero relay claims
 	upgrades.Upgrade_0_1_13,
 }
 

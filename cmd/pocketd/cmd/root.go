@@ -12,7 +12,7 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
-	"github.com/cosmos/cosmos-sdk/client/flags"
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -26,6 +26,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/pokt-network/poktroll/app"
+	pocketdcmd "github.com/pokt-network/poktroll/cmd"
+	"github.com/pokt-network/poktroll/cmd/flags"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
@@ -74,6 +76,11 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
 
+			// Parse the --network flag. If set, update related flags (e.g. --chain-id, --node, --grpc-addr).
+			if err = pocketdcmd.ParseAndSetNetworkRelatedFlags(cmd); err != nil {
+				return err
+			}
+
 			clientCtx = clientCtx.WithCmdContext(cmd.Context())
 			clientCtx, err = client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
 			if err != nil {
@@ -98,6 +105,7 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			}
 
 			clientCtx = clientCtx.WithTxConfig(txConfigWithTextual)
+
 			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
@@ -111,7 +119,11 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			customAppTemplate, customAppConfig := initAppConfig()
 			customCMTConfig := initCometBFTConfig()
 
-			return server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig)
+			if err = server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig); err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 
@@ -125,8 +137,8 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	initRootCmd(rootCmd, clientCtx.TxConfig, clientCtx.InterfaceRegistry, clientCtx.Codec, moduleBasicManager)
 
 	if err := overwriteFlagDefaults(rootCmd, map[string]string{
-		flags.FlagChainID:        DefaultChainID,
-		flags.FlagKeyringBackend: "test",
+		cosmosflags.FlagChainID:        DefaultChainID,
+		cosmosflags.FlagKeyringBackend: "test",
 	}); err != nil {
 		log.Fatal(err)
 	}
@@ -139,6 +151,8 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	rootCmd.AddCommand(
 		relayercmd.RelayerCmd(),
 	)
+
+	rootCmd.PersistentFlags().String(flags.FlagNetwork, flags.DefaultNetwork, flags.FlagNetworkUsage)
 
 	return rootCmd
 }

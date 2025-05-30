@@ -30,7 +30,7 @@ curl -X POST https://shannon-testnet-grove-rpc.beta.poktroll.com/block
 Using the `pocketd` binary:
 
 ```bash
-pocketd query block --type=height 0 --node https://shannon-testnet-grove-rpc.beta.poktroll.com
+pocketd query block --type=height 0 --network=beta
 ```
 
 ## Alpha Genesis

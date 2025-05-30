@@ -95,7 +95,7 @@ pocketd tx staking \
   delegate $VALIDATOR_ADDR <amount> \
   --from <delegator_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 Example with specific parameters:
@@ -105,7 +105,7 @@ pocketd tx staking \
   delegate $VALIDATOR_ADDR 1000000upokt \
   --from <your_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 ## How do I unbond (undelegate) tokens from my Validator?
@@ -117,7 +117,7 @@ pocketd tx staking \
   unbond $VALIDATOR_ADDR <amount> \
   --from <delegator_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 Example with specific parameters:
@@ -127,7 +127,7 @@ pocketd tx staking \
   unbond $VALIDATOR_ADDR 500000upokt \
   --from <your_account> \
   --fees 200000upokt \
-  --chain-id=<CHAIN_ID> --node=<NODE_URL>
+  --network=<NETWORK> #e.g. local, alpha, beta, main
 ```
 
 :::note Unbonding lock period
@@ -171,3 +171,10 @@ Your Full Node must be fully synchronized before creating a Validator.
 - When setting up your validator:
   - The `commission-rate`, `commission-max-rate`, and `commission-max-change-rate` should be expressed as decimals (e.g., `0.1` for 10%)
   - Ensure you have sufficient balance for your specified amounts in `validator.json` and delegations
+
+## What keys are important for Validators?
+
+  _BE ABSOLUTELY SURE YOU HAVE THESE BACKED UP!!!_
+  - You will need your validator address key (the address you staked from)
+  - Your `priv_validator_key.json` - found in `/pocketd/config`
+  - Your `node_key.json` - found in `/pocketd/config`

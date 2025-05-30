@@ -24,20 +24,13 @@ The `stake-application` transaction submission command accepts a `--config` flag
 that points to a `yaml` configuration file that defines the `stake_amount` and
 `service_ids` which the `Application` is allowed to use.
 
-:::warning
-
-TestNet is not ready as of writing this documentation, so you may
-need to adjust the command below appropriately.
-
-:::
-
 ```bash
 pocketd tx application stake-application \
   --home=./pocket \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from application1 \
-  --node tcp://pocket-node:26657
+  --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ## Configuration
@@ -76,7 +69,7 @@ The current protocol requires the `service_ids` list to contain **EXACTLY ONE** 
 to prevent `Application`s from over-servicing.
 
 A detailed explanation of why this is the case can be found in
-[Tokenomics/TLM](../../3_protocol/tokenomics/token_logic_modules.md).
+[Tokenomics/TLM](../../3_protocol/tokenomics/2_token_logic_modules.md).
 
 :::
 

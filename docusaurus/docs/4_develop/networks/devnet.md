@@ -67,8 +67,10 @@ Each Helm chart receives a list of configuration files. For example, see the [re
 ## Interaction with DevNet
 
 :::note
-Devnets are provisioned with the same mnemonc phrases as LocalNet, so it is possible to reuse the same keys
+
+DevNets are provisioned with the same mnemonic phrases as LocalNet, so it is possible to reuse the same keys
 from the keybase - the user just needs to change the `--node=` flag to point to the DevNet RPC endpoint when using the `pocketd` CLI.
+
 :::
 
 The DevNet RPC endpoint is exposed on `https://devnet-**NETWORK_NAME**-validator-rpc.poktroll.com`.

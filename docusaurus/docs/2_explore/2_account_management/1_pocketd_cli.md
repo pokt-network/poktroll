@@ -14,19 +14,24 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
 
 ## Table of Contents <!-- omit in toc -->
 
-- [1. Install Script (Linux \& MacOS)](#1-install-script-linux--macos)
-- [2. Homebrew (MacOS only)](#2-homebrew-macos-only)
+- [Bash Install Script (Linux \& MacOS)](#bash-install-script-linux--macos)
+- [Homebrew (MacOS only)](#homebrew-macos-only)
   - [Troubleshooting Homebrew](#troubleshooting-homebrew)
-- [3. Alternative Methods](#3-alternative-methods)
+- [Alternative Methods](#alternative-methods)
   - [Using release binaries](#using-release-binaries)
   - [From Source (danger zone)](#from-source-danger-zone)
     - [Installation dependencies](#installation-dependencies)
     - [Build from source](#build-from-source)
-- [4. Windows (why!?)](#4-windows-why)
+- [Windows (why!?)](#windows-why)
+- [Publishing a new `pocketd` release](#publishing-a-new-pocketd-release)
+  - [1. Create a new `dev` git tag](#1-create-a-new-dev-git-tag)
+  - [2. Draft a new GitHub release](#2-draft-a-new-github-release)
+  - [3. Wait for the release artifacts to be built (5 - 20 minutes)](#3-wait-for-the-release-artifacts-to-be-built-5---20-minutes)
+  - [4. Verify via the `pocketd-install.sh` script](#4-verify-via-the-pocketd-installsh-script)
 
 ---
 
-## 1. Install Script (Linux & MacOS)
+## Bash Install Script (Linux & MacOS)
 
 Easiest, fastest way to get started that works on both Linux and MacOS.
 
@@ -43,7 +48,7 @@ pocketd --help
 
 ---
 
-## 2. Homebrew (MacOS only)
+## Homebrew (MacOS only)
 
 For MacOS users who prefer [Homebrew](https://brew.sh/).
 
@@ -75,7 +80,7 @@ The source code for the Homebrew formula can be found at [homebrew-pocketd](http
 
 ---
 
-## 3. Alternative Methods
+## Alternative Methods
 
 ### Using release binaries
 
@@ -147,13 +152,64 @@ pocketd --help
 
 ---
 
-## 4. Windows (why!?)
+## Windows (why!?)
 
 :::danger
 
 - Native Windows installation is **not supported**.
 - Use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)
 - Follow the Linux install instructions above.
-  :::
+
+:::
 
 ---
+
+## Publishing a new `pocketd` release
+
+:::warning Devs only
+
+This section is intended for core protocol developers only.
+
+:::
+
+This section is intended **only for core protocol developers**.
+
+It is also only intended for for dev releases of the `pocketd` CLI.
+
+If you are publishing an official protocol upgrade accompanies by a CLI update, visit the [release procedure docs](../../4_develop//upgrades/2_release_procedure.md).
+
+:::
+
+### 1. Create a new `dev` git tag
+
+```bash
+# Clone the repository if you haven't already
+git clone git@github.com:pokt-network/poktroll.git poktroll
+cd poktroll
+
+# Create a new dev git tag and follow the on-screen instructions
+make release_tag_dev
+
+# Push the tag to GitHub
+git push origin $(git tag)
+```
+
+### 2. Draft a new GitHub release
+
+Draft a new release at [pokt-network/poktroll/releases/new](https://github.com/pokt-network/poktroll/releases/new) using the tag (e.g. `v0.1.12-dev3`) created in the previous step.
+
+Make sure to mark as a `pre-release` and use the auto-generated release notes for simplicity.
+
+### 3. Wait for the release artifacts to be built (5 - 20 minutes)
+
+The [release artifacts workflow](https://github.com/pokt-network/poktroll/actions/workflows/release-artifacts.yml) will automatically build and publish the release artifacts to GitHub.
+
+Wait for the release artifacts to be built and published to GitHub.
+
+The artifacts will be attached an an `Asset` to your [release](https://github.com/pokt-network/poktroll/releases) once the workflow completes.
+
+### 4. Verify via the `pocketd-install.sh` script
+
+```bash
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev3 --upgrade
+```

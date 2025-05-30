@@ -3,14 +3,14 @@ package session
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/poktroll/api/pocket/session"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service:           modulev1.Query_ServiceDesc.ServiceName,
+			Service:           sessiontypes.Query_serviceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				// 				{
 				// 					RpcMethod: "Params",
@@ -26,7 +26,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// This is a query operation that will not result in a state transition but simply gives a view into the chain state.
 				//
 				// Example:
-				// $ pocketd q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE) --home $(POCKETD_HOME) `,
+				// $ pocketd q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42
 				// 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "application_address"}, {ProtoField: "service"}, {ProtoField: "block_height"}},
 				// 				},
 
@@ -34,7 +34,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{
-			Service:              modulev1.Msg_ServiceDesc.ServiceName,
+			Service:              sessiontypes.Msg_serviceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command
 			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
 				// {

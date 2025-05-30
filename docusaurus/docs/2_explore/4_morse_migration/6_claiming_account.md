@@ -167,7 +167,8 @@ pkd_<NETWORK>fund_mact <your_shannon_address>
 
 ```bash
 # Ensure this returns a nonzero balance
-pocketd query bank balances <your_shannon_key_name> --node=${RPC_ENDPOINT}
+pocketd query bank balances <your_shannon_key_name> --network=<network> #e.g. local, alpha, beta, main
+
 ```
 
 ### 5. Check your claimable Morse account
@@ -181,7 +182,7 @@ For this next step, you will need to convert your Morse address from lower case 
 ```bash
 pocketd query migration show-morse-claimable-account \
   <morse-address-ALL-CAPS> \
-  --node=${RPC_ENDPOINT}
+  --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ### 6. Claim your Morse Pocket
@@ -192,7 +193,7 @@ Running the following command:
 pocketd tx migration claim-account \
   pocket-account-<morse-keyfile-export>.json \
   --from=<your_shannon_key_name> \
-  --node=${RPC_ENDPOINT} --chain-id <chain-id>
+  --network=<network> #e.g. local, alpha, beta, main
 ```
 
 The above will prompt for your generated Morse Encrypt Passphrase and produce output similar to the following:
@@ -216,7 +217,7 @@ This step may sit in your terminal for a minute or so. Be patient and don't pani
 ### 7. Verify your Shannon balance
 
 ```bash
-pocketd query bank balances <your_shannon_address> --node=${RPC_ENDPOINT}
+pocketd query bank balances <your_shannon_address> --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ## Troubleshooting
@@ -226,14 +227,14 @@ pocketd query bank balances <your_shannon_address> --node=${RPC_ENDPOINT}
 If you're hitting errors related to signature verification, ensure you've specified
 the following flags based on your environment and keyring config
 
-- `--chain-id`: one of `pocket-alpha`, `pocket-beta`, `pocket`
+- `--network`: one of `local`, `alpha`, `beta`, `main`
 - `--home`: the path to your keyring directory
 - `--keyring-backend`: one of `test`, `file`, `os`, `kwallet`, `pass`, `keosd`
 
 ### Onchain Fee Requirement
 
 ```bash
-pocketd query migration params --node=${RPC_ENDPOINT} --home=~/.pocketd
+pocketd query migration params --home=~/.pocketd --network=<network> #e.g. local, alpha, beta, main
 ```
 
 ```yaml
