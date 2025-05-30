@@ -76,19 +76,21 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// 	Skip:      true, // skipped because authority gated
 				// },
 				{
-					RpcMethod: "AddService",
-					Use:       "add-service <service-id> <service-description> <compute-units-per-relay>",
-					Short:     "Create a new service on-chain.",
+					RpcMethod: "SetupService",
+					Use:       "setup-service <service-id> <service-description> <compute-units-per-relay> <owner-address>",
+					Short:     "Update an existing service or create a new one if it does not already exist on-chain.",
 					Long: `
-- Register a new service specifying:
+- Setup a service by specifying:
   - <service-id>: unique string (max 42 chars)
   - <service-description>: description (max 169 chars)
-  - <compute-units-per-relay>: integer value`,
-					Example:        `pocketd tx service add-service svc-foo "service description" 13 --fees 300upokt --from foo`,
+  - <compute-units-per-relay>: integer value
+  - <owner-address>: address of the service owner`,
+					Example:        `pocketd tx service setup-service svc-foo "service description" 13 pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5 --fees 300upokt --from foo`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						// {ProtoField: "serviceId"},
 						// {ProtoField: "description"},
 						// {ProtoField: "computeUnitsPerRelay"},
+						// {ProtoField: "ownerAddress"},
 					},
 				},
 				// this line is used by ignite scaffolding # autocli/tx

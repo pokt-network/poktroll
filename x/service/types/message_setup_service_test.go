@@ -9,25 +9,25 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func TestMsgAddService_ValidateBasic(t *testing.T) {
+func TestMsgSetupService_ValidateBasic(t *testing.T) {
 	serviceOwnerAddress := sample.AccAddress()
 	tests := []struct {
 		desc        string
-		msg         MsgAddService
+		msg         MsgSetupService
 		expectedErr error
 	}{
 		{
 			desc: "invalid service owner address - no service",
-			msg: MsgAddService{
-				OwnerAddress: "invalid_address",
+			msg: MsgSetupService{
+				Signer: "invalid_address",
 				// Service: intentionally omitted,
 			},
 			expectedErr: ErrServiceInvalidAddress,
 		},
 		{
 			desc: "no service ID",
-			msg: MsgAddService{
-				OwnerAddress: serviceOwnerAddress,
+			msg: MsgSetupService{
+				Signer: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					// ID intentionally omitted
 					Name:                 "service name",
@@ -39,8 +39,8 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		},
 		{
 			desc: "no service name",
-			msg: MsgAddService{
-				OwnerAddress: serviceOwnerAddress,
+			msg: MsgSetupService{
+				Signer: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id: "svc1",
 					// Name intentionally omitted
@@ -52,8 +52,8 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		},
 		{
 			desc: "invalid service name",
-			msg: MsgAddService{
-				OwnerAddress: serviceOwnerAddress,
+			msg: MsgSetupService{
+				Signer: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
 					Name:                 "service&name",
@@ -64,22 +64,22 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			expectedErr: sharedtypes.ErrSharedInvalidServiceName,
 		},
 		{
-			desc: "signer address does not equal service owner address",
-			msg: MsgAddService{
-				OwnerAddress: serviceOwnerAddress,
+			// Allow any signer to add a service owned by a different address.
+			desc: "valid - signer address does not equal service owner address",
+			msg: MsgSetupService{
+				Signer: sample.AccAddress(), // Random address that does not equal serviceOwnerAddress
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
 					Name:                 "service name",
 					ComputeUnitsPerRelay: 1,
-					OwnerAddress:         sample.AccAddress(), // Random address that does not equal serviceOwnerAddress
+					OwnerAddress:         serviceOwnerAddress,
 				},
 			},
-			expectedErr: ErrServiceInvalidOwnerAddress,
 		},
 		{
 			desc: "zero compute units per relay",
-			msg: MsgAddService{
-				OwnerAddress: serviceOwnerAddress,
+			msg: MsgSetupService{
+				Signer: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
 					Name:                 "service name",
@@ -92,8 +92,8 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		},
 		{
 			desc: "compute units per relay greater than max",
-			msg: MsgAddService{
-				OwnerAddress: serviceOwnerAddress,
+			msg: MsgSetupService{
+				Signer: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
 					Name:                 "service name",
@@ -106,8 +106,8 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		},
 		{
 			desc: "min compute units per relay",
-			msg: MsgAddService{
-				OwnerAddress: serviceOwnerAddress,
+			msg: MsgSetupService{
+				Signer: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
 					Name:                 "service name",
@@ -119,8 +119,8 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		},
 		{
 			desc: "max compute units per relay",
-			msg: MsgAddService{
-				OwnerAddress: serviceOwnerAddress,
+			msg: MsgSetupService{
+				Signer: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
 					Name:                 "service name",

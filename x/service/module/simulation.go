@@ -23,9 +23,9 @@ var (
 )
 
 const (
-	opWeightMsgAddService = "op_weight_msg_add_service"
+	opWeightMsgSetupService = "op_weight_msg_setup_service"
 	// TODO_TECHDEBT: Determine the simulation weight value
-	defaultWeightMsgAddService int = 100
+	defaultWeightMsgSetupService int = 100
 
 	// this line is used by starport scaffolding # simapp/module/const
 )
@@ -55,15 +55,15 @@ func (AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedP
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
 	operations := make([]simtypes.WeightedOperation, 0)
 
-	var weightMsgAddService int
-	simState.AppParams.GetOrGenerate(opWeightMsgAddService, &weightMsgAddService, nil,
+	var weightMsgSetupService int
+	simState.AppParams.GetOrGenerate(opWeightMsgSetupService, &weightMsgSetupService, nil,
 		func(_ *rand.Rand) {
-			weightMsgAddService = defaultWeightMsgAddService
+			weightMsgSetupService = defaultWeightMsgSetupService
 		},
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
-		weightMsgAddService,
-		servicesimulation.SimulateMsgAddService(am.accountKeeper, am.bankKeeper, am.keeper),
+		weightMsgSetupService,
+		servicesimulation.SimulateMsgSetupService(am.accountKeeper, am.bankKeeper, am.keeper),
 	))
 
 	// this line is used by starport scaffolding # simapp/module/operation
@@ -75,10 +75,10 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.WeightedProposalMsg {
 	return []simtypes.WeightedProposalMsg{
 		simulation.NewWeightedProposalMsg(
-			opWeightMsgAddService,
-			defaultWeightMsgAddService,
+			opWeightMsgSetupService,
+			defaultWeightMsgSetupService,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				servicesimulation.SimulateMsgAddService(am.accountKeeper, am.bankKeeper, am.keeper)
+				servicesimulation.SimulateMsgSetupService(am.accountKeeper, am.bankKeeper, am.keeper)
 				return nil
 			},
 		),

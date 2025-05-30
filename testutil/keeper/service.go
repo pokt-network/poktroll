@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"cosmossdk.io/log"
-	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -21,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/service/mocks"
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -49,15 +49,23 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	ctrl := gomock.NewController(t)
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
-		SpendableCoins(gomock.Any(), gomock.Any()).
+		GetBalance(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(
-			func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
+			func(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 				mapMu.RLock()
 				defer mapMu.RUnlock()
-				if coins, ok := mapAccAddrCoins[addr.String()]; ok {
-					return coins
+
+				coins, ok := mapAccAddrCoins[addr.String()]
+				if !ok {
+					return sdk.Coin{}
 				}
-				return sdk.Coins{}
+
+				ok, coin := coins.Find(denom)
+				if !ok {
+					return sdk.Coin{}
+				}
+
+				return coin
 			},
 		).AnyTimes()
 	mockBankKeeper.EXPECT().
@@ -67,7 +75,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 				mapMu.Lock()
 				defer mapMu.Unlock()
 				coins := mapAccAddrCoins[senderAddr.String()]
-				if coins.AmountOf("upokt").GT(amt.AmountOf("upokt")) {
+				if coins.AmountOf(pocket.DenomuPOKT).GTE(amt.AmountOf(pocket.DenomuPOKT)) {
 					mapAccAddrCoins[senderAddr.String()] = coins.Sub(amt...)
 					return nil
 				}
@@ -94,7 +102,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 // AddAccToAccMapCoins adds to the mapAccAddrCoins map the coins specified as
 // parameters, to the function under the address specified. When it cleans up
 // it deletes the entry in the map for the provided address.
-func AddAccToAccMapCoins(t *testing.T, addr, denom string, amount uint64) {
+func AddAccToAccMapCoins(t *testing.T, addr, denom string, amount int64) {
 	t.Helper()
 	t.Cleanup(func() {
 		mapMu.Lock()
@@ -103,7 +111,7 @@ func AddAccToAccMapCoins(t *testing.T, addr, denom string, amount uint64) {
 	})
 	addrBech32, err := sdk.AccAddressFromBech32(addr)
 	require.NoError(t, err)
-	coins := sdk.NewCoins(sdk.Coin{Denom: denom, Amount: math.NewIntFromUint64(amount)})
+	coins := sdk.NewCoins(sdk.NewInt64Coin(denom, amount))
 	mapMu.Lock()
 	defer mapMu.Unlock()
 	mapAccAddrCoins[addrBech32.String()] = coins
