@@ -167,9 +167,9 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 	// DO NOT set the sequence number in unordered mode.
 	if !txCtx.unordered {
 		accountRetriever := txCtx.clientCtx.AccountRetriever
-		_, seq, err := accountRetriever.GetAccountNumberSequence(clientCtx, accAddress)
-		if err != nil {
-			return 0, err
+		_, seq, seqErr := accountRetriever.GetAccountNumberSequence(clientCtx, accAddress)
+		if seqErr != nil {
+			return 0, seqErr
 		}
 
 		txf = txf.WithSequence(seq)
