@@ -25,6 +25,7 @@ Visit the [Service FAQ](../4_faq/1_service_faq.md) for more information about in
   - [1. Add a Service](#1-add-a-service)
   - [2. Query for the Service](#2-query-for-the-service)
   - [3. What do I do next?](#3-what-do-i-do-next)
+- [How do I update an existing service `compute_units_per_relay`?](#how-do-i-update-an-existing-service-compute_units_per_relay)
 
 ## Introduction
 
@@ -82,3 +83,24 @@ pocketd query service show-service "svc-$USER" \
 ### 3. What do I do next?
 
 _TODO(@olshansk): Coming soon..._
+
+
+## How do I update an existing service `compute_units_per_relay`?
+
+Use the `add-service` command to modify the `compute_units_per_relay` for an existing service.
+Provide the `SERVICE_ID` of the `Service` you want to update, but with a new value for `COMPUTE_UNITS_PER_RELAY`.
+
+```bash
+pocketd tx service add-service \
+    ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${NEW_COMPUTE_UNITS_PER_RELAY} \
+    --fees 300upokt --from ${SERVICE_OWNER} --network=beta
+```
+
+For example:
+
+```bash
+pocketd tx service add-service \
+   "svc-$USER" "service description for $USER" 20 \
+   --fees 300upokt --from $USER \
+   --network=beta
+```
