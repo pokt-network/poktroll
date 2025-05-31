@@ -1,406 +1,282 @@
-#!/bin/bash
+##############
+### Params ###
+##############
 
-# Script to help query and update module parameters for different environments.
-#
-# Usage: ./update_params.sh <command> [module_name] [options]
-#   <command>: Required. One of:
-#     query <module_name>  - Query parameters for a specific module
-#     query-all           - Query parameters for all available modules
-#     update <module_name> - Generate update transaction for a module
-#   [options]: Optional flags:
-#     --env <environment>: Target environment (local, alpha, beta, main). Default: beta
-#     --output-dir <dir>: Directory to save transaction files. Default: . (current directory)
-#     --network <network>: Network flag for query. Default: uses --env value
-#     --home <path>: Home directory for pocketd. Default: ~/.pocket
-#     --no-prompt: Skip the edit prompt and just generate the template (update only)
-#
-# This script can:
-# 1. Query current parameters for a specific module or all modules
-# 2. Display them in a pretty formatted output
-# 3. Generate transaction template files for parameter updates
-# 4. Provide instructions for submitting transactions
+# TODO_CONSIDERATION: additional factoring (e.g. POCKETD_FLAGS).
+PARAM_FLAGS = --home=$(POCKETD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE)
 
-set -e
+##################
+### Query All ###
+##################
 
-# Available modules list
-AVAILABLE_MODULES=(
-  "auth"
-  "bank"
-  "tokenomics"
-  "gov"
-  "staking"
-  "slashing"
-  "distribution"
-  "mint"
-  "params"
-  "application"
-  "gateway"
-  "service"
-  "supplier"
-  "session"
-  "proof"
-  "shared"
-)
+.PHONY: params_query_all
+params_query_all: check_jq ## Query the params from all available modules
+	@for module in $(MODULES); do \
+	    echo "~~~ Querying $$module module params ~~~"; \
+	    pocketd query $$module params --node $(POCKET_NODE) --output json | jq; \
+	    echo ""; \
+	done
 
-# Module descriptions
-declare -A MODULE_DESCRIPTIONS
-MODULE_DESCRIPTIONS["auth"]="Authentication parameters [Cosmos]"
-MODULE_DESCRIPTIONS["bank"]="Bank module parameters [Cosmos]"
-MODULE_DESCRIPTIONS["tokenomics"]="Tokenomics parameters (mint allocation, rewards) [Pocket]"
-MODULE_DESCRIPTIONS["gov"]="Governance parameters [Cosmos]"
-MODULE_DESCRIPTIONS["staking"]="Staking parameters [Cosmos]"
-MODULE_DESCRIPTIONS["slashing"]="Slashing parameters [Cosmos]"
-MODULE_DESCRIPTIONS["distribution"]="Distribution parameters [Cosmos]"
-MODULE_DESCRIPTIONS["mint"]="Mint parameters [Cosmos]"
-MODULE_DESCRIPTIONS["params"]="Global chain parameters [Cosmos]"
-MODULE_DESCRIPTIONS["application"]="Application module parameters [Pocket]"
-MODULE_DESCRIPTIONS["gateway"]="Gateway module parameters [Pocket]"
-MODULE_DESCRIPTIONS["service"]="Service module parameters [Pocket]"
-MODULE_DESCRIPTIONS["supplier"]="Supplier module parameters [Pocket]"
-MODULE_DESCRIPTIONS["session"]="Session module parameters [Pocket]"
-MODULE_DESCRIPTIONS["proof"]="Proof module parameters [Pocket]"
-MODULE_DESCRIPTIONS["shared"]="Shared module parameters [Pocket]"
+##################
+### Cosmos Modules ###
+####################
 
-# Check if command is provided
-if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
-  echo "Usage: ./update_params.sh <command> [module_name] [options]"
-  echo ""
-  echo "Commands:"
-  echo "  query <module_name>  - Query parameters for a specific module"
-  echo "  query-all           - Query parameters for all available modules"
-  echo "  update <module_name> - Generate update transaction for a module"
-  echo ""
-  echo "Available modules:"
-  for module in "${AVAILABLE_MODULES[@]}"; do
-    printf "  %-12s - %s\n" "$module" "${MODULE_DESCRIPTIONS[$module]}"
-  done
-  echo ""
-  echo "Available options:"
-  echo "  --env <environment>: Target environment (local, alpha, beta, main). Default: beta"
-  echo "  --output-dir <dir>: Directory to save transaction files. Default: . (current directory)"
-  echo "  --network <network>: Network flag for query. Default: uses --env value"
-  echo "  --home <path>: Home directory for pocketd. Default: ~/.pocket"
-  echo "  --no-prompt: Skip the edit prompt and just generate the template (update only)"
-  echo ""
-  echo "Examples:"
-  echo "  ./update_params.sh query tokenomics"
-  echo "  ./update_params.sh query-all --env alpha"
-  echo "  ./update_params.sh update tokenomics --env local"
-  echo "  ./update_params.sh update auth --env beta --output-dir ./params"
-  exit 1
-fi
+.PHONY: params_auth_get_all
+params_auth_get_all: ## Get the cosmos auth module params
+	pocketd query auth params --node $(POCKET_NODE)
 
-COMMAND="$1"
-shift # Remove command from arguments
+.PHONY: params_bank_get_all
+params_bank_get_all: ## Get the cosmos bank module params
+	pocketd query bank params --node $(POCKET_NODE)
 
-# For update command, module name is required
-if [ "$COMMAND" = "update" ]; then
-  if [ -z "$1" ] || [[ "$1" == --* ]]; then
-    echo "Error: Module name is required for update command" >&2
-    echo "Usage: ./update_params.sh update <module_name> [options]"
-    exit 1
-  fi
-  MODULE_NAME="$1"
-  shift # Remove module name from arguments
-elif [ "$COMMAND" = "query" ]; then
-  if [ -z "$1" ] || [[ "$1" == --* ]]; then
-    echo "Error: Module name is required for query command" >&2
-    echo "Usage: ./update_params.sh query <module_name> [options]"
-    exit 1
-  fi
-  MODULE_NAME="$1"
-  shift # Remove module name from arguments
-elif [ "$COMMAND" = "query-all" ]; then
-  # No module name needed for query-all
-  MODULE_NAME=""
-else
-  echo "Error: Unknown command '$COMMAND'. Use: query, query-all, or update" >&2
-  exit 1
-fi
+.PHONY: params_consensus_get_all
+params_consensus_get_all: ## Get the cosmos consensus module params
+	pocketd query consensus params --node $(POCKET_NODE)
 
-# Default values
-ENVIRONMENT="beta"
-OUTPUT_DIR="."
-HOME_DIR="~/.pocket"
-NETWORK=""
-NO_PROMPT=false
+.PHONY: params_crisis_get_all
+params_crisis_get_all: ## Get the cosmos crisis module params
+	pocketd query crisis params --node $(POCKET_NODE)
 
-# Parse optional arguments
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-  --env)
-    ENVIRONMENT="$2"
-    shift 2
-    ;;
-  --output-dir)
-    OUTPUT_DIR="$2"
-    shift 2
-    ;;
-  --network)
-    NETWORK="$2"
-    shift 2
-    ;;
-  --home)
-    HOME_DIR="$2"
-    shift 2
-    ;;
-  --no-prompt)
-    NO_PROMPT=true
-    shift
-    ;;
-  *)
-    echo "Unknown parameter passed: $1"
-    exit 1
-    ;;
-  esac
-done
+.PHONY: params_distribution_get_all
+params_distribution_get_all: ## Get the cosmos distribution module params
+	pocketd query distribution params --node $(POCKET_NODE)
 
-# Use environment as network if network not explicitly set
-if [ -z "$NETWORK" ]; then
-  NETWORK="$ENVIRONMENT"
-fi
+.PHONY: params_gov_get_all
+params_gov_get_all: ## Get the cosmos gov module params
+	pocketd query gov params --node $(POCKET_NODE)
 
-# Define authorities and network configs for each environment
-case $ENVIRONMENT in
-  local)
-    AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
-    FROM_KEY="pnf_local"
-    CHAIN_ID="poktroll"
-    NODE=""
-    ;;
-  alpha)
-    AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
-    FROM_KEY="pnf_alpha"
-    CHAIN_ID="pocket-alpha"
-    NODE="--node https://alpha-testnet-rpc.poktroll.com:443"
-    ;;
-  beta)
-    AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
-    FROM_KEY="pnf_beta"
-    CHAIN_ID="pocket-beta"
-    NODE="--node https://beta-testnet-rpc.poktroll.com:443"
-    ;;
-  main)
-    AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
-    FROM_KEY="pnf_mainnet"
-    CHAIN_ID="poktroll"
-    NODE="--node https://mainnet-rpc.poktroll.com:443"
-    ;;
-  *)
-    echo "Error: Unknown environment '$ENVIRONMENT'. Use: local, alpha, beta, or main" >&2
-    exit 1
-    ;;
-esac
+.PHONY: params_mint_get_all
+params_mint_get_all: ## Get the cosmos mint module params
+	pocketd query mint params --node $(POCKET_NODE)
 
-# Create output directory if it doesn't exist (only needed for update command)
-if [ "$COMMAND" = "update" ]; then
-  mkdir -p "$OUTPUT_DIR"
-fi
+.PHONY: params_protocolpool_get_all
+params_protocolpool_get_all: ## Get the cosmos protocolpool module params
+	pocketd query protocolpool params --node $(POCKET_NODE)
 
-# Function to query and display parameters for a single module
-query_module_params() {
-  local module=$1
-  local show_header=${2:-true}
+.PHONY: params_slashing_get_all
+params_slashing_get_all: ## Get the cosmos slashing module params
+	pocketd query slashing params --node $(POCKET_NODE)
 
-  # Build the query command
-  local query_cmd="./pocketd query $module params --home=$HOME_DIR"
-  if [ "$NETWORK" != "local" ]; then
-    query_cmd="$query_cmd --network=$NETWORK"
-  fi
-  query_cmd="$query_cmd -o json"
+.PHONY: params_staking_get_all
+params_staking_get_all: ## Get the cosmos staking module params
+	pocketd query staking params --node $(POCKET_NODE)
 
-  if [ "$show_header" = true ]; then
-    echo "========================================="
-    echo "Module: $module (${MODULE_DESCRIPTIONS[$module]:-Unknown module})"
-    echo "Environment: $ENVIRONMENT"
-    echo "Network: $NETWORK"
-    echo "========================================="
-  fi
+#########################
+### Tokenomics Module ###
+#########################
 
-  # Query parameters
-  local params_output
-  params_output=$(eval $query_cmd 2>/dev/null)
-  local query_exit_code=$?
+.PHONY: params_tokenomics_get_all
+params_tokenomics_get_all: ## Get the tokenomics module params
+	pocketd query tokenomics params --node $(POCKET_NODE)
 
-  if [ $query_exit_code -ne 0 ] || [ -z "$params_output" ]; then
-    echo "❌ Failed to query parameters for module '$module'"
-    if [ "$show_header" = true ]; then
-      echo "   This module may not exist or may not have queryable parameters"
-    fi
-    return 1
-  fi
+.PHONY: params_tokenomics_update_all
+params_tokenomics_update_all: ## Update the tokenomics module params
+	pocketd tx authz exec ./tools/scripts/params_templates/tokenomics_0_all.json $(PARAM_FLAGS)
 
-  # Check if the response contains parameters
-  local params_only
-  params_only=$(echo "$params_output" | jq '.params' 2>/dev/null)
+.PHONY: params_tokenomics_update_mint_allocation_percentages
+params_tokenomics_update_mint_allocation_percentages: ## Update the tokenomics module mint_allocation_percentages param
+	pocketd tx authz exec ./tools/scripts/params_templates/tokenomics_1_mint_allocation_percentages.json $(PARAM_FLAGS)
 
-  if [ "$params_only" = "null" ] || [ -z "$params_only" ]; then
-    echo "❌ No parameters found for module '$module'"
-    return 1
-  fi
+.PHONY: params_tokenomics_update_dao_reward_address
+params_tokenomics_update_dao_reward_address: ## Update the tokenomics module dao_reward_address param
+	pocketd tx authz exec ./tools/scripts/params_templates/tokenomics_2_dao_reward_address.json $(PARAM_FLAGS)
 
-  echo "✅ Parameters for $module:"
-  echo "$params_only" | jq '.'
-  echo ""
+.PHONY: params_tokenomics_update_global_inflation_per_claim
+params_tokenomics_update_global_inflation_per_claim: ## Update the tokenomics module global_inflation_per_claim param
+	pocketd tx authz exec ./tools/scripts/params_templates/tokenomics_3_global_inflation_per_claim.json $(PARAM_FLAGS)
 
-  return 0
-}
+#####################
+### Service Module ###
+######################
 
-# Function to query all modules
-query_all_modules() {
-  echo "========================================="
-  echo "Querying parameters for all modules"
-  echo "Environment: $ENVIRONMENT"
-  echo "Network: $NETWORK"
-  echo "========================================="
-  echo ""
+.PHONY: params_service_get_all
+params_service_get_all: ## Get the service module params
+	pocketd query service params --node $(POCKET_NODE)
 
-  local successful_modules=()
-  local failed_modules=()
+.PHONY: params_service_update_all
+params_service_update_all: ## Update the service module params
+	pocketd tx authz exec ./tools/scripts/params_templates/service_0_all.json $(PARAM_FLAGS)
 
-  for module in "${AVAILABLE_MODULES[@]}"; do
-    echo "🔍 Checking module: $module..."
-    if query_module_params "$module" false; then
-      successful_modules+=("$module")
-    else
-      failed_modules+=("$module")
-    fi
-  done
+.PHONY: params_service_update_add_service_fee
+params_service_update_add_service_fee: ## Update the service module add_service_fee param
+	pocketd tx authz exec ./tools/scripts/params_templates/service_1_add_service_fee.json $(PARAM_FLAGS)
 
-  echo "========================================="
-  echo "Query Summary"
-  echo "========================================="
-  echo "✅ Successfully queried ${#successful_modules[@]} modules: ${successful_modules[*]}"
-  if [ ${#failed_modules[@]} -gt 0 ]; then
-    echo "❌ Failed to query ${#failed_modules[@]} modules: ${failed_modules[*]}"
-  fi
-  echo ""
-}
+.PHONY: params_service_update_target_num_relays
+params_service_update_target_num_relays: ## Update the service module target_num_relays param
+	pocketd tx authz exec ./tools/scripts/params_templates/service_2_target_num_relays.json $(PARAM_FLAGS)
 
-# Execute the requested command
-case $COMMAND in
-  "query")
-    query_module_params "$MODULE_NAME"
-    ;;
-  "query-all")
-    query_all_modules
-    ;;
-  "update")
-    # Existing update logic starts here
+####################
+### Proof Module ###
+###################
 
-    # Build the query command
-    QUERY_CMD="./pocketd query $MODULE_NAME params --home=$HOME_DIR"
-    if [ "$NETWORK" != "local" ]; then
-      QUERY_CMD="$QUERY_CMD --network=$NETWORK"
-    fi
-    QUERY_CMD="$QUERY_CMD -o json"
+.PHONY: params_proof_get_all
+params_proof_get_all: ## Get the proof module params
+	pocketd query proof params --node $(POCKET_NODE)
 
-    echo "========================================="
-    echo "Querying current $MODULE_NAME parameters"
-    echo "Environment: $ENVIRONMENT"
-    echo "Network: $NETWORK"
-    echo "Command: $QUERY_CMD"
-    echo "========================================="
-    echo ""
+.PHONY: params_proof_update_all
+params_proof_update_all: ## Update the proof module params
+	pocketd tx authz exec ./tools/scripts/params_templates/proof_0_all.json $(PARAM_FLAGS)
 
-    # Query current parameters
-    echo "Current parameters:"
-    CURRENT_PARAMS=$(eval $QUERY_CMD)
-    if [ $? -ne 0 ]; then
-      echo "Error: Failed to query parameters for module '$MODULE_NAME'" >&2
-      exit 1
-    fi
+.PHONY: params_proof_update_proof_request_probability
+params_proof_update_proof_request_probability: ## Update the proof module proof_request_probability param
+	pocketd tx authz exec ./tools/scripts/params_templates/proof_1_proof_request_probability.json $(PARAM_FLAGS)
 
-    # Display current parameters with nice formatting
-    echo "$CURRENT_PARAMS" | jq '.'
-    echo ""
+.PHONY: params_proof_update_proof_requirement_threshold
+params_proof_update_proof_requirement_threshold: ## Update the proof module proof_requirement_threshold param
+	pocketd tx authz exec ./tools/scripts/params_templates/proof_2_proof_requirement_threshold.json $(PARAM_FLAGS)
 
-    # Extract just the params object
-    PARAMS_ONLY=$(echo "$CURRENT_PARAMS" | jq '.params')
+.PHONY: params_proof_update_proof_missing_penalty
+params_proof_update_proof_missing_penalty: ## Update the proof module proof_missing_penalty param
+	pocketd tx authz exec ./tools/scripts/params_templates/proof_3_proof_missing_penalty.json $(PARAM_FLAGS)
 
-    # Generate timestamp for unique filename
-    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-    OUTPUT_FILE="$OUTPUT_DIR/${MODULE_NAME}_params_${ENVIRONMENT}_${TIMESTAMP}.json"
+.PHONY: params_proof_update_proof_submission_fee
+params_proof_update_proof_submission_fee: ## Update the proof module proof_submission_fee param
+	pocketd tx authz exec ./tools/scripts/params_templates/proof_4_proof_submission_fee.json $(PARAM_FLAGS)
 
-    # Generate the transaction template
-    cat > "$OUTPUT_FILE" <<EOF
-{
-  "body": {
-    "messages": [
-      {
-        "@type": "/pocket.${MODULE_NAME}.MsgUpdateParams",
-        "authority": "$AUTHORITY",
-        "params": $(echo "$PARAMS_ONLY" | jq '.')
-      }
-    ]
-  }
-}
-EOF
+#####################
+### Shared Module ###
+####################
 
-    echo "========================================="
-    echo "Transaction template created: $OUTPUT_FILE"
-    echo "========================================="
-    echo ""
+.PHONY: params_shared_get_all
+params_shared_get_all: ## Get the shared module params
+	pocketd query shared params --node $(POCKET_NODE)
 
-    if [ "$NO_PROMPT" = false ]; then
-      echo "The transaction file has been created with current parameters."
-      echo "You should now:"
-      echo "1. Edit the file to update the desired parameter values"
-      echo "2. Review your changes carefully"
-      echo ""
-      read -p "Press Enter to open the file for editing (or Ctrl+C to skip)..."
+.PHONY: params_shared_update_all
+params_shared_update_all: ## Update the shared module params
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_0_all.json $(PARAM_FLAGS)
 
-      # Try to open with common editors
-      if command -v windsurf >/dev/null 2>&1; then
-        windsurf "$OUTPUT_FILE"
-      elif command -v code >/dev/null 2>&1; then
-        code "$OUTPUT_FILE"
-      elif command -v nano >/dev/null 2>&1; then
-        nano "$OUTPUT_FILE"
-      elif command -v vim >/dev/null 2>&1; then
-        vim "$OUTPUT_FILE"
-      elif command -v vi >/dev/null 2>&1; then
-        vi "$OUTPUT_FILE"
-      else
-        echo "No suitable editor found. Please edit the file manually: $OUTPUT_FILE"
-      fi
+.PHONY: params_shared_update_num_blocks_per_session
+params_shared_update_num_blocks_per_session: ## Update the shared module num_blocks_per_session param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_1_num_blocks_per_session.json $(PARAM_FLAGS)
 
-      echo ""
-      echo "After editing, press Enter to continue..."
-      read -p ""
-    fi
+.PHONY: params_shared_update_grace_period_end_offset_blocks
+params_shared_update_grace_period_end_offset_blocks: ## Update the shared module grace_period_end_offset_blocks param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_2_grace_period_end_offset_blocks.json $(PARAM_FLAGS)
 
-    echo "========================================="
-    echo "Submit the transaction"
-    echo "========================================="
-    echo ""
-    echo "To submit your parameter update transaction, run:"
-    echo ""
+.PHONY: params_shared_update_claim_window_open_offset_blocks
+params_shared_update_claim_window_open_offset_blocks: ## Update the shared module claim_window_open_offset_blocks param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_3_claim_window_open_offset_blocks.json $(PARAM_FLAGS)
 
-    # Generate the submission command based on environment
-    if [ "$ENVIRONMENT" = "local" ]; then
-      echo "  make params_update_${MODULE_NAME} PARAM_FILE=$OUTPUT_FILE"
-      echo ""
-      echo "Or manually:"
-      echo "  pocketd tx authz exec $OUTPUT_FILE --from=$FROM_KEY --keyring-backend=test --home=$HOME_DIR --chain-id=$CHAIN_ID --yes"
-    else
-      echo "  pocketd tx authz exec $OUTPUT_FILE --from=$FROM_KEY --keyring-backend=test --chain-id=$CHAIN_ID $NODE --yes"
-      echo ""
-      echo "Or with network flag:"
-      echo "  pocketd tx authz exec $OUTPUT_FILE --from=$FROM_KEY --keyring-backend=test --network=$ENVIRONMENT --yes"
-    fi
+.PHONY: params_shared_update_claim_window_close_offset_blocks
+params_shared_update_claim_window_close_offset_blocks: ## Update the shared module claim_window_close_offset_blocks param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_4_claim_window_close_offset_blocks.json $(PARAM_FLAGS)
 
-    echo ""
-    echo "Template file location: $OUTPUT_FILE"
-    echo ""
-    echo "⚠️  IMPORTANT: Review your changes carefully before submitting!"
-    echo "⚠️  Parameter updates affect the entire network and cannot be easily reverted."
-    echo ""
+.PHONY: params_shared_update_proof_window_open_offset_blocks
+params_shared_update_proof_window_open_offset_blocks: ## Update the shared module proof_window_open_offset_blocks param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_5_proof_window_open_offset_blocks.json $(PARAM_FLAGS)
 
-    # Show a preview of what will be submitted
-    echo "========================================="
-    echo "Transaction preview:"
-    echo "========================================="
-    cat "$OUTPUT_FILE" | jq '.'
-    ;;
-esac
+.PHONY: params_shared_update_proof_window_close_offset_blocks
+params_shared_update_proof_window_close_offset_blocks: ## Update the shared module proof_window_close_offset_blocks param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_6_proof_window_close_offset_blocks.json $(PARAM_FLAGS)
+
+.PHONY: params_shared_update_supplier_unbonding_period_sessions
+params_shared_update_supplier_unbonding_period_sessions: ## Update the shared module supplier_unbonding_period_sessions param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_7_supplier_unbonding_period_sessions.json $(PARAM_FLAGS)
+
+.PHONY: params_shared_update_application_unbonding_period_sessions
+params_shared_update_application_unbonding_period_sessions: ## Update the shared module application_unbonding_period_sessions param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_8_application_unbonding_period_sessions.json $(PARAM_FLAGS)
+
+.PHONY: params_shared_update_compute_units_to_tokens_multiplier
+params_shared_update_compute_units_to_tokens_multiplier: ## Update the shared module compute_units_to_tokens_multiplier param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_9_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
+
+.PHONY: params_shared_update_gateway_unbonding_period_sessions
+params_shared_update_gateway_unbonding_period_sessions: ## Update the shared module gateway_unbonding_period_sessions param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_10_gateway_unbonding_period_sessions.json $(PARAM_FLAGS)
+
+.PHONY: params_shared_update_compute_unit_cost_granularity
+params_shared_update_compute_unit_cost_granularity: ## Update the shared module compute_unit_cost_granularity param
+	pocketd tx authz exec ./tools/scripts/params_templates/shared_11_compute_unit_cost_granularity.json $(PARAM_FLAGS)
+
+####################
+### Gateway Module ###
+####################
+
+.PHONY: params_gateway_get_all
+params_gateway_get_all: ## Get the gateway module params
+	pocketd query gateway params --node $(POCKET_NODE)
+
+.PHONY: params_gateway_update_all
+params_gateway_update_all: ## Update the gateway module params
+	pocketd tx authz exec ./tools/scripts/params_templates/gateway_0_all.json $(PARAM_FLAGS)
+
+.PHONY: params_gateway_update_min_stake
+params_gateway_update_min_stake: ## Update the gateway module min_stake param
+	pocketd tx authz exec ./tools/scripts/params_templates/gateway_1_min_stake.json $(PARAM_FLAGS)
+
+########################
+### Application Module ###
+########################
+
+.PHONY: params_application_get_all
+params_application_get_all: ## Get the application module params
+	pocketd query application params --node $(POCKET_NODE)
+
+.PHONY: params_application_update_all
+params_application_update_all: ## Update the application module params
+	pocketd tx authz exec ./tools/scripts/params_templates/application_0_all.json $(PARAM_FLAGS)
+
+.PHONY: params_application_update_max_delegated_gateways
+params_application_update_max_delegated_gateways: ## Update the application module max_delegated_gateways param
+	pocketd tx authz exec ./tools/scripts/params_templates/application_1_max_delegated_gateways.json $(PARAM_FLAGS)
+
+.PHONY: params_application_update_min_stake
+params_application_update_min_stake: ## Update the application module min_stake param
+	pocketd tx authz exec ./tools/scripts/params_templates/application_2_min_stake.json $(PARAM_FLAGS)
+
+#####################
+### Supplier Module ###
+#####################
+
+.PHONY: params_supplier_get_all
+params_supplier_get_all: ## Get the supplier module params
+	pocketd query supplier params --node $(POCKET_NODE)
+
+.PHONY: params_supplier_update_all
+params_supplier_update_all: ## Update the supplier module params
+	pocketd tx authz exec ./tools/scripts/params_templates/supplier_0_all.json $(PARAM_FLAGS)
+
+.PHONY: params_supplier_update_min_stake
+params_supplier_update_min_stake: ## Update the supplier module min_stake param
+	pocketd tx authz exec ./tools/scripts/params_templates/supplier_1_min_stake.json $(PARAM_FLAGS)
+
+.PHONY: params_supplier_update_staking_fee
+params_supplier_update_staking_fee: ## Update the supplier module staking_fee param
+	pocketd tx authz exec ./tools/scripts/params_templates/supplier_2_staking_fee.json $(PARAM_FLAGS)
+
+####################
+### Session Module ###
+####################
+
+.PHONY: params_session_get_all
+params_session_get_all: ## Get the session module params
+	pocketd query session params --node $(POCKET_NODE)
+
+.PHONY: params_session_update_all
+params_session_update_all: ## Update the session module params
+	pocketd tx authz exec ./tools/scripts/params_templates/session_0_all.json $(PARAM_FLAGS)
+
+.PHONY: params_session_update_num_suppliers_per_session
+params_session_update_num_suppliers_per_session: ## Update the session module num_suppliers_per_session param
+	pocketd tx authz exec ./tools/scripts/params_templates/session_1_num_suppliers_per_session.json $(PARAM_FLAGS)
+
+####################
+### Migration Module ###
+####################
+
+.PHONY: params_migration_get_all
+params_migration_get_all: ## Get the migration module params
+	pocketd query migration params --node $(POCKET_NODE)
+
+.PHONY: params_migration_update_all
+params_migration_update_all: ## Update the migration module params
+	pocketd tx authz exec ./tools/scripts/params_templates/migration_0_all.json $(PARAM_FLAGS)
+
+####################
+### Consensus Module ###
+####################
+
+.PHONY: params_consensus_update_block_size_6mb
+params_consensus_update_block_size_6mb: ## Update consensus block size to 6MB
+	pocketd tx authz exec ./tools/scripts/params_templates/consensus_block_size_6mb.json $(PARAM_FLAGS)
