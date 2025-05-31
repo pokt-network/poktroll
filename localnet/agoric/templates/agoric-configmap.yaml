@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-scripts
+  namespace: {{ .Release.Namespace }}
+data:
+  foreigner.mnemonic: |
+    {{ .Values.mnemonic }}
+
+  entrypoint.sh: |
+    #!/bin/bash
+    set -e
+
+    # Import the "foreigner" key from the mnemonic
+    cat /usr/src/upgrade-test-scripts/foreigner.mnemonic | agd keys add foreigner --keyring-backend=test --hd-path="m/44'/118'/0'/0/0" --recover
+
+    . /usr/src/upgrade-test-scripts/env_setup.sh
+
+    if [ -n "$DELVE_PORT" ]; then
+      # TODO_IMPROVE: figure out how to get delve/gdb to not lose the source hook.
+      #echo "Starting delve debug agd in foreground"
+      #/usr/src/upgrade-test-scripts/start_agd_delve.sh
+      echo "🚨 Remote debugging not yet supported 🚨\n🚧Use: 'make agd_shell', then './start_agd_debug.sh' to debug locally!🚧"
+      sleep infinity
+    else
+      echo "Starting agd in foreground"
+      /usr/src/upgrade-test-scripts/start_agd.sh
+    fi
+
+  # DEV_NOTE: This is not currently used, as it does not yet work. 😅
+  # TODO_IMPROVE: figure out how to get delve/gdb to not lose the source hook.
+  # See:
+  # - https://discord.com/channels/585576150827532298/1366728719141441598/1366789646230622289
+  # - https://github.com/Agoric/agoric-sdk/pull/8002
+  start_agd_debug.sh: |
+    #!/bin/bash
+    set -e
+
+    # Import the "foreigner" key from the mnemonic
+    cat /usr/src/upgrade-test-scripts/foreigner.mnemonic | agd keys add foreigner --keyring-backend=test --hd-path="m/44'/118'/0'/0/0" --recover
+
+    #. /usr/src/upgrade-test-scripts/env_setup.sh
+    . /root/.bashrc
+
+    # start_agd never builds an image so it's safe to include this multigigabyte logfile
+    export SLOGFILE=slog.slog
+
+    echo "Starting agd debugger in foreground"
+
+    # Remote delve
+    #dlv exec --headless --accept-multiclient --api-version=2 --listen=:$DELVE_PORT $(which agd) -- start --log_level warn "$@"
+
+    # Local delve (use make `agd_shell`, then `./entrypoint.sh`)
+    #dlv exec $(which agd) -- start --log_level warn "$@"
+
+    # Remote gdb
+    #gdbserver agd start --log_level warn "$@"
+
+    # Local gdb
+    #gdb --args agd start --log_level warn "$@"
