@@ -148,9 +148,10 @@ For example, the following will create `tools/scripts/migration/msg_import_morse
 Check the diff:
 
 ```bash
-diff tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15_unstaked.json tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json
+rm tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json.backup.20250531_130114
+mv tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15_unstaked.json tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json
 git diff .
-git commit -am "Auto-unstaked Morse validators"
+git commit -am "Auto-unstaked Morse validators for entity XXX"
 git push
 ```
 
@@ -182,12 +183,23 @@ This can **ONLY BE DONE ONCE** on networks with the `allow_morse_account_import_
 The following `import-morse-accounts` command can be used to import the canonical account state into Shannon:
 
 ```bash
-pocketd tx migration import-morse-accounts \
-  "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" \
-  --from <authorized-key-name> \
-  --home <shannon-home-directory> \
-  --network=<shannon-network-name> \
-  --gas=auto --gas-adjustment=1.5
+pocketd tx migration import-morse-accounts morse_account_state.json \
+  --from pnf_alpha \
+  --home=$HOME/.pocket_prod \
+  --chain-id=pocket-alpha \
+  --gas=auto \
+  --gas-prices=1upokt \
+  --gas-adjustment=1.5 \
+  --grpc-addr=https://shannon-testnet-grove-grpc.alpha.poktroll.com \
+  --node=https://shannon-testnet-grove-rpc.alpha.poktroll.com
+```
+
+<details>
+<summary>Convenience functions for `import-morse-accounts` by network</summary>
+
+```bash
+# LocalNet
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pnf --home=./localnet/pocketd --network=local --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
 <details>
