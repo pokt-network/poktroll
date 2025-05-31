@@ -48,6 +48,13 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 		ServiceConfigs:            stakeMsg.GetServices(),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		DelegateeGatewayAddresses: make([]string, 0),
+		ServiceUsageMetrics:       make([]*sharedtypes.ServiceUsageMetrics, 0),
+	}
+	for _, svc := range stakeMsg.GetServices() {
+		expectedApp.ServiceUsageMetrics = append(
+			expectedApp.ServiceUsageMetrics,
+			&sharedtypes.ServiceUsageMetrics{ServiceId: svc.ServiceId},
+		)
 	}
 	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
 
@@ -99,6 +106,10 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 		ServiceConfigs:            updateStakeMsg.GetServices(),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		DelegateeGatewayAddresses: make([]string, 0),
+		ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
+			{ServiceId: "svc1"},
+			{ServiceId: "svc2"},
+		},
 	}
 	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
 

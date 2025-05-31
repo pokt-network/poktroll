@@ -89,3 +89,11 @@ message ConfigOption {
   string value = 2; // Config option value
 }
 
+// ServiceUsageMetrics tracks usage statistics for a specific service
+// - Records total number of relays and compute units consumed
+// - It is updated during claims settlement in the tokenomics module
+message ServiceUsageMetrics {
+  string service_id = 1;
+  uint64 total_relays = 2;
+  uint64 total_compute_units = 3;
+}

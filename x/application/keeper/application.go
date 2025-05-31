@@ -1,11 +1,11 @@
 package keeper
 
 // ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-// │ 📦  Application Primary Store                                                           │
+// │ 📦  Application Primary Store                                                            │
 // ├──────────────────────────────────────────────────────────────────────────────────────────┤
-// │ Store (bucket)        Key (prefix + addr)                 → Value                       │
+// │ Store (bucket)        Key (prefix + addr)                 → Value                        │
 // │──────────────────────────────────────────────────────────────────────────────────────────│
-// │ applicationStore      AK                                  → appBz                       │
+// │ applicationStore      AK                                  → appBz                        │
 // └──────────────────────────────────────────────────────────────────────────────────────────┘
 //
 // Legend
@@ -42,6 +42,9 @@ func (k Keeper) SetApplication(ctx context.Context, application types.Applicatio
 	k.indexApplicationTransfer(ctx, application)
 	k.indexApplicationDelegations(ctx, application)
 	k.indexApplicationUndelegations(ctx, application)
+	k.indexApplicationServiceUsageMetrics(ctx, application)
+
+	application.ServiceUsageMetrics = nil // Reset the ServiceUsageMetrics to nil before storing
 
 	// Store the application
 	applicationStore := k.getApplicationStore(ctx)
@@ -57,6 +60,27 @@ func (k Keeper) GetApplication(
 	ctx context.Context,
 	appAddr string,
 ) (app types.Application, found bool) {
+	// First get the base application data without metrics
+	app, found = k.GetDehydratedApplication(ctx, appAddr)
+	if !found {
+		return app, false
+	}
+
+	// Add service usage metrics to the application
+	// This is done separately for better performance when metrics aren't needed
+	k.hydrateApplicationServiceUsageMetrics(ctx, &app)
+
+	return app, true
+}
+
+// GetDehydratedApplication retrieves an application without loading its service usage metrics
+// - Returns basic application data without the potentially large metrics history
+// - More performant than GetApplication when metrics aren't needed
+// - Used when only core application data is required (claim settlement, session building, etc.)
+func (k Keeper) GetDehydratedApplication(
+	ctx context.Context,
+	appAddr string,
+) (app types.Application, found bool) {
 	applicationStore := k.getApplicationStore(ctx)
 
 	appBz := applicationStore.Get(types.ApplicationKey(appAddr))
@@ -65,19 +89,9 @@ func (k Keeper) GetApplication(
 	}
 
 	k.cdc.MustUnmarshal(appBz, &app)
-
-	// Ensure that the PendingUndelegations is an empty map and not nil when
-	// unmarshalling an app that has no pending undelegations.
-	if app.PendingUndelegations == nil {
-		app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
-	}
-
-	// Ensure that the DelegateeGatewayAddresses is an empty slice and not nil
-	// when unmarshalling an app that has no delegations.
-	if app.DelegateeGatewayAddresses == nil {
-		app.DelegateeGatewayAddresses = make([]string, 0)
-	}
-
+	// Ensure all fields are properly initialized as CosmosSDK stores empty slices/maps as nil,
+	// which can cause downstream issues.
+	initializeNilApplicationFields(k.logger, &app)
 	return app, true
 }
 
@@ -90,6 +104,7 @@ func (k Keeper) RemoveApplication(ctx context.Context, application types.Applica
 	k.removeApplicationTransferIndex(ctx, application.Address)
 	k.removeApplicationUndelegationIndexes(ctx, application.Address)
 	k.removeApplicationDelegationsIndexes(ctx, application)
+	k.removeApplicationServiceUsageMetricsIndex(ctx, application)
 
 	// Remove the application from the store
 	applicationStore := k.getApplicationStore(ctx)
@@ -118,6 +133,35 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 	}
 
 	return
+}
+
+// GetServiceUsageMetrics retrieves usage metrics for a specific application and service
+// - Returns metrics tracking relay count and compute units for a service
+func (k Keeper) GetServiceUsageMetrics(
+	ctx context.Context,
+	applicationAddress,
+	serviceId string,
+) sharedtypes.ServiceUsageMetrics {
+	serviceUsageMetricsStore := k.getApplicationServiceUsageMetricsStore(ctx)
+
+	serviceUsageMetricsKey := types.ServiceUsageMetricsKey(applicationAddress, serviceId)
+	serviceUsageMetricsBz := serviceUsageMetricsStore.Get(serviceUsageMetricsKey)
+
+	// Return initialized empty metrics if none exist for this combination
+	// This ensures we always return a valid metrics object with the correct serviceId
+	applicationServiceUsageMetrics := types.ApplicationServiceUsageMetrics{
+		ApplicationAddress: applicationAddress,
+		ServiceUsageMetrics: &sharedtypes.ServiceUsageMetrics{
+			ServiceId: serviceId,
+		},
+	}
+
+	if serviceUsageMetricsBz == nil {
+		return *applicationServiceUsageMetrics.ServiceUsageMetrics
+	}
+
+	k.cdc.MustUnmarshal(serviceUsageMetricsBz, &applicationServiceUsageMetrics)
+	return *applicationServiceUsageMetrics.ServiceUsageMetrics
 }
 
 // GetAllUnstakingApplicationsIterator returns an iterator over all unstaking applications.
@@ -194,6 +238,43 @@ func (k Keeper) GetUndelegationsIterator(
 	return sharedtypes.NewRecordIterator(undelegationsIterator, undelegationAccessor)
 }
 
+// getApplicationServiceUsageMetricsIterator returns an iterator over all service usage metrics
+// for a specific application. This allows efficient traversal and processing of metrics data
+// without loading the entire application object.
+func (k Keeper) getApplicationServiceUsageMetricsIterator(
+	ctx context.Context,
+	applicationAddress string,
+) sharedtypes.RecordIterator[types.ApplicationServiceUsageMetrics] {
+	serviceUsageMetricsStore := k.getApplicationServiceUsageMetricsStore(ctx)
+	appKey := types.ApplicationKey(applicationAddress)
+
+	serviceUsageMetricsIterator := storetypes.KVStorePrefixIterator(serviceUsageMetricsStore, appKey)
+
+	serviceUsageMetricsAccessor := applicationUsageMetricsAccessorFn(k.cdc)
+	return sharedtypes.NewRecordIterator(serviceUsageMetricsIterator, serviceUsageMetricsAccessor)
+}
+
+// hydrateApplicationServiceUsageMetrics populates an application object with its service usage metrics
+// - Retrieves all metrics for all services the application has used
+// - Loads metrics from the store and attaches them to the application
+// - Called during application retrieval to provide a complete application object
+func (k Keeper) hydrateApplicationServiceUsageMetrics(
+	ctx context.Context,
+	app *types.Application,
+) {
+	// Hydrate the application's service usage metrics
+	serviceUsageMetricsIterator := k.getApplicationServiceUsageMetricsIterator(ctx, app.Address)
+	for ; serviceUsageMetricsIterator.Valid(); serviceUsageMetricsIterator.Next() {
+		appServiceUsageMetrics, err := serviceUsageMetricsIterator.Value()
+		if err != nil {
+			k.logger.Error(fmt.Sprintf("failed to get service usage metrics for app %s: %v", app.Address, err))
+			continue
+		}
+
+		app.ServiceUsageMetrics = append(app.ServiceUsageMetrics, appServiceUsageMetrics.ServiceUsageMetrics)
+	}
+}
+
 // applicationFromPrimaryKeyAccessorFn creates a DataRecordAccessor for Applications.
 // - Retrieves an application from its primary key in the store
 // - Returns an error if the application does not exist
@@ -232,6 +313,24 @@ func undelegationAccessorFn(
 	}
 }
 
+// applicationUsageMetricsAccessorFn returns a function that unmarshals binary data
+// into ApplicationServiceUsageMetrics objects. This accessor is used with record iterators
+// to efficiently process service metrics records without loading entire application objects.
+func applicationUsageMetricsAccessorFn(
+	cdc codec.BinaryCodec,
+) sharedtypes.DataRecordAccessor[types.ApplicationServiceUsageMetrics] {
+	return func(serviceUsageMetricsBz []byte) (types.ApplicationServiceUsageMetrics, error) {
+		if serviceUsageMetricsBz == nil {
+			err := fmt.Errorf("expecting service usage metrics bytes to be non-nil")
+			return types.ApplicationServiceUsageMetrics{}, err
+		}
+
+		var serviceUsageMetrics types.ApplicationServiceUsageMetrics
+		cdc.MustUnmarshal(serviceUsageMetricsBz, &serviceUsageMetrics)
+		return serviceUsageMetrics, nil
+	}
+}
+
 // getApplicationStore returns a prefixed KVStore for application data.
 func (k Keeper) getApplicationStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
@@ -260,6 +359,11 @@ func (k Keeper) getApplicationUnstakingStore(ctx context.Context) storetypes.KVS
 func (k Keeper) getApplicationTransferStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationTransferKeyPrefix))
+}
+
+func (k Keeper) getApplicationServiceUsageMetricsStore(ctx context.Context) storetypes.KVStore {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceUsageMetricsKeyPrefix))
 }
 
 // GetAllApplicationsIterator returns a RecordIterator over all Application records.
@@ -311,7 +415,16 @@ func initializeNilApplicationFields(keeperLogger log.Logger, app *types.Applicat
 
 	// The CosmosSDK codec treats empty slices and maps as nil, so we need to
 	// ensure that they are initialized as empty.
+
 	if app.PendingUndelegations == nil {
 		app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+	}
+
+	if app.DelegateeGatewayAddresses == nil {
+		app.DelegateeGatewayAddresses = make([]string, 0)
+	}
+
+	if app.ServiceUsageMetrics == nil {
+		app.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
 	}
 }
