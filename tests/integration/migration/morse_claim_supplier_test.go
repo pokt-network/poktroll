@@ -770,7 +770,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 
 	// Retrieve the claiming Morse supplier's node/operator claimable account.
 	morseOperatorClaimableAccount := s.QueryMorseClaimableAccount(s.T(), nonCustodialSupplierAddress)
-	morseOperatorAddress := morseOperatorClaimableAccount.GetMorseSrcAddress()
 
 	// Retrieve the claiming Morse supplier's owner claimable account.
 	morseOwnerAddress := morseOperatorClaimableAccount.GetMorseOutputAddress()
@@ -789,9 +788,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 		expectedErr := status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"morse owner address (%s) MUST be claimed before morse node (%s) can be claimed",
+				"morse owner address (%s) MUST be claimed BEFORE migrating the Morse node/supplier to a Shannon Supplier account",
 				morseOwnerAddress,
-				morseOperatorAddress,
 			).Error(),
 		)
 		s.ErrorContains(err, expectedErr.Error())
