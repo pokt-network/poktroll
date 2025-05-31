@@ -14,30 +14,65 @@ The `update_params.sh` script provides a comprehensive tool for querying, managi
 
 ## Quick Start
 
+```bash
+./tools/scripts/params/gov_params.sh help
+```
+
 ### Query Parameters
 
 ```bash
 # Query specific module parameters
-./update_params.sh query tokenomics
+./tools/scripts/params/gov_params.sh query tokenomics
 
 # Query all available module parameters
-./update_params.sh query-all
+./tools/scripts/params/gov_params.sh query-all
 
 # Query with specific environment
-./update_params.sh query tokenomics --env beta
+./tools/scripts/params/gov_params.sh query tokenomics --env beta
 ```
 
 ### Update Parameters
 
 ```bash
 # Generate update transaction template
-./update_params.sh update tokenomics
+./tools/scripts/params/gov_params.sh update tokenomics
 
 # Generate template for specific environment
-./update_params.sh update tokenomics --env beta --output-dir ./params
+./tools/scripts/params/gov_params.sh update tokenomics --env beta --output-dir ./params
 
 # Skip edit prompt and just generate template
-./update_params.sh update tokenomics --no-prompt
+./tools/scripts/params/gov_params.sh update tokenomics --no-prompt
+```
+
+## Updating All Params
+
+:::danger Updating all params
+Due to how `params` work in the Cosmos SDK, every `MsgUpdateParams`, transaction for
+particular module MUST update ALL params for that module EVEN IF only one is being updated.
+:::
+
+```mermaid
+flowchart LR
+    subgraph Offchain ["Offchain"]
+        A[pocketd]
+        C[Get All Params for Module]
+        C --> |Update Params| D[Update Params Msg<br/>Modified & Unmodified]
+    end
+
+    subgraph Onchain ["Onchain"]
+        B[Query Module Params]
+        E[Update All Parameters<br/>via Transaction]
+    end
+
+    A --> |Query Params| B
+    B --> |Return Params | C
+    D --> |Submit Update Tx| E
+
+    style A fill:#e1f5fe,color:#000
+    style B fill:#f3e5f5,color:#000
+    style C fill:#fff3e0,color:#000
+    style D fill:#e8f5e8,color:#000
+    style E fill:#ffebee,color:#000
 ```
 
 ## Available Modules
@@ -72,7 +107,7 @@ The `update_params.sh` script provides a comprehensive tool for querying, managi
 ### Command Structure
 
 ```bash
-./update_params.sh <command> [module_name] [options]
+./tools/scripts/params/gov_params.sh <command> [module_name] [options]
 ```
 
 ### Commands
@@ -107,7 +142,7 @@ The `update_params.sh` script provides a comprehensive tool for querying, managi
 First, check the current parameter values:
 
 ```bash
-./update_params.sh query tokenomics --env beta
+./tools/scripts/params/gov_params.sh query tokenomics --env beta
 ```
 
 Example output:
@@ -133,7 +168,7 @@ Example output:
 Create a transaction template with current parameters:
 
 ```bash
-./update_params.sh update tokenomics --env beta --output-dir ./params
+./tools/scripts/params/gov_params.sh update tokenomics --env beta --output-dir ./params
 ```
 
 This generates a file like `tokenomics_params_beta_20241230_143022.json`:
@@ -214,7 +249,7 @@ Check the transaction result and verify parameter updates:
 pocketd query tx --type=hash <TRANSACTION_HASH> --network=beta
 
 # Verify updated parameters
-./update_params.sh query tokenomics --env beta
+./tools/scripts/params/gov_params.sh query tokenomics --env beta
 ```
 
 ## Common Use Cases
@@ -225,10 +260,10 @@ pocketd query tx --type=hash <TRANSACTION_HASH> --network=beta
 
 ```bash
 # Query current allocation
-./update_params.sh query tokenomics --env beta
+./tools/scripts/params/gov_params.sh query tokenomics --env beta
 
 # Generate update template
-./update_params.sh update tokenomics --env beta
+./tools/scripts/params/gov_params.sh update tokenomics --env beta
 
 # Edit the JSON file to modify mint_allocation_percentages
 # Submit transaction as shown above
@@ -245,10 +280,10 @@ pocketd query tx --type=hash <TRANSACTION_HASH> --network=beta
 
 ```bash
 # Query application parameters
-./update_params.sh query application --env beta
+./tools/scripts/params/gov_params.sh query application --env beta
 
 # Generate update template
-./update_params.sh update application --env beta
+./tools/scripts/params/gov_params.sh update application --env beta
 ```
 
 ### Bulk Parameter Review
@@ -257,34 +292,11 @@ Query all module parameters across environments:
 
 ```bash
 # Check all parameters in beta
-./update_params.sh query-all --env beta
+./tools/scripts/params/gov_params.sh query-all --env beta
 
 # Check all parameters in alpha
-./update_params.sh query-all --env alpha
+./tools/scripts/params/gov_params.sh query-all --env alpha
 ```
-
-## Best Practices
-
-### Before Updating Parameters
-
-1. **Query Current State**: Always check current parameter values first
-2. **Test on Lower Environments**: Test changes on alpha/beta before main
-3. **Document Changes**: Keep records of parameter changes and reasoning
-4. **Review Authority**: Ensure correct authority address for environment
-
-### Parameter Value Guidelines
-
-1. **Percentage Values**: Use decimal format (0.1 for 10%)
-2. **Address Validation**: Verify all addresses are correct for the environment
-3. **Numeric Precision**: Be careful with decimal precision in JSON
-4. **String vs Number**: Some parameters require string format in JSON
-
-### Transaction Submission
-
-1. **Fees**: Always include appropriate fees (200upokt minimum)
-2. **Gas**: Monitor gas usage for complex parameter updates
-3. **Confirmation**: Wait for transaction confirmation before proceeding
-4. **Verification**: Always verify changes took effect
 
 ## Troubleshooting
 
@@ -296,7 +308,7 @@ Query all module parameters across environments:
 ❌ Failed to query parameters for module 'unknown_module'
 ```
 
-- Check available modules list with `./update_params.sh help`
+Check available modules list with `./tools/scripts/params/gov_params.sh help`
 
 **Authority Mismatch:**
 
@@ -304,7 +316,7 @@ Query all module parameters across environments:
 Error: unauthorized: invalid authority
 ```
 
-- Verify authority address matches environment configuration
+Verify authority address matches environment configuration
 
 **Network Connection:**
 
@@ -312,7 +324,7 @@ Error: unauthorized: invalid authority
 Error: Failed to query parameters
 ```
 
-- Check network connectivity and node endpoint
+Check network connectivity and node endpoint
 
 **Invalid JSON Format:**
 
@@ -320,30 +332,7 @@ Error: Failed to query parameters
 Error: invalid character in JSON
 ```
 
-- Validate JSON syntax before submission
-
-### Debug Commands
-
-```bash
-# Check script configuration
-./update_params.sh help
-
-# Test connectivity
-pocketd status --node=<NODE_ENDPOINT>
-
-# Validate JSON
-cat params_file.json | jq '.'
-```
-
-## Security Considerations
-
-⚠️ **IMPORTANT WARNINGS:**
-
-- **Parameter updates affect the entire network and cannot be easily reverted**
-- **Always review changes carefully before submitting**
-- **Test on lower environments first**
-- **Ensure proper authority permissions**
-- **Keep transaction files secure**
+Validate JSON syntax before submission
 
 ## Examples
 
@@ -351,10 +340,10 @@ cat params_file.json | jq '.'
 
 ```bash
 # 1. Query current state
-./update_params.sh query tokenomics --env beta
+./tools/scripts/params/gov_params.sh query tokenomics --env beta
 
 # 2. Generate template
-./update_params.sh update tokenomics --env beta --output-dir ./governance
+./tools/scripts/params/gov_params.sh update tokenomics --env beta --output-dir ./governance
 
 # 3. Edit the generated file
 # vim ./governance/tokenomics_params_beta_20241230_143022.json
@@ -364,7 +353,5 @@ pocketd tx authz exec ./governance/tokenomics_params_beta_20241230_143022.json \
   --from=pnf_beta --network=beta --yes --fees=200upokt
 
 # 5. Verify changes
-./update_params.sh query tokenomics --env beta
+./tools/scripts/params/gov_params.sh query tokenomics --env beta
 ```
-
-This comprehensive workflow ensures safe and effective governance parameter management across all Pocket Network environments.
