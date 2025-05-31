@@ -267,7 +267,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 
 	// Loop through all EXISTING Morse accounts and map them to NEW Shannon accounts.
 	for _, morseAccount := range morseAccounts {
-		mapping, mappingErr := mappingAccounts(ctx, clientCtx, cmd, morseAccount)
+		mapping, mappingErr := mappingAccounts(clientCtx, morseAccount)
 		if mappingErr != nil {
 			// On error, break loop and return.
 			// Partial results will be written to output-file due to deferred write above.
@@ -407,17 +407,9 @@ func readMorseAccountsPrivateKeysFile(
 // - Creates the migration message.
 // - Imports the Shannon private key into the keyring.
 func mappingAccounts(
-	ctx context.Context,
 	clientCtx cosmosclient.Context,
-	cmd *cobra.Command,
 	morseAccount MorseAccountInfo,
 ) (*MorseShannonMapping, error) {
-	// Conventionally derive a cosmos-sdk client context from the cobra command.
-	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
-	if err != nil {
-		return nil, err
-	}
-
 	// Ensure that a signing account is provided.
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
 	if shannonSigningAddr == "" {
