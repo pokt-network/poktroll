@@ -95,11 +95,10 @@ func (rs ClaimSettlementResults) GetServiceIds() (serviceIds []string) {
 	return serviceIds
 }
 
-// GetRelaysPerServiceMap returns a map of service IDs to the total number of relays
-// claimed for that service in the combined results.
-// IMPORTANT: **DO NOT** directly iterate over returned map in onchain code to avoid
-// the possibility of introducing non-determinism. Instead, iterate over the service ID
-// slice returned by OR a sorted slice of the service ID keys.
+// GetRelaysPerServiceMap returns a map of {service_id -> total_num_relays_claimed_for_service} across all results.
+// IMPORTANT: **DO NOT** directly iterate over returned map in onchain code.
+// Iterating over the returned map can cause non-determinism.
+// Instead, iterate over a sorted slice of the service ID keys.
 func (rs ClaimSettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs error) {
 	relaysPerServiceMap := make(map[string]uint64)
 
