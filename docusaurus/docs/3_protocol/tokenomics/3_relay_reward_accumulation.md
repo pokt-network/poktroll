@@ -1,4 +1,7 @@
-# RelayMiner Reward Accumulation
+---
+title: RelayMiner Reward Accumulation
+sidebar_position: 3
+---
 
 ## tl;dr
 
@@ -12,13 +15,12 @@ This page was put together as a result of the discussion in [pokt-network/poktro
 
 ## Table of Contents
 
-- [RelayMiner Reward Accumulation](#relayminer-reward-accumulation)
-  - [tl;dr](#tldr)
-  - [Table of Contents](#table-of-contents)
-  - [Background on Optimistic Relay Accumulation](#background-on-optimistic-relay-accumulation)
-    - [Managing 5xx Rewards](#managing-5xx-rewards)
-  - [Rate Limiting with Optimistic Accumulation](#rate-limiting-with-optimistic-accumulation)
-    - [Pessimistic Reversal of 5xx Rewards](#pessimistic-reversal-of-5xx-rewards)
+- [tl;dr](#tldr)
+- [Table of Contents](#table-of-contents)
+- [Background on Optimistic Relay Accumulation](#background-on-optimistic-relay-accumulation)
+  - [Managing 5xx Rewards](#managing-5xx-rewards)
+- [Rate Limiting with Optimistic Accumulation](#rate-limiting-with-optimistic-accumulation)
+  - [Pessimistic Reversal of 5xx Rewards](#pessimistic-reversal-of-5xx-rewards)
 
 ---
 
