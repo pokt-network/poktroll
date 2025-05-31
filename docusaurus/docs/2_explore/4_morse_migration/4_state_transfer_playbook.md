@@ -11,9 +11,12 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
   - [1. Retrieve a Pruned Morse Snapshot](#1-retrieve-a-pruned-morse-snapshot)
   - [2. Export Morse Snapshot State](#2-export-morse-snapshot-state)
   - [3. Transform Morse Export to a Canonical Account State Import Message](#3-transform-morse-export-to-a-canonical-account-state-import-message)
-  - [4. Distribute Canonical Account State Import Message](#4-distribute-canonical-account-state-import-message)
-  - [5. Align on Account State via Social Consensus](#5-align-on-account-state-via-social-consensus)
-  - [6. Import Canonical State into Shannon](#6-import-canonical-state-into-shannon)
+    - [3.1 Shannon MainNet Only](#31-shannon-mainnet-only)
+    - [3.2 Shannon TestNet Only](#32-shannon-testnet-only)
+  - [4. Social Consensus](#4-social-consensus)
+    - [4.1 Distribute Canonical Account State Import Message](#41-distribute-canonical-account-state-import-message)
+    - [4.2 Align on Account State via Social Consensus](#42-align-on-account-state-via-social-consensus)
+  - [5. Import Canonical State into Shannon](#5-import-canonical-state-into-shannon)
   - [7. Query Canonical State in Shannon](#7-query-canonical-state-in-shannon)
   - [8. Cleanup \& Documentation](#8-cleanup--documentation)
 - [State Validation: Morse Account Holders](#state-validation-morse-account-holders)
@@ -29,45 +32,41 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 
 ## Step by Step Instructions for Protocol Maintainer
 
+We're using `snapshot-pruned-165398-165498-2025-04-15.tar` as an example. Make sure to replace it with the latest snapshot file name.
+
 ### 1. Retrieve a Pruned Morse Snapshot
 
 Go to [Liquify's Snapshot Explorer](https://pocket-snapshot-uk.liquify.com/#/pruned/) and download the latest pruned snapshot.
 
 :::tip Multi-threaded Download
 
-Use a tool like [aria2c](https://aria2.github.io/) for a faster multi-threaded download.
-
-**For example**:
+Use a tool like [aria2c](https://aria2.github.io/) for a faster multi-threaded download. **For example**:
 
 ```bash
-aria2c -x 16 -s 16 -k 1M https://pocket-snapshot-us.liquify.com/files/pruned/pruned-169726-169826-2025-05-27.tar
+aria2c -x 16 \
+  -s 16 \
+  -k 1M \
+  https://pocket-snapshot-us.liquify.com/files/pruned/snapshot-pruned-165398-165498-2025-04-15.tar
 ```
 
 :::
 
 Export the snapshot into a new directory on your local machine.
 
-For example, for the `pruned-169726-169826-2025-05-27.tar` snapshot:
+For example, for the `snapshot-pruned-165398-165498-2025-04-15.tar` snapshot:
 
 ```bash
-# 0. Create a new directory
-mkdir -p $HOME/morse-mainnet-snapshot-pruned-169726-169826-2025-05-27
+# 1. Create a new directory
+rm -rf $HOME/morse-mainnet-snapshot
+mkdir -p $HOME/morse-mainnet-snapshot
 
-# 1. Untar the snapshot file
-tar -xvf pruned-169726-169826-2025-05-27.tar -C $HOME/morse-mainnet-snapshot-pruned-169726-169826-2025-05-27
-
-# 2. Change directory to the extracted snapshot folder
-cd $HOME/morse-mainnet-snapshot-pruned-169726-169826-2025-05-27
+# 2. Untar the snapshot file
+tar -xvf ~/Downloads/snapshot-pruned-165398-165498-2025-04-15.tar -C /Users/olshansky/morse-mainnet-snapshot
 ```
 
-:::warning Note the height and date of the snapshot
+:::warning Note the height and date of the snapshot file name
 
-The height and date are encoded in the snapshot file name.
-
-For example, the snapshot file name `pruned-169726-169826-2025-05-27.tar` has a max height of `169825` and a date of `2025-05-27`; the end-height is exclusive.
-
-See the table in [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) to
-ensure the correct snapshot heights are used.
+The snapshot file name `snapshot-pruned-165398-165498-2025-04-15.tar` has a max height of `165497` and a date of `2025-04-15`. **The end-height is exclusive.**
 
 :::
 
@@ -75,36 +74,77 @@ ensure the correct snapshot heights are used.
 
 Choose the snapshot height, which must be less than or equal to the snapshot height retrieved above. **This will be the published canonical export height.**
 
+Prepare your environment variables:
+
 ```bash
-export MAINNET_SNAPSHOT_HEIGHT="169825"
-export MAINNET_SNAPSHOT_DATE="2025-05-27"
+export MAINNET_SNAPSHOT_HEIGHT="165497"
+export MAINNET_SNAPSHOT_DATE="2025-04-15"
 export MORSE_MAINNET_STATE_EXPORT_PATH="./morse_state_export_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json"
+```
+
+Verify the snapshot data directory has the expected files:
+
+```bash
+ls $HOME/morse-mainnet-snapshot/data
+application.db blockstore.db evidence.db state.db txindexer.db
+```
+
+Export the state:
+
+```bash
 pocket --datadir="$HOME/morse-mainnet-snapshot" util export-genesis-for-reset "$MAINNET_SNAPSHOT_HEIGHT" pocket > "$MORSE_MAINNET_STATE_EXPORT_PATH"
+```
+
+Verify the state export:
+
+```bash
+cat "$MORSE_MAINNET_STATE_EXPORT_PATH"
 ```
 
 ### 3. Transform Morse Export to a Canonical Account State Import Message
 
-:::info Testing on Shannon TestNet?
-
-`MorseClaimableAccount`s imported to Shannon TestNet(s) are a merge of the Morse MainNet and TestNet state exports, for developer convenience.
-
-:::
+Prepare your environment variables:
 
 ```bash
 export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json"
+```
+
+Transform the Morse export to a canonical account state import message:
+
+```bash
 pocketd tx migration collect-morse-accounts "$MORSE_MAINNET_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
 ```
 
-### 4. Distribute Canonical Account State Import Message
+Verify the state import message:
+
+```bash
+cat "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
+```
+
+#### 3.1 Shannon MainNet Only
+
+Manually unstake all Morse validators on Shannon MainNet.
+
+The official list can be found [here](https://docs.google.com/spreadsheets/d/1V33oAE01s7JLXxjsnJYt7cg_ttaEKbXFFs_qpLKR9l0/edit?gid=0#gid=0).
+
+#### 3.2 Shannon TestNet Only
+
+`MorseClaimableAccount`s imported to Shannon TestNet(s) are a merge of the Morse MainNet and TestNet state exports, for developer convenience.
+
+See the table in [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) to ensure the correct snapshot heights are used.
+
+### 4. Social Consensus
+
+#### 4.1 Distribute Canonical Account State Import Message
 
 Distribute the `msg_import_morse_accounts_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json` and its hash for public verification by Morse account/stake-holders.
 
-### 5. Align on Account State via Social Consensus
+#### 4.2 Align on Account State via Social Consensus
 
 - Wait for consensus (offchain, time-bounded).
 - React to feedback as needed.
 
-### 6. Import Canonical State into Shannon
+### 5. Import Canonical State into Shannon
 
 :::danger
 
