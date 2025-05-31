@@ -20,13 +20,16 @@
     "@easyops-cn/docusaurus-search-local": "^0.46.1",
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
+    "katex": "^0.16.22",
     "prism-react-renderer": "^2.3.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-markdown": "^9.0.3",
+    "react-player": "^2.16.0",
+    "rehype-katex": "^7.0.1",
     "rehype-raw": "^7.0.0",
-    "remark-mermaid-plugin": "^1.0.2",
-    "react-player": "^2.16.0"
+    "remark-math": "^6.0.0",
+    "remark-mermaid-plugin": "^1.0.2"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.7.0",
