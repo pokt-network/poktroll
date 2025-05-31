@@ -70,6 +70,8 @@ const config = {
           sidebarCollapsible: false,
           remarkPlugins: [remarkMath],
           rehypePlugins: [rehypeKatex],
+          editUrl:
+            "https://github.com/pokt-network/poktroll/edit/main/docusaurus",
         },
         theme: {
           customCss: [
