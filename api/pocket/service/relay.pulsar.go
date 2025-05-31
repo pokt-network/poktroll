@@ -2,17 +2,18 @@
 package service
 
 import (
-	session "github.com/pokt-network/poktroll/api/pocket/session"
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-proto"
-	runtime "github.com/cosmos/cosmos-proto/runtime"
-	_ "github.com/cosmos/gogoproto/gogoproto"
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoiface "google.golang.org/protobuf/runtime/protoiface"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
 	reflect "reflect"
 	sync "sync"
+
+	_ "github.com/cosmos/cosmos-proto"
+	runtime "github.com/cosmos/cosmos-proto/runtime"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	session "github.com/pokt-network/poktroll/api/pocket/session"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoiface "google.golang.org/protobuf/runtime/protoiface"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 var (

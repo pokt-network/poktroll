@@ -22,7 +22,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the x/auth module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "EvidenceMsg_UpdateParams",
+                "operationId": "FeegrantMsg_UpdateParams",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -56,7 +56,7 @@
                     "Msg"
                 ],
                 "summary": "Exec attempts to execute the provided messages using\nauthorizations granted to the grantee. Each message should have only\none signer corresponding to the granter of the authorization.",
-                "operationId": "EvidenceMsg_Exec",
+                "operationId": "FeegrantMsg_Exec",
                 "parameters": [
                     {
                         "description": "MsgExec attempts to execute the provided messages using\nauthorizations granted to the grantee. Each message should have only\none signer corresponding to the granter of the authorization.",
@@ -90,7 +90,7 @@
                     "Msg"
                 ],
                 "summary": "Grant grants the provided authorization to the grantee on the granter's\naccount with the provided expiration time. If there is already a grant\nfor the given (granter, grantee, Authorization) triple, then the grant\nwill be overwritten.",
-                "operationId": "EvidenceMsg_Grant",
+                "operationId": "FeegrantMsg_Grant",
                 "parameters": [
                     {
                         "description": "MsgGrant is a request type for Grant method. It declares authorization to the grantee\non behalf of the granter with the provided expiration time.",
@@ -124,7 +124,7 @@
                     "Msg"
                 ],
                 "summary": "Revoke revokes any authorization corresponding to the provided method name on the\ngranter's account that has been granted to the grantee.",
-                "operationId": "EvidenceMsg_Revoke",
+                "operationId": "FeegrantMsg_Revoke",
                 "parameters": [
                     {
                         "description": "MsgRevoke revokes any authorization with the provided sdk.Msg type on the\ngranter's account with that has been granted to the grantee.",
@@ -158,7 +158,7 @@
                     "Query"
                 ],
                 "summary": "AppOptions returns the autocli options for all of the modules in an app.",
-                "operationId": "EvidenceQuery_AppOptions",
+                "operationId": "FeegrantQuery_AppOptions",
                 "parameters": [
                     {
                         "description": "AppOptionsRequest is the RemoteInfoService/AppOptions request type.",
@@ -192,7 +192,7 @@
                     "Msg"
                 ],
                 "summary": "MultiSend defines a method for sending coins from some accounts to other accounts.",
-                "operationId": "EvidenceMsg_MultiSend",
+                "operationId": "FeegrantMsg_MultiSend",
                 "parameters": [
                     {
                         "description": "MsgMultiSend represents an arbitrary multi-in, multi-out send message.",
@@ -226,7 +226,7 @@
                     "Msg"
                 ],
                 "summary": "Send defines a method for sending coins from one account to another account.",
-                "operationId": "EvidenceMsg_Send",
+                "operationId": "FeegrantMsg_Send",
                 "parameters": [
                     {
                         "description": "MsgSend represents a message to send coins from one account to another.",
@@ -260,7 +260,7 @@
                     "Msg"
                 ],
                 "summary": "SetSendEnabled is a governance operation for setting the SendEnabled flag\non any number of Denoms. Only the entries to add or update should be\nincluded. Entries that already exist in the store, but that aren't\nincluded in this message, will be left unchanged.",
-                "operationId": "EvidenceMsg_SetSendEnabled",
+                "operationId": "FeegrantMsg_SetSendEnabled",
                 "parameters": [
                     {
                         "description": "MsgSetSendEnabled is the Msg/SetSendEnabled request type.\n\nOnly entries to add/update/delete need to be included.\nExisting SendEnabled entries that are not included in this\nmessage are left unchanged.",
@@ -294,7 +294,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/bank module parameters.\nThe authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin70",
+                "operationId": "FeegrantMsg_UpdateParamsMixin70",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -328,7 +328,7 @@
                     "Msg"
                 ],
                 "summary": "LoadTest defines a method for executing a sequence of load test operations.",
-                "operationId": "EvidenceMsg_LoadTest",
+                "operationId": "FeegrantMsg_LoadTest",
                 "parameters": [
                     {
                         "description": "MsgLoadTestOps defines a message containing a sequence of load test operations.",
@@ -362,7 +362,7 @@
                     "Msg"
                 ],
                 "summary": "AuthorizeCircuitBreaker allows a super-admin to grant (or revoke) another\naccount's circuit breaker permissions.",
-                "operationId": "EvidenceMsg_AuthorizeCircuitBreaker",
+                "operationId": "FeegrantMsg_AuthorizeCircuitBreaker",
                 "parameters": [
                     {
                         "description": "MsgAuthorizeCircuitBreaker defines the Msg/AuthorizeCircuitBreaker request type.",
@@ -396,7 +396,7 @@
                     "Msg"
                 ],
                 "summary": "ResetCircuitBreaker resumes processing of Msg's in the state machine that\nhave been been paused using TripCircuitBreaker.",
-                "operationId": "EvidenceMsg_ResetCircuitBreaker",
+                "operationId": "FeegrantMsg_ResetCircuitBreaker",
                 "parameters": [
                     {
                         "description": "MsgResetCircuitBreaker defines the Msg/ResetCircuitBreaker request type.",
@@ -430,7 +430,7 @@
                     "Msg"
                 ],
                 "summary": "TripCircuitBreaker pauses processing of Msg's in the state machine.",
-                "operationId": "EvidenceMsg_TripCircuitBreaker",
+                "operationId": "FeegrantMsg_TripCircuitBreaker",
                 "parameters": [
                     {
                         "description": "MsgTripCircuitBreaker defines the Msg/TripCircuitBreaker request type.",
@@ -464,7 +464,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/consensus module parameters.\nThe authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin85",
+                "operationId": "FeegrantMsg_UpdateParamsMixin85",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -498,7 +498,7 @@
                     "Msg"
                 ],
                 "summary": "IncreaseCount increments the counter by the specified amount.",
-                "operationId": "EvidenceMsg_IncreaseCount",
+                "operationId": "FeegrantMsg_IncreaseCount",
                 "parameters": [
                     {
                         "description": "MsgIncreaseCounter defines a count Msg service counter.",
@@ -532,7 +532,7 @@
                     "Query"
                 ],
                 "summary": "GetCount queries the parameters of x/Counter module.",
-                "operationId": "EvidenceQuery_GetCount",
+                "operationId": "FeegrantQuery_GetCount",
                 "parameters": [
                     {
                         "description": "QueryGetCountRequest defines the request type for querying x/mock count.",
@@ -566,7 +566,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/crisis module\nparameters. The authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin89",
+                "operationId": "FeegrantMsg_UpdateParamsMixin89",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -600,7 +600,7 @@
                     "Msg"
                 ],
                 "summary": "VerifyInvariant defines a method to verify a particular invariant.",
-                "operationId": "EvidenceMsg_VerifyInvariant",
+                "operationId": "FeegrantMsg_VerifyInvariant",
                 "parameters": [
                     {
                         "description": "MsgVerifyInvariant represents a message to verify a particular invariance.",
@@ -635,7 +635,7 @@
                     "Msg"
                 ],
                 "summary": "CommunityPoolSpend defines a governance operation for sending tokens from\nthe community pool in the x/distribution module to another account, which\ncould be the governance module itself. The authority is defined in the\nkeeper.",
-                "operationId": "EvidenceMsg_CommunityPoolSpend",
+                "operationId": "FeegrantMsg_CommunityPoolSpend",
                 "parameters": [
                     {
                         "description": "MsgCommunityPoolSpend defines a message for sending tokens from the community\npool to another account. This message is typically executed via a governance\nproposal with the governance module being the executing authority.",
@@ -669,7 +669,7 @@
                     "Msg"
                 ],
                 "summary": "DepositValidatorRewardsPool defines a method to provide additional rewards\nto delegators to a specific validator.",
-                "operationId": "EvidenceMsg_DepositValidatorRewardsPool",
+                "operationId": "FeegrantMsg_DepositValidatorRewardsPool",
                 "parameters": [
                     {
                         "description": "DepositValidatorRewardsPool defines the request structure to provide\nadditional rewards to delegators from a specific validator.",
@@ -704,7 +704,7 @@
                     "Msg"
                 ],
                 "summary": "FundCommunityPool defines a method to allow an account to directly\nfund the community pool.",
-                "operationId": "EvidenceMsg_FundCommunityPool",
+                "operationId": "FeegrantMsg_FundCommunityPool",
                 "parameters": [
                     {
                         "description": "MsgFundCommunityPool allows an account to directly\nfund the community pool.",
@@ -738,7 +738,7 @@
                     "Msg"
                 ],
                 "summary": "SetWithdrawAddress defines a method to change the withdraw address\nfor a delegator (or validator self-delegation).",
-                "operationId": "EvidenceMsg_SetWithdrawAddress",
+                "operationId": "FeegrantMsg_SetWithdrawAddress",
                 "parameters": [
                     {
                         "description": "MsgSetWithdrawAddress sets the withdraw address for\na delegator (or validator self-delegation).",
@@ -772,7 +772,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/distribution\nmodule parameters. The authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin100",
+                "operationId": "FeegrantMsg_UpdateParamsMixin100",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -806,7 +806,7 @@
                     "Msg"
                 ],
                 "summary": "WithdrawDelegatorReward defines a method to withdraw rewards of delegator\nfrom a single validator.",
-                "operationId": "EvidenceMsg_WithdrawDelegatorReward",
+                "operationId": "FeegrantMsg_WithdrawDelegatorReward",
                 "parameters": [
                     {
                         "description": "MsgWithdrawDelegatorReward represents delegation withdrawal to a delegator\nfrom a single validator.",
@@ -840,7 +840,7 @@
                     "Msg"
                 ],
                 "summary": "WithdrawValidatorCommission defines a method to withdraw the\nfull commission to the validator address.",
-                "operationId": "EvidenceMsg_WithdrawValidatorCommission",
+                "operationId": "FeegrantMsg_WithdrawValidatorCommission",
                 "parameters": [
                     {
                         "description": "MsgWithdrawValidatorCommission withdraws the full commission to the validator\naddress.",
@@ -874,7 +874,7 @@
                     "Msg"
                 ],
                 "summary": "SubmitEvidence submits an arbitrary Evidence of misbehavior such as equivocation or\ncounterfactual signing.",
-                "operationId": "EvidenceMsg_SubmitEvidence",
+                "operationId": "FeegrantMsg_SubmitEvidence",
                 "parameters": [
                     {
                         "description": "MsgSubmitEvidence represents a message that supports submitting arbitrary\nEvidence of misbehavior such as equivocation or counterfactual signing.",
@@ -908,7 +908,7 @@
                     "Msg"
                 ],
                 "summary": "GrantAllowance grants fee allowance to the grantee on the granter's\naccount with the provided expiration time.",
-                "operationId": "EvidenceMsg_GrantAllowance",
+                "operationId": "FeegrantMsg_GrantAllowance",
                 "parameters": [
                     {
                         "description": "MsgGrantAllowance adds permission for Grantee to spend up to Allowance\nof fees from the account of Granter.",
@@ -942,7 +942,7 @@
                     "Msg"
                 ],
                 "summary": "PruneAllowances prunes expired fee allowances, currently up to 75 at a time.",
-                "operationId": "EvidenceMsg_PruneAllowances",
+                "operationId": "FeegrantMsg_PruneAllowances",
                 "parameters": [
                     {
                         "description": "MsgPruneAllowances prunes expired fee allowances.",
@@ -976,7 +976,7 @@
                     "Msg"
                 ],
                 "summary": "RevokeAllowance revokes any fee allowance of granter's account that\nhas been granted to the grantee.",
-                "operationId": "EvidenceMsg_RevokeAllowance",
+                "operationId": "FeegrantMsg_RevokeAllowance",
                 "parameters": [
                     {
                         "description": "MsgRevokeAllowance removes any existing Allowance from Granter to Grantee.",
@@ -1010,7 +1010,7 @@
                     "Msg"
                 ],
                 "summary": "CancelProposal defines a method to cancel governance proposal",
-                "operationId": "EvidenceMsg_CancelProposal",
+                "operationId": "FeegrantMsg_CancelProposal",
                 "parameters": [
                     {
                         "description": "MsgCancelProposal is the Msg/CancelProposal request type.",
@@ -1044,7 +1044,7 @@
                     "Msg"
                 ],
                 "summary": "Deposit defines a method to add deposit on a specific proposal.",
-                "operationId": "EvidenceMsg_Deposit",
+                "operationId": "FeegrantMsg_Deposit",
                 "parameters": [
                     {
                         "description": "MsgDeposit defines a message to submit a deposit to an existing proposal.",
@@ -1078,7 +1078,7 @@
                     "Msg"
                 ],
                 "summary": "ExecLegacyContent defines a Msg to be in included in a MsgSubmitProposal\nto execute a legacy content-based proposal.",
-                "operationId": "EvidenceMsg_ExecLegacyContent",
+                "operationId": "FeegrantMsg_ExecLegacyContent",
                 "parameters": [
                     {
                         "description": "MsgExecLegacyContent is used to wrap the legacy content field into a message.\nThis ensures backwards compatibility with v1beta1.MsgSubmitProposal.",
@@ -1112,7 +1112,7 @@
                     "Msg"
                 ],
                 "summary": "SubmitProposal defines a method to create new proposal given the messages.",
-                "operationId": "EvidenceMsg_SubmitProposal",
+                "operationId": "FeegrantMsg_SubmitProposal",
                 "parameters": [
                     {
                         "description": "MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary\nproposal Content.",
@@ -1146,7 +1146,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/gov module\nparameters. The authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin116",
+                "operationId": "FeegrantMsg_UpdateParamsMixin116",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -1180,7 +1180,7 @@
                     "Msg"
                 ],
                 "summary": "Vote defines a method to add a vote on a specific proposal.",
-                "operationId": "EvidenceMsg_Vote",
+                "operationId": "FeegrantMsg_Vote",
                 "parameters": [
                     {
                         "description": "MsgVote defines a message to cast a vote.",
@@ -1214,7 +1214,7 @@
                     "Msg"
                 ],
                 "summary": "VoteWeighted defines a method to add a weighted vote on a specific proposal.",
-                "operationId": "EvidenceMsg_VoteWeighted",
+                "operationId": "FeegrantMsg_VoteWeighted",
                 "parameters": [
                     {
                         "description": "MsgVoteWeighted defines a message to cast a vote.",
@@ -1248,7 +1248,7 @@
                     "Msg"
                 ],
                 "summary": "Deposit defines a method to add deposit on a specific proposal.",
-                "operationId": "EvidenceMsg_DepositMixin120",
+                "operationId": "FeegrantMsg_DepositMixin120",
                 "parameters": [
                     {
                         "description": "MsgDeposit defines a message to submit a deposit to an existing proposal.",
@@ -1282,7 +1282,7 @@
                     "Msg"
                 ],
                 "summary": "SubmitProposal defines a method to create new proposal given a content.",
-                "operationId": "EvidenceMsg_SubmitProposalMixin120",
+                "operationId": "FeegrantMsg_SubmitProposalMixin120",
                 "parameters": [
                     {
                         "description": "MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary\nproposal Content.",
@@ -1316,7 +1316,7 @@
                     "Msg"
                 ],
                 "summary": "Vote defines a method to add a vote on a specific proposal.",
-                "operationId": "EvidenceMsg_VoteMixin120",
+                "operationId": "FeegrantMsg_VoteMixin120",
                 "parameters": [
                     {
                         "description": "MsgVote defines a message to cast a vote.",
@@ -1350,7 +1350,7 @@
                     "Msg"
                 ],
                 "summary": "VoteWeighted defines a method to add a weighted vote on a specific proposal.",
-                "operationId": "EvidenceMsg_VoteWeightedMixin120",
+                "operationId": "FeegrantMsg_VoteWeightedMixin120",
                 "parameters": [
                     {
                         "description": "MsgVoteWeighted defines a message to cast a vote.",
@@ -1384,7 +1384,7 @@
                     "Msg"
                 ],
                 "summary": "CreateGroup creates a new group with an admin account address, a list of members and some optional metadata.",
-                "operationId": "EvidenceMsg_CreateGroup",
+                "operationId": "FeegrantMsg_CreateGroup",
                 "parameters": [
                     {
                         "description": "MsgCreateGroup is the Msg/CreateGroup request type.",
@@ -1418,7 +1418,7 @@
                     "Msg"
                 ],
                 "summary": "CreateGroupPolicy creates a new group policy using given DecisionPolicy.",
-                "operationId": "EvidenceMsg_CreateGroupPolicy",
+                "operationId": "FeegrantMsg_CreateGroupPolicy",
                 "parameters": [
                     {
                         "description": "MsgCreateGroupPolicy is the Msg/CreateGroupPolicy request type.",
@@ -1452,7 +1452,7 @@
                     "Msg"
                 ],
                 "summary": "CreateGroupWithPolicy creates a new group with policy.",
-                "operationId": "EvidenceMsg_CreateGroupWithPolicy",
+                "operationId": "FeegrantMsg_CreateGroupWithPolicy",
                 "parameters": [
                     {
                         "description": "MsgCreateGroupWithPolicy is the Msg/CreateGroupWithPolicy request type.",
@@ -1486,7 +1486,7 @@
                     "Msg"
                 ],
                 "summary": "Exec executes a proposal.",
-                "operationId": "EvidenceMsg_ExecMixin124",
+                "operationId": "FeegrantMsg_ExecMixin124",
                 "parameters": [
                     {
                         "description": "MsgExec is the Msg/Exec request type.",
@@ -1520,7 +1520,7 @@
                     "Msg"
                 ],
                 "summary": "LeaveGroup allows a group member to leave the group.",
-                "operationId": "EvidenceMsg_LeaveGroup",
+                "operationId": "FeegrantMsg_LeaveGroup",
                 "parameters": [
                     {
                         "description": "MsgLeaveGroup is the Msg/LeaveGroup request type.",
@@ -1554,7 +1554,7 @@
                     "Msg"
                 ],
                 "summary": "SubmitProposal submits a new proposal.",
-                "operationId": "EvidenceMsg_SubmitProposalMixin124",
+                "operationId": "FeegrantMsg_SubmitProposalMixin124",
                 "parameters": [
                     {
                         "description": "MsgSubmitProposal is the Msg/SubmitProposal request type.",
@@ -1588,7 +1588,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupAdmin updates the group admin with given group id and previous admin address.",
-                "operationId": "EvidenceMsg_UpdateGroupAdmin",
+                "operationId": "FeegrantMsg_UpdateGroupAdmin",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupAdmin is the Msg/UpdateGroupAdmin request type.",
@@ -1622,7 +1622,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupMembers updates the group members with given group id and admin address.",
-                "operationId": "EvidenceMsg_UpdateGroupMembers",
+                "operationId": "FeegrantMsg_UpdateGroupMembers",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupMembers is the Msg/UpdateGroupMembers request type.",
@@ -1656,7 +1656,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupMetadata updates the group metadata with given group id and admin address.",
-                "operationId": "EvidenceMsg_UpdateGroupMetadata",
+                "operationId": "FeegrantMsg_UpdateGroupMetadata",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupMetadata is the Msg/UpdateGroupMetadata request type.",
@@ -1690,7 +1690,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupPolicyAdmin updates a group policy admin.",
-                "operationId": "EvidenceMsg_UpdateGroupPolicyAdmin",
+                "operationId": "FeegrantMsg_UpdateGroupPolicyAdmin",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupPolicyAdmin is the Msg/UpdateGroupPolicyAdmin request type.",
@@ -1724,7 +1724,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupPolicyDecisionPolicy allows a group policy's decision policy to be updated.",
-                "operationId": "EvidenceMsg_UpdateGroupPolicyDecisionPolicy",
+                "operationId": "FeegrantMsg_UpdateGroupPolicyDecisionPolicy",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupPolicyDecisionPolicy is the Msg/UpdateGroupPolicyDecisionPolicy request type.",
@@ -1758,7 +1758,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupPolicyMetadata updates a group policy metadata.",
-                "operationId": "EvidenceMsg_UpdateGroupPolicyMetadata",
+                "operationId": "FeegrantMsg_UpdateGroupPolicyMetadata",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupPolicyMetadata is the Msg/UpdateGroupPolicyMetadata request type.",
@@ -1792,7 +1792,7 @@
                     "Msg"
                 ],
                 "summary": "Vote allows a voter to vote on a proposal.",
-                "operationId": "EvidenceMsg_VoteMixin124",
+                "operationId": "FeegrantMsg_VoteMixin124",
                 "parameters": [
                     {
                         "description": "MsgVote is the Msg/Vote request type.",
@@ -1826,7 +1826,7 @@
                     "Msg"
                 ],
                 "summary": "WithdrawProposal withdraws a proposal.",
-                "operationId": "EvidenceMsg_WithdrawProposal",
+                "operationId": "FeegrantMsg_WithdrawProposal",
                 "parameters": [
                     {
                         "description": "MsgWithdrawProposal is the Msg/WithdrawProposal request type.",
@@ -1860,7 +1860,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/mint module\nparameters. The authority is defaults to the x/gov module account.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin129",
+                "operationId": "FeegrantMsg_UpdateParamsMixin129",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -1894,7 +1894,7 @@
                     "Msg"
                 ],
                 "summary": "Send defines a method to send a nft from one account to another account.",
-                "operationId": "EvidenceMsg_SendMixin135",
+                "operationId": "FeegrantMsg_SendMixin135",
                 "parameters": [
                     {
                         "description": "MsgSend represents a message to send a nft from one account to another account.",
@@ -1928,7 +1928,7 @@
                     "Msg"
                 ],
                 "summary": "CancelContinuousFund defines a method for cancelling continuous fund.",
-                "operationId": "EvidenceMsg_CancelContinuousFund",
+                "operationId": "FeegrantMsg_CancelContinuousFund",
                 "parameters": [
                     {
                         "description": "MsgCancelContinuousFund defines a message to cancel continuous funds for a specific recipient.",
@@ -1962,7 +1962,7 @@
                     "Msg"
                 ],
                 "summary": "CommunityPoolSpend defines a governance operation for sending tokens from\nthe community pool in the x/protocolpool module to another account, which\ncould be the governance module itself. The authority is defined in the\nkeeper.",
-                "operationId": "EvidenceMsg_CommunityPoolSpendMixin140",
+                "operationId": "FeegrantMsg_CommunityPoolSpendMixin140",
                 "parameters": [
                     {
                         "description": "MsgCommunityPoolSpend defines a message for sending tokens from the community\npool to another account. This message is typically executed via a governance\nproposal with the governance module being the executing authority.",
@@ -1996,7 +1996,7 @@
                     "Msg"
                 ],
                 "summary": "CreateContinuousFund defines a method to distribute a percentage of funds to an address continuously.\nThis ContinuousFund can be indefinite or run until a given expiry time.\nFunds come from validator block rewards from x/distribution, but may also come from\nany user who funds the ProtocolPoolEscrow module account directly through x/bank.",
-                "operationId": "EvidenceMsg_CreateContinuousFund",
+                "operationId": "FeegrantMsg_CreateContinuousFund",
                 "parameters": [
                     {
                         "description": "MsgCreateContinuousFund defines a message for adding continuous funds.",
@@ -2030,7 +2030,7 @@
                     "Msg"
                 ],
                 "summary": "FundCommunityPool defines a method to allow an account to directly\nfund the community pool.",
-                "operationId": "EvidenceMsg_FundCommunityPoolMixin140",
+                "operationId": "FeegrantMsg_FundCommunityPoolMixin140",
                 "parameters": [
                     {
                         "description": "MsgFundCommunityPool allows an account to directly\nfund the community pool.",
@@ -2064,7 +2064,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/protocolpool module parameters.\nThe authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin140",
+                "operationId": "FeegrantMsg_UpdateParamsMixin140",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -2098,7 +2098,7 @@
                     "Msg"
                 ],
                 "summary": "Unjail defines a method for unjailing a jailed validator, thus returning\nthem into the bonded validator set, so they can begin receiving provisions\nand rewards again.",
-                "operationId": "EvidenceMsg_Unjail",
+                "operationId": "FeegrantMsg_Unjail",
                 "parameters": [
                     {
                         "name": "body",
@@ -2131,7 +2131,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/slashing module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin146",
+                "operationId": "FeegrantMsg_UpdateParamsMixin146",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -2165,7 +2165,7 @@
                     "Msg"
                 ],
                 "summary": "BeginRedelegate defines a method for performing a redelegation\nof coins from a delegator and source validator to a destination validator.",
-                "operationId": "EvidenceMsg_BeginRedelegate",
+                "operationId": "FeegrantMsg_BeginRedelegate",
                 "parameters": [
                     {
                         "description": "MsgBeginRedelegate defines a SDK message for performing a redelegation\nof coins from a delegator and source validator to a destination validator.",
@@ -2199,7 +2199,7 @@
                     "Msg"
                 ],
                 "summary": "CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation\nand delegate back to previous validator.",
-                "operationId": "EvidenceMsg_CancelUnbondingDelegation",
+                "operationId": "FeegrantMsg_CancelUnbondingDelegation",
                 "parameters": [
                     {
                         "name": "body",
@@ -2232,7 +2232,7 @@
                     "Msg"
                 ],
                 "summary": "CreateValidator defines a method for creating a new validator.",
-                "operationId": "EvidenceMsg_CreateValidator",
+                "operationId": "FeegrantMsg_CreateValidator",
                 "parameters": [
                     {
                         "description": "MsgCreateValidator defines a SDK message for creating a new validator.",
@@ -2266,7 +2266,7 @@
                     "Msg"
                 ],
                 "summary": "Delegate defines a method for performing a delegation of coins\nfrom a delegator to a validator.",
-                "operationId": "EvidenceMsg_Delegate",
+                "operationId": "FeegrantMsg_Delegate",
                 "parameters": [
                     {
                         "description": "MsgDelegate defines a SDK message for performing a delegation of coins\nfrom a delegator to a validator.",
@@ -2300,7 +2300,7 @@
                     "Msg"
                 ],
                 "summary": "EditValidator defines a method for editing an existing validator.",
-                "operationId": "EvidenceMsg_EditValidator",
+                "operationId": "FeegrantMsg_EditValidator",
                 "parameters": [
                     {
                         "description": "MsgEditValidator defines a SDK message for editing an existing validator.",
@@ -2334,7 +2334,7 @@
                     "Msg"
                 ],
                 "summary": "Undelegate defines a method for performing an undelegation from a\ndelegate and a validator.",
-                "operationId": "EvidenceMsg_Undelegate",
+                "operationId": "FeegrantMsg_Undelegate",
                 "parameters": [
                     {
                         "description": "MsgUndelegate defines a SDK message for performing an undelegation from a\ndelegate and a validator.",
@@ -2368,7 +2368,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines an operation for updating the x/staking module\nparameters.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin151",
+                "operationId": "FeegrantMsg_UpdateParamsMixin151",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -2402,7 +2402,7 @@
                     "ABCIListenerService"
                 ],
                 "summary": "ListenCommit is the corresponding endpoint for ABCIListener.ListenCommit",
-                "operationId": "EvidenceABCIListenerService_ListenCommit",
+                "operationId": "FeegrantABCIListenerService_ListenCommit",
                 "parameters": [
                     {
                         "name": "body",
@@ -2435,7 +2435,7 @@
                     "ABCIListenerService"
                 ],
                 "summary": "ListenFinalizeBlock is the corresponding endpoint for ABCIListener.ListenEndBlock",
-                "operationId": "EvidenceABCIListenerService_ListenFinalizeBlock",
+                "operationId": "FeegrantABCIListenerService_ListenFinalizeBlock",
                 "parameters": [
                     {
                         "name": "body",
@@ -2468,7 +2468,7 @@
                     "Msg"
                 ],
                 "summary": "CancelUpgrade is a governance operation for cancelling a previously\napproved software upgrade.",
-                "operationId": "EvidenceMsg_CancelUpgrade",
+                "operationId": "FeegrantMsg_CancelUpgrade",
                 "parameters": [
                     {
                         "description": "MsgCancelUpgrade is the Msg/CancelUpgrade request type.",
@@ -2502,7 +2502,7 @@
                     "Msg"
                 ],
                 "summary": "SoftwareUpgrade is a governance operation for initiating a software upgrade.",
-                "operationId": "EvidenceMsg_SoftwareUpgrade",
+                "operationId": "FeegrantMsg_SoftwareUpgrade",
                 "parameters": [
                     {
                         "description": "MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.",
@@ -2536,7 +2536,7 @@
                     "Msg"
                 ],
                 "summary": "CreatePeriodicVestingAccount defines a method that enables creating a\nperiodic vesting account.",
-                "operationId": "EvidenceMsg_CreatePeriodicVestingAccount",
+                "operationId": "FeegrantMsg_CreatePeriodicVestingAccount",
                 "parameters": [
                     {
                         "description": "MsgCreateVestingAccount defines a message that enables creating a vesting\naccount.",
@@ -2570,7 +2570,7 @@
                     "Msg"
                 ],
                 "summary": "CreatePermanentLockedAccount defines a method that enables creating a permanent\nlocked account.",
-                "operationId": "EvidenceMsg_CreatePermanentLockedAccount",
+                "operationId": "FeegrantMsg_CreatePermanentLockedAccount",
                 "parameters": [
                     {
                         "description": "MsgCreatePermanentLockedAccount defines a message that enables creating a permanent\nlocked account.",
@@ -2604,7 +2604,7 @@
                     "Msg"
                 ],
                 "summary": "CreateVestingAccount defines a method that enables creating a vesting\naccount.",
-                "operationId": "EvidenceMsg_CreateVestingAccount",
+                "operationId": "FeegrantMsg_CreateVestingAccount",
                 "parameters": [
                     {
                         "description": "MsgCreateVestingAccount defines a message that enables creating a vesting\naccount.",
@@ -2638,7 +2638,7 @@
                     "Query"
                 ],
                 "summary": "AccountInfo queries account info which is common to all account types.",
-                "operationId": "EvidenceQuery_AccountInfo",
+                "operationId": "FeegrantQuery_AccountInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -2671,7 +2671,7 @@
                     "Query"
                 ],
                 "summary": "Accounts returns all the existing accounts.",
-                "operationId": "EvidenceQuery_Accounts",
+                "operationId": "FeegrantQuery_Accounts",
                 "parameters": [
                     {
                         "type": "string",
@@ -2729,7 +2729,7 @@
                     "Query"
                 ],
                 "summary": "Account returns account details based on address.",
-                "operationId": "EvidenceQuery_Account",
+                "operationId": "FeegrantQuery_Account",
                 "parameters": [
                     {
                         "type": "string",
@@ -2761,7 +2761,7 @@
                     "Query"
                 ],
                 "summary": "AccountAddressByID returns account address based on account number.",
-                "operationId": "EvidenceQuery_AccountAddressByID",
+                "operationId": "FeegrantQuery_AccountAddressByID",
                 "parameters": [
                     {
                         "type": "string",
@@ -2801,7 +2801,7 @@
                     "Query"
                 ],
                 "summary": "Bech32Prefix queries bech32Prefix",
-                "operationId": "EvidenceQuery_Bech32Prefix",
+                "operationId": "FeegrantQuery_Bech32Prefix",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2824,7 +2824,7 @@
                     "Query"
                 ],
                 "summary": "AddressBytesToString converts Account Address bytes to string",
-                "operationId": "EvidenceQuery_AddressBytesToString",
+                "operationId": "FeegrantQuery_AddressBytesToString",
                 "parameters": [
                     {
                         "type": "string",
@@ -2856,7 +2856,7 @@
                     "Query"
                 ],
                 "summary": "AddressStringToBytes converts Address string to bytes",
-                "operationId": "EvidenceQuery_AddressStringToBytes",
+                "operationId": "FeegrantQuery_AddressStringToBytes",
                 "parameters": [
                     {
                         "type": "string",
@@ -2887,7 +2887,7 @@
                     "Query"
                 ],
                 "summary": "ModuleAccounts returns all the existing module accounts.",
-                "operationId": "EvidenceQuery_ModuleAccounts",
+                "operationId": "FeegrantQuery_ModuleAccounts",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2910,7 +2910,7 @@
                     "Query"
                 ],
                 "summary": "ModuleAccountByName returns the module account info by module name",
-                "operationId": "EvidenceQuery_ModuleAccountByName",
+                "operationId": "FeegrantQuery_ModuleAccountByName",
                 "parameters": [
                     {
                         "type": "string",
@@ -2941,7 +2941,7 @@
                     "Query"
                 ],
                 "summary": "Params queries all parameters.",
-                "operationId": "EvidenceQuery_Params",
+                "operationId": "FeegrantQuery_Params",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2964,7 +2964,7 @@
                     "Query"
                 ],
                 "summary": "Returns list of `Authorization`, granted to the grantee by the granter.",
-                "operationId": "EvidenceQuery_Grants",
+                "operationId": "FeegrantQuery_Grants",
                 "parameters": [
                     {
                         "type": "string",
@@ -3038,7 +3038,7 @@
                     "Query"
                 ],
                 "summary": "GranteeGrants returns a list of `GrantAuthorization` by grantee.",
-                "operationId": "EvidenceQuery_GranteeGrants",
+                "operationId": "FeegrantQuery_GranteeGrants",
                 "parameters": [
                     {
                         "type": "string",
@@ -3102,7 +3102,7 @@
                     "Query"
                 ],
                 "summary": "GranterGrants returns list of `GrantAuthorization`, granted by granter.",
-                "operationId": "EvidenceQuery_GranterGrants",
+                "operationId": "FeegrantQuery_GranterGrants",
                 "parameters": [
                     {
                         "type": "string",
@@ -3167,7 +3167,7 @@
                     "Query"
                 ],
                 "summary": "AllBalances queries the balance of all coins for a single account.",
-                "operationId": "EvidenceQuery_AllBalances",
+                "operationId": "FeegrantQuery_AllBalances",
                 "parameters": [
                     {
                         "type": "string",
@@ -3238,7 +3238,7 @@
                     "Query"
                 ],
                 "summary": "Balance queries the balance of a single coin for a single account.",
-                "operationId": "EvidenceQuery_Balance",
+                "operationId": "FeegrantQuery_Balance",
                 "parameters": [
                     {
                         "type": "string",
@@ -3277,7 +3277,7 @@
                     "Query"
                 ],
                 "summary": "DenomOwners queries for all account addresses that own a particular token\ndenomination.",
-                "operationId": "EvidenceQuery_DenomOwners",
+                "operationId": "FeegrantQuery_DenomOwners",
                 "parameters": [
                     {
                         "pattern": ".+",
@@ -3343,7 +3343,7 @@
                     "Query"
                 ],
                 "summary": "DenomOwnersByQuery queries for all account addresses that own a particular token\ndenomination.",
-                "operationId": "EvidenceQuery_DenomOwnersByQuery",
+                "operationId": "FeegrantQuery_DenomOwnersByQuery",
                 "parameters": [
                     {
                         "type": "string",
@@ -3407,7 +3407,7 @@
                     "Query"
                 ],
                 "summary": "DenomsMetadata queries the client metadata for all registered coin\ndenominations.",
-                "operationId": "EvidenceQuery_DenomsMetadata",
+                "operationId": "FeegrantQuery_DenomsMetadata",
                 "parameters": [
                     {
                         "type": "string",
@@ -3465,7 +3465,7 @@
                     "Query"
                 ],
                 "summary": "DenomMetadata queries the client metadata of a given coin denomination.",
-                "operationId": "EvidenceQuery_DenomMetadata",
+                "operationId": "FeegrantQuery_DenomMetadata",
                 "parameters": [
                     {
                         "pattern": ".+",
@@ -3498,7 +3498,7 @@
                     "Query"
                 ],
                 "summary": "DenomMetadataByQueryString queries the client metadata of a given coin denomination.",
-                "operationId": "EvidenceQuery_DenomMetadataByQueryString",
+                "operationId": "FeegrantQuery_DenomMetadataByQueryString",
                 "parameters": [
                     {
                         "type": "string",
@@ -3529,7 +3529,7 @@
                     "Query"
                 ],
                 "summary": "Params queries the parameters of x/bank module.",
-                "operationId": "EvidenceQuery_ParamsMixin69",
+                "operationId": "FeegrantQuery_ParamsMixin69",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3553,7 +3553,7 @@
                     "Query"
                 ],
                 "summary": "SendEnabled queries for SendEnabled entries.",
-                "operationId": "EvidenceQuery_SendEnabled",
+                "operationId": "FeegrantQuery_SendEnabled",
                 "parameters": [
                     {
                         "type": "array",
@@ -3622,7 +3622,7 @@
                     "Query"
                 ],
                 "summary": "SpendableBalances queries the spendable balance of all coins for a single\naccount.",
-                "operationId": "EvidenceQuery_SpendableBalances",
+                "operationId": "FeegrantQuery_SpendableBalances",
                 "parameters": [
                     {
                         "type": "string",
@@ -3688,7 +3688,7 @@
                     "Query"
                 ],
                 "summary": "SpendableBalanceByDenom queries the spendable balance of a single denom for\na single account.",
-                "operationId": "EvidenceQuery_SpendableBalanceByDenom",
+                "operationId": "FeegrantQuery_SpendableBalanceByDenom",
                 "parameters": [
                     {
                         "type": "string",
@@ -3727,7 +3727,7 @@
                     "Query"
                 ],
                 "summary": "TotalSupply queries the total supply of all coins.",
-                "operationId": "EvidenceQuery_TotalSupply",
+                "operationId": "FeegrantQuery_TotalSupply",
                 "parameters": [
                     {
                         "type": "string",
@@ -3786,7 +3786,7 @@
                     "Query"
                 ],
                 "summary": "SupplyOf queries the supply of a single coin.",
-                "operationId": "EvidenceQuery_SupplyOf",
+                "operationId": "FeegrantQuery_SupplyOf",
                 "parameters": [
                     {
                         "type": "string",
@@ -3817,7 +3817,7 @@
                     "Service"
                 ],
                 "summary": "Config queries for the operator configuration.",
-                "operationId": "EvidenceService_Config",
+                "operationId": "FeegrantService_Config",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3840,7 +3840,7 @@
                     "Service"
                 ],
                 "summary": "Status queries for the node status.",
-                "operationId": "EvidenceService_Status",
+                "operationId": "FeegrantService_Status",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3863,7 +3863,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetAuthnDescriptor returns information on how to authenticate transactions in the application\nNOTE: this RPC is still experimental and might be subject to breaking changes or removal in\nfuture releases of the cosmos-sdk.",
-                "operationId": "EvidenceReflectionService_GetAuthnDescriptor",
+                "operationId": "FeegrantReflectionService_GetAuthnDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3886,7 +3886,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetChainDescriptor returns the description of the chain",
-                "operationId": "EvidenceReflectionService_GetChainDescriptor",
+                "operationId": "FeegrantReflectionService_GetChainDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3909,7 +3909,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetCodecDescriptor returns the descriptor of the codec of the application",
-                "operationId": "EvidenceReflectionService_GetCodecDescriptor",
+                "operationId": "FeegrantReflectionService_GetCodecDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3932,7 +3932,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetConfigurationDescriptor returns the descriptor for the sdk.Config of the application",
-                "operationId": "EvidenceReflectionService_GetConfigurationDescriptor",
+                "operationId": "FeegrantReflectionService_GetConfigurationDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3955,7 +3955,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetQueryServicesDescriptor returns the available gRPC queryable services of the application",
-                "operationId": "EvidenceReflectionService_GetQueryServicesDescriptor",
+                "operationId": "FeegrantReflectionService_GetQueryServicesDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3978,7 +3978,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetTxDescriptor returns information on the used transaction object and available msgs that can be used",
-                "operationId": "EvidenceReflectionService_GetTxDescriptor",
+                "operationId": "FeegrantReflectionService_GetTxDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4001,7 +4001,7 @@
                     "ReflectionService"
                 ],
                 "summary": "ListAllInterfaces lists all the interfaces registered in the interface\nregistry.",
-                "operationId": "EvidenceReflectionService_ListAllInterfaces",
+                "operationId": "FeegrantReflectionService_ListAllInterfaces",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4024,7 +4024,7 @@
                     "ReflectionService"
                 ],
                 "summary": "ListImplementations list all the concrete types that implement a given\ninterface.",
-                "operationId": "EvidenceReflectionService_ListImplementations",
+                "operationId": "FeegrantReflectionService_ListImplementations",
                 "parameters": [
                     {
                         "type": "string",
@@ -4056,7 +4056,7 @@
                     "Service"
                 ],
                 "summary": "ABCIQuery defines a query handler that supports ABCI queries directly to the\napplication, bypassing Tendermint completely. The ABCI query must contain\na valid and supported path, including app, custom, p2p, and store.",
-                "operationId": "EvidenceService_ABCIQuery",
+                "operationId": "FeegrantService_ABCIQuery",
                 "parameters": [
                     {
                         "type": "string",
@@ -4103,7 +4103,7 @@
                     "Service"
                 ],
                 "summary": "GetLatestBlock returns the latest block.",
-                "operationId": "EvidenceService_GetLatestBlock",
+                "operationId": "FeegrantService_GetLatestBlock",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4126,7 +4126,7 @@
                     "Service"
                 ],
                 "summary": "GetBlockByHeight queries block for given height.",
-                "operationId": "EvidenceService_GetBlockByHeight",
+                "operationId": "FeegrantService_GetBlockByHeight",
                 "parameters": [
                     {
                         "type": "string",
@@ -4158,7 +4158,7 @@
                     "Service"
                 ],
                 "summary": "GetNodeInfo queries the current node info.",
-                "operationId": "EvidenceService_GetNodeInfo",
+                "operationId": "FeegrantService_GetNodeInfo",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4181,7 +4181,7 @@
                     "Service"
                 ],
                 "summary": "GetSyncing queries node syncing.",
-                "operationId": "EvidenceService_GetSyncing",
+                "operationId": "FeegrantService_GetSyncing",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4204,7 +4204,7 @@
                     "Service"
                 ],
                 "summary": "GetLatestValidatorSet queries latest validator-set.",
-                "operationId": "EvidenceService_GetLatestValidatorSet",
+                "operationId": "FeegrantService_GetLatestValidatorSet",
                 "parameters": [
                     {
                         "type": "string",
@@ -4262,7 +4262,7 @@
                     "Service"
                 ],
                 "summary": "GetValidatorSetByHeight queries validator-set at a given height.",
-                "operationId": "EvidenceService_GetValidatorSetByHeight",
+                "operationId": "FeegrantService_GetValidatorSetByHeight",
                 "parameters": [
                     {
                         "type": "string",
@@ -4327,7 +4327,7 @@
                     "Query"
                 ],
                 "summary": "Account returns account permissions.",
-                "operationId": "EvidenceQuery_AccountsMixin81",
+                "operationId": "FeegrantQuery_AccountsMixin81",
                 "parameters": [
                     {
                         "type": "string",
@@ -4385,7 +4385,7 @@
                     "Query"
                 ],
                 "summary": "Account returns account permissions.",
-                "operationId": "EvidenceQuery_AccountMixin81",
+                "operationId": "FeegrantQuery_AccountMixin81",
                 "parameters": [
                     {
                         "type": "string",
@@ -4416,7 +4416,7 @@
                     "Query"
                 ],
                 "summary": "DisabledList returns a list of disabled message urls",
-                "operationId": "EvidenceQuery_DisabledList",
+                "operationId": "FeegrantQuery_DisabledList",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4439,7 +4439,7 @@
                     "Query"
                 ],
                 "summary": "Params queries the parameters of x/consensus module.",
-                "operationId": "EvidenceQuery_ParamsMixin84",
+                "operationId": "FeegrantQuery_ParamsMixin84",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4463,7 +4463,7 @@
                     "Query"
                 ],
                 "summary": "CommunityPool queries the community pool coins.",
-                "operationId": "EvidenceQuery_CommunityPool",
+                "operationId": "FeegrantQuery_CommunityPool",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4486,7 +4486,7 @@
                     "Query"
                 ],
                 "summary": "DelegationTotalRewards queries the total rewards accrued by each\nvalidator.",
-                "operationId": "EvidenceQuery_DelegationTotalRewards",
+                "operationId": "FeegrantQuery_DelegationTotalRewards",
                 "parameters": [
                     {
                         "type": "string",
@@ -4518,7 +4518,7 @@
                     "Query"
                 ],
                 "summary": "DelegationRewards queries the total rewards accrued by a delegation.",
-                "operationId": "EvidenceQuery_DelegationRewards",
+                "operationId": "FeegrantQuery_DelegationRewards",
                 "parameters": [
                     {
                         "type": "string",
@@ -4557,7 +4557,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorValidators queries the validators of a delegator.",
-                "operationId": "EvidenceQuery_DelegatorValidators",
+                "operationId": "FeegrantQuery_DelegatorValidators",
                 "parameters": [
                     {
                         "type": "string",
@@ -4589,7 +4589,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorWithdrawAddress queries withdraw address of a delegator.",
-                "operationId": "EvidenceQuery_DelegatorWithdrawAddress",
+                "operationId": "FeegrantQuery_DelegatorWithdrawAddress",
                 "parameters": [
                     {
                         "type": "string",
@@ -4621,7 +4621,7 @@
                     "Query"
                 ],
                 "summary": "Params queries params of the distribution module.",
-                "operationId": "EvidenceQuery_ParamsMixin99",
+                "operationId": "FeegrantQuery_ParamsMixin99",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4644,7 +4644,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorDistributionInfo queries validator commission and self-delegation rewards for validator",
-                "operationId": "EvidenceQuery_ValidatorDistributionInfo",
+                "operationId": "FeegrantQuery_ValidatorDistributionInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -4676,7 +4676,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorCommission queries accumulated commission for a validator.",
-                "operationId": "EvidenceQuery_ValidatorCommission",
+                "operationId": "FeegrantQuery_ValidatorCommission",
                 "parameters": [
                     {
                         "type": "string",
@@ -4708,7 +4708,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorOutstandingRewards queries rewards of a validator address.",
-                "operationId": "EvidenceQuery_ValidatorOutstandingRewards",
+                "operationId": "FeegrantQuery_ValidatorOutstandingRewards",
                 "parameters": [
                     {
                         "type": "string",
@@ -4740,7 +4740,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorSlashes queries slash events of a validator.",
-                "operationId": "EvidenceQuery_ValidatorSlashes",
+                "operationId": "FeegrantQuery_ValidatorSlashes",
                 "parameters": [
                     {
                         "type": "string",
@@ -4819,7 +4819,7 @@
                     "Query"
                 ],
                 "summary": "CurrentEpoch provide current epoch of specified identifier",
-                "operationId": "EvidenceQuery_CurrentEpoch",
+                "operationId": "FeegrantQuery_CurrentEpoch",
                 "parameters": [
                     {
                         "type": "string",
@@ -4849,7 +4849,7 @@
                     "Query"
                 ],
                 "summary": "EpochInfos provide running epochInfos",
-                "operationId": "EvidenceQuery_EpochInfos",
+                "operationId": "FeegrantQuery_EpochInfos",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4872,7 +4872,7 @@
                     "Query"
                 ],
                 "summary": "AllEvidence queries all evidence.",
-                "operationId": "EvidenceQuery_AllEvidence",
+                "operationId": "FeegrantQuery_AllEvidence",
                 "parameters": [
                     {
                         "type": "string",
@@ -4930,7 +4930,7 @@
                     "Query"
                 ],
                 "summary": "Evidence queries evidence based on evidence hash.",
-                "operationId": "EvidenceQuery_Evidence",
+                "operationId": "FeegrantQuery_Evidence",
                 "parameters": [
                     {
                         "type": "string",
@@ -4969,7 +4969,7 @@
                     "Query"
                 ],
                 "summary": "Allowance returns granted allwance to the grantee by the granter.",
-                "operationId": "EvidenceQuery_Allowance",
+                "operationId": "FeegrantQuery_Allowance",
                 "parameters": [
                     {
                         "type": "string",
@@ -5008,7 +5008,7 @@
                     "Query"
                 ],
                 "summary": "Allowances returns all the grants for the given grantee address.",
-                "operationId": "EvidenceQuery_Allowances",
+                "operationId": "FeegrantQuery_Allowances",
                 "parameters": [
                     {
                         "type": "string",
@@ -5072,7 +5072,7 @@
                     "Query"
                 ],
                 "summary": "AllowancesByGranter returns all the grants given by an address",
-                "operationId": "EvidenceQuery_AllowancesByGranter",
+                "operationId": "FeegrantQuery_AllowancesByGranter",
                 "parameters": [
                     {
                         "type": "string",
@@ -5136,7 +5136,7 @@
                     "Query"
                 ],
                 "summary": "Constitution queries the chain's constitution.",
-                "operationId": "EvidenceQuery_Constitution",
+                "operationId": "FeegrantQuery_Constitution",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -5159,7 +5159,7 @@
                     "Query"
                 ],
                 "summary": "Params queries all parameters of the gov module.",
-                "operationId": "EvidenceQuery_ParamsMixin115",
+                "operationId": "FeegrantQuery_ParamsMixin115",
                 "parameters": [
                     {
                         "type": "string",
@@ -5191,7 +5191,7 @@
                     "Query"
                 ],
                 "summary": "Proposals queries all proposals based on given status.",
-                "operationId": "EvidenceQuery_Proposals",
+                "operationId": "FeegrantQuery_Proposals",
                 "parameters": [
                     {
                         "enum": [
@@ -5276,7 +5276,7 @@
                     "Query"
                 ],
                 "summary": "Proposal queries proposal details based on ProposalID.",
-                "operationId": "EvidenceQuery_Proposal",
+                "operationId": "FeegrantQuery_Proposal",
                 "parameters": [
                     {
                         "type": "string",
@@ -5309,7 +5309,7 @@
                     "Query"
                 ],
                 "summary": "Deposits queries all deposits of a single proposal.",
-                "operationId": "EvidenceQuery_Deposits",
+                "operationId": "FeegrantQuery_Deposits",
                 "parameters": [
                     {
                         "type": "string",
@@ -5375,7 +5375,7 @@
                     "Query"
                 ],
                 "summary": "Deposit queries single deposit information based on proposalID, depositAddr.",
-                "operationId": "EvidenceQuery_Deposit",
+                "operationId": "FeegrantQuery_Deposit",
                 "parameters": [
                     {
                         "type": "string",
@@ -5415,7 +5415,7 @@
                     "Query"
                 ],
                 "summary": "TallyResult queries the tally of a proposal vote.",
-                "operationId": "EvidenceQuery_TallyResult",
+                "operationId": "FeegrantQuery_TallyResult",
                 "parameters": [
                     {
                         "type": "string",
@@ -5448,7 +5448,7 @@
                     "Query"
                 ],
                 "summary": "Votes queries votes of a given proposal.",
-                "operationId": "EvidenceQuery_Votes",
+                "operationId": "FeegrantQuery_Votes",
                 "parameters": [
                     {
                         "type": "string",
@@ -5514,7 +5514,7 @@
                     "Query"
                 ],
                 "summary": "Vote queries voted information based on proposalID, voterAddr.",
-                "operationId": "EvidenceQuery_Vote",
+                "operationId": "FeegrantQuery_Vote",
                 "parameters": [
                     {
                         "type": "string",
@@ -5554,7 +5554,7 @@
                     "Query"
                 ],
                 "summary": "Params queries all parameters of the gov module.",
-                "operationId": "EvidenceQuery_ParamsMixin119",
+                "operationId": "FeegrantQuery_ParamsMixin119",
                 "parameters": [
                     {
                         "type": "string",
@@ -5586,7 +5586,7 @@
                     "Query"
                 ],
                 "summary": "Proposals queries all proposals based on given status.",
-                "operationId": "EvidenceQuery_ProposalsMixin119",
+                "operationId": "FeegrantQuery_ProposalsMixin119",
                 "parameters": [
                     {
                         "enum": [
@@ -5671,7 +5671,7 @@
                     "Query"
                 ],
                 "summary": "Proposal queries proposal details based on ProposalID.",
-                "operationId": "EvidenceQuery_ProposalMixin119",
+                "operationId": "FeegrantQuery_ProposalMixin119",
                 "parameters": [
                     {
                         "type": "string",
@@ -5704,7 +5704,7 @@
                     "Query"
                 ],
                 "summary": "Deposits queries all deposits of a single proposal.",
-                "operationId": "EvidenceQuery_DepositsMixin119",
+                "operationId": "FeegrantQuery_DepositsMixin119",
                 "parameters": [
                     {
                         "type": "string",
@@ -5770,7 +5770,7 @@
                     "Query"
                 ],
                 "summary": "Deposit queries single deposit information based on proposalID, depositor address.",
-                "operationId": "EvidenceQuery_DepositMixin119",
+                "operationId": "FeegrantQuery_DepositMixin119",
                 "parameters": [
                     {
                         "type": "string",
@@ -5810,7 +5810,7 @@
                     "Query"
                 ],
                 "summary": "TallyResult queries the tally of a proposal vote.",
-                "operationId": "EvidenceQuery_TallyResultMixin119",
+                "operationId": "FeegrantQuery_TallyResultMixin119",
                 "parameters": [
                     {
                         "type": "string",
@@ -5843,7 +5843,7 @@
                     "Query"
                 ],
                 "summary": "Votes queries votes of a given proposal.",
-                "operationId": "EvidenceQuery_VotesMixin119",
+                "operationId": "FeegrantQuery_VotesMixin119",
                 "parameters": [
                     {
                         "type": "string",
@@ -5909,7 +5909,7 @@
                     "Query"
                 ],
                 "summary": "Vote queries voted information based on proposalID, voterAddr.",
-                "operationId": "EvidenceQuery_VoteMixin119",
+                "operationId": "FeegrantQuery_VoteMixin119",
                 "parameters": [
                     {
                         "type": "string",
@@ -5949,7 +5949,7 @@
                     "Query"
                 ],
                 "summary": "GroupInfo queries group info based on group id.",
-                "operationId": "EvidenceQuery_GroupInfo",
+                "operationId": "FeegrantQuery_GroupInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -5982,7 +5982,7 @@
                     "Query"
                 ],
                 "summary": "GroupMembers queries members of a group by group id.",
-                "operationId": "EvidenceQuery_GroupMembers",
+                "operationId": "FeegrantQuery_GroupMembers",
                 "parameters": [
                     {
                         "type": "string",
@@ -6048,7 +6048,7 @@
                     "Query"
                 ],
                 "summary": "GroupPoliciesByAdmin queries group policies by admin address.",
-                "operationId": "EvidenceQuery_GroupPoliciesByAdmin",
+                "operationId": "FeegrantQuery_GroupPoliciesByAdmin",
                 "parameters": [
                     {
                         "type": "string",
@@ -6113,7 +6113,7 @@
                     "Query"
                 ],
                 "summary": "GroupPoliciesByGroup queries group policies by group id.",
-                "operationId": "EvidenceQuery_GroupPoliciesByGroup",
+                "operationId": "FeegrantQuery_GroupPoliciesByGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -6179,7 +6179,7 @@
                     "Query"
                 ],
                 "summary": "GroupPolicyInfo queries group policy info based on account address of group policy.",
-                "operationId": "EvidenceQuery_GroupPolicyInfo",
+                "operationId": "FeegrantQuery_GroupPolicyInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -6211,7 +6211,7 @@
                     "Query"
                 ],
                 "summary": "Groups queries all groups in state.",
-                "operationId": "EvidenceQuery_Groups",
+                "operationId": "FeegrantQuery_Groups",
                 "parameters": [
                     {
                         "type": "string",
@@ -6269,7 +6269,7 @@
                     "Query"
                 ],
                 "summary": "GroupsByAdmin queries groups by admin address.",
-                "operationId": "EvidenceQuery_GroupsByAdmin",
+                "operationId": "FeegrantQuery_GroupsByAdmin",
                 "parameters": [
                     {
                         "type": "string",
@@ -6334,7 +6334,7 @@
                     "Query"
                 ],
                 "summary": "GroupsByMember queries groups by member address.",
-                "operationId": "EvidenceQuery_GroupsByMember",
+                "operationId": "FeegrantQuery_GroupsByMember",
                 "parameters": [
                     {
                         "type": "string",
@@ -6399,7 +6399,7 @@
                     "Query"
                 ],
                 "summary": "Proposal queries a proposal based on proposal id.",
-                "operationId": "EvidenceQuery_ProposalMixin123",
+                "operationId": "FeegrantQuery_ProposalMixin123",
                 "parameters": [
                     {
                         "type": "string",
@@ -6432,7 +6432,7 @@
                     "Query"
                 ],
                 "summary": "TallyResult returns the tally result of a proposal. If the proposal is\nstill in voting period, then this query computes the current tally state,\nwhich might not be final. On the other hand, if the proposal is final,\nthen it simply returns the `final_tally_result` state stored in the\nproposal itself.",
-                "operationId": "EvidenceQuery_TallyResultMixin123",
+                "operationId": "FeegrantQuery_TallyResultMixin123",
                 "parameters": [
                     {
                         "type": "string",
@@ -6465,7 +6465,7 @@
                     "Query"
                 ],
                 "summary": "ProposalsByGroupPolicy queries proposals based on account address of group policy.",
-                "operationId": "EvidenceQuery_ProposalsByGroupPolicy",
+                "operationId": "FeegrantQuery_ProposalsByGroupPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -6530,7 +6530,7 @@
                     "Query"
                 ],
                 "summary": "VoteByProposalVoter queries a vote by proposal id and voter.",
-                "operationId": "EvidenceQuery_VoteByProposalVoter",
+                "operationId": "FeegrantQuery_VoteByProposalVoter",
                 "parameters": [
                     {
                         "type": "string",
@@ -6570,7 +6570,7 @@
                     "Query"
                 ],
                 "summary": "VotesByProposal queries a vote by proposal id.",
-                "operationId": "EvidenceQuery_VotesByProposal",
+                "operationId": "FeegrantQuery_VotesByProposal",
                 "parameters": [
                     {
                         "type": "string",
@@ -6636,7 +6636,7 @@
                     "Query"
                 ],
                 "summary": "VotesByVoter queries a vote by voter.",
-                "operationId": "EvidenceQuery_VotesByVoter",
+                "operationId": "FeegrantQuery_VotesByVoter",
                 "parameters": [
                     {
                         "type": "string",
@@ -6701,7 +6701,7 @@
                     "Query"
                 ],
                 "summary": "AnnualProvisions current minting annual provisions value.",
-                "operationId": "EvidenceQuery_AnnualProvisions",
+                "operationId": "FeegrantQuery_AnnualProvisions",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -6724,7 +6724,7 @@
                     "Query"
                 ],
                 "summary": "Inflation returns the current minting inflation value.",
-                "operationId": "EvidenceQuery_Inflation",
+                "operationId": "FeegrantQuery_Inflation",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -6747,7 +6747,7 @@
                     "Query"
                 ],
                 "summary": "Params returns the total set of minting parameters.",
-                "operationId": "EvidenceQuery_ParamsMixin128",
+                "operationId": "FeegrantQuery_ParamsMixin128",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -6770,7 +6770,7 @@
                     "Query"
                 ],
                 "summary": "Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721",
-                "operationId": "EvidenceQuery_BalanceMixin134",
+                "operationId": "FeegrantQuery_BalanceMixin134",
                 "parameters": [
                     {
                         "type": "string",
@@ -6809,7 +6809,7 @@
                     "Query"
                 ],
                 "summary": "Classes queries all NFT classes",
-                "operationId": "EvidenceQuery_Classes",
+                "operationId": "FeegrantQuery_Classes",
                 "parameters": [
                     {
                         "type": "string",
@@ -6867,7 +6867,7 @@
                     "Query"
                 ],
                 "summary": "Class queries an NFT class based on its id",
-                "operationId": "EvidenceQuery_Class",
+                "operationId": "FeegrantQuery_Class",
                 "parameters": [
                     {
                         "type": "string",
@@ -6899,7 +6899,7 @@
                     "Query"
                 ],
                 "summary": "NFTs queries all NFTs of a given class or owner,choose at least one of the two, similar to tokenByIndex in\nERC721Enumerable",
-                "operationId": "EvidenceQuery_NFTs",
+                "operationId": "FeegrantQuery_NFTs",
                 "parameters": [
                     {
                         "type": "string",
@@ -6969,7 +6969,7 @@
                     "Query"
                 ],
                 "summary": "NFT queries an NFT based on its class and id.",
-                "operationId": "EvidenceQuery_NFT",
+                "operationId": "FeegrantQuery_NFT",
                 "parameters": [
                     {
                         "type": "string",
@@ -7008,7 +7008,7 @@
                     "Query"
                 ],
                 "summary": "Owner queries the owner of the NFT based on its class and id, same as ownerOf in ERC721",
-                "operationId": "EvidenceQuery_Owner",
+                "operationId": "FeegrantQuery_Owner",
                 "parameters": [
                     {
                         "type": "string",
@@ -7047,7 +7047,7 @@
                     "Query"
                 ],
                 "summary": "Supply queries the number of NFTs from the given class, same as totalSupply of ERC721.",
-                "operationId": "EvidenceQuery_Supply",
+                "operationId": "FeegrantQuery_Supply",
                 "parameters": [
                     {
                         "type": "string",
@@ -7079,7 +7079,7 @@
                     "Query"
                 ],
                 "summary": "Params queries a specific parameter of a module, given its subspace and\nkey.",
-                "operationId": "EvidenceQuery_ParamsMixin137",
+                "operationId": "FeegrantQuery_ParamsMixin137",
                 "parameters": [
                     {
                         "type": "string",
@@ -7116,7 +7116,7 @@
                     "Query"
                 ],
                 "summary": "Subspaces queries for all registered subspaces and all keys for a subspace.",
-                "operationId": "EvidenceQuery_Subspaces",
+                "operationId": "FeegrantQuery_Subspaces",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7139,7 +7139,7 @@
                     "Query"
                 ],
                 "summary": "CommunityPool queries the community pool coins.",
-                "operationId": "EvidenceQuery_CommunityPoolMixin139",
+                "operationId": "FeegrantQuery_CommunityPoolMixin139",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7162,7 +7162,7 @@
                     "Query"
                 ],
                 "summary": "ContinuousFunds queries all continuous funds in the store.",
-                "operationId": "EvidenceQuery_ContinuousFunds",
+                "operationId": "FeegrantQuery_ContinuousFunds",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7185,7 +7185,7 @@
                     "Query"
                 ],
                 "summary": "ContinuousFund queries a continuous fund by the recipient is is associated with.",
-                "operationId": "EvidenceQuery_ContinuousFund",
+                "operationId": "FeegrantQuery_ContinuousFund",
                 "parameters": [
                     {
                         "type": "string",
@@ -7217,7 +7217,7 @@
                     "Query"
                 ],
                 "summary": "Params returns the total set of x/protocolpool parameters.",
-                "operationId": "EvidenceQuery_ParamsMixin139",
+                "operationId": "FeegrantQuery_ParamsMixin139",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7240,7 +7240,7 @@
                     "Query"
                 ],
                 "summary": "Params queries the parameters of slashing module",
-                "operationId": "EvidenceQuery_ParamsMixin144",
+                "operationId": "FeegrantQuery_ParamsMixin144",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7263,7 +7263,7 @@
                     "Query"
                 ],
                 "summary": "SigningInfos queries signing info of all validators",
-                "operationId": "EvidenceQuery_SigningInfos",
+                "operationId": "FeegrantQuery_SigningInfos",
                 "parameters": [
                     {
                         "type": "string",
@@ -7321,7 +7321,7 @@
                     "Query"
                 ],
                 "summary": "SigningInfo queries the signing info of given cons address",
-                "operationId": "EvidenceQuery_SigningInfo",
+                "operationId": "FeegrantQuery_SigningInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -7354,7 +7354,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorDelegations queries all delegations of a given delegator address.",
-                "operationId": "EvidenceQuery_DelegatorDelegations",
+                "operationId": "FeegrantQuery_DelegatorDelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -7420,7 +7420,7 @@
                     "Query"
                 ],
                 "summary": "Redelegations queries redelegations of given address.",
-                "operationId": "EvidenceQuery_Redelegations",
+                "operationId": "FeegrantQuery_Redelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -7498,7 +7498,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorUnbondingDelegations queries all unbonding delegations of a given\ndelegator address.",
-                "operationId": "EvidenceQuery_DelegatorUnbondingDelegations",
+                "operationId": "FeegrantQuery_DelegatorUnbondingDelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -7564,7 +7564,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorValidators queries all validators info for given delegator\naddress.",
-                "operationId": "EvidenceQuery_DelegatorValidatorsMixin149",
+                "operationId": "FeegrantQuery_DelegatorValidatorsMixin149",
                 "parameters": [
                     {
                         "type": "string",
@@ -7629,7 +7629,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorValidator queries validator info for given delegator validator\npair.",
-                "operationId": "EvidenceQuery_DelegatorValidator",
+                "operationId": "FeegrantQuery_DelegatorValidator",
                 "parameters": [
                     {
                         "type": "string",
@@ -7668,7 +7668,7 @@
                     "Query"
                 ],
                 "summary": "HistoricalInfo queries the historical info for given height.",
-                "operationId": "EvidenceQuery_HistoricalInfo",
+                "operationId": "FeegrantQuery_HistoricalInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -7701,7 +7701,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the staking parameters.",
-                "operationId": "EvidenceQuery_ParamsMixin149",
+                "operationId": "FeegrantQuery_ParamsMixin149",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7724,7 +7724,7 @@
                     "Query"
                 ],
                 "summary": "Pool queries the pool info.",
-                "operationId": "EvidenceQuery_Pool",
+                "operationId": "FeegrantQuery_Pool",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7748,7 +7748,7 @@
                     "Query"
                 ],
                 "summary": "Validators queries all validators that match the given status.",
-                "operationId": "EvidenceQuery_Validators",
+                "operationId": "FeegrantQuery_Validators",
                 "parameters": [
                     {
                         "type": "string",
@@ -7812,7 +7812,7 @@
                     "Query"
                 ],
                 "summary": "Validator queries validator info for given validator address.",
-                "operationId": "EvidenceQuery_Validator",
+                "operationId": "FeegrantQuery_Validator",
                 "parameters": [
                     {
                         "type": "string",
@@ -7845,7 +7845,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorDelegations queries delegate info for given validator.",
-                "operationId": "EvidenceQuery_ValidatorDelegations",
+                "operationId": "FeegrantQuery_ValidatorDelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -7910,7 +7910,7 @@
                     "Query"
                 ],
                 "summary": "Delegation queries delegate info for given validator delegator pair.",
-                "operationId": "EvidenceQuery_Delegation",
+                "operationId": "FeegrantQuery_Delegation",
                 "parameters": [
                     {
                         "type": "string",
@@ -7949,7 +7949,7 @@
                     "Query"
                 ],
                 "summary": "UnbondingDelegation queries unbonding info for given validator delegator\npair.",
-                "operationId": "EvidenceQuery_UnbondingDelegation",
+                "operationId": "FeegrantQuery_UnbondingDelegation",
                 "parameters": [
                     {
                         "type": "string",
@@ -7989,7 +7989,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorUnbondingDelegations queries unbonding delegations of a validator.",
-                "operationId": "EvidenceQuery_ValidatorUnbondingDelegations",
+                "operationId": "FeegrantQuery_ValidatorUnbondingDelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -8054,7 +8054,7 @@
                     "Service"
                 ],
                 "summary": "TxDecode decodes the transaction.",
-                "operationId": "EvidenceService_TxDecode",
+                "operationId": "FeegrantService_TxDecode",
                 "parameters": [
                     {
                         "description": "TxDecodeRequest is the request type for the Service.TxDecode\nRPC method.",
@@ -8088,7 +8088,7 @@
                     "Service"
                 ],
                 "summary": "TxDecodeAmino decodes an Amino transaction from encoded bytes to JSON.",
-                "operationId": "EvidenceService_TxDecodeAmino",
+                "operationId": "FeegrantService_TxDecodeAmino",
                 "parameters": [
                     {
                         "description": "TxDecodeAminoRequest is the request type for the Service.TxDecodeAmino\nRPC method.",
@@ -8122,7 +8122,7 @@
                     "Service"
                 ],
                 "summary": "TxEncode encodes the transaction.",
-                "operationId": "EvidenceService_TxEncode",
+                "operationId": "FeegrantService_TxEncode",
                 "parameters": [
                     {
                         "description": "TxEncodeRequest is the request type for the Service.TxEncode\nRPC method.",
@@ -8156,7 +8156,7 @@
                     "Service"
                 ],
                 "summary": "TxEncodeAmino encodes an Amino transaction from JSON to encoded bytes.",
-                "operationId": "EvidenceService_TxEncodeAmino",
+                "operationId": "FeegrantService_TxEncodeAmino",
                 "parameters": [
                     {
                         "description": "TxEncodeAminoRequest is the request type for the Service.TxEncodeAmino\nRPC method.",
@@ -8190,7 +8190,7 @@
                     "Service"
                 ],
                 "summary": "Simulate simulates executing a transaction for estimating gas usage.",
-                "operationId": "EvidenceService_Simulate",
+                "operationId": "FeegrantService_Simulate",
                 "parameters": [
                     {
                         "description": "SimulateRequest is the request type for the Service.Simulate\nRPC method.",
@@ -8224,7 +8224,7 @@
                     "Service"
                 ],
                 "summary": "GetTxsEvent fetches txs by event.",
-                "operationId": "EvidenceService_GetTxsEvent",
+                "operationId": "FeegrantService_GetTxsEvent",
                 "parameters": [
                     {
                         "type": "array",
@@ -8322,7 +8322,7 @@
                     "Service"
                 ],
                 "summary": "BroadcastTx broadcast transaction.",
-                "operationId": "EvidenceService_BroadcastTx",
+                "operationId": "FeegrantService_BroadcastTx",
                 "parameters": [
                     {
                         "description": "BroadcastTxRequest is the request type for the Service.BroadcastTxRequest\nRPC method.",
@@ -8356,7 +8356,7 @@
                     "Service"
                 ],
                 "summary": "GetBlockWithTxs fetches a block with decoded txs.",
-                "operationId": "EvidenceService_GetBlockWithTxs",
+                "operationId": "FeegrantService_GetBlockWithTxs",
                 "parameters": [
                     {
                         "type": "string",
@@ -8422,7 +8422,7 @@
                     "Service"
                 ],
                 "summary": "GetTx fetches a tx by hash.",
-                "operationId": "EvidenceService_GetTx",
+                "operationId": "FeegrantService_GetTx",
                 "parameters": [
                     {
                         "type": "string",
@@ -8454,7 +8454,7 @@
                     "Query"
                 ],
                 "summary": "AppliedPlan queries a previously applied upgrade plan by its name.",
-                "operationId": "EvidenceQuery_AppliedPlan",
+                "operationId": "FeegrantQuery_AppliedPlan",
                 "parameters": [
                     {
                         "type": "string",
@@ -8486,7 +8486,7 @@
                     "Query"
                 ],
                 "summary": "Returns the account with authority to conduct upgrades",
-                "operationId": "EvidenceQuery_Authority",
+                "operationId": "FeegrantQuery_Authority",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -8509,7 +8509,7 @@
                     "Query"
                 ],
                 "summary": "CurrentPlan queries the current upgrade plan.",
-                "operationId": "EvidenceQuery_CurrentPlan",
+                "operationId": "FeegrantQuery_CurrentPlan",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -8532,7 +8532,7 @@
                     "Query"
                 ],
                 "summary": "ModuleVersions queries the list of module versions from state.",
-                "operationId": "EvidenceQuery_ModuleVersions",
+                "operationId": "FeegrantQuery_ModuleVersions",
                 "parameters": [
                     {
                         "type": "string",
@@ -8563,7 +8563,7 @@
                     "Query"
                 ],
                 "summary": "UpgradedConsensusState queries the consensus state that will serve\nas a trusted kernel for the next version of this chain. It will only be\nstored at the last height of this chain.\nUpgradedConsensusState RPC not supported with legacy querier\nThis rpc is deprecated now that IBC has its own replacement\n(https://github.com/cosmos/ibc-go/blob/2c880a22e9f9cc75f62b527ca94aa75ce1106001/proto/ibc/core/client/v1/query.proto#L54)",
-                "operationId": "EvidenceQuery_UpgradedConsensusState",
+                "operationId": "FeegrantQuery_UpgradedConsensusState",
                 "parameters": [
                     {
                         "type": "string",
@@ -12835,7 +12835,7 @@
                 "operationId": "GithubCompoktNetworkpoktrollMsg_ClaimMorseAccount",
                 "parameters": [
                     {
-                        "description": "- Execute a claim (one-time minting of tokens on Shannon)\n- Claim the balance of a given Morse account per on-chain MorseClaimableAccounts\n- Mint claimed balance to the given Shannon account\n\nNOTE:\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts\n\nNext free index: 6",
+                        "description": "- Execute a claim (one-time minting of tokens on Shannon)\n- Claim the balance of a given Morse account per on-chain MorseClaimableAccounts\n- Mint claimed balance to the given Shannon account\n\nNOTE:\n- A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -13179,6 +13179,40 @@
                         "description": "A successful response.",
                         "schema": {
                             "$ref": "#/definitions/pocket.service.MsgAddServiceResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.service.Msg/DeleteService": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "DeleteService defines the DeleteService RPC.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_DeleteService",
+                "parameters": [
+                    {
+                        "description": "MsgDeleteService defines the MsgDeleteService message.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgDeleteService"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgDeleteServiceResponse"
                         }
                     },
                     "default": {
@@ -13624,7 +13658,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     },
@@ -13741,7 +13775,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     }
@@ -13852,7 +13886,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     }
@@ -13963,7 +13997,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     },
@@ -14096,7 +14130,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     },
@@ -14229,7 +14263,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     }
@@ -14317,7 +14351,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     }
@@ -14519,7 +14553,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     },
@@ -14606,7 +14640,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_ApplySnapshotChunk",
+                "operationId": "FeegrantABCI_ApplySnapshotChunk",
                 "parameters": [
                     {
                         "name": "body",
@@ -14638,7 +14672,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_CheckTx",
+                "operationId": "FeegrantABCI_CheckTx",
                 "parameters": [
                     {
                         "name": "body",
@@ -14670,7 +14704,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Commit",
+                "operationId": "FeegrantABCI_Commit",
                 "parameters": [
                     {
                         "name": "body",
@@ -14702,7 +14736,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Echo",
+                "operationId": "FeegrantABCI_Echo",
                 "parameters": [
                     {
                         "name": "body",
@@ -14734,7 +14768,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_ExtendVote",
+                "operationId": "FeegrantABCI_ExtendVote",
                 "parameters": [
                     {
                         "name": "body",
@@ -14766,7 +14800,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_FinalizeBlock",
+                "operationId": "FeegrantABCI_FinalizeBlock",
                 "parameters": [
                     {
                         "name": "body",
@@ -14798,7 +14832,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Flush",
+                "operationId": "FeegrantABCI_Flush",
                 "parameters": [
                     {
                         "name": "body",
@@ -14830,7 +14864,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Info",
+                "operationId": "FeegrantABCI_Info",
                 "parameters": [
                     {
                         "name": "body",
@@ -14862,7 +14896,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_InitChain",
+                "operationId": "FeegrantABCI_InitChain",
                 "parameters": [
                     {
                         "name": "body",
@@ -14894,7 +14928,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_ListSnapshots",
+                "operationId": "FeegrantABCI_ListSnapshots",
                 "parameters": [
                     {
                         "name": "body",
@@ -14926,7 +14960,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_LoadSnapshotChunk",
+                "operationId": "FeegrantABCI_LoadSnapshotChunk",
                 "parameters": [
                     {
                         "name": "body",
@@ -14958,7 +14992,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_OfferSnapshot",
+                "operationId": "FeegrantABCI_OfferSnapshot",
                 "parameters": [
                     {
                         "name": "body",
@@ -14990,7 +15024,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_PrepareProposal",
+                "operationId": "FeegrantABCI_PrepareProposal",
                 "parameters": [
                     {
                         "name": "body",
@@ -15022,7 +15056,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_ProcessProposal",
+                "operationId": "FeegrantABCI_ProcessProposal",
                 "parameters": [
                     {
                         "name": "body",
@@ -15054,7 +15088,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Query",
+                "operationId": "FeegrantABCI_Query",
                 "parameters": [
                     {
                         "name": "body",
@@ -15086,7 +15120,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_VerifyVoteExtension",
+                "operationId": "FeegrantABCI_VerifyVoteExtension",
                 "parameters": [
                     {
                         "name": "body",
@@ -16285,7 +16319,7 @@
                     "format": "uint64"
                 },
                 "reverse": {
-                    "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                    "description": "reverse is set to true if results are to be returned in the descending order.",
                     "type": "boolean"
                 }
             }
@@ -25378,7 +25412,7 @@
             ]
         },
         "pocket.migration.MsgClaimMorseAccount": {
-            "description": "- Execute a claim (one-time minting of tokens on Shannon)\n- Claim the balance of a given Morse account per on-chain MorseClaimableAccounts\n- Mint claimed balance to the given Shannon account\n\nNOTE:\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts\n\nNext free index: 6",
+            "description": "- Execute a claim (one-time minting of tokens on Shannon)\n- Claim the balance of a given Morse account per on-chain MorseClaimableAccounts\n- Mint claimed balance to the given Shannon account\n\nNOTE:\n- A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts",
             "type": "object",
             "title": "MsgClaimMorseAccount is used to:",
             "properties": {
@@ -25397,7 +25431,7 @@
                     "type": "string"
                 },
                 "shannon_signing_address": {
-                    "description": "The bech32-encoded address of the Shannon account which is signing for this message.\nThis account is liable for any fees incurred by violating the constraints of Morse\naccount/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor\nclaim messages AND has EXACTLY ONE signer.",
+                    "description": "The bech32-encoded address of the Shannon account which is signing for this message.\nThis account is liable for any fees incurred by violating the constraints of Morse\naccount/actor claim message fee waiving.",
                     "type": "string"
                 }
             }
@@ -25654,11 +25688,15 @@
             "type": "object"
         },
         "pocket.migration.Params": {
-            "description": "Params defines the parameters for the module.\n\nNext free index: 3",
+            "description": "Params defines the parameters for the module.\n\nNext free index: 4",
             "type": "object",
             "properties": {
                 "allow_morse_account_import_overwrite": {
                     "description": "allow_morse_account_import_overwrite is a feature flag which is used to enable/disable\nthe re-importing of Morse claimable accounts by the authority.\nSuch a re-import will:\n- Ignore (i.e. leave) ALL claimed destination Shannon accounts/actors\n- Delete ALL existing onchain MorseClaimableAccounts\n- Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts\nThis is useful for testing purposes, but should be disabled in production.",
+                    "type": "boolean"
+                },
+                "morse_account_claiming_enabled": {
+                    "description": "morse_account_claiming_enabled is a feature flag which is used to enable/disable the processing of Morse account/actor claim messages\n(i.e. `MsgClaimMorseAccount`, `MorseClaimApplication`, and `MorseClaimSupplier`).",
                     "type": "boolean"
                 },
                 "waive_morse_claim_gas_fees": {
@@ -25949,6 +25987,34 @@
             "properties": {
                 "service": {
                     "$ref": "#/definitions/pocket.shared.Service"
+                }
+            }
+        },
+        "pocket.service.MsgDeleteService": {
+            "description": "MsgDeleteService defines the MsgDeleteService message.",
+            "type": "object",
+            "properties": {
+                "creator": {
+                    "type": "string"
+                },
+                "last_session_end_height": {
+                    "type": "string",
+                    "format": "int64"
+                },
+                "owner_address": {
+                    "type": "string"
+                },
+                "service_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.service.MsgDeleteServiceResponse": {
+            "description": "MsgDeleteServiceResponse defines the MsgDeleteServiceResponse message.",
+            "type": "object",
+            "properties": {
+                "service_id": {
+                    "type": "string"
                 }
             }
         },

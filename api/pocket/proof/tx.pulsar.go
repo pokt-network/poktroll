@@ -2,23 +2,24 @@
 package proof
 
 import (
-	_ "cosmossdk.io/api/amino"
-	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
-	_ "cosmossdk.io/api/cosmos/msg/v1"
-	session "github.com/pokt-network/poktroll/api/pocket/session"
-	_ "github.com/pokt-network/poktroll/api/pocket/shared"
 	binary "encoding/binary"
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-proto"
-	runtime "github.com/cosmos/cosmos-proto/runtime"
-	_ "github.com/cosmos/gogoproto/gogoproto"
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoiface "google.golang.org/protobuf/runtime/protoiface"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
 	math "math"
 	reflect "reflect"
 	sync "sync"
+
+	_ "cosmossdk.io/api/amino"
+	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
+	_ "cosmossdk.io/api/cosmos/msg/v1"
+	_ "github.com/cosmos/cosmos-proto"
+	runtime "github.com/cosmos/cosmos-proto/runtime"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	session "github.com/pokt-network/poktroll/api/pocket/session"
+	_ "github.com/pokt-network/poktroll/api/pocket/shared"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoiface "google.golang.org/protobuf/runtime/protoiface"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 var (

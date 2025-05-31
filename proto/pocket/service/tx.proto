@@ -23,7 +23,11 @@ service Msg {
   rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
   rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse );
   rpc AddService   (MsgAddService  ) returns (MsgAddServiceResponse  );
+
+  // DeleteService defines the DeleteService RPC.
+  rpc DeleteService(MsgDeleteService) returns (MsgDeleteServiceResponse);
 }
+
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
@@ -31,7 +35,6 @@ message MsgUpdateParams {
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-
 
   // params defines the x/service parameters to update.
   // NOTE: All parameters must be supplied.
@@ -52,6 +55,7 @@ message MsgUpdateParam {
   // The (name, as_type) tuple must match the corresponding name and type as
   // specified in the `Params` message in `proof/params.proto.`
   string name = 2;
+
   oneof as_type {
     cosmos.base.v1beta1.Coin as_coin = 3 [(gogoproto.jsontag) = "as_coin"];
     uint64 as_uint64 = 4 [(gogoproto.jsontag) = "as_uint64"];
@@ -77,3 +81,16 @@ message MsgAddServiceResponse {
   pocket.shared.Service service = 1;
 }
 
+// MsgDeleteService defines the MsgDeleteService message.
+message MsgDeleteService {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string owner_address = 2;
+  string service_id = 3;
+  int64 last_session_end_height = 4;
+}
+
+// MsgDeleteServiceResponse defines the MsgDeleteServiceResponse message.
+message MsgDeleteServiceResponse {
+  string service_id = 1;
+}

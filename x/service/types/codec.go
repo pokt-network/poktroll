@@ -9,6 +9,10 @@ import (
 
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgDeleteService{},
+	)
+
+	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgAddService{},
 	)
 	// this line is used by starport scaffolding # 3
