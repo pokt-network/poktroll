@@ -155,6 +155,14 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	// enable the forward authenticated server to send request to a supplier for a given service name. It can be useful for operational purposes.
+	// More information available here:  https://dev.poktroll.com/operate/configs/relayminer_config#forward
+	if relayMinerConfig.Forward.Enabled {
+		if err = relayMiner.ServeForward(ctx, "tcp", relayMinerConfig.Forward.Addr, relayMinerConfig.Forward.Token); err != nil {
+			return fmt.Errorf("serve forward: %w", err)
+		}
+	}
+
 	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")
 	err = relayMiner.Start(ctx)
