@@ -19,18 +19,19 @@ var (
 	noPassphrase                  bool
 )
 
+// TODO_MAINNET_MIGRATION: Add a few examples in the CLI.
 func ClaimAccountCmd() *cobra.Command {
 	claimAcctCmd := &cobra.Command{
 		Use:   "claim-account [morse_key_export_path] --from [shannon_dest_key_name]",
 		Args:  cobra.ExactArgs(1),
-		Short: "Claim an onchain MorseClaimableAccount as an unstaked/non-actor account",
-		Long: `Claim an onchain MorseClaimableAccount as an unstaked/non-actor account.
+		Short: "Claim 1 Morse Account as an unstaked account (i.e. non-actor, balance only account)",
+		Long: `Claim 1 onchain MorseAccount as an unstaked account (i.e. non-actor, balance only).
 
-The unstaked balance amount of the onchain MorseClaimableAccount will be minted to the Shannon account specified by the --from flag.
-This will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
+The unstaked balance amount of the onchain MorseAccount will be minted to the Shannon account specified by the --from flag.
+
+This CLI will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
-		// Example: TODO_MAINNET_CRITICAL(@bryanchriswhite): Add a few examples,
 		RunE:    runClaimAccount,
 		PreRunE: logger.PreRunESetup,
 	}
