@@ -6,7 +6,7 @@ sidebar_position: 4
 A gentle high-level introduction to token minting and burning, intended to understand
 the different variables involved and how they interact.
 
-::warning Morse Readers
+:::warning Morse Readers
 
 If you were involved in the "Morse" network of Pocket Network, approach
 this document from a first-principles perspective. **Do not try to draw parallels**.
@@ -111,6 +111,12 @@ $$
 u\text{POKT} &= \frac{\text{EstimatedOffchainComputeUnits} \times \text{ComputeUnitsToTokenMultiplier}}{\text{ComputeUnitsCostGranularity}}
 \end{aligned}
 $$
+
+:::warning Rendering bug (ignore the duplication)
+
+TODO(@olshansk): Look into why this equation renders twice: as latex and plaintext.
+
+:::
 
 ### 💰 Example with Numbers
 
