@@ -53,8 +53,11 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root (hex) %x count due to: %s", msg.RootHash, err)
 	}
 
+	// Ensure the count is greater than zero, as a valid claim MUST reflect the
+	// number of relays served by the supplier in the session.
+	// If no work was done, there should be no claim.
 	if count == 0 {
-		return ErrProofInvalidClaimRootHash.Wrapf("has zero count in Merkle (hex) root %x", msg.RootHash)
+		return ErrProofInvalidClaimRootHash.Wrapf("has zero count in Merkle root (hex) %x", msg.RootHash)
 	}
 
 	sum, err := merkleRoot.Sum()
@@ -62,6 +65,10 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 		return ErrProofInvalidClaimRootHash.Wrapf("error getting Merkle root (hex) %x sum due to: %s", msg.RootHash, err)
 	}
 
+	// Ensure the sum is greater than zero, as a valid claim MUST reflect the
+	// number of compute units corresponding to the number of relays served by the
+	// supplier in the session.
+	// If no work was done, there should be no claim.
 	if sum == 0 {
 		return ErrProofInvalidClaimRootHash.Wrapf("has zero sum in Merkle root (hex) %x", msg.RootHash)
 	}

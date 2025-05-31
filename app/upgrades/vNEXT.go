@@ -1,3 +1,18 @@
+// vNEXT.go - Next Upgrade Placeholder
+//
+// This file serves as a staging area for the next planned upgrade and contains:
+//   - Incremental onchain upgrades specific changes that are not planned for
+//     immediate release (e.g. parameter changes, data records restructuring, etc.)
+//   - Upgrade handlers and store migrations for the upcoming version
+//
+// Upgrade Release Process:
+// 1. Add any upgrade specific changes in this file until an upgrade is planned
+// 2. Once ready for release:
+//   - Rename file to the target version (e.g., vNEXT.go → v0.1.14.go)
+//   - Change Upgrade_NEXT_PlanName constant to the new version (e.g. Upgrade_v0_1_14_PlanName)
+//   - Replace all mentions of "vNEXT" and "vPREV" with appropriate versions
+//
+// 3. Create a new vNEXT.go file for the subsequent upgrade
 package upgrades
 
 import (
@@ -21,8 +36,6 @@ const (
 // This upgrade adds:
 // - the `compute_unit_cost_granularity` shared module param
 // - the `morse_account_claiming_enabled` migration module param
-//
-// https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
