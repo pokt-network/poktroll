@@ -6,10 +6,16 @@ JSON_FILE=""
 VALIDATOR_LIST=""
 
 # Parse command line options
-while getopts "o:h" opt; do
+while getopts "o:ihb" opt; do
     case $opt in
     o)
         OUTPUT_FILE="$OPTARG"
+        ;;
+    i)
+        IN_PLACE=true
+        ;;
+    b)
+        NO_BACKUP=true
         ;;
     h)
         show_help=true
@@ -28,41 +34,14 @@ shift $((OPTIND - 1))
 if [ $# -ne 2 ] || [ "$show_help" = true ]; then
     echo ""
     echo "###############################################################################"
-    echo "###                      Morse Manual Unstaker                            ###"
+    echo "###                      Morse Manual Unstaker (Fast)                     ###"
     echo "###############################################################################"
     echo ""
     echo "DESCRIPTION:"
-    echo "    The Morse Manual Unstaker processes morse account state JSON files."
-    echo "    It manually unstakes specified accounts by:"
-    echo "    - Setting supplier_stake to 0"
-    echo "    - Setting application_stake to 0"
-    echo "    - Setting unstaked_balance to the sum of original values"
+    echo "    Fast version that processes all validators in a single jq pass"
     echo ""
     echo "USAGE:"
     echo "    $0 [-o output_file] <path_to_json_file> <comma_separated_validator_list>"
-    echo ""
-    echo "OPTIONS:"
-    echo "    -o output_file              Specify custom output file path"
-    echo "    -h                          Show this help message"
-    echo ""
-    echo "PARAMETERS:"
-    echo "    path_to_json_file           Path to the JSON file to process"
-    echo "    comma_separated_validator_list   List of morse_src_address values to update"
-    echo ""
-    echo "EXAMPLE:"
-    echo "    $0 tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json \\"
-    echo "       'c409a9e0d1be8780fe0b29dcdf72f8a879fb110c,08e5727cd7fbc4bc97ef3246da7379043f949f70,278654d9daf0e0be2c4e4da5a26c3b4149c5f6d0,81522de7711246fca147a34173dd2a462dc77a5a,c86b27e72c32b64db3eae137ffa84fec007a9062,79cbe645f2b4fa767322faf59a0093e6b73a2383,a86b6a5517630a23aec3dc4e3479a5818c575ac2,882f3f23687a9f3dddf6c65d66e9e3184ca67573,96f2c414b6f3afbba7ba571b7de360709d614e62,05db988509a25dd812dfd1a421cbf47078301a16'"
-    echo ""
-    echo "    With custom output:"
-    echo "    $0 -o unstaked_accounts.json tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json \\"
-    echo "       'c409a9e0d1be8780fe0b29dcdf72f8a879fb110c,08e5727cd7fbc4bc97ef3246da7379043f949f70'"
-    echo ""
-    echo "NOTES:"
-    echo "    - A timestamped backup will be created automatically"
-    echo "    - Requires 'jq' to be installed for JSON processing"
-    echo "    - Validator addresses are case-insensitive"
-    echo "    - If -o is not specified, creates output file with '_unstaked' suffix"
-    echo "    - Missing validator addresses will be logged as errors"
     echo ""
     echo "###############################################################################"
     echo ""
@@ -73,8 +52,9 @@ JSON_FILE="$1"
 VALIDATOR_LIST="$2"
 
 # Determine output file
-if [ -z "$OUTPUT_FILE" ]; then
-    # Extract directory, filename, and extension
+if [ "$IN_PLACE" = true ]; then
+    OUTPUT_FILE="$JSON_FILE"
+elif [ -z "$OUTPUT_FILE" ]; then
     DIR=$(dirname "$JSON_FILE")
     BASENAME=$(basename "$JSON_FILE" .json)
     OUTPUT_FILE="${DIR}/${BASENAME}_unstaked.json"
@@ -88,81 +68,98 @@ fi
 
 # Check if jq is installed
 if ! command -v jq &>/dev/null; then
-    echo "Error: jq is required but not installed. Please install jq first."
-    echo "On Ubuntu/Debian: sudo apt-get install jq"
-    echo "On macOS: brew install jq"
+    echo "Error: jq is required but not installed."
     exit 1
 fi
 
-# Create backup of original file
-BACKUP_FILE="${JSON_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
-cp "$JSON_FILE" "$BACKUP_FILE"
-echo "Created backup: $BACKUP_FILE"
+# Create backup (unless skipped)
+if [ "$NO_BACKUP" != true ]; then
+    BACKUP_FILE="${JSON_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+    cp "$JSON_FILE" "$BACKUP_FILE"
+    echo "Created backup: $BACKUP_FILE"
+fi
 
-# Copy original to output file for processing
-cp "$JSON_FILE" "$OUTPUT_FILE"
-echo "Processing into output file: $OUTPUT_FILE"
-
-# Convert comma-separated list to array
+# Convert comma-separated list to space-separated for bash array
 IFS=',' read -ra VALIDATORS <<<"$VALIDATOR_LIST"
 
-# Create a temporary file for processing
-TEMP_FILE=$(mktemp)
-
-# Track processed and missing validators
-PROCESSED_COUNT=0
-MISSING_VALIDATORS=()
-
-# Process each validator
+# Clean up validators (trim whitespace, convert to lowercase)
+CLEANED_VALIDATORS=()
 for validator in "${VALIDATORS[@]}"; do
-    # Trim whitespace and convert to lowercase for comparison
-    validator=$(echo "$validator" | xargs | tr '[:upper:]' '[:lower:]')
-    echo "Processing validator: $validator"
-
-    # Check if validator exists in the file
-    VALIDATOR_EXISTS=$(jq --arg validator "$validator" '
-        .morse_account_state.accounts |
-        any(.morse_src_address | ascii_downcase == $validator)
-    ' "$OUTPUT_FILE")
-
-    if [ "$VALIDATOR_EXISTS" = "false" ]; then
-        echo "ERROR: Validator $validator not found in the JSON file"
-        MISSING_VALIDATORS+=("$validator")
-        continue
-    fi
-
-    # Use jq to find and modify the account
-    jq --arg validator "$validator" '
-        .morse_account_state.accounts |= map(
-            if (.morse_src_address | ascii_downcase) == $validator then
-                . as $account |
-                ($account.unstaked_balance.amount | tonumber) as $unstaked |
-                ($account.supplier_stake.amount | tonumber) as $supplier |
-                ($account.application_stake.amount | tonumber) as $application |
-                ($unstaked + $supplier + $application) as $new_balance |
-                .unstaked_balance.amount = ($new_balance | tostring) |
-                .supplier_stake.amount = "0" |
-                .application_stake.amount = "0"
-            else
-                .
-            end
-        )
-    ' "$OUTPUT_FILE" >"$TEMP_FILE"
-
-    # Check if jq command was successful
-    if [ $? -eq 0 ]; then
-        mv "$TEMP_FILE" "$OUTPUT_FILE"
-        echo "Successfully processed validator: $validator"
-        ((PROCESSED_COUNT++))
-    else
-        echo "Error processing validator: $validator"
-        rm -f "$TEMP_FILE"
-        exit 1
-    fi
+    cleaned=$(echo "$validator" | xargs | tr '[:upper:]' '[:lower:]')
+    CLEANED_VALIDATORS+=("$cleaned")
 done
 
-# Clean up
-rm -f "$TEMP_FILE"
+echo "Processing ${#CLEANED_VALIDATORS[@]} validators in a single pass..."
+
+# Build JSON array of validators for jq
+VALIDATORS_JSON="["
+for i in "${!CLEANED_VALIDATORS[@]}"; do
+    if [ $i -gt 0 ]; then
+        VALIDATORS_JSON+=","
+    fi
+    VALIDATORS_JSON+="\"${CLEANED_VALIDATORS[$i]}\""
+done
+VALIDATORS_JSON+="]"
+
+# Execute single jq command with validators as argument
+jq --argjson validators "$VALIDATORS_JSON" '
+.morse_account_state.accounts |= map(
+    if (.morse_src_address | ascii_downcase) as $addr | ($validators | index($addr)) then
+        . as $account |
+        ($account.unstaked_balance.amount | tonumber) as $unstaked |
+        ($account.supplier_stake.amount | tonumber) as $supplier |
+        ($account.application_stake.amount | tonumber) as $application |
+        ($unstaked + $supplier + $application) as $new_balance |
+        .unstaked_balance.amount = ($new_balance | tostring) |
+        .supplier_stake.amount = "0" |
+        .application_stake.amount = "0"
+    else
+        .
+    end
+)' "$JSON_FILE" >"$OUTPUT_FILE"
+
+if [ $? -ne 0 ]; then
+    echo "Error: jq processing failed!"
+    exit 1
+fi
+
+# If output file is different from input, offer to replace the original
+if [ "$OUTPUT_FILE" != "$JSON_FILE" ]; then
+    echo ""
+    echo "Processed file saved as: $OUTPUT_FILE"
+    echo "Original file: $JSON_FILE"
+    echo ""
+    read -p "Do you want to replace the original file with the processed version? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        cp "$OUTPUT_FILE" "$JSON_FILE"
+        echo "Original file updated successfully!"
+        if [ "$NO_BACKUP" != true ]; then
+            echo "Backup is still available at: $BACKUP_FILE"
+        fi
+    else
+        echo "Original file unchanged. Processed version available at: $OUTPUT_FILE"
+    fi
+fi
+
+# Count processed and missing validators in a single jq call
+echo "Checking results..."
+RESULTS=$(jq --argjson validators "$VALIDATORS_JSON" '
+{
+    "processed": [
+        .morse_account_state.accounts[] |
+        select((.morse_src_address | ascii_downcase) as $addr | ($validators | index($addr))) |
+        select(.supplier_stake.amount == "0" and .application_stake.amount == "0") |
+        .morse_src_address | ascii_downcase
+    ],
+    "missing": ($validators - [
+        .morse_account_state.accounts[] |
+        .morse_src_address | ascii_downcase
+    ])
+}' "$OUTPUT_FILE")
+
+PROCESSED_COUNT=$(echo "$RESULTS" | jq -r '.processed | length')
+MISSING_VALIDATORS=($(echo "$RESULTS" | jq -r '.missing[]' 2>/dev/null))
 
 echo ""
 echo "==============================================================================="
@@ -180,27 +177,5 @@ if [ ${#MISSING_VALIDATORS[@]} -gt 0 ]; then
     done
 fi
 
-# Optional: Show summary of changes
 echo ""
-echo "Summary of processed accounts:"
-for validator in "${VALIDATORS[@]}"; do
-    validator=$(echo "$validator" | xargs | tr '[:upper:]' '[:lower:]')
-
-    # Skip if validator was missing
-    if [[ " ${MISSING_VALIDATORS[@]} " =~ " $validator " ]]; then
-        continue
-    fi
-
-    echo "=== $validator ==="
-    jq --arg validator "$validator" '
-        .morse_account_state.accounts[] |
-        select((.morse_src_address | ascii_downcase) == $validator) |
-        {
-            morse_src_address: .morse_src_address,
-            unstaked_balance: .unstaked_balance.amount,
-            supplier_stake: .supplier_stake.amount,
-            application_stake: .application_stake.amount
-        }
-    ' "$OUTPUT_FILE"
-    echo ""
-done
+echo "Processing completed in a single jq pass - much faster than the original!"
