@@ -66,6 +66,8 @@ const config = {
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
           sidebarCollapsible: false,
+          editUrl:
+            "https://github.com/pokt-network/poktroll/edit/main/docusaurus",
         },
         theme: {
           customCss: [
