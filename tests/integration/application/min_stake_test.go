@@ -246,7 +246,7 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, s.getCurrentHeight())
-	relayMiningDifficulty := s.newRelayminingDifficulty()
+	relayMiningDifficulty := s.newRelayMiningDifficulty()
 	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(s.T(), err)
 
@@ -266,8 +266,8 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	}
 }
 
-// newRelayminingDifficulty creates a new RelayMiningDifficulty for use in calculating application burn.
-func (s *applicationMinStakeTestSuite) newRelayminingDifficulty() servicetypes.RelayMiningDifficulty {
+// newRelayMiningDifficulty creates a new RelayMiningDifficulty for use in calculating application burn.
+func (s *applicationMinStakeTestSuite) newRelayMiningDifficulty() servicetypes.RelayMiningDifficulty {
 	s.T().Helper()
 
 	targetNumRelays := s.keepers.ServiceKeeper.GetParams(s.ctx).TargetNumRelays

@@ -126,3 +126,6 @@ pocket-account-*.json
 localnet_testing_state_export.json
 localnet_testing_msg_import_morse_accounts.json
 *claim_supplier_*_supplier_config.yaml
+
+# Gov Param Update transaction templates
+*_params_*.json
