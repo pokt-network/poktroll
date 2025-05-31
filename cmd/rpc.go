@@ -45,8 +45,6 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 	default:
 		return fmt.Errorf("unknown --network specified %q", networkStr)
 	}
-
-	return nil
 }
 
 // setNetworkRelatedFlags sets the following flags according to the given arguments
