@@ -1,4 +1,7 @@
-# Governance Parameters Management
+---
+title: Governance Params Management
+sidebar_position: 3
+---
 
 :::warning Authority only
 
@@ -8,7 +11,7 @@ It can be used by developers on LocalNet but can only be executed by the foundat
 
 :::
 
-## Overview
+## Overview <!-- omit in toc -->
 
 The `update_params.sh` script provides a comprehensive tool for querying, managing, and updating governance parameters across different Pocket Network environments. This script supports both Cosmos SDK modules and Pocket-specific modules.
 
@@ -44,7 +47,18 @@ The `update_params.sh` script provides a comprehensive tool for querying, managi
 ./tools/scripts/params/gov_params.sh update tokenomics --no-prompt
 ```
 
-## Updating All Params
+## Pre-requisites
+
+Before updating parameters, make sure you have the following:
+
+- A valid `pocketd` CLI binary installed via [install instructions](../../2_explore/2_account_management/1_pocketd_cli.md)
+- A valid `pocket` home directory with the authority keys imported. For example:
+
+```bash
+pocket keys import-hex pnf_beta <...>
+```
+
+## IMPORTANT: Updating All Params
 
 :::danger Updating all params
 Due to how `params` work in the Cosmos SDK, every `MsgUpdateParams`, transaction for
@@ -104,19 +118,19 @@ flowchart LR
 
 ## Script Usage
 
-### Command Structure
+### Command Structure <!-- omit in toc -->
 
 ```bash
 ./tools/scripts/params/gov_params.sh <command> [module_name] [options]
 ```
 
-### Commands
+### Commands <!-- omit in toc -->
 
 - `query <module_name>` - Query parameters for a specific module
 - `query-all` - Query parameters for all available modules
 - `update <module_name>` - Generate update transaction for a module
 
-### Options
+### Options <!-- omit in toc -->
 
 | Option                | Description                                   | Default               |
 | --------------------- | --------------------------------------------- | --------------------- |
@@ -126,7 +140,7 @@ flowchart LR
 | `--home <path>`       | Home directory for pocketd                    | ~/.pocket             |
 | `--no-prompt`         | Skip edit prompt (update only)                | false                 |
 
-### Environment Configuration
+### Environment Configuration <!-- omit in toc -->
 
 | Environment | Chain ID     | Authority                                   | Node                                         |
 | ----------- | ------------ | ------------------------------------------- | -------------------------------------------- |
