@@ -31,6 +31,8 @@ const (
 	MorseNonHex
 	// MorseModule represents a module account
 	MorseModule
+	// MorseNonCustodialOwnerAccount represents a non-custodial validator's owner account
+	MorseNonCustodialOwnerAccount
 )
 
 // MorseValidatorActorType represents different types of validator actors
@@ -46,6 +48,8 @@ const (
 	MorseUnbondingValidator
 	// MorseUnbondedValidator represents a validator that has unbonded on Morse while waiting to be claimed
 	MorseUnbondedValidator
+	// MorseNonCustodialValidator represents a non-custodial validator with a separate owner account
+	MorseNonCustodialValidator
 )
 
 // MorseApplicationActorType represents different types of application actors
@@ -88,6 +92,11 @@ func (af *actorFixture[T]) GetActor() T {
 // which can be used for signing purposes.
 func (af *actorFixture[T]) GetPrivateKey() cometcrypto.PrivKey {
 	return af.privKey
+}
+
+// GetAddress returns the address which corresponds to the actor fixture.
+func (af *actorFixture[T]) GetAddress() string {
+	return af.privKey.PubKey().Address().String()
 }
 
 // actorTypeGroups organizes actor fixtures by their type, allowing for easy access
@@ -142,6 +151,8 @@ func (cfg *MorseFixturesConfig) GetTotalAccounts() uint64 {
 		cfg.ValidAccountsConfig.NumApplications +
 		cfg.ValidAccountsConfig.NumValidators +
 		cfg.ValidAccountsConfig.NumModuleAccounts +
+		// 1 account for the operator and 1 for the owner (unstaked balances)
+		(cfg.ValidAccountsConfig.NumNonCustodialValidators * 2) +
 		cfg.InvalidAccountsConfig.NumAddressTooShort +
 		cfg.InvalidAccountsConfig.NumAddressTooLong +
 		cfg.InvalidAccountsConfig.NumNonHexAddress +
@@ -189,10 +200,11 @@ type ApplicationStakesConfigFn func(
 // ValidAccountsConfig defines the number of valid accounts to generate
 // for each account type in the test fixtures.
 type ValidAccountsConfig struct {
-	NumAccounts       uint64 // Number of regular externally owned accounts
-	NumApplications   uint64 // Number of application accounts
-	NumValidators     uint64 // Number of validator accounts
-	NumModuleAccounts uint64 // Number of module accounts
+	NumAccounts               uint64 // Number of regular externally owned accounts
+	NumApplications           uint64 // Number of application accounts
+	NumValidators             uint64 // Number of validator accounts
+	NumNonCustodialValidators uint64 // Number of non-custodial validator accounts
+	NumModuleAccounts         uint64 // Number of module accounts
 }
 
 // OrphanedActorsConfig defines the number of orphaned staked actors to generate.
@@ -416,35 +428,35 @@ func (mf *MorseMigrationFixtures) generate() error {
 
 	// Generate valid regular externally owned accounts (EOAs)
 	for i := range mf.config.ValidAccountsConfig.NumAccounts {
-		if err := mf.addAccount(i, MorseEOA); err != nil {
+		if _, err := mf.addAccount(i, MorseEOA); err != nil {
 			return err
 		}
 	}
 
 	// Generate module accounts which represent system accounts
 	for i := range mf.config.ValidAccountsConfig.NumModuleAccounts {
-		if err := mf.addAccount(i, MorseModule); err != nil {
+		if _, err := mf.addAccount(i, MorseModule); err != nil {
 			return err
 		}
 	}
 
 	// Generate invalid accounts with addresses that are too short
 	for i := range mf.config.InvalidAccountsConfig.NumAddressTooShort {
-		if err := mf.addAccount(i, MorseInvalidTooShort); err != nil {
+		if _, err := mf.addAccount(i, MorseInvalidTooShort); err != nil {
 			return err
 		}
 	}
 
 	// Generate invalid accounts with addresses that are too long
 	for i := range mf.config.InvalidAccountsConfig.NumAddressTooLong {
-		if err := mf.addAccount(i, MorseInvalidTooLong); err != nil {
+		if _, err := mf.addAccount(i, MorseInvalidTooLong); err != nil {
 			return err
 		}
 	}
 
 	// Generate accounts with invalid hex characters in the address
 	for i := range mf.config.InvalidAccountsConfig.NumNonHexAddress {
-		if err := mf.addAccount(i, MorseNonHex); err != nil {
+		if _, err := mf.addAccount(i, MorseNonHex); err != nil {
 			return err
 		}
 	}
@@ -495,6 +507,17 @@ func (mf *MorseMigrationFixtures) generate() error {
 		}
 	}
 
+	// Generate non-custodial validators with both staked and unstaked operator accounts and unstaked owne
+	for i := range mf.config.ValidAccountsConfig.NumNonCustodialValidators {
+		if _, err := mf.addAccount(i, MorseNonCustodialOwnerAccount); err != nil {
+			return err
+		}
+
+		if err := mf.addValidator(i, MorseNonCustodialValidator); err != nil {
+			return err
+		}
+	}
+
 	// Generate unbonding validator accounts with both staked unstaked accounts
 	for i := range mf.config.UnbondingActorsConfig.NumValidatorsUnbondingBegan {
 		if err := mf.addValidator(i, MorseUnbondingValidator); err != nil {
@@ -518,7 +541,7 @@ func (mf *MorseMigrationFixtures) generate() error {
 func (mf *MorseMigrationFixtures) addAccount(
 	actorTypeIndex uint64,
 	unstakedActorType MorseUnstakedActorType,
-) (err error) {
+) (unstakedActorFixture *actorFixture[*migrationtypes.MorseAccount], err error) {
 	// Get the next global index for this account
 	allAccountsIndex := mf.nextAllAccountsIndex()
 
@@ -583,7 +606,7 @@ func (mf *MorseMigrationFixtures) addAccount(
 		morseAccountJSONBz, err = cmtjson.Marshal(morseAccount)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Add the account to the Morse state export with the appropriate type
@@ -598,7 +621,7 @@ func (mf *MorseMigrationFixtures) addAccount(
 	// Convert the account to a claimable account for migration
 	morseClaimableAccount, err := mf.generateMorseClaimableAccount(morseAccount)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Store the claimable account in the account state
@@ -606,7 +629,7 @@ func (mf *MorseMigrationFixtures) addAccount(
 
 	// Create an unstaked account actorFixture to track this account and add it to the appropriate
 	// group in the fixtures to make it available for test assertions and scenario setup.
-	unstakedActorFixture := &actorFixture[*migrationtypes.MorseAccount]{
+	unstakedActorFixture = &actorFixture[*migrationtypes.MorseAccount]{
 		actor:            morseAccount,
 		claimableAccount: morseClaimableAccount,
 		privKey:          privKey,
@@ -617,7 +640,7 @@ func (mf *MorseMigrationFixtures) addAccount(
 		unstakedActorFixture,
 	)
 
-	return nil
+	return unstakedActorFixture, nil
 }
 
 // addApplication creates and adds a staked application account to the Morse state export
@@ -666,8 +689,13 @@ func (mf *MorseMigrationFixtures) addApplication(
 		return err
 	}
 
+	switch applicationType {
 	// Set the unstaking time for unbonding and unbonded applications
-	if mf.config.UnstakingTimeConfig.ApplicationUnstakingTimeFn != nil {
+	case MorseUnbondingApplication, MorseUnbondedApplication:
+		if mf.config.UnstakingTimeConfig.ApplicationUnstakingTimeFn == nil {
+			panic("UnstakingTimeConfigFn is required when using UnbondingActorsConfig")
+		}
+
 		unstakingTime := mf.config.UnstakingTimeConfig.ApplicationUnstakingTimeFn(
 			allAccountsIndex,
 			actorIndex,
@@ -681,12 +709,12 @@ func (mf *MorseMigrationFixtures) addApplication(
 	mf.morseAccountState.Accounts[allAccountsIndex] = morseClaimableAccount
 
 	// For non-orphaned applications, also create an unstaked account counterpart
+	// Orphaned applications don't have corresponding unstaked accounts, so we skip this step
 	if applicationType != MorseOrphanedApplication {
-		if err := mf.addUnstakedAccountForStakedActor(allAccountsIndex, pubKey, unstakedBalance); err != nil {
+		if err = mf.addUnstakedAccountForStakedActor(allAccountsIndex, pubKey, unstakedBalance); err != nil {
 			return err
 		}
 	}
-	// Orphaned applications don't have corresponding unstaked accounts, so we skip this step
 
 	// Create an application actorFixture to track this account and add it to the appropriate
 	// group in the fixtures to make it available for test assertions and scenario setup.
@@ -750,8 +778,25 @@ func (mf *MorseMigrationFixtures) addValidator(
 		return err
 	}
 
-	// Set the unstaking time for unbonding and unbonded suppliers
-	if mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn != nil {
+	switch validatorType {
+
+	// For orphaned validators, no unstaked account is needed; bypass the default case.
+	case MorseOrphanedValidator:
+		// No-op
+
+	// For non-custodial validators, also create an unstaked owner account.
+	case MorseNonCustodialValidator:
+		// DEV_NOTE: IMPLICIT ASSUMPTION that the previous account index belongs to the Morse owner (unstaked) account.
+		// This is a safe assumption because the Morse owner account is always created before the Morse validator account.
+		morseOwnerPrivKey := mf.generateMorsePrivateKey(allAccountsIndex - 1)
+		morseClaimableAccount.MorseOutputAddress = morseOwnerPrivKey.PubKey().Address().String()
+
+	// For unbonding and unbonded suppliers, set the unstaking time.
+	case MorseUnbondingValidator, MorseUnbondedValidator:
+		if mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn == nil {
+			panic("UnstakingTimeConfigFn is required when using UnbondingActorsConfig")
+		}
+
 		if mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn != nil {
 			unstakingTime := mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn(
 				allAccountsIndex,
@@ -763,16 +808,16 @@ func (mf *MorseMigrationFixtures) addValidator(
 		}
 	}
 
-	// Store the claimable validator in the account state
+	// Store the claimable validator in the account state.
 	mf.morseAccountState.Accounts[allAccountsIndex] = morseClaimableAccount
 
-	// For non-orphaned validators, also create an unstaked account counterpart
+	// For non-orphaned validators, create an unstaked account counterpart.
+	// Orphaned validators don't have corresponding unstaked accounts, so we skip this step
 	if validatorType != MorseOrphanedValidator {
-		if err := mf.addUnstakedAccountForStakedActor(allAccountsIndex, pubKey, unstakedBalance); err != nil {
+		if err = mf.addUnstakedAccountForStakedActor(allAccountsIndex, pubKey, unstakedBalance); err != nil {
 			return err
 		}
 	}
-	// Orphaned validators don't have corresponding unstaked accounts, so we skip this step
 
 	// Create a validator actorFixture to track this account and add it to the appropriate
 	// group in the fixtures to make it available for test assertions and scenario setup.
