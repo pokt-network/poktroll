@@ -3,7 +3,7 @@ title: MainNet
 sidebar_position: 1
 ---
 
-- 🚰 Coming Soon: MACT Faucet for claiming tokens
+- 🚰 [StakeNode's MACT Faucet for claiming POKT](https://faucet.pocket.network)
 - 🗺️ [StakeNodes' Explorer](https://explorer.pocket.network/pocket-mainnet)
 - 🗺️ [Soothe's Explorer](https://shannon-mainnet.trustsoothe.io)
 - 👨‍💻 [Soothe's GraphQL Playground](https://shannon-mainnet-api.trustsoothe.io)
