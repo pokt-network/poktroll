@@ -750,7 +750,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 
 	// Retrieve the first non-custodial supplier fixture.
 	nonCustodialSupplierFixture := fixtures.GetValidatorFixtures(testmigration.MorseNonCustodialValidator)[0]
-	nonCustodialSupplierAddress := nonCustodialSupplierFixture.GetActor().Address.String()
+	nonCustodialSupplierAddress := nonCustodialSupplierFixture.GetActor().GetAddress()
 
 	// Generate new Shannon operator and owner addresses.
 	shannonOperatorAddr := sample.AccAddress()
@@ -802,7 +802,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 		supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
 		bankClient := s.GetBankQueryClient(s.T())
 
-		// Ensure the found supplier matches the expected supplier.
+		// Ensure no supplier was created by the claim
 		_, err = supplierClient.GetSupplier(s.SdkCtx(), shannonOperatorAddr)
 		expectedErr = status.Error(
 			codes.NotFound,
@@ -835,7 +835,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 		currentSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		nextSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, currentSessionEndHeight+1)
 
-		// Calculate what the expect Supplier onchain should look like.
+		// Calculate what the expected Supplier onchain should look like.
 		expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight())
 		expectedSupplierStake := morseOperatorClaimableAccount.GetSupplierStake()
 		expectedSupplier := &sharedtypes.Supplier{
