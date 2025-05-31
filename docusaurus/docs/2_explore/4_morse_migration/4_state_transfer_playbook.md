@@ -17,8 +17,8 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
     - [4.1 Distribute Canonical Account State Import Message](#41-distribute-canonical-account-state-import-message)
     - [4.2 Align on Account State via Social Consensus](#42-align-on-account-state-via-social-consensus)
   - [5. Import Canonical State into Shannon](#5-import-canonical-state-into-shannon)
-  - [7. Query Canonical State in Shannon](#7-query-canonical-state-in-shannon)
-  - [8. Cleanup \& Documentation](#8-cleanup--documentation)
+  - [6. Query Canonical State in Shannon](#6-query-canonical-state-in-shannon)
+  - [7. Cleanup \& Documentation](#7-cleanup--documentation)
 - [State Validation: Morse Account Holders](#state-validation-morse-account-holders)
   - [Why Validate?](#why-validate)
   - [How to Validate](#how-to-validate)
@@ -56,12 +56,16 @@ Export the snapshot into a new directory on your local machine.
 For example, for the `snapshot-pruned-165398-165498-2025-04-15.tar` snapshot:
 
 ```bash
-# 1. Create a new directory
-rm -rf $HOME/morse-mainnet-snapshot
-mkdir -p $HOME/morse-mainnet-snapshot
+# Set snapshot variables (replace with actual values)
+export SNAPSHOT_FILE="snapshot-pruned-165398-165498-2025-04-15.tar"
+export SNAPSHOT_DIR="$HOME/morse-mainnet-snapshot"
+
+# 1. Cleanup and create new directory
+rm -rf "$SNAPSHOT_DIR"
+mkdir -p "$SNAPSHOT_DIR"
 
 # 2. Untar the snapshot file
-tar -xvf ~/Downloads/snapshot-pruned-165398-165498-2025-04-15.tar -C /Users/olshansky/morse-mainnet-snapshot
+tar -xvf ~/Downloads/"$SNAPSHOT_FILE" -C "$SNAPSHOT_DIR"
 ```
 
 :::warning Note the height and date of the snapshot file name
@@ -85,19 +89,20 @@ export MORSE_MAINNET_STATE_EXPORT_PATH="./morse_state_export_${MAINNET_SNAPSHOT_
 Verify the snapshot data directory has the expected files:
 
 ```bash
-ls $HOME/morse-mainnet-snapshot/data
-application.db blockstore.db evidence.db state.db txindexer.db
+ls "$SNAPSHOT_DIR"/data
+# Expected output: application.db blockstore.db evidence.db state.db txindexer.db
 ```
 
 Export the state:
 
 ```bash
-pocket --datadir="$HOME/morse-mainnet-snapshot" util export-genesis-for-reset "$MAINNET_SNAPSHOT_HEIGHT" pocket > "$MORSE_MAINNET_STATE_EXPORT_PATH"
+pocket --datadir="$SNAPSHOT_DIR" util export-genesis-for-reset "$MAINNET_SNAPSHOT_HEIGHT" pocket > "$MORSE_MAINNET_STATE_EXPORT_PATH"
 ```
 
 Verify the state export:
 
 ```bash
+# Check the file was created
 cat "$MORSE_MAINNET_STATE_EXPORT_PATH"
 ```
 
@@ -121,44 +126,74 @@ Verify the state import message:
 cat "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
 ```
 
-#### 3.1 Shannon MainNet Only
-
-Manually unstake all Morse validators on Shannon MainNet.
-
-First, commit what you have to state.
+Commit the initial files:
 
 ```bash
+# Move files to migration directory
 mv "$MORSE_MAINNET_STATE_EXPORT_PATH" ./tools/scripts/migration/
 mv "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" ./tools/scripts/migration/
+
+# Commit and push
 git commit -am "Added Morse MainNet state export and import message"
 git push
 ```
 
-Then, use the [official list](https://docs.google.com/spreadsheets/d/1V33oAE01s7JLXxjsnJYt7cg_ttaEKbXFFs_qpLKR9l0/edit)
+#### 3.1 Shannon MainNet Only
+
+Manually unstake all Morse validators on Shannon MainNet.
+
+Use the [official list](https://docs.google.com/spreadsheets/d/1V33oAE01s7JLXxjsnJYt7cg_ttaEKbXFFs_qpLKR9l0/edit)
 of validators that requested an auto-unstake to unstake them.
 
-For example, the following will create `tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15_unstaked.json`
+**Validator Groups to Unstake:**
+
+- **QSpider**: `c409a9e0d1be8780fe0b29dcdf72f8a879fb110c,08e5727cd7fbc4bc97ef3246da7379043f949f70,278654d9daf0e0be2c4e4da5a26c3b4149c5f6d0,81522de7711246fca147a34173dd2a462dc77a5a,c86b27e72c32b64db3eae137ffa84fec007a9062,79cbe645f2b4fa767322faf59a0093e6b73a2383,a86b6a5517630a23aec3dc4e3479a5818c575ac2,882f3f23687a9f3dddf6c65d66e9e3184ca67573,96f2c414b6f3afbba7ba571b7de360709d614e62,05db988509a25dd812dfd1a421cbf47078301a16,0a34d3d8339838975b374150c2db8fae2ce75240,0d7b3fbe06cca0b391fce2f7706c2cddf20b2f02,520afeba8edcc8cba167b0c2c3bdd6115e5e0ace,57c8eb2c16b02ed082226e99e28b957e1313ce1c,5c67f0d3e6cdc78955a43db00875185c371b567c`
+
+- **Weavers** and **Spacebelt**: (See complete lists in validator spreadsheet)
+
+**Automated Unstaking Process:**
+
+```bash
+# Use the prepared unstaking script
+./tools/scripts/params/manual_unstake_prepared.sh "tools/scripts/migration/${MSG_IMPORT_MORSE_ACCOUNTS_PATH}"
+
+# Update the hash after unstaking
+./pocketd tx migration import-morse-accounts \
+  "tools/scripts/migration/${MSG_IMPORT_MORSE_ACCOUNTS_PATH}" \
+  --update-hash-only
+
+# Beautify the JSON file
+jq '.' "tools/scripts/migration/${MSG_IMPORT_MORSE_ACCOUNTS_PATH}" > temp.json && mv temp.json "tools/scripts/migration/${MSG_IMPORT_MORSE_ACCOUNTS_PATH}"
+
+# Commit changes
+git commit -am "Auto-unstaked validators and updated hash"
+git push
+```
+
+**Manual Unstaking (Alternative):**
+
+For individual validator groups, use the manual unstake script:
 
 ```bash
 ./tools/scripts/params/manual_unstake.sh \
-  tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json \
+  "tools/scripts/migration/msg_import_morse_accounts_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json" \
   'c409a9e0d1be8780fe0b29dcdf72f8a879fb110c,08e5727cd7fbc4bc97ef3246da7379043f949f70,278654d9daf0e0be2c4e4da5a26c3b4149c5f6d0,81522de7711246fca147a34173dd2a462dc77a5a,c86b27e72c32b64db3eae137ffa84fec007a9062,79cbe645f2b4fa767322faf59a0093e6b73a2383,a86b6a5517630a23aec3dc4e3479a5818c575ac2,882f3f23687a9f3dddf6c65d66e9e3184ca67573,96f2c414b6f3afbba7ba571b7de360709d614e62,05db988509a25dd812dfd1a421cbf47078301a16'
 ```
 
-Check the diff:
+Check the diff and update:
 
 ```bash
-rm tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json.backup.20250531_130114
-mv tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15_unstaked.json tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json
+# Clean up backup files
+rm "tools/scripts/migration/msg_import_morse_accounts_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json.backup."*
+
+# Review changes
 git diff .
-```
 
-Update the hash, commit and push it:
-
-```bash
+# Update hash and commit
 ./pocketd tx migration import-morse-accounts \
-  tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json \
+  "tools/scripts/migration/msg_import_morse_accounts_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json" \
   --update-hash-only
+
 git commit -am "Auto-unstaked Morse validators for entity XXX"
 git push
 ```
@@ -190,27 +225,55 @@ This can **ONLY BE DONE ONCE** on networks with the `allow_morse_account_import_
 
 :::
 
-The following `import-morse-accounts` command can be used to import the canonical account state into Shannon:
+**Network-specific Import Commands:**
 
 ```bash
-pocketd tx migration import-morse-accounts morse_account_state.json \
-  --from pnf_alpha \
-  --home=$HOME/.pocket_prod \
-  --chain-id=pocket-alpha \
-  --gas=auto \
-  --gas-prices=1upokt \
-  --gas-adjustment=1.5 \
-  --grpc-addr=https://shannon-testnet-grove-grpc.alpha.poktroll.com \
-  --node=https://shannon-testnet-grove-rpc.alpha.poktroll.com
+# Set common variables
+export IMPORT_MSG_PATH="tools/scripts/migration/${MSG_IMPORT_MORSE_ACCOUNTS_PATH}"
+export GAS_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5"
+
+# MainNet
+## Port forward
+kubectl port-forward pods/mainnet-validator1-pocketd-0 26658:26657 9091:9090 -n mainnet
+
+## Run the command
+pocketd tx migration import-morse-accounts \
+  "$IMPORT_MSG_PATH" \
+  --from=grove_mainnet_genesis \
+  --home=~/.pocket_prod --keyring-backend=test \
+  --node=http://localhost:26658 --chain-id=pocket-alpha \
+  $GAS_FLAGS
+
+# Alpha TestNet
+## Port forward
+kubectl port-forward pods/alpha-validator1-pocketd-0 26658:26657 9091:9090 -n testnet-alpha
+
+## Run the command
+pocketd tx migration import-morse-accounts \
+  "$IMPORT_MSG_PATH" \
+  --from=pnf_alpha \
+  --home=~/.pocket_prod --keyring-backend=test \
+  --node=http://localhost:26658 --chain-id=pocket-alpha \
+  $GAS_FLAGS
+
+# Beta TestNet
+pocketd tx migration import-morse-accounts "$IMPORT_MSG_PATH" \
+  --from=pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e \
+  --home=~/.pocket_prod --keyring-backend=test \
+  --network=beta \
+  $GAS_FLAGS
+
+# LocalNet (for testing)
+pocketd tx migration import-morse-accounts \
+  "$IMPORT_MSG_PATH" \
+  --from=pnf \
+  --home=./localnet/pocketd --keyring-backend=test \
+  --node=http://localhost:26657 \
+  $GAS_FLAGS
 ```
 
 <details>
-<summary>Convenience functions for `import-morse-accounts` by network</summary>
-
-```bash
-# LocalNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pnf --home=./localnet/pocketd --network=local --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
-```
+<summary>Legacy convenience functions for `import-morse-accounts` by network</summary>
 
 ```bash
 # LocalNet
@@ -228,26 +291,28 @@ pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --f
 
 </details>
 
-### 7. Query Canonical State in Shannon
+### 6. Query Canonical State in Shannon
 
-The list of all claimable Morse accounts (balances/stakes) on Shannon can be retrieved using the following command:
+**Query All Claimable Accounts:**
 
 ```bash
 pocketd query migration list-morse-claimable-account
 ```
 
-A specific Morse address can be retrieved using the following command:
+**Query Specific Account:**
 
 ```bash
-pocketd query migration show-morse-claimable-account <morse-address>
+# Example: Query an auto-unstaked account
+export TEST_MORSE_ADDRESS="c409a9e0d1be8780fe0b29dcdf72f8a879fb110c"
+pocketd query migration show-morse-claimable-account "$TEST_MORSE_ADDRESS"
 ```
 
 <details>
-<summary>Convenience functions for `list-morse-claimable-account` by network</summary>
+<summary>Network-specific query commands</summary>
 
 ```bash
 # LocalNet
-pocketd query migration list-morse-claimable-account --network=local
+pocketd query migration list-morse-claimable-account --node=http://localhost:26657
 
 # Alpha TestNet
 pocketd query migration list-morse-claimable-account --network=alpha
@@ -261,9 +326,39 @@ pocketd query migration list-morse-claimable-account --network=main
 
 </details>
 
-### 8. Cleanup & Documentation
+**Validation Commands:**
 
-Document the details of the snapshot upload in [tools/scripts/migration/README.md](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/migration/README.md)/.
+```bash
+# Query an account that was auto-unstaked
+export TEST_MORSE_ADDRESS="c409a9e0d1be8780fe0b29dcdf72f8a879fb110c"
+pocketd query migration show-morse-claimable-account "$TEST_MORSE_ADDRESS"
+
+# Validate all accounts in the import message (LocalNet example)
+pocketd tx migration import-morse-accounts \
+  "tools/scripts/migration/msg_import_morse_accounts_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json" \
+  --from=pnf \
+  --home=./localnet/pocketd --keyring-backend=test \
+  --node=http://localhost:26657 \
+  --gas=auto --gas-adjustment=1.5
+```
+
+### 7. Cleanup & Documentation
+
+Document the details of the snapshot upload in [tools/scripts/migration/README.md](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/migration/README.md).
+
+**Update Migration Artifacts:**
+
+```bash
+# Document the completed migration
+echo "Snapshot Height: $MAINNET_SNAPSHOT_HEIGHT" >> tools/scripts/migration/README.md
+echo "Snapshot Date: $MAINNET_SNAPSHOT_DATE" >> tools/scripts/migration/README.md
+echo "Import Message: msg_import_morse_accounts_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json" >> tools/scripts/migration/README.md
+
+# Final commit
+git add tools/scripts/migration/README.md
+git commit -m "Updated migration documentation for snapshot ${MAINNET_SNAPSHOT_HEIGHT}"
+git push
+```
 
 ## State Validation: Morse Account Holders
 
@@ -276,7 +371,7 @@ Document the details of the snapshot upload in [tools/scripts/migration/README.m
 
 ### Why Validate?
 
-**The output in `msg_morse_import_accounts_${SNAPSHOT_HEIGHT}_${DATE}.json` MUST be validated before step 6.**
+**The output in `msg_morse_import_accounts_${SNAPSHOT_HEIGHT}_${DATE}.json` MUST be validated before step 5.**
 
 The [State Transfer Overview](3_state_transfer_overview.md) process determines the _official_ set of claimable Morse accounts (balances/stakes) on Shannon.
 
@@ -289,7 +384,7 @@ Firstly, **Retrieve** the latest proposed `msg_morse_import_accounts_${SNAPSHOT_
 Then, **Validate** using the Shannon CLI like so:
 
 ```bash
-pocketd tx migration validate-morse-accounts ./msg_import_morse_accounts_<SNAPSHOT_HEIGHT>_<SNAPSHOT_DATE>.json [morse_hex_address1, ...]
+pocketd tx migration validate-morse-accounts "./msg_import_morse_accounts_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json" [morse_hex_address1, ...]
 ```
 
 - You can pass multiple Morse addresses to the command
@@ -311,7 +406,7 @@ mv e2e/tests/morse_state_export.json morse_state_export.json
 
 ### `invalid character at start of key`
 
-If you're getting this error, make sure your `--home` flag points to a Shannon (not Morese) directory:
+If you're getting this error, make sure your `--home` flag points to a Shannon (not Morse) directory:
 
 ```bash
 failed to read in /Users/olshansky/.pocket/config/config.toml: While parsing config: toml: invalid character at start of key: {
