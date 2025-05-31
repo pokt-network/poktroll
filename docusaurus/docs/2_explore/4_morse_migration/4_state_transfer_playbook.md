@@ -151,9 +151,19 @@ Check the diff:
 rm tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json.backup.20250531_130114
 mv tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15_unstaked.json tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json
 git diff .
+```
+
+Update the hash, commit and push it:
+
+```bash
+./pocketd tx migration import-morse-accounts \
+  tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json \
+  --update-hash-only
 git commit -am "Auto-unstaked Morse validators for entity XXX"
 git push
 ```
+
+Repeat this process for each user with validators to unstake.
 
 #### 3.2 Shannon TestNet Only
 
@@ -201,9 +211,6 @@ pocketd tx migration import-morse-accounts morse_account_state.json \
 # LocalNet
 pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pnf --home=./localnet/pocketd --network=local --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
-
-<details>
-<summary>Convenience functions for `import-morse-accounts` by network</summary>
 
 ```bash
 # LocalNet

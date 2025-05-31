@@ -23,15 +23,25 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 
 	switch networkStr {
 	case "":
-	// No network flag was provided, so we don't need to set any flags.
+		// No network flag was provided, so we don't need to set any flags.
+		return nil
+
+	// LocalNet
 	case flags.LocalNetworkName:
 		return setNetworkRelatedFlags(cmd, pocket.LocalNetChainId, pocket.LocalNetRPCURL, pocket.LocalNetGRPCAddr)
+
+	// Shannon Alpha TestNet
 	case flags.AlphaNetworkName:
 		return setNetworkRelatedFlags(cmd, pocket.AlphaTestNetChainId, pocket.AlphaTestNetRPCURL, pocket.AlphaNetGRPCAddr)
+
+	// Shannon Beta TestNet
 	case flags.BetaNetworkName:
 		return setNetworkRelatedFlags(cmd, pocket.BetaTestNetChainId, pocket.BetaTestNetRPCURL, pocket.BetaNetGRPCAddr)
+
+	// MainNet
 	case flags.MainNetworkName:
 		return setNetworkRelatedFlags(cmd, pocket.MainNetChainId, pocket.MainNetRPCURL, pocket.MainNetGRPCAddr)
+
 	default:
 		return fmt.Errorf("unknown --network specified %q", networkStr)
 	}
@@ -68,14 +78,15 @@ func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr strin
 		}
 	}
 
+	// TODO_TECHDEBT(@bryanchriswhite): This should only be set on transactions, not queries.
 	// Also set --grpc-insecure flag, but ONLY for LocalNet.
-	if chainId == pocket.LocalNetChainId {
-		if !cmd.Flags().Changed(cosmosflags.FlagGRPCInsecure) {
-			if err := cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, "true"); err != nil {
-				return err
-			}
-		}
-	}
+	// if chainId == pocket.LocalNetChainId {
+	// 	if !cmd.Flags().Changed(cosmosflags.FlagGRPCInsecure) {
+	// 		if err := cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, "true"); err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
 
 	return nil
 }

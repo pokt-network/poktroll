@@ -3,13 +3,16 @@ package cmd
 import (
 	"bytes"
 	"encoding/base64"
+	json "encoding/json"
 	"os"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
@@ -81,6 +84,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Only update the hash state
 	if updateHashOnly {
 		var actualMorseAccountStateHash []byte
 		actualMorseAccountStateHash, err = msgImportMorseClaimableAccounts.GetMorseAccountState().GetHash()
@@ -89,7 +93,15 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 		}
 		msgImportMorseClaimableAccounts.MorseAccountStateHash = actualMorseAccountStateHash
 
-		msgImportMorseClaimableAccountsJSONBz, err = cmtjson.MarshalIndent(msgImportMorseClaimableAccounts, "", "  ")
+		msgImportMorseClaimableAccounts, err = migrationtypes.NewMsgImportMorseClaimableAccounts(
+			authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			msgImportMorseClaimableAccounts.GetMorseAccountState(),
+		)
+		if err != nil {
+			return err
+		}
+
+		msgImportMorseClaimableAccountsJSONBz, err = json.MarshalIndent(msgImportMorseClaimableAccounts, "", "  ")
 		if err != nil {
 			return err
 		}
