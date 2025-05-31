@@ -267,7 +267,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 
 	// Loop through all EXISTING Morse accounts and map them to NEW Shannon accounts.
 	for _, morseAccount := range morseAccounts {
-		mapping, mappingErr := mappingAccounts(cmd, morseAccount)
+		mapping, mappingErr := mappingAccounts(ctx, clientCtx, cmd, morseAccount)
 		if mappingErr != nil {
 			// On error, break loop and return.
 			// Partial results will be written to output-file due to deferred write above.
