@@ -6,7 +6,7 @@ sidebar_position: 4
 A gentle high-level introduction to token minting and burning, intended to understand
 the different variables involved and how they interact.
 
-::warning Morse Readers
+:::warning Morse Readers
 
 If you were involved in the "Morse" network of Pocket Network, approach
 this document from a first-principles perspective. **Do not try to draw parallels**.
@@ -112,6 +112,12 @@ u\text{POKT} &= \frac{\text{EstimatedOffchainComputeUnits} \times \text{ComputeU
 \end{aligned}
 $$
 
+:::warning Rendering bug (ignore the duplication)
+
+TODO(@olshansk): Look into why this equation renders twice: as latex and plaintext.
+
+:::
+
 ### 💰 Example with Numbers
 
 Assume the following Offchain market driven numbers:
@@ -120,12 +126,12 @@ Assume the following Offchain market driven numbers:
 - **Market rate**: $5M for 1M relays
 - **Session**: Num actual offchain relays between App (User) & Supplier (Operator)
 
-| Num Relays     | Description                           | RelayMiningDifficulty (RMD) | ComputeUnitsPerRelay (CUPR) | ComputeUnitsToTokenMultiplier (CUTTM) | ComputeUnitCostGranularity (CUCG) | Estimated Compute Units (CU)                       | uPOKT Result                                                                   | USD <br> (at $0.10/POKT) |
-| -------------- | ------------------------------------- | --------------------------- | --------------------------- | ------------------------------------- | --------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------ |
-| **1,000,000**  | Baseline values                       | 1.0                         | 1.0                         | 50                                    | 1                                 | 1,000,000 x 1 x 1 <br/> = 1,000,000                | 1,000,000 × 50 / 1 <br/> = **50,000,000 uPOKT <br/> = 50 POKT**                | **$5.00**                |
-| **1,000,000**  | High multiplier <br> High granularity | 1.0                         | 1.0                         | 50,000,000                            | 1e6                               | 1,000,000 x 1 x 1 <br/> = 1,000,000                | 1,000,000 × 50,000,000 / 1,000,000 <br/> = **50,000,000 uPOKT <br/>= 50 POKT** | **$5.00**                |
-| **1,000,000**  | High compute units per relay          | 1.0                         | 5.0                         | 50                                    | 1                                 | 1,000,000 x 1 x 5 <br/> = 5,000,000                | 5,000,000 × 50 / 1 <br/> = **250,000,000 uPOKT <br/> = 250 POKT**              | **$25.00**               |
-| **10,000,000** | Adjusted relay mining difficulty      | 0.1                         | 1.0                         | 50                                    | 1                                 | 1,000,000 x <br/>(0.1 / 0.1) x 1 <br/> = 1,000,000 | 1,000,000 × 50 / 1 <br/> = **5,000,000 uPOKT <br/> = 5 POKT**                  | **$5.00**                |
+| Num Relays     | Description                            | RelayMiningDifficulty (RMD) | ComputeUnitsPerRelay (CUPR) | ComputeUnitsToTokenMultiplier (CUTTM) | ComputeUnitCostGranularity (CUCG) | Estimated Compute Units (CU)                       | uPOKT Result                                                                   | USD <br/> (at $0.10/POKT) |
+| -------------- | -------------------------------------- | --------------------------- | --------------------------- | ------------------------------------- | --------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------- |
+| **1,000,000**  | Baseline values                        | 1.0                         | 1.0                         | 50                                    | 1                                 | 1,000,000 x 1 x 1 <br/> = 1,000,000                | 1,000,000 × 50 / 1 <br/> = **50,000,000 uPOKT <br/> = 50 POKT**                | **$5.00**                 |
+| **1,000,000**  | High multiplier <br/> High granularity | 1.0                         | 1.0                         | 50,000,000                            | 1e6                               | 1,000,000 x 1 x 1 <br/> = 1,000,000                | 1,000,000 × 50,000,000 / 1,000,000 <br/> = **50,000,000 uPOKT <br/>= 50 POKT** | **$5.00**                 |
+| **1,000,000**  | High compute units per relay           | 1.0                         | 5.0                         | 50                                    | 1                                 | 1,000,000 x 1 x 5 <br/> = 5,000,000                | 5,000,000 × 50 / 1 <br/> = **250,000,000 uPOKT <br/> = 250 POKT**              | **$25.00**                |
+| **10,000,000** | Adjusted relay mining difficulty       | 0.1                         | 1.0                         | 50                                    | 1                                 | 1,000,000 x <br/>(0.1 / 0.1) x 1 <br/> = 1,000,000 | 1,000,000 × 50 / 1 <br/> = **5,000,000 uPOKT <br/> = 5 POKT**                  | **$5.00**                 |
 
 :::note Relay Mining Difficulty
 
