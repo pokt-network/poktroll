@@ -33,30 +33,41 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 
 Go to [Liquify's Snapshot Explorer](https://pocket-snapshot-uk.liquify.com/#/pruned/) and download the latest pruned snapshot.
 
-:::warning
+:::tip Multi-threaded Download
 
-If you're reproducing the Morse state migration process, for validation purposes, you MUST use the **same snapshot height** in order to guarantee deterministic and correct results.
+Use a tool like [aria2c](https://aria2.github.io/) for a faster multi-threaded download.
 
-See the table in [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) to
-ensure the correct snapshot heights are used.
+**For example**:
+
+```bash
+aria2c -x 16 -s 16 -k 1M https://pocket-snapshot-us.liquify.com/files/pruned/pruned-169726-169826-2025-05-27.tar
+```
 
 :::
 
 Export the snapshot into a new directory on your local machine.
 
+For example, for the `pruned-169726-169826-2025-05-27.tar` snapshot:
+
 ```bash
-mkdir -p $HOME/morse-mainnet-snapshot
+# 0. Create a new directory
+mkdir -p $HOME/morse-mainnet-snapshot-pruned-169726-169826-2025-05-27
+
 # 1. Untar the snapshot file
-tar -xvf <snapshot-file>.tar -C $HOME/morse-mainnet-snapshot
+tar -xvf pruned-169726-169826-2025-05-27.tar -C $HOME/morse-mainnet-snapshot-pruned-169726-169826-2025-05-27
+
 # 2. Change directory to the extracted snapshot folder
-cd $HOME/morse-mainnet-snapshot
+cd $HOME/morse-mainnet-snapshot-pruned-169726-169826-2025-05-27
 ```
 
 :::warning Note the height and date of the snapshot
 
 The height and date are encoded in the snapshot file name.
 
-For example, the snapshot file name `pruned-166819-166919-2025-04-29.tar` has a max height of `166918` and a date of `2025-04-29`; the end-height is exclusive.
+For example, the snapshot file name `pruned-169726-169826-2025-05-27.tar` has a max height of `169825` and a date of `2025-05-27`; the end-height is exclusive.
+
+See the table in [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) to
+ensure the correct snapshot heights are used.
 
 :::
 
@@ -65,8 +76,8 @@ For example, the snapshot file name `pruned-166819-166919-2025-04-29.tar` has a 
 Choose the snapshot height, which must be less than or equal to the snapshot height retrieved above. **This will be the published canonical export height.**
 
 ```bash
-export MAINNET_SNAPSHOT_HEIGHT="<HEIGHT>" # E.g. "166918"
-export MAINNET_SNAPSHOT_DATE="<DATE>" # E.g. "2025-04-29"
+export MAINNET_SNAPSHOT_HEIGHT="169825"
+export MAINNET_SNAPSHOT_DATE="2025-05-27"
 export MORSE_MAINNET_STATE_EXPORT_PATH="./morse_state_export_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json"
 pocket --datadir="$HOME/morse-mainnet-snapshot" util export-genesis-for-reset "$MAINNET_SNAPSHOT_HEIGHT" pocket > "$MORSE_MAINNET_STATE_EXPORT_PATH"
 ```
@@ -76,9 +87,6 @@ pocket --datadir="$HOME/morse-mainnet-snapshot" util export-genesis-for-reset "$
 :::info Testing on Shannon TestNet?
 
 `MorseClaimableAccount`s imported to Shannon TestNet(s) are a merge of the Morse MainNet and TestNet state exports, for developer convenience.
-
-See [Migration Testing](12_testnet_testing.md) for additional instructions.
-Follow the steps there, and resume **from the next step (i.e. skip this step)**.
 
 :::
 
