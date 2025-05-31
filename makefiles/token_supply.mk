@@ -1,0 +1,4 @@
+- Get total staked
+- Get total supply
+- Get per module
+- Easily track it over time

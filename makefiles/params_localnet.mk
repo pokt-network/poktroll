@@ -2,7 +2,6 @@
 ### Params ###
 ##############
 
-# TODO_CONSIDERATION: additional factoring (e.g. POCKETD_FLAGS).
 PARAM_FLAGS = --home=$(POCKETD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE)
 
 ### Tokenomics Module Params ###

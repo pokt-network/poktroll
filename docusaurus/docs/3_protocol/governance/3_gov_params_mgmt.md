@@ -3,6 +3,44 @@ title: Governance Params Management
 sidebar_position: 3
 ---
 
+
+## Governance Parameters
+
+### User Experience Questions
+
+1. **What governance params are available?**
+2. **How do I check the current governance param values?**
+3. **How do I update a specific value?**
+
+### Parameter Categories
+
+#### Application Parameters
+
+- **App Min Stake**: Minimum stake required for application participation
+- **App Max Delegated Gateways**: Maximum number of gateways an application can delegate to
+
+#### Cosmos Parameters
+
+- Validator Parameters
+- Consensus Parameters
+- Staking Parameters
+- Slashing Parameters
+
+#### Service Module Parameters
+
+- Service-specific configuration parameters
+
+#### Tokenomics Parameters
+
+- Parameters controlling token economics and reward calculations
+
+#### Shared Parameters
+
+- Cross-module shared configuration values
+
+- Show how to query everything
+- Show how to update everything
+
 :::warning Authority only
 
 This page is for Pocket Network Authority members only on how to update and manage onchain parameters.

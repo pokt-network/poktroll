@@ -419,7 +419,8 @@ include ./makefiles/tests.mk
 include ./makefiles/localnet.mk
 include ./makefiles/query.mk
 include ./makefiles/testnet.mk
-include ./makefiles/params.mk
+include ./makefiles/params_localnet.mk
+include ./makefiles/params_governance.mk
 include ./makefiles/applications.mk
 include ./makefiles/suppliers.mk
 include ./makefiles/gateways.mk
