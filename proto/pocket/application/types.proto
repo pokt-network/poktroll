@@ -49,8 +49,7 @@ message Application {
   // Information about pending application transfers
   PendingApplicationTransfer pending_transfer = 7;
 
-  // service_usage_metrics tracks relay volume and compute units consumed per service
-  // It is updated when claims are settled in the tokenomics module
+  // service_usage_metrics tracks tracks the onchain services consumed by this application.
   repeated pocket.shared.ServiceUsageMetrics service_usage_metrics = 8;
 }
 

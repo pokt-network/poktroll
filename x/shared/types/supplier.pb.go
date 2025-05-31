@@ -5,14 +5,13 @@ package types
 
 import (
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-
 	_ "github.com/cosmos/cosmos-proto"
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -44,8 +43,7 @@ type Supplier struct {
 	// List of historical service configuration updates, tracking the suppliers
 	// services update and corresponding activation heights.
 	ServiceConfigHistory []*ServiceConfigUpdate `protobuf:"bytes,6,rep,name=service_config_history,json=serviceConfigHistory,proto3" json:"service_config_history,omitempty"`
-	// service_usage_metrics tracks relay volume and compute units provided per service
-	// It is updated when claims are settled in the tokenomics module
+	// service_usage_metrics tracks tracks the onchain services consumed by this supplier.
 	ServiceUsageMetrics []*ServiceUsageMetrics `protobuf:"bytes,7,rep,name=service_usage_metrics,json=serviceUsageMetrics,proto3" json:"service_usage_metrics,omitempty"`
 }
 

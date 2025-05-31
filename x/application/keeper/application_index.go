@@ -290,10 +290,12 @@ func (k Keeper) removeApplicationServiceUsageMetricsIndex(
 	application types.Application,
 ) {
 	appServiceUsageMetricsStore := k.getApplicationServiceUsageMetricsStore(ctx)
+	appServiceUsageMetricsIterator := k.getApplicationServiceUsageMetricsIterator(ctx, application.Address)
 
-	for _, appServiceUsageMetrics := range application.ServiceUsageMetrics {
-		appServiceUsageMetricsStore.Delete(
-			types.ServiceUsageMetricsKey(application.Address, appServiceUsageMetrics.ServiceId),
-		)
+	// TODO_CONSIDERATION: We could keep the metrics indefinitely for historical purposes
+	// even after the application is removed.
+	for ; appServiceUsageMetricsIterator.Valid(); appServiceUsageMetricsIterator.Next() {
+		// Delete each service usage metrics entry for the application
+		appServiceUsageMetricsStore.Delete(appServiceUsageMetricsIterator.Key())
 	}
 }

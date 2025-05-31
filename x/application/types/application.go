@@ -38,7 +38,11 @@ func (app *Application) IsActive(queryHeight int64) bool {
 // UpdateServiceUsageMetrics increments the service usage metrics for a specific service
 // - It finds existing metrics for the service or initializes a new one
 // - Increments relay and compute unit counts by the provided values
-func (app *Application) UpdateServiceUsageMetrics(serviceId string, numRelays, numComputeUnits uint64) {
+func (app *Application) UpdateServiceUsageMetrics(
+	serviceId string,
+	numRelays,
+	numComputeUnits uint64,
+) {
 	var serviceUsageMetrics *sharedtypes.ServiceUsageMetrics
 	for _, existingServiceUsageMetrics := range app.ServiceUsageMetrics {
 		if existingServiceUsageMetrics.ServiceId == serviceId {

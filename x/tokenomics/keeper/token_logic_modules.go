@@ -212,9 +212,8 @@ func (k Keeper) ProcessTokenLogicModules(
 		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
 
-		// Create a dehydrated application copy without service usage metrics to add to the event.
-		// This prevents bloating the event with potentially large metrics data
-		// while preserving all other application information
+		// Create a dehydrated application copy without hydrated data to add to the event.
+		// This prevents bloating the event with potentially large unnecessary data
 		dehydratedApplication := *application
 		dehydratedApplication.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
 
@@ -233,11 +232,15 @@ func (k Keeper) ProcessTokenLogicModules(
 		}
 	}
 
+	// Get the number of estimated compute units consumed to update the usage metrics
+	// of the corresponding service, application and supplier.
 	numEstimatedComputeUnits, err := pendingResult.Claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
 	if err != nil {
 		return err
 	}
 
+	// Get the number of estimated relays served  to update the usage metrics
+	// of the corresponding service, application and supplier.
 	numEstimatedRelays, err := pendingResult.Claim.GetNumEstimatedRelays(relayMiningDifficulty)
 	if err != nil {
 		return err

@@ -167,6 +167,7 @@ func (k Keeper) hydrateSupplierServiceUsageMetrics(
 	supplier *sharedtypes.Supplier,
 ) {
 	// Hydrate the supplier's service usage metrics
+	existingMetrics := make(map[string]struct{})
 	serviceUsageMetricsIterator := k.getSupplierServiceUsageMetricsIterator(ctx, supplier.OperatorAddress)
 	for ; serviceUsageMetricsIterator.Valid(); serviceUsageMetricsIterator.Next() {
 		supplierServiceUsageMetrics, err := serviceUsageMetricsIterator.Value()
@@ -179,6 +180,17 @@ func (k Keeper) hydrateSupplierServiceUsageMetrics(
 			supplier.ServiceUsageMetrics,
 			supplierServiceUsageMetrics.ServiceUsageMetrics,
 		)
+		existingMetrics[supplierServiceUsageMetrics.ServiceUsageMetrics.ServiceId] = struct{}{}
+	}
+
+	// Ensure all services in the supplier's service config history have metrics
+	for _, serviceConfig := range supplier.ServiceConfigHistory {
+		if _, exists := existingMetrics[serviceConfig.Service.ServiceId]; !exists {
+			// Initialize empty metrics for services without existing metrics
+			supplier.ServiceUsageMetrics = append(supplier.ServiceUsageMetrics, &sharedtypes.ServiceUsageMetrics{
+				ServiceId: serviceConfig.Service.ServiceId,
+			})
+		}
 	}
 }
 

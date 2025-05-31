@@ -43,6 +43,10 @@ func (claim *Claim) GetNumEstimatedComputeUnits(
 }
 
 // GetNumEstimatedRelays returns the claim's estimated number of relays.
+//
+// This function calculates the estimated total number of relays that were actually served
+// off-chain by scaling the on-chain volume applicable relays using the relay mining
+// difficulty multiplier.
 func (claim *Claim) GetNumEstimatedRelays(
 	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
 ) (numEstimatedRelays uint64, err error) {

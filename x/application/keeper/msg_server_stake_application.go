@@ -175,7 +175,7 @@ func (k Keeper) createApplication(
 		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
 		ServiceUsageMetrics:       make([]*sharedtypes.ServiceUsageMetrics, 0),
 	}
-	updateAppServiceUsageMetrics(&application)
+	initializeAppServiceUsageMetrics(&application)
 
 	return application
 }
@@ -206,16 +206,16 @@ func (k Keeper) updateApplication(
 	}
 	app.ServiceConfigs = msg.Services
 
-	updateAppServiceUsageMetrics(app)
+	initializeAppServiceUsageMetrics(app)
 
 	return nil
 }
 
-// updateAppServiceUsageMetrics ensures that the application has usage metrics tracking for all its services
+// initializeAppServiceUsageMetrics ensures that the application has usage metrics tracking for all its services
 // - Iterates through all service configs in the application
 // - Initializes metrics for newly added services with zero values
 // - Maintains existing metrics for services that already have them
-func updateAppServiceUsageMetrics(application *types.Application) {
+func initializeAppServiceUsageMetrics(application *types.Application) {
 	for _, service := range application.ServiceConfigs {
 		serviceUsageMetricsExists := false
 		for _, serviceUsageMetrics := range application.ServiceUsageMetrics {

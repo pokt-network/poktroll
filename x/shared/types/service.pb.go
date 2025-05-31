@@ -8,13 +8,12 @@ package types
 
 import (
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -417,9 +416,10 @@ func (m *ConfigOption) GetValue() string {
 	return ""
 }
 
-// ServiceUsageMetrics tracks usage statistics for a specific service
-// - Records total number of relays and compute units consumed
-// - It is updated during claims settlement in the tokenomics module
+// ServiceUsageMetrics tracks cumulative (monotonically increasing) onchain service usage
+// - Tracks total # of relays serviced
+// - Tracks total # of compute units consumed
+// - Updated during claim settlement
 type ServiceUsageMetrics struct {
 	ServiceId         string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
 	TotalRelays       uint64 `protobuf:"varint,2,opt,name=total_relays,json=totalRelays,proto3" json:"total_relays,omitempty"`

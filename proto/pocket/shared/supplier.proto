@@ -34,8 +34,7 @@ message Supplier {
   // services update and corresponding activation heights.
   repeated ServiceConfigUpdate service_config_history = 6;
 
-  // service_usage_metrics tracks relay volume and compute units provided per service
-  // It is updated when claims are settled in the tokenomics module
+  // service_usage_metrics tracks tracks the onchain services consumed by this supplier.
   repeated pocket.shared.ServiceUsageMetrics service_usage_metrics = 7;
 }
 

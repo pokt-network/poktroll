@@ -89,9 +89,10 @@ message ConfigOption {
   string value = 2; // Config option value
 }
 
-// ServiceUsageMetrics tracks usage statistics for a specific service
-// - Records total number of relays and compute units consumed
-// - It is updated during claims settlement in the tokenomics module
+// ServiceUsageMetrics tracks cumulative (monotonically increasing) onchain service usage
+// - Tracks total # of relays serviced
+// - Tracks total # of compute units consumed
+// - Updated during claim settlement
 message ServiceUsageMetrics {
   string service_id = 1;
   uint64 total_relays = 2;

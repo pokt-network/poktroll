@@ -73,9 +73,9 @@ func (k Keeper) GetApplication(
 	return app, true
 }
 
-// GetDehydratedApplication retrieves an application without loading its service usage metrics
-// - Returns basic application data without the potentially large metrics history
-// - More performant than GetApplication when metrics aren't needed
+// GetDehydratedApplication retrieves an application without loading its hydrated data
+// - Returns basic application data without potentially large supplementary data
+// - More performant than GetApplication when hydrated data isn't needed
 // - Used when only core application data is required (claim settlement, session building, etc.)
 func (k Keeper) GetDehydratedApplication(
 	ctx context.Context,
@@ -147,7 +147,7 @@ func (k Keeper) GetServiceUsageMetrics(
 	serviceUsageMetricsKey := types.ServiceUsageMetricsKey(applicationAddress, serviceId)
 	serviceUsageMetricsBz := serviceUsageMetricsStore.Get(serviceUsageMetricsKey)
 
-	// Return initialized empty metrics if none exist for this combination
+	// Return initialized empty metrics if none exist for this application
 	// This ensures we always return a valid metrics object with the correct serviceId
 	applicationServiceUsageMetrics := types.ApplicationServiceUsageMetrics{
 		ApplicationAddress: applicationAddress,
@@ -263,6 +263,7 @@ func (k Keeper) hydrateApplicationServiceUsageMetrics(
 	app *types.Application,
 ) {
 	// Hydrate the application's service usage metrics
+	existingMetrics := make(map[string]struct{})
 	serviceUsageMetricsIterator := k.getApplicationServiceUsageMetricsIterator(ctx, app.Address)
 	for ; serviceUsageMetricsIterator.Valid(); serviceUsageMetricsIterator.Next() {
 		appServiceUsageMetrics, err := serviceUsageMetricsIterator.Value()
@@ -272,6 +273,17 @@ func (k Keeper) hydrateApplicationServiceUsageMetrics(
 		}
 
 		app.ServiceUsageMetrics = append(app.ServiceUsageMetrics, appServiceUsageMetrics.ServiceUsageMetrics)
+		existingMetrics[appServiceUsageMetrics.ServiceUsageMetrics.ServiceId] = struct{}{}
+	}
+
+	// Ensure that each service config has a corresponding service usage metrics entry
+	for _, serviceConfig := range app.ServiceConfigs {
+		if _, exists := existingMetrics[serviceConfig.ServiceId]; !exists {
+			// Initialize empty metrics for services without existing metrics
+			app.ServiceUsageMetrics = append(app.ServiceUsageMetrics, &sharedtypes.ServiceUsageMetrics{
+				ServiceId: serviceConfig.ServiceId,
+			})
+		}
 	}
 }
 
@@ -326,6 +338,11 @@ func applicationUsageMetricsAccessorFn(
 		}
 
 		var serviceUsageMetrics types.ApplicationServiceUsageMetrics
+		// MustUnmarshal is safe here because:
+		// 1. The data was previously marshaled using the same codec when stored
+		// 2. The store only contains data of the unmarshaled type (ApplicationServiceUsageMetrics)
+		// 3. Any unmarshaling failure indicates corrupt store data, which should halt the chain
+		// 4. This follows the same pattern used throughout the codebase for store data unmarshaling
 		cdc.MustUnmarshal(serviceUsageMetricsBz, &serviceUsageMetrics)
 		return serviceUsageMetrics, nil
 	}
@@ -361,6 +378,7 @@ func (k Keeper) getApplicationTransferStore(ctx context.Context) storetypes.KVSt
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationTransferKeyPrefix))
 }
 
+// getApplicationServiceUsageMetricsStore returns a prefixed KVStore for service usage metrics.
 func (k Keeper) getApplicationServiceUsageMetricsStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceUsageMetricsKeyPrefix))
