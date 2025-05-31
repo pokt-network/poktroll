@@ -123,7 +123,7 @@ type TxContext interface {
 	SignTx(
 		keyName string,
 		txBuilder cosmosclient.TxBuilder,
-		offline, overwriteSig bool,
+		offline, overwriteSig, unordered bool,
 	) error
 
 	// EncodeTx takes a transaction builder and encodes it, returning its byte representation.
@@ -149,6 +149,9 @@ type TxContext interface {
 		signingKeyName string,
 		msgs ...cosmostypes.Msg,
 	) (uint64, error)
+
+	// WithUnordered returns a copy of the transaction context with the unordered flag set.
+	WithUnordered(bool) TxContext
 }
 
 // Block is an interface which abstracts the details of a block to its minimal
