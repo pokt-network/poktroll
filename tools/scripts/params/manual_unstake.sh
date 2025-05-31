@@ -4,6 +4,8 @@
 OUTPUT_FILE=""
 JSON_FILE=""
 VALIDATOR_LIST=""
+IN_PLACE=false
+NO_BACKUP=false
 
 # Parse command line options
 while getopts "o:ihb" opt; do
@@ -41,7 +43,13 @@ if [ $# -ne 2 ] || [ "$show_help" = true ]; then
     echo "    Fast version that processes all validators in a single jq pass"
     echo ""
     echo "USAGE:"
-    echo "    $0 [-o output_file] <path_to_json_file> <comma_separated_validator_list>"
+    echo "    $0 [-o output_file] [-i] [-b] <path_to_json_file> <comma_separated_validator_list>"
+    echo ""
+    echo "OPTIONS:"
+    echo "    -o output_file              Specify custom output file path"
+    echo "    -i                          Modify the original file in-place"
+    echo "    -b                          Skip creating backup files"
+    echo "    -h                          Show this help message"
     echo ""
     echo "###############################################################################"
     echo ""
@@ -72,8 +80,13 @@ if ! command -v jq &>/dev/null; then
     exit 1
 fi
 
-# Create backup (unless skipped)
-if [ "$NO_BACKUP" != true ]; then
+# Create backup (unless skipped or doing in-place without backup)
+BACKUP_FILE=""
+if [ "$NO_BACKUP" != true ] && [ "$IN_PLACE" = true ]; then
+    BACKUP_FILE="${JSON_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+    cp "$JSON_FILE" "$BACKUP_FILE"
+    echo "Created backup: $BACKUP_FILE"
+elif [ "$NO_BACKUP" != true ] && [ "$IN_PLACE" != true ]; then
     BACKUP_FILE="${JSON_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
     cp "$JSON_FILE" "$BACKUP_FILE"
     echo "Created backup: $BACKUP_FILE"
@@ -101,6 +114,13 @@ for i in "${!CLEANED_VALIDATORS[@]}"; do
 done
 VALIDATORS_JSON+="]"
 
+# For in-place modification, we need to use a temp file
+if [ "$IN_PLACE" = true ]; then
+    TEMP_FILE="${JSON_FILE}.tmp"
+else
+    TEMP_FILE="$OUTPUT_FILE"
+fi
+
 # Execute single jq command with validators as argument
 jq --argjson validators "$VALIDATORS_JSON" '
 .morse_account_state.accounts |= map(
@@ -116,30 +136,18 @@ jq --argjson validators "$VALIDATORS_JSON" '
     else
         .
     end
-)' "$JSON_FILE" >"$OUTPUT_FILE"
+)' "$JSON_FILE" >"$TEMP_FILE"
 
 if [ $? -ne 0 ]; then
     echo "Error: jq processing failed!"
+    rm -f "$TEMP_FILE"
     exit 1
 fi
 
-# If output file is different from input, offer to replace the original
-if [ "$OUTPUT_FILE" != "$JSON_FILE" ]; then
-    echo ""
-    echo "Processed file saved as: $OUTPUT_FILE"
-    echo "Original file: $JSON_FILE"
-    echo ""
-    read -p "Do you want to replace the original file with the processed version? (y/N): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        cp "$OUTPUT_FILE" "$JSON_FILE"
-        echo "Original file updated successfully!"
-        if [ "$NO_BACKUP" != true ]; then
-            echo "Backup is still available at: $BACKUP_FILE"
-        fi
-    else
-        echo "Original file unchanged. Processed version available at: $OUTPUT_FILE"
-    fi
+# If doing in-place modification, move temp file to original
+if [ "$IN_PLACE" = true ]; then
+    mv "$TEMP_FILE" "$JSON_FILE"
+    echo "File modified in-place: $JSON_FILE"
 fi
 
 # Count processed and missing validators in a single jq call
@@ -164,7 +172,9 @@ MISSING_VALIDATORS=($(echo "$RESULTS" | jq -r '.missing[]' 2>/dev/null))
 echo ""
 echo "==============================================================================="
 echo "Processing complete!"
-echo "Original file backed up to: $BACKUP_FILE"
+if [ -n "$BACKUP_FILE" ]; then
+    echo "Original file backed up to: $BACKUP_FILE"
+fi
 echo "Output file: $OUTPUT_FILE"
 echo "Processed validators: $PROCESSED_COUNT"
 

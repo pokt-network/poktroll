@@ -1,6 +1,19 @@
 #!/bin/bash
 
-FILE=tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json
+# Check if file argument is provided
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <json_file>"
+    echo "Example: $0 tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json"
+    exit 1
+fi
+
+FILE="$1"
+
+# Check if file exists
+if [ ! -f "$FILE" ]; then
+    echo "Error: File '$FILE' not found!"
+    exit 1
+fi
 
 # Qspider
 ./tools/scripts/params/manual_unstake.sh -i -b "$FILE" \
