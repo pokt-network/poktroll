@@ -125,7 +125,34 @@ cat "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
 
 Manually unstake all Morse validators on Shannon MainNet.
 
-The official list can be found [here](https://docs.google.com/spreadsheets/d/1V33oAE01s7JLXxjsnJYt7cg_ttaEKbXFFs_qpLKR9l0/edit?gid=0#gid=0).
+First, commit what you have to state.
+
+```bash
+mv "$MORSE_MAINNET_STATE_EXPORT_PATH" ./tools/scripts/migration/
+mv "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" ./tools/scripts/migration/
+git commit -am "Added Morse MainNet state export and import message"
+git push
+```
+
+Then, use the [official list](https://docs.google.com/spreadsheets/d/1V33oAE01s7JLXxjsnJYt7cg_ttaEKbXFFs_qpLKR9l0/edit)
+of validators that requested an auto-unstake to unstake them.
+
+For example, the following will create `tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15_unstaked.json`
+
+```bash
+./tools/scripts/params/manual_unstake.sh \
+  tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json \
+  'c409a9e0d1be8780fe0b29dcdf72f8a879fb110c,08e5727cd7fbc4bc97ef3246da7379043f949f70,278654d9daf0e0be2c4e4da5a26c3b4149c5f6d0,81522de7711246fca147a34173dd2a462dc77a5a,c86b27e72c32b64db3eae137ffa84fec007a9062,79cbe645f2b4fa767322faf59a0093e6b73a2383,a86b6a5517630a23aec3dc4e3479a5818c575ac2,882f3f23687a9f3dddf6c65d66e9e3184ca67573,96f2c414b6f3afbba7ba571b7de360709d614e62,05db988509a25dd812dfd1a421cbf47078301a16'
+```
+
+Check the diff:
+
+```bash
+diff tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15_unstaked.json tools/scripts/migration/msg_import_morse_accounts_165497_2025-04-15.json
+git diff .
+git commit -am "Auto-unstaked Morse validators"
+git push
+```
 
 #### 3.2 Shannon TestNet Only
 
