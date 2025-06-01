@@ -2,7 +2,7 @@
   "body": {
     "messages": [
       {
-        "@type": "/pocket.slashing.MsgUpdateParams",
+        "@type": "/cosmos.slashing.v1beta1.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
           "signed_blocks_window": "100",

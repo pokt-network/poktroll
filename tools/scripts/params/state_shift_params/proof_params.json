@@ -5,20 +5,20 @@
         "@type": "/pocket.proof.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
-  "proof_request_probability": 0.25,
-  "proof_requirement_threshold": {
-    "denom": "upokt",
-    "amount": "20000000"
-  },
-  "proof_missing_penalty": {
-    "denom": "upokt",
-    "amount": "320000000"
-  },
-  "proof_submission_fee": {
-    "denom": "upokt",
-    "amount": "1"
-  }
-}
+          "proof_request_probability": 0.2,
+          "proof_requirement_threshold": {
+            "denom": "upokt",
+            "amount": "100000000"
+          },
+          "proof_missing_penalty": {
+            "denom": "upokt",
+            "amount": "100000000"
+          },
+          "proof_submission_fee": {
+            "denom": "upokt",
+            "amount": "1000000"
+          }
+        }
       }
     ]
   }

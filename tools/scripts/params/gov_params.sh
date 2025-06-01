@@ -4,12 +4,14 @@
 #
 # Usage: ./update_params.sh <command> [module_name] [options]
 #   <command>: Required. One of:
-#     query <module_name>  - Query parameters for a specific module
-#     query-all           - Query parameters for all available modules
-#     update <module_name> - Generate update transaction for a module
+#     query <module_name>     - Query parameters for a specific module
+#     query-all              - Query parameters for all available modules
+#     update <module_name>    - Generate update transaction for a module
+#     export-params <module_name> - Export parameters to a specified file
 #   [options]: Optional flags:
 #     --env <environment>: Target environment (local, alpha, beta, main). Default: beta
 #     --output-dir <dir>: Directory to save transaction files. Default: . (current directory)
+#     --output-file <file>: Specific output file path (export-params only)
 #     --network <network>: Network flag for query. Default: uses --env value
 #     --home <path>: Home directory for pocketd. Default: ~/.pocket
 #     --no-prompt: Skip the edit prompt and just generate the template (update only)
@@ -18,7 +20,8 @@
 # 1. Query current parameters for a specific module or all modules
 # 2. Display them in a pretty formatted output
 # 3. Generate transaction template files for parameter updates
-# 4. Provide instructions for submitting transactions
+# 4. Export parameters to a specific file path for external tools
+# 5. Provide instructions for submitting transactions
 
 set -e
 
@@ -39,6 +42,17 @@ AVAILABLE_MODULES=(
     "session"
     "proof"
     "shared"
+)
+
+# Cosmos modules (use cosmos.module.v1beta1.MsgUpdateParams)
+COSMOS_MODULES=(
+    "auth"
+    "bank"
+    "gov"
+    "staking"
+    "slashing"
+    "distribution"
+    "mint"
 )
 
 # Function to get module description
@@ -63,14 +77,31 @@ get_module_description() {
     esac
 }
 
+# Function to get the correct message type for a module
+get_message_type() {
+    local module=$1
+
+    # Check if it's a Cosmos module
+    for cosmos_module in "${COSMOS_MODULES[@]}"; do
+        if [ "$cosmos_module" = "$module" ]; then
+            echo "/cosmos.${module}.v1beta1.MsgUpdateParams"
+            return
+        fi
+    done
+
+    # Default to Pocket module format
+    echo "/pocket.${module}.MsgUpdateParams"
+}
+
 # Check if command is provided
 if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
     echo "Usage: ./update_params.sh <command> [module_name] [options]"
     echo ""
     echo "Commands:"
-    echo "  query <module_name>  - Query parameters for a specific module"
-    echo "  query-all           - Query parameters for all available modules"
-    echo "  update <module_name> - Generate update transaction for a module"
+    echo "  query <module_name>     - Query parameters for a specific module"
+    echo "  query-all              - Query parameters for all available modules"
+    echo "  update <module_name>    - Generate update transaction for a module"
+    echo "  export-params <module_name> - Export parameters to a specified file"
     echo ""
     echo "Available modules:"
     for module in "${AVAILABLE_MODULES[@]}"; do
@@ -80,6 +111,7 @@ if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
     echo "Available options:"
     echo "  --env <environment>: Target environment (local, alpha, beta, main). Default: beta"
     echo "  --output-dir <dir>: Directory to save transaction files. Default: . (current directory)"
+    echo "  --output-file <file>: Specific output file path (export-params only)"
     echo "  --network <network>: Network flag for query. Default: uses --env value"
     echo "  --home <path>: Home directory for pocketd. Default: ~/.pocket"
     echo "  --no-prompt: Skip the edit prompt and just generate the template (update only)"
@@ -89,17 +121,18 @@ if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
     echo "  ./update_params.sh query-all --env alpha"
     echo "  ./update_params.sh update tokenomics --env local"
     echo "  ./update_params.sh update auth --env beta --output-dir ./params"
+    echo "  ./update_params.sh export-params application --output-file tools/scripts/params/state_shift_params/application_params.json"
     exit 1
 fi
 
 COMMAND="$1"
 shift # Remove command from arguments
 
-# For update command, module name is required
-if [ "$COMMAND" = "update" ]; then
+# For update and export-params commands, module name is required
+if [ "$COMMAND" = "update" ] || [ "$COMMAND" = "export-params" ]; then
     if [ -z "$1" ] || [[ "$1" == --* ]]; then
-        echo "Error: Module name is required for update command" >&2
-        echo "Usage: ./update_params.sh update <module_name> [options]"
+        echo "Error: Module name is required for $COMMAND command" >&2
+        echo "Usage: ./update_params.sh $COMMAND <module_name> [options]"
         exit 1
     fi
     MODULE_NAME="$1"
@@ -116,13 +149,14 @@ elif [ "$COMMAND" = "query-all" ]; then
     # No module name needed for query-all
     MODULE_NAME=""
 else
-    echo "Error: Unknown command '$COMMAND'. Use: query, query-all, or update" >&2
+    echo "Error: Unknown command '$COMMAND'. Use: query, query-all, update, or export-params" >&2
     exit 1
 fi
 
 # Default values
 ENVIRONMENT="beta"
 OUTPUT_DIR="."
+OUTPUT_FILE=""
 HOME_DIR="~/.pocket"
 NETWORK=""
 NO_PROMPT=false
@@ -136,6 +170,10 @@ while [[ "$#" -gt 0 ]]; do
         ;;
     --output-dir)
         OUTPUT_DIR="$2"
+        shift 2
+        ;;
+    --output-file)
+        OUTPUT_FILE="$2"
         shift 2
         ;;
     --network)
@@ -279,6 +317,89 @@ query_all_modules() {
     echo ""
 }
 
+# Function to export parameters to a specific file
+export_module_params() {
+    local module=$1
+    local output_file=$2
+
+    # Build the query command
+    local query_cmd="./pocketd query $module params --home=$HOME_DIR"
+    if [ "$NETWORK" != "local" ]; then
+        query_cmd="$query_cmd --network=$NETWORK"
+    fi
+    query_cmd="$query_cmd -o json"
+
+    echo "========================================="
+    echo "Exporting $module parameters"
+    echo "Environment: $ENVIRONMENT"
+    echo "Network: $NETWORK"
+    echo "Output file: $output_file"
+    echo "========================================="
+    echo ""
+
+    # Query current parameters
+    local current_params
+    current_params=$(eval $query_cmd)
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to query parameters for module '$module'" >&2
+        exit 1
+    fi
+
+    # Extract just the params object
+    local params_only
+    params_only=$(echo "$current_params" | jq '.params')
+
+    if [ "$params_only" = "null" ] || [ -z "$params_only" ]; then
+        echo "❌ No parameters found for module '$module'"
+        exit 1
+    fi
+
+    # Create the directory if it doesn't exist
+    local output_dir
+    output_dir=$(dirname "$output_file")
+    mkdir -p "$output_dir"
+
+    # Get the correct message type for this module
+    local message_type
+    message_type=$(get_message_type "$module")
+
+    # Generate the full transaction structure
+    local transaction_content
+    transaction_content=$(
+        cat <<EOF
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "$message_type",
+        "authority": "$AUTHORITY",
+        "params": $(echo "$params_only" | jq '.')
+      }
+    ]
+  }
+}
+EOF
+    )
+
+    # Write to file
+    echo "$transaction_content" | jq '.' >"$output_file"
+
+    if [ $? -eq 0 ]; then
+        echo "✅ Successfully exported $module parameters to: $output_file"
+        echo ""
+        echo "Transaction structure:"
+        echo "$transaction_content" | jq '.'
+        echo ""
+        echo "The file contains the complete transaction structure with MsgUpdateParams."
+        echo "You can modify the 'params' section as needed for your parameter updates."
+        echo ""
+        echo "Message type used: $message_type"
+    else
+        echo "❌ Failed to write parameters to: $output_file"
+        exit 1
+    fi
+}
+
 # Execute the requested command
 case $COMMAND in
 "query")
@@ -286,6 +407,16 @@ case $COMMAND in
     ;;
 "query-all")
     query_all_modules
+    ;;
+"export-params")
+    # Validate that output file is specified
+    if [ -z "$OUTPUT_FILE" ]; then
+        echo "Error: --output-file is required for export-params command" >&2
+        echo "Usage: ./update_params.sh export-params <module_name> --output-file <path>"
+        echo "Example: ./update_params.sh export-params application --output-file tools/scripts/params/state_shift_params/application_params.json"
+        exit 1
+    fi
+    export_module_params "$MODULE_NAME" "$OUTPUT_FILE"
     ;;
 "update")
     # Existing update logic starts here
@@ -322,15 +453,18 @@ case $COMMAND in
 
     # Generate timestamp for unique filename
     TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-    OUTPUT_FILE="$OUTPUT_DIR/${MODULE_NAME}_params_${ENVIRONMENT}_${TIMESTAMP}.json"
+    OUTPUT_FILE_UPDATE="$OUTPUT_DIR/${MODULE_NAME}_params_${ENVIRONMENT}_${TIMESTAMP}.json"
+
+    # Get the correct message type for this module
+    MESSAGE_TYPE=$(get_message_type "$MODULE_NAME")
 
     # Generate the transaction template
-    cat >"$OUTPUT_FILE" <<EOF
+    cat >"$OUTPUT_FILE_UPDATE" <<EOF
 {
   "body": {
     "messages": [
       {
-        "@type": "/pocket.${MODULE_NAME}.MsgUpdateParams",
+        "@type": "$MESSAGE_TYPE",
         "authority": "$AUTHORITY",
         "params": $(echo "$PARAMS_ONLY" | jq '.')
       }
@@ -340,7 +474,8 @@ case $COMMAND in
 EOF
 
     echo "========================================="
-    echo "Transaction template created: $OUTPUT_FILE"
+    echo "Transaction template created: $OUTPUT_FILE_UPDATE"
+    echo "Message type used: $MESSAGE_TYPE"
     echo "========================================="
     echo ""
 
@@ -354,17 +489,17 @@ EOF
 
         # Try to open with common editors
         if command -v windsurf >/dev/null 2>&1; then
-            windsurf "$OUTPUT_FILE"
+            windsurf "$OUTPUT_FILE_UPDATE"
         elif command -v code >/dev/null 2>&1; then
-            code "$OUTPUT_FILE"
+            code "$OUTPUT_FILE_UPDATE"
         elif command -v nano >/dev/null 2>&1; then
-            nano "$OUTPUT_FILE"
+            nano "$OUTPUT_FILE_UPDATE"
         elif command -v vim >/dev/null 2>&1; then
-            vim "$OUTPUT_FILE"
+            vim "$OUTPUT_FILE_UPDATE"
         elif command -v vi >/dev/null 2>&1; then
-            vi "$OUTPUT_FILE"
+            vi "$OUTPUT_FILE_UPDATE"
         else
-            echo "No suitable editor found. Please edit the file manually: $OUTPUT_FILE"
+            echo "No suitable editor found. Please edit the file manually: $OUTPUT_FILE_UPDATE"
         fi
 
         echo ""
@@ -378,9 +513,10 @@ EOF
     echo ""
     echo "To submit your parameter update transaction, run:"
     echo ""
-    echo "  pocketd tx authz exec $OUTPUT_FILE --from=$FROM_KEY --keyring-backend=test --chain-id=$CHAIN_ID $NODE --yes --home=$HOME_DIR --fees=200upokt"
+    echo "  pocketd tx authz exec $OUTPUT_FILE_UPDATE --from=$FROM_KEY --keyring-backend=test --chain-id=$CHAIN_ID $NODE --yes --home=$HOME_DIR --fees=200upokt"
     echo ""
-    echo "Template file location: $OUTPUT_FILE"
+    echo "Template file location: $OUTPUT_FILE_UPDATE"
+    echo "Message type used: $MESSAGE_TYPE"
     echo ""
     echo "⚠️  IMPORTANT: Review your changes carefully before submitting!"
     echo "⚠️  Parameter updates affect the entire network and cannot be easily reverted."
@@ -390,6 +526,6 @@ EOF
     echo "========================================="
     echo "Transaction preview:"
     echo "========================================="
-    cat "$OUTPUT_FILE" | jq '.'
+    cat "$OUTPUT_FILE_UPDATE" | jq '.'
     ;;
 esac

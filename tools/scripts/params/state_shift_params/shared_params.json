@@ -5,15 +5,15 @@
         "@type": "/pocket.shared.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
-          "num_blocks_per_session": "50",
-          "grace_period_end_offset_blocks": "1",
-          "claim_window_open_offset_blocks": "1",
-          "claim_window_close_offset_blocks": "4",
-          "proof_window_close_offset_blocks": "4",
+          "num_blocks_per_session": "60",
+          "grace_period_end_offset_blocks": "5",
+          "claim_window_open_offset_blocks": "2",
+          "claim_window_close_offset_blocks": "2",
+          "proof_window_close_offset_blocks": "2",
           "supplier_unbonding_period_sessions": "1",
           "application_unbonding_period_sessions": "1",
-          "compute_units_to_tokens_multiplier": "42000000",
           "gateway_unbonding_period_sessions": "1",
+          "compute_units_to_tokens_multiplier": "1000000",
           "compute_unit_cost_granularity": "1000000"
         }
       }
