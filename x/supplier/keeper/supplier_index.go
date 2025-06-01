@@ -182,16 +182,11 @@ func (k Keeper) indexSupplierServiceUsageMetrics(
 	appServiceUsageMetricsStore := k.getSupplierServiceUsageMetricsStore(ctx)
 
 	for _, serviceUsageMetrics := range supplier.ServiceUsageMetrics {
-		appServiceUsageMetrics := &sharedtypes.SupplierServiceUsageMetrics{
-			SupplierAddress:     supplier.OperatorAddress,
-			ServiceUsageMetrics: serviceUsageMetrics,
-		}
-
-		supplierServiceUsageMetricsBz := k.cdc.MustMarshal(appServiceUsageMetrics)
+		serviceUsageMetricsBz := k.cdc.MustMarshal(serviceUsageMetrics)
 
 		appServiceUsageMetricsStore.Set(
 			types.ServiceUsageMetricsKey(supplier.OperatorAddress, serviceUsageMetrics.ServiceId),
-			supplierServiceUsageMetricsBz,
+			serviceUsageMetricsBz,
 		)
 	}
 }

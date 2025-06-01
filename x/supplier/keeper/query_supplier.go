@@ -84,6 +84,7 @@ func (k Keeper) getAllSuppliers(
 
 			// Hydrate all supplier fields
 			k.hydrateSupplierServiceConfigs(ctx, &supplier)
+			k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
 
 			suppliers = append(suppliers, supplier)
 			return nil
@@ -151,8 +152,9 @@ func (k Keeper) getAllServiceSuppliers(
 				return status.Error(codes.Internal, err.Error())
 			}
 
-			// Load service configurations and history into the supplier object
+			// Hydrate all supplier fields
 			k.hydrateSupplierServiceConfigs(ctx, &supplier)
+			k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
 
 			// Add the supplier to the results
 			suppliers = append(suppliers, supplier)

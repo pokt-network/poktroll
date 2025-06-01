@@ -40,9 +40,10 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 		supplier.OwnerAddress = sample.AccAddress()
 		supplier.OperatorAddress = sample.AccAddress()
 		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: math.NewInt(int64(i))}
+		serviceId := fmt.Sprintf("svc%d", i)
 		supplier.Services = []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: fmt.Sprintf("svc%d", i),
+				ServiceId: serviceId,
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     fmt.Sprintf("http://localhost:%d", i),
@@ -58,6 +59,9 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 			1,
 			sharedtypes.NoDeactivationHeight,
 		)
+		supplier.ServiceUsageMetrics = map[string]*sharedtypes.ServiceUsageMetrics{
+			serviceId: {ServiceId: serviceId},
+		}
 		keeper.SetAndIndexDehydratedSupplier(ctx, *supplier)
 	}
 

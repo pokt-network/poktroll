@@ -114,19 +114,14 @@ func (k Keeper) RemoveApplication(ctx context.Context, application types.Applica
 // GetAllApplications returns all applications in the store.
 // - Ensures PendingUndelegations is always initialized
 func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Application) {
-	applicationStore := k.getApplicationStore(ctx)
-	iterator := storetypes.KVStorePrefixIterator(applicationStore, []byte{})
+	appIterator := k.GetAllApplicationsIterator(ctx)
+	defer appIterator.Close()
 
-	defer iterator.Close()
-
-	for ; iterator.Valid(); iterator.Next() {
-		var app types.Application
-		k.cdc.MustUnmarshal(iterator.Value(), &app)
-
-		// Ensure that the PendingUndelegations is an empty map and not nil when
-		// unmarshalling an app that has no pending undelegations.
-		if app.PendingUndelegations == nil {
-			app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+	for ; appIterator.Valid(); appIterator.Next() {
+		app, err := appIterator.Value()
+		if err != nil {
+			k.logger.Error(fmt.Sprintf("failed to get application: %v", err))
+			continue
 		}
 
 		apps = append(apps, app)
@@ -149,19 +144,16 @@ func (k Keeper) GetServiceUsageMetrics(
 
 	// Return initialized empty metrics if none exist for this application
 	// This ensures we always return a valid metrics object with the correct serviceId
-	applicationServiceUsageMetrics := types.ApplicationServiceUsageMetrics{
-		ApplicationAddress: applicationAddress,
-		ServiceUsageMetrics: &sharedtypes.ServiceUsageMetrics{
-			ServiceId: serviceId,
-		},
+	serviceUsageMetrics := sharedtypes.ServiceUsageMetrics{
+		ServiceId: serviceId,
 	}
 
 	if serviceUsageMetricsBz == nil {
-		return *applicationServiceUsageMetrics.ServiceUsageMetrics
+		return serviceUsageMetrics
 	}
 
-	k.cdc.MustUnmarshal(serviceUsageMetricsBz, &applicationServiceUsageMetrics)
-	return *applicationServiceUsageMetrics.ServiceUsageMetrics
+	k.cdc.MustUnmarshal(serviceUsageMetricsBz, &serviceUsageMetrics)
+	return serviceUsageMetrics
 }
 
 // GetAllUnstakingApplicationsIterator returns an iterator over all unstaking applications.
@@ -175,7 +167,7 @@ func (k Keeper) GetAllUnstakingApplicationsIterator(
 
 	unstakingAppsIterator := storetypes.KVStorePrefixIterator(unstakingApplicationsStore, []byte{})
 
-	applicationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc)
+	applicationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc, k.logger)
 	return sharedtypes.NewRecordIterator(unstakingAppsIterator, applicationAccessor)
 }
 
@@ -190,7 +182,7 @@ func (k Keeper) GetAllTransferringApplicationsIterator(
 
 	transferringAppsIterator := storetypes.KVStorePrefixIterator(transferApplicationsStore, []byte{})
 
-	applicationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc)
+	applicationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc, k.logger)
 	return sharedtypes.NewRecordIterator(transferringAppsIterator, applicationAccessor)
 }
 
@@ -210,7 +202,7 @@ func (k Keeper) GetDelegationsIterator(
 	gatewayKey := types.StringKey(gatewayAddress)
 	delegationsIterator := storetypes.KVStorePrefixIterator(delegationsStore, gatewayKey)
 
-	delegationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc)
+	delegationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc, k.logger)
 	return sharedtypes.NewRecordIterator(delegationsIterator, delegationAccessor)
 }
 
@@ -244,7 +236,7 @@ func (k Keeper) GetUndelegationsIterator(
 func (k Keeper) getApplicationServiceUsageMetricsIterator(
 	ctx context.Context,
 	applicationAddress string,
-) sharedtypes.RecordIterator[types.ApplicationServiceUsageMetrics] {
+) sharedtypes.RecordIterator[sharedtypes.ServiceUsageMetrics] {
 	serviceUsageMetricsStore := k.getApplicationServiceUsageMetricsStore(ctx)
 	appKey := types.ApplicationKey(applicationAddress)
 
@@ -262,27 +254,29 @@ func (k Keeper) hydrateApplicationServiceUsageMetrics(
 	ctx context.Context,
 	app *types.Application,
 ) {
+	if app.ServiceUsageMetrics == nil {
+		app.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
+	}
+
 	// Hydrate the application's service usage metrics
-	existingMetrics := make(map[string]struct{})
 	serviceUsageMetricsIterator := k.getApplicationServiceUsageMetricsIterator(ctx, app.Address)
 	for ; serviceUsageMetricsIterator.Valid(); serviceUsageMetricsIterator.Next() {
-		appServiceUsageMetrics, err := serviceUsageMetricsIterator.Value()
+		serviceUsageMetrics, err := serviceUsageMetricsIterator.Value()
 		if err != nil {
 			k.logger.Error(fmt.Sprintf("failed to get service usage metrics for app %s: %v", app.Address, err))
 			continue
 		}
 
-		app.ServiceUsageMetrics = append(app.ServiceUsageMetrics, appServiceUsageMetrics.ServiceUsageMetrics)
-		existingMetrics[appServiceUsageMetrics.ServiceUsageMetrics.ServiceId] = struct{}{}
+		app.ServiceUsageMetrics[serviceUsageMetrics.ServiceId] = &serviceUsageMetrics
 	}
 
 	// Ensure that each service config has a corresponding service usage metrics entry
 	for _, serviceConfig := range app.ServiceConfigs {
-		if _, exists := existingMetrics[serviceConfig.ServiceId]; !exists {
+		if _, ok := app.ServiceUsageMetrics[serviceConfig.ServiceId]; !ok {
 			// Initialize empty metrics for services without existing metrics
-			app.ServiceUsageMetrics = append(app.ServiceUsageMetrics, &sharedtypes.ServiceUsageMetrics{
+			app.ServiceUsageMetrics[serviceConfig.ServiceId] = &sharedtypes.ServiceUsageMetrics{
 				ServiceId: serviceConfig.ServiceId,
-			})
+			}
 		}
 	}
 }
@@ -293,6 +287,7 @@ func (k Keeper) hydrateApplicationServiceUsageMetrics(
 func applicationFromPrimaryKeyAccessorFn(
 	applicationStore storetypes.KVStore,
 	cdc codec.BinaryCodec,
+	logger log.Logger,
 ) sharedtypes.DataRecordAccessor[types.Application] {
 	return func(applicationKey []byte) (types.Application, error) {
 		applicationBz := applicationStore.Get(applicationKey)
@@ -302,6 +297,10 @@ func applicationFromPrimaryKeyAccessorFn(
 
 		var application types.Application
 		cdc.MustUnmarshal(applicationBz, &application)
+
+		// Ensure all fields are properly initialized as CosmosSDK stores empty slices/maps as nil,
+		// which can cause downstream issues.
+		initializeNilApplicationFields(logger, &application)
 
 		return application, nil
 	}
@@ -330,14 +329,14 @@ func undelegationAccessorFn(
 // to efficiently process service metrics records without loading entire application objects.
 func applicationUsageMetricsAccessorFn(
 	cdc codec.BinaryCodec,
-) sharedtypes.DataRecordAccessor[types.ApplicationServiceUsageMetrics] {
-	return func(serviceUsageMetricsBz []byte) (types.ApplicationServiceUsageMetrics, error) {
+) sharedtypes.DataRecordAccessor[sharedtypes.ServiceUsageMetrics] {
+	return func(serviceUsageMetricsBz []byte) (sharedtypes.ServiceUsageMetrics, error) {
 		if serviceUsageMetricsBz == nil {
 			err := fmt.Errorf("expecting service usage metrics bytes to be non-nil")
-			return types.ApplicationServiceUsageMetrics{}, err
+			return sharedtypes.ServiceUsageMetrics{}, err
 		}
 
-		var serviceUsageMetrics types.ApplicationServiceUsageMetrics
+		var serviceUsageMetrics sharedtypes.ServiceUsageMetrics
 		// MustUnmarshal is safe here because:
 		// 1. The data was previously marshaled using the same codec when stored
 		// 2. The store only contains data of the unmarshaled type (ApplicationServiceUsageMetrics)
@@ -412,6 +411,7 @@ func getApplicationAccessorFn(
 		var application types.Application
 		cdc.MustUnmarshal(applicationBz, &application)
 		initializeNilApplicationFields(logger, &application)
+
 		return application, nil
 	}
 }
@@ -443,6 +443,6 @@ func initializeNilApplicationFields(keeperLogger log.Logger, app *types.Applicat
 	}
 
 	if app.ServiceUsageMetrics == nil {
-		app.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
+		app.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
 	}
 }

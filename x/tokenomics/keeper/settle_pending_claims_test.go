@@ -837,7 +837,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// DEV_NOTE: The slashing flow skips populating all the supplier's history for performance reasons.
 	// The slashed supplier Services property already has the relevant active service configs at the time of the claimed session end height.
 	dehydratedSlashedSupplier := slashedSupplier
-	dehydratedSlashedSupplier.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
+	dehydratedSlashedSupplier.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
 	dehydratedSlashedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &dehydratedSlashedSupplier,
@@ -960,6 +960,17 @@ func (s *TestSuite) TestSettlePendingClaims_ServiceUsageMetrics() {
 	err := s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
+	// Set initial service usage metrics
+	claimedServicesMap := make(map[string]*sharedtypes.ServiceUsageMetrics)
+	for _, serviceId := range testServiceIds {
+		claimedServicesMap[serviceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId:         serviceId,
+			TotalRelays:       initialServiceUsageMetrics[serviceId],
+			TotalComputeUnits: initialServiceUsageMetrics[serviceId],
+		}
+		s.updateServiceUsageMetrics(ctx, t, claimedServicesMap[serviceId])
+	}
+
 	// Upsert the claims
 	for _, claim := range s.claims {
 		s.keepers.UpsertClaim(ctx, claim)
@@ -982,7 +993,7 @@ func (s *TestSuite) TestSettlePendingClaims_ServiceUsageMetrics() {
 		serviceId := claim.SessionHeader.ServiceId
 
 		// Get the service usage metrics for the claim
-		serviceUsageMetrics := app.ServiceUsageMetrics[0]
+		serviceUsageMetrics := app.ServiceUsageMetrics[serviceId]
 		require.NotNil(t, serviceUsageMetrics)
 
 		numEstimatedRelays, err := claim.GetNumEstimatedRelays(s.relayMiningDifficulties[i])
@@ -990,6 +1001,11 @@ func (s *TestSuite) TestSettlePendingClaims_ServiceUsageMetrics() {
 
 		numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(s.relayMiningDifficulties[i])
 		require.NoError(t, err)
+
+		// TODO_TECHDEBT: Have multiple claims for the same service in the test suite
+		// and update the service usage metrics accordingly.
+		claimedServicesMap[serviceId].TotalRelays += numEstimatedRelays
+		claimedServicesMap[serviceId].TotalComputeUnits += numEstimatedComputeUnits
 
 		// Validate that the service usage metrics were updated correctly
 		appExpectedServiceUsageMetrics := &sharedtypes.ServiceUsageMetrics{
@@ -1010,6 +1026,15 @@ func (s *TestSuite) TestSettlePendingClaims_ServiceUsageMetrics() {
 				require.Equal(t, supplierExpectedServiceUsageMetrics, supplierServiceUsageMetrics)
 			}
 		}
+	}
+
+	// Validate that the service usage metrics in the service keeper were updated correctly
+	for serviceId, expectedMetrics := range claimedServicesMap {
+		service, found := s.keepers.GetService(ctx, serviceId)
+		require.True(t, found)
+
+		require.Equal(t, expectedMetrics.TotalComputeUnits, service.TotalComputeUnits)
+		require.Equal(t, expectedMetrics.TotalRelays, service.TotalRelays)
 	}
 }
 
@@ -1119,8 +1144,8 @@ func (s *TestSuite) createTestActors(
 			Address:        appAddr,
 			Stake:          &appStake,
 			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
-			ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
-				{
+			ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
+				serviceId: {
 					ServiceId:         serviceId,
 					TotalRelays:       initialServiceUsageMetrics[serviceId],
 					TotalComputeUnits: initialServiceUsageMetrics[serviceId] * computeUnitsPerRelay,
@@ -1139,17 +1164,14 @@ func (s *TestSuite) createTestActors(
 		Stake:                &supplierStake,
 		Services:             supplierServiceConfigs,
 		ServiceConfigHistory: supplierServiceConfigHistory,
-		ServiceUsageMetrics:  make([]*sharedtypes.ServiceUsageMetrics, 0),
+		ServiceUsageMetrics:  make(map[string]*sharedtypes.ServiceUsageMetrics),
 	}
 	for serviceId, usage := range initialServiceUsageMetrics {
-		supplier.ServiceUsageMetrics = append(
-			supplier.ServiceUsageMetrics,
-			&sharedtypes.ServiceUsageMetrics{
-				ServiceId:         serviceId,
-				TotalRelays:       usage,
-				TotalComputeUnits: usage * computeUnitsPerRelay,
-			},
-		)
+		supplier.ServiceUsageMetrics[serviceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId:         serviceId,
+			TotalRelays:       usage,
+			TotalComputeUnits: usage * computeUnitsPerRelay,
+		}
 	}
 	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, supplier)
 
@@ -1250,4 +1272,21 @@ func (s *TestSuite) createTestClaimsAndProofs(
 	}
 
 	return claims, proofs
+}
+
+// updateServiceUsageMetrics updates the service usage metrics for a given service
+// in the keeper to reflect the initial usage metrics defined in initialServiceUsageMetrics.
+func (s *TestSuite) updateServiceUsageMetrics(
+	ctx context.Context,
+	t *testing.T,
+	serviceUsageMetrics *sharedtypes.ServiceUsageMetrics,
+) {
+	serviceId := serviceUsageMetrics.ServiceId
+	service, found := s.keepers.GetService(ctx, serviceId)
+	require.True(t, found)
+
+	service.TotalComputeUnits = initialServiceUsageMetrics[serviceId]
+	service.TotalRelays = initialServiceUsageMetrics[serviceId]
+
+	s.keepers.SetService(ctx, service)
 }

@@ -173,7 +173,7 @@ func (k Keeper) createApplication(
 		ServiceConfigs:            msg.Services,
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
-		ServiceUsageMetrics:       make([]*sharedtypes.ServiceUsageMetrics, 0),
+		ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics),
 	}
 	initializeAppServiceUsageMetrics(&application)
 
@@ -228,10 +228,9 @@ func initializeAppServiceUsageMetrics(application *types.Application) {
 		// Initialize zero metrics for newly staked services
 		// This ensures all services have tracking from the beginning
 		if !serviceUsageMetricsExists {
-			application.ServiceUsageMetrics = append(
-				application.ServiceUsageMetrics,
-				&sharedtypes.ServiceUsageMetrics{ServiceId: service.ServiceId},
-			)
+			application.ServiceUsageMetrics[service.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+				ServiceId: service.ServiceId,
+			}
 		}
 	}
 }

@@ -59,12 +59,13 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				Add(expectedMorseClaimableAccount.GetSupplierStake()).
 				Sub(expectedStake)
 
+			serviceId := s.appServiceConfig.ServiceId
 			expectedApp := apptypes.Application{
 				Address:        shannonDestAddr,
 				Stake:          &expectedStake,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
-				ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
-					{ServiceId: s.appServiceConfig.ServiceId},
+				ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
+					serviceId: {ServiceId: serviceId},
 				},
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
@@ -148,13 +149,14 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 			expectedBalance := expectedMorseClaimableAccount.GetUnstakedBalance()
 
 			// Assert that the claim msg response is correct.
+			serviceId := s.appServiceConfig.ServiceId
 			expectedApp := apptypes.Application{
 				Address:        shannonDestAddr,
 				Stake:          &expectedFinalStake,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
-				ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
-					{ServiceId: "nosvc"},
-					{ServiceId: s.appServiceConfig.ServiceId},
+				ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
+					"nosvc":   {ServiceId: "nosvc"},
+					serviceId: {ServiceId: serviceId},
 				},
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
@@ -359,13 +361,12 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			UnstakeSessionEndHeight:   expectedUnstakeSessionEndHeight,
 			DelegateeGatewayAddresses: make([]string, 0),
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
-			ServiceUsageMetrics:       make([]*sharedtypes.ServiceUsageMetrics, 0),
+			ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics, 0),
 		}
 		for _, svc := range expectedApp.ServiceConfigs {
-			expectedApp.ServiceUsageMetrics = append(
-				expectedApp.ServiceUsageMetrics,
-				&sharedtypes.ServiceUsageMetrics{ServiceId: svc.ServiceId},
-			)
+			expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+				ServiceId: svc.ServiceId,
+			}
 		}
 
 		// Claim a Morse claimable account.
@@ -423,13 +424,12 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			Stake:                   &expectedAppStake,
 			ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 			UnstakeSessionEndHeight: expectedUnstakeSessionEndHeight,
-			ServiceUsageMetrics:     make([]*sharedtypes.ServiceUsageMetrics, 0),
+			ServiceUsageMetrics:     make(map[string]*sharedtypes.ServiceUsageMetrics, 0),
 		}
 		for _, svc := range expectedApp.ServiceConfigs {
-			expectedApp.ServiceUsageMetrics = append(
-				expectedApp.ServiceUsageMetrics,
-				&sharedtypes.ServiceUsageMetrics{ServiceId: svc.ServiceId},
-			)
+			expectedApp.ServiceUsageMetrics[svc.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+				ServiceId: svc.ServiceId,
+			}
 		}
 		appClient := s.AppSuite.GetAppQueryClient(s.T())
 		foundApp, err := appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
@@ -471,7 +471,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			DelegateeGatewayAddresses: make([]string, 0),
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 			ServiceConfigs:            make([]*sharedtypes.ApplicationServiceConfig, 0),
-			ServiceUsageMetrics:       make([]*sharedtypes.ServiceUsageMetrics, 0),
+			ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics, 0),
 		}
 
 		// Claim a Morse claimable account.

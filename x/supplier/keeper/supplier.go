@@ -60,6 +60,7 @@ func (k Keeper) GetDehydratedSupplier(
 		return supplier, false
 	}
 	k.cdc.MustUnmarshal(supplierBz, &supplier)
+	supplier.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
 	return supplier, true
 }
 
@@ -108,6 +109,7 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 		var supplier sharedtypes.Supplier
 		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
 		k.hydrateSupplierServiceConfigs(ctx, &supplier)
+		k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
 
 		suppliers = append(suppliers, supplier)
 	}
@@ -133,7 +135,7 @@ func (k Keeper) GetAllUnstakingSuppliersIterator(
 func (k Keeper) getSupplierServiceUsageMetricsIterator(
 	ctx context.Context,
 	supplierAddress string,
-) sharedtypes.RecordIterator[sharedtypes.SupplierServiceUsageMetrics] {
+) sharedtypes.RecordIterator[sharedtypes.ServiceUsageMetrics] {
 	serviceUsageMetricsStore := k.getSupplierServiceUsageMetricsStore(ctx)
 	supplierKey := types.StringKey(supplierAddress)
 
@@ -166,30 +168,30 @@ func (k Keeper) hydrateSupplierServiceUsageMetrics(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
 ) {
+	if supplier.ServiceUsageMetrics == nil {
+		supplier.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
+	}
+
 	// Hydrate the supplier's service usage metrics
-	existingMetrics := make(map[string]struct{})
 	serviceUsageMetricsIterator := k.getSupplierServiceUsageMetricsIterator(ctx, supplier.OperatorAddress)
 	for ; serviceUsageMetricsIterator.Valid(); serviceUsageMetricsIterator.Next() {
-		supplierServiceUsageMetrics, err := serviceUsageMetricsIterator.Value()
+		serviceUsageMetrics, err := serviceUsageMetricsIterator.Value()
 		if err != nil {
 			k.logger.Error(fmt.Sprintf("failed to get service usage metrics for supplier %s: %v", supplier.OperatorAddress, err))
 			continue
 		}
 
-		supplier.ServiceUsageMetrics = append(
-			supplier.ServiceUsageMetrics,
-			supplierServiceUsageMetrics.ServiceUsageMetrics,
-		)
-		existingMetrics[supplierServiceUsageMetrics.ServiceUsageMetrics.ServiceId] = struct{}{}
+		supplier.ServiceUsageMetrics[serviceUsageMetrics.ServiceId] = &serviceUsageMetrics
 	}
 
 	// Ensure all services in the supplier's service config history have metrics
-	for _, serviceConfig := range supplier.ServiceConfigHistory {
-		if _, exists := existingMetrics[serviceConfig.Service.ServiceId]; !exists {
+	for _, serviceConfig := range supplier.Services {
+		serviceId := serviceConfig.ServiceId
+		if _, ok := supplier.ServiceUsageMetrics[serviceId]; !ok {
 			// Initialize empty metrics for services without existing metrics
-			supplier.ServiceUsageMetrics = append(supplier.ServiceUsageMetrics, &sharedtypes.ServiceUsageMetrics{
-				ServiceId: serviceConfig.Service.ServiceId,
-			})
+			supplier.ServiceUsageMetrics[serviceId] = &sharedtypes.ServiceUsageMetrics{
+				ServiceId: serviceId,
+			}
 		}
 	}
 }
@@ -247,19 +249,14 @@ func (k Keeper) GetServiceUsageMetrics(
 	serviceUsageMetricsKey := types.ServiceUsageMetricsKey(supplierAddressAddress, serviceId)
 	serviceUsageMetricsBz := serviceUsageMetricsStore.Get(serviceUsageMetricsKey)
 
-	supplierServiceUsageMetrics := sharedtypes.SupplierServiceUsageMetrics{
-		SupplierAddress: supplierAddressAddress,
-		ServiceUsageMetrics: &sharedtypes.ServiceUsageMetrics{
-			ServiceId: serviceId,
-		},
-	}
+	serviceUsageMetrics := sharedtypes.ServiceUsageMetrics{ServiceId: serviceId}
 
 	if serviceUsageMetricsBz == nil {
-		return *supplierServiceUsageMetrics.ServiceUsageMetrics
+		return serviceUsageMetrics
 	}
 
-	k.cdc.MustUnmarshal(serviceUsageMetricsBz, &supplierServiceUsageMetrics)
-	return *supplierServiceUsageMetrics.ServiceUsageMetrics
+	k.cdc.MustUnmarshal(serviceUsageMetricsBz, &serviceUsageMetrics)
+	return serviceUsageMetrics
 }
 
 // SetServiceUsageMetrics stores service usage metrics for a specific supplier and service
@@ -270,12 +267,7 @@ func (k Keeper) SetServiceUsageMetrics(
 ) {
 	serviceUsageMetricsStore := k.getSupplierServiceUsageMetricsStore(ctx)
 
-	supplierServiceUsageMetrics := sharedtypes.SupplierServiceUsageMetrics{
-		SupplierAddress:     supplierAddressAddress,
-		ServiceUsageMetrics: serviceUsageMetrics,
-	}
-
-	serviceUsageMetricsBz := k.cdc.MustMarshal(&supplierServiceUsageMetrics)
+	serviceUsageMetricsBz := k.cdc.MustMarshal(serviceUsageMetrics)
 	serviceUsageMetricsKey := types.ServiceUsageMetricsKey(supplierAddressAddress, serviceUsageMetrics.ServiceId)
 	serviceUsageMetricsStore.Set(serviceUsageMetricsKey, serviceUsageMetricsBz)
 }
@@ -292,14 +284,14 @@ func (k Keeper) getSupplierServiceUsageMetricsStore(ctx context.Context) storety
 // - Returns deserialized SupplierServiceUsageMetrics objects from storage
 func supplierUsageMetricsAccessorFn(
 	cdc codec.BinaryCodec,
-) sharedtypes.DataRecordAccessor[sharedtypes.SupplierServiceUsageMetrics] {
-	return func(serviceUsageMetricsBz []byte) (sharedtypes.SupplierServiceUsageMetrics, error) {
+) sharedtypes.DataRecordAccessor[sharedtypes.ServiceUsageMetrics] {
+	return func(serviceUsageMetricsBz []byte) (sharedtypes.ServiceUsageMetrics, error) {
 		if serviceUsageMetricsBz == nil {
 			err := fmt.Errorf("expecting service usage metrics bytes to be non-nil")
-			return sharedtypes.SupplierServiceUsageMetrics{}, err
+			return sharedtypes.ServiceUsageMetrics{}, err
 		}
 
-		var serviceUsageMetrics sharedtypes.SupplierServiceUsageMetrics
+		var serviceUsageMetrics sharedtypes.ServiceUsageMetrics
 		cdc.MustUnmarshal(serviceUsageMetricsBz, &serviceUsageMetrics)
 		return serviceUsageMetrics, nil
 	}

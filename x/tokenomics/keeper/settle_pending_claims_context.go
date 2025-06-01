@@ -112,6 +112,13 @@ func (sctx *settlementContext) FlushAllActorsToStore(ctx context.Context) {
 		}
 	}
 	logger.Info(fmt.Sprintf("updated %d onchain supplier records", len(sctx.settledSuppliers)))
+
+	// Flush all Service records to the store
+	for _, service := range sctx.serviceMap {
+		sctx.keeper.serviceKeeper.SetService(ctx, *service)
+		logger.Info(fmt.Sprintf("updated onchain service record with ID %q", service.Id))
+	}
+	logger.Info(fmt.Sprintf("updated %d onchain service records", len(sctx.serviceMap)))
 }
 
 // ClaimCacheWarmUp warms up the settlement context's cache by based on the claim's properties.
@@ -384,15 +391,8 @@ func (sctx *settlementContext) cacheApplicationServiceUsageMetrics(
 	application *apptypes.Application,
 	serviceId string,
 ) {
-	serviceUsageMetricsIdx := slices.IndexFunc(
-		application.ServiceUsageMetrics,
-		func(serviceUsageMetrics *sharedtypes.ServiceUsageMetrics) bool {
-			return serviceUsageMetrics.ServiceId == serviceId
-		},
-	)
-
 	// Service usage metrics already cached, no need to update
-	if serviceUsageMetricsIdx >= 0 {
+	if _, ok := application.ServiceUsageMetrics[serviceId]; ok {
 		return
 	}
 
@@ -419,15 +419,8 @@ func (sctx *settlementContext) cacheSupplierServiceUsageMetrics(
 	supplier *sharedtypes.Supplier,
 	serviceId string,
 ) {
-	serviceUsageMetricsIdx := slices.IndexFunc(
-		supplier.ServiceUsageMetrics,
-		func(serviceUsageMetrics *sharedtypes.ServiceUsageMetrics) bool {
-			return serviceUsageMetrics.ServiceId == serviceId
-		},
-	)
-
 	// Service usage metrics already cached, no need to update
-	if serviceUsageMetricsIdx >= 0 {
+	if _, ok := supplier.ServiceUsageMetrics[serviceId]; ok {
 		return
 	}
 

@@ -132,17 +132,18 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Prepare the test application.
 	application := apptypes.Application{
-		Address:        sample.AccAddress(),
-		Stake:          &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+		Address:             sample.AccAddress(),
+		Stake:               &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
+		ServiceConfigs:      []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+		ServiceUsageMetrics: make(map[string]*sharedtypes.ServiceUsageMetrics),
 	}
 
 	hydratedApplication := apptypes.Application{
 		Address:        application.Address,
 		Stake:          application.Stake,
 		ServiceConfigs: application.ServiceConfigs,
-		ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
-			{ServiceId: service.Id},
+		ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
+			service.Id: {ServiceId: service.Id},
 		},
 	}
 
@@ -166,8 +167,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		OperatorAddress: supplierOwnerAddr,
 		Stake:           &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		Services:        services,
-		ServiceUsageMetrics: []*sharedtypes.ServiceUsageMetrics{
-			{ServiceId: service.Id},
+		ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
+			service.Id: {ServiceId: service.Id},
 		},
 	}
 
@@ -193,7 +194,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		AnyTimes()
 	mockApplicationKeeper.EXPECT().
 		GetServiceUsageMetrics(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(*hydratedApplication.ServiceUsageMetrics[0]).
+		Return(*hydratedApplication.ServiceUsageMetrics[service.Id]).
 		AnyTimes()
 	mockApplicationKeeper.EXPECT().
 		GetDehydratedApplication(gomock.Any(), gomock.Not(application.Address)).
@@ -255,7 +256,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		AnyTimes()
 	mockSupplierKeeper.EXPECT().
 		GetServiceUsageMetrics(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(*supplier.ServiceUsageMetrics[0]).
+		Return(*supplier.ServiceUsageMetrics[service.Id]).
 		AnyTimes()
 
 	// Mock the bank keeper.

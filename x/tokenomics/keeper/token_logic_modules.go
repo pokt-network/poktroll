@@ -215,7 +215,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		// Create a dehydrated application copy without hydrated data to add to the event.
 		// This prevents bloating the event with potentially large unnecessary data
 		dehydratedApplication := *application
-		dehydratedApplication.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
+		dehydratedApplication.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			Application:        &dehydratedApplication,
@@ -251,6 +251,9 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Update service usage metrics for the supplier
 	supplier.UpdateServiceUsageMetrics(service.Id, numEstimatedRelays, numEstimatedComputeUnits)
+
+	// Update the service usage metrics for the service
+	service.UpdateServiceUsageMetrics(numEstimatedRelays, numEstimatedComputeUnits)
 
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite): If the application stake has dropped to (near?) zero:
 	// - Unstake it

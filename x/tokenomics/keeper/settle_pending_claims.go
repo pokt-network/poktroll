@@ -268,10 +268,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		)
 	}
 
-	// Persist the state of all the applications and suppliers involved in the claims.
-	// This is done in a single batch to reduce the number of writes to state storage.
-	settlementContext.FlushAllActorsToStore(ctx)
-
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
 
 	// Execute all the pending mint, burn, and transfer operations.
@@ -283,6 +279,10 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	if err = k.ExecutePendingExpiredResults(ctx, settlementContext, expiredResults); err != nil {
 		return settledResults, expiredResults, err
 	}
+
+	// Persist the state of all the applications and suppliers involved in the claims.
+	// This is done in a single batch to reduce the number of writes to state storage.
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	logger.Info(fmt.Sprintf(
 		"settled %d and expired %d claims at block height %d",
@@ -653,7 +653,7 @@ func (k Keeper) slashSupplierStake(
 		}
 
 		dehydratedSupplier := *supplierToSlash
-		dehydratedSupplier.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
+		dehydratedSupplier.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
 
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
 			Supplier:         &dehydratedSupplier,

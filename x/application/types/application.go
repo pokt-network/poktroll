@@ -43,7 +43,8 @@ func (app *Application) UpdateServiceUsageMetrics(
 	numRelays,
 	numComputeUnits uint64,
 ) {
-	var serviceUsageMetrics *sharedtypes.ServiceUsageMetrics
+	serviceUsageMetrics := &sharedtypes.ServiceUsageMetrics{ServiceId: serviceId}
+
 	for _, existingServiceUsageMetrics := range app.ServiceUsageMetrics {
 		if existingServiceUsageMetrics.ServiceId == serviceId {
 			serviceUsageMetrics = existingServiceUsageMetrics
@@ -51,21 +52,12 @@ func (app *Application) UpdateServiceUsageMetrics(
 		}
 	}
 
-	// Initialize new service metrics if this is the first time tracking this service
-	// This ensures we track usage from the first relay onward
-	if serviceUsageMetrics == nil {
-		serviceUsageMetrics = &sharedtypes.ServiceUsageMetrics{
-			ServiceId:         serviceId,
-			TotalRelays:       0,
-			TotalComputeUnits: 0,
-		}
-		app.ServiceUsageMetrics = append(app.ServiceUsageMetrics, serviceUsageMetrics)
-	}
-
 	// Increment the metrics with the new relay and compute unit counts
 	// These values represent the application's total consumption of the service
 	serviceUsageMetrics.TotalRelays += numRelays
 	serviceUsageMetrics.TotalComputeUnits += numComputeUnits
+
+	app.ServiceUsageMetrics[serviceId] = serviceUsageMetrics
 }
 
 // GetApplicationUnbondingHeight returns the session end height at which the given

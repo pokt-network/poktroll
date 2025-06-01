@@ -41,7 +41,7 @@ func (s *Supplier) IsActive(queryHeight int64, serviceId string) bool {
 // - Finds existing metrics for the service or initializes new ones
 // - Increments relay and compute unit counts by the provided values
 func (s *Supplier) UpdateServiceUsageMetrics(serviceId string, numRelays, numComputeUnits uint64) {
-	var serviceUsageMetrics *ServiceUsageMetrics
+	serviceUsageMetrics := &ServiceUsageMetrics{ServiceId: serviceId}
 	for _, existingServiceUsageMetrics := range s.ServiceUsageMetrics {
 		if existingServiceUsageMetrics.ServiceId == serviceId {
 			serviceUsageMetrics = existingServiceUsageMetrics
@@ -49,21 +49,12 @@ func (s *Supplier) UpdateServiceUsageMetrics(serviceId string, numRelays, numCom
 		}
 	}
 
-	// Initialize new service metrics if this is the first time tracking this service
-	// This happens when a supplier first serves a service or during metrics initialization
-	if serviceUsageMetrics == nil {
-		serviceUsageMetrics = &ServiceUsageMetrics{
-			ServiceId:         serviceId,
-			TotalRelays:       0,
-			TotalComputeUnits: 0,
-		}
-		s.ServiceUsageMetrics = append(s.ServiceUsageMetrics, serviceUsageMetrics)
-	}
-
 	// Increment the metrics with the new relay and compute unit counts
 	// These values accumulate over time to represent total service usage
 	serviceUsageMetrics.TotalRelays += numRelays
 	serviceUsageMetrics.TotalComputeUnits += numComputeUnits
+
+	s.ServiceUsageMetrics[serviceId] = serviceUsageMetrics
 }
 
 // GetActiveServiceConfigs returns a list of all service configurations that are active

@@ -35,7 +35,7 @@ message Supplier {
   repeated ServiceConfigUpdate service_config_history = 6;
 
   // service_usage_metrics tracks tracks the onchain services consumed by this supplier.
-  repeated pocket.shared.ServiceUsageMetrics service_usage_metrics = 7;
+  map<string, pocket.shared.ServiceUsageMetrics> service_usage_metrics = 7;
 }
 
 // ServiceConfigUpdate tracks a change in a supplier's service configurations
@@ -58,11 +58,4 @@ message ServiceConfigUpdate {
   // - Once no longer required for settlement, the config is automatically removed by
   //   the EndBlockerPruneSupplierServiceConfigHistory process
   int64 deactivation_height = 4;
-}
-
-// SupplierServiceUsageMetrics tracks service metrics for a specific supplier
-message SupplierServiceUsageMetrics {
-  string supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-
-  pocket.shared.ServiceUsageMetrics service_usage_metrics = 2;
 }

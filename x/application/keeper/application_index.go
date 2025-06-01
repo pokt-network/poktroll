@@ -180,16 +180,11 @@ func (k Keeper) indexApplicationServiceUsageMetrics(
 	appServiceUsageMetricsStore := k.getApplicationServiceUsageMetricsStore(ctx)
 
 	for _, serviceUsageMetrics := range app.ServiceUsageMetrics {
-		appServiceUsageMetrics := &types.ApplicationServiceUsageMetrics{
-			ApplicationAddress:  app.Address,
-			ServiceUsageMetrics: serviceUsageMetrics,
-		}
-
-		appServiceUsageMetricsBz := k.cdc.MustMarshal(appServiceUsageMetrics)
+		serviceUsageMetricsBz := k.cdc.MustMarshal(serviceUsageMetrics)
 
 		appServiceUsageMetricsStore.Set(
 			types.ServiceUsageMetricsKey(app.Address, serviceUsageMetrics.ServiceId),
-			appServiceUsageMetricsBz,
+			serviceUsageMetricsBz,
 		)
 	}
 }

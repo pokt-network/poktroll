@@ -99,7 +99,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	// Create the expected app without service usage metrics since the event
 	// emits a dehydrated application to reduce event size and chain bloat
 	expectedApp := foundApp
-	expectedApp.ServiceUsageMetrics = make([]*sharedtypes.ServiceUsageMetrics, 0)
+	expectedApp.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
 	expectedEvent, err = sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingEnd{
 			Application:        &expectedApp,
