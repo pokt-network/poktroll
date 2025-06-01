@@ -50,4 +50,4 @@ fi
 # 	t.Logf("hash: %s", base64.StdEncoding.EncodeToString(morseAccountStateHash))
 # 	require.Equal(t, "w5/Sf4c1L9/G5eYPC0wvrI3ynzwlnxcka0C8ULB9sMc=", base64.StdEncoding.EncodeToString(morseAccountStateHash))
 # }
-jq '.morse_account_state_hash = "w5/Sf4c1L9/G5eYPC0wvrI3ynzwlnxcka0C8ULB9sMc="' ./tools/scripts/migration/msg_import_morse_accounts_m169825_t179148.json > ./tools/scripts/migration/msg_import_morse_accounts_m169825_t179148.json.tmp && mv ./tools/scripts/migration/msg_import_morse_accounts_m169825_t179148.json.tmp ./tools/scripts/migration/msg_import_morse_accounts_m169825_t179148.json
+jq '.morse_account_state_hash = "w5/Sf4c1L9/G5eYPC0wvrI3ynzwlnxcka0C8ULB9sMc="' ./tools/scripts/migration/msg_import_morse_accounts_m169825_t179148.json > ./temp.json && mv ./temp.json ./tools/scripts/migration/msg_import_morse_accounts_m169825_t179148.json
