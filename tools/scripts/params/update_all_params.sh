@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Parameter Update Script - Beta and Main Network Support
-# Usage: ./update_params.sh [beta|main] [--help]
+# Parameter Update Script - Local, Alpha, Beta, and Main Network Support
+# Usage: ./update_params.sh [local|alpha|beta|main] [--help]
 #
-# This script updates all parameter files for either beta or main network
+# This script updates all parameter files for either local, alpha, beta, or main network
 # See ./tools/scripts/params/gov_params.sh for additional governance parameters
 
 set -e
@@ -31,7 +31,28 @@ COSMOS_PARAM_FILES=(
   staking_params.json
 )
 
-# Network configurations
+get_local_config() {
+  case "$1" in
+  from) echo "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw" ;;
+  keyring_backend) echo "test" ;;
+  chain_id) echo "pocket" ;;
+  node) echo "http://localhost:26657" ;;
+  home) echo "./localnet/poktrolld" ;;
+  fees) echo "1000upokt" ;;
+  esac
+}
+
+get_alpha_config() {
+  case "$1" in
+  from) echo "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h" ;;
+  keyring_backend) echo "test" ;;
+  chain_id) echo "pocket-alpha" ;;
+  node) echo "https://shannon-testnet-grove-rpc.alpha.poktroll.com" ;;
+  home) echo "~/.pocket_prod" ;;
+  fees) echo "200upokt" ;;
+  esac
+}
+
 get_beta_config() {
   case "$1" in
   from) echo "pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e" ;;
@@ -62,6 +83,8 @@ USAGE:
   $0 [ENVIRONMENT] [OPTIONS]
 
 ENVIRONMENTS:
+  local   Update parameters on localnet
+  alpha   Update parameters on alpha network
   beta    Update parameters on beta network (default)
   main    Update parameters on main network
 
@@ -90,6 +113,18 @@ $(printf "  - %s\n" "${COSMOS_PARAM_FILES[@]}")
   (See that script for additional governance parameter details)
 
 CONFIGURATION:
+  Local Network
+    - Chain ID: $(get_local_config chain_id)
+    - Node: $(get_local_config node)
+    - From: $(get_local_config from)
+    - Fees: $(get_local_config fees)
+
+  Alpha Network:
+    - Chain ID: $(get_alpha_config chain_id)
+    - Node: $(get_alpha_config node)
+    - From: $(get_alpha_config from)
+    - Fees: $(get_alpha_config fees)
+
   Beta Network:
     - Chain ID: $(get_beta_config chain_id)
     - Node: $(get_beta_config node)
@@ -125,11 +160,11 @@ error() {
 validate_environment() {
   local env="$1"
   case "$env" in
-  beta | main)
+  local | alpha | beta | main)
     return 0
     ;;
   *)
-    error "Invalid environment: $env. Use 'beta' or 'main'"
+    error "Invalid environment: $env. Use 'local', 'alpha', 'beta', or 'main'"
     ;;
   esac
 }
@@ -164,6 +199,12 @@ get_config_value() {
   local key="$2"
 
   case "$env" in
+  local)
+    get_local_config "$key"
+    ;;
+  alpha)
+    get_alpha_config "$key"
+    ;;
   beta)
     get_beta_config "$key"
     ;;
@@ -275,7 +316,7 @@ main() {
       mode="state"
       shift
       ;;
-    beta | main)
+    local | alpha | beta | main)
       env="$1"
       env_provided=true
       shift

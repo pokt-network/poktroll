@@ -16,8 +16,8 @@ It can be used by developers on LocalNet but can only be executed by the foundat
 Get your hands dirty
 
 ```bash
-./tools/scripts/params/gov_params.sh help
-./tools/scripts/params/update_all_params.sh help
+./tools/scripts/params/gov_params.sh --help
+./tools/scripts/params/update_all_params.sh --help
 ```
 
 View all parameters in beta
@@ -32,10 +32,11 @@ Update tokenomics parameters in beta
 ./tools/scripts/params/gov_params.sh update tokenomics --env beta
 ```
 
-Batch update all parametesr across all environments
+Batch update all parameters across all modules:
 
 ```bash
-./tools/scripts/params/update_all_params.sh --env beta
+./tools/scripts/params/update_all_params.sh beta
+./tools/scripts/params/update_all_params.sh main
 ```
 
 ## Overview <!-- omit in toc -->
@@ -116,7 +117,11 @@ flowchart LR
 
 ## `gov_params.sh` - Script Usage
 
-### Command Structure <!-- omit in toc -->
+Query or update an individual module's parameters:
+
+- `query <module_name>` - Query parameters for a specific module
+- `query-all` - Query parameters for all available modules
+- `update <module_name>` - Generate update transaction for a module
 
 ```bash
 ./tools/scripts/params/gov_params.sh <command> [module_name] [options]
@@ -128,11 +133,14 @@ For options and configurations, see the `help` command:
 ./tools/scripts/params/gov_params.sh help
 ```
 
-### Commands <!-- omit in toc -->
+## `update_all_params.sh` - Script Usage
 
-- `query <module_name>` - Query parameters for a specific module
-- `query-all` - Query parameters for all available modules
-- `update <module_name>` - Generate update transaction for a module
+A helper that bulk updates all parameters for a given environment using the `.json` files in `./tools/scripts/params/bulk_params`.
+
+```bash
+./tools/scripts/params/update_all_params.sh <command> [options]
+```
+
 
 ## Parameter Update Workflow
 
