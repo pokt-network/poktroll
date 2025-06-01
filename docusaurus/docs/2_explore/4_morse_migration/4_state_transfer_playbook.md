@@ -147,8 +147,7 @@ of validators that requested an auto-unstake to unstake them.
 
 **Validator Groups to Unstake:**
 
-- **QSpider**: `c409a9e0d1be8780fe0b29dcdf72f8a879fb110c,08e5727cd7fbc4bc97ef3246da7379043f949f70,278654d9daf0e0be2c4e4da5a26c3b4149c5f6d0,81522de7711246fca147a34173dd2a462dc77a5a,c86b27e72c32b64db3eae137ffa84fec007a9062,79cbe645f2b4fa767322faf59a0093e6b73a2383,a86b6a5517630a23aec3dc4e3479a5818c575ac2,882f3f23687a9f3dddf6c65d66e9e3184ca67573,96f2c414b6f3afbba7ba571b7de360709d614e62,05db988509a25dd812dfd1a421cbf47078301a16,0a34d3d8339838975b374150c2db8fae2ce75240,0d7b3fbe06cca0b391fce2f7706c2cddf20b2f02,520afeba8edcc8cba167b0c2c3bdd6115e5e0ace,57c8eb2c16b02ed082226e99e28b957e1313ce1c,5c67f0d3e6cdc78955a43db00875185c371b567c`
-
+- **QSpider**: `c409a9e0d1be8780fe0b29dcdf72f8a879fb110c,...`
 - **Weavers** and **Spacebelt**: (See complete lists in validator spreadsheet)
 
 **Automated Unstaking Process:**
