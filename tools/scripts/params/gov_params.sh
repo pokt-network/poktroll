@@ -121,7 +121,7 @@ if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
     echo "  ./update_params.sh query-all --env alpha"
     echo "  ./update_params.sh update tokenomics --env local"
     echo "  ./update_params.sh update auth --env beta --output-dir ./params"
-    echo "  ./update_params.sh export-params application --output-file tools/scripts/params/state_shift_params/application_params.json"
+    echo "  ./update_params.sh export-params application --output-file tools/scripts/params/bulk_params/application_params.json"
     exit 1
 fi
 
@@ -413,7 +413,7 @@ case $COMMAND in
     if [ -z "$OUTPUT_FILE" ]; then
         echo "Error: --output-file is required for export-params command" >&2
         echo "Usage: ./update_params.sh export-params <module_name> --output-file <path>"
-        echo "Example: ./update_params.sh export-params application --output-file tools/scripts/params/state_shift_params/application_params.json"
+        echo "Example: ./update_params.sh export-params application --output-file tools/scripts/params/bulk_params/application_params.json"
         exit 1
     fi
     export_module_params "$MODULE_NAME" "$OUTPUT_FILE"

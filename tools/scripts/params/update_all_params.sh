@@ -10,7 +10,7 @@ set -e
 
 # Default configuration
 DEFAULT_ENV="beta"
-PARAM_DIR="tools/scripts/params/state_shift_params"
+PARAM_DIR="tools/scripts/params/bulk_params"
 GOV_PARAM_SCRIPT="./tools/scripts/params/gov_params.sh"
 
 # Parameter files to update
