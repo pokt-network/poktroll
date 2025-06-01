@@ -11,41 +11,40 @@ It can be used by developers on LocalNet but can only be executed by the foundat
 
 :::
 
-## Overview <!-- omit in toc -->
-
-The `update_params.sh` script provides a comprehensive tool for querying, managing, and updating governance parameters across different Pocket Network environments. This script supports both Cosmos SDK modules and Pocket-specific modules.
-
 ## Quick Start
 
-```bash
-./tools/scripts/params/gov_params.sh help
-```
-
-### Query Parameters
+Get your hands dirty
 
 ```bash
-# Query specific module parameters
-./tools/scripts/params/gov_params.sh query tokenomics
-
-# Query all available module parameters
-./tools/scripts/params/gov_params.sh query-all
-
-# Query with specific environment
-./tools/scripts/params/gov_params.sh query tokenomics --env beta
+./tools/scripts/params/gov_params.sh --help
+./tools/scripts/params/update_all_params.sh --help
 ```
 
-### Update Parameters
+View all parameters in beta
 
 ```bash
-# Generate update transaction template
-./tools/scripts/params/gov_params.sh update tokenomics
-
-# Generate template for specific environment
-./tools/scripts/params/gov_params.sh update tokenomics --env beta --output-dir ./params
-
-# Skip edit prompt and just generate template
-./tools/scripts/params/gov_params.sh update tokenomics --no-prompt
+./tools/scripts/params/gov_params.sh query-all --env beta
 ```
+
+Update tokenomics parameters in beta
+
+```bash
+./tools/scripts/params/gov_params.sh update tokenomics --env beta
+```
+
+Batch update all parameters across all modules:
+
+```bash
+./tools/scripts/params/update_all_params.sh beta
+./tools/scripts/params/update_all_params.sh main
+```
+
+## Overview <!-- omit in toc -->
+
+This repository contains two complementary scripts for parameter management:
+
+1. `gov_params.sh` - Individual governance parameter querying & management
+2. `update_all_params.sh` - All-on-one helper for batch parameter updates across all modules
 
 ## Pre-requisites
 
@@ -58,7 +57,7 @@ Before updating parameters, make sure you have the following:
 pocket keys import-hex pnf_beta <...>
 ```
 
-## IMPORTANT: Updating All Params
+### Important Background: Updating All Params
 
 :::danger Updating all params
 Due to how `params` work in the Cosmos SDK, every `MsgUpdateParams`, transaction for
@@ -116,38 +115,32 @@ flowchart LR
 | `distribution` | Distribution parameters   | Reward distribution        |
 | `mint`         | Mint parameters           | Inflation parameters       |
 
-## Script Usage
+## `gov_params.sh` - Script Usage
 
-### Command Structure <!-- omit in toc -->
-
-```bash
-./tools/scripts/params/gov_params.sh <command> [module_name] [options]
-```
-
-### Commands <!-- omit in toc -->
+Query or update an individual module's parameters:
 
 - `query <module_name>` - Query parameters for a specific module
 - `query-all` - Query parameters for all available modules
 - `update <module_name>` - Generate update transaction for a module
 
-### Options <!-- omit in toc -->
+```bash
+./tools/scripts/params/gov_params.sh <command> [module_name] [options]
+```
 
-| Option                | Description                                   | Default               |
-| --------------------- | --------------------------------------------- | --------------------- |
-| `--env <environment>` | Target environment (local, alpha, beta, main) | beta                  |
-| `--output-dir <dir>`  | Directory to save transaction files           | . (current directory) |
-| `--network <network>` | Network flag for query                        | Uses --env value      |
-| `--home <path>`       | Home directory for pocketd                    | ~/.pocket             |
-| `--no-prompt`         | Skip edit prompt (update only)                | false                 |
+For options and configurations, see the `help` command:
 
-### Environment Configuration <!-- omit in toc -->
+```bash
+./tools/scripts/params/gov_params.sh help
+```
 
-| Environment | Chain ID     | Authority                                   | Node                                         |
-| ----------- | ------------ | ------------------------------------------- | -------------------------------------------- |
-| `local`     | pocket       | pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw | localhost:26657                              |
-| `alpha`     | pocket-alpha | pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h | shannon-testnet-grove-rpc.alpha.poktroll.com |
-| `beta`      | pocket-beta  | pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t | shannon-testnet-grove-rpc.beta.poktroll.com  |
-| `main`      | pocket       | pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t | shannon-grove-rpc.mainnet.poktroll.com       |
+## `update_all_params.sh` - Script Usage
+
+A helper that bulk updates all parameters for a given environment using the `.json` files in `./tools/scripts/params/bulk_params`.
+
+```bash
+./tools/scripts/params/update_all_params.sh <command> [options]
+```
+
 
 ## Parameter Update Workflow
 
@@ -159,7 +152,9 @@ First, check the current parameter values:
 ./tools/scripts/params/gov_params.sh query tokenomics --env beta
 ```
 
-Example output:
+<details>
+
+<summary>Example output:</summary>
 
 ```json
 {
@@ -177,6 +172,8 @@ Example output:
 }
 ```
 
+</details>
+
 ### Step 2: Generate Update Template
 
 Create a transaction template with current parameters:
@@ -186,6 +183,10 @@ Create a transaction template with current parameters:
 ```
 
 This generates a file like `tokenomics_params_beta_20241230_143022.json`:
+
+<details>
+
+<summary>Example output:</summary>
 
 ```json
 {
@@ -211,9 +212,15 @@ This generates a file like `tokenomics_params_beta_20241230_143022.json`:
 }
 ```
 
+</details>
+
 ### Step 3: Edit Parameters
 
 Modify the generated JSON file with your desired parameter changes. For example, to update the mint allocation:
+
+<details>
+
+<summary>Example output:</summary>
 
 ```json
 {
@@ -239,6 +246,8 @@ Modify the generated JSON file with your desired parameter changes. For example,
 }
 ```
 
+</details>
+
 ### Step 4: Submit Transaction
 
 Submit the parameter update transaction:
@@ -246,12 +255,10 @@ Submit the parameter update transaction:
 ```bash
 pocketd tx authz exec tokenomics_params_beta_20241230_143022.json \
   --from=pnf_beta \
-  --keyring-backend=test \
-  --chain-id=pocket-beta \
-  --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
-  --yes \
-  --home=~/.pocket \
-  --fees=200upokt
+  --keyring-backend=test --home=~/.pocket \
+  --chain-id=pocket-beta --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
+  --fees=200upokt --yes
+
 ```
 
 ### Step 5: Verify Changes
@@ -264,52 +271,6 @@ pocketd query tx --type=hash <TRANSACTION_HASH> --network=beta
 
 # Verify updated parameters
 ./tools/scripts/params/gov_params.sh query tokenomics --env beta
-```
-
-## Common Use Cases
-
-### Updating Tokenomics Parameters
-
-**Mint Allocation Changes:**
-
-```bash
-# Query current allocation
-./tools/scripts/params/gov_params.sh query tokenomics --env beta
-
-# Generate update template
-./tools/scripts/params/gov_params.sh update tokenomics --env beta
-
-# Edit the JSON file to modify mint_allocation_percentages
-# Submit transaction as shown above
-```
-
-**Inflation Rate Updates:**
-
-```bash
-# Current: global_inflation_per_claim: 0.1
-# Updated: global_inflation_per_claim: 0.5
-```
-
-### Updating Application Parameters
-
-```bash
-# Query application parameters
-./tools/scripts/params/gov_params.sh query application --env beta
-
-# Generate update template
-./tools/scripts/params/gov_params.sh update application --env beta
-```
-
-### Bulk Parameter Review
-
-Query all module parameters across environments:
-
-```bash
-# Check all parameters in beta
-./tools/scripts/params/gov_params.sh query-all --env beta
-
-# Check all parameters in alpha
-./tools/scripts/params/gov_params.sh query-all --env alpha
 ```
 
 ## Troubleshooting
@@ -348,7 +309,27 @@ Error: invalid character in JSON
 
 Validate JSON syntax before submission
 
-## Examples
+## Common Use Cases & Examples
+
+### Updating Minimum Supplier Stake
+
+```bash
+# Query current minimum stake
+./tools/scripts/params/gov_params.sh query supplier --env beta
+
+# Generate update template
+./tools/scripts/params/gov_params.sh update supplier --env beta
+
+# Submit the transaction
+```
+
+### View All Parameters
+
+Check all parameters in beta
+
+```bash
+./tools/scripts/params/gov_params.sh query-all --env beta
+```
 
 ### Complete Tokenomics Update Example
 
