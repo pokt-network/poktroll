@@ -17,12 +17,14 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/config"
 )
 
+// TODO_MAINNET_MIGRATION: Add a few examples,
 func ClaimSupplierCmd() *cobra.Command {
 	claimSupplierCmd := &cobra.Command{
 		Use:   "claim-supplier [morse_node_address] [morse_private_key_export_path] [path_to_supplier_stake_config] --from [shannon_dest_key_name]",
 		Args:  cobra.ExactArgs(3),
-		Short: "Claim an onchain MorseClaimableAccount as a staked supplier account",
-		Long: `Claim an onchain MorseClaimableAccount as a staked supplier account.
+		Short: "Claim 1 onchain MorseClaimableAccount as a staked supplier account",
+		Long: `
+Claim 1 onchain MorseClaimableAccount as a staked supplier account.
 
 morse_node_address: Hex-encoded address of the Morse node account to be claimed
 
