@@ -35,7 +35,7 @@ message Supplier {
   repeated ServiceConfigUpdate service_config_history = 6;
 
   // service_usage_metrics tracks tracks the onchain services consumed by this supplier.
-  map<string, pocket.shared.ServiceUsageMetrics> service_usage_metrics = 7;
+  map<string, ServiceUsageMetrics> service_usage_metrics = 7;
 }
 
 // ServiceConfigUpdate tracks a change in a supplier's service configurations

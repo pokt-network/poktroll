@@ -17,7 +17,7 @@ package keeper
 //   ||          : byte-level concatenation / prefix.
 //   PK          : types.ServiceConfigUpdateKey(...).
 //   SK          : types.ServiceUsageMetricsKey(...).
-//   cfgBz       : protobuf-marshalled sharedtypes.ServiceConfigUpdate.
+//   cfgBz       : protobuf-marshaled sharedtypes.ServiceConfigUpdate.
 //
 // Fast-path look-ups
 //   • SupplierAddr  → supplierServiceConfigUpdateStore → [PK] → serviceConfigUpdateStore.
