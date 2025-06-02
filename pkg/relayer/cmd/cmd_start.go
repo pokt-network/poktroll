@@ -8,6 +8,7 @@ import (
 	"os"
 
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
@@ -157,6 +158,13 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")
+
+	if err := logFlagValues(logger, cmd); err != nil {
+		logger.Error().Err(err).Msg("Could not read provided flags")
+		return err
+
+	}
+
 	err = relayMiner.Start(ctx)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Error().Err(err).Msg("Could not start relay miner")
@@ -166,5 +174,41 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		logger.Info().Msg("Relay miner stopped; exiting")
 		return err
 	}
+
+	return nil
+}
+
+// logFlagValues logs the flags provided to the command.
+// It logs the chain ID, version, home directory, keyring backend, and gRPC insecure flag.
+// This is useful for debugging and ensuring the correct configuration is used.
+func logFlagValues(logger polylog.Logger, cmd *cobra.Command) error {
+	flagChainId, err := cmd.Flags().GetString(cosmosflags.FlagChainID)
+	if err != nil {
+		return err
+	}
+
+	flagHome, err := cmd.Flags().GetString(cosmosflags.FlagHome)
+	if err != nil {
+		return err
+	}
+
+	flagKeyringBackend, err := cmd.Flags().GetString(cosmosflags.FlagKeyringBackend)
+	if err != nil {
+		return err
+	}
+
+	flagGrpcInsecure, err := cmd.Flags().GetBool(cosmosflags.FlagGRPCInsecure)
+	if err != nil {
+		return err
+	}
+
+	logger.Info().
+		Str("chain_id", flagChainId).
+		Str("version", version.NewInfo().Version).
+		Str("home", flagHome).
+		Str("keyring_backend", flagKeyringBackend).
+		Bool("grpc_insecure", flagGrpcInsecure).
+		Msg("Provided flags")
+
 	return nil
 }
