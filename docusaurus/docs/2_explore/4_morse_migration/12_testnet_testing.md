@@ -11,7 +11,7 @@ sidebar_position: 12
   - [2. Export Morse TestNet State](#2-export-morse-testnet-state)
   - [3. Export Morse MainNet State](#3-export-morse-mainnet-state)
   - [4. Merge Morse MainNet \& TestNet States](#4-merge-morse-mainnet--testnet-states)
-  - [5. Continue the State Upload Process](#5-continue-the-state-upload-process)
+  - [5. Complete the State Transform Process](#5-complete-the-state-transform-process)
 
 ---
 
@@ -40,17 +40,13 @@ On **Shannon TestNet only** will the snapshot contain both Morse MainNet and Tes
 
 ### 1. Retrieve a Morse TestNet Snapshot
 
-:::important SNapshot Height Verification
+:::important Snapshot Height Verification
 
-- Snapshot heights MUST match those used to generate the canonical state (see [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration)).
+- Snapshot heights MUST match those used to generate the canonical state.
+
+See the table in [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) to ensure the correct snapshot heights and for all links.
 
 :::
-
-Use the links below to download the snapshot:
-
-| Snapshot                                                                                                                                                        | Height | Date       | Size |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ---- |
-| [morse-testnet-176966-2025-05-09.txz](https://link.storjshare.io/raw/ju4zrcq46yp6ft2hm7o4xwlkts3q/pocket-network-snapshots/morse-testnet-176966-2025-05-09.txz) | 176966 | 2025-05-09 | ~7GB |
 
 **Extract the snapshot by cop-pasting the following commands**:
 
@@ -96,6 +92,6 @@ pocketd tx migration collect-morse-accounts \
 - **Replace** `${MAINNET_SNAPSHOT_HEIGHT}` and `${TESTNET_SNAPSHOT_HEIGHT}` with your actual values.
 - **Result**: `msg_import_morse_accounts_m<MAINNET_SNAPSHOT_HEIGHT>_t<TESTNET_SNAPSHOT_HEIGHT>.json` is ready for import.
 
-### 5. Continue the State Upload Process
+### 5. Complete the State Transform Process
 
-Go to step 6in [State Transfer Playbook](./4_state_transfer_playbook.md) to upload the snapshot.
+Resume the [State Transfer Playbook](./4_state_transfer_playbook.md) from [step 3.1](./4_state_transfer_playbook.md#31-optional-on-shannon-testnet-and-mandatory-on-shannon-mainnet) to complete state transformation.
