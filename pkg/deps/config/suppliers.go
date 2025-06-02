@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"net/url"
 
@@ -9,6 +10,7 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
@@ -117,7 +119,8 @@ func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 //
 //	ClientContext, a GRPC client connection, and a keyring from the given queryNodeGRPCURL.
 func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
-	return func(_ context.Context,
+	return func(
+		ctx context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
@@ -148,6 +151,22 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 		if err != nil {
 			return nil, err
 		}
+
+		// Get the chain ID from the configured query client context.
+		nodeStatus, err := cmtservice.GetNodeStatus(ctx, queryClientCtx)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check if the network's returned chain ID matches the configured chain ID.
+		if nodeStatus.NodeInfo.Network != queryClientCtx.ChainID {
+			return nil, fmt.Errorf(
+				"RPC URL is for a different network: %s vs %s",
+				nodeStatus.NodeInfo.Network,
+				queryClientCtx.ChainID,
+			)
+		}
+
 		deps = depinject.Configs(deps, depinject.Supply(
 			query.Context(queryClientCtx),
 			grpc.ClientConn(queryClientCtx),

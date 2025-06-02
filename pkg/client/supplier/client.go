@@ -84,23 +84,24 @@ func (sClient *supplierClient) SubmitProofs(
 		msgs = append(msgs, p)
 	}
 
-	logger.Info().
-		Int("num_proof_messages", len(msgs)).
-		Msg("[PROVING] About to submit transaction")
+	logger.Info().Msgf(
+		"[PROVING] About to submit transaction with (%d) num_proof_messages", len(msgs),
+	)
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
 	txResponse, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
 
-	logger.Info().
-		Str("tx_hash", txResponse.TxHash).
-		Msg("[PROVING] Transaction submitted")
+	logger.Info().Msgf(
+		"[PROVING] Transaction submitted with tx_hash: %q", txResponse.TxHash,
+	)
 
 	if len(txResponse.RawLog) > 0 {
-		logger.Error().
-			Str("tx_hash", txResponse.TxHash).
-			Str("log", txResponse.RawLog).
-			Msgf("[PROVING] Failed to submit transaction")
+		logger.Error().Msgf(
+			"[PROVING] Failed to submit transaction with tx_hash: %q: %s",
+			txResponse.TxHash,
+			txResponse.RawLog,
+		)
 	}
 
 	err, errCh := eitherErr.SyncOrAsyncError()
@@ -147,23 +148,24 @@ func (sClient *supplierClient) CreateClaims(
 		msgs = append(msgs, c)
 	}
 
-	logger.Info().
-		Int("num_claim_messages", len(msgs)).
-		Msg("[CLAIMING] About to submit transaction")
+	logger.Info().Msgf(
+		"[CLAIMING] About to submit transaction with (%d) num_claim_messages", len(msgs),
+	)
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
 	txResponse, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
 
-	logger.Info().
-		Str("tx_hash", txResponse.TxHash).
-		Msg("[CLAIMING] Transaction submitted")
+	logger.Info().Msgf(
+		"[CLAIMING] Transaction submitted with tx_hash: %q", txResponse.TxHash,
+	)
 
 	if len(txResponse.RawLog) > 0 {
-		logger.Error().
-			Str("tx_hash", txResponse.TxHash).
-			Str("log", txResponse.RawLog).
-			Msgf("[CLAIMING] Failed to submit transaction")
+		logger.Error().Msgf(
+			"[CLAIMING] Failed to submit transaction with tx_hash: %q: %s",
+			txResponse.TxHash,
+			txResponse.RawLog,
+		)
 	}
 
 	err, errCh := eitherErr.SyncOrAsyncError()
