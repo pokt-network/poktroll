@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
@@ -109,6 +110,12 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	if err = logFlagValues(logger, cmd); err != nil {
+		logger.Error().Err(err).Msg("Could not read provided flags")
+		return err
+
+	}
+
 	// Log query caching status
 	if flagQueryCaching {
 		logger.Info().Msg("query caching ENABLED")
@@ -159,12 +166,6 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")
 
-	if err = logFlagValues(logger, cmd); err != nil {
-		logger.Error().Err(err).Msg("Could not read provided flags")
-		return err
-
-	}
-
 	err = relayMiner.Start(ctx)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Error().Err(err).Msg("Could not start relay miner")
@@ -182,33 +183,16 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 // It logs the chain ID, version, home directory, keyring backend, and gRPC insecure flag.
 // This is useful for debugging and ensuring the correct configuration is used.
 func logFlagValues(logger polylog.Logger, cmd *cobra.Command) error {
-	flagChainId, err := cmd.Flags().GetString(cosmosflags.FlagChainID)
-	if err != nil {
-		return err
-	}
-
-	flagHome, err := cmd.Flags().GetString(cosmosflags.FlagHome)
-	if err != nil {
-		return err
-	}
-
-	flagKeyringBackend, err := cmd.Flags().GetString(cosmosflags.FlagKeyringBackend)
-	if err != nil {
-		return err
-	}
-
-	flagGrpcInsecure, err := cmd.Flags().GetBool(cosmosflags.FlagGRPCInsecure)
-	if err != nil {
-		return err
-	}
+	clientCtx := client.GetClientContextFromCmd(cmd)
 
 	logger.Info().
-		Str("chain_id", flagChainId).
+		Str("chain_id", clientCtx.ChainID).
 		Str("version", version.NewInfo().Version).
-		Str("home", flagHome).
-		Str("keyring_backend", flagKeyringBackend).
-		Bool("grpc_insecure", flagGrpcInsecure).
-		Msg("Provided flags")
+		Str("home", clientCtx.HomeDir).
+		Str("keyring_backend", clientCtx.Keyring.Backend()).
+		Str("keyring_dir", clientCtx.KeyringDir).
+		Str("grpc_insecure", cmd.Flag(cosmosflags.FlagGRPCInsecure).Value.String()).
+		Msg("Config in use")
 
 	return nil
 }
