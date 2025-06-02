@@ -76,14 +76,20 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 
 		// Ensure that the number of relays claimed is greater than 0.
+		// CreateClaim message handler validation already ensures that the number of relays
+		// is greater than 0, but this is a sanity check to ensure that no invalid claims
+		// are processed in the settlement phase.
 		if numClaimRelays == 0 {
 			logger.Error(fmt.Sprintf(
-				"claim for session ID %q has 0 relays, skipping settlement",
+				"SHOULD NEVER HAPPEN: claim for session ID %q has 0 relays, skipping settlement",
 				sessionId,
 			))
 
 			// TODO_CONSIDERATION: Treat this claim as expired, since it has no relays.
 			// This would result in the Supplier being slashed for submitting a claim with 0 relays.
+			// DEV_NOTE: This scenario should theoretically never occur because claims are only
+			// created when the number of compute units exceeds zero.
+			// CreateClaim message handler should have rejected the claim in the first place.
 			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 			continue
 		}
@@ -96,14 +102,20 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 
 		// Ensure that the number of compute units claimed is greater than 0.
+		// CreateClaim message handler validation already ensures that the number of compute units
+		// is greater than 0, but this is a sanity check to ensure that no invalid claims
+		// are processed in the settlement phase.
 		if numClaimComputeUnits == 0 {
 			logger.Error(fmt.Sprintf(
-				"claim for session ID %q has 0 compute units, skipping settlement",
+				"SHOULD NEVER HAPPEN: claim for session ID %q has 0 compute units, skipping settlement",
 				sessionId,
 			))
 
 			// TODO_CONSIDERATION: Treat this claim as expired, since it has no compute units.
 			// This would result in the Supplier being slashed for submitting a claim with 0 compute units.
+			// DEV_NOTE: This scenario should theoretically never occur because claims are only
+			// created when the number of compute units exceeds zero.
+			// CreateClaim message handler should have rejected the claim in the first place.
 			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 			continue
 		}

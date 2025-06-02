@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sync"
+	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
@@ -46,6 +47,10 @@ const (
 	// events where the sender address matches the interpolated address.
 	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
 	txWithSenderAddrQueryFmt = "tm.event='Tx' AND message.sender='%s'"
+
+	// MUST set a timeout when using unordered transactions. 10 minutes is the maximum, use 9 for safety.
+	// See: https://docs.cosmos.network/v0.53/build/architecture/adr-070-unordered-account
+	txTimeoutTimestampDelay = time.Minute * 9
 )
 
 // TODO_TECHDEBT(@bryanchriswhite): Refactor this to use the EventsReplayClient
@@ -129,6 +134,9 @@ type txClient struct {
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
 
+	// unordered is a flag which indicates whether the transactions should be sent unordered.
+	unordered bool
+
 	logger polylog.Logger
 }
 
@@ -185,6 +193,9 @@ func NewTxClient(
 	for _, opt := range opts {
 		opt(txnClient)
 	}
+
+	// Set the unordered flag on the client context.
+	txnClient.txCtx = txnClient.txCtx.WithUnordered(txnClient.unordered)
 
 	if err = txnClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err
@@ -271,11 +282,24 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
+	// TODO_TECHDEBT(@bryanchriswhite): Set a timeout timestamp which is estimated
+	// to correspond to the timeout height.
+	txBuilder.SetTimeoutTimestamp(time.Now().Add(txTimeoutTimestampDelay))
+
+	offline := txnClient.txCtx.GetClientCtx().Offline
+	txBuilder.SetUnordered(txnClient.unordered)
+
+	// Override offline mode if unordered is set in order to prevent populating
+	// the sequence number. The account number WILL still be queried in TxContext#SignTx().
+	if txnClient.unordered {
+		offline = true
+	}
+
 	// sign transactions
 	err = txnClient.txCtx.SignTx(
 		txnClient.signingKeyName,
 		txBuilder,
-		false, false,
+		offline, false, txnClient.unordered,
 	)
 	if err != nil {
 		return nil, either.SyncErr(err)

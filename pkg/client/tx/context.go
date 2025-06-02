@@ -11,7 +11,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
@@ -37,6 +37,9 @@ type cosmosTxContext struct {
 	// Holds the cosmos-sdk transaction factory.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk@v0.47.5/client/tx#Factory)
 	txFactory cosmostx.Factory
+
+	// unordered is a flag which indicates whether the transactions should be sent unordered.
+	unordered bool
 }
 
 // NewTxContext initializes a new cosmosTxContext with the given dependencies.
@@ -72,10 +75,31 @@ func (txCtx cosmosTxContext) GetKeyring() cosmoskeyring.Keyring {
 func (txCtx cosmosTxContext) SignTx(
 	signingKeyName string,
 	txBuilder cosmosclient.TxBuilder,
-	offline, overwriteSig bool,
+	offline, overwriteSig, unordered bool,
 ) error {
+	txFactory := txCtx.txFactory
+
+	// Account number MUST be set for unordered transactions.
+	// ONLY query for the account number if online (i.e. offline is false).
+	// If offline is true, the account number MUST be EXPLICITLY set via the --account-number` flag.
+	online := !offline
+	shouldQueryAccountNumber := unordered || online
+	if shouldQueryAccountNumber {
+		signingKeyAddr, err := txCtx.GetKeyAddress(signingKeyName)
+		if err != nil {
+			return err
+		}
+		accountRetriever := txCtx.clientCtx.AccountRetriever
+		accountNumber, _, err := accountRetriever.GetAccountNumberSequence(txCtx.GetClientCtx(), signingKeyAddr)
+		if err != nil {
+			return err
+		}
+
+		txFactory = txFactory.WithAccountNumber(accountNumber)
+	}
+
 	return authclient.SignTx(
-		txCtx.txFactory,
+		txFactory,
 		cosmosclient.Context(txCtx.clientCtx),
 		signingKeyName,
 		txBuilder,
@@ -117,6 +141,15 @@ func (txCtx cosmosTxContext) GetClientCtx() cosmosclient.Context {
 	return cosmosclient.Context(txCtx.clientCtx)
 }
 
+// GetKeyAddress returns the address of the given key name, according to the configured keyring.
+func (txCtx cosmosTxContext) GetKeyAddress(keyName string) (cosmostypes.AccAddress, error) {
+	keyRecord, err := txCtx.GetKeyring().Key(keyName)
+	if err != nil {
+		return nil, err
+	}
+	return keyRecord.GetAddress()
+}
+
 // GetSimulatedTxGas calculates the gas for the given messages using the simulation mode.
 func (txCtx cosmosTxContext) GetSimulatedTxGas(
 	ctx context.Context,
@@ -124,26 +157,27 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 	msgs ...cosmostypes.Msg,
 ) (uint64, error) {
 	clientCtx := cosmosclient.Context(txCtx.clientCtx)
-	keyRecord, err := txCtx.GetKeyring().Key(signingKeyName)
-	if err != nil {
-		return 0, err
-	}
-
-	accAddress, err := keyRecord.GetAddress()
-	if err != nil {
-		return 0, err
-	}
-
-	accountRetriever := txCtx.clientCtx.AccountRetriever
-	_, seq, err := accountRetriever.GetAccountNumberSequence(clientCtx, accAddress)
+	accAddress, err := txCtx.GetKeyAddress(signingKeyName)
 	if err != nil {
 		return 0, err
 	}
 
 	txf := txCtx.txFactory.
 		WithSimulateAndExecute(true).
-		WithFromName(signingKeyName).
-		WithSequence(seq)
+		WithFromName(signingKeyName)
+
+	// ONLY set the sequence number in txs are ordered.
+	isOrderedTx := !txCtx.unordered
+	if isOrderedTx {
+		accountRetriever := txCtx.clientCtx.AccountRetriever
+		_, seq, seqErr := accountRetriever.GetAccountNumberSequence(clientCtx, accAddress)
+		if seqErr != nil {
+			return 0, seqErr
+		}
+
+		// Transactions are ordered, so we must set the sequence number.
+		txf = txf.WithSequence(seq)
+	}
 
 	txBytes, err := txf.BuildSimTx(msgs...)
 	if err != nil {
@@ -165,4 +199,11 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 	}
 
 	return uint64(txf.GasAdjustment() * float64(simRes.GasInfo.GasUsed)), nil
+}
+
+// WithUnordered returns a copy of the transaction context with the unordered flag set.
+func (txCtx cosmosTxContext) WithUnordered(unordered bool) client.TxContext {
+	txCtx.unordered = unordered
+	txCtx.txFactory = txCtx.txFactory.WithUnordered(unordered)
+	return txCtx
 }
