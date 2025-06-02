@@ -16,7 +16,7 @@
           },
           "proof_submission_fee": {
             "denom": "upokt",
-            "amount": "1000000"
+            "amount": "1"
           }
         }
       }

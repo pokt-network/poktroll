@@ -28,6 +28,8 @@ type supplierClient struct {
 
 	txClient client.TxClient
 	txCtx    client.TxContext
+
+	logger polylog.Logger
 }
 
 // NewSupplierClient constructs a new SupplierClient with the given dependencies
@@ -49,6 +51,7 @@ func NewSupplierClient(
 		deps,
 		&sClient.txClient,
 		&sClient.txCtx,
+		&sClient.logger,
 	); err != nil {
 		return nil, err
 	}
@@ -81,9 +84,27 @@ func (sClient *supplierClient) SubmitProofs(
 		msgs = append(msgs, p)
 	}
 
+	logger.Info().
+		Int("num_proof_messages", len(msgs)).
+		Msg("[PROVING] About to submit transaction")
+
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
-	_, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
+	txResponse, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
+
+	if txResponse != nil {
+		logger.Info().
+			Str("tx_hash", txResponse.TxHash).
+			Msg("[PROVING] Transaction submitted")
+
+		if len(txResponse.RawLog) > 0 {
+			logger.Error().
+				Str("tx_hash", txResponse.TxHash).
+				Str("log", txResponse.RawLog).
+				Msgf("[PROVING] Failed to submit transaction")
+		}
+	}
+
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -128,9 +149,27 @@ func (sClient *supplierClient) CreateClaims(
 		msgs = append(msgs, c)
 	}
 
+	logger.Info().
+		Int("num_claim_messages", len(msgs)).
+		Msg("[CLAIMING] About to submit transaction")
+
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
-	_, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
+	txResponse, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
+
+	if txResponse != nil {
+		logger.Info().
+			Str("tx_hash", txResponse.TxHash).
+			Msg("[CLAIMING] Transaction submitted")
+
+		if len(txResponse.RawLog) > 0 {
+			logger.Error().
+				Str("tx_hash", txResponse.TxHash).
+				Str("log", txResponse.RawLog).
+				Msgf("[CLAIMING] Failed to submit transaction")
+		}
+	}
+
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err

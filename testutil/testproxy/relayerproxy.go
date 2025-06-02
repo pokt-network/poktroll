@@ -365,7 +365,7 @@ func newMockRelayMeterWithCallCount(
 
 	relayMeter.EXPECT().Start(gomock.Any()).Return(nil).AnyTimes()
 
-	relayMeter.EXPECT().AccumulateRelayReward(gomock.Any(), gomock.Any()).
+	relayMeter.EXPECT().ShouldRateLimit(gomock.Any(), gomock.Any()).
 		Do(func(ctx context.Context, meta servicetypes.RelayRequestMetadata) {
 			callCount.AccumulateRelayReward++
 		}).AnyTimes()

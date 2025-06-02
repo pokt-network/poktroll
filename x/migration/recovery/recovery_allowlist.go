@@ -11,7 +11,12 @@ import (
 // IsMorseAddressRecoverable checks if a given address exists in any of the
 // allowlists for Morse address recovery.
 func IsMorseAddressRecoverable(address string) bool {
-	// Check if the address is in the recovery allowlist
+	// Check if the address is in the Morse multi-sig allowlist
+	if listContainsTarget(morseMultiSigAllowList, address) {
+		return true
+	}
+
+	// Check if the address is in the lost app stake allowlist
 	if listContainsTarget(lostAppStakesAllowlist, address) {
 		return true
 	}
@@ -31,6 +36,7 @@ func IsMorseAddressRecoverable(address string) bool {
 
 // Ensure that all address slices are sorted in ascending order for use in binary search.
 func init() {
+	sort.Strings(morseMultiSigAllowList)
 	sort.Strings(lostAppStakesAllowlist)
 	sort.Strings(knownAppStakesAllowlist)
 	sort.Strings(moduleAccountsAllowlist)
@@ -40,6 +46,11 @@ func init() {
 func listContainsTarget(list []string, target string) bool {
 	_, found := slices.BinarySearch(list, target)
 	return found
+}
+
+var morseMultiSigAllowList = []string{
+	// wPOKT bridge: https://docs.pokt.network/welcome/usdpokt-token/bridging/wrapped-pokt-wpokt
+	"2eb054616797de8565506333afb334655e7774ed",
 }
 
 var lostAppStakesAllowlist = []string{

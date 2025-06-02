@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -55,9 +56,11 @@ func (msg *MsgImportMorseClaimableAccounts) ValidateBasic() error {
 
 	// Validate the given hash matches the computed hash.
 	if !bytes.Equal(computedHash, givenHash) {
+		computedHashBase64 := base64.StdEncoding.EncodeToString(computedHash)
+		givenHashBase64 := base64.StdEncoding.EncodeToString(givenHash)
 		return ErrMorseAccountsImport.Wrapf(
 			"computed MorseAccountState hash (%s) doesn't match the given MorseAccountStateHash (%s)",
-			computedHash, givenHash,
+			computedHashBase64, givenHashBase64,
 		)
 	}
 	return nil

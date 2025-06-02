@@ -81,9 +81,15 @@ func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
+		var logger polylog.Logger
+		// Inject the logger from the deps config
+		if err := depinject.Inject(deps, &logger); err != nil {
+			return nil, err
+		}
+
 		// Convert the host to a websocket URL
 		queryNodeWebsocketURL := events.RPCToWebsocketURL(queryNodeRPCURL)
-		eventsQueryClient := events.NewEventsQueryClient(queryNodeWebsocketURL)
+		eventsQueryClient := events.NewEventsQueryClient(queryNodeWebsocketURL, events.WithLogger(logger))
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
 	}
