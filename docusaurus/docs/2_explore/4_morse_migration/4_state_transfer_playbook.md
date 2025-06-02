@@ -103,7 +103,21 @@ Verify the state export:
 
 ```bash
 # Check the file was created
-cat "$MORSE_MAINNET_STATE_EXPORT_PATH"
+jq -r '{root_keys: .|keys, num_auth_accounts: .app_state.auth.accounts|length, num_nodes: .app_state.pos.validators|length, num_applications: .app_state.application.applications|length}' "$MORSE_MAINNET_STATE_EXPORT_PATH"
+
+# Example output:
+{
+  "root_keys": [
+    "app_hash",
+    "app_state",
+    "chain_id",
+    "consensus_params",
+    "genesis_time"
+  ],
+  "num_auth_accounts": 57630,
+  "num_nodes": 12161,
+  "num_applications": 2298
+}
 ```
 
 ### 3. Transform Morse Export to a Canonical Account State Import Message
@@ -123,7 +137,15 @@ pocketd tx migration collect-morse-accounts "$MORSE_MAINNET_STATE_EXPORT_PATH" "
 Verify the state import message:
 
 ```bash
-cat "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
+# Check the file was created, and that it contains the expected number of accounts and hash
+jq -r '{num_morse_claimable_accounts: .morse_account_state.accounts|length, morse_account_state_hash: .morse_account_state_hash}' "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
+
+# Example output:
+{
+  "num_morse_claimable_accounts": 63802,
+  "morse_account_state_hash": "w5/Sf4c1L9/G5eYPC0wvrI3ynzwlnxcka0C8ULB9sMc="
+}
+
 ```
 
 Commit the initial files:
