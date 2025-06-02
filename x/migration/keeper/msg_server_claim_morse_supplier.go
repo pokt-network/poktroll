@@ -126,17 +126,6 @@ func (k msgServer) ClaimMorseSupplier(
 			)
 		}
 
-		// Ensure that the Morse owner account has not already been claimed.
-		if morseOwnerClaimableAccount.IsClaimed() && morseOwnerClaimableAccount.ShannonDestAddress == "" {
-			return nil, status.Error(
-				codes.FailedPrecondition,
-				migrationtypes.ErrMorseSupplierClaim.Wrapf(
-					"(SHOULD NEVER HAPPEN) The shannon address of an already claimed Morse owner account (%s) should not be empty",
-					morseOwnerAddress,
-				).Error(),
-			)
-		}
-
 		// Ensure that the Shannon owner address on the Morse supplier claim
 		// matches the Shannon dest address of the claimed Morse owner account.
 		if morseOwnerClaimableAccount.GetShannonDestAddress() != msg.GetShannonOwnerAddress() {
