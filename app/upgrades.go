@@ -68,7 +68,11 @@ var allUpgrades = []upgrades.Upgrade{
 	// - add morse_account_claiming_enabled migration module param
 	// - add compute_unit_cost_granularity shared module param
 	// - fix chain halt caused by zero relay claims
-	upgrades.Upgrade_0_1_13,
+	// upgrades.Upgrade_0_1_14,
+
+	// v0.1.14 - upgrade to:
+	// - Add Morse supplier claiming non-custodial Morse owner check (#1317)
+	upgrades.Upgrade_0_1_14,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
