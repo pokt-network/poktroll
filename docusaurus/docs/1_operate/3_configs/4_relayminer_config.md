@@ -243,7 +243,7 @@ This endpoint:
   through the relayminer proxy)
 - Bypasses the onchain miner, meter and session mechanisms to prevent misuse by unauthorized users:
     - Requires authentication
-    - A token can be defined using a 32 bytes hexadecimal `token`
+    - An authentication token can be defined using a 32 bytes hexadecimal `token`
 
 Example configuration:
 
@@ -251,7 +251,7 @@ Example configuration:
 forward:
   enabled: true
   addr: localhost:8082
-  token: 8e8cff9152db92e960b00b4159b23f82084192f9d6c589337caab9705b3e0693
+  auth_token: 8e8cff9152db92e960b00b4159b23f82084192f9d6c589337caab9705b3e0693
 ```
 
 Example query to forward a request using the `relayminer1` to `ollama` service in Localnet environment:

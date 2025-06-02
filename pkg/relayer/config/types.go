@@ -48,9 +48,9 @@ type YAMLRelayMinerForwardConfig struct {
 	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP.
 	Addr string `yaml:"addr"`
 
-	// Token is a 32 bytes hexadecimal string to authenticate request to the forward server. (mandatory flag when enabling forwarding capabilities).
+	// AuthToken is a 32 bytes hexadecimal string to authenticate request to the forward server. (mandatory flag when enabling forwarding capabilities).
 	// You can use 'make relayminer_forward_token_gen' command to print a well-formatted token.
-	Token string `yaml:"token"`
+	AuthToken string `yaml:"auth_token"`
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
@@ -134,9 +134,9 @@ type RelayMinerForwardConfig struct {
 	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP.
 	Addr string
 
-	// Token is a 32 bytes hexadecimal string to authenticate request to the forward server. (mandatory flag when enabling forwarding capabilities)
+	// AuthToken is a 32 bytes hexadecimal string to authenticate request to the forward server. (mandatory flag when enabling forwarding capabilities)
 	// You can use 'make relayminer_forward_token_gen' command to print a well-formatted token.
-	Token string
+	AuthToken string
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket

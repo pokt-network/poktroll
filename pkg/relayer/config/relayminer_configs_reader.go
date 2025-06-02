@@ -78,9 +78,9 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	relayMinerConfig.Forward = &RelayMinerForwardConfig{
-		Enabled: yamlRelayMinerConfig.Forward.Enabled,
-		Addr:    yamlRelayMinerConfig.Forward.Addr,
-		Token:   yamlRelayMinerConfig.Forward.Token,
+		Enabled:   yamlRelayMinerConfig.Forward.Enabled,
+		Addr:      yamlRelayMinerConfig.Forward.Addr,
+		AuthToken: yamlRelayMinerConfig.Forward.AuthToken,
 	}
 
 	// Hydrate the pocket node urls
