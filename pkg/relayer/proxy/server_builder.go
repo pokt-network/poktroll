@@ -186,6 +186,6 @@ func (rp *relayerProxy) logRelayMinerConfiguredServices(supplierOperatorAddress 
 	for serviceId := range availableConfigs {
 		availableServices = append(availableServices, serviceId)
 	}
-	rp.logger.Warn().Msgf("relayminer_configs for supplier %s: %v", supplierOperatorAddress, availableServices)
+	rp.logger.Info().Msgf("relayminer_configs for supplier %s: %v", supplierOperatorAddress, availableServices)
 
 }
