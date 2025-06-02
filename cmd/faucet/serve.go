@@ -26,13 +26,12 @@ func ServeCmd() *cobra.Command {
 		Short: "Start a Pocket Network faucet server.",
 		Long: `Start a Pocket Network faucet server.
 
-The faucet server is a REST API that allows users to request tokens of a given denom be sent to a recipient address.
+The faucet server exposes a configurable REST HTTP endpoint to the faucet client.
+It uses the configured Pocket Network RPC endpoint, keyring, and signing key to send transactions.
 
 For more information, see: https://dev.poktroll.com/operate/faucet
 // TODO_UP_NEXT(@bryanchriswhite): update docs URL once known.`,
-		Example: `
-
-# Option 1: Using a config file
+		Example: `# Option 1: Using a config file
 pocketd faucet serve --listen-address 0.0.0.0:8080 --config ./faucet_config.yaml
 
 # Option 2: Using environment variables
