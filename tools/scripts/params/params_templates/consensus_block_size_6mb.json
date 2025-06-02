@@ -1,0 +1,25 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/cosmos.consensus.v1.MsgUpdateParams",
+        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "abci": {},
+        "block": {
+          "max_bytes": "66060288",
+          "max_gas": "-1"
+        },
+        "evidence": {
+          "max_age_duration": "48h0m0s",
+          "max_age_num_blocks": "100000",
+          "max_bytes": "1048576"
+        },
+        "validator": {
+          "pub_key_types": [
+            "ed25519"
+          ]
+        }
+      }
+    ]
+  }
+}
