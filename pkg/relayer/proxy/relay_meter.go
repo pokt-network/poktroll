@@ -142,7 +142,7 @@ func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
 	return nil
 }
 
-// EnsureRateLimit updates the relay meter with the given relay request metadata
+// ShouldRateLimit updates the relay meter with the given relay request metadata
 // and checks if the relay request exceeds the rate limit for the given application.
 // It returns true if the rate limit is exceeded, false otherwise.
 func (rmtr *ProxyRelayMeter) ShouldRateLimit(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) bool {
