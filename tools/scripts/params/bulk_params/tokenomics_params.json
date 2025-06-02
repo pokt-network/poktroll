@@ -13,7 +13,7 @@
             "application": 0.1
           },
           "dao_reward_address": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
-          "global_inflation_per_claim": 0.1
+          "global_inflation_per_claim": 0.4
         }
       }
     ]

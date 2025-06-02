@@ -272,7 +272,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 
 **Variables:**
 
-- `NETWORK`: one of (`pocket-alpha`, `pocket-beta`, `pocket`)
+- `NETWORK`: one of (`local`, `alpha`, `beta`, `main`)
 - `RPC_ENDPOINT`: The RPC endpoint for the network (e.g., `https://shannon-testnet-grove-rpc.alpha.poktroll.com`)
 - `UPGRADE_TX_JSON`: Path to the upgrade transaction JSON (e.g., `tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json`)
 - `FROM_ACCOUNT`: The account submitting the transaction (e.g., `pnf_alpha`)
@@ -296,7 +296,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 
    ```bash
    # Get the current height
-   CURRENT_HEIGHT=$(pocketd status --network=${NETWORK} | jq '.sync_info.latest_block_height' | tr -d '"')
+   CURRENT_HEIGHT=$(pocketd q block --network=${NETWORK} -o json | tail -n +2 | jq '.header.height')
    # Add 5 blocks (arbitrary, adjust as needed)
    UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
    # Update the JSON

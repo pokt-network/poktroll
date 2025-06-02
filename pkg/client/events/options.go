@@ -1,12 +1,21 @@
 package events
 
-import "github.com/pokt-network/poktroll/pkg/client"
+import (
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+)
 
 // WithDialer returns a client.EventsQueryClientOption which sets the given dialer on the
 // resulting eventsQueryClient when passed to NewEventsQueryClient().
 func WithDialer(dialer client.Dialer) client.EventsQueryClientOption {
 	return func(evtClient client.EventsQueryClient) {
 		evtClient.(*eventsQueryClient).dialer = dialer
+	}
+}
+
+func WithLogger(logger polylog.Logger) client.EventsQueryClientOption {
+	return func(evtClient client.EventsQueryClient) {
+		evtClient.(*eventsQueryClient).logger = logger
 	}
 }
 
