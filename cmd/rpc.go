@@ -48,22 +48,26 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 }
 
 // setNetworkRelatedFlags sets the following flags according to the given arguments
-// ONLY if they have not already been set:
+// ONLY if they have not already been set AND are registered on the given command:
 // * --chain-id
 // * --node
 // * --grpc-addr
 //
 // DEV_NOTE: --grpc-insecure is also set, but ONLY for LocalNet.
 func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr string) error {
-	if !cmd.Flags().Changed(cosmosflags.FlagChainID) {
-		if err := cmd.Flags().Set(cosmosflags.FlagChainID, chainId); err != nil {
-			return err
+	if chainIDFlag := cmd.Flags().Lookup(cosmosflags.FlagChainID); chainIDFlag != nil {
+		if !cmd.Flags().Changed(cosmosflags.FlagChainID) {
+			if err := cmd.Flags().Set(cosmosflags.FlagChainID, chainId); err != nil {
+				return err
+			}
 		}
 	}
 
-	if !cmd.Flags().Changed(cosmosflags.FlagNode) {
-		if err := cmd.Flags().Set(cosmosflags.FlagNode, nodeUrl); err != nil {
-			return err
+	if nodeFlag := cmd.Flags().Lookup(cosmosflags.FlagNode); nodeFlag != nil {
+		if !cmd.Flags().Changed(cosmosflags.FlagNode) {
+			if err := cmd.Flags().Set(cosmosflags.FlagNode, nodeUrl); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -76,15 +80,16 @@ func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr strin
 		}
 	}
 
-	// TODO_TECHDEBT(@bryanchriswhite): This should only be set on transactions, not queries.
 	// Also set --grpc-insecure flag, but ONLY for LocalNet.
-	// if chainId == pocket.LocalNetChainId {
-	// 	if !cmd.Flags().Changed(cosmosflags.FlagGRPCInsecure) {
-	// 		if err := cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, "true"); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
+	if chainId == pocket.LocalNetChainId {
+		if grpcInsecureFlag := cmd.Flags().Lookup(cosmosflags.FlagGRPCInsecure); grpcInsecureFlag != nil {
+			if !cmd.Flags().Changed(cosmosflags.FlagGRPCInsecure) {
+				if err := cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, "true"); err != nil {
+					return err
+				}
+			}
+		}
+	}
 
 	return nil
 }
