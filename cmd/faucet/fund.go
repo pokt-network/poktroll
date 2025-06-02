@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
@@ -26,25 +28,29 @@ var faucetBaseURL string
 
 func FundCmd() *cobra.Command {
 	fundCmd := &cobra.Command{
-		Use:   "fund [denom] [recipient address]",
+		Use:   "fund [denom] [recipient key name or address]",
 		Args:  cobra.ExactArgs(2),
-		Short: "Request tokens of a given denom be sent to a recipient address.",
-		Long: `Request tokens of a given denom be sent to a recipient address.
+		Short: "Request tokens of a given denom be sent to a recipient key name or address.",
+		Long: `Request tokens of a given denom be sent to a recipient key name or address.
 
 The faucet fund command sends a POST request to fund the account with the token denom as specified by RESTful path parameters.
 Requests are send to the faucet server at the endpoint specified by --faucet-base-url flag.
 The --network flag can also be used to set the faucet base URL by network name (e.g. --network=beta; see: --help).
+The amount of tokens sent is a server-side configuration parameter.
 
 // TODO_UP_NEXT(@bryanchriswhite): update docs URL once known.
 For more information, see: https://dev.poktroll.com/operate/faucet`,
-		Example: `# Funding mact denom, default faucet base URL
+		Example: `# Funding mact denom by key name, using default faucet base URL
+pocketd faucet fund mact app1
+
+# Funding mact denom by address, using default faucet base URL
 pocketd faucet fund mact pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
 
-# Funding upokt denom, custom faucet base URL
-pocketd faucet fund upokt pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 --base-url=http://localhost:8080
+# Funding upokt denom by key name, custom faucet base URL
+pocketd faucet fund upokt app --base-url=http://localhost:8080
 
-# Funding mact denom, faucet base URL set by --network flag
-pocketd faucet fund mact pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 --network=main`,
+# Funding mact denom by key name, faucet base URL set by --network flag
+pocketd faucet fund mact app --network=main`,
 		RunE: runFund,
 	}
 
@@ -56,11 +62,29 @@ pocketd faucet fund mact pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 --network=m
 // runFund parses the recipient address sends a request to the faucet server for the given address and denom.
 func runFund(cmd *cobra.Command, args []string) error {
 	denom := args[0]
-	recipientAddressStr := args[1]
+	recipientAddressStrOrKeyName := args[1]
 
-	recipientAddress, err := cosmostypes.AccAddressFromBech32(recipientAddressStr)
+	// Conventionally derive a cosmos-sdk client context from the cobra command
+	clientCtx, err := cosmosclient.GetClientQueryContext(cmd)
 	if err != nil {
 		return err
+	}
+
+	// Attempt to parse the first argument as an address first (no key name should be an address).
+	recipientAddress, err := cosmostypes.AccAddressFromBech32(recipientAddressStrOrKeyName)
+	if err != nil {
+		// Attempt to retrieve the address from the keyring.
+		// If the key name is not found, an error is returned.
+		var record *keyring.Record
+		record, err = clientCtx.Keyring.Key(recipientAddressStrOrKeyName)
+		if err != nil {
+			return err
+		}
+
+		recipientAddress, err = record.GetAddress()
+		if err != nil {
+			return err
+		}
 	}
 
 	if err = sendFundRequest(denom, recipientAddress); err != nil {
@@ -69,7 +93,7 @@ func runFund(cmd *cobra.Command, args []string) error {
 
 	logger.Logger.Info().
 		Str("denom", denom).
-		Str("recipient_address", recipientAddressStr).
+		Str("recipient_address", recipientAddress.String()).
 		Msg("Success")
 
 	return nil
@@ -90,17 +114,7 @@ func sendFundRequest(denom string, recipientAddress cosmostypes.AccAddress) erro
 		return err
 	}
 
-	switch httpRes.StatusCode {
-	case http.StatusAccepted:
-		return nil
-	case http.StatusNotModified:
-		logger.Logger.Warn().
-			Str("recipient_address", recipientAddress.String()).
-			Msg("address has already been funded; server is in 'create_accounts_only' mode (no-op)")
-		return nil
-	default:
-	}
-
+	// Read the response body (JSON).
 	bodyBytes, err := io.ReadAll(httpRes.Body)
 	if err != nil {
 		return err
@@ -110,6 +124,17 @@ func sendFundRequest(denom string, recipientAddress cosmostypes.AccAddress) erro
 	}()
 
 	bodyStr := string(bodyBytes)
+
+	switch httpRes.StatusCode {
+	case http.StatusAccepted:
+		logger.Logger.Info().Msg(bodyStr)
+		return nil
+	case http.StatusNotModified:
+		logger.Logger.Error().Msg(bodyStr)
+		return nil
+	default:
+	}
+
 	return fmt.Errorf("unexpected response status code %d; body: %q", httpRes.StatusCode, bodyStr)
 }
 

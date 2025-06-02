@@ -220,7 +220,7 @@ func NewFundResponse(
 // SendDenom sends tokens of the specified denom to recipientAddress.
 // - Amount is determined by SupportedSendCoins config.
 // - Only checks that the TX passed CheckTx (entered mempool); does not wait for commit.
-// - TX may still fail after being accepted into the mempool.
+// - TX MAY still fail after being accepted into the mempool.
 func (srv *Server) SendDenom(
 	ctx context.Context,
 	logger polylog.Logger,
