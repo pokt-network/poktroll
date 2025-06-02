@@ -243,7 +243,7 @@ query_module_params() {
     local show_header=${2:-true}
 
     # Build the query command
-    local query_cmd="./pocketd query $module params --home=$HOME_DIR"
+    local query_cmd="pocketd query $module params --home=$HOME_DIR"
     if [ "$NETWORK" != "local" ]; then
         query_cmd="$query_cmd --network=$NETWORK"
     fi
@@ -323,7 +323,7 @@ export_module_params() {
     local output_file=$2
 
     # Build the query command
-    local query_cmd="./pocketd query $module params --home=$HOME_DIR"
+    local query_cmd="pocketd query $module params --home=$HOME_DIR"
     if [ "$NETWORK" != "local" ]; then
         query_cmd="$query_cmd --network=$NETWORK"
     fi
@@ -422,7 +422,7 @@ case $COMMAND in
     # Existing update logic starts here
 
     # Build the query command
-    QUERY_CMD="./pocketd query $MODULE_NAME params --home=$HOME_DIR"
+    QUERY_CMD="pocketd query $MODULE_NAME params --home=$HOME_DIR"
     if [ "$NETWORK" != "local" ]; then
         QUERY_CMD="$QUERY_CMD --network=$NETWORK"
     fi
