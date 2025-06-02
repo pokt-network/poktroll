@@ -159,7 +159,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")
 
-	if err := logFlagValues(logger, cmd); err != nil {
+	if err = logFlagValues(logger, cmd); err != nil {
 		logger.Error().Err(err).Msg("Could not read provided flags")
 		return err
 
