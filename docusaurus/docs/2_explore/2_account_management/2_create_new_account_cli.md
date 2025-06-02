@@ -46,12 +46,22 @@ Follow the [installation guide](1_pocketd_cli.md) specific to your operating sys
 
 ## Exporting & Importing Hex Private Keys
 
+You can import a hex private key into your keyring like so:
+
 ```bash
 pocketd keys import-hex <wallet_name> <hex_private_key>
 ```
 
+And export a hex private key from your keyring like so:
+
 ```bash
 pocketd keys export <wallet_name> --unsafe --unarmored-hex --yes
+```
+
+For more details, see:
+
+```bash
+pocketd keys --help
 ```
 
 ## Creating a new wallet Wallet
