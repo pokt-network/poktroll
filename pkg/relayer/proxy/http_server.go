@@ -186,7 +186,7 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 func (server *relayMinerHTTPServer) Forward(ctx context.Context, serviceID string, w http.ResponseWriter, req *http.Request) error {
 	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceID]
 	if !ok {
-		return ErrRelayerProxyServiceIDNotFound
+		return ErrRelayerProxyServiceIDNotFound.Wrapf("service ID: %s", serviceID)
 	}
 
 	if isWebSocketRequest(req) {
