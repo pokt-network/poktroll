@@ -35,7 +35,8 @@ const (
 	// TODO_UP_NEXT(@bryanchriswhite): Update to the MainNet URL once available.
 	DefaultFaucetBaseURL = "https://shannon-testnet-grove-faucet.beta.poktroll.com"
 
-	FaucetConfigPath        = "faucet-config-path"
+	FaucetConfigPath = "faucet-config-path"
+	// TODO_UP_NEXT(@bryanchriswhite): explicitly set config.
 	FaucetConfigPathUsage   = "Path to the faucet config yaml file ($HOME/.{pocket,poktroll} and PWD are searched by default)"
 	DefaultFaucetConfigPath = ""
 
