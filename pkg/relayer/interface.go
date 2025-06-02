@@ -61,7 +61,7 @@ type RelayerProxy interface {
 	// PingAll tests the connectivity between all the managed relay servers and their respective backend URLs.
 	PingAll(ctx context.Context) error
 
-	// Forward sends a request to the relay server that managed the given service id.
+	// Forward sends a request to the relay server for the given service ID.
 	Forward(ctx context.Context, serviceID string, w http.ResponseWriter, r *http.Request) error
 }
 
@@ -106,7 +106,7 @@ type RelayServer interface {
 	// Ping tests the connection between the relay server and its backend URL.
 	Ping(ctx context.Context) error
 
-	// Forward sends a request to the supplier service.
+	// Forward sends a request to the supplier service for the given service ID.
 	Forward(ctx context.Context, serviceID string, w http.ResponseWriter, r *http.Request) error
 }
 
