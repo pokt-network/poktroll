@@ -80,8 +80,8 @@ func ScaleRelayDifficultyHash(
 	return scaledHashInt.Bytes()
 }
 
-// GetRelayDifficultyProbability returns a fraction that determines the probability that a
-// target (i.e. difficulty) hash is relative to the baseline.
+// GetRelayDifficultyProbability returns a fraction representing the probability a relay is 'onchain_volume_applicable'.
+// This is does by comparing the provided relay difficulty hash against the hard-coded baseline.
 func GetRelayDifficultyProbability(relayDifficultyHash []byte) *big.Rat {
 	target := bytesToBigInt(relayDifficultyHash)
 	maxHash := bytesToBigInt(BaseRelayDifficultyHashBz)
@@ -89,8 +89,8 @@ func GetRelayDifficultyProbability(relayDifficultyHash []byte) *big.Rat {
 	return probability
 }
 
-// GetRelayDifficultyMultiplier returns the inverse of GetRelayDifficultyProbability
-// to scale onchain volume applicable relays to estimated serviced offchain relays.
+// GetRelayDifficultyMultiplier returns the inverse of GetRelayDifficultyProbability.
+// It is a multiplier that scales FROM 'onchain_volume_applicable_relays' TO 'offchain_estimate_actual_relays'.
 func GetRelayDifficultyMultiplier(relayDifficultyHash []byte) *big.Rat {
 	probability := GetRelayDifficultyProbability(relayDifficultyHash)
 	return new(big.Rat).Inv(probability)

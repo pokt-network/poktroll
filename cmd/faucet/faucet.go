@@ -22,7 +22,7 @@ const (
 var (
 	// faucetCfg is used to configure the faucet server.
 	// It is initialized in preRunServe.
-	faucetCfg *faucet.Config
+	faucetCfg *faucet.FaucetConfig
 
 	// txClient is used by the faucet server to send transactions.
 	// It is initialized in preRunServe.
@@ -36,8 +36,15 @@ var (
 func FaucetCmd() *cobra.Command {
 	faucetCmd := &cobra.Command{
 		Use:   "faucet",
-		Short: "Pocket Network Faucet",
-		Long:  `Pocket Network Faucet`,
+		Short: "Pocket Network faucet client and server CLI",
+		Long: `Pocket Network faucet client and server CLI.
+
+The faucet serve command exposes a configurable REST HTTP endpoint to the faucet client.
+It uses the configured Pocket Network RPC endpoint, keyring, and signing key to send transactions.
+
+The faucet fund command sends a POST request to fund the account with the token denom as specified by RESTful path parameters.
+Requests are send to the faucet server at the endpoint specified by --faucet-base-url flag.
+The --network flag can also be used to set the faucet base URL by network name (e.g. --network=beta; see: --help).`,
 	}
 
 	faucetCmd.AddCommand(FundCmd())

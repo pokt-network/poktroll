@@ -83,7 +83,7 @@ func TestNewFaucet(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 
-	config, err := faucet.NewConfig(
+	config, err := faucet.NewFaucetConfig(
 		clientCtx,
 		testSigningKeyName,
 		testListenAddress,

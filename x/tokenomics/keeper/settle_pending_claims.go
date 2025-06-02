@@ -56,8 +56,11 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 
 		var (
+			// These values are used for cores business logic; minting, slashing, etc.
 			proofRequirement prooftypes.ProofRequirementReason
 			claimeduPOKT     cosmostypes.Coin
+
+			// These values are used for basic validation, telemetry and observability.
 			numClaimRelays,
 			numClaimComputeUnits,
 			numEstimatedComputeUnits uint64
@@ -65,9 +68,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		sessionId := claim.GetSessionHeader().GetSessionId()
 
-		// NB: Not every (Req, Res) pair in the session is inserted into the tree due
-		// to the relay mining difficulty. This is the count of non-empty leaves that
-		// matched the necessary difficulty.
+		// DEV_NOTE: Not every Relay (Request, Response) pair in the session is inserted into the tree.
+		// See the godoc for GetNumRelays for more delays.
 		numClaimRelays, err = claim.GetNumRelays()
 		if err != nil {
 			return settledResults, expiredResults, err
@@ -114,18 +116,24 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
+		// Retrieve the shared module params.
+		// It contains network wide governance params required to convert claims to POKT (e.g. CUTTM).
+		sharedParams := settlementContext.GetSharedParams()
+
 		// numEstimatedComputeUnits is the probabilistic estimation of the offchain
-		// work done by the relay miner in this session. It is derived from the claimed
-		// work and the relay mining difficulty.
+		// work done by the relay miner in this session.
+		// It is derived from the claimed work and the relay mining difficulty.
 		numEstimatedComputeUnits, err = claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
 		if err != nil {
 			return settledResults, expiredResults, err
 		}
 
-		sharedParams := settlementContext.GetSharedParams()
-		// claimeduPOKT is the amount of uPOKT that the supplier would receive if the
-		// claim is settled. It is derived from the claimed number of relays, the current
-		// service mining difficulty and the global network parameters.
+		// claimeduPOKT is the amount the supplier will receive if the claim is settled.
+		// It is derived from:
+		// - The claim's number of relays
+		// - The service's configured CUPR
+		// - The service's onchain current relay mining difficulty
+		// - Global network parameters (e.g. CUTTM)
 		claimeduPOKT, err = claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 		if err != nil {
 			return settledResults, expiredResults, err
@@ -160,13 +168,16 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 			var expirationReason tokenomicstypes.ClaimExpirationReason
 			switch claim.ProofValidationStatus {
+
 			// If the proof is required and not found, the claim is expired.
 			case prooftypes.ClaimProofStatus_PENDING_VALIDATION:
 				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_MISSING
-			// If the proof is required and invalid, the claim is expired.
+
+				// If the proof is required and invalid, the claim is expired.
 			case prooftypes.ClaimProofStatus_INVALID:
 				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_INVALID
-			// If the proof is required and valid, the claim is settled.
+
+				// If the proof is required and valid, the claim is settled.
 			case prooftypes.ClaimProofStatus_VALIDATED:
 				expirationReason = tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
 			}

@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	cometcrypto "github.com/cometbft/cometbft/crypto"
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
@@ -21,19 +20,16 @@ import (
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
-var (
-	inputFilePath  string
-	outputFilePath string
-	unsafe         bool
-	unarmoredJSON  bool
-)
-
+// TODO_MAINNET_MIGRATION: Update the docs in https://dev.poktroll.com/operate/morse_migration/claiming
 // ClaimMorseAccountBulkCmd returns the cobra command for bulk claiming Morse accounts and mapping them to new Shannon accounts.
 func ClaimMorseAccountBulkCmd() *cobra.Command {
 	claimAcctBulkCmd := &cobra.Command{
 		Use:  "claim-accounts --input-file [morse_hex_keys_file] --output-file [morse_shannon_map_output_file]",
 		Args: cobra.ExactArgs(0),
-		Example: `Safe example (does not export shannon private keys in plaintext)
+		Example: `
+
+1. Safe example (does not export shannon private keys in plaintext)
+
 $ pocketd tx migration claim-accounts \
   --input-file ./bulk-accounts.json \
   --output-file ./bulk-accounts-output.json \
@@ -41,7 +37,8 @@ $ pocketd tx migration claim-accounts \
   --home ./localnet/pocketd \
   --keyring-backend test
 
-Unsafe example (exports shannon private keys in plaintext):
+2. Unsafe example (exports shannon private keys in plaintext):
+
 $ pocketd tx migration claim-accounts \
   --input-file ./bulk-accounts.json \
   --output-file ./bulk-accounts-output.json \
@@ -50,12 +47,12 @@ $ pocketd tx migration claim-accounts \
   --keyring-backend test \
   --unsafe \
   --unarmored-json`,
-		Short: "Bulk claim unstaked balances from multiple Morse accounts to new Shannon accounts using JSON input/output files.",
-		Long: `Easily claim unstaked balances from multiple Morse accounts in bulk.
+		Short: "Claim many Morse accounts as unstaked accounts (i.e. non-actor, balance only account)",
+		Long: `Claim many Morse accounts as unstaked accounts (i.e. non-actor, balance only account).
 
 This automates the batch transition and mapping of accounts from Morse to Shannon, streamlining the migration process.
 
-In particular, this command:
+This command:
 - Accepts a JSON file with Morse private keys (hex format).
 - For each Morse account, a new Shannon account will be created.
 - After running, you'll get an output JSON mapping each Morse account to its new Shannon account, with both addresses and private keys (hex).
@@ -102,40 +99,32 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 	}
 
 	// Prepare the input file path flag.
-	claimAcctBulkCmd.Flags().StringVarP(
-		&inputFilePath,
+	claimAcctBulkCmd.Flags().StringVar(
+		&flagInputFilePath,
 		flags.FlagInputFile,
-		flags.FlagInputFileShort,
 		"",
-		"path to the JSON file containing Morse private keys (hex-encoded) for all accounts to be migrated in bulk",
-	)
+		"Path to the JSON file containing Morse private keys (hex-encoded) for all accounts to be migrated in bulk.")
 
 	// Prepare the output file path flag.
-	claimAcctBulkCmd.Flags().StringVarP(
-		&outputFilePath,
+	claimAcctBulkCmd.Flags().StringVar(
+		&flagOutputFilePath,
 		flags.FlagOutputFile,
-		flags.FlagOutputFileShort,
 		"",
-		"path to the JSON file where the mapping of Morse accounts to their newly generated Shannon accounts (addresses and private keys in hex) will be written",
-	)
+		"Path to a JSON file where the mapping of Morse accounts to their newly generated Shannon accounts (addresses and private keys in hex) will be written.")
 
 	// Prepare the unsafe flag.
-	claimAcctBulkCmd.Flags().BoolVarP(
-		&unsafe,
+	claimAcctBulkCmd.Flags().BoolVar(
+		&flagUnsafe,
 		"unsafe",
-		"",
 		false,
-		"unsafe operation, do not auto-load the shannon account private keys into the keyring",
-	)
+		"Enable unsafe operations. This flag must be switched on along with all unsafe operation-specific options.")
 
 	// Prepare the unarmored JSON flag.
-	claimAcctBulkCmd.Flags().BoolVarP(
-		&unarmoredJSON,
+	claimAcctBulkCmd.Flags().BoolVar(
+		&flagUnarmoredJSON,
 		"unarmored-json",
-		"",
 		false,
-		"unarmored JSON output file, this is useful for the migration of operators into a shannon keyring for later use",
-	)
+		"Export unarmored hex privkey. Requires --unsafe.")
 
 	// Adds standard Cosmos SDK CLI tx flags.
 	cosmosflags.AddTxFlagsToCmd(claimAcctBulkCmd)
@@ -164,44 +153,10 @@ func marshalAccountInfo(address string, privateKey []byte) ([]byte, error) {
 	}
 
 	// Marshal the struct based on the flags.
-	if unsafe && unarmoredJSON {
+	if flagUnsafe && flagUnarmoredJSON {
 		return json.Marshal(&unsafeStruct)
 	}
 	return json.Marshal(&safeStruct)
-}
-
-// MorseAccountInfo holds Morse account data.
-// - Address and private key are in hex format.
-type MorseAccountInfo struct {
-	// Address is the Morse account address in hex format.
-	Address cometcrypto.Address `json:"address"`
-
-	// PrivateKey is the Morse account private key in ed25519 format.
-	PrivateKey ed25519.PrivKey `json:"private_key"`
-}
-
-// MarshalJSON customizes MorseAccountInfo JSON output.
-// - Includes private key if unsafe/unarmored flags are set.
-func (m MorseAccountInfo) MarshalJSON() ([]byte, error) {
-	addressStr := hex.EncodeToString(m.Address)
-	return marshalAccountInfo(addressStr, m.PrivateKey)
-}
-
-// ShannonAccountInfo holds Shannon account data.
-// - Address and private key are in bech32 format.
-type ShannonAccountInfo struct {
-	// Address is the Shannon account address in bech32 format.
-	Address sdk.AccAddress `json:"address"`
-
-	// PrivateKey is the Shannon account private key in secp256k1 format.
-	PrivateKey secp256k1.PrivKey `json:"private_key"`
-}
-
-// MarshalJSON customizes ShannonAccountInfo JSON output.
-// - Includes private key if unsafe/unarmored flags are set.
-func (s ShannonAccountInfo) MarshalJSON() ([]byte, error) {
-	addressStr := s.Address.String()
-	return marshalAccountInfo(addressStr, s.PrivateKey.Bytes())
 }
 
 // MorseShannonMapping maps a Morse account to its corresponding Shannon account and migration message.
@@ -241,7 +196,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
 	// Ensure that unsafe and unarmored-json flags are used together.
-	if (unarmoredJSON && !unsafe) || unsafe && !unarmoredJSON {
+	if (flagUnarmoredJSON && !flagUnsafe) || flagUnsafe && !flagUnarmoredJSON {
 		return fmt.Errorf("unsafe and unarmored-json flags must be used together")
 	}
 
@@ -251,21 +206,21 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	// Conventionally derive a cosmos-sdk client context from the cobra command.
+	// Derive a cosmos-sdk client context from the cobra command.
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
 		return err
 	}
 
 	// Read Morse private keys from file.
-	morseAccounts, err := readMorsePrivateKeysFile(ctx, clientCtx)
+	morseAccounts, err := readMorseAccountsPrivateKeysFile(ctx, clientCtx)
 	if err != nil {
 		return err
 	}
 
 	logger.Logger.Info().
-		Str("input_file", inputFilePath).
-		Str("output_file", outputFilePath).
+		Str("input_file", flagInputFilePath).
+		Str("output_file", flagOutputFilePath).
 		Msgf("About to start running MsgClaimMorseAccount for %d Morse accounts", len(morseAccounts))
 
 	// Prepare the migration batch result.
@@ -300,18 +255,18 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	// Write output JSON file to --output-file path.
 	defer func() {
 		outputJSON, _ := json.MarshalIndent(migrationBatchResult, "", "  ")
-		logger.Logger.Info().Msgf("writing migration output JSON to %s", outputFilePath)
-		writeErr := os.WriteFile(outputFilePath, outputJSON, 0644)
+		logger.Logger.Info().Msgf("writing migration output JSON to %s", flagOutputFilePath)
+		writeErr := os.WriteFile(flagOutputFilePath, outputJSON, 0644)
 		if writeErr != nil {
 			logger.Logger.Error().Err(writeErr).
-				Msgf("output file content printed due to error writing file to %s", outputFilePath)
+				Msgf("output file content printed due to error writing file to %s", flagOutputFilePath)
 			println(outputJSON)
 		}
 	}()
 
 	// Loop through all EXISTING Morse accounts and map them to NEW Shannon accounts.
 	for _, morseAccount := range morseAccounts {
-		mapping, mappingErr := mappingAccounts(cmd, morseAccount)
+		mapping, mappingErr := mappingAccounts(clientCtx, morseAccount)
 		if mappingErr != nil {
 			// On error, break loop and return.
 			// Partial results will be written to output-file due to deferred write above.
@@ -369,7 +324,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	}
 
 	if migrationBatchResult.Error != "" {
-		logger.Logger.Error().Msgf("error migrating morse accounts: %s. \n Check the output file for more details: %s", migrationBatchResult.Error, outputFilePath)
+		logger.Logger.Error().Msgf("error migrating morse accounts: %s. \n Check the output file for more details: %s", migrationBatchResult.Error, flagOutputFilePath)
 	} else {
 		logger.Logger.Info().
 			Int("tx_messages", len(claimMessages)).
@@ -380,27 +335,33 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-// readMorsePrivateKeysFile reads Morse private keys from the input file, validates their claimable status, and returns a list of MorseAccountInfo.
-func readMorsePrivateKeysFile(
+// readMorseAccountsPrivateKeysFile reads ad validates Morse account info. It:
+// 1. Reads Morse private keys from the input file.
+// 2. Validates their claimable status.
+// 3. Returns a list of MorseAccountInfo.
+func readMorseAccountsPrivateKeysFile(
 	ctx context.Context,
 	clientCtx cosmosclient.Context,
 ) ([]MorseAccountInfo, error) {
-	// Prepare a new morse private keys slice.
-	var morsePrivateKeys []string
+	// Prepare the Morse accounts slice that will be returned.
 	var morseAccounts []MorseAccountInfo
 
 	// Prepare a new query client.
 	queryClient := types.NewQueryClient(clientCtx)
 
 	// Read the input file.
-	fileContents, err := os.ReadFile(inputFilePath)
+	fileContents, err := os.ReadFile(flagInputFilePath)
 	if err != nil {
 		return nil, err
 	}
+
+	// Unmarshal the Morse private keys from the input file.
+	var morsePrivateKeys []string
 	if err := json.Unmarshal(fileContents, &morsePrivateKeys); err != nil {
 		return nil, err
 	}
 
+	// Loop through all Morse private keys and validate their claimable status.
 	for _, morsePrivateKey := range morsePrivateKeys {
 		morseHexKey, err := hex.DecodeString(morsePrivateKey)
 		if err != nil {
@@ -417,11 +378,11 @@ func readMorsePrivateKeysFile(
 			return nil, queryErr
 		}
 
-		// exists at snapshot but could or not be claimed yet
+		// Check if the Morse account is already claimed.
 		if res.MorseClaimableAccount.IsClaimed() {
-			// this morse account was already claimed
-			// Ignore already-claimed Morse accounts in migration.
-			logger.Logger.Warn().Msgf("morse account %s already claimed: %v", morseAddressStr, res.MorseClaimableAccount)
+			// Ignore already-claimed Morse accounts during the bulk supplier migration.
+			// This is intentional behaviour assuming a human error of not removing a key from the input-file that has already been claimed.
+			logger.Logger.Warn().Msgf("Skipping accounts with morse address (%s) because it has already been claimed: %v", morseAddressStr, res.MorseClaimableAccount)
 			continue
 		}
 
@@ -434,7 +395,7 @@ func readMorsePrivateKeysFile(
 	}
 
 	if len(morseAccounts) == 0 {
-		return nil, fmt.Errorf("no claimable morse accounts found in the snapshot. Check the logs and the input file before trying again.")
+		return nil, fmt.Errorf("Zero claimable Morse accounts found in the snapshot. Check the logs and the input file before trying again.")
 	}
 
 	return morseAccounts, nil
@@ -444,13 +405,10 @@ func readMorsePrivateKeysFile(
 // - Maps a Morse account to a new Shannon account.
 // - Creates the migration message.
 // - Imports the Shannon private key into the keyring.
-func mappingAccounts(cmd *cobra.Command, morseAccount MorseAccountInfo) (*MorseShannonMapping, error) {
-	// Conventionally derive a cosmos-sdk client context from the cobra command.
-	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
-	if err != nil {
-		return nil, err
-	}
-
+func mappingAccounts(
+	clientCtx cosmosclient.Context,
+	morseAccount MorseAccountInfo,
+) (*MorseShannonMapping, error) {
 	// Ensure that a signing account is provided.
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
 	if shannonSigningAddr == "" {

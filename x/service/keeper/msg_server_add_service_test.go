@@ -63,16 +63,6 @@ func TestMsgServer_AddService(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			desc: "valid - service added successfully",
-			setup: func(t *testing.T) {
-				// Add 10000000001 upokt to the account
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
-			},
-			address:     newServiceOwnerAddr,
-			service:     newService,
-			expectedErr: nil,
-		},
-		{
 			desc:    "invalid - service owner address is empty",
 			setup:   func(t *testing.T) {},
 			address: "", // explicitly set to empty string
@@ -175,7 +165,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - sufficient balance of different denom",
 			setup: func(t *testing.T) {
 				// Adds 10000000001 wrong coins to the account
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, pocket.DenomMACT, oneUPOKTGreaterThanFee)
 			},
 			address:     newServiceOwnerAddr,
 			service:     newService,
@@ -188,9 +178,35 @@ func TestMsgServer_AddService(t *testing.T) {
 			service:     oldService,
 			expectedErr: types.ErrServiceInvalidOwnerAddress,
 		},
-		// {
-		// 	desc: "// TODO(@red-0ne, #781): valid - update compute_units_pre_relay if the owner is correct",
-		// },
+		// This test is placed after those that check for errors, because of the stateful
+		// nature of the test setup.
+		// If placed first, those above will follow the update service logic and
+		// will not return an error.
+		{
+			desc: "valid - service added successfully",
+			setup: func(t *testing.T) {
+				// Add 10000000001 upokt to the account
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
+			},
+			address:     newServiceOwnerAddr,
+			service:     newService,
+			expectedErr: nil,
+		},
+		{
+			desc: "valid - update compute_units_per_relay if the owner is correct",
+			setup: func(t *testing.T) {
+				// Add 10000000001 upokt to the account
+				keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
+			},
+			address: oldServiceOwnerAddr,
+			service: sharedtypes.Service{
+				Id:                   oldService.Id,
+				Name:                 oldService.Name,
+				ComputeUnitsPerRelay: 20, // Update to a new value
+				OwnerAddress:         oldServiceOwnerAddr,
+			},
+			expectedErr: nil,
+		},
 	}
 
 	for _, test := range tests {

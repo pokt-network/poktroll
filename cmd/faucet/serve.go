@@ -26,13 +26,15 @@ func ServeCmd() *cobra.Command {
 		Short: "Start a Pocket Network faucet server.",
 		Long: `Start a Pocket Network faucet server.
 
-The faucet server is a REST API that allows users to request tokens of a given denom be sent to a recipient address.
+The faucet server exposes a configurable REST HTTP endpoint to the faucet client.
+It uses the configured Pocket Network RPC endpoint, keyring, and signing key to send transactions.
 
 For more information, see: https://dev.poktroll.com/operate/faucet
 // TODO_UP_NEXT(@bryanchriswhite): update docs URL once known.`,
-		Example: `pocketd faucet serve --listen-address 0.0.0.0:8080 --config ./faucet_config.yaml # Using a config file
+		Example: `# Option 1: Using a config file
+pocketd faucet serve --listen-address 0.0.0.0:8080 --config ./faucet_config.yaml
 
-# Using environment variables:
+# Option 2: Using environment variables
 FAUCET_LISTEN_ADDRESS=0.0.0.0:8080 \
 FAUCET_SUPPORTED_SEND_TOKENS_="100upokt,1mact" \
 FAUCET_SIGNING_KEY_NAME=faucet \
@@ -65,6 +67,7 @@ func preRunServe(cmd *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
+	// Parse the viper config values into a new FaucetConfig struct.
 	faucetCfg, err = parseFaucetConfigFromViper(clientCtx)
 	if err != nil {
 		return err
@@ -78,6 +81,7 @@ func preRunServe(cmd *cobra.Command, _ []string) (err error) {
 	}
 	txClientOpts = append(txClientOpts, signingKeyOpt)
 
+	// Configure the tx client to be unordered.
 	unorderedOpt := tx.WithUnordered()
 	txClientOpts = append(txClientOpts, unorderedOpt)
 
@@ -103,11 +107,13 @@ func runServe(cmd *cobra.Command, _ []string) error {
 	cmdContext, cmdCancel := context.WithCancel(cmd.Context())
 	cmd.SetContext(cmdContext)
 
+	// Register a signal handler to gracefully shut down the server.
 	signals.GoOnExitSignal(func() {
 		logger.Logger.Info().Msg("Shutting down...")
 		cmdCancel()
 	})
 
+	// Construct and start the faucet server.
 	faucetSrv, err := faucet.NewFaucetServer(
 		cmdContext,
 		faucet.WithConfig(faucetCfg),
@@ -125,8 +131,8 @@ func runServe(cmd *cobra.Command, _ []string) error {
 // - unmarshal the current viper config values into a new FaucetConfig struct
 // - validate the resulting faucet config
 // - load the faucet config's signing key (from the keyring)
-func parseFaucetConfigFromViper(clientCtx cosmosclient.Context) (*faucet.Config, error) {
-	config := new(faucet.Config)
+func parseFaucetConfigFromViper(clientCtx cosmosclient.Context) (*faucet.FaucetConfig, error) {
+	config := new(faucet.FaucetConfig)
 	if err := viper.Unmarshal(config); err != nil {
 		return nil, err
 	}
