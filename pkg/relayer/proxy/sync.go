@@ -85,7 +85,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// TODO_CONSIDERATION: Consider implementing a delay queue instead of rejecting
 	// requests when application stake is insufficient. This would allow processing
 	// once earlier requests complete and free up stake.
-	if shouldRateLimit := server.relayMeter.ShouldRateLimit(ctx, meta); shouldRateLimit {
+	if server.relayMeter.ShouldRateLimit(ctx, meta) {
 		return relayRequest, ErrRelayerProxyRateLimited
 	}
 
