@@ -14,7 +14,6 @@ import (
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -143,10 +142,10 @@ func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
 	return nil
 }
 
-// AccumulateRelayReward accumulates the relay reward for the given relay request.
-// The relay reward is added optimistically, assuming that the relay will be volume / reward
-// applicable and the relay meter would remain up to date.
-func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) error {
+// ShouldRateLimit updates the relay meter with the given relay request metadata
+// and checks if the relay request exceeds the rate limit for the given application.
+// It returns true if the rate limit is exceeded, false otherwise.
+func (rmtr *ProxyRelayMeter) ShouldRateLimit(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) bool {
 	rmtr.relayMeterMu.Lock()
 	defer rmtr.relayMeterMu.Unlock()
 
@@ -154,17 +153,26 @@ func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta 
 	// stake amount.
 	appRelayMeter, err := rmtr.ensureRequestSessionRelayMeter(ctx, reqMeta)
 	if err != nil {
-		return err
+		rmtr.logger.Warn().Msgf(
+			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
+		return false
 	}
 
 	// Get the cost of the relay based on the service and shared parameters.
-	relayCostCoin, err := getSingleMinedRelayCostCoin(
+	relayCostCoin, err := getSingleRelayCostCoin(
 		appRelayMeter.sharedParams,
 		appRelayMeter.service,
-		appRelayMeter.serviceRelayDifficulty,
 	)
 	if err != nil {
-		return err
+		rmtr.logger.Warn().Msgf(
+			"[Non critical] Unable to calculate relay cost in session %s. Relay will continue without rate limiting: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
+		return false
 	}
 
 	// Increase the consumed stake amount by relay cost.
@@ -173,7 +181,7 @@ func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta 
 	isAppOverServiced := appRelayMeter.maxCoin.IsLT(newConsumedCoin)
 	if !isAppOverServiced {
 		appRelayMeter.consumedCoin = newConsumedCoin
-		return nil
+		return false
 	}
 
 	// Check if the supplier is allowing unlimited over-servicing (i.e. negative value)
@@ -188,11 +196,12 @@ func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta 
 	if !allowUnlimitedOverServicing {
 		maxAllowedOverServicing := appRelayMeter.maxCoin.Add(rmtr.overServicingAllowanceCoins)
 		if maxAllowedOverServicing.IsLT(newConsumedCoin) {
-			return ErrRelayerProxyRateLimited.Wrapf(
+			rmtr.logger.Warn().Msgf(
 				"application has been rate limited, stake needed: %s, has: %s",
 				newConsumedCoin.String(),
 				appRelayMeter.maxCoin.String(),
 			)
+			return true
 		}
 	}
 
@@ -208,37 +217,43 @@ func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta 
 		)
 	}
 
-	return nil
+	return false
 }
 
 // SetNonApplicableRelayReward updates the relay meter to make the relay reward for
 // the given relay request as non-applicable.
 // This is used when the relay is not volume / reward applicable but was optimistically
 // accounted for in the relay meter.
-func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) error {
+func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) {
 	rmtr.relayMeterMu.Lock()
 	defer rmtr.relayMeterMu.Unlock()
 
 	sessionRelayMeter, ok := rmtr.sessionToRelayMeterMap[reqMeta.GetSessionHeader().GetSessionId()]
 	if !ok {
-		return ErrRelayerProxyUnknownSession.Wrap("session relay meter not found")
+		rmtr.logger.Warn().Msgf(
+			"[Non critical] Unable to find session relay meter for session %s. Application may be rate limited more than intended: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			ErrRelayerProxyUnknownSession.Wrap("session relay meter not found"),
+		)
 	}
 
 	// Get the cost of the relay based on the service and shared parameters.
-	relayCost, err := getSingleMinedRelayCostCoin(
+	relayCost, err := getSingleRelayCostCoin(
 		sessionRelayMeter.sharedParams,
 		sessionRelayMeter.service,
-		sessionRelayMeter.serviceRelayDifficulty,
 	)
 	if err != nil {
-		return ErrRelayerProxyCalculateRelayCost.Wrapf("%s", err)
+		rmtr.logger.Warn().Msgf(
+			"[Non critical] Unable to calculate relay cost in session %s. Application may be rate limited more than intended: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			err,
+		)
 	}
 
 	// Decrease the consumed stake amount by relay cost.
 	newConsumedAmount := sessionRelayMeter.consumedCoin.Sub(relayCost)
 
 	sessionRelayMeter.consumedCoin = newConsumedAmount
-	return nil
 }
 
 // forEachNewBlockFn is a callback function that is called every time a new block is committed.
@@ -407,11 +422,10 @@ func filterTypedEvents[T proto.Message](
 	return eventObs
 }
 
-// getSingleMinedRelayCostCoin returns the cost of a relay based on the shared parameters and the service.
+// getSingleRelayCostCoin returns the cost of a relay based on the shared parameters and the service.
 //
 // relayCost =
 //
-//	relayDifficultyMultiplier *
 //	Compute Units Per Relay (CUPR) *
 //	Compute Units To Token Multiplier (CUTTM) /
 //	Compute Unit Cost Granularity
@@ -419,19 +433,13 @@ func filterTypedEvents[T proto.Message](
 // Example:
 // 1 relayCost (in uPOKT) =
 //
-//	1000 (difficulty multiplier to get the estimated served relays) *
 //	100 (compute units per relay)
 //	42_000_000 (compute unit cost in pPOKT) /
 //	1000000 (convert pPOKT to uPOKT)
-func getSingleMinedRelayCostCoin(
+func getSingleRelayCostCoin(
 	sharedParams *sharedtypes.Params,
 	service *sharedtypes.Service,
-	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
 ) (cosmostypes.Coin, error) {
-	// Get the difficulty multiplier based on the relay mining difficulty.
-	difficultyTargetHash := relayMiningDifficulty.GetTargetHash()
-	difficultyMultiplier := protocol.GetRelayDifficultyMultiplier(difficultyTargetHash)
-
 	// Get the cost of a single compute unit in fractional uPOKT.
 	computeUnitCostUpokt := new(big.Rat).SetFrac64(
 		int64(sharedParams.GetComputeUnitsToTokensMultiplier()),
@@ -439,11 +447,9 @@ func getSingleMinedRelayCostCoin(
 	)
 	// Get the cost of a single relay in fractional uPOKT.
 	relayCostRat := new(big.Rat).Mul(new(big.Rat).SetUint64(service.ComputeUnitsPerRelay), computeUnitCostUpokt)
-	// Get the estimated cost of the served relays in fractional uPOKT.
-	estimatedRelayCostRat := big.NewRat(0, 1).Mul(relayCostRat, difficultyMultiplier)
 
 	// Get the estimated cost of the relay if it gets mined in uPOKT.
-	estimatedRelayCost := big.NewInt(0).Quo(estimatedRelayCostRat.Num(), estimatedRelayCostRat.Denom())
+	estimatedRelayCost := big.NewInt(0).Quo(relayCostRat.Num(), relayCostRat.Denom())
 	estimatedRelayCostCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewIntFromBigInt(estimatedRelayCost))
 
 	return estimatedRelayCostCoin, nil

@@ -30,6 +30,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
@@ -203,6 +204,7 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 				eventsQueryClient,
 				txCtxMock,
 				blockClientMock,
+				polylog.DefaultContextLogger,
 			)
 
 			// Attempt to create the transactions client.
@@ -256,6 +258,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		eventsQueryClient,
 		txCtxMock,
 		blockClientMock,
+		polylog.DefaultContextLogger,
 	)
 
 	// Construct the transaction client.
@@ -407,6 +410,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 		eventsQueryClient,
 		txCtxMock,
 		blockClientMock,
+		polylog.DefaultContextLogger,
 	)
 
 	// Construct the transaction client.
@@ -515,6 +519,7 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 		eventsQueryClient,
 		txCtxMock,
 		blockClientMock,
+		polylog.DefaultContextLogger,
 	)
 
 	// Construct the transaction client.
@@ -760,6 +765,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 				eventsQueryClient,
 				txCtxMock,
 				blockClientMock,
+				polylog.DefaultContextLogger,
 			)
 
 			// Create the client

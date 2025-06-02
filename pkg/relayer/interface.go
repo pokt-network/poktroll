@@ -197,20 +197,14 @@ type RelayMeter interface {
 	// Start starts the relay meter.
 	Start(ctx context.Context) error
 
-	// AccumulateRelayReward adds the relay reward from the incoming request to session's accumulator.
-	// The relay cost is added optimistically, assuming that the relay WILL be volume / reward applicable.
-	//
-	// The reason why optimistic AccumulateRelayReward + SetNonApplicableRelayReward is used instead of
-	// a simpler AccumulateVolumeApplicableRelayReward is that when the relay is first seen
-	// we don't know if it will be volume / reward applicable until it is served.
-	//
-	// To rate limit or not the current relay, we need to always optimistically account all relays as being
-	// volume / reward applicable.
-	AccumulateRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+	// ShouldRateLimit checks if the relay request exceeds the rate limit for the given application.
+	// The relay cost is added optimistically to account for concurrent requests
+	// that may arrive before the relay response is signed and sent back to the client.
+	ShouldRateLimit(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) bool
 
 	// SetNonApplicableRelayReward updates the relay meter for the given relay request as
 	// non-applicable between a single Application and a single Supplier for a single session.
 	// The volume / reward applicability of the relay is unknown to the relay miner
 	// until the relay is served and the relay response signed.
-	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata)
 }

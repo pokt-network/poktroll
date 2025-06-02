@@ -75,7 +75,10 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
 	_, isSupplierOperatorAddressPresent := ra.operatorAddressToSigningKeyNameMap[meta.GetSupplierOperatorAddress()]
 	if !isSupplierOperatorAddressPresent {
-		return ErrRelayAuthenticatorMissingSupplierOperatorAddress
+		return ErrRelayAuthenticatorMissingSupplierOperatorAddress.Wrapf(
+			"supplier operator address %s is not present in the signing key names map",
+			meta.GetSupplierOperatorAddress(),
+		)
 	}
 
 	for _, supplier := range session.Suppliers {
