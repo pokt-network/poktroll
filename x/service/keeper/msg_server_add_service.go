@@ -50,12 +50,17 @@ func (k msgServer) AddService(
 				).Error(),
 			)
 		}
-		return nil, status.Error(
-			codes.FailedPrecondition,
-			types.ErrServiceAlreadyExists.Wrapf(
-				"TODO_MAINNET_MIGRATION(@red-0ne): This is an ephemeral state of the code. Once we s/AddService/UpdateService/g, add the business logic here for updates here.",
-			).Error(),
-		)
+
+		// TODO_POST_MIGRATION: This logic will be replaced once the following PR is merged:
+		// https://github.com/pokt-network/poktroll/pull/1388
+		logger.Info(fmt.Sprintf("Updating ComputeUnitsPerRelay: %v", msg.Service.ComputeUnitsPerRelay))
+		foundService.ComputeUnitsPerRelay = msg.Service.ComputeUnitsPerRelay
+		k.SetService(ctx, foundService)
+
+		isSuccessful = true
+		return &types.MsgAddServiceResponse{
+			Service: &foundService,
+		}, nil
 	}
 
 	// Retrieve the address of the actor adding the service; the owner of the service.

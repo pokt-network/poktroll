@@ -5,6 +5,8 @@
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
 import { themes as prismThemes } from "prism-react-renderer";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -66,6 +68,10 @@ const config = {
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
           sidebarCollapsible: false,
+          remarkPlugins: [remarkMath],
+          rehypePlugins: [rehypeKatex],
+          editUrl:
+            "https://github.com/pokt-network/poktroll/edit/main/docusaurus",
         },
         theme: {
           customCss: [

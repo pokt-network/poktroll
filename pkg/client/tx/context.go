@@ -80,9 +80,11 @@ func (txCtx cosmosTxContext) SignTx(
 	txFactory := txCtx.txFactory
 
 	// Account number MUST be set for unordered transactions.
-	// ONLY query for the account number if offline is false; otherwise,
-	// it should be set explicitly via the --account-number` flag.
-	if unordered && !offline {
+	// ONLY query for the account number if online (i.e. offline is false).
+	// If offline is true, the account number MUST be EXPLICITLY set via the --account-number` flag.
+	online := !offline
+	shouldQueryAccountNumber := unordered || online
+	if shouldQueryAccountNumber {
 		signingKeyAddr, err := txCtx.GetKeyAddress(signingKeyName)
 		if err != nil {
 			return err
@@ -164,14 +166,16 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 		WithSimulateAndExecute(true).
 		WithFromName(signingKeyName)
 
-	// DO NOT set the sequence number in unordered mode.
-	if !txCtx.unordered {
+	// ONLY set the sequence number in txs are ordered.
+	isOrderedTx := !txCtx.unordered
+	if isOrderedTx {
 		accountRetriever := txCtx.clientCtx.AccountRetriever
 		_, seq, seqErr := accountRetriever.GetAccountNumberSequence(clientCtx, accAddress)
 		if seqErr != nil {
 			return 0, seqErr
 		}
 
+		// Transactions are ordered, so we must set the sequence number.
 		txf = txf.WithSequence(seq)
 	}
 

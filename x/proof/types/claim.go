@@ -15,19 +15,26 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// GetNumClaimedComputeUnits returns the number of compute units for a given claim
-// as determined by the sum of the root hash.
+// GetNumClaimedComputeUnits returns the number of compute units for a given claim.
+// It is determined by the sum stored in the root hash of the SMST.
 func (claim *Claim) GetNumClaimedComputeUnits() (numClaimedComputeUnits uint64, err error) {
 	return smt.MerkleSumRoot(claim.GetRootHash()).Sum()
 }
 
-// GetNumRelays returns the number of relays for a given claim
-// as determined by the count of the root hash.
+// GetNumRelays returns the number of relays for a given claim.
+// It is the count of non-empty leaves in the tree.
+//
+// Note that not every Relay (Request, Response) pair in the session is inserted into the tree.
+// The relay hash has to have matched the difficulty for that service.
+//
+// This is controlled by the Relay Mining difficulty to reduce co-processor
+// hardware requirements and enable scaling to tens of billions of relays.
 func (claim *Claim) GetNumRelays() (numRelays uint64, err error) {
 	return smt.MerkleSumRoot(claim.GetRootHash()).Count()
 }
 
 // GetNumEstimatedComputeUnits returns the claim's estimated number of compute units.
+// numEstimatedComputeUnits =
 func (claim *Claim) GetNumEstimatedComputeUnits(
 	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
 ) (numEstimatedComputeUnits uint64, err error) {
@@ -36,14 +43,16 @@ func (claim *Claim) GetNumEstimatedComputeUnits(
 		return 0, err
 	}
 
+	// Safe (high-precision) float division
 	numerator := numEstimatedComputeUnitsRat.Num()
 	denominator := numEstimatedComputeUnitsRat.Denom()
-
 	return new(big.Int).Div(numerator, denominator).Uint64(), nil
 }
 
-// GetClaimeduPOKT returns the claim's reward based on the relay mining difficulty
-// and global network parameters.
+// GetClaimeduPOKT returns the claim's token reward in uPOKT.
+// At a high-level, the following is done:
+// estimatedOffchainComputeUnits = claim.NumVolumeApplicableComputeUnits * service.RelayMiningDifficulty
+// uPOKT = estimatedOffchainComputeUnits * chain.ComputeUnitsToTokenMultiplier / chain.ComputeUnitsCostGranularity
 func (claim *Claim) GetClaimeduPOKT(
 	sharedParams sharedtypes.Params,
 	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
@@ -59,18 +68,19 @@ func (claim *Claim) GetClaimeduPOKT(
 	computeUnitsToUpoktMultiplierRat := new(big.Rat).SetFrac64(
 		// CUTTM is a GLOBAL network wide parameter.
 		int64(sharedParams.GetComputeUnitsToTokensMultiplier()),
+
 		// The uPOKT cost granularity of a single compute unit.
 		int64(sharedParams.GetComputeUnitCostGranularity()),
 	)
 
-	upoktAmountRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToUpoktMultiplierRat)
-
 	// Perform the division as late as possible to minimize precision loss.
+	upoktAmountRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToUpoktMultiplierRat)
 	upoktAmount := new(big.Int).Div(upoktAmountRat.Num(), upoktAmountRat.Denom())
 
+	// Sanity check against unpredictable errors
 	if upoktAmount.Sign() < 0 {
 		return sdk.Coin{}, ErrProofInvalidClaimedAmount.Wrapf(
-			"num estimated compute units (%s) * CUTTM (%s) resulted in a negative amount: %s",
+			"SHOULD NEVER HAPPEN: num estimated compute units (%s) * CUTTM (%s) resulted in a negative amount: %s",
 			numEstimatedComputeUnitsRat.RatString(),
 			computeUnitsToUpoktMultiplierRat.RatString(),
 			upoktAmountRat,
@@ -80,8 +90,9 @@ func (claim *Claim) GetClaimeduPOKT(
 	return sdk.NewCoin(pocket.DenomuPOKT, math.NewIntFromBigInt(upoktAmount)), nil
 }
 
-// getNumEstimatedComputeUnitsRat returns the estimated claim's number of compute units
-// as a ratio.
+// getNumEstimatedComputeUnitsRat returns the claim's estimated number of compute units
+// as a big.Rat ratio.
+// This is necessary for safe (high-precision) float division.
 func (claim *Claim) getNumEstimatedComputeUnitsRat(
 	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
 ) (numEstimatedComputeUnits *big.Rat, err error) {
@@ -94,11 +105,13 @@ func (claim *Claim) getNumEstimatedComputeUnitsRat(
 		)
 	}
 
+	// Retrieve the number of compute unit's from the root hash corresponding to the claim's SMST.
 	numComputeUnits, err := claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return nil, err
 	}
 
+	// This is necessary for safe (high-precision) float division.
 	numComputeUnitsRat := new(big.Rat).SetUint64(numComputeUnits)
 	difficultyMultiplier := protocol.GetRelayDifficultyMultiplier(relayMiningDifficulty.GetTargetHash())
 	numEstimatedComputeUnitsRat := new(big.Rat).Mul(difficultyMultiplier, numComputeUnitsRat)
