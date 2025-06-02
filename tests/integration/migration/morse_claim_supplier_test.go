@@ -750,7 +750,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 
 	// Retrieve the first non-custodial supplier fixture.
 	nonCustodialSupplierFixture := fixtures.GetValidatorFixtures(testmigration.MorseNonCustodialValidator)[0]
-	nonCustodialSupplierAddress := nonCustodialSupplierFixture.GetActor().GetAddress()
+	nonCustodialSupplierAddress := nonCustodialSupplierFixture.GetAddress()
 
 	// Generate new Shannon operator and owner addresses.
 	shannonOperatorAddr := sample.AccAddress()
