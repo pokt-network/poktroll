@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/base64"
-	json "encoding/json"
 	"os"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
@@ -101,7 +100,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		msgImportMorseClaimableAccountsJSONBz, err = json.MarshalIndent(msgImportMorseClaimableAccounts, "", "  ")
+		msgImportMorseClaimableAccountsJSONBz, err = cmtjson.MarshalIndent(msgImportMorseClaimableAccounts, "", "  ")
 		if err != nil {
 			return err
 		}
