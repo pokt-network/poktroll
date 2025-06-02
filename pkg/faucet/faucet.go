@@ -2,6 +2,7 @@ package faucet
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -111,7 +112,7 @@ func (srv *Server) newHandleDenomPOSTRequest(ctx context.Context) http.HandlerFu
 			}
 		}
 		if sendCoin == nil {
-			respondNotFound(logger.Logger, res, fmt.Errorf("unsupported denom %q", denom))
+			respondNotFound(logger.Logger, req, res, fmt.Errorf("unsupported denom %q", denom))
 		}
 
 		logger := logger.Logger.With("denom", sendCoin.Denom)
@@ -140,24 +141,26 @@ func (srv *Server) newHandleDenomPOSTRequest(ctx context.Context) http.HandlerFu
 		}
 
 		// If the address doesn't exist onchain, send it tokens.
-		txResponse, sendErr := srv.SendDenom(ctx, logger, denom, recipientAddress)
+		fundResponse, sendErr := srv.SendDenom(ctx, logger, denom, recipientAddress)
 		if sendErr != nil {
 			respondBadRequest(logger, res, sendErr)
 			return
 		}
 
-		// If CheckTx fails, return a 400 Bad Request response with the tx log.
-		if txResponse.Code != 0 {
-			respondBadRequest(logger, res, errors.New(txResponse.RawLog))
+		fundResponseJSON, err := json.Marshal(fundResponse)
+		if err != nil {
+			respondInternalError(logger, res, err)
 			return
 		}
 
-		// Send accepted response with tx hash (202).
-		respondAccepted(logger, res, txResponse.TxHash)
-		if _, err = res.Write([]byte{}); err != nil {
-			logger.Error().Err(err).Send()
+		// If CheckTx fails, return a 400 Bad Request response with the fund response.
+		if fundResponse.Code != 0 {
+			respondBadRequest(logger, res, errors.New(string(fundResponseJSON)))
 			return
 		}
+
+		// Send accepted response with the JSON serialized fund response (202).
+		respondAccepted(logger, res, fundResponseJSON)
 	}
 }
 
@@ -182,6 +185,38 @@ func (srv *Server) shouldSendToRecipient(ctx context.Context, recipientAddress c
 	return true, nil
 }
 
+// FundResponse is the response object returned by the /{denom}/{recipient_address} endpoint.
+// ALL successful HTTP requests will have status code 202 with a non-empty TxHash.
+// A successful HTTP response (202) DOES NOT guarantee that the onchain TX will be successful.
+type FundResponse struct {
+	TxHash             string            `json:"tx_hash"`
+	Code               uint32            `json:"code"`
+	Log                string            `json:"log"`
+	RecipientAddress   string            `json:"recipient_address"`
+	SentCoins          cosmostypes.Coins `json:"sent_coins"`
+	CreateAccountsOnly bool              `json:"create_accounts_only,omitempty"`
+}
+
+// NewFundResponse is a constructor for FundResponse.
+// It guarantees that no fields are omitted during construction.
+func NewFundResponse(
+	txHash string,
+	code uint32,
+	recipientAddress string,
+	sentCoins cosmostypes.Coins,
+	log string,
+	createAccountsOnly bool,
+) *FundResponse {
+	return &FundResponse{
+		TxHash:             txHash,
+		Code:               code,
+		Log:                log,
+		RecipientAddress:   recipientAddress,
+		SentCoins:          sentCoins,
+		CreateAccountsOnly: createAccountsOnly,
+	}
+}
+
 // SendDenom sends tokens of the specified denom to recipientAddress.
 // - Amount is determined by SupportedSendCoins config.
 // - Only checks that the TX passed CheckTx (entered mempool); does not wait for commit.
@@ -191,16 +226,17 @@ func (srv *Server) SendDenom(
 	logger polylog.Logger,
 	denom string,
 	recipientAddress cosmostypes.AccAddress,
-) (*cosmostypes.TxResponse, error) {
+) (*FundResponse, error) {
 	isDenomSupported, denomCoin := srv.config.GetSupportedSendCoins().Find(denom)
 	if !isDenomSupported {
 		return nil, fmt.Errorf("denom %q not supported", denom)
 	}
 
+	coinsToSend := cosmostypes.NewCoins(denomCoin)
 	sendMsg := banktypes.NewMsgSend(
 		srv.config.signingAddress,
 		recipientAddress,
-		cosmostypes.NewCoins(denomCoin),
+		coinsToSend,
 	)
 
 	txResponse, eitherErr := srv.config.txClient.SignAndBroadcast(ctx, sendMsg)
@@ -230,14 +266,24 @@ func (srv *Server) SendDenom(
 		}
 	}(ctx, txResponse, errCh)
 
-	return txResponse, nil
+	// Construct and return a fund response.
+	fundResponse := NewFundResponse(
+		txResponse.TxHash,
+		txResponse.Code,
+		recipientAddress.String(),
+		coinsToSend,
+		txResponse.RawLog,
+		srv.config.CreateAccountsOnly,
+	)
+
+	return fundResponse, nil
 }
 
 // respondAccepted writes a 202 Accepted response with the provided message.
-func respondAccepted(logger polylog.Logger, res http.ResponseWriter, msg string) {
+func respondAccepted(logger polylog.Logger, res http.ResponseWriter, msgJSONBz []byte) {
 	// Send a accepted response (202).
 	res.WriteHeader(http.StatusAccepted)
-	if _, err := res.Write([]byte(msg)); err != nil {
+	if _, err := res.Write(msgJSONBz); err != nil {
 		logger.Error().Err(err).Send()
 	}
 }
@@ -272,10 +318,10 @@ func respondNotModified(logger polylog.Logger, res http.ResponseWriter, recipien
 }
 
 // respondNotFound writes a 404 Not Found response and logs the error.
-func respondNotFound(logger polylog.Logger, res http.ResponseWriter, err error) {
+func respondNotFound(logger polylog.Logger, req *http.Request, res http.ResponseWriter, err error) {
 	logger.Error().Err(err).Send()
 	res.WriteHeader(http.StatusNotFound)
-	if _, err := fmt.Fprintf(res, "not found"); err != nil {
+	if _, err = fmt.Fprintf(res, "%s: %s", req.URL.Path, err); err != nil {
 		logger.Error().Err(err).Send()
 	}
 }
