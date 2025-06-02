@@ -39,16 +39,6 @@ var (
 	flagRelaySupplier                  string // Supplier address
 	flagRelayPayload                   string // Relay payload
 	flagSupplierPublicEndpointOverride string // Optional endpoint override
-
-	// Cosmos flags for 'pocketd relayminer relay' subcommand
-	flagNodeGRPCURLRelay      string
-	flagNodeGRPCInsecureRelay bool
-
-	// TODO_TECHDEBT(@olshansk): Reconsider the need for this flag.
-	// This flag can theoretically be avoided because it is only used to get the height of the latest block for session generation.
-	// Passing `0` as the block height defaults to the latest height.
-	// We are keeping it to use this file as an example of an end-to-end system that leverages the shannon-sdk for example purposes.
-	flagNodeRPCURLRelay string
 )
 
 // relayCmd defines the `relay` subcommand for sending a relay as an application.
@@ -57,7 +47,7 @@ var (
 // - Useful for local testing, debugging, and verifying Supplier setup
 // - See TODO_IMPROVE for planned enhancements
 func relayCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmdRelay := &cobra.Command{
 		Use:   "relay --app <app> --supplier <supplier> --payload <payload> [--supplier-public-endpoint-override <url>]",
 		Short: "Send a relay as an application to a particular supplier",
 		Long: `Send a test relay to a Supplier's RelayMiner from a staked Application.
@@ -99,22 +89,30 @@ For more info, run 'relay --help'.`,
 		RunE: runRelay,
 	}
 
-	// Cosmos flags
-	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (defaults to LocalNet)")
-	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (defaults to LocalNet)")
-	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options (defaults to true for LocalNet)")
-	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-
 	// Custom Flags
-	cmd.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
-	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
-	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
-	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
+	cmdRelay.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
+	cmdRelay.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
+	cmdRelay.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
+	cmdRelay.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
 
-	_ = cmd.MarkFlagRequired("app")
-	_ = cmd.MarkFlagRequired("payload")
+	// Required flags
+	_ = cmdRelay.MarkFlagRequired("app")
+	_ = cmdRelay.MarkFlagRequired("payload")
 
-	return cmd
+	// Cosmos flags
+	cosmosflags.AddTxFlagsToCmd(cmdRelay)
+	// Cosmos flags Defaults
+	_ = cmdRelay.Flags().Lookup(cosmosflags.FlagLogLevel).Value.Set("debug")
+	_ = cmdRelay.Flags().Lookup(cosmosflags.FlagKeyringBackend).Value.Set("test")
+	_ = cmdRelay.Flags().Lookup(cosmosflags.FlagGRPCInsecure).Value.Set("true")
+	_ = cmdRelay.Flags().Lookup(cosmosflags.FlagChainID).Value.Set("pocket")
+
+	// Required flags
+	_ = cmdRelay.MarkFlagRequired(cosmosflags.FlagNode)
+	_ = cmdRelay.MarkFlagRequired(cosmosflags.FlagGRPC)
+	_ = cmdRelay.MarkFlagRequired(cosmosflags.FlagChainID)
+
+	return cmdRelay
 }
 
 // runRelay executes the relay command logic.
@@ -133,6 +131,10 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
+	rpcURL, _ := cmd.Flags().GetString(cosmosflags.FlagNode)
+	grpcURL, _ := cmd.Flags().GetString(cosmosflags.FlagGRPC)
+	grpcInsecure, _ := cmd.Flags().GetBool(cosmosflags.FlagGRPCInsecure)
+
 	// Set up logger options
 	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
@@ -149,8 +151,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
-		HostPort: flagNodeGRPCURLRelay,
-		Insecure: flagNodeGRPCInsecureRelay,
+		HostPort: grpcURL,
+		Insecure: grpcInsecure,
 	})
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error connecting to gRPC")
@@ -160,7 +162,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	logger.Info().Msgf("✅ gRPC connection initialized: %v", grpcConn)
 
 	// Create a connection to the POKT full node
-	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURLRelay)
+	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(rpcURL)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error fetching block height")
 		return err

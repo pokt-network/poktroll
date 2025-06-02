@@ -10,7 +10,6 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -28,7 +27,7 @@ import (
 // - Cache various data
 // - Rate limit incoming requests
 func startCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmdStart := &cobra.Command{
 		Use:   "start --config <path-to-relay-miner-config-file> --chain-id <chain-id>",
 		Short: "Start a RelayMiner",
 		Long: `Start a RelayMiner Process.
@@ -46,25 +45,27 @@ RelayMiner Responsibilities:
 	}
 
 	// Custom flags
-	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "(Required) The path to the relayminer config file")
-	cmd.Flags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "(Optional) Enable or disable onchain query caching")
+	cmdStart.Flags().StringVar(&flagRelayMinerConfig, "config", "", "(Required) The path to the relayminer config file")
+	cmdStart.Flags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "(Optional) Enable or disable onchain query caching")
 
 	// Cosmos flags
-	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, flags.OmittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
-	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
-	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
-	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
-	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
-	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.7, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
-	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
+	cosmosflags.AddTxFlagsToCmd(cmdStart)
+	// Cosmos FlagDefaults
+	_ = cmdStart.Flags().Lookup(cosmosflags.FlagGRPC).Value.Set("localhost:9090")
+	_ = cmdStart.Flags().Lookup(cosmosflags.FlagGasPrices).Value.Set("1upokt")
+	_ = cmdStart.Flags().Lookup(cosmosflags.FlagGasAdjustment).Value.Set("1.7")
+	_ = cmdStart.Flags().Lookup(cosmosflags.FlagLogLevel).Value.Set("debug")
+	_ = cmdStart.Flags().Lookup(cosmosflags.FlagKeyringBackend).Value.Set("test")
+	_ = cmdStart.Flags().Lookup(cosmosflags.FlagGRPCInsecure).Value.Set("true")
+	_ = cmdStart.Flags().Lookup(cosmosflags.FlagChainID).Value.Set("pocket")
 
 	// Required flags
-	_ = cmd.MarkFlagRequired("config")
-	// TODO_TECHDEBT(@olshansk): Consider making this part of the relay miner config file or erroring in a more user-friendly way.
-	_ = cmd.MarkFlagRequired(cosmosflags.FlagChainID)
+	_ = cmdStart.MarkFlagRequired("config")
+	_ = cmdStart.MarkFlagRequired(cosmosflags.FlagNode)
+	_ = cmdStart.MarkFlagRequired(cosmosflags.FlagGRPC)
+	_ = cmdStart.MarkFlagRequired(cosmosflags.FlagChainID)
 
-	return cmd
+	return cmdStart
 }
 
 // runRelayer starts the relay miner with the provided configuration and context.
