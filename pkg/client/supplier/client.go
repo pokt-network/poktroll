@@ -92,16 +92,18 @@ func (sClient *supplierClient) SubmitProofs(
 	//  with offchain pkgs/nomenclature.
 	txResponse, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
 
-	logger.Info().Msgf(
-		"[PROVING] Transaction submitted with tx_hash: %q", txResponse.TxHash,
-	)
-
-	if len(txResponse.RawLog) > 0 {
-		logger.Error().Msgf(
-			"[PROVING] Failed to submit transaction with tx_hash: %q: %s",
-			txResponse.TxHash,
-			txResponse.RawLog,
+	if txResponse != nil {
+		logger.Info().Msgf(
+			"[PROVING] Transaction submitted with tx_hash: %q", txResponse.TxHash,
 		)
+
+		if len(txResponse.RawLog) > 0 {
+			logger.Error().Msgf(
+				"[PROVING] Failed to submit transaction with tx_hash: %q: %s",
+				txResponse.TxHash,
+				txResponse.RawLog,
+			)
+		}
 	}
 
 	err, errCh := eitherErr.SyncOrAsyncError()
@@ -156,16 +158,18 @@ func (sClient *supplierClient) CreateClaims(
 	//  with offchain pkgs/nomenclature.
 	txResponse, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
 
-	logger.Info().Msgf(
-		"[CLAIMING] Transaction submitted with tx_hash: %q", txResponse.TxHash,
-	)
-
-	if len(txResponse.RawLog) > 0 {
-		logger.Error().Msgf(
-			"[CLAIMING] Failed to submit transaction with tx_hash: %q: %s",
-			txResponse.TxHash,
-			txResponse.RawLog,
+	if txResponse != nil {
+		logger.Info().Msgf(
+			"[CLAIMING] Transaction submitted with tx_hash: %q", txResponse.TxHash,
 		)
+
+		if len(txResponse.RawLog) > 0 {
+			logger.Error().Msgf(
+				"[CLAIMING] Failed to submit transaction with tx_hash: %q: %s",
+				txResponse.TxHash,
+				txResponse.RawLog,
+			)
+		}
 	}
 
 	err, errCh := eitherErr.SyncOrAsyncError()
