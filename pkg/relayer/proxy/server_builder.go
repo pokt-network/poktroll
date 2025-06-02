@@ -48,29 +48,30 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			return err
 		}
 
+		// Log all the RelayMiner's configured services for the supplier.
+		rp.logRelayMinerConfiguredServices(supplierOperatorAddress)
+
 		// Check that the supplier's advertised services' endpoints are present in
 		// the server config and handled by a server.
 		// Iterate over the supplier's advertised services then iterate over each
 		// service's endpoint
 		for _, service := range supplier.Services {
-			for _, endpoint := range service.Endpoints {
-				found := false
-				// Iterate over the server configs and check if `endpointUrl` is present
-				// in any of the server config's suppliers' service's PubliclyExposedEndpoints
-				for _, serverConfig := range rp.serverConfigs {
-					if _, ok := serverConfig.SupplierConfigsMap[service.ServiceId]; ok {
-						found = true
-						break
-					}
+			found := false
+			// Iterate over the server configs and check if a config corresponding to
+			// the service is present.
+			for _, serverConfig := range rp.serverConfigs {
+				if _, ok := serverConfig.SupplierConfigsMap[service.ServiceId]; ok {
+					found = true
+					break
 				}
+			}
 
-				if !found {
-					return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
-						"service endpoint %s not handled by the relay miner %s",
-						endpoint.Url,
-						supplierOperatorAddress,
-					)
-				}
+			if !found {
+				return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+					"service %s not handled by the relay miner's supplier %s",
+					service.ServiceId,
+					supplierOperatorAddress,
+				)
 			}
 		}
 	}
@@ -167,4 +168,24 @@ func (rp *relayerProxy) waitForSupplierToStake(
 	}
 
 	return supplier, nil
+}
+
+// logRelayMinerConfiguredServices logs the services configured in the RelayMiner
+// server configs. This is useful for debugging and understanding which services
+// the RelayMiner is configured to handle.
+func (rp *relayerProxy) logRelayMinerConfiguredServices(supplierOperatorAddress string) {
+
+	availableConfigs := make(map[string]struct{})
+	for _, serviceConfig := range rp.serverConfigs {
+		for serviceId := range serviceConfig.SupplierConfigsMap {
+			availableConfigs[serviceId] = struct{}{}
+		}
+	}
+
+	availableServices := make([]string, 0, len(availableConfigs))
+	for serviceId := range availableConfigs {
+		availableServices = append(availableServices, serviceId)
+	}
+	rp.logger.Warn().Msgf("available_configs for supplier %s: %v", supplierOperatorAddress, availableServices)
+
 }

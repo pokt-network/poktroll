@@ -58,9 +58,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			// - Request validation failures
 			// - Backend connection errors
 			// - Backend 5xx errors
-			if err = server.relayMeter.SetNonApplicableRelayReward(ctx, relayRequest.Meta); err != nil {
-				logger.Error().Err(err).Msg("failed to unclaim relay UPOKT")
-			}
+			server.relayMeter.SetNonApplicableRelayReward(ctx, relayRequest.Meta)
 		}
 	}
 
@@ -81,15 +79,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	//
 	// Reward accumulation is reverted automatically when:
 	//    - The relay isn't successfully completed
-	//    - The relay isn't eligible for rewards
 	//
 	// This approach prioritizes accurate accounting over optimistic processing.
 	//
 	// TODO_CONSIDERATION: Consider implementing a delay queue instead of rejecting
 	// requests when application stake is insufficient. This would allow processing
 	// once earlier requests complete and free up stake.
-	if err = server.relayMeter.AccumulateRelayReward(ctx, meta); err != nil {
-		return relayRequest, err
+	if shouldRateLimit := server.relayMeter.ShouldRateLimit(ctx, meta); shouldRateLimit {
+		return relayRequest, ErrRelayerProxyRateLimited
 	}
 
 	var serviceConfig *config.RelayMinerSupplierServiceConfig

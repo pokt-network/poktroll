@@ -25,6 +25,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/encoding"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
@@ -127,6 +128,8 @@ type txClient struct {
 	// should retry in the event that it encounters an error or its connection is interrupted.
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
+
+	logger polylog.Logger
 }
 
 type (
@@ -174,6 +177,7 @@ func NewTxClient(
 		deps,
 		&txnClient.txCtx,
 		&txnClient.blockClient,
+		&txnClient.logger,
 	); err != nil {
 		return nil, err
 	}
@@ -479,7 +483,8 @@ func (txnClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 	txResultsCh := txResultsObs.Subscribe(ctx).Ch()
 	for txResult := range txResultsCh {
 		// Convert transaction hash into its normalized hex form.
-		txHashHex := encoding.TxHashBytesToNormalizedHex(comettypes.Tx(txResult.Tx).Hash())
+		txHash := comettypes.Tx(txResult.Tx).Hash()
+		txHashHex := encoding.TxHashBytesToNormalizedHex(txHash)
 
 		txnClient.txsMutex.Lock()
 		// Remove from the txTimeoutPool.
@@ -511,6 +516,18 @@ func (txnClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 			// > mempool but failed to gossip: validation failed
 			//
 			// Potential parse and send transaction error on txErrCh here.
+
+			txnClient.logger.Info().
+				Str("tx_hash", fmt.Sprintf("%X", txHash)).
+				Int64("height", txResult.Height).
+				Msgf("[TX] Transaction committed")
+
+			if len(txResult.Result.Log) > 0 {
+				txnClient.logger.Error().
+					Str("tx_hash", txHashHex).
+					Str("log", txResult.Result.Log).
+					Msgf("[TX] Transaction failed")
+			}
 
 			// Close and remove from txErrChans
 			close(txErrCh)

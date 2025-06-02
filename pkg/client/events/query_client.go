@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
@@ -43,6 +44,8 @@ type eventsQueryClient struct {
 	// eventsBytesAndConns maps event subscription queries to their respective
 	// eventsBytes observable, connection, and isClosed status.
 	eventsBytesAndConns map[string]*eventsBytesAndConn
+
+	logger polylog.Logger
 }
 
 // eventsBytesAndConn is a struct which holds an eventsBytes observable & the
@@ -195,6 +198,17 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 		closeErr := conn.Close()
 		return nil, multierr.Combine(subscribeErr, closeErr)
 	}
+
+	// Log the successful connection establishment if a logger is configured.
+	if eqc.logger != nil {
+		// Log in a separate goroutine to prevent message ordering issues and ensure
+		// that "connection established" appears after any "connection closed" logs
+		// from concurrent goPublishEventsBz goroutines.
+		go eqc.logger.Info().
+			Str("comet_websocket_url", eqc.cometWebsocketURL).
+			Msg("connection established")
+	}
+
 	return conn, nil
 }
 
