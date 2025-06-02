@@ -338,6 +338,9 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
+	invalidRootHashWithZeroCount := testproof.RandSmstRootWithSumAndCount(t, 1, 0)
+	invalidRootHashWithZeroSum := testproof.RandSmstRootWithSumAndCount(t, 0, 1)
+
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
 	// service is the only service for which a session should exist.
@@ -531,6 +534,46 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					"could not find app with address %q at height %d",
 					randAppAddr,
 					sessionRes.GetSession().GetHeader().GetSessionStartBlockHeight(),
+				).Error(),
+			),
+		},
+		{
+			desc: "claim msg merkle root must have non-zero relays",
+			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+				return newTestClaimMsg(t,
+					sessionStartHeight,
+					sessionRes.GetSession().GetSessionId(),
+					supplierOperatorAddr,
+					appAddr,
+					service,
+					invalidRootHashWithZeroCount,
+				)
+			},
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrProofInvalidClaimRootHash.Wrapf(
+					"has zero count in Merkle root (hex) %x",
+					invalidRootHashWithZeroCount,
+				).Error(),
+			),
+		},
+		{
+			desc: "claim msg merkle root must have non-zero compute units",
+			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+				return newTestClaimMsg(t,
+					sessionStartHeight,
+					sessionRes.GetSession().GetSessionId(),
+					supplierOperatorAddr,
+					appAddr,
+					service,
+					invalidRootHashWithZeroSum,
+				)
+			},
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrProofInvalidClaimRootHash.Wrapf(
+					"has zero sum in Merkle root (hex) %x",
+					invalidRootHashWithZeroSum,
 				).Error(),
 			),
 		},
