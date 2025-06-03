@@ -541,16 +541,18 @@ func (txnClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 			//
 			// Potential parse and send transaction error on txErrCh here.
 
-			txnClient.logger.Info().
-				Str("tx_hash", fmt.Sprintf("%X", txHash)).
-				Int64("height", txResult.Height).
-				Msgf("[TX] Transaction committed")
+			txnClient.logger.Info().Msgf(
+				"[TX] Transaction with hash %q committed at height (%d)",
+				txHashHex,
+				txResult.Height,
+			)
 
 			if len(txResult.Result.Log) > 0 {
-				txnClient.logger.Error().
-					Str("tx_hash", txHashHex).
-					Str("log", txResult.Result.Log).
-					Msgf("[TX] Transaction failed")
+				txnClient.logger.Error().Msgf(
+					"[TX] Transaction with hash %q failed: %s",
+					txHashHex,
+					txResult.Result.Log,
+				)
 			}
 
 			// Close and remove from txErrChans

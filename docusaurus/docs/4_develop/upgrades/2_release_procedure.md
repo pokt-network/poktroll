@@ -296,8 +296,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 
    ```bash
    # Get the current height
-   CURRENT_HEIGHT=$(pocketd q block --network=${NETWORK} -o json | tail -n +2 | jq '.header.height')
-   # Add 5 blocks (arbitrary, adjust as needed)
+   CURRENT_HEIGHT=$(pocketd q block --network=${NETWORK} -o json | tail -n +2 | jq -r '.header.height') # Add 5 blocks (arbitrary, adjust as needed)
    UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
    # Update the JSON
    sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" ${UPGRADE_TX_JSON}

@@ -113,7 +113,6 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	if err = logFlagValues(logger, cmd); err != nil {
 		logger.Error().Err(err).Msg("Could not read provided flags")
 		return err
-
 	}
 
 	// Log query caching status
@@ -185,14 +184,15 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 func logFlagValues(logger polylog.Logger, cmd *cobra.Command) error {
 	clientCtx := client.GetClientContextFromCmd(cmd)
 
-	logger.Info().
-		Str("chain_id", clientCtx.ChainID).
-		Str("version", version.NewInfo().Version).
-		Str("home", clientCtx.HomeDir).
-		Str("keyring_backend", clientCtx.Keyring.Backend()).
-		Str("keyring_dir", clientCtx.KeyringDir).
-		Str("grpc_insecure", cmd.Flag(cosmosflags.FlagGRPCInsecure).Value.String()).
-		Msg("Config in use")
+	logger.Info().Msgf(
+		"Config in use: chain_id: %s, version: %s, home: %s, keyring_backend: %s, keyring_dir: %s, grpc_insecure: %s",
+		clientCtx.ChainID,
+		version.NewInfo().Version,
+		clientCtx.HomeDir,
+		clientCtx.Keyring.Backend(),
+		clientCtx.KeyringDir,
+		cmd.Flag(cosmosflags.FlagGRPCInsecure).Value.String(),
+	)
 
 	return nil
 }

@@ -14,11 +14,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 )
 
-// FaucetConfig defines the configuration for a faucet server.
+// Config defines the configuration for a faucet server.
 // Loaded via viper. Can be provided through:
 // - A config file matching this structure (uses mapstructure tags as keys)
 // - Environment variables, prefixed with "FAUCET_" (e.g. FAUCET_SIGNING_KEY_NAME)
-type FaucetConfig struct {
+type Config struct {
 
 	// ############################################################
 	// ### Public Configs - Settable via config file or env ###
@@ -71,12 +71,12 @@ func NewFaucetConfig(
 	listenAddress string,
 	sendTokens []string,
 	createAccountOnly bool,
-) (*FaucetConfig, error) {
+) (*Config, error) {
 	if len(sendTokens) == 0 {
 		return nil, fmt.Errorf("send tokens MUST contain at least one token (e.g. 1upokt)")
 	}
 
-	config := &FaucetConfig{
+	config := &Config{
 		SigningKeyName:     signingKeyName,
 		ListenAddress:      listenAddress,
 		SupportedSendCoins: sendTokens,
@@ -98,7 +98,7 @@ func NewFaucetConfig(
 // - SigningKeyName must be set
 // - SupportedSendCoins must include at least one valid coin string (e.g. "1upokt")
 // - ListenAddress must be a valid "host:port" string
-func (config *FaucetConfig) Validate() error {
+func (config *Config) Validate() error {
 	if config.SigningKeyName == "" {
 		return fmt.Errorf("signing key name MUST be set")
 	}
@@ -115,19 +115,19 @@ func (config *FaucetConfig) Validate() error {
 }
 
 // GetSupportedSendCoins returns SupportedSendCoins as a cosmos-sdk Coins object.
-func (config *FaucetConfig) GetSupportedSendCoins() cosmostypes.Coins {
+func (config *Config) GetSupportedSendCoins() cosmostypes.Coins {
 	sendCoins, _ := cosmostypes.ParseCoinsNormalized(strings.Join(config.SupportedSendCoins, ","))
 	return sendCoins
 }
 
 // GetSigningAddress returns the address of the configured signing key.
-func (config *FaucetConfig) GetSigningAddress() cosmostypes.AccAddress {
+func (config *Config) GetSigningAddress() cosmostypes.AccAddress {
 	return config.signingAddress
 }
 
 // validateSupportedSendCoins checks that SupportedSendCoins are valid coin strings.
 // - Ensures no parsing errors will occur when used later.
-func (config *FaucetConfig) validateSupportedSendCoins(supportedSendTokens []string) error {
+func (config *Config) validateSupportedSendCoins(supportedSendTokens []string) error {
 	if _, err := cosmostypes.ParseCoinsNormalized(strings.Join(supportedSendTokens, ",")); err != nil {
 		return fmt.Errorf("unable to parse send coins %w", err)
 	}
@@ -135,7 +135,7 @@ func (config *FaucetConfig) validateSupportedSendCoins(supportedSendTokens []str
 }
 
 // validateListenAddress checks that ListenAddress matches the "host:port" format.
-func (config *FaucetConfig) validateListenAddress(listenAddress string) error {
+func (config *Config) validateListenAddress(listenAddress string) error {
 	// Ensure that the listen address is the expected format.
 	if _, _, err := net.SplitHostPort(listenAddress); err != nil {
 		return fmt.Errorf("listen address MUST be in the form of host:port (e.g. 127.0.0.1:42069)")
@@ -145,7 +145,7 @@ func (config *FaucetConfig) validateListenAddress(listenAddress string) error {
 
 // LoadSigningKey loads the signing key from the keyring in the given client context.
 // - Uses the configured SigningKeyName.
-func (config *FaucetConfig) LoadSigningKey(clientCtx cosmosclient.Context) error {
+func (config *Config) LoadSigningKey(clientCtx cosmosclient.Context) error {
 	// Load the faucet key, by name, from the keyring.
 	// NOTE: DOES respect the --keyring-backend and --home flags.
 	keyRecord, err := clientCtx.Keyring.Key(config.SigningKeyName)
@@ -163,7 +163,7 @@ func (config *FaucetConfig) LoadSigningKey(clientCtx cosmosclient.Context) error
 }
 
 // WithConfig sets the faucet server's configuration object.
-func WithConfig(config *FaucetConfig) FaucetOptionFn {
+func WithConfig(config *Config) FaucetOptionFn {
 	return func(faucet *Server) {
 		faucet.config = config
 	}
