@@ -39,7 +39,16 @@ var (
 	flagRelaySupplier                  string // Supplier address
 	flagRelayPayload                   string // Relay payload
 	flagSupplierPublicEndpointOverride string // Optional endpoint override
-	flagRelayNumRequests               int    // Number of relay requests to send
+
+	// Cosmos flags for 'pocketd relayminer relay' subcommand
+	flagNodeGRPCURLRelay      string
+	flagNodeGRPCInsecureRelay bool
+
+	// TODO_TECHDEBT(@olshansk): Reconsider the need for this flag.
+	// This flag can theoretically be avoided because it is only used to get the height of the latest block for session generation.
+	// Passing `0` as the block height defaults to the latest height.
+	// We are keeping it to use this file as an example of an end-to-end system that leverages the shannon-sdk for example purposes.
+	flagNodeRPCURLRelay string
 )
 
 // relayCmd defines the `relay` subcommand for sending a relay as an application.
@@ -48,7 +57,7 @@ var (
 // - Useful for local testing, debugging, and verifying Supplier setup
 // - See TODO_IMPROVE for planned enhancements
 func relayCmd() *cobra.Command {
-	cmdRelay := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "relay --app <app> --supplier <supplier> --payload <payload> [--supplier-public-endpoint-override <url>]",
 		Short: "Send a relay as an application to a particular supplier",
 		Long: `Send a test relay to a Supplier's RelayMiner from a staked Application.
@@ -90,31 +99,22 @@ For more info, run 'relay --help'.`,
 		RunE: runRelay,
 	}
 
-	// Custom Flags
-	cmdRelay.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
-	cmdRelay.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
-	cmdRelay.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
-	cmdRelay.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
-	cmdRelay.Flags().IntVar(&flagRelayNumRequests, "num-requests", 1, "Number of relay requests to send (default 1)")
-
-	// Required flags
-	_ = cmdRelay.MarkFlagRequired("app")
-	_ = cmdRelay.MarkFlagRequired("payload")
-
 	// Cosmos flags
-	cosmosflags.AddTxFlagsToCmd(cmdRelay)
-	// Cosmos flags Defaults
-	_ = cmdRelay.Flags().Lookup(cosmosflags.FlagLogLevel).Value.Set("debug")
-	_ = cmdRelay.Flags().Lookup(cosmosflags.FlagKeyringBackend).Value.Set("test")
-	_ = cmdRelay.Flags().Lookup(cosmosflags.FlagGRPCInsecure).Value.Set("true")
-	_ = cmdRelay.Flags().Lookup(cosmosflags.FlagChainID).Value.Set("pocket")
+	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (defaults to LocalNet)")
+	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (defaults to LocalNet)")
+	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options (defaults to true for LocalNet)")
+	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 
-	// Required flags
-	_ = cmdRelay.MarkFlagRequired(cosmosflags.FlagNode)
-	_ = cmdRelay.MarkFlagRequired(cosmosflags.FlagGRPC)
-	_ = cmdRelay.MarkFlagRequired(cosmosflags.FlagChainID)
+	// Custom Flags
+	cmd.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
+	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
+	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
+	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
 
-	return cmdRelay
+	_ = cmd.MarkFlagRequired("app")
+	_ = cmd.MarkFlagRequired("payload")
+
+	return cmd
 }
 
 // runRelay executes the relay command logic.
@@ -133,10 +133,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
-	rpcURL, _ := cmd.Flags().GetString(cosmosflags.FlagNode)
-	grpcURL, _ := cmd.Flags().GetString(cosmosflags.FlagGRPC)
-	grpcInsecure, _ := cmd.Flags().GetBool(cosmosflags.FlagGRPCInsecure)
-
 	// Set up logger options
 	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
@@ -153,8 +149,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
-		HostPort: grpcURL,
-		Insecure: grpcInsecure,
+		HostPort: flagNodeGRPCURLRelay,
+		Insecure: flagNodeGRPCInsecureRelay,
 	})
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error connecting to gRPC")
@@ -164,7 +160,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	logger.Info().Msgf("✅ gRPC connection initialized: %v", grpcConn)
 
 	// Create a connection to the POKT full node
-	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(rpcURL)
+	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURLRelay)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error fetching block height")
 		return err
@@ -316,112 +312,109 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Retrieved private key for app %s", app.Address)
 	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
+	signedRelayReq, err := appSigner.Sign(ctx, relayReq, ring)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error signing relay request")
+		return err
+	}
+	logger.Info().Msg("✅ Relay request signed.")
 
-	for i := 0; i < flagRelayNumRequests; i++ {
-		signedRelayReq, err := appSigner.Sign(ctx, relayReq, ring)
-		if err != nil {
-			logger.Error().Err(err).Msg("❌ Error signing relay request")
-			return err
-		}
-		logger.Info().Msg("✅ Relay request signed.")
+	// Marshal the signed relay request
+	relayReqBz, err := signedRelayReq.Marshal()
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error marshaling relay request")
+		return err
+	}
+	logger.Info().Msg("✅ Relay request marshaled.")
 
-		// Marshal the signed relay request
-		relayReqBz, err := signedRelayReq.Marshal()
-		if err != nil {
-			logger.Error().Err(err).Msg("❌ Error marshaling relay request")
-			return err
-		}
-		logger.Info().Msg("✅ Relay request marshaled.")
+	// Parse the endpoint URL
+	reqUrl, err := url.Parse(endpointUrl)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error parsing endpoint URL")
+		return err
+	}
+	logger.Info().Msgf("✅ Endpoint URL parsed: %v", reqUrl)
 
-		// Parse the endpoint URL
-		reqUrl, err := url.Parse(endpointUrl)
-		if err != nil {
-			logger.Error().Err(err).Msg("❌ Error parsing endpoint URL")
-			return err
-		}
-		logger.Info().Msgf("✅ Endpoint URL parsed: %v", reqUrl)
+	// Create the HTTP request with the relay request body
+	httpReq := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqUrl,
+		Body:   io.NopCloser(bytes.NewReader(relayReqBz)),
+	}
 
-		// Create the HTTP request with the relay request body
-		httpReq := &http.Request{
-			Method: http.MethodPost,
-			URL:    reqUrl,
-			Body:   io.NopCloser(bytes.NewReader(relayReqBz)),
-		}
+	// Send the request HTTP request containing the signed relay request
+	httpResp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error sending relay request")
+		return err
+	}
+	defer httpResp.Body.Close()
 
-		// Send the request HTTP request containing the signed relay request
-		httpResp, err := http.DefaultClient.Do(httpReq)
-		if err != nil {
-			logger.Error().Err(err).Msg("❌ Error sending relay request")
-			return err
-		}
-		defer httpResp.Body.Close()
+	// Read the response
+	respBz, err := io.ReadAll(httpResp.Body)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error reading response")
+		return err
+	}
+	logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
 
-		// Read the response
-		respBz, err := io.ReadAll(httpResp.Body)
-		if err != nil {
-			logger.Error().Err(err).Msg("❌ Error reading response")
-			return err
-		}
-		logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
+	// Ensure the supplier operator signature is present
+	supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
+	if supplierSignerAddress == "" {
+		logger.Error().Msg("❌ Supplier operator signature is missing")
+		return errors.New("Relay response missing supplier operator signature")
+	}
 
-		// Ensure the supplier operator signature is present
-		supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
-		if supplierSignerAddress == "" {
-			logger.Error().Msg("❌ Supplier operator signature is missing")
-			return errors.New("Relay response missing supplier operator signature")
-		}
+	// Ensure the supplier operator address matches the expected address
+	if flagRelaySupplier == "" {
+		logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
+	} else if supplierSignerAddress != flagRelaySupplier {
+		logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
+		return errors.New("Relay response supplier operator signature does not match")
+	}
 
-		// Ensure the supplier operator address matches the expected address
-		if flagRelaySupplier == "" {
-			logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
-		} else if supplierSignerAddress != flagRelaySupplier {
-			logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
-			return errors.New("Relay response supplier operator signature does not match")
-		}
+	// Validate the relay response
+	relayResp, err := sdk.ValidateRelayResponse(
+		ctx,
+		sdk.SupplierAddress(supplierSignerAddress),
+		respBz,
+		&accountClient,
+	)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error validating response")
+		return err
+	}
+	// Deserialize the relay response
+	backendHttpResponse, err := sdktypes.DeserializeHTTPResponse(relayResp.Payload)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error deserializing response payload")
+		return err
+	}
+	logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
 
-		// Validate the relay response
-		relayResp, err := sdk.ValidateRelayResponse(
-			ctx,
-			sdk.SupplierAddress(supplierSignerAddress),
-			respBz,
-			&accountClient,
-		)
-		if err != nil {
-			logger.Error().Err(err).Msg("❌ Error validating response")
-			return err
-		}
-		// Deserialize the relay response
-		backendHttpResponse, err := sdktypes.DeserializeHTTPResponse(relayResp.Payload)
-		if err != nil {
-			logger.Error().Err(err).Msg("❌ Error deserializing response payload")
-			return err
-		}
-		logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
+	var jsonMap map[string]interface{}
+	// Unmarshal the HTTP response body into jsonMap
+	if err := json.Unmarshal(backendHttpResponse.BodyBz, &jsonMap); err != nil {
+		logger.Error().Err(err).Msg("❌ Error deserializing response payload")
+		return err
+	}
+	logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
 
-		var jsonMap map[string]interface{}
-		// Unmarshal the HTTP response body into jsonMap
-		if err := json.Unmarshal(backendHttpResponse.BodyBz, &jsonMap); err != nil {
-			logger.Error().Err(err).Msg("❌ Error deserializing response payload")
-			return err
-		}
-		logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
-
-		// If "jsonrpc" key exists, try to further deserialize "result"
-		if _, ok := jsonMap["jsonrpc"]; ok {
-			resultRaw, exists := jsonMap["result"]
-			if exists {
-				switch v := resultRaw.(type) {
-				case map[string]interface{}:
-					logger.Info().Msgf("✅ Further deserialized 'result' (object): %+v", v)
-				case []interface{}:
-					logger.Info().Msgf("✅ Further deserialized 'result' (array): %+v", v)
-				case string:
-					logger.Info().Msgf("✅ Further deserialized 'result' (string): %s", v)
-				case float64, bool, nil:
-					logger.Info().Msgf("✅ Further deserialized 'result' (primitive): %+v", v)
-				default:
-					logger.Warn().Msgf("⚠️ 'result' is of an unhandled type: %T, value: %+v", v, v)
-				}
+	// If "jsonrpc" key exists, try to further deserialize "result"
+	if _, ok := jsonMap["jsonrpc"]; ok {
+		resultRaw, exists := jsonMap["result"]
+		if exists {
+			switch v := resultRaw.(type) {
+			case map[string]interface{}:
+				logger.Info().Msgf("✅ Further deserialized 'result' (object): %+v", v)
+			case []interface{}:
+				logger.Info().Msgf("✅ Further deserialized 'result' (array): %+v", v)
+			case string:
+				logger.Info().Msgf("✅ Further deserialized 'result' (string): %s", v)
+			case float64, bool, nil:
+				logger.Info().Msgf("✅ Further deserialized 'result' (primitive): %+v", v)
+			default:
+				logger.Warn().Msgf("⚠️ 'result' is of an unhandled type: %T, value: %+v", v, v)
 			}
 		}
 	}
