@@ -58,12 +58,12 @@ The --network flag can also be used to set the faucet base URL by network name (
 
 // Setup viper reads viper config values from the following sources in order of precedence (highest to lowest):
 // 1. Explicit viper.Set() calls
-// 2. Bound flags (not currently in use)
+// 2. Bound flags
 // 3. Environment variables
 // 4. Persistent config file(s)
 // 5. Defaults
 // See: https://github.com/spf13/viper?tab=readme-ov-file#why-viper
-func setupViper() error {
+func setupViper(cmd *cobra.Command) error {
 	// Set up the viper config (search paths, extension, etc.).
 	if err := setViperConfig(); err != nil {
 		return err
@@ -73,6 +73,12 @@ func setupViper() error {
 	// See: https://github.com/spf13/viper?tab=readme-ov-file#working-with-environment-variables
 	viper.SetEnvPrefix(envPrefix)
 	viper.AutomaticEnv()
+
+	// Bind the listen address flag to the viper config.
+	listenAddressFlag := cmd.Flags().Lookup(flags.FaucetListenAddress)
+	if err := viper.BindPFlag("listen_address", listenAddressFlag); err != nil {
+		return err
+	}
 
 	// Set default values.
 	setViperDefaults()

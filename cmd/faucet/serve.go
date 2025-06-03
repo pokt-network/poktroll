@@ -47,6 +47,7 @@ pocketd faucet serve`,
 	cosmosflags.AddTxFlagsToCmd(serveCmd)
 
 	serveCmd.Flags().StringVar(&faucetConfigPath, flags.FaucetConfigPath, flags.DefaultFaucetConfigPath, flags.FaucetConfigPathUsage)
+	serveCmd.Flags().String(flags.FaucetListenAddress, flags.DefaultFaucetListenAddress, flags.FaucetListenAddressUsage)
 
 	return serveCmd
 }
@@ -57,7 +58,7 @@ pocketd faucet serve`,
 // - constructs a tx client for use in the faucet
 // - constructs a bank query client for use in the faucet
 func preRunServe(cmd *cobra.Command, _ []string) (err error) {
-	if err = setupViper(); err != nil {
+	if err = setupViper(cmd); err != nil {
 		panic(err)
 	}
 
