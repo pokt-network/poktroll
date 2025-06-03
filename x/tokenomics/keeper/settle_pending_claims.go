@@ -244,6 +244,32 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			}
 		}
 
+		// TODO_TECHDEBT(@red-0ne): This check exists to avoid chain halts when CUPR params are changed.
+		// We log the error, remove the claim, and skip its settlement instead of failing.
+		// This code should be removed once CUPR supports historical values, allowing
+		// claims to be validated against the CUPR value that was active during the session
+		// when the claim was created.
+		service, svcErr := settlementContext.GetService(serviceId)
+		if svcErr != nil {
+			logger.Error(fmt.Sprintf(
+				"error retrieving service %q for claim %q: %s",
+				serviceId, claim.SessionHeader.SessionId, svcErr,
+			))
+			return settledResults, expiredResults, svcErr
+		}
+		expectedClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay
+		if numClaimComputeUnits != expectedClaimComputeUnits {
+			logger.Error(tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
+				"[TOKENOMICS MISMATCH]: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d). Removing claim. See the source code for a TODO_TECHDEBT.",
+				numClaimComputeUnits,
+				numClaimRelays,
+				service.ComputeUnitsPerRelay,
+			).Error())
+
+			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
+			continue
+		}
+
 		// If this code path is reached, then either:
 		// 1. The claim does not require a proof.
 		// 2. The claim requires a proof and a valid proof was found.
