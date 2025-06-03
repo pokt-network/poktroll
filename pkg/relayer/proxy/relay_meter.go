@@ -197,13 +197,17 @@ func (rmtr *ProxyRelayMeter) ShouldRateLimit(ctx context.Context, reqMeta servic
 		maxAllowedOverServicing := appRelayMeter.maxCoin.Add(rmtr.overServicingAllowanceCoins)
 		if maxAllowedOverServicing.IsLT(newConsumedCoin) {
 			rmtr.logger.Warn().Msgf(
-				"application has been rate limited, stake needed: %s, has: %s",
+				"application with address %q has been rate limited, stake needed: (%s), has: (%s)",
+				reqMeta.SessionHeader.ApplicationAddress,
 				newConsumedCoin.String(),
-				appRelayMeter.maxCoin.String(),
+				maxAllowedOverServicing.String(),
 			)
 			return true
 		}
 	}
+
+	// Update the consumed coin amount to reflect the over-servicing.
+	appRelayMeter.consumedCoin = newConsumedCoin
 
 	appRelayMeter.numOverServicedRelays++
 	appRelayMeter.numOverServicedComputeUnits += appRelayMeter.service.ComputeUnitsPerRelay
@@ -250,6 +254,15 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 		)
 	}
 
+	// TODO_FOLLOWUP(@red-0ne): Consider fixing the relay meter logic to never have
+	// a less than relay cost consumed amount.
+	if sessionRelayMeter.consumedCoin.IsLT(relayCost) {
+		rmtr.logger.Error().Msgf(
+			"(SHOULD NEVER HAPPEN) Unable to decrease consumed stake amount for application %q",
+			sessionRelayMeter.app.GetAddress(),
+		)
+		return
+	}
 	// Decrease the consumed stake amount by relay cost.
 	newConsumedAmount := sessionRelayMeter.consumedCoin.Sub(relayCost)
 
