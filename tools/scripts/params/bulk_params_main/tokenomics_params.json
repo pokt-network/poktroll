@@ -6,14 +6,14 @@
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
           "mint_allocation_percentages": {
-            "dao": 0.1,
-            "proposer": 0.2,
-            "supplier": 0.5,
-            "source_owner": 0.1,
-            "application": 0.1
+            "dao": 0.05,
+            "proposer": 0.14,
+            "supplier": 0.78,
+            "source_owner": 0.03,
+            "application": 0.0
           },
-          "dao_reward_address": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
-          "global_inflation_per_claim": 0.1
+          "dao_reward_address": "pokt1dd5rkaf8m9tm466mr2rytphv46jqx638a5m5er",
+          "global_inflation_per_claim": 1.0
         }
       }
     ]
