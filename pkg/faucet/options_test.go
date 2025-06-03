@@ -14,7 +14,7 @@ var (
 )
 
 func TestNewConfig_SupportedCoins(t *testing.T) {
-	config := &faucet.FaucetConfig{
+	config := &faucet.Config{
 		SupportedSendCoins: []string{testSendUPOKT, testSendMACT},
 	}
 
@@ -25,7 +25,7 @@ func TestNewConfig_SupportedCoins(t *testing.T) {
 }
 
 func TestNewConfig_LoadSigningKey(t *testing.T) {
-	config := &faucet.FaucetConfig{
+	config := &faucet.Config{
 		SigningKeyName: testSigningKeyName,
 	}
 	err := config.LoadSigningKey(clientCtx)
@@ -54,12 +54,12 @@ func TestNewConfig(t *testing.T) {
 func TestNewConfig_Validate_Error(t *testing.T) {
 	testCases := []struct {
 		desc        string
-		config      *faucet.FaucetConfig
+		config      *faucet.Config
 		expectedErr error
 	}{
 		{
 			desc: "empty signing key name",
-			config: &faucet.FaucetConfig{
+			config: &faucet.Config{
 				SigningKeyName:     "",
 				ListenAddress:      testListenAddress,
 				SupportedSendCoins: testSupportedSendCoins,
@@ -69,7 +69,7 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 		},
 		{
 			desc: "empty listen address",
-			config: &faucet.FaucetConfig{
+			config: &faucet.Config{
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      "",
 				SupportedSendCoins: testSupportedSendCoins,
@@ -79,7 +79,7 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 		},
 		{
 			desc: "URL for listen address",
-			config: &faucet.FaucetConfig{
+			config: &faucet.Config{
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      "scheme://host:42069",
 				SupportedSendCoins: testSupportedSendCoins,
@@ -89,7 +89,7 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 		},
 		{
 			desc: "invalid send coins (missing denom)",
-			config: &faucet.FaucetConfig{
+			config: &faucet.Config{
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      testListenAddress,
 				SupportedSendCoins: []string{"123"},
@@ -99,7 +99,7 @@ func TestNewConfig_Validate_Error(t *testing.T) {
 		},
 		{
 			desc: "invalid send coins (missing amount)",
-			config: &faucet.FaucetConfig{
+			config: &faucet.Config{
 				SigningKeyName:     testSigningKeyName,
 				ListenAddress:      testListenAddress,
 				SupportedSendCoins: []string{"xyz"},

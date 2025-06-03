@@ -29,14 +29,14 @@ var denomRouteTemplate = fmt.Sprintf("/{%s}/{%s}", denomRouteDenomParamName, den
 // Server handles HTTP funding requests by broadcasting onchain bank send transactions
 // using a dedicated faucet account.
 type Server struct {
-	config  *FaucetConfig
+	config  *Config
 	handler *chi.Mux
 }
 
 // NewFaucetServer constructs a new Server using the provided options.
 func NewFaucetServer(ctx context.Context, opts ...FaucetOptionFn) (*Server, error) {
 	faucet := &Server{
-		config:  new(FaucetConfig),
+		config:  new(Config),
 		handler: chi.NewRouter(),
 	}
 

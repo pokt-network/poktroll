@@ -53,7 +53,7 @@ pocketd faucet serve`,
 
 // preRunServe performs the following setup steps:
 // - retrieves the cosmos-sdk client context from the cobra command
-// - unmarshals viper config values into a new FaucetConfig struct
+// - unmarshals viper config values into a new Config struct
 // - constructs a tx client for use in the faucet
 // - constructs a bank query client for use in the faucet
 func preRunServe(cmd *cobra.Command, _ []string) (err error) {
@@ -67,7 +67,7 @@ func preRunServe(cmd *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
-	// Parse the viper config values into a new FaucetConfig struct.
+	// Parse the viper config values into a new Config struct.
 	faucetCfg, err = parseFaucetConfigFromViper(clientCtx)
 	if err != nil {
 		return err
@@ -128,11 +128,11 @@ func runServe(cmd *cobra.Command, _ []string) error {
 }
 
 // parseFaucetConfigFromViper performs the following steps:
-// - unmarshal the current viper config values into a new FaucetConfig struct
+// - unmarshal the current viper config values into a new Config struct
 // - validate the resulting faucet config
 // - load the faucet config's signing key (from the keyring)
-func parseFaucetConfigFromViper(clientCtx cosmosclient.Context) (*faucet.FaucetConfig, error) {
-	config := new(faucet.FaucetConfig)
+func parseFaucetConfigFromViper(clientCtx cosmosclient.Context) (*faucet.Config, error) {
+	config := new(faucet.Config)
 	if err := viper.Unmarshal(config); err != nil {
 		return nil, err
 	}
