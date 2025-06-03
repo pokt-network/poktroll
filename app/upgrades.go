@@ -72,7 +72,11 @@ var allUpgrades = []upgrades.Upgrade{
 
 	// v0.1.14 - upgrade to:
 	// - Add Morse supplier claiming non-custodial Morse owner check (#1317)
-	upgrades.Upgrade_0_1_14,
+	// upgrades.Upgrade_0_1_14,
+
+	// v0.1.15 - upgrade to:
+	// - Add compute units validation in claim settlement to prevent chain halts when CUPR params change (#1407)
+	upgrades.Upgrade_0_1_15,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

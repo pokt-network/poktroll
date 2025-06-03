@@ -1,0 +1,16 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/cosmos.distribution.v1beta1.MsgUpdateParams",
+        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "params": {
+          "community_tax": "0.020000000000000000",
+          "base_proposer_reward": "0.000000000000000000",
+          "bonus_proposer_reward": "0.000000000000000000",
+          "withdraw_addr_enabled": true
+        }
+      }
+    ]
+  }
+}
