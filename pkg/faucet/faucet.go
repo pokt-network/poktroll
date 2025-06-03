@@ -96,7 +96,7 @@ func (srv *Server) newHandleDenomPOSTRequest(ctx context.Context) http.HandlerFu
 		// - Denomination as configured (e.g. "uPOKT")
 		// - Uppercase denomination (e.g. "UPOKT")
 		// - Lowercase denomination (e.g. "upokt")
-		sendCoin := new(cosmostypes.Coin)
+		var sendCoin *cosmostypes.Coin
 		for _, supportedSendCoin := range srv.config.GetSupportedSendCoins() {
 			switch supportedSendCoin.Denom {
 			case strings.ToUpper(denom):
@@ -104,7 +104,8 @@ func (srv *Server) newHandleDenomPOSTRequest(ctx context.Context) http.HandlerFu
 			case strings.ToLower(denom):
 				fallthrough
 			case denom:
-				*sendCoin = supportedSendCoin
+				sendCoin = &supportedSendCoin
+			default:
 			}
 
 			if sendCoin != nil {
@@ -113,6 +114,7 @@ func (srv *Server) newHandleDenomPOSTRequest(ctx context.Context) http.HandlerFu
 		}
 		if sendCoin == nil {
 			respondNotFound(logger.Logger, req, res, fmt.Errorf("unsupported denom %q", denom))
+			return
 		}
 
 		logger := logger.Logger.With("denom", sendCoin.Denom)
@@ -183,38 +185,6 @@ func (srv *Server) shouldSendToRecipient(ctx context.Context, recipientAddress c
 
 	// Send by default.
 	return true, nil
-}
-
-// FundResponse is the response object returned by the /{denom}/{recipient_address} endpoint.
-// ALL successful HTTP requests will have status code 202 with a non-empty TxHash.
-// A successful HTTP response (202) DOES NOT guarantee that the onchain TX will be successful.
-type FundResponse struct {
-	TxHash             string            `json:"tx_hash"`
-	Code               uint32            `json:"code"`
-	Log                string            `json:"log"`
-	RecipientAddress   string            `json:"recipient_address"`
-	SentCoins          cosmostypes.Coins `json:"sent_coins"`
-	CreateAccountsOnly bool              `json:"create_accounts_only,omitempty"`
-}
-
-// NewFundResponse is a constructor for FundResponse.
-// It guarantees that no fields are omitted during construction.
-func NewFundResponse(
-	txHash string,
-	code uint32,
-	recipientAddress string,
-	sentCoins cosmostypes.Coins,
-	log string,
-	createAccountsOnly bool,
-) *FundResponse {
-	return &FundResponse{
-		TxHash:             txHash,
-		Code:               code,
-		Log:                log,
-		RecipientAddress:   recipientAddress,
-		SentCoins:          sentCoins,
-		CreateAccountsOnly: createAccountsOnly,
-	}
 }
 
 // SendDenom sends tokens of the specified denom to recipientAddress.
