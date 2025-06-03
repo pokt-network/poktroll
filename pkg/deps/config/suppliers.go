@@ -161,9 +161,9 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 		// Check if the network's returned chain ID matches the configured chain ID.
 		if nodeStatus.NodeInfo.Network != queryClientCtx.ChainID {
 			return nil, fmt.Errorf(
-				"RPC URL is for a different network: %s vs %s",
-				nodeStatus.NodeInfo.Network,
+				"chain ID mismatch: client is configured for %q but the RPC node reports %q - ensure you're connecting to the correct network",
 				queryClientCtx.ChainID,
+				nodeStatus.NodeInfo.Network,
 			)
 		}
 
