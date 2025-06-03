@@ -78,10 +78,15 @@ func NewHTTPServer(
 ) relayer.RelayServer {
 	// Create the HTTP server.
 	httpServer := &http.Server{
-		// TODO_IMPROVE: Make timeouts configurable.
-		IdleTimeout:  60 * time.Second,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		// Keep IdleTimeout reasonable to clean up idle connections
+		IdleTimeout: 60 * time.Second,
+
+		// Disable the server's read and write timeouts, as we will handle
+		// timeouts per-request using the context passed to the request handlers.
+		// Request based timeouts should be sourced from the service configuration
+		// and not the server configuration.
+		ReadTimeout:  0,
+		WriteTimeout: 0,
 	}
 
 	return &relayMinerHTTPServer{
@@ -186,6 +191,22 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 			return
 		}
 	}
+}
+
+// determineTimeoutFromServiceID determines the timeout for the relay request
+// based on the service ID.
+//   - It looks up the service ID in the server's configuration and returns the
+//     timeout specified for that service ID.
+//   - If no specific timeout is found, it returns the default timeout.
+func (server *relayMinerHTTPServer) determineTimeoutFromServiceID(serviceId string) time.Duration {
+	timeout := config.DefaultRequestTimeoutSeconds * time.Second
+
+	// Look up service-specific timeout in server config
+	if supplierConfig, exists := server.serverConfig.SupplierConfigsMap[serviceId]; exists {
+		timeout = time.Duration(supplierConfig.RequestTimeoutSeconds) * time.Second
+	}
+
+	return timeout
 }
 
 // isWebSocketRequest checks if the request is trying to upgrade to WebSocket.

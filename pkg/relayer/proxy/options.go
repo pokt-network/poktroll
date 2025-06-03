@@ -14,3 +14,9 @@ func WithServicesConfigMap(servicesConfigMap map[string]*config.RelayMinerServer
 		relProxy.(*relayerProxy).serverConfigs = servicesConfigMap
 	}
 }
+
+func WithPingEnabled(pingEnabled bool) relayer.RelayerProxyOption {
+	return func(relProxy relayer.RelayerProxy) {
+		relProxy.(*relayerProxy).pingEnabled = pingEnabled
+	}
+}

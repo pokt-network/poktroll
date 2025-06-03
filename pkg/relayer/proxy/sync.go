@@ -43,6 +43,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	meta := relayRequest.Meta
 	serviceId := meta.SessionHeader.ServiceId
 
+	// Set the timeout for the request based on the service ID.
+	timeout := server.determineTimeoutFromServiceID(serviceId)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	// Replace the request context with the new context that has a timeout.
+	request = request.WithContext(ctx)
+
 	// Track whether the relay completes successfully to handle reward management
 	// A successful relay means that:
 	// - The relay request was processed without errors

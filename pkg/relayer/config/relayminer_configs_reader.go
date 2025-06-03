@@ -4,6 +4,10 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// DefaultRequestTimeoutSeconds is the default timeout for requests in seconds.
+// If not specified in the config, it will be used as a fallback.
+const DefaultRequestTimeoutSeconds = 30
+
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
 func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	var (
@@ -21,8 +25,22 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigUnmarshalYAML.Wrap(err.Error())
 	}
 
+	if yamlRelayMinerConfig.DefaultRequestTimeoutSeconds < 0 {
+		return nil, ErrRelayMinerConfigInvalidRequestTimeout.Wrapf(
+			"invalid 'default_request_timeout_seconds' value %d, it must be greater than or equal to 0",
+			yamlRelayMinerConfig.DefaultRequestTimeoutSeconds,
+		)
+	}
+
+	// Fallback to DefaultRequestTimeoutSeconds const if none is specified in the config
+	// This is to keeps the backwards compatibility with the previous versions of the config file
+	if yamlRelayMinerConfig.DefaultRequestTimeoutSeconds == 0 {
+		yamlRelayMinerConfig.DefaultRequestTimeoutSeconds = DefaultRequestTimeoutSeconds
+	}
+
 	// Global section
 	relayMinerConfig.DefaultSigningKeyNames = yamlRelayMinerConfig.DefaultSigningKeyNames
+	relayMinerConfig.DefaultRequestTimeoutSeconds = yamlRelayMinerConfig.DefaultRequestTimeoutSeconds
 
 	// SmtStorePath is required
 	if len(yamlRelayMinerConfig.SmtStorePath) == 0 {

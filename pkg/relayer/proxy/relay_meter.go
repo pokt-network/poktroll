@@ -25,7 +25,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-const defaultOverServicingAllowanceCoins = 1000000
+const DefaultOverServicingAllowanceCoins = 1_000_000
 
 var _ relayer.RelayMeter = (*ProxyRelayMeter)(nil)
 
@@ -92,7 +92,7 @@ type ProxyRelayMeter struct {
 }
 
 func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
-	overservicingAllowanceCoins := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, defaultOverServicingAllowanceCoins)
+	overservicingAllowanceCoins := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, DefaultOverServicingAllowanceCoins)
 	rm := &ProxyRelayMeter{
 		sessionToRelayMeterMap:      make(map[string]*sessionRelayMeter),
 		overServicingAllowanceCoins: overservicingAllowanceCoins,
@@ -197,13 +197,17 @@ func (rmtr *ProxyRelayMeter) ShouldRateLimit(ctx context.Context, reqMeta servic
 		maxAllowedOverServicing := appRelayMeter.maxCoin.Add(rmtr.overServicingAllowanceCoins)
 		if maxAllowedOverServicing.IsLT(newConsumedCoin) {
 			rmtr.logger.Warn().Msgf(
-				"application has been rate limited, stake needed: %s, has: %s",
+				"application with address %q has been rate limited, stake needed: (%s), has: (%s)",
+				reqMeta.SessionHeader.ApplicationAddress,
 				newConsumedCoin.String(),
-				appRelayMeter.maxCoin.String(),
+				maxAllowedOverServicing.String(),
 			)
 			return true
 		}
 	}
+
+	// Update the consumed coin amount to reflect the over-servicing.
+	appRelayMeter.consumedCoin = newConsumedCoin
 
 	appRelayMeter.numOverServicedRelays++
 	appRelayMeter.numOverServicedComputeUnits += appRelayMeter.service.ComputeUnitsPerRelay

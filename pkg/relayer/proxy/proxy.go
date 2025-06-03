@@ -65,6 +65,10 @@ type relayerProxy struct {
 	// servedRelaysPublishCh is a channel that emits the relays that have been served so that the
 	// servedRelays observable can fan out the notifications to its subscribers.
 	servedRelaysPublishCh chan<- *types.Relay
+
+	// pingEnabled indicates whether the relay servers should be pinged before starting them.
+	// This is useful to ensure that the backend nodes are reachable before starting the servers.
+	pingEnabled bool
 }
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
@@ -140,10 +144,13 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 	for _, relayServer := range rp.servers {
 		server := relayServer // create a new variable scoped to the anonymous function
 
-		// Ensure that each backing data node responds to a ping request
-		// (at least) before continuing operation.
-		if err := server.Ping(ctx); err != nil {
-			return err
+		// Only test the connectivity of the backing data nodes if pingEnabled is true.
+		if rp.pingEnabled {
+			// Ensure that each backing data node responds to a ping request
+			// (at least) before continuing operation.
+			if err := server.Ping(ctx); err != nil {
+				return err
+			}
 		}
 
 		startGroup.Go(func() error { return server.Start(ctx) })

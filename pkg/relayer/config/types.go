@@ -18,13 +18,14 @@ const (
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
 type YAMLRelayMinerConfig struct {
-	DefaultSigningKeyNames []string                       `yaml:"default_signing_key_names"`
-	Metrics                YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
-	PocketNode             YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
-	Pprof                  YAMLRelayMinerPprofConfig      `yaml:"pprof"`
-	SmtStorePath           string                         `yaml:"smt_store_path"`
-	Suppliers              []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
-	Ping                   YAMLRelayMinerPingConfig       `yaml:"ping"`
+	DefaultSigningKeyNames       []string                       `yaml:"default_signing_key_names"`
+	DefaultRequestTimeoutSeconds uint64                         `yaml:"default_request_timeout_seconds"`
+	Metrics                      YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
+	PocketNode                   YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
+	Pprof                        YAMLRelayMinerPprofConfig      `yaml:"pprof"`
+	SmtStorePath                 string                         `yaml:"smt_store_path"`
+	Suppliers                    []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
+	Ping                         YAMLRelayMinerPingConfig       `yaml:"ping"`
 }
 
 // YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
@@ -52,11 +53,12 @@ type YAMLRelayMinerMetricsConfig struct {
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
-	ListenUrl            string                              `yaml:"listen_url"`
-	ServiceConfig        YAMLRelayMinerSupplierServiceConfig `yaml:"service_config"`
-	ServiceId            string                              `yaml:"service_id"`
-	SigningKeyNames      []string                            `yaml:"signing_key_names"`
-	XForwardedHostLookup bool                                `yaml:"x_forwarded_host_lookup"`
+	ListenUrl             string                              `yaml:"listen_url"`
+	ServiceConfig         YAMLRelayMinerSupplierServiceConfig `yaml:"service_config"`
+	ServiceId             string                              `yaml:"service_id"`
+	SigningKeyNames       []string                            `yaml:"signing_key_names"`
+	RequestTimeoutSeconds uint64                              `yaml:"request_timeout_seconds"`
+	XForwardedHostLookup  bool                                `yaml:"x_forwarded_host_lookup"`
 }
 
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
@@ -85,13 +87,14 @@ type YAMLRelayMinerPprofConfig struct {
 
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
-	DefaultSigningKeyNames []string
-	Metrics                *RelayMinerMetricsConfig
-	PocketNode             *RelayMinerPocketNodeConfig
-	Pprof                  *RelayMinerPprofConfig
-	Servers                map[string]*RelayMinerServerConfig
-	SmtStorePath           string
-	Ping                   *RelayMinerPingConfig
+	DefaultSigningKeyNames       []string
+	DefaultRequestTimeoutSeconds uint64
+	Metrics                      *RelayMinerMetricsConfig
+	PocketNode                   *RelayMinerPocketNodeConfig
+	Pprof                        *RelayMinerPprofConfig
+	Servers                      map[string]*RelayMinerServerConfig
+	SmtStorePath                 string
+	Ping                         *RelayMinerPingConfig
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
@@ -154,6 +157,10 @@ type RelayMinerSupplierConfig struct {
 	// SigningKeyNames: a list of key names that can accept relays for that supplier.
 	// If empty, we copy the values from `DefaultSigningKeyNames`.
 	SigningKeyNames []string
+
+	// RequestTimeoutSeconds is the timeout in seconds for the relay requests forwarded
+	// to the backend service.
+	RequestTimeoutSeconds uint64
 }
 
 // RelayMinerSupplierServiceConfig is the structure resulting from parsing the supplier

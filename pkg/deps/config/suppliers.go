@@ -743,6 +743,7 @@ func NewSupplyRelayAuthenticatorFn(
 //   - SupplierFn: Supplier function for dependency injection
 func NewSupplyRelayerProxyFn(
 	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
+	pingEnabled bool,
 ) SupplierFn {
 	return func(
 		_ context.Context,
@@ -752,6 +753,7 @@ func NewSupplyRelayerProxyFn(
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,
 			proxy.WithServicesConfigMap(servicesConfigMap),
+			proxy.WithPingEnabled(pingEnabled),
 		)
 		if err != nil {
 			return nil, err
