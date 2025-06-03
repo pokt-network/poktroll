@@ -204,9 +204,10 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 		// Log in a separate goroutine to prevent message ordering issues and ensure
 		// that "connection established" appears after any "connection closed" logs
 		// from concurrent goPublishEventsBz goroutines.
-		go eqc.logger.Info().
-			Str("comet_websocket_url", eqc.cometWebsocketURL).
-			Msg("connection established")
+		go eqc.logger.Info().Msgf(
+			"connection established to comet websocket endpoint %s",
+			eqc.cometWebsocketURL,
+		)
 	}
 
 	return conn, nil
