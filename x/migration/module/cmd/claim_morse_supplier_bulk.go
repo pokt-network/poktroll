@@ -242,7 +242,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	}()
 
 	// Read Morse private keys from file and ensure its not empty.
-	morseNodeAccounts, nodeMorseKeysErr := getMorseAccountsFromFile(flagInputFilePath)
+	morseNodeAccounts, nodeMorseKeysErr := getMorseAccountsFromFile(flagMorsePrivateKeysFile)
 	if nodeMorseKeysErr != nil {
 		return nodeMorseKeysErr
 	}
@@ -324,7 +324,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 			shannonOwnerAddress = morseShannonMapping.ShannonAccount.Address.String()
 		} else {
 			// Non-custodial: use the MorseSrcAddress as the owner address
-			shannonOwnerAddress = ownerAddressToMClaimableAccountMap[morseOutputAddress].MorseSrcAddress
+			shannonOwnerAddress = ownerAddressToMClaimableAccountMap[morseOutputAddress].ShannonDestAddress
 		}
 
 		// Build the supplier stake config for this migration.
