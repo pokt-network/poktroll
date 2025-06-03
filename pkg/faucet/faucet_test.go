@@ -120,9 +120,9 @@ func TestNewFaucet(t *testing.T) {
 
 	t.Run("supported coin #1 (100000000000upokt)", func(t *testing.T) {
 		requestURL := fmt.Sprintf("http://%s/upokt/%s", config.ListenAddress, testRecipientAddress)
-		res, getErr := http.DefaultClient.Get(requestURL)
+		res, getErr := http.DefaultClient.Post(requestURL, "application/json", nil)
 		require.NoError(t, getErr)
-		require.Equal(t, http.StatusOK, res.StatusCode)
+		require.Equal(t, http.StatusAccepted, res.StatusCode)
 
 		expectedSendCoinsUPOKT, _ := cosmostypes.ParseCoinsNormalized(testSendUPOKT)
 		expectedSendMsg := bank.NewMsgSend(
@@ -140,9 +140,9 @@ func TestNewFaucet(t *testing.T) {
 
 	t.Run("supported coin #2 (1mact)", func(t *testing.T) {
 		requestURL := fmt.Sprintf("http://%s/mact/%s", config.ListenAddress, testRecipientAddress)
-		res, getErr := http.DefaultClient.Get(requestURL)
+		res, getErr := http.DefaultClient.Post(requestURL, "application/json", nil)
 		require.NoError(t, getErr)
-		require.Equal(t, http.StatusOK, res.StatusCode)
+		require.Equal(t, http.StatusAccepted, res.StatusCode)
 
 		expectedSendCoinsMACT, _ := cosmostypes.ParseCoinsNormalized(testSendMACT)
 		expectedSendMsg := bank.NewMsgSend(
