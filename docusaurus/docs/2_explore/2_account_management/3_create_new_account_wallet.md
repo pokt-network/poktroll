@@ -11,7 +11,7 @@ sidebar_position: 3
 
 ## Wallet Options
 
-The $POKT token, native to the Pocket Chain can currently be accessed in a sovereign wallet using the following:
+The $POKT token can currently be accessed in a sovereign wallet using the following:
 
 | Wallet | Chrome | Firefox | Mobile App |
 | --- | --- | --- | --- |
@@ -33,9 +33,8 @@ The $POKT token, native to the Pocket Chain can currently be accessed in a sover
 
 ![Select Pocket Network in Keplr](../static/img/keplr-select-chains.png)
 
-
-## Wallet Options (EVM & SOL Bridged $POKT)
-The xERC-20 implementation of the token and the Solana implementation of the token can be obtained by bridging your token via the official [Pocket Network Bridge](https://bridge.pokt.network/). Those bridged tokens can use any wallets that support Ethereum or Solana.
+## Bridged Wallet Options
+The EVM ([xERC-20](https://www.xerc20.com/)) implementation of the token and the Solana implementation of the token can be obtained by bridging your token via the official [Pocket Network Bridge](https://bridge.pokt.network/). Those bridged tokens can use any wallets that support Ethereum or Solana.
 
 ## Future Options
 
