@@ -40,6 +40,10 @@ const (
 	FaucetConfigPathUsage   = "Path to the faucet config yaml file ($HOME/.{pocket,poktroll} and PWD are searched by default)"
 	DefaultFaucetConfigPath = ""
 
+	FaucetListenAddress        = "listen-address"
+	FaucetListenAddressUsage   = "The listen address of the Pocket Network Faucet in the form of host:port"
+	DefaultFaucetListenAddress = "0.0.0.0:8080"
+
 	LocalNetworkName = "local"
 	AlphaNetworkName = "alpha"
 	BetaNetworkName  = "beta"

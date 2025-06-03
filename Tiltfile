@@ -89,6 +89,10 @@ localnet_config_defaults = {
         "enabled": False,
         "clone_if_not_present": False,
     },
+
+    "faucet": {
+        "enabled": True,
+    }
 }
 
 # Initial empty config
@@ -515,3 +519,27 @@ load("./tiltfiles/pocketdex.tilt", "check_and_load_pocketdex")
 #   -- OR --
 #   2. Prints a message if true or false
 check_and_load_pocketdex(localnet_config["indexer"])
+
+
+### Pocketd Faucet
+if localnet_config["faucet"]["enabled"]:
+    helm_resource(
+        "pocketd-faucet",
+        chart_prefix + "pocketd-faucet",
+        flags=[
+            "--values=./localnet/kubernetes/values-pocketd-faucet.yaml",
+            "--set=image.repository=pocketd",
+        ],
+        image_deps=["pocketd"],
+        image_keys=[("image.repository", "image.tag")],
+        resource_deps=["validator"],
+    )
+
+    k8s_resource(
+        "pocketd-faucet",
+        labels=["faucet"],
+        resource_deps=["validator"],
+        port_forwards=[
+            "8080:8080",
+        ],
+    )
