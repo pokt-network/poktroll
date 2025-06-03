@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
-	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -32,8 +31,7 @@ The unstaked balance amount of the onchain MorseAccount will be minted to the Sh
 This CLI will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
-		RunE:    runClaimAccount,
-		PreRunE: logger.PreRunESetup,
+		RunE: runClaimAccount,
 	}
 
 	// Add a string flag for providing a passphrase to decrypt the Morse keyfile.
