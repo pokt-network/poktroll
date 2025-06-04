@@ -78,10 +78,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// - Add compute units validation in claim settlement to prevent chain halts when CUPR params change (#1407)
 	// upgrades.Upgrade_0_1_15,
 
-	// v0.1.16 - upgrade to:
+	// vNext - upgrade to:
 	// - Normalize Morse accounts recovery allowlist addresses (to uppercase).
 	// - Normalize Morse source address when handling Morse account recovery message.
-	upgrades.Upgrade_0_1_16,
+	upgrades.Upgrade_NEXT,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
