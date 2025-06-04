@@ -1,3 +1,5 @@
+load("ext://helm_resource", "helm_resource", "helm_repo")
+
 ibc_relayer_dockerfile = """
 FROM golang:1.23.0
 
@@ -51,30 +53,34 @@ def ibc_disabled_resource(reason):
                    labels=["IBC"])
 
 
-def check_and_load_ibc(ibc_config):
+def check_and_load_ibc(chart_prefix, ibc_config):
     if ibc_config["enabled"]:
-        load_ibc_resources(ibc_config)
+        load_ibc_resources(chart_prefix, ibc_config)
     else:
         ibc_disabled_resource(
             "Localnet IBC resources disabled. Set `ibc.enabled` to `true` in `localnet_config.yaml` to enable them.")
 
 
-def check_and_load_agoric(ibc_config):
+def check_and_load_agoric(chart_prefix, ibc_config):
     if ibc_config["relay_pairs_enabled"]["pocket-agoriclocal"]:
         docker_build(
             "agoric",
-            context=os.path.join(".", "localnet", "agoric"),  # needs any folder, doesn't matter
+            context=os.path.join(".", "localnet", "kubernetes"),  # needs any folder, less context is faster
             dockerfile_contents=agoric_dockerfile
         )
 
-        k8s_yaml(helm(
-            os.path.join("localnet", "agoric"),
-            name="agoric",
-            values=os.path.join("localnet", "kubernetes", "values-agoric.yaml"),  # Only files go here
-        ))
+        helm_resource(
+            "agoric-validator",
+            chart_prefix + "agoric-validator",
+            flags=[
+                "--values=./localnet/kubernetes/values-agoric.yaml",
+            ],
+            image_deps=["agoric"],
+            image_keys=[("image.repository", "image.tag")],
+        )
 
         k8s_resource(
-            'agoric',
+            "agoric-validator",
             new_name="Agoric Local Node",
             labels=["IBC"],
             port_forwards=[
@@ -90,9 +96,8 @@ def pair_pretty(pair):
     return chain_a_id.title() + "->" + chain_b_id.title()
 
 
-def load_ibc_relayer_server_resources(pair):
+def load_ibc_relayer_server_resources(chart_prefix, pair):
     chain_a_id, chain_b_id = pair.split("-")
-    release_name = pair + "-daemon-ibc-relayer"
     pair_ibc_setup_dep = pair_pretty(pair) + " IBC Setup"
 
     if chain_a_id == "pocket":
@@ -114,30 +119,31 @@ def load_ibc_relayer_server_resources(pair):
             pair_ibc_setup_dep,
         ]
 
-    k8s_yaml(helm(
-        os.path.join("localnet", "ibc-relayer"),
-        name=release_name,
-        values=[
-            os.path.join("localnet", "kubernetes", "values-ibc-relayer-daemon.yaml"),
-            os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pair + ".yaml"),
+    helm_resource(
+        "ibc-relayer",
+        chart_prefix + "ibc-relayer",
+        flags=[
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-daemon.yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pair + ".yaml"),
+            "--set=chain_a_id=" + chain_a_id,
+            "--set=chain_b_id=" + chain_b_id
         ],
-        set=[
-            "chain_a_id=" + chain_a_id,
-            "chain_b_id=" + chain_b_id
-        ],
-    ))
+        resource_deps=resource_deps,
+        image_deps=["ibc-relayer"],
+        image_keys=[("image.repository", "image.tag")],
+    )
 
     k8s_resource(
-        release_name,
+        "ibc-relayer",
         new_name=pair_pretty(pair) + " IBC Relayer",
         labels=["IBC"],
         resource_deps=resource_deps,
     )
 
 
-def load_ibc_relayer_setup_resource(pair):
+def load_ibc_relayer_setup_resources(chart_prefix, pair):
     chain_a_id, chain_b_id = pair.split("-")
-    release_name = pair + "-cli-ibc-relayer"
     if chain_a_id == "pocket":
         resource_deps = [
             "validator",
@@ -154,21 +160,37 @@ def load_ibc_relayer_setup_resource(pair):
             chain_b_id.title() + " Local Node",
         ]
 
-    k8s_yaml(helm(
-        os.path.join("localnet", "ibc-relayer"),
-        name=release_name,
-        values=[
-            os.path.join("localnet", "kubernetes", "values-ibc-relayer-cli.yaml"),
-            os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pair + ".yaml"),
+    # k8s_yaml(helm(
+    #     os.path.join("localnet", "ibc-relayer"),
+    #     name=release_name,
+    #     values=[
+    #         os.path.join("localnet", "kubernetes", "values-ibc-relayer-cli.yaml"),
+    #         os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pair + ".yaml"),
+    #     ],
+    #     set=[
+    #         "chain_a_id=" + chain_a_id,
+    #         "chain_b_id=" + chain_b_id
+    #     ],
+    # ))
+
+    helm_resource(
+        "ibc-relayer-setup",
+        chart_prefix + "ibc-relayer",
+        flags=[
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-cli.yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pair + ".yaml"),
+            "--set=chain_a_id=" + chain_a_id,
+            "--set=chain_b_id=" + chain_b_id
         ],
-        set=[
-            "chain_a_id=" + chain_a_id,
-            "chain_b_id=" + chain_b_id
-        ],
-    ))
+        resource_deps=resource_deps,
+        image_deps=["ibc-relayer"],
+        image_keys=[("image.repository", "image.tag")],
+    )
 
     k8s_resource(
-        workload=release_name,
+        # workload=release_name,
+        "ibc-relayer-setup",
         new_name=pair_pretty(pair) + " IBC Setup",
         labels=["IBC"],
         trigger_mode=TRIGGER_MODE_MANUAL,
@@ -176,13 +198,13 @@ def load_ibc_relayer_setup_resource(pair):
     )
 
 
-def load_ibc_relayer(pair):
-    load_ibc_relayer_server_resources(pair)
-    load_ibc_relayer_setup_resource(pair)
+def load_ibc_relayer(chart_prefix, pair):
+    load_ibc_relayer_server_resources(chart_prefix, pair)
+    load_ibc_relayer_setup_resources(chart_prefix, pair)
 
 
-def load_ibc_resources(ibc_config):
-    check_and_load_agoric(ibc_config)
+def load_ibc_resources(chart_prefix, ibc_config):
+    check_and_load_agoric(chart_prefix, ibc_config)
 
     if len(ibc_config["relay_pairs_enabled"]) > 0:
         docker_build(
@@ -192,4 +214,4 @@ def load_ibc_resources(ibc_config):
 
     for pair, enabled in ibc_config["relay_pairs_enabled"].items():
         if enabled:
-            load_ibc_relayer(pair)
+            load_ibc_relayer(chart_prefix, pair)

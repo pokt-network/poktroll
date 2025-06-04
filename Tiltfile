@@ -554,4 +554,4 @@ if localnet_config["faucet"]["enabled"]:
 
 ### IBC relayer(s) & alt-chain node(s)
 load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
-check_and_load_ibc(localnet_config["ibc"])
+check_and_load_ibc(chart_prefix, localnet_config["ibc"])
