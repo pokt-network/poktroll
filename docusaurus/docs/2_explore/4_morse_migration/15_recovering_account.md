@@ -3,18 +3,18 @@ title: Recovering Morse Accounts
 sidebar_position: 15
 ---
 
-## Quickstart
+## Quickstart <!-- omit in toc -->
 
 Recovering an unclaimable Morse account:
 
 ```bash
-pocketd tx migration recover-account <638...> <pokt1...> --from=<authority-key> --network=beta
+pocketd tx migration recover-account <638...> <pokt1...> --from=pnf_beta --network=beta
 ```
 
 Recovering a Morse module account:
 
 ```bash
-pocketd tx migration recover-account DAO pnf --from=pnf --network=beta
+pocketd tx migration recover-account DAO pnf --from=pnf_beta --network=beta
 ```
 
 For other options and configurations, run:
@@ -23,18 +23,38 @@ For other options and configurations, run:
 pocketd tx migration recover-account --help
 ```
 
-This guide covers how to recover Morse accounts that are both:
+## Table of Contents <!-- omit in toc -->
 
-1. **Unclaimable**
-2. **On the recoverable accounts allowlist**
+- [Overview](#overview)
+  - [Step 1: Verify the account balance and details](#step-1-verify-the-account-balance-and-details)
+  - [Step 2: Verify the account can be recovered](#step-2-verify-the-account-can-be-recovered)
+  - [Step 3: Import authority address](#step-3-import-authority-address)
+  - [Required Authorization](#required-authorization)
+  - [Example 1: Recover DAO Module Account](#example-1-recover-dao-module-account)
+  - [Example 2: Recover Another Account](#example-2-recover-another-account)
+- [Complete Recovery Examples](#complete-recovery-examples)
+  - [Copy-Paste Ready Commands](#copy-paste-ready-commands)
+- [Hyperlinks to explorers](#hyperlinks-to-explorers)
+  - [MainNet Explorers](#mainnet-explorers)
+  - [TestNet Explorers](#testnet-explorers)
+- [Background Documentation](#background-documentation)
+- [Pre-requisites](#pre-requisites)
 
-:::info Authority-gated
+## Overview
+
+This guide covers how to recover Morse accounts that:
+
+1. Are in the [recovery allowlist](https://github.com/pokt-network/poktroll/blob/main/x/migration/recovery/recovery_allowlist.go)
+2. Are unclaimable due to some reason (lost private key, unclaimable, etc)
+3. Can only be claimed by an onchain authority (i.e. Pocket Network Foundation)
+
+:::danger Authority-gated
 The recovery process is authority-gated and requires proper authorization.
 :::
 
-### Checking the balance of the account to recover
+### Step 1: Verify the account balance and details
 
-Before attempting recovery, you should verify the account balance and details. Check the [Morse mainnet snapshot](https://raw.githubusercontent.com/pokt-network/poktroll/refs/heads/main/tools/scripts/migration/msg_import_morse_accounts_170616_2025-06-03.json) to see account information.
+Before attempting recovery, you should verify the account balance and details. Check the [Morse mainnet snapshot](https://raw.githubusercontent.com/pokt-network/poktroll/refs/heads/main/tools/scripts/migration/m sg_import_morse_accounts_170616_2025-06-03.json) to see account information.
 
 Example for the DAO module account:
 
@@ -59,7 +79,7 @@ Example for the DAO module account:
 }
 ```
 
-### Checking if the account can be recovered
+### Step 2: Verify the account can be recovered
 
 Verify that the account is on the recoverable accounts allowlist by checking the [recovery allowlist](https://github.com/pokt-network/poktroll/blob/main/x/migration/recovery/recovery_allowlist.go).
 
@@ -68,7 +88,7 @@ An account is eligible for recovery if it meets **both** criteria:
 - It is **unclaimable** (cannot be claimed through normal migration)
 - It is on the **recoverable accounts allowlist**
 
-## Instructions to import authority address
+### Step 3: Import authority address
 
 Before recovering accounts, you need to import the authority address that has the proper authorization:
 
@@ -81,15 +101,6 @@ pocketd keys add authority-key --recover --keyring-backend=os
 ```
 
 **Note**: The actual private key hex is omitted for security reasons. Obtain the proper authority key from your organization's secure key management system.
-
-## Command to recover account
-
-The recovery command uses the following format:
-
-```bash
-pocketd tx migration recover-account [morse-src-address] [shannon-dest-address-or-key-name] --from=[authority-key] [flags]
-```
-
 ### Required Authorization
 
 You **MUST** have an onchain authorization for the message type `pocket.migration.MsgRecoverMorseAccount`. Check existing authorizations with:
@@ -120,24 +131,6 @@ pocketd tx migration recover-account [morse-address] [shannon-dest] --from=autho
 
 # Example with specific addresses
 pocketd tx migration recover-account validator1 pokt1abc123def456ghi789jkl012mno345pqr678stu --from=authority-key --network=main
-```
-
-### Additional Flags
-
-Common flags you might need:
-
-```bash
-# Specify gas and fees
---gas=auto --gas-adjustment=1.5 --fees=1000upokt
-
-# Use different keyring backend
---keyring-backend=os
-
-# Specify network
---network=main  # or --network=beta
-
-# Broadcast mode
---broadcast-mode=sync
 ```
 
 ## Complete Recovery Examples
@@ -185,7 +178,9 @@ For more detailed information about the recovery process, refer to:
 - [Recovery Allowlist Source](https://github.com/pokt-network/poktroll/blob/main/x/migration/recovery/recovery_allowlist.go)
 - [MainNet Snapshot Data](https://raw.githubusercontent.com/pokt-network/poktroll/refs/heads/main/tools/scripts/migration/msg_import_morse_accounts_170616_2025-06-03.json)
 
-## Troubleshooting
+## Pre-requisites
+
+
 
 **Common Issues:**
 
