@@ -3,18 +3,26 @@ title: Recovering Morse Accounts
 sidebar_position: 15
 ---
 
+:::danger Authority-gated
+
+The recovery process is authority-gated and requires proper authorization.
+
+Ensure the destination Shannon address is correct.
+
+:::
+
 ## Quickstart <!-- omit in toc -->
 
-Recovering an unclaimable Morse account:
+Recovering an unclaimable Morse account to a Shannon address on Beta:
 
 ```bash
 pocketd tx migration recover-account <638...> <pokt1...> --from=pnf_beta --network=beta
 ```
 
-Recovering a Morse module account:
+Recovering a Morse module account to a Shannon address on Beta:
 
 ```bash
-pocketd tx migration recover-account DAO pnf --from=pnf_beta --network=beta
+pocketd tx migration recover-account DAO <pokt1...> --from=pnf_beta --network=beta
 ```
 
 For other options and configurations, run:
@@ -41,10 +49,6 @@ pocketd tx migration recover-account --help
 - [Pre-requisites](#pre-requisites)
 
 ## Overview
-
-:::danger Authority-gated
-The recovery process is authority-gated and requires proper authorization.
-:::
 
 This guide covers how to recover Morse accounts that:
 
