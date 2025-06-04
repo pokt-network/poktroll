@@ -17,7 +17,7 @@ import (
 
 func RecoverMorseAccountCmd() *cobra.Command {
 	recoverCmd := &cobra.Command{
-		Use:   "recover-account [morse-src-address] [shannon-dest-address-or-key-name]",
+		Use:   "recover-account [morse-src-address-or-module-name-all-caps] [shannon-dest-address-or-key-name]",
 		Args:  cobra.ExactArgs(2),
 		Short: "Recover a Morse account which is BOTH unclaimable AND on the recoverable accounts allowlist",
 		Long: `Recover a Morse account that is BOTH unclaimable AND on the recoverable accounts allowlist.

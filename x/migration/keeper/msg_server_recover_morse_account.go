@@ -33,7 +33,7 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 		)
 	}
 
-	normalizedMorseSrcAddress := encoding.NormalizeMorseHexAddress(msg.GetMorseSrcAddress())
+	normalizedMorseSrcAddress := encoding.NormalizeMorseAddress(msg.GetMorseSrcAddress())
 
 	// Check if the morse account is listed in the recoverable accounts list.
 	if !recovery.IsMorseAddressRecoverable(normalizedMorseSrcAddress) {
