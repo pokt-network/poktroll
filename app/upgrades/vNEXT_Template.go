@@ -7,12 +7,14 @@
 //   - YOU SHOULD NEVER NEED TO CHANGE THIS FILE
 //
 // USAGE INSTRUCTIONS:
-//  1. To start a new upgrade cycle, copy this file to vNEXT.go:
+//  1. To start a new upgrade cycle, rename vNEXT.go to the target version (e.g., v0.1.14.go) and update all identifiers accordingly:
+//     cp ./app/upgrades/vNEXT.go ./app/upgrades/v0.1.14.go
+//  2. Then, copy this file to vNEXT.go:
 //     cp ./app/upgrades/vNEXT_Template.go ./app/upgrades/vNEXT.go
-//  2. Look for the word "Template" in `vNEXT.go` and replace it with an empty string.
-//  3. Make all upgrade-specific changes in vNEXT.go only.
-//  4. When an upgrade is finalized, rename vNEXT.go to the target version (e.g., v0.1.14.go) and update all identifiers accordingly.
-//  5. To reset, restore, or start a new upgrade cycle, repeat step 1.
+//  3. Look for the word "Template" in `vNEXT.go` and replace it with an empty string.
+//  4. Make all upgrade-specific changes in vNEXT.go only.
+//  5. To reset, restore, or start a new upgrade cycle, repeat fromstep 1.
+//  6. Update the last entry in the `allUpgrades` slice in `app/upgrades.go` to point to the new upgrade version variable.
 //
 // vNEXT_Template.go should NEVER be modified for upgrade-specific logic.
 // Only update this file to improve the template itself.
