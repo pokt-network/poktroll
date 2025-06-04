@@ -42,15 +42,15 @@ pocketd tx migration recover-account --help
 
 ## Overview
 
+:::danger Authority-gated
+The recovery process is authority-gated and requires proper authorization.
+:::
+
 This guide covers how to recover Morse accounts that:
 
 1. Are in the [recovery allowlist](https://github.com/pokt-network/poktroll/blob/main/x/migration/recovery/recovery_allowlist.go)
 2. Are unclaimable due to some reason (lost private key, unclaimable, etc)
 3. Can only be claimed by an onchain authority (i.e. Pocket Network Foundation)
-
-:::danger Authority-gated
-The recovery process is authority-gated and requires proper authorization.
-:::
 
 ### Step 1: Verify the account balance and details
 
@@ -101,6 +101,7 @@ pocketd keys add authority-key --recover --keyring-backend=os
 ```
 
 **Note**: The actual private key hex is omitted for security reasons. Obtain the proper authority key from your organization's secure key management system.
+
 ### Required Authorization
 
 You **MUST** have an onchain authorization for the message type `pocket.migration.MsgRecoverMorseAccount`. Check existing authorizations with:
@@ -179,8 +180,6 @@ For more detailed information about the recovery process, refer to:
 - [MainNet Snapshot Data](https://raw.githubusercontent.com/pokt-network/poktroll/refs/heads/main/tools/scripts/migration/msg_import_morse_accounts_170616_2025-06-03.json)
 
 ## Pre-requisites
-
-
 
 **Common Issues:**
 
