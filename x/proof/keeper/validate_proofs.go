@@ -11,6 +11,16 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
+// validationResult is a struct that holds the result of a proof validation task.
+type validationResult struct {
+	// claim is the claim associated with the proof that was validated.
+	claim *types.Claim
+	// supplierOperatorAddress is the address of the supplier operator that submitted the proof.
+	supplierOperatorAddress string
+	// event is the event emitted for the proof validation result.
+	event types.EventProofValidityChecked
+}
+
 // proofValidationTaskCoordinator is a helper struct to coordinate parallel proof
 // validation tasks.
 type proofValidationTaskCoordinator struct {
@@ -20,9 +30,8 @@ type proofValidationTaskCoordinator struct {
 	// wg is a wait group to wait for all goroutines to finish before returning.
 	wg *sync.WaitGroup
 
-	// processedProofs is a map of supplier operator addresses to the session IDs
-	// whose proofs that have been processed.
-	processedProofs map[string][]string
+	// validationResult is a map that holds the processed proofs and their validation results.
+	validationResult map[string]*validationResult
 
 	// numValidProofs and numInvalidProofs are counters to keep track of proof validation results.
 	numValidProofs,
@@ -47,6 +56,8 @@ func (k Keeper) ValidateSubmittedProofs(ctx sdk.Context) (numValidProofs, numInv
 
 	logger.Info(fmt.Sprintf("Number of CPU cores used for parallel proof validation: %d\n", numCPU))
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
 	// Iterate over proofs using an iterator to prevent OOM issues caused by bulk fetching.
 	proofIterator := k.GetAllProofsIterator(ctx)
 
@@ -57,10 +68,12 @@ func (k Keeper) ValidateSubmittedProofs(ctx sdk.Context) (numValidProofs, numInv
 		// Use a wait group to wait for all goroutines to finish before returning.
 		wg: &sync.WaitGroup{},
 
-		processedProofs: make(map[string][]string),
-		coordinatorMu:   &sync.Mutex{},
+		validationResult: make(map[string]*validationResult),
+		coordinatorMu:    &sync.Mutex{},
 	}
 
+	// Maintain the order of the validated proofs to ensure that the process is deterministic.
+	proofKeys := make([]string, 0)
 	for ; proofIterator.Valid(); proofIterator.Next() {
 		proofBz := proofIterator.Value()
 
@@ -71,7 +84,10 @@ func (k Keeper) ValidateSubmittedProofs(ctx sdk.Context) (numValidProofs, numInv
 		// Increment the wait group to wait for proof validation to finish.
 		proofValidationCoordinator.wg.Add(1)
 
-		go k.validateProof(ctx, proofBz, proofValidationCoordinator)
+		proofKey := string(proofIterator.Key())
+		proofKeys = append(proofKeys, proofKey)
+
+		go k.validateProof(ctx, proofKey, proofBz, proofValidationCoordinator)
 	}
 
 	// Wait for all goroutines to finish before returning.
@@ -80,17 +96,33 @@ func (k Keeper) ValidateSubmittedProofs(ctx sdk.Context) (numValidProofs, numInv
 	// Close the proof iterator before deleting the processed proofs.
 	proofIterator.Close()
 
-	// Delete all the processed proofs from the store since they are no longer needed.
-	logger.Info("removing processed proofs from the store")
-	for supplierOperatorAddr, processedProofs := range proofValidationCoordinator.processedProofs {
-		for _, sessionId := range processedProofs {
-			k.RemoveProof(ctx, sessionId, supplierOperatorAddr)
-			logger.Info(fmt.Sprintf(
-				"removing proof for supplier %s with session ID %s",
-				supplierOperatorAddr,
-				sessionId,
-			))
+	// Process the validation results collected by the goroutines in the same order
+	// as the proofs were iterated.
+	for _, proofKey := range proofKeys {
+		validationResult, ok := proofValidationCoordinator.validationResult[proofKey]
+		if !ok {
+			// DEV_NOTE: This should never happen since we have already collected all the validation results.
+			logger.Error(fmt.Sprintf("(SHOULD NEVER HAPPEN) no validation result found for proof key %s", proofKey))
+			continue
 		}
+
+		claim := validationResult.claim
+		eventProofValidityChecked := validationResult.event
+		supplierOperatorAddress := validationResult.supplierOperatorAddress
+		sessionId := validationResult.claim.GetSessionHeader().GetSessionId()
+
+		if err = sdkCtx.EventManager().EmitTypedEvent(&eventProofValidityChecked); err != nil {
+			logger.Error(fmt.Sprintf("failed to emit proof validity check event due to: %v", err))
+			return
+		}
+		k.UpsertClaim(ctx, *claim)
+
+		k.RemoveProof(ctx, sessionId, supplierOperatorAddress)
+		logger.Info(fmt.Sprintf(
+			"removing proof for supplier %s with session ID %s",
+			validationResult.supplierOperatorAddress,
+			sessionId,
+		))
 	}
 
 	return proofValidationCoordinator.numValidProofs, proofValidationCoordinator.numInvalidProofs, nil
@@ -102,6 +134,7 @@ func (k Keeper) ValidateSubmittedProofs(ctx sdk.Context) (numValidProofs, numInv
 // proof validation.
 func (k Keeper) validateProof(
 	ctx context.Context,
+	proofKey string,
 	proofBz []byte,
 	coordinator *proofValidationTaskCoordinator,
 ) {
@@ -139,13 +172,15 @@ func (k Keeper) validateProof(
 	// used in the proof validation below.
 	// EnsureWellFormedProof which is called in MsgSubmitProof handler has already validated
 	// that the claim referenced by the proof exists and has a matching session header.
+	coordinator.coordinatorMu.Lock()
 	claim, claimFound := k.GetClaim(ctx, sessionHeader.GetSessionId(), supplierOperatorAddr)
 	if !claimFound {
 		// DEV_NOTE: This should never happen since EnsureWellFormedProof has already checked
 		// that the proof has a corresponding claim.
-		logger.Error("no claim found for the corresponding proof")
+		logger.Error(fmt.Sprintf("(SHOULD NEVER HAPPEN) no claim found for the corresponding proof key %s", proofKey))
 		return
 	}
+	coordinator.coordinatorMu.Unlock()
 	logger.Debug("successfully retrieved claim")
 
 	// Set the proof status to valid by default.
@@ -172,29 +207,25 @@ func (k Keeper) validateProof(
 		FailureReason: invalidProofReason,
 	}
 
-	if err := sdkCtx.EventManager().EmitTypedEvent(&eventProofValidityChecked); err != nil {
-		logger.Error(fmt.Sprintf("failed to emit proof validity check event due to: %v", err))
-		return
-	}
-
-	// Protect the subsequent operations from concurrent access.
-	coordinator.coordinatorMu.Lock()
-	defer coordinator.coordinatorMu.Unlock()
-
 	// Update the claim to reflect the validation result of the associated proof.
 	//
 	// It will be used later by the SettlePendingClaims routine to determine whether:
 	// 1. The claim should be settled or not
 	// 2. The corresponding supplier should be slashed or not
 	claim.ProofValidationStatus = proofStatus
-	k.UpsertClaim(ctx, claim)
 
-	// Collect the processed proofs info to delete them after the proofIterator is closed
-	// to prevent iterator invalidation.
-	coordinator.processedProofs[supplierOperatorAddr] = append(
-		coordinator.processedProofs[supplierOperatorAddr],
-		sessionHeader.GetSessionId(),
-	)
+	// Protect the subsequent operations from concurrent access.
+	coordinator.coordinatorMu.Lock()
+	defer coordinator.coordinatorMu.Unlock()
+
+	// Collect the validation result to be persisted outside of the goroutine.
+	// This is done to ensure that the outcome of the proof validation is deterministic
+	// by emitting the events and persisting the claims in the same order they were iterated.
+	coordinator.validationResult[proofKey] = &validationResult{
+		claim:                   &claim,
+		supplierOperatorAddress: supplierOperatorAddr,
+		event:                   eventProofValidityChecked,
+	}
 
 	if proofStatus == types.ClaimProofStatus_INVALID {
 		// Increment the number of invalid proofs.
