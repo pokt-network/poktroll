@@ -45,14 +45,18 @@ RUN grep -qF 'printKeys' /root/.bashrc || echo "printKeys" >> /root/.bashrc
 """
 
 
-# pocketdex_disabled_resource creates a tilt resource that prints a message indicating
-# that the indexer is disabled and how to enable it.
+# ⚠️ IBC Disabled Resource
+# - Creates a Tilt resource that prints a message indicating IBC is disabled
+# - Shows how to enable it
 def ibc_disabled_resource(reason):
     local_resource("⚠️ IBC Disabled",
                    "echo '{}'".format(reason),
                    labels=["IBC"])
 
 
+# Check and Load IBC
+# - Loads IBC resources if enabled in config
+# - Otherwise, creates a disabled resource with instructions
 def check_and_load_ibc(chart_prefix, ibc_config):
     if ibc_config["enabled"]:
         load_ibc_resources(chart_prefix, ibc_config)
@@ -61,6 +65,11 @@ def check_and_load_ibc(chart_prefix, ibc_config):
             "Localnet IBC resources disabled. Set `ibc.enabled` to `true` in `localnet_config.yaml` to enable them.")
 
 
+# Check and Load Agoric
+# - If the pocket-agoriclocal relay pair is enabled:
+#   - Builds Agoric docker image
+#   - Deploys Agoric via Helm/k8s
+#   - Sets up Agoric k8s resource with port-forwards
 def check_and_load_agoric(chart_prefix, ibc_config):
     if ibc_config["relay_pairs_enabled"]["pocket-agoriclocal"]:
         docker_build(
@@ -69,6 +78,7 @@ def check_and_load_agoric(chart_prefix, ibc_config):
             dockerfile_contents=agoric_dockerfile
         )
 
+        # Deploy helm chart
         helm_resource(
             "agoric-validator",
             chart_prefix + "agoric-validator",
@@ -79,6 +89,7 @@ def check_and_load_agoric(chart_prefix, ibc_config):
             image_keys=[("image.repository", "image.tag")],
         )
 
+        # Update k8s resource with new name, lebels, and port-forwards
         k8s_resource(
             "agoric-validator",
             new_name="Agoric Local Node",
@@ -91,11 +102,16 @@ def check_and_load_agoric(chart_prefix, ibc_config):
         )
 
 
+# Pair Pretty Printer
+# - Converts a pair string like "pocket-agoriclocal" to "Pocket->Agoriclocal"
 def pair_pretty(pair):
     chain_a_id, chain_b_id = pair.split("-")
     return chain_a_id.title() + "->" + chain_b_id.title()
 
 
+# Load IBC Relayer Server Resources
+# - Sets up the server-side relayer for a given pair
+# - Adds appropriate resource dependencies based on which chain is "pocket"
 def load_ibc_relayer_server_resources(chart_prefix, pair):
     chain_a_id, chain_b_id = pair.split("-")
     pair_ibc_setup_dep = pair_pretty(pair) + " IBC Setup"
@@ -119,6 +135,7 @@ def load_ibc_relayer_server_resources(chart_prefix, pair):
             pair_ibc_setup_dep,
         ]
 
+    # Deploy helm chart
     helm_resource(
         "ibc-relayer",
         chart_prefix + "ibc-relayer",
@@ -134,6 +151,7 @@ def load_ibc_relayer_server_resources(chart_prefix, pair):
         image_keys=[("image.repository", "image.tag")],
     )
 
+    # Update k8s resource with new name, lebels, and port-forwards
     k8s_resource(
         "ibc-relayer",
         new_name=pair_pretty(pair) + " IBC Relayer",
@@ -142,6 +160,9 @@ def load_ibc_relayer_server_resources(chart_prefix, pair):
     )
 
 
+# Load IBC Relayer Setup Resource
+# - Sets up the CLI/setup resource for a given pair
+# - Adds appropriate resource dependencies based on which chain is "pocket"
 def load_ibc_relayer_setup_resources(chart_prefix, pair):
     chain_a_id, chain_b_id = pair.split("-")
     if chain_a_id == "pocket":
@@ -160,19 +181,7 @@ def load_ibc_relayer_setup_resources(chart_prefix, pair):
             chain_b_id.title() + " Local Node",
         ]
 
-    # k8s_yaml(helm(
-    #     os.path.join("localnet", "ibc-relayer"),
-    #     name=release_name,
-    #     values=[
-    #         os.path.join("localnet", "kubernetes", "values-ibc-relayer-cli.yaml"),
-    #         os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pair + ".yaml"),
-    #     ],
-    #     set=[
-    #         "chain_a_id=" + chain_a_id,
-    #         "chain_b_id=" + chain_b_id
-    #     ],
-    # ))
-
+    # Deploy helm chart
     helm_resource(
         "ibc-relayer-setup",
         chart_prefix + "ibc-relayer",
@@ -188,6 +197,8 @@ def load_ibc_relayer_setup_resources(chart_prefix, pair):
         image_keys=[("image.repository", "image.tag")],
     )
 
+    # Update k8s resource with new name, lebels,
+    # port-forwards, and the manual trigger mode.
     k8s_resource(
         # workload=release_name,
         "ibc-relayer-setup",
@@ -198,11 +209,17 @@ def load_ibc_relayer_setup_resources(chart_prefix, pair):
     )
 
 
+# Load IBC Relayer
+# - Loads both server and setup resources for a given pair
 def load_ibc_relayer(chart_prefix, pair):
     load_ibc_relayer_server_resources(chart_prefix, pair)
     load_ibc_relayer_setup_resources(chart_prefix, pair)
 
 
+# Load IBC Resources
+# - Loads Agoric resources if enabled
+# - Builds ibc-relayer docker image if any relay pairs are enabled
+# - Iterates through all enabled relay pairs and loads relayer resources for each
 def load_ibc_resources(chart_prefix, ibc_config):
     check_and_load_agoric(chart_prefix, ibc_config)
 
