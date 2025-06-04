@@ -17,6 +17,12 @@ To upgrade `pocketd` to the latest version, run:
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --upgrade
 ```
 
+To upgrade a `pocketd` to a specific release (e.g. `v0.1.12-dev3`), run:
+
+```
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev3 --upgrade
+```
+
 :::
 
 ## Table of Contents <!-- omit in toc -->
