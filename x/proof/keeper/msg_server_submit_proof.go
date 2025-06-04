@@ -128,7 +128,13 @@ func (k msgServer) SubmitProof(
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
+	}
 	numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
+	}
 
 	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
