@@ -31,6 +31,11 @@ func IsMorseAddressRecoverable(address string) bool {
 		return true
 	}
 
+	// Check if the address is in the exchanges and bridges allowlist
+	if listContainsTarget(exchangesAndBridgesAllowlist, address) {
+		return true
+	}
+
 	return false
 }
 
@@ -40,6 +45,7 @@ func init() {
 	sort.Strings(lostAppStakesAllowlist)
 	sort.Strings(knownAppStakesAllowlist)
 	sort.Strings(moduleAccountsAllowlist)
+	sort.Strings(exchangesAndBridgesAllowlist)
 }
 
 // listContainsTarget uses binary search on list to determine whether target is present.
@@ -2112,6 +2118,20 @@ var knownAppStakesAllowlist = []string{
 	"9EA35FEE7695C2F639864EE38A5A448C20AE4547",
 	"319CF4360BA850D6C004910FBED197BDE045FB9C",
 	"381ADD8CF814F45B8BF6DEA56AC185C2358B8BF2",
+}
+
+var exchangesAndBridgesAllowlist = []string{
+	"6386713DEB27B609DAAD5E2E32EE6591753E5F4E",
+	"2EB054616797DE8565506333AFB334655E7774ED",
+	"5EEDF4989B385D69017F1A5597D6D3A09E81E03B",
+	"A7BEC93013FA51339DE2F62CB0466550C67092F2",
+	"3C7A0C26B00774D499639EA067E2575883988F12",
+	"0C31A932C691653E34DC50CF6D2A7DFA83CCDD68",
+	"0F8CE67624D907F339A40CE9926E11399701D22C",
+	"5357D2DAD668C4192E5F617683F0E6A4AE6B44C7",
+	"DDB570983E817357500BFDACB2B7C1CE51BD22C7",
+	"FCB87998D289DD82938FE266B77CAD933D74FE51",
+	"75D64262C132576481388883FD1CCE5F23EC36F7",
 }
 
 var moduleAccountsAllowlist = []string{
