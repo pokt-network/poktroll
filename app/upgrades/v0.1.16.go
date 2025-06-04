@@ -11,9 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/app/keepers"
 )
 
-// TODO_NEXT_UPGRADE: Rename NEXT with the appropriate next
-// upgrade version number and update comment versions.
-
 const (
 	Upgrade_0_1_16_PlanName = "v0.1.16"
 )
