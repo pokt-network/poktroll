@@ -410,7 +410,8 @@ for x in range(localnet_config["path_gateways"]["count"]):
 
     configmap_create(
         "path-config-" + str(actor_number),
-        from_file=".config.yaml=./localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
+        # from_file=".config.yaml=./localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
+        from_file=".config.yaml=./localnet/kubernetes/config-path-prod.yaml"
     )
 
     helm_resource(

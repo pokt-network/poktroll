@@ -129,3 +129,5 @@ localnet_testing_msg_import_morse_accounts.json
 
 # Gov Param Update transaction templates
 # *_params_*.json
+
+localnet/kubernetes/config-path-prod.yaml
