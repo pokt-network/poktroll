@@ -102,5 +102,5 @@ func (msg *MsgClaimMorseApplication) getSigningBytes() ([]byte, error) {
 
 // GetMorseSignerAddress returns the morse address which was used to sign the claim message.
 func (msg *MsgClaimMorseApplication) GetMorseSignerAddress() string {
-	return encoding.NormalizeMorseHexAddress(msg.GetMorsePublicKey().Address().String())
+	return encoding.NormalizeMorseAddress(msg.GetMorsePublicKey().Address().String())
 }

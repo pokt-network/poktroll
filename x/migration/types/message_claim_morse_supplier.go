@@ -28,7 +28,7 @@ func NewMsgClaimMorseSupplier(
 	services []*sharedtypes.SupplierServiceConfig,
 	shannonSigningAddr string,
 ) (*MsgClaimMorseSupplier, error) {
-	morseNodeAddress = encoding.NormalizeMorseHexAddress(morseNodeAddress)
+	morseNodeAddress = encoding.NormalizeMorseAddress(morseNodeAddress)
 
 	msg := &MsgClaimMorseSupplier{
 		MorseNodeAddress:       morseNodeAddress,
@@ -129,5 +129,5 @@ func (msg *MsgClaimMorseSupplier) getSigningBytes() ([]byte, error) {
 // - The Morse node address (i.e. operator)
 // - The Morse output address (i.e. owner)
 func (msg *MsgClaimMorseSupplier) GetMorseSignerAddress() string {
-	return encoding.NormalizeMorseHexAddress(msg.GetMorsePublicKey().Address().String())
+	return encoding.NormalizeMorseAddress(msg.GetMorsePublicKey().Address().String())
 }
