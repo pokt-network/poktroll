@@ -49,6 +49,12 @@ This guide covers how to recover Morse accounts that:
 
 ## Step 1: Verify the account balance and details
 
+:::note `pocketd` configs
+
+You may need to update `--home=... --keyring-backend=...` to fit your `pocketd` environment
+
+:::
+
 Using `A7BEC93013FA51339DE2F62CB0466550C67092F2` as an example on Beta TestNet.
 
 1. Visit [shannon-beta.trustsoothe.io/migration?address=A7..F2](https://shannon-beta.trustsoothe.io/migration?address=5EED...)
