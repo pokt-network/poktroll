@@ -16,13 +16,15 @@ Ensure the destination Shannon address is correct.
 Recovering a lost Morse account to a misc Shannon address on Beta:
 
 ```bash
-pocketd tx migration recover-account A7BEC93013FA51339DE2F62CB0466550C67092F2 <pokt1...> --from=pnf_beta --network=beta
+pocketd tx migration recover-account A7BEC93013FA51339DE2F62CB0466550C67092F2 pokt132y5nzs4xahqy6cmzankn8mn4ec897j50wuzhr --from=pnf_beta --network=beta
+# pokt132 is a misc account address
 ```
 
 Recovering the Morse DAO module account to Shannon's PNF address on Beta:
 
 ```bash
 pocketd tx migration recover-account DAO pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --from=pnf_beta --network=beta
+# pokt1f0... is the pnf_beta account address
 ```
 
 For other options and configurations, run:
@@ -57,7 +59,7 @@ You may need to update `--home=... --keyring-backend=...` to fit your `pocketd` 
 
 Using `A7BEC93013FA51339DE2F62CB0466550C67092F2` as an example on Beta TestNet.
 
-1. Visit [shannon-beta.trustsoothe.io/migration?address=A7..F2](https://shannon-beta.trustsoothe.io/migration?address=5EED...)
+1. Visit [shannon-beta.trustsoothe.io/migration?address=A7..F2](https://shannon-beta.trustsoothe.io/migration?address=A7BEC93013FA51339DE2F62CB0466550C67092F2)
 2. Look for `A7..F2` in [recovery_allowlist.go](https://github.com/pokt-network/poktroll/blob/main/x/migration/recovery/recovery_allowlist.go).
 3. Verify `A7..F2` is in [state export from Morse](https://raw.githubusercontent.com/pokt-network/poktroll/refs/heads/main/tools/scripts/migration/morse_state_export_170616_2025-06-03.json).
 
@@ -77,6 +79,7 @@ Get the address of `pnf_beta`:
 
 ```bash
 pocketd keys show pnf_beta -a --keyring-backend=os
+# The following address corresponds to the pnf_beta address:
 # pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e
 ```
 
