@@ -190,7 +190,7 @@ genesis:
               denom: upokt
     # For ref, see https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/types/v1/genesis.proto#L13
     ibc:
-      # - https://github.com/cosmos/ibc-go/blob/bd79edf6749398e36fb367730b7e20da5c563806/proto/ibc/core/client/v1/client.proto#L61
+      # - https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/client/v1/genesis.proto#L11
       client_genesis:
         params:
           allowed_clients:
