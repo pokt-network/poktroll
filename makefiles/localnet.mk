@@ -78,7 +78,7 @@ localnet_regenesis: ignite_check_version check_yq ## Regenerate the localnet gen
 	@ignite chain init --skip-proto
 # DEV_NOTE: We want the following command to run every time localnet is spun up (i.e. localnet re-genesis)
 	$(MAKE) move_poktroll_to_pocket
-	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
+	AUTH_CONTENT=$$(cat ./tools/scripts/authz/localnet_genesis_authorizations.json | jq -r tostring); \
 	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' ${HOME}/.pocket/config/genesis.json;
 	@cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
 	@cp -r ${HOME}/.pocket/config $(POCKETD_HOME)/

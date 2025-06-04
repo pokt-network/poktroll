@@ -174,7 +174,7 @@ Since governance parameters aren't updated via `pocketd` CLI, comment out these 
 
 #### 0.4. Update the DAO Genesis Authorizations JSON File
 
-Add a grant (array element) to `tools/scripts/authz/dao_genesis_authorizations.json` with the `authorization.msg` typeURL for this module's `MsgUpdateType`:
+Add a grant (array element) to `tools/scripts/authz/localnet_genesis_authorizations.json` with the `authorization.msg` typeURL for this module's `MsgUpdateType`:
 
 ```diff
 + {
