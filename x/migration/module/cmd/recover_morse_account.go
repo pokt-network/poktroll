@@ -35,14 +35,14 @@ To check existing authz authorizations, run:
 `,
 		Example: `Examples:
 
-# Recover the dao module account by Shannon destination key **name**
-	pocketd tx migration recover-account DAO pnf --from=pnf --network=beta
+# Recover the dao module account by Shannon destination key name
+pocketd tx migration recover-account dao pnf --from=pnf --network=beta
 
-# Recover the dao module account by key **name** on MainNet with OS keyring backend
-	pocketd tx migration recover-account DAO pnf --from=pnf --network=main --keyring-backend=os
+# Recover the dao module account by Shannon destination address
+pocketd tx migration recover-account dao pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw --from=pnf
 
-# Recover the dao module account by Shannon destination **address**
-	pocketd tx migration recover-account DAO pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw --from=pnf
+# Recover the dao module account by key name on MainNet with OS keyring backend
+pocketd tx migration recover-account dao pnf --from=pnf --network=main --keyring-backend=os
 `,
 		RunE: runRecover,
 	}
