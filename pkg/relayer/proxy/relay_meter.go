@@ -254,6 +254,15 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 		)
 	}
 
+	// TODO_FOLLOWUP(@red-0ne): Consider fixing the relay meter logic to never have
+	// a less than relay cost consumed amount.
+	if sessionRelayMeter.consumedCoin.IsLT(relayCost) {
+		rmtr.logger.Error().Msgf(
+			"(SHOULD NEVER HAPPEN) Unable to decrease consumed stake amount for application %q",
+			sessionRelayMeter.app.GetAddress(),
+		)
+		return
+	}
 	// Decrease the consumed stake amount by relay cost.
 	newConsumedAmount := sessionRelayMeter.consumedCoin.Sub(relayCost)
 
