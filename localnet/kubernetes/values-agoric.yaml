@@ -1,0 +1,26 @@
+fund_on_start: true
+
+image:
+  repository: agoric
+  tag: latest
+  pullPolicy: Never
+
+mnemonic: "beach prize number regular tiger aware ring shiver path dizzy please bacon steel car crash youth rural history furnace possible property chicken entire system"
+
+service:
+  type: ClusterIP
+  ports:
+    p2p: 26656
+    rpc: 26657
+    rest: 1317
+    grpc: 9090
+
+env:
+  DEST: "1"
+  DEBUG: "SwingSet:ls,SwingSet:vat"
+
+  # Uncomment to enable delve debugging
+  # DELVE_PORT: "40009"
+
+command:
+  - /usr/src/upgrade-test-scripts/entrypoint.sh

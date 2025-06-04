@@ -1,0 +1,13 @@
+prefix: "cli"
+kind: "Job"
+command:
+  - /root/.hermes/entrypoint.sh
+  - create
+  - channel
+  - --a-port=transfer
+  - --b-port=transfer
+  - --new-client-connection
+  - --yes
+  # Intentionally omitted, expected to be added by Tilt with helm(set=[chain_a="xxx",chain_b="yyy"])
+  # - --a-chain=xxx
+  # - --b-chain=yyy
