@@ -31,8 +31,8 @@ func IsMorseAddressRecoverable(address string) bool {
 		return true
 	}
 
-	// Check if the address is in the upbit allowlist
-	if listContainsTarget(exchangesAndBridges, address) {
+	// Check if the address is in the exchanges and bridges allowlist
+	if listContainsTarget(exchangesAndBridgesAllowlist, address) {
 		return true
 	}
 
@@ -45,7 +45,7 @@ func init() {
 	sort.Strings(lostAppStakesAllowlist)
 	sort.Strings(knownAppStakesAllowlist)
 	sort.Strings(moduleAccountsAllowlist)
-	sort.Strings(exchangesAndBridges)
+	sort.Strings(exchangesAndBridgesAllowlist)
 }
 
 // listContainsTarget uses binary search on list to determine whether target is present.
@@ -2121,7 +2121,6 @@ var knownAppStakesAllowlist = []string{
 }
 
 var exchangesAndBridgesAllowlist = []string{
-	// Upbit
 	"6386713DEB27B609DAAD5E2E32EE6591753E5F4E",
 	"2EB054616797DE8565506333AFB334655E7774ED",
 	"5EEDF4989B385D69017F1A5597D6D3A09E81E03B",
