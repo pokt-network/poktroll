@@ -72,7 +72,7 @@ Using `A7BEC93013FA51339DE2F62CB0466550C67092F2` as an example on Beta TestNet.
 **Add `pnf_beta` to your keyring**:
 
 ```bash
-pocketd keys import-hex pnf_beta <private-key-hex-for-pnf-beta> --key-type secp256k1 --keyring-backend os
+pocketd keys import-hex pnf_beta <private-key-hex-for-pnf-beta> --key-type secp256k1 --keyring-backend=os
 ```
 
 Get the address of `pnf_beta`:
