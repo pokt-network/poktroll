@@ -28,6 +28,7 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
@@ -61,6 +62,17 @@ var Upgrade_NEXT = Upgrade{
 		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
+
+			// Adds new authz that were previously incorrect. See #1425
+			grantAuthorizationMessages := []string{
+				"/pocket.migration.MsgUpdateParams",
+				"/pocket.service.MsgRecoverMorseAccount",
+			}
+			if err := applyNewAuthorizations(ctx, keepers, logger, grantAuthorizationMessages); err != nil {
+				return vm, err
+			}
+
 			return vm, nil
 		}
 	},
