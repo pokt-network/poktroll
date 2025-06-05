@@ -23,7 +23,7 @@ var (
 	ErrTokenomicsEmittingEventFailed            = sdkerrors.Register(ModuleName, 1114, "failed to emit event")
 	ErrTokenomicsServiceNotFound                = sdkerrors.Register(ModuleName, 1115, "service not found")
 	ErrTokenomicsConstraint                     = sdkerrors.Register(ModuleName, 1116, "constraint violation")
-	ErrTokenomicsSettlementInternal             = sdkerrors.Register(ModuleName, 1117, "internal token logic module error")
+	ErrTokenomicsSettlementInternal             = sdkerrors.Register(ModuleName, 1117, "internal claim settlement error")
 	ErrTokenomicsTLMInternal                    = sdkerrors.Register(ModuleName, 1118, "internal token logic module error")
 	ErrTokenomicsProcessingTLM                  = sdkerrors.Register(ModuleName, 1119, "failed to process token logic module")
 	ErrTokenomicsCoinIsZero                     = sdkerrors.Register(ModuleName, 1120, "coin amount cannot be zero")
