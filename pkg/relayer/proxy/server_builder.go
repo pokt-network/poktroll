@@ -2,21 +2,10 @@ package proxy
 
 import (
 	"context"
-	"time"
+	"strings"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
-)
-
-const (
-	// supplierMaxStakeWaitTimeMinutes is the time to wait before a panic is thrown
-	// if the supplier is still not staked when the time elapses.
-	//
-	// This is intentionally a larger number because if a RelayMiner is provisioned
-	// for this long (either in testing or in prod) without an associated onchain
-	// supplier being stake, we need to communicate it either to the operator or
-	// to the developer.
-	supplierMaxStakeWaitTimeMinutes = 20 * time.Minute
 )
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's onchain advertised services.
@@ -101,7 +90,11 @@ func (rp *relayerProxy) logRelayMinerConfiguredServices(supplierOperatorAddress 
 	for serviceId := range availableConfigs {
 		availableServices = append(availableServices, serviceId)
 	}
-	rp.logger.Info().Msgf("relayminer_configs for supplier %s: %v", supplierOperatorAddress, availableServices)
+	rp.logger.Info().Msgf(
+		"[RelayMiner] configured services for supplier %q: [%s]",
+		supplierOperatorAddress,
+		strings.Join(availableServices, ", "),
+	)
 
 }
 
@@ -123,8 +116,8 @@ func (rp *relayerProxy) logSupplierServices(ctx context.Context, supplierOperato
 		configuredServices = append(configuredServices, serviceConfig.ServiceId)
 	}
 	rp.logger.Info().Msgf(
-		"relayminer_configs for supplier %s: %v",
+		"[Supplier] staked services %q: [%s]",
 		supplierOperatorAddress,
-		configuredServices,
+		strings.Join(configuredServices, ", "),
 	)
 }

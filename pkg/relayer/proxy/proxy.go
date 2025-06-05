@@ -149,6 +149,8 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 			// Ensure that each backing data node responds to a ping request
 			// (at least) before continuing operation.
 			if err := server.Ping(ctx); err != nil {
+				rp.logger.Error().Err(err).
+					Msg("failed to ping backend service before starting relay server")
 				return err
 			}
 		}

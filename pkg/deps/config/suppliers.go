@@ -617,30 +617,32 @@ func SupplyMiner(
 	return depinject.Configs(deps, depinject.Supply(mnr)), nil
 }
 
-// SupplyRelayMeter constructs a RelayMeter instance and returns a new depinject.Config with it supplied.
+// SupplyRelayMeterFn returns a function which constructs a RelayMeter instance
+// and returns a new depinject.Config with it supplied.
 //
-// - Supplies RelayMeter to the dependency injection config
-// - Returns updated config and error if any
+// - Accepts enableOverServicing flag for proxy setup
+// - Returns a SupplierFn for dependency injection
 //
 // Parameters:
-//   - ctx: Context for the function
-//   - deps: Dependency injection config
-//   - cmd: Cobra command
+//   - enableOverServicing: Flag to enable over-servicing in the relay meter
 //
 // Returns:
-//   - depinject.Config: Updated dependency injection config
-//   - error: Error if setup fails
-func SupplyRelayMeter(
-	_ context.Context,
-	deps depinject.Config,
-	_ *cobra.Command,
-) (depinject.Config, error) {
-	rm, err := proxy.NewRelayMeter(deps)
-	if err != nil {
-		return nil, err
-	}
+//   - SupplierFn: Supplier function for dependency injection
+func SupplyRelayMeterFn(
+	enableOverServicing bool,
+) SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		rm, err := proxy.NewRelayMeter(deps, enableOverServicing)
+		if err != nil {
+			return nil, err
+		}
 
-	return depinject.Configs(deps, depinject.Supply(rm)), nil
+		return depinject.Configs(deps, depinject.Supply(rm)), nil
+	}
 }
 
 // SupplyTxFactory constructs a cosmostx.Factory instance and returns a new depinject.Config with it supplied.
@@ -734,10 +736,12 @@ func NewSupplyRelayAuthenticatorFn(
 // newSupplyRelayerProxyFn returns a function which constructs a RelayerProxy and returns a new depinject.Config with it supplied.
 //
 // - Accepts servicesConfigMap for proxy setup
+// - Accepts pingEnabled flag to enable pinging the backend services
 // - Returns a SupplierFn for dependency injection
 //
 // Parameters:
 //   - servicesConfigMap: Map of services configuration
+//   - pingEnabled: Flag to enable pinging the backend services
 //
 // Returns:
 //   - SupplierFn: Supplier function for dependency injection

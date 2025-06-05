@@ -100,7 +100,7 @@ func setupRelayerDependencies(
 		config.NewSupplyServiceQueryClientFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySessionQuerierFn(),
-		config.SupplyRelayMeter,
+		config.SupplyRelayMeterFn(relayMinerConfig.EnableOverServicing),
 		config.SupplyMiner,
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyBankQuerierFn(),

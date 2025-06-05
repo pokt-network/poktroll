@@ -6,7 +6,7 @@ import (
 
 // DefaultRequestTimeoutSeconds is the default timeout for requests in seconds.
 // If not specified in the config, it will be used as a fallback.
-const DefaultRequestTimeoutSeconds = 30
+const DefaultRequestTimeoutSeconds = 10
 
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
 func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
@@ -25,15 +25,8 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigUnmarshalYAML.Wrap(err.Error())
 	}
 
-	if yamlRelayMinerConfig.DefaultRequestTimeoutSeconds < 0 {
-		return nil, ErrRelayMinerConfigInvalidRequestTimeout.Wrapf(
-			"invalid 'default_request_timeout_seconds' value %d, it must be greater than or equal to 0",
-			yamlRelayMinerConfig.DefaultRequestTimeoutSeconds,
-		)
-	}
-
 	// Fallback to DefaultRequestTimeoutSeconds const if none is specified in the config
-	// This is to keeps the backwards compatibility with the previous versions of the config file
+	// This is for the backwards compatibility with the previous versions of the config file
 	if yamlRelayMinerConfig.DefaultRequestTimeoutSeconds == 0 {
 		yamlRelayMinerConfig.DefaultRequestTimeoutSeconds = DefaultRequestTimeoutSeconds
 	}
@@ -47,6 +40,12 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigInvalidSmtStorePath
 	}
 	relayMinerConfig.SmtStorePath = yamlRelayMinerConfig.SmtStorePath
+
+	// EnableOverServicing is a flag that indicates whether the relay miner server
+	// should enable over-servicing for the relays it serves.
+	// Over-servicing allows the relay miner to serve more relays than the
+	// amount of stake the Application has.
+	relayMinerConfig.EnableOverServicing = yamlRelayMinerConfig.EnableOverServicing
 
 	// No additional validation on metrics. The server would fail to start if they are invalid
 	// which is the intended behaviour.

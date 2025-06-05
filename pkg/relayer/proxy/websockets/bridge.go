@@ -332,7 +332,7 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 
 	// Check if the relay should be rate-limited.
 	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
-	if b.relayMeter.ShouldRateLimit(b.ctx, relayRequest.Meta) {
+	if shouldRateLimit, _ := b.relayMeter.ShouldRateLimit(b.ctx, relayRequest.Meta); shouldRateLimit {
 		b.serviceBackendConn.handleError(
 			ErrWebsocketsGatewayMessage.Wrapf("offchain rate limit hit by relayer proxy"),
 		)
@@ -426,7 +426,7 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 
 	// Check if the relay should be rate-limited.
 	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
-	if b.relayMeter.ShouldRateLimit(b.ctx, b.latestRelayRequest.Meta) {
+	if shouldRateLimit, _ := b.relayMeter.ShouldRateLimit(b.ctx, b.latestRelayRequest.Meta); shouldRateLimit {
 		b.serviceBackendConn.handleError(
 			ErrWebsocketsGatewayMessage.Wrapf("offchain rate limit hit by relayer proxy"),
 		)

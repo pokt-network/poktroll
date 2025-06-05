@@ -80,13 +80,12 @@ func NewHTTPServer(
 	httpServer := &http.Server{
 		// Keep IdleTimeout reasonable to clean up idle connections
 		IdleTimeout: 60 * time.Second,
-
-		// Disable the server's read and write timeouts, as we will handle
-		// timeouts per-request using the context passed to the request handlers.
-		// Request based timeouts should be sourced from the service configuration
-		// and not the server configuration.
-		ReadTimeout:  0,
-		WriteTimeout: 0,
+		// Read and Write timeouts are set to reasonable default values to prevent slow-loris
+		// attacks and to ensure that the server does not hang indefinitely on a request.
+		// These defaults are kept as baseline security measures, but per-request timeouts
+		// will override these values based on the configured timeout for each service ID.
+		ReadTimeout:  config.DefaultRequestTimeoutSeconds * time.Second,
+		WriteTimeout: config.DefaultRequestTimeoutSeconds * time.Second,
 	}
 
 	return &relayMinerHTTPServer{
@@ -193,12 +192,12 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 	}
 }
 
-// determineTimeoutFromServiceID determines the timeout for the relay request
+// requestTimeoutForServiceId determines the timeout for the relay request
 // based on the service ID.
 //   - It looks up the service ID in the server's configuration and returns the
 //     timeout specified for that service ID.
 //   - If no specific timeout is found, it returns the default timeout.
-func (server *relayMinerHTTPServer) determineTimeoutFromServiceID(serviceId string) time.Duration {
+func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string) time.Duration {
 	timeout := config.DefaultRequestTimeoutSeconds * time.Second
 
 	// Look up service-specific timeout in server config

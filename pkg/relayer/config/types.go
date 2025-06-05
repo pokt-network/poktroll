@@ -26,6 +26,7 @@ type YAMLRelayMinerConfig struct {
 	SmtStorePath                 string                         `yaml:"smt_store_path"`
 	Suppliers                    []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
 	Ping                         YAMLRelayMinerPingConfig       `yaml:"ping"`
+	EnableOverServicing          bool                           `yaml:"enable_over_servicing"`
 }
 
 // YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
@@ -95,6 +96,7 @@ type RelayMinerConfig struct {
 	Servers                      map[string]*RelayMinerServerConfig
 	SmtStorePath                 string
 	Ping                         *RelayMinerPingConfig
+	EnableOverServicing          bool
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
