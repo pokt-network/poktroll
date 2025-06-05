@@ -108,4 +108,10 @@ jobs:
           reporter: github-check
           level: warning
           locale: "US"
-# TODO_IMPROVE: Enforce using k.Logger() when logging in the `x/` directory code.
+# TODO_IMPROVE(@olshansk): Ensure some modules are banned or enforced in the `x/` directory.
+#
+# Enforce:
+# - Using k.Logger() when logging in the `x/` directory code.
+#
+# Ban:
+# - Golangs default "time" package
