@@ -6,7 +6,7 @@
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "plan": {
           "name": "v0.1.16",
-          "height": "36073",
+          "height": "32780",
           "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.16/pocket_linux_amd64.tar.gz\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.16/pocket_linux_arm64.tar.gz\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.16/pocket_darwin_amd64.tar.gz\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.16/pocket_darwin_arm64.tar.gz\"}}"
         }
       }
