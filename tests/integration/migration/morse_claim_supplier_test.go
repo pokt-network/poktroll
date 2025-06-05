@@ -464,6 +464,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		sharedParams := s.GetSharedParams(s.T())
 		currentSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		nextSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, currentSessionEndHeight+1)
+		// TODO_IN_THIS_COMMIT: fix this test
 		durationUntilUnstakeCompletion := int64(time.Until(morseClaimableAccount.UnstakingTime))
 		estimatedBlocksUntilUnstakeCompletion := durationUntilUnstakeCompletion / int64(estimatedBlockDuration)
 		estimatedUnstakeCompletionHeight := currentHeight + estimatedBlocksUntilUnstakeCompletion
