@@ -79,5 +79,5 @@ func AccAddressFromConsBech32(consBech32 string) string {
 // MorseAddressHex returns the hex-encoded string representation of the address
 // corresponding to a random Morse (ed25519) keypair.
 func MorseAddressHex() string {
-	return encoding.NormalizeMorseHexAddress(hex.EncodeToString(ConsAddress().Bytes()))
+	return encoding.NormalizeMorseAddress(hex.EncodeToString(ConsAddress().Bytes()))
 }

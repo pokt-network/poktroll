@@ -38,14 +38,14 @@ import (
 // upgrade version number and update comment versions.
 
 const (
-	Upgrade_NEXT_PlanName = "vNEXT"
+	Upgrade_NEXTTemplate_PlanName = "vNEXT"
 )
 
-// Upgrade_NEXT handles the upgrade to release `vNEXT`.
+// Upgrade_NEXTTemplate handles the upgrade to release `vNEXT`.
 // This upgrade adds:
 // - ...
-var Upgrade_NEXT = Upgrade{
-	PlanName: Upgrade_NEXT_PlanName,
+var Upgrade_NEXTTemplate = Upgrade{
+	PlanName: Upgrade_NEXTTemplate_PlanName,
 	// No KVStore migrations in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 
