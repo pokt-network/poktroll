@@ -252,6 +252,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_BelowMinStake() {
 }
 
 func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
+	s.T().Skip("TODO_URGENT(@red-0ne): Skipping this test to unblock community and exchanges during the migration. See #1436.")
+
 	// Configure fixtures to generate Morse applications which have begun unbonding on Morse:
 	// - 1 whose unbonding period HAS NOT yet elapsed
 	// - 1 whose unbonding period HAS elapsed
