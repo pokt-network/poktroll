@@ -25,6 +25,9 @@ import (
 var (
 	flagSupplierStakeTemplateFile string
 	flagMorsePrivateKeysFile      string
+	flagAddOperatorShare          uint64
+	flagNewKeyPrefix              string
+	flagUseIndexNames             bool
 )
 
 const (
@@ -33,6 +36,15 @@ const (
 
 	flagMorsePrivateKeysFileName = "morse-private-keys-file"
 	flagMorsePrivateKeysFileDesc = "Path to a file containing Morse private keys (hex-encoded) for all accounts to be migrated in bulk."
+
+	flagAddOperatorShareName = "add-operator-share"
+	flagAddOperatorShareDesc = "Add a share of the operator reward to the rev_share reward. This is useful to avoid the need of been funding them all the time"
+
+	flagNewKeyPrefixName = "name-prefix-pattern"
+	flagNewKeyPrefixDesc = "Prefix to use for new keys. Helps operators to migrate and set a prefix for the accounts"
+
+	flagUseIndexNamesName = "use-index-names"
+	flagUseIndexNamesDesc = "Use index names for the new keys. Helps operators to migrate and set a prefix for the accounts"
 )
 
 // ClaimSupplierBulkCmd returns the cobra command for bulk-claiming Morse nodes as Shannon Suppliers.
@@ -159,6 +171,10 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 	// Flags to export private keys in the output file.
 	claimSuppliersCmd.Flags().BoolVar(&flagUnsafe, FlagUnsafe, false, FlagUnsafeDesc)
 	claimSuppliersCmd.Flags().BoolVar(&flagUnarmoredJSON, FlagUnarmoredJSON, false, FlagUnarmoredJSONDesc)
+	// Flags to customize the new Shannon account.
+	claimSuppliersCmd.Flags().StringVar(&flagNewKeyPrefix, flagNewKeyPrefixName, "", flagNewKeyPrefixDesc)
+	claimSuppliersCmd.Flags().Uint64Var(&flagAddOperatorShare, flagAddOperatorShareName, 0, flagAddOperatorShareDesc)
+	claimSuppliersCmd.Flags().BoolVar(&flagUseIndexNames, flagUseIndexNamesName, false, flagUseIndexNamesDesc)
 
 	// Required flags.
 	_ = claimSuppliersCmd.MarkFlagRequired(flagMorsePrivateKeysFileName)
@@ -192,14 +208,6 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
 	if shannonSigningAddr == "" {
 		return fmt.Errorf("no shannon signing address provided via the following flag: --from")
-	}
-
-	// Load the supplier stake config template from the YAML file.
-	// Fail fast if the file is missing or invalid.
-	logger.Logger.Info().Msgf("Loading stake template file: %s", flagSupplierStakeTemplateFile)
-	templateSupplierStakeConfig, templateError := loadTemplateSupplierStakeConfigYAML(flagSupplierStakeTemplateFile)
-	if templateError != nil {
-		return templateError
 	}
 
 	// Prepare the migration batch result object.
@@ -260,7 +268,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	ownerAddressToMClaimableAccountMap := map[string]*types.MorseClaimableAccount{}
 
 	// Iterate over each Morse node private key to process migration.
-	for _, morseNodeAccount := range morseNodeAccounts {
+	for i, morseNodeAccount := range morseNodeAccounts {
 		morseNodeAddress := hex.EncodeToString(morseNodeAccount.Address)
 
 		// Ensure the Morse output address is not empty (i.e., is a node)
@@ -335,6 +343,18 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 			shannonOwnerAddress = ownerAddressToMClaimableAccountMap[morseOutputAddress].ShannonDestAddress
 		}
 
+		// TODO(@jorgecuesta): I don't like this,
+		//  but I don't see a better way to do this since the internal structure use pointer
+		//  so once I modify the elements inside they are modified for all the iterations.
+		//  the prefill of rev_share can be done outside but do to the operator share added it need to get that generated one
+		// 	Any ideas on this please let me know.
+		// Load the supplier stake config template from the YAML file.
+		// Fail fast if the file is missing or invalid.
+		templateSupplierStakeConfig, templateError := loadTemplateSupplierStakeConfigYAML(flagSupplierStakeTemplateFile)
+		if templateError != nil {
+			return templateError
+		}
+
 		// Build the supplier stake config for this migration.
 		supplierStakeConfig, supplierStakeConfigErr := buildSupplierStakeConfig(
 			shannonOwnerAddress,
@@ -359,8 +379,17 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		}
 
 		// Import the generated Shannon private key into the keyring.
+		keyName := shannonOperatorAddress
+		if flagNewKeyPrefix != "" {
+			suffix := shannonOperatorAddress
+			if flagUseIndexNames {
+				suffix = fmt.Sprintf("%d", i)
+			}
+			keyName = fmt.Sprintf("%s-%s", flagNewKeyPrefix, suffix)
+		}
+		morseShannonMapping.ShannonAccount.KeyringName = keyName
 		keyringErr := clientCtx.Keyring.ImportPrivKeyHex(
-			shannonOperatorAddress,
+			keyName,
 			hex.EncodeToString(morseShannonMapping.ShannonAccount.PrivateKey.Key),
 			"secp256k1",
 		)
@@ -564,7 +593,7 @@ func buildSupplierStakeConfig(
 		return nil, fmt.Errorf("operator address must be non-empty")
 	}
 
-	yamlStakeConfig := *templateSupplierStakeConfig // clone the provided template.
+	yamlStakeConfig := templateSupplierStakeConfig // clone the provided template.
 	yamlStakeConfig.OwnerAddress = ownerAddress
 	yamlStakeConfig.OperatorAddress = operatorAddress
 
@@ -584,17 +613,17 @@ func buildSupplierStakeConfig(
 	// See the discussion here: https://github.com/pokt-network/poktroll/pull/1386#discussion_r2115168813
 
 	if len(yamlStakeConfig.DefaultRevSharePercent) != 0 {
-		if yamlStakeConfig.DefaultRevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, defaultRevShareMap); err != nil {
+		if yamlStakeConfig.DefaultRevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, operatorAddress, defaultRevShareMap); err != nil {
 			return nil, err
 		}
 	}
 	for _, service := range yamlStakeConfig.Services {
 		if len(service.RevSharePercent) == 0 {
 			// set the same rev share per service as default which already includes the owner and enforce 100%
-			service.RevSharePercent = defaultRevShareMap
+			service.RevSharePercent = yamlStakeConfig.DefaultRevSharePercent
 			continue
 		}
-		service.RevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, service.RevSharePercent)
+		service.RevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, operatorAddress, service.RevSharePercent)
 		if err != nil {
 			return nil, err
 		}
@@ -622,15 +651,29 @@ func buildSupplierStakeConfig(
 // - Adds or adjusts the owner's share if necessary.
 // - If the owner isn't present, it's added to balance the total to 100%.
 // - Returns: updated map or error.
-func updateRevShareMapToFullAllocation(owner string, revShareMap map[string]uint64) (map[string]uint64, error) {
+func updateRevShareMapToFullAllocation(owner, operator string, revShareMap map[string]uint64) (map[string]uint64, error) {
 	totalShare := uint64(0)
 	ownerFound := false
+	operatorFound := false
 
 	for address, share := range revShareMap {
 		totalShare += share
+		revShareMap[address] = share
 		if strings.EqualFold(address, owner) {
 			ownerFound = true
+		} else if strings.EqualFold(address, operator) {
+			operatorFound = true
 		}
+	}
+
+	// allows operator to be automatically added to the share map to fund on everytime it gets rewards
+	// this avoids the need to send funds from time to time and also avoids incur in network feeds for those sending.
+	if flagAddOperatorShare > 0 && !operatorFound {
+		if totalShare > 100 {
+			return nil, fmt.Errorf("total revenue share is > 100%")
+		}
+		totalShare += flagAddOperatorShare
+		revShareMap[operator] = flagAddOperatorShare
 	}
 
 	// if the owner is not part of the list, add it with the difference.

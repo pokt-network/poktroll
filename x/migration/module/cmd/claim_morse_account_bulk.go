@@ -135,21 +135,25 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 // marshalAccountInfo serializes account info to JSON.
 // - Includes private key if both --unsafe and --unarmored-json are set.
 // - Otherwise, only address is included.
-func marshalAccountInfo(address string, privateKey []byte) ([]byte, error) {
+func marshalAccountInfo(address string, privateKey []byte, keyringName string) ([]byte, error) {
 	// Prepare the unsafe struct in the case both --unsafe and --unarmored-json are set.
 	unsafeStruct := struct {
-		Address    string `json:"address"`
-		PrivateKey string `json:"private_key"`
+		Address     string `json:"address"`
+		PrivateKey  string `json:"private_key"`
+		KeyringName string `json:"keyring,omitempty"`
 	}{
-		Address:    address,
-		PrivateKey: hex.EncodeToString(privateKey),
+		Address:     address,
+		PrivateKey:  hex.EncodeToString(privateKey),
+		KeyringName: keyringName,
 	}
 
 	// Prepare the safe struct in the case only --unarmored-json is set.
 	safeStruct := struct {
-		Address string `json:"address"`
+		Address     string `json:"address"`
+		KeyringName string `json:"keyring,omitempty"`
 	}{
-		Address: address,
+		Address:     address,
+		KeyringName: keyringName,
 	}
 
 	// Marshal the struct based on the flags.
@@ -444,9 +448,9 @@ func mappingAccounts(
 	}
 
 	// Import Shannon private key into keyring.
-	name := morseShannonMapping.ShannonAccount.Address.String()
+	morseShannonMapping.ShannonAccount.KeyringName = morseShannonMapping.ShannonAccount.Address.String()
 	keyringErr := clientCtx.Keyring.ImportPrivKeyHex(
-		name,
+		morseShannonMapping.ShannonAccount.KeyringName,
 		hex.EncodeToString(morseShannonMapping.ShannonAccount.PrivateKey.Key),
 		"secp256k1",
 	)
