@@ -82,6 +82,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// - Normalize Morse accounts recovery allowlist addresses (to uppercase).
 	// - Normalize Morse source address when handling Morse account recovery message.
 	upgrades.Upgrade_0_1_16,
+
+	// v0.1.17 - upgrade to:
+	// - Fix for non-deterministic behavior in the unstaking of Morse suppliers
+	upgrades.Upgrade_0_1_17,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
