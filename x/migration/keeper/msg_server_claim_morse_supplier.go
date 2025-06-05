@@ -227,7 +227,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// - No further minting is needed
 	// - Block time is estimated and used to set the unstake session end height
 	// - Emit event to signal unbonding start
-	if morseNodeClaimableAccount.HasUnbonded() {
+	if morseNodeClaimableAccount.HasUnbonded(ctx) {
 		events = append(events, morseSupplierClaimedEvent)
 		events = append(events, morseSupplierUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
@@ -291,7 +291,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// - Set the unstake session end height on the supplier
 	// - Emit an unbonding begin event
 	if morseNodeClaimableAccount.IsUnbonding() {
-		estimatedUnstakeSessionEndHeight, isUnbonded := morseNodeClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
+		estimatedUnstakeSessionEndHeight, isUnbonded := morseNodeClaimableAccount.GetEstimatedUnbondingEndHeight(ctx, sharedParams)
 
 		// DEV_NOTE: SHOULD NEVER happen, the check above (using #SecondsUntilUnbonded()) is the same, but in terms of time instead of block height.
 		if isUnbonded {
