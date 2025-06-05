@@ -260,6 +260,12 @@ func (k msgServer) ClaimMorseSupplier(
 		return claimMorseSupplierResponse, nil
 	}
 
+	// TODO_HACK(@olshansky, #): Ensure that claimable suppliers have valid service configs.
+	// This is a quick workaround upon encountering this issue: https://gist.github.com/okdas/3328c0c507b5dba8b31ab871589f34b0
+	if err = sharedtypes.ValidateSupplierServiceConfigs(msg.Services); err != nil {
+		return nil, err
+	}
+
 	// Stake (or update) the supplier.
 	msgStakeSupplier := suppliertypes.NewMsgStakeSupplier(
 		shannonSigningAddress.String(),

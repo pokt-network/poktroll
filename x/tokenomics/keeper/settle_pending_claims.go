@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"slices"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -244,7 +245,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			}
 		}
 
-		// TODO_TECHDEBT(@red-0ne): This check exists to avoid chain halts when CUPR params are changed.
+		// TODO_HACK(@red-0ne): This check exists to avoid chain halts when CUPR params are changed.
 		// We log the error, remove the claim, and skip its settlement instead of failing.
 		// This code should be removed once CUPR supports historical values, allowing
 		// claims to be validated against the CUPR value that was active during the session
@@ -260,11 +261,20 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		expectedClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay
 		if numClaimComputeUnits != expectedClaimComputeUnits {
 			logger.Error(tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
-				"[TOKENOMICS MISMATCH]: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d). Removing claim. See the source code for a TODO_TECHDEBT.",
+				"[TOKENOMICS MISMATCH]: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d). Removing claim. See the source code for a TODO_HACK.",
 				numClaimComputeUnits,
 				numClaimRelays,
 				service.ComputeUnitsPerRelay,
 			).Error())
+
+			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
+			continue
+		}
+
+		// TODO_HACK(@red-0ne): This check exists to avoid chain halts caused by the
+		// claim's suppliers not being staked for the claim's service.
+		if err := k.ensureSupplierIsStakedForService(settlementContext, claim); err != nil {
+			logger.Error(fmt.Sprintf("[TOKENOMICS MISMATCH]: %s. Removing claim. See the source code for a TODO_HACK.", err))
 
 			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 			continue
@@ -750,4 +760,36 @@ func (k Keeper) finalizeTelemetry(
 	telemetry.ClaimCounter(claimProofStage.String(), 1, serviceId, applicationAddress, supplierOperatorAddress, err)
 	telemetry.ClaimRelaysCounter(claimProofStage.String(), numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
 	telemetry.ClaimComputeUnitsCounter(claimProofStage.String(), numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
+}
+
+// ensureSupplierIsStakedForService checks if the supplier is staked for the service
+// that the claim is for. If the supplier is not staked for the service, it returns an error.
+func (k Keeper) ensureSupplierIsStakedForService(
+	settlementContext *settlementContext,
+	claim prooftypes.Claim,
+) error {
+	supplier, err := settlementContext.GetSupplier(claim.SupplierOperatorAddress)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+			"error retrieving supplier %q for claim %q: %s",
+			claim.SupplierOperatorAddress, claim.SessionHeader.SessionId, err,
+		)
+	}
+
+	svcIndex := slices.IndexFunc(
+		supplier.Services,
+		func(serviceConfig *sharedtypes.SupplierServiceConfig) bool {
+			return serviceConfig.ServiceId == claim.SessionHeader.ServiceId
+		},
+	)
+
+	if svcIndex < 0 {
+		return tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+			"supplier %q not staked for service %q.",
+			claim.SupplierOperatorAddress,
+			claim.SessionHeader.ServiceId,
+		)
+	}
+
+	return nil
 }
