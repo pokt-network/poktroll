@@ -337,9 +337,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Calculate the current session end height and the next session start height.
 		currentHeight := s.GetApp().GetSdkCtx().BlockHeight()
 		sharedParams := s.GetSharedParams(s.T())
-		// TODO_IN_THIS_COMMIT: fix this test
-		durationUntilUnstakeCompletion := int64(time.Until(morseClaimableAccount.UnstakingTime))
-		estimatedBlocksUntilUnstakeCompletion := durationUntilUnstakeCompletion / int64(estimatedBlockDuration)
+		secondsUntilUnstakeCompletion := morseClaimableAccount.SecondsUntilUnbonded(s.SdkCtx())
+		estimatedBlocksUntilUnstakeCompletion := secondsUntilUnstakeCompletion / int64(estimatedBlockDuration)
 		estimatedUnstakeCompletionHeight := currentHeight + estimatedBlocksUntilUnstakeCompletion
 		expectedUnstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, estimatedUnstakeCompletionHeight))
 
