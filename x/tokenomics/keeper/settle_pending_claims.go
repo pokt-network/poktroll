@@ -273,8 +273,10 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		// TODO_HACK(@red-0ne): This check exists to avoid chain halts caused by the
 		// claim's suppliers not being staked for the claim's service.
-		if err := k.ensureSupplierIsStakedForService(settlementContext, claim); err != nil {
-			logger.Error(fmt.Sprintf("[TOKENOMICS MISMATCH]: %s. Removing claim. See the source code for a TODO_HACK.", err))
+		if err = k.ensureSupplierIsStakedForService(settlementContext, claim); err != nil {
+			// TODO_POST_MIGRATION_HACK_FIX(@red-0ne): Emit an event for this to track these errors
+			// and eventually remove it altogether.
+			logger.Error(fmt.Sprintf("[TOKENOMICS MISMATCH]: %s. Skipping and removing a Claim for the wrong service. See the source code for a TODO_HACK.", err))
 
 			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 			continue
