@@ -411,7 +411,7 @@ func (sctx *settlementContext) cacheApplicationServiceUsageMetrics(
 	)
 }
 
-// cacheSupplierServiceUsageMetrics ensures the supplier service usage metrics hydrated
+// cacheSupplierServiceUsageMetrics ensures the supplier service usage metrics are hydrated
 // - Checks if the supplier already has metrics for the service in its in-memory representation
 // - If not, retrieves the latest metrics from storage and updates the supplier object
 func (sctx *settlementContext) cacheSupplierServiceUsageMetrics(

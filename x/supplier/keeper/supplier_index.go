@@ -179,12 +179,12 @@ func (k Keeper) indexSupplierServiceUsageMetrics(
 	ctx context.Context,
 	supplier sharedtypes.Supplier,
 ) {
-	appServiceUsageMetricsStore := k.getSupplierServiceUsageMetricsStore(ctx)
+	supplierServiceUsageMetricsStore := k.getSupplierServiceUsageMetricsStore(ctx)
 
 	for _, serviceUsageMetrics := range supplier.ServiceUsageMetrics {
 		serviceUsageMetricsBz := k.cdc.MustMarshal(serviceUsageMetrics)
 
-		appServiceUsageMetricsStore.Set(
+		supplierServiceUsageMetricsStore.Set(
 			types.ServiceUsageMetricsKey(supplier.OperatorAddress, serviceUsageMetrics.ServiceId),
 			serviceUsageMetricsBz,
 		)
