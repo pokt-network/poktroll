@@ -62,7 +62,7 @@ require (
 	github.com/go-kit/kit v0.13.0
 	github.com/gogo/status v1.1.0
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.4
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
@@ -103,10 +103,12 @@ require (
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20250529214913-363101e08c43
+	github.com/pokt-network/shannon-sdk v0.0.0-20250603210336-969a825fddd5
 	go.uber.org/mock v0.5.2
 	golang.org/x/term v0.32.0
 )
+
+require github.com/go-chi/chi/v5 v5.2.1
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
@@ -246,7 +248,6 @@ require (
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/ghostiam/protogetter v0.3.9 // indirect
-	github.com/go-chi/chi/v5 v5.2.1 // indirect
 	github.com/go-critic/go-critic v0.12.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.4 // indirect
 	github.com/go-kit/log v0.2.1 // indirect

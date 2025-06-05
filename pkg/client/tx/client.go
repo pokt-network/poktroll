@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sync"
+	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
@@ -25,6 +26,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/encoding"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
@@ -45,6 +47,10 @@ const (
 	// events where the sender address matches the interpolated address.
 	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
 	txWithSenderAddrQueryFmt = "tm.event='Tx' AND message.sender='%s'"
+
+	// MUST set a timeout when using unordered transactions. 10 minutes is the maximum, use 9 for safety.
+	// See: https://docs.cosmos.network/v0.53/build/architecture/adr-070-unordered-account
+	txTimeoutTimestampDelay = time.Minute * 9
 )
 
 // TODO_TECHDEBT(@bryanchriswhite): Refactor this to use the EventsReplayClient
@@ -127,6 +133,11 @@ type txClient struct {
 	// should retry in the event that it encounters an error or its connection is interrupted.
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
+
+	// unordered is a flag which indicates whether the transactions should be sent unordered.
+	unordered bool
+
+	logger polylog.Logger
 }
 
 type (
@@ -174,6 +185,7 @@ func NewTxClient(
 		deps,
 		&txnClient.txCtx,
 		&txnClient.blockClient,
+		&txnClient.logger,
 	); err != nil {
 		return nil, err
 	}
@@ -181,6 +193,9 @@ func NewTxClient(
 	for _, opt := range opts {
 		opt(txnClient)
 	}
+
+	// Set the unordered flag on the client context.
+	txnClient.txCtx = txnClient.txCtx.WithUnordered(txnClient.unordered)
 
 	if err = txnClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err
@@ -267,11 +282,24 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
+	// TODO_TECHDEBT(@bryanchriswhite): Set a timeout timestamp which is estimated
+	// to correspond to the timeout height.
+	txBuilder.SetTimeoutTimestamp(time.Now().Add(txTimeoutTimestampDelay))
+
+	offline := txnClient.txCtx.GetClientCtx().Offline
+	txBuilder.SetUnordered(txnClient.unordered)
+
+	// Override offline mode if unordered is set in order to prevent populating
+	// the sequence number. The account number WILL still be queried in TxContext#SignTx().
+	if txnClient.unordered {
+		offline = true
+	}
+
 	// sign transactions
 	err = txnClient.txCtx.SignTx(
 		txnClient.signingKeyName,
 		txBuilder,
-		false, false,
+		offline, false, txnClient.unordered,
 	)
 	if err != nil {
 		return nil, either.SyncErr(err)
@@ -479,7 +507,8 @@ func (txnClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 	txResultsCh := txResultsObs.Subscribe(ctx).Ch()
 	for txResult := range txResultsCh {
 		// Convert transaction hash into its normalized hex form.
-		txHashHex := encoding.TxHashBytesToNormalizedHex(comettypes.Tx(txResult.Tx).Hash())
+		txHash := comettypes.Tx(txResult.Tx).Hash()
+		txHashHex := encoding.TxHashBytesToNormalizedHex(txHash)
 
 		txnClient.txsMutex.Lock()
 		// Remove from the txTimeoutPool.
@@ -511,6 +540,20 @@ func (txnClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 			// > mempool but failed to gossip: validation failed
 			//
 			// Potential parse and send transaction error on txErrCh here.
+
+			txnClient.logger.Info().Msgf(
+				"[TX] Transaction with hash %q committed at height (%d)",
+				txHashHex,
+				txResult.Height,
+			)
+
+			if len(txResult.Result.Log) > 0 {
+				txnClient.logger.Error().Msgf(
+					"[TX] Transaction with hash %q failed: %s",
+					txHashHex,
+					txResult.Result.Log,
+				)
+			}
 
 			// Close and remove from txErrChans
 			close(txErrCh)

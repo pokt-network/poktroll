@@ -28,6 +28,8 @@ type supplierClient struct {
 
 	txClient client.TxClient
 	txCtx    client.TxContext
+
+	logger polylog.Logger
 }
 
 // NewSupplierClient constructs a new SupplierClient with the given dependencies
@@ -49,6 +51,7 @@ func NewSupplierClient(
 		deps,
 		&sClient.txClient,
 		&sClient.txCtx,
+		&sClient.logger,
 	); err != nil {
 		return nil, err
 	}
@@ -81,9 +84,28 @@ func (sClient *supplierClient) SubmitProofs(
 		msgs = append(msgs, p)
 	}
 
+	logger.Info().Msgf(
+		"[PROVING] About to submit transaction with (%d) num_proof_messages", len(msgs),
+	)
+
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
-	_, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
+	txResponse, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
+
+	if txResponse != nil {
+		logger.Info().Msgf(
+			"[PROVING] Transaction submitted with tx_hash: %q", txResponse.TxHash,
+		)
+
+		if len(txResponse.RawLog) > 0 {
+			logger.Error().Msgf(
+				"[PROVING] Failed to submit transaction with tx_hash: %q: %s",
+				txResponse.TxHash,
+				txResponse.RawLog,
+			)
+		}
+	}
+
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -128,9 +150,28 @@ func (sClient *supplierClient) CreateClaims(
 		msgs = append(msgs, c)
 	}
 
+	logger.Info().Msgf(
+		"[CLAIMING] About to submit transaction with (%d) num_claim_messages", len(msgs),
+	)
+
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
-	_, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
+	txResponse, eitherErr := sClient.txClient.SignAndBroadcastWithTimeoutHeight(ctx, timeoutHeight, msgs...)
+
+	if txResponse != nil {
+		logger.Info().Msgf(
+			"[CLAIMING] Transaction submitted with tx_hash: %q", txResponse.TxHash,
+		)
+
+		if len(txResponse.RawLog) > 0 {
+			logger.Error().Msgf(
+				"[CLAIMING] Failed to submit transaction with tx_hash: %q: %s",
+				txResponse.TxHash,
+				txResponse.RawLog,
+			)
+		}
+	}
+
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err

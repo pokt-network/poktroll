@@ -68,7 +68,24 @@ var allUpgrades = []upgrades.Upgrade{
 	// - add morse_account_claiming_enabled migration module param
 	// - add compute_unit_cost_granularity shared module param
 	// - fix chain halt caused by zero relay claims
-	upgrades.Upgrade_0_1_13,
+	// upgrades.Upgrade_0_1_14,
+
+	// v0.1.14 - upgrade to:
+	// - Add Morse supplier claiming non-custodial Morse owner check (#1317)
+	// upgrades.Upgrade_0_1_14,
+
+	// v0.1.15 - upgrade to:
+	// - Add compute units validation in claim settlement to prevent chain halts when CUPR params change (#1407)
+	// upgrades.Upgrade_0_1_15,
+
+	// v0.1.16 - upgrade to:
+	// - Normalize Morse accounts recovery allowlist addresses (to uppercase).
+	// - Normalize Morse source address when handling Morse account recovery message.
+	upgrades.Upgrade_0_1_16,
+
+	// v0.1.17 - upgrade to:
+	// - Fix for non-deterministic behavior in the unstaking of Morse suppliers
+	upgrades.Upgrade_0_1_17,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

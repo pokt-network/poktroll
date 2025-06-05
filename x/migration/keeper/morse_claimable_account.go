@@ -104,7 +104,7 @@ func (k Keeper) ImportFromMorseAccountState(
 		// DEV_NOTE: Ensure all MorseClaimableAccounts are initially unclaimed.
 		morseAccount.ClaimedAtHeight = 0
 		// DEV_NOTE: Ensure all MorseClaimableAccounts use the normalized hex address case (upper).
-		morseAccount.MorseSrcAddress = encoding.NormalizeMorseHexAddress(morseAccount.MorseSrcAddress)
+		morseAccount.MorseSrcAddress = encoding.NormalizeMorseAddress(morseAccount.MorseSrcAddress)
 		k.SetMorseClaimableAccount(ctx, *morseAccount)
 	}
 }

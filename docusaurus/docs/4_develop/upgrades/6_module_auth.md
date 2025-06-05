@@ -47,7 +47,7 @@ pocketd query authz grants-by-grantee pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegm
 
 ### Example: Adding a new Authorization
 
-In [this PR](https://github.com/pokt-network/poktroll/pull/1173/files), the following was added to `dao_genesis_authorizations.json`:
+In [this PR](https://github.com/pokt-network/poktroll/pull/1173/files), the following was added to `localnet_genesis_authorizations.json`:
 
 ```json
   {

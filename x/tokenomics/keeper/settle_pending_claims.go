@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"slices"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -76,14 +77,20 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 
 		// Ensure that the number of relays claimed is greater than 0.
+		// CreateClaim message handler validation already ensures that the number of relays
+		// is greater than 0, but this is a sanity check to ensure that no invalid claims
+		// are processed in the settlement phase.
 		if numClaimRelays == 0 {
 			logger.Error(fmt.Sprintf(
-				"claim for session ID %q has 0 relays, skipping settlement",
+				"SHOULD NEVER HAPPEN: claim for session ID %q has 0 relays, skipping settlement",
 				sessionId,
 			))
 
 			// TODO_CONSIDERATION: Treat this claim as expired, since it has no relays.
 			// This would result in the Supplier being slashed for submitting a claim with 0 relays.
+			// DEV_NOTE: This scenario should theoretically never occur because claims are only
+			// created when the number of compute units exceeds zero.
+			// CreateClaim message handler should have rejected the claim in the first place.
 			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 			continue
 		}
@@ -96,14 +103,20 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 
 		// Ensure that the number of compute units claimed is greater than 0.
+		// CreateClaim message handler validation already ensures that the number of compute units
+		// is greater than 0, but this is a sanity check to ensure that no invalid claims
+		// are processed in the settlement phase.
 		if numClaimComputeUnits == 0 {
 			logger.Error(fmt.Sprintf(
-				"claim for session ID %q has 0 compute units, skipping settlement",
+				"SHOULD NEVER HAPPEN: claim for session ID %q has 0 compute units, skipping settlement",
 				sessionId,
 			))
 
 			// TODO_CONSIDERATION: Treat this claim as expired, since it has no compute units.
 			// This would result in the Supplier being slashed for submitting a claim with 0 compute units.
+			// DEV_NOTE: This scenario should theoretically never occur because claims are only
+			// created when the number of compute units exceeds zero.
+			// CreateClaim message handler should have rejected the claim in the first place.
 			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 			continue
 		}
@@ -230,6 +243,43 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 				continue
 			}
+		}
+
+		// TODO_HACK(@red-0ne): This check exists to avoid chain halts when CUPR params are changed.
+		// We log the error, remove the claim, and skip its settlement instead of failing.
+		// This code should be removed once CUPR supports historical values, allowing
+		// claims to be validated against the CUPR value that was active during the session
+		// when the claim was created.
+		service, svcErr := settlementContext.GetService(serviceId)
+		if svcErr != nil {
+			logger.Error(fmt.Sprintf(
+				"error retrieving service %q for claim %q: %s",
+				serviceId, claim.SessionHeader.SessionId, svcErr,
+			))
+			return settledResults, expiredResults, svcErr
+		}
+		expectedClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay
+		if numClaimComputeUnits != expectedClaimComputeUnits {
+			logger.Error(tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
+				"[TOKENOMICS MISMATCH]: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d). Removing claim. See the source code for a TODO_HACK(#1439).",
+				numClaimComputeUnits,
+				numClaimRelays,
+				service.ComputeUnitsPerRelay,
+			).Error())
+
+			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
+			continue
+		}
+
+		// TODO_HACK(@red-0ne, #1439): This check exists to avoid chain halts caused by the
+		// claim's suppliers not being staked for the claim's service.
+		if err = k.ensureSupplierIsStakedForService(settlementContext, claim); err != nil {
+			// TODO_POST_MIGRATION_HACK_FIX(@red-0ne, #1439): Emit an event for this to track these errors
+			// and eventually remove it altogether.
+			logger.Error(fmt.Sprintf("[TOKENOMICS MISMATCH]: %s. Skipping and removing a Claim for the wrong service. See the source code for a TODO_HACK.", err))
+
+			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
+			continue
 		}
 
 		// If this code path is reached, then either:
@@ -715,4 +765,36 @@ func (k Keeper) finalizeTelemetry(
 	telemetry.ClaimCounter(claimProofStage.String(), 1, serviceId, applicationAddress, supplierOperatorAddress, err)
 	telemetry.ClaimRelaysCounter(claimProofStage.String(), numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
 	telemetry.ClaimComputeUnitsCounter(claimProofStage.String(), numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
+}
+
+// ensureSupplierIsStakedForService checks if the supplier is staked for the service
+// that the claim is for. If the supplier is not staked for the service, it returns an error.
+func (k Keeper) ensureSupplierIsStakedForService(
+	settlementContext *settlementContext,
+	claim prooftypes.Claim,
+) error {
+	supplier, err := settlementContext.GetSupplier(claim.SupplierOperatorAddress)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+			"error retrieving supplier %q for claim %q: %s",
+			claim.SupplierOperatorAddress, claim.SessionHeader.SessionId, err,
+		)
+	}
+
+	svcIndex := slices.IndexFunc(
+		supplier.Services,
+		func(serviceConfig *sharedtypes.SupplierServiceConfig) bool {
+			return serviceConfig.ServiceId == claim.SessionHeader.ServiceId
+		},
+	)
+
+	if svcIndex < 0 {
+		return tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+			"supplier %q not staked for service %q.",
+			claim.SupplierOperatorAddress,
+			claim.SessionHeader.ServiceId,
+		)
+	}
+
+	return nil
 }

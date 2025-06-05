@@ -962,7 +962,7 @@ func (s *relaysSuite) signWithRetries(
 	// All messages have to be signed by the keyName provided.
 	// TODO_TECHDEBT: Extend the txContext to support multiple signers.
 	for i := 0; i < maxRetries; i++ {
-		err := s.txContext.SignTx(actorKeyName, txBuilder, false, false)
+		err := s.txContext.SignTx(actorKeyName, txBuilder, false, false, false)
 		if err == nil {
 			return nil
 		}

@@ -11,8 +11,9 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
   - [1. Retrieve a Pruned Morse Snapshot](#1-retrieve-a-pruned-morse-snapshot)
   - [2. Export Morse Snapshot State](#2-export-morse-snapshot-state)
   - [3. Transform Morse Export to a Canonical Account State Import Message](#3-transform-morse-export-to-a-canonical-account-state-import-message)
-    - [3.1 Shannon MainNet Only](#31-shannon-mainnet-only)
-    - [3.2 Shannon TestNet Only](#32-shannon-testnet-only)
+    - [3.1 Copy and verify the state import message:](#31-copy-and-verify-the-state-import-message)
+    - [3.2 Optional on Shannon TestNet and mandatory on Shannon MainNet](#32-optional-on-shannon-testnet-and-mandatory-on-shannon-mainnet)
+    - [3.3 Update migration artifacts in git](#33-update-migration-artifacts-in-git)
   - [4. Social Consensus](#4-social-consensus)
     - [4.1 Distribute Canonical Account State Import Message](#41-distribute-canonical-account-state-import-message)
     - [4.2 Align on Account State via Social Consensus](#42-align-on-account-state-via-social-consensus)
@@ -103,7 +104,21 @@ Verify the state export:
 
 ```bash
 # Check the file was created
-cat "$MORSE_MAINNET_STATE_EXPORT_PATH"
+jq -r '{root_keys: .|keys, num_auth_accounts: .app_state.auth.accounts|length, num_nodes: .app_state.pos.validators|length, num_applications: .app_state.application.applications|length}' "$MORSE_MAINNET_STATE_EXPORT_PATH"
+
+# Example output:
+{
+  "root_keys": [
+    "app_hash",
+    "app_state",
+    "chain_id",
+    "consensus_params",
+    "genesis_time"
+  ],
+  "num_auth_accounts": 57630,
+  "num_nodes": 12161,
+  "num_applications": 2298
+}
 ```
 
 ### 3. Transform Morse Export to a Canonical Account State Import Message
@@ -120,25 +135,35 @@ Transform the Morse export to a canonical account state import message:
 pocketd tx migration collect-morse-accounts "$MORSE_MAINNET_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
 ```
 
-Verify the state import message:
+:::note Shannon TestNet Only
+
+`MorseClaimableAccount`s imported to Shannon TestNet(s) are a merge of the Morse MainNet and TestNet state exports, for developer convenience.
+
+Follow **[the steps in "Migration E2E Testing"](./12_testnet_testing.md) instead of running the command above**, and then resume from step 3.1.
+
+:::
+
+#### 3.1 Copy and verify the state import message:
 
 ```bash
-cat "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
+# Copy files to migration directory
+cp "$MORSE_MAINNET_STATE_EXPORT_PATH" ./tools/scripts/migration/
+cp "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" ./tools/scripts/migration/
 ```
-
-Commit the initial files:
 
 ```bash
-# Move files to migration directory
-mv "$MORSE_MAINNET_STATE_EXPORT_PATH" ./tools/scripts/migration/
-mv "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" ./tools/scripts/migration/
+# Check the file was created, and that it contains the expected number of accounts and hash
+jq -r '{num_morse_claimable_accounts: .morse_account_state.accounts|length, morse_account_state_hash: .morse_account_state_hash}' "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
 
-# Commit and push
-git commit -am "Added Morse MainNet state export and import message"
-git push
+# Example output:
+{
+  "num_morse_claimable_accounts": 63802,
+  "morse_account_state_hash": "w5/Sf4c1L9/G5eYPC0wvrI3ynzwlnxcka0C8ULB9sMc="
+}
+
 ```
 
-#### 3.1 Shannon MainNet Only
+#### 3.2 Optional on Shannon TestNet and mandatory on Shannon MainNet
 
 Manually unstake all Morse validators on Shannon MainNet.
 
@@ -199,11 +224,15 @@ git push
 
 Repeat this process for each user with validators to unstake.
 
-#### 3.2 Shannon TestNet Only
+#### 3.3 Update migration artifacts in git
 
-`MorseClaimableAccount`s imported to Shannon TestNet(s) are a merge of the Morse MainNet and TestNet state exports, for developer convenience.
+Commit the migration artifact files:
 
-See the table in [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) to ensure the correct snapshot heights are used.
+```bash
+# Commit and push
+git commit -am "Added Morse MainNet state export and import message"
+git push
+```
 
 ### 4. Social Consensus
 
@@ -256,10 +285,13 @@ pocketd tx migration import-morse-accounts \
   $GAS_FLAGS
 
 # Beta TestNet
+## Port forward
+kubectl port-forward pods/testnet-beta-validator1-pocketd-0 26658:26657 9091:9090 -n testnet-beta
+
 pocketd tx migration import-morse-accounts "$IMPORT_MSG_PATH" \
   --from=pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e \
   --home=~/.pocket_prod --keyring-backend=test \
-  --network=beta \
+  --node=http://localhost:26658 --chain-id=pocket-beta \
   $GAS_FLAGS
 
 # LocalNet (for testing)
@@ -270,6 +302,12 @@ pocketd tx migration import-morse-accounts \
   --node=http://localhost:26657 \
   $GAS_FLAGS
 ```
+
+:::tip kubectl not set up or not cooperatiing?
+
+As an alternative to `kubectl port-forward`, you can use the network-specific public RPC endpoint by removing the `--node` and `--chain-id` flags, and replacing them with the `--network=<local|alpha|beta|main>` flag.
+
+:::
 
 <details>
 <summary>Legacy convenience functions for `import-morse-accounts` by network</summary>

@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
@@ -32,10 +33,12 @@ func TestNewSupplierClient(t *testing.T) {
 	memKeyring, _ := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 	txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, memKeyring)
 	txClientMock := mockclient.NewMockTxClient(ctrl)
+	logger := polylog.DefaultContextLogger
 
 	deps := depinject.Supply(
 		txCtxMock,
 		txClientMock,
+		logger,
 	)
 
 	tests := []struct {
@@ -95,6 +98,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	deps := depinject.Supply(
 		txCtxMock,
 		txClientMock,
+		polylog.DefaultContextLogger,
 	)
 
 	supplierClient, err := supplier.NewSupplierClient(deps, signingKeyOpt)
@@ -157,6 +161,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	deps := depinject.Supply(
 		txCtxMock,
 		txClientMock,
+		polylog.DefaultContextLogger,
 	)
 
 	supplierClient, err := supplier.NewSupplierClient(deps, signingKeyOpt)

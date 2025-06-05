@@ -242,7 +242,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	}()
 
 	// Read Morse private keys from file and ensure its not empty.
-	morseNodeAccounts, nodeMorseKeysErr := getMorseAccountsFromFile(flagInputFilePath)
+	morseNodeAccounts, nodeMorseKeysErr := getMorseAccountsFromFile(flagMorsePrivateKeysFile)
 	if nodeMorseKeysErr != nil {
 		return nodeMorseKeysErr
 	}
@@ -292,11 +292,19 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 					return fmt.Errorf("the bulk claim tool does not have support for non-custodial nodes when the morse output address '%s' is a node", morseOutputAddress)
 				}
 				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseAccount
+
+				if !claimableMorseAccount.IsClaimed() {
+					return fmt.Errorf("morse output address '%s' is not claimed", morseOutputAddress)
+				}
 			} else {
 				// Custodial: use the current MorseClaimableAccount
 				isCustodial = true
 				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseNode
 			}
+		}
+
+		if ownerAddressToMClaimableAccountMap[morseOutputAddress] == nil {
+			return fmt.Errorf("failed to load MorseClaimableAccount for owner address '%s'", morseOutputAddress)
 		}
 
 		// Create a new Shannon account for the migration:
@@ -324,7 +332,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 			shannonOwnerAddress = morseShannonMapping.ShannonAccount.Address.String()
 		} else {
 			// Non-custodial: use the MorseSrcAddress as the owner address
-			shannonOwnerAddress = ownerAddressToMClaimableAccountMap[morseOutputAddress].MorseSrcAddress
+			shannonOwnerAddress = ownerAddressToMClaimableAccountMap[morseOutputAddress].ShannonDestAddress
 		}
 
 		// Build the supplier stake config for this migration.

@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/base64"
-	json "encoding/json"
 	"os"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
@@ -16,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
-	"github.com/pokt-network/poktroll/cmd/logger"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -42,9 +40,8 @@ For more documentation, refer to: https://dev.poktroll.com/operate/morse_migrati
 		Example: `
 	pocketd tx migration import-morse-accounts $HOME/morse-snapshot/msg_morse_import_accounts_166819_2025-04-29.json --from=pnf --home ./localnet/pocketd
 	pocketd tx migration import-morse-accounts $HOME/morse-snapshot/msg_morse_import_accounts_166819_2025-04-29.json --from=pnf`,
-		Args:    cobra.ExactArgs(1),
-		RunE:    runImportMorseAccounts,
-		PreRunE: logger.PreRunESetup,
+		Args: cobra.ExactArgs(1),
+		RunE: runImportMorseAccounts,
 	}
 
 	// Add Cosmos SDK standard flags to the command
@@ -101,7 +98,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		msgImportMorseClaimableAccountsJSONBz, err = json.MarshalIndent(msgImportMorseClaimableAccounts, "", "  ")
+		msgImportMorseClaimableAccountsJSONBz, err = cmtjson.MarshalIndent(msgImportMorseClaimableAccounts, "", "  ")
 		if err != nil {
 			return err
 		}

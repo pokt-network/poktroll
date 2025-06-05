@@ -330,13 +330,11 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 
 	logger.Debug().Msg("relay emitted to miner")
 
-	// Accumulate the relay reward.
-	// The asynchronous flow assumes that every inbound and outbound message is a
-	// payment-eligible relay.
+	// Check if the relay should be rate-limited.
 	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
-	if err := b.relayMeter.AccumulateRelayReward(b.ctx, relayRequest.Meta); err != nil {
+	if b.relayMeter.ShouldRateLimit(b.ctx, relayRequest.Meta) {
 		b.serviceBackendConn.handleError(
-			ErrWebsocketsGatewayMessage.Wrapf("failed to accumulate relay reward: %v", err),
+			ErrWebsocketsGatewayMessage.Wrapf("offchain rate limit hit by relayer proxy"),
 		)
 		return
 	}
@@ -426,13 +424,11 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 
 	logger.Debug().Msg("relay emitted to miner")
 
-	// Accumulate the relay reward.
-	// The asynchronous flow assumes that every inbound and outbound message is a
-	// payment-eligible relay.
+	// Check if the relay should be rate-limited.
 	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
-	if err := b.relayMeter.AccumulateRelayReward(b.ctx, b.latestRelayRequest.Meta); err != nil {
-		b.gatewayConn.handleError(
-			ErrWebsocketsServiceBackendMessage.Wrapf("failed to accumulate relay reward: %v", err),
+	if b.relayMeter.ShouldRateLimit(b.ctx, b.latestRelayRequest.Meta) {
+		b.serviceBackendConn.handleError(
+			ErrWebsocketsGatewayMessage.Wrapf("offchain rate limit hit by relayer proxy"),
 		)
 		return
 	}
