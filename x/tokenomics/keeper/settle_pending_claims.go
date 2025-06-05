@@ -261,7 +261,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		expectedClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay
 		if numClaimComputeUnits != expectedClaimComputeUnits {
 			logger.Error(tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
-				"[TOKENOMICS MISMATCH]: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d). Removing claim. See the source code for a TODO_HACK.",
+				"[TOKENOMICS MISMATCH]: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d). Removing claim. See the source code for a TODO_HACK(#1439).",
 				numClaimComputeUnits,
 				numClaimRelays,
 				service.ComputeUnitsPerRelay,
