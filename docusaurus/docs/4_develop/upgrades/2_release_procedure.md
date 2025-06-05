@@ -3,43 +3,6 @@ title: Protocol Upgrade Release Procedure
 sidebar_position: 2
 ---
 
-Rought notes while going through the upgrade
-
-- Not enough copy-pasta
-- Hide unnecessary context for pure operators (non-developers)
-- Export the proper vars
-- Use all the new flags
-- How do you query abci_info?
-- Avoid hardcoded examples
-- Use the --network flag
-- pocketd query upgrade plan --network=NETWORK
-
-Troubleshooting the update:
-
-- Look at the validator pods & logs
-- See if they're continuting fine or in a crashloop backoff
-
-Replacing the binary:
-
-- 1. Replace cmd/args with infinite loop so we can shell
-- 2. Create a copy-pasta script o edit the config
-- 3. Ensure we have a "copy inifinte loop bash"
-- 4. Replace all of the args
-- 5. Restart the validator after applying the config
-- 6. Kill pod
-- 7. Shell into the container
-- ls -la /home/pocket/.pocket/cosmosirvisor
-- Ensure there's an upgrade handler
-
-Deleting releases:
-
-- Delete release
-- Delete tag (local and remote)
-- Override
-- Possible because we have no checksums
-- Explain the process
--
-
 - :::important
   This is the step-by-step checklist for core protocol developers to release protocol upgrades.
 
@@ -47,6 +10,8 @@ Deleting releases:
   :::
 
   **If this is your first upgrade, before starting:**
+
+## If this is your first upgrade, before starting:
 
 - Ensure you know [When is a Protocol Upgrade Needed?](./1_protocol_upgrades.md#when-is-a-protocol-upgrade-needed)
 - Familiarize yourself with [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference
@@ -67,6 +32,7 @@ Deleting releases:
 
 ## Table of Contents <!-- omit in toc -->
 
+- [If this is your first upgrade, before starting:](#if-this-is-your-first-upgrade-before-starting)
 - [Protocol Upgrade Release: At-a-Glance](#protocol-upgrade-release-at-a-glance)
 - [0. Prerequisites \& Sanity Checks](#0-prerequisites--sanity-checks)
 - [1. Ensure `ConsensusVersion` is updated](#1-ensure-consensusversion-is-updated)
