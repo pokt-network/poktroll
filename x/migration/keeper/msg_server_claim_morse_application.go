@@ -135,7 +135,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// - Use a lookup table to estimate block times per network
 	// - Calculate unstake session end height using shared parameters and block time
 	// - Emit events for Morse application claimed and unbonding started
-	if morseClaimableAccount.HasUnbonded() {
+	if morseClaimableAccount.HasUnbonded(ctx) {
 		events = append(events, morseAppClaimedEvent)
 		events = append(events, morseAppUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
