@@ -30,7 +30,7 @@ const (
 	FlagNetworkUsage = "Sets the --chain-id, --node, and --grpc-addr flags (if applicable) based on the given network moniker (e.g. local, alpha, beta, main)"
 	DefaultNetwork   = ""
 
-	FlagFaucetBaseURL      = "base-url"
+	FlagFaucetBaseURL      = "faucet-base-url"
 	FlagFaucetBaseURLUsage = "The base URL of the Pocket Network Faucet"
 	// TODO_UP_NEXT(@bryanchriswhite): Update to the MainNet URL once available.
 	DefaultFaucetBaseURL = "https://shannon-testnet-grove-faucet.beta.poktroll.com"

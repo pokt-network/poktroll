@@ -274,6 +274,7 @@ func (k msgServer) ClaimMorseSupplier(
 		postClaimSupplierStake,
 		msg.Services,
 	)
+
 	supplier, err := k.supplierKeeper.StakeSupplier(ctx, logger, msgStakeSupplier)
 	if err != nil {
 		// DEV_NOTE: StakeSupplier SHOULD ALWAYS return a gRPC status error.

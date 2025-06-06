@@ -3,28 +3,37 @@ title: Protocol Upgrade Release Procedure
 sidebar_position: 2
 ---
 
-:::warning
+- :::important
+  This is the step-by-step checklist for core protocol developers to release protocol upgrades.
 
-**This guide is intended for core protocol developers.**
+  **❗ DO NOT PROCEED if you are not comfortable with Git, GitHub releases, scripting, etc❗**
+  :::
 
-- Before starting, read [**When is a Protocol Upgrade Warranted?**](./1_protocol_upgrades.md#when-is-a-protocol-upgrade-needed).
-- If you are not comfortable with git, GitHub releases, or scripting, this is not for you.
+  **If this is your first upgrade, before starting:**
 
-:::
+## If this is your first upgrade, before starting:
 
-## Protocol Upgrade Release: Step-by-Step 🚶 <!-- omit in toc -->
+- Ensure you know [When is a Protocol Upgrade Needed?](./1_protocol_upgrades.md#when-is-a-protocol-upgrade-needed)
+- Familiarize yourself with [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference
+- Ensure you have push access to [pokt-network/poktroll](https://github.com/pokt-network/poktroll)
+- Ensure you have the required CLI tools (`git`, `make`, `jq`, `sed`, `curl`, `go`, `brew`, `pocketd`, etc.)
+- Understand `state-breaking` vs `consensus-breaking` changes
+- Know how to test changes locally ([Testing Upgrades](3_testing_upgrades_locally.md))
 
-**This is a complete, 📠-🍝-ready checklist for releasing protocol upgrades.**
+---
 
-- Every step is numbered and must be completed in order.
-- Do not skip steps if you are not experienced in protocol upgrades.
-- Most commands are ready to copy/paste. If you found an issue, please update this doc.
-- Keep track of all the steps and merge everything to the `main` branch for history and visibility.
+## Protocol Upgrade Release: At-a-Glance
+
+- Steps must be completed in order—do not skip unless experienced
+- Most commands are copy/paste ready; update this doc if you find issues
+- Merge all changes to `main` for history and visibility
 
 ---
 
 ## Table of Contents <!-- omit in toc -->
 
+- [If this is your first upgrade, before starting:](#if-this-is-your-first-upgrade-before-starting)
+- [Protocol Upgrade Release: At-a-Glance](#protocol-upgrade-release-at-a-glance)
 - [0. Prerequisites \& Sanity Checks](#0-prerequisites--sanity-checks)
 - [1. Ensure `ConsensusVersion` is updated](#1-ensure-consensusversion-is-updated)
 - [2. Prepare a New Upgrade Plan](#2-prepare-a-new-upgrade-plan)
@@ -43,14 +52,12 @@ sidebar_position: 2
 
 ## 0. Prerequisites & Sanity Checks
 
-**Before you start:**
-
-- [ ] You have push/publish access to the repo and [GitHub releases](https://github.com/pokt-network/poktroll/releases)
-- [ ] You have the following CLI tools: `git`, `make`, `jq`, `sed`, `curl`, `go`, `brew`, `pocketd`, etc.
-- [ ] You have reviewed or are familiar with [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference
-- [ ] You have read the full [Protocol Upgrade Introduction](./1_protocol_upgrades.md)
-- [ ] You understand the difference between `state-breaking` and `consensus-breaking` changes
-- [ ] You know how to test your changes locally (see [Testing Upgrades](3_testing_upgrades_locally.md))
+- [ ] Push/publish access to the repo and [GitHub releases](https://github.com/pokt-network/poktroll/releases)
+- [ ] Required CLI tools: `git`, `make`, `jq`, `sed`, `curl`, `go`, `brew`, `pocketd`, etc.
+- [ ] Familiar with [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades)
+- [ ] Read the [Protocol Upgrade Introduction](./1_protocol_upgrades.md)
+- [ ] Understand `state-breaking` vs `consensus-breaking`
+- [ ] Know how to test locally ([Testing Upgrades](3_testing_upgrades_locally.md))
 
 ---
 
