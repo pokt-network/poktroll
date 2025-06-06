@@ -160,7 +160,7 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 
 	rootCmd.PersistentFlags().String(flags.FlagNetwork, flags.DefaultNetwork, flags.FlagNetworkUsage)
 
-	AddAutoFeeFlag(rootCmd)
+	pocketdcmd.AddAutoFeeFlag(rootCmd)
 
 	return rootCmd
 }

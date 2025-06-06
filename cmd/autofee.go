@@ -35,13 +35,14 @@ import (
 
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/cmd/flags"
 )
 
 const (
-	FlagAutoFee = "auto-fee"
-
 	// Default gas adjustment multiplier for auto-fee (50% buffer)
 	DefaultAutoFeeGasAdjustment = 1.5
+
 	// https://github.com/pokt-network/pocket-network-genesis/blob/master/shannon/mainnet/app.toml
 	DefaultGasPrices = "0.001upokt"
 )
@@ -50,7 +51,7 @@ const (
 // Call this during your app's root command initialization
 func AddAutoFeeFlag(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().Bool(
-		FlagAutoFee,
+		flags.FlagAutoFee,
 		false,
 		"Automatically calculate and set transaction fees using gas simulation",
 	)
@@ -93,7 +94,7 @@ func handleAutoFee(cmd *cobra.Command) error {
 	}
 
 	// Check if auto-fee is enabled
-	autoFee, err := cmd.Flags().GetBool(FlagAutoFee)
+	autoFee, err := cmd.Flags().GetBool(flags.FlagAutoFee)
 	if err != nil || !autoFee {
 		return nil // Auto-fee not enabled, nothing to do
 	}
@@ -104,6 +105,7 @@ func handleAutoFee(cmd *cobra.Command) error {
 	}
 
 	// Priority 2: Respect manual --gas + --gas-prices combination
+	// Intentionally ignore errors here, as we default to auto-fee if flags are not set
 	gas, _ := cmd.Flags().GetString(cosmosflags.FlagGas)
 	gasPrices, _ := cmd.Flags().GetString(cosmosflags.FlagGasPrices)
 
@@ -131,6 +133,7 @@ func applyAutoFeeCalculation(cmd *cobra.Command) error {
 	}
 
 	// Ensure gas prices are available for fee calculation
+	// Intentionally ignore errors here, as we default to auto-fee if flags are not set
 	gasPrices, _ := cmd.Flags().GetString(cosmosflags.FlagGasPrices)
 	if gasPrices == "" {
 		if err := cmd.Flags().Set(cosmosflags.FlagGasPrices, DefaultGasPrices); err != nil {
@@ -146,7 +149,7 @@ func validateAndWarnFeeFlags(cmd *cobra.Command) error {
 	fees, _ := cmd.Flags().GetString(cosmosflags.FlagFees)
 	gas, _ := cmd.Flags().GetString(cosmosflags.FlagGas)
 	gasPrices, _ := cmd.Flags().GetString(cosmosflags.FlagGasPrices)
-	autoFee, _ := cmd.Flags().GetBool(FlagAutoFee)
+	autoFee, _ := cmd.Flags().GetBool(flags.FlagAutoFee)
 	gasAdj, _ := cmd.Flags().GetFloat64(cosmosflags.FlagGasAdjustment)
 
 	// Validate gas adjustment value
@@ -157,7 +160,7 @@ func validateAndWarnFeeFlags(cmd *cobra.Command) error {
 	// Show warnings for conflicting flags when explicit fees are set
 	if fees != "" {
 		if autoFee {
-			fmt.Fprintf(cmd.ErrOrStderr(), "Warning: --%s ignored when --%s is explicitly set\n", FlagAutoFee, cosmosflags.FlagFees)
+			fmt.Fprintf(cmd.ErrOrStderr(), "Warning: --%s ignored when --%s is explicitly set\n", flags.FlagAutoFee, cosmosflags.FlagFees)
 		}
 		if gasPrices != "" {
 			fmt.Fprintf(cmd.ErrOrStderr(), "Warning: --%s ignored when --%s is explicitly set\n", cosmosflags.FlagGasPrices, cosmosflags.FlagFees)
@@ -170,41 +173,13 @@ func validateAndWarnFeeFlags(cmd *cobra.Command) error {
 	// Show warning when manual gas calculation would override auto-fee
 	if autoFee && fees == "" && gas != "" && gas != "auto" && gasPrices != "" {
 		fmt.Fprintf(cmd.ErrOrStderr(), "Warning: --%s ignored due to manual gas calculation (--%s + --%s)\n",
-			FlagAutoFee, cosmosflags.FlagGas, cosmosflags.FlagGasPrices)
+			flags.FlagAutoFee, cosmosflags.FlagGas, cosmosflags.FlagGasPrices)
 	}
 
 	// Validate that auto-fee has the prerequisites
 	if autoFee && fees == "" && (gas == "" || gas == "auto") && gasPrices == "" {
-		return fmt.Errorf("--%s requires gas prices to be available via --%s flag", FlagAutoFee, cosmosflags.FlagGasPrices)
+		return fmt.Errorf("--%s requires gas prices to be available via --%s flag", flags.FlagAutoFee, cosmosflags.FlagGasPrices)
 	}
 
 	return nil
-}
-
-// AutoFeeConfig represents configuration for auto-fee functionality
-type AutoFeeConfig struct {
-	Enabled       bool
-	GasPrices     string
-	GasAdjustment float64
-}
-
-// GetAutoFeeConfig retrieves the current auto-fee configuration from a command
-func GetAutoFeeConfig(cmd *cobra.Command) AutoFeeConfig {
-	enabled, _ := cmd.Flags().GetBool(FlagAutoFee)
-	gasPrices, _ := cmd.Flags().GetString(cosmosflags.FlagGasPrices)
-	gasAdj, _ := cmd.Flags().GetFloat64(cosmosflags.FlagGasAdjustment)
-
-	if gasPrices == "" {
-		gasPrices = DefaultGasPrices
-	}
-
-	if gasAdj <= 0 {
-		gasAdj = DefaultAutoFeeGasAdjustment
-	}
-
-	return AutoFeeConfig{
-		Enabled:       enabled,
-		GasPrices:     gasPrices,
-		GasAdjustment: gasAdj,
-	}
 }

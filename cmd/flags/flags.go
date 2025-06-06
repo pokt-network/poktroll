@@ -27,7 +27,7 @@ const (
 	FlagOutputFileUsage = "An absolute or relative path to an output file that can be used to write data to. Caution that this file may be updated or overwritten if it already exists."
 
 	FlagNetwork      = "network"
-	FlagNetworkUsage = "Sets the --chain-id, --node, and --grpc-addr flags (if applicable) based on the given network moniker (e.g. local, alpha, beta, main)"
+	FlagNetworkUsage = "[pocketd helper] Sets the --chain-id, --node, and --grpc-addr flags (if applicable) based on the given network moniker (e.g. local, alpha, beta, main)"
 	DefaultNetwork   = ""
 
 	// GetTxClientGasAndFeesOptionsFromFlags returns a slice of TxClientOptions which
@@ -47,7 +47,7 @@ const (
 	//   - WithGasSetting
 	//     In this case, the fee is calculated, given by: `fees = gas_limit * gas_adjustment * gas_prices`.
 	FlagAutoFee      = "auto-fee"
-	FlagAutoFeeUsage = "Attempts to automatically calculate the fee for the transaction based on the provided gas limit, gas adjustment, and gas prices."
+	FlagAutoFeeUsage = "[pocketd helper] Attempts to automatically calculate the fee for the transaction based on the provided gas limit, gas adjustment, and gas prices."
 	DefaultAutoFee   = ""
 
 	FlagFaucetBaseURL      = "base-url"
