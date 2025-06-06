@@ -37,6 +37,26 @@ func (s *Supplier) IsActive(queryHeight int64, serviceId string) bool {
 	return false
 }
 
+// UpdateServiceUsageMetrics increments the service usage metrics for a specific service
+// - Finds existing metrics for the service or initializes new ones
+// - Increments relay and compute unit counts by the provided values
+func (s *Supplier) UpdateServiceUsageMetrics(serviceId string, numRelays, numComputeUnits uint64) {
+	serviceUsageMetrics := &ServiceUsageMetrics{ServiceId: serviceId}
+	for _, existingServiceUsageMetrics := range s.ServiceUsageMetrics {
+		if existingServiceUsageMetrics.ServiceId == serviceId {
+			serviceUsageMetrics = existingServiceUsageMetrics
+			break
+		}
+	}
+
+	// Increment the metrics with the new relay and compute unit counts
+	// These values accumulate over time to represent total service usage
+	serviceUsageMetrics.TotalRelays += numRelays
+	serviceUsageMetrics.TotalComputeUnits += numComputeUnits
+
+	s.ServiceUsageMetrics[serviceId] = serviceUsageMetrics
+}
+
 // GetActiveServiceConfigs returns a list of all service configurations that are active
 // at the specified block height.
 //

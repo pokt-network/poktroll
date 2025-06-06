@@ -111,6 +111,12 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 			serviceConfigs := expectedSupplier.GetActiveServiceConfigs(currentHeight)
 			if len(serviceConfigs) > 0 {
 				expectedSupplier.Services = serviceConfigs
+				expectedSupplier.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
+				for _, serviceConfig := range serviceConfigs {
+					expectedSupplier.ServiceUsageMetrics[serviceConfig.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+						ServiceId: serviceConfig.ServiceId,
+					}
+				}
 			}
 
 			// Assert that the supplier was staked.
@@ -279,6 +285,14 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			serviceConfigs := expectedSupplier.GetActiveServiceConfigs(currentHeight)
 			if len(serviceConfigs) > 0 {
 				expectedSupplier.Services = serviceConfigs
+			}
+			if len(expectedSupplier.Services) > 0 {
+				expectedSupplier.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
+				for _, serviceConfig := range expectedSupplier.Services {
+					expectedSupplier.ServiceUsageMetrics[serviceConfig.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+						ServiceId: serviceConfig.ServiceId,
+					}
+				}
 			}
 
 			// Assert that the supplier was updated.
@@ -489,7 +503,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 				},
 			},
 			// DEV_NOTE: The services field will be empty until a service activation height elapses.
-			Services: make([]*sharedtypes.SupplierServiceConfig, 0),
+			Services:            make([]*sharedtypes.SupplierServiceConfig, 0),
+			ServiceUsageMetrics: make(map[string]*sharedtypes.ServiceUsageMetrics),
 		}
 
 		// Claim a Morse claimable account.
@@ -529,6 +544,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		// Nilify the following zero-value map/slice fields because they are not initialized in the TxResponse.
 		expectedSupplier.Services = nil
 		expectedSupplier.ServiceConfigHistory[0].Service.Endpoints[0].Configs = nil
+		expectedSupplier.ServiceUsageMetrics = nil
 
 		// Check the Morse claim response.
 		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{
@@ -624,6 +640,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 			// No ServiceConfigHistory or Services for unbonded supplier.
 			ServiceConfigHistory: make([]*sharedtypes.ServiceConfigUpdate, 0),
 			Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
+			ServiceUsageMetrics:  make(map[string]*sharedtypes.ServiceUsageMetrics),
 		}
 
 		// Claim a Morse claimable account.
@@ -660,6 +677,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		// Nilify the following zero-value map/slice fields because they are not initialized in the TxResponse.
 		expectedSupplier.ServiceConfigHistory = nil
 		expectedSupplier.Services = nil
+		expectedSupplier.ServiceUsageMetrics = nil
 
 		// Check the Morse claim response.
 		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{

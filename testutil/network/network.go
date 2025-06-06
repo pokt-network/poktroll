@@ -112,18 +112,24 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 	state := apptypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i+1)))
+		serviceId1 := fmt.Sprintf("svc%d", i)
+		serviceId2 := fmt.Sprintf("svc%d%d", i, i)
 		application := apptypes.Application{
 			Address: sample.AccAddress(),
 			Stake:   &stake,
 			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 				{
-					ServiceId: fmt.Sprintf("svc%d", i),
+					ServiceId: serviceId1,
 				},
 				{
-					ServiceId: fmt.Sprintf("svc%d%d", i, i),
+					ServiceId: serviceId2,
 				},
 			},
 			PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{},
+			ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
+				serviceId1: {ServiceId: serviceId1},
+				serviceId2: {ServiceId: serviceId2},
+			},
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&application)

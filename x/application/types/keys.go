@@ -21,6 +21,10 @@ package types
 // │ DelegationKey()                           Application/delegation/                  │
 // │                                           └── <GatewayAddr>/                       │
 // │                                               <AppAddr>/                           │
+// │                                                                                    │
+// │ ServiceUsageMetricsKey()                  Application/service_usage_metrics/       │
+// │                                           └── <AppAddr>/                           │
+// │                                               <ServiceId>/                         │
 // └────────────────────────────────────────────────────────────────────────────────────┘
 //
 // Legend
@@ -72,6 +76,10 @@ const (
 	// DelegationKeyPrefix indexes applications delegating to gateways
 	// - Prefix: Application/delegation/
 	DelegationKeyPrefix = "Application/delegation/"
+
+	// ServiceUsageMetricsKeyPrefix indexes service usage metrics by application
+	// - Prefix: Application/service_usage_metrics/
+	ServiceUsageMetricsKeyPrefix = "Application/service_usage_metrics/"
 )
 
 // ApplicationKey returns the store key to retrieve an Application from the index fields.
@@ -112,6 +120,22 @@ func DelegationKey(gatewayAddr, appAddr string) []byte {
 
 	appAddrKey := StringKey(appAddr)
 	key = append(key, appAddrKey...)
+
+	return key
+}
+
+// ServiceUsageMetricsKey returns the store key for application service usage metrics
+// - Key format: Application/service_usage_metrics/<AppAddr>/<ServiceId>/
+// - <AppAddr>: bech-32 or hex-encoded application address (UTF-8 bytes)
+// - <ServiceId>: unique identifier for the service (UTF-8 bytes)
+func ServiceUsageMetricsKey(appAddr, serviceId string) []byte {
+	var key []byte
+
+	appKey := StringKey(appAddr)
+	key = append(key, appKey...)
+
+	serviceIdKey := StringKey(serviceId)
+	key = append(key, serviceIdKey...)
 
 	return key
 }

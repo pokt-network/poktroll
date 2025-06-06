@@ -212,8 +212,13 @@ func (k Keeper) ProcessTokenLogicModules(
 		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
 
+		// Create a dehydrated application copy without hydrated data to add to the event.
+		// This prevents bloating the event with potentially large unnecessary data
+		dehydratedApplication := *application
+		dehydratedApplication.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
+
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-			Application:        application,
+			Application:        &dehydratedApplication,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -226,6 +231,29 @@ func (k Keeper) ProcessTokenLogicModules(
 			return err
 		}
 	}
+
+	// Get the number of estimated compute units consumed to update the usage metrics
+	// of the corresponding service, application and supplier.
+	numEstimatedComputeUnits, err := pendingResult.Claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+	if err != nil {
+		return err
+	}
+
+	// Get the number of estimated relays served  to update the usage metrics
+	// of the corresponding service, application and supplier.
+	numEstimatedRelays, err := pendingResult.Claim.GetNumEstimatedRelays(relayMiningDifficulty)
+	if err != nil {
+		return err
+	}
+
+	// Update service usage metrics for the application
+	application.UpdateServiceUsageMetrics(service.Id, numEstimatedRelays, numEstimatedComputeUnits)
+
+	// Update service usage metrics for the supplier
+	supplier.UpdateServiceUsageMetrics(service.Id, numEstimatedRelays, numEstimatedComputeUnits)
+
+	// Update the service usage metrics for the service
+	service.UpdateServiceUsageMetrics(numEstimatedRelays, numEstimatedComputeUnits)
 
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite): If the application stake has dropped to (near?) zero:
 	// - Unstake it
