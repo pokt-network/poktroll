@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -151,7 +152,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	)
 
 	// Initialize the tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}

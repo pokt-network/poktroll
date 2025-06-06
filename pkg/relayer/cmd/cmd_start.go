@@ -12,10 +12,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/cmd/signals"
-	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 )
@@ -46,15 +46,20 @@ RelayMiner Responsibilities:
 		RunE: runRelayer,
 	}
 
+	// Global logger flags
+	// TODO_TECHDEBT(@bryanchriswhite): consolidate log level flags (cosmos & custom).
+	cmdStart.PersistentFlags().StringVar(&logger.LogLevel, cosmosflags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
+	cmdStart.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
+
 	// Custom flags
-	cmdStart.Flags().StringVar(&flagRelayMinerConfig, "config", "", "(Required) The path to the relayminer config file")
-	cmdStart.Flags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "(Optional) Enable or disable onchain query caching")
+	cmdStart.Flags().StringVar(&flagRelayMinerConfig, flags.FlagConfig, flags.DefaultFlagConfig, flags.FlagConfigUsage)
+	cmdStart.Flags().BoolVar(&flagQueryCaching, flags.FlagQueryCaching, flags.DefaultFlagQueryCaching, flags.FlagQueryCachingUsage)
 
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
 	cosmosflags.AddTxFlagsToCmd(cmdStart)
 
 	// Required flags
-	_ = cmdStart.MarkFlagRequired("config")
+	_ = cmdStart.MarkFlagRequired(flags.FlagConfig)
 	// TODO_TECHDEBT(@olshansk): Consider making this part of the relay miner config file or erroring in a more user-friendly way.
 	_ = cmdStart.MarkFlagRequired(cosmosflags.FlagChainID)
 
@@ -72,18 +77,8 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
-	logLevel := cmd.Flag(cosmosflags.FlagLogLevel).Value.String()
-	// Set up logger options
-	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
-	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.ParseLevel(logLevel)),
-		polyzero.WithOutput(os.Stderr),
-	}
-
-	// Construct logger and associate with command context
-	logger := polyzero.NewLogger(loggerOpts...)
-	ctx = logger.WithContext(ctx)
-	cmd.SetContext(ctx)
+	// Retrieve the logger from the command context.
+	logger := polylog.Ctx(cmd.Context())
 
 	// Handle interrupt/kill signals asynchronously
 	signals.GoOnExitSignal(cancelCtx)
