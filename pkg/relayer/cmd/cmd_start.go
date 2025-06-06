@@ -47,14 +47,14 @@ RelayMiner Responsibilities:
 	}
 
 	// Custom flags
-	cmdStart.Flags().StringVar(&flagRelayMinerConfig, "config", "", "(Required) The path to the relayminer config file")
-	cmdStart.Flags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "(Optional) Enable or disable onchain query caching")
+	cmdStart.Flags().StringVar(&flagRelayMinerConfig, flags.FlagConfig, flags.DefaultFlagConfig, flags.FlagConfigUsage)
+	cmdStart.Flags().BoolVar(&flagQueryCaching, flags.FlagQueryCaching, flags.DefaultFlagQueryCaching, flags.FlagQueryCachingUsage)
 
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
 	cosmosflags.AddTxFlagsToCmd(cmdStart)
 
 	// Required flags
-	_ = cmdStart.MarkFlagRequired("config")
+	_ = cmdStart.MarkFlagRequired(flags.FlagConfig)
 	// TODO_TECHDEBT(@olshansk): Consider making this part of the relay miner config file or erroring in a more user-friendly way.
 	_ = cmdStart.MarkFlagRequired(cosmosflags.FlagChainID)
 

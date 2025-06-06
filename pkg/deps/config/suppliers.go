@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -33,9 +34,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
-
-// FlagQueryCaching is the flag name to enable or disable query caching.
-const FlagQueryCaching = "query-caching"
 
 // SupplierFn is a function that is used to supply a depinject config.
 type SupplierFn func(
@@ -526,7 +524,7 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Check if query caching is enabled
-		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		queryCachingEnabled, err := cmd.Flags().GetBool(flags.FlagQueryCaching)
 		if err != nil {
 			return nil, err
 		}
@@ -562,7 +560,7 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Check if params caching is enabled
-		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		queryCachingEnabled, err := cmd.Flags().GetBool(flags.FlagQueryCaching)
 		if err != nil {
 			return nil, err
 		}

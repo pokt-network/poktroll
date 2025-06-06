@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
+	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -90,17 +91,22 @@ For more info, run 'relay --help'.`,
 	}
 
 	// Custom Flags
-	cmdRelay.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
-	cmdRelay.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
-	cmdRelay.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
-	cmdRelay.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
+	cmdRelay.Flags().StringVar(&flagRelayApp, flags.FlagApp, flags.DefaultFlagApp, flags.FlagAppUsage)
+	cmdRelay.Flags().StringVar(&flagRelayPayload, flags.FlagPayload, flags.DefaultFlagPayload, flags.FlagPayloadUsage)
+	cmdRelay.Flags().StringVar(&flagRelaySupplier, flags.FlagSupplier, flags.DefaultFlagSupplier, flags.FlagSupplierUsage)
+	cmdRelay.Flags().StringVar(
+		&flagSupplierPublicEndpointOverride,
+		flags.FlagSupplierPublicEndpointOverride,
+		flags.DefaultFlagSupplierPublicEndpointOverride,
+		flags.FlagSupplierPublicEndpointOverrideUsage,
+	)
 
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
 	cosmosflags.AddTxFlagsToCmd(cmdRelay)
 
 	// Required flags
-	_ = cmdRelay.MarkFlagRequired("app")
-	_ = cmdRelay.MarkFlagRequired("payload")
+	_ = cmdRelay.MarkFlagRequired(flags.FlagApp)
+	_ = cmdRelay.MarkFlagRequired(flags.FlagPayload)
 
 	return cmdRelay
 }
