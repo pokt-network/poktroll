@@ -22,7 +22,7 @@ for arg in "$@"; do
 done
 
 function get_all_raw_morse_output_addresses() {
-  jq -r '[.app_state.pos.validators[]|select(.output_address != "")]|map(.output_address)[]' $1
+  jq -r '[.app_state.pos.validators[]|select(.output_address != "")|select(.output_address != .address)]|map(.output_address)[]' $1
 }
 
 function get_all_raw_morse_claimable_account_src_addresses() {
