@@ -57,4 +57,4 @@ fi
 
 echo "Copy/paste the quoted and comma-delimited elements into an \`invalidAddressesAllowlist\` variable in x/migration/recovery/recovery_allowlist.go:"
 # Print all invalid addresses as a JSON array to simplify copy/pasting (quotes and commas).
-echo "$ALL_INVALID_MORSE_ADDRESSES_JSON" | jq -R -s 'split("\n")[:-1]'
+echo "$ALL_INVALID_MORSE_ADDRESSES_JSON" | to_uppercase | jq -R -s 'split("\n")[:-1]'
