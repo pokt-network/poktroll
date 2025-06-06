@@ -26,12 +26,15 @@ package upgrades
 
 import (
 	"context"
+	_ "embed"
+	"encoding/json"
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
 // TODO_NEXT_UPGRADE: Rename NEXT with the appropriate next
@@ -40,6 +43,9 @@ import (
 const (
 	Upgrade_NEXT_PlanName = "vNEXT"
 )
+
+//go:embed zero_balance_morse_claimable_accounts.json
+var zeroBalanceMorseClaimableAccountsJSONBz []byte
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
@@ -61,7 +67,30 @@ var Upgrade_NEXT = Upgrade{
 		// 3. Update the upgrade handler here accordingly
 		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 
+		createZeroBalanceMorseClaimableAccounts := func(ctx context.Context) error {
+			var zeroBalanceMorseClaimableAccounts []*migrationtypes.MorseClaimableAccount
+			if err := json.Unmarshal(zeroBalanceMorseClaimableAccountsJSONBz, &zeroBalanceMorseClaimableAccounts); err != nil {
+				return err
+			}
+
+			for _, morseClaimableAccount := range zeroBalanceMorseClaimableAccounts {
+				// Ensure that the MorseClaimableAccount DOES NOT exist on-chain (skip if so).
+				if _, isFound := keepers.MigrationKeeper.GetMorseClaimableAccount(ctx, morseClaimableAccount.GetMorseSrcAddress()); isFound {
+					continue
+				}
+
+				// Store the MorseClaimableAccount onchain.
+				keepers.MigrationKeeper.SetMorseClaimableAccount(ctx, *morseClaimableAccount)
+			}
+
+			return nil
+		}
+
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			if err := createZeroBalanceMorseClaimableAccounts(ctx); err != nil {
+				return vm, err
+			}
+
 			return vm, nil
 		}
 	},
