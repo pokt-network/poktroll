@@ -14,7 +14,6 @@ function get_all_raw_morse_claimable_account_src_addresses() {
   jq -r '.morse_account_state.accounts|map(.morse_src_address)[]' $1
 }
 
-
 function zero_balance_morse_claimable_accounts_for_addresses() {
   jq -r '.|map({morse_src_address: ., unstaked_balance: "0upokt", supplier_stake: "0upokt", application_stake: "0upokt", claimed_at_height: 0, shannon_dest_address: "", morse_output_address: ""})' <<< "$1"
 }
