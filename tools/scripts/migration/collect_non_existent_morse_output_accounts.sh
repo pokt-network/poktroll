@@ -22,7 +22,7 @@ for arg in "$@"; do
 done
 
 function get_all_raw_morse_output_addresses() {
-  jq -r '[.app_state.pos.validators[]|select(.output_address != "")|select(.output_address != .address)]|map(.output_address)[]' $1
+  jq -r '[.app_state.pos.validators[]|select(.output_address != "" and .output_address != .address)]|map(.output_address)[]' $1
 }
 
 function get_all_raw_morse_claimable_account_src_addresses() {
@@ -50,7 +50,7 @@ if [ "$TESTNET" = true ]; then
   TESTNET_MORSE_STATE_EXPORT_PATH="$SCRIPT_PATH/morse_state_export_179148_2025-06-01.json"
   MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_PATH/msg_import_morse_accounts_m170616_t179148.json"
   TESTNET_MORSE_OUTPUT_ADDRESSES=$(get_all_raw_morse_output_addresses "$TESTNET_MORSE_STATE_EXPORT_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
-  ALL_MORSE_OUTPUT_ADDRESSES=$(echo "$ALL_MORSE_OUTPUT_ADDRESSES"\n"$TESTNET_MORSE_OUTPUT_ADDRESSES" | sort | uniq)
+  ALL_MORSE_OUTPUT_ADDRESSES=$(printf "%s\n%s\n" "$ALL_MORSE_OUTPUT_ADDRESSES" "$TESTNET_MORSE_OUTPUT_ADDRESSES" | sort | uniq)
 fi
 
 ALL_MORSE_CLAIMABLE_ACCOUNT_SRC_ADDRESSES=$(get_all_raw_morse_claimable_account_src_addresses "$MSG_MORSE_IMPORT_ACCOUNTS_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
