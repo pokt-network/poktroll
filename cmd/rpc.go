@@ -28,19 +28,47 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 
 	// LocalNet
 	case flags.LocalNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.LocalNetChainId, pocket.LocalNetRPCURL, pocket.LocalNetGRPCAddr, "true", pocket.LocalNetFaucetBaseURL)
+		return setNetworkRelatedFlags(
+			cmd,
+			pocket.LocalNetChainId,
+			pocket.LocalNetRPCURL,
+			pocket.LocalNetGRPCAddr,
+			flags.BooleanTrueValue,
+			pocket.LocalNetFaucetBaseURL,
+		)
 
 	// Alpha TestNet
 	case flags.AlphaNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.AlphaTestNetChainId, pocket.AlphaTestNetRPCURL, pocket.AlphaNetGRPCAddr, "false", pocket.AlphaTestNetFaucetBaseURL)
+		return setNetworkRelatedFlags(
+			cmd,
+			pocket.AlphaTestNetChainId,
+			pocket.AlphaTestNetRPCURL,
+			pocket.AlphaNetGRPCAddr,
+			flags.BooleanFalseValue,
+			pocket.AlphaTestNetFaucetBaseURL,
+		)
 
 	// Beta TestNet
 	case flags.BetaNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.BetaTestNetChainId, pocket.BetaTestNetRPCURL, pocket.BetaNetGRPCAddr, "false", pocket.BetaTestNetFaucetBaseURL)
+		return setNetworkRelatedFlags(
+			cmd,
+			pocket.BetaTestNetChainId,
+			pocket.BetaTestNetRPCURL,
+			pocket.BetaNetGRPCAddr,
+			flags.BooleanFalseValue,
+			pocket.BetaTestNetFaucetBaseURL,
+		)
 
 	// MainNet
 	case flags.MainNetworkName:
-		return setNetworkRelatedFlags(cmd, pocket.MainNetChainId, pocket.MainNetRPCURL, pocket.MainNetGRPCAddr, "false", pocket.MainNetFaucetBaseURL)
+		return setNetworkRelatedFlags(
+			cmd,
+			pocket.MainNetChainId,
+			pocket.MainNetRPCURL,
+			pocket.MainNetGRPCAddr,
+			flags.BooleanFalseValue,
+			pocket.MainNetFaucetBaseURL,
+		)
 
 	default:
 		return fmt.Errorf("unknown --network specified %q", networkStr)
@@ -57,45 +85,45 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 
 func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr, grpcInsecure, faucetBaseUrl string) error {
 	// --chain-id flag
-	if chainIDFlag := cmd.Flags().Lookup(cosmosflags.FlagChainID); chainIDFlag != nil {
+	if chainIDFlag := cmd.Flag(cosmosflags.FlagChainID); chainIDFlag != nil {
 		if !cmd.Flags().Changed(cosmosflags.FlagChainID) {
-			if err := cmd.Flags().Set(cosmosflags.FlagChainID, chainId); err != nil {
+			if err := chainIDFlag.Value.Set(chainId); err != nil {
 				return err
 			}
 		}
 	}
 
 	// --node flag
-	if nodeFlag := cmd.Flags().Lookup(cosmosflags.FlagNode); nodeFlag != nil {
+	if nodeFlag := cmd.Flag(cosmosflags.FlagNode); nodeFlag != nil {
 		if !cmd.Flags().Changed(cosmosflags.FlagNode) {
-			if err := cmd.Flags().Set(cosmosflags.FlagNode, nodeUrl); err != nil {
+			if err := nodeFlag.Value.Set(nodeUrl); err != nil {
 				return err
 			}
 		}
 	}
 
 	// --grpc-addr flag
-	if grpcFlag := cmd.Flags().Lookup(cosmosflags.FlagGRPC); grpcFlag != nil {
+	if grpcFlag := cmd.Flag(cosmosflags.FlagGRPC); grpcFlag != nil {
 		if !cmd.Flags().Changed(cosmosflags.FlagGRPC) {
-			if err := cmd.Flags().Set(cosmosflags.FlagGRPC, grpcAddr); err != nil {
+			if err := grpcFlag.Value.Set(grpcAddr); err != nil {
 				return err
 			}
 		}
 	}
 
 	// --grpc-insecure flag
-	if grpcInsecureFlag := cmd.Flags().Lookup(cosmosflags.FlagGRPCInsecure); grpcInsecureFlag != nil {
+	if grpcInsecureFlag := cmd.Flag(cosmosflags.FlagGRPCInsecure); grpcInsecureFlag != nil {
 		if !cmd.Flags().Changed(cosmosflags.FlagGRPCInsecure) {
-			if err := cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, grpcInsecure); err != nil {
+			if err := grpcInsecureFlag.Value.Set(grpcInsecure); err != nil {
 				return err
 			}
 		}
 	}
 
 	// --faucet-base-url flag
-	if faucetBaseURLFlag := cmd.Flags().Lookup(flags.FlagFaucetBaseURL); faucetBaseURLFlag != nil {
+	if faucetBaseURLFlag := cmd.Flag(flags.FlagFaucetBaseURL); faucetBaseURLFlag != nil {
 		if !cmd.Flags().Changed(flags.FlagFaucetBaseURL) {
-			if err := cmd.Flags().Set(flags.FlagFaucetBaseURL, faucetBaseUrl); err != nil {
+			if err := faucetBaseURLFlag.Value.Set(faucetBaseUrl); err != nil {
 				return err
 			}
 		}

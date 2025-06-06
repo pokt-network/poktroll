@@ -1,5 +1,10 @@
 package flags
 
+import (
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+)
+
 const (
 	// OmittedDefaultFlagValue is used whenever a flag is required but no reasonable default value can be provided.
 	// In most cases, this forces the user to specify the flag value to avoid unintended behavior.
@@ -49,3 +54,43 @@ const (
 	BetaNetworkName  = "beta"
 	MainNetworkName  = "main"
 )
+
+// GetFlagValueString returns the value of the flag with the given name.
+// If the flag is not registered, an error is returned.
+func GetFlagValueString(cmd *cobra.Command, flagName string) (string, error) {
+	flag, err := GetFlag(cmd, flagName)
+	if err != nil {
+		return "", err
+	}
+
+	return flag.Value.String(), nil
+}
+
+// GetFlagBool returns the value of the flag with the given name.
+// If the flag is not registered, an error is returned.
+func GetFlagBool(cmd *cobra.Command, flagName string) (bool, error) {
+	flagValueString, err := GetFlagValueString(cmd, flagName)
+	if err != nil {
+		return false, err
+	}
+
+	switch flagValueString {
+	case BooleanTrueValue:
+		return true, nil
+	case BooleanFalseValue:
+		return false, nil
+	default:
+		return false, ErrFlagInvalidValue.Wrapf("expected 'true' or 'false', gor: %s", flagValueString)
+	}
+}
+
+// GetFlag returns the flag with the given name.
+// If the flag is not registered, an error is returned.
+func GetFlag(cmd *cobra.Command, flagName string) (*pflag.Flag, error) {
+	flag := cmd.Flag(flagName)
+	if flag == nil {
+		return nil, ErrFlagNotRegistered.Wrapf("flag name: %s", flagName)
+	}
+
+	return flag, nil
+}

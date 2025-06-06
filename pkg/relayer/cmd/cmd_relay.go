@@ -121,10 +121,22 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
-	logLevel := cmd.Flag(cosmosflags.FlagLogLevel).Value.String()
-	nodeRPCURL := cmd.Flag(cosmosflags.FlagNode).Value.String()
-	nodeGRPCURL := cmd.Flag(cosmosflags.FlagGRPC).Value.String()
-	nodeGRPCInsecure, err := cmd.Flags().GetBool(cosmosflags.FlagGRPCInsecure)
+	logLevel, err := flags.GetFlagValueString(cmd, cosmosflags.FlagLogLevel)
+	if err != nil {
+		return err
+	}
+
+	nodeRPCURL, err := flags.GetFlagValueString(cmd, cosmosflags.FlagNode)
+	if err != nil {
+		return err
+	}
+
+	nodeGRPCURL, err := flags.GetFlagValueString(cmd, cosmosflags.FlagGRPC)
+	if err != nil {
+		return err
+	}
+
+	nodeGRPCInsecure, err := flags.GetFlagBool(cmd, cosmosflags.FlagGRPCInsecure)
 	if err != nil {
 		return err
 	}
