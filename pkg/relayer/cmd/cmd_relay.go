@@ -57,7 +57,7 @@ var (
 // - Useful for local testing, debugging, and verifying Supplier setup
 // - See TODO_IMPROVE for planned enhancements
 func relayCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmdRelay := &cobra.Command{
 		Use:   "relay --app <app> --supplier <supplier> --payload <payload> [--supplier-public-endpoint-override <url>]",
 		Short: "Send a relay as an application to a particular supplier",
 		Long: `Send a test relay to a Supplier's RelayMiner from a staked Application.
@@ -99,22 +99,20 @@ For more info, run 'relay --help'.`,
 		RunE: runRelay,
 	}
 
-	// Cosmos flags
-	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (defaults to LocalNet)")
-	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (defaults to LocalNet)")
-	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options (defaults to true for LocalNet)")
-	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-
 	// Custom Flags
-	cmd.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
-	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
-	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
-	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
+	cmdRelay.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
+	cmdRelay.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
+	cmdRelay.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
+	cmdRelay.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
 
-	_ = cmd.MarkFlagRequired("app")
-	_ = cmd.MarkFlagRequired("payload")
+	// This command depends on the conventional cosmos-sdk CLI tx flags.
+	cosmosflags.AddTxFlagsToCmd(cmdRelay)
 
-	return cmd
+	// Required flags
+	_ = cmdRelay.MarkFlagRequired("app")
+	_ = cmdRelay.MarkFlagRequired("payload")
+
+	return cmdRelay
 }
 
 // runRelay executes the relay command logic.
