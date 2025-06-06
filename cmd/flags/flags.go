@@ -109,7 +109,7 @@ func GetFlagBool(cmd *cobra.Command, flagName string) (bool, error) {
 	case BooleanFalseValue:
 		return false, nil
 	default:
-		return false, ErrFlagInvalidValue.Wrapf("expected 'true' or 'false', gor: %s", flagValueString)
+		return false, ErrFlagInvalidValue.Wrapf("expected 'true' or 'false', got: %s", flagValueString)
 	}
 }
 
