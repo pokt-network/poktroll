@@ -58,6 +58,10 @@ var zeroBalanceMorseClaimableAccountsJSONBz []byte
 //     The file includes missing accounts from **both** Morse MainNet and TestNet.
 //     It is shared across all networks for simplicity.
 //     There is **zero risk** of unintended token minting (staked or unstaked).
+//
+// - Update the Morse account recovery allowlist:
+//   - Add all known invalid addresses
+//   - Update the exchanges allowlist
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
