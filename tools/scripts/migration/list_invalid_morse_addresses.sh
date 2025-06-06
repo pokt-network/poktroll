@@ -7,19 +7,19 @@ source "$SCRIPT_DIR/common.sh"
 parse_args "$@"
 
 function get_raw_invalid_morse_account_addresses() {
-  jq -r '[.app_state.auth.accounts[]|select(.type == "posmint/Account")|select(.value.address|length != 40)]|map(.value.address)[]' $1
+  jq -r '[.app_state.auth.accounts[]|select(.type == "posmint/Account")|select(.value.address|length != 40)]|map(.value.address)[]' "$1"
 }
 
 function get_raw_invalid_morse_application_addresses() {
-  jq -r '[.app_state.application.applications[]|select(.address|length != 40)]|map(.address)[]' $1
+  jq -r '[.app_state.application.applications[]|select(.address|length != 40)]|map(.address)[]' "$1"
 }
 
 function get_raw_invalid_morse_supplier_addresses() {
-  jq '[.app_state.pos.validators[]|select(.address|length != 40)]|map(.address)[]' $1
+  jq '[.app_state.pos.validators[]|select(.address|length != 40)]|map(.address)[]' "$1"
 }
 
 function get_raw_invalid_non_custodial_morse_owner_addresses() {
-  jq -r '[.app_state.pos.validators[]|select(.output_address != .address and .output_address != "" and (.output_address|length != 40))]|map(.output_address)[]' $1
+  jq -r '[.app_state.pos.validators[]|select(.output_address != .address and .output_address != "" and (.output_address|length != 40))]|map(.output_address)[]' "$1"
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
