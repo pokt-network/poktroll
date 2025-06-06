@@ -50,6 +50,7 @@ func init() {
 	sort.Strings(knownAppStakesAllowlist)
 	sort.Strings(moduleAccountsAllowlist)
 	sort.Strings(exchangesAllowlist)
+	sort.Strings(invalidAddressesAllowlist)
 }
 
 // listContainsTarget uses binary search on list to determine whether target is present.
