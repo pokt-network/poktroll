@@ -269,7 +269,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	ownerAddressToMClaimableAccountMap := map[string]*types.MorseClaimableAccount{}
 
 	// Iterate over each Morse node private key to process migration.
-	for i, morseNodeAccount := range morseNodeAccounts {
+	for idx, morseNodeAccount := range morseNodeAccounts {
 		morseNodeAddress := hex.EncodeToString(morseNodeAccount.Address)
 
 		// Ensure the Morse output address is not empty (i.e., is a node)
