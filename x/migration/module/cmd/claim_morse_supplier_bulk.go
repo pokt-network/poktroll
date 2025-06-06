@@ -670,8 +670,8 @@ func updateRevShareMapToFullAllocation(owner, operator string, revShareMap map[s
 		}
 	}
 
-	// allows operator to be automatically added to the share map to fund on everytime it gets rewards
-	// this avoids the need to send funds from time to time and also avoids incur in network feeds for those sending.
+	// Allows the operator to automatically be added to the revshare map to get funds on every reward.
+	// This covers the operator's tx fees and increases their rewards.
 	if flagAddOperatorShare > 0 && !operatorFound {
 		if totalShare > 100 {
 			return nil, fmt.Errorf("total revenue share is > 100%")
