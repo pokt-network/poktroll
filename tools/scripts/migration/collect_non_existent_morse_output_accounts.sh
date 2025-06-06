@@ -7,11 +7,11 @@ source "$SCRIPT_DIR/common.sh"
 parse_args "$@"
 
 function get_raw_non_custodial_morse_output_addresses() {
-  jq -r '[.app_state.pos.validators[]|select(.output_address != "" and .output_address != .address)]|map(.output_address)[]' $1
+  jq -r '[.app_state.pos.validators[]|select(.output_address != "" and .output_address != .address)]|map(.output_address)[]' "$1"
 }
 
 function get_all_raw_morse_claimable_account_src_addresses() {
-  jq -r '.morse_account_state.accounts|map(.morse_src_address)[]' $1
+  jq -r '.morse_account_state.accounts|map(.morse_src_address)[]' "$1"
 }
 
 function zero_balance_morse_claimable_accounts_for_addresses() {
