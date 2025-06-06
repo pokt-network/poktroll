@@ -15,6 +15,7 @@ This guide demonstrates common Vultr API operations for managing virtual machine
   - [Retrieve the Vultr Instance Configuration](#retrieve-the-vultr-instance-configuration)
   - [Environment Setup](#environment-setup)
   - [Connect to Your Instance](#connect-to-your-instance)
+  - [Setup password-less ssh](#setup-password-less-ssh)
   - [Delete Instance](#delete-instance)
 - [\[Optional\] Prepare your instance for Pocket](#optional-prepare-your-instance-for-pocket)
   - [Install `pocketd`](#install-pocketd)
@@ -133,6 +134,12 @@ To copy password to clipboard:
 cat vultr_create.json | jq -r '.instance.default_password' | pbcopy
 ```
 
+### Setup password-less ssh
+
+```bash
+ssh-copy-id root@$VULTR_INSTANCE_IP
+```
+
 ### Delete Instance
 
 ```bash
@@ -154,19 +161,19 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
 Export a key from your local machine:
 
 ```bash
-pkd keys export {key-name} --unsafe --unarmored-hex
+pocketd keys export {key-name} --unsafe --unarmored-hex --yes
 ```
 
 And import it into your instance:
 
 ```bash
-pocket keys import {key-name} {hex-priv-key}
+pocketd keys import {key-name} {hex-priv-key}
 ```
 
 Or create a new one:
 
 ```bash
-pocket keys add {key-name}
+pocketd keys add {key-name}
 ```
 
 ### Run a full node
