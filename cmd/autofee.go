@@ -53,7 +53,7 @@ func AddAutoFeeFlag(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().Bool(
 		flags.FlagAutoFee,
 		false,
-		"Automatically calculate and set transaction fees using gas simulation",
+		flags.FlagAutoFeeUsage,
 	)
 }
 
