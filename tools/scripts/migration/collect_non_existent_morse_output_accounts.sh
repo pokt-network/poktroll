@@ -49,18 +49,22 @@ function zero_balance_morse_claimable_accounts_for_addresses() {
   jq -r '.|map({morse_src_address: ., unstaked_balance: "0upokt", supplier_stake: "0upokt", application_stake: "0upokt", claimed_at_height: 0, shannon_dest_address: "", morse_output_address: ""})' <<< "$1"
 }
 
-SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+function to_uppercase() {
+  tr '[:lower:]' '[:upper:]'
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Use the state-shift day Morse MainNet snapshot.
-MORSE_STATE_EXPORT_PATH="$SCRIPT_PATH/morse_state_export_170616_2025-06-03.json"
-MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_PATH/msg_import_morse_accounts_170616_2025-06-03.json"
-ALL_MORSE_OUTPUT_ADDRESSES=$(get_raw_non_custodial_morse_output_addresses "$MORSE_STATE_EXPORT_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
+MORSE_STATE_EXPORT_PATH="$SCRIPT_DIR/morse_state_export_170616_2025-06-03.json"
+MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_DIR/msg_import_morse_accounts_170616_2025-06-03.json"
+ALL_MORSE_OUTPUT_ADDRESSES=$(get_raw_non_custodial_morse_output_addresses "$MORSE_STATE_EXPORT_PATH" | to_uppercase | sort | uniq)
 
 # If the testnet flag is set, use the state-shift day Morse MainNet & TestNet merged snapshot.
 if [ "$TESTNET" = true ]; then
-  TESTNET_MORSE_STATE_EXPORT_PATH="$SCRIPT_PATH/morse_state_export_179148_2025-06-01.json"
-  MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_PATH/msg_import_morse_accounts_m170616_t179148.json"
-  TESTNET_MORSE_OUTPUT_ADDRESSES=$(get_raw_non_custodial_morse_output_addresses "$TESTNET_MORSE_STATE_EXPORT_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
+  TESTNET_MORSE_STATE_EXPORT_PATH="$SCRIPT_DIR/morse_state_export_179148_2025-06-01.json"
+  MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_DIR/msg_import_morse_accounts_m170616_t179148.json"
+  TESTNET_MORSE_OUTPUT_ADDRESSES=$(get_raw_non_custodial_morse_output_addresses "$TESTNET_MORSE_STATE_EXPORT_PATH" | to_uppercase | sort | uniq)
   ALL_MORSE_OUTPUT_ADDRESSES=$(printf "%s\n%s\n" "$ALL_MORSE_OUTPUT_ADDRESSES" "$TESTNET_MORSE_OUTPUT_ADDRESSES" | sort | uniq)
 fi
 
