@@ -171,6 +171,7 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 	// Flags to export private keys in the output file.
 	claimSuppliersCmd.Flags().BoolVar(&flagUnsafe, FlagUnsafe, false, FlagUnsafeDesc)
 	claimSuppliersCmd.Flags().BoolVar(&flagUnarmoredJSON, FlagUnarmoredJSON, false, FlagUnarmoredJSONDesc)
+
 	// Flags to customize the new Shannon account.
 	claimSuppliersCmd.Flags().StringVar(&flagNewKeyPrefix, flagNewKeyPrefixName, "", flagNewKeyPrefixDesc)
 	claimSuppliersCmd.Flags().Uint64Var(&flagAddOperatorShare, flagAddOperatorShareName, 0, flagAddOperatorShareDesc)
