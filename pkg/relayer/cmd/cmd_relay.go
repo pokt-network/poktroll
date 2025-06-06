@@ -39,16 +39,6 @@ var (
 	flagRelaySupplier                  string // Supplier address
 	flagRelayPayload                   string // Relay payload
 	flagSupplierPublicEndpointOverride string // Optional endpoint override
-
-	// Cosmos flags for 'pocketd relayminer relay' subcommand
-	flagNodeGRPCURLRelay      string
-	flagNodeGRPCInsecureRelay bool
-
-	// TODO_TECHDEBT(@olshansk): Reconsider the need for this flag.
-	// This flag can theoretically be avoided because it is only used to get the height of the latest block for session generation.
-	// Passing `0` as the block height defaults to the latest height.
-	// We are keeping it to use this file as an example of an end-to-end system that leverages the shannon-sdk for example purposes.
-	flagNodeRPCURLRelay string
 )
 
 // relayCmd defines the `relay` subcommand for sending a relay as an application.
@@ -131,10 +121,18 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
+	logLevel := cmd.Flag(cosmosflags.FlagLogLevel).Value.String()
+	nodeRPCURL := cmd.Flag(cosmosflags.FlagNode).Value.String()
+	nodeGRPCURL := cmd.Flag(cosmosflags.FlagGRPC).Value.String()
+	nodeGRPCInsecure, err := cmd.Flags().GetBool(cosmosflags.FlagGRPCInsecure)
+	if err != nil {
+		return err
+	}
+
 	// Set up logger options
 	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
+		polyzero.WithLevel(polyzero.ParseLevel(logLevel)),
 		polyzero.WithOutput(os.Stderr),
 	}
 
@@ -147,8 +145,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
-		HostPort: flagNodeGRPCURLRelay,
-		Insecure: flagNodeGRPCInsecureRelay,
+		HostPort: nodeGRPCURL,
+		Insecure: nodeGRPCInsecure,
 	})
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error connecting to gRPC")
@@ -158,7 +156,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	logger.Info().Msgf("✅ gRPC connection initialized: %v", grpcConn)
 
 	// Create a connection to the POKT full node
-	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURLRelay)
+	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(nodeRPCURL)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error fetching block height")
 		return err

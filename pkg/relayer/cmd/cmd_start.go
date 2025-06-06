@@ -72,10 +72,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
+	logLevel := cmd.Flag(cosmosflags.FlagLogLevel).Value.String()
 	// Set up logger options
 	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
+		polyzero.WithLevel(polyzero.ParseLevel(logLevel)),
 		polyzero.WithOutput(os.Stderr),
 	}
 
