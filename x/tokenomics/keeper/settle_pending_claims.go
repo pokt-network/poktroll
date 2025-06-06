@@ -737,9 +737,9 @@ func (k Keeper) settleClaim(
 		return nil, err
 	}
 
-	claimProcessingContext.isSettled = true
+	claimSettlementContext.isSettled = true
 
-	return claimProcessingContext, nil
+	return claimSettlementContext, nil
 }
 
 // discardFaultyClaim is used to handle unexpected faulty claims.
