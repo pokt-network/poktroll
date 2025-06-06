@@ -21,12 +21,23 @@ for arg in "$@"; do
   esac
 done
 
-function get_all_raw_morse_output_addresses() {
+function get_raw_non_custodial_morse_output_addresses() {
   jq -r '[.app_state.pos.validators[]|select(.output_address != "" and .output_address != .address)]|map(.output_address)[]' $1
 }
 
 function get_all_raw_morse_claimable_account_src_addresses() {
   jq -r '.morse_account_state.accounts|map(.morse_src_address)[]' $1
+}
+
+function diff_A_sub_B() {
+  A="$1"
+  B="$2"
+
+  # comm compares two sorted files/streams, line by line.
+  # -2: suppress lines only in B
+  # -3: suppress lines common to both
+  # Result: lines only in A
+  comm -23 <(echo "$A") <(echo "$B")
 }
 
 function lines_to_json_array() {
@@ -43,25 +54,25 @@ SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Use the state-shift day Morse MainNet snapshot.
 MORSE_STATE_EXPORT_PATH="$SCRIPT_PATH/morse_state_export_170616_2025-06-03.json"
 MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_PATH/msg_import_morse_accounts_170616_2025-06-03.json"
-ALL_MORSE_OUTPUT_ADDRESSES=$(get_all_raw_morse_output_addresses "$MORSE_STATE_EXPORT_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
+ALL_MORSE_OUTPUT_ADDRESSES=$(get_raw_non_custodial_morse_output_addresses "$MORSE_STATE_EXPORT_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
 
 # If the testnet flag is set, use the state-shift day Morse MainNet & TestNet merged snapshot.
 if [ "$TESTNET" = true ]; then
   TESTNET_MORSE_STATE_EXPORT_PATH="$SCRIPT_PATH/morse_state_export_179148_2025-06-01.json"
   MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_PATH/msg_import_morse_accounts_m170616_t179148.json"
-  TESTNET_MORSE_OUTPUT_ADDRESSES=$(get_all_raw_morse_output_addresses "$TESTNET_MORSE_STATE_EXPORT_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
+  TESTNET_MORSE_OUTPUT_ADDRESSES=$(get_raw_non_custodial_morse_output_addresses "$TESTNET_MORSE_STATE_EXPORT_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
   ALL_MORSE_OUTPUT_ADDRESSES=$(printf "%s\n%s\n" "$ALL_MORSE_OUTPUT_ADDRESSES" "$TESTNET_MORSE_OUTPUT_ADDRESSES" | sort | uniq)
 fi
 
 ALL_MORSE_CLAIMABLE_ACCOUNT_SRC_ADDRESSES=$(get_all_raw_morse_claimable_account_src_addresses "$MSG_MORSE_IMPORT_ACCOUNTS_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
-MISSING_MORSE_ACCOUNT_ADDRESSES=$(comm -23 <(echo "$ALL_MORSE_OUTPUT_ADDRESSES") <(echo "$ALL_MORSE_CLAIMABLE_ACCOUNT_SRC_ADDRESSES"))
+MISSING_MORSE_ACCOUNT_ADDRESSES=$(diff_A_sub_B "$ALL_MORSE_OUTPUT_ADDRESSES" "$ALL_MORSE_CLAIMABLE_ACCOUNT_SRC_ADDRESSES")
 MISSING_MORSE_ACCOUNT_ADDRESSES_JSON=$(lines_to_json_array "$MISSING_MORSE_ACCOUNT_ADDRESSES")
 ZERO_BALANCE_MORSE_CLAIMABLE_ACCOUNTS_JSON=$(zero_balance_morse_claimable_accounts_for_addresses "$MISSING_MORSE_ACCOUNT_ADDRESSES_JSON")
 
 if [ "$PRINT_COUNTS" = true ]; then
-  echo "Total Morse output addresses: $(wc -l <<< "$ALL_MORSE_OUTPUT_ADDRESSES")"
+  echo "Total Non-Custodial Morse Accounts: $(wc -l <<< "$ALL_MORSE_OUTPUT_ADDRESSES")"
   echo "Total Morse claimable accounts: $(wc -l <<< "$ALL_MORSE_CLAIMABLE_ACCOUNT_SRC_ADDRESSES")"
-  echo "Total missing accounts: $(wc -l <<< "$MISSING_MORSE_ACCOUNT_ADDRESSES")"
+  echo "Total missing MorseClaimableAccounts: $(wc -l <<< "$MISSING_MORSE_ACCOUNT_ADDRESSES")"
 else
   echo "$ZERO_BALANCE_MORSE_CLAIMABLE_ACCOUNTS_JSON"
 fi
