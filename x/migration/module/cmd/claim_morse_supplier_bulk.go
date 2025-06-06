@@ -382,10 +382,13 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		// Import the generated Shannon private key into the keyring.
 		keyName := shannonOperatorAddress
 		if flagNewKeyPrefix != "" {
+			// Default suffix is the address
 			suffix := shannonOperatorAddress
+			// Override the default suffix if the index flag is provided
 			if flagUseIndexNames {
 				suffix = fmt.Sprintf("%d", i)
 			}
+			// The final keyring name is: 'prefix-idx' or 'prefix-address'
 			keyName = fmt.Sprintf("%s-%s", flagNewKeyPrefix, suffix)
 		}
 		morseShannonMapping.ShannonAccount.KeyringName = keyName
