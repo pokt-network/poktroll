@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -122,7 +123,7 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}

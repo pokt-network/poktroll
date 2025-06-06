@@ -1,4 +1,4 @@
-package flags
+package config
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/client/tx/types"
-	"github.com/pokt-network/poktroll/pkg/deps/config"
 )
 
 // GetTxClientFromFlags constructs a new TxClient instance using the provided command flags.
@@ -47,11 +46,11 @@ func GetTxClientFromFlags(
 	}
 
 	// Construct dependencies for the tx client
-	deps, err := config.SupplyConfig(ctx, cmd, []config.SupplierFn{
-		config.NewSupplyLoggerFromCtx(ctx),
-		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),
-		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),
-		config.NewSupplyBlockClientFn(queryNodeRPCUrl),
+	deps, err := SupplyConfig(ctx, cmd, []SupplierFn{
+		NewSupplyLoggerFromCtx(ctx),
+		NewSupplyEventsQueryClientFn(queryNodeRPCUrl),
+		NewSupplyBlockQueryClientFn(queryNodeRPCUrl),
+		NewSupplyBlockClientFn(queryNodeRPCUrl),
 	})
 	if err != nil {
 		return nil, err
@@ -74,7 +73,7 @@ func GetTxClientFromFlags(
 		return nil, err
 	}
 
-	gasAndFeesOptions, err := config.GetTxClientGasAndFeesOptionsFromFlags(cmd, gasSettingStr)
+	gasAndFeesOptions, err := GetTxClientGasAndFeesOptionsFromFlags(cmd, gasSettingStr)
 	if err != nil {
 		return nil, err
 	}
