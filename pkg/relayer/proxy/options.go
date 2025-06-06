@@ -14,3 +14,12 @@ func WithServicesConfigMap(servicesConfigMap map[string]*config.RelayMinerServer
 		relProxy.(*relayerProxy).serverConfigs = servicesConfigMap
 	}
 }
+
+// WithPingEnabled configures whether ping functionality is enabled for the RelayerProxy.
+// When enabled, the proxy will perform health checks and connectivity tests to
+// backend service endpoints.
+func WithPingEnabled(pingEnabled bool) relayer.RelayerProxyOption {
+	return func(relProxy relayer.RelayerProxy) {
+		relProxy.(*relayerProxy).pingEnabled = pingEnabled
+	}
+}

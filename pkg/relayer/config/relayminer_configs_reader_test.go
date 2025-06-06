@@ -39,6 +39,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				default_signing_key_names: [ supplier1 ]
+				default_request_timeout_seconds: 60
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -49,6 +50,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				        username: user
 				        password: pwd
 				      headers: {}
+				    request_timeout_seconds: 20
 				`,
 
 			expectedErr: nil,
@@ -58,8 +60,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				DefaultSigningKeyNames: []string{"supplier1"},
-				SmtStorePath:           "smt_stores",
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				DefaultRequestTimeoutSeconds: uint64(60),
+				SmtStorePath:                 "smt_stores",
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -77,6 +80,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 									},
 									Headers: map[string]string{},
 								},
+								RequestTimeoutSeconds: uint64(20),
 							},
 						},
 					},
@@ -87,22 +91,23 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			desc: "valid: relay miner config with signing key configured on supplier level",
 
 			inputConfigYAML: `
-                pocket_node:
-                  query_node_rpc_url: tcp://127.0.0.1:36657
-                  query_node_grpc_url: tcp://127.0.0.1:36658
-                  tx_node_rpc_url: tcp://127.0.0.1:36659
-                smt_store_path: smt_stores
-                suppliers:
-                  - service_id: ethereum
-                    listen_url: http://127.0.0.1:8080
-                    signing_key_names: [ supplier1 ]
-                    service_config:
-                      backend_url: http://anvil.servicer:8545
-                      authentication:
-                        username: user
-                        password: pwd
-                      headers: {}
-                `,
+				pocket_node:
+				  query_node_rpc_url: tcp://127.0.0.1:36657
+				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
+				smt_store_path: smt_stores
+				suppliers:
+				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
+				    signing_key_names: [ supplier1 ]
+				    service_config:
+				      backend_url: http://anvil.servicer:8545
+				      authentication:
+				        username: user
+				        password: pwd
+				      headers: {}
+				    request_timeout_seconds: 20
+				`,
 
 			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
@@ -111,7 +116,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SmtStorePath: "smt_stores",
+				SmtStorePath:                 "smt_stores",
+				DefaultRequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -129,7 +135,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 									},
 									Headers: map[string]string{},
 								},
-								SigningKeyNames: []string{"supplier1"},
+								SigningKeyNames:       []string{"supplier1"},
+								RequestTimeoutSeconds: 20,
 							},
 						},
 					},
@@ -141,31 +148,32 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 			pocket_node:
-				query_node_rpc_url: tcp://127.0.0.1:36657
-				query_node_grpc_url: tcp://127.0.0.1:36658
-				tx_node_rpc_url: tcp://127.0.0.1:36659
+			  query_node_rpc_url: tcp://127.0.0.1:36657
+			  query_node_grpc_url: tcp://127.0.0.1:36658
+			  tx_node_rpc_url: tcp://127.0.0.1:36659
 			smt_store_path: smt_stores
 			default_signing_key_names: [supplier1]
+			default_request_timeout_seconds: 120
 			suppliers:
-			- service_id: ethereum
-				listen_url: http://127.0.0.1:8080
-				signing_key_names: []
-				service_config:
-					backend_url: http://anvil.servicer:8545
-					authentication:
-						username: user
-						password: pwd
-					headers: {}
-			- service_id: ollama
-				listen_url: http://127.0.0.1:8080
-				signing_key_names: [supplier2]
-				service_config:
-					backend_url: http://ollama.servicer:8545
-					authentication:
-						username: user
-						password: pwd
-					headers: {}
-                `,
+			  - service_id: ethereum
+			    listen_url: http://127.0.0.1:8080
+			    signing_key_names: []
+			    service_config:
+			      backend_url: http://anvil.servicer:8545
+			      authentication:
+			        username: user
+			        password: pwd
+			      headers: {}
+			  - service_id: ollama
+			    listen_url: http://127.0.0.1:8080
+			    signing_key_names: [supplier2]
+			    service_config:
+			      backend_url: http://ollama.servicer:8545
+			      authentication:
+			        username: user
+			        password: pwd
+			      headers: {}
+			`,
 
 			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
@@ -174,8 +182,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SmtStorePath:           "smt_stores",
-				DefaultSigningKeyNames: []string{"supplier1"},
+				SmtStorePath:                 "smt_stores",
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				DefaultRequestTimeoutSeconds: 120,
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -195,7 +204,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 								},
 								// Note the supplier is missing in the yaml, but it is populated from
 								// the global `default_signing_key_names`
-								SigningKeyNames: []string{"supplier1"},
+								SigningKeyNames:       []string{"supplier1"},
+								RequestTimeoutSeconds: 120,
 							},
 							"ollama": {
 								ServiceId:  "ollama",
@@ -208,7 +218,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 									},
 									Headers: map[string]string{},
 								},
-								SigningKeyNames: []string{"supplier2"},
+								SigningKeyNames:       []string{"supplier2"},
+								RequestTimeoutSeconds: 120,
 							},
 						},
 					},
@@ -247,8 +258,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				DefaultSigningKeyNames: []string{"supplier1"},
-				SmtStorePath:           "smt_stores",
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				SmtStorePath:                 "smt_stores",
+				DefaultRequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -266,6 +278,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 									},
 									Headers: map[string]string{},
 								},
+								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 							},
 							"7b-llm-model": {
 								ServiceId:  "7b-llm-model",
@@ -273,6 +286,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "llama-endpoint"},
 								},
+								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 							},
 						},
 					},
@@ -302,8 +316,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				DefaultSigningKeyNames: []string{"supplier1"},
-				SmtStorePath:           "smt_stores",
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				SmtStorePath:                 "smt_stores",
+				DefaultRequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -316,6 +331,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
+								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 							},
 						},
 					},
@@ -347,8 +363,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				DefaultSigningKeyNames: []string{"supplier1"},
-				SmtStorePath:           "smt_stores",
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				SmtStorePath:                 "smt_stores",
+				DefaultRequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -361,6 +378,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
+								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 							},
 						},
 					},
@@ -692,6 +710,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				config.PocketNode.TxNodeRPCUrl.String(),
 			)
 
+			require.Equal(
+				t,
+				test.expectedConfig.DefaultRequestTimeoutSeconds,
+				config.DefaultRequestTimeoutSeconds,
+			)
+
 			for listenAddress, server := range test.expectedConfig.Servers {
 				require.Equal(
 					t,
@@ -722,6 +746,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						t,
 						supplier.ServiceConfig.BackendUrl.String(),
 						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.BackendUrl.String(),
+					)
+
+					require.Equal(
+						t,
+						supplier.RequestTimeoutSeconds,
+						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].RequestTimeoutSeconds,
 					)
 
 					if supplier.ServiceConfig.Authentication != nil {

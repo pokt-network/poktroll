@@ -200,7 +200,10 @@ type RelayMeter interface {
 	// ShouldRateLimit checks if the relay request exceeds the rate limit for the given application.
 	// The relay cost is added optimistically to account for concurrent requests
 	// that may arrive before the relay response is signed and sent back to the client.
-	ShouldRateLimit(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) bool
+	ShouldRateLimit(
+		ctx context.Context,
+		relayRequestMeta servicetypes.RelayRequestMetadata,
+	) (shouldRateLimit bool, isOverServicing bool)
 
 	// SetNonApplicableRelayReward updates the relay meter for the given relay request as
 	// non-applicable between a single Application and a single Supplier for a single session.
