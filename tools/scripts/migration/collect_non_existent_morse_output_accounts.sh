@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#set -eo pipefail
+set -eo pipefail
 
 PRINT_COUNTS=false
 TESTNET=false
