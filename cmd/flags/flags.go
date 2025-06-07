@@ -30,6 +30,26 @@ const (
 	FlagNetworkUsage = "Sets the --chain-id, --node, and --grpc-addr flags (if applicable) based on the given network moniker (e.g. local, alpha, beta, main)"
 	DefaultNetwork   = ""
 
+	// GetTxClientGasAndFeesOptionsFromFlags returns a slice of TxClientOptions which
+	// are derived from the provided command flags and/or config, using the
+	// following precedence:
+	//
+	// 1. If a fee is specified, it overrides all gas settings, only returns:
+	//   - WithFeeAmount
+	//     In this case, the fee amount is explicitly set (by the tx author);
+	//     therefore, while the gas limit will still be respected by the CheckTx
+	//     ABCI method, the gas limit, adjustment, and prices are NOT used to
+	//     calculate the fee.
+	//
+	// 2. Otherwise, the following gas related options are returned:
+	//   - WithGasPrices
+	//   - WithGasAdjustment
+	//   - WithGasSetting
+	//     In this case, the fee is calculated, given by: `fees = gas_limit * gas_adjustment * gas_prices`.
+	FlagAutoFee      = "auto-fee"
+	FlagAutoFeeUsage = "Attempts to automatically calculate the fee for the transaction based on the provided gas limit, gas adjustment, and gas prices."
+	DefaultAutoFee   = ""
+
 	FlagFaucetBaseURL      = "base-url"
 	FlagFaucetBaseURLUsage = "The base URL of the Pocket Network Faucet"
 	// TODO_UP_NEXT(@bryanchriswhite): Update to the MainNet URL once available.

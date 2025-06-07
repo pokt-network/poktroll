@@ -33,7 +33,6 @@ import (
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
-// TODO_MAINNET: adjust chain ID to `pocket`, `pokt` or `shannon`
 const DefaultChainID = "pocket"
 
 // NewRootCmd creates a new root command for pocketd. It is called once in the main function.
@@ -83,17 +82,22 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
 
-			// Parse the --network flag. If set, update related flags (e.g. --chain-id, --node, --grpc-addr).
+			// Parse the --network flag
+			// If set, auto-update related Cosmos SDK flags on the user's behalf (e.g. --chain-id, --node, --grpc-addr).
 			if err = pocketdcmd.ParseAndSetNetworkRelatedFlags(cmd); err != nil {
 				return err
 			}
 
+			// Prepares the client context with the command context
 			clientCtx = clientCtx.WithCmdContext(cmd.Context())
+
+			// Hydrates the client context with values from the command flags
 			clientCtx, err = client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
 			if err != nil {
 				return err
 			}
 
+			// Hydrates the client context with values from client.toml
 			clientCtx, err = config.ReadFromClientConfig(clientCtx)
 			if err != nil {
 				return err
@@ -113,12 +117,6 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 
 			clientCtx = clientCtx.WithTxConfig(txConfigWithTextual)
 
-			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
-				return err
-			}
-
-			// TODO_TECHDEBT: Investigate if the call below is duplicated intentionally
-			// or if it can be deleted.
 			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
@@ -161,6 +159,8 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	)
 
 	rootCmd.PersistentFlags().String(flags.FlagNetwork, flags.DefaultNetwork, flags.FlagNetworkUsage)
+
+	AddAutoFeeFlag(rootCmd)
 
 	return rootCmd
 }
