@@ -26,6 +26,7 @@ import (
 func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settledResults tlm.ClaimSettlementResults,
 	expiredResults tlm.ClaimSettlementResults,
+	numDiscardedFaultyClaims uint64,
 	err error,
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
@@ -43,14 +44,17 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	expiredResults = make(tlm.ClaimSettlementResults, 0)
 	settlementContext := NewSettlementContext(ctx, &k, logger)
 	numExpiringClaims := 0
-	numDiscardedFaultyClaims := 0
+	numDiscardedFaultyClaims = 0
 
 	// Iterating over all potentially expiring claims.
 	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
 		claim, iterErr := expiringClaimsIterator.Value()
 		if iterErr != nil {
-			// Discard a faulty claim and continue iterating over the next one.
-			k.discardFaultyClaim(ctx, claim, iterErr, logger)
+			claimKey := string(expiringClaimsIterator.Key())
+			logger.Error(tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+				"[UNEXPECTED ERROR] Critical error during claim settlement during session with key %s. Claim will be discarded to prevent chain halt: %s",
+				claimKey, err,
+			).Error())
 			numDiscardedFaultyClaims++
 			continue
 		}
@@ -125,12 +129,12 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 	// Execute all the pending mint, burn, and transfer operations.
 	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
-		return settledResults, expiredResults, err
+		return settledResults, expiredResults, numDiscardedFaultyClaims, err
 	}
 
 	// Slash all suppliers who failed to submit a required proof.
 	if err = k.ExecutePendingExpiredResults(ctx, settlementContext, expiredResults); err != nil {
-		return settledResults, expiredResults, err
+		return settledResults, expiredResults, numDiscardedFaultyClaims, err
 	}
 
 	logger.Info(
@@ -141,7 +145,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		"block_height", blockHeight,
 	)
 
-	return settledResults, expiredResults, nil
+	return settledResults, expiredResults, numDiscardedFaultyClaims, nil
 }
 
 // ExecutePendingExpiredResults executes all pending supplier slashing operations.
@@ -763,8 +767,9 @@ func (k Keeper) discardFaultyClaim(
 
 	// Emit an event that a claim settlement failed and the claim is being discarded.
 
+	dehydratedClaim := claim.GetDehydratedClaim()
 	claimDiscardedEvent := tokenomicstypes.EventClaimDiscarded{
-		Claim: &claim,
+		Claim: &dehydratedClaim,
 		Error: err.Error(),
 	}
 	sdkCtx.EventManager().EmitTypedEvent(&claimDiscardedEvent)
