@@ -133,6 +133,53 @@ To copy password to clipboard:
 cat vultr_create.json | jq -r '.instance.default_password' | pbcopy
 ```
 
+:::tip Setup password-less ssh
+
+ssh-copy-id root@$VULTR_INSTANCE_IP
+
+:::
+
+### [Optional] Streamline your configs
+
+It is up to you how to store `vultr_create.json` and `vultr_get.json` along with the new `env` variables.
+
+One option is to create a very opinionated `.env` with some helpers after moving the `.json` files into a new directory
+
+```bash
+mkdir -p ~/workspace/vultr/server
+mv vultr_create.json ~/workspace/vultr/server
+mv vultr_get.json ~/workspace/vultr/server
+cd ~/workspace/vultr/server
+```
+
+<details>
+  <summer> Opinionated .env </summar>
+
+  ```bash
+  cat <<EOF > .env
+  export VULTR_INSTANCE_ID=\$(cat vultr_create.json | jq -r '.instance.id')
+  export VULTR_INSTANCE_IP=\$(cat vultr_get.json | jq -r '.instance.main_ip')
+  export VULTR_PASSWORD=\$(cat vultr_create.json | jq -r '.instance.default_password')
+  export VULTR_API_KEY="VMGSTYLIOHLF3IUC4YGQW2KF7IC2UDCWL4OQ"
+  echo "##############"
+  echo "Visit your instance at https://my.vultr.com/subs/?id=\${VULTR_INSTANCE_ID}"
+  echo "##############"
+  echo "ssh root@\${VULTR_INSTANCE_IP}"
+  echo "##############"
+  echo "Get password by running"
+  echo "cat vultr_create.json | jq -r '.instance.default_password' | pbcopy"
+  echo "##############"
+  echo "Check logs by running"
+  echo "sudo journalctl -u cosmovisor-pocket.service -f"
+  echo "##############"
+  echo "Check height by running"
+  echo "curl -X GET http://localhost:26657/block | jq '.result.block.header.height'"
+  echo "##############"
+  EOF
+  ```
+  
+</details>
+
 ### Delete Instance
 
 ```bash
