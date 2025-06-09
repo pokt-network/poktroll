@@ -52,6 +52,14 @@ jobs:
           make ignite_release_extract_binaries
           make cosmovisor_cross_compile
 
+      # Publish binaries to GitHub Releases ASAP after they are built, reuse them for Docker builds later.
+      - name: Add release and publish binaries
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -161,10 +169,95 @@ jobs:
           cache-to: type=gha,mode=max
           context: .
 
-      # Only publish GitHub releases for tag events
-      - name: Add release and publish binaries
+      # Build debug images after release images (leveraging cache and built images)
+
+      # For version tag pushes - Debug image
+      - name: Docker Metadata action for debug image - tag events
+        id: meta-debug-tag
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
-          files: |
-            release/*
+          images: |
+            ghcr.io/pokt-network/pocketd
+          tags: |
+            type=semver,pattern={{version}},suffix=-debug
+            type=semver,pattern={{major}}.{{minor}},suffix=-debug
+            type=ref,event=tag,suffix=-debug
+            type=sha,suffix=-debug
+            type=sha,format=long,suffix=-debug
+
+      - name: Build and push Debug Docker image for tag events
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-debug-tag.outputs.tags }}
+          labels: ${{ steps.meta-debug-tag.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.debug
+          build-args: |
+            RELEASE_IMAGE=ghcr.io/pokt-network/pocketd:${{ github.ref_name }}-prod
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
+
+      # For main branch pushes - Debug image
+      - name: Docker Metadata action for debug image - main branch
+        id: meta-debug-main
+        if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: "true"
+        with:
+          images: |
+            ghcr.io/pokt-network/pocketd
+          tags: |
+            type=raw,value=main-debug
+            type=sha,suffix=-main-debug
+            type=sha,format=long,suffix=-main-debug
+
+      - name: Build and push Debug Docker image for main branch
+        if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-debug-main.outputs.tags }}
+          labels: ${{ steps.meta-debug-main.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.debug
+          build-args: |
+            RELEASE_IMAGE=ghcr.io/pokt-network/pocketd:main-prod
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
+
+      # For manual workflow triggers - Debug image
+      - name: Docker Metadata action for debug image - manual workflow_dispatch
+        id: meta-debug-manual
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: "true"
+        with:
+          images: |
+            ghcr.io/pokt-network/pocketd
+          tags: |
+            type=raw,value=${{ env.BRANCH_NAME }}-debug${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
+            type=sha,suffix=-${{ env.BRANCH_NAME }}-debug${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
+
+      - name: Build and push Debug Docker image for manual workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-debug-manual.outputs.tags }}
+          labels: ${{ steps.meta-debug-manual.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.debug
+          build-args: |
+            RELEASE_IMAGE=ghcr.io/pokt-network/pocketd:${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .

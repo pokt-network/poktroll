@@ -1,4 +1,4 @@
-# This Dockerfile is used to build container image for development purposes.
+# This Dockerfile is used to build container image for development purposes. Mainly used for DevNets.
 # It intentionally contains no security features, ships with code and troubleshooting tools.
 
 FROM golang:1.24.3 AS base
