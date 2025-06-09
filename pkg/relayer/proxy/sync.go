@@ -250,8 +250,19 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Over-serviced relays exceed the application's allocated stake and are provided
 	// as a free service by the supplier to build goodwill, but they are not eligible
 	// for on-chain compensation since they fall outside the protocol's reward mechanism.
+	//
+	// Emitting over-serviced relays would:
+	// - Break the optimistic relay reward accumulation pattern
+	// - Violate the separation between "goodwill service" and "protocol-compensated service"
+	//
+	// The system uses optimistic accumulation where relay rewards are accumulated
+	// before forwarding to the relay miner.
+	// Over-serviced relays should never enter this pipeline.
 	if !isOverServicing {
-		// Emit the relay to the servedRelays observable.
+		// Forward potentially reward-eligible relays to the servedRelays observable which
+		// is used by the relayMiner to update the SMT tree with reward applicable relays.
+		// This excludes over-serviced relays to avoid skewing claims with rewards
+		// that exceed what is allowed by the protocol.
 		server.servedRelaysProducer <- relay
 
 		// Mark the relay as successful and eligible for rewards.
