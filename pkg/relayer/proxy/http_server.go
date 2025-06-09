@@ -47,9 +47,15 @@ type relayMinerHTTPServer struct {
 	// the relay requests and signs the relay responses.
 	relayAuthenticator relayer.RelayAuthenticator
 
-	// servedRelaysProducer is a channel that emits the relays that have been served, allowing
-	// the servedRelays observable to fan-out notifications to its subscribers.
-	servedRelaysProducer chan<- *types.Relay
+	// servedRewardableRelaysProducer is a channel that emits the relays thatL
+	// 	1. Have been successfully served
+	// 	2. Are reward-applicable (i.e. should be inserted into the SMT)
+	// Some examples of relays that shouldn't be emitted to this channel:
+	// 	- Relays that failed to be served
+	// 	- Relays that are not reward-applicable
+	// 	- Relays that are over-serviced
+	// The servedRewardableRelaysProducer observable to fan-out notifications to its subscribers.
+	servedRewardableRelaysProducer chan<- *types.Relay
 
 	// relayMeter is the relay meter that the RelayServer uses to meter the relays and claim the relay price.
 	// It is used to ensure that the relays are metered and priced correctly.
@@ -89,15 +95,15 @@ func NewHTTPServer(
 	}
 
 	return &relayMinerHTTPServer{
-		logger:               logger,
-		server:               httpServer,
-		relayAuthenticator:   relayAuthenticator,
-		servedRelaysProducer: servedRelaysProducer,
-		serverConfig:         serverConfig,
-		relayMeter:           relayMeter,
-		blockClient:          blockClient,
-		sharedQueryClient:    sharedQueryClient,
-		sessionQueryClient:   sessionQueryClient,
+		logger:                         logger,
+		server:                         httpServer,
+		relayAuthenticator:             relayAuthenticator,
+		servedRewardableRelaysProducer: servedRelaysProducer,
+		serverConfig:                   serverConfig,
+		relayMeter:                     relayMeter,
+		blockClient:                    blockClient,
+		sharedQueryClient:              sharedQueryClient,
+		sessionQueryClient:             sessionQueryClient,
 	}
 }
 
