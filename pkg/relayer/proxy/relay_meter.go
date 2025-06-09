@@ -256,9 +256,13 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 	// TODO_FOLLOWUP(@red-0ne): Consider fixing the relay meter logic to never have
 	// a less than relay cost consumed amount.
 	if sessionRelayMeter.consumedCoin.IsLT(relayCost) {
-		rmtr.logger.Error().Msgf(
-			"(SHOULD NEVER HAPPEN) Unable to decrease consumed stake amount for application %q",
+		rmtr.logger.Warn().Msgf(
+			"(SHOULD NEVER HAPPEN) Your session earned less than the cost of a single relay. Not submitting a claim for application (%s), service id: (%s), session id: (%s), with consumed amount: (%s), relay cost: (%s)",
 			sessionRelayMeter.app.GetAddress(),
+			sessionRelayMeter.sessionHeader.GetServiceId(),
+			sessionRelayMeter.sessionHeader.GetSessionId(),
+			sessionRelayMeter.consumedCoin.String(),
+			relayCost.String(),
 		)
 		return
 	}
@@ -295,7 +299,7 @@ func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client
 		sessionEndHeight := sessionRelayMeter.sessionHeader.GetSessionEndBlockHeight()
 		sessionClaimOpenHeight := sessionEndHeight + int64(sharedParams.GetClaimWindowOpenOffsetBlocks())
 
-		if block.Height() > sessionClaimOpenHeight {
+		if block.Height() >= sessionClaimOpenHeight {
 			// The session started its claim phase and the corresponding session relay meter
 			// is no longer needed.
 			delete(rmtr.sessionToRelayMeterMap, sessionRelayMeter.sessionHeader.GetSessionId())

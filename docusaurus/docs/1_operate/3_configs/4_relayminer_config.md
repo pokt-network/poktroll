@@ -18,7 +18,9 @@ You can find a fully featured example configuration at [relayminer_config_full_e
 - [Structure](#structure)
 - [Global options](#global-options)
   - [`default_signing_key_names`](#default_signing_key_names)
+  - [`default_request_timeout_seconds`](#default_request_timeout_seconds)
   - [`smt_store_path`](#smt_store_path)
+  - [`enable_over_servicing`](#enable_over_servicing)
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
   - [`ping`](#ping)
@@ -30,13 +32,12 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`service_id`](#service_id)
   - [`signing_key_names`](#signing_key_names)
   - [`listen_url`](#listen_url)
+  - [`request_timeout_seconds`](#request_timeout_seconds)
   - [`service_config`](#service_config)
     - [`backend_url`](#backend_url)
     - [`authentication`](#authentication)
     - [`headers`](#headers)
     - [`forward_pocket_headers`](#forward_pocket_headers)
-    - [`publicly_exposed_endpoints`](#publicly_exposed_endpoints)
-      - [Why should one supplier have multiple `publicly_exposed_endpoints`?](#why-should-one-supplier-have-multiple-publicly_exposed_endpoints)
 - [Configuring Signing Keys](#configuring-signing-keys)
   - [Example Configuration](#example-configuration)
 - [Supported server types](#supported-server-types)
@@ -111,7 +112,9 @@ and `supplier` specific sections and configurations.
 
 ```yaml
 default_signing_key_names: [<string>, <string>]
+default_request_timeout_seconds: <uint64>
 smt_store_path: <string>
+enable_over_servicing: <boolean>
 ```
 
 ### `default_signing_key_names`
@@ -127,6 +130,18 @@ Each key name listed here must be present in the keyring used to start the
 
 For more details, see [Configuring Signing Keys](#configuring-signing-keys).
 
+### `default_request_timeout_seconds`
+
+_`Optional`_
+
+The default timeout duration in seconds for relay requests. This value is used
+when a supplier does not specify its own `request_timeout_seconds` configuration.
+If neither `default_request_timeout_seconds` nor supplier-specific `request_timeout_seconds`
+is configured, the `RelayMiner` will use a system default.
+
+This timeout applies to the duration that the `RelayMiner` will wait for a response
+from the backend service before considering the request as timed out.
+
 ### `smt_store_path`
 
 _`Required`_
@@ -134,6 +149,24 @@ _`Required`_
 The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
+
+### `enable_over_servicing`
+
+_`Optional`_ (default: `false`)
+
+Enables or disables over-servicing functionality for the `RelayMiner`.
+
+When set to `true`, the Supplier can provide services beyond what an Application's
+stake can cover in a given session. This means the Supplier will mine relays for
+"free" without being compensated onchain for the additional service.
+
+Over-servicing is commonly used by Suppliers to:
+- Build goodwill with Applications
+- Improve their off-chain quality-of-service rating
+
+When disabled (`false`), the `RelayMiner` will strictly enforce rate limiting based
+on the Application's allocated stake, rejecting requests that would exceed the
+Application's ability to pay.
 
 ### `metrics`
 
@@ -240,6 +273,7 @@ At least one supplier is required for the `RelayMiner` to be functional.
 suppliers:
   - service_id: <string>
     listen_url: <enum{http}>://<host>
+    request_timeout_seconds: <uint64>
     service_config:
       backend_url: <url>
       forward_pocket_headers: <boolean>
@@ -275,6 +309,20 @@ _`Required`_
 
 The address on which the `RelayMiner` will start a server to listen for incoming
 requests. The server type is inferred from the URL scheme (http, https, etc...).
+
+### `request_timeout_seconds`
+
+_`Optional`_
+
+The timeout duration in seconds for relay requests specific to a supplier's service.
+This value overrides the global `default_request_timeout_seconds` setting for
+this particular supplier's service.
+
+If not specified, the `default_request_timeout_seconds` will be used.
+
+This timeout controls how long the `RelayMiner` will wait for a response from
+the backend service before considering the request as failed and returning a
+timeout error to the client.
 
 ### `service_config`
 
