@@ -872,7 +872,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 				},
 			},
 			// DEV_NOTE: The services field will be empty until a service activation height elapses.
-			Services: make([]*sharedtypes.SupplierServiceConfig, 0),
+			Services:            make([]*sharedtypes.SupplierServiceConfig, 0),
+			ServiceUsageMetrics: make(map[string]*sharedtypes.ServiceUsageMetrics),
 		}
 
 		// Claim a Morse claimable account.
@@ -901,6 +902,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 		// Nilify the following zero-value map/slice fields because they are not initialized in the TxResponse.
 		expectedSupplier.Services = nil
 		expectedSupplier.ServiceConfigHistory[0].Service.Endpoints[0].Configs = nil
+		expectedSupplier.ServiceUsageMetrics = nil
 
 		// Check the Morse claim response.
 		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{

@@ -265,7 +265,7 @@ func (k Keeper) hydrateApplicationServiceUsageMetrics(
 	for ; serviceUsageMetricsIterator.Valid(); serviceUsageMetricsIterator.Next() {
 		serviceUsageMetrics, err := serviceUsageMetricsIterator.Value()
 		if err != nil {
-			k.logger.Error(fmt.Sprintf("failed to get service usage metrics for app %s: %v", app.Address, err))
+			k.logger.Error(fmt.Sprintf("[SKIPPING USAGE METRICS] failed to get service usage metrics for app %s: %v", app.Address, err))
 			continue
 		}
 

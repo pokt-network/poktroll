@@ -55,7 +55,7 @@ type Application struct {
 	UnstakeSessionEndHeight uint64 `protobuf:"varint,6,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
 	// Information about pending application transfers
 	PendingTransfer *PendingApplicationTransfer `protobuf:"bytes,7,opt,name=pending_transfer,json=pendingTransfer,proto3" json:"pending_transfer,omitempty"`
-	// service_usage_metrics tracks tracks the onchain services consumed by this application.
+	// service_usage_metrics tracks the onchain services consumed by this application.
 	ServiceUsageMetrics map[string]*types1.ServiceUsageMetrics `protobuf:"bytes,8,rep,name=service_usage_metrics,json=serviceUsageMetrics,proto3" json:"service_usage_metrics,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 

@@ -86,9 +86,13 @@ func GetApplicationTransferHeight(
 // non-essential fields.
 func (app *Application) DehydratedApplication() Application {
 	return Application{
-		Address:                 app.Address,
-		UnstakeSessionEndHeight: app.UnstakeSessionEndHeight,
-		PendingTransfer:         app.PendingTransfer,
-		ServiceUsageMetrics:     make(map[string]*sharedtypes.ServiceUsageMetrics),
+		Address:                   app.Address,
+		UnstakeSessionEndHeight:   app.UnstakeSessionEndHeight,
+		Stake:                     app.Stake,
+		PendingTransfer:           app.PendingTransfer,
+		ServiceConfigs:            app.ServiceConfigs,
+		DelegateeGatewayAddresses: make([]string, 0),
+		PendingUndelegations:      make(map[uint64]UndelegatingGatewayList, 0),
+		ServiceUsageMetrics:       make(map[string]*sharedtypes.ServiceUsageMetrics),
 	}
 }

@@ -62,14 +62,9 @@ func (claim *Claim) GetNumEstimatedRelays(
 		return 0, err
 	}
 
-	difficultyMultiplier := protocol.GetRelayDifficultyMultiplier(relayMiningDifficulty.GetTargetHash())
-	numRelaysRat := new(big.Rat).SetUint64(numRelays)
-	numEstimatedRelaysRat := new(big.Rat).Mul(difficultyMultiplier, numRelaysRat)
+	targetHash := relayMiningDifficulty.GetTargetHash()
 
-	numerator := numEstimatedRelaysRat.Num()
-	denominator := numEstimatedRelaysRat.Denom()
-
-	return new(big.Int).Div(numerator, denominator).Uint64(), nil
+	return protocol.GetNumEstimatedRelays(numRelays, targetHash), nil
 }
 
 // GetClaimeduPOKT returns the claim's token reward in uPOKT.

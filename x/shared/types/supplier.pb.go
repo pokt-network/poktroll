@@ -44,7 +44,7 @@ type Supplier struct {
 	// List of historical service configuration updates, tracking the suppliers
 	// services update and corresponding activation heights.
 	ServiceConfigHistory []*ServiceConfigUpdate `protobuf:"bytes,6,rep,name=service_config_history,json=serviceConfigHistory,proto3" json:"service_config_history,omitempty"`
-	// service_usage_metrics tracks tracks the onchain services consumed by this supplier.
+	// service_usage_metrics tracks the onchain services consumed by this supplier.
 	ServiceUsageMetrics map[string]*ServiceUsageMetrics `protobuf:"bytes,7,rep,name=service_usage_metrics,json=serviceUsageMetrics,proto3" json:"service_usage_metrics,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
