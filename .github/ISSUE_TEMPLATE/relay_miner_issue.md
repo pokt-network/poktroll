@@ -17,9 +17,9 @@ assignees: ""
 ## Priority
 
 - [ ] P0 (ASAP)
-- [ ] P1 (1-2 weeks)
-- [ ] P2 (2-6 weeks)
-- [ ] P3 (one day)
+- [ ] P1 (one day)
+- [ ] P2 (1-2 weeks)
+- [ ] P3 (2-6 weeks)
 
 ## What? Why?
 
