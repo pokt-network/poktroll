@@ -65,7 +65,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 		logger,
 		server.relayAuthenticator,
 		server.relayMeter,
-		server.servedRelaysProducer,
+		server.servedRewardableRelaysProducer,
 		server.blockClient,
 		supplierServiceConfig,
 		session,
