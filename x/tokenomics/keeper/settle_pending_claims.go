@@ -575,11 +575,6 @@ func (k Keeper) settleClaim(
 	claim prooftypes.Claim,
 	logger cosmoslog.Logger,
 ) (*claimSettlementContext, error) {
-	logger = logger.With(
-		"session_id", claim.SessionHeader.SessionId,
-		"supplier_operator_address", claim.SupplierOperatorAddress,
-	)
-
 	if err := settlementContext.ClaimCacheWarmUp(ctx, &claim); err != nil {
 		return nil, err
 	}
@@ -650,6 +645,8 @@ func (k Keeper) settleClaim(
 	}
 
 	logger = k.logger.With(
+		"session_id", claim.SessionHeader.SessionId,
+		"supplier_operator_address", claim.SupplierOperatorAddress,
 		"num_claim_compute_units", numClaimComputeUnits,
 		"num_relays_in_session_tree", numClaimRelays,
 		"num_estimated_compute_units", numEstimatedComputeUnits,
