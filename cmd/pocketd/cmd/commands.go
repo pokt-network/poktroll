@@ -58,6 +58,48 @@ func initRootCmd(
 func addModuleInitFlags(startCmd *cobra.Command) {
 	//nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code.
 	crisis.AddModuleInitFlags(startCmd)
+
+	// Add additional CometBFT P2P flags that aren't included by default
+	startCmd.Flags().Int("p2p.max-num-inbound-peers", 40, "Maximum number of inbound peers")
+	startCmd.Flags().Int("p2p.max-num-outbound-peers", 10, "Maximum number of outbound peers to connect to, excluding persistent peers")
+
+	// Add a pre-run function to apply the custom P2P configuration
+	originalPreRunE := startCmd.PreRunE
+	startCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+		// Call the original pre-run function first if it exists
+		if originalPreRunE != nil {
+			if err := originalPreRunE(cmd, args); err != nil {
+				return err
+			}
+		}
+
+		// Apply custom P2P configuration from flags
+		return applyP2PConfigFromFlags(cmd)
+	}
+}
+
+// applyP2PConfigFromFlags reads the custom P2P flags and applies them to the CometBFT configuration
+func applyP2PConfigFromFlags(cmd *cobra.Command) error {
+	// Get viper instance to modify the configuration
+	v := viper.GetViper()
+
+	// Read the custom P2P flags
+	maxInboundPeers, err := cmd.Flags().GetInt("p2p.max-num-inbound-peers")
+	if err != nil {
+		return err
+	}
+
+	maxOutboundPeers, err := cmd.Flags().GetInt("p2p.max-num-outbound-peers")
+	if err != nil {
+		return err
+	}
+
+	// Apply the values to viper configuration
+	// These will be used by CometBFT when it reads its configuration
+	v.Set("p2p.max_num_inbound_peers", maxInboundPeers)
+	v.Set("p2p.max_num_outbound_peers", maxOutboundPeers)
+
+	return nil
 }
 
 // genesisCommand builds genesis-related `pocketd genesis` command. Users may provide application specific commands as a parameter
