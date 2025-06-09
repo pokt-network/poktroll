@@ -644,7 +644,7 @@ func (k Keeper) settleClaim(
 		return nil, err
 	}
 
-	logger = k.logger.With(
+	logger = logger.With(
 		"session_id", claim.SessionHeader.SessionId,
 		"supplier_operator_address", claim.SupplierOperatorAddress,
 		"num_claim_compute_units", numClaimComputeUnits,
