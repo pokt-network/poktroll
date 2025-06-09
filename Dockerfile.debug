@@ -1,0 +1,215 @@
+# This Dockerfile is used to build container image for debugging/troubleshooting workloads.
+# It extends the production release image with additional tools for debugging and development.
+# This image should be built AFTER the release image to leverage existing layers and cache.
+
+# Use the already-built release image as base
+ARG RELEASE_IMAGE=ghcr.io/pokt-network/pocketd:latest
+FROM ${RELEASE_IMAGE}
+
+# Switch to root to install debugging packages
+USER root
+
+# Install comprehensive debugging and development tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        # Network debugging tools
+        curl \
+        wget \
+        dnsutils \
+        netcat-openbsd \
+        telnet \
+        iputils-ping \
+        traceroute \
+        tcpdump \
+        nmap \
+        socat \
+        iperf3 \
+        mtr \
+        nethogs \
+        iftop \
+        conntrack \
+        # HTTP/API debugging
+        httpie \
+        websocat \
+        # System monitoring and debugging
+        htop \
+        iotop \
+        strace \
+        ltrace \
+        lsof \
+        procps \
+        psmisc \
+        tree \
+        pstree \
+        # Text processing and editors
+        vim \
+        nano \
+        jq \
+        less \
+        sed \
+        gawk \
+        ripgrep \
+        bat \
+        fzf \
+        # JSON/YAML tools
+        jo \
+        dasel \
+        yq \
+        # Version control and file tools
+        git \
+        rsync \
+        unzip \
+        zip \
+        tar \
+        # Shell utilities
+        bash-completion \
+        # SSL/TLS debugging
+        openssl \
+        # Database clients (useful for cosmos chains)
+        sqlite3 \
+        # Performance analysis
+        sysstat \
+        bpftrace \
+        # Network utilities
+        iproute2 \
+        net-tools \
+        # Additional utilities
+        file \
+        which \
+        # Container debugging
+        ca-certificates \
+        crictl \
+        # Process debugging
+        gdb \
+        # Memory debugging
+        valgrind && \
+    # Clean up
+    rm -rf /var/lib/apt/lists/*
+
+# Install grpcurl v1.9.3 for gRPC debugging
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+        curl -L "https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_amd64.deb" -o /tmp/grpcurl.deb && \
+        dpkg -i /tmp/grpcurl.deb && \
+        rm /tmp/grpcurl.deb; \
+    elif [ "$ARCH" = "arm64" ]; then \
+        curl -L "https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_arm64.deb" -o /tmp/grpcurl.deb && \
+        dpkg -i /tmp/grpcurl.deb && \
+        rm /tmp/grpcurl.deb; \
+    else \
+        echo "grpcurl: unsupported architecture $ARCH, skipping installation"; \
+    fi
+
+# Install kubectl for in-cluster debugging
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl" && \
+    chmod +x kubectl && \
+    mv kubectl /usr/local/bin/
+
+# Switch back to pocket user but with bash shell for better development experience
+USER pocket
+
+# Set bash as default shell for better development experience
+SHELL ["/bin/bash", "-c"]
+
+# Add useful aliases and environment setup for debugging
+RUN echo '# Debugging aliases' >> ~/.bashrc && \
+    echo 'alias ll="ls -la"' >> ~/.bashrc && \
+    echo 'alias la="ls -A"' >> ~/.bashrc && \
+    echo 'alias l="ls -CF"' >> ~/.bashrc && \
+    echo 'alias grep="grep --color=auto"' >> ~/.bashrc && \
+    echo 'alias fgrep="fgrep --color=auto"' >> ~/.bashrc && \
+    echo 'alias egrep="egrep --color=auto"' >> ~/.bashrc && \
+    echo 'alias ports="netstat -tuln"' >> ~/.bashrc && \
+    echo 'alias processes="ps aux"' >> ~/.bashrc && \
+    echo 'alias meminfo="cat /proc/meminfo"' >> ~/.bashrc && \
+    echo 'alias cpuinfo="cat /proc/cpuinfo"' >> ~/.bashrc && \
+    echo 'alias diskusage="df -h"' >> ~/.bashrc && \
+    echo 'alias logs="journalctl -f"' >> ~/.bashrc && \
+    echo '# Kubernetes aliases' >> ~/.bashrc && \
+    echo 'alias k="kubectl"' >> ~/.bashrc && \
+    echo 'alias kgp="kubectl get pods"' >> ~/.bashrc && \
+    echo 'alias kgs="kubectl get svc"' >> ~/.bashrc && \
+    echo 'alias kns="kubectl config view --minify -o jsonpath=\"{..namespace}\""' >> ~/.bashrc && \
+    echo 'alias podips="kubectl get pods -o wide"' >> ~/.bashrc && \
+    echo 'alias events="kubectl get events --sort-by=.metadata.creationTimestamp"' >> ~/.bashrc && \
+    echo '# Custom prompt with debugging info' >> ~/.bashrc && \
+    echo 'export PS1="\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "' >> ~/.bashrc && \
+    echo '# Useful environment variables for debugging' >> ~/.bashrc && \
+    echo 'export EDITOR=vim' >> ~/.bashrc && \
+    echo 'export PAGER=less' >> ~/.bashrc
+
+# Add some helpful debugging scripts
+RUN echo '#!/bin/bash' > ~/debug-info.sh && \
+    echo 'echo "=== System Information ==="' >> ~/debug-info.sh && \
+    echo 'uname -a' >> ~/debug-info.sh && \
+    echo 'echo "=== Memory Usage ==="' >> ~/debug-info.sh && \
+    echo 'free -h' >> ~/debug-info.sh && \
+    echo 'echo "=== Disk Usage ==="' >> ~/debug-info.sh && \
+    echo 'df -h' >> ~/debug-info.sh && \
+    echo 'echo "=== Network Interfaces ==="' >> ~/debug-info.sh && \
+    echo 'ip addr show' >> ~/debug-info.sh && \
+    echo 'echo "=== Listening Ports ==="' >> ~/debug-info.sh && \
+    echo 'netstat -tuln' >> ~/debug-info.sh && \
+    echo 'echo "=== Running Processes ==="' >> ~/debug-info.sh && \
+    echo 'ps aux' >> ~/debug-info.sh && \
+    chmod +x ~/debug-info.sh
+
+# K8s DNS debugging script
+RUN echo '#!/bin/bash' > ~/k8s-dns-check.sh && \
+    echo 'echo "=== Kubernetes DNS Resolution ==="' >> ~/k8s-dns-check.sh && \
+    echo 'echo "Checking kubernetes.default..."' >> ~/k8s-dns-check.sh && \
+    echo 'nslookup kubernetes.default' >> ~/k8s-dns-check.sh && \
+    echo 'echo "Checking kube-dns/coredns..."' >> ~/k8s-dns-check.sh && \
+    echo 'nslookup kube-dns.kube-system.svc.cluster.local' >> ~/k8s-dns-check.sh && \
+    echo 'echo "=== Local DNS Config ==="' >> ~/k8s-dns-check.sh && \
+    echo 'cat /etc/resolv.conf' >> ~/k8s-dns-check.sh && \
+    chmod +x ~/k8s-dns-check.sh
+
+# K8s environment info script
+RUN echo '#!/bin/bash' > ~/k8s-info.sh && \
+    echo 'echo "=== Kubernetes Environment ==="' >> ~/k8s-info.sh && \
+    echo 'echo "Namespace: ${KUBERNETES_NAMESPACE:-$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace 2>/dev/null || echo \"N/A\")}"' >> ~/k8s-info.sh && \
+    echo 'echo "Pod Name: $HOSTNAME"' >> ~/k8s-info.sh && \
+    echo 'echo "Node Name: ${NODE_NAME:-N/A}"' >> ~/k8s-info.sh && \
+    echo 'echo "Pod IP: ${POD_IP:-$(hostname -i)}"' >> ~/k8s-info.sh && \
+    echo 'echo "Service Account: $(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace 2>/dev/null || echo \"N/A\")"' >> ~/k8s-info.sh && \
+    echo 'echo "=== Mounted Volumes ==="' >> ~/k8s-info.sh && \
+    echo 'mount | grep -E "(configMap|secret|persistentVolume)" || echo "No K8s volumes detected"' >> ~/k8s-info.sh && \
+    echo 'echo "=== Environment Variables ==="' >> ~/k8s-info.sh && \
+    echo 'env | sort | grep -E "(KUBERNETES|POD|NODE|NAMESPACE|SERVICE)" || echo "No K8s env vars detected"' >> ~/k8s-info.sh && \
+    chmod +x ~/k8s-info.sh
+
+# Script to notify about tools requiring elevated permissions
+RUN echo '#!/bin/bash' > ~/privileged-tools-info.sh && \
+    echo 'echo "=== Tools Requiring Elevated Permissions ==="' >> ~/privileged-tools-info.sh && \
+    echo 'echo "The following tools require root privileges or special capabilities:"' >> ~/privileged-tools-info.sh && \
+    echo 'echo "- tcpdump: needs CAP_NET_RAW or root"' >> ~/privileged-tools-info.sh && \
+    echo 'echo "- nmap: needs CAP_NET_RAW or root"' >> ~/privileged-tools-info.sh && \
+    echo 'echo "- strace: needs CAP_SYS_PTRACE or root"' >> ~/privileged-tools-info.sh && \
+    echo 'echo "- bpftrace: needs CAP_SYS_ADMIN or root"' >> ~/privileged-tools-info.sh && \
+    echo 'echo "- conntrack: needs CAP_NET_ADMIN or root"' >> ~/privileged-tools-info.sh && \
+    echo 'echo ""' >> ~/privileged-tools-info.sh && \
+    echo 'echo "To run these tools:"' >> ~/privileged-tools-info.sh && \
+    echo 'echo "1. Run pod with elevated privileges (not recommended for production)"' >> ~/privileged-tools-info.sh && \
+    echo 'echo "2. Use: kubectl exec -it <pod> -c <container> -- su -c \"<command>\""' >> ~/privileged-tools-info.sh && \
+    echo 'echo "3. Or add specific capabilities to your pod security context"' >> ~/privileged-tools-info.sh && \
+    chmod +x ~/privileged-tools-info.sh
+
+# Create a welcome script with usage instructions
+RUN echo '#!/bin/bash' > ~/welcome.sh && \
+    echo 'echo "==================================="' >> ~/welcome.sh && \
+    echo 'echo "Welcome to Pocket Debug Container"' >> ~/welcome.sh && \
+    echo 'echo "==================================="' >> ~/welcome.sh && \
+    echo 'echo ""' >> ~/welcome.sh && \
+    echo 'echo "Useful scripts:"' >> ~/welcome.sh && \
+    echo 'echo "  ~/debug-info.sh         - System information"' >> ~/welcome.sh && \
+    echo 'echo "  ~/k8s-info.sh          - Kubernetes environment"' >> ~/welcome.sh && \
+    echo 'echo "  ~/k8s-dns-check.sh     - DNS debugging"' >> ~/welcome.sh && \
+    echo 'echo "  ~/privileged-tools-info.sh - Tools requiring root"' >> ~/welcome.sh && \
+    echo 'echo ""' >> ~/welcome.sh && \
+    echo 'echo "Type '\''alias'\'' to see available shortcuts"' >> ~/welcome.sh && \
+    chmod +x ~/welcome.sh && \
+    echo '~/welcome.sh' >> ~/.bashrc
+
+# Inherit the same entrypoint and environment from the release image
+# No need to redefine PATH, WORKDIR etc. as they're inherited
