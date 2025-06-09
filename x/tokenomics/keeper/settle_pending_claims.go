@@ -59,10 +59,10 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			continue
 		}
 
-		claimProcessingContext, err := k.settleClaim(ctx, settlementContext, claim, logger)
-		if err != nil {
+		claimProcessingContext, settlementErr := k.settleClaim(ctx, settlementContext, claim, logger)
+		if settlementErr != nil {
 			// Discard a faulty claim and continue iterating over the next one.
-			k.discardFaultyClaim(ctx, claim, err, logger)
+			k.discardFaultyClaim(ctx, claim, settlementErr, logger)
 			numDiscardedFaultyClaims++
 			continue
 		}
@@ -89,7 +89,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			claim.SupplierOperatorAddress,
 			claimProcessingContext.numClaimRelays,
 			claimProcessingContext.numClaimComputeUnits,
-			err,
+			settlementErr,
 		)
 
 		// The claim & proof are no longer necessary, so there's no need for them
@@ -575,7 +575,7 @@ func (k Keeper) settleClaim(
 	claim prooftypes.Claim,
 	logger cosmoslog.Logger,
 ) (*claimSettlementContext, error) {
-	logger = k.logger.With(
+	logger = logger.With(
 		"session_id", claim.SessionHeader.SessionId,
 		"supplier_operator_address", claim.SupplierOperatorAddress,
 	)
@@ -772,7 +772,12 @@ func (k Keeper) discardFaultyClaim(
 		Claim: &dehydratedClaim,
 		Error: err.Error(),
 	}
-	sdkCtx.EventManager().EmitTypedEvent(&claimDiscardedEvent)
+	if evtErr := sdkCtx.EventManager().EmitTypedEvent(&claimDiscardedEvent); evtErr != nil {
+		logger.Error(fmt.Sprintf(
+			"failed to emit claim discarded event for claim %q: %s",
+			claim.SessionHeader.SessionId, evtErr,
+		))
+	}
 
 	// Remove the faulty claim from the state.
 	k.proofKeeper.RemoveClaim(sdkCtx, claim.SessionHeader.SessionId, claim.SupplierOperatorAddress)
