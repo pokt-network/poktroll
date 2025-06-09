@@ -81,3 +81,14 @@ func GetApplicationTransferHeight(
 
 	return int64(application.GetPendingTransfer().GetSessionEndHeight()) + sessionEndToProofWindowCloseBlocks
 }
+
+// DehydratedApplication returns a version of the application that is stripped of
+// non-essential fields.
+func (app *Application) DehydratedApplication() Application {
+	return Application{
+		Address:                 app.Address,
+		UnstakeSessionEndHeight: app.UnstakeSessionEndHeight,
+		PendingTransfer:         app.PendingTransfer,
+		ServiceUsageMetrics:     make(map[string]*sharedtypes.ServiceUsageMetrics),
+	}
+}

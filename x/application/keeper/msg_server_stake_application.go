@@ -216,21 +216,16 @@ func (k Keeper) updateApplication(
 // - Initializes metrics for newly added services with zero values
 // - Maintains existing metrics for services that already have them
 func initializeAppServiceUsageMetrics(application *types.Application) {
-	for _, service := range application.ServiceConfigs {
-		serviceUsageMetricsExists := false
-		for _, serviceUsageMetrics := range application.ServiceUsageMetrics {
-			if service.ServiceId == serviceUsageMetrics.ServiceId {
-				serviceUsageMetricsExists = true
-				break
-			}
+	for _, serviceConfig := range application.ServiceConfigs {
+		if _, exists := application.ServiceUsageMetrics[serviceConfig.ServiceId]; exists {
+			// Service usage metrics already exist for this service, no need to initialize
+			continue
 		}
 
 		// Initialize zero metrics for newly staked services
 		// This ensures all services have tracking from the beginning
-		if !serviceUsageMetricsExists {
-			application.ServiceUsageMetrics[service.ServiceId] = &sharedtypes.ServiceUsageMetrics{
-				ServiceId: service.ServiceId,
-			}
+		application.ServiceUsageMetrics[serviceConfig.ServiceId] = &sharedtypes.ServiceUsageMetrics{
+			ServiceId: serviceConfig.ServiceId,
 		}
 	}
 }

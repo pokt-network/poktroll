@@ -49,7 +49,7 @@ message Application {
   // Information about pending application transfers
   PendingApplicationTransfer pending_transfer = 7;
 
-  // service_usage_metrics tracks tracks the onchain services consumed by this application.
+  // service_usage_metrics tracks the onchain services consumed by this application.
   map<string, pocket.shared.ServiceUsageMetrics> service_usage_metrics = 8;
 }
 

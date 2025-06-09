@@ -14,6 +14,9 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// TODO_TECHDEBT(@red-0ne): Split x/supplier/keeper/supplier.go into multiple files:
+// stores, getters, setters, etc
+
 // SetAndIndexDehydratedSupplier stores a supplier record and indexes its relevant attributes for efficient querying.
 // It modifies the Supplier structure onchain metadata to manage state bloat.
 //
@@ -174,6 +177,8 @@ func (k Keeper) hydrateSupplierServiceUsageMetrics(
 
 	// Hydrate the supplier's service usage metrics
 	serviceUsageMetricsIterator := k.getSupplierServiceUsageMetricsIterator(ctx, supplier.OperatorAddress)
+	defer serviceUsageMetricsIterator.Close()
+
 	for ; serviceUsageMetricsIterator.Valid(); serviceUsageMetricsIterator.Next() {
 		serviceUsageMetrics, err := serviceUsageMetricsIterator.Value()
 		if err != nil {
@@ -236,17 +241,16 @@ func (k Keeper) storeSupplier(ctx context.Context, supplier *sharedtypes.Supplie
 	supplierStore.Set(supplierKey, supplierBz)
 }
 
-// GetServiceUsageMetrics retrieves usage metrics for a specific supplier and service
 // - Returns metrics tracking relay count and compute units provided by a supplier
 // - Returns initialized empty metrics if none exist for the supplier/service pair
 func (k Keeper) GetServiceUsageMetrics(
 	ctx context.Context,
-	supplierAddressAddress,
+	supplierAddress,
 	serviceId string,
 ) sharedtypes.ServiceUsageMetrics {
 	serviceUsageMetricsStore := k.getSupplierServiceUsageMetricsStore(ctx)
 
-	serviceUsageMetricsKey := types.ServiceUsageMetricsKey(supplierAddressAddress, serviceId)
+	serviceUsageMetricsKey := types.ServiceUsageMetricsKey(supplierAddress, serviceId)
 	serviceUsageMetricsBz := serviceUsageMetricsStore.Get(serviceUsageMetricsKey)
 
 	serviceUsageMetrics := sharedtypes.ServiceUsageMetrics{ServiceId: serviceId}

@@ -33,6 +33,9 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// TODO_TECHDEBT(@red-0ne): Split x/application/keeper/application.go into multiple files:
+// stores, getters, setters, etc
+
 // SetApplication sets an application in the store and updates all related indexes.
 // - Indexes the application in all relevant indexes
 // - Stores the application in the main application store
@@ -56,12 +59,9 @@ func (k Keeper) SetApplication(ctx context.Context, application types.Applicatio
 // - Returns false if not found
 // - Initializes PendingUndelegations as an empty map if nil
 // - Initializes DelegateeGatewayAddresses as an empty slice if nil
-func (k Keeper) GetApplication(
-	ctx context.Context,
-	appAddr string,
-) (app types.Application, found bool) {
+func (k Keeper) GetApplication(ctx context.Context, appAddr string) (types.Application, bool) {
 	// First get the base application data without metrics
-	app, found = k.GetDehydratedApplication(ctx, appAddr)
+	app, found := k.GetDehydratedApplication(ctx, appAddr)
 	if !found {
 		return app, false
 	}
@@ -260,6 +260,8 @@ func (k Keeper) hydrateApplicationServiceUsageMetrics(
 
 	// Hydrate the application's service usage metrics
 	serviceUsageMetricsIterator := k.getApplicationServiceUsageMetricsIterator(ctx, app.Address)
+	defer serviceUsageMetricsIterator.Close()
+
 	for ; serviceUsageMetricsIterator.Valid(); serviceUsageMetricsIterator.Next() {
 		serviceUsageMetrics, err := serviceUsageMetricsIterator.Value()
 		if err != nil {

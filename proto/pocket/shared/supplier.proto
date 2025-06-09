@@ -34,7 +34,7 @@ message Supplier {
   // services update and corresponding activation heights.
   repeated ServiceConfigUpdate service_config_history = 6;
 
-  // service_usage_metrics tracks tracks the onchain services consumed by this supplier.
+  // service_usage_metrics tracks the onchain services consumed by this supplier.
   map<string, ServiceUsageMetrics> service_usage_metrics = 7;
 }
 

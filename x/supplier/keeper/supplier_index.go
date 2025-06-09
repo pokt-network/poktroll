@@ -274,6 +274,7 @@ func (k Keeper) removeSupplierServiceUsageMetricsIndex(
 ) {
 	supplierServiceUsageMetricsStore := k.getSupplierServiceUsageMetricsStore(ctx)
 	supplierServiceUsageMetricsIterator := k.getSupplierServiceUsageMetricsIterator(ctx, supplierOperatorAddr)
+	defer supplierServiceUsageMetricsIterator.Close()
 
 	// TODO_CONSIDERATION: We could keep the metrics indefinitely for historical purposes
 	// even after the supplier is removed.

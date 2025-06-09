@@ -214,8 +214,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 		// Create a dehydrated application copy without hydrated data to add to the event.
 		// This prevents bloating the event with potentially large unnecessary data
-		dehydratedApplication := *application
-		dehydratedApplication.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
+		dehydratedApplication := application.DehydratedApplication()
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			Application:        &dehydratedApplication,

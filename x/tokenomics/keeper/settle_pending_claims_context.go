@@ -115,7 +115,8 @@ func (sctx *settlementContext) FlushAllActorsToStore(ctx context.Context) {
 
 	// Flush all Service records to the store
 	for _, service := range sctx.serviceMap {
-		sctx.keeper.serviceKeeper.SetService(ctx, *service)
+		svc := *service
+		sctx.keeper.serviceKeeper.SetService(ctx, svc)
 		logger.Info(fmt.Sprintf("updated onchain service record with ID %q", service.Id))
 	}
 	logger.Info(fmt.Sprintf("updated %d onchain service records", len(sctx.serviceMap)))
@@ -252,7 +253,7 @@ func (sctx *settlementContext) cacheSupplier(
 		// Supplier is cached, ensure that it has a service configuration and service
 		// usage metrics corresponding to the claim's service ID.
 		sctx.cacheSupplierServiceConfig(ctx, cachedSupplier, serviceId)
-		sctx.cacheSupplierServiceUsageMetrics(ctx, cachedSupplier, serviceId)
+		sctx.hydrateSupplierServiceUsageMetrics(ctx, cachedSupplier, serviceId)
 
 		return nil // Supplier already cached
 	}
@@ -274,7 +275,7 @@ func (sctx *settlementContext) cacheSupplier(
 	supplier.Services = sctx.keeper.supplierKeeper.GetSupplierActiveServiceConfig(ctx, &supplier, serviceId)
 
 	sctx.cacheSupplierServiceConfig(ctx, &supplier, serviceId)
-	sctx.cacheSupplierServiceUsageMetrics(ctx, &supplier, serviceId)
+	sctx.hydrateSupplierServiceUsageMetrics(ctx, &supplier, serviceId)
 
 	// Store supplier in cache for future claim processing
 	idx := len(sctx.settledSuppliers)
@@ -322,7 +323,7 @@ func (sctx *settlementContext) cacheApplication(
 
 		// Application is cached, ensure that it has a service usage metrics corresponding
 		// to the claim's service ID.
-		sctx.cacheApplicationServiceUsageMetrics(ctx, cachedApplication, serviceId)
+		sctx.hydrateApplicationServiceUsageMetrics(ctx, cachedApplication, serviceId)
 
 		return nil // Application already cached
 	}
@@ -334,7 +335,7 @@ func (sctx *settlementContext) cacheApplication(
 		return tokenomicstypes.ErrTokenomicsApplicationNotFound
 	}
 
-	sctx.cacheApplicationServiceUsageMetrics(ctx, &application, serviceId)
+	sctx.hydrateApplicationServiceUsageMetrics(ctx, &application, serviceId)
 
 	// Store application in cache for future claim processing
 	idx := len(sctx.settledApplications)
@@ -383,10 +384,10 @@ func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, se
 	return nil
 }
 
-// cacheApplicationServiceUsageMetrics ensures application the service usage metrics hydrated
+// hydrateApplicationServiceUsageMetrics ensures application the service usage metrics hydrated
 // - Checks if the application already has metrics for the service in its in-memory representation
 // - If not, retrieves the latest metrics from storage and updates the application object
-func (sctx *settlementContext) cacheApplicationServiceUsageMetrics(
+func (sctx *settlementContext) hydrateApplicationServiceUsageMetrics(
 	ctx context.Context,
 	application *apptypes.Application,
 	serviceId string,
@@ -411,10 +412,10 @@ func (sctx *settlementContext) cacheApplicationServiceUsageMetrics(
 	)
 }
 
-// cacheSupplierServiceUsageMetrics ensures the supplier service usage metrics are hydrated
+// hydrateSupplierServiceUsageMetrics ensures the supplier service usage metrics are hydrated
 // - Checks if the supplier already has metrics for the service in its in-memory representation
 // - If not, retrieves the latest metrics from storage and updates the supplier object
-func (sctx *settlementContext) cacheSupplierServiceUsageMetrics(
+func (sctx *settlementContext) hydrateSupplierServiceUsageMetrics(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
 	serviceId string,
