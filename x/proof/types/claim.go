@@ -151,7 +151,7 @@ func (claim *Claim) GetProofRequirementSampleValue(
 	return poktrand.SeededFloat64(proofRequirementSeed), nil
 }
 
-// GetDehydratedClaim returns a dehydrated version of the claim.
+// GetDehydratedClaim returns a copy of the claim with only the essential fields.
 func (claim *Claim) GetDehydratedClaim() Claim {
 	return Claim{
 		SupplierOperatorAddress: claim.SupplierOperatorAddress,

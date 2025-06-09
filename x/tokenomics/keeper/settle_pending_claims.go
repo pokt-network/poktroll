@@ -47,6 +47,12 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	numDiscardedFaultyClaims = 0
 
 	// Iterating over all potentially expiring claims.
+	// This loop does the following:
+	// - Retrieve the claim
+	// - Settle the claim
+	// - Remove the claim from the state
+	// - Emit an event
+	// - Update the relevant actors in the state
 	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
 		claim, iterErr := expiringClaimsIterator.Value()
 		if iterErr != nil {
@@ -59,6 +65,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			continue
 		}
 
+		// Settle the claim.
 		claimProcessingContext, settlementErr := k.settleClaim(ctx, settlementContext, claim, logger)
 		if settlementErr != nil {
 			// Discard a faulty claim and continue iterating over the next one.
@@ -67,9 +74,12 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			continue
 		}
 
-		// If the code path reached this section, we will either successfully settle or expire the claim.
+		// If the code path reached this section, we will either:
+		// - Successfully settle the claim
+		// - Successfully expire the claim
 		numExpiringClaims++
 
+		// Identify the stage of the claim (e.g. settled, expired, proven, claimed, etc.)
 		var settlementStage prooftypes.ClaimProofStage
 		if claimProcessingContext.isSettled {
 			// Append the token logic module processing ClaimSettlementResult to the settled results.
@@ -82,6 +92,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 
 		// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
+		// Telemetry will be emitted for all non-faulty (i.e. discarded) claims.
+		// TODO_CONSIDERATION: Consider adding discarded faulty claims to the telemetry.
 		defer k.finalizeTelemetry(
 			settlementStage,
 			claim.SessionHeader.ServiceId,
@@ -92,8 +104,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			settlementErr,
 		)
 
-		// The claim & proof are no longer necessary, so there's no need for them
-		// to take up onchain space.
+		// The claim is being settled or expired, so it no longer needs onchain storage.
+		// Remove it from the latest (i.e. pruned) state so it will be maintained by archived nodes.
 		k.proofKeeper.RemoveClaim(ctx, claim.SessionHeader.SessionId, claim.SupplierOperatorAddress)
 
 		logger.Info(
@@ -105,6 +117,9 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		)
 	}
 
+	// Claims settlement results have been computed when this code path is reached.
+	// The onchain data now needs to be updated.
+
 	// Persist the state of all the applications and suppliers involved in the claims.
 	// This is done in a single batch to reduce the number of writes to state storage.
 	settlementContext.FlushAllActorsToStore(ctx)
@@ -112,6 +127,9 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	logger.Info(
 		"expiring claims processed",
 		"num_expiring_claims", numExpiringClaims,
+		"num_settled", settledResults.GetNumClaims(),
+		"num_expired", expiredResults.GetNumClaims(),
+		"num_discarded_faulty", numDiscardedFaultyClaims,
 		"block_height", blockHeight,
 	)
 
@@ -559,16 +577,16 @@ func (k Keeper) finalizeTelemetry(
 
 // settleClaim processes a single claim and determines its settlement outcome.
 //
-// Key responsibilities:
-// - Evaluates whether the claim should be settled or expired, based on business rules.
-// - Handles proof requirements, token logic module (TLM) processing, and event emission.
-// - Returns errors only for unexpected conditions that prevent normal processing (e.g., invalid claim data, cache failures, TLM or event emission errors).
-// - Normal business outcomes (expired claims, missing proofs, etc.) do NOT return errors; these are reflected in the returned ClaimProcessingContext.
-// - When an error is returned, the claim should be discarded to avoid chain halt.
+// Responsibilities:
+// - Evaluate if the claim should be settled or expired (per business logic rules)
+// - Handle proof requirements, Token Logic Module (TLM) processing, and event emission
+// - Return errors only for unexpected conditions that prevent normal processing (e.g., invalid claim data, cache failures, TLM or event emission errors)
+//   - Normal business outcomes (expired claims, missing proofs, etc.) do NOT return errors—these are reflected in the returned ClaimProcessingContext
+//   - When an error is returned, the claim should be discarded to avoid chain halt
 //
 // Notes:
-// - This method does NOT perform state changes directly.
-// - It prepares settlement operations, which are later executed in batch by ExecutePendingSettledResults and ExecutePendingExpiredResults.
+// - Does NOT perform state changes directly
+// - Prepares settlement operations for batch execution by ExecutePendingSettledResults and ExecutePendingExpiredResults
 func (k Keeper) settleClaim(
 	ctx cosmostypes.Context,
 	settlementContext *settlementContext,
