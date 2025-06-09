@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -150,12 +150,18 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 		}
 		resp, err := c.Head(backendUrl.String())
 		if err != nil {
-			return err
+			return fmt.Errorf(
+				"failed to ping backend %q for serviceId %q: %w",
+				backendUrl.String(), supplierCfg.ServiceId, err,
+			)
 		}
 		_ = resp.Body.Close()
 
 		if resp.StatusCode >= http.StatusInternalServerError {
-			return errors.New("ping failed")
+			return fmt.Errorf(
+				"failed to ping backend %q for serviceId %q: received status code %d",
+				backendUrl.String(), supplierCfg.ServiceId, resp.StatusCode,
+			)
 		}
 
 	}

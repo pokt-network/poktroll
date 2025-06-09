@@ -41,10 +41,14 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 	relayMinerConfig.SmtStorePath = yamlRelayMinerConfig.SmtStorePath
 
-	// EnableOverServicing is a flag that indicates whether the relay miner server
+	// EnableOverServicing is a flag that indicates whether the relay miner
 	// should enable over-servicing for the relays it serves.
-	// Over-servicing allows the relay miner to serve more relays than the
-	// amount of stake the Application has.
+	//
+	// Over-servicing allows the offchain relay miner to serve more relays than the
+	// amount of stake the onchain Application can pay the corresponding onchain
+	// Supplier at the end of the session
+	//
+	// This can enable high quality of service for the network and earn quality points with Gateways.
 	relayMinerConfig.EnableOverServicing = yamlRelayMinerConfig.EnableOverServicing
 
 	// No additional validation on metrics. The server would fail to start if they are invalid

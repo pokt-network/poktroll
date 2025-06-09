@@ -620,11 +620,11 @@ func SupplyMiner(
 // SupplyRelayMeterFn returns a function which constructs a RelayMeter instance
 // and returns a new depinject.Config with it supplied.
 //
-// - Accepts enableOverServicing flag for proxy setup
+// - Accepts enableOverServicing boolean for proxy setup
 // - Returns a SupplierFn for dependency injection
 //
 // Parameters:
-//   - enableOverServicing: Flag to enable over-servicing in the relay meter
+//   - enableOverServicing: Enable over-servicing in the relay meter
 //
 // Returns:
 //   - SupplierFn: Supplier function for dependency injection
@@ -735,9 +735,10 @@ func NewSupplyRelayAuthenticatorFn(
 
 // newSupplyRelayerProxyFn returns a function which constructs a RelayerProxy and returns a new depinject.Config with it supplied.
 //
-// - Accepts servicesConfigMap for proxy setup
-// - Accepts pingEnabled flag to enable pinging the backend services
-// - Returns a SupplierFn for dependency injection
+//   - Accepts servicesConfigMap for proxy setup
+//   - Accepts pingEnabled flag to enable pinging the backend services to ensure
+//     they are correctly setup and reachable before starting the relayer proxy.
+//   - Returns a SupplierFn for dependency injection
 //
 // Parameters:
 //   - servicesConfigMap: Map of services configuration
