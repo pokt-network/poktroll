@@ -15,6 +15,7 @@ This guide demonstrates common Vultr API operations for managing virtual machine
   - [Retrieve the Vultr Instance Configuration](#retrieve-the-vultr-instance-configuration)
   - [Environment Setup](#environment-setup)
   - [Connect to Your Instance](#connect-to-your-instance)
+  - [\[Optional\] Streamline your configs](#optional-streamline-your-configs)
   - [Delete Instance](#delete-instance)
 - [\[Optional\] Prepare your instance for Pocket](#optional-prepare-your-instance-for-pocket)
   - [Install `pocketd`](#install-pocketd)
@@ -153,31 +154,31 @@ cd ~/workspace/vultr/server
 ```
 
 <details>
-  <summer> Opinionated .env </summar>
+  <summary> Opinionated .env </summary>
 
-  ```bash
-  cat <<EOF > .env
-  export VULTR_INSTANCE_ID=\$(cat vultr_create.json | jq -r '.instance.id')
-  export VULTR_INSTANCE_IP=\$(cat vultr_get.json | jq -r '.instance.main_ip')
-  export VULTR_PASSWORD=\$(cat vultr_create.json | jq -r '.instance.default_password')
-  export VULTR_API_KEY="VMGSTYLIOHLF3IUC4YGQW2KF7IC2UDCWL4OQ"
-  echo "##############"
-  echo "Visit your instance at https://my.vultr.com/subs/?id=\${VULTR_INSTANCE_ID}"
-  echo "##############"
-  echo "ssh root@\${VULTR_INSTANCE_IP}"
-  echo "##############"
-  echo "Get password by running"
-  echo "cat vultr_create.json | jq -r '.instance.default_password' | pbcopy"
-  echo "##############"
-  echo "Check logs by running"
-  echo "sudo journalctl -u cosmovisor-pocket.service -f"
-  echo "##############"
-  echo "Check height by running"
-  echo "curl -X GET http://localhost:26657/block | jq '.result.block.header.height'"
-  echo "##############"
-  EOF
-  ```
-  
+```bash
+cat <<EOF > .env
+export VULTR_INSTANCE_ID=\$(cat vultr_create.json | jq -r '.instance.id')
+export VULTR_INSTANCE_IP=\$(cat vultr_get.json | jq -r '.instance.main_ip')
+export VULTR_PASSWORD=\$(cat vultr_create.json | jq -r '.instance.default_password')
+export VULTR_API_KEY=""
+echo "##############"
+echo "Visit your instance at https://my.vultr.com/subs/?id=\${VULTR_INSTANCE_ID}"
+echo "##############"
+echo "ssh root@\${VULTR_INSTANCE_IP}"
+echo "##############"
+echo "Get password by running"
+echo "cat vultr_create.json | jq -r '.instance.default_password' | pbcopy"
+echo "##############"
+echo "Check logs by running"
+echo "sudo journalctl -u cosmovisor-pocket.service -f"
+echo "##############"
+echo "Check height by running"
+echo "curl -X GET http://localhost:26657/block | jq '.result.block.header.height'"
+echo "##############"
+EOF
+```
+
 </details>
 
 ### Delete Instance
