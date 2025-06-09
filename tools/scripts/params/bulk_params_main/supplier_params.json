@@ -7,7 +7,7 @@
         "params": {
           "min_stake": {
             "denom": "upokt",
-            "amount": "60000000000"
+            "amount": "59500000000"
           },
           "staking_fee": {
             "denom": "upokt",

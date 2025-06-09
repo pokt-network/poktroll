@@ -741,6 +741,7 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	// Finalize the block with the transaction.
 	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
 		Height: app.LastBlockHeight() + 1,
+		Time:   app.GetSdkCtx().BlockTime(),
 		// Randomize the proposer address for each block.
 		ProposerAddress: sample.ConsAddress().Bytes(),
 		DecidedLastCommit: cmtabcitypes.CommitInfo{
@@ -851,7 +852,7 @@ func (app *App) nextBlockUpdateCtx() {
 	prevCtx := app.sdkCtx
 
 	header := prevCtx.BlockHeader()
-	header.Time = prevCtx.BlockTime().Add(time.Duration(1) * time.Second)
+	header.Time = prevCtx.BlockTime().Add(time.Duration(1) * time.Minute)
 	header.Height++
 
 	headerInfo := coreheader.Info{

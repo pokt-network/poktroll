@@ -8,11 +8,11 @@
           "proof_request_probability": 0.2,
           "proof_requirement_threshold": {
             "denom": "upokt",
-            "amount": "100000000"
+            "amount": "1"
           },
           "proof_missing_penalty": {
             "denom": "upokt",
-            "amount": "100000000"
+            "amount": "1"
           },
           "proof_submission_fee": {
             "denom": "upokt",

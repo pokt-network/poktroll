@@ -227,7 +227,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// - No further minting is needed
 	// - Block time is estimated and used to set the unstake session end height
 	// - Emit event to signal unbonding start
-	if morseNodeClaimableAccount.HasUnbonded() {
+	if morseNodeClaimableAccount.HasUnbonded(ctx) {
 		events = append(events, morseSupplierClaimedEvent)
 		events = append(events, morseSupplierUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
@@ -258,6 +258,12 @@ func (k msgServer) ClaimMorseSupplier(
 		}
 
 		return claimMorseSupplierResponse, nil
+	}
+
+	// TODO_HACK(@olshansky, #1439): Ensure that claimable suppliers have valid service configs.
+	// This is a quick workaround upon encountering this issue: https://gist.github.com/okdas/3328c0c507b5dba8b31ab871589f34b0
+	if err = sharedtypes.ValidateSupplierServiceConfigs(msg.Services); err != nil {
+		return nil, err
 	}
 
 	// Stake (or update) the supplier.
@@ -291,7 +297,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// - Set the unstake session end height on the supplier
 	// - Emit an unbonding begin event
 	if morseNodeClaimableAccount.IsUnbonding() {
-		estimatedUnstakeSessionEndHeight, isUnbonded := morseNodeClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
+		estimatedUnstakeSessionEndHeight, isUnbonded := morseNodeClaimableAccount.GetEstimatedUnbondingEndHeight(ctx, sharedParams)
 
 		// DEV_NOTE: SHOULD NEVER happen, the check above (using #SecondsUntilUnbonded()) is the same, but in terms of time instead of block height.
 		if isUnbonded {
