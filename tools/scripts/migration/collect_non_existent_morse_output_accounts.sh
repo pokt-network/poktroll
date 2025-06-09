@@ -2,7 +2,7 @@
 
 set -eo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/common.sh"
+source "$SCRIPT_DIR/common_bash_utils.sh"
 
 parse_args "$@"
 
@@ -15,7 +15,7 @@ function get_all_raw_morse_claimable_account_src_addresses() {
 }
 
 function zero_balance_morse_claimable_accounts_for_addresses() {
-  jq -r '.|map({morse_src_address: ., unstaked_balance: "0upokt", supplier_stake: "0upokt", application_stake: "0upokt", claimed_at_height: 0, shannon_dest_address: "", morse_output_address: ""})' <<< "$1"
+  jq -r '.|map({morse_src_address: ., unstaked_balance: "0upokt", supplier_stake: "0upokt", application_stake: "0upokt", claimed_at_height: 0, shannon_dest_address: "", morse_output_address: ""})' <<<"$1"
 }
 
 # Use the state-shift day Morse MainNet snapshot.
