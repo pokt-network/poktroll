@@ -355,6 +355,7 @@ If `rev_share_percent` is defined for a `service`, then the `owner_address` of t
 
 :::
 
+TODO_IN_THIS_PR: Incorporate this feedback.
 Qspider — 11:40 AM
 I looked in the docs and cli. Just double checked. Looked at protocol specifications just now don't see anything for supplier min stake. I've looked at the docs and cli many times over the months. I see staking configs but it's not listed anywhere that I can see as a minimum stake. I do have 60,000 in my mind from the community chats sometime in the last months.
 Perhaps I'm just overlooking it? It's gott abe somewhere. lol

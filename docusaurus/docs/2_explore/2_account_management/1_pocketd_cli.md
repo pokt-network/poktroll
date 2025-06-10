@@ -19,7 +19,7 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
 
 To upgrade a `pocketd` to a specific release (e.g. `v0.1.12-dev3`), run:
 
-```
+```bash
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev3 --upgrade
 ```
 
@@ -226,3 +226,9 @@ The artifacts will be attached an an `Asset` to your [release](https://github.co
 ```bash
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev3 --upgrade
 ```
+
+TODO_IN_THIS_PR:
+
+- Show how to use `make ignite_release`
+- Call out the artifacts workflow in the release procedure
+- Explain that it can be updated manually
