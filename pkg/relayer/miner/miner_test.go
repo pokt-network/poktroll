@@ -166,7 +166,7 @@ func newMockRelayMeter(t *testing.T) relayer.RelayMeter {
 	relayMeter := mockrelayer.NewMockRelayMeter(ctrl)
 
 	relayMeter.EXPECT().Start(gomock.Any()).Return(nil).AnyTimes()
-	relayMeter.EXPECT().ShouldRateLimit(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+	relayMeter.EXPECT().IsOverServicing(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	relayMeter.EXPECT().SetNonApplicableRelayReward(gomock.Any(), gomock.Any()).AnyTimes()
 
 	return relayMeter
