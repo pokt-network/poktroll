@@ -23,7 +23,7 @@ that don't have corresponding morse claimable accounts, then generates zero-bala
 morse claimable accounts for those missing addresses.
 
 OPTIONS:
-    --run                  Execute the script (defaults to non-execution if not specified)
+    --run                   Execute the script (required to run functionality)
     --input FILE           Input morse state export file (default: morse_state_export_170616_2025-06-03.json)
     --output FILE          Output file to write results (also writes to stdout)
     --testnet              Include TestNet data in addition to MainNet
@@ -37,12 +37,9 @@ EXAMPLES:
     $(basename "$0") --run --testnet                          # Run with MainNet and TestNet data
     $(basename "$0") --run --print-counts                     # Show only count statistics
 
-FULL EXAMPLE:
-    tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --run --input morse_state_export_170616_2025-06-03.json --output results.json
-
 FILES USED:
     - Default input: morse_state_export_170616_2025-06-03.json (MainNet snapshot)
-    - TestNet file: TODO_IN_THIS_PR_UPDATE_DEFAUlT_FILE (if --testnet used)
+    - TestNet file: morse_state_export_179148_2025-06-01.json (if --testnet used)
     - Import message files: msg_import_morse_accounts_*.json (auto-generated based on input)
 
 OUTPUT:
@@ -141,7 +138,7 @@ run_script() {
   # If testnet flag is set, merge MainNet and TestNet data
   if [ "$TESTNET" = true ]; then
     # Use the hardcoded TestNet file (since it's referenced by the default import message naming)
-    TESTNET_MORSE_STATE_EXPORT_PATH="$SCRIPT_DIR/morse_state_export_TODO_IN_THIS_PR_UPDATE_DEFAULT_FILE"
+    TESTNET_MORSE_STATE_EXPORT_PATH="$SCRIPT_DIR/morse_state_export_179148_2025-06-01.json"
 
     # Check if TestNet file exists
     if [ ! -f "$TESTNET_MORSE_STATE_EXPORT_PATH" ]; then
