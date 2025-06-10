@@ -34,7 +34,6 @@ RUN apt-get update && \
         htop \
         iotop \
         strace \
-        ltrace \
         lsof \
         procps \
         psmisc \
