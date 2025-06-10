@@ -1,5 +1,28 @@
 #!/bin/bash
 
+# Script configuration flags
+PRINT_COUNTS=false # Whether to print line counts
+TESTNET=false      # Whether to use testnet mode
+
+# Parse command line arguments
+function parse_args() {
+  for arg in "$@"; do
+    case $arg in
+    --count)
+      PRINT_COUNTS=true # Enable count printing when --count flag is passed
+      shift
+      ;;
+    --testnet)
+      TESTNET=true # Enable testnet mode when --testnet flag is passed
+      shift
+      ;;
+    *)
+      # Ignore unrecognized arguments
+      ;;
+    esac
+  done
+}
+
 # Combine two lists and remove duplicates
 function join_lists() {
   # Print both inputs, sort them, and keep only unique lines

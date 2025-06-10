@@ -5,9 +5,6 @@
 
 set -eo pipefail
 
-# Declare constants
-DEFAULT_INPUT_FILE="morse_state_export_170616_2025-06-03.json"
-
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -26,23 +23,26 @@ that don't have corresponding morse claimable accounts, then generates zero-bala
 morse claimable accounts for those missing addresses.
 
 OPTIONS:
+    --run                  Execute the script (defaults to non-execution if not specified)
     --input FILE           Input morse state export file (default: morse_state_export_170616_2025-06-03.json)
+    --output FILE          Output file to write results (also writes to stdout)
     --testnet              Include TestNet data in addition to MainNet
     --print-counts         Only print account counts instead of generating JSON
     --help, -h             Show this help message
 
 EXAMPLES:
-    $(basename "$0")                                    # Run with default input file
-    $(basename "$0") --input custom_export.json        # Run with custom input file
-    $(basename "$0") --testnet                          # Run with MainNet and TestNet data
-    $(basename "$0") --print-counts                     # Show only count statistics
+    $(basename "$0") --run                                    # Run with default input file
+    $(basename "$0") --run --input custom_export.json        # Run with custom input file
+    $(basename "$0") --run --output results.json             # Run and save to file
+    $(basename "$0") --run --testnet                          # Run with MainNet and TestNet data
+    $(basename "$0") --run --print-counts                     # Show only count statistics
 
 FULL EXAMPLE:
     tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --run --input morse_state_export_170616_2025-06-03.json --output results.json
 
 FILES USED:
-    - Default input: morse_state_export_170616_2025-06-03.json (MainNet export)
-    - TestNet file: morse_state_export_179148_2025-06-01.json (if --testnet used; in addition to MainNet export)
+    - Default input: morse_state_export_170616_2025-06-03.json (MainNet snapshot)
+    - TestNet file: TODO_IN_THIS_PR_UPDATE_DEFAUlT_FILE (if --testnet used)
     - Import message files: msg_import_morse_accounts_*.json (auto-generated based on input)
 
 OUTPUT:
@@ -50,38 +50,6 @@ OUTPUT:
 
 EOF
 }
-
-
-# Parse all command line arguments
-parse_args "$@"
-
-# Set default values options
-PRINT_COUNTS=false # Whether to print line counts
-TESTNET=false      # Whether to consider MainNet OR TestNet data ONLY
-INPUT_FILE=""     # Explicit list of input files
-OUTPUT_FILE=""
-
-# Parse additional arguments for input and output files
-while [[ $# -gt 0 ]]; do
-  case $1 in
-  --count)
-    PRINT_COUNTS=true # Enable count printing when --count flag is passed
-    shift
-    ;;
-  --testnet)
-    TESTNET=true # Enable testnet mode when --testnet flag is passed
-    shift
-    ;;
-  --input)
-    INPUT_FILE="$2"
-    shift 2
-    ;;
-  *)
-    # Skip other arguments (handled by parse_args)
-    shift
-    ;;
-  esac
-done
 
 # Function to extract non-custodial morse output addresses from state export
 # Selects validators where output_address is set and different from validator address
@@ -148,7 +116,7 @@ output_results() {
 # Main execution function
 run_script() {
   # Set default input file if not provided
-  local input_file="${INPUT_FILE:-"$DEFAULT_INPUT_FILE"}"
+  local input_file="${INPUT_FILE:-morse_state_export_170616_2025-06-03.json}"
 
   # Build full path for input file (assume it's in script directory if not absolute path)
   if [[ "$input_file" != /* ]]; then
@@ -162,6 +130,10 @@ run_script() {
     echo "Error: Input file '$MORSE_STATE_EXPORT_PATH' not found" >&2
     exit 1
   fi
+
+  # Generate import message filename based on input file
+  MSG_MORSE_IMPORT_ACCOUNTS_FILENAME=$(get_import_message_filename "$input_file")
+  MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_DIR/$MSG_MORSE_IMPORT_ACCOUNTS_FILENAME"
 
   # Get all morse output addresses from MainNet, convert to uppercase and deduplicate
   ALL_MORSE_OUTPUT_ADDRESSES=$(get_raw_non_custodial_morse_output_addresses "$MORSE_STATE_EXPORT_PATH" | to_uppercase | sort | uniq)
@@ -182,10 +154,6 @@ run_script() {
       ALL_MORSE_OUTPUT_ADDRESSES=$(join_lists "$ALL_MORSE_OUTPUT_ADDRESSES" "$TESTNET_MORSE_OUTPUT_ADDRESSES" | sort | uniq)
     fi
   fi
-
-  # Generate import message filename based on input file
-  MSG_MORSE_IMPORT_ACCOUNTS_FILENAME=$(get_import_message_filename "$input_file")
-  MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_DIR/$MSG_MORSE_IMPORT_ACCOUNTS_FILENAME"
 
   # Check if import message file exists
   if [ ! -f "$MSG_MORSE_IMPORT_ACCOUNTS_PATH" ]; then
@@ -211,12 +179,12 @@ run_script() {
 Total Morse claimable accounts: $(echo "$ALL_MORSE_CLAIMABLE_ACCOUNT_SRC_ADDRESSES" | count_non_empty_lines)
 Total missing MorseClaimableAccounts: $(echo "$MISSING_MORSE_ACCOUNT_ADDRESSES" | count_non_empty_lines)"
 
-    echo "$count_output"
+    output_results "$count_output" "$OUTPUT_FILE"
     exit 0
   fi
 
   # Output the generated zero-balance morse claimable accounts JSON
-  echo "$ZERO_BALANCE_MORSE_CLAIMABLE_ACCOUNTS_JSON"
+  output_results "$ZERO_BALANCE_MORSE_CLAIMABLE_ACCOUNTS_JSON" "$OUTPUT_FILE"
 }
 
 # Check if no arguments provided or help requested, show help by default
@@ -224,6 +192,48 @@ if [ $# -eq 0 ] || [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
   show_help
   exit 0
 fi
+
+# Check if --run flag is provided
+RUN_SCRIPT=false
+for arg in "$@"; do
+  if [[ "$arg" == "--run" ]]; then
+    RUN_SCRIPT=true
+    break
+  fi
+done
+
+# If --run not provided, show help and exit
+if [ "$RUN_SCRIPT" = false ]; then
+  echo "Error: --run flag is required to execute the script functionality."
+  echo ""
+  show_help
+  exit 1
+fi
+
+# Parse all command line arguments
+parse_args "$@"
+
+# Set default values for new options
+INPUT_FILE=""
+OUTPUT_FILE=""
+
+# Parse additional arguments for input and output files
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  --input)
+    INPUT_FILE="$2"
+    shift 2
+    ;;
+  --output)
+    OUTPUT_FILE="$2"
+    shift 2
+    ;;
+  *)
+    # Skip other arguments (handled by parse_args)
+    shift
+    ;;
+  esac
+done
 
 # Execute the main script functionality
 run_script
