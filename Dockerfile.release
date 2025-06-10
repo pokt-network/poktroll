@@ -17,4 +17,7 @@ COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
 
 USER pocket
 
+# Add cosmovisor current binary to PATH with higher priority
+ENV PATH="/home/pocket/.pocket/cosmovisor/current/bin:${PATH}"
+
 ENTRYPOINT ["pocketd"]
