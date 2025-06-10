@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
@@ -42,6 +44,28 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	meta := relayRequest.Meta
 	serviceId := meta.SessionHeader.ServiceId
+
+	// Check if the request's selected supplier is available for relaying.
+	availableSuppliers := server.relayAuthenticator.GetSupplierOperatorAddresses()
+	if !slices.Contains(availableSuppliers, meta.SupplierOperatorAddress) {
+		logger.Warn().Msgf(
+			"supplier %q operator address is not available in [%s]",
+			meta.SupplierOperatorAddress,
+			strings.Join(availableSuppliers, ", "),
+		)
+		return relayRequest, ErrRelayerProxySupplierNotReachable
+	}
+
+	// Set per-request timeouts based on the service ID configuration.
+	// This overrides the server's default timeout values for this specific request.
+	requestTimeout := server.requestTimeoutForServiceId(serviceId)
+	rc := http.NewResponseController(writer)
+	// Set write deadline: ensures the response is sent back promptly to the client.
+	// If the server cannot complete sending the response within this timeout, the connection is closed.
+	if err = rc.SetWriteDeadline(time.Now().Add(requestTimeout)); err != nil {
+		logger.Warn().Err(err).Msg("failed setting write deadline for response controller")
+		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
+	}
 
 	// Track whether the relay completes successfully to handle reward management
 	// A successful relay means that:
@@ -85,7 +109,9 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// TODO_CONSIDERATION: Consider implementing a delay queue instead of rejecting
 	// requests when application stake is insufficient. This would allow processing
 	// once earlier requests complete and free up stake.
-	if server.relayMeter.ShouldRateLimit(ctx, meta) {
+	isOverServicing := server.relayMeter.IsOverServicing(ctx, meta)
+	shouldRateLimit := isOverServicing && !server.relayMeter.AllowOverServicing()
+	if shouldRateLimit {
 		return relayRequest, ErrRelayerProxyRateLimited
 	}
 
@@ -105,7 +131,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	if serviceConfig == nil {
-		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled
+		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+			"service %q not configured",
+			serviceId,
+		)
 	}
 
 	logger = logger.With(
@@ -217,12 +246,26 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
 
-	// Emit the relay to the servedRelays observable.
-	server.servedRelaysProducer <- relay
+	// Only emit relays and mark them as rewardable when they are not over-servicing:
+	// - Over-serviced relays exceed the application's allocated stake.
+	// - These are provided as free goodwill by the supplier.
+	// - Not eligible for on-chain compensation (outside protocol's reward mechanism).
+	//
+	// Emitting over-serviced relays would:
+	// - Break the optimistic relay reward accumulation pattern.
+	// - Mix "goodwill service" with "protocol-compensated service".
+	//
+	// Protocol details:
+	// - Relay rewards are optimistically accumulated before forwarding to the relay miner.
+	// - Over-serviced relays must never enter this reward pipeline.
+	if !isOverServicing {
+		// Forward reward-eligible relays for SMT updates (excludes over-serviced relays).
+		server.servedRewardableRelaysProducer <- relay
 
-	// Mark the relay as successful. This prevents the deferred reward management
-	// function from reverting the accumulated rewards.
-	shouldRewardRelay = true
+		// Mark relay as successful and rewardable, so deferred logic doesn't revert it.
+		shouldRewardRelay = true
+	}
+
 	return relayRequest, nil
 }
 

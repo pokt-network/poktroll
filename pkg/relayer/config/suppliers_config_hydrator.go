@@ -29,6 +29,12 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 			supplierConfig.SigningKeyNames = relayMinerConfig.DefaultSigningKeyNames
 		}
 
+		// If RequestTimeoutSeconds is not specified, use the default from the config.
+		supplierConfig.RequestTimeoutSeconds = yamlSupplierConfig.RequestTimeoutSeconds
+		if supplierConfig.RequestTimeoutSeconds == 0 {
+			supplierConfig.RequestTimeoutSeconds = relayMinerConfig.DefaultRequestTimeoutSeconds
+		}
+
 		// Supplier operator name should be unique
 		if _, ok := existingSuppliers[yamlSupplierConfig.ServiceId]; ok {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
