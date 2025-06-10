@@ -4,7 +4,7 @@ sidebar_position: 1
 ---
 
 :::important Managing Protocol Upgrades
-This is a meta introduction to protocol upgrades.
+This is a _high-level meta-overview_ of protocol upgrades.
 
 **❗ If you need to trigger a protocol upgrade, see the [Protocol Upgrade Release Procedure](2_release_procedure.md) section ❗**
 :::

@@ -3,40 +3,25 @@ title: Protocol Upgrade Release Procedure
 sidebar_position: 2
 ---
 
-- :::important
-  This is the step-by-step checklist for core protocol developers to release protocol upgrades.
+:::important
+This is the step-by-step (almost) 🖨🍝 checklist for core protocol developers to release protocol upgrades.
 
-  **❗ DO NOT PROCEED if you are not comfortable with Git, GitHub releases, scripting, etc❗**
-  :::
+**❗ DO NOT PROCEED if you are not comfortable with Git, GitHub releases, scripting, etc❗**
+:::
 
-  **If this is your first upgrade, before starting:**
-
-## If this is your first upgrade, before starting:
+## If this is your first time managing an upgrade, learn the following:
 
 - Ensure you know [When is a Protocol Upgrade Needed?](./1_protocol_upgrades.md#when-is-a-protocol-upgrade-needed)
-- Familiarize yourself with [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference
 - Ensure you have push access to [pokt-network/poktroll](https://github.com/pokt-network/poktroll)
 - Ensure you have the required CLI tools (`git`, `make`, `jq`, `sed`, `curl`, `go`, `brew`, `pocketd`, etc.)
-- Understand `state-breaking` vs `consensus-breaking` changes
-- Know how to test changes locally ([Testing Upgrades](3_testing_upgrades_locally.md))
-
----
-
-## Protocol Upgrade Release: At-a-Glance
-
-- Steps must be completed in order—do not skip unless experienced
-- Most commands are copy/paste ready; update this doc if you find issues
-- Merge all changes to `main` for history and visibility
-
----
+- Understand `state-breaking` vs `consensus-breaking` changes from the [overview](./1_protocol_upgrades.md)
+- Be aware of the list of [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference
+- If you implemented the upgrade, familiarize yourself with [how to test changes locally](3_testing_upgrades_locally.md)
 
 ## Table of Contents <!-- omit in toc -->
 
-- [If this is your first upgrade, before starting:](#if-this-is-your-first-upgrade-before-starting)
-- [Protocol Upgrade Release: At-a-Glance](#protocol-upgrade-release-at-a-glance)
-- [0. Prerequisites \& Sanity Checks](#0-prerequisites--sanity-checks)
-- [1. Ensure `ConsensusVersion` is updated](#1-ensure-consensusversion-is-updated)
-- [2. Prepare a New Upgrade Plan](#2-prepare-a-new-upgrade-plan)
+- [If this is your first time managing an upgrade, learn the following:](#if-this-is-your-first-time-managing-an-upgrade-learn-the-following)
+- [1. Prepare a New Upgrade Plan](#1-prepare-a-new-upgrade-plan)
 - [3. Create a GitHub Release](#3-create-a-github-release)
 - [4. Write an Upgrade Transaction (JSON file)](#4-write-an-upgrade-transaction-json-file)
 - [5. Validate the Upgrade Binary URLs (Live Network Only)](#5-validate-the-upgrade-binary-urls-live-network-only)
@@ -48,20 +33,8 @@ sidebar_position: 2
 - [Before You Finish](#before-you-finish)
 - [TODO](#todo)
 
----
-
-## 0. Prerequisites & Sanity Checks
-
-- [ ] Push/publish access to the repo and [GitHub releases](https://github.com/pokt-network/poktroll/releases)
-- [ ] Required CLI tools: `git`, `make`, `jq`, `sed`, `curl`, `go`, `brew`, `pocketd`, etc.
-- [ ] Familiar with [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades)
-- [ ] Read the [Protocol Upgrade Introduction](./1_protocol_upgrades.md)
-- [ ] Understand `state-breaking` vs `consensus-breaking`
-- [ ] Know how to test locally ([Testing Upgrades](3_testing_upgrades_locally.md))
-
----
-
-## 1. Ensure `ConsensusVersion` is updated
+<details>
+<summary>TODO(@olshansk): Ensure `ConsensusVersion` updates is part of the process</summary>
 
 - Bump the `ConsensusVersion` for all modules with `state-breaking` changes.
 - This requires manual inspection and understanding of your changes.
@@ -71,15 +44,18 @@ sidebar_position: 2
 
 **⚠️DO NOT PROCEED until these changes are merged⚠️**
 
----
+</details>
 
-## 2. Prepare a New Upgrade Plan
+## 1. Prepare a New Upgrade Plan
 
 :::tip Reference
 
 - Review [Pocket Network's historical.go](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for past upgrades.
-- See [Cosmos SDK upgrade docs](https://docs.cosmos.network/main/build/building-apps/app-upgrade).
+- Optional Reference: [Cosmos SDK upgrade docs](https://docs.cosmos.network/main/build/building-apps/app-upgrade).
   :::
+
+**TODO_IN_THIS_PR**: Replace this whole thing with the `vNext` approach.
+Make this comply with the vNext approach.
 
 1. **Select SHAs**
 
@@ -159,11 +135,18 @@ You can review [all prior releases here](https://github.com/pokt-network/poktrol
      <!-- Auto-generated GitHub Release Notes continue here -->
      ```
 
+     TODO_IN_THIS_PR:
+
+     - Script to auto-generate descriptions
+     - Links to where/how the artifacts are build
+
 4. **Set as a pre-release** (change to `latest release` after upgrade completes).
 
 ---
 
 ## 4. Write an Upgrade Transaction (JSON file)
+
+Add a make target for this.
 
 :::tip
 See [v0.1.2 upgrade transactions](https://github.com/pokt-network/poktroll/pull/1204) for examples.
@@ -448,3 +431,13 @@ The following improvements will streamline this process further
 
 - [ ] Concrete examples of PR examples & descriptions along the way
 - [ ] Additional helpers (not automation) for some of the commands throughout
+
+TODO_IN_THIS_PR: Remind the reader to make the release the latest at the very end.
+TOD_IN_THIS_PR: Add links to observability:
+
+- https://discord.com/channels/824324475256438814/1382058945920630906
+- https://github.com/pokt-network/poktroll/pull/1460
+
+oad here: https://grafana.tooling.grove.city/goto/xL03JALNR?orgId=1
+Claims & proofs on mainnet https://explorer.pocket.network/pocket-mainnet - to make sure everything works as expected. Last time I discovered lots of tokens spent on relays on poktscan, but it doesn't work right now. So just waiting for a block with eth claims/proofs.
+31 claims in this block
