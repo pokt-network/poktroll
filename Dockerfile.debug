@@ -30,7 +30,6 @@ RUN apt-get update && \
         conntrack \
         # HTTP/API debugging
         httpie \
-        websocat \
         # System monitoring and debugging
         htop \
         iotop \
@@ -40,7 +39,6 @@ RUN apt-get update && \
         procps \
         psmisc \
         tree \
-        pstree \
         # Text processing and editors
         vim \
         nano \
@@ -53,7 +51,6 @@ RUN apt-get update && \
         fzf \
         # JSON/YAML tools
         jo \
-        dasel \
         yq \
         # Version control and file tools
         git \
@@ -78,7 +75,6 @@ RUN apt-get update && \
         which \
         # Container debugging
         ca-certificates \
-        crictl \
         # Process debugging
         gdb \
         # Memory debugging
