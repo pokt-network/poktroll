@@ -103,7 +103,7 @@ func setupRelayerDependencies(
 		config.NewSupplyServiceQueryClientFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySessionQuerierFn(),
-		config.SupplyRelayMeter,
+		config.SupplyRelayMeterFn(relayMinerConfig.EnableOverServicing),
 		config.SupplyMiner,
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyBankQuerierFn(),
@@ -116,7 +116,7 @@ func setupRelayerDependencies(
 		// Always use "auto" gas setting for RelayMiner.
 		config.NewSupplySupplierClientsFn(signingKeyNames, cosmosflags.GasFlagAuto),
 		config.NewSupplyRelayAuthenticatorFn(signingKeyNames),
-		config.NewSupplyRelayerProxyFn(servicesConfigMap),
+		config.NewSupplyRelayerProxyFn(servicesConfigMap, relayMinerConfig.Ping.Enabled),
 		config.NewSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 

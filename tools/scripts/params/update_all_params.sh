@@ -296,7 +296,6 @@ update_state_params() {
 
     local cmd="pocketd tx authz exec \"$PARAM_DIR/$file\" \
       --from=$from \
-      --keyring-backend=$keyring_backend \
       --chain-id=$chain_id \
       --node=\"$node\" \
       --yes \
@@ -314,7 +313,6 @@ update_state_params() {
 
     local cmd="pocketd tx authz exec \"$PARAM_DIR/$file\" \
       --from=$from \
-      --keyring-backend=$keyring_backend \
       --chain-id=$chain_id \
       --node=\"$node\" \
       --yes \
