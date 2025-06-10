@@ -354,3 +354,12 @@ If `rev_share_percent` is defined for a `service`, then the `owner_address` of t
 `Supplier` MUST be **explicitly** defined in the map if they are to receive a share.
 
 :::
+
+Qspider — 11:40 AM
+I looked in the docs and cli. Just double checked. Looked at protocol specifications just now don't see anything for supplier min stake. I've looked at the docs and cli many times over the months. I see staking configs but it's not listed anywhere that I can see as a minimum stake. I do have 60,000 in my mind from the community chats sometime in the last months.
+Perhaps I'm just overlooking it? It's gott abe somewhere. lol
+I'm thinking for example, the supplier, I would expect something to be linked here.
+Fund the Supplier
+https://dev.poktroll.com/operate/cheat_sheets/supplier_cheatsheet#3-fund-the-supplier-account
+
+Somewhere in there perhaps 3. Stake your Supplier should list or have a link to specifications.
