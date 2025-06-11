@@ -658,7 +658,7 @@ func (txnClient *txClient) getTxTimeoutError(
 
 	// Query the transaction using the decoded byte hash.
 	txResponse, err := txnClient.txCtx.QueryTx(ctx, txHash, false)
-	if err != nil {
+	if err != nil || txResponse == nil {
 		return ErrQueryTx.Wrapf("with hash: %s: %s", txHashHex, err)
 	}
 
@@ -673,8 +673,7 @@ func (txnClient *txClient) getTxTimeoutError(
 	// Transaction was successful even if it was expected to timeout.
 	txnClient.logger.Warn().Msgf(
 		"expecting tx with hash %s to timeout but was successful at height %d",
-		txHashHex,
-		currentHeight,
+		txHashHex, currentHeight,
 	)
 	return nil
 
