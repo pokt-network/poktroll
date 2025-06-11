@@ -1,0 +1,10 @@
+owner_address: pokt1vns9fcc5gy8444p98a86uv98qlxp3n959kx6mh
+operator_address: pokt19jq2zu3eluufyd22sfc9jrlqv9hw5plt5pmcrv
+default_rev_share_percent:
+  pokt1vns9fcc5gy8444p98a86uv98qlxp3n959kx6mh: 80
+  pokt19jq2zu3eluufyd22sfc9jrlqv9hw5plt5pmcrv: 20
+services:
+  - service_id: anvil
+    endpoints:
+      - publicly_exposed_url: http://relayminer1:8545
+        rpc_type: JSON_RPC
