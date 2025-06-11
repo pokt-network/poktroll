@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -140,10 +141,24 @@ func (k msgServer) ClaimMorseSupplier(
 		}
 	}
 
-	// Mint the Morse node/supplier's stake to the shannonSigningAddress account balance.
-	// The Supplier stake is subsequently escrowed from the shannonSigningAddress account balance.
+	// If both of the following are true:
+	// 1. The Morse Supplier started unstaking before the state shift
+	// 2. The Morse Supplier fully unstaked after the state shift at the time of claim
+	// Then the Shannon owner address is where the staked balance needs to be minted to.
+	// DEV_NOTE: The "stake is subsequently escrowed "
+	hasUnbonded := morseNodeClaimableAccount.HasUnbonded(ctx)
+	var stakedTokensDestAddr sdk.AccAddress
+	if hasUnbonded {
+		stakedTokensDestAddr = shannonOwnerAddr
+	} else {
+		stakedTokensDestAddr = shannonSigningAddress
+	}
+
+	// Mint the Morse node/supplier's stake to the stakedTokensDestAddr account balance.
+	// The Supplier stake is subsequently escrowed from the stakedTokensDestAddr account balance
+	// UNLESS it has already unbonded during the migration.
 	// NOTE: The supplier module's staking fee parameter will be deducted from the claimed balance below.
-	if err = k.MintClaimedMorseTokens(ctx, shannonSigningAddress, morseNodeClaimableAccount.GetSupplierStake()); err != nil {
+	if err = k.MintClaimedMorseTokens(ctx, stakedTokensDestAddr, morseNodeClaimableAccount.GetSupplierStake()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -227,7 +242,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// - No further minting is needed
 	// - Block time is estimated and used to set the unstake session end height
 	// - Emit event to signal unbonding start
-	if morseNodeClaimableAccount.HasUnbonded(ctx) {
+	if hasUnbonded {
 		events = append(events, morseSupplierClaimedEvent)
 		events = append(events, morseSupplierUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
