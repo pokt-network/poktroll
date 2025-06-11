@@ -163,11 +163,11 @@ func initAppConfig() (string, interface{}) {
 	// In summary:
 	// - if you leave srvCfg.MinGasPrices = "", all validators MUST tweak their own app.toml config
 	// - if you set srvCfg.MinGasPrices non-empty, validators CAN tweak their own app.toml to override OR use this default value.
-
+	//
 	// Default Application configuration settings
 	// MingGasPrices set to the minimal value of the smallest denomination
-	srvCfg.MinGasPrices = "1upokt"
-	srvCfg.Mempool.MaxTxs = 100000 // 100k max transactions per block
+	srvCfg.MinGasPrices = "0.000000001upokt"
+	srvCfg.Mempool.MaxTxs = 100_000 // 100k max transactions per block
 
 	// Positive non-zero value turns on Prometheus support.
 	// Prometheus metrics are removed from the exporter when retention time is reached.
@@ -175,17 +175,22 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.Telemetry.Enabled = true
 	srvCfg.Telemetry.MetricsSink = "mem"
 
-	srvCfg.Pruning = "nothing" // archiving node by default
+	// Archiving node by default
+	srvCfg.Pruning = "nothing"
+	// Uncomment these (and replace with the above) to have a prunning nose
+	// srvCfg.Pruning = "custom"
+	// srvCfg.PruningKeepRecent = "100"
+	// srvCfg.PruningInterval = "10"
 
 	// Controls how large any single RPC request accepted by the CometBFT server (offchain) can be.
-	srvCfg.API.RPCMaxBodyBytes = 100000000 // 95MB
-	srvCfg.API.RPCReadTimeout = 60         // 1 minute
-	srvCfg.API.RPCReadTimeout = 60         // 1 minute
+	srvCfg.API.RPCMaxBodyBytes = 100_000_000 // 95MB
+	srvCfg.API.RPCReadTimeout = 60           // 1 minute
+	srvCfg.API.RPCReadTimeout = 60           // 1 minute
 	srvCfg.API.Enable = true
 	srvCfg.API.Swagger = true
 
 	srvCfg.GRPC.Enable = true
-	srvCfg.GRPC.MaxRecvMsgSize = 100000000 // 95MB
+	srvCfg.GRPC.MaxRecvMsgSize = 100_000_000 // 95MB
 	srvCfg.GRPCWeb.Enable = true
 
 	// For testing only: set the min gas prices to 0.
