@@ -140,8 +140,18 @@ func (k msgServer) ClaimMorseSupplier(
 		}
 	}
 
+	// If:
+	// 1. The Morse Supplier started unstaking before the state shift
+	// 2. The Morse Supplier fully unstaked after the state shift at the time of claim
+	// Then the Shannon owner address is where the staked balance needs to go
+	hasUnbonded := morseNodeClaimableAccount.HasUnbonded(ctx)
+	if hasUnbonded {
+		shannonSigningAddress = shannonOwnerAddr
+	}
+
 	// Mint the Morse node/supplier's stake to the shannonSigningAddress account balance.
-	// The Supplier stake is subsequently escrowed from the shannonSigningAddress account balance.
+	// The Supplier stake is subsequently escrowed from the shannonSigningAddress account balance
+	// UNLESS it has already unbonded during the migration.
 	// NOTE: The supplier module's staking fee parameter will be deducted from the claimed balance below.
 	if err = k.MintClaimedMorseTokens(ctx, shannonSigningAddress, morseNodeClaimableAccount.GetSupplierStake()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -227,7 +237,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// - No further minting is needed
 	// - Block time is estimated and used to set the unstake session end height
 	// - Emit event to signal unbonding start
-	if morseNodeClaimableAccount.HasUnbonded(ctx) {
+	if hasUnbonded {
 		events = append(events, morseSupplierClaimedEvent)
 		events = append(events, morseSupplierUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
