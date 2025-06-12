@@ -476,7 +476,7 @@ func mappingAccounts(
 	var destinationReadErr error
 	var hasDestination bool
 
-	// assign morse to this one
+	// Check if a shannon address was specified or if a new key should be generated
 	if flagDestination != "" {
 		shannonAddress, destinationReadErr = sdk.AccAddressFromBech32(flagDestination)
 		if destinationReadErr != nil {
