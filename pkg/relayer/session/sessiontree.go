@@ -182,7 +182,7 @@ func importSessionTree(
 	sessionTree.claimedRoot = nil  // explicitly set for posterity
 	sessionTree.isClaiming = false // explicitly set for posterity
 
-	logger.Info().Msg("the imported session tree with no committed onchain claim")
+	logger.Info().Msg("imported session tree with no committed onchain claim")
 
 	return sessionTree, nil
 }
