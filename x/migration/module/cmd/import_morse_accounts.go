@@ -48,7 +48,7 @@ For more documentation, refer to: https://dev.poktroll.com/operate/morse_migrati
 	// Add Cosmos SDK standard flags to the command
 	cosmosflags.AddTxFlagsToCmd(importMorseAcctsCmd)
 
-	importMorseAcctsCmd.Flags().String(flags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
+	importMorseAcctsCmd.Flags().String(cosmosflags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
 	importMorseAcctsCmd.Flags().String(flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 	importMorseAcctsCmd.Flags().BoolVar(&updateHashOnly, flagUpdateHashOnly, false, "Update the hash of the Morse account state JSON file after auto-unstaking accounts")
 

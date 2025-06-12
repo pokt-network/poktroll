@@ -91,22 +91,22 @@ For more info, run 'relay --help'.`,
 	}
 
 	// Custom Flags
-	cmdRelay.Flags().StringVar(&flagRelayApp, flags.FlagApp, flags.DefaultFlagApp, flags.FlagAppUsage)
-	cmdRelay.Flags().StringVar(&flagRelayPayload, flags.FlagPayload, flags.DefaultFlagPayload, flags.FlagPayloadUsage)
-	cmdRelay.Flags().StringVar(&flagRelaySupplier, flags.FlagSupplier, flags.DefaultFlagSupplier, flags.FlagSupplierUsage)
+	cmdRelay.Flags().StringVar(&flagRelayApp, FlagApp, DefaultFlagApp, FlagAppUsage)
+	cmdRelay.Flags().StringVar(&flagRelayPayload, FlagPayload, DefaultFlagPayload, FlagPayloadUsage)
+	cmdRelay.Flags().StringVar(&flagRelaySupplier, FlagSupplier, DefaultFlagSupplier, FlagSupplierUsage)
 	cmdRelay.Flags().StringVar(
 		&flagSupplierPublicEndpointOverride,
-		flags.FlagSupplierPublicEndpointOverride,
-		flags.DefaultFlagSupplierPublicEndpointOverride,
-		flags.FlagSupplierPublicEndpointOverrideUsage,
+		FlagSupplierPublicEndpointOverride,
+		DefaultFlagSupplierPublicEndpointOverride,
+		FlagSupplierPublicEndpointOverrideUsage,
 	)
 
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
 	cosmosflags.AddTxFlagsToCmd(cmdRelay)
 
 	// Required flags
-	_ = cmdRelay.MarkFlagRequired(flags.FlagApp)
-	_ = cmdRelay.MarkFlagRequired(flags.FlagPayload)
+	_ = cmdRelay.MarkFlagRequired(FlagApp)
+	_ = cmdRelay.MarkFlagRequired(FlagPayload)
 
 	return cmdRelay
 }

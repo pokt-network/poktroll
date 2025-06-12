@@ -10,7 +10,7 @@ const (
 	// In most cases, this forces the user to specify the flag value to avoid unintended behavior.
 	OmittedDefaultFlagValue = "intentionally omitting default"
 
-	FlagLogLevel      = "log-level"
+	// DEV_NOTE: use cosmosflags.FlagLogLevelUsage for the flag name.
 	FlagLogLevelUsage = "The logging level (debug|info|warn|error)"
 	DefaultLogLevel   = "info"
 
@@ -57,31 +57,14 @@ const (
 	BooleanTrueValue  = "true"
 	BooleanFalseValue = "false"
 
-	/* Relayminer Command flags */
-	FlagApp        = "app"
-	FlagAppUsage   = "(Required) Staked application address"
-	DefaultFlagApp = ""
-
-	FlagPayload        = "payload"
-	FlagPayloadUsage   = "(Required) JSON-RPC payload"
-	DefaultFlagPayload = ""
-
-	FlagSupplier        = "supplier"
-	FlagSupplierUsage   = "(Optional) Staked Supplier address"
-	DefaultFlagSupplier = ""
-
-	FlagSupplierPublicEndpointOverride        = "supplier-public-endpoint-override"
-	FlagSupplierPublicEndpointOverrideUsage   = "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)"
-	DefaultFlagSupplierPublicEndpointOverride = ""
-
-	FlagConfig        = "config"
-	FlagConfigUsage   = "(Required) The path to the relayminer config file"
-	DefaultFlagConfig = ""
-
 	// FlagQueryCaching is the flag name to enable or disable query caching.
 	FlagQueryCaching        = "query-caching"
 	FlagQueryCachingUsage   = "(Optional) Enable or disable onchain query caching"
 	DefaultFlagQueryCaching = true
+
+	// TODO_IN_THIS_COMMIT: comment... cosmos-sdk CLI hard-coded default node URL.
+	// See: <link>
+	DefaultNodeRPCURL = "tcp://localhost:26657"
 )
 
 // GetFlagValueString returns the value of the flag with the given name.
