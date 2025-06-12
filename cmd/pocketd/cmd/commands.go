@@ -80,8 +80,11 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 
 // applyP2PConfigFromFlags reads the custom P2P flags and applies them to the CometBFT configuration
 func applyP2PConfigFromFlags(cmd *cobra.Command) error {
-	// Get viper instance to modify the configuration
-	v := viper.GetViper()
+	// Get the server context which contains the CometBFT configuration
+	serverCtx := server.GetServerContextFromCmd(cmd)
+	if serverCtx == nil || serverCtx.Config == nil {
+		return errors.New("server context or CometBFT config not available")
+	}
 
 	// Read the custom P2P flags
 	maxInboundPeers, err := cmd.Flags().GetInt("p2p.max-num-inbound-peers")
@@ -94,8 +97,13 @@ func applyP2PConfigFromFlags(cmd *cobra.Command) error {
 		return err
 	}
 
-	// Apply the values to viper configuration
-	// These will be used by CometBFT when it reads its configuration
+	// Apply the values directly to the CometBFT configuration object
+	// This ensures the values are applied after the config is loaded from file
+	serverCtx.Config.P2P.MaxNumInboundPeers = maxInboundPeers
+	serverCtx.Config.P2P.MaxNumOutboundPeers = maxOutboundPeers
+
+	// Also set in viper for consistency (though this may not be necessary)
+	v := viper.GetViper()
 	v.Set("p2p.max_num_inbound_peers", maxInboundPeers)
 	v.Set("p2p.max_num_outbound_peers", maxOutboundPeers)
 
