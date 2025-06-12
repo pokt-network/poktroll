@@ -37,7 +37,7 @@ const config = {
     [
       require.resolve("docusaurus-plugin-chat-page"),
       {
-        path: "🤖 chat",
+        path: "chat",
         openai: {
           apiKey: process.env.OPENAI_API_KEY,
         },
