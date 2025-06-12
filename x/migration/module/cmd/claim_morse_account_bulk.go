@@ -67,7 +67,7 @@ $ pocketd tx migration claim-accounts \
   --keyring-backend test \
   --unsafe \
   --unarmored-json \
-  --destination <SHANNON-ADDRESS> # This is the new here (BE CAREFUL WHAT YOU SET HERE)
+  --destination <SHANNON-ADDRESS> # MAKE SURE YOU HAVE THE PRIVATE KEYS FOR THIS ADDRESS
 `,
 		Short: "Claim many Morse accounts as unstaked accounts (i.e. non-actor, balance only account)",
 		Long: `Claim many Morse accounts as unstaked accounts (i.e. non-actor, balance only account).
