@@ -428,7 +428,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	if flagDryRunClaim {
 		logger.Logger.Info().
 			Str("path", flagOutputFilePath).
-			Msg("tx IS NOT being broadcasted because: '--dry-run-claim=true'.")details.")
+			Msg("tx IS NOT being broadcasted because: '--dry-run-claim=true'.")
 		return nil
 	}
 
