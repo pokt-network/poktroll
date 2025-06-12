@@ -1,19 +1,26 @@
 #!/usr/bin/env bash
 
-# Script to collect non-existent morse output accounts for migration
-# This script identifies validator output addresses that don't have corresponding morse claimable accounts
-
 set -eo pipefail
+shopt -s nullglob
 
-# Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Source common utilities
 source "$SCRIPT_DIR/common_bash_utils.sh"
 
+# Default Morse state export heights; can be overridden with the --height and --testnet-height flags, respectively.
+DEFAULT_MAINNET_HEIGHT="170616"
+DEFAULT_TESTNET_HEIGHT="179148"
+
+# Set default values for global flag variables
+SHOW_USAGE=true # If left set, the help/usage text will be printed.
+PRINT_STATS=false # If true, ONLY print account statistics
+STATS="starting..." # If --show-stats flag is set, this variable will collect the stats.
+MAINNET_HEIGHT=$DEFAULT_MAINNET_HEIGHT
+TESTNET=false # If true, consider the TestNet artifacts and ONLY output missing TestNet accounts
+TESTNET_HEIGHT=$DEFAULT_TESTNET_HEIGHT
+
 # Function to display help information
-show_help() {
-  cat <<EOF
+show_usage() {
+  cat <<🚀
 Usage: $(basename "$0") [OPTIONS]
 
 Collect non-existent morse output accounts for migration.
@@ -23,217 +30,252 @@ that don't have corresponding morse claimable accounts, then generates zero-bala
 morse claimable accounts for those missing addresses.
 
 OPTIONS:
-    --run                  Execute the script (defaults to non-execution if not specified)
-    --input FILE           Input morse state export file (default: morse_state_export_170616_2025-06-03.json)
-    --output FILE          Output file to write results (also writes to stdout)
-    --testnet              Include TestNet data in addition to MainNet
-    --print-counts         Only print account counts instead of generating JSON
-    --help, -h             Show this help message
+    --defaults                       ONLY generate and output the missing Morse accounts JSON for MainNet and TestNet heights (if none of --defaults, --height, or --testnet-height are specified, the help/usage text will be printed)
+    --height HEIGHT                  Use the MainNet artifacts with the given height (required even if --testnet is specified)
+    --testnet                        ONLY generate missing Morse accounts from TestNet artifacts
+    --testnet-height TESTNET_HEIGHT  Use TestNet artifacts with the given height (only required if --testnet is specified)
+    --help, -h                       Show this help message
 
 EXAMPLES:
-    $(basename "$0") --run                                    # Run with default input file
-    $(basename "$0") --run --input custom_export.json        # Run with custom input file
-    $(basename "$0") --run --output results.json             # Run and save to file
-    $(basename "$0") --run --testnet                          # Run with MainNet and TestNet data
-    $(basename "$0") --run --print-counts                     # Show only count statistics
+    $(basename "$0") --defaults                               # Run with default MainNet and TestNet artifacts
+    $(basename "$0") --height 167639                          # Run with MainNet artifacts with height 167639
+    $(basename "$0") --height 167639 --testnet-height 176966  # Run with MainNet artifacts with height 167639 and TestNet artifacts with height 176966
 
-FULL EXAMPLE:
-    tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --run --input morse_state_export_170616_2025-06-03.json --output results.json
+FULL EXAMPLES:
+    tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --defaults
+    tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --defaults --show-stats
+    tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --defaults --testnet
+    tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --defaults --height 169825 --testnet-height 179148
 
 FILES USED:
-    - Default input: morse_state_export_170616_2025-06-03.json (MainNet snapshot)
-    - TestNet file: TODO_IN_THIS_PR_UPDATE_DEFAUlT_FILE (if --testnet used)
-    - Import message files: msg_import_morse_accounts_*.json (auto-generated based on input)
+    - Default MainNet state export: morse_state_export_170616_2025-06-03.json (MainNet snapshot)
+    - Default TestNet state export: morse_state_export_179148_2025-06-01.json (TestNet snapshot)
+    - Import message files: msg_import_morse_accounts_*.json (auto-generated based on MainNet and TestNet height(s))
 
 OUTPUT:
     JSON array of zero-balance morse claimable accounts for missing addresses
-
-EOF
+🚀
 }
 
-# Function to extract non-custodial morse output addresses from state export
-# Selects validators where output_address is set and different from validator address
-get_raw_non_custodial_morse_output_addresses() {
-  jq -r '[.app_state.pos.validators[]|select(.output_address != "" and .output_address != .address)]|map(.output_address)[]' "$1"
-}
-
-# Function to get all morse source addresses from claimable accounts
-get_all_raw_morse_claimable_account_src_addresses() {
-  jq -r '.morse_account_state.accounts|map(.morse_src_address)[]' "$1"
-}
-
-# Function to create zero-balance morse claimable accounts for given addresses
-# Takes a JSON array of addresses and creates account objects with zero balances
-zero_balance_morse_claimable_accounts_for_addresses() {
-  jq -r '.|map({morse_src_address: ., unstaked_balance: "0upokt", supplier_stake: "0upokt", application_stake: "0upokt", claimed_at_height: 0, shannon_dest_address: "", morse_output_address: ""})' <<<"$1"
-}
-
-# Function to extract base filename without extension for generating related filenames
-get_base_filename() {
-  local filepath="$1"
-  local filename=$(basename "$filepath")
-  echo "${filename%.*}" # Remove extension
-}
-
-# Function to generate import message filename based on input file
-get_import_message_filename() {
-  local input_file="$1"
-  local base_name=$(get_base_filename "$input_file")
-
-  # Extract the date portion (assuming format like morse_state_export_170616_2025-06-03.json)
-  if [[ "$base_name" =~ morse_state_export_([0-9]+_[0-9]{4}-[0-9]{2}-[0-9]{2}) ]]; then
-    local date_part="${BASH_REMATCH[1]}"
-    if [ "$TESTNET" = true ]; then
-      echo "msg_import_morse_accounts_m${date_part}_t179148.json"
-    else
-      echo "msg_import_morse_accounts_${date_part}.json"
-    fi
-  else
-    # Fallback if pattern doesn't match
-    if [ "$TESTNET" = true ]; then
-      echo "msg_import_morse_accounts_m_$(get_base_filename "$input_file")_t179148.json"
-    else
-      echo "msg_import_morse_accounts_$(get_base_filename "$input_file").json"
-    fi
-  fi
-}
-
-# Function to output results to both stdout and file (if specified)
-output_results() {
-  local content="$1"
-  local output_file="$2"
-
-  # Always output to stdout
-  echo "$content"
-
-  # If output file is specified, also write to file
-  if [ -n "$output_file" ]; then
-    echo "$content" >"$output_file"
-    echo "Results written to: $output_file" >&2
-  fi
-}
-
-# Main execution function
-run_script() {
-  # Set default input file if not provided
-  local input_file="${INPUT_FILE:-morse_state_export_170616_2025-06-03.json}"
-
-  # Build full path for input file (assume it's in script directory if not absolute path)
-  if [[ "$input_file" != /* ]]; then
-    MORSE_STATE_EXPORT_PATH="$SCRIPT_DIR/$input_file"
-  else
-    MORSE_STATE_EXPORT_PATH="$input_file"
-  fi
-
-  # Check if input file exists
-  if [ ! -f "$MORSE_STATE_EXPORT_PATH" ]; then
-    echo "Error: Input file '$MORSE_STATE_EXPORT_PATH' not found" >&2
-    exit 1
-  fi
-
-  # Generate import message filename based on input file
-  MSG_MORSE_IMPORT_ACCOUNTS_FILENAME=$(get_import_message_filename "$input_file")
-  MSG_MORSE_IMPORT_ACCOUNTS_PATH="$SCRIPT_DIR/$MSG_MORSE_IMPORT_ACCOUNTS_FILENAME"
-
-  # Get all morse output addresses from MainNet, convert to uppercase and deduplicate
-  ALL_MORSE_OUTPUT_ADDRESSES=$(get_raw_non_custodial_morse_output_addresses "$MORSE_STATE_EXPORT_PATH" | to_uppercase | sort | uniq)
-
-  # If testnet flag is set, merge MainNet and TestNet data
-  if [ "$TESTNET" = true ]; then
-    # Use the hardcoded TestNet file (since it's referenced by the default import message naming)
-    TESTNET_MORSE_STATE_EXPORT_PATH="$SCRIPT_DIR/morse_state_export_TODO_IN_THIS_PR_UPDATE_DEFAULT_FILE"
-
-    # Check if TestNet file exists
-    if [ ! -f "$TESTNET_MORSE_STATE_EXPORT_PATH" ]; then
-      echo "Warning: TestNet file '$TESTNET_MORSE_STATE_EXPORT_PATH' not found, skipping TestNet data" >&2
-    else
-      # Extract TestNet morse output addresses
-      TESTNET_MORSE_OUTPUT_ADDRESSES=$(get_raw_non_custodial_morse_output_addresses "$TESTNET_MORSE_STATE_EXPORT_PATH" | to_uppercase | sort | uniq)
-
-      # Combine MainNet and TestNet addresses, removing duplicates
-      ALL_MORSE_OUTPUT_ADDRESSES=$(join_lists "$ALL_MORSE_OUTPUT_ADDRESSES" "$TESTNET_MORSE_OUTPUT_ADDRESSES" | sort | uniq)
-    fi
-  fi
-
-  # Check if import message file exists
-  if [ ! -f "$MSG_MORSE_IMPORT_ACCOUNTS_PATH" ]; then
-    echo "Error: Import message file '$MSG_MORSE_IMPORT_ACCOUNTS_PATH' not found" >&2
-    exit 1
-  fi
-
-  # Get all existing morse claimable account source addresses
-  ALL_MORSE_CLAIMABLE_ACCOUNT_SRC_ADDRESSES=$(get_all_raw_morse_claimable_account_src_addresses "$MSG_MORSE_IMPORT_ACCOUNTS_PATH" | tr '[:lower:]' '[:upper:]' | sort | uniq)
-
-  # Find addresses that exist in morse output but not in claimable accounts
-  MISSING_MORSE_ACCOUNT_ADDRESSES=$(diff_A_sub_B "$ALL_MORSE_OUTPUT_ADDRESSES" "$ALL_MORSE_CLAIMABLE_ACCOUNT_SRC_ADDRESSES")
-
-  # Convert missing addresses to JSON array format
-  MISSING_MORSE_ACCOUNT_ADDRESSES_JSON=$(lines_to_json_array "$MISSING_MORSE_ACCOUNT_ADDRESSES")
-
-  # Generate zero-balance morse claimable accounts for missing addresses
-  ZERO_BALANCE_MORSE_CLAIMABLE_ACCOUNTS_JSON=$(zero_balance_morse_claimable_accounts_for_addresses "$MISSING_MORSE_ACCOUNT_ADDRESSES_JSON")
-
-  # If print counts flag is set, show statistics and exit
-  if [ "$PRINT_COUNTS" = true ]; then
-    local count_output="Total Non-Custodial Morse Accounts: $(echo "$ALL_MORSE_OUTPUT_ADDRESSES" | count_non_empty_lines)
-Total Morse claimable accounts: $(echo "$ALL_MORSE_CLAIMABLE_ACCOUNT_SRC_ADDRESSES" | count_non_empty_lines)
-Total missing MorseClaimableAccounts: $(echo "$MISSING_MORSE_ACCOUNT_ADDRESSES" | count_non_empty_lines)"
-
-    output_results "$count_output" "$OUTPUT_FILE"
-    exit 0
-  fi
-
-  # Output the generated zero-balance morse claimable accounts JSON
-  output_results "$ZERO_BALANCE_MORSE_CLAIMABLE_ACCOUNTS_JSON" "$OUTPUT_FILE"
-}
-
-# Check if no arguments provided or help requested, show help by default
-if [ $# -eq 0 ] || [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-  show_help
-  exit 0
-fi
-
-# Check if --run flag is provided
-RUN_SCRIPT=false
-for arg in "$@"; do
-  if [[ "$arg" == "--run" ]]; then
-    RUN_SCRIPT=true
-    break
-  fi
-done
-
-# If --run not provided, show help and exit
-if [ "$RUN_SCRIPT" = false ]; then
-  echo "Error: --run flag is required to execute the script functionality."
-  echo ""
-  show_help
-  exit 1
-fi
-
-# Parse all command line arguments
-parse_args "$@"
-
-# Set default values for new options
-INPUT_FILE=""
-OUTPUT_FILE=""
-
-# Parse additional arguments for input and output files
 while [[ $# -gt 0 ]]; do
-  case $1 in
-  --input)
-    INPUT_FILE="$2"
+  arg="$1"
+  case $arg in
+  --height)
+    # Use the MainNet artifacts with the given height and don't show usage.
+    MAINNET_HEIGHT="$2"
+    SHOW_USAGE=false
     shift 2
     ;;
-  --output)
-    OUTPUT_FILE="$2"
+  --testnet)
+    # Use TestNet artifacts with the default TestNet height and don't show usage.
+    TESTNET=true
+    shift
+    ;;
+  --testnet-height)
+    # Use TestNet artifacts with the given height and don't show usage.
+    TESTNET_HEIGHT="$2"
+    TESTNET=true
+    SHOW_USAGE=false
     shift 2
+    ;;
+  --defaults)
+    # Set MainNet and TestNet heights to their respective defaults and don't show usage if --defaults is specified
+    # NOTE: This DOES NOT set nor imply the --testnet flag.
+    MAINNET_HEIGHT=$DEFAULT_MAINNET_HEIGHT
+    TESTNET_HEIGHT=$DEFAULT_TESTNET_HEIGHT
+    SHOW_USAGE=false
+    shift
+    ;;
+  -h|--help)
+    # Show usage if -h or --help is specified.
+    SHOW_USAGE=true
+    shift
     ;;
   *)
-    # Skip other arguments (handled by parse_args)
+    # Ignore unrecognized arguments
     shift
     ;;
   esac
 done
 
-# Execute the main script functionality
-run_script
+# Get the unquoted and newline-delimited string of all non-custodial Morse output addresses from the given state export file.
+# All addresses are normalized to uppercase, sorted, and deduplicated.
+#   $1 - Path to the Morse state export file
+get_raw_non_custodial_morse_output_addresses() {
+  jq -r '[.app_state.pos.validators[]|select(.output_address != "" and .output_address != .address)]|map(.output_address)[]' "$1" | to_uppercase | sort | uniq
+}
+
+# Get the unquoted and newline-delimited string of all Morse claimable accounts from the given import message file.
+# All addresses are normalized to uppercase, sorted, and deduplicated.
+#   $1 - Path to the Morse accounts import message file
+get_all_raw_morse_claimable_account_src_addresses() {
+  jq -r '.morse_account_state.accounts|map(.morse_src_address)[]' "$1" | to_uppercase | sort | uniq
+}
+
+# Generate a JSON array of zero-balance Morse claimable accounts for the given JSON array of Morse claimable accounts..
+#   $1 - JSON array of Morse claimable accounts
+zero_balance_morse_claimable_accounts_for_addresses_json() {
+  echo "$1" | jq -r '.|map({morse_src_address: ., unstaked_balance: "0upokt", supplier_stake: "0upokt", application_stake: "0upokt", claimed_at_height: 0, shannon_dest_address: "", morse_output_address: ""})'
+}
+
+# Attempt to match a single file by the given glob pattern.
+# Exits with non-zero status if zero or more than one file is found.
+#   $1 - Glob pattern of the file name to match
+match_single_file_by_glob() {
+  local path_glob="$1"
+  local glob_matched_files=(${path_glob})
+  local num_glob_matched_files=${#glob_matched_files[@]}
+
+  if (( $num_glob_matched_files == 0 )); then
+    echo "No files matched '$path_glob'" >&2
+    exit 1
+  elif (( $num_glob_matched_files > 1 )); then
+    echo "${num_glob_matched_files} files matched ${path_glob}:" >&2
+    for file in "${glob_matched_files[@]}"; do
+      echo "  - $file" >&2
+    done
+    exit 2
+  fi
+
+  if ! assert_file_exists "${glob_matched_files[0]}"; then
+    exit $?
+  fi
+
+  echo "${glob_matched_files[0]}"
+}
+
+# Get the path to the state export file with the given height.
+#   $1 - Height to look for in the state export file name
+#   $2 - Directory to prepend to the state export file name (optional; default is $SCRIPT_DIR)
+get_state_export_path_by_height() {
+  local height="$1"
+  local artifact_dir="${2:-$SCRIPT_DIR}"
+
+  local morse_state_export_glob="${artifact_dir}/morse_state_export_${height}*.json"
+  if ! match_single_file_by_glob "$morse_state_export_glob"; then
+    exit $?
+  fi
+}
+
+# Get the path to the import message file with the given MainNet height and optional TestNet height.
+#   $1 - MainNet height to look for in the import message file name
+#   $2 - TestNet height to look for in the import message file name (optional; default is "0", ignored if "0")
+#   $3 - Directory to prepend to the import message file name (optional; default is $SCRIPT_DIR)
+get_import_message_path_by_height() {
+  local mainnet_height="$1"
+  local testnet_height="${2:-"0"}"
+  local artifact_dir="${3:-$SCRIPT_DIR}"
+
+  # Default to MainNet only import message, override with MainNet + TestNet import message if testnet height is set.
+  local msg_import_morse_accounts_glob="${artifact_dir}/msg_import_morse_accounts_${mainnet_height}*.json"
+  if [ "$testnet_height" != "0" ]; then
+    msg_import_morse_accounts_glob="${artifact_dir}/msg_import_morse_accounts_m${mainnet_height}_t${testnet_height}.json"
+  fi
+
+  if ! match_single_file_by_glob "$msg_import_morse_accounts_glob"; then
+    exit $?
+  fi
+}
+
+# Generate a JSON array of missing Morse claimable accounts for the MainNet state export with the given MainNet height.
+collect_mainnet_missing_morse_accounts_json() {
+  local mainnet_height="$1"
+
+  local mainnet_morse_state_export_path
+  if ! mainnet_morse_state_export_path=$(get_state_export_path_by_height "$mainnet_height"); then
+    exit $?
+  fi
+
+  local msg_import_morse_accounts_path
+  if ! msg_import_morse_accounts_path=$(get_import_message_path_by_height "$mainnet_height"); then
+    exit $?
+  fi
+
+  # Convert missing addresses to JSON array format
+  local missing_morse_account_addresses_json
+  if ! missing_morse_account_addresses_json=$(collect_missing_morse_output_addresses_json "$mainnet_morse_state_export_path" "$msg_import_morse_accounts_path"); then
+    exit $?
+  fi
+
+  # Generate and output zero-balance morse claimable accounts for missing addresses
+  zero_balance_morse_claimable_accounts_for_addresses_json "$missing_morse_account_addresses_json"
+}
+
+# Generate a JSON array of missing Morse claimable accounts for the TestNet state export with the given MainNet height and TestNet heights.
+collect_testnet_missing_morse_accounts_json() {
+  local mainnet_height="$1"
+  local testnet_height="$2"
+
+  local mainnet_morse_state_export_path
+  if ! mainnet_morse_state_export_path=$(get_state_export_path_by_height "$mainnet_height"); then
+    exit $?
+  fi
+
+  local msg_import_morse_accounts_path
+  if ! msg_import_morse_accounts_path=$(get_import_message_path_by_height "$mainnet_height" "$testnet_height"); then
+    exit $?
+  fi
+
+  local testnet_morse_state_export_path
+  if ! testnet_morse_state_export_path=$(get_state_export_path_by_height "$testnet_height"); then
+    exit $?
+  fi
+
+  # Convert missing addresses to JSON array format
+  local missing_morse_account_addresses_json
+  if ! missing_morse_account_addresses_json=$(collect_missing_morse_output_addresses_json "$testnet_morse_state_export_path" "$msg_import_morse_accounts_path"); then
+    exit $?
+  fi
+
+  # Generate zero-balance morse claimable accounts for missing addresses
+  zero_balance_morse_claimable_accounts_for_addresses_json "$missing_morse_account_addresses_json"
+}
+
+# Generate a JSON array of missing Morse claimable accounts for the given Morse state export and import message files.
+#   $1 - Path to the Morse state export file
+#   $2 - Path to the Morse accounts import message file
+collect_missing_morse_output_addresses_json() {
+  morse_state_export_path="$1"
+  msg_import_morse_accounts_path="$2"
+
+  local expected_morse_output_addresses
+  if ! expected_morse_output_addresses=$(get_raw_non_custodial_morse_output_addresses "$morse_state_export_path"); then
+    exit $?
+  fi
+
+  local all_morse_claimable_account_src_addresses
+  if ! all_morse_claimable_account_src_addresses=$(get_all_raw_morse_claimable_account_src_addresses "$msg_import_morse_accounts_path"); then
+    exit $?
+  fi
+
+  local missing_morse_account_addresses
+  if ! missing_morse_account_addresses=$(diff_A_sub_B "$expected_morse_output_addresses" "$all_morse_claimable_account_src_addresses"); then
+    exit $?
+  fi
+
+  # Convert missing addresses to JSON array format
+  lines_to_json_array "$missing_morse_account_addresses"
+}
+
+# Execute the main script functionality.
+run() {
+  if [ "$TESTNET" = true ]; then
+    # ONLY generate missing Morse accounts from TestNet state exports.
+    collect_testnet_missing_morse_accounts_json "$MAINNET_HEIGHT" "$TESTNET_HEIGHT"
+    if [[ $? -ne 0 ]]; then
+      exit $?
+    fi
+  else
+    # ONLY generate missing Morse accounts from MainNet state exports.
+    collect_mainnet_missing_morse_accounts_json "$MAINNET_HEIGHT"
+    if [[ $? -ne 0 ]]; then
+      exit $?
+    fi
+  fi
+}
+
+if [ "$SHOW_USAGE" = true ]; then
+  show_usage
+  exit 0
+fi
+run

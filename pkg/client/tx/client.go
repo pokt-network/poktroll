@@ -229,6 +229,15 @@ func NewTxClient(
 	return txnClient, nil
 }
 
+// TODO_REFACTOR(red-0ne): Improve transaction error handling architecture
+// The current approach returns an async error channel for all transactions, but this
+// adds unnecessary complexity. Based on our experience with Cosmos SDK's transaction
+// lifecycle, we should separate two distinct error types:
+// 1. Mempool inclusion errors - These occur immediately when broadcasting (synchronous)
+// 2. Transaction execution errors - These occur during block processing (asynchronous)
+// Creating distinct paths for these error types would simplify error handling throughout
+// the codebase and improve developer experience.
+//
 // SignAndBroadcastWithTimeoutHeight signs a set of Cosmos SDK messages, constructs
 // a transaction, and broadcasts it to the network. The function performs several
 // steps to ensure the messages and the resultant transaction are valid:
@@ -587,7 +596,8 @@ func (txnClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 		txnClient.txsMutex.Lock()
 
 		// Retrieve transactions associated with the current block's height.
-		txsByHash, ok := txnClient.txTimeoutPool[block.Height()]
+		currentHeight := block.Height()
+		txsByHash, ok := txnClient.txTimeoutPool[currentHeight]
 		if !ok {
 			// If no transactions are found for the current block height, continue.
 			txnClient.txsMutex.Unlock()
@@ -610,23 +620,36 @@ func (txnClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 			default:
 			}
 
-			// Transaction was not processed by its subscription: handle timeout.
-			txErrCh <- txnClient.getTxTimeoutError(ctx, txHash) // Send a timeout error.
-			close(txErrCh)                                      // Close the error channel.
-			delete(txsByHash, txHash)                           // Remove the transaction.
+			// Check if the transaction was not processed by its subscription: handle timeout.
+			if err := txnClient.getTxTimeoutError(ctx, currentHeight, txHash); err != nil {
+				// Send a tx client timeout error.
+				txErrCh <- err
+			}
+			close(txErrCh)            // Close the error channel.
+			delete(txsByHash, txHash) // Remove the transaction.
 		}
 
 		// Clean up the txTimeoutPool for the current block height.
-		delete(txnClient.txTimeoutPool, block.Height())
+		delete(txnClient.txTimeoutPool, currentHeight)
 		txnClient.txsMutex.Unlock()
 	}
 }
 
+// TODO_CONSIDERATION: Simplify error handling by removing custom tx client timeout errors
+// We should consider relying solely on CosmosSDK's built-in ErrTxTimeoutHeight error,
+// which is already returned by the BroadcastTx() method when a transaction fails to be
+// committed before its timeout height. This would eliminate duplicate error handling
+// and reduce code complexity.
+//
 // getTxTimeoutError checks if a transaction with the specified hash has timed out.
 // The function decodes the provided hexadecimal hash into bytes and queries the
 // transaction using the byte hash. If any error occurs during this process,
 // appropriate wrapped errors are returned for easier debugging.
-func (txnClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex string) error {
+func (txnClient *txClient) getTxTimeoutError(
+	ctx context.Context,
+	currentHeight int64,
+	txHashHex string,
+) error {
 	// Decode the provided hex hash into bytes.
 	txHash, err := hex.DecodeString(txHashHex)
 	if err != nil {
@@ -635,12 +658,25 @@ func (txnClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex stri
 
 	// Query the transaction using the decoded byte hash.
 	txResponse, err := txnClient.txCtx.QueryTx(ctx, txHash, false)
-	if err != nil {
+	if err != nil || txResponse == nil {
 		return ErrQueryTx.Wrapf("with hash: %s: %s", txHashHex, err)
 	}
 
-	// Return a timeout error with details about the transaction.
-	return ErrTxTimeout.Wrapf("with hash %s: %s", txHashHex, txResponse.TxResult.Log)
+	if txResponse.TxResult.Code != 0 {
+		// Return a tx client timeout error with details about the transaction error log.
+		return ErrTxTimeout.Wrapf(
+			"with tx hash %s and height %d: %s",
+			txHashHex, currentHeight, txResponse.TxResult.Log,
+		)
+	}
+
+	// Transaction was successful even if it was expected to timeout.
+	txnClient.logger.Warn().Msgf(
+		"expecting tx with hash %s to timeout but was successful at height %d",
+		txHashHex, currentHeight,
+	)
+	return nil
+
 }
 
 // getFeeAmount calculates the transaction fee amount based on client settings.
