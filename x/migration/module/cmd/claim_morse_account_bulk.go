@@ -57,7 +57,7 @@ $ pocketd tx migration claim-accounts \
   --unsafe \
   --unarmored-json
 
-3. Set same Destination for many accounts and avoid creating new wallets for each account (like operators claiming remaining pocket on operation wallets):
+3. Set the same Destination for many accounts and avoid creating new wallets for each account (like operators claiming remaining pocket on operation wallets):
 
 $ pocketd tx migration claim-accounts \
   --input-file ./bulk-accounts.json \
