@@ -80,8 +80,8 @@ What this command does:
 
 Additional options:
 1. Supports a '--dry-run-claim' mode that simulates the transaction but doesn't broadcast it onchain.
-2. Supports '--add-operator-share=[INT]' which adds operator rev share automatically. Useful to ensure operator wallet has always funds to work.
-3. Supports '--name-prefix-pattern=[prefix]' which will add that prefix to the name used to store the key on the keyring. Results will looks like: '[PREFIX]-[ADDRESS]'
+2. Supports '--add-operator-share=[INT]' which adds operator rev share automatically. Useful to ensure the operator wallet always has funds to work.
+3. Supports '--name-prefix-pattern=[prefix]' which adds a prefix to the name used to store the key on the keyring. Results will looks like: '[PREFIX]-[ADDRESS]'
 4. Supports '--use-index-names' which will replace the ADDRESS as suffix to use the index of the node in the list. Results will looks like: '[PREFIX]-[INDEX]'
 5. Enables exporting unarmored (plain) JSON output with sensitive keys.
 
