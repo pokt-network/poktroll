@@ -142,9 +142,9 @@ classDef effect color:#f80,stroke:#f80
 
 Use one of the following faucets:
 
-- [Alpha Testnet](https://faucet.alpha.testnet.pokt.network/)
-- [Beta Testnet](https://faucet.beta.testnet.pokt.network/)
-- Mainnet: _TODO(@olshansk): Coming soon..._
+- [Alpha Testnet MACT/POKT Faucet](https://faucet.alpha.testnet.pokt.network/)
+- [Beta Testnet MACT/POKT Faucet](https://faucet.beta.testnet.pokt.network/)
+- [Mainnet MACT Faucet](https://faucet.pocket.network/)
 
 :::tip Grove Employees 🌿
 
