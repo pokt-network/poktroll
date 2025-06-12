@@ -201,7 +201,7 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 // - Prepares and submits claim transactions.
 // - Handles output and error reporting.
 func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
-	logger.Logger.Info().Msg("Initializing claim suppliers process...")
+	logger.Logger.Info().Msg("Starting the bulk claim-suppliers process...")
 	ctx := cmd.Context()
 
 	// Derive a cosmos-sdk client context from the cobra command.
