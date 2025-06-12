@@ -150,6 +150,7 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 		false,
 		"Export unarmored hex privkey. Requires --unsafe.")
 
+	// Shannon destination address for all funds
 	claimAcctBulkCmd.Flags().StringVar(&flagDestination, flagDestinationName, "", flagDestinationDesc)
 
 	// Flag for dry run mode.
