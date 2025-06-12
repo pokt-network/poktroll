@@ -201,20 +201,22 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 // - Prepares and submits claim transactions.
 // - Handles output and error reporting.
 func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
+	logger.Logger.Info().Msg("Initializing claim suppliers process...")
 	ctx := cmd.Context()
 
 	// Derive a cosmos-sdk client context from the cobra command.
-	logger.Logger.Info().Msg("Configuring cosmos tx client")
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
 		return err
 	}
+	logger.Logger.Info().Msg("Cosmos tx client successfully configured")
 
 	// Retrieve the Shannon signing address (used to sign the claim transaction).
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
 	if shannonSigningAddr == "" {
 		return fmt.Errorf("no shannon signing address provided via the following flag: --from")
 	}
+	logger.Logger.Info().Str("shannon_signing_address", shannonSigningAddr).Msg("Validated Shannon signing address")
 
 	// Load the supplier stake config template from the YAML file.
 	// Fail fast if the file is missing or invalid.
@@ -222,6 +224,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	if templateError != nil {
 		return templateError
 	}
+	logger.Logger.Info().Msg("Successfully loaded supplier stake configuration template")
 
 	// Prepare the migration batch result object.
 	migrationBatchResult := MigrationBatchResult{
@@ -239,13 +242,13 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		for _, morseToShannonMapping := range migrationBatchResult.Mappings {
 			shannonAddress := morseToShannonMapping.ShannonAccount.Address.String()
 			morseAddress := hex.EncodeToString(morseToShannonMapping.MorseAccount.Address)
-			keyringErr := clientCtx.Keyring.Delete(shannonAddress)
+			keyringErr := clientCtx.Keyring.Delete(morseToShannonMapping.ShannonAccount.KeyringName)
 			if keyringErr != nil {
 				logger.Logger.Error().Err(keyringErr).
-					Msgf("failed to delete private key for shannon address '%s' associated with morse account '%s'. Please check the logs and try again",
-						shannonAddress,
-						morseAddress,
-					)
+					Str("name", morseToShannonMapping.ShannonAccount.KeyringName).
+					Str("shannon", shannonAddress).
+					Str("morse", morseAddress).
+					Msg("failed to delete key from the keyring after a handled error")
 			}
 		}
 	}()
@@ -273,6 +276,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 			flagInputFilePath,
 		)
 	}
+	logger.Logger.Info().Int("morse_accounts_count", len(morseNodeAccounts)).Msg("Loaded Morse private keys successfully")
 
 	// Prepare the slice of claim messages for the bulk claim transaction.
 	claimMessages := make([]cosmossdk.Msg, 0)
@@ -282,10 +286,11 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	// - For custodial: the claimable account has the same address.
 	// - For non-custodial: the claimable account has a different address.
 	ownerAddressToMClaimableAccountMap := map[string]*types.MorseClaimableAccount{}
-
+	logger.Logger.Info().Msg("Starting the claim process for each Morse node...")
 	// Iterate over each Morse node private key to process migration.
 	for idx, morseNodeAccount := range morseNodeAccounts {
 		morseNodeAddress := hex.EncodeToString(morseNodeAccount.Address)
+		logger.Logger.Info().Str("morse_node_address", morseNodeAddress).Msgf("Processing Morse node #%d", idx+1)
 
 		// Ensure the Morse output address is not empty (i.e., is a node)
 		claimableMorseNode, isNode, morseNodeError := queryMorseClaimableAccount(ctx, clientCtx, morseNodeAddress)
@@ -306,6 +311,9 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		// Populate the ownerAddressMap if not already present
 		if ownerAddressToMClaimableAccountMap[morseOutputAddress] == nil {
 			if claimableMorseNode.MorseOutputAddress != claimableMorseNode.MorseSrcAddress {
+				logger.Logger.Info().
+					Str("morse_output_address", claimableMorseNode.MorseOutputAddress).
+					Msg("Checking MorseOutputAddress exists as MorseClaimableAccount and is already migrated.")
 				// Non-custodial: load and cache MorseClaimableAccount for output address
 				claimableMorseAccount, outputAddressIsNode, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress)
 				if morseAccountError != nil {
@@ -348,6 +356,10 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 				PrivateKey: *shannonPrivateKey,
 			},
 		}
+		logger.Logger.Info().
+			Str("shannon_operator_address", shannonAddress.String()).
+			Str("morse_node_address", hex.EncodeToString(morseNodeAccount.Address)).
+			Msg("Generated new Shannon account")
 
 		// Determine the owner address for the supplier stake config.
 		var shannonOwnerAddress string
@@ -385,16 +397,23 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		// Import the generated Shannon private key into the keyring.
 		keyName := shannonOperatorAddress
 		if flagNewKeyPrefix != "" {
-			// Default suffix is the address
+			// The default suffix is the address
 			suffix := shannonOperatorAddress
 			// Override the default suffix if the index flag is provided
 			if flagUseIndexNames {
-				suffix = fmt.Sprintf("%d", idx)
+				// avoid it the first item been 0
+				suffix = fmt.Sprintf("%d", idx+1)
 			}
 			// The final keyring name is: 'prefix-idx' or 'prefix-address'
 			keyName = fmt.Sprintf("%s-%s", flagNewKeyPrefix, suffix)
 		}
+
 		morseShannonMapping.ShannonAccount.KeyringName = keyName
+		logger.Logger.Info().
+			Str("name", keyName).
+			Str("morse_node_address", morseNodeAddress).
+			Str("shannon_operator_address", shannonOperatorAddress).
+			Msg("Storing shannon operator address into the keyring")
 		keyringErr := clientCtx.Keyring.ImportPrivKeyHex(
 			keyName,
 			hex.EncodeToString(morseShannonMapping.ShannonAccount.PrivateKey.Key),
@@ -414,20 +433,21 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Construct a tx client.
+	logger.Logger.Info().Msg("Preparing transaction client")
 	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
 	if flagDryRunClaim {
-		logger.Logger.Info().Msgf(
-			"--dry-run-claim=true - tx will not be broadcasted, please check %s file for more details.",
-			flagOutputFilePath,
-		)
+		logger.Logger.Info().
+			Str("path", flagOutputFilePath).
+			Msg("tx will not be broadcasted due to: '--dry-run-claim=true' so please check output file for more details.")
 		return nil
 	}
 
 	// Sign and broadcast the claim Morse account message.
+	logger.Logger.Info().Int("messages", len(claimMessages)).Msg("Sign and broadcast transaction")
 	tx, eitherErr := txClient.SignAndBroadcast(ctx, claimMessages...)
 	broadcastErr, broadcastErrCh := eitherErr.SyncOrAsyncError()
 
@@ -460,7 +480,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		logger.Logger.Info().
 			Int("tx_messages", len(claimMessages)).
 			Str("tx_hash", migrationBatchResult.TxHash).
-			Msg("morse suppliers migration tx delivered successfully")
+			Msg("Morse suppliers migration tx delivered successfully")
 	}
 
 	return nil
@@ -593,6 +613,11 @@ func buildSupplierStakeConfig(
 	operatorAddress string,
 	templateSupplierStakeConfig *config.YAMLStakeConfig,
 ) (*config.SupplierStakeConfig, error) {
+	logger.Logger.Info().
+		Str("owner", ownerAddress).
+		Str("operator", operatorAddress).
+		Msg("Building stake config")
+
 	if ownerAddress == "" {
 		return nil, fmt.Errorf("owner address must be non-empty")
 	}
