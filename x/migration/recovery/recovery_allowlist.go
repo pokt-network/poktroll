@@ -45,6 +45,7 @@ func IsMorseAddressRecoverable(address string) bool {
 	if listContainsTarget(invalidAddressesAllowlist, address) {
 		return true
 	}
+
 	return false
 }
 
@@ -98,6 +99,12 @@ var moduleAccountsAllowlist = []string{
 	"FEE_COLLECTOR",
 }
 
+// generated via: ./tools/scripts/migration/list_invalid_morse_addresses.sh --defaults --testnet
+//
+// DEV_NOTE:
+// - This includes 1 TestNet address
+// - These addresses are only recoverable by the authority
+// - Recoverable addresses still require a corresponding Morse claimable account to exist onchain in order to be recovered
 var invalidAddressesAllowlist = []string{
 	"0454231B75352B322F6F74C468BC02FAB5A589DAA5446B29AEC4FB4607540E7E",
 	"09408D55E6EC5A225A7C115AF3BC20F69217E44C5EB66E2C1BD291E45EFFCE6D",
