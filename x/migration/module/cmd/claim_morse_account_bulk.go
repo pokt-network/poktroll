@@ -490,7 +490,6 @@ func mappingAccounts(
 		// mock empty private key
 		shannonPrivateKey = &secp256k1.PrivKey{}
 	} else {
-		// otherwise create a new shannon key
 		// Create a new Shannon account
 		// 1. Generate a secp256k1 private key
 		shannonPrivateKey = secp256k1.GenPrivKey()
