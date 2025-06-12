@@ -33,6 +33,23 @@ const config = {
     ],
   ],
 
+  plugins: [
+    [
+      require.resolve("docusaurus-plugin-chat-page"),
+      {
+        path: "🤖 chat",
+        openai: {
+          apiKey: process.env.OPENAI_API_KEY,
+        },
+        embeddingCache: {
+          enabled: true,
+          strategy: "manual", // or "timestamp" (hash is implemented)
+          path: "embeddings.json",
+        },
+      },
+    ],
+  ],
+
   // GitHub pages deployment config.
   url: "https://pocket.com/",
   baseUrl: "/",
@@ -127,6 +144,11 @@ const config = {
             sidebarId: "developSidebar",
             label: "🧑‍💻️ Core Developers",
             to: "/4_develop/",
+          },
+          {
+            to: "/chat", // Make sure this matches your plugin's path configuration
+            label: "🤖 Chat",
+            position: "left",
           },
         ],
       },
