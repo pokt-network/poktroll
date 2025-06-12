@@ -89,7 +89,11 @@ var allUpgrades = []upgrades.Upgrade{
 
 	// v0.1.18 - upgrade to:
 	// - Updates the Morse recoverable account allowlists
-	upgrades.Upgrade_0_1_18,
+	// upgrades.Upgrade_0_1_18,
+
+	// v0.1.19 - upgrade to:
+	// - Fix claiming Morse suplier that's fully unstaked
+	upgrades.Upgrade_0_1_19,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
