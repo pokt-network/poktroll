@@ -95,11 +95,7 @@ var testNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
 // - Creation of zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that:
 //   - Are non-custodial
 //   - Had no corresponding `MorseAuthAccount`
-//   - Were therefore excluded from the canonical `MsgImportMorseClaimableAccounts` import
-//     These accounts are defined in `zero_balance_morse_claimable_accounts.json`, generated via:
-//     tools/scripts/upgrades/zero_balance_morse_claimable_accounts.sh --testnet
-//     The file includes missing accounts from **both** Morse MainNet and TestNet.
-//     It is shared across all networks for simplicity.
+//   - Were therefore excluded from the canonical `MsgImportMorseClaimableAccounts` import.
 //     There is **zero risk** of unintended token minting (staked or unstaked).
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
