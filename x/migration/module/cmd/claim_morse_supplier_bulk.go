@@ -25,7 +25,7 @@ import (
 var (
 	flagSupplierStakeTemplateFile string
 	flagMorsePrivateKeysFile      string
-	flagAddOperatorShare          uint64
+	flagSetOperatorShare          uint64
 	flagNewKeyPrefix              string
 	flagUseIndexNames             bool
 )
@@ -37,8 +37,8 @@ const (
 	flagMorsePrivateKeysFileName = "morse-private-keys-file"
 	flagMorsePrivateKeysFileDesc = "Path to a file containing Morse private keys (hex-encoded) for all accounts to be migrated in bulk."
 
-	flagAddOperatorShareName = "add-operator-share"
-	flagAddOperatorShareDesc = "Add a share of the operator reward to the rev_share reward. This is useful to avoid the need of been funding them all the time"
+	flagSetOperatorShareName = "set-operator-share"
+	flagSetOperatorShareDesc = "Sets the operator’s share in the revenue distribution. Useful to automatically allocate rewards to the operator, avoiding the need for repeated manual funding."
 
 	flagNewKeyPrefixName = "name-prefix-pattern"
 	flagNewKeyPrefixDesc = "Prefix to use for new keys. Helps operators to migrate and set a prefix for the accounts"
@@ -59,8 +59,8 @@ $ pocketd tx migration claim-suppliers \
 	  --morse-private-keys-file=./morse_private_keys.json \
 	  --stake-template-file=./supplier-stake-template.yaml \
 	  --output-file=./supplier_output.json \
-	  --home=./localnet/pocketd --keyring-backend=test \
-	  --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+	  --home=~/.pocket --keyring-backend=file \
+	  --gas=auto --gas-prices=0.001upokt --gas-adjustment=1.1
 `,
 		Short: "Claim many onchain MorseClaimableAccount as staked Supplier accounts.",
 		Long: `
@@ -79,8 +79,11 @@ What this command does:
 5. Outputs the migration results to a JSON file.
 
 Additional options:
-1. Supports a dry-run mode that simulates the transaction but doesn't broadcast it onchain.
-2. Enables exporting unarmored (plain) JSON output with sensitive keys.
+1. Supports a '--dry-run-claim' mode that simulates the transaction but doesn't broadcast it onchain.
+2. Supports '--add-operator-share=[INT]' which adds operator rev share automatically. Useful to ensure operator wallet has always funds to work.
+3. Supports '--name-prefix-pattern=[prefix]' which will add that prefix to the name used to store the key on the keyring. Results will looks like: '[PREFIX]-[ADDRESS]'
+4. Supports '--use-index-names' which will replace the ADDRESS as suffix to use the index of the node in the list. Results will looks like: '[PREFIX]-[INDEX]'
+5. Enables exporting unarmored (plain) JSON output with sensitive keys.
 
 
 Example input Morse private keys file:
@@ -101,6 +104,8 @@ Example input staking template file:
 # stake_amount: ${SHANNON_SUPPLIER_STAKE_AMOUNT}          # intentionally commented out, taken from MorseClaimableAccount
 
 # Default (example) revenue share: delegator gets 75%, owner gets 25%
+# Using --add-operator-share=1 it will add automatically 1% for operator (supplier) address and reduce that 1 from
+# owner rev share.
 default_rev_share_percent:
   ${DELEGATOR_REWARDS_ADDRESS}: 75
 # ${SUPPLIER_OWNER_ADDRESS}: intentionally commented out, taken from MorseClaimableAccount
@@ -174,7 +179,7 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 
 	// Flags to customize the new Shannon account.
 	claimSuppliersCmd.Flags().StringVar(&flagNewKeyPrefix, flagNewKeyPrefixName, "", flagNewKeyPrefixDesc)
-	claimSuppliersCmd.Flags().Uint64Var(&flagAddOperatorShare, flagAddOperatorShareName, 0, flagAddOperatorShareDesc)
+	claimSuppliersCmd.Flags().Uint64Var(&flagSetOperatorShare, flagSetOperatorShareName, 0, flagSetOperatorShareDesc)
 	claimSuppliersCmd.Flags().BoolVar(&flagUseIndexNames, flagUseIndexNamesName, false, flagUseIndexNamesDesc)
 
 	// Required flags.
@@ -209,6 +214,13 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
 	if shannonSigningAddr == "" {
 		return fmt.Errorf("no shannon signing address provided via the following flag: --from")
+	}
+
+	// Load the supplier stake config template from the YAML file.
+	// Fail fast if the file is missing or invalid.
+	templateSupplierStakeConfig, templateError := loadTemplateSupplierStakeConfigYAML(flagSupplierStakeTemplateFile)
+	if templateError != nil {
+		return templateError
 	}
 
 	// Prepare the migration batch result object.
@@ -256,7 +268,10 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		return nodeMorseKeysErr
 	}
 	if len(morseNodeAccounts) == 0 {
-		return fmt.Errorf("Zero Morse nodes found in the file %s. Check the logs and the input file before trying again.", flagInputFilePath)
+		return fmt.Errorf(
+			"zero Morse nodes found in the file %s. Check the logs and the input file before trying again",
+			flagInputFilePath,
+		)
 	}
 
 	// Prepare the slice of claim messages for the bulk claim transaction.
@@ -344,18 +359,6 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 			shannonOwnerAddress = ownerAddressToMClaimableAccountMap[morseOutputAddress].ShannonDestAddress
 		}
 
-		// TODO(@jorgecuesta): I don't like this,
-		//  but I don't see a better way to do this since the internal structure use pointer
-		//  so once I modify the elements inside they are modified for all the iterations.
-		//  the prefill of rev_share can be done outside but do to the operator share added it need to get that generated one
-		// 	Any ideas on this please let me know.
-		// Load the supplier stake config template from the YAML file.
-		// Fail fast if the file is missing or invalid.
-		templateSupplierStakeConfig, templateError := loadTemplateSupplierStakeConfigYAML(flagSupplierStakeTemplateFile)
-		if templateError != nil {
-			return templateError
-		}
-
 		// Build the supplier stake config for this migration.
 		supplierStakeConfig, supplierStakeConfigErr := buildSupplierStakeConfig(
 			shannonOwnerAddress,
@@ -386,7 +389,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 			suffix := shannonOperatorAddress
 			// Override the default suffix if the index flag is provided
 			if flagUseIndexNames {
-				suffix = fmt.Sprintf("%d", i)
+				suffix = fmt.Sprintf("%d", idx)
 			}
 			// The final keyring name is: 'prefix-idx' or 'prefix-address'
 			keyName = fmt.Sprintf("%s-%s", flagNewKeyPrefix, suffix)
@@ -418,7 +421,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 
 	if flagDryRunClaim {
 		logger.Logger.Info().Msgf(
-			"--dry-run-claim=true - tx will be broadcasted, please check %s file for more details.",
+			"--dry-run-claim=true - tx will not be broadcasted, please check %s file for more details.",
 			flagOutputFilePath,
 		)
 		return nil
@@ -597,9 +600,31 @@ func buildSupplierStakeConfig(
 		return nil, fmt.Errorf("operator address must be non-empty")
 	}
 
-	yamlStakeConfig := templateSupplierStakeConfig // clone the provided template.
-	yamlStakeConfig.OwnerAddress = ownerAddress
-	yamlStakeConfig.OperatorAddress = operatorAddress
+	// clone the provided template.
+	// DefaultRevSharePercent is a map which is a reference if assign to the new one
+	// Services are pointers so clone them too
+	yamlStakeConfig := &config.YAMLStakeConfig{
+		OwnerAddress:    ownerAddress,
+		OperatorAddress: operatorAddress,
+		StakeAmount:     "", // intentionally empty
+		Services:        make([]*config.YAMLStakeService, 0),
+		DefaultRevSharePercent: func() map[string]uint64 {
+			m := make(map[string]uint64, len(templateSupplierStakeConfig.DefaultRevSharePercent))
+			for k, v := range templateSupplierStakeConfig.DefaultRevSharePercent {
+				m[k] = v
+			}
+			return m
+		}(),
+	}
+
+	for _, service := range templateSupplierStakeConfig.Services {
+		// clone to avoid modify the template on multiple iterations
+		yamlStakeConfig.Services = append(yamlStakeConfig.Services, &config.YAMLStakeService{
+			ServiceId:       service.ServiceId,
+			RevSharePercent: service.RevSharePercent,
+			Endpoints:       service.Endpoints,
+		})
+	}
 
 	// Validate the owner and operator addresses.
 	if err := yamlStakeConfig.ValidateAndNormalizeAddresses(logger.Logger); err != nil {
@@ -621,6 +646,7 @@ func buildSupplierStakeConfig(
 			return nil, err
 		}
 	}
+
 	for _, service := range yamlStakeConfig.Services {
 		if len(service.RevSharePercent) == 0 {
 			// set the same rev share per service as default which already includes the owner and enforce 100%
@@ -658,26 +684,26 @@ func buildSupplierStakeConfig(
 func updateRevShareMapToFullAllocation(owner, operator string, revShareMap map[string]uint64) (map[string]uint64, error) {
 	totalShare := uint64(0)
 	ownerFound := false
-	operatorFound := false
 
 	for address, share := range revShareMap {
 		totalShare += share
 		revShareMap[address] = share
 		if strings.EqualFold(address, owner) {
 			ownerFound = true
-		} else if strings.EqualFold(address, operator) {
-			operatorFound = true
 		}
 	}
 
 	// Allows the operator to automatically be added to the revshare map to get funds on every reward.
 	// This covers the operator's tx fees and increases their rewards.
-	if flagAddOperatorShare > 0 && !operatorFound {
+	if flagSetOperatorShare > 0 {
 		if totalShare > 100 {
-			return nil, fmt.Errorf("total revenue share is > 100%")
+			return nil, fmt.Errorf(
+				"invalid revenue share configuration: total revenue share exceeds 100%% (current: %d%%, attempted to add operator share: %d%%)",
+				totalShare, flagSetOperatorShare,
+			)
 		}
-		totalShare += flagAddOperatorShare
-		revShareMap[operator] = flagAddOperatorShare
+		totalShare += flagSetOperatorShare
+		revShareMap[operator] = flagSetOperatorShare
 	}
 
 	// if the owner is not part of the list, add it with the difference.
