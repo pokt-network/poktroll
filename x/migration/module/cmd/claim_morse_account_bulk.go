@@ -518,8 +518,8 @@ func mappingAccounts(
 		return morseShannonMapping, nil
 	}
 
+	// If an explicit shannon dest address was not specified, the newly generated private key MUST be stored.
 	if !hasDestination {
-		// we need to store the pk
 		// Import Shannon private key into keyring.
 		morseShannonMapping.ShannonAccount.KeyringName = morseShannonMapping.ShannonAccount.Address.String()
 		logger.Logger.Info().
