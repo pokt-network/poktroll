@@ -526,7 +526,7 @@ func mappingAccounts(
 			Str("keyring_name", morseShannonMapping.ShannonAccount.KeyringName).
 			Str("morse_node_address", hex.EncodeToString(morseAccount.Address)).
 			Str("shannon_operator_address", morseShannonMapping.ShannonAccount.KeyringName).
-			Msg("Storing shannon operator address into the keyring")
+			Msg("Storing shannon operator address in thekeyring")
 		keyringErr := clientCtx.Keyring.ImportPrivKeyHex(
 			morseShannonMapping.ShannonAccount.KeyringName,
 			hex.EncodeToString(morseShannonMapping.ShannonAccount.PrivateKey.Key),
