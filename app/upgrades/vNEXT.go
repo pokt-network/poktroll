@@ -31,9 +31,11 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
+	"github.com/pokt-network/poktroll/app/pocket"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -44,8 +46,49 @@ const (
 	Upgrade_NEXT_PlanName = "vNEXT"
 )
 
-//go:embed zero_balance_morse_claimable_accounts.json
-var zeroBalanceMorseClaimableAccountsJSONBz []byte
+// generated via: ./tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --defaults
+var mainNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
+  {
+    "morse_src_address": "0C3B325133D65B6136CD59511CC63F17EF992BE6",
+    "unstaked_balance": "0upokt",
+    "supplier_stake": "0upokt",
+    "application_stake": "0upokt",
+    "claimed_at_height": 0,
+    "shannon_dest_address": "",
+    "morse_output_address": ""
+  },
+  {
+    "morse_src_address": "F022ED4E7CCBCE2ABE54E2E3E51B847247E12DDB",
+    "unstaked_balance": "0upokt",
+    "supplier_stake": "0upokt",
+    "application_stake": "0upokt",
+    "claimed_at_height": 0,
+    "shannon_dest_address": "",
+    "morse_output_address": ""
+  }
+]`)
+
+// generated via: ./tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --defaults --testnet
+var testNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
+  {
+    "morse_src_address": "1C66C4B5905CF32EE9ED9D806D6EE12E93D38C20",
+    "unstaked_balance": "0upokt",
+    "supplier_stake": "0upokt",
+    "application_stake": "0upokt",
+    "claimed_at_height": 0,
+    "shannon_dest_address": "",
+    "morse_output_address": ""
+  },
+  {
+    "morse_src_address": "1FA385948BFF6856765A048BC9F1920354EF87FD",
+    "unstaked_balance": "0upokt",
+    "supplier_stake": "0upokt",
+    "application_stake": "0upokt",
+    "claimed_at_height": 0,
+    "shannon_dest_address": "",
+    "morse_output_address": ""
+  }
+]`)
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
@@ -76,9 +119,21 @@ var Upgrade_NEXT = Upgrade{
 		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 
 		createZeroBalanceMorseClaimableAccounts := func(ctx context.Context) error {
+			sdkCtx := sdk.UnwrapSDKContext(ctx)
 			var zeroBalanceMorseClaimableAccounts []*migrationtypes.MorseClaimableAccount
-			if err := json.Unmarshal(zeroBalanceMorseClaimableAccountsJSONBz, &zeroBalanceMorseClaimableAccounts); err != nil {
+
+			if err := json.Unmarshal(mainNetZeroBalanceMorseClaimableAccountsJSONBZ, &zeroBalanceMorseClaimableAccounts); err != nil {
 				return err
+			}
+
+			// For non-main networks, include missing testnet zero-balance morse claimable accounts as well.
+			if sdkCtx.ChainID() != pocket.MainNetChainId {
+				var testNetZeroBalanceMorseClaimableAccounts []*migrationtypes.MorseClaimableAccount
+				if err := json.Unmarshal(testNetZeroBalanceMorseClaimableAccountsJSONBZ, &testNetZeroBalanceMorseClaimableAccounts); err != nil {
+					return err
+				}
+
+				zeroBalanceMorseClaimableAccounts = append(zeroBalanceMorseClaimableAccounts, testNetZeroBalanceMorseClaimableAccounts...)
 			}
 
 			for _, morseClaimableAccount := range zeroBalanceMorseClaimableAccounts {
