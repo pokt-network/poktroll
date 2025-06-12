@@ -305,34 +305,27 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		// the right way to know if a node is isCustodial or not
 		isCustodial := strings.EqualFold(morseOutputAddress, morseNodeAddress)
 		if isCustodial {
+			// Populate the ownerAddressMap
 			ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseNode
-		}
-
-		// Populate the ownerAddressMap if not already present
-		if ownerAddressToMClaimableAccountMap[morseOutputAddress] == nil {
-			if claimableMorseNode.MorseOutputAddress != claimableMorseNode.MorseSrcAddress {
-				logger.Logger.Info().
-					Str("morse_output_address", claimableMorseNode.MorseOutputAddress).
-					Msg("Checking MorseOutputAddress exists as MorseClaimableAccount and is already migrated.")
-				// Non-custodial: load and cache MorseClaimableAccount for output address
-				claimableMorseAccount, outputAddressIsNode, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress)
-				if morseAccountError != nil {
-					return morseAccountError
-				}
-				if outputAddressIsNode {
-					// TODO_TECHDEBT(@olshansky): Re-evaluate if/how this can happen and tackle it separately.
-					return fmt.Errorf("the bulk claim tool does not have support for non-custodial nodes when the morse output address '%s' is a node", morseOutputAddress)
-				}
-				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseAccount
-
-				if !claimableMorseAccount.IsClaimed() {
-					return fmt.Errorf("morse output address '%s' is not claimed", morseOutputAddress)
-				}
-			} else {
-				// Custodial: use the current MorseClaimableAccount
-				isCustodial = true
-				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseNode
+		} else {
+			logger.Logger.Info().
+				Str("morse_output_address", claimableMorseNode.MorseOutputAddress).
+				Msg("Checking MorseOutputAddress exists as MorseClaimableAccount and is already migrated.")
+			// Non-custodial: load and cache MorseClaimableAccount for output address
+			claimableMorseAccount, outputAddressIsNode, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress)
+			if morseAccountError != nil {
+				return morseAccountError
 			}
+			if outputAddressIsNode {
+				// TODO_TECHDEBT(@olshansky): Re-evaluate if/how this can happen and tackle it separately.
+				return fmt.Errorf("the bulk claim tool does not have support for non-custodial nodes when the morse output address '%s' is a node", morseOutputAddress)
+			}
+
+			if !claimableMorseAccount.IsClaimed() {
+				return fmt.Errorf("morse output address '%s' is not claimed", morseOutputAddress)
+			}
+			// Populate the ownerAddressMap
+			ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseAccount
 		}
 
 		if ownerAddressToMClaimableAccountMap[morseOutputAddress] == nil {
@@ -404,7 +397,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 				// avoid it the first item been 0
 				suffix = fmt.Sprintf("%d", idx+1)
 			}
-			// The final keyring name is: 'prefix-idx' or 'prefix-address'
+			// The final keyring name is: 'prefix-idx+1' or 'prefix-address'
 			keyName = fmt.Sprintf("%s-%s", flagNewKeyPrefix, suffix)
 		}
 
@@ -432,18 +425,18 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		migrationBatchResult.Mappings = append(migrationBatchResult.Mappings, &morseShannonMapping)
 	}
 
-	// Construct a tx client.
-	logger.Logger.Info().Msg("Preparing transaction client")
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
-	if err != nil {
-		return err
-	}
-
 	if flagDryRunClaim {
 		logger.Logger.Info().
 			Str("path", flagOutputFilePath).
 			Msg("tx will not be broadcasted due to: '--dry-run-claim=true' so please check output file for more details.")
 		return nil
+	}
+
+	// Construct a tx client.
+	logger.Logger.Info().Msg("Preparing transaction client")
+	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	if err != nil {
+		return err
 	}
 
 	// Sign and broadcast the claim Morse account message.
