@@ -533,7 +533,7 @@ func mappingAccounts(
 			"secp256k1",
 		)
 		if keyringErr != nil {
-			logger.Logger.Error().Msg("failed to import private key for shannon account, please check the logs and try again")
+			logger.Logger.Error().Err(keyringErr).Msg("failed to import private key for shannon account. Please check the logs and try again")
 			return morseShannonMapping, keyringErr
 		}
 	}
