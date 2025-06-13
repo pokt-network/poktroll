@@ -88,6 +88,10 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 				return err
 			}
 
+			if err = flags.ParseAndSetFeeRelatedFlags(cmd); err != nil {
+				return err
+			}
+
 			clientCtx = clientCtx.WithCmdContext(cmd.Context())
 			clientCtx, err = client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
 			if err != nil {

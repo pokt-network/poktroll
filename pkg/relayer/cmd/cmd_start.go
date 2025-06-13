@@ -54,6 +54,7 @@ RelayMiner Responsibilities:
 	// Custom flags
 	cmdStart.Flags().StringVar(&relayMinerConfigPath, FlagConfig, DefaultFlagConfig, FlagConfigUsage)
 	cmdStart.Flags().BoolVar(&queryCachingEnabled, flags.FlagQueryCaching, flags.DefaultFlagQueryCaching, flags.FlagQueryCachingUsage)
+	cmdStart.Flags().Bool(flags.FlagAutoFee, flags.DefaultFlagAutoFee, flags.FlagAutoFeeUsage)
 
 	// Required cosmos-sdk CLI query flags.
 	cmdStart.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, flags.FlagGRPCUsage)

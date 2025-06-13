@@ -16,6 +16,11 @@ import (
 // * --node
 // * --grpc-addr
 func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
+	// If the --network flag is not registered, this is a no-op.
+	if cmd.Flags().Lookup(flags.FlagNetwork) == nil {
+		return nil
+	}
+
 	networkStr, err := cmd.Flags().GetString(flags.FlagNetwork)
 	if err != nil {
 		return err

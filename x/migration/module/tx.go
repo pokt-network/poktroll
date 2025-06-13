@@ -25,25 +25,34 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 // Since autoCLI does not apply to several migration CLI operations, this command
 // MUST be manually constructed.
 func TxCommands() *cobra.Command {
-	migrateCmd := &cobra.Command{
+	migrationCmd := &cobra.Command{
 		Use:   "migration",
 		Short: "Transactions commands for the migration module",
 	}
 
-	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Add `recover-morse-account` migration module tx command.
-	// Be sure to include comprehensive `Long` and `Example` cobra.Command fields!
+	// Global logger flags
+	// DEV_NOTE: Since the root command runs logger.PreRunESetup(), we need to ensure
+	// that the log level and output flags are registered on all migration module tx subcommands.
+	// TODO_INVESTIGATE(@bryanchriswhite):
+	// 1. Why isn't this a double registration
+	// 2. Is this still explicitly necessary?
+	// 3. What's different about other module TX (sub)commands?
+	migrationCmd.PersistentFlags().StringVar(&logger.LogLevel, cosmosflags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
+	migrationCmd.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
-	migrateCmd.AddCommand(cmd.CollectMorseAccountsCmd())
-	migrateCmd.AddCommand(cmd.ClaimAccountCmd())
-	migrateCmd.AddCommand(cmd.ClaimMorseAccountBulkCmd())
-	migrateCmd.AddCommand(cmd.ClaimApplicationCmd())
-	migrateCmd.AddCommand(cmd.ClaimSupplierCmd())
-	migrateCmd.AddCommand(cmd.ClaimSupplierBulkCmd())
-	migrateCmd.AddCommand(cmd.ImportMorseAccountsCmd())
-	migrateCmd.AddCommand(cmd.ValidateMorseAccountsCmd())
-	migrateCmd.AddCommand(cmd.RecoverMorseAccountCmd())
-	migrateCmd.PersistentFlags().StringVar(&logger.LogLevel, cosmosflags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
-	migrateCmd.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
+	// Register the --auto-fee flag for all migration module tx subcommands.
+	migrationCmd.PersistentFlags().Bool(flags.FlagAutoFee, flags.DefaultFlagAutoFee, flags.FlagAutoFeeUsage)
 
-	return migrateCmd
+	// Register all migration module tx subcommands.
+	migrationCmd.AddCommand(cmd.CollectMorseAccountsCmd())
+	migrationCmd.AddCommand(cmd.ClaimAccountCmd())
+	migrationCmd.AddCommand(cmd.ClaimMorseAccountBulkCmd())
+	migrationCmd.AddCommand(cmd.ClaimApplicationCmd())
+	migrationCmd.AddCommand(cmd.ClaimSupplierCmd())
+	migrationCmd.AddCommand(cmd.ClaimSupplierBulkCmd())
+	migrationCmd.AddCommand(cmd.ImportMorseAccountsCmd())
+	migrationCmd.AddCommand(cmd.ValidateMorseAccountsCmd())
+	migrationCmd.AddCommand(cmd.RecoverMorseAccountCmd())
+
+	return migrationCmd
 }

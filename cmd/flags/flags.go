@@ -1,6 +1,7 @@
 package flags
 
 import (
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -40,6 +41,13 @@ const (
 	FlagNetwork      = "network"
 	FlagNetworkUsage = "Sets the --chain-id, --node, and --grpc-addr flags (if applicable) based on the given network moniker (e.g. local, alpha, beta, main)"
 	DefaultNetwork   = ""
+
+	FlagAutoFee               = "auto-fee"
+	FlagAutoFeeUsage          = "Sets --gas=\"auto\", --gas-prices=\"0.0001upokt\", and --gas-adjustment=\"1.5\" flags"
+	DefaultFlagAutoFee        = false
+	autoFeeGasValue           = cosmosflags.GasFlagAuto
+	autoFeeGasAdjustmentValue = "1.5"
+	autoFeeGasPricesValue     = "0.0001upokt"
 
 	FlagFaucetBaseURL      = "base-url"
 	FlagFaucetBaseURLUsage = "The base URL of the Pocket Network Faucet"
@@ -114,4 +122,50 @@ func GetFlag(cmd *cobra.Command, flagName string) (*pflag.Flag, error) {
 	}
 
 	return flag, nil
+}
+
+// ParseAndSetFeeRelatedFlags checks if the --auto-fee flag is set (i.e. not empty-string).
+// If so, set the following *unset* flags according to their hard-coded fee-related values:
+// (i.e. setting any of these flags explicitly will override the auto-fee flag)
+// * --gas
+// * --gas-prices
+// * --gas-adjustment
+func ParseAndSetFeeRelatedFlags(cmd *cobra.Command) error {
+	// If the --auto-fee flag is not registered, this is a no-op.
+	if cmd.Flags().Lookup(FlagAutoFee) == nil {
+		return nil
+	}
+
+	shouldSetFeeRelatedFlags, err := cmd.Flags().GetBool(FlagAutoFee)
+	if err != nil {
+		return err
+	}
+
+	// If the --auto-fee flag is not set, this is a no-op.
+	if !shouldSetFeeRelatedFlags {
+		return nil
+	}
+
+	// Set the --gas flag ONLY if it is unset.
+	if !cmd.Flags().Changed(cosmosflags.FlagGas) {
+		if err := cmd.Flags().Set(cosmosflags.FlagGas, autoFeeGasValue); err != nil {
+			return err
+		}
+	}
+
+	// Set the --gas-prices flag ONLY if it is unset.
+	if !cmd.Flags().Changed(cosmosflags.FlagGasPrices) {
+		if err := cmd.Flags().Set(cosmosflags.FlagGasPrices, autoFeeGasPricesValue); err != nil {
+			return err
+		}
+	}
+
+	// Set the --gas-adjustment flag ONLY if it is unset.
+	if !cmd.Flags().Changed(cosmosflags.FlagGasAdjustment) {
+		if err := cmd.Flags().Set(cosmosflags.FlagGasAdjustment, autoFeeGasAdjustmentValue); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
