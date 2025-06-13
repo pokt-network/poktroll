@@ -94,11 +94,15 @@ var testNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
-// - Creation of zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that:
+// 1. Creation of zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that:
 //   - Are non-custodial
 //   - Had no corresponding `MorseAuthAccount` because they were never used (no balance, no onchain public key)
 //   - Were therefore excluded from the canonical `MsgImportMorseClaimableAccounts` import.
 //     There is **zero risk** of unintended token minting (staked or unstaked).
+//
+// 2. Update the Morse account recovery allowlist:
+//   - Add all known invalid addresses
+//   - Update the exchanges allowlist
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
