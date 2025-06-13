@@ -10,6 +10,12 @@ const (
 	// In most cases, this forces the user to specify the flag value to avoid unintended behavior.
 	OmittedDefaultFlagValue = "intentionally omitting default"
 
+	// DEV_NOTE: use cosmosflags.FlagGRPC for the flag name.
+	FlagGRPCUsage = "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified."
+
+	// DEV_NOTE: use cosmosflags.FlagGRPCInsecure for the flag name.
+	FlagGRPCInsecureUsage = "Allow gRPC over insecure channels, if not the server MUST be TLS terminated"
+
 	// DEV_NOTE: use cosmosflags.FlagLogLevelUsage for the flag name.
 	FlagLogLevelUsage = "The logging level (debug|info|warn|error)"
 	DefaultLogLevel   = "info"

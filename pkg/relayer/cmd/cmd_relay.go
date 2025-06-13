@@ -101,6 +101,10 @@ For more info, run 'relay --help'.`,
 		FlagSupplierPublicEndpointOverrideUsage,
 	)
 
+	// Required cosmos-sdk CLI query flags.
+	cmdRelay.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, flags.FlagGRPCUsage)
+	cmdRelay.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, flags.FlagGRPCInsecureUsage)
+
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
 	cosmosflags.AddTxFlagsToCmd(cmdRelay)
 

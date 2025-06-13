@@ -5,8 +5,6 @@
 package cmd
 
 var (
-	// flagNodeGRPCURL is the Cosmos node GRPC URL flag value.
-	flagNodeGRPCURL string
 	// relayMinerConfigPath is the relay miner config file path from `--config` flag.
 	relayMinerConfigPath string
 	// queryCachingEnabled is the query caching flag value.
