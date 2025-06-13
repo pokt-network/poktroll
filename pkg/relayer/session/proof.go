@@ -47,8 +47,11 @@ func (rs *relayerSessionsManager) submitProofs(
 
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessionsObs))
 
-	// Delete failed session trees so they don't get proven again.
-	channel.ForEach(ctx, failedSubmitProofsSessionsObs, rs.deleteSessionTrees)
+	// Delete expired session trees so they don't get proven again.
+	channel.ForEach(
+		ctx, failedSubmitProofsSessionsObs,
+		rs.deleteExpiredSessionTreesFn(sharedtypes.GetProofWindowCloseHeight),
+	)
 }
 
 // mapWaitForEarliestSubmitProofsHeight is intended to be used as a MapFn. It

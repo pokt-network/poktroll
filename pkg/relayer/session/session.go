@@ -545,78 +545,38 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	return nil, true
 }
 
-// deleteExpiredSessionTreesFn deletes unclaimed sessions past the proof window close height.
-// These sessions can no longer be proved onchain, so there is no need for the offchain evidence (i.e. the session tree).
+// deleteExpiredSessionTreesFn returns a function that deletes non-claimed sessions
+// that have expired.
 func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
-	supplierOperatorAddress string,
-) func(ctx context.Context, currentBlock client.Block) {
-	return func(ctx context.Context, currentHeight client.Block) {
-		logger := rs.logger.With("supplier_operator_address", supplierOperatorAddress)
-
+	expirationHeightFn func(*sharedtypes.Params, int64) int64,
+) func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
+	return func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
+		currentHeight := rs.blockClient.LastBlock(ctx).Height()
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
 			return
 		}
 
-		supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
-		if !ok || supplierSessionTrees == nil {
-			logger.Info().Msg("no session trees found for the supplier operator address")
-			return
-		}
+		// TODO_TEST: Add tests that cover existing expired failed session trees.
+		for _, sessionTree := range failedSessionTrees {
+			sessionEndHeight := sessionTree.GetSessionHeader().GetSessionEndBlockHeight()
+			proofWindowCloseHeight := expirationHeightFn(sharedParams, sessionEndHeight)
 
-		// Collect the tree of all expired sessions in preparation for deletion.
-		expiredSessionTrees := make([]relayer.SessionTree, 0)
-		for _, sessionTrees := range supplierSessionTrees {
-			for sessionId, sessionTree := range sessionTrees {
-				sessionHeader := sessionTree.GetSessionHeader()
-				sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
-				proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
-
-				// If the session is already past its proof window close height,
-				// it is considered expired and should be deleted.
-				if currentHeight.Height() > proofWindowCloseHeight {
-					logger.Debug().
-						Str("service_id", sessionHeader.GetServiceId()).
-						Str("application_address", sessionHeader.GetApplicationAddress()).
-						Str("session_id", sessionId).
-						Msg("adding tree from expired session for deletion")
-
-					expiredSessionTrees = append(expiredSessionTrees, sessionTree)
+			if currentHeight > proofWindowCloseHeight {
+				rs.logger.Debug().Msg("deleting expired session")
+				rs.removeFromRelayerSessions(sessionTree)
+				if err := sessionTree.Delete(); err != nil {
+					rs.logger.Error().
+						Err(err).
+						Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
+						Str("supplier_operator_address", sessionTree.GetSupplierOperatorAddress()).
+						Msg("failed to delete session tree")
 				}
+				continue
 			}
 		}
-
-		// Delete the expired session trees from the relayerSessions.
-		rs.deleteSessionTrees(ctx, expiredSessionTrees)
 	}
-}
-
-// deleteSessionTrees deletes the provided session trees from the relayerSessions.
-// It removes the session tree from the in-memory map and deletes it from the disk store.
-func (rs *relayerSessionsManager) deleteSessionTrees(
-	ctx context.Context,
-	sessionTrees []relayer.SessionTree,
-) {
-	logger := rs.logger.With("supplier_operator_address", sessionTrees[0].GetSupplierOperatorAddress())
-
-	// Iterate over the session trees and delete them from the relayerSessions.
-	for _, sessionTree := range sessionTrees {
-		sessionId := sessionTree.GetSessionHeader().GetSessionId()
-		logger.Info().Str("session_id", sessionId).Msg("deleting failed session tree")
-
-		// Remove the session tree from the relayerSessions.
-		rs.removeFromRelayerSessions(sessionTree)
-
-		if err := sessionTree.Delete(); err != nil {
-			logger.Error().Err(err).Str("session_id", sessionId).Msg("failed to delete session tree")
-		}
-	}
-
-	rs.logger.Debug().Msgf(
-		"deleted %d session trees from relayerSessions",
-		len(sessionTrees),
-	)
 }
 
 // supplierSessionsToClaim returns an observable that notifies when sessions that
@@ -630,14 +590,6 @@ func (rs *relayerSessionsManager) supplierSessionsToClaim(
 		ctx,
 		rs.blockClient.CommittedBlocksSequence(ctx),
 		rs.forEachBlockClaimSessionsFn(supplierOperatorAddress, sessionsToClaimPublishCh),
-	)
-
-	// At each new block, check and clean up any expired sessions that are past
-	// their proof window close height.
-	channel.ForEach(
-		ctx,
-		rs.blockClient.CommittedBlocksSequence(ctx),
-		rs.deleteExpiredSessionTreesFn(supplierOperatorAddress),
 	)
 
 	return sessionsToClaimObs

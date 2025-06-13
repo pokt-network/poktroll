@@ -193,7 +193,7 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 		grpc.MaxCallSendMsgSize(maxGRPCMsgSize),
 		grpc.MaxCallRecvMsgSize(maxGRPCMsgSize),
 	}
-	simRes, err := txSvcClient.Simulate(ctx, simRequest, gRPCOpts...)
+	simRes, err := txSvcClient.Simulate(context.Background(), simRequest, gRPCOpts...)
 	if err != nil {
 		return 0, err
 	}
