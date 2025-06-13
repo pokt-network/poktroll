@@ -254,15 +254,11 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-<<<<<<< Updated upstream
-	logger.Logger.Info().Msg("Successfully loaded morse accounts from file")
-=======
 
 	logger.Logger.Error().
 		Str("input_file", flagInputFilePath).
 		Str("output_file", flagOutputFilePath).
 		Msgf("About to start running MsgClaimMorseAccount for %d Morse accounts", len(morseAccounts))
->>>>>>> Stashed changes
 
 	// Prepare the migration batch result.
 	migrationBatchResult := MigrationBatchResult{

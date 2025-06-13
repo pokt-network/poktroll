@@ -151,8 +151,8 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Supplier Claim - Short circuit #1
 	// If both of the following are true:
-	// 	1. The Morse Supplier started unstaking before the state shift
-	// 	2. The Morse Supplier fully unstaked after the state shift at the time of claim
+	// 1. The Morse Supplier started unstaking before the state shift
+	// 2. The Morse Supplier fully unstaked after the state shift at the time of claim
 	// Then the Shannon owner address is where the staked balance needs to be minted to.
 	morseUnbondingPeriodElapsed := morseNodeClaimableAccount.HasUnbonded(ctx)
 
@@ -169,11 +169,6 @@ func (k msgServer) ClaimMorseSupplier(
 	} else {
 		stakedTokensDestAddr = shannonSigningAddress
 	}
-
-	// What should the destination address be for suppliers?
-	// 1. If the unbonding period elapsed -> owner
-	// 2. If it should be auto-unstaked -> owner
-	// 3. If the supplier remains staked -> operator
 
 	// Mint the Morse node/supplier's stake to the stakedTokensDestAddr account balance.
 	// The Supplier stake is subsequently escrowed from the stakedTokensDestAddr account balance
@@ -296,8 +291,8 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 	postClaimSupplierStake := preClaimSupplierStake.Add(morseNodeClaimableAccount.GetSupplierStake())
 
-	// TODO_HACK(@olshansky, #1439): Ensure that claimable suppliers have valid service configs.
-	// This is a quick workaround upon encountering this issue: https://gist.github.com/okdas/3328c0c507b5dba8b31ab871589f34b0
+	// Sanity check the service configs.
+	// Quick workaround upon encountering this issue: https://gist.github.com/okdas/3328c0c507b5dba8b31ab871589f34b0
 	if err = sharedtypes.ValidateSupplierServiceConfigs(msg.Services); err != nil {
 		return nil, err
 	}
@@ -537,15 +532,3 @@ func checkClaimSigner(
 
 	return claimSignerType, nil
 }
-
-// Beta Before
-// - minStake: 1uPOKT
-// - Migrating: 15K accounts
-// - Output: Supplier remains
-// - Result: succes
-
-// Beta Current
-// - minStake: 60kPOKT
-// - Migrating: 15K accounts
-// - Output: Supplier remains
-// - Result: succes
