@@ -216,16 +216,17 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		// If the supplier operator cannot afford to claim any of the session trees,
-		// we skip the claims creation and return an empty slice of claimable session trees.
-		// This is a common case when the supplier operator has insufficient funds.
+		// If the supplier operator cannot afford to claim any of the session trees, then:
+		// 1. Skip claim creation
+		// 2. Return an empty slice of claimable session trees.
+		// DEV_NOTE: This is a common case when the supplier operator has insufficient funds.
 		if len(claimableSessionTrees) == 0 {
-			err := fmt.Errorf(
-				"supplier operator %q cannot afford to claim any of the (%d) session trees",
+			err = fmt.Errorf(
+				"supplier operator %q cannot afford to claim any of the (%d) session trees. ❗ MAKE SURE TO TOP UP YOUR SUPPLIER'S BALANCE ❗",
 				sessionTrees[0].GetSupplierOperatorAddress(),
 				len(sessionTrees),
 			)
-			rs.logger.Error().Msgf("no claimable session trees, skipping claims creation: %v", err)
+			rs.logger.Warn().Msgf("no claimable session trees, skipping claims creation: %v", err)
 
 			// Avoid submitting transactions with no claim messages.
 			return either.Error[[]relayer.SessionTree](err), false
@@ -359,11 +360,6 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 			return nil, err
 		}
 
-		claimLogger = claimLogger.With(
-			"estimated_claim_and_proof_submission_cost", claimAndProofSubmissionCost,
-			"claim_reward", claimReward,
-		)
-
 		isClaimProfitable := claimReward.IsGT(ClamAndProofGasCost)
 
 		if supplierCanAffordClaimAndProofFees && isClaimProfitable {
@@ -372,9 +368,10 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 			supplierOperatorBalanceCoin = &newSupplierOperatorBalanceCoin
 
 			estimatedClaimProfit := claimReward.Sub(ClamAndProofGasCost)
-			claimLogger.With(
-				"estimated_claim_profit", estimatedClaimProfit,
-			).Info().Msg("adding profitable claim")
+			claimLogger.Info().Msgf(
+				"adding profitable claim with estimated claim and proof submission cost %s, claim reward %s, and estimated claim profit %s",
+				claimAndProofSubmissionCost, claimReward, estimatedClaimProfit,
+			)
 
 			continue
 		}
@@ -388,8 +385,13 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		}
 
 		if !isClaimProfitable {
-			// Log a warning of any session that the claim is not profitable.
-			claimLogger.Warn().Msg("claim is not profitable, deleting session tree")
+			// Calculate how unprofitable the claim is
+			unprofitableAmount := ClamAndProofGasCost.Sub(claimReward)
+			// Log a warning with details about how unprofitable the claim is in plain English
+			claimLogger.Warn().Msgf(
+				"claim is not profitable - it would cost %s more than the reward of %s, deleting session tree",
+				unprofitableAmount, claimReward,
+			)
 		}
 
 		if supplierCanAffordClaimAndProofFees {
@@ -417,11 +419,7 @@ func (rs *relayerSessionsManager) getClaimRewardCoin(
 	serviceId := sessionHeader.GetServiceId()
 
 	// Create a claim object to calculate the claim reward.
-	claim := &prooftypes.Claim{
-		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
-		SessionHeader:           sessionHeader,
-		RootHash:                sessionTree.GetClaimRoot(),
-	}
+	claim := claimFromSessionTree(sessionTree)
 
 	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficulty(ctx, serviceId)
 	if err != nil {
