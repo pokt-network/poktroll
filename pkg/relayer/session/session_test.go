@@ -54,7 +54,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 
 	service = sharedtypes.Service{
 		Id:                   "svc",
-		ComputeUnitsPerRelay: 2,
+		ComputeUnitsPerRelay: 20000,
 	}
 
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, service.Id, protocol.BaseRelayDifficultyHashBz)
@@ -154,14 +154,14 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	lowCUPRService := sharedtypes.Service{
 		Id:                   "lowCUPRService",
-		ComputeUnitsPerRelay: 1,
+		ComputeUnitsPerRelay: 10000,
 	}
 	testqueryclients.AddToExistingServices(t, lowCUPRService)
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, lowCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	highCUPRService := sharedtypes.Service{
 		Id:                   "highCUPRService",
-		ComputeUnitsPerRelay: 2,
+		ComputeUnitsPerRelay: 20000,
 	}
 	testqueryclients.AddToExistingServices(t, highCUPRService)
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, highCUPRService.Id, protocol.BaseRelayDifficultyHashBz)

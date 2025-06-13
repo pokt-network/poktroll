@@ -25,9 +25,12 @@ import (
 // - Value obtained empirically by observing logs during load testing
 // - Value may change as network parameters change
 // - This value is a function of the claim & proof message sizes
-// TODO_TECHDEBT(red-0ne): ClamAndProofGasCost value should be in function of
-// the biggest Relay byte size and tx_size_cost_per_byte auth module param.
-// It could be obtained by maintaining a max Relay size in the SessionTree.
+//
+// TODO(@bryanchriswhite, #1454): ClamAndProofGasCost value should be a function of
+// the biggest Relay (in num of bytes) and tx_size_cost_per_byte auth module param.
+// There should be a two step approach to this:
+// 1. Choose a reasonable (emperically observed) p90 of claim & proof sizes across most chains
+// 2. TODO_FUTURE: Compute the gas cost dynamically based on the size of the branch being proven.
 var ClamAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 10_000)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
