@@ -63,11 +63,8 @@ func (rs *relayerSessionsManager) createClaims(
 	// In this case, the error may not be persistent.
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
 
-	// Delete expired session trees so they don't get claimed again.
-	channel.ForEach(
-		ctx, failedCreateClaimSessionsObs,
-		rs.deleteExpiredSessionTreesFn(sharedtypes.GetClaimWindowCloseHeight),
-	)
+	// Delete failed session trees so they don't get claimed again.
+	channel.ForEach(ctx, failedCreateClaimSessionsObs, rs.deleteSessionTrees)
 
 	// Map eitherClaimedSessions to a new observable of []relayer.SessionTree
 	// which is notified when the corresponding claims creation succeeded.
@@ -101,7 +98,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimsHeight(
 // earliest block height, allowed by the protocol, at which claims can be created
 // for a session with the given sessionEndHeight. It is calculated relative to
 // sessionEndHeight using onchain governance parameters and randomized input.
-// It IS A BLOCKING function.
+// IT IS A BLOCKING FUNCTION.
 func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
