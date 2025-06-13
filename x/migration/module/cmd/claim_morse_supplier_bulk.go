@@ -312,13 +312,9 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 				Str("morse_output_address", claimableMorseNode.MorseOutputAddress).
 				Msg("Checking MorseOutputAddress exists as MorseClaimableAccount and is already migrated.")
 			// Non-custodial: load and cache MorseClaimableAccount for output address
-			claimableMorseAccount, outputAddressIsNode, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress)
+			claimableMorseAccount, _, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress)
 			if morseAccountError != nil {
 				return morseAccountError
-			}
-			if outputAddressIsNode {
-				// TODO_TECHDEBT(@olshansky): Re-evaluate if/how this can happen and tackle it separately.
-				return fmt.Errorf("the bulk claim tool does not have support for non-custodial nodes when the morse output address '%s' is a node", morseOutputAddress)
 			}
 
 			if !claimableMorseAccount.IsClaimed() {
