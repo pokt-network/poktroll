@@ -460,11 +460,16 @@ func (txnClient *txClient) addPendingTransactions(
 	txnClient.txsMutex.Lock()
 	defer txnClient.txsMutex.Unlock()
 
+	// timeoutHeight is the height that is passed to txBuilder.SetTimeoutHeight
+	// - A transaction that is committed at timeoutHeight will be considered valid
+	// - txTimeoutPool tracks transactions that are expected to be rejected due to timeout
+	txExpirationHeight := timeoutHeight + 1
+
 	// Initialize txTimeoutPool map if necessary.
-	txsByHash, ok := txnClient.txTimeoutPool[timeoutHeight+1]
+	txsByHash, ok := txnClient.txTimeoutPool[txExpirationHeight]
 	if !ok {
 		txsByHash = make(map[string]chan error)
-		txnClient.txTimeoutPool[timeoutHeight+1] = txsByHash
+		txnClient.txTimeoutPool[txExpirationHeight] = txsByHash
 	}
 
 	// Initialize txErrorChans map in txTimeoutPool map if necessary.

@@ -250,9 +250,6 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
 
 	// Calculate when the claim window opens for this session
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
-	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&s.sharedParams, sessionEndHeight)
-	fmt.Println("claimWindowOpenHeight", claimWindowOpenHeight)
-	fmt.Println("claimWindowCloseHeight", claimWindowCloseHeight)
 	// Move to the block where the claim window opens (which should trigger claim creation)
 	s.advanceToBlock(claimWindowOpenHeight)
 
