@@ -545,12 +545,14 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	return nil, true
 }
 
-// deleteExpiredSessionTreesFn deletes non-claimed sessions that are past their
-// proof window close height.
+// deleteExpiredSessionTreesFn deletes unclaimed sessions past the proof window close height.
+// These sessions can no longer be proved onchain, so there is no need for the offchain evidence (i.e. the session tree).
 func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 	supplierOperatorAddress string,
 ) func(ctx context.Context, currentBlock client.Block) {
 	return func(ctx context.Context, currentHeight client.Block) {
+		logger := rs.logger.With("supplier_operator_address", supplierOperatorAddress)
+
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
@@ -559,12 +561,11 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 
 		supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
 		if !ok || supplierSessionTrees == nil {
-			rs.logger.Debug().
-				Str("supplier_operator_address", supplierOperatorAddress).
-				Msg("no session trees found for the supplier operator address")
+			logger.Info().Msg("no session trees found for the supplier operator address")
 			return
 		}
 
+		// Collect the tree of all expired sessions in preparation for deletion.
 		expiredSessionTrees := make([]relayer.SessionTree, 0)
 		for _, sessionTrees := range supplierSessionTrees {
 			for sessionId, sessionTree := range sessionTrees {
@@ -575,17 +576,18 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 				// If the session is already past its proof window close height,
 				// it is considered expired and should be deleted.
 				if currentHeight.Height() > proofWindowCloseHeight {
-					rs.logger.Debug().
+					logger.Debug().
+						Str("service_id", sessionHeader.GetServiceId()).
+						Str("application_address", sessionHeader.GetApplicationAddress()).
 						Str("session_id", sessionId).
-						Str("supplier_operator_address", supplierOperatorAddress).
-						Int64("session_end_height", sessionEndHeight).
-						Msg("adding expired session tree for deletion")
+						Msg("adding tree from expired session for deletion")
 
 					expiredSessionTrees = append(expiredSessionTrees, sessionTree)
 				}
 			}
 		}
 
+		// Delete the expired session trees from the relayerSessions.
 		rs.deleteSessionTrees(ctx, expiredSessionTrees)
 	}
 }
@@ -594,28 +596,26 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 // It removes the session tree from the in-memory map and deletes it from the disk store.
 func (rs *relayerSessionsManager) deleteSessionTrees(
 	ctx context.Context,
-	failedSessionTrees []relayer.SessionTree,
+	sessionTrees []relayer.SessionTree,
 ) {
-	for _, sessionTree := range failedSessionTrees {
-		rs.logger.Debug().
-			Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
-			Str("supplier_operator_address", sessionTree.GetSupplierOperatorAddress()).
-			Msg("deleting failed session tree")
+	logger := rs.logger.With("supplier_operator_address", sessionTrees[0].GetSupplierOperatorAddress())
 
+	// Iterate over the session trees and delete them from the relayerSessions.
+	for _, sessionTree := range sessionTrees {
+		sessionId := sessionTree.GetSessionHeader().GetSessionId()
+		logger.Info().Str("session_id", sessionId).Msg("deleting failed session tree")
+
+		// Remove the session tree from the relayerSessions.
 		rs.removeFromRelayerSessions(sessionTree)
 
 		if err := sessionTree.Delete(); err != nil {
-			rs.logger.Error().
-				Err(err).
-				Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
-				Str("supplier_operator_address", sessionTree.GetSupplierOperatorAddress()).
-				Msg("failed to delete session tree")
+			logger.Error().Err(err).Str("session_id", sessionId).Msg("failed to delete session tree")
 		}
 	}
 
 	rs.logger.Debug().Msgf(
 		"deleted %d session trees from relayerSessions",
-		len(failedSessionTrees),
+		len(sessionTrees),
 	)
 }
 
