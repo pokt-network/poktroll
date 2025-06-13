@@ -65,7 +65,7 @@ var testNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
   }
 ]`)
 
-// Upgrade_NEXT handles the upgrade to release `vNEXT`.
+// Upgrade_0_1_20 handles the upgrade to release `v0.1.20`.
 // This upgrade adds:
 // 1. Creation of zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that:
 //   - Are non-custodial
@@ -88,10 +88,10 @@ var Upgrade_0_1_20 = Upgrade{
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
 		// Add new parameters by:
-		// 1. Inspecting the diff between vPREV..vNEXT
+		// 1. Inspecting the diff between v0.1.19..v0.1.20
 		// 2. Manually inspect changes in ignite's config.yml
 		// 3. Update the upgrade handler here accordingly
-		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
+		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.19..v0.1.20
 
 		createZeroBalanceMorseClaimableAccounts := func(ctx context.Context) error {
 			sdkCtx := sdk.UnwrapSDKContext(ctx)
