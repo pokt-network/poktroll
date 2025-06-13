@@ -92,8 +92,13 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_1_18,
 
 	// v0.1.19 - upgrade to:
-	// - Fix claiming Morse suplier that's fully unstaked
-	upgrades.Upgrade_0_1_19,
+	// - Fix claiming Morse supplier that's fully unstaked
+	// upgrades.Upgrade_0_1_19,
+
+	// v0.1.20 - upgrade to:
+	// - Add zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that are non-custodial and had no corresponding `MorseAuthAccount`
+	// - Update the Morse account recovery allowlist with exchange allowlist updates and invalid addresses
+	upgrades.Upgrade_0_1_20,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
