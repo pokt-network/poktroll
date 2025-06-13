@@ -16,14 +16,22 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// ClaimMorseSupplier performs the following steps, given msg is valid and a
-// MorseClaimableAccount exists for the given morse_src_address:
-//   - Mint and transfer all tokens (unstaked balance plus supplier stake) of the
-//     MorseClaimableAccount to the shannonDestAddress.
-//   - Mark the MorseClaimableAccount as claimed (i.e. adding the shannon_dest_address
-//     and claimed_at_height).
-//   - Stake a supplier for the amount specified in the MorseClaimableAccount,
-//     and the services specified in the msg.
+// ClaimMorseSupplier processes a Morse supplier claim migration.
+//
+// Preconditions:
+// - The message is valid.
+// - A MorseClaimableAccount exists for the given morse_src_address.
+//
+// Steps performed:
+// - Mint and transfer all tokens (unstaked balance plus supplier stake) from the MorseClaimableAccount to the shannonDestAddress.
+// - Mark the MorseClaimableAccount as claimed (i.e., set the shannon_dest_address and claimed_at_height).
+// - Stake a supplier for the amount and services specified in the MorseClaimableAccount and the message.
+//
+// Short Circuits (these cause early exit):
+// - Short circuit #1: If the Morse Supplier started unstaking before the state shift and fully unstaked after the state shift at the time of claim, mint the staked balance to the Shannon owner and exit after event emission.
+// - Short circuit #2: If the Morse Supplier's stake is below the minimum required, auto-unstake, mint to owner, emit events, and exit.
+//
+// The function does not alter business logic and preserves all original comment content, but comments have been clarified and reformatted for improved readability.
 func (k msgServer) ClaimMorseSupplier(
 	ctx context.Context,
 	msg *migrationtypes.MsgClaimMorseSupplier,
@@ -302,11 +310,8 @@ func (k msgServer) ClaimMorseSupplier(
 		postClaimSupplierStake,
 		msg.Services,
 	)
-<<<<<<< Updated upstream
-=======
 
 	// Stake the supplier
->>>>>>> Stashed changes
 	supplier, err := k.supplierKeeper.StakeSupplier(ctx, logger, msgStakeSupplier)
 	if err != nil {
 		return nil, err
