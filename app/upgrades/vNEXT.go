@@ -47,6 +47,8 @@ const (
 )
 
 // generated via: ./tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --defaults
+// Once onchain, this can be verified like so:
+// pocketd query migration show-morse-claimable-account 0C3B325133D65B6136CD59511CC63F17EF992BE6 --network=main --grpc-insecure=false -o json
 var mainNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
   {
     "morse_src_address": "0C3B325133D65B6136CD59511CC63F17EF992BE6",
@@ -92,13 +94,13 @@ var testNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
-// - Creation of zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that:
+// 1. Creation of zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that:
 //   - Are non-custodial
-//   - Had no corresponding `MorseAuthAccount`
+//   - Had no corresponding `MorseAuthAccount` because they were never used (no balance, no onchain public key)
 //   - Were therefore excluded from the canonical `MsgImportMorseClaimableAccounts` import.
 //     There is **zero risk** of unintended token minting (staked or unstaked).
 //
-// - Update the Morse account recovery allowlist:
+// 2. Update the Morse account recovery allowlist:
 //   - Add all known invalid addresses
 //   - Update the exchanges allowlist
 var Upgrade_NEXT = Upgrade{

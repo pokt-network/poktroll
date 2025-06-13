@@ -84,7 +84,7 @@ while [[ $# -gt 0 ]]; do
     SHOW_USAGE=false
     shift
     ;;
-  -h|--help)
+  -h | --help)
     # Show usage if -h or --help is specified.
     SHOW_USAGE=true
     shift

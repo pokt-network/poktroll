@@ -73,10 +73,10 @@ match_single_file_by_glob() {
   local glob_matched_files=(${path_glob})
   local num_glob_matched_files=${#glob_matched_files[@]}
 
-  if (( $num_glob_matched_files == 0 )); then
+  if (($num_glob_matched_files == 0)); then
     echo "No files matched '$path_glob'" >&2
     exit 1
-  elif (( $num_glob_matched_files > 1 )); then
+  elif (($num_glob_matched_files > 1)); then
     echo "${num_glob_matched_files} files matched ${path_glob}:" >&2
     for file in "${glob_matched_files[@]}"; do
       echo "  - $file" >&2
