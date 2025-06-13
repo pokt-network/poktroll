@@ -40,9 +40,7 @@ type relayerSessionsManager struct {
 	// 1. Review all usages of `sessionTrees` and simplify
 	// 2. Ensure the mutex is used everywhere it's needed and is not used everywhere it's not
 	// 3. Cleanup comments and techdebt in this package.
-
-	// TODO_IN_THIS_PR: Identify all functions accessing and mutating 'rs.sessionTrees` and lock the mutex in there
-
+	//
 	// sessionTrees is a SessionsTreesMap (see type alias above).
 	//
 	// - The block height index is used to know when the sessions contained in the entry should be closed.
@@ -207,6 +205,11 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
 
+	// Lock the mutex before accessing and modifying the sessionsTrees map to ensure
+	// thread safety during shutdown.
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
 	// Persist each active session's state to disk and properly close the associated
 	// key-value stores. This ensures that all accumulated relay data (including root
 	// hashes needed for claims) is safely stored before shutdown.
@@ -320,8 +323,6 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 // should be present in the rs.sessionsTrees map. "Late" sessions
 // are expected to present in the presence of network interruptions, restarts, or other
 // disruptions to the relayminer process.
-// TODO_IMPROVE: Add the ability for the process to resume where it left off in
-// case the process is restarted or the connection is dropped and reconnected.
 func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 	sessionsSupplier string,
 	sessionsToClaimsPublishCh chan<- []relayer.SessionTree,
@@ -335,9 +336,6 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 		// They will be emitted last, after all the late sessions have been emitted.
 		var onTimeSessions []relayer.SessionTree
 
-		// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
-		// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-		// to get the most recently (asynchronously) observed (and cached) value.
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
@@ -570,13 +568,18 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 			return
 		}
 
+		// Lock mutex to safely read from the sessionsTrees map
+		rs.sessionsTreesMu.Lock()
+
 		supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
 		if !ok || supplierSessionTrees == nil {
+			rs.sessionsTreesMu.Unlock() // Unlock before returning
 			logger.Info().Msg("no session trees found for the supplier operator address")
 			return
 		}
 
-		// Collect the tree of all expired sessions in preparation for deletion.
+		// Create a copy of the relevant trees to avoid holding the lock
+		// during the potentially time-consuming operations that follow
 		expiredSessionTrees := make([]relayer.SessionTree, 0)
 		for _, sessionTrees := range supplierSessionTrees {
 			for sessionId, sessionTree := range sessionTrees {
@@ -598,6 +601,9 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 				}
 			}
 		}
+
+		// Unlock the mutex after we're done reading the map
+		rs.sessionsTreesMu.Unlock()
 
 		// Delete the expired session trees from the relayerSessions.
 		rs.deleteSessionTrees(ctx, expiredSessionTrees)

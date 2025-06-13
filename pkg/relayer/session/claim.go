@@ -104,9 +104,16 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	sessionTrees []relayer.SessionTree,
 	failedCreateClaimsSessionsCh chan<- []relayer.SessionTree,
 ) []relayer.SessionTree {
+	// Check if sessionTrees is empty to prevent index out of bounds errors
+	if len(sessionTrees) == 0 {
+		rs.logger.Warn().Msg("received empty sessionTrees array")
+		return nil
+	}
+
 	// Given the sessionTrees are grouped by their sessionEndHeight, we can use the
 	// first one from the group to calculate the earliest height for claim creation.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
+	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 
 	logger := rs.logger.With("session_end_height", sessionEndHeight)
 
@@ -142,7 +149,6 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	logger.Info().Msg("observed earliest claim commit height offset seed block height")
 
 	// Get the earliest claim commit height for this supplier.
-	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 	earliestSupplierClaimsCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
 		sessionEndHeight,
@@ -201,6 +207,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		if len(sessionTrees) == 0 {
 			return either.Success(sessionTrees), false
 		}
+		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
 		// Filter out the session trees that the supplier operator can afford to claim.
 		claimableSessionTrees, err := rs.payableProofsSessionTrees(ctx, sessionTrees)
@@ -225,7 +232,6 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// TODO_REFACTOR(@red-0ne): Pass a richer type to the function instead of []SessionTrees to:
 		// - Avoid making assumptions about shared properties
 		// - Eliminate constant queries for sharedParams
-		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
@@ -272,6 +278,11 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
 ) ([]relayer.SessionTree, error) {
+	// Check if sessionTrees is empty to prevent index out of bounds errors
+	if len(sessionTrees) == 0 {
+		return sessionTrees, nil
+	}
+
 	supplierOperatorAddress := sessionTrees[0].GetSupplierOperatorAddress()
 	logger := rs.logger.With(
 		"supplier_operator_address", supplierOperatorAddress,

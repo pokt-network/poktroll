@@ -78,10 +78,16 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	sessionTrees []relayer.SessionTree,
 	failedSubmitProofsSessionsCh chan<- []relayer.SessionTree,
 ) []relayer.SessionTree {
+	// Guard against empty sessionTrees to prevent index out of bounds errors
+	if len(sessionTrees) == 0 {
+		rs.logger.Warn().Msg("received empty sessionTrees array")
+		return nil
+	}
+
 	// Given the sessionTrees are grouped by their sessionEndHeight, we can use the
 	// first one from the group to calculate the earliest height for proof submission.
-	// TODO_IN_THIS_PR: Look for all 'sessionTrees[0]' and add a guard in place to ensure no index out of bounds errors.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
+	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 
 	logger := rs.logger.With("session_end_height", sessionEndHeight)
 
@@ -121,7 +127,6 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	}
 
 	// Get the earliest proof commit height for this supplier.
-	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 	earliestSupplierProofsCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		sessionEndHeight,
@@ -170,6 +175,11 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 				SessionHeader:           session.GetSessionHeader(),
 				Proof:                   session.GetProofBz(),
 			}
+		}
+
+		// Guard against empty sessionTrees to prevent index out of bounds errors
+		if len(sessionTrees) == 0 {
+			return either.Success(sessionTrees), false
 		}
 
 		// All session trees in the batch share the same sessionEndHeight, so we
