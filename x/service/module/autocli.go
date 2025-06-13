@@ -70,27 +70,28 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 		Tx: &autocliv1.ServiceCommandDescriptor{
 			Service:              servicetypes.Msg_serviceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command
-			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
+			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
 				// {
 				// 	RpcMethod: "UpdateParams",
 				// 	Skip:      true, // skipped because authority gated
 				// },
-				{
-					RpcMethod: "AddService",
-					Use:       "add-service <service-id> <service-description> <compute-units-per-relay>",
-					Short:     "Create a new service on-chain.",
-					Long: `
-- Register a new service specifying:
-  - <service-id>: unique string (max 42 chars)
-  - <service-description>: description (max 169 chars)
-  - <compute-units-per-relay>: integer value`,
-					Example:        `pocketd tx service add-service svc-foo "service description" 13 --fees 300upokt --from foo`,
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						// {ProtoField: "serviceId"},
-						// {ProtoField: "description"},
-						// {ProtoField: "computeUnitsPerRelay"},
-					},
-				},
+				//				{
+				//					RpcMethod: "AddService",
+				//					Use:       "add-service <service-id> <service-description> <compute-units-per-relay>",
+				//					Short:     "Create a new service on-chain.",
+				//					Long: `
+				//- Register a new service specifying:
+				//  - <service-id>: unique string (max 42 chars)
+				//  - <service-description>: description (max 169 chars)
+				//  - <compute-units-per-relay>: integer value`,
+				//					Example:        `pocketd tx service add-service svc-foo "service description" 13 --fees 300upokt --from foo`,
+				//					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+				//						// {ProtoField: "serviceId"},
+				//						// {ProtoField: "description"},
+				//						// {ProtoField: "computeUnitsPerRelay"},
+				//					},
+				//					Skip: true,
+				//				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
