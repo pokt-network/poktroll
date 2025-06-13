@@ -155,7 +155,7 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 
 		// Scenarios 2: The claim window is still open.
 		// The session has still a chance to reach settlement by creating the claim and submitting the proof.
-		sessionTree, treeErr := importSessionTree(sessionSMT, claim, rs.storesDirectory, rs.logger)
+		sessionTree, treeErr := importSessionTree(sessionSMT, claim, rs.storesDirectory, sessionLogger)
 		if treeErr != nil {
 			sessionLogger.Error().Err(treeErr).Msg("failed to import session tree")
 			continue

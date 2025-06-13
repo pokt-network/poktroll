@@ -63,11 +63,8 @@ func (rs *relayerSessionsManager) createClaims(
 	// In this case, the error may not be persistent.
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
 
-	// Delete expired session trees so they don't get claimed again.
-	channel.ForEach(
-		ctx, failedCreateClaimSessionsObs,
-		rs.deleteExpiredSessionTreesFn(sharedtypes.GetClaimWindowCloseHeight),
-	)
+	// Delete failed session trees so they don't get claimed again.
+	channel.ForEach(ctx, failedCreateClaimSessionsObs, rs.deleteSessionTrees)
 
 	// Map eitherClaimedSessions to a new observable of []relayer.SessionTree
 	// which is notified when the corresponding claims creation succeeded.
