@@ -94,7 +94,7 @@ var testNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
 // This upgrade adds:
 // - Creation of zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that:
 //   - Are non-custodial
-//   - Had no corresponding `MorseAuthAccount`
+//   - Had no corresponding `MorseAuthAccount` because they were never used (no balance, no onchain public key)
 //   - Were therefore excluded from the canonical `MsgImportMorseClaimableAccounts` import.
 //     There is **zero risk** of unintended token minting (staked or unstaked).
 var Upgrade_NEXT = Upgrade{
