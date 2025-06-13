@@ -31,6 +31,12 @@ MORSE_SUPPLIER_3_PREFIX=${MORSE_ADDR_SUPPLIER_3:0:4}
 MORSE_OWNER_1_PREFIX=${MORSE_ADDR_OWNER_1:0:4}
 MORSE_OWNER_2_PREFIX=${MORSE_ADDR_OWNER_2:0:4}
 
+SHANNON_ADDR_SUPPLIER_1=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_SUPPLIER_1_PREFIX}-claim-supplier-1 -a)
+SHANNON_ADDR_SUPPLIER_2=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2 -a)
+SHANNON_ADDR_SUPPLIER_3=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_SUPPLIER_3_PREFIX}-claim-supplier-3 -a)
+SHANNON_ADDR_OWNER_1=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_OWNER_1_PREFIX}-claim-owner-1 -a)
+SHANNON_ADDR_OWNER_2=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_OWNER_2_PREFIX}-claim-owner-2 -a)
+
 pocketd tx bank send pnf $SHANNON_ADDR_SUPPLIER_1 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
 pocketd tx bank send pnf $SHANNON_ADDR_SUPPLIER_2 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
 pocketd tx bank send pnf $SHANNON_ADDR_SUPPLIER_3 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
@@ -42,12 +48,6 @@ pocketd tx bank send pnf $SHANNON_ADDR_OWNER_2 1mact --home=./localnet/pocketd -
 # pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_SUPPLIER_3_PREFIX}-claim-supplier-3
 # pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_OWNER_1_PREFIX}-claim-owner-1
 # pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_OWNER_2_PREFIX}-claim-owner-2
-
-SHANNON_ADDR_SUPPLIER_1=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_SUPPLIER_1_PREFIX}-claim-supplier-1 -a)
-SHANNON_ADDR_SUPPLIER_2=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2 -a)
-SHANNON_ADDR_SUPPLIER_3=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_SUPPLIER_3_PREFIX}-claim-supplier-3 -a)
-SHANNON_ADDR_OWNER_1=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_OWNER_1_PREFIX}-claim-owner-1 -a)
-SHANNON_ADDR_OWNER_2=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_OWNER_2_PREFIX}-claim-owner-2 -a)
 
 pocketd tx migration collect-morse-accounts \
     localnet_testing_state_export.json localnet_testing_msg_import_morse_accounts.json \

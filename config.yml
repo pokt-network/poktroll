@@ -344,7 +344,7 @@ genesis:
     # For ref, see proto/poktroll/migration/params.proto
     migration:
       params:
-        waive_morse_claim_gas_fees: true
+        waive_morse_claim_gas_fees: false
         allow_morse_account_import_overwrite: false
         morse_account_claiming_enabled: true
     # For ref, see proto/poktroll/shared/params.proto
