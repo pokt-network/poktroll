@@ -461,10 +461,10 @@ func (txnClient *txClient) addPendingTransactions(
 	defer txnClient.txsMutex.Unlock()
 
 	// Initialize txTimeoutPool map if necessary.
-	txsByHash, ok := txnClient.txTimeoutPool[timeoutHeight]
+	txsByHash, ok := txnClient.txTimeoutPool[timeoutHeight+1]
 	if !ok {
 		txsByHash = make(map[string]chan error)
-		txnClient.txTimeoutPool[timeoutHeight] = txsByHash
+		txnClient.txTimeoutPool[timeoutHeight+1] = txsByHash
 	}
 
 	// Initialize txErrorChans map in txTimeoutPool map if necessary.
