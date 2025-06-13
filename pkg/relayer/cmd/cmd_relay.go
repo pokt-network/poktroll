@@ -100,6 +100,7 @@ For more info, run 'relay --help'.`,
 		DefaultFlagSupplierPublicEndpointOverride,
 		FlagSupplierPublicEndpointOverrideUsage,
 	)
+	cmdRelay.Flags().Bool(flags.FlagAutoFee, flags.DefaultFlagAutoFee, flags.FlagAutoFeeUsage)
 
 	// Required cosmos-sdk CLI query flags.
 	cmdRelay.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, flags.FlagGRPCUsage)
