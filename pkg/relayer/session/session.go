@@ -41,6 +41,8 @@ type relayerSessionsManager struct {
 	// 2. Ensure the mutex is used everywhere it's needed and is not used everywhere it's not
 	// 3. Cleanup comments and techdebt in this package.
 
+	// TODO_IN_THIS_PR: Identify all functions accessing and mutating 'rs.sessionTrees` and lock the mutex in there
+
 	// sessionTrees is a SessionsTreesMap (see type alias above).
 	//
 	// - The block height index is used to know when the sessions contained in the entry should be closed.

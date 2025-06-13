@@ -80,6 +80,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 ) []relayer.SessionTree {
 	// Given the sessionTrees are grouped by their sessionEndHeight, we can use the
 	// first one from the group to calculate the earliest height for proof submission.
+	// TODO_IN_THIS_PR: Look for all 'sessionTrees[0]' and add a guard in place to ensure no index out of bounds errors.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
 	logger := rs.logger.With("session_end_height", sessionEndHeight)
