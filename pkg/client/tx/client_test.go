@@ -365,7 +365,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 
 func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	var (
-		timeoutHeight = int64(5)
+		timeoutHeight = int64(6)
 		// expectedErrMsg is the expected error message that will be returned
 		// by the transaction client. It is computed and assigned in the
 		// testtx.NewOneTimeErrCheckTxTxContext helper function.
