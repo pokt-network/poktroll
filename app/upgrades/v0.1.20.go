@@ -25,18 +25,36 @@ const (
 var mainNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
   {
     "morse_src_address": "0C3B325133D65B6136CD59511CC63F17EF992BE6",
-    "unstaked_balance": "0upokt",
-    "supplier_stake": "0upokt",
-    "application_stake": "0upokt",
+    "unstaked_balance": {
+      "amount": "0",
+      "denom": "upokt"
+    },
+    "supplier_stake": {
+      "amount": "0",
+      "denom": "upokt"
+    },
+    "application_stake": {
+      "amount": "0",
+      "denom": "upokt"
+    },
     "claimed_at_height": 0,
     "shannon_dest_address": "",
     "morse_output_address": ""
   },
   {
     "morse_src_address": "F022ED4E7CCBCE2ABE54E2E3E51B847247E12DDB",
-    "unstaked_balance": "0upokt",
-    "supplier_stake": "0upokt",
-    "application_stake": "0upokt",
+    "unstaked_balance": {
+      "amount": "0",
+      "denom": "upokt"
+    },
+    "supplier_stake": {
+      "amount": "0",
+      "denom": "upokt"
+    },
+    "application_stake": {
+      "amount": "0",
+      "denom": "upokt"
+    },
     "claimed_at_height": 0,
     "shannon_dest_address": "",
     "morse_output_address": ""
@@ -47,18 +65,36 @@ var mainNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
 var testNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
   {
     "morse_src_address": "1C66C4B5905CF32EE9ED9D806D6EE12E93D38C20",
-    "unstaked_balance": "0upokt",
-    "supplier_stake": "0upokt",
-    "application_stake": "0upokt",
+    "unstaked_balance": {
+      "amount": "0",
+      "denom": "upokt"
+    },
+    "supplier_stake": {
+      "amount": "0",
+      "denom": "upokt"
+    },
+    "application_stake": {
+      "amount": "0",
+      "denom": "upokt"
+    },
     "claimed_at_height": 0,
     "shannon_dest_address": "",
     "morse_output_address": ""
   },
   {
     "morse_src_address": "1FA385948BFF6856765A048BC9F1920354EF87FD",
-    "unstaked_balance": "0upokt",
-    "supplier_stake": "0upokt",
-    "application_stake": "0upokt",
+    "unstaked_balance": {
+      "amount": "0",
+      "denom": "upokt"
+    },
+    "supplier_stake": {
+      "amount": "0",
+      "denom": "upokt"
+    },
+    "application_stake": {
+      "amount": "0",
+      "denom": "upokt"
+    },
     "claimed_at_height": 0,
     "shannon_dest_address": "",
     "morse_output_address": ""
