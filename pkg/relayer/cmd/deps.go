@@ -57,9 +57,9 @@ func setupRelayerDependencies(
 			return nil, err
 		}
 
-		parsedFlagNodeGRPCUrl, err := url.Parse(nodeGRPCURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
+		parsedFlagNodeGRPCUrl, parseErr := url.Parse(nodeGRPCURL)
+		if parseErr != nil {
+			return nil, fmt.Errorf("failed to parse grpc query URL: %w", parseErr)
 		}
 		queryNodeGRPCUrl = parsedFlagNodeGRPCUrl
 	}
