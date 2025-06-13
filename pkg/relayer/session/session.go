@@ -598,6 +598,11 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
 ) {
+	if len(sessionTrees) == 0 {
+		rs.logger.Debug().Msg("no session trees to delete")
+		return
+	}
+
 	logger := rs.logger.With("supplier_operator_address", sessionTrees[0].GetSupplierOperatorAddress())
 
 	// Iterate over the session trees and delete them from the relayerSessions.
