@@ -68,8 +68,11 @@ const (
 	FlagQueryCachingUsage   = "(Optional) Enable or disable onchain query caching"
 	DefaultFlagQueryCaching = true
 
-	// TODO_IN_THIS_COMMIT: comment... cosmos-sdk CLI hard-coded default node URL.
-	// See: <link>
+	// This is the default for the conventional cosmos-sdk --node flag value.
+	// - It is hard-coded into cosmos-sdk CLI code
+	// - Since this flag is registered by cosmos-sdk we CANNOT change the default value.
+	// - This costant MUST match what cosmos-sdk registers and is ONLY used for comparison (i.e. not in any flag registration logic).
+	// See: https://github.com/cosmos/cosmos-sdk/blob/v0.53.2/client/flags/flags.go#L108
 	DefaultNodeRPCURL = "tcp://localhost:26657"
 )
 
