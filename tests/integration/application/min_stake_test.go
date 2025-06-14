@@ -109,7 +109,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	s.setBlockHeight(settlementSessionEndHeight)
 
 	// Settle pending claims; this should cause the application to be unbonded.
-	_, _, err := s.keepers.Keeper.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
+	_, _, _, err := s.keepers.Keeper.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
 	require.NoError(s.T(), err)
 
 	expectedApp := s.getExpectedApp(claim)

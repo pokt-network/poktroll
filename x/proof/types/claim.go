@@ -150,3 +150,11 @@ func (claim *Claim) GetProofRequirementSampleValue(
 	// required probabilistically.
 	return poktrand.SeededFloat64(proofRequirementSeed), nil
 }
+
+// GetDehydratedClaim returns a copy of the claim with only the essential fields.
+func (claim *Claim) GetDehydratedClaim() Claim {
+	return Claim{
+		SupplierOperatorAddress: claim.SupplierOperatorAddress,
+		SessionHeader:           claim.SessionHeader,
+	}
+}
