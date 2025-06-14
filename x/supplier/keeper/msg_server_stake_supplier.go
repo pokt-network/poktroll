@@ -246,7 +246,6 @@ func (k Keeper) StakeSupplier(
 
 	// Emit an event which signals that the supplier staked.
 	events = append(events, &suppliertypes.EventSupplierStaked{
-		// TODO_IN_THIS_PR: Dehydrate the supplier before emitting the event. Do so elsewhere as well.
 		Supplier:         &supplier,
 		SessionEndHeight: sessionEndHeight,
 	})
