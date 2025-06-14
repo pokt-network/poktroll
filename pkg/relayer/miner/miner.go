@@ -116,17 +116,17 @@ func (mnr *miner) mapMineRelay(
 // If the service does not have a relay difficulty target hash defined, the default difficulty target hash is returned.
 func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *servicetypes.RelayRequest) ([]byte, error) {
 	if req == nil {
-		return nil, errors.New("relay request is nil")
+		return nil, errors.New("[SHOULD NEVER HAPPEN] relay request is nil")
 	}
 
 	meta := req.GetMeta()
 	sessionHeader := meta.GetSessionHeader()
 	if sessionHeader == nil {
-		return nil, errors.New("relay metadata has nil session header")
+		return nil, errors.New("[SHOULD NEVER HAPPEN] relay metadata has nil session header")
 	}
 
 	if err := sessionHeader.ValidateBasic(); err != nil {
-		return nil, fmt.Errorf("invalid session header: %w", err)
+		return nil, fmt.Errorf("[SHOULD NEVER HAPPEN] invalid session header: %w", err)
 	}
 
 	serviceRelayDifficulty, err := mnr.serviceQueryClient.GetServiceRelayDifficulty(ctx, sessionHeader.ServiceId)
