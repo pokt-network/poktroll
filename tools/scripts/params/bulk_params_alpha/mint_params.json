@@ -3,7 +3,7 @@
     "messages": [
       {
         "@type": "/cosmos.mint.v1beta1.MsgUpdateParams",
-        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "authority": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
         "params": {
           "mint_denom": "upokt",
           "inflation_rate_change": "0.000000000000000000",

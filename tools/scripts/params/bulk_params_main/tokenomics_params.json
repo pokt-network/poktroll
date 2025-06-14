@@ -10,7 +10,7 @@
             "proposer": 0.2,
             "supplier": 0.6,
             "source_owner": 0.1,
-            "application": 0.0
+            "application": 0
           },
           "dao_reward_address": "pokt1dd5rkaf8m9tm466mr2rytphv46jqx638a5m5er",
           "global_inflation_per_claim": 0.000001
