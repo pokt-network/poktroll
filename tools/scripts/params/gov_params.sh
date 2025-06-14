@@ -217,7 +217,7 @@ local)
     AUTHORITY="pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
     FROM_KEY="pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
     CHAIN_ID="pocket"
-    NODE="--node=localhost:26657"
+    NODE="--node=http://localhost:26657"
     ;;
 alpha)
     AUTHORITY="pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h"
@@ -242,6 +242,11 @@ main)
     exit 1
     ;;
 esac
+
+# If local environment and HOME_DIR was not overridden, set HOME_DIR to ./localnet/poktrolld
+if [ "$ENVIRONMENT" = "local" ] && [ "$HOME_DIR" = "~/.pocket" ]; then
+    HOME_DIR="./localnet/pocketd"
+fi
 
 # Create output directory if it doesn't exist (only needed for update command)
 if [ "$COMMAND" = "update" ]; then
