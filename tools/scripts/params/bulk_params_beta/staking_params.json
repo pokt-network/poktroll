@@ -7,7 +7,7 @@
         "params": {
           "unbonding_time": "504h0m0s",
           "max_validators": 5,
-          "max_entries": 7,
+          "max_entries": 8,
           "historical_entries": 10000,
           "bond_denom": "upokt",
           "min_commission_rate": "0.000000000000000000"

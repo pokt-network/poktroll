@@ -3,12 +3,12 @@
     "messages": [
       {
         "@type": "/pocket.application.MsgUpdateParams",
-        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "authority": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
         "params": {
           "max_delegated_gateways": "7",
           "min_stake": {
             "denom": "upokt",
-            "amount": "60000000000"
+            "amount": "100000000"
           }
         }
       }
