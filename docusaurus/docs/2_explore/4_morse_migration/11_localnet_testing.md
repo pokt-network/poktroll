@@ -542,3 +542,5 @@ pocketd query bank balance $SHANNON_ADDR_SUPPLIER_3 upokt -o json --network=loca
 ```
 
 ## Example
+
+For an example of some copy-pasta, see the [example](./localnet_testing_example/instructions.sh).

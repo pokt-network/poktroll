@@ -53,11 +53,12 @@ pocketd tx bank send pnf $SHANNON_ADDR_OWNER_2 1mact --home=./localnet/pocketd -
 pocketd tx bank send pnf $SHANNON_ADDR_SIGNER 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
 
 pocketd tx migration collect-morse-accounts \
-    localnet_testing_state_export.json localnet_testing_msg_import_morse_accounts.json \
+    docusaurus/docs/2_explore/4_morse_migration/localnet_testing_example/localnet_testing_state_export.json \
+    docusaurus/docs/2_explore/4_morse_migration/localnet_testing_example/localnet_testing_msg_import_morse_accounts.json \
     --home=./localnet/pocketd
 
 pocketd tx migration import-morse-accounts \
-    localnet_testing_msg_import_morse_accounts.json \
+    docusaurus/docs/2_explore/4_morse_migration/localnet_testing_example/localnet_testing_msg_import_morse_accounts.json \
     --from=pnf \
     --home=./localnet/pocketd --keyring-backend=test \
     --network=local \
@@ -80,7 +81,7 @@ pocketd tx migration claim-account \
 
 pocketd tx migration claim-supplier \
     ${MORSE_ADDR_SUPPLIER_2} pocket-account-${MORSE_ADDR_SUPPLIER_2}.json \
-    ${MORSE_SUPPLIER_2_PREFIX}_claim_supplier_2_supplier_config.yaml \
+    docusaurus/docs/2_explore/4_morse_migration/localnet_testing_example/${MORSE_SUPPLIER_2_PREFIX}_claim_supplier_2_supplier_config.yaml \
     --from=signer \
     --network=local \
     --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
@@ -89,14 +90,3 @@ pocketd tx migration claim-supplier \
 pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_2 -o json --network=local --home=./localnet/pocketd
 
 pocketd query bank balance $SHANNON_ADDR_SUPPLIER_2 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
-
-# owner_address: pokt1vns9fcc5gy8444p98a86uv98qlxp3n959kx6mh # ${MORSE_OWNER_2_PREFIX}-claim-owner-2
-# operator_address: pokt19jq2zu3eluufyd22sfc9jrlqv9hw5plt5pmcrv #${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2
-# default_rev_share_percent:
-#   pokt1vns9fcc5gy8444p98a86uv98qlxp3n959kx6mh: 80 # ${MORSE_OWNER_2_PREFIX}-claim-owner-2
-#   pokt19jq2zu3eluufyd22sfc9jrlqv9hw5plt5pmcrv: 20 # ${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2
-# services:
-#   - service_id: anvil
-#     endpoints:
-#       - publicly_exposed_url: http://relayminer1:8545
-#         rpc_type: JSON_RPC
