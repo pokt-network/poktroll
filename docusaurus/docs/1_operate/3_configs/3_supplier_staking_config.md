@@ -13,6 +13,7 @@ You can find a fully featured example configuration at [supplier_staking_config.
 
 :::
 
+- [Gov Param References \& Values](#gov-param-references--values)
 - [Usage](#usage)
 - [Staking types](#staking-types)
   - [Custodial Staking](#custodial-staking)
@@ -28,6 +29,12 @@ You can find a fully featured example configuration at [supplier_staking_config.
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
     - [`rev_share_percent`](#rev_share_percent)
+
+## Gov Param References & Values
+
+- Supplier module governance params can be found [here](../../3_protocol/governance/2_gov_params.md).
+- Supplier module Beta parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_beta/supplier_params.json).
+- Supplier module Main parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_main/supplier_params.json).
 
 ## Usage
 
