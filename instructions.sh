@@ -31,23 +31,26 @@ MORSE_SUPPLIER_3_PREFIX=${MORSE_ADDR_SUPPLIER_3:0:4}
 MORSE_OWNER_1_PREFIX=${MORSE_ADDR_OWNER_1:0:4}
 MORSE_OWNER_2_PREFIX=${MORSE_ADDR_OWNER_2:0:4}
 
+# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_SUPPLIER_1_PREFIX}-claim-supplier-1
+# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2
+# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_SUPPLIER_3_PREFIX}-claim-supplier-3
+# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_OWNER_1_PREFIX}-claim-owner-1
+# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_OWNER_2_PREFIX}-claim-owner-2
+# pocketd --keyring-backend=test --home=./localnet/pocketd keys add signer
+
 SHANNON_ADDR_SUPPLIER_1=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_SUPPLIER_1_PREFIX}-claim-supplier-1 -a)
 SHANNON_ADDR_SUPPLIER_2=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2 -a)
 SHANNON_ADDR_SUPPLIER_3=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_SUPPLIER_3_PREFIX}-claim-supplier-3 -a)
 SHANNON_ADDR_OWNER_1=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_OWNER_1_PREFIX}-claim-owner-1 -a)
 SHANNON_ADDR_OWNER_2=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show ${MORSE_OWNER_2_PREFIX}-claim-owner-2 -a)
+SHANNON_ADDR_SIGNER=$(pocketd --keyring-backend=test --home=./localnet/pocketd keys show signer -a)
 
 pocketd tx bank send pnf $SHANNON_ADDR_SUPPLIER_1 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
 pocketd tx bank send pnf $SHANNON_ADDR_SUPPLIER_2 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
 pocketd tx bank send pnf $SHANNON_ADDR_SUPPLIER_3 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
 pocketd tx bank send pnf $SHANNON_ADDR_OWNER_1 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
 pocketd tx bank send pnf $SHANNON_ADDR_OWNER_2 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
-
-# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_SUPPLIER_1_PREFIX}-claim-supplier-1
-# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2
-# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_SUPPLIER_3_PREFIX}-claim-supplier-3
-# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_OWNER_1_PREFIX}-claim-owner-1
-# pocketd --keyring-backend=test --home=./localnet/pocketd keys add ${MORSE_OWNER_2_PREFIX}-claim-owner-2
+pocketd tx bank send pnf $SHANNON_ADDR_SIGNER 1mact --home=./localnet/pocketd --yes --unordered --timeout-duration=5s --fees=1upokt
 
 pocketd tx migration collect-morse-accounts \
     localnet_testing_state_export.json localnet_testing_msg_import_morse_accounts.json \
@@ -67,10 +70,18 @@ pocketd tx migration claim-account \
     --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
     --gas=auto --gas-adjustment=1.5 --yes --gas-prices=100000000000000000000000000upokt
 
+# pocketd tx migration claim-supplier \
+#     ${MORSE_ADDR_SUPPLIER_2} pocket-account-${MORSE_ADDR_SUPPLIER_2}.json \
+#     ${MORSE_SUPPLIER_2_PREFIX}_claim_supplier_2_supplier_config.yaml \
+#     --from=${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2 \
+#     --network=local \
+#     --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
+#     --gas=auto --gas-adjustment=1.5 --yes --gas-prices=100000000000000000000000000upokt
+
 pocketd tx migration claim-supplier \
     ${MORSE_ADDR_SUPPLIER_2} pocket-account-${MORSE_ADDR_SUPPLIER_2}.json \
     ${MORSE_SUPPLIER_2_PREFIX}_claim_supplier_2_supplier_config.yaml \
-    --from=${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2 \
+    --from=signer \
     --network=local \
     --home=./localnet/pocketd --keyring-backend=test --no-passphrase \
     --gas=auto --gas-adjustment=1.5 --yes --gas-prices=100000000000000000000000000upokt
@@ -78,3 +89,14 @@ pocketd tx migration claim-supplier \
 pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_2 -o json --network=local --home=./localnet/pocketd
 
 pocketd query bank balance $SHANNON_ADDR_SUPPLIER_2 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
+
+# owner_address: pokt1vns9fcc5gy8444p98a86uv98qlxp3n959kx6mh # ${MORSE_OWNER_2_PREFIX}-claim-owner-2
+# operator_address: pokt19jq2zu3eluufyd22sfc9jrlqv9hw5plt5pmcrv #${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2
+# default_rev_share_percent:
+#   pokt1vns9fcc5gy8444p98a86uv98qlxp3n959kx6mh: 80 # ${MORSE_OWNER_2_PREFIX}-claim-owner-2
+#   pokt19jq2zu3eluufyd22sfc9jrlqv9hw5plt5pmcrv: 20 # ${MORSE_SUPPLIER_2_PREFIX}-claim-supplier-2
+# services:
+#   - service_id: anvil
+#     endpoints:
+#       - publicly_exposed_url: http://relayminer1:8545
+#         rpc_type: JSON_RPC
