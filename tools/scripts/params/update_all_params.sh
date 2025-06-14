@@ -10,7 +10,8 @@ set -e
 
 # Default configuration
 DEFAULT_ENV="beta"
-PARAM_DIR="tools/scripts/params/bulk_params"
+# PARAM_DIR must be specified by the user if needed; no default is set
+PARAM_DIR=""
 GOV_PARAM_SCRIPT="./tools/scripts/params/gov_params.sh"
 
 # Parameter files to update
@@ -26,9 +27,16 @@ POCKET_PARAM_FILES=(
   slashing_params.json
 )
 
+# TODO(@olshansk): These are intentionally commented out to avoid accidental overwrite
+# of Cosmos default SDK values.
 COSMOS_PARAM_FILES=(
-  mint_params.json
-  staking_params.json
+  # mint_params.json
+  # staking_params.json
+  # auth_params.json
+  # bank_params.json
+  # gov_params.json
+  # slashing_params.json
+  # distribution_params.json
 )
 
 get_local_config() {
@@ -94,18 +102,16 @@ OPTIONS:
   -v, --verbose           Enable verbose output
   --gov-only              Only run governance parameters (from gov_params.sh)
   --state-only            Only run state shift parameters (default behavior)
-  --param-dir=DIR         Override parameter directory (default: $PARAM_DIR)
+  --param-dir=DIR         Specify parameter directory (required for state/gov param updates)
 
 EXAMPLES:
-  $0 beta                                                   # Update beta network with default params
-  $0 main --param-dir=tools/scripts/params/bulk_params_main # Update main network with main-specific params
-  $0 beta --param-dir=tools/scripts/params/bulk_params_beta # Update beta network with beta-specific params
-  $0 beta --dry-run                                         # Show what would be executed on beta
-  $0 main --gov-only                                        # Run only governance params on main
-  $0 local --param-dir=./custom_params                      # Use custom parameter directory
+  $0 main --param-dir=tools/scripts/params/bulk_params_main   # Update main network with main-specific params
+  $0 beta --param-dir=tools/scripts/params/bulk_params_beta   # Update beta network with beta-specific params
+  $0 alpha --param-dir=tools/scripts/params/bulk_params_alpha # Update alpha network with alpha-specific params
+  $0 local --param-dir=./custom_params                        # Use custom parameter directory
 
 PARAMETER FILES:
-  State shift parameters from: [specified directory]
+  State shift parameters from: [specified directory, must be specified with --param-dir]
   Pocket parameters:
 $(printf "  - %s\n" "${POCKET_PARAM_FILES[@]}")
   Cosmos SDK parameters:
@@ -141,7 +147,7 @@ CONFIGURATION:
 
 NOTES:
   - Ensure you have the correct keyring access for the target environment
-  - All parameter files must exist in the specified directory
+  - All parameter files must exist in the specified directory (must be set with --param-dir)
   - Use --dry-run to verify commands before execution
   - For governance parameters, see $GOV_PARAM_SCRIPT for details
   - You will be prompted for confirmation before executing transactions
@@ -175,6 +181,9 @@ validate_environment() {
 validate_files() {
   log "Validating parameter files..."
 
+  if [[ -z "$PARAM_DIR" ]]; then
+    error "PARAM_DIR is not set. Use --param-dir to specify the parameter directory."
+  fi
   if [[ ! -d "$PARAM_DIR" ]]; then
     error "Parameter directory not found: $PARAM_DIR"
   fi
@@ -247,7 +256,7 @@ prompt_confirmation() {
   if [[ "$mode" == "state" || "$mode" == "both" ]]; then
     echo "Files to process:"
     for file in "${POCKET_PARAM_FILES[@]}" "${COSMOS_PARAM_FILES[@]}"; do
-      echo "  - $PARAM_DIR/$file"
+      echo "  - ${PARAM_DIR:-"(not set)"}/$file"
     done
   fi
 
@@ -407,6 +416,11 @@ main() {
   echo "Dry run: ${DRY_RUN:-false}"
   echo "Verbose: ${VERBOSE:-false}"
   echo "======================================"
+
+  # Validate that PARAM_DIR is set if mode is not gov-only
+  if [[ "$mode" != "gov" && -z "$PARAM_DIR" ]]; then
+    error "--param-dir must be specified for parameter updates."
+  fi
 
   # Validate files exist
   validate_files

@@ -12,6 +12,7 @@ accounts:
     mnemonic: "crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade"
     coins:
       - 69000000000000000000042upokt
+      - 69000000000000000000042mact
   - name: validator1
     mnemonic: "creek path rule retire evolve vehicle bargain champion roof whisper prize endorse unknown anchor fashion energy club sauce elder parent cotton old affair visa"
     coins:
@@ -86,14 +87,21 @@ client:
 validators:
   - name: validator1
     bonded: 900000000upokt
-    # DEV_NOTE: adjust `cmd/pocketd/cmd/config.go` to change the default options. The section below **ONLY** changes
-    # the values for the first validator, and the config is rendered using `ignite` cli. This is primarily used for
-    # LocalNet. Other participants of the network are relying on `pocketd init`, which gets values from `cmd/config.go`.
+    # DEV_NOTE: adjust `cmd/pocketd/cmd/config.go` to change the default options.
+    # The section below **ONLY** changes the values for the first validator.
+    # The config is rendered using `ignite` cli.
+    # This is primarily used for LocalNet.
+    # Other participants of the network are relying on `pocketd init`, which gets values from `cmd/config.go`.
+    # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
+    # See the enhancement request here: https://github.com/ignite/cli/issues/4340
+    # TODO_MAINNET_MIGRATION(@okdas, #794): turn on `minimum-gas-prices` back
     app:
-      # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
-      # See the enhancement request here: https://github.com/ignite/cli/issues/4340
-      # TODO_MAINNET_MIGRATION(@okdas, #794): turn on `minimum-gas-prices` back
-      # minimum-gas-prices: 0.000000001upokt
+      # Tutorial from Jan 2025: https://tutorials.ignite.com/storage-and-fees-with-the-cosmos-sdk-and-ignite-cli/
+      #minimum-gas-prices: 0.000000001upokt
+      # pruning: nothing
+      # pruning: custom
+      # pruning-keep-recent: "100"
+      # pruning-interval: "10"
       telemetry:
         enabled: true
       pocket:
@@ -237,7 +245,7 @@ genesis:
           denom: upokt
         # TODO_MAINNET_MIGRATION(@olshansk): Determine realistic amount for supplier staking fee.
         staking_fee:
-          amount: "1" # 1 uPOKT
+          amount: "1000000" # 1 POKT
           denom: upokt
       supplierList:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
