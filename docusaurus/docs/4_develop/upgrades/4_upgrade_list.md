@@ -19,11 +19,6 @@ See `pocketd query upgrade --help` to query onchain upgrade information.
 
 ## Table of Contents
 
-https://discord.com/channels/553741558869131266/1217918754801975398/1380265086744264894
-
-1. I'll update the docs
-2. I'll add a warning that genesis is the source of truth
-
 - [Table of Contents](#table-of-contents)
 - [Legend](#legend)
 - [MainNet Protocol Upgrades](#mainnet-protocol-upgrades)

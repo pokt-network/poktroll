@@ -28,6 +28,7 @@ sidebar_position: 11
   - [\[Most Common\] Option 1 : Non-Custodial Supplier Claim WITH Output Address - Signed by Operator](#most-common-option-1--non-custodial-supplier-claim-with-output-address---signed-by-operator)
   - [Option 2 : Non-Custodial Supplier Claim WITH Output Address - Signed by Owner](#option-2--non-custodial-supplier-claim-with-output-address---signed-by-owner)
   - [Option 3: Custodial Supplier Claim WITHOUT Output Address Signed by Operator](#option-3-custodial-supplier-claim-without-output-address-signed-by-operator)
+- [Example](#example)
 
 ---
 
@@ -539,3 +540,5 @@ pocketd query supplier show-supplier $SHANNON_ADDR_SUPPLIER_3 -o json --network=
 ```bash
 pocketd query bank balance $SHANNON_ADDR_SUPPLIER_3 upokt -o json --network=local --home=./localnet/pocketd | jq '.balance.amount'
 ```
+
+## Example
