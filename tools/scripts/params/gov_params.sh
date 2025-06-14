@@ -116,7 +116,7 @@ if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
     echo "  --env <environment>: Target environment (local, alpha, beta, main). Default: beta"
     echo "  --output-dir <dir>: Directory to save transaction files. Default: . (current directory)"
     echo "  --output-file <file>: Specific output file path (export-params only)"
-    echo "  --export-dir <dir>: Directory to save exported parameter files (export-all-params only). Default: tools/scripts/params/bulk_params"
+    echo "  --export-dir <dir>: Directory to save exported parameter files (export-all-params only). (REQUIRED for export-all-params)"
     echo "  --network <network>: Network flag for query. Default: uses --env value"
     echo "  --home <path>: Home directory for pocketd. Default: ~/.pocket"
     echo "  --no-prompt: Skip the edit prompt and just generate the template (update only)"
@@ -128,7 +128,6 @@ if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
     echo "  ./tools/scripts/params/gov_params.sh update auth --env beta --output-dir ./params"
     echo "  ./tools/scripts/params/gov_params.sh export-params application --output-file tools/scripts/params/bulk_params/application_params.json"
     echo "  ./tools/scripts/params/gov_params.sh export-all-params --env beta --export-dir ./exported_params"
-    echo "  ./tools/scripts/params/gov_params.sh export-all-params --env main"
     exit 1
 fi
 
@@ -164,7 +163,7 @@ fi
 ENVIRONMENT="beta"
 OUTPUT_DIR="."
 OUTPUT_FILE=""
-EXPORT_DIR="tools/scripts/params/bulk_params"
+EXPORT_DIR=""
 HOME_DIR="~/.pocket"
 NETWORK=""
 NO_PROMPT=false
@@ -500,6 +499,13 @@ case $COMMAND in
     export_module_params "$MODULE_NAME" "$OUTPUT_FILE"
     ;;
 "export-all-params")
+    # Validate that export dir is specified
+    if [ -z "$EXPORT_DIR" ]; then
+        echo "Error: --export-dir is required for export-all-params command" >&2
+        echo "Usage: ./tools/scripts/params/gov_params.sh export-all-params --export-dir <dir> [--env <environment>]"
+        echo "Example: ./tools/scripts/params/gov_params.sh export-all-params --env beta --export-dir ./exported_params"
+        exit 1
+    fi
     export_all_module_params "$EXPORT_DIR"
     ;;
 "update")

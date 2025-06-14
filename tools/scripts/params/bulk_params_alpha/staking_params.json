@@ -3,10 +3,10 @@
     "messages": [
       {
         "@type": "/cosmos.staking.v1beta1.MsgUpdateParams",
-        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "authority": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
         "params": {
           "unbonding_time": "504h0m0s",
-          "max_validators": 10,
+          "max_validators": 5,
           "max_entries": 7,
           "historical_entries": 10000,
           "bond_denom": "upokt",
