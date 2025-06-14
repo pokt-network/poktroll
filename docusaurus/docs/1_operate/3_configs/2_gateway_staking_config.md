@@ -13,9 +13,16 @@ You can find a fully featured example configuration at [gateway1_stake_config.ya
 
 :::
 
+- [Gov Param References \& Values](#gov-param-references--values)
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`stake_amount`](#stake_amount)
+
+## Gov Param References & Values
+
+- Gateway module governance params can be found [here](../../3_protocol/governance/2_gov_params.md).
+- Gateway module Beta parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_beta/gateway_params.json).
+- Gateway module Main parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_main/gateway_params.json).
 
 ## Usage
 

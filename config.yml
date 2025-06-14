@@ -97,8 +97,8 @@ validators:
     # TODO_MAINNET_MIGRATION(@okdas, #794): turn on `minimum-gas-prices` back
     app:
       # Tutorial from Jan 2025: https://tutorials.ignite.com/storage-and-fees-with-the-cosmos-sdk-and-ignite-cli/
-      minimum-gas-prices: 0.000000001upokt
-      pruning: nothing
+      #minimum-gas-prices: 0.000000001upokt
+      # pruning: nothing
       # pruning: custom
       # pruning-keep-recent: "100"
       # pruning-interval: "10"
