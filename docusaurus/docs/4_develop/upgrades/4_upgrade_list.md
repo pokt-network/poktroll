@@ -7,6 +7,16 @@ The tables below provide a list of past and upcoming protocol upgrades.
 
 For more detailed information about what upgrades are, how they work, and what changes they bring to the protocol, please refer to our [upgrade overview page](1_protocol_upgrades.md).
 
+:::warning Best Effort Document
+
+This document is a best effort attempt to keep track of all protocol upgrades.
+
+It should not be treated as the source of truth.
+
+See `pocketd query upgrade --help` to query onchain upgrade information.
+
+:::
+
 ## Table of Contents
 
 https://discord.com/channels/553741558869131266/1217918754801975398/1380265086744264894
