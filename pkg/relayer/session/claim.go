@@ -405,7 +405,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 			)
 		}
 
-		if supplierCanAffordClaimAndProofFees {
+		if !supplierCanAffordClaimAndProofFees {
 			// Log a warning of any session that the supplier operator cannot afford to claim.
 			claimLogger.Warn().Msg("supplier operator cannot afford to submit proof for claim, deleting session tree")
 		}
