@@ -1,0 +1,21 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.tokenomics.MsgUpdateParams",
+        "authority": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
+        "params": {
+          "mint_allocation_percentages": {
+            "dao": 0.1,
+            "proposer": 0.05,
+            "supplier": 0.7,
+            "source_owner": 0.15,
+            "application": 0
+          },
+          "dao_reward_address": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
+          "global_inflation_per_claim": 0.1
+        }
+      }
+    ]
+  }
+}
