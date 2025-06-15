@@ -52,6 +52,14 @@ const config = {
           temperature: 0.7,
           maxTokens: 1000,
         },
+        embedding: {
+          model: "text-embedding-3-small",
+          chunkSize: 2000,
+          chunkingStrategy: "headers", // Splits at markdown headers!
+          batchSize: 5,
+          maxChunksPerFile: 15,
+          relevantChunks: 5,
+        },
       },
     ],
   ],
