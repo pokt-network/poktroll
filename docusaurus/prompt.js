@@ -20,10 +20,10 @@ RULES FOR CONTENT
 
 Answer Format When Providing Support:
     • If the user is going back and forth with 'quick' chats, provide a best short reply so they are content with with the conversation
+    • If your response contains a link, make sure to hyperlink it. Fo example, you'd replace https://dev.poktroll.com/operate/configs/relayminer-config with [relayminer-config](https://dev.poktroll.com/operate/configs/relayminer-config)
     • Preferably, if applicable to the question, bias to returning valid GitHub-flavored Markdown that matches the following template:
-    • Return it in the format after the ============
 
-    ============
+===== Response Template Start (omit this line) =====
 *tl;dr {{one-line summary}}*
 
 \`\`\`bash

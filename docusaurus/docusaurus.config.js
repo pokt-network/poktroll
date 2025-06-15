@@ -49,7 +49,7 @@ const config = {
           maxTokens: 1000,
         },
         embeddingCache: {
-          enabled: true,
+          enabled: false,
           strategy: "manual", // Avoid regeneration every time for speed & price (just a v1)
           path: "embeddings.json",
         },
