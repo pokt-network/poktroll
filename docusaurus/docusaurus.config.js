@@ -37,20 +37,21 @@ const config = {
     [
       require.resolve("docusaurus-plugin-chat-page"),
       {
+        baseURL: "https://dev.poktroll.com",
         path: "chat",
         openai: {
           apiKey: process.env.OPENAI_API_KEY,
+        },
+        prompt: {
+          systemPrompt: require("./prompt"),
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          maxTokens: 1000,
         },
         embeddingCache: {
           enabled: true,
           strategy: "manual", // Avoid regeneration every time for speed & price (just a v1)
           path: "embeddings.json",
-        },
-        prompt: {
-          ...require("./prompt"),
-          model: "gpt-4o-mini",
-          temperature: 0.7,
-          maxTokens: 1000,
         },
         embedding: {
           model: "text-embedding-3-small",
