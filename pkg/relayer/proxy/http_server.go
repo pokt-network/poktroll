@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net"
 	"net/http"
 	"time"
@@ -173,6 +173,22 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Forward sends request to the appropriate service.
+// - It checks if the service id is managed by the relayminer.
+// - It checks wether it needs to forward a websocket connection or send a http request.
+func (server *relayMinerHTTPServer) Forward(ctx context.Context, serviceID string, w http.ResponseWriter, req *http.Request) error {
+	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceID]
+	if !ok {
+		return ErrRelayerProxyServiceIDNotFound.Wrapf("service ID: %s", serviceID)
+	}
+
+	if isWebSocketRequest(req) {
+		return server.forwardAsyncConnection(ctx, supplierConfig, w, req)
+	} else {
+		return server.forwardHTTP(ctx, supplierConfig, w, req)
+	}
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective
