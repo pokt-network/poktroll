@@ -83,7 +83,7 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	s.logger, s.ctx = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 
 	// Initialize test data and state
-	s.service = sharedtypes.Service{Id: "svc", ComputeUnitsPerRelay: 2}
+	s.service = sharedtypes.Service{Id: "svc", ComputeUnitsPerRelay: 2000}
 	s.sharedParams = sharedtypes.DefaultParams()
 	s.proofParams = prooftypes.DefaultParams()
 	s.proofParams.ProofRequirementThreshold = uPOKTCoin(1)
