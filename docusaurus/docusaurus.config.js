@@ -43,7 +43,7 @@ const config = {
         },
         embeddingCache: {
           enabled: true,
-          strategy: "manual", // or "timestamp" (hash is implemented)
+          strategy: "manual", // Avoid regeneration every time for speed & price (just a v1)
           path: "embeddings.json",
         },
       },
@@ -146,7 +146,7 @@ const config = {
             to: "/4_develop/",
           },
           {
-            to: "/chat", // Make sure this matches your plugin's path configuration
+            to: "/chat",
             label: "🤖 Chat",
             position: "left",
           },
