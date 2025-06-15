@@ -46,6 +46,12 @@ const config = {
           strategy: "manual", // Avoid regeneration every time for speed & price (just a v1)
           path: "embeddings.json",
         },
+        prompt: {
+          ...require("./prompt"),
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          maxTokens: 1000,
+        },
       },
     ],
   ],
