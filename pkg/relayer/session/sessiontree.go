@@ -340,6 +340,7 @@ func (st *sessionTree) GetClaimRoot() []byte {
 func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
+	defer func() { st.treeStore = nil }()
 
 	st.isClaiming = false
 

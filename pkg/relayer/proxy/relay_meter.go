@@ -296,8 +296,11 @@ func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client
 
 	// Delete the relay meters that correspond to settled sessions.
 	for _, sessionRelayMeter := range rmtr.sessionToRelayMeterMap {
-		sessionEndHeight := sessionRelayMeter.sessionHeader.GetSessionEndBlockHeight()
-		sessionClaimOpenHeight := sessionEndHeight + int64(sharedParams.GetClaimWindowOpenOffsetBlocks())
+
+		sessionClaimOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
+			sharedParams,
+			sessionRelayMeter.sessionHeader.GetSessionEndBlockHeight(),
+		)
 
 		if block.Height() >= sessionClaimOpenHeight {
 			// The session started its claim phase and the corresponding session relay meter

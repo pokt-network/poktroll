@@ -204,15 +204,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		for _, sessionTree := range sessionTrees {
-			rs.removeFromRelayerSessions(sessionTree)
-			if err := sessionTree.Delete(); err != nil {
-				// Do not fail the entire operation if a session tree cannot be deleted
-				// as this does not affect the C&P lifecycle.
-				rs.logger.Error().Err(err).Msg("failed to delete session tree")
-			}
-		}
-
+		rs.deleteSessionTrees(ctx, sessionTrees)
 		return either.Success(sessionTrees), false
 	}
 }
@@ -247,12 +239,7 @@ func (rs *relayerSessionsManager) proveClaims(
 		if isProofRequired {
 			sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
 		} else {
-			rs.removeFromRelayerSessions(sessionTree)
-			if err := sessionTree.Delete(); err != nil {
-				// Do not fail the entire operation if a session tree cannot be deleted
-				// as this does not affect the C&P lifecycle.
-				logger.Error().Err(err).Msg("failed to delete session tree")
-			}
+			rs.deleteSession(sessionTree)
 		}
 	}
 
@@ -360,13 +347,4 @@ func (rs *relayerSessionsManager) isProofRequired(
 
 	logger.Info().Msg("claim does not require proof")
 	return false, nil
-}
-
-// claimFromSessionTree creates a claim object from the given SessionTree.
-func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
-	return prooftypes.Claim{
-		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
-		SessionHeader:           sessionTree.GetSessionHeader(),
-		RootHash:                sessionTree.GetClaimRoot(),
-	}
 }

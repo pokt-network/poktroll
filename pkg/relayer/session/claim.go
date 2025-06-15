@@ -390,10 +390,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		// Supplier CANNOT afford to claim the session.
 		// Delete the session tree from the relayer sessions and the KVStore since
 		// it won't be claimed due to insufficient funds.
-		rs.removeFromRelayerSessions(sessionTree)
-		if err := sessionTree.Delete(); err != nil {
-			claimLogger.Error().Err(err).Msg("failed to delete session tree")
-		}
+		rs.deleteSession(sessionTree)
 
 		if !isClaimProfitable {
 			// Calculate how unprofitable the claim is

@@ -25,6 +25,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	request *http.Request,
 ) (*types.RelayRequest, error) {
 	logger := server.logger.With("relay_request_type", "synchronous")
+	startTime := time.Now()
+	startHeight := server.blockClient.LastBlock(ctx).Height()
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("handling HTTP request")
 
@@ -245,6 +247,21 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 
 	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
+
+	// Verify relay reward eligibility again after completing the backend request.
+	// During long-running backend requests (especially under high load or with LLM services),
+	// the session may have expired while we were waiting for the response.
+	// If a session expires during processing, the relay is classified as "over-servicing"
+	// and becomes ineligible for rewards, as it falls outside the protocol's reward mechanism.
+	if err := server.relayAuthenticator.CheckRelayRewardEligibility(ctx, relayRequest); err != nil {
+		processingTime := time.Since(startTime).Milliseconds()
+		logger.Warn().Msgf(
+			"relay request is no longer eligible for rewards, request took %d ms, starting at block %d and ending at block %d: %v",
+			processingTime, server.blockClient.LastBlock(ctx).Height(), startHeight, err,
+		)
+
+		isOverServicing = true
+	}
 
 	// Only emit relays and mark them as rewardable when they are not over-servicing:
 	// - Over-serviced relays exceed the application's allocated stake.

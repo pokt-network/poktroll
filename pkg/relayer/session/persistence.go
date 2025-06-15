@@ -226,11 +226,7 @@ func (rs *relayerSessionsManager) persistSessionMetadata(sessionTree relayer.Ses
 	sessionId := sessionTree.GetSessionHeader().SessionId
 	sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
 
-	sessionSMT := &prooftypes.SessionSMT{
-		SessionHeader:           sessionTree.GetSessionHeader(),
-		SupplierOperatorAddress: supplierOperatorAddress,
-		SmtRoot:                 sessionTree.GetSMSTRoot(),
-	}
+	sessionSMT := sessionSMTFromSessionTree(sessionTree)
 	logger := rs.logger.With(
 		"method", "persistSessionMetadata",
 		"supplier_operator_address", supplierOperatorAddress,

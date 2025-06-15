@@ -16,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -574,7 +575,7 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 		supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
 		if !ok || supplierSessionTrees == nil {
 			rs.sessionsTreesMu.Unlock() // Unlock before returning
-			logger.Info().Msg("no session trees found for the supplier operator address")
+			logger.Debug().Msg("no expired session trees found for the supplier operator address")
 			return
 		}
 
@@ -616,9 +617,6 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
 ) {
-	rs.sessionsTreesMu.Lock()
-	defer rs.sessionsTreesMu.Unlock()
-
 	logger := rs.logger.With("method", "RSM.deleteSessionTrees")
 
 	if len(sessionTrees) == 0 {
@@ -635,11 +633,7 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 		logger.Info().Str("session_id", sessionId).Msg("deleting session tree")
 
 		// Remove the session tree from the relayerSessions.
-		rs.removeFromRelayerSessions(sessionTree)
-
-		if err := sessionTree.Delete(); err != nil {
-			logger.Error().Err(err).Str("session_id", sessionId).Msg("failed to delete session tree")
-		}
+		rs.deleteSession(sessionTree)
 
 		numSessionTreesDeleted++
 	}
@@ -648,6 +642,20 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 		"deleted %d session trees from relayerSessions",
 		numSessionTreesDeleted,
 	)
+}
+
+// deleteSession deletes the session tree from the relayerSessions and
+// removes it from the disk store.
+func (rs *relayerSessionsManager) deleteSession(sessionTree relayer.SessionTree) {
+	rs.removeFromRelayerSessions(sessionTree)
+
+	sessionId := sessionTree.GetSessionHeader().GetSessionId()
+	if err := sessionTree.Delete(); err != nil {
+		rs.logger.Error().Err(err).Str("session_id", sessionId).Msg("failed to delete session tree")
+	}
+
+	sessionSMT := sessionSMTFromSessionTree(sessionTree)
+	rs.deletePersistedSessionTree(sessionSMT)
 }
 
 // supplierSessionsToClaim returns an observable that notifies when sessions that
@@ -672,4 +680,24 @@ func (rs *relayerSessionsManager) supplierSessionsToClaim(
 	)
 
 	return sessionsToClaimObs
+}
+
+// claimFromSessionTree creates a claim object from the given SessionTree.
+func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
+	return prooftypes.Claim{
+		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
+		SessionHeader:           sessionTree.GetSessionHeader(),
+		RootHash:                sessionTree.GetClaimRoot(),
+	}
+}
+
+// sessionSMTFromSessionTree creates a SessionSMT from the given SessionTree.
+func sessionSMTFromSessionTree(
+	sessionTree relayer.SessionTree,
+) *prooftypes.SessionSMT {
+	return &prooftypes.SessionSMT{
+		SessionHeader:           sessionTree.GetSessionHeader(),
+		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
+		SmtRoot:                 sessionTree.GetSMSTRoot(),
+	}
 }

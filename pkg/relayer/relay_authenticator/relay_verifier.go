@@ -91,6 +91,39 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	return ErrRelayAuthenticatorInvalidSessionSupplier
 }
 
+// CheckRelayRewardEligibility verifies the relay's session hasn't expired for reward
+// purposes by ensuring the current block height hasn't reached the claim window yet.
+// Returns an error if the relay is no longer eligible for rewards.
+func (ra *relayAuthenticator) CheckRelayRewardEligibility(
+	ctx context.Context,
+	relayRequest *servicetypes.RelayRequest,
+) error {
+	currentHeight := ra.blockClient.LastBlock(ctx).Height()
+
+	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+
+	sessionClaimOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
+		sharedParams,
+		relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight(),
+	)
+
+	// If current height is equal or greater than the claim window opening height,
+	// the relay is no longer eligible for rewards as the session has expired
+	// for reward purposes
+	if currentHeight >= sessionClaimOpenHeight {
+		return ErrRelayAuthenticatorInvalidSession.Wrapf(
+			"session expired, must be before claim window open height (%d), but current height is (%d)",
+			sessionClaimOpenHeight,
+			currentHeight,
+		)
+	}
+
+	return nil
+}
+
 // getTargetSessionBlockHeight returns the block height at which the session
 // for the given relayRequest should be processed.
 //   - If the session is within the grace period, the session's end block height is returned.

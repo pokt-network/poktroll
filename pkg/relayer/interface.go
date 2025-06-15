@@ -74,6 +74,11 @@ type RelayAuthenticator interface {
 		serviceId string,
 	) error
 
+	// CheckRelayRewardEligibility verifies the relay's session hasn't expired for reward
+	// purposes by ensuring the current block height hasn't reached the claim window yet.
+	// Returns an error if the relay is no longer eligible for rewards.
+	CheckRelayRewardEligibility(ctx context.Context, relayRequest *servicetypes.RelayRequest) error
+
 	// SignRelayResponse signs the relay response given a supplier operator address.
 	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierOperatorAddr string) error
 
