@@ -33,6 +33,38 @@ const config = {
     ],
   ],
 
+  plugins: [
+    [
+      require.resolve("docusaurus-plugin-chat-page"),
+      {
+        baseURL: "https://dev.poktroll.com",
+        path: "chat",
+        openai: {
+          apiKey: process.env.OPENAI_API_KEY,
+        },
+        prompt: {
+          systemPrompt: require("./prompt"),
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          maxTokens: 1000,
+        },
+        embeddingCache: {
+          enabled: false,
+          strategy: "manual", // Avoid regeneration every time for speed & price (just a v1)
+          path: "embeddings.json",
+        },
+        embedding: {
+          model: "text-embedding-3-small",
+          chunkSize: 2000,
+          chunkingStrategy: "headers", // Splits at markdown headers!
+          batchSize: 5,
+          maxChunksPerFile: 15,
+          relevantChunks: 5,
+        },
+      },
+    ],
+  ],
+
   // GitHub pages deployment config.
   url: "https://pocket.com/",
   baseUrl: "/",
@@ -127,6 +159,11 @@ const config = {
             sidebarId: "developSidebar",
             label: "🧑‍💻️ Core Developers",
             to: "/4_develop/",
+          },
+          {
+            to: "/chat",
+            label: "🤖 Chat",
+            position: "left",
           },
         ],
       },

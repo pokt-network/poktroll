@@ -4,8 +4,18 @@
 # Production
 /build
 
+# Docusaurus build artifacts
+.docusaurus/*
+
+# But keep the embeddings cache for CI efficiency
+!.docusaurus/embeddings.json
+
+# Node modules and other standard ignores
+node_modules/
+build/
+.env.local
+
 # Generated files
-.docusaurus
 .cache-loader
 
 # Misc
