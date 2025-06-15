@@ -72,7 +72,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 
 	if yamlRelayMinerConfig.Forward.Enabled {
 		// accepts 32 bytes hexadecimal
-		if matched, _ := regexp.MatchString(`^[a-fA-F0-9]{64}$`, yamlRelayMinerConfig.Forward.Token); !matched {
+		if matched, _ := regexp.MatchString(`^[a-fA-F0-9]{64}$`, yamlRelayMinerConfig.Forward.AuthToken); !matched {
 			return nil, ErrRelayerMinerWrongForwardToken
 		}
 	}
