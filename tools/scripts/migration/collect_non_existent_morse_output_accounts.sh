@@ -113,7 +113,7 @@ get_all_raw_morse_claimable_account_src_addresses() {
 # Generate a JSON array of zero-balance Morse claimable accounts for the given JSON array of Morse claimable accounts..
 #   $1 - JSON array of Morse claimable accounts
 zero_balance_morse_claimable_accounts_for_addresses_json() {
-  echo "$1" | jq -r '.|map({morse_src_address: ., unstaked_balance: "0upokt", supplier_stake: "0upokt", application_stake: "0upokt", claimed_at_height: 0, shannon_dest_address: "", morse_output_address: ""})'
+  echo "$1" | jq -r '.|map({morse_src_address: ., unstaked_balance: {amount: "0", denom: "upokt"}, supplier_stake: {amount: "0", denom: "upokt"}, application_stake: {amount: "0", denom: "upokt"}, claimed_at_height: 0, shannon_dest_address: "", morse_output_address: ""})'
 }
 
 # Generate a JSON array of missing Morse claimable accounts for the MainNet state export with the given MainNet height.

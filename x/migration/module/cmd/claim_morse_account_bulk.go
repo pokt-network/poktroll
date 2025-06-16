@@ -437,6 +437,13 @@ func readMorseAccountsPrivateKeysFile(
 			continue
 		}
 
+		if res.MorseClaimableAccount.MorseOutputAddress != "" {
+			// Ignore already-claimed Morse accounts during the bulk supplier migration.
+			// This is intentional behaviour assuming a human error of not removing a key from the input-file that has already been claimed.
+			logger.Logger.Warn().Msgf("Skipping accounts with morse address (%s) because it has staked balance: %v, please use `pocketd tx migration claim-supplier` instead", morseAddressStr, res.MorseClaimableAccount)
+			continue
+		}
+
 		// Morse account is in the snapshot and not yet claimed.
 		// Add it to migration list.
 		morseAccounts = append(morseAccounts, MorseAccountInfo{
