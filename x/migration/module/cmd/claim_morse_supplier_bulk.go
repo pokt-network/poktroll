@@ -655,7 +655,7 @@ func buildSupplierStakeConfig(
 	// TODO_TECHDEBT(#1372): Re-evaluate this codeblock.
 	// See the discussion here: https://github.com/pokt-network/poktroll/pull/1386#discussion_r2115168813
 
-	if len(yamlStakeConfig.DefaultRevSharePercent) != 0 {
+	if len(defaultRevShareMap) != 0 {
 		if yamlStakeConfig.DefaultRevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, operatorAddress, defaultRevShareMap); err != nil {
 			return nil, err
 		}
@@ -716,6 +716,14 @@ func updateRevShareMapToFullAllocation(owner, operator string, revShareMap map[s
 				totalShare, flagSetOperatorShare,
 			)
 		}
+
+		if ownerFound && revShareMap[owner] == 100 {
+			// drop this to respect the flagSetOperatorShare
+			revShareMap[owner] = revShareMap[owner] - flagSetOperatorShare
+			// let's drop the totalShare because it is full owner share
+			totalShare = revShareMap[owner]
+		}
+
 		totalShare += flagSetOperatorShare
 		revShareMap[operator] = flagSetOperatorShare
 	}
