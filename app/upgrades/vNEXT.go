@@ -43,7 +43,7 @@ const (
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
-// - ...
+// - Update the recovery allowlist to include the additional accounts
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
