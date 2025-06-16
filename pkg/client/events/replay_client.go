@@ -200,7 +200,7 @@ func (rClient *replayClient[T]) Close() {
 // - Handles context cancellation to prevent resource leaks
 // - Cleans up connections when errors occur or context is canceled
 //
-// The method runs in a continuous loop until the context is cancelled or retry limit is exceeded.
+// The method runs in a continuous loop until the context is canceled or retry limit is exceeded.
 func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh chan<- T) {
 	numRetries := 0
 
