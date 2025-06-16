@@ -300,7 +300,7 @@ func (s *suite) sendRelaysForSession(
 	for i := 0; i < relayLimit; i++ {
 		payload := fmt.Sprintf(payload_fmt, i+1) // i+1 to avoid id=0 which is invalid
 
-		s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, defaultJSONPRCPath, payload)
+		s.TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPathAndData(appName, supplierOperatorName, "1", serviceId, defaultJSONPRCPath, payload)
 		time.Sleep(10 * time.Millisecond)
 	}
 }
