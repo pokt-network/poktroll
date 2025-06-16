@@ -556,7 +556,7 @@ func (s *suite) TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPa
 			s.Log(prettyJson)
 		}
 
-		// TODO_IMPROVE: This is a minimalistic first approach to request validation in E2E tests.
+		// TODO_IMPROVE(@red-0ne): This is a minimalistic first approach to request validation in E2E tests.
 		// Consider leveraging the shannon-sdk or path here.
 		switch path {
 		case "":

@@ -574,7 +574,10 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 		supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
 		if !ok || supplierSessionTrees == nil {
 			rs.sessionsTreesMu.Unlock() // Unlock before returning
-			logger.Debug().Msg("no session trees found for the supplier operator address")
+			// Use probabilistic debug info to log that no session trees were found to avoid spamming
+			// the logs with entries at each new block height and supplier that has no session trees.
+			rs.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).
+				Msg("no session trees found for the supplier operator address")
 			return
 		}
 

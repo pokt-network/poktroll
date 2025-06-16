@@ -380,7 +380,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 
 			estimatedClaimProfit := claimReward.Sub(ClamAndProofGasCost)
 			claimLogger.Info().Msgf(
-				"adding profitable claim with estimated claim and proof submission cost %s, claim reward %s, and estimated claim profit %s",
+				"💲 Processing profitable claim — estimated submission cost 💸: %s, reward 🎁: %s, estimated profit 💰: %s",
 				claimAndProofSubmissionCost, claimReward, estimatedClaimProfit,
 			)
 
@@ -400,20 +400,23 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 			unprofitableAmount := ClamAndProofGasCost.Sub(claimReward)
 			// Log a warning with details about how unprofitable the claim is in plain English
 			claimLogger.Warn().Msgf(
-				"claim is not profitable - it would cost %s more than the reward of %s, deleting session tree",
+				"⚠️ Aborting claim — cost exceeds reward by %s (reward: %s). 🧹 Cleaning up session state.",
 				unprofitableAmount, claimReward,
 			)
 		}
 
 		if !supplierCanAffordClaimAndProofFees {
 			// Log a warning of any session that the supplier operator cannot afford to claim.
-			claimLogger.Warn().Msg("supplier operator cannot afford to submit proof for claim, deleting session tree")
+			claimLogger.Warn().Msgf(
+				"⚠️ Aborting claim — supplier operator has insufficient funds to submit claim & proof (cost: %s, balance: %s). 🧹 Cleaning up session tree.",
+				claimAndProofSubmissionCost, supplierOperatorBalanceCoin,
+			)
 		}
 	}
 
 	if len(claimableSessionTrees) < len(sessionTrees) {
 		logger.Warn().Msgf(
-			"Supplier operator %q can only afford %d out of %d claims",
+			"⚠️ Supplier operator %q can only process %d out of %d claims. 💰 Prioritizing most profitable ones.",
 			supplierOperatorAddress, len(claimableSessionTrees), len(sessionTrees),
 		)
 	}
@@ -421,7 +424,8 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	return claimableSessionTrees, nil
 }
 
-// getClaimRewardCoin calculates the claim reward coin for the given session tree.
+// getClaimRewardCoin calculates the number of uPOKT the supplier claimed for the particular session.
+// It uses the serviceID from the tree's session header and queries onchain data for downstream calculations
 func (rs *relayerSessionsManager) getClaimRewardCoin(
 	ctx context.Context,
 	sessionTree relayer.SessionTree,
