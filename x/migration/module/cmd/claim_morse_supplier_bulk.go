@@ -25,6 +25,9 @@ import (
 var (
 	flagSupplierStakeTemplateFile string
 	flagMorsePrivateKeysFile      string
+	flagSetOperatorShare          uint64
+	flagNewKeyPrefix              string
+	flagUseIndexNames             bool
 )
 
 const (
@@ -33,6 +36,15 @@ const (
 
 	flagMorsePrivateKeysFileName = "morse-private-keys-file"
 	flagMorsePrivateKeysFileDesc = "Path to a file containing Morse private keys (hex-encoded) for all accounts to be migrated in bulk."
+
+	flagSetOperatorShareName = "set-operator-share"
+	flagSetOperatorShareDesc = "Sets the operator’s share in the revenue distribution. Useful to automatically allocate rewards to the operator, avoiding the need for repeated manual funding."
+
+	flagNewKeyPrefixName = "name-prefix-pattern"
+	flagNewKeyPrefixDesc = "Prefix to use for new keys. Helps operators to migrate and set a prefix for the accounts"
+
+	flagUseIndexNamesName = "use-index-names"
+	flagUseIndexNamesDesc = "Use index names for the new keys. Helps operators to migrate and set a prefix for the accounts"
 )
 
 // ClaimSupplierBulkCmd returns the cobra command for bulk-claiming Morse nodes as Shannon Suppliers.
@@ -47,8 +59,8 @@ $ pocketd tx migration claim-suppliers \
 	  --morse-private-keys-file=./morse_private_keys.json \
 	  --stake-template-file=./supplier-stake-template.yaml \
 	  --output-file=./supplier_output.json \
-	  --home=./localnet/pocketd --keyring-backend=test \
-	  --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+	  --home=~/.pocket --keyring-backend=file \
+	  --gas=auto --gas-prices=0.001upokt --gas-adjustment=1.1
 `,
 		Short: "Claim many onchain MorseClaimableAccount as staked Supplier accounts.",
 		Long: `
@@ -67,8 +79,11 @@ What this command does:
 5. Outputs the migration results to a JSON file.
 
 Additional options:
-1. Supports a dry-run mode that simulates the transaction but doesn't broadcast it onchain.
-2. Enables exporting unarmored (plain) JSON output with sensitive keys.
+1. Supports a '--dry-run-claim' mode that simulates the transaction but doesn't broadcast it onchain.
+2. Supports '--add-operator-share=[INT]' which adds operator rev share automatically. Useful to ensure the operator wallet always has funds to work.
+3. Supports '--name-prefix-pattern=[prefix]' which adds a prefix to the name used to store the key on the keyring. Results will looks like: '[PREFIX]-[ADDRESS]'
+4. Supports '--use-index-names' which will replace the ADDRESS as suffix to use the index of the node in the list. Results will looks like: '[PREFIX]-[INDEX]'
+5. Enables exporting unarmored (plain) JSON output with sensitive keys.
 
 
 Example input Morse private keys file:
@@ -89,6 +104,8 @@ Example input staking template file:
 # stake_amount: ${SHANNON_SUPPLIER_STAKE_AMOUNT}          # intentionally commented out, taken from MorseClaimableAccount
 
 # Default (example) revenue share: delegator gets 75%, owner gets 25%
+# Using --add-operator-share=1 it will add automatically 1% for operator (supplier) address and reduce that 1 from
+# owner rev share.
 default_rev_share_percent:
   ${DELEGATOR_REWARDS_ADDRESS}: 75
 # ${SUPPLIER_OWNER_ADDRESS}: intentionally commented out, taken from MorseClaimableAccount
@@ -160,6 +177,11 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 	claimSuppliersCmd.Flags().BoolVar(&flagUnsafe, FlagUnsafe, false, FlagUnsafeDesc)
 	claimSuppliersCmd.Flags().BoolVar(&flagUnarmoredJSON, FlagUnarmoredJSON, false, FlagUnarmoredJSONDesc)
 
+	// Flags to customize the new Shannon account.
+	claimSuppliersCmd.Flags().StringVar(&flagNewKeyPrefix, flagNewKeyPrefixName, "", flagNewKeyPrefixDesc)
+	claimSuppliersCmd.Flags().Uint64Var(&flagSetOperatorShare, flagSetOperatorShareName, 0, flagSetOperatorShareDesc)
+	claimSuppliersCmd.Flags().BoolVar(&flagUseIndexNames, flagUseIndexNamesName, false, flagUseIndexNamesDesc)
+
 	// Required flags.
 	_ = claimSuppliersCmd.MarkFlagRequired(flagMorsePrivateKeysFileName)
 	_ = claimSuppliersCmd.MarkFlagRequired(flagSupplierStakeTemplateFileName)
@@ -179,28 +201,30 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 // - Prepares and submits claim transactions.
 // - Handles output and error reporting.
 func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
+	logger.Logger.Info().Msg("Starting the bulk claim-suppliers process...")
 	ctx := cmd.Context()
 
 	// Derive a cosmos-sdk client context from the cobra command.
-	logger.Logger.Info().Msg("Configuring cosmos tx client")
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
 		return err
 	}
+	logger.Logger.Info().Msg("Cosmos tx client successfully configured")
 
 	// Retrieve the Shannon signing address (used to sign the claim transaction).
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
 	if shannonSigningAddr == "" {
 		return fmt.Errorf("no shannon signing address provided via the following flag: --from")
 	}
+	logger.Logger.Info().Str("shannon_signing_address", shannonSigningAddr).Msg("Validated Shannon signing address")
 
 	// Load the supplier stake config template from the YAML file.
 	// Fail fast if the file is missing or invalid.
-	logger.Logger.Info().Msgf("Loading stake template file: %s", flagSupplierStakeTemplateFile)
 	templateSupplierStakeConfig, templateError := loadTemplateSupplierStakeConfigYAML(flagSupplierStakeTemplateFile)
 	if templateError != nil {
 		return templateError
 	}
+	logger.Logger.Info().Msg("Successfully loaded supplier stake configuration template")
 
 	// Prepare the migration batch result object.
 	migrationBatchResult := MigrationBatchResult{
@@ -218,13 +242,13 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		for _, morseToShannonMapping := range migrationBatchResult.Mappings {
 			shannonAddress := morseToShannonMapping.ShannonAccount.Address.String()
 			morseAddress := hex.EncodeToString(morseToShannonMapping.MorseAccount.Address)
-			keyringErr := clientCtx.Keyring.Delete(shannonAddress)
+			keyringErr := clientCtx.Keyring.Delete(morseToShannonMapping.ShannonAccount.KeyringName)
 			if keyringErr != nil {
 				logger.Logger.Error().Err(keyringErr).
-					Msgf("failed to delete private key for shannon address '%s' associated with morse account '%s'. Please check the logs and try again",
-						shannonAddress,
-						morseAddress,
-					)
+					Str("name", morseToShannonMapping.ShannonAccount.KeyringName).
+					Str("shannon", shannonAddress).
+					Str("morse", morseAddress).
+					Msg("failed to delete key from the keyring after a handled error")
 			}
 		}
 	}()
@@ -247,8 +271,12 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		return nodeMorseKeysErr
 	}
 	if len(morseNodeAccounts) == 0 {
-		return fmt.Errorf("Zero Morse nodes found in the file %s. Check the logs and the input file before trying again.", flagInputFilePath)
+		return fmt.Errorf(
+			"zero Morse nodes found in the file %s. Check the logs and the input file before trying again",
+			flagInputFilePath,
+		)
 	}
+	logger.Logger.Info().Int("morse_accounts_count", len(morseNodeAccounts)).Msg("Loaded Morse private keys successfully")
 
 	// Prepare the slice of claim messages for the bulk claim transaction.
 	claimMessages := make([]cosmossdk.Msg, 0)
@@ -258,10 +286,11 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	// - For custodial: the claimable account has the same address.
 	// - For non-custodial: the claimable account has a different address.
 	ownerAddressToMClaimableAccountMap := map[string]*types.MorseClaimableAccount{}
-
+	logger.Logger.Info().Msg("Starting the claim process for each Morse node...")
 	// Iterate over each Morse node private key to process migration.
-	for _, morseNodeAccount := range morseNodeAccounts {
+	for idx, morseNodeAccount := range morseNodeAccounts {
 		morseNodeAddress := hex.EncodeToString(morseNodeAccount.Address)
+		logger.Logger.Info().Str("morse_node_address", morseNodeAddress).Msgf("Processing Morse node #%d", idx+1)
 
 		// Ensure the Morse output address is not empty (i.e., is a node)
 		claimableMorseNode, isNode, morseNodeError := queryMorseClaimableAccount(ctx, clientCtx, morseNodeAddress)
@@ -276,31 +305,23 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		// the right way to know if a node is isCustodial or not
 		isCustodial := strings.EqualFold(morseOutputAddress, morseNodeAddress)
 		if isCustodial {
+			// Populate the ownerAddressMap
 			ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseNode
-		}
-
-		// Populate the ownerAddressMap if not already present
-		if ownerAddressToMClaimableAccountMap[morseOutputAddress] == nil {
-			if claimableMorseNode.MorseOutputAddress != claimableMorseNode.MorseSrcAddress {
-				// Non-custodial: load and cache MorseClaimableAccount for output address
-				claimableMorseAccount, outputAddressIsNode, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress)
-				if morseAccountError != nil {
-					return morseAccountError
-				}
-				if outputAddressIsNode {
-					// TODO_TECHDEBT(@olshansky): Re-evaluate if/how this can happen and tackle it separately.
-					return fmt.Errorf("the bulk claim tool does not have support for non-custodial nodes when the morse output address '%s' is a node", morseOutputAddress)
-				}
-				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseAccount
-
-				if !claimableMorseAccount.IsClaimed() {
-					return fmt.Errorf("morse output address '%s' is not claimed", morseOutputAddress)
-				}
-			} else {
-				// Custodial: use the current MorseClaimableAccount
-				isCustodial = true
-				ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseNode
+		} else {
+			logger.Logger.Info().
+				Str("morse_output_address", claimableMorseNode.MorseOutputAddress).
+				Msg("Checking MorseOutputAddress exists as MorseClaimableAccount and is already migrated.")
+			// Non-custodial: load and cache MorseClaimableAccount for output address
+			claimableMorseAccount, _, morseAccountError := queryMorseClaimableAccount(ctx, clientCtx, morseOutputAddress)
+			if morseAccountError != nil {
+				return morseAccountError
 			}
+
+			if !claimableMorseAccount.IsClaimed() {
+				return fmt.Errorf("morse output address '%s' is not claimed", morseOutputAddress)
+			}
+			// Populate the ownerAddressMap
+			ownerAddressToMClaimableAccountMap[morseOutputAddress] = claimableMorseAccount
 		}
 
 		if ownerAddressToMClaimableAccountMap[morseOutputAddress] == nil {
@@ -324,6 +345,10 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 				PrivateKey: *shannonPrivateKey,
 			},
 		}
+		logger.Logger.Info().
+			Str("shannon_operator_address", shannonAddress.String()).
+			Str("morse_node_address", hex.EncodeToString(morseNodeAccount.Address)).
+			Msg("Generated new Shannon account")
 
 		// Determine the owner address for the supplier stake config.
 		var shannonOwnerAddress string
@@ -359,8 +384,27 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		}
 
 		// Import the generated Shannon private key into the keyring.
+		keyName := shannonOperatorAddress
+		if flagNewKeyPrefix != "" {
+			// The default suffix is the address
+			suffix := shannonOperatorAddress
+			// Override the default suffix if the index flag is provided
+			if flagUseIndexNames {
+				// avoid it the first item been 0
+				suffix = fmt.Sprintf("%d", idx+1)
+			}
+			// The final keyring name is: 'prefix-idx+1' or 'prefix-address'
+			keyName = fmt.Sprintf("%s-%s", flagNewKeyPrefix, suffix)
+		}
+
+		morseShannonMapping.ShannonAccount.KeyringName = keyName
+		logger.Logger.Info().
+			Str("name", keyName).
+			Str("morse_node_address", morseNodeAddress).
+			Str("shannon_operator_address", shannonOperatorAddress).
+			Msg("Storing shannon operator address into the keyring")
 		keyringErr := clientCtx.Keyring.ImportPrivKeyHex(
-			shannonOperatorAddress,
+			keyName,
 			hex.EncodeToString(morseShannonMapping.ShannonAccount.PrivateKey.Key),
 			"secp256k1",
 		)
@@ -377,21 +421,22 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		migrationBatchResult.Mappings = append(migrationBatchResult.Mappings, &morseShannonMapping)
 	}
 
+	if flagDryRunClaim {
+		logger.Logger.Info().
+			Str("path", flagOutputFilePath).
+			Msg("tx IS NOT being broadcasted because: '--dry-run-claim=true'.")
+		return nil
+	}
+
 	// Construct a tx client.
+	logger.Logger.Info().Msg("Preparing transaction client")
 	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
-	if flagDryRunClaim {
-		logger.Logger.Info().Msgf(
-			"--dry-run-claim=true - tx will be broadcasted, please check %s file for more details.",
-			flagOutputFilePath,
-		)
-		return nil
-	}
-
 	// Sign and broadcast the claim Morse account message.
+	logger.Logger.Info().Int("messages", len(claimMessages)).Msg("Sign and broadcast transaction")
 	tx, eitherErr := txClient.SignAndBroadcast(ctx, claimMessages...)
 	broadcastErr, broadcastErrCh := eitherErr.SyncOrAsyncError()
 
@@ -424,7 +469,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 		logger.Logger.Info().
 			Int("tx_messages", len(claimMessages)).
 			Str("tx_hash", migrationBatchResult.TxHash).
-			Msg("morse suppliers migration tx delivered successfully")
+			Msg("Morse suppliers migration tx delivered successfully")
 	}
 
 	return nil
@@ -557,6 +602,11 @@ func buildSupplierStakeConfig(
 	operatorAddress string,
 	templateSupplierStakeConfig *config.YAMLStakeConfig,
 ) (*config.SupplierStakeConfig, error) {
+	logger.Logger.Info().
+		Str("owner", ownerAddress).
+		Str("operator", operatorAddress).
+		Msg("Building stake config")
+
 	if ownerAddress == "" {
 		return nil, fmt.Errorf("owner address must be non-empty")
 	}
@@ -564,9 +614,31 @@ func buildSupplierStakeConfig(
 		return nil, fmt.Errorf("operator address must be non-empty")
 	}
 
-	yamlStakeConfig := *templateSupplierStakeConfig // clone the provided template.
-	yamlStakeConfig.OwnerAddress = ownerAddress
-	yamlStakeConfig.OperatorAddress = operatorAddress
+	// clone the provided template.
+	// DefaultRevSharePercent is a map which is a reference if assign to the new one
+	// Services are pointers so clone them too
+	yamlStakeConfig := &config.YAMLStakeConfig{
+		OwnerAddress:    ownerAddress,
+		OperatorAddress: operatorAddress,
+		StakeAmount:     "", // intentionally empty
+		Services:        make([]*config.YAMLStakeService, 0),
+		DefaultRevSharePercent: func() map[string]uint64 {
+			m := make(map[string]uint64, len(templateSupplierStakeConfig.DefaultRevSharePercent))
+			for k, v := range templateSupplierStakeConfig.DefaultRevSharePercent {
+				m[k] = v
+			}
+			return m
+		}(),
+	}
+
+	for _, service := range templateSupplierStakeConfig.Services {
+		// clone to avoid modify the template on multiple iterations
+		yamlStakeConfig.Services = append(yamlStakeConfig.Services, &config.YAMLStakeService{
+			ServiceId:       service.ServiceId,
+			RevSharePercent: service.RevSharePercent,
+			Endpoints:       service.Endpoints,
+		})
+	}
 
 	// Validate the owner and operator addresses.
 	if err := yamlStakeConfig.ValidateAndNormalizeAddresses(logger.Logger); err != nil {
@@ -584,17 +656,18 @@ func buildSupplierStakeConfig(
 	// See the discussion here: https://github.com/pokt-network/poktroll/pull/1386#discussion_r2115168813
 
 	if len(yamlStakeConfig.DefaultRevSharePercent) != 0 {
-		if yamlStakeConfig.DefaultRevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, defaultRevShareMap); err != nil {
+		if yamlStakeConfig.DefaultRevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, operatorAddress, defaultRevShareMap); err != nil {
 			return nil, err
 		}
 	}
+
 	for _, service := range yamlStakeConfig.Services {
 		if len(service.RevSharePercent) == 0 {
 			// set the same rev share per service as default which already includes the owner and enforce 100%
-			service.RevSharePercent = defaultRevShareMap
+			service.RevSharePercent = yamlStakeConfig.DefaultRevSharePercent
 			continue
 		}
-		service.RevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, service.RevSharePercent)
+		service.RevSharePercent, err = updateRevShareMapToFullAllocation(ownerAddress, operatorAddress, service.RevSharePercent)
 		if err != nil {
 			return nil, err
 		}
@@ -622,15 +695,29 @@ func buildSupplierStakeConfig(
 // - Adds or adjusts the owner's share if necessary.
 // - If the owner isn't present, it's added to balance the total to 100%.
 // - Returns: updated map or error.
-func updateRevShareMapToFullAllocation(owner string, revShareMap map[string]uint64) (map[string]uint64, error) {
+func updateRevShareMapToFullAllocation(owner, operator string, revShareMap map[string]uint64) (map[string]uint64, error) {
 	totalShare := uint64(0)
 	ownerFound := false
 
 	for address, share := range revShareMap {
 		totalShare += share
+		revShareMap[address] = share
 		if strings.EqualFold(address, owner) {
 			ownerFound = true
 		}
+	}
+
+	// Allows the operator to automatically be added to the revshare map to get funds on every reward.
+	// This covers the operator's tx fees and increases their rewards.
+	if flagSetOperatorShare > 0 {
+		if totalShare > 100 {
+			return nil, fmt.Errorf(
+				"invalid revenue share configuration: total revenue share exceeds 100%% (current: %d%%, attempted to add operator share: %d%%)",
+				totalShare, flagSetOperatorShare,
+			)
+		}
+		totalShare += flagSetOperatorShare
+		revShareMap[operator] = flagSetOperatorShare
 	}
 
 	// if the owner is not part of the list, add it with the difference.

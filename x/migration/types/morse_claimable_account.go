@@ -24,9 +24,10 @@ func (m *MorseClaimableAccount) IsUnbonding() bool {
 	return !m.UnstakingTime.IsZero()
 }
 
-// HasUnbonded indicates that the MorseClaimableAccount began unbonding on Morse
-// and the unbonding period has elapsed. E.g., the supplier was claimed > 21 days
-// after it began unbonding.
+// HasUnbonded indicates that:
+// 1. the MorseClaimableAccount began unbonding on Morse
+// 2. The unbonding period has elapsed.
+// For example, the supplier was claimed on Shannon > 21 days after it began unbonding on Morse.
 func (m *MorseClaimableAccount) HasUnbonded(ctx context.Context) bool {
 	return m.IsUnbonding() && m.SecondsUntilUnbonded(ctx) <= 0
 }
@@ -35,8 +36,11 @@ func (m *MorseClaimableAccount) HasUnbonded(ctx context.Context) bool {
 // unbonding period will elapse.
 func (m *MorseClaimableAccount) SecondsUntilUnbonded(ctx context.Context) int64 {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	durationUntilUnbonded := m.UnstakingTime.Sub(sdkCtx.BlockTime())
-	return int64(durationUntilUnbonded.Seconds())
+	absoluteUnstakingTime := m.UnstakingTime
+	absoluteBlockTime := sdkCtx.BlockTime()
+	durationUntilUnbonded := absoluteUnstakingTime.Sub(absoluteBlockTime)
+	secondsUntilUnbonded := durationUntilUnbonded.Seconds()
+	return int64(secondsUntilUnbonded)
 }
 
 // GetEstimatedUnbondingEndHeight returns the estimated block height at which the

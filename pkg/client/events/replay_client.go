@@ -264,7 +264,7 @@ func (rClient *replayClient[T]) retryPublishEventsFactory(ctx context.Context) f
 		// Subscribe to the eventBzObs and block until the channel closes.
 		// Then pass this as an error to force the retry.OnError to resubscribe.
 		go func() {
-			eventsBzObserver := eventsBzObs.Subscribe(ctx)
+			eventsBzObserver := eventsBzObs.Subscribe(eventsBzCtx)
 			for range eventsBzObserver.Ch() {
 				// Wait for the channel to close.
 				continue

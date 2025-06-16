@@ -1,0 +1,18 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/cosmos.mint.v1beta1.MsgUpdateParams",
+        "authority": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
+        "params": {
+          "mint_denom": "upokt",
+          "inflation_rate_change": "0.000000000000000000",
+          "inflation_max": "0.000000000000000000",
+          "inflation_min": "0.000000000000000000",
+          "goal_bonded": "0.670000000000000000",
+          "blocks_per_year": "6311520"
+        }
+      }
+    ]
+  }
+}

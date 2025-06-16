@@ -3,108 +3,55 @@ title: Protocol Upgrade Release Procedure
 sidebar_position: 2
 ---
 
-:::warning
+:::important
+This is the step-by-step (almost) 🖨🍝 checklist for core protocol developers to release protocol upgrades.
 
-**This guide is intended for core protocol developers.**
-
-- Before starting, read [**When is a Protocol Upgrade Warranted?**](./1_protocol_upgrades.md#when-is-a-protocol-upgrade-needed).
-- If you are not comfortable with git, GitHub releases, or scripting, this is not for you.
-
+**❗ DO NOT PROCEED if you are not comfortable with Git, GitHub releases, scripting, etc❗**
 :::
 
-## Protocol Upgrade Release: Step-by-Step 🚶 <!-- omit in toc -->
+## If this is your first time managing an upgrade: <!-- omit in toc -->
 
-**This is a complete, 📠-🍝-ready checklist for releasing protocol upgrades.**
-
-- Every step is numbered and must be completed in order.
-- Do not skip steps if you are not experienced in protocol upgrades.
-- Most commands are ready to copy/paste. If you found an issue, please update this doc.
-- Keep track of all the steps and merge everything to the `main` branch for history and visibility.
-
----
+- Ensure you understand [When is a Protocol Upgrade Needed?](./1_protocol_upgrades.md#when-is-a-protocol-upgrade-needed)
+- Ensure you have push access to [pokt-network/poktroll](https://github.com/pokt-network/poktroll)
+- Ensure you have the required CLI tools (`git`, `make`, `jq`, `sed`, `curl`, `go`, `brew`, `pocketd`, etc.)
+- Understand `state-breaking` vs `consensus-breaking` changes from the [overview](./1_protocol_upgrades.md)
+- Be aware of the list of [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference
+- If you implemented the upgrade, familiarize yourself with [how to test changes locally](3_testing_upgrades_locally.md)
 
 ## Table of Contents <!-- omit in toc -->
 
-- [0. Prerequisites \& Sanity Checks](#0-prerequisites--sanity-checks)
-- [1. Ensure `ConsensusVersion` is updated](#1-ensure-consensusversion-is-updated)
-- [2. Prepare a New Upgrade Plan](#2-prepare-a-new-upgrade-plan)
-- [3. Create a GitHub Release](#3-create-a-github-release)
-- [4. Write an Upgrade Transaction (JSON file)](#4-write-an-upgrade-transaction-json-file)
-- [5. Validate the Upgrade Binary URLs (Live Network Only)](#5-validate-the-upgrade-binary-urls-live-network-only)
-- [6. Test the New Release Locally](#6-test-the-new-release-locally)
-- [7. Submit the Upgrade on Alpha TestNet](#7-submit-the-upgrade-on-alpha-testnet)
+- [1. Prepare a New Upgrade Handler](#1-prepare-a-new-upgrade-handler)
+- [2. Create a GitHub Release](#2-create-a-github-release)
+- [3. Prepare the Upgrade Transactions](#3-prepare-the-upgrade-transactions)
+- [4. Test the New Release Locally](#4-test-the-new-release-locally)
+- [5. Submit the Upgrade on each network](#5-submit-the-upgrade-on-each-network)
+- [7. Update the release notes](#7-update-the-release-notes)
 - [8. Update the `homebrew-tap` Formula](#8-update-the-homebrew-tap-formula)
-- [9. Submit the Upgrade on Beta \& MainNet](#9-submit-the-upgrade-on-beta--mainnet)
-- [10. Troubleshooting \& Canceling an Upgrade](#10-troubleshooting--canceling-an-upgrade)
-- [Before You Finish](#before-you-finish)
-- [TODO](#todo)
+- [9. Troubleshooting \& Canceling an Upgrade](#9-troubleshooting--canceling-an-upgrade)
+- [10. Finish off checklist](#10-finish-off-checklist)
+- [TODOs \& Improvements](#todos--improvements)
 
----
+## 1. Prepare a New Upgrade Handler
 
-## 0. Prerequisites & Sanity Checks
+1. Identify the version of the last [release](https://github.com/pokt-network/poktroll/releases) (e.g. `v0.1.20`)
+2. Prepare a new upgrade handler by copying `vNEXT.go` to the next release (e.g. `v0.1.21`) like so:
 
-**Before you start:**
+   ```bash
+   cp app/upgrades/vNEXT.go app/upgrades/v0.1.21.go
+   ```
 
-- [ ] You have push/publish access to the repo and [GitHub releases](https://github.com/pokt-network/poktroll/releases)
-- [ ] You have the following CLI tools: `git`, `make`, `jq`, `sed`, `curl`, `go`, `brew`, `pocketd`, etc.
-- [ ] You have reviewed or are familiar with [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference
-- [ ] You have read the full [Protocol Upgrade Introduction](./1_protocol_upgrades.md)
-- [ ] You understand the difference between `state-breaking` and `consensus-breaking` changes
-- [ ] You know how to test your changes locally (see [Testing Upgrades](3_testing_upgrades_locally.md))
+3. Open `v0.1.21.go` and replace all instances of `vNEXT` with `v0.1.21`.
+4. Open `app/upgrades.go` and add the new upgrade to `allUpgrades`, commenting out the old upgrade.
+5. Prepare a new `vNEXT.go` by copying `vNEXT_Template.go` to `vNEXT.go` like so:
 
----
+   ```bash
+   cp app/upgrades/vNEXT_Template.go app/upgrades/vNEXT.go
+   ```
 
-## 1. Ensure `ConsensusVersion` is updated
+6. Open `vNEXT.go` and remove all instances of `Template`.
+7. Create a PR with these changes ([example](https://github.com/pokt-network/poktroll/pull/1489)) and merge it.
 
-- Bump the `ConsensusVersion` for all modules with `state-breaking` changes.
-- This requires manual inspection and understanding of your changes.
-- Merge these changes to `main` before continuing.
-
-🔗 [See all ConsensusVersion uses](https://github.com/search?q=repo%3Apokt-network%2Fpoktroll+ConsensusVersion&type=code)
-
-**⚠️DO NOT PROCEED until these changes are merged⚠️**
-
----
-
-## 2. Prepare a New Upgrade Plan
-
-:::tip Reference
-
-- Review [Pocket Network's historical.go](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for past upgrades.
-- See [Cosmos SDK upgrade docs](https://docs.cosmos.network/main/build/building-apps/app-upgrade).
-  :::
-
-1. **Select SHAs**
-
-   - Find the SHA of the last public [release](https://github.com/pokt-network/poktroll/releases/)
-   - Find the SHA for the new release (usually `main`)
-   - Compare them:
-
-     ```bash
-     https://github.com/pokt-network/poktroll/compare/v<LAST_RELEASE_SHA>..<NEW_RELEASE_SHA>
-     ```
-
-2. **Identify Breaking Changes**
-
-   - Manually inspect the diff for parameter/authorization/state changes
-
-3. **Update Upgrade Plan**
-
-   - If any protobufs were changed, make sure to review [protobuf deprecation](./5_protobuf_upgrades.md)
-   - Edit `app/upgrades.go` and add your upgrade to `allUpgrades`
-   - **Examples**:
-     - [v0.1.2](https://github.com/pokt-network/poktroll/pull/1202/files) - State-breaking change with a new parameter; _simple upgrade_
-     - [v0.1.3](https://github.com/pokt-network/poktroll/pull/1216/files) - Node software update without consensus-breaking changes; _empty upgrade_
-
-**⚠️DO NOT PROCEED until these changes are merged⚠️**
-
----
-
-## 3. Create a GitHub Release
-
-:::note
-You can review [all prior releases here](https://github.com/pokt-network/poktroll/releases).
-:::
+## 2. Create a GitHub Release
 
 1. **Tag the release** using one of the following and follow on-screen prompts:
 
@@ -117,79 +64,27 @@ You can review [all prior releases here](https://github.com/pokt-network/poktrol
 2. **Publish the release** by:
 
    - [Drafting a new release](https://github.com/pokt-network/poktroll/releases/new)
-   - Using the tag from the step above
+   - Use the tag above to auto-generate the release notes
 
-3. **Update the description in the release** by:
+3. **Set as a pre-release** (change to `latest release` after upgrade completes).
 
-   - Clicking `Generate release notes` in the GitHub UI
-   - Add this table **ABOVE** the auto-generated notes (below)
+:::note 😎 Keep Calm and Wait for CI 😅
 
-     ```markdown
-     ## Protocol Upgrades
+Wait for the [`Release Artifacts`](https://github.com/pokt-network/poktroll/actions/workflows/release-artifacts.yml) CI job to build artifacts for your release.
 
-     | Category                     | Applicable | Notes                                |
-     | ---------------------------- | ---------- | ------------------------------------ |
-     | Planned Upgrade              | ✅         | New features.                        |
-     | Consensus Breaking Change    | ✅         | Yes, see upgrade here: #1216         |
-     | Manual Intervention Required | ❓         | Cosmosvisor managed everything well. |
+It'll take ~20 minutes and will be auto-attached to the release once complete.
 
-     | Network       | Upgrade Height | Upgrade Transaction Hash | Notes |
-     | ------------- | -------------- | ------------------------ | ----- |
-     | Alpha TestNet | ⚪             | ⚪                       | ⚪    |
-     | Beta TestNet  | ⚪             | ⚪                       | ⚪    |
-     | MainNet       | ⚪             | ⚪                       | ⚪    |
-
-     **Legend**:
-
-     - ⚠️ - Warning/Caution Required
-     - ✅ - Yes
-     - ❌ - No
-     - ⚪ - Will be filled out throughout the release process / To Be Determined
-     - ❓ - Unknown / Needs Discussion
-
-     ## What's Changed
-
-     <!-- Auto-generated GitHub Release Notes continue here -->
-     ```
-
-4. **Set as a pre-release** (change to `latest release` after upgrade completes).
-
----
-
-## 4. Write an Upgrade Transaction (JSON file)
-
-:::tip
-See [v0.1.2 upgrade transactions](https://github.com/pokt-network/poktroll/pull/1204) for examples.
 :::
 
-**Generate the new upgrade transaction JSON files like so**:
+## 3. Prepare the Upgrade Transactions
+
+Generate the new upgrade transaction JSON files like so:
 
 ```bash
 ./tools/scripts/upgrades/prepare_upgrade_tx.sh v<YOUR_VERSION>.<YOUR_RELEASE>.<YOUR_PATCH>
 ```
 
-For example, running:
-
-```bash
-./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.2
-```
-
-:::note 😎 Keep Calm and Wait for CI 😅
-
-If you see an error message like this:
-
-```bash
-$ ./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.11
-Downloading checksum file from https://github.com/pokt-network/poktroll/releases/download/v0.1.11/release_checksum...
-Error: Failed to download checksum file
-```
-
-This means that CI is still building the release artifacts.
-You can check the status of CI by looking for a run corresponding to the new release/tag on [the actions page](https://github.com/pokt-network/poktroll/actions).
-
-:::
-
-Will create:
+This will create:
 
 ```bash
 tools/scripts/upgrades/upgrade_tx_vX.Y.Z_alpha.json
@@ -198,11 +93,16 @@ tools/scripts/upgrades/upgrade_tx_vX.Y.Z_local.json
 tools/scripts/upgrades/upgrade_tx_vX.Y.Z_main.json
 ```
 
-:::info `height` is not populate in the `*.json` files
-You will need to update the `height` before submitting each one. _More on this later..._
-:::
+For example:
 
-**Example JSON snippet:**
+```bash
+./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.20
+```
+
+_Note that the `height` is not populated in the `*.json` files. You will need to update the `height` before submitting each one. More on this later..._
+
+<details>
+<summary>Example JSON snippet:</summary>
 
 ```json
 {
@@ -222,11 +122,11 @@ You will need to update the `height` before submitting each one. _More on this l
 }
 ```
 
----
+</details>
 
-## 5. Validate the Upgrade Binary URLs (Live Network Only)
+<details>
 
-**⚠️The binary URLs and checksum must be correct for LIVE NETWORKS. Otherwise,cosmovisor will fail⚠️**
+<summary>**Optional**: Validate the Upgrade Binary URLs</summary>
 
 Install `go-getter` if you don't have it:
 
@@ -255,105 +155,47 @@ Expected output should look like the following:
 2025/04/16 12:11:48 success!
 ```
 
-**⚠️DO NOT PROCEED until all URLs validate⚠️**
+</details>
 
----
+## 4. Test the New Release Locally
 
-## 6. Test the New Release Locally
+:::warning Chain Halt Risk
 
-- Follow [Testing Protocol Upgrades](3_testing_upgrades_locally.md) **before** submitting any transactions.
-- If you find an issue, you'll need to repeat the steps as needed (update plan, release, transactions, etc.).
-
----
-
-## 7. Submit the Upgrade on Alpha TestNet
-
-This step is parameterized so you can use it for any network (Alpha, Beta, or MainNet). Substitute the variables below as needed.
-
-**Variables:**
-
-- `NETWORK`: one of (`local`, `alpha`, `beta`, `main`)
-- `RPC_ENDPOINT`: The RPC endpoint for the network (e.g., `https://shannon-testnet-grove-rpc.alpha.poktroll.com`)
-- `UPGRADE_TX_JSON`: Path to the upgrade transaction JSON (e.g., `tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json`)
-- `FROM_ACCOUNT`: The account submitting the transaction (e.g., `pnf_alpha`)
-- `TX_HASH`: The hash of the submitted transaction (for monitoring)
-
-**Step-by-Step instructions:**
-
-1. Get the RPC endpoint for `NETWORK`. Example for Alpha [here](https://dev.poktroll.com/tools/tools/shannon_alpha).
-2. Update the `height` in your upgrade transaction JSON ():
-
-   :::tip Export `UPGRADE_TX_JSON`, `RPC_ENDPOINT`, `NETWORK`, and `FROM_ACCOUNT`
-
-   ```bash
-   export RPC_ENDPOINT=https://shannon-testnet-grove-rpc.alpha.poktroll.com
-   export UPGRADE_TX_JSON="tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json"
-   export NETWORK=alpha
-   export FROM_ACCOUNT=pnf_alpha
-   ```
-
-   :::
-
-   ```bash
-   # Get the current height
-   CURRENT_HEIGHT=$(pocketd q block --network=${NETWORK} -o json | tail -n +2 | jq -r '.header.height') # Add 5 blocks (arbitrary, adjust as needed)
-   UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
-   # Update the JSON
-   sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" ${UPGRADE_TX_JSON}
-   # Cat the output file
-   cat ${UPGRADE_TX_JSON}
-   ```
-
-3. Submit the transaction:
-
-   ```bash
-   pocketd \
-     --keyring-backend="test" --home="~/.pocket" \
-     --fees=300upokt --network=${NETWORK} \
-     tx authz exec ${UPGRADE_TX_JSON} --from=${FROM_ACCOUNT}
-   ```
-
-   :::tip Grove Employee Helpers 🌿
-
-   If you're a Grove Employee, you can use the helpers [here](https://www.notion.so/buildwithgrove/Playbook-Streamlining-rc-helpers-for-Shannon-Alpha-Beta-Main-Network-Environments-152a36edfff680019314d468fad88864?pvs=4) to use this wrapper:
-
-   ```bash
-   pkd_<NETWORK>_tx authz exec ${UPGRADE_TX_JSON} --from=${FROM_ACCOUNT}
-   ```
-
-4. Verify the upgrade is planned onchain:
-
-   ```bash
-   pocketd query upgrade plan --network=${NETWORK}
-   ```
-
-5. Watch the transaction (using the TX_HASH from step 3):
-
-   ```bash
-   watch -n 5 "pocketd query tx --type=hash ${TX_HASH} --network=${NETWORK}"
-   ```
-
-6. Verify node version aligns with what's in `<UPGRADE_TX_JSON>`:
-
-   ```bash
-   curl -s ${RPC_ENDPOINT}/abci_info | jq '.result.response.version'
-   ```
-
-7. Once the upgrade is complete, make sure to:
-   - Record the upgrade `height` and `tx_hash` in the [GitHub Release](https://github.com/pokt-network/poktroll/releases)
-   - Commit the `{UPGRADE_TX_JSON}` file with the final height to `main`
-
-:::tip Grove Employees 🌿
-
-- Use logging/observability tools to monitor full nodes & validators.
-- Only proceed to Beta/MainNet after Alpha is successful.
-- [Connect to our cluster](https://www.notion.so/buildwithgrove/Playbook-Connecting-to-Vultr-Protocol-k8s-cluster-protocol-nj-162a36edfff680608c30ff9eebd3e605?pvs=4) to inspect logs and pod status
+If your upgrade handle had complex business logic, you MUST test it locally to avoid a chain halt.
 
 :::
 
-**⚠️ DO NOT PROCEED until the changes from step (2) are merged assuming the upgrade succeeded ⚠️**
+Follow [Testing Protocol Upgrades](3_testing_upgrades_locally.md) **BEFORE** submitting any transactions.
 
----
+If you find an issue, you'll need to:
+
+1. Delete the previous release
+2. Delete the previous tag
+3. Prepare a new release
+4. Regenerate the artifacts
+
+## 5. Submit the Upgrade on each network
+
+If you are submitting the upgrade for `v0.1.21`, follow the instructions
+generated by the `prepare_upgrade_tx.sh` script.
+
+```bash
+./tools/scripts/upgrades/submit_upgrade.sh alpha v0.1.21
+./tools/scripts/upgrades/submit_upgrade.sh beta v0.1.21
+./tools/scripts/upgrades/submit_upgrade.sh main v0.1.21
+```
+
+**Make sure to ONLY move to the next network after the prior one finished successfully.**
+
+## 7. Update the release notes
+
+Generate a table of the upgrade heights and tx hashes like so:
+
+```bash
+./tools/scripts/upgrades/prepare_upgrade_release_notes.sh v0.1.21
+```
+
+And insert the table above the auto-generated release notes.
 
 ## 8. Update the `homebrew-tap` Formula
 
@@ -384,60 +226,20 @@ brew install pocketd
 
 See [pocketd CLI docs](../../2_explore/2_account_management/1_pocketd_cli.md) for more info.
 
----
+## 9. Troubleshooting & Canceling an Upgrade
 
-## 9. Submit the Upgrade on Beta & MainNet
-
-Repeat [Step 7: Submit the Upgrade Onchain](#7-submit-the-upgrade-on-alpha-testnet) with the appropriate parameters for Beta and MainNet:
-
-- Use the correct `<RPC_ENDPOINT>` for Beta or MainNet
-- Use the correct `<NETWORK>`, (`beta` for Beta or `main` for MainNet)
-- Use the correct `<UPGRADE_TX_JSON>` (e.g., `upgrade_tx_v0.1.2_beta.json` or `upgrade_tx_v0.1.2_main.json`)
-- Use the correct sender account for each network
-
-This ensures a single, copy-pasta-friendly process for all networks.
-
-**⚠️ DO NOT PROCEED until the changes from step (2) are merged assuming the upgrade succeeded ⚠️**
-
-:::tip Grove Employees 🌿
-
-If you're a Grove Employee, you can use the helpers [here](https://www.notion.so/buildwithgrove/Playbook-Streamlining-rc-helpers-for-Shannon-Alpha-Beta-Main-Network-Environments-152a36edfff680019314d468fad88864?pvs=4) to use this wrapper:
-
-See the instructions in [this PR](https://github.com/pokt-network/poktroll/pull/1219) for copy-pasta
-commands on how `v0.1.3` was submitted on Alpha & Beta.
-
-:::
-
----
-
-## 10. Troubleshooting & Canceling an Upgrade
-
-**If you need to cancel, see:**
-
+- 🌿 Grove Only: [Infrastructure Helper Scripts](https://github.com/buildwithgrove/infrastructure/tree/main/scripts)
 - [Chain Halt Troubleshooting](./7_chain_halt_troubleshooting.md)
 - [Failed upgrade contingency plan](./8_contigency_plans.md)
 - [Chain Halt Recovery](./9_recovery_from_chain_halt.md)
 
-**Checklist:**
+## 10. Finish off checklist
 
-1. Follow [Protocol Upgrade Procedure](3_testing_upgrades_locally.md)
-2. Update the [Upgrade List](./4_upgrade_list.md)
-3. Deploy a full node on TestNet and verify sync (see [Full Node Quickstart Guide](../../1_operate/1_cheat_sheets/2_full_node_cheatsheet.md))
+- [ ] Update the [Upgrade List](./4_upgrade_list.md)
+- [ ] [Create snapshot](https://www.notion.so/buildwithgrove/Shannon-Snapshot-Playbook-1aea36edfff680bbb5a7e71c9846f63c?source=copy_link) for each network
 
----
-
-## Before You Finish
-
-- [ ] All steps above are checked off
-- [ ] All releases, plans, and transactions are published and tested
-- [ ] The upgrade transaction json files with the updated height are merged in
-- [ ] You have communicated upgrade details to the team/community
-- [ ] You have prepared for rollback/troubleshooting if needed
-- [ ] You have updated the published release with the final upgrade height on each network
-
-## TODO
-
-The following improvements will streamline this process further
+## TODOs & Improvements
 
 - [ ] Concrete examples of PR examples & descriptions along the way
-- [ ] Additional helpers (not automation) for some of the commands throughout
+- [ ] Remind the reader to make the release the latest at the very end.
+- [ ] Add dashboard links to observability
