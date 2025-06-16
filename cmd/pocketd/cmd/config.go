@@ -133,6 +133,7 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// cfg.P2P.MaxNumInboundPeers = 100
 	// cfg.P2P.MaxNumOutboundPeers = 40
 
+	// in bytes/second
 	cfg.P2P.SendRate = 25600000 // 25MB/s
 	cfg.P2P.RecvRate = 25600000 // 25MB/s
 

@@ -79,6 +79,8 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 }
 
 // applyP2PConfigFromFlags reads the custom P2P flags and applies them to the CometBFT configuration
+// Only applies values if they were explicitly set by the user via flags.
+// This prevents overriding config file values with hardcoded flag defaults.
 func applyP2PConfigFromFlags(cmd *cobra.Command) error {
 	// Get the server context which contains the CometBFT configuration
 	serverCtx := server.GetServerContextFromCmd(cmd)
@@ -86,26 +88,38 @@ func applyP2PConfigFromFlags(cmd *cobra.Command) error {
 		return errors.New("server context or CometBFT config not available")
 	}
 
-	// Read the custom P2P flags
-	maxInboundPeers, err := cmd.Flags().GetInt("p2p.max-num-inbound-peers")
-	if err != nil {
-		return err
+	// Only apply flag values if they were explicitly set by the user
+	// This allows config file values to take precedence when flags aren't used
+
+	if cmd.Flags().Changed("p2p.max-num-inbound-peers") {
+		maxInboundPeers, err := cmd.Flags().GetInt("p2p.max-num-inbound-peers")
+		if err != nil {
+			return err
+		}
+		if maxInboundPeers < 0 {
+			return errors.New("p2p.max-num-inbound-peers cannot be negative")
+		}
+		serverCtx.Config.P2P.MaxNumInboundPeers = maxInboundPeers
+
+		// Also set in viper for consistency
+		v := viper.GetViper()
+		v.Set("p2p.max_num_inbound_peers", maxInboundPeers)
 	}
 
-	maxOutboundPeers, err := cmd.Flags().GetInt("p2p.max-num-outbound-peers")
-	if err != nil {
-		return err
+	if cmd.Flags().Changed("p2p.max-num-outbound-peers") {
+		maxOutboundPeers, err := cmd.Flags().GetInt("p2p.max-num-outbound-peers")
+		if err != nil {
+			return err
+		}
+		if maxOutboundPeers < 0 {
+			return errors.New("p2p.max-num-outbound-peers cannot be negative")
+		}
+		serverCtx.Config.P2P.MaxNumOutboundPeers = maxOutboundPeers
+
+		// Also set in viper for consistency
+		v := viper.GetViper()
+		v.Set("p2p.max_num_outbound_peers", maxOutboundPeers)
 	}
-
-	// Apply the values directly to the CometBFT configuration object
-	// This ensures the values are applied after the config is loaded from file
-	serverCtx.Config.P2P.MaxNumInboundPeers = maxInboundPeers
-	serverCtx.Config.P2P.MaxNumOutboundPeers = maxOutboundPeers
-
-	// Also set in viper for consistency (though this may not be necessary)
-	v := viper.GetViper()
-	v.Set("p2p.max_num_inbound_peers", maxInboundPeers)
-	v.Set("p2p.max_num_outbound_peers", maxOutboundPeers)
 
 	return nil
 }
