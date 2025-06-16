@@ -198,7 +198,7 @@ func (rClient *replayClient[T]) Close() {
 // - Processes incoming events by decoding them from bytes to the generic type T
 // - Retries connection on failures up to connRetryLimit times with predefined delay
 // - Handles context cancellation to prevent resource leaks
-// - Cleans up connections when errors occur or context is cancelled
+// - Cleans up connections when errors occur or context is canceled
 //
 // The method runs in a continuous loop until the context is cancelled or retry limit is exceeded.
 func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh chan<- T) {

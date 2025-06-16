@@ -146,8 +146,15 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// prove should be deterministic and use onchain governance params.
 	claimsWindowOpenBlock := rs.waitForBlock(ctx, claimWindowOpenHeight)
 	if claimsWindowOpenBlock == nil {
-		logger.Warn().Msg("failed to observe earliest claim commit height offset seed block height")
-		failedCreateClaimsSessionsCh <- sessionTrees
+		// Only treat this as a failure if we're not in the process of shutting down.
+		// During normal operation (stopping==false), this is an unexpected error that should be handled.
+		// During shutdown (stopping=true), block observation failures are expected and should be ignored
+		// to prevent unnecessary session tree deletion and ensure proper persistence.
+		if !rs.stopping {
+			logger.Warn().Msg("failed to observe earliest claim commit height offset seed block height")
+			failedCreateClaimsSessionsCh <- sessionTrees
+		}
+
 		return nil
 	}
 

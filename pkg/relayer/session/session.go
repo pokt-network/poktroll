@@ -82,6 +82,15 @@ type relayerSessionsManager struct {
 
 	// bankQueryClient is used to query for the bank module parameters.
 	bankQueryClient client.BankQueryClient
+
+	// stopping is a boolean that indicates whether the relayerSessionsManager is
+	// in the process of a graceful shutting down.
+	// During normal operation, context cancellations (e.g. deadlines) are treated
+	// as failures that should cause failing session trees to be deleted.
+	// When stopping=true, these same cancellations are expected as part of shutdown
+	// and should not trigger deletion, ensuring session trees are properly persisted
+	// for recovery after restart.
+	stopping bool
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -198,6 +207,12 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 //
 // This ensures no data is lost during shutdown and resources are properly cleaned up.
 func (rs *relayerSessionsManager) Stop() {
+	// Set the stopping flag to true to distinguish between normal errors and shutdown operations.
+	// During shutdown, context cancellations are expected and should not trigger session tree deletion.
+	// This ensures session trees are properly persisted for recovery after restart, rather than
+	// being interpreted as failures requiring cleanup.
+	rs.stopping = true
+
 	// Close the block client and unsubscribe from all observables to stop receiving events.
 	// Proper shutdown is important for:
 	//   - Graceful termination
