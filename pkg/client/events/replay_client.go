@@ -246,7 +246,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 			// Subscribe to the events observable and get the channel for receiving events
 			eventsCh := eventsBytesObs.Subscribe(eventsBzCtx).Ch()
 
-			// Process events until connection breaks or context is cancelled
+			// Process events until connection breaks or context is canceled
 			for eitherEventBz := range eventsCh {
 				// Extract event bytes or error from the Either type
 				eventBz, eitherErr := eitherEventBz.ValueOrError()
