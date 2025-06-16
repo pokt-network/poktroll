@@ -11,7 +11,7 @@
           },
           "staking_fee": {
             "denom": "upokt",
-            "amount": "1"
+            "amount": "0"
           }
         }
       }
