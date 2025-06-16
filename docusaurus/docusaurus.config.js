@@ -33,6 +33,9 @@ const config = {
     ],
   ],
 
+  // TODO(@olshansk): Figure out how to make this work in production.
+  // More details here: https://github.com/nichnarmada/docusaurus-plugin-chat-page/issues/5
+  /*
   plugins: [
     [
       require.resolve("docusaurus-plugin-chat-page"),
@@ -55,7 +58,7 @@ const config = {
           maxTokens: 1000,
         },
         embeddingCache: {
-          enabled: false,
+          enabled: true, // toggle this to false/true whenever you want to regenerate embeddings
           strategy: "manual", // Avoid regeneration every time for speed & price (just a v1)
           path: "embeddings.json",
         },
@@ -70,7 +73,7 @@ const config = {
       },
     ],
   ],
-
+  */
   // GitHub pages deployment config.
   url: "https://pocket.com/",
   baseUrl: "/",
@@ -166,11 +169,13 @@ const config = {
             label: "🧑‍💻️ Core Developers",
             to: "/4_develop/",
           },
+          /*
           {
             to: "/chat",
             label: "🤖 Chat",
             position: "left",
           },
+          */
         ],
       },
       footer: {
