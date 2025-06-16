@@ -25,7 +25,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	request *http.Request,
 ) (*types.RelayRequest, error) {
 	logger := server.logger.With("relay_request_type", "synchronous")
-	startTime := time.Now()
+	requestStartTime := time.Now()
 	startHeight := server.blockClient.LastBlock(ctx).Height()
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("handling HTTP request")
@@ -254,7 +254,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// If a session expires during processing, the relay is classified as "over-servicing"
 	// and becomes ineligible for rewards, as it falls outside the protocol's reward mechanism.
 	if err := server.relayAuthenticator.CheckRelayRewardEligibility(ctx, relayRequest); err != nil {
-		processingTime := time.Since(startTime).Milliseconds()
+		processingTime := time.Since(requestStartTime).Milliseconds()
 		logger.Warn().Msgf(
 			"relay request is no longer eligible for rewards, request took %d ms, starting at block %d and ending at block %d: %v",
 			processingTime, server.blockClient.LastBlock(ctx).Height(), startHeight, err,

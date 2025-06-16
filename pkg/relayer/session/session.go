@@ -670,7 +670,12 @@ func (rs *relayerSessionsManager) deleteSession(sessionTree relayer.SessionTree)
 	}
 
 	sessionSMT := sessionSMTFromSessionTree(sessionTree)
-	rs.deletePersistedSessionTree(sessionSMT)
+	if err := rs.deletePersistedSessionTree(sessionSMT); err != nil {
+		rs.logger.Error().
+			Err(err).
+			Str("session_id", sessionId).
+			Msg("failed to delete persisted session tree metadata")
+	}
 }
 
 // supplierSessionsToClaim returns an observable that notifies when sessions that

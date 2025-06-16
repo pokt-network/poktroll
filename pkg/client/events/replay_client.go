@@ -28,14 +28,6 @@ const (
 	// bytes observable returns an error.
 	eventsBytesRetryDelay = time.Second
 
-	// TODO_MAINNET(@bryanchriswhite): Make this a customizable parameter in the
-	// Gateway & RelayMiner config files
-	// eventsBytesRetryLimit is the maximum number of times to attempt to
-	// re-establish the events query bytes subscription when the events bytes
-	// observable returns an error or closes.
-	eventsBytesRetryLimit        = 10
-	eventsBytesRetryResetTimeout = 10 * time.Second
-
 	// replayObsCacheBufferSize is the replay buffer size of the
 	// replayObsCache replay observable which is used to cache the replay
 	// observable that is notified of new events.
