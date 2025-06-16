@@ -46,7 +46,7 @@ const config = {
           // If it provides value, but the key gets abused, we set up a backend proxy.
           // Alternatively, we can update the plugin to have a "BYOK" feature.
           apiKey:
-            "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",
+            "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",
         },
         prompt: {
           systemPrompt: require("./prompt"),
