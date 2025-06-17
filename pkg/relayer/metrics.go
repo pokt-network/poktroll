@@ -1,20 +1,23 @@
 package relayer
 
 import (
+	"fmt"
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"time"
 )
 
 const (
 	relayMinerProcess = "relayminer"
 
-	requestsTotal        = "requests_total"
-	requestsErrorsTotal  = "requests_errors_total"
-	requestsSuccessTotal = "requests_success_total"
-	requestSizeBytes     = "request_size_bytes"
-	responseSizeBytes    = "response_size_bytes"
-	smtSizeBytes         = "smt_size_bytes"
-	relayDurationSeconds = "relay_duration_seconds"
+	requestsTotal          = "requests_total"
+	requestsErrorsTotal    = "requests_errors_total"
+	requestsSuccessTotal   = "requests_success_total"
+	requestSizeBytes       = "request_size_bytes"
+	responseSizeBytes      = "response_size_bytes"
+	smtSizeBytes           = "smt_size_bytes"
+	relayDurationSeconds   = "relay_duration_seconds"
+	serviceDurationSeconds = "service_duration_seconds"
 )
 
 var (
@@ -53,7 +56,7 @@ var (
 	}, []string{"service_id"})
 
 	// RelaysDurationSeconds observes request durations in the relay miner.
-	// This histogram, labeled by 'service_id', measures response times,
+	// This histogram, labeled by 'service_id' and 'status_code', measures response times,
 	// vital for performance analysis under different loads.
 	//
 	// Buckets:
@@ -67,7 +70,26 @@ var (
 		Name:      relayDurationSeconds,
 		Help:      "Histogram of request durations for performance analysis.",
 		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 15},
-	}, []string{"service_id"})
+	}, []string{"service_id", "status_code"})
+
+	// ServiceDurationSeconds observes request durations of the request to the service in the relay miner
+	// This histogram, labeled by 'service_id' and 'status_code', measures response times,
+	// vital for performance analysis under different loads.
+	// The principle on this is to allow us to understand the difference on request duration between relay miner
+	// and service execution.
+	//
+	// Buckets:
+	// - 0.1s to 15s range, capturing response times from very fast to upper limit.
+	//
+	// Usage:
+	// - Analyze typical response times and long-tail latency issues.
+	// - Compare performance across services or environments.
+	ServiceDurationSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		Subsystem: relayMinerProcess,
+		Name:      serviceDurationSeconds,
+		Help:      "Histogram of service call durations for performance analysis.",
+		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 15},
+	}, []string{"service_id", "status_code"})
 
 	// RelayResponseSizeBytes is a histogram metric for observing response size distribution.
 	// It counts responses in bytes, with buckets:
@@ -96,3 +118,25 @@ var (
 		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
 	}, []string{"service_id"})
 )
+
+// CaptureServiceDuration records the duration of a service call, labeled by service ID and HTTP status code.
+// It calculates the elapsed time since the provided start time and updates the ServiceDurationSeconds histogram.
+func CaptureServiceDuration(serviceId string, startTime time.Time, statusCode int) {
+	duration := time.Since(startTime).Seconds()
+
+	ServiceDurationSeconds.
+		With("service_id", serviceId).
+		With("status_code", fmt.Sprintf("%d", statusCode)).
+		Observe(duration)
+}
+
+// CaptureRelayDuration records the duration of a relay handling, labeled by service ID and HTTP status code.
+// It calculates the elapsed time since the provided start time and updates the ServiceDurationSeconds histogram.
+func CaptureRelayDuration(serviceId string, startTime time.Time, statusCode int) {
+	duration := time.Since(startTime).Seconds()
+
+	RelaysDurationSeconds.
+		With("service_id", serviceId).
+		With("status_code", fmt.Sprintf("%d", statusCode)).
+		Observe(duration)
+}

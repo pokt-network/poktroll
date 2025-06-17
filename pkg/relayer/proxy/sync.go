@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	io "io"
 	"net/http"
 	"slices"
 	"strings"
@@ -24,6 +25,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) (*types.RelayRequest, error) {
+	startTime := time.Now()
+	// defaulted to 500 and only set to 200 at the very end to avoid need write it everywhere
+	statusCode := uint(200)
+
 	logger := server.logger.With("relay_request_type", "synchronous")
 	requestStartTime := time.Now()
 	startHeight := server.blockClient.LastBlock(ctx).Height()
@@ -37,7 +42,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Warn().Err(err).Msg("failed creating relay request")
 		return relayRequest, err
 	}
-	request.Body.Close()
+	defer func(Body io.ReadCloser) {
+		e := Body.Close()
+		if e != nil {
+			logger.Error().Err(e).Msg("failed to close the request body")
+		}
+	}(request.Body)
 
 	if err = relayRequest.ValidateBasic(); err != nil {
 		logger.Warn().Err(err).Msg("failed validating relay request")
@@ -155,13 +165,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		"service_id", serviceId,
 		"supplier_operator_address", meta.SupplierOperatorAddress,
 	).Add(1)
-	defer func() {
-		startTime := time.Now()
-		duration := time.Since(startTime).Seconds()
-
+	defer func(startTime time.Time, statusCode *uint) {
 		// Capture the relay request duration metric.
-		relayer.RelaysDurationSeconds.With("service_id", serviceId).Observe(duration)
-	}()
+		relayer.CaptureRelayDuration(serviceId, startTime, int(*statusCode))
+	}(startTime, &statusCode)
 
 	relayer.RelayRequestSizeBytes.With("service_id", serviceId).
 		Observe(float64(relayRequest.Size()))
@@ -176,7 +183,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("failed to build the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer httpRequest.Body.Close()
+	defer func(Body io.ReadCloser) {
+		e := Body.Close()
+		if e != nil {
+			logger.Error().Err(e).Msg("failed to close the request body")
+		}
+	}(httpRequest.Body)
 
 	// Configure the HTTP client to use the appropriate transport based on the
 	// backend URL scheme.
@@ -192,13 +204,22 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	// Send the relay request to the native service.
+	serviceCallStartTime := time.Now()
 	httpResponse, err := client.Do(httpRequest)
 	if err != nil {
 		// Do not expose connection errors with the backend service to the client.
+		// Capture the service call request duration metric.
+		relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, 500)
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
-	defer httpResponse.Body.Close()
-
+	defer func(Body io.ReadCloser) {
+		e := Body.Close()
+		if e != nil {
+			logger.Error().Err(e).Msg("failed to close the response body")
+		}
+	}(httpResponse.Body)
+	// Capture the service call request duration metric.
+	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 	// If the backend service returns a 5xx error, we consider it an internal error
 	// and do not expose the error to the client.
 	if httpResponse.StatusCode >= 500 {
@@ -298,6 +319,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		shouldRewardRelay = true
 	}
 
+	// set to 200 because everything is good about the processed relay.
+	statusCode = 200
 	return relayRequest, nil
 }
 
