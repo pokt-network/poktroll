@@ -656,7 +656,7 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 		logger.Info().Str("session_id", sessionId).Msg("deleting session tree")
 
 		// Remove the session tree from the relayerSessions.
-		rs.deleteSession(sessionTree)
+		rs.deleteSessionTree(sessionTree)
 
 		numSessionTreesDeleted++
 	}
@@ -667,9 +667,9 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 	)
 }
 
-// deleteSession deletes the session tree from the relayerSessions and
+// deleteSessionTree deletes the session tree from the relayerSessions and
 // removes it from the disk store.
-func (rs *relayerSessionsManager) deleteSession(sessionTree relayer.SessionTree) {
+func (rs *relayerSessionsManager) deleteSessionTree(sessionTree relayer.SessionTree) {
 	rs.removeFromRelayerSessions(sessionTree)
 
 	sessionHeader := sessionTree.GetSessionHeader()
@@ -680,10 +680,13 @@ func (rs *relayerSessionsManager) deleteSession(sessionTree relayer.SessionTree)
 		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress(),
 	)
 
+	// Delete the session tree from the KVStore and close the underlying store.
 	if err := sessionTree.Delete(); err != nil {
 		logger.Error().Err(err).Msg("failed to delete session tree")
 	}
 
+	// Delete the persisted session tree metadata from the disk store.
+	// This is necessary to ensure that the session is not restored on the next startup.
 	sessionSMT := sessionSMTFromSessionTree(sessionTree)
 	if err := rs.deletePersistedSessionTree(sessionSMT); err != nil {
 		rs.logger.Error().
@@ -719,7 +722,7 @@ func (rs *relayerSessionsManager) supplierSessionsToClaim(
 	return sessionsToClaimObs
 }
 
-// claimFromSessionTree creates a claim object from the given SessionTree.
+// claimFromSessionTree returns a claim object from the given SessionTree.
 func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
 	return prooftypes.Claim{
 		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),

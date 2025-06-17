@@ -296,7 +296,6 @@ func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client
 
 	// Delete the relay meters that correspond to settled sessions.
 	for _, sessionRelayMeter := range rmtr.sessionToRelayMeterMap {
-
 		sessionClaimOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
 			sharedParams,
 			sessionRelayMeter.sessionHeader.GetSessionEndBlockHeight(),

@@ -267,7 +267,7 @@ func (rs *relayerSessionsManager) proveClaims(
 		if isProofRequired {
 			sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
 		} else {
-			rs.deleteSession(sessionTree)
+			rs.deleteSessionTree(sessionTree)
 		}
 	}
 

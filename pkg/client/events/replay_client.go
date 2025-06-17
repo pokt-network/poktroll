@@ -234,6 +234,9 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 				continue
 			}
 
+			// Reset the retry counter since we successfully established a connection
+			numRetries = 0
+
 			// Subscribe to the events observable and get the channel for receiving events
 			eventsCh := eventsBytesObs.Subscribe(eventsBzCtx).Ch()
 
