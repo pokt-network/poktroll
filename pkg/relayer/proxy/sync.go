@@ -35,7 +35,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Warn().Err(err).Msg("failed creating relay request")
 		return relayRequest, err
 	}
-	request.Body.Close()
 
 	if err = relayRequest.ValidateBasic(); err != nil {
 		logger.Warn().Err(err).Msg("failed validating relay request")
@@ -171,7 +170,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("failed to build the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer httpRequest.Body.Close()
+	defer closeBody(httpRequest.Body, server.logger)
 
 	// Configure the HTTP client to use the appropriate transport based on the
 	// backend URL scheme.
