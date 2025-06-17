@@ -74,8 +74,10 @@ type RelayAuthenticator interface {
 		serviceId string,
 	) error
 
-	// CheckRelayRewardEligibility verifies the relay's session hasn't expired for reward
-	// purposes by ensuring the current block height hasn't reached the claim window yet.
+	// CheckRelayRewardEligibility verifies the Relay Request is still reward eligible.
+	// This is done by:
+	// - Retrieving the session header of the relay request
+	// - Ensuring the current block height hasn't reached the beginning of the claim window
 	// Returns an error if the relay is no longer eligible for rewards.
 	CheckRelayRewardEligibility(ctx context.Context, relayRequest *servicetypes.RelayRequest) error
 

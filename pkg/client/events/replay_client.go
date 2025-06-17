@@ -47,6 +47,7 @@ type NewEventsFn[T any] func([]byte) (T, error)
 // replayClient implements the EventsReplayClient interface for a generic type T,
 // and replay observable for type T.
 type replayClient[T any] struct {
+	logger polylog.Logger
 	// queryString is the query string used to subscribe to events of the
 	// desired type.
 	// See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
@@ -90,8 +91,6 @@ type replayClient[T any] struct {
 	// in the event that it encounters an error or its connection is interrupted.
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
-
-	logger polylog.Logger
 }
 
 // NewEventsReplayClient creates a new EventsReplayClient from the given
@@ -201,7 +200,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 		if numRetries > rClient.connRetryLimit {
 			// If the number of retries exceeds the connection retry limit, exit the loop.
 			rClient.logger.Error().Msgf(
-				"Exceeded connection retry limit of %d for events query subscription with query: %s",
+				"⚠️ Max connection retries (%d) reached for event subscription. Query: %s. Subscription aborted.",
 				rClient.connRetryLimit,
 				rClient.queryString,
 			)
@@ -221,7 +220,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 			eventsBytesObs, err := rClient.eventsClient.EventsBytes(eventsBzCtx, rClient.queryString)
 			if err != nil {
 				rClient.logger.Error().Err(err).Msgf(
-					"Failed to establish events bytes subscription for query: %s, retrying (%d/%d)",
+					"🔌 Failed to establish websocket connection to blockchain node for event subscription '%s'. Retrying connection (%d/%d)",
 					rClient.queryString,
 					numRetries+1,
 					rClient.connRetryLimit,
@@ -244,7 +243,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 				eventBz, eitherErr := eitherEventBz.ValueOrError()
 				if eitherErr != nil {
 					rClient.logger.Error().Err(eitherErr).Msgf(
-						"Error receiving events bytes for query: %s, retrying (%d/%d)",
+						"📡 Lost connection to event stream for query: %s. Attempting to reconnect (%d/%d)",
 						rClient.queryString,
 						numRetries+1,
 						rClient.connRetryLimit,
@@ -258,15 +257,29 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 				event, err := rClient.eventDecoder(eventBz)
 				if err != nil {
 					if ErrEventsUnmarshalEvent.Is(err) {
-						// Event bytes were not the expected type - skip this event and continue
+						// Event bytes were not the expected type - skip this message and continue
+						rClient.logger.Info().Msgf(
+							"ℹ️ Received blockchain event that doesn't match subscription filter for query: %s. Skipping event (this is expected)",
+							rClient.queryString,
+						)
 						continue
 					}
 
 					// Unexpected decoding error - exit event loop to retry
+					rClient.logger.Error().Err(err).Msgf(
+						"⚠️ Failed to decode blockchain event data for query: %s. Reconnecting to refresh event stream (%d/%d)",
+						rClient.queryString,
+						numRetries+1,
+						rClient.connRetryLimit,
+					)
 					break
 				}
 
 				// Successfully decoded event - publish it to the channel
+				rClient.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+					"📦 Publishing blockchain event for query: %s",
+					rClient.queryString,
+				)
 				publishCh <- event
 			}
 

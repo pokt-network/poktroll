@@ -3,6 +3,7 @@ package relay_authenticator
 import (
 	"context"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -110,6 +111,11 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 		relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight(),
 	)
 
+	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"⏳ Checking relay reward eligibility - relay must be processed before claim window opens at height %d",
+		sessionClaimOpenHeight,
+	)
+
 	// If current height is equal or greater than the claim window opening height,
 	// the relay is no longer eligible for rewards as the session has expired
 	// for reward purposes
@@ -120,6 +126,12 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 			currentHeight,
 		)
 	}
+
+	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"✅ Relay is eligible for rewards - current height (%d) < claim window open height (%d)",
+		currentHeight,
+		sessionClaimOpenHeight,
+	)
 
 	return nil
 }

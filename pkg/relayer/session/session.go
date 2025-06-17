@@ -4,6 +4,7 @@ import (
 	"context"
 	"path"
 	"sync"
+	"sync/atomic"
 
 	"cosmossdk.io/depinject"
 	"github.com/pokt-network/smt/kvstore/pebble"
@@ -83,14 +84,17 @@ type relayerSessionsManager struct {
 	// bankQueryClient is used to query for the bank module parameters.
 	bankQueryClient client.BankQueryClient
 
-	// stopping is a boolean that indicates whether the relayerSessionsManager is
-	// in the process of a graceful shutting down.
-	// During normal operation, context cancellations (e.g. deadlines) are treated
-	// as failures that should cause failing session trees to be deleted.
-	// When stopping=true, these same cancellations are expected as part of shutdown
-	// and should not trigger deletion, ensuring session trees are properly persisted
-	// for recovery after restart.
-	stopping bool
+	// stopping indicates whether the relayerSessionsManager is in the process of graceful shutdown.
+	//
+	// Why it exists:
+	// - During normal operation, context cancellations (e.g., deadlines) are treated as session failures.
+	// - These failures trigger cleanup: session trees are deleted.
+	//
+	// What changes when stopping = true:
+	// - Context cancellations during shutdown are expected.
+	// - These should NOT trigger deletion.
+	// - This ensures session trees are persisted for recovery after restart.
+	stopping atomic.Bool
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -207,11 +211,12 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 //
 // This ensures no data is lost during shutdown and resources are properly cleaned up.
 func (rs *relayerSessionsManager) Stop() {
-	// Set the stopping flag to true to distinguish between normal errors and shutdown operations.
-	// During shutdown, context cancellations are expected and should not trigger session tree deletion.
-	// This ensures session trees are properly persisted for recovery after restart, rather than
-	// being interpreted as failures requiring cleanup.
-	rs.stopping = true
+	// Mark the manager as stopping to prevent misinterpreting shutdown cancellations as failures.
+	//
+	// This ensures:
+	// - Session trees are not deleted during shutdown.
+	// - Data is preserved for recovery on the next startup.
+	rs.stopping.Store(true)
 
 	// Close the block client and unsubscribe from all observables to stop receiving events.
 	// Proper shutdown is important for:
@@ -667,18 +672,27 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 func (rs *relayerSessionsManager) deleteSession(sessionTree relayer.SessionTree) {
 	rs.removeFromRelayerSessions(sessionTree)
 
-	sessionId := sessionTree.GetSessionHeader().GetSessionId()
+	sessionHeader := sessionTree.GetSessionHeader()
+	logger := rs.logger.With(
+		"session_id", sessionHeader.GetSessionId(),
+		"application_address", sessionHeader.GetApplicationAddress(),
+		"service_id", sessionHeader.GetServiceId(),
+		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress(),
+	)
+
 	if err := sessionTree.Delete(); err != nil {
-		rs.logger.Error().Err(err).Str("session_id", sessionId).Msg("failed to delete session tree")
+		logger.Error().Err(err).Msg("failed to delete session tree")
 	}
 
 	sessionSMT := sessionSMTFromSessionTree(sessionTree)
 	if err := rs.deletePersistedSessionTree(sessionSMT); err != nil {
 		rs.logger.Error().
 			Err(err).
-			Str("session_id", sessionId).
 			Msg("failed to delete persisted session tree metadata")
 	}
+
+	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).
+		Msg("deleted session tree from relayerSessions and disk store")
 }
 
 // supplierSessionsToClaim returns an observable that notifies when sessions that

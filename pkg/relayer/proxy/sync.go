@@ -248,16 +248,28 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
 
-	// Verify relay reward eligibility again after completing the backend request.
-	// During long-running backend requests (especially under high load or with LLM services),
-	// the session may have expired while we were waiting for the response.
-	// If a session expires during processing, the relay is classified as "over-servicing"
-	// and becomes ineligible for rewards, as it falls outside the protocol's reward mechanism.
+	// Verify relay reward eligibility a SECOND time AFTER completing the backend request.
+	//
+	// Why is this needed?
+	// - A session may have ended during long running backend requests
+	// - E.g. A RelayMiner is handling a lot of load
+	// - E.g. Sessions are really short
+	// - E.g. Waiting for a response takes a long time (e.g. LLM service)
+	//
+	// What is the result?
+	// - A relay is classified as "over-servicing"
+	// - The relay becomes "reward ineligible"
+	//
+	// What are some mitigations?
+	// - Longer sessions (onchain gov param)
+	// - RelayMiner allows over-servicing (relayminer config but still reward ineligible)
+	// - Increasing the claim window open offset blocks (onchain gov param)
+	// TODO(@Olshansk): Revisit params to enable the above.
 	if err := server.relayAuthenticator.CheckRelayRewardEligibility(ctx, relayRequest); err != nil {
 		processingTime := time.Since(requestStartTime).Milliseconds()
 		logger.Warn().Msgf(
-			"relay request is no longer eligible for rewards, request took %d ms, starting at block %d and ending at block %d: %v",
-			processingTime, server.blockClient.LastBlock(ctx).Height(), startHeight, err,
+			"⏱️ Backend took %d ms — relay no longer eligible (session expired: block %d → %d). Likely long response time or session too short. Error: %v",
+			processingTime, startHeight, server.blockClient.LastBlock(ctx).Height(), err,
 		)
 
 		isOverServicing = true

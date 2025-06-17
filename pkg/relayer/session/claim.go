@@ -112,7 +112,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 ) []relayer.SessionTree {
 	// Check if sessionTrees is empty to prevent index out of bounds errors
 	if len(sessionTrees) == 0 {
-		rs.logger.Warn().Msg("received empty sessionTrees array")
+		rs.logger.Warn().Msg("⚠️ Received empty session trees array - no sessions to process")
 		return nil
 	}
 
@@ -130,7 +130,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to get shared params")
+		logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity and API endpoints. ❗Unable to calculate claim timing, which may prevent rewards.")
 		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
@@ -140,18 +140,22 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// we wait for claimWindowOpenHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window opens.
 	logger = logger.With("claim_window_open_height", claimWindowOpenHeight)
-	logger.Info().Msg("waiting & blocking until the earliest claim commit height offset seed block height")
+	logger.Info().Msgf(
+		"⏱️ Waiting for network-defined claim window to open at block height %d before creating claims",
+		claimWindowOpenHeight,
+	)
 
 	// The block that'll be used as a source of entropy for which branch(es) to
 	// prove should be deterministic and use onchain governance params.
 	claimsWindowOpenBlock := rs.waitForBlock(ctx, claimWindowOpenHeight)
 	if claimsWindowOpenBlock == nil {
-		// Only treat this as a failure if we're not in the process of shutting down.
-		// During normal operation (stopping==false), this is an unexpected error that should be handled.
-		// During shutdown (stopping=true), block observation failures are expected and should be ignored
-		// to prevent unnecessary session tree deletion and ensure proper persistence.
-		if !rs.stopping {
-			logger.Warn().Msg("failed to observe earliest claim commit height offset seed block height")
+		// Ignore this failure during shutdown:
+		// - When `stopping == true`, context cancellations and observable failures are expected.
+		// - Avoid interpreting them as session failures, to ensure session trees are persisted.
+		//
+		// In normal operation (`stopping == false`), this is a critical error and must be handled.
+		if !rs.stopping.Load() {
+			logger.Error().Msg("❌️ Failed to observe required block for claim timing. ❗Check node connectivity and sync status. ❗These sessions claims cannot be processed and rewards may be lost.")
 			failedCreateClaimsSessionsCh <- sessionTrees
 		}
 
@@ -159,7 +163,9 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	}
 
 	logger = logger.With("claim_window_open_block_hash", fmt.Sprintf("%x", claimsWindowOpenBlock.Hash()))
-	logger.Info().Msg("observed earliest claim commit height offset seed block height")
+	logger.Info().Msg(
+		"🔭 Successfully observed reference block that determines claim timing. Using block hash for randomization to prevent network congestion.",
+	)
 
 	// Get the earliest claim commit height for this supplier.
 	earliestSupplierClaimsCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
@@ -170,7 +176,10 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	)
 
 	logger = logger.With("earliest_claim_commit_height", earliestSupplierClaimsCommitHeight)
-	logger.Info().Msg("waiting & blocking until the earliest claim commit height for this supplier")
+	logger.Info().Msgf(
+		"⌛ Waiting for the assigned claim creation timing at block %d.",
+		earliestSupplierClaimsCommitHeight,
+	)
 
 	// Wait for the earliestSupplierClaimsCommitHeight to be reached before proceeding.
 	// This waiting is implemented using a goroutine and a buffered channel to enable
@@ -185,7 +194,10 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	blockObserved := make(chan struct{}, 1)
 	go func() {
 		_ = rs.waitForBlock(ctx, earliestSupplierClaimsCommitHeight)
-		logger.Info().Msgf("observed earliest claim commit height %d", earliestSupplierClaimsCommitHeight)
+		logger.Info().Msgf(
+			"🎯 Reached block %d - claim creation window is now open! Proceeding with claim creation.",
+			earliestSupplierClaimsCommitHeight,
+		)
 
 		close(blockObserved)
 	}()
@@ -195,7 +207,10 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// claim created and are ready to be proven.
 	claimsFlushed, failedClaims := rs.createClaimRoots(sessionTrees)
 	if len(failedClaims) > 0 {
-		logger.Warn().Msgf("failed to create claims for %d session trees", len(failedClaims))
+		logger.Error().Msgf(
+			"⚠️ Failed to create claims for %d session trees due to local storage issue. ❗Check disk space, permissions, and kvstore integrity.",
+			len(failedClaims),
+		)
 		failedCreateClaimsSessionsCh <- failedClaims
 	}
 
@@ -226,7 +241,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		claimableSessionTrees, err := rs.payableProofsSessionTrees(ctx, sessionTrees)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("failed to calculate payable proofs session trees")
+			rs.logger.Error().Err(err).Msg("❌️ Failed to calculate which claims are affordable.")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
@@ -236,11 +251,14 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// DEV_NOTE: This is a common case when the supplier operator has insufficient funds.
 		if len(claimableSessionTrees) == 0 {
 			err = fmt.Errorf(
-				"supplier operator %q cannot afford to claim any of the (%d) session trees. ❗ MAKE SURE TO TOP UP YOUR SUPPLIER'S BALANCE ❗",
+				"supplier operator %q cannot process any of the (%d) session trees due to insufficient funds or unprofitable claims. ❗Check the supplier balance",
 				sessionTrees[0].GetSupplierOperatorAddress(),
 				len(sessionTrees),
 			)
-			rs.logger.Warn().Msgf("no claimable session trees, skipping claims creation: %v", err)
+			rs.logger.Warn().Msgf(
+				"💸 No claimable sessions available - either insufficient funds or unprofitable claims for %d session trees. ❗Check your supplier's balance: %v",
+				len(sessionTrees), err,
+			)
 
 			// Avoid submitting transactions with no claim messages.
 			return either.Error[[]relayer.SessionTree](err), false
@@ -264,7 +282,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("failed to get shared params")
+			rs.logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. Check node connectivity and API endpoints.")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
@@ -272,7 +290,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// Create claims for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.CreateClaims(ctx, claimWindowCloseHeight, claimMsgs...); err != nil {
 			failedCreateClaimsSessionsPublishCh <- claimableSessionTrees
-			rs.logger.Error().Err(err).Msg("failed to create claims")
+			rs.logger.Error().Err(err).Msg("❌ Failed to submit claims to the network. Check node connectivity and transaction fees.")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
@@ -287,7 +305,7 @@ func (rs *relayerSessionsManager) createClaimRoots(
 	for _, sessionTree := range sessionTrees {
 		// This session should no longer be updated
 		if _, err := sessionTree.Flush(); err != nil {
-			rs.logger.Error().Err(err).Msg("failed to flush session")
+			rs.logger.Error().Err(err).Msg("⚠️ Failed to flush session data to storage 💾. Check disk space and storage integrity.")
 			failedClaims = append(failedClaims, sessionTree)
 			continue
 		}
@@ -374,7 +392,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 
 		claimReward, err := rs.getClaimRewardCoin(ctx, sessionTree)
 		if err != nil {
-			claimLogger.Error().Err(err).Msg("failed to calculate claim reward")
+			claimLogger.Error().Err(err).Msg("⚠️ Failed to calculate claim reward for session")
 			return nil, err
 		}
 
