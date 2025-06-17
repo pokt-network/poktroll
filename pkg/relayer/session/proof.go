@@ -98,7 +98,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
-		logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity and API endpoints. ❗Unable to calculate proof timing, which may prevent rewards and cause slashing.")
+		logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Unable to calculate proof timing, which may prevent rewards and cause slashing.")
 		failedSubmitProofsSessionsCh <- sessionTrees
 		return nil
 	}
@@ -214,7 +214,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity and API endpoints. ❗Rewards may not be secured and supplier may be slashed.")
+			rs.logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Rewards may not be secured and supplier may be slashed.")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)

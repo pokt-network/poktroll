@@ -130,7 +130,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
-		logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity and API endpoints. ❗Unable to calculate claim timing, which may prevent rewards.")
+		logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Unable to calculate claim timing, which may prevent rewards.")
 		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
@@ -282,7 +282,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. Check node connectivity and API endpoints.")
+			rs.logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. Check node connectivity.")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
