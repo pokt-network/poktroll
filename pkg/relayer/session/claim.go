@@ -21,11 +21,17 @@ import (
 )
 
 // Cumulative (observed) gas fees for creating a single claim and submitting a single proof:
-// - Gas price at time of observance: 0.01uPOKT
+// - Gas price at time of observance: 0.001uPOKT
 // - Value obtained empirically by observing logs during load testing
 // - Value may change as network parameters change
 // - This value is a function of the claim & proof message sizes
-var ClamAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 100_000)
+//
+// TODO(@bryanchriswhite, #1507): ClaimAndProofGasCost value should be a function of
+// the biggest Relay (in num of bytes) and tx_size_cost_per_byte auth module param.
+// There should be a two step approach to this:
+// 1. Choose a reasonable (emperically observed) p90 of claim & proof sizes across most chains
+// 2. TODO_FUTURE: Compute the gas cost dynamically based on the size of the branch being proven.
+var ClaimAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 10_000)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims
@@ -115,7 +121,10 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 
-	logger := rs.logger.With("session_end_height", sessionEndHeight)
+	logger := rs.logger.With(
+		"session_end_height", sessionEndHeight,
+		"supplier_operator_address", supplierOperatorAddr,
+	)
 
 	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
@@ -208,12 +217,34 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
+		supplierOperatorAddress := sessionTrees[0].GetSupplierOperatorAddress()
+
+		logger := rs.logger.With(
+			"session_end_height", sessionEndHeight,
+			"supplier_operator_address", supplierOperatorAddress,
+		)
 
 		// Filter out the session trees that the supplier operator can afford to claim.
 		claimableSessionTrees, err := rs.payableProofsSessionTrees(ctx, sessionTrees)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("failed to calculate payable proofs session trees")
+			logger.Error().Err(err).Msg("failed to calculate payable proofs session trees")
+			return either.Error[[]relayer.SessionTree](err), false
+		}
+
+		// If the supplier operator cannot afford to claim any of the session trees, then:
+		// 1. Skip claim creation
+		// 2. Return an empty slice of claimable session trees.
+		// DEV_NOTE: This is a common case when the supplier operator has insufficient funds.
+		if len(claimableSessionTrees) == 0 {
+			err = fmt.Errorf(
+				"supplier operator %q cannot afford to claim any of the (%d) session trees. ❗ MAKE SURE TO TOP UP YOUR SUPPLIER'S BALANCE ❗",
+				sessionTrees[0].GetSupplierOperatorAddress(),
+				len(sessionTrees),
+			)
+			logger.Warn().Msgf("no claimable session trees, skipping claims creation: %v", err)
+
+			// Avoid submitting transactions with no claim messages.
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
@@ -235,7 +266,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("failed to get shared params")
+			logger.Error().Err(err).Msg("failed to get shared params")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
@@ -243,7 +274,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// Create claims for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.CreateClaims(ctx, claimWindowCloseHeight, claimMsgs...); err != nil {
 			failedCreateClaimsSessionsPublishCh <- claimableSessionTrees
-			rs.logger.Error().Err(err).Msg("failed to create claims")
+			logger.Error().Err(err).Msg("failed to create claims")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
@@ -296,7 +327,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	// Account for the gas cost of creating a claim and submitting a proof.
 	// This accounts for onchain fees (pocket specific) and gas costs (network wide).
 	proofSubmissionFee := proofParams.GetProofSubmissionFee()
-	claimAndProofSubmissionCost := proofSubmissionFee.Add(ClamAndProofGasCost)
+	claimAndProofSubmissionCost := proofSubmissionFee.Add(ClaimAndProofGasCost)
 
 	supplierOperatorBalanceCoin, err := rs.bankQueryClient.GetBalance(
 		ctx,
@@ -338,10 +369,30 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		// Supplier CAN afford to claim the session.
 		// Add it to the claimableSessionTrees slice.
 		supplierCanAffordClaimAndProofFees := supplierOperatorBalanceCoin.IsGTE(claimAndProofSubmissionCost)
-		if supplierCanAffordClaimAndProofFees {
+
+		claimLogger := logger.With(
+			"session_id", sessionTree.GetSessionHeader().GetSessionId(),
+		)
+
+		claimReward, err := rs.getClaimRewardCoin(ctx, sessionTree)
+		if err != nil {
+			claimLogger.Error().Err(err).Msg("failed to calculate claim reward")
+			return nil, err
+		}
+
+		isClaimProfitable := claimReward.IsGT(ClaimAndProofGasCost)
+
+		if supplierCanAffordClaimAndProofFees && isClaimProfitable {
 			claimableSessionTrees = append(claimableSessionTrees, sessionTree)
 			newSupplierOperatorBalanceCoin := supplierOperatorBalanceCoin.Sub(claimAndProofSubmissionCost)
 			supplierOperatorBalanceCoin = &newSupplierOperatorBalanceCoin
+
+			estimatedClaimProfit := claimReward.Sub(ClaimAndProofGasCost)
+			claimLogger.Info().Msgf(
+				"💲 Processing profitable claim — estimated submission cost 💸: %s, reward 🎁: %s, estimated profit 💰: %s",
+				claimAndProofSubmissionCost, claimReward, estimatedClaimProfit,
+			)
+
 			continue
 		}
 
@@ -350,26 +401,59 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		// it won't be claimed due to insufficient funds.
 		rs.removeFromRelayerSessions(sessionTree)
 		if err := sessionTree.Delete(); err != nil {
-			logger.With(
-				"session_id", sessionTree.GetSessionHeader().GetSessionId(),
-			).Error().Err(err).Msg("failed to delete session tree")
+			claimLogger.Error().Err(err).Msg("failed to delete session tree")
 		}
 
-		// Log a warning of any session that the supplier operator cannot afford to claim.
-		logger.With(
-			"session_id", sessionTree.GetSessionHeader().GetSessionId(),
-			"supplier_operator_balance", supplierOperatorBalanceCoin,
-			"proof_submission_fee", proofSubmissionFee,
-			"claim_and_proof_gas_cost", ClamAndProofGasCost,
-		).Warn().Msg("supplier operator cannot afford to submit proof for claim, deleting session tree")
+		if !isClaimProfitable {
+			// Calculate how unprofitable the claim is
+			unprofitableAmount := ClaimAndProofGasCost.Sub(claimReward)
+			// Log a warning with details about how unprofitable the claim is in plain English
+			claimLogger.Warn().Msgf(
+				"⚠️ Aborting claim — cost exceeds reward by %s (reward: %s). 🧹 Cleaning up session state.",
+				unprofitableAmount, claimReward,
+			)
+		}
+
+		if !supplierCanAffordClaimAndProofFees {
+			// Log a warning of any session that the supplier operator cannot afford to claim.
+			claimLogger.Warn().Msgf(
+				"⚠️ Aborting claim — supplier operator has insufficient funds to submit claim & proof (cost: %s, balance: %s). 🧹 Cleaning up session tree.",
+				claimAndProofSubmissionCost, supplierOperatorBalanceCoin,
+			)
+		}
 	}
 
 	if len(claimableSessionTrees) < len(sessionTrees) {
 		logger.Warn().Msgf(
-			"Supplier operator %q can only afford %d out of %d claims",
+			"⚠️ Supplier operator %q can only process %d out of %d claims. 💰 Prioritizing most profitable ones.",
 			supplierOperatorAddress, len(claimableSessionTrees), len(sessionTrees),
 		)
 	}
 
 	return claimableSessionTrees, nil
+}
+
+// getClaimRewardCoin calculates the number of uPOKT the supplier claimed for the particular session.
+// It uses the serviceID from the tree's session header and queries onchain data for downstream calculations
+func (rs *relayerSessionsManager) getClaimRewardCoin(
+	ctx context.Context,
+	sessionTree relayer.SessionTree,
+) (sdktypes.Coin, error) {
+	sessionHeader := sessionTree.GetSessionHeader()
+	serviceId := sessionHeader.GetServiceId()
+
+	// Create a claim object to calculate the claim reward.
+	claim := claimFromSessionTree(sessionTree)
+
+	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficulty(ctx, serviceId)
+	if err != nil {
+		return sdktypes.Coin{}, err
+	}
+
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		return sdktypes.Coin{}, err
+	}
+
+	return claim.GetClaimeduPOKT(*sharedParams, relayMiningDifficulty)
 }

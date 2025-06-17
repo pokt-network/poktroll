@@ -14,14 +14,14 @@ Feature: Tokenomics Namespace
         And the "supplier" account for "supplier1" is staked
         And an account exists for "app1"
         And the "application" account for "app1" is staked
-        And the service "anvil" registered for application "app1" has a compute units per relay of "1"
+        And the service "anvil" registered for application "app1" has a compute units per relay of "100"
         # Start servicing relays
-        # Set proof_requirement_threshold to 839 < num_relays (20) * compute_units_per_relay (1) * compute_units_to_tokens_multiplier (42)
+        # Set proof_requirement_threshold to 83900 < num_relays (20) * compute_units_per_relay (100) * compute_units_to_tokens_multiplier (42)
         # to make sure a proof is required.
         And the "proof" module parameters are set as follows
             | name                         | value                                                            | type  |
             | proof_request_probability    | 0.25                                                             | float |
-            | proof_requirement_threshold  | 839                                                              | coin  |
+            | proof_requirement_threshold  | 83900                                                            | coin  |
             | proof_missing_penalty        | 320                                                              | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
         And all "proof" module params should be updated
@@ -37,9 +37,10 @@ Feature: Tokenomics Namespace
         # Please note that supplier mint is > app burn because of inflation
         # TODO_TECHDEBT: Update this test such the inflation is set and enforce that Mint=Burn
         # Then add a separate test that only validates that inflation is enforced correctly
-        Then the account balance of "supplier1" should be "898" uPOKT "more" than before
-        # The application stake should be less 840 * (1 + glbal_inflation) = 840 * 1.1 = 924
-        And the "application" stake of "app1" should be "924" uPOKT "less" than before
+        # The supplier balance should be more 84000 * (1 + (glbal_inflation * supplier_allocation) = 84000 * 1.07 = 89880
+        Then the account balance of "supplier1" should be "89880" uPOKT "more" than before
+        # The application stake should be less 84000 * (1 + (glbal_inflation) = 84000 * 1.1 = 92400
+        And the "application" stake of "app1" should be "92400" uPOKT "less" than before
 
     Scenario: TLM Mint=Burn when a valid claim is create but not required
         # Baseline
@@ -49,14 +50,14 @@ Feature: Tokenomics Namespace
         And the "supplier" account for "supplier1" is staked
         And an account exists for "app1"
         And the "application" account for "app1" is staked
-        And the service "anvil" registered for application "app1" has a compute units per relay of "1"
+        And the service "anvil" registered for application "app1" has a compute units per relay of "100"
         # Set proof_request_probability to 0 and proof_requirement_threshold to
-        # 421 > num_relays (10) * compute_units_per_relay (1) * compute_units_to_tokens_multiplier (42)
+        # 42100 > num_relays (10) * compute_units_per_relay (100) * compute_units_to_tokens_multiplier (42)
         # to make sure a proof is not required.
         And the "proof" module parameters are set as follows
             | name                         | value                                                            | type  |
             | proof_request_probability    | 0                                                                | float |
-            | proof_requirement_threshold  | 421                                                              | coin  |
+            | proof_requirement_threshold  | 42100                                                            | coin  |
             | proof_missing_penalty        | 320                                                              | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
         And all "proof" module params should be updated
@@ -72,9 +73,10 @@ Feature: Tokenomics Namespace
         # Validate the results
         # Please note that supplier mint is > app burn because of inflation
         # TODO_TECHDEBT: Update this test such the inflation is set and enforce that Mint=Burn
-        Then the account balance of "supplier1" should be "449" uPOKT "more" than before
-        # The application stake should be less 420 * (1 + glbal_inflation) = 420 * 1.1 = 462
-        And the "application" stake of "app1" should be "462" uPOKT "less" than before
+        # The supplier balance should be more 42000 * (1 + (glbal_inflation * supplier_allocation) = 42000 * 1.07 = 44940
+        Then the account balance of "supplier1" should be "44940" uPOKT "more" than before
+        # The application stake should be less 42000 * (1 + glbal_inflation) = 42000 * 1.1 = 46200
+        And the "application" stake of "app1" should be "46200" uPOKT "less" than before
 
     # TODO_TEST: Implement the following scenarios
     # Scenario: Supplier revenue shares are properly distributed

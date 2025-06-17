@@ -526,7 +526,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 	s.Fatalf("ERROR: session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierOperatorName)
 }
 
-func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, path, requestData string) {
+func (s *suite) TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPathAndData(appName, supplierOperatorName, numRelays, serviceId, path, requestData string) {
 	method := "POST"
 	// If requestData is empty, assume a GET request
 	if requestData == "" {
@@ -535,38 +535,43 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 
 	appAddr := accNameToAddrMap[appName]
 
-	res, err := s.pocketd.RunCurlWithRetry(pathUrl, serviceId, method, path, appAddr, requestData, 5)
-	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q due to: %v", appName, supplierOperatorName, serviceId, err)
+	numRelaysInt, err := strconv.Atoi(numRelays)
+	require.NoError(s, err, "error converting numRelays %q to int: %v", numRelays, err)
 
-	var jsonContent json.RawMessage
-	err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
-	require.NoErrorf(s, err, `Expected valid JSON, got: %s`, res.Stdout)
+	for range numRelaysInt {
+		res, err := s.pocketd.RunCurlWithRetry(pathUrl, serviceId, method, path, appAddr, requestData, 5)
+		require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q due to: %v", appName, supplierOperatorName, serviceId, err)
 
-	jsonMap, err := jsonToMap(jsonContent)
-	require.NoError(s, err, "error converting JSON to map")
+		var jsonContent json.RawMessage
+		err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
+		require.NoErrorf(s, err, `Expected valid JSON, got: %s`, res.Stdout)
 
-	// Log the JSON content if the test is verbose
-	if isVerbose() {
-		prettyJson, err := jsonPrettyPrint(jsonContent)
-		require.NoError(s, err, "error pretty printing JSON")
-		s.Log(prettyJson)
-	}
+		jsonMap, err := jsonToMap(jsonContent)
+		require.NoError(s, err, "error converting JSON to map")
 
-	// TODO_IMPROVE: This is a minimalistic first approach to request validation in E2E tests.
-	// Consider leveraging the shannon-sdk or path here.
-	switch path {
-	case "":
-		// Validate JSON-RPC request where the path is empty
-		require.Nil(s, jsonMap["error"], "error in relay response")
-		require.NotNil(s, jsonMap["result"], "no result in relay response")
-	default:
-		// Validate REST request where the path is non-empty
-		require.Nil(s, jsonMap["error"], "error in relay response")
+		// Log the JSON content if the test is verbose
+		if isVerbose() {
+			prettyJson, err := jsonPrettyPrint(jsonContent)
+			require.NoError(s, err, "error pretty printing JSON")
+			s.Log(prettyJson)
+		}
+
+		// TODO_IMPROVE(@red-0ne): This is a minimalistic first approach to request validation in E2E tests.
+		// Consider leveraging the shannon-sdk or path here.
+		switch path {
+		case "":
+			// Validate JSON-RPC request where the path is empty
+			require.Nil(s, jsonMap["error"], "error in relay response")
+			require.NotNil(s, jsonMap["result"], "no result in relay response")
+		default:
+			// Validate REST request where the path is non-empty
+			require.Nil(s, jsonMap["error"], "error in relay response")
+		}
 	}
 }
 
-func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPath(appName, supplierName, serviceId, path string) {
-	s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierName, serviceId, path, "")
+func (s *suite) TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPath(appName, supplierName, numRelays, serviceId, path string) {
+	s.TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPathAndData(appName, supplierName, numRelays, serviceId, path, "")
 }
 
 func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
