@@ -717,13 +717,11 @@ func updateRevShareMapToFullAllocation(owner, operator string, revShareMap map[s
 			)
 		}
 
-		// this is defaulted by yamlStakeConfig.ValidateAndParseServiceConfigs(defaultRevShareMap)
-		// which set 100 to the owner.
+		// If the owner was found and has the default 100% share (set by ValidateAndParseServiceConfigs),
+		// adjust it to respect the flagSetOperatorShare value.
 		if ownerFound && revShareMap[owner] == 100 {
-			// drop this to respect the flagSetOperatorShare
-			revShareMap[owner] = revShareMap[owner] - flagSetOperatorShare
-			// let's drop the totalShare because it is full owner share
-			totalShare = revShareMap[owner]
+			revShareMap[owner] -= flagSetOperatorShare
+			totalShare = revShareMap[owner] // Reflect adjusted total, excluding operator share
 		}
 
 		totalShare += flagSetOperatorShare
