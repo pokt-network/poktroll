@@ -419,7 +419,7 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 
 	supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
 	if !ok {
-		logger.Debug().Msg("no session tree found for the supplier operator address")
+		logger.Debug().Msg("🔍 No session tree found for the supplier operator address")
 		return
 	}
 

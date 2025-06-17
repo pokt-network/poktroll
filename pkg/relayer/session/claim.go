@@ -26,12 +26,12 @@ import (
 // - Value may change as network parameters change
 // - This value is a function of the claim & proof message sizes
 //
-// TODO(@bryanchriswhite, #1454): ClamAndProofGasCost value should be a function of
+// TODO(@bryanchriswhite, #1507): ClaimAndProofGasCost value should be a function of
 // the biggest Relay (in num of bytes) and tx_size_cost_per_byte auth module param.
 // There should be a two step approach to this:
 // 1. Choose a reasonable (emperically observed) p90 of claim & proof sizes across most chains
 // 2. TODO_FUTURE: Compute the gas cost dynamically based on the size of the branch being proven.
-var ClamAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 10_000)
+var ClaimAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 10_000)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims
@@ -121,7 +121,10 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 
-	logger := rs.logger.With("session_end_height", sessionEndHeight)
+	logger := rs.logger.With(
+		"session_end_height", sessionEndHeight,
+		"supplier_operator_address", supplierOperatorAddr,
+	)
 
 	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
@@ -214,12 +217,18 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
+		supplierOperatorAddress := sessionTrees[0].GetSupplierOperatorAddress()
+
+		logger := rs.logger.With(
+			"session_end_height", sessionEndHeight,
+			"supplier_operator_address", supplierOperatorAddress,
+		)
 
 		// Filter out the session trees that the supplier operator can afford to claim.
 		claimableSessionTrees, err := rs.payableProofsSessionTrees(ctx, sessionTrees)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("failed to calculate payable proofs session trees")
+			logger.Error().Err(err).Msg("failed to calculate payable proofs session trees")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
@@ -233,7 +242,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 				sessionTrees[0].GetSupplierOperatorAddress(),
 				len(sessionTrees),
 			)
-			rs.logger.Warn().Msgf("no claimable session trees, skipping claims creation: %v", err)
+			logger.Warn().Msgf("no claimable session trees, skipping claims creation: %v", err)
 
 			// Avoid submitting transactions with no claim messages.
 			return either.Error[[]relayer.SessionTree](err), false
@@ -257,7 +266,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("failed to get shared params")
+			logger.Error().Err(err).Msg("failed to get shared params")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
@@ -265,7 +274,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// Create claims for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.CreateClaims(ctx, claimWindowCloseHeight, claimMsgs...); err != nil {
 			failedCreateClaimsSessionsPublishCh <- claimableSessionTrees
-			rs.logger.Error().Err(err).Msg("failed to create claims")
+			logger.Error().Err(err).Msg("failed to create claims")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
@@ -318,7 +327,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	// Account for the gas cost of creating a claim and submitting a proof.
 	// This accounts for onchain fees (pocket specific) and gas costs (network wide).
 	proofSubmissionFee := proofParams.GetProofSubmissionFee()
-	claimAndProofSubmissionCost := proofSubmissionFee.Add(ClamAndProofGasCost)
+	claimAndProofSubmissionCost := proofSubmissionFee.Add(ClaimAndProofGasCost)
 
 	supplierOperatorBalanceCoin, err := rs.bankQueryClient.GetBalance(
 		ctx,
@@ -371,14 +380,14 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 			return nil, err
 		}
 
-		isClaimProfitable := claimReward.IsGT(ClamAndProofGasCost)
+		isClaimProfitable := claimReward.IsGT(ClaimAndProofGasCost)
 
 		if supplierCanAffordClaimAndProofFees && isClaimProfitable {
 			claimableSessionTrees = append(claimableSessionTrees, sessionTree)
 			newSupplierOperatorBalanceCoin := supplierOperatorBalanceCoin.Sub(claimAndProofSubmissionCost)
 			supplierOperatorBalanceCoin = &newSupplierOperatorBalanceCoin
 
-			estimatedClaimProfit := claimReward.Sub(ClamAndProofGasCost)
+			estimatedClaimProfit := claimReward.Sub(ClaimAndProofGasCost)
 			claimLogger.Info().Msgf(
 				"💲 Processing profitable claim — estimated submission cost 💸: %s, reward 🎁: %s, estimated profit 💰: %s",
 				claimAndProofSubmissionCost, claimReward, estimatedClaimProfit,
@@ -397,7 +406,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 
 		if !isClaimProfitable {
 			// Calculate how unprofitable the claim is
-			unprofitableAmount := ClamAndProofGasCost.Sub(claimReward)
+			unprofitableAmount := ClaimAndProofGasCost.Sub(claimReward)
 			// Log a warning with details about how unprofitable the claim is in plain English
 			claimLogger.Warn().Msgf(
 				"⚠️ Aborting claim — cost exceeds reward by %s (reward: %s). 🧹 Cleaning up session state.",
