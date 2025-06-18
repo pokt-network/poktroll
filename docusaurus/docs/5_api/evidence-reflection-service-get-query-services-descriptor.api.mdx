@@ -1,0 +1,64 @@
+---
+id: evidence-reflection-service-get-query-services-descriptor
+title: "GetQueryServicesDescriptor returns the available gRPC queryable services of the application"
+description: "GetQueryServicesDescriptor returns the available gRPC queryable services of the application"
+sidebar_label: "GetQueryServicesDescriptor returns the available gRPC queryable services of the application"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vk1v2zgQ/SsEL9sFHKvt3nLabjbo9lAgm2RPTWGMpLHFhiK1JOXUMPzfd4aUZPojSQ/dIIBpambezJs3I29lgJWXl1/kLS41VkFZc4durSqUX2fSduiA7z7V8lJer1WNpsIT08VHDH/36DbDd/8n+sqpLlgnZ9Kh76zxSDBb+f7tW/6oBwOKQYE/CN9X5OaXvRaj+ZxcK2sCmsAe0HVaVTGZ4ptnt630VYMt8ClsOqRAtvxGiZFjUEHzxfOJ3Q4wQnkRGpxg6RB6Z7AW5SY+eD6EuL25IqzOMU1BpQL/JdvhOCYxXAkyZAa9UGZpXRtrEfTPKLAGpaHUKNh6E09+QOR6juo7xdwsJvM9H+AcbDI6Dg25dBBa+SDsUlTWt9Zf+PpR5PUetFIFbP1LfJ/3FKndJTJehnNS6kllJAhtoMUM0wenzCrDHG3GTlKEYMt+KaYHVB0/GEBEvS9pRzX5RWvrXucYpbUawWQgk1VWi+KwBDrGZTqr0IPWG4HfO+uTiMCITLy/eDHAEXaLobH1Sx0bLPba2TcssjeBj6F+tEmfo/0zPdo3JoVlODgEfDDGCku0uihnLn7IkYpGT5+jb2wBmFrQKNfoWmVCBtBBaB5MiRX0PIxBPNlecwgaxLo3NZD1kwpN7ODKdRXdj+vnRdksktg5/mvqyUwnEUGEhCAq6h9l03M3g02ZP5jY+KHAtYK8NigrNY8cc4tfU+9Z5cbLN8aGScO/jiJOmHJ38DejhbqEXoczu9WI3pAaiTEqAJ2jVv+UFXvIeGXrvEziAVfIKyNtunT123sZUw20686J/lnlHmL9nh4fc8o0QF0rzh/0Te4SKWrpBQOrs44TiTlzLyz+9I7wR5t7Re+DM+t77FxGrxxHn2BWGCuMMpVF2o5FCR6LvdCL9buSWHtXUIzFfn0VR4t/JvmIjl/oW9k7TRGbEDp/WRS+AZpYc7GiIcULmqM5R5x39jE4q/W8sq08ZuAu+Yg/yDK+7Haz18O2oIzB8GORPyfjFJx+cPAqOdXwVUNmYkVboC85XMGxL8jvybrHYgQSt9d39+LDzadsuv66v7/hK3FFeqedPgie1jSjpNmUrwVm0TKrKZnhJHg6PfWOHtKqDy2YLOT/q50DdiY1B/weik4TVZxTbNN20NUXmXRFvqys+KNs1BZ9GdRFp0N90cWRwqhFDRXLEbdbDvWP07sdX0dDuqfjGpziKvgbZdIg0GqMknzEDa8k+q3XsejXoPs4/8eLh6UwDcjH63sa0f8AjpjVxQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GetQueryServicesDescriptor returns the available gRPC queryable services of the application"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/reflection/v1beta1/app_descriptor/query_services"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GetQueryServicesDescriptor returns the available gRPC queryable services of the application
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"GetQueryServicesDescriptorResponse is the response returned by the GetQueryServicesDescriptor RPC","properties":{"queries":{"title":"queries provides information on the available queryable services","type":"object","properties":{"query_services":{"type":"array","title":"query_services is a list of cosmos-sdk QueryServiceDescriptor","items":{"type":"object","title":"QueryServiceDescriptor describes a cosmos-sdk queryable service","properties":{"fullname":{"type":"string","title":"fullname is the protobuf fullname of the service descriptor"},"is_module":{"type":"boolean","title":"is_module describes if this service is actually exposed by an application's module"},"methods":{"type":"array","title":"methods provides a list of query service methods","items":{"type":"object","title":"QueryMethodDescriptor describes a queryable method of a query service\nno other info is provided beside method name and tendermint queryable path\nbecause it would be redundant with the grpc reflection service","properties":{"full_query_path":{"type":"string","title":"full_query_path is the path that can be used to query\nthis method via tendermint abci.Query"},"name":{"type":"string","title":"name is the protobuf name (not fullname) of the method"}}}}}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,64 @@
+---
+id: fee-query-params-mixin-195
+title: "Params queries all parameters of the ibc-transfer module."
+description: "Params queries all parameters of the ibc-transfer module."
+sidebar_label: "Params queries all parameters of the ibc-transfer module."
+hide_title: true
+hide_table_of_contents: true
+api: eJylVcFy0zAQ/RWNzkncluFATpROgR46E9pwKkxHlte2GllSJdk04+m/sys7GdMUwkAOsSzte/u0+yT3PIoq8OUd/9KC3/LvM24deBGVNVcFX/KPAGnlfiW8aMK1elLm9N1bPuMegrMmAKJ7fnZyQo8CgvTKERqx5yy0UkIIZavZLnyBUGlNBBMJIZzTSqZ82UMgWM+DrKERh3xJyKDjZmRjKrBYw56dxa0DVlqfZhMgGxDsZnXBGoi1LUgCxSGlzR9ARnx3nvYd1bAdlyCHCoZ5VkCpDAyZ0xRE8IHZMs00tmg1HE/iQYLq4B6MyDUUh9leBLDhiXk8K1QYxkJrJr0NYS5roQyLdgP474UJJWmKFjWp8M2k5Ymo3FoNwvDnGQ9git+rmK7+k4TS2+aYiPE3w9ylaHV8xUyGtQaeHFaSdHiPEv7JU39uirQFTKIUklbgMQw91Yg4TL0540lqFEqHSbTwXmwxVkVowvFc74flfViIXpmKUxlEUSjSL/RqCkklavBEiepV4L6I08qN/n/Ew6DGdh2aVuVyvmvZxMHDgUGSCpJ+EWt8yTA6wyqHbAfJutNsPDTkJ98hNd4qPW+9RkAdowvLLAu1MMaaeeVtB3Pv5CLHIi6c3URvtV5I2/CX8m8HDPuAkXSIsfTHaRv0mYH4d8zXQ/BAjjegMqU9NOBFMnelYt3mRJcR9xxxP6zfZLtE7Obyds3OV1dkchU1tefzer2iKXaBZkXDj24VMrnVYCeowEeIyXFU1UHMOGLGRhawNbjobIiNMBPK/2n8L3vfGy3CU8ycxkJQxtSEfjTFHUcmBJItaO8jJQ670+ScZA6sbo06KbzvcxHgq9fPzzT9mL4/yzscdsIrulroDdPUIAokIjdtYEtXAX5UHNmxE7pN5+7lgacu7q376XKNR+MnJihwTA==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Params queries all parameters of the ibc-transfer module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/apps/transfer/v1/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Params queries all parameters of the ibc-transfer module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is the response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"params defines the parameters of the module.","type":"object","properties":{"receive_enabled":{"description":"receive_enabled enables or disables all cross-chain token transfers to this\nchain.","type":"boolean"},"send_enabled":{"description":"send_enabled enables or disables all cross-chain token transfers from this\nchain.","type":"boolean"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,78 @@
+---
+id: evidence-msg-exec
+title: "Exec attempts to execute the provided messages using
+authorizations granted to the grantee. Each message should have only
+one signer corresponding to the granter of the authorization."
+description: "Exec attempts to execute the provided messages using"
+sidebar_label: "Exec attempts to execute the provided messages using
+authorizations granted to the grantee. Each message should have only
+one signer corresponding to the granter of the authorization."
+hide_title: true
+hide_table_of_contents: true
+api: eJzdVkuP2zYQ/isETw3glTbpzaduFgYaoEENr3PyLoIxNZaYpUiVHHntGP7vnZHkjfaVDdpeUh8Mcjj85vXNUAdNUCY9XemPqdQ3Ex0ajEA2+A+FnurZ1hboDfLh59kOjZ7oiH+1mOh9KPZ6etAmeEJPsoSmcdZ0l/MvKXiRJVNhDbIqMJloGzllYAYUPAVEWDeUFAWFLGgJFVWomhjEdKFqTAlKTKpN1pfXHlqqQrRfOzNJlRHYfiHX5Vq/xUzNwFSnuypVoXWFqmCLKni3v/bBs9SWHqMyIUZMTfAF4z/EiSpsuu0DoxkngfYNchRh/QUN8Z7d5byRxSShDl7IclBMFBldHye6TmV6mo7ZEDqnJbv2Sza5y8XoV3VnnVMU9+LZxvpCQe+cqoFMJS7/wpBZH0xand9MTkmYCNqS7X9a/CE6b95ce3ajcRwP42zB2QLYpqVRRBAj7HlruSxpFMALkf7WHz+JkwOForASHbj5+Mqx/03+X3yQprARuWUotngUgUCkPkvvzs+flvxCpdYY9mjTOnVSF6x/11GLAUkVyHThPIm/fJY/Pj+ZVFK61znN6q2jMSVeosrAgYnehMgkZcl6T6hHhd8AQz2TEa9aj7uGzXMFMcYQ/1livh+JCcWYspZBS4xjf1n06zvduUpg3Y8E/V/2Bw+JnqjPXXy2e37m1qmRBfLWNCF1CQSqeJebkOqQsm4KZtu3ay7F20yIPLxDCeOWJx4/XQfdRsdXKqImTfM8VeDZrbOSA8ez2JhMLmdNuKUYnMtMqPXjDF71d9R71lSL+SVX/3XYGqz3SD+G/LFX7sH5oRXaLr69pbMd1DyaHzwf31qpfzVW94S658MNc8H6TXjaTZcVG1Slpapdi2O5eHnGHtyFeJufXFaL2dVSXcw/yACwJA7o35fLuYjUJdMisKhvPTBd63moRek1YGkfqU/vzLBSPpBKSHIo5a7BjyB/ZhY/yP191xLuKG8cF0Ii7uh0GAi+0i8RnNE6ijNHKmkJVj0c1pDwU3THo4iZNJE/vla83EK0sJayrYQKFULBs0yYcot7YUE/M8/kO0CLumu7MfZ4fgrd+xsX/Cg19F3dm1HXzv+8WrLyevgcrLvhqiPcyavI/1Ot5aOyK073jojsoB34su1GnO4x5fc3CpPE7g==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Exec attempts to execute the provided messages using\nauthorizations granted to the grantee. Each message should have only\none signer corresponding to the granter of the authorization."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.authz.v1beta1.Msg/Exec"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Exec attempts to execute the provided messages using
+authorizations granted to the grantee. Each message should have only
+one signer corresponding to the granter of the authorization.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgExec attempts to execute the provided messages using\nauthorizations granted to the grantee. Each message should have only\none signer corresponding to the granter of the authorization.","type":"object","properties":{"grantee":{"type":"string"},"msgs":{"description":"Execute Msg.\nThe x/authz will try to find a grant matching (msg.signers[0], grantee, MsgTypeURL(msg))\ntriple and validate it.","type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}}}}}},"description":"MsgExec attempts to execute the provided messages using\nauthorizations granted to the grantee. Each message should have only\none signer corresponding to the granter of the authorization.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgExecResponse defines the Msg/MsgExecResponse response type.","type":"object","properties":{"results":{"type":"array","items":{"type":"string","format":"byte"}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

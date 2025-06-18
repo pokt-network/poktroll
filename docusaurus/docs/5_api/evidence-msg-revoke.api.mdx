@@ -1,0 +1,75 @@
+---
+id: evidence-msg-revoke
+title: "Revoke revokes any authorization corresponding to the provided method name on the
+granter's account that has been granted to the grantee."
+description: "Revoke revokes any authorization corresponding to the provided method name on the"
+sidebar_label: "Revoke revokes any authorization corresponding to the provided method name on the
+granter's account that has been granted to the grantee."
+hide_title: true
+hide_table_of_contents: true
+api: eJzNVsFS2zAQ/RWNLr0kMdBbTgWGmXJgmgnpKWUYRd7YIrakSutAyPDv3bUcCCQlTHshh0RevX1a7b5dZy1RFVEOp/IqFvKmJ52HoNA4e5nLobxYmhysBtq8HcPSLUD2ZIDfDUQ8c/lKDtdSO4tgkZfK+8ro1j27i86yLeoSasWrHKIOxvMuURNlYhSh/YlC2ZVQDZYumMeWQ9wbLAWWIHxwHEkuYr4YkKfAlQdBCNr8ZYugKITwhSi0do3FjaNCUaooZgBWJFAu0LWM6REGdB/mooDc7A400jMdRklAA5Gj7oC87IARg7GFfOp1e2HvXk0pY+NtE6o9AP70Pm1KuMQmAEkAQwNPbIje2ZhScnJ0tFvPUxEbrSHGeVOJDZy5/lcf445L5DA3lpLCsdJutovYHNvmYre0m5zPVVPhnhtY0Vh48ASlpEAILvzbRd4XlHb5tpoMkRakoZ6cu1ArTKavJ7INFZWp4hZahaBWhDUIdTx81re0vau+nlR5bjh+VY22XdoU1VRGVex13Cvcg6rVLqRM5sSy0duzgmsgbC6sqt8T8Ee1m9goKu9imxGFJT1l2sXaxQEH9jhYHs8ot8fcONnzYIsQlhB4Gq5l27WyRPRxmGWxVNY62y8oZOgHrwfsPvBugcFV1UC7Wr5NynXyEWeEFOPRORX0MG2tjLWAH2O+SuBETrOblTh+Gc4XD6r2FbwaYptCbs2uF9PrkbU1y4ydu91+OS/pfFHQXGlmHGfGQfcpoHsXFtnmBmJ8cT0Rp6NLbkeDHI/8PpmM2CTOqbdcBV1zKd02F+uAQIeIOTAuVwqmWwnrUERA3uT618puUX4qnb5K5nOjITxg5ivKLF+he3ckCU/l3yRMbJ2ISQUly57A6/VMRfgZqqcnNpMsAr2vp7RcqmDUjCsxvaFDSlA5C4FUv4AVFzYNuv6EQ2J41bSz5+3QY0Enj1Oa/B7fxd5sdebox/WEwLPuH0TdTkQZ1D2/euh7KCX/E2Hvdoy1trWslC2adi7JxMmfP76JHNI=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Revoke revokes any authorization corresponding to the provided method name on the\ngranter's account that has been granted to the grantee."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.authz.v1beta1.Msg/Revoke"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Revoke revokes any authorization corresponding to the provided method name on the
+granter's account that has been granted to the grantee.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgRevoke revokes any authorization with the provided sdk.Msg type on the\ngranter's account with that has been granted to the grantee.","type":"object","properties":{"grantee":{"type":"string"},"granter":{"type":"string"},"msg_type_url":{"type":"string"}}}}},"description":"MsgRevoke revokes any authorization with the provided sdk.Msg type on the\ngranter's account with that has been granted to the grantee.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgRevokeResponse defines the Msg/MsgRevokeResponse response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

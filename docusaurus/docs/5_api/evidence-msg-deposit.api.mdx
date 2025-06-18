@@ -1,0 +1,72 @@
+---
+id: evidence-msg-deposit
+title: "Deposit defines a method to add deposit on a specific proposal."
+description: "Deposit defines a method to add deposit on a specific proposal."
+sidebar_label: "Deposit defines a method to add deposit on a specific proposal."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVktv2zAM/iuCzq2zF3bIaW1XYD10C9rslAaFbNO2Wlv0JDltEOS/j5TtxG6CdtiWQ2CTFB8fP1LeSK9yJ6cLee1yuTyRWINVXqO5SuVUXq50CiYBUt5/hRqd9vJEWvjVgPPnmK7ldCMTNB6M50dV16VOwvnJg0PDMpcUUCl+SsElVtesJd/ks3MpUsi0ASeUqMA5lYPwKFwTV6RTpG2tSKaMgGftvDa5qC2SXJURZeTXNZBLjB8g4QxZB9ZrcCGrCps2v3EGrZz9xtBHgVTE6/4F7cC5slat6ZVsquD2ZdCx8wvUZlCYx0cw4kn7IlRksNIm4EQ1pVxXm0x0Z+7M9x/zy6mYF9AJRaahTIV2bHdF70+FTgqhq7qEipB3wpNt0jiPFSHoC0zvjNM5BWgsRed+adtWlmOOhI7H6BWYusqctwS03HJplPARDf1Y2YF1iPBOtUOCM+0bqtKU0nMkzSxlzqq+qW4A/D6NXnuv08NYA+UoWmM00VWQFLNRjMMQJzJDWynCQDba+M+fQoXbl639n8zteyOn3jawZYGr0bi2JR/evTss9IwCJAmFy5pS9Obs658H8aZzNsKP1JO+3D6aYNwOB68HK1NNeWTezgw1A55rMiUygrXEi7/K//VxTzCFgRU1EnKww+aS6OOHltde6XI4zW9O+TjWl1Z9OBgnktitOX9VzoZHAkQdWY5P1BHGHaMbj3lgVpruiMbrRDgCWGc6GfGstecxQRfKUL6gt0mCrkIX5biKVu+jQa/JxoFdgeXbYSMbW5J54X3tppOJK5QxaE5ziys4tXUSxYRkVOOjt1iWUULb4mUNt+0ZcU6W4mZ2Qfi/7bZS2hjwf+b5ujVundNdxsS52d9Vl8+KN+Zw1S32j/sd0C27XUuWoxW3txtto8GW0ibDQ/JfFJSdyOkCaGKuYsIlnVK6T2gfJ3194ubydi7OZlc8W9pztvLbfD5jkbigQUEStZOikjApRlVs9JZjToyb2SbTPQmDXjjwYbcSLyplBi7/nXQjBHZU9/DsJ3VJcHDcwIBNx8eFPOAjuekZSY0omL1kttnEysFPW263LKYeW/oWWdDjSlmtYgZusST3BaiUhp87/QjrcC+HJXM652TYvGzC3L9cOMzO9sQZLdvav2q7HAzY7MftnIzj7uuoCttIWvXE257+p1LyZxafDiskyDayVCZvwk6QrU/+/QY7RmXN
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Deposit defines a method to add deposit on a specific proposal."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.gov.v1.Msg/Deposit"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Deposit defines a method to add deposit on a specific proposal.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgDeposit defines a message to submit a deposit to an existing proposal.","type":"object","properties":{"amount":{"description":"amount to be deposited by depositor.","type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"depositor":{"description":"depositor defines the deposit addresses from the proposals.","type":"string"},"proposal_id":{"description":"proposal_id defines the unique id of the proposal.","type":"string","format":"uint64"}}}}},"description":"MsgDeposit defines a message to submit a deposit to an existing proposal.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgDepositResponse defines the Msg/Deposit response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

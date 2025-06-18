@@ -1,0 +1,81 @@
+---
+id: evidence-msg-set-send-enabled
+title: "SetSendEnabled is a governance operation for setting the SendEnabled flag
+on any number of Denoms. Only the entries to add or update should be
+included. Entries that already exist in the store, but that aren't
+included in this message, will be left unchanged."
+description: "SetSendEnabled is a governance operation for setting the SendEnabled flag"
+sidebar_label: "SetSendEnabled is a governance operation for setting the SendEnabled flag
+on any number of Denoms. Only the entries to add or update should be
+included. Entries that already exist in the store, but that aren't
+included in this message, will be left unchanged."
+hide_title: true
+hide_table_of_contents: true
+api: eJztV01v4zYQ/SsEL20Bx97d3nJqNjXQPSw2SNJTEgSUNJa4oUiVpJwYhv9731CSI1v5WBQ9Fc0hkDjfj29m5K2Mqgzy9EZ+DaW8m0nXkFdRO/ulkKdyudYF2ZwgvL+ieEW2WFqVGSrkTHr6q6UQP7tiI0+3Mnc2ko38qJrG6Dy5WXwPzvJZyCuqFT8VFHKvG5YiBFwfehY6iFiRgGBxJOkjirhpaH5rb+03azYCQb0mGDmhimLRNoWKtCjIUCRhCXaQZCS0zU1bUAHL5ZMOUdtSjL3v/VQqCuVh6+LeCA8Q6HBrawpBlZQ0DK2iaG1eKVvCMUDh1FCVy75THvHeeEY0wm8Cpo2V8zpupjjsRUP9qMUjVJcOg+ud6SS1K1pDo2gBidtS7mYyoJ576q9oEmMsHcIYICHc6ghF4bzogByFUd6rDV51pDqVc1zsYbQxtrVqAooAiOCTq1MUcZBOiCq2Qfz8WBHS8hB3mgw5K7LWL/MJoklplMszFCMUelnmnCFl5Q5/M9kGui9opVoT71fOT9E6UmDA1B6uFLe/nFC51hQC+gnRRnlVh/lgelDlWpmWqft7Z87ecIp6STxqY0Sl1smJ9i9SsyM1M/jLaoTQM0tTPoWjYH+KnTM1cbSZ3Vodu3jcFqV1/oC8r93zgO2uA/A/3cecovZMn+hb2vFBaByYmAD59OHDlC9nIrR5Dq+r1ohBnX39W5PxsveJe19pS2/A2+slfCdDabi9RM8XyrBAgp4aqDKY3oP6/6iat0dh7goaaWk4LclDDa1Wq9gd/fpJplSj0mbMxHcn0WGs3zrxlMgzCaZpzl+Zi7FJgqhnyGsdMGmBKf+VKN2avFXYoWK/WgVPk0AxMZfvcGy1Mqq8tVBSdiNsW2eYhZg33cCYi9QpbPPavB6mUUbo8qFTxPKgJ4wnVaDhuHu6hoBZxBSYiayN+8bBDHn2MTSO6FGZ7QfItHlqjHDH3w+NC+k2VKzwtshdqF2YZ8o+zNcfM1zrx/mUv5LXmAds/F2yla03sK1ibMLpYhEQBeiclB7Anvgmn7ObeeMeeD+aeY5tMLmXzkZ8hqa4vDgHp953WyttLcUf8/y1U+6c4yuKm+Hy+fNo+aTqxtDRF8DApuOtfbPfas8ae2GaRncvbK+bQfkOvNR25aadfV4hTVHqWLUZl7Pg2k6Q96PzD4uhUHG5vLoWZxdfeHDoyGnLP66vL/hInGMKYIn2Y0DlaQxYVbPSe465lflWu2T6pzSc0QssZLbUyo5c/t9RfUcdXOR+HEV6iovG4FYZvsTobd9sN/KVZoOzo3YDmyruU9hst5kK9Kc3ux0fg8AeRL3B41p5zer8hlgVyiWfuPpAzOXzbiucXHNmrI7vHB7UxxuCW6+zOMOubOKbunejUXLx7eoayln/a6NO60N69cjLGv9PpeRfL2ydZn4620oDCNs0xGXnk//+BvsZnZc=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SetSendEnabled is a governance operation for setting the SendEnabled flag\non any number of Denoms. Only the entries to add or update should be\nincluded. Entries that already exist in the store, but that aren't\nincluded in this message, will be left unchanged."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.bank.v1beta1.Msg/SetSendEnabled"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+SetSendEnabled is a governance operation for setting the SendEnabled flag
+on any number of Denoms. Only the entries to add or update should be
+included. Entries that already exist in the store, but that aren't
+included in this message, will be left unchanged.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgSetSendEnabled is the Msg/SetSendEnabled request type.\n\nOnly entries to add/update/delete need to be included.\nExisting SendEnabled entries that are not included in this\nmessage are left unchanged.","type":"object","properties":{"authority":{"description":"authority is the address that controls the module.","type":"string"},"send_enabled":{"description":"send_enabled is the list of entries to add or update.","type":"array","items":{"type":"object","description":"SendEnabled maps coin denom to a send_enabled status (whether a denom is\nsendable).","properties":{"denom":{"type":"string"},"enabled":{"type":"boolean"}}}},"use_default_for":{"description":"use_default_for is a list of denoms that should use the params.default_send_enabled value.\nDenoms listed here will have their SendEnabled entries deleted.\nIf a denom is included that doesn't have a SendEnabled entry,\nit will be ignored.","type":"array","items":{"type":"string"}}}}}},"description":"MsgSetSendEnabled is the Msg/SetSendEnabled request type.\n\nOnly entries to add/update/delete need to be included.\nExisting SendEnabled entries that are not included in this\nmessage are left unchanged.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgSetSendEnabledResponse defines the Msg/SetSendEnabled response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

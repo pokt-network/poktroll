@@ -1,0 +1,72 @@
+---
+id: evidence-query-balance
+title: "Balance queries the balance of a single coin for a single account."
+description: "Balance queries the balance of a single coin for a single account."
+sidebar_label: "Balance queries the balance of a single coin for a single account."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVcFu2zAM/RVBpw1I47a75bS2CLYetmVpdmqDQrYZW40suZKcNgjy7yMlO3XWoFmHBQhsS+TjI/lEbbgXheOjW/6zAbvm8wE3NVjhpdHXOR/x8UrmoDMI2/eXQgn84ANeCysq8GDJecNzcJmVNbmhk8hzC84x6ZgvgXWf3rBHgmFphHFsYewQwTRCvbjhgiSUWvgS3y08NtICkvG2gQF3WQmV4KMN9+ua3Jy3Uhd8ux38yQOZm6pjkRmpWVw5RiRYdTSCJX8r7pxIutpoB472z09P6bHP5YK5JsNQbtEo1plTzMxoD9qTh6hrJbNQ/OTBkdumF3YfLzSk7ce0hetS7eAZMaXcwmrwSFoXNp1cMWxgaXIi0aZk0gfIPLXXkgy8jAm1ZXpN4irWdCE11lBgXZeg2ZP0JX6EIkodsmFC5/hnojKN9sM7fae//5iNR2xG8giLbCFB5ZQB2l3j91Mps5LJqlZQYX3aJjbOYwMj8TvtZIEBGsyXdTJh6ZoVpjCYgTfHU4vBD3R10KrgQL/jjwwWolH+QK81azQ81xgQCYG12IF/avnb3DOTQ89KImgBFs2w45XwcenTeczFC6lcz1pYK0jW0kPljsf6HLcPHDo6tpL4CzXpu4QSVSh4URx03BWxX7lOnXToECb0vFUfMwtUlUNn1R5mEvZuRWRZ0BanoKQORCsgJEJzZMSTzLjKuCQVepmszlKsyFnSDYBk0w6fbZKu77vz78CuugnXWIUgpfe1GyWJK4XWRp8U1qzgxNbZkPCGtVl6a5QaZsF/P7eb6MMu0ZKOH6eBdQy2ElJr8H+H/C0aR/A5za+FOXBoSzRjBZ7SJiW4hLBP0O/J2GXSBWLT8c2MXUyu6QhJr6h3X2ezCS2xK1SyUdBKWWRByu3wPAZMcqSqRjLtG9PGM4ftws3aOF8J3YP8L6rYK8JOjh6efVIrrAiFDt3YtIq55VEx6EuawUermrAQdYOvo5draycdrH2JWRDGZpMKB7+s2m5pOd4m4cqUTqSK7rWFUA5eEdwNifdfYwdzW8K6d7WthGrIJuhkJawkLu/k9WHaztyP7L03/kGG3WTS6z7BjnlX5u0cTUsQOY464ht3L/BurX3P79VgpUR3k+HLeIYj6Dej/SRL
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Balance queries the balance of a single coin for a single account."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/bank/v1beta1/balances/{address}/by_denom"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Balance queries the balance of a single coin for a single account.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"address is the address to query balances for.","name":"address","in":"path","required":true,"schema":{"type":"string"}},{"description":"denom is the coin denom to query balances for.","name":"denom","in":"query","schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryBalanceResponse is the response type for the Query/Balance RPC method.","type":"object","properties":{"balance":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

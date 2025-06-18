@@ -1,0 +1,72 @@
+---
+id: evidence-abci-info
+title: "EvidenceABCI_Info"
+description: "EvidenceABCI_Info"
+sidebar_label: "EvidenceABCI_Info"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VU1v2zAM/SuCzklcdMMOOS0NCiyHYUGbnYKikG3GVmNLmkSnDYz+95Fy0nz2C9h8SASKfCKfHqlWoiqCHM7l6Go8kXc9aR14hdqaSS6H8nqlczAZ8O79xCys7EkPfxoIeGXztRy2MrMGwSAvlXOVzmJ08hCsYVvISqgVr3DtgCBt+gAZEo7zfBZqCDE2zfT9CnzQXdzGO6DXppDPPZlWNlu+7tGTC+trRXnIRhv89pVj3KX7ZMTrGfDXFa89EDfoG4iG4KwJXRGXFxf8l0PIvHYYgeRIhCbLIIRFU4mt+4CO/1fMuc8WmStUZzmuVMD7jmhGLVUo34RM1whHcSXoosQ3oz5INicKC9VUeIZTIxoDT474gFyA99b/D2ozm8OeFyUOBfijWr5cRk4Bla7CnrfyXq3JVyPU4f2zvnfbp1T0pMpzzfmrarofEimqSViqOBv4QuI+c+c6ugYsLbe7syEmppDuXSZEYQ6+phoH3J4Djkk2MQE8Xx+NjlY2viL3EtGFYZKEUhljTb/wdgV977JBStwMnF2it1U1yGwtj7O67WLEFXmKm+mYGH0ftlbaGMCPIf/snDtwmnMshZvdJLt+UrWr4HQS7fR7NIB2GwdTZmc+MdFdaCbvRM3jkpIThcaySbmIhCvqU7aP1i+TbXni5vp2JkbTCWGjRk5W/pjNpmwSY1K+JVMnfZVF6RtVs9N7wAetuF0JY1EEwDhGSRa1MnuQWxUJloTYSOKgqBc5Ijxh4iqqkKHinbYbhc3lOYURUgSkSypZj+TWtqkK8NtXz89splvz9PbMablSXquUuZjfEXwJivCiKJewZmq7QdCfcTLsXjWxN4+HAuutixjRrHb4pu/dXstMf93OWByb17COE0N69cgvJf0OpeRHlaNjm0dbSxPTFE3sW9lh8vcX8kKfcw==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"EvidenceABCI_Info"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/tendermint.abci.ABCI/Info"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+EvidenceABCI_Info
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"abci_version":{"type":"string"},"block_version":{"type":"string","format":"uint64"},"p2p_version":{"type":"string","format":"uint64"},"version":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"app_version":{"type":"string","format":"uint64"},"data":{"type":"string"},"last_block_app_hash":{"type":"string","format":"byte"},"last_block_height":{"type":"string","format":"int64"},"version":{"type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

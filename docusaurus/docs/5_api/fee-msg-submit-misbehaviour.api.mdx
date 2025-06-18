@@ -1,0 +1,72 @@
+---
+id: fee-msg-submit-misbehaviour
+title: "SubmitMisbehaviour defines a rpc handler method for MsgSubmitMisbehaviour."
+description: "SubmitMisbehaviour defines a rpc handler method for MsgSubmitMisbehaviour."
+sidebar_label: "SubmitMisbehaviour defines a rpc handler method for MsgSubmitMisbehaviour."
+hide_title: true
+hide_table_of_contents: true
+api: eJzVVsFu2zAM/RVB58buultObYMO66FYkKantChkm7HVyJImyWmzIP8+0koaL/HaYegOyyGwafLxiXykveZBlJ4PZ/zGl/zhhBsLTgRp9HXBh/wLANofb5usluFG+gwqsZSmcfyEO/jegA+Xpljx4ZrnRgfQgS6FtUrmLUr65I0mm88rqAVdFeBzJy09xQwIf4zOCphLDZ4JzXyxSNCJhZUFFioRmG/9PbtaygJ0Dmxu3L1WsqwCy5VEEqzugCX3elpJz2rwXpTAKuFZBqAxiXWANKFI2J0HhlnubIH3owgitQ8gigTPSsmRrMmeIA94bx3VKUjw7dFb/0dZ0M3W1QcndUmhMigybJk1WmLZGDEPci7B8c0J79LtYPwm3Xl8fJhqg0CiKCQVVqhxN2Szp9FNxRoPBVWPzR3ADwTBAgPrVpLYeVlqcG+dLXowzO6wyMhkQ2T+x0aTqKUD7GRwDWzI4K3RPlb+7PT0WMEXyDPPMee8UWznTlgfORGTLe5rwahR6Jn21HTH4V5TKY/lu+vOXDQq9JxHo0jhxaIrqgOcM+7vjvXO0JiiK2KJoCXQXsEm1yJE0+cz3lINQirf8RbOiRX6ygC1/ycTQ8+2QuoL7JX4W/pmzuaoSF0oHJQaQmXi5PV2m8ocfRDVGt+eSIQK71KZ5UluHCRxApLlp6RfBxjjwS3B0Xpf88YpDK9CsH6Yph6paKMHpTNLGCC3JMMiJ9YsgjNKYYaaHx0vxrBL9GST8Qhb8z5sLaTWEP4M+SY6R3B8GZGmJvvXzNWLqK2Cg5W7X0eHa/T8oGv7VdYxST03x0MwqpAKK2Womowop8R/gNyejVuku8OwydXtlF2Mrzu78Ot0OiYTG+HAGDTFiRF5OzFa1OT0HjARo85FMtsrpg3uRGh3MomiFroD+aHi+6UYr+oP8BJSq7AyRKHt/Hqryxnv1yVi9SgTW1uRqjFsvc6EhzunNhsyY68dfk7M8HIpnBQZ1XT2gOkq3NDUOpTyAlbUoriHBlMiR+6qaVfD4U4ilcaIC1zTNrzp+9AZvPG32yk6Z9sPnLpdWNyJZ3pP4P+Qc/peouh2y7S2NVdCl027NnjEpN9PSQNaWg==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SubmitMisbehaviour defines a rpc handler method for MsgSubmitMisbehaviour."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.core.client.v1.Msg/SubmitMisbehaviour"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+SubmitMisbehaviour defines a rpc handler method for MsgSubmitMisbehaviour.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgSubmitMisbehaviour defines an sdk.Msg type that submits Evidence for\nlight client misbehaviour.\nThis message has been deprecated. Use MsgUpdateClient instead.","type":"object","properties":{"client_id":{"type":"string","title":"client unique identifier"},"misbehaviour":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"title":"misbehaviour used for freezing the light client"},"signer":{"type":"string","title":"signer address"}}}}},"description":"MsgSubmitMisbehaviour defines an sdk.Msg type that submits Evidence for\nlight client misbehaviour.\nThis message has been deprecated. Use MsgUpdateClient instead.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgSubmitMisbehaviourResponse defines the Msg/SubmitMisbehaviour response\ntype.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

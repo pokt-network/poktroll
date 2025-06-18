@@ -1,0 +1,72 @@
+---
+id: evidence-query-allowance
+title: "Allowance returns granted allwance to the grantee by the granter."
+description: "Allowance returns granted allwance to the grantee by the granter."
+sidebar_label: "Allowance returns granted allwance to the grantee by the granter."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vt1P2zAQ/1csv2yTSgPsLU/rEGJomtQVtheEJie5NgbHDrZTqKL+77tzPprSAhuCvtSx7/N3vzu75l4sHI+v+M8K7Ipfj7gpwQovjT7PeMxPlzIDnUI4/jNRytwL/OQjXgorCvBgSb3mGbjUypIUUW1hhcYjJh3zOTCRZRacY2YePiuHR0FE6gUTmonObishLZtXOnNj9KPRy8YibkhyUAqf49rCXSUtYKTeVjDiLs2hEDyuuV+VpOa8RR98vR7tDxGeCzEBiq8RzHbiFNqgpA2iH9wTAcOrA74mYVca7cDR+fHhIf1tJzFhrkpTjHteKdaJUxCpQefak4YoSyXTUNLoxpFaPXC7bS+Uua/yrDXYYdQ5YBQrmxsbdoNO1Cux2fSEITFyk1EgbVomuYHUE20sEczLJqke0N1QNlijdzGAvqsH+e+KmKzapd3n00uvaOOMRMic8wZrwKQOCXz/fUHfzBvMMDUWS91YY/fS51hYpVjA8+GFBJ7P9UtzvIeaHMknKW2hpkMVPHkKkxTZmCBr9YqomAgn0xFDTWkyWgVBwgix6ZXGHA12tNzB+9364VG6o76VnwjhTabGY4ybH+E5F5XyezpJs0rDQ4mVw9zAWmTXqxrqeRKkJhtyQKLRRZhqyOZC+Gbr8zEPoXohlRtIC2vFigaKh8K9C+HorEDMxWKvYg/iFnJ9GSz4ymq3YYhSzQF2FlVw0K2bz9CxzbwgCkDIg4ZlzKPUuMK4CFkcZKPlUYKgHEV95aO6NbLuVrBGfWTKsruYKqvQVO596eIocrnQ2uiDhTVLOLBlOiaL49LcemuUGqem4I8TvGh02FeUpOnG6TJ5yWwhpNbg/83yj0a4MX5NN8bc7FL0JEcxtsCZVCVkLiLbB6h3b+xt1Dlis9OLSzaZng8G37fLyyltsROks1HQ8lmkgc/dhfWCYeIkodoE064YNj1zWDQ8LI3zhdADk29BjS0MekrSMI5KhYCQ51CMuqXNFW9oQ03VEgeXLXVwJQaPmHjzrIi7yYj455gJGaprnKzwy6r1mrbvwhspvsLlUlgpEgKX3j7S0Rr5OxfKwU7M/ezgH2ft/f+Jvf2w28akmxmaJsZSqIq+cHkLq8FzKryLXh/++10X/58MYOugaA4io8sF69KcTvCBVPqB3s78ppbrJ9DZ6SVOur8Zf+dK
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Allowance returns granted allwance to the grantee by the granter."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/feegrant/v1beta1/allowance/{granter}/{grantee}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Allowance returns granted allwance to the grantee by the granter.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"granter is the address of the user granting an allowance of their funds.","name":"granter","in":"path","required":true,"schema":{"type":"string"}},{"description":"grantee is the address of the user being granted an allowance of another user's funds.","name":"grantee","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryAllowanceResponse is the response type for the Query/Allowance RPC method.","type":"object","properties":{"allowance":{"description":"allowance is a allowance granted for grantee by granter.","type":"object","title":"Grant is stored in the KVStore to record a grant with full context","properties":{"allowance":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"allowance can be any of basic, periodic, allowed fee allowance."},"grantee":{"description":"grantee is the address of the user being granted an allowance of another user's funds.","type":"string"},"granter":{"description":"granter is the address of the user granting an allowance of their funds.","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

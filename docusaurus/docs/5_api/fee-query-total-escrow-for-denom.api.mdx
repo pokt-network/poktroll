@@ -1,0 +1,72 @@
+---
+id: fee-query-total-escrow-for-denom
+title: "TotalEscrowForDenom returns the total amount of tokens in escrow based on the denom."
+description: "TotalEscrowForDenom returns the total amount of tokens in escrow based on the denom."
+sidebar_label: "TotalEscrowForDenom returns the total amount of tokens in escrow based on the denom."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vd9v2jAQ/lcsP20aJW33xtNYR7c+bGMde2pRZZJL4uLYqX2BIsT/vrs4MBBo3SYNCcU/7j7fd/f5vJaoiiAHd/JbA34lpz3pavAKtbM3mRzIa4B252HiUJlRSL1bXjv/AayrZE/WyqsKEDxjrKWlCTll3a62NKkVljT28NRoD4SJvoGeDGkJlZKDtcRVzU4BvbZFi4kEyK79N3KzmbJvqJ0NENj88vycPxlQLLrmQMlyKEKTphBC3hixNe8TWOosgkX2UHVtdNpSSx4Du633ojjEazmfoHzbQQsdBJawO0owCZE7L044idvxlaAslS7jkDq+bvYIKTJfzylHHempyjUx3sOIrpy2IoNcWwhCCXRzsGKpsaRJm29tW2pC2Yz+IuL07+29/fJ1MhqICYUbF0WuwWRMgexuaL4sdVoKXdUGKkpWpJY2ASn2GPe9DbqgAxoiLLalFLOVKFzhiAC6v2F2WPFNrxPM8U73Y4NcNeZEWoZWNBaeazqQAgLvqQT/VP/fx566DPasNIEW4MmMSl4pjEtvLyMXVNqEPWvlvVrxdUCowstnvYvbx8noSZVlmuNXZrzv0qaoIvWr4qTjLon7mTslVA9UYRvrj7y/VYzLo+KCIBVC6yRmKlDKSXFs3VaQEx71QvgFYLzMJU0SPUsTKkBI0CsbcvDJ4iJpnUKybr+bpD3xIaKTawC/2DaWxhtCKRHrMEiSUCprnT0rvFvAma/T/oyS3q/dHL0zpp+23eeQ7vfoI96TJV9IKtXLsJXS1gL+GfLnaBzBp9z9cnfiHpdkJgq6uM2M4RLGPiO/pfPzZHuQuB19n4jh+IZvlUbD5fw0mYx5SVyRuB0tRXWrtFV313pfAmaFclZjMN1IWIciUL1os3YBK2X3IP+TUA7SstMswjMmtaEccTBtfdadiO4kiYgcWUaclk5INFxcyK6H8MZg+/wc6IkKUhI1hlmvOaIf3mw2vPzUvnyDOxoulNdqxtkmzWU68Ji0nCsT4CjiXWuRr267jvha/OqCh0y2rcByI1go0/CMhnNY7R7MzZQMS1AZkeIA4t6Q3rUa97yO+hiLbXftPo4mdON/AuEewW4=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"TotalEscrowForDenom returns the total amount of tokens in escrow based on the denom."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/apps/transfer/v1/denoms/{denom}/total_escrow"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+TotalEscrowForDenom returns the total amount of tokens in escrow based on the denom.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"denom","in":"path","required":true,"schema":{"type":"string","pattern":".+"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryTotalEscrowForDenomResponse is the response type for TotalEscrowForDenom RPC method.","type":"object","properties":{"amount":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

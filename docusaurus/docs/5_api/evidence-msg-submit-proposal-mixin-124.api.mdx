@@ -1,0 +1,72 @@
+---
+id: evidence-msg-submit-proposal-mixin-124
+title: "SubmitProposal submits a new proposal."
+description: "SubmitProposal submits a new proposal."
+sidebar_label: "SubmitProposal submits a new proposal."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9Vt1v2zYQ/1cIPjt2mxV78NNS18P8kM1wXGCFG6S0dLbYSKRGnvwBw//77ijJli01CYZieXDEu+N9/vgjDxLV2svhQt77tXzsSZuDU6itmcRyKMcbHYOJgJRPD8Uy0zh1Nrdepfd6p8372w+yJx38U4DHjzbey+FBRtYgGORPleepjoK7wXdvDct8lECm+CsGHzmds5ZCUYjLCEJ7gQkIUgyuNFVEgfsc+pQB/ycXdvkdIqR17rgM1OA5DuwgasdjqYhhpQ2UcTIbg7ArwYqCjXjBirwK2/tqtgmQxAmNwie2SGOxhGoDxEJnGcRaIaR7QdsjB6r044Sx2P9qJivhba9yCM4Lr9dGYeEoBeVAUOs8NdyRL+XFF5JuLIJvlOjRabOmNWWuihR5Rn+PR0+f/3yYjkeT3yfjT6QEU2Q80w5VEM1nX+TjsSfXzhb5U25pSPsnFceUh293qsuqHo6KIlsYFLWYWhbMRWnezpyiZmSo1tARqdawdyVSTSMmh998/NwnFHzjkArFVqfpZd8v5yRy5f1F15Rzak9LjZCFsC8D5rdSfbhOnXKnOjUnq9Jpc8vxGOpCFSvswHatCXWZPc16qdEptxcnjUJUdDJigfaimM4OngDUDnXGFgOqY0TgL3FNpoTMaRck60aH/SUm9x2Y/FF3G23zRZZRue10K0UNp3p5dfI6m4AaU2h7DOLaX7l43dsxDPDnERKvNR1jOURXwJEFPqfDXeLr9t27dt53VHwU0YBWBfsrzdnXz+LTWeXzxTIqk7cRa93QJx3/CIjnrhVGU4/E5NPr4+jJlXWZYnIrtMFfP5QDOjZYr9U9QwFgl1OaBFRwjjj3PzXx5YojuiMaVpQcrME1EybRL7cypIpKp83z8H+xUODQro2dML+CgA9Lpl8D24sZEVUllh8FJAnZKkxoNYisz6zvB9rvb97327giY6KWTeCrxUEWLqV9CWLuh4OBT5Qx1tzQ/g3cuDzqL6lz/dw+o7Np2o9sJls5l3vER7IUs+mI+v2620xpYwDf5vm+NC6d07OIgTI7v3PGO5XlJfuUr4uuq7b7dj2D/HwPLk7TPg3rsXmfnPc0mH9RSx8b/Hq2rOixQZjarGz75IwSKlWsNSbFklsy4P7cUO1b654HdbPEbPwwF3fTScPzH/P5lEViRKfMkqg8ZioKx8yojI1ec8yJMTLKZKovfi4JDxjuOkJbpkzD5ZsRe1Ho6Tgg7HCQp1Q1uw+oOVRgXsgOMJOjKzhTwxM+A2R/OCyVh88uPR5ZTADhKSzoc6OcVktu1IKfWgkoetiFUT8DD2pUMtLNnLNi87QIJHHNTgztcscdXQ85vmj72Dim078e5mS8rJ7lWaAu6dSW7yf6HUrJz33eHfgmyA4yVWZdBAKRpU/++xd1a0xY
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SubmitProposal submits a new proposal."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.group.v1.Msg/SubmitProposal"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+SubmitProposal submits a new proposal.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgSubmitProposal is the Msg/SubmitProposal request type.","type":"object","properties":{"exec":{"description":"exec defines the mode of execution of the proposal,\nwhether it should be executed immediately on creation or not.\nIf so, proposers signatures are considered as Yes votes.","type":"string","default":"EXEC_UNSPECIFIED","enum":["EXEC_UNSPECIFIED","EXEC_TRY"]},"group_policy_address":{"description":"group_policy_address is the account address of group policy.","type":"string"},"messages":{"description":"messages is a list of `sdk.Msg`s that will be executed if the proposal passes.","type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"metadata":{"description":"metadata is any arbitrary metadata attached to the proposal.","type":"string"},"proposers":{"description":"proposers are the account addresses of the proposers.\nProposers signatures will be counted as yes votes.","type":"array","items":{"type":"string"}},"summary":{"description":"summary is the summary of the proposal.","type":"string"},"title":{"description":"title is the title of the proposal.","type":"string"}}}}},"description":"MsgSubmitProposal is the Msg/SubmitProposal request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgSubmitProposalResponse is the Msg/SubmitProposal response type.","type":"object","properties":{"proposal_id":{"description":"proposal is the unique ID of the proposal.","type":"string","format":"uint64"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

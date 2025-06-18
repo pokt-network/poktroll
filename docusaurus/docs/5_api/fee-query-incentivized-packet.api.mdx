@@ -1,0 +1,72 @@
+---
+id: fee-query-incentivized-packet
+title: "IncentivizedPacket returns all packet fees for a packet given its identifier"
+description: "IncentivizedPacket returns all packet fees for a packet given its identifier"
+sidebar_label: "IncentivizedPacket returns all packet fees for a packet given its identifier"
+hide_title: true
+hide_table_of_contents: true
+api: eJztV01z2zYQ/Ss7ONNi6nY6U52aKMlUh7aq7Vvt0UDkikREAjQAylU1+u9dgCANSbStZnJMDg4F7Ofbt8vlnlleGDb9m/3Vot6xh4SpBjW3Qsl5zqbsM6K/Wc5lhtKKrfgX8wXPNmhZwhqueY0WtTOxZzmaTIvGKZNqVnIpsYJWiscWQeROfy1Qk6IkNRJpvKGlyCdBmB7pVkh/Z0t61vjYCo0Ui9UtJsxkJdacTffM7hpnw1gtZMEOh+SlABql7Rvuncg39d2ZBkMWkJAb8xndfY3ThK2Vrrmlk1ZI+/NPY2GsKpVtoERRlBa4hadSZCVYBY++3ENU/ueyk+vj6UX+TwAPLn7TKGnQOI3rd+/cf8dBvQfTZhkas24r6MUnZC9T0lKVnAZvmkpknofpF+PU9ueBqNUXzFy8VtjKHXiqnjPV3AQnkONaSDRgSxw8g7MGlIs/PdcG3WSO69p1hhVdYiISW3Y19YGFQJylgXE5rJF89h5iVWj6VjpN6dhdYI2zE+XPtea7KP1KGAtqHYx6r66YFmvzGmpdmtTp4ArAhTQwn91e/0IIVXyH2htK6Ne6lTnwPCfkDHB6Vr6kvILBM+paWEuJBV1zlgoZi5Gin0BdwBvTVtwOpcm2CVBY3osVNaq2ywe4MSoT3Ll4ErYkAZh/mF2KI0kt+wDGMXTuA370V6qnCvMCa6qY8x/DeUzqmRJyoBenFtugDBHSsVS1kJ7NPiMKmteqlXZyL+/lH3/efZrCHTnuDoE4U+UgjE9O9l0r6qbygXQYZa2xqgYav6XK76URBTloqTTQTxBY7aBQhSIIrJq8jY13PjLdEuYTGJt7NHKYK9bloJI0ii1+B3MczMD1y/GMmuM7nqd4dvR0Y2sZxtbYayxG9WTIuZndStOE9jfMGwyT7eX6nM3FXicakPQSjnphbFDHiSTPi0M8PcNuFbjwvOPQJK8bLQz5Ie++ImEZmn9MuoVo/tFXO9pCXq9AtKG9guHLS59LIWxZF+if7mykPUR6wSbybPB0ETsM/xxz1ryt7MiGIikB/KchHAhB1Jpo8E0WlRNIVR5nQ6Fj4ffTIR06+vG6Izm9mKsxzr34ej/29Wt3PbK6MiK76Pi6iFU8RDV1AS9GFQcQY+TG1iekzqedgldVvJn43uL9SUF9IEHQ+Dha1LsBQnaL8L1BK/KUpWKVpQS8SclQuv0hDawx6X7si+KQOjYdXQYmHtKeF0e3/eEhHVvzHBP1tv/maXVFEZXWNmaapsY5VfKq0GqLV7Q4TlZUOHK3sVpV1YTakp1CdtvpwAeShJvFjLk1/i2zNa1pEu1lln/vhDvjD269X6uRl0RJYlQIW7YrZy51tq9I70npTdo7gptPt3fwfjGPeuy3u7uFO4IZNYiqMHQIz3yHhE+Mtww7ljtUu2DCE0jletcS3f4Dw5UzxA==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"IncentivizedPacket returns all packet fees for a packet given its identifier"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/apps/fee/v1/channels/{packet_id.channel_id}/ports/{packet_id.port_id}/sequences/{packet_id.sequence}/incentivized_packet"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+IncentivizedPacket returns all packet fees for a packet given its identifier
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"channel unique identifier","name":"packet_id.channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"channel port identifier","name":"packet_id.port_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"packet sequence","name":"packet_id.sequence","in":"path","required":true,"schema":{"type":"string","format":"uint64"}},{"description":"block height at which to query","name":"query_height","in":"query","schema":{"type":"string","format":"uint64"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryIncentivizedPacketsResponse defines the response type for the IncentivizedPacket rpc","properties":{"incentivized_packet":{"title":"the identified fees for the incentivized packet","type":"object","properties":{"packet_fees":{"type":"array","title":"list of packet fees","items":{"type":"object","title":"PacketFee contains ICS29 relayer fees, refund address and optional list of permitted relayers","properties":{"fee":{"title":"fee encapsulates the recv, ack and timeout fees associated with an IBC packet","type":"object","properties":{"ack_fee":{"type":"array","title":"the packet acknowledgement fee","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"recv_fee":{"type":"array","title":"the packet receive fee","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"timeout_fee":{"type":"array","title":"the packet timeout fee","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}},"refund_address":{"type":"string","title":"the refund address for unspent fees"},"relayers":{"type":"array","title":"optional list of relayers permitted to receive fees","items":{"type":"string"}}}}},"packet_id":{"title":"unique packet identifier comprised of the channel ID, port ID and sequence","type":"object","properties":{"channel_id":{"type":"string","title":"channel unique identifier"},"port_id":{"type":"string","title":"channel port identifier"},"sequence":{"type":"string","format":"uint64","title":"packet sequence"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

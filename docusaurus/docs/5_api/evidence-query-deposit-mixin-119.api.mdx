@@ -1,0 +1,72 @@
+---
+id: evidence-query-deposit-mixin-119
+title: "Deposit queries single deposit information based on proposalID, depositor address."
+description: "Deposit queries single deposit information based on proposalID, depositor address."
+sidebar_label: "Deposit queries single deposit information based on proposalID, depositor address."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vt9P2zAQ/lcsP21SaYBNk9anMag2HtgYdE+AkJtcEkNiB9spVFX+993FSZr+GIxuQwKc893n83efz15wJxLLR1f8Rwlmzm8GXBdghJNanUZ8xMczGYEKoZ6+PYFCW+nO5JNUBwcf+YAXwogcHBgCWfAIbGhkQeEYXBiN/iK7lRGLIJYKLHMpsFLJhxIYWnVcG1rHISIqxFuNRaOs4YRLcWzgoZQGMDtnShhwG6aQCz5acDcvKNQ6I1WCnrE2uXBoKaVyH97zqhqspxj5HWmzkmBjZSKKDFiL1tjofCVV28u1A9kx06q6IWdbaIVr0fzh/j79W831iNkyDDGfuMxY605phFo5UI4iRFFkMqzrF9xZClv0ll3Fq2valPSigWPSM9DCM8qUIZG1tY4ImhB2cX7MsPapjiiJZkt6egehI2UYUpKTfkMNRZtJtFT36SfewDqI2kK8jC9yXaot8N7OnGbTrqyIO52zrmg9cGGMmFMRHeR2E+xYS9UlKhD0HhR7lC7FDzwlOpeqZp4JFeEv84sPr9W1+vZ9Mh6xCW6uySiWkEXENvqd4vdjKsOUybzIIMdaeiLC0jrUnSf5WlmZ4AIl1oa10qKdJDrRyIbTr6FpTYEDXm9gmzarerJV+O8KuOMJ2kijf+431tqpobzcFfwP7TIWZbZFRUcKl4CnAilFysEY3O1OB/D56oQ6gp4XpgcJmH7KaHp36KvlhMxsz3tDu8+v9clPb5Z7wLFmkvIX2Xk/pKYox2KKZGtgR2KfubZXYHkMwjCLvtlSHlL5rdGhmQqL5OKgLd7pyWB5SlslEd3+PCB6AvXGqNuOeBBqm2sbJHoWzA6mSNBB0GktWPS0UwUNLJq7BSpEsmBm7VVWmgxBU+cKOwoCmwqltNpLjJ7BninCIS0wLPS9MzrLhiGenfW9X/oY9hk9qVlyun5egs2FVArcnyGfeWcPfkOXT6y3tK0U3ViCfaqcElxA2HsY96jNfdAuxC7GlxN2dH5KR0a6jGr7dTI5JxM7RqVrNHmpi7CWenP7vQRMciVWfTLNiCntmMXy0ZHX1uVC9SD/i2pWSOnk6+DJBUWGDFEqdXUWjaKuuFcUxqKm8G+jKr7sUjQ3Wn2qtNKimWXbxOKkuE0CXSwo558mqyoyP9QPr9EVDmfCSDEl5ukpJS2NUeYxrgMb+Xc9h7+5aC6Dt+xvGuQqE21XUdRTZiIr6QuH9zBfe53Vj6pdkv0nN8drsl6Wo7pB5xREhO2VyPbzR/i6KlwvcqOZ0yHrus+X8QTb3i91x/yD
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Deposit queries single deposit information based on proposalID, depositor address."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/gov/v1beta1/proposals/{proposal_id}/deposits/{depositor}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Deposit queries single deposit information based on proposalID, depositor address.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"proposal_id defines the unique id of the proposal.","name":"proposal_id","in":"path","required":true,"schema":{"type":"string","format":"uint64"}},{"description":"depositor defines the deposit addresses from the proposals.","name":"depositor","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryDepositResponse is the response type for the Query/Deposit RPC method.","type":"object","properties":{"deposit":{"description":"deposit defines the requested deposit.","type":"object","properties":{"amount":{"description":"amount to be deposited by depositor.","type":"array","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"depositor":{"description":"depositor defines the deposit addresses from the proposals.","type":"string"},"proposal_id":{"description":"proposal_id defines the unique id of the proposal.","type":"string","format":"uint64"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

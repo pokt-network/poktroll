@@ -1,0 +1,72 @@
+---
+id: evidence-query-account
+title: "Account returns account details based on address."
+description: "Account returns account details based on address."
+sidebar_label: "Account returns account details based on address."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VU1v2zAM/SuCThuQxm13y2ldUGw9DMjS7FQEgyIzsVpbUiU6a2Dkv4+05Xw03boVmC+WKb4n8pGUG4lqFeXoTn6rIWzkfCCdh6DQOHuTy5G8XpscrIZ2+8eV1q62KAfSq6AqQAgMbmQOUQfjGUYglecBYhQ5LI2FKLAA0dvQiUfmEksXhkRkiWYPIYNhBq+woHWAx9oEoEAw1DCQURdQKTlqJG48wyIGY1dyu52zc/TORoi8f3l+zq/juK5ErLWmY5Z1KXp3DkI7i0B5EUJ5XxrdCpDdR4Y1B8ce87WiJE2miU6YLt+eXnCknGxrbRFZgojpZCxIxMLlHERKyS3uQbcSBy4Fmi4hlaTf5/4bx4/d9qlEAxbZcOiqnBxCaOdZ/VJ8R/VLNrdsP7ULXYY5kffFHdIp/DDfUtUlvlACK2oLT54ih1xACCTMmyrxZxG0yw81MES6gkBuVIhKYWf6cCnbUFGZMh54qxDUhjsRoYr/RXDeq0gwtXoRuBPxSLlUgABYBxvFvkht/GKhIinq7L4YfAY3F4FX0A0tTdVIZtrFysVM1Vhk64sFEVxkiS5mTcJvCRAhrPsRr0NJ2ALRx1GWxUJZ6+zZKrg1nAWvh0wz9O4BgyvLoXaVfJ7BbYcRn8iTe5/Uf522UsZawL9j/to5d+RzvkuW7rQHxwW5iZXBol4wXcbcZ4T76cJD1h8kpte3M3E1ueHRNFhyhb7MZhM2iTH1qyNT17BKtw2brrLXiLnpWNUumLQS1qGIVCXa9C5ipewB5Vtqf5TzrscQnjDzJQnAJ7XiN6kv7mTXF4TlzqBX6g02pO6g5ai/qknfgiJlYNNwBN9Dud2yub3gyU7LtQpGLVg8/kuYyGtqyKUqI5zEuBt++W6abv734l9+Ji8m2U+15Zleq7LmL1o+wObgx7Odk2sBKqdrgmPtdkl48HiAO7mUuM12Y/b5ekbj+wvVf5MI
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Account returns account details based on address."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/auth/v1beta1/accounts/{address}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Account returns account details based on address.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"address defines the address to query for.","name":"address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryAccountResponse is the response type for the Query/Account RPC method.","type":"object","properties":{"account":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"account defines the account of the corresponding address."}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

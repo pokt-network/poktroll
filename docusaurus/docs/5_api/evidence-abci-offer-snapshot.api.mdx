@@ -1,0 +1,72 @@
+---
+id: evidence-abci-offer-snapshot
+title: "EvidenceABCI_OfferSnapshot"
+description: "EvidenceABCI_OfferSnapshot"
+sidebar_label: "EvidenceABCI_OfferSnapshot"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vk1v4zYQ/SsDnlrAH8G26MGnOq6LpsUmhuOghzQIKGlscU2RKkklaxj57ztDypacZJPuAvXBpqmZNzOPb4baiyA3XkxuxfR8diHuBsLW6GRQ1lwUYiLmD6pAkyM/vb9ar9FdG1n70gYxEA7/bdCHc1vsxGQvcmsCmsBLWdda5RFm/Mlbw3s+L7GSvAq7GgnbZp8wZ5yggo4bjO9Bgm9jQLAQSoQeHJnXjnMMCn0b6r6UvuwB++CU2ZDl2rpKUkIi2wXsBdJqUwbItaJ0hw/o1FphwVGAkYDcuhRKZGPxNBCHrRipRTqaxdwJJNtBjVQFR3tW5mneedmYre9lrYi9Dbp+2rT1y8+9vC+bKkNHsSB5gzKRn2NmT53zt+CuTjke+hpz4iTvWGhdCf9buZ66TAUn3a5HKUEMgMQjNVijd6DWwDILFF/HGInzt6I0r9WQ/EAGeCxVXp5wA4/SQ5BbNByhwiALGeT3VdLjCo5IT+mT2kKRFsQkuAbjhq+t8encP5yd8U+BPneqjpImaPBNnqP360bDwXxEsb+7p07FRpCNfpXQQ3FDuLn86/Lq78sJ3JitsY8GktMAZGYdkap1xyU9CjaNiX8MDGE6m80XqwkchgNIqqYOWAwiV7tWr8n2/GpJptP3UZfzP+czMl0iF0WnqTy8kOYAAp2IpaN2vud1//vV8uO0c+4H8txBES0d9dcgrueXv82XX4FYO1slgaEp0P3gf+zDELMFrmUkXbTM0h6apuJh2+0k5njBtNBvin1ctHV0/1NS4u6gtmOYF5oy0Bj8THzROQA6R1Ptf5BWbgt8d9r89EHEVINUuj/zpHNyR7YqYOXfj/VrevxcxUyDLArF+Uu96LtEiipqLLl51fFIYp+5Ny896vfS8tVYWx8zlIHmoRiHKIOKih3JLFcjdh4/d/boHlgdk9u9aJwmvzKE2k/GY19KY2j0bpx9wKGr81FGbI1quw3Oaj3KbSWe53mdfOCcLGG5mBHH78NWUhmD4b8hf0zGCZxeDlgcy+7Wn3+WVa3x9BruZkv/wjxcd2edMM4Ol0nncRj83U43qPunrczavlT8rKR0YaNC2WRc1phrHFL+j9Ztx4eCqbuvVzBdXPSm3x+r1YK3YEbdYTW27SHzmLuRFRu9B8wS59NNybQrMDTYPMarkxVTSdODPCgNWC0Q1QI9uZyUdxRvwM9hXGuqlUHjee9bGd6K12RISKdCpJMsWb1kv99n0uON009PvE1H6+hl7paWD9IpmTE9t3fxTpYEHJW7xR2znebHcMVZsbluYks/nyUsyuQxjZfCm7Z3vQZbXF3z3Mva18sqDhrh5CO/etL3RAh+XWXvdMnx3l5oaTZNbHeRMPnzBQQ7w7I=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"EvidenceABCI_OfferSnapshot"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/tendermint.abci.ABCI/OfferSnapshot"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+EvidenceABCI_OfferSnapshot
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"offers a snapshot to the application","properties":{"app_hash":{"type":"string","format":"byte","title":"light client-verified app hash for snapshot height"},"snapshot":{"title":"snapshot offered by peers","type":"object","properties":{"chunks":{"type":"integer","format":"int64","title":"Number of chunks in the snapshot"},"format":{"type":"integer","format":"int64","title":"The application-specific snapshot format"},"hash":{"type":"string","format":"byte","title":"Arbitrary snapshot hash, equal only if identical"},"height":{"type":"string","format":"uint64","title":"The height at which the snapshot was taken"},"metadata":{"type":"string","format":"byte","title":"Arbitrary application metadata"}}}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"result":{"type":"string","title":"- UNKNOWN: Unknown result, abort all snapshot restoration\n - ACCEPT: Snapshot accepted, apply chunks\n - ABORT: Abort all snapshot restoration\n - REJECT: Reject this specific snapshot, try others\n - REJECT_FORMAT: Reject all snapshots of this format, try others\n - REJECT_SENDER: Reject all snapshots from the sender(s), try others","default":"UNKNOWN","enum":["UNKNOWN","ACCEPT","ABORT","REJECT","REJECT_FORMAT","REJECT_SENDER"]}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

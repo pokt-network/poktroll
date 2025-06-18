@@ -1,0 +1,74 @@
+---
+id: evidence-msg-fund-community-pool
+title: "FundCommunityPool defines a method to allow an account to directly
+fund the community pool."
+description: "WARNING: This method will fail if an external community pool is used."
+sidebar_label: "FundCommunityPool defines a method to allow an account to directly
+fund the community pool."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVktPIzkQ/iuWz9AZZm85LRMxOxxgopDVHgIaOe3qboMfvX4kRFH++1a5O5DQ0bAzggNy21Wf6/HV52y5hFB61UblLB/zfy5nt9e3f43ZvFGBGYiNk2yttGaVUJqpignL4DmCt0Kz0hmTrIob1jqHp4GlALLgZzyKOvDxgt+Emj+ccdeCF3TFtcRLrlZKgi0BD398TVZO9jBTREFnD/8mCPGLkxs+3vLS2Qg20lK0rVZlRho9Bop4y0PZgBG0Ok4F0QfgTGjt1oGSEGXpko0sOiaVhzLqzb2t0IHFBt5kljPatICobvmItvjdekoqKgg5MENgtOrthPdig2YqggkH+y/+x8FOnLJMQqUsYHQY1BNYrHts8ANr5YyyOWuMXObo833Fvb23t9/nV9Qv6DdZpUBLagbaXeP3ulFlw5RpNRisY+gSTCE603f43gZV4wXJ4+1UfSyIZMsNq13tMNHoivczDtErW/MdpYYBnzjBPzpsXVDR+dMGu7eV+eA27rPj4+gT7GgjtM6GLqnPnz4NiXTJQipLCKFKmu3NCesDiTnrYV84QNGj4WiY+z4CRsUbMnNfw0okHU8kY1my8NyiKbYYvHf+93L6+TyUTsKBlULQGjyaVc4bEbutPz53bIkoLeFXZuf4rj+74yGbzriQUlH8Qk8PXXKJDHZU1CcdeyJ2w4EHyNh8rYgNfo1KF4wLhVTksEx0QbG6WGIeF8XJnqFvAL8CT5q45clrhGlibMN4NAqNsNbZ89q7FZz7tiwIqWjdU/RO6wI5PJCLu86HfUFLNptOsI7vwxqhrIX4/5BvOuMOHBWcCDB71eWrZ0F6cigEi9flvpIvUvBS2ocjATjQDGUrN2TrpMEwWI06mJYU7ohiP8e41s4/jfaJsNnV3ZxdTq9pGFSksPi3+XxKW2yCzHa41VFblJnaVhgyeg+YAqOudcH0K2ZdZAEiHRIxjLAHkMN5fVX1/jlFqcr69TvydVSeg6fx4x7ubhQimo5ajdWnNDOztj3/F/wd/iPKcAKw8Q1NEbpvt0sR4G+vdzvaRk55fOcXuFwJr8SS+rd4wGsbEBJFg5j1BJv8SuZ0z+cUJJnrlPXirVDRNHQelyjcbfyp7cPBoE+/383ReNn/8jBZxbgXa3o58P+Yc/oxQ95ZevLelmth65S1hHeY9Pcfb25Snw==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"FundCommunityPool defines a method to allow an account to directly\nfund the community pool."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.distribution.v1beta1.Msg/FundCommunityPool"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+WARNING: This method will fail if an external community pool is used.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgFundCommunityPool allows an account to directly\nfund the community pool.","type":"object","properties":{"amount":{"type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"depositor":{"type":"string"}}}}},"description":"MsgFundCommunityPool allows an account to directly\nfund the community pool.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgFundCommunityPoolResponse defines the Msg/FundCommunityPool response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

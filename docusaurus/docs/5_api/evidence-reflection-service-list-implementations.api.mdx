@@ -1,0 +1,75 @@
+---
+id: evidence-reflection-service-list-implementations
+title: "ListImplementations list all the concrete types that implement a given
+interface."
+description: "ListImplementations list all the concrete types that implement a given"
+sidebar_label: "ListImplementations list all the concrete types that implement a given
+interface."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vd9P2zAQ/lcsP21SaQZ769MYQhvSJlWle4IKuc4lMTi2sZ2MKur/vrskzVrSAZq2vtQ538/vvjs3PIo88NkNX0CmQUZlzTX4Wkngqwm3Drwg2VXKZ/yyVikYCSPVu28qxKvSaSjBxNYg8Al3wosSIngK0PAUgvTK0S06UwYvMoHGBpVYCpkyEFgsgA1XLFr2WIHfdOLDACyzfopRyHzkD+WKojgRCzx7eKyUBywi+gomPMgCSsFnDY8bR9YhemVyvt2uSDk49A+B7s8+fKC/w9zPWaikhBCySrOdOuUiLWZhIlkI57SSbarJfSCzZi/sob8j8C16r0x1mOyiMEqY2awVHrG7NYv5BaXSF2bX99gqaoanZkbVlXWI5V2JtYi8gy7swSK8FxvCMkIZjsHV/iZYTiYqHY8gZVhl4MlhDpAy8N76vwPs5XKkTWFPi7iQg0c15EgpYif6eMbbVKNQ+i1F/iHWp+56jMWEizRVlL/Q832TFqIe4hdBfIUTTKOMCa3b5iN00uN0tYwgkoj4e0SYYLmqwdyaYS4IbpzGwtIo59AWRtMx44m0obQhWYsAiR+GO6lP1wjWaTK4CElzOGbbRI2mPuBO2I185TX6L2J0YZYkoRDGWHOSe1vDiXdySv6nzj5Eb7WeSlvy5zBcdzbsM2oypDa28HW3pVDGQHyb5++dcud8RXsjs2MiXxSohpjGolqTu4R8n6DdT+sfkl0gtri8XrLz+RUNoIqa2vx1uZyTiF0gPlZDz3ohW9b32+s1x8RcQrVLpj8xYyML2Em8dDbEUpg9l/+FQAegDEyO8BQTpxEhSqXtTtOT64Z35EJbole7i3cEw4+eYu263pEMP2bjbf6MZ9ioAkumAE1Dnn94vd2SuH0wUI7HWngl1tQFen5UoDOyPxM6wKiWYRXxd4v+uXjP/tkrdRSp3QIytH5qoSv6wuMDbMYv2naFFgWIFBcb1dMpneM75OKe+WiNEqeHuf9yucSF8wssFtYt
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ListImplementations list all the concrete types that implement a given\ninterface."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/reflection/v1beta1/interfaces/{interface_name}/implementations"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ListImplementations list all the concrete types that implement a given
+interface.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"interface_name defines the interface to query the implementations for.","name":"interface_name","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"ListImplementationsResponse is the response type of the ListImplementations\nRPC.","type":"object","properties":{"implementation_message_names":{"type":"array","items":{"type":"string"}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

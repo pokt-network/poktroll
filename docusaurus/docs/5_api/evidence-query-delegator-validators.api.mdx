@@ -1,0 +1,72 @@
+---
+id: evidence-query-delegator-validators
+title: "DelegatorValidators queries the validators of a delegator."
+description: "DelegatorValidators queries the validators of a delegator."
+sidebar_label: "DelegatorValidators queries the validators of a delegator."
+hide_title: true
+hide_table_of_contents: true
+api: eJylVU1v2zAM/SuCThuQxm13y2ldV2w9DMjSbJctKBSbsdXakirRWQMj/32kP1JndtdhzSWyRD6Sj09UJVGlQc5+yK8l+J1cTaR14BVqa64TOZNXW52AiaE+vv0IOaQKrf+ucp3wIsiJdMqrAhA8A1UygRB77RiCAJLO5VYliYcQRAIbbSAIzEAcTkV3ilY8cCyxsX5K4Iagx2DoSDO+U5jR2sNDqT1QyuhLmMgQZ1AoOask7hwDBPTapHK/X7FxcNYECHx+fnrKf8dZX4hQxjGF2ZS56Mw5ndgaBIPsoZzLdVxTFd0Fdqt6YY/xavpG2Fu00EI3fHShBGfNFPDuT1O7RyP+YjG/FMR9ZhPOrq3Vru8gRu6M526ibirdPjVtkODT2VF/etuq1ywdug/itOtUG1x5r3bcHYQijDWg/k0o/kaVOY5wb0Rp4NFRCZAI8J4C/lcL/s5GbBPoWWkCTcGTGZVTKGy23p3LOlVUOu8X81yRz8R63xwPuZhIkrPm/FU+77vUFBUkQJWOOh5I7DM3JhC+THrYTbvpN5RpbVREKCnUBfC9mskotqGwIUo0h16XNdXbszUxchYd/ENUDS7oPtr2h0QAv+0mROlzgs4QXZhFUciUMdacpN5u4cS7eMroU2fv0ds8n8a2kH9WetP4iA9kyXeAuvQybKG0MYD/hvylMW7AVzxsNnao1cuMzESqMSvXDBcx9gn5/bL+PuoCicXVzVJczK/5lmjMuZOfl8s5b4lL0rWlrUbYKq6F3U69l4BZnMxqe4eblTAWRaAm0qGzAQtlepCv0shR8QdRIjxi5HJigkPWXaha/fyQjX7Yt6cg+mw1VIN2KqKP2dig7wmJOpFRTYxcVWsV4JvP93verl8N2l+xvddqzTTzc6QDr0nZG5UHGBRxGCfyzaJ9RN6K175ao8x0s8PsmppK/qLlPexGX7j9ipwyUAmNJa6ksbugd8lhD2EwBFmuh9v86WpJ4+I3ROfPRQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"DelegatorValidators queries the validators of a delegator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/distribution/v1beta1/delegators/{delegator_address}/validators"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+DelegatorValidators queries the validators of a delegator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"delegator_address defines the delegator address to query for.","name":"delegator_address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryDelegatorValidatorsResponse is the response type for the\nQuery/DelegatorValidators RPC method.","type":"object","properties":{"validators":{"description":"validators defines the validators a delegator is delegating for.","type":"array","items":{"type":"string"}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

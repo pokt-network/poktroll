@@ -1,0 +1,75 @@
+---
+id: evidence-msg-cancel-upgrade
+title: "CancelUpgrade is a governance operation for cancelling a previously
+approved software upgrade."
+description: "CancelUpgrade is a governance operation for cancelling a previously"
+sidebar_label: "CancelUpgrade is a governance operation for cancelling a previously
+approved software upgrade."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VUtv2zAM/iuCThuQxG13y2ltUGA9FAvS9JQVg2IztlpZ0ig5Dxj57yPtJM1r7TB0PiQyRX58faRrGVUeZH8i70MunzrSeUAVtbN3mezL27nOwKZAlz8Hig7m0eeoMpAdifCrghBvXLaS/VqmzkawkY/Ke6PTBiV5Ds6yLKQFlIpPGYQUtedb8kDIB8BCBxELECRPDi82/kRceeiRf/4nADd9hjTSu0eOPWoITQxVLBzquDp1ubva+lJZhhD4rKLgPNCZ9qZ0WWVAfMpgpioTSejEMsndXFTWsImbAy4Ii1L/vBdUiKhtLtf8dD4sY37XCNSYiBWsWRC8s6HN+Ori4jTXaxGqNKVIZ5URW3XG+qB2jTaQbyWx0Tjft22Fmvqeid9SpWHpSRUyAYgO/y2Nt9mSOqL0q5Ym0ByQ1GYOSxVb0Zcr2YQalTZhT1shqhXp6ghleN/X1/a6PuFKRxIRNcevzHDfpClRSU1U+VnDszQ74ZgSObPVslzsxlxQhiJtdA2hkZZHmGtXBbP6YammSEaZCG4WFwpBVC0g174EmiPeEt6FJk0VC3pLUhdKF3pbzfnllEp22TuhBpkEQAqJ908tKzRkXcToQz9JQqGsdbabs/8u+rTHKD3vXng6TS91pTxO+aG1ETekKUbDAbXrfdhSaWsh/h3yfavcgtO2ZJ6NXvfg7VKV3sDR/tk1iihiZ+6U5IOCYEWuY1FN2X3CsXTJz8LhS7INTIxuH8bienjHM6Qju5HfxuMhi8SABsIZ2EyESpuJsKpkpfeAOTDuQhvM5iSsiyJA5Evub6nsHuT/J9dBhXaUj7CMiTdULo6raW294d1E/pl3hHfIPGpdwaQlq7qeqgCPaNZrFlMvkXo2oeNcoVZTrvPkibwVQJbYUPUFuK2Ddvd0xxwbq5uqWQfHe4hZ2Fpc0yr28U3dp725Gn5/GJPydPOFLZslJVEt+FtAv30p+YPN1s1maWS1NMrmVbMqZIvJz2+Smc5t
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CancelUpgrade is a governance operation for cancelling a previously\napproved software upgrade."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.upgrade.v1beta1.Msg/CancelUpgrade"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CancelUpgrade is a governance operation for cancelling a previously
+approved software upgrade.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgCancelUpgrade is the Msg/CancelUpgrade request type.","type":"object","properties":{"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"}}}}},"description":"MsgCancelUpgrade is the Msg/CancelUpgrade request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgCancelUpgradeResponse is the Msg/CancelUpgrade response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

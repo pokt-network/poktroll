@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-msg-unstake-gateway
+title: "GithubCompoktNetworkpoktrollMsg_UnstakeGateway"
+description: "GithubCompoktNetworkpoktrollMsg_UnstakeGateway"
+sidebar_label: "GithubCompoktNetworkpoktrollMsg_UnstakeGateway"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9Vt9PGzkQ/ldGfrqTIEH0dA95OopQi6qWCNInQGiyO9l1s2vv2bOEKOJ/vxk7KQtE5U66NlIS73h++ZtvxrsxjFU0k2vzOVbm9sD4jgKy9e68NBPzwXLdz0992/klfyFe+bDUZfBNIwZ3X11kXNIHZFrh2hyYQH/3FPm9L9dmsjGFd0yOdYld19giuR5/i96pLBY1tagrXnck8fz8GxUsfrqgibClmGzLMlCMA8XIwbpKFNlyo4JZTfCeivrdMWy1wS+ARVptk3vUT87QBpLTcegpCWLnXcyRjo+O9K+kWATbabLi+wRiXxTictE3sFMfSfD/6Xi7DH8RDgcmFe31OU+9dVDSwjqKgMB+SQ5WQgF5KMn51rp0QEBXyhew9b3j0Y27cV8uZmcT0OBZCAtLTQk2qt65PK9qW9Rg266hViCLKaWij+xbaIlrX964aCsJ0EvSsKsSzNdQ+coLDuwV8jcASsFf4yNnTgfYs/P4HDv2jM3uEIJcP734NBviBzVGSACW6rbPHXAn/IkCzR258q4mW9V7sjgwCx9alB3TW8d//jGo21W2B7GHbA+4Q20Y3TrLVtYl5MjiF347ArsA5/lJ9nume2K8VBT7hvfw2okBPXSCpPijEHz4GfQufEkDLTk5VRSGaIjo3XEuEqNthgTHENJgsUxtfDvWX3l7X5WlHazmj810aJIgagV9rPYafgdxiNx/nouZ4mLZ+ZiyRq7ladz5Ykk82lZ3JLbjV7aRwj0FHdIb04dGzGrmLk7G41ijc94dVsHf02HoitFcABztMhkVwviXqV9lGxkSjHA5PRXY33bbonVO8vxXnj9n5excrhTly+XTvXD2gDoFns2zQZ9at/B7RlMtTqFKsGvwsWZy6DLy411acHl2NYOT6fmgsT7OZlMVwanQ2oso8xqLxGuHrSq95VgT0xrkZLar1HGRWDe1rC26gctMEdhyBF6QBKTSsK00PJX62aG/c5HpgcddIwikiaO12mwZdG1eM0j8vOCQFKFW3on6ZjPHSF9D8/ioYqlKkIvnWpb3GCzOFbPrWwlTE5bSpUq6Ja3T7ZCmweFMk1L1pk8N+nIyKJ+yxYlcmh3/UPd20BrTi6uZKM+37w5tGhsm4ErfK+R3Yoy+n6h16vUk25gGXdWn5jXZp37+Ae+tH6k=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GithubCompoktNetworkpoktrollMsg_UnstakeGateway"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.gateway.Msg/UnstakeGateway"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GithubCompoktNetworkpoktrollMsg_UnstakeGateway
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"address":{"type":"string","title":"The Bech32 address of the gateway"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"gateway":{"type":"object","properties":{"address":{"type":"string","title":"The Bech32 address of the gateway"},"stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}},"title":"The total amount of uPOKT the gateway has staked"},"unstake_session_end_height":{"type":"string","format":"uint64","title":"Session end height at which the gateway initiated unstaking (0 if not unstaking)"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

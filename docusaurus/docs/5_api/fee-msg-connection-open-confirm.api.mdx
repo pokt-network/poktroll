@@ -1,0 +1,75 @@
+---
+id: fee-msg-connection-open-confirm
+title: "ConnectionOpenConfirm defines a rpc handler method for
+MsgConnectionOpenConfirm."
+description: "ConnectionOpenConfirm defines a rpc handler method for"
+sidebar_label: "ConnectionOpenConfirm defines a rpc handler method for
+MsgConnectionOpenConfirm."
+hide_title: true
+hide_table_of_contents: true
+api: eJzNV01v4zYQ/SsEz7G93RY9+FA0CVJsDpsYjnuKgywljSWuJVIlqTiu4f/eN5Qca2OlaYsWaIAE5Gg+3zwOmZ0MKvdyei8/+1w+nElbk1NBW3Odyan8hQjyx0trDKUsva3JYLfSrpJn0tFvDflwYbOtnO5kak0gE3ip6rrUaXQ0+eqtYZlPC6oUrzLyqdM1f0UQRBgMIDJaaUNeKFH5XHi4FskWuzmVaktOBCsuC6WNuMByaVS6NnZTUpaTCAWJtFAGS7sS6Yt74YMKxJa3s6sbAUHr4XyMcsK2JuRjk69Qxr52jEbQ5LvqOiePOmNBp+6D0yaX+6hvV49I4/TrmVxZVylgI5NtIA6mQ8kK0Ujg66uc4+513sd8p+LL9c31Qox+ipV8OcYvSOdFOIX5hhMoy230PKcn7SH/FJWF9kKb1FEFjCkTKghSaSFaV2JT6JLEmqhGKUtzsL1pqoTatL2qaCw+2Q09QeJtFXNHx3yD9pW5dToUlReV2qJEaz3FjjnyFKKDLhIqS4E4Vwj7THPqXtA4H4tCuYxhWvuzFoxRhRTBj6VJHKk1UuvQ8+LasFMESZUn6Pcr7rJ+VbG3UFJhabpEmMragNxMlYREZY0O+E0jgtFSeQ6Jgo1QfgDUJVIJXsQaB8h16P+xA4qj2MEomQpKsIel4TRRl+GsUlvVynHDckDmg1CwL1Bd5/TAqrpxNTD3zKumhjP2qUy2NCtH9HuErtRAwp+w3nU19Wj1JrMbbcKPP/Rq63V2AwLo2BaRa8bs4JiJ+xLExOb8/SAHB7GJ7dGJ9TCsaeMclgCUg+0RzuvcDEXZ7+Pn/+l04mGr0Ww5Da6hiJqv+ZDFPn388OH0yJ8L36Qpeb9qSnFQZ1//8qSed65fMOECoTwZ1I7nvtVn/E8n76ENK9WUA4Ps3IjG0HMNVVCfnAPL/1Fx7837jHpaoB3lYE2PihB9/1HGVDGySt/TVs6pLXR1oMq/H+vn9vMpIc+kytoxqMpZ3yRCVKG1Kh80HOTye0R2dYo5a7IS9K0oFDZO3KV5q++MdqvHF5n1sTAVCuwmOknHqXU0PtJ7/PTd+E1WwNSTw/XBr5GdbFwJL0UItZ9OJh5ZGWtGubNPNEKa4wSQj2u7Ds6WJWKw/bfF3rU24gKaYj67RKPed1vhuBkKf83z51a5dY63EzNsfnwSXT2rqi5p4O1wHGu9J8Nr4XHgnszgo+rJ5Ow9Rw5jrifSZmVPD1Q7ZHJM6Cbhgidc/QiVbXDdTg5QiPnV3UKcz677l9diMWORQBO9Lak7fSqNeRu8CqD0nmNOjPveJtOtBG4ywTcnv2vArEqZnsv/gsjfYPJyoAI9h0ldAiDOJNJn13H8Xr7NcfgbZjloUvBBgfVul+B58qsr93sWgzcOz+h7LJ+U0yphhO8fELUglXEjcSzWtG3L5wk3WnCOrF42cei8nnbM+NbiHNdAHf5U96F3lme3dwsoJ93DvoqjUDq1Ycrh71RK/lchPs8iQ1m2kyWutCYOJNn65J8/AKdCaxI=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ConnectionOpenConfirm defines a rpc handler method for\nMsgConnectionOpenConfirm."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.core.connection.v1.Msg/ConnectionOpenConfirm"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ConnectionOpenConfirm defines a rpc handler method for
+MsgConnectionOpenConfirm.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgConnectionOpenConfirm defines a msg sent by a Relayer to Chain B to\nacknowledge the change of connection state to OPEN on Chain A.","type":"object","properties":{"connection_id":{"type":"string"},"proof_ack":{"type":"string","format":"byte","title":"proof for the change of the connection state on Chain A: `INIT -> OPEN`"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}},"signer":{"type":"string"}}}}},"description":"MsgConnectionOpenConfirm defines a msg sent by a Relayer to Chain B to\nacknowledge the change of connection state to OPEN on Chain A.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgConnectionOpenConfirmResponse defines the Msg/ConnectionOpenConfirm\nresponse type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

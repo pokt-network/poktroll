@@ -1,0 +1,72 @@
+---
+id: fee-query-packet-commitment
+title: "PacketCommitment queries a stored packet commitment hash."
+description: "PacketCommitment queries a stored packet commitment hash."
+sidebar_label: "PacketCommitment queries a stored packet commitment hash."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk1z2zYQ/SsYntoZWUzSTg861fWkjQ/NuI57ijweCFySiEiABkDZqkb/vW9BUqIlxW7ceOQRBGC/3j7s7iYJsvDJ7HPyV0tundxOEtuQk0Fbc5kls+R3onhydyXVksKFrWsdajIhmSSNdLKmQI4VbJKMvHK6YVEIqlIaQ5Vojb5vSegMMjrX5CBoILa/cqcz7GkWamQosXZ032pHsB9cS5PEq5Jqmcw2SVg3LOmD06ZIttvJodnGuvCcTT7/vgYjLsJDAxlFe0ujndeYmiS5dbUM2Gm1Cb/8DOO3LO4bazx5lnj35g1/PXXoXPhWKfI+bysxXJ9Cn7ImcOIgIZum0ipmOf3iWWxz7IhdfCHFeQ46VLwRiXDIg+vegsgo14a8CCUJVWkciXsW2PkgEJCQogNsbh5KrUohK2+FNqpqEQWfOmtzIU0W9ZSkizKI3NladPd5t7vzIP3cOAJatCJOKLZB3aA7bNSeqc9hu1gHGoXYZ1N6b5WWgTLxoENnlRNHHs5oqjKfbKNBm3+L9prcshr8x4cetQ+RI4O2uy7i46x+ZJVVtY6uXNNKe+x/6ODRnhF0xMHCYxkESUDVgwfcYHNJ1MC5uRlkP7b1glxU50HYqfhgHwCkE97WSCAnzPgWKakK64BB7UUt10KV1iKVwTL2HlCN0qSNUEiA5G9rMs2ue0HTYipK6TLO/9JPhA8A9qyGi+DL3CwcySVcE1wOCpDg0rBSGFESPJ88ibj3+iBiUCiUEpzqHWGma9MyGa1YkKit0QH/KiIYJaVnkwjYINknQJ3DleBFjJEz+JUnsc+AZCv2pJVMBilYw9ywm4jLsFdgKCooJ6wAZGCWhHyJ6Hql/Fwi3VvXAHPPjGkbKGOdeCFzkzuifyJ08b35o0fg+phGtHqpyuxjG2WWH4GOaRGFZswGxUzcnRETk/PtRgYFMYnj+gFYVesclgCUjfV/EzyOXLbViXdyblD96bFBmoAsOQcQv0sRPKwuGY1uISoqYpvZRYqtn94l0VW8iMqPbkvn5JrbQqDav2zr1+74RC9KZNa9MlldjUUiRDVagCxOCu5AHCN3WNhj9daxKPtgmad9cdxXVjxrXzKqmAJKy+NCQd1ggFY3S1K9UKmCaNp3+nT1dlj6dLNv/9uU2zK2+u6M39HU3d4UDoeGuoUFT241zB2tq2CsDKHxszT1rNWas8LZFZ25Rk0XSMC0scvgbFVNoTI5DP1TJyN+w01xfXWRcJt/SW2NR2so/DfNf3aXO+W3PBHk9pi8FyXXzgKPrV2wupR1n0HuAZUzHQyJ6/efbsT51eW4Dt3cXPGWuADRbUU906WKTO8nkpcUM1sZ1c6ZfiVQlAQXQW5R1odampHK/0OaJ7HvSBroMaRNBSDYYkzCpifU5wSEipG5GGDHH6xWb/c/uQjOnkyWkVu8u5/9junF57uJDQkqESpb3GwW6EJ/u2q75e040WAfy5V0Wi4YfZ59tec1nkCOiYaOgtuVneSH634A/FE8NyKfRGOoH4arx0pWLf/Ccknrp+N0HFNf49JXx+dX+DPA/XpnjkbrV3ixk97e4m5JMuMWhZR1x+cYlZswEjzqCvxcd/Xtj/c3qJ//Ah8nro8=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PacketCommitment queries a stored packet commitment hash."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/channel/v1/channels/{channel_id}/ports/{port_id}/packet_commitments/{sequence}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+PacketCommitment queries a stored packet commitment hash.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"channel unique identifier","name":"channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"port unique identifier","name":"port_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"packet sequence","name":"sequence","in":"path","required":true,"schema":{"type":"string","format":"uint64"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryPacketCommitmentResponse defines the client query response for a packet\nwhich also includes a proof and the height from which the proof was\nretrieved","properties":{"commitment":{"type":"string","format":"byte","title":"packet associated with the request fields"},"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

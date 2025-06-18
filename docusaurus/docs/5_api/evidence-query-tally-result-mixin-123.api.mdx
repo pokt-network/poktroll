@@ -1,0 +1,84 @@
+---
+id: evidence-query-tally-result-mixin-123
+title: "TallyResult returns the tally result of a proposal. If the proposal is
+still in voting period, then this query computes the current tally state,
+which might not be final. On the other hand, if the proposal is final,
+then it simply returns the `final_tally_result` state stored in the
+proposal itself."
+description: "TallyResult returns the tally result of a proposal. If the proposal is"
+sidebar_label: "TallyResult returns the tally result of a proposal. If the proposal is
+still in voting period, then this query computes the current tally state,
+which might not be final. On the other hand, if the proposal is final,
+then it simply returns the `final_tally_result` state stored in the
+proposal itself."
+hide_title: true
+hide_table_of_contents: true
+api: eJztVk1z2zYQ/SsYnNoZ2YydTg861fV4Eh8ycRT1FHsUiFyKiEkABpayNRr99+wCpEJaVtz0XB8oGNh9+/kW2EpUqyCnX+SnFvxG3k2kdeAVamuuCzmVV2tdgMkhHi/mqq43MwhtjR/0kzZn52/lRDrlVQMInoG2soCQe+0YggCct84GVS90IXQQWIFojX5oQdCGLYUSvcQpQRkCGivRpo44Citae3hotQdyDX0LExnyCholp1uJG8eqAb02K5IsrW8U0k6rDf75h9zt7lg9OGsCBNY4f/OGf8b+XojQ5jmEULa16MXZtdwaBIOsoZyrdR6TlH0LrLYdODLGi4kb5G3WQfbJiOfZQGBvVHBEbLmLzC6/QY6cb881Qp2iQFY9tBu3RQGlNpAsceogIBQinr2OrJYBlTaL3LYp7rGF0XEfziPoVcU2QtvE8iYh6o2Bva5GO6q3PYbenxwDNlasLcJR2EeN1WIN+DMDz2SOmWKJF81sIBxD3x8dAyWBowF0fxPCLBW1xAtdaohF8OSobAQJ3lv/35r15x2Q2wIGUkQkWIEfkou23p7L6CrVuQ4DaeW92jB9EZrwuq2/0vFzInMaVFFo9l/VN0OVmKKGqKpWLyrukzjM3Jhp2HqT6pP44tPBeC6J6zKK9BtU0lsTUNe0MlxEMifILW2LCQsa+lDVH5jZIreNa7GjYN56T2XpjBEzECa35rHSeSUa7g9qaxRLEMRaNvzRRDVLHy8qZQhfH/iShAknmtYogm5cjOVHdF+jzCLaXaQgvyb79LU0TzkSErw1P4AxQF1yM9FsryxfBiuIZeNJPJVZbkNjQ7bytnXZ+izrNUO2HczvXZYGFI1q8Ov+jmh9TRAVogvTLAsUmrHmhKDWcOJdfrqkbjp19h69retTyqF8XsfPSUf8TZJidnNJPfg6bEOjyAD+O+QPSTiB3/E1VNpDJl5WJCZWNEnaJcNljH1Ceo/W32e9ITG7+jwXFzfXTHaNNffp+/n8hrfEJbHW0laircojbbub8DVgph5nNTnTrWIXBSoWHVIdsFFmAPk/A36ZAaOS7wcNwhNmrqb6c6Jj7207dnyRiR2kG/lBv+uzbuRFjtB6On7lJJpQn1VUMUbYbpcqwD++3u14OyaT9mm5Vl6rJTcRP7d04DXxsyRcOHB2fxXI32bd4+l38Wuvshfj7ae8YW6vVd3yf7S8h82zF9zujsQrUAVdHexxkrigV5bDge7BRcWk28+ed1dzGunfAS8Vz40=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"TallyResult returns the tally result of a proposal. If the proposal is\nstill in voting period, then this query computes the current tally state,\nwhich might not be final. On the other hand, if the proposal is final,\nthen it simply returns the `final_tally_result` state stored in the\nproposal itself."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/group/v1/proposals/{proposal_id}/tally"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+TallyResult returns the tally result of a proposal. If the proposal is
+still in voting period, then this query computes the current tally state,
+which might not be final. On the other hand, if the proposal is final,
+then it simply returns the `final_tally_result` state stored in the
+proposal itself.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"proposal_id is the unique id of a proposal.","name":"proposal_id","in":"path","required":true,"schema":{"type":"string","format":"uint64"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryTallyResultResponse is the Query/TallyResult response type.","type":"object","properties":{"tally":{"description":"tally defines the requested tally.","type":"object","properties":{"abstain_count":{"description":"abstain_count is the weighted sum of abstainers.","type":"string"},"no_count":{"description":"no_count is the weighted sum of no votes.","type":"string"},"no_with_veto_count":{"description":"no_with_veto_count is the weighted sum of veto.","type":"string"},"yes_count":{"description":"yes_count is the weighted sum of yes votes.","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

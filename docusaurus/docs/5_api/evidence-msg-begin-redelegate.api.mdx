@@ -1,0 +1,75 @@
+---
+id: evidence-msg-begin-redelegate
+title: "BeginRedelegate defines a method for performing a redelegation
+of coins from a delegator and source validator to a destination validator."
+description: "BeginRedelegate defines a method for performing a redelegation"
+sidebar_label: "BeginRedelegate defines a method for performing a redelegation
+of coins from a delegator and source validator to a destination validator."
+hide_title: true
+hide_table_of_contents: true
+api: eJzNVttu4zgM/RVBz7nM5S1P03YKbLGYmSDNPrVFociMrYkteUQ6bRDk35eUnTa3TmYXi8X0obFF6pA84qG81mRy1KM7/QVz/dDToYZoyAV/k+mRvl66DLwFNj5eQu78BDIoITcEuqcj/GgA6TJkKz1aaxs8gSd5NHVdOptwht8xeFlDW0Bl5CkDtNHVYuUYjH0ArTKYOw+ojLr9/KeqANHkoOYhKs6OfyrnczbG7Q4GuvdhrmxwHtU8hoqtnY03GZ8pDE20oJamdFlapJB8kJxPAK+mAZdGqxo4tzD7Dpb4vY5CDDnAVF4VmrbQ/VKuOP5O8hQW4NWToyKF8qHaxpKMDP8knME9Z//12/R6pKYFdItq7qDMlEPxu+H3p8LZQrmqLqFillER+9oGiYutgIqQ3Xt0OQdoIkeXs3FMkJqtVB7ywAVQ+CeVdX5IkcnWm55OBZywbJKt4/rRZBmHx5MILww/Zki/6InR/sRz00X/7ftpexx6RLGBjSxgHTy2rH949+64mS4UNtZyrvOmVFt3wfrPdDbpQF/4kZZit+Ehf9voSug/30Q2SJdK2EdyFRyfW08L6YZL0MwQ9JPX5uU056YpT6jrwqvGw3PNIbmvIUZm/V/xci77bDdlx6A5xN2ceenjh1YSZFy525gmRrNiX0dQ4flYn1rzcV/3NDe9k/xNOd7dkijqOvgNQRxL4m09tJPjf5VCG5KzqgMmRgwV/Da0AauAAySz4BwGy/czZvf94EQ/8iaEuIQoF9daN7Hk/QVRjaPhEAvjffD9PIYl9GNtB4IzqMOCYijLATenPuTntt2jLtlTTcZXfLbnYSvjvAf6NeQvrXMLztesNOXk9fq8fjYimf0JvH16VU03gveG8tHgfXV/Y96ectgbszv4zs/DiXuu4HJUzhdbM5Oyh8JBn+t7CnEx3BKiJte3U3UxvpGB4UjK039Mp2NZUles2lBCJ1tjU8XeyLTQ54DTDcGn3ybTPSkfSCGQGKWzKuN3IH8rBeyR+SJhgmca1iUzKyWk7lt34rjTb4uD8Q7lwf1ViLZ433o9Mwh/xXKzkWVuuMjfancPcvbRmZkcyt0DxyvAZDzlRE8LWKVvmTRN+1PJLrVKkwbc4WQVqbQ7Lvi2qumnvg878h9/u52y86z7eqzS2NXRPMl1yf9HWsvnqOxOszKtrXVpfN6k4adbTPn7G+6D2J8=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"BeginRedelegate defines a method for performing a redelegation\nof coins from a delegator and source validator to a destination validator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.staking.v1beta1.Msg/BeginRedelegate"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+BeginRedelegate defines a method for performing a redelegation
+of coins from a delegator and source validator to a destination validator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgBeginRedelegate defines a SDK message for performing a redelegation\nof coins from a delegator and source validator to a destination validator.","type":"object","properties":{"amount":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"delegator_address":{"type":"string"},"validator_dst_address":{"type":"string"},"validator_src_address":{"type":"string"}}}}},"description":"MsgBeginRedelegate defines a SDK message for performing a redelegation\nof coins from a delegator and source validator to a destination validator.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgBeginRedelegateResponse defines the Msg/BeginRedelegate response type.","type":"object","properties":{"completion_time":{"type":"string","format":"date-time"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

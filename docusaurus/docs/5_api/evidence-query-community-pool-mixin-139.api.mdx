@@ -1,0 +1,64 @@
+---
+id: evidence-query-community-pool-mixin-139
+title: "CommunityPool queries the community pool coins."
+description: "CommunityPool queries the community pool coins."
+sidebar_label: "CommunityPool queries the community pool coins."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVU1vGjEQ/SuWL70QNh+ncmqCUJtDWprQE0SR8Q67DuuP2F4ShPLfO2MDhYCStkiI9XjmzcybN8uKR1EF3hvzny34Jb/vcOvAi6isuS55jw8WqgQjIV0/9K3WrVFxObS2uVEvypxdfOYd7iE4awIg0oqfn57STwlBeuUICXEuWWilhBBmbcM27l0MldZEMJEihHONkil38RgobMWDrEGLQ7xUz145t2tQpgKLNWyTsLh0wGbWJ2uKK/YCJ+Z22GcaYm1Lqoj8MYOdPoKMeHaeKIkqd+cw4rAcsrISZspAYHKDzsj8iQzKhB1o4b1Y4lFF0OEQrI/uWzDBop2DYc8q1njAYVitTCKJCVPilwltWxO7EzMx33+MBj02wkazkc0UNCVRgn7XeH6ulayZ0q4BjbRnqmQbotVrCiYmqAoTtEggkvjUKg8lmy5ZZSuLXET7MUk5OT2t/UL0ylT8tcNTA0duNh/ymIm2iUc0ZFhr4MVhRqwIvMeZ/peU3i9e2hJ2vBSCVuDRDTWkRcymi/PcTBSqCTveB6N9P9eXfH3IRoeLslRUv2iGuyGJIo2LJKqjgVsS9xW1o3f2hDuAYHn0e1r9o9SsBQytIFUtYo2HQtqgbSiSDKRtKKZYnBVblIe0Hh0ewC/A04tlxVuPC8PrGF3oFUWohTHWnFTeLuDEO9mdIoldZ+fR26bpIhR/W/5djmFX6MlwWZH6j2G1UMZA/Dvkm+ycwfElqMzMHlnMGt1YhZvYTgmuIOwTjHu2fl5sErHbwd2IXQ6vaU1UbGg830ajIZlYH8Vq0ZTVKmRSqxGanD4CJsURq7mY9RMzNrKAQ8JLZ0PUwuxA/vvg9zreyivCSyxcg+1TnkT9ai2KMc+iyNreygKPi7PU5p40kNsaq6Sw1WoqAvzyzesrmZ/SH1BvjI8L4ZWYEnHje0xXgyhxAUlLc1jSiwD/SRzJciGaNm3d23WnGW4l/HUwwsX4Dc+IdKM=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CommunityPool queries the community pool coins."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/protocolpool/v1/community_pool"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CommunityPool queries the community pool coins.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryCommunityPoolResponse is the response type for the Query/CommunityPool\nRPC method.","type":"object","properties":{"pool":{"description":"pool defines community pool's coins.","type":"array","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

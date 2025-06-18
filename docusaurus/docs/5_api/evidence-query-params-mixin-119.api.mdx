@@ -1,0 +1,72 @@
+---
+id: evidence-query-params-mixin-119
+title: "Params queries all parameters of the gov module."
+description: "Params queries all parameters of the gov module."
+sidebar_label: "Params queries all parameters of the gov module."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9Vk1v4zYQ/SsDnlrAsZIseqhPTbNBm0PaNOsWKNZBQEtjiRuKVEjKiWH4v3eGlL3y2o6NPTRAEkmcj8c3b4ZciiBLL0afxV8tuoV4HAjboJNBWXNbiJG4masCTY5x+eleOln7O/WmzMXFz2IgGv6AAR3HWIoCfe5Uw97kGxf9U1g0CAXOlEEPr5XKK/jqBsHCC8eGmXUDyKWBKYI19DuDiZjboEw5EYOJmRBUrRfxFayjxQIb61WYiCEhMRRwOyd9VAlGqOjZ4UurHNKmgmtxIHxeYS3FaCmi8Uj44Ci4WK0e2dg31nj0vH55fs7/tjd3Bb7Nc/R+1mpYmzOQ3JqAJrCHbBqt8khm9sWz27KXdjteJDjx+9BFA0X0VLiJDpFJ4il+jQ5Z8oCH+2sgQitbMIRuQ3b6BfPAVXJc1KDSdjranhJVu0i21zeV45y9ujnUMmDB9escjmeu5dvTJjo6ZYvd7HfyTdVtDWk97vYq2Boqq4tOL10IUglI4AzWSz2EW6OCkhrmUrc4gsuJqakUle/hWpd4IGpl1lD2YFAmYlgnYhBfMzEEKjA6SOrsoPbSSOfkguUXcB/B11aZDa2Swj2jgVcVKnqhZrOELWoGpCnoF2RtWxOG1ALmjz/HNyMYUynSR5gp1AULhexu6T31l6objTWBTGXLW88UJoFMjFclJWhJVrBuCpguoLSlpT0Ge7yQKfme3hmIuIF9XcU/g9TDB6XXXz1BeNH8ONqX1rq2PlxmMs2JK1nGoRMshQUf5DOCQSxSKio1djog3lod+OMUJ4ba3dOIZA5JeKrYVdtAkF8tiS4xXQRkkkJFQVjR74BitbkoAwL1L/HAEHzE0FdiI70fwkecSQbVaf98+NNJOOYY7NMJYGJYxvEPdlzERhxHqtJrPDN20DFDnASLHYwX2YcTMLJmUpsdFM3W8gmqSfbHZbOOe2BQfWzTMRk1Q8kODYOtBljFDok87DlSDLQG3xoCQ0jROSLzu06W9/eV2wJ7VoqCluj61NOnD5epmYNU2vesd0bb+7l+Scu702AgZFEoxi/1fd8lUlTTuUrteGiMRGR95rpTkC8Simeq1v3adwUq7RxqW7Q6kpmGIfmWGGHzJWEkstz62vqMbLP5xZS2f5ElYWXL3tViRR4e3Xx972mdJucqhMaPssxX0hhrzkpn53jmmnzIgYaNfQ7Oaj3MaUB+u4NPyQd+JUs+zYn942FrqYzBcFrku2Scgj/y3Whm95xNFZlBSYdRO+VwGcc+I79X656zdSJ4uPk0hqv7W5a5Cpor9Pt4fM+f4Jr0ajV2gpV5FGx3PTsWOA0l57vOTk9gbABPZaJFmiyhlqYX8jtqv7XljcQCvoWs0bR/ThS5X3a6+CySLsiXItHfThvrGzAvjPpXT+K3IqTsuVxOpce/nV6t+HO87NJ3epxLp+SUyeOrs/L8TIqcSe1xB+Sm+cUPD92h/SP8rzfsvTStx4LhoRAnO73R4zMuvrmNrx7JvEJJZ2XccLK4ojt0E3q+O5ONtbpp1t9uxjQD/gMdQ3/h
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Params queries all parameters of the gov module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/gov/v1beta1/params/{params_type}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Params queries all parameters of the gov module.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"params_type defines which parameters to query for, can be one of \"voting\",\n\"tallying\" or \"deposit\".","name":"params_type","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is the response type for the Query/Params RPC method.","type":"object","properties":{"deposit_params":{"description":"deposit_params defines the parameters related to deposit.","type":"object","properties":{"max_deposit_period":{"description":"Maximum period for Atom holders to deposit on a proposal. Initial value: 2\nmonths.","type":"string"},"min_deposit":{"description":"Minimum deposit for a proposal to enter voting period.","type":"array","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}},"tally_params":{"description":"tally_params defines the parameters related to tally.","type":"object","properties":{"quorum":{"description":"Minimum percentage of total stake needed to vote for a result to be\nconsidered valid.","type":"string","format":"byte"},"threshold":{"description":"Minimum proportion of Yes votes for proposal to pass. Default value: 0.5.","type":"string","format":"byte"},"veto_threshold":{"description":"Minimum value of Veto votes to Total votes ratio for proposal to be\nvetoed. Default value: 1/3.","type":"string","format":"byte"}}},"voting_params":{"description":"voting_params defines the parameters related to voting.","type":"object","properties":{"voting_period":{"description":"Duration of the voting period.","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

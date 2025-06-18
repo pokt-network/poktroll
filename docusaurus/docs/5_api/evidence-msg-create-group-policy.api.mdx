@@ -1,0 +1,72 @@
+---
+id: evidence-msg-create-group-policy
+title: "CreateGroupPolicy creates a new group policy using given DecisionPolicy."
+description: "CreateGroupPolicy creates a new group policy using given DecisionPolicy."
+sidebar_label: "CreateGroupPolicy creates a new group policy using given DecisionPolicy."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vk1v2zgQ/SsEL70kdre76MGnpmnQ5lCskbinIAjG1NhiI5FccuTEMPzfO0PZsWIJSbDb9cGWZoZvvt4MvdEEy6QnN/p7WurbE+0DRiDr3WWhJ/piZQt0Bll5dx4RCL9G34Spr6xZ6xMd8Z8GE332xVpPNtp4R+hIHiEEtslI45/JO5ElU2IN8lRgMtEG0bIXRu+BK5sUlahYN+4rd34VrQOOOA75ZSA//4mG+D1EyYMsphxLUVvXd5vFez9gjG8cKSiKiCkpv8jipThV2bLjJ1G0bqm3J4xobGK4u9CWhJ28HMunVr05hmIsdm0lNKim3SPZSzfuI58qBRYs2LgTcat6l9TeeCcZSdDZ5M4W/ZLsNfuqNM5yodXll2f16FfiRC98rIE7rxvr6ONf4qZGggJooOF7jbgBt1YQ55YixLV60gARMF0KRb6X1kAn5HNcp/9OK3m3EblQFBvciiAF71Lbyg/v3/dTO1OpMYYZtGgqtTcXrN84G1c72NeS2Vm9dUgy8YfGpJ2IlwfF4UO1ViZHUbylW7ldC2gqGiiiY+bhI/NawDBGH/9dLV9O2fiiO4pMXFxi7JKZRX9+aOecwFapYw0xgqxAS1in/2Xut3mGUoLl4MFBzvdp0LaE50xa9KwxqkmMpJZ2hU592e2J6VPPeBRLL5dA8CnnA1Ty29j4VPs0ajfB6o/RIPvYPmFcYZS7ZaObWPHRkiikyXicSnDOu1OGWOFpDGY05/KOgr+n6KtqZHytjxO7bs+oz2yprqbn3JTXYWuwziG9Dfl7a9yC800obLo63G8Xj1CHCjv3yWH5DdwCn3pXxWHrHg4eVmTH0LqF78/EecnxcbOobOaSx1iSOuWAH3y8H+8zVFcX1zN1Nr2UobMk8epvs9lUROqc58ezqB0gMHmAHNRi9BqwBCbtbIPZPSnnSSUkUQpLanAdyN/IxWeleBoFwkcah4rrIgFkMmx2NL3RAzRloD5RudOlEJyPbDZzSPgjVtutiLn1kXt5w48riBbmUs2bW3ZVIhS8KITZ97iWVNuFdDqTwMS8avKOOF5OQtr2xBlfEoFetL3tzOD07+sZG893f7TqvLl0hAe5pfh7orX8d5PTed1k2UZX4JZN3h+6xZTPL2jwiCE=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CreateGroupPolicy creates a new group policy using given DecisionPolicy."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.group.v1.Msg/CreateGroupPolicy"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CreateGroupPolicy creates a new group policy using given DecisionPolicy.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgCreateGroupPolicy is the Msg/CreateGroupPolicy request type.","type":"object","properties":{"admin":{"description":"admin is the account address of the group admin.","type":"string"},"decision_policy":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"decision_policy specifies the group policy's decision policy."},"group_id":{"description":"group_id is the unique ID of the group.","type":"string","format":"uint64"},"metadata":{"description":"metadata is any arbitrary metadata attached to the group policy.","type":"string"}}}}},"description":"MsgCreateGroupPolicy is the Msg/CreateGroupPolicy request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgCreateGroupPolicyResponse is the Msg/CreateGroupPolicy response type.","type":"object","properties":{"address":{"description":"address is the account address of the newly created group policy.","type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

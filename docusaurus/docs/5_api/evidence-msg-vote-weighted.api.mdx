@@ -1,0 +1,72 @@
+---
+id: evidence-msg-vote-weighted
+title: "VoteWeighted defines a method to add a weighted vote on a specific proposal."
+description: "VoteWeighted defines a method to add a weighted vote on a specific proposal."
+sidebar_label: "VoteWeighted defines a method to add a weighted vote on a specific proposal."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVt9v4jgQ/lcsP7ewt3e6B56O9jgtD1tQyXZ1QhUyyZB4m9g526FFiP99Z+wEEkLb0+7ygJLxeH5+80323InU8tGSf7Ypf7ziugQjnNRqmvARn2xlAioGPFw9aAdfQaaZg4RfcQP/VWDdjU52fLTnsVYOlKNHUZa5jL2R4TerFclsnEEh6CkBGxtZ0ik6QMNtuyyBjVRgmWAFWCtSYE6zWFiHki0qDtCz25WAV/X6G8QO30tDQTsJluwX4EQi3AVfzQmTaF/tmDBr6YwwO3Y8Ec4JjDQhry4D1o6t5do6I1XKD1QuMm77zuqDY0Jk7bnJkjJhtUbLrDBG7PBVOii8yfNMuy6awCjImRe2ylcp6ZjeBFcbbcKDxc64Qa9mujZ5OYlODluRy24CVww9FRW2SGnHCAdC4p0qgABeS7auISW1EVWOyOEPs2iyms2j6exu9eVuMZ/cTv+ZTv5GHVBVQSB9XaN98u9kcSYZ3yyi8fTuTHo36wlWX6fRp9XDJJrxR2xv6Fi/MEFOQPI1oQxrkbBWx1JQl5+ly07noQIXQIS/0A9tRb6SSd9b67DTC+wxziBDKTaaBI3ipTIjBgpBVa6kcn/+QeCluEzfnRe3czNMJInBefRAetvRIeTz81NO/CINUs3ImQoOJLAlQigg9uOHD/3Ax8xWcYwWN1XOGnWy9WvI6b622OkB6gw7uTV+GdWlT1dNeWrM91JQ2FV4KVEVbYExWPAfyuRtkox1Ai0tRASkCIUWSlD0+0fuQ8V5ztt09C5NdX39FY73PaBccYSVpPhFPm9f8SWqkXHp4kWMvQowl2nP5+gM3884WKHIYrXlRsYdVId7NHza+pyEy/BtGGtbaDtI9Xaw/W1w3n1UtGC2YGil7nllcryTOVfa0XBoM6GUVtep0Vu4NmU8WGNtB6V+ckbn+SDWRY/jF+EOu0FNdj+/xY68b7ZAAlbg/p/lz0E5GMcPAILS/Wm3T15EUebQ3awnVjnuv+Vpi7zB0g2fHnv5eEZ9J8s1ObV2rVQb3Z+Y24zWTYpcW60p0SFlfY0ZPWvzNGxKwO4ni4iN51MaSOkoIf4piuYkYreYgUZRGC8R+/FSoiCl9wx7HsV+19QZnvwmtODokPBTCNUy+YuR2inHcVgcvLhhmWNtKAiPmH0N4iXvgZj2YBvG2JaMcI+6+/1aWPhi8sOBxAgMgx98S3zcCiPFmkq5pF2ZgUioY4iEJ9hRZwJXXUcUEannlaePc94iSIcbY2Tv0r2p+9gazflsEaHyuv4ELTypcSOeaX3g/4jzzheal+15LlRaeWrhwSb9vgNqSNti
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"VoteWeighted defines a method to add a weighted vote on a specific proposal."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.gov.v1.Msg/VoteWeighted"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+VoteWeighted defines a method to add a weighted vote on a specific proposal.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgVoteWeighted defines a message to cast a vote.","type":"object","properties":{"metadata":{"description":"metadata is any arbitrary metadata attached to the VoteWeighted.","type":"string"},"options":{"description":"options defines the weighted vote options.","type":"array","items":{"type":"object","description":"WeightedVoteOption defines a unit of vote for vote split.","properties":{"option":{"description":"option defines the valid vote options, it must not contain duplicate vote options.","type":"string","default":"VOTE_OPTION_UNSPECIFIED","enum":["VOTE_OPTION_UNSPECIFIED","VOTE_OPTION_YES","VOTE_OPTION_ABSTAIN","VOTE_OPTION_NO","VOTE_OPTION_NO_WITH_VETO"]},"weight":{"description":"weight is the vote weight associated with the vote option.","type":"string"}}}},"proposal_id":{"description":"proposal_id defines the unique id of the proposal.","type":"string","format":"uint64"},"voter":{"description":"voter is the voter address for the proposal.","type":"string"}}}}},"description":"MsgVoteWeighted defines a message to cast a vote.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgVoteWeightedResponse defines the Msg/VoteWeighted response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

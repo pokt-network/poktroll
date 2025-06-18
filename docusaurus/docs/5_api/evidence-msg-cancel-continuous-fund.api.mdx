@@ -1,0 +1,72 @@
+---
+id: evidence-msg-cancel-continuous-fund
+title: "CancelContinuousFund defines a method for cancelling continuous fund."
+description: "CancelContinuousFund defines a method for cancelling continuous fund."
+sidebar_label: "CancelContinuousFund defines a method for cancelling continuous fund."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9Vk1vGzcQ/SsEz/pI0qIHneoILpJDUEFWT64RUNzRLmMuyZJD2Ybg/94Z7krZ2KuoKILosOJyhm+Gbx6He5Co6iQXt/JTquXdRPoAUaHx7mMlF/J6bypwGsj4ealoYJfeoXHZ5/RHdpWcyAj/ZEj43ldPcnGQmuzgkIcqBGt0AZt/Sd7xXNINtIpHFSQdTWArBaIAY/iigp1xkIQSLaSkahDohS6eQp9cxY586ekjOaYA2uyMFpH+g6FkZpQmPgWgOH77BTTSe4i8UzSQSqoZGx8NPr3O7OpoEiYJbEAorX12KFRVRcpJ+J04LR9EShiNq+UzM9Tn8Rp8fTSdA+9QOAZbT0jiofEJ+m2rWFjZQk+MhWokD/5NfjbrLA4TgaSEMUPhIgXvUsf6uzdvRvgWKWtNYXfZiqM7Y/1YZa175NNeO377SdouPILOyOSrv905onp6LgusIw+qzw2YuhlRwrJ3+FDs32R1XCu21ut70SG8rvBEUiVaRdgyG4e//craO8VF08L5qBuyHiV4CsdLvhumUgjTAvyTVH5J30XgO5XtSBJXTmQHjyRTpL1BjCTb/yWvC4X2FQy8qBBQQxyyRlO/vJMlVVTGpoG3ilE9ka9BaNPlWL935sMrKiaSmDWcv7Kr4ZJCUS/asYWjXeJii6DmV5U20NeHa/miTTDDnSMBBp/KZhQ29DbXPrU+zWhv6LW3wXs727+d0Zmbn7lzEsQ9RL62DjJHSyANYkiL+Tw1yjnvpnX0e5jGoGdbYnkW/D1Gb+1M+1a+3N9Nt0a8J0+xXi2pNpdhW2WcA/xvyJ865w6cLlkW1frrvXn9qNpg4cVF9PXADY7W4FoxbudHTnRDsURtsMlbzmnOCU4p+IOP9/NjtmJ9fbMRV6uPfI4Mcmz5YbNZ8ZQgupOnqe5MKF3OhFPcP+QlYE6MS9Ml04+E8ygSIBu59q1yA8gfJa9veDhJG+ER58ESKRy9VPXQK+9Wnlce4Y1qj4rXsHpp8eGwVQn+ivb5maepmpGqdkvDvYpGbZnU2zsK2oCqqAWwWO+BC7vsWs10wymyu83l9L9sO6zDbsUV3YgBv+t7Nzhgqz9vNuS87b/J2tKTZFQPLCZ6LqTkLz1eXRpJmTtIq1ydS2eQHSb//gXiFJyv
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CancelContinuousFund defines a method for cancelling continuous fund."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.protocolpool.v1.Msg/CancelContinuousFund"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CancelContinuousFund defines a method for cancelling continuous fund.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgCancelContinuousFund defines a message to cancel continuous funds for a specific recipient.","type":"object","properties":{"authority":{"description":"Authority is the account address of authority.","type":"string"},"recipient":{"description":"Recipient is the account address string of the recipient whose funds are to be cancelled.","type":"string"}}}}},"description":"MsgCancelContinuousFund defines a message to cancel continuous funds for a specific recipient.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgCancelContinuousFundResponse defines the response to executing a\nMsgCancelContinuousFund message.","type":"object","properties":{"canceled_height":{"description":"CanceledHeight defines the canceled block height.","type":"string","format":"uint64"},"canceled_time":{"description":"CanceledTime is the canceled time.","type":"string","format":"date-time"},"recipient":{"description":"Recipient is the account address string of the recipient whose funds are cancelled.","type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

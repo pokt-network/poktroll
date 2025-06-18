@@ -1,0 +1,72 @@
+---
+id: fee-msg-store-code
+title: "StoreCode defines a rpc handler method for MsgStoreCode."
+description: "StoreCode defines a rpc handler method for MsgStoreCode."
+sidebar_label: "StoreCode defines a rpc handler method for MsgStoreCode."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVt9v2jAQ/lcsP0OyddoeeFqLOq0P1RBlT6iqnORIXBzbsx1ahvjfd+eEkgJrO615QM75fn/fXdjwIErPR3N+7Ut+O+DGghNBGn1V8BH/BoDyu5tgHIxNAXzAHfxqwIcLU6z5aMNzowPoQEdhrZJ5NE7vvdEk83kFtaBTAT530tItOkavT05ZAQupwbNQAevcs7C2wBbGReFe1dk8wSToFr2Y7B7ygO/WUd5Bgo9BZanB0anT88FJXZKdDCoKogYTReHAe74d8Afh67tsHeAupzpP2GIytcBCOWn1fJElIxkjS2YWTMmyCixXEhvDqEFO5CFhV/giNMuwCvHAsLTyt7R4X1tKAgq+pWfwvp0iLenQ+Si4BrYk8NZo33bq7MOHY2zOmW/yHFNaNIrt1MnXm7E+hGfXqn4t087xQU2d8O9FHaGNUfOlb+p/wWxnw2Qb11fi7PMXVglfEYBRREGLiGkLTERmIRoVTrRMs0bDo8Vy0Qacw8zfpXMHpT6npkSnJRK9VyeKPp3xmGoQUvmetnBOrFFXBqj967G+tteHPaU24NhIyl+oSd8ktqhG3ojypOFJeh9zWxDKCIUuFI5oDaEyRaRCnz3U1PYKfVjjY/4iVPiWyixP4gi2E+gTmtBk9TFBB2l/lXlwK3C0/Ta8cQptqxCsH6Up8kFro4elMysY0ihl2M/EmmVwRqkEh5YfVdLasAvUZNPJGFF43W0tpNYQ3ub5ulVuneOuJvpM9+v48lHUVkF/A+4n4XC/PcGChNALc0zpcYXRWClD1WSUVUopDjH8g3HLdJcvm17ezNj55Ko3XN9nswmJ2BjpbxR0/McdSFG0qEnpNceUGIHTJtOdmDaBeQh0SaDXQvdc/geVnpX+xNwAjyG1CvtAASOUm45lc/4Sy9DjnmcIVEUERZvNJhMefjq13ZIYkXP4EZ3jcSWcFBm1b36LsSoQBeGHxFzCmtBoF8hwRpmRumriTB8uE+Jca3GOK9yGF3VvezM0+XEzQ+Ws+6zXLUnwQ0XfEPwdcU5/Dsg6roco23AldNnEeeetT3r+AIqH7Ag=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"StoreCode defines a rpc handler method for MsgStoreCode."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.lightclients.wasm.v1.Msg/StoreCode"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+StoreCode defines a rpc handler method for MsgStoreCode.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgStoreCode defines the request type for the StoreCode rpc.","type":"object","properties":{"signer":{"type":"string","title":"signer address"},"wasm_byte_code":{"type":"string","format":"byte","title":"wasm byte code of light client contract. It can be raw or gzip compressed"}}}}},"description":"MsgStoreCode defines the request type for the StoreCode rpc.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgStoreCodeResponse defines the response type for the StoreCode rpc","properties":{"checksum":{"type":"string","format":"byte","title":"checksum is the sha256 hash of the stored code"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,75 @@
+---
+id: evidence-msg-reset-circuit-breaker
+title: "ResetCircuitBreaker resumes processing of Msg's in the state machine that
+have been been paused using TripCircuitBreaker."
+description: "ResetCircuitBreaker resumes processing of Msg's in the state machine that"
+sidebar_label: "ResetCircuitBreaker resumes processing of Msg's in the state machine that
+have been been paused using TripCircuitBreaker."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFVktv2zgQ/isEL3tx7D5uPm1iBNgAW6zhuCcnKEbUyGIjkSw5cpI18t93hlJaJXbaYNGiPsh8zOObmW9G2muCbdLzjf6Qtvp6on3ACGS9uyj1XJ/vbInOIF9+WmFCWthoOktnEeEGo57oiF86THTmy3s932vjHaEjWUIIjTXZ1uxz8k7OkqmxBVmVmEy0QW7ZD9s/Yl6VWFmHSVGNikVmx2QGAIruA04ZkPyzRV98RkO8D1FCIospg+qo9tHS/SGGr1fK9h7BGN85UsPFv1gq8opYQ3nxy1iynOkBqaJHNAKRWNht9cNEt5xAOfzUxSYd+n5yrVJAYytGrEA1lmPzlYSfQ1QfV38nwcH+uxYVh2cwJXYzVRfVlWMcDL/BihS2gYOBpsnK3wRVxfBHtmqgJ/HadOWOxHxr2VLvdRQixAj3vLWEbQ7sWej5N/l15Za9jchkpdjhgxyk4F3qy/3uzZvDZJ+q1BnJRdXlgLK42Pqp5F0Nhl8Z1SD8OhYP+EfpLrxvENwo3xV0DR0J3qnO4R0zjLi2GKOP/y8H30dofIkjKctGt3leMPdaoP7o/TudoRLYZhzMS5x6wdef/fUh9SYaytIKfmiWY5WcopYzCNujikdJ+0LduB3SuLn6Xv0jKetyyRMBoWrB1MyC3GxXroYdqgLR9Y8AXeJidFl/zR6fepGytMj9KBM5+JQzAFTzbmZ8an2aDiNouns7fYFirJMw7jDKsN9rnjOsXhOFNJ/NUg3OeXeyjX6HJzGYacFFmQZ/Q9E3zdT4Vj9Px2Wvo85YUq2WCy7lj822YJ1Dep3lD71wb5xfTcLB1bfXzfkdtKHBZ1P9sYgHI3fzeHPNlbWu8oe9sajZo9paqrtCkM0E5glDuPXxZvaIWa3OL9fqdHkhbWpJEOi/1uulHKkF9xF34tBIYHIjOWhF6EeGpRmkQD2YYaWcJ8XVlEupfQtuZPK3cvJJ8r42EeEdzULDmRTImRD7ga4bfZSubOoYYbnitZCd1fb7AhJ+jM3DgxwzBSKXesPLHUQLhdRgI3WtEUpWFYbfoLBh0Y+zk7WAE/GmyxPm+WgT8vYapzxaA31X9nrUj8t/LtcsXAzfP22eezrCrbyb+DnXWj6qRDsPq3y21w24bZenj+5tyu8/6ito5A==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ResetCircuitBreaker resumes processing of Msg's in the state machine that\nhave been been paused using TripCircuitBreaker."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.circuit.v1.Msg/ResetCircuitBreaker"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ResetCircuitBreaker resumes processing of Msg's in the state machine that
+have been been paused using TripCircuitBreaker.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgResetCircuitBreaker defines the Msg/ResetCircuitBreaker request type.","type":"object","properties":{"authority":{"description":"authority is the account authorized to trip or reset the circuit breaker.","type":"string"},"msg_type_urls":{"description":"msg_type_urls specifies a list of Msg type URLs to resume processing. If\nit is left empty all Msg processing for type URLs that the account is\nauthorized to trip will resume.","type":"array","items":{"type":"string"}}}}}},"description":"MsgResetCircuitBreaker defines the Msg/ResetCircuitBreaker request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgResetCircuitBreakerResponse defines the Msg/ResetCircuitBreaker response type.","type":"object","properties":{"success":{"type":"boolean"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

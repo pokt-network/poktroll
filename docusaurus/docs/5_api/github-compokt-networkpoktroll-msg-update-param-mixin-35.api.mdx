@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-msg-update-param-mixin-35
+title: "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin35"
+description: "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin35"
+sidebar_label: "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin35"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VlFP2zAQ/iuWn5hUGgTbHvo0qNDGA1sF3VOHKje5JqaJ7dkXKKr477uzUwgUxjRteUDm8t3d57vvLt1IVGWQo5k8D6W8GkjrwCvU1pwVciQ/a6zaxdg2zq7wK+Ct9Ss+elvX5DD/7gqFMFFeNed6rc3RBzmQHn62EPDEFndytJG5NQgG+aicq3Uew2fXwRq2hbyCRvEJ7xxQTru4hhwpjvNMBjWE6BvmrTb48X0PGtBrUxJ0aX2jKIXsIPcDqVqsrNcYORQQcq8dJybQwyuhg8AKhCoKD4HPCgXzpfulN40t2hrEXgFL1dZIRivWWWlvRGtqdrE34G8pFl3x3ZCYPGVGPIxqYJfyPT+pVNoDlRp9C9EQnDUhXfnw4GCX/LEIbZ5T6mVbiy2cM/+jOjtuZtjNG5scBBVCG0jFiVBA8EFQA3r16hXilSymbeahZZrkPacXc7pz0Inq08SvQrfda9RaN20jCLgAL+xSPMAFwUUH/2H2enUZbTF0C+0jfyVKfQNmi+/ivdDVF/TWPQPZCeWFvhmSDKwdVQMKAd5Txv/QvtwWfbkRPSjB9ymT6ehQRqqodB16aOW9uiOsRmjC27k+pde72qbpKwrN/FU96bvEEjVUX1W+NhSpiP3K/dUSIl1WlleYsyEyV1jRf5mz+Qpw2PV4SP5Zz5+AATyNNK/EjWx9TT4VogujLAuVMsaa/dLT0O97lw8XVMHhlsowt+z/lPtl8hEnhBQXkzHV/e2wjdLGEMk/inyewCk4LXAWzMXjBj5dq8bV8GyDPiq5tyYfjWln9ZaYNku7K+lxRblpaLg9zDFjwvsmdSjbshcXp5dTcTw54znSyFzkl+l0wiYxJvlbMiX9qzzqv0v/VmAmxq1KZLqTMBZpgpFfcusbZXohk5REpyXxTEyC1CCSGkSUg3jU05ObPwgXYY2Zq6kMnC/2ddNJbSZ3pUZx+mKjblWsTsJuNgsV4Luv7+/ZTO3z1JEZHW+U12rBVZtdUY4KVEHzzOpcATdtnPbG/pQZMbxu4yg/3yEsvORxTJ8Ph7/FXvUGaPLtckrgRfc5b+KCkV7d8qee/o6k5J8N7B23QrRtZK1M2cYxlykmP78AEBz9cg==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GithubCompoktNetworkpoktrollMsg_UpdateParamMixin35"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.session.Msg/UpdateParam"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GithubCompoktNetworkpoktrollMsg_UpdateParamMixin35
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"as_uint64":{"type":"string","format":"uint64"},"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"name":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"num_suppliers_per_session":{"description":"num_suppliers_per_session is the maximum number of suppliers per session\n(application:supplier pair for a given session number).","type":"string","format":"uint64"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

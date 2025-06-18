@@ -1,0 +1,75 @@
+---
+id: evidence-msg-deposit-validator-rewards-pool
+title: "DepositValidatorRewardsPool defines a method to provide additional rewards
+to delegators to a specific validator."
+description: "DepositValidatorRewardsPool defines a method to provide additional rewards"
+sidebar_label: "DepositValidatorRewardsPool defines a method to provide additional rewards
+to delegators to a specific validator."
+hide_title: true
+hide_table_of_contents: true
+api: eJzNVsFu4zYQ/RWC50Te3d58ajYboDls13DcXmxjQZNjiRuJo5JUHMPwv3eGlB079jptLq2BBNJw+Gbm8c1QGxlVGeRwKr+GUs6vJLbgVbTo7o0cyrsna8BpoMXvX6DFYOOfqrZGRfRjWClvwgixllfSw18dhPgZzVoON1Kji+AiP6q2ra1OmIMfAR3bgq6gUfxkIGhvW16leBdiCANL6yCIWIHoo4kQfadj50FEFK1HTnfmlDGWAVVNjgmAlw3UUDJoEEuPjVAitKDt0mrxtItXUCVx3QKlgosfoCO9EyxxEi2EVE2DXa6r91PeqzW52QhNOLDv9x9XeIvW7UtRlNcjOLGysaIXohob6xJVQjlDfyLHK2Zu5n7/NrkbigmVn41iaaE2wgb2u6f3VWV1JWzT1tAQ+Zkq3YVI1TYQKzQzF2xJAYixkEi0HoxYrEWJJVKhEYu3KybSrSvllkujhM+s0I8X01miP7t1T/l3Oi3KJpyH2b7m7/+gkB1xckjgsGVDaNGFzNenDx9OhX0jQqc1lbnsOGR2Z6x3Ngo15AUmxn2AV4z0RqoUnkF3kUgWauYuY5FyQlAlnLbG7niWqqvjmZKd6Bw8E4ORNAbeo39f5ZcbUqOBAy9LoCV4cluib1TMpl8+ZblGZevwb5r3ONaveflUqFfyRVGjwy2Jop7Bnyj8fRpXfUcfyFqcqnrmjmVNbz8TdYaj6BQ7Va5iRW8DjaHBUBjLOS86xi+ePi6Iyo8FKWdw+VoI4J/A8wWzkZ2vCbCKsQ3DwSBUyjl01yUlD9e+1QVjFi0+Ro91XWiaLK+Jech7xGfyFOPRLR3q27CNss5B/GfIX7NzBqfrkNU4frna7p4VT9fDsTh9edwd634w7s95fjQOX/zOTMGDGWndEk/76raiHEVJV0a34FoGXNg1Jb1C/zjYVSnGdw8TcTO657a1kXOWv00mIzaJW+pBJFNuQqVTEzrVsNNbwGl405HmZPon4ZBGLUReZP00yh1A/id6PiJt33gRnuOgrYlBTjVJZ9NLfSrfkDqBXhI7nXHFrUNAm81CBfjD19stm0k+nr6KpnM+cG/Vgk9jOqcEKlCGhhWL6BHW6fMgDcXrCaeb9NGlOfV6QLLw844bulbaeNF3ftDdo28PE3Je9N9pTZqe0qsV32v0fyglfwTy7jTykm0ja+XKLs0wmTH59zfsQK6Y
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"DepositValidatorRewardsPool defines a method to provide additional rewards\nto delegators to a specific validator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.distribution.v1beta1.Msg/DepositValidatorRewardsPool"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+DepositValidatorRewardsPool defines a method to provide additional rewards
+to delegators to a specific validator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"DepositValidatorRewardsPool defines the request structure to provide\nadditional rewards to delegators from a specific validator.","type":"object","properties":{"amount":{"type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"depositor":{"type":"string"},"validator_address":{"type":"string"}}}}},"description":"DepositValidatorRewardsPool defines the request structure to provide\nadditional rewards to delegators from a specific validator.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgDepositValidatorRewardsPoolResponse defines the response to executing a\nMsgDepositValidatorRewardsPool message.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

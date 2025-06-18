@@ -1,0 +1,84 @@
+---
+id: fee-msg-pay-packet-fee
+title: "PayPacketFee defines a rpc handler method for MsgPayPacketFee
+PayPacketFee is an open callback that may be called by any module/user that wishes to escrow funds in order to
+incentivize the relaying of the packet at the next sequence
+NOTE: This method is intended to be used within a multi msg transaction, where the subsequent msg that follows
+initiates the lifecycle of the incentivized packet"
+description: "PayPacketFee defines a rpc handler method for MsgPayPacketFee"
+sidebar_label: "PayPacketFee defines a rpc handler method for MsgPayPacketFee
+PayPacketFee is an open callback that may be called by any module/user that wishes to escrow funds in order to
+incentivize the relaying of the packet at the next sequence
+NOTE: This method is intended to be used within a multi msg transaction, where the subsequent msg that follows
+initiates the lifecycle of the incentivized packet"
+hide_title: true
+hide_table_of_contents: true
+api: eJztWD1z4zYQ/SsYFqlk6XLpVMXncSYuLqexlUryeEAQInECAQYAJSsa//e8BSiJknW2iitS2IWHBPfz7eLtjrZZ4KXPxrPsqy+zx0FmG+l4UNbcFdk4+0NKnD9N+GbCxVIGvGeDzMl/WunDF1tssvE2E9YEaQI98qbRSkT90XdvDZ15Ucma01PYNBJGbf5digA7QQVNB3DR98AKuVBGehYqyTpfjHTZwrp4eCTtGjE300p5BjtMcMNyyVovCxYsa/gmanE8kQLjIVow8jkwT7aNkHgwBfuF+cq2uiB1YescIRRsrUIVFch2qKC9VlpDZG4argqyjUQaR7AFJT2luQBIlG2XHV4ZvPDGt5qHfVpiNWAIiXG4DqqWtg0Mop5x761QkOy8I6G7Lzdd/ITaCYrHziH1tAsgCXLn+KaHNrnfgSGWxq61LEpZo4LkH4IqyDraKqQXTjVUTejdWGX2peEAdylNFyGOja2ViYWPGSFoXtvWhOHczM1f36a3YzaF43TIFkoCaJSMksP7ulKiYqpudAwkYSRaH2zNahkqW8yNVyUctA7eqSmUA0D5hpW2tIAg2OH72ETnPWh8cMqU2csgiwmc+YI/6nexuhxUSEu1kh9gngez6/XL8exdjg88T/FM7an5Rjr/Bpw24sQ10wpcahdsp8MQQa1CSGzZMVNs3w59oqQ+7KchDDJKXbrX3w7euRARWF4UAMiTJycXLSpB3KgWYGOBc+42lK23rRPySVTcGKmfVPGWaYo4KbBOgbVGgdaZAmpBLRDZwWZjXbjcIEmfWFNkbod6KnM2Dq6V8cA31vhUzc+fPr1u0mvmW0GZLlrNduLUGT97gt53tk8maXf45ijtbikUeavDmRwMIJHPDfyjZ6RzsPNTUjm+DcIWfXpQMFpKGrWIu+YhHf32Od2OwJU+1/2nTfsDX7+nz+d6Gx2r0s2Z9FUiRDW1bHlW8WUHYh+5sysOJ8wZOrfQ0nVsEmtzUtG5OVJP5ISIDBYerXNaJOJ2UmPfof0Fh4mBuNmw2hatliPsRG63w/hKxntIEdo1o8voGSjUuoKE7NwoLEZo+ZX6V3btA8ZAesQe/RXizD514FTE2eWkyDw6o0hMs1vRiKLhlrMa3aZYTVuW48ZzQagNwL3SJf++zZP9kKQoj4XV2q49BYsy7ZcrjWsvNkLLXay9XIrDIpUiQ2Ua62NX8FDhbaRyMez1rh+CpYarX4coyehkEwaiq8i8s23WOg3tKoTGj0cjT2xkzVXp7EpeocjDHH06bOwyOEQ9xIaZnXbIQ9JhXyDJ7ic36O73zdZcgfbCZZa/JuFkHNs+Xcv7wzZ/+8xpyvWW2P06OTtMqANpdoNp3/iP/V3pUo2jheAypaOhN9udPx5m0UH3zDR59XE/FnozV5mFPbNmVACQlWjaNiegR4T6FRBdW7cc7UrA7m8fpux6ctdj6D+n0wkdsRt0lNWyo0r0OXkxvCah9wxTYNRvKZjuiRlLVy/QR+rkmpueyQ/W+Z+xzlFD7UdHQCajRqO7qIzxzm87QpplbxASDB5REu5ARWwGre02517+7fTLCx0jCexX4xkeV9wpnlNbzugqVZIXdGlw95ZyE5fpOMOvphQbies2jtXTeU70lDSusdY04U3Zxx7hTr49TCGcdz8g1HHYZ46v6ccF/B9n2aDbWeOEjmfbTHNTtnHkZskm/f0HWN/0Cw==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PayPacketFee defines a rpc handler method for MsgPayPacketFee\nPayPacketFee is an open callback that may be called by any module/user that wishes to escrow funds in order to\nincentivize the relaying of the packet at the next sequence\nNOTE: This method is intended to be used within a multi msg transaction, where the subsequent msg that follows\ninitiates the lifecycle of the incentivized packet"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.applications.fee.v1.Msg/PayPacketFee"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+PayPacketFee defines a rpc handler method for MsgPayPacketFee
+PayPacketFee is an open callback that may be called by any module/user that wishes to escrow funds in order to
+incentivize the relaying of the packet at the next sequence
+NOTE: This method is intended to be used within a multi msg transaction, where the subsequent msg that follows
+initiates the lifecycle of the incentivized packet
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"MsgPayPacketFee defines the request type for the PayPacketFee rpc\nThis Msg can be used to pay for a packet at the next sequence send & should be combined with the Msg that will be\npaid for","properties":{"fee":{"title":"fee encapsulates the recv, ack and timeout fees associated with an IBC packet","type":"object","properties":{"ack_fee":{"type":"array","title":"the packet acknowledgement fee","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"recv_fee":{"type":"array","title":"the packet receive fee","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"timeout_fee":{"type":"array","title":"the packet timeout fee","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}},"relayers":{"type":"array","title":"optional list of relayers permitted to the receive packet fees","items":{"type":"string"}},"signer":{"type":"string","title":"account address to refund fee if necessary"},"source_channel_id":{"type":"string","title":"the source channel unique identifer"},"source_port_id":{"type":"string","title":"the source port unique identifier"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgPayPacketFeeResponse defines the response type for the PayPacketFee rpc"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

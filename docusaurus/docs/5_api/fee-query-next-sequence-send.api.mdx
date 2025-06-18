@@ -1,0 +1,72 @@
+---
+id: fee-query-next-sequence-send
+title: "NextSequenceSend returns the next send sequence for a given channel."
+description: "NextSequenceSend returns the next send sequence for a given channel."
+sidebar_label: "NextSequenceSend returns the next send sequence for a given channel."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk1vGzcQ/SsETw0ga5O06EGnukba+FDDtd2TZRgUd7TLaJfckFzZqqD/3jfc1bdiJ2kCB6a5nDczbx5nuJRRFUGO7uXfLfmFfBhI15BX0Th7mcuR/IMofXm8oud4S59bsppuyeZyIBvlVU2RPAMsZU5Be9OwKQx1qaylSrTWwEiYnGw0U0MehhZm2yOPhsEMGzUqllh7+DGe4D/6lgYy6JJqJUdLGRcNW4bojS3kajU4dNs4H1/yyd//j8MHPhwaZwMF/v7+7Vv+tR/EuQit1hTCtK3E+vgQfrSzETGxhWqayuhEdPYpsNny2K2bfCIdYRhNrHgj1eKwFDe9B2GCiCUJzoZCFAwips7z5tgm0+wkgLi5vhCoZOlSWT1LIJouQYuzj6E/jAUqf0TLQMJLrZCXbI2Nv/6yEzHbi7W9YHth23qCmqySKzd9EW+yiLSDVpOfVSSSncAPPZsQGXmD9liSKcp4XJQrhqyqRaLohuYmYP9jOszEGas91SgO5UJFQUqXooMST6WBzxlRg+DGdm17ldJIcAHiGoqP7onm2AmuJqG5Ija0QaiqcN7Esg6iVguhS+dQq+jGFtKgmAB6T8YKDeoV/3Y2Nxx6EDQshqJUPudizsJAhKgindUI0VhUduJJzRCa4AtVUBCXlkHhRCvIdLCXcR/1QcbB4ZCKY9sHwkI1FipCnGJConbWRPzXicFkqQK7RMJWqHCC1DFCiUGkHLmCX1D0tgKKvbiTXnIVVZLz2HKYyMtyVNrV6EFcsAKUQfEK9iWy60F77Yum9Q04D6yYtgEYYyqbj+3UE/2bqKsMmAhH8vd9Tjuy+nrt71T2CQIwqSyiMMzZGpiFu3HS34xvdrIGSEVMTrp8mFbdeo8lCGVn/b8BLsdUtdWJe3Ju0T/puUGZwCx5DxJ/SA/bJ1a7nHZOISsqUqPeZIqtn9/LFCpuRBV2Tivv1YJ7eKQ6vO7rt+7zifEhVd7dMlVd75okimp0cFWcNNyQuNdhDtuqp9h6212Ovg9id9MMWZ6ql0M/C5ngvhGPZJEuThpRI5mZic6085T1R7P5u/UyZMvtLF1lPOOw1Y+6VXaihWPEkZ+vJ3frK3goY2zCKMsCQzl7Vng3pzPf6OEEBRg2bha9q6ohbp08TP22sxG/4yRPE8mT+TXYGpfWUvw65L+6wx34A4/vqTsW70XJvbPAZWsnDJcx9hnsntA5s7UjcfPh9k6cX1/u9qG7u2veEhcQuquoV7rSSen96+E1YFYrs9oF068EmpLgJsgjyoVYK7sD+YNEs0fDRq8R9llTgRN2nuqx7AV1LyGolKRPuXZQWM3fbf/kfjjae6YlbfHu9iF1Ql6oT4lM2ctyOcEQ+sdXqxVvf07PzNE9lnPljZow+fx4NIHXkP1UVYGOEtp0HfnTTf9YeyNeemOeZGDdPiw3j7mqWv4Lyxkt9t+j6WH5PSF98f35HfGsKV494GhJKufRAK66r+d4YTZxx+6oG/M12TSTPz/coW/9B9Y4PMA=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"NextSequenceSend returns the next send sequence for a given channel."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/channel/v1/channels/{channel_id}/ports/{port_id}/next_sequence_send"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+NextSequenceSend returns the next send sequence for a given channel.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"channel unique identifier","name":"channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"port unique identifier","name":"port_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryNextSequenceSendResponse is the request type for the\nQuery/QueryNextSequenceSend RPC method","properties":{"next_sequence_send":{"type":"string","format":"uint64","title":"next sequence send number"},"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

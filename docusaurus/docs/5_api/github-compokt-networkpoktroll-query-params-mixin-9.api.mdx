@@ -1,0 +1,64 @@
+---
+id: github-compokt-networkpoktroll-query-params-mixin-9
+title: "Parameters queries the parameters of the module."
+description: "Parameters queries the parameters of the module."
+sidebar_label: "Parameters queries the parameters of the module."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVU1v2zAM/SuCzmlcdKfltC4ouh7aZW12SotCsRlbjb4q0UmDoP99lOQYWRMsQwMYkWTykXx8lLccRR34aMZ/teA3/GnArQMvUFpzU/ERv5bYtPOx1c4u8Q5wbf0yLr1VKrk8T4QXOtzKN2m+8gH3EJw1AQh0yy/Oz+NfBaH00kVQgrxkoS1LCGHRKrYzH5JraQ2CweghnFOyTGkULyG6bXkoG9DiEC+lkbO479CYDD0yw40DtrCeYQMsGRfZmt1PxkwDNraK4aMdwdn5C5RIe+cjFShzKS65HEbvoCpYSAMhxUimgOBDH1bbqlVwOoqW5jmgWMJhoLGVpg8jGNolGLam9tCmAmPJNfHFhKnoYULb1uDw0Tyau5/TqxGbUh75kC0kqCqSRHY3tF83smyY1E6Bpg7kMso2oNUdQY8myJoCtEQrUfvaSg8Vm29YbWtLNaA9XVwOHledXUAvTc3fBzwVcORN/4smC9EqPKInw1oDb45CUkrgPXH+KVn9O/vSVrBnJQm0Bk9m1GMtMB99ucjVoJAq7FkL78WGbCWCDqdjfcuvD+kYcFFVMuYv1GTfJVGkaahEfdSxJ/FAu1morzQX8lC/dvFBvlkN5FtDSltgQ5siXglnJl8Pxe5+KGqBsBabopudAQ/gVwRL982Wt16RZ4PowqgoQiOMseas9nYFZ96VwzmRONxBDUuSx8f0H7IP+06WcZaJ+tOwWkhDif4f8m02zuB0N0qzsEcmsyEzVqebMsIdZ4PdXz1M2eXkJs6JRBXb82M6ncQjNiaxWjrKahVlUquhLkSmTwBHxUVWczLdihmLLFCP6KWzAbUwe5CfaPxfJff6QnjDwimqPwZK3G87Ucz4frZRK7t8B7wTRhJQkgZx21CW0Wu7nYsAv716f4/Hr+m7NJrRciW8FPNI3OyJojUgKhrAqKUlbOJFQF8VF1W5EqpNU/dx3GMPewVfX01pMP4ANVB8JQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the parameters of the module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/gateway/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the parameters of the module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"min_stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

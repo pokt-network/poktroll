@@ -1,0 +1,72 @@
+---
+id: evidence-abci-listener-service-listen-commit
+title: "ListenCommit is the corresponding endpoint for ABCIListener.ListenCommit"
+description: "ListenCommit is the corresponding endpoint for ABCIListener.ListenCommit"
+sidebar_label: "ListenCommit is the corresponding endpoint for ABCIListener.ListenCommit"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVsFu4zYQ/RWCpxZI7MW26MGnJm6ABtuihu3uxWsEFDWWuKZIlaSSGIb/fWdI2aYdN5sFooMgUcM3M2/eDLXlQVSejxb85nZ8/5fyAQy4GbhHJYEvr7htwYmgrLkv+YjfPaoSjIQLxg/pfWybRgV+xR3814EPt7bc8NGWS2vwa6BH0bZayQg6/OqtoTUva2gEPYVNC+jJFl9BEk5QQdNCDj9N2Ex5FmpgvStGW9nKuriY27PpZMwaCLUtEbF1lFRQ4Mlfoa1cP9Sgqjpk/n1wylRojXiNwC9cmfDbr1lA8Exp4MuGtcJ7pgyLWCxhMeHZFHxrjYc+itKCZ8YGRmQItA+1on0ry3dXXNbCVPDgIQ9DOCc26FQFaPxr9MyCdfDp80QoR7QI9ulzXGL9WuehjNzoyAvmxoJlPogALHn27KcZBNxqSvYHaAjgf/5i7gOzLZVKaExUGam7EhLtySVsDpRbpyplsLAIvndPaILdWqtBGLbSIvotMQi06pSvWQHhCcCwvfMvpvf+olRlXM9YKBJsRkNwHWCUJekLiIa0hx1kfMVWQvtTG6T8aEClWMPmVSkUGwwD7Tyl+PA/1oeQkJloyNYZV3t+ogRaqtCePQxp5WxD+I9Cd/CGSPCihrsokFMKHZDw3i73XbpSOysHOASI4uQuajvCfvzwIRXIS6eiXBDhhvlOSvB+1Wm2Nx+gj3eeBQn4OAz69zdNg5RcCSvR6XAhBcM6g42O7rF9wDmEe5dMTqsibZmXGamHCtxZNX75yGOoWEDtf2REnPr6PX0+rzzRIMpSpVaf5FsiRQ3WUVQXN+72JObMnRDel0Zal8graUKAKVuLecUa5QfK4Owk6Us14q31MR8RanwbSusb6wext/DuQDSIOxCFVIMLB9TwDNbjMjg6+7a8cxoR6xBaPxoOPc5DY8115ewjXLtWDnBGiUFr18FZrQcSu/M831naw27RkgSGtfo+bIO9aCC8DfnvZJzA8WQmkU2Ph+zds2haDS+PtGNv5yfM4jhOqaH7mXe0zUbbcbGfR4fSLw9T52yu5KqK59uLzhrXdABWKtRdQWkPiYNrzO/JuvVwTwib3s3m7GZynzX/n/P5hJbYGLsQ53/fhkLGNjSiIaPvAcfpitVPwfRP8WwmdvAjaa0RJoN8R0WfUHFoqADPYdhq5IUCiNrZ9mJf8B8UOzo58YmVqql7EGm7LYSHf53e7WgZBeSwyIslldcpURDJiyVGUIMocQqRVJIOxmnaXc8p3qMaXkw+kn7acYPzvw2v2i6zBp/8M5ujcdH/MzZxLHInnuh/Eu8jzumPlHYn1dHalmuUdReHE0+YdH0D7q3VZA==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ListenCommit is the corresponding endpoint for ABCIListener.ListenCommit"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.store.streaming.abci.ABCIListenerService/ListenCommit"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ListenCommit is the corresponding endpoint for ABCIListener.ListenCommit
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"ListenCommitRequest is the request type for the ListenCommit RPC method","properties":{"block_height":{"type":"string","format":"int64","title":"explicitly pass in block height as ResponseCommit does not contain this info"},"change_set":{"type":"array","items":{"type":"object","title":"StoreKVPair is a KVStore KVPair used for listening to state changes (Sets and Deletes)\nIt optionally includes the StoreKey for the originating KVStore and a Boolean flag to distinguish between Sets and\nDeletes","properties":{"delete":{"type":"boolean","title":"true indicates a delete operation, false indicates a set operation"},"key":{"type":"string","format":"byte"},"store_key":{"type":"string","title":"the store key for the KVStore this pair originates from"},"value":{"type":"string","format":"byte"}}}},"res":{"type":"object","properties":{"retain_height":{"type":"string","format":"int64"}}}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"ListenCommitResponse is the response type for the ListenCommit RPC method"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,70 @@
+---
+id: evidence-reflection-service-get-authn-descriptor
+title: "GetAuthnDescriptor returns information on how to authenticate transactions in the application
+NOTE: this RPC is still experimental and might be subject to breaking changes or removal in
+future releases of the cosmos-sdk."
+description: "GetAuthnDescriptor returns information on how to authenticate transactions in the application"
+sidebar_label: "GetAuthnDescriptor returns information on how to authenticate transactions in the application
+NOTE: this RPC is still experimental and might be subject to breaking changes or removal in
+future releases of the cosmos-sdk."
+hide_title: true
+hide_table_of_contents: true
+api: eJzdVsFu4zYQ/RVCl7aAE+1ubz41TYPtHrYNEveUXRiUNJIYU6SWpJw1DP9735CyI8duk0NPDQJYImfezDy+GWqbBdn4bP6Q3VGtqQzKmntya1VS9nWW2Z6c5LVPVTbPbtaqIlPSienyI4WrIbTmN/KlU32wLptljnxvjSfAb7MP797xTzUawBeAV8IPZUne14MWe/NLuJbWBDKBPWTfa1XGJPJHz27bzJctdZKfwqYnANniEQnBMaigeeE0obsRXigvQkuHcHgIgzNUiWITN05dxd3tNbB7x3QElQqSbBNTGEPGBZEKLMiL1j6JYAUvoxQugfidQ0xqEk/YFZ5MpUwjgpPGy0it52peVHecgVeNWXa2Sm+jrXRObiZEPBshtVoZStX7oe+tC6iaDSQYQFa6sU6FtoO7CtT5fyP4Hm7I+DOQJ0QhQdaIF8rU1nWpQvzLGIYrrDVosfVLGr6YP/5c3PxYV5tuox/lT3PRElJ6IlHaQVeiAZFe1NLxT4rCaNII5haWCdcw618MaOZ4CNtBXLIh0ag18fvZtGeiGIJQ4QcvCgqBXDonZVZCFnYIAGyhGmksssam6ui8HJZc9nIkwS07Cq2tlhC3NhI+z3T64JDFhM43uB+d32FxpDLZct6l1Jp/G4p5xy1ZySAh9G8DqKpOVDn4qD3YjrGTKkZt7WbZa9mfpDcY9W0gMc1wLwAGjZhDV5CboCq0fEM8OJJ00tLPH6Zxos++g8cg0UjwZAqqVtiG+yFirAEaGbps9/w3wxyq5aDDmZFkgEvfe6gdNJBzAPtPJtOxXEpm4Q21x1SDVPpcj/9jkx7H+iVtvzw+pkFWleL8pb6dukSKxtY553ggccrcmbmZRuvJNDg7GSeTD/bn58NcxEbEOGYN+KAgdT4rh440QWq0aCU61bQBjYwZF/ngUIUjuWL1la00DUQak+vsGj4K4PUQJ6AjTdLzdtJsaX1n/YWvVnz0qcdQKVqLSZahxUuejPICjrk73Iz5+j1miXyfo4hldaAkT9fGLPO4OcnxzbvNBqcB1IbQ+3mee6RorLlo0It04frykoEue7sKzmp9WVoe0Mfc3ycf8Sss4221m70O20llDIW3IX9OxgkcXwZ8pKfdc93CDMM2tEPBcDljX8DvybpVvg8k7m7uF+Lq9tOktX9fLG55SVxDAFbT2GpQBEdJAyh7DZjbhVlNyYxPAmMbF2zgzd760Ekzgfzfq/bogA6tHOh7yHuN02JaolK2o6IfsgQAX9Z0/JDbqxovo67xdKxsXojahjha0MxA2y0j/OX0bsfLmNZug3U8rqVTsuCTf/iKBFqSFV8GaIYVbXgM47Ow5y5DrUOceS+HLYvw0JEfbxYYS38DuHHhVg==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GetAuthnDescriptor returns information on how to authenticate transactions in the application\nNOTE: this RPC is still experimental and might be subject to breaking changes or removal in\nfuture releases of the cosmos-sdk."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/reflection/v1beta1/app_descriptor/authn"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GetAuthnDescriptor returns information on how to authenticate transactions in the application
+NOTE: this RPC is still experimental and might be subject to breaking changes or removal in
+future releases of the cosmos-sdk.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"GetAuthnDescriptorResponse is the response returned by the GetAuthnDescriptor RPC","properties":{"authn":{"title":"authn describes how to authenticate to the application when sending transactions","type":"object","properties":{"sign_modes":{"type":"array","title":"sign_modes defines the supported signature algorithm","items":{"type":"object","title":"SigningModeDescriptor provides information on a signing flow of the application\nNOTE(fdymylja): here we could go as far as providing an entire flow on how\nto sign a message given a SigningModeDescriptor, but it's better to think about\nthis another time","properties":{"authn_info_provider_method_fullname":{"type":"string","title":"authn_info_provider_method_fullname defines the fullname of the method to call to get\nthe metadata required to authenticate using the provided sign_modes"},"name":{"type":"string","title":"name defines the unique name of the signing mode"},"number":{"type":"integer","format":"int32","title":"number is the unique int32 identifier for the sign_mode enum"}}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: fee-msg-module-query-safe
+title: "ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe."
+description: "ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe."
+sidebar_label: "ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe."
+hide_title: true
+hide_table_of_contents: true
+api: eJzVVktz2zYQ/isY9GqSjtvpQac6bjrNwVNVVk+KJwOCKxIxCLB42NZo9N+7C1IWRclOOm0P1UGClovdb799ccuDqD2frfitr/n9BbcdOBGUNR8rPuO/AKD8862toobfI7jNnVgDv+AO/ozgw3tbbfhsy6U1AUygo+g6rWQyUXzx1pDMywZaQaew6QDt2vILyIB2ggqaBOhl4oRVsFYGPAsNsE5stBUVW1vHULU4BdQ5Qh4UeHIzwEvnCrx0qiNA6Gj/5Mh8m8wxT27xsVMktwyeQcYAOeHscQvnxAb/qgCtPxfPsbMEcNF7nMTjRAsBnE8hCRIEJaMWLgHYsAHnJ1NumDBMIb9ONkIZJqS00YT8JOhKhDHHPjhlatRCD63A3PByE2DEOemfZdmu098jIEzsKasYQrr+eZFdXr3LP5kmhM7PiqJWoYllLm1bSOtb64efzFcPRaltWbSIvqis9IXAUJBCGaKDQlSOTGUYTLBlXGfJbwZG2goDyNvqOxl9sO3wwEGtMLZUYZkwVeZsDBTpDgkRoTlHwT5kej4JGQX/13jxc8G9qg24t4LuNZioKgfep2u7voOVA+zy4CIkge+s8X0tXV1envbONfNRSrSxjprt1akO/4P2Xwzmj7K19/nNc6ABVTfhzaaI2Fo//jDC0t9hIrCnRsnmyLFnT+D2M6LiU9YmU+Kl6oZMs5RjLKiDOQoEBHpJuT4zWV7p4t1uSCPSI6IOZ5JlWDTw3CHR6BGcQ0//Ss6OGaaARlo0p2osxxFeFH1/xRPUIJQ+R9Sr4/TY10/94yk3RAMWtyL8Qs/HVxJFLVasqM9efCFxzNxri0gw10nWYAtqbKehBCfKxCwO9sbS9uysT0GkocQLVcp8RLXPD0P98zDUfd7gnfzxXX6+uj24R1wauK+3PDpN1TqMI4+4DA6I2tlHyBBoXiLdeWcfgrNa05w6WU93/R32HjXZYn6DSfq6WZpqBsK3Wb7tlXvj+HZB1bU4vDp8eBZtp+F4Y6/2m+xQ+wOD+7TdH6beiwyLyKztaRvcpJ05GtaEO0NMT9Y9FPsg2OLD3ZJdzz+OuvbX5XJOInaDubIahp4RMvWMwf2NSl8zTMAoYz2Y4cSMDcxDSBsL890KMzL5T8vvKP6Xkg/wHIpOIxnkNSV5O/C64n+3MtHLtDYxJ6RA1rbbUnj4w+ndjsT9ZJut8PgonBIlsbu6RxQNiIqSiBl/gA0lq59J2ZIwk7qOaUxM5xPVaX/jGvdRF97UvR915Py3uyUql8Nra5uGF3fiiV5p8XvGOb0CJxJSVZJsy7UwdUwjhPc26fMXl/783A==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.applications.interchain_accounts.host.v1.Msg/ModuleQuerySafe"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ModuleQuerySafe defines a rpc handler for MsgModuleQuerySafe.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"MsgModuleQuerySafe defines the payload for Msg/ModuleQuerySafe","properties":{"requests":{"description":"requests defines the module safe queries to execute.","type":"array","items":{"type":"object","description":"QueryRequest defines the parameters for a particular query request\nby an interchain account.","properties":{"data":{"type":"string","format":"byte","title":"data defines the payload of the query request as defined by ADR-021.\nhttps://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing"},"path":{"type":"string","title":"path defines the path of the query request as defined by ADR-021.\nhttps://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing"}}}},"signer":{"type":"string","title":"signer address"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgModuleQuerySafeResponse defines the response for Msg/ModuleQuerySafe","properties":{"height":{"type":"string","format":"uint64","title":"height at which the responses were queried"},"responses":{"type":"array","title":"protobuf encoded responses for each query","items":{"type":"string","format":"byte"}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

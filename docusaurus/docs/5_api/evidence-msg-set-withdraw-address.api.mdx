@@ -1,0 +1,75 @@
+---
+id: evidence-msg-set-withdraw-address
+title: "SetWithdrawAddress defines a method to change the withdraw address
+for a delegator (or validator self-delegation)."
+description: "SetWithdrawAddress defines a method to change the withdraw address"
+sidebar_label: "SetWithdrawAddress defines a method to change the withdraw address
+for a delegator (or validator self-delegation)."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFVk1v2zAM/SuCThuQxG13y2lpUWA9FAvSDDukRaHYjK1WljSJThsE+e8j/dFli9dsw7AFSCBL5OMj+URnK1HlUY4X8jrm8m4gnYegUDt7lcmxvFzrDGwKdHh/A/hZY5EF9TTJsgAxyoEM8KWCiOcu28jxVqbOIljkpfLe6LSGSh6is7wX0wJKxasMYhq051MKQ/CH6CICRoEFiKf2QKj2ZOXCrVUiAwO5QhfEG/quldFZ/RTBrIbtIQV4OyKiuPFAkdzyAVKkZx84U9QQGzot0n0bgjdbl4hB21zuBrLj8YoRfwb/Pjtugw5ALcNQwY43onc2NtmdnZwc1nwiYpWmFG9VGdGZM9bf7OGsxaVkVtpCkzBZJj0F6TjcWq7pYc+60q5UZbAnHysqC8+eTCETEAKV6o/Sel0pqctgz0oTaA6BzKhrpcJm692ZrKmi0mZfJSoEtSFbjVDG47HeN8eHIhtI0opm/spM913qEpVUTZX3Ovbqs6cXXbuUKAELlwl0Ii2UzaFXsreWshe/J9kGmMJ7F+vUFRb0lKQuli6OMs2klxXbj9anS6rl6ahfOeQcIawh8BzbyioYwikQfRwnSSTW1tlhHtwahsGnI4YaefeIwRkzSl0pDwrS+IhzshSz6QU18zhsqbS1gL+GfN0YN+A0dVmFs2+j9PJZld7ATyZT186+gbQ3rTQ15fCaXBQUWuTkWC2ZYsJ8h8TlyYXHpCMvZpc3czGZXvEt1MhU5If5fMpb4oKulKOt5k6ptL5TVpVsdAyYiXGnGjLtSliHPA/5kNVQKrsH+X/k+V3VXi4SwjMm3lAJmWstiW2r3IU8olwC7dEuNb/gC0D+2+1SRfgUzG7H26SGQC/VBS3XKmi15C4s7ihuASqjmcNif4QNN7WZbcM5s2RzU9Xj5sc5xzpuPCY0+j2+anu3d0enH2/mZLxsX/NlPQQlpcHvHvodS8l/Hdi7nlz13lYaaklVjyLZYPLnK4SZA7I=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SetWithdrawAddress defines a method to change the withdraw address\nfor a delegator (or validator self-delegation)."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.distribution.v1beta1.Msg/SetWithdrawAddress"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+SetWithdrawAddress defines a method to change the withdraw address
+for a delegator (or validator self-delegation).
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgSetWithdrawAddress sets the withdraw address for\na delegator (or validator self-delegation).","type":"object","properties":{"delegator_address":{"type":"string"},"withdraw_address":{"type":"string"}}}}},"description":"MsgSetWithdrawAddress sets the withdraw address for\na delegator (or validator self-delegation).","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgSetWithdrawAddressResponse defines the Msg/SetWithdrawAddress response\ntype.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

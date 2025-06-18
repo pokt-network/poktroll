@@ -1,0 +1,64 @@
+---
+id: evidence-query-community-pool
+title: "CommunityPool queries the community pool coins."
+description: "WARNING: This query will fail if an external community pool is used."
+sidebar_label: "CommunityPool queries the community pool coins."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVU1TGzEM/SseX3qBLLS3nErTDOVQmkI6PRCGcbzaXZP1B7Y3kMnw3yvZSZolTOl0mktiWXqSn56UNS8hSK9cVNbwIf95dnV5cXk+ZNNGBfbQgV+xR9W2rBKqZapiwjB4iuCNaJm0WndGxRVz1uJtYF2AcsCPeBR14MMb/p0A+O0Rtw68oBwXJWYZL1UJRkK6vhttYSaIgsEegrMmACKs+fuTE/rqV3nGQiclhFB1Ldu6U15pTQQTKUI41yqZchb3gcLWPMgGtDjES3X0yrjagNKjYgO7JCyuHLDK+mRNcUUvcGauJiOmITY2M4H+mMHO70FGPDtPVESVX0e8HZaT2CyhUgbCC5LfkUGZsActvBcrPKoIOoG+TNkH/wxyhAg7fMGiXYDBLscGD9gXq5VJvGGzy2SSSmO7hbadiYOZmZnLb9MxaQQ2RlYpaEsiC/WBGdhjo2TDlHYtaGxIJlF2IVq9IWdmgqoxT4fUIr0PnfJQsvmK1ba2yFK0gwO6crK9N4bolan5Mz0S637lZvshj0p0bXxFTYZ1Bp4csoUVgPfY3X8S1Z97LW0Je14KQWvw6IZq0iJm04f3+TERx22/mW82uZ/rY74+ZOOIi7JUVL9oJ/shiSKNIyXqVwM3JObe4UUNKauIDR4KaYO2oSgV+c+7xM/ydI7POC12Ar5zeb4D+CV42g9r3nnUP29idGFYFKERxlhzXHu7hGPv5IAgBs4uordtO0CoAz1f5xj2CT0Zzh7y9zasFsoYiH+H/DU7Z3DcZcpU9lBFowbdWI1T1M0JriDsY4x7tH5RbBOxq/H1lJ1NLmh+VWyJ4y/T6YRMbISKs2jKkhMySc4ITU5vAZNsiNVczOYXMzaygJ3CS2dD1MLsQfb2Vtr1KIU8qP3Fvts4vRevfw/Gf/vbyKKL6Fq4FvmkwlMv1xup3fAsNSpmT2x43MgtkdcTHHaswbdT7Ho9FwF++Pb5mcypTrTjz6XwSsypHTe3mLMBUeJskkIXsKIdgX83jhS/FG2XBvLlJiBl7KbjfDzFmfkFff+bDQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CommunityPool queries the community pool coins."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/distribution/v1beta1/community_pool"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+WARNING: This query will fail if an external community pool is used.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryCommunityPoolResponse is the response type for the Query/CommunityPool\nRPC method.","type":"object","properties":{"pool":{"description":"pool defines community pool's coins.","type":"array","items":{"type":"object","description":"DecCoin defines a token with a denomination and a decimal amount.\n\nNOTE: The amount field is an Dec which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

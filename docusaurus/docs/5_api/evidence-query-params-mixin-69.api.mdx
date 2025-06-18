@@ -1,0 +1,64 @@
+---
+id: evidence-query-params-mixin-69
+title: "Params queries the parameters of x/bank module."
+description: "Params queries the parameters of x/bank module."
+sidebar_label: "Params queries the parameters of x/bank module."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVU1vGzcQ/SvEnhJA1jpJ0aA+xXXdJocAqu2c4sDg7o60jLgkS3L1AcH/vW/Ilb2yjDitLtJy37wZvnkz2hVRLkJx9rX4uye/Lb5NCuvIy6is+dQUZ8XlSjVkakqv72bSyy58Vhtlfv2tmBSegrMmEBh2xdvTU/5qKNReOWZA/LkIfV1TCPNeiz18itDamkgmcoR0Tqs65Sy/Bw7bFaFuqZPHfKmOXMbVwCYamitDQcSWHlKIuHUk5taLfzhCmYXYlJU0S+E4mCL5wGUwDLS2+k51xLPzfP+o8pUSNhxXkc8FwCxPzvzIK+w8naR0nW16TS+nwiVkr+NdINPckZGVpobPh6jKWk3SFPeT4inisLQ/yHmCmNSciS/QAbVcI+Ay44UyYiheBQi3x05vzZ/QakHQUYWJ6FlBXMHQWm+FbBqEjvOKuSKd2Bg1hIl8NXBdR+vlgiZCW7vs3URI04hOGuV6nfqcJUKIMuhRl8/waOx6T7okgjwguzXnSdLahs6Gk9Asxen0l/eTTGANCqSNCjGkdleyXq6lbwLwnQNxpbSKWybYlzlXmsbNl97LLR5VpNzsp506VHgsZycdJ0LJmBLbiWiFPBQqRBn7IF6tW8KtPF5npAq3hoGMej19xg4AjWoJ0cPD3P4feOPxM9n76ZmJNKI3tHG4Gsoj7yHa/xrMH/u5tg2NUAqkC/KA5X7no3dvi1RqlEqPlX+xI4e5PuTXR2KBG9ZVXL/Us3FIkqjDWoJLnwt8EHGsXF47aaGoZ4d+2DCPI49XreU1uqBUtYwtHsrs5AQuV28qXP9NOawaHm+/Ah928q7ovQa+jdGFs7IMrTTGmpMF1g6deFdPOXTq7DJ6q/UUhj82a44RvwMprmYX0Ptl2k4qYyj+HPPnDM7k+P/giT523UULmFio2PYV05XMfYK4tfXLcp9IXF1e34jz2SceThU19+Tjzc2Mj8QFHAqjDxaVdbKogfys7wvEbDNWNRcz/MK2iRjWyC+dDRELakT537t9cOMHT0XaxNJpXJ/zJOl3gxO+FtkJiGUqfA1uSF5JfoCgLUpj7G5XyUBfvL6/5+P0v4Zz/FxJr3gp8BNytCQbjBobaElbHnn8Azs24ErqPs3X08Hmxj2Y9a/LG4zAv+mg3Ks=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Params queries the parameters of x/bank module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/bank/v1beta1/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Params queries the parameters of x/bank module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse defines the response type for querying x/bank parameters.","type":"object","properties":{"params":{"description":"params provides the parameters of the bank module.","type":"object","properties":{"default_send_enabled":{"type":"boolean"},"send_enabled":{"description":"Deprecated: Use of SendEnabled in params is deprecated.\nFor genesis, use the newly added send_enabled field in the genesis object.\nStorage, lookup, and manipulation of this information is now in the keeper.\n\nAs of cosmos-sdk 0.47, this only exists for backwards compatibility of genesis files.","type":"array","items":{"type":"object","description":"SendEnabled maps coin denom to a send_enabled status (whether a denom is\nsendable).","properties":{"denom":{"type":"string"},"enabled":{"type":"boolean"}}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

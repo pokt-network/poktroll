@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-query-relay-mining-difficulty
+title: "Queries a list of RelayMiningDifficulty items."
+description: "Queries a list of RelayMiningDifficulty items."
+sidebar_label: "Queries a list of RelayMiningDifficulty items."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VktTGzkQ/itdOkGVsYFkc/BpCbAJh2xY4z1hyqWZaXsUNNJE0tg4Lv/37ZbGD7CB3cO6qGJm1M+vv+7WUgQ59aJ/L/5q0C3EQ0fYGp0MypqbQvTFFxXKJru0VW0fw58Y5tY98qOzWkeV8QC1XHxTRpnplZpMVN7osBAdUUsnKwzo2PxSGHohex7dTOVItjtCGfpQy1DSs8OfjXJILoNrsCN8XmIlRX8pwqKOisGRB7FaPbCwr63x6Pn8/PSU/xXoc6dqDpykL8A3eY7eTxoNa/Eu+cmtCWgCa8i61iqPqfZ+eFZb7ru12Q/MA6fjGJigklN3MOm9MA5iA8qDhIqCk1OExmMBwYIP1iGEEsGavJTKQFSGpD0yxVZfem9zJQMpzqk8ZMzXmCs6hhZeuLnqjszw+9X38fD68uvV9edhH66rjF2V5H7tnLywx7tWq/3MOL2dfqZt/jguUU3LsJ/1kExGCUgSIAPMS5WXyXnEDqqYF+ykNZceciJaQ4lx9CxLfwaxSBAVzCbSQyjtHKqGDaqK3kixJlBIyiuTJxS19CEejwy/4hNRgAqvpIbKzti1nBHRCYRnfrept4TriIl1laQ0ia/h00ex6gjTVOOYhR+3bNkH4A2HdhIjJCsZOn5LtoAcJYTaKr4ZTLOJppUeq+JwJFtORLevwc+sfE6sff/kLUg3xTAmzMvD7pIAF6XcVIxdse8dd1TPWMrXch+ZP+gTPsmq1tgBNYF5bBbwpTz/7RPrRxds9ii2yoBGCPrQof/xLTX9MYSGLYyMNMXLIJg5H0GjLDjCX+gsZCr4Dsul1tjNZm4bXUCG/ZE5zU7pd3Z21u124aihMmv4cA7ZIiDBSI08UVoTjE19/GYVWYFmWvp1CM2JpMAOzDMDjSFKUTOSVXSOsPkfxlpuC9yRIorhFN2LHvhwLmKoQSrtd6Slc5IHvwpY+fd9/Z6O9wd8R8iiUBy/1Le7KhGidkYdUtyAuIscLynFRQGtaCJQt70ylDlqhpJ2Vml59VHd4xqj/dQXPV56JyYtwN56A/ZatvYii8eJ6eMtwXrLzb5bidSp633YOE1myxBq3+/1iNTGWHMydXaGJ67Ouxnh21376dJ8Ei8zu0s68JkkYXB7SVV532xFm4Wy+HeWvyXhZPyBF/bE7nPzMm6rabwosLnDUMHg+m4IF7c33A4qaK7c1+Hwlj/BJfHY0qdEZJlHIrc3hvcMMxkZ1RRM+wTGBholgQ9r60MlzY7J/8yJZwlviBfwKfRqTdmzm4j8suXLvdiNlWm0jnYzr+Ol5yBr6KS/vScR7iVlwDaXy0x6/Nvp1Yo//4xXtv49Pc6kUzJjUIlahfL8TByeSO1xL/zNsBBHg/badQzbKfU8rXVzGw5rJnXDb/T4iItn17nVAwmXNElpXnAQ6fyCLmF12NHcm07Mq03LfbkeUh//A4SHvq0=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Queries a list of RelayMiningDifficulty items."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Queries a list of RelayMiningDifficulty items.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"serviceId","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"relayMiningDifficulty":{"description":"RelayMiningDifficulty is a message used to store the onchain Relay Mining\ndifficulty associated with a specific service ID.\nTODO_TECHDEBT: Embed this message in the Service message.","type":"object","properties":{"block_height":{"description":"The block height at which this relay mining difficulty was computed.\nThis is needed to determine how much time has passed since the last time\nthe exponential moving average was computed.","type":"string","format":"int64"},"num_relays_ema":{"description":"The exponential moving average of the number of relays for this service.","type":"string","format":"uint64"},"service_id":{"description":"The service ID the relay mining difficulty is associated with.","type":"string"},"target_hash":{"description":"The target hash determining the difficulty to mine relays for this service.\nFor example, if we use sha256 to hash the (RelayRequest,ReqlayResponse) tuple,\nand the difficulty has 4 leading zero bits, then the target hash would be:\n0b0000111... (until 32 bytes are filled up).","type":"string","format":"byte"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

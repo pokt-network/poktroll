@@ -1,0 +1,64 @@
+---
+id: evidence-reflection-service-get-tx-descriptor
+title: "GetTxDescriptor returns information on the used transaction object and available msgs that can be used"
+description: "GetTxDescriptor returns information on the used transaction object and available msgs that can be used"
+sidebar_label: "GetTxDescriptor returns information on the used transaction object and available msgs that can be used"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VlFv2zgM/iuCnjYgjbfdW59u1xXbgA0o0uxpPRSyzdhaZckn0mmCoP/9SClJnbi73cPhiqG1JfIj+fEjvZ0m06C+/K4XsHJQkQ3+FuLaVqD/nOnQQzRy9rnWl/p6bWvwFUxM7z8CLTcfAKtoewpRz3QE7INHYOydfvfmjfyp9wbsyGjvFQ5VBYirwamD+Zxdq+AJPImH6Xtnq5RB8QPFbaexaqEz8kTbHhgolD84G3YkS04OzrJZ7LGVRUUtHGPxAw3RQ63Kbbo481OLmytG7aOwQDaXQpv0ex+JNoqvhRZU1q9C7FKuiv912Eg4Q6oyXpWg+PbRxJrDUUjhRsXdeeOCb5CB8hUT05OYRuPRJK4lEoVyWKlU92xS/mmizKrzpoMp8YebAx9H3ONFWGWizONJAhJQveI6uFYkw0pIZrSZLzfp8vWdtySwPpDqwHiSWnHo+xBJ9cFtuxD71mKXQpxB40xl7+SAmSgmbsDUojsfj7pTlbMsERSLwdcQJZ1a2ZT3NjHe8oFjJhX2UNmVraalWK/YcNSG+TOrSNH6Rj/NtDRypDYTo9mOxJb67CwSnnZuBMtUIJqGNfIK64f5V2xeM4Al6PCfZMx2IzHmHpYMYlQVsAt4wWAH6BOl1eDsGiIn8WipZftR5ROdcP73ksH9EN1UK+NbJYNpuPWp0CWfflt8kUYyx7msF/h7/pkx9MoMjl5YBZ67CBtulDAHMXK9/8lGOC21CjWMrCyDNiDLKg9uPvrtnU6pcqXupb7/tG2nsX7P17sJHzNt6tpK/sbdjF0SRft2vuR4JHHM3PnKyittsoykYWmMxjOQM1cyOGbN1ZqS52WytsRNS2LUBvkINJCKNdTyS5GVWJQGoXgez2L9tmQC3xbcrfv6mF1Bm9EboyB/Pnh2+fOz00l+uiXq8bIokMfXB3/R8HaFi9hXcwGc9+GBYnBuXoVOn3Nxm33UH2yZdvfT7NewHQvaA/075K/ZOIPz51FYnqr5qmUz1fDoDaXAFYJ9wX6PIT4Uh0BqcX27VO9vPo8m/tNyeSNH6oqVHxzspc/9kih5m+tfAYt8hdWczP4pbWTk1vEl71bqjB9B/m8qOiHqKHGCDRW9Y9Ykvf0eygr7rrPC2Fc0lv5jcVAZv+x1xk+nShNOT7TGzWq5bAHc7QTpW3RPT3L81wBxy+f8uDbRSvryxom0YPjLksT5AFtZU2m3S1jjhrQTzpeRiOI4KR+vlzy2fwPU/FvF
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GetTxDescriptor returns information on the used transaction object and available msgs that can be used"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/reflection/v1beta1/app_descriptor/tx_descriptor"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GetTxDescriptor returns information on the used transaction object and available msgs that can be used
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"GetTxDescriptorResponse is the response returned by the GetTxDescriptor RPC","properties":{"tx":{"title":"tx provides information on msgs that can be forwarded to the application\nalongside the accepted transaction protobuf type","type":"object","properties":{"fullname":{"description":"fullname is the protobuf fullname of the raw transaction type (for instance the tx.Tx type)\nit is not meant to support polymorphism of transaction types, it is supposed to be used by\nreflection clients to understand if they can handle a specific transaction type in an application.","type":"string"},"msgs":{"type":"array","title":"msgs lists the accepted application messages (sdk.Msg)","items":{"type":"object","title":"MsgDescriptor describes a cosmos-sdk message that can be delivered with a transaction","properties":{"msg_type_url":{"description":"msg_type_url contains the TypeURL of a sdk.Msg.","type":"string"}}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,75 @@
+---
+id: evidence-msg-cancel-unbonding-delegation
+title: "CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation
+and delegate back to previous validator."
+description: "CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation"
+sidebar_label: "CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation
+and delegate back to previous validator."
+hide_title: true
+hide_table_of_contents: true
+api: eJzNVttuGzcQ/RWCz7aUpEUf9FTHMVCjSCLYypNtGNTuaJcRl9ySXMmC4H/vGXJtXSxFeUiBCpDEy3AuZ2YOuZZRVUGO7uTnUMmHM+la8ipqZ69LOZJXC12SLQibj5cKA/PNTp0tta0+kaEqScoz6emfjkL86MqVHK1l4WwkG3mo2tboIskNvwcIYy0UNTWKR3HVEsy46XcqIvREHQ0vwN5Rc6KkmbYURKxJ3H76WzQUgqpIzJwX8B5/DQ4IJYqkQnQvOnDyVQkL91PnYbn1HHnUFJLXjeuy/yWFwus2xTmSl05v7CsR3ZysWOpYYwKgHAxn9cqW+IqsZ3Bv7+2Xr5OrkZjA57woZppMKXRguWvMl7UuaqGb1lAD8HJ8RReiaxBirF15b4OuYKDzsM6Qa0+lmK5E5SqHAKIbMIZ7mB6LrJcL0QMa+XwmUwAHdp43eeldZ6fNUq2CMMAejiIE4AmPlAEohxFHTH4lpspwVthe4SntPNakq/oA2nsCbJYx6WcZL17YmIvOzUVrVEFbSPRxnEmuDAU7Utv4x+855L4CHlVZAtVwEJiFMro8IcWf3AecFDmKvqO0EFpnQ8b+w7t3b4O8EKErCiiddUa8iLP3/2kT3fSGZPYbJa06cyAFFxbo0lMLzSg18h5p/iVO7lZl4UrakkJ+qCK/l7LfPuSURaXNdgqU92oFWR2pCadt/Zm3D5U50qvZf2XG20cSRD3LHEl9BnGHKk7yl+rbep+4Mm2lct4p7k0v3Vvml35O6Klizm3Xelpo1wXxWrCcomwEHrUuJDRUrDEbFi40LgxCVHNoHyzeT4Hs+wGqZvgjqg/kF+T5yljLzhtoqmNsw2g4DKAB6+x55d2Czn1bDFjjoHXz6J0xgwLsso/SbT4jPkJS3IwvkeHTahulraX4c5o/Z+GsHBccl+bN5rq6elLMuLvU+DLaUEfPjVuk8Ia9toXfsMpm8wCZbGnVduYOXDs1ghAV7pluysEOOfJzRLV0fj58gUHcXN1OxMX4eosD/ppMxrwkLtGxDku5ZVWR4rSqYaFTihMHIufZmX4krIsiUORNrqxG2S2V/5vq3wHytXUjPcUh7glt2f1Ub+u+Me7k8caAvuOtgdqqucOgYb2eqkDfvHl+5mUUm8e76O6Bs++1mnJq7h5guSZVgue4l+a0Sg+MxKfnE/YzFUuXKG6fW7lN8okLXB5t/KHswxYJjL/eTiA87V9qTSJe6dWSX3H4HUnJj0A+ndgyra0lLu2qS/Qns07+/Aui/aap
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation\nand delegate back to previous validator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.staking.v1beta1.Msg/CancelUnbondingDelegation"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation
+and delegate back to previous validator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"MsgCancelUnbondingDelegation defines the SDK message for performing a cancel unbonding delegation for delegator","properties":{"amount":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}},"title":"amount is always less than or equal to unbonding delegation entry balance"},"creation_height":{"description":"creation_height is the height which the unbonding took place.","type":"string","format":"int64"},"delegator_address":{"type":"string"},"validator_address":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgCancelUnbondingDelegationResponse"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,81 @@
+---
+id: evidence-msg-grant
+title: "Grant grants the provided authorization to the grantee on the granter's
+account with the provided expiration time. If there is already a grant
+for the given (granter, grantee, Authorization) triple, then the grant
+will be overwritten."
+description: "Grant grants the provided authorization to the grantee on the granter's"
+sidebar_label: "Grant grants the provided authorization to the grantee on the granter's
+account with the provided expiration time. If there is already a grant
+for the given (granter, grantee, Authorization) triple, then the grant
+will be overwritten."
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVktv20YQ/iuDvaQBJMpSG6TVKYphtD4EFWz1UttoVuRI3Hi5y+4u9Yig/56ZJWlRkWr3gR6K6iCQO4+dx/fNcCeCXHoxvhMf/FI89IQt0cmgrLnOxFhcrVSGJkUS/vajkyaInnD4e4U+vLfZVox3IrUmIAnoUZalVmm0Hnzy1vCZT3MsJD9l6FOnSpaSZ/IYHYLyIKHxCWFbIiysg1pWYMhtlsB1gAxTLR2SckVnTn2O10CwEHKEJasj3hs6mmMu9QLsoiNxsFYhjwels5xUBrgplWu8qAITSo2vp9js/BOmnCrpUjmCQs8JRFenmdShLtWKgiPtQnlPAs+h4QbTKlBYnYubpOqA/nIMR9nzwfPq72rxk5oPTpml2O97QmaZYidST7smLDpEdWraE9SeQlIdRCYD9jlsjloFzVr8CusczaH4lKnWdaYI0mT1+5wLUhnk7i7AVFr32KRjd28yi968CpDLFVnGCnUr9o0lXQcEwDoTD6AMfDwq0cd7U8gtMDK33BFlVlIrjvxw0WuqB2XdYOhMtVqZO1fJaPsfwDaHQR0gVgdX4Z4PfElFq4Eyurg4RfYEfJWm6P2i0tCqs69/yPmbxhUlvlCG8ubYSTh4Klx7WSzaKSvaoi9kpc8wcmKAkLUpSZVr4RwV/W+F/zy5Upt10aLI6ZIw0mEIHX07EjHUIJX2HW3pnNySrgpY+H+HyCQrqHlyedbwLHKbWcb//hhRz0ETrOni8ZW/NzJNbRW5/xI0mf7MY4xs0Q5lRnxtRwDzJbqm8UqMb27otTf3YNKN6zVQdqXG01HSzhy7Qrd2KlD/GQk1CSnx0vpYdBlyehuk1hfWJ5z052Q1nFP7hgkjtF2CHh154sW5E5XTZJOHUPrxYOBzaYiq/SUljH1XpglbJ6V9DM5qnaS2EF+X/ba2gfekCTfTS4LMy24LqYzB8Oc8f6iVa+e05hnrN4dFfrWRRanxaMudrJp3J2OxuyhohIy+61+87Y9+mA3fjN8Mx6Pvk4u3w19Fd7Ye1sjTSO34U9TvUzpf5hQ8ISDk1ZyTHHDGfcpmbd3joE0fbq5uZzCZXne20U+z2ZSP4JKobzU23JdpTNDIgpVecsyBca/rYJonMDaAx8BCxk4hTcfl/41GR/16GjUBN2FQamoeVynCedcw7E78EcPIW80xAmnOpCTd3W4uPf7i9H7Px4RaR5+ed/S4kk7JOff67oHuyClrhhSR8hG3DJ160vdnHBGr6yoO36+nPvOttpjQwivDs7oPnbkx/fl2Rsrz5mO4iCtBOLnmjUv/YyH4mzp+nrBCPNsJLc2yioNZ1D759wVg2Rqc
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Grant grants the provided authorization to the grantee on the granter's\naccount with the provided expiration time. If there is already a grant\nfor the given (granter, grantee, Authorization) triple, then the grant\nwill be overwritten."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.authz.v1beta1.Msg/Grant"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Grant grants the provided authorization to the grantee on the granter's
+account with the provided expiration time. If there is already a grant
+for the given (granter, grantee, Authorization) triple, then the grant
+will be overwritten.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgGrant is a request type for Grant method. It declares authorization to the grantee\non behalf of the granter with the provided expiration time.","type":"object","properties":{"grant":{"description":"Grant gives permissions to execute\nthe provide method with expiration time.","type":"object","properties":{"authorization":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}},"expiration":{"type":"string","format":"date-time","title":"time when the grant will expire and will be pruned. If null, then the grant\ndoesn't have a time expiration (other conditions  in `authorization`\nmay apply to invalidate the grant)"}}},"grantee":{"type":"string"},"granter":{"type":"string"}}}}},"description":"MsgGrant is a request type for Grant method. It declares authorization to the grantee\non behalf of the granter with the provided expiration time.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgGrantResponse defines the Msg/MsgGrant response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

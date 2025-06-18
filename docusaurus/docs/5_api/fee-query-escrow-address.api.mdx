@@ -1,0 +1,72 @@
+---
+id: fee-query-escrow-address
+title: "EscrowAddress returns the escrow address for a particular port and channel id."
+description: "EscrowAddress returns the escrow address for a particular port and channel id."
+sidebar_label: "EscrowAddress returns the escrow address for a particular port and channel id."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVU1v2zAM/SuCThuQxm13y2lZ0W09DMjS7FQEhWLTsVpbUiU6bWD4v4+0ndRusnZYl0tkSY8fj49UJVGtg5zcyJ8l+K1cjqR14BVqa64SOZFfAZqT28sQe/s4TRIPIciRdMqrAhA8oyuZAJ1rxzhClUY/lCDiTBkDudAJGNSpBk9AQzC60p3d6oT2NIOcwozWHh5K7YGcoy9hJEOcQaHkpJK4dYwM6LVZy7oe/cGtsx6P+uSD9zhc8uXgrAkQ+Pz89JT/hkFMRSjjmEhKy1zsro/JT2wNUkyMUM7lOm5Yju4Cw6qe26G9hv4B+/POqNBBYAZ7J4LjFTZtNgcIMZ9dCKpWZhOOpMvLru4gRq6l56KjbrOCBnmrulIf8EB4jTlvsJ/2tlBxbEuDYoeqm9+IcklVmeMRmowoDTw5igASAd5b/29svZ5MbBPo3dJkdN1IIrW+UNhufTqXTaiodN5PWHmvtqwWhCK87etze3xEqJJo0Ry/ymd9SENRQXyp9VHgnsQ+c8PKesDSm1YIu1p0R5SiUIIaFXVc5sq3jaFM0mtMproVBlleQ5MUt8VERnoVR0R9iNArE1Lw0eYs6pAhqp4buI7YMG11/VVHLyREPQV+sxsVpc/JfIbowiSKApux5mTt7QZOvIvHK6rD2Nl79DbPx7Et5EsGrluM+EI3WdqSR8FbZgulKV78O8s/2sut8SXPi9Qeavgio2tirTErV2wuYtsnhHu0/j7aORLzy+uFmM6uep3zfbGY8Za4IL1b2moFr+JG8N24esswi5ZZbYPpVsJYFIEKSYfOBiyU6Zn879oZELIXMMITRi4ndjiMpjJVp6sbSboiICuLCem0RcvNGbPQ6YuWk8ET0UiMd5+H+AuVUZkySphdVNVKBfjl87rm7YfmbZvc0HKjvFYrrgE/WjrwmqSfqjzAQTb7GSQ/zLtH4qN47W07mv5umBgeJRuVl/xFy3vYDt/B5kF7R0iH794/xLOjt17S1QxUQoaYq/Z0Si+bwx7uYDZzt+wHyrfLBU2x340i8pQ=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"EscrowAddress returns the escrow address for a particular port and channel id."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/apps/transfer/v1/channels/{channel_id}/ports/{port_id}/escrow_address"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+EscrowAddress returns the escrow address for a particular port and channel id.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"unique channel identifier","name":"channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"unique port identifier","name":"port_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryEscrowAddressResponse is the response type of the EscrowAddress RPC method.","type":"object","properties":{"escrow_address":{"type":"string","title":"the escrow account address"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

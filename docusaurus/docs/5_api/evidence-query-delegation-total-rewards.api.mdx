@@ -1,0 +1,75 @@
+---
+id: evidence-query-delegation-total-rewards
+title: "DelegationTotalRewards queries the total rewards accrued by each
+validator."
+description: "DelegationTotalRewards queries the total rewards accrued by each"
+sidebar_label: "DelegationTotalRewards queries the total rewards accrued by each
+validator."
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVsGS2zYM/RUOL01ndq0kvfnU7WanzaHt1nFPsScDU7DELEUqJOWNx+N/LyBKWqlWkqbprSfLAPkAPDyCPMkIRZDLt/KPBv1Rbq+kq9FD1M6+zuVS3h10jlZh6373Cg0WrXPtIpgVPoLPg7ySNXioMKJnrJPMMSiva15IGHna5fw7yHOPIYgc99piELFEMXhF741OfOBwYu/8gsAtQc/BkEszfg2xpG+PHxrtkbKOvsErGVSJFcjlScZjzQAhem0LeT5veXGonQ0Y2P/y+XP+mWZ9I0KjFIXZN0b0yzkd5WxEG3kH1LXRqiUkex9422kUdorXMjhP4KpDFzpR0kcTnDizwNaNbRGyeQixur8V1IHS5ZxjV7HbvUcVuT+e2xp1qtd3fbvIsXMM/QFjuoSSHZQianOxOwp4atwoIHgPR+5LxCqMqB8SmcZ7quVVD5bqoYg1sUA0J0ae8t9Ytx8H/y7034TSJbr4RMWjhL46UXXrtH0ihkT6gFY86li22VhXaZtyAJu3JqUrMAIq19i42NiN/e339d1SrKmcZBR7jSbnpoMVFEE8llqVQle1wWooXTUhuqrr7cYGXVCchsgRveC5HYUrHJUc3WXtKdjMOeAiKe+5E3Im5wGMzifn7RMLI+vwUkyteXLUQ1MJ7t5UVd8in/9bV86JcSoYGhNnhpYVjcWPNbFFGaD3NDv+1ez6/ABRLsfRKk2gBXpaRrOqgphMP7xMxUTQJnzN0ZvG+jG5L9m4kqRLzfmDuR9vaSmqSLBQzG4cSJwfRZOxyheR7uSbBD0zCxFUubHDeWGikzAIt8C2JL6iljJTLlQuZLnmZHZNS/7hxY44epENIy1kp4u77pz54bIN6A/9Tdt4OnmyjLEOyywLJVjr7HXh3QGvfa0WDL2o3UP0zpiFIl39vfA3aY/4iVbyLUJN+zJsBdpajP8M+de0OIFv+dLeu0vp3pa0TBR0dJsdw2WMfU37Hp1/yPpAYnX3Zi1u7l/z0NDRcGN/Wa/v2SRuSeaOTEnnoFqdd6+HLwGzVpnVlEz3JayLIlAHyVm7ECuwI8j/WDITOgbVRvwYs9oQN5xE25dTJ6e3MsmJ944ERX87SbWgvajoz3LuCdXrihpTUokMezrtIOCf3pzPbG4fY2Tf8p3gNeyYdX7l6cDfpPI9mIAXFQzDRj5bdUPxe/Gtj8FZWvrJYnmuEKkN/6PPBzzOPhzPW9pUIuQ0tLiStO6Gnnt1HCFcjEhW73Cyf75b0zD5C/qNA8Q=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"DelegationTotalRewards queries the total rewards accrued by each\nvalidator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/distribution/v1beta1/delegators/{delegator_address}/rewards"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+DelegationTotalRewards queries the total rewards accrued by each
+validator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"delegator_address defines the delegator address to query for.","name":"delegator_address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryDelegationTotalRewardsResponse is the response type for the\nQuery/DelegationTotalRewards RPC method.","type":"object","properties":{"rewards":{"description":"rewards defines all the rewards accrued by a delegator.","type":"array","items":{"type":"object","description":"DelegationDelegatorReward represents the properties\nof a delegator's delegation reward.","properties":{"reward":{"type":"array","items":{"type":"object","description":"DecCoin defines a token with a denomination and a decimal amount.\n\nNOTE: The amount field is an Dec which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"validator_address":{"type":"string"}}}},"total":{"description":"total defines the sum of all the rewards.","type":"array","items":{"type":"object","description":"DecCoin defines a token with a denomination and a decimal amount.\n\nNOTE: The amount field is an Dec which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

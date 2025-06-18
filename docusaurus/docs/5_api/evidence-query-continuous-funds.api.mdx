@@ -1,0 +1,64 @@
+---
+id: evidence-query-continuous-funds
+title: "ContinuousFunds queries all continuous funds in the store."
+description: "ContinuousFunds queries all continuous funds in the store."
+sidebar_label: "ContinuousFunds queries all continuous funds in the store."
+hide_title: true
+hide_table_of_contents: true
+api: eJylVcFy2jAQ/RWNzoCT9MapSSZtc+iUEnJKOxkhr7ESWXIk2Qnj4d+7KwEBzIROywVL3n27+/btuuNBLDwfP/CfDbgl/z3gtgYngrLmNudjftOqHIyE+Prx2pqgTGMb/6UxuecD7sDX1nhAjI5fnJ3RXw5eOlUTBiJcMt9ICd4XjWYb8xG6SgQDE8hD1LVWMkbNnjy5ddzLEirRx4uZ3Buphaogv2ryBYTpGpYpz0IJ2zAsLGtghXXxNnpmBzX8MtPJNasglDanrMgDo9j5E8iA59oRIUGlCuXW+bGIDPTSO4BnORTKgGdCa/buzaI3U4b5IALsBBbOiSUeVYAqwh8m9FG4bTQqt1CgMYYtDuMyqsl6oUe9+uCtViiDXlU/4oPQA6YKloyIaw9hgGRXtl3HjNWwlCt7LcEkY9il1genzALP2JdKYP95jk7DgO3kK0wInERZiAX005hs3206/W5NhSZWg2VzIMItSgpyVjhbsWtbVY1RYclqa3U/nRVpWaparSW5H3i6ebWJK/IcRYYMRG+KHW+ltA0aIRKoll7EjI5E2/yon4Vo9JGYl4Y1BulDKrEIcA5l/E/zc0rSOexYKQRdgNttD159uuAx1SCU3lXlSbXux/qcXnc9NgYcCVVJY5Ndl0hRhUyv9XCUxo+HwrMXHHz1wQwm5VoXaU2rAFFwr1ABIpR4yKT1lfUZ1hOstJpElLXnWW8hDLgH14Kjpdrxxml0LkOo/TjLfCmMsWa4cDgwQ1fL0RwZHdX2OTir9Ujaqjfgd8mHXaElw1WFfTgNWwllDIS/Q/6ejBM4fgCUKeyRvVaiGVuoUDZzgssIe4h+r9Y9Z5tAbHpzN2OXk1tSvAqaevVtNpvQFY6g8RavknSFjNI1oiKjU8AkP2I1JbN+YsYG2kFxbVgfKmF2IP9LBXvFb2UX4C1kNX55DIWMXejWCnngSSFJ81uN4LE9X1e8pxMkusSUybHr5sLDvdOrFV2/xC/x+AEfW+GUmBOLD78xYAkix9EkYT3DklYEflhrUmkrdBPn8XARUEO3iv56M8OR+QMaBdWx
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ContinuousFunds queries all continuous funds in the store."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/protocolpool/v1/continuous_funds"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ContinuousFunds queries all continuous funds in the store.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryUnclaimedBudgetResponse is the response type for the Query/ContinuousFunds\nRPC method.","type":"object","properties":{"continuous_funds":{"description":"ContinuousFunds defines all continuous funds in state.","type":"array","items":{"type":"object","description":"ContinuousFund defines the fields of continuous fund proposal.","properties":{"expiry":{"description":"Optional, if expiry is set, removes the state object when expired.","type":"string","format":"date-time"},"percentage":{"description":"Percentage is the percentage of funds to be allocated from Community pool.","type":"string"},"recipient":{"description":"Recipient is the address string of the account receiving funds.","type":"string"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

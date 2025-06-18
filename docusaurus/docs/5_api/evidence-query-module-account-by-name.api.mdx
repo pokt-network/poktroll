@@ -1,0 +1,72 @@
+---
+id: evidence-query-module-account-by-name
+title: "ModuleAccountByName returns the module account info by module name"
+description: "ModuleAccountByName returns the module account info by module name"
+sidebar_label: "ModuleAccountByName returns the module account info by module name"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VcFu2zAM/RVBpw1I47a7+bS2KLYeOmRpdiqKQpGZWK0suRKdLTDy7yMtJ3OWbB2GrRerEt8j+fSotBLVMsr8Xn5uIKzlw0j6GoJC491NIXN5vTIFOA3d8eOtLxoLF1r7xuHl+pOqQI5krQItEAITtdLxbp4+I2kcrWuFJa0DvDQmAPFiaGAkoy6hUjJvJa5rxkQMxi3lZvPAwbH2LkLk8/PTU/4UEHUwNVdH0RciNlpDjIvGim34mPJo7xAcMkLVtTW66yd7igxrB2n3+boej7Q47amFiQJL2KUSXLVY+NDtdujsCFxMJ1eC9Cl9wcX1rfr5E2hk9QIrjiY1qhJyoMkvAt+n40PpRlIVheGWlJ0MIZv0N6KuF6qxeERQJxoH32rKB4WAEKi1v9L196VrXwwrN0S6hEBhJGWlMG29O5ddqaiMjYNoFYJas68QqvifZBrJilyllkeBOxGHyh279gDYBJcsU3Xnor9dYdzCi/l6u92PSvIIsS2ha4SHJpeZ9rHyMVMNltnqbE6KnGUJ+Njzxaxlig2BIoTVdhCbYAlfItYxz7JYKue8O1kGv4KTUOsxU41r/4zBWzvWvpI/t3WXMOKSItnGdCWv01bKOAf4Z8y3KTiRP/BzsfCHxrwqKUwsDZbNnOky5j4h3FcfnrNtIjG9vpuJi8kNT5lBy9f2cTab8Ja4IhN7C72Lle5c3D9VrxGzE1nVVEy/Es6jiHRTdFj7iJVyA8p/Yog9EXZORPiGWW1JEU7d3Ubbm+VeJrMQlu1Cn94w7K59y9BO3qUh0Usqn8FtO1cRvgS72fD2S/eTkN/TcqWCUXNWlHxVmMhrcupC2QgHde6eCflm2r/4b8WPl2+//u1YOx7qlbIN/0fLZ1hvf0Q2DxRXgirokeD86Yi0hRoHoIMnif20m6kP1zMa3u9QtW+Q
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ModuleAccountByName returns the module account info by module name"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/auth/v1beta1/module_accounts/{name}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ModuleAccountByName returns the module account info by module name
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"name","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryModuleAccountByNameResponse is the response type for the Query/ModuleAccountByName RPC method.","type":"object","properties":{"account":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

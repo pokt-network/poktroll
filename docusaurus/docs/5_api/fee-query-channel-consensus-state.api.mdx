@@ -1,0 +1,75 @@
+---
+id: fee-query-channel-consensus-state
+title: "ChannelConsensusState queries for the consensus state for the channel
+associated with the provided channel identifiers."
+description: "ChannelConsensusState queries for the consensus state for the channel"
+sidebar_label: "ChannelConsensusState queries for the consensus state for the channel
+associated with the provided channel identifiers."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFV01v4zYQ/SsETy3gWLvbogefmqbbbg5dpNn0FAcBTY0lriVSISknrqH/3hlSsmVZ+Wg2RRdYhKY4w8c3b4bDLfcic3x2zf+swW74zYSbCqzwyujzlM/4bwDhy+1ZLrSG4sxoB9rV7osXHviEV8KKEjxY8rLlKThpVUX2aC2jEau1uquBqRS0V0sFFg01mu2X3KoU5xQZVcLnOLZwVysLCMLbGibcyRxKwWdb7jcVWTpvlc5400yG21bG+qf2pO9vuqGFtXI4ZLouF2CZWTKfA5MdWcy1bLUAuvW3cf0rgUz40thSeJyplfY//fgktBxUlvuXQ4vr3xDaDZm7ijZ2ZPHh3Tv6cwj3lLlaSnBuWResWz5FfwjYYyTJQlRVoWTQaPLVkdn2GIhZfAVJ8L3yBU0EGXcqLhT6ChK+bPdgygVidr/JD8NT0OxcB+vkER/s8uKMYRLkhjRVWUohr+IpZVhGahshqcMWF7HzX5lwzkiFPlN2r3w+GqsmsBGnbuPUyLkPYfwcP49omYs0VcSlKC76Jk0P3iGAcZCRFQKHO5vlk5pYbILkOv8l2FUBLNiRQOFBOQy2hJ23To1HevlMLoti08YuavdTlDpGVGlpoURuEarwDITMu0S4zxXuuQKoENxcd7afYwaTO4cZMWWfzD2sccaZsh8KUWTG4uFLx0qxweMbQ6Ixc42qBR8ctDspzSTSKuiv0ZFsx2CaTVkubEoiW7lJ5PakRIhKo+IWFsQKoQVmM3DsXJNT3EQKzKDJwYlb1IMTO4OLhJ/rFgjlkNI1+vKGLYCVRiuP/2VgMFgKR1vigTVGeYTUOULxjoUzUgQfSbZ9BATtYkZ3SYUXIc3mmmDiuTShkqbES4UCliFlzjOB9jmernXa5iSralsh544UU1fojHwKnc710gL8HagLeeWOsmFY5F5Qv/Zn60WW1K9CWFimiLPOMQl3WOT/9Sa70h3YCUkW6wTSKmtrcYiE0mbtvwkmx1LUxUienGq8EOGhwjAhs2Atkvgm5XVQ7UzarzJ4KsjC/bY7KU798IEHqJgRheutFtaKDV04Hkr3n5Q0+lbi5SKyUcMdiX3mRhsfhq2FRac7MQ5L5G4+Ws/1WM3E86yxP0m7Vb1mxVFQ2itlxrOQbOEOnvFELWQijYWkNUvW77uhS7b7hqpJqNHBqbbfaZLBtZF0Cku2A7E2SVR470OcaBCHA7vu+r3aFggp975ysyRxtLfRJxkeDE5sJacLjPK0MitvTVFMMbX5kN8v0Yb9givpIuXUwzzntsTKoMG/zPMfcXF0fkMNzdIcZwjGGVM5w9jUC3KXkO8TtLvH8px0G7HLj1+u2OnFeb/YXV1d0BQjjZgC2nQSMqRT21c955hSgliNYNoRw8rHqNLSPWicL4XuufwflXlA3S6RPDz4pCqQRwIcYrhtVXvNUbWBGBv4absFPPP7/U8q1LODB0EQMM3uW/Zh67MvtLTuuLPe9bGzYdVHKeRIKoHbbhd4qf5li6ah6bvwGJpd43AtrBILijO9bpSjMabkUhQOjnjYVVH+3WXbKX/PnnoEjRLXlUNNxXAtipp+4XAFm8MHU+j2XwPp0QfSK/B0kXk1mBc/nl4BbiiHbwf53DPqW0C2umxuGpKtSKlpQNXFVaf4LKp8z/7onqbatrsyfv94hTfaPzgzp2w=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ChannelConsensusState queries for the consensus state for the channel\nassociated with the provided channel identifiers."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/channel/v1/channels/{channel_id}/ports/{port_id}/consensus_state/revision/{revision_number}/height/{revision_height}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ChannelConsensusState queries for the consensus state for the channel
+associated with the provided channel identifiers.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"channel unique identifier","name":"channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"port unique identifier","name":"port_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"revision number of the consensus state","name":"revision_number","in":"path","required":true,"schema":{"type":"string","format":"uint64"}},{"description":"revision height of the consensus state","name":"revision_height","in":"path","required":true,"schema":{"type":"string","format":"uint64"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryChannelClientStateResponse is the Response type for the\nQuery/QueryChannelClientState RPC method","properties":{"client_id":{"type":"string","title":"client ID associated with the consensus state"},"consensus_state":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"title":"consensus state associated with the channel"},"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

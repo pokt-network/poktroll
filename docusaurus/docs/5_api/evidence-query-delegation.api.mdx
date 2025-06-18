@@ -1,0 +1,72 @@
+---
+id: evidence-query-delegation
+title: "Delegation queries delegate info for given validator delegator pair."
+description: "Delegation queries delegate info for given validator delegator pair."
+sidebar_label: "Delegation queries delegate info for given validator delegator pair."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk1v2zgQ/SsET1vAsdruzafNZoNuDttmU++pNgJaGkmsJZIlKbuG4f++M6Qsy5ZaF2kDBFHme948DrnnXhSOzz7xfxuwO76ccG3ACi+1esj4jN9vZAYqhaB+/gsqKIKST7gRVtTgwZL/nmfgUitNUM74RlQyE17bZ5FllmWQSwWO+RJYp2KkAodSzb5QfJZrO8XICuMOYqBcUmQjfInfFr400gLW6G0DE+7SEmrBZ3vud4a8nbdSFfxwmFzWlsUuxmrrVNdqO4/x4tqWZOyMVg4c6d++fk1/zuu9Za5JUywmbyp2NKdaUq08KE8ewphKpmE0yWdHbvte2vN4YZanUT61EZl0XXRGhVLLAZXgkJw82NPjHcPRlzqjMtqm9OozpJ6IYYlDXsaWss7t+Rh9WNKIkRsbDCWXKtdM50z0hNfLWIlKII+Hqe+0VF0qgfNeg2Jb6cuQQOlaqphXqAx/mah1o/x0oRbq/Yf5/YzNsbwoZLmEKiMc0e4B/9+WMi2ZrE0FNQ4qtpI2zuu6xW+hnCwwQYNtsyNv2GrHCl1o7MDr663F5CP0mvDQwBjxgq47zANQerO2YLC2rvqVRhgCPAEpx0pqGQsmaNI0YMMePIKwUHqrYjNa9Y7WJCBJIDmnUyk8HAPSctAeC2RGb8HSkNFzobpF8MNsa88lnplvcu1kQrVQbtxzOsNijmJMf7YTetlPCLtSWBjJEuUtsS4p3CotpCA3kI0GPt9+o50MTK50MobjiRHtDxEjF03lRxaRYo2CrwaBx+BgLe6HF+2j78+Qau9ZSQxaAO1Y3Ee18FH0+9vIby9k5XrWwlqxo33soXbXc/0R1SO3BkfwJNUvqse+S4CoRlRFMerYgfiN80S3iQzMCCKI+4xWbYFcUL3r8XQZGSHDzOLOwHgFhFboupnxJNWu1i5xXqyxhmTzZoWwvEm6SC7Zn1PlkJzIiMrzE3HAyA7s5nixN7bCJKX3xs2SBKmrlFY3hdUbuLEmnVKyqdFrb3VVTVPcN5fdf4w+7E+0pLuD0518LWwtpFLgfyzyP9E4Bl/SbZzrkVVfohnC7MtmReESin2Dfltt18kxEXu6/zhnt48PdEikr2i6f8/njyRidwiYRlEku0gD2ds3wbXA4VQjqu3hjV9Mac8cjhOVRjtfC9UL+Yt4cwZDR1kPX31iKsSEkod57FtOfeKRU0SFyCr8annFe7uJDGaDd1qPXKS/eCvheEpslJLs9yvh4D9bHQ4kDg8tlC8pg5ViRdjT01I6+kbi56JyMOin2zv8t6f2Cn3FfuoFOorQccOoXYSgof/wcw274Ws1PDtfUvdPvU5fUPfFdA5L9ChBZLhxCftodIvvT+N77oP9TqeuW0/v7ue4Cf8HOwNmcQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Delegation queries delegate info for given validator delegator pair."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/staking/v1beta1/validators/{validator_addr}/delegations/{delegator_addr}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Delegation queries delegate info for given validator delegator pair.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"validator_addr defines the validator address to query for.","name":"validator_addr","in":"path","required":true,"schema":{"type":"string"}},{"description":"delegator_addr defines the delegator address to query for.","name":"delegator_addr","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryDelegationResponse is response type for the Query/Delegation RPC method.","type":"object","properties":{"delegation_response":{"description":"delegation_responses defines the delegation info of a delegation.","type":"object","properties":{"balance":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"delegation":{"description":"Delegation represents the bond with tokens held by an account. It is\nowned by one delegator, and is associated with the voting power of one\nvalidator.","type":"object","properties":{"delegator_address":{"description":"delegator_address is the encoded address of the delegator.","type":"string"},"shares":{"description":"shares define the delegation shares received.","type":"string"},"validator_address":{"description":"validator_address is the encoded address of the validator.","type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

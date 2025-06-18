@@ -1,0 +1,81 @@
+---
+id: evidence-msg-create-continuous-fund
+title: "CreateContinuousFund defines a method to distribute a percentage of funds to an address continuously.
+This ContinuousFund can be indefinite or run until a given expiry time.
+Funds come from validator block rewards from x/distribution, but may also come from
+any user who funds the ProtocolPoolEscrow module account directly through x/bank."
+description: "CreateContinuousFund defines a method to distribute a percentage of funds to an address continuously."
+sidebar_label: "CreateContinuousFund defines a method to distribute a percentage of funds to an address continuously.
+This ContinuousFund can be indefinite or run until a given expiry time.
+Funds come from validator block rewards from x/distribution, but may also come from
+any user who funds the ProtocolPoolEscrow module account directly through x/bank."
+hide_title: true
+hide_table_of_contents: true
+api: eJztVktvGzcQ/isETy2gh+02SKtTHcFBcwgiOOqltlFQ3JGWMZfc8iFZEPzf882uVpItOS6K5lYdbIqc93zfjDYyqUWUoxv5MS7kXU/6moJKxrsPhRzJq6UpyGnC41/jQCrR2LtkXPY5vs+ukD0Z6O9MMb3zxVqONlLjnVzio6pra3RjbPglesd3UZdUKT4VFHUwNb/CERycsi8KmhtHUShRUYxqQWLug1BFYdxC6J2smEM4DhBOWtcEe372hXTC9zpwRslQbELKqfTBpPVxBJfdkzBRpJLYSYBPnFVqXAVv25fKF9mS+AHBqWwTLr14GC78UmRnWcUvKaxgC5X48SComALClo89SQ+1CSeC+NQclO0JMxetEIcTKfVEoAp22whiQqlEm6RYleRaYSqOvfUkKlYpdEQWUOonUxGHgKpoNAolPQ5jsnvrirGXFn7eVpuznqFM1no0mQoxD74SY19V2XEZa+/tyeQDaVObLUieOr7unnbVh7emGVr7jGvoklly8593vLPPn973QheDncssRylkanKJtXexRdfF2dkJXImYtYb5ebaiE2db/y1TrreWdzlx1Tp33Cp6IJ0TJ6Zu3UsF2ZbhmEhdVRvAn0jSAfqAIEQBBAoBZfxXuX6bvtoXdCBlYHRB4RDiuPrpQjahJmVsPJBWIag1ZE2iKr7u67f2eXOEr55kgLQ8nRyqNCXaVvCU4klovopLTKWC+1cYNjTL4L16iY7K7XizR69dD27dtASRn3nREAeBjWvcGR4o6FrmViZj4WVhlt1kWQueGzD0vvGlfUUt35fKGswVaM4wB+7R9ZUKkGgeH4a7qJFtT+C/qNQaMyP6vY1bp9xa5EgBo8x32QC+qG7y2tsJJskViuZX3ejtxkEBMupkEV0ZfF6U8DhT7p4h11YOFa59bLqrUolvQ+1j5eOg3tpuptTyfABGDF/YcAgM85yX5EbmYGGkTKmOo+Ewlso57/qLgMncD7UezAC7Qe3veVnYAVKUzxv+udUR7yApridjgPV1s5UyzlH6Z5Y/tsKtcax0Ztn1fktfPaiqtvRsHe7XRbebMM4ufu6fve1f/Do9fzN6cz66+GVw9vb8T/l0eew1Dwb7wbg3bu6PJ8a4RJRAWCrzjLMZcmp9hL3y4X7Y5Smurz5PxeXkAw8kkzhq+ft0OuErhnP0uGrHi9LNeHGqYqHXDHNg3NQ2mO1JOJ941zbrEaiplDsw+T9TvxNTnwBjNzYTPaRhbYESbkdDkM2WxDfyZRLD3kkagwclDwIobzYzFemPYB8f+RrEYLjf4LhUwagZo+zmDk5LUgXWC/P+npgR43aN9accIovb3GyW5yuNKd1qXGL11+mbsncHs2ry6fMUwrPtj+mq2XcyqBWzC39HUvJPdNZullRzt5FWuUVuydja5M9XCR8/aA==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CreateContinuousFund defines a method to distribute a percentage of funds to an address continuously.\nThis ContinuousFund can be indefinite or run until a given expiry time.\nFunds come from validator block rewards from x/distribution, but may also come from\nany user who funds the ProtocolPoolEscrow module account directly through x/bank."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.protocolpool.v1.Msg/CreateContinuousFund"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CreateContinuousFund defines a method to distribute a percentage of funds to an address continuously.
+This ContinuousFund can be indefinite or run until a given expiry time.
+Funds come from validator block rewards from x/distribution, but may also come from
+any user who funds the ProtocolPoolEscrow module account directly through x/bank.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgCreateContinuousFund defines a message for adding continuous funds.","type":"object","properties":{"authority":{"description":"Authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"expiry":{"description":"Optional, if expiry is set, removes the state object when expired.","type":"string","format":"date-time"},"percentage":{"description":"Percentage is the percentage of funds to be allocated from Community pool.","type":"string"},"recipient":{"description":"Recipient address of the account receiving funds.","type":"string"}}}}},"description":"MsgCreateContinuousFund defines a message for adding continuous funds.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgCreateContinuousFundResponse defines the response to executing a\nMsgCreateContinuousFund message.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

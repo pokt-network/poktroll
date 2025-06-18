@@ -1,0 +1,75 @@
+---
+id: fee-query-packet-receipt
+title: "PacketReceipt queries if a given packet sequence has been received on the
+queried chain"
+description: "PacketReceipt queries if a given packet sequence has been received on the"
+sidebar_label: "PacketReceipt queries if a given packet sequence has been received on the
+queried chain"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1V01v4zYQ/SuETi3gWLvbogefmgbbbg5dpN70tA4CmhpLXEukQlJOXMP/fd9Qki1/bNIGWyCBaZLz9ebNcLxJgsx9Mvmc/NWQWyd3o8TW5GTQ1lxnyST5nSie3N9ItaQwJUW6DskoqaWTFQVyLL1JMvLK4QRykFKFNIZK0Rj90JDQGZmgF5ocBA3E9lfudYY9zUK1DAXWjh4a7QjGg2tolHhVUCWTySYJ65olfXDa5Ml2Ozo2W1sXnrPJ59/XYARFeGggo2hvabDzGlOjZGFdJQN2Gm3CLz/D+B2L+9oaT54l3r15wx+HDl0K3yhF3i+aUvTXx9CnrAkAhCVkXZdaxRSnXzyLbU4dsfMvpDjPQYeSNyILDkgw7dSLjBbakBehIKFKDTPigW/vHBCIRkjRojUzrpUXj4VWhZClt0IbVTYIhW85axcjIU0WFRak8yKIhbNVJ8C78ZJ4lJ61ATNaEacV22Bv0C1C8dKz4M7XgQYxVuSWZa8cf/SkfYhp3I5abfetO6fAf2SVZbmO3k1ppT32P7S+a8/xOaqADGVCBkEScXSRISjYXBLVcG5metmPTTUnF9V5cGosPthHROmEtxVgZliNbwBYmVunQ1F5Ucm1UIW1ADxYBsaDmwMMtREK6Ej+tCbT7LoXNM7HopAu4ywt/Uj4IANdVHARWZ2ZuSO5hGuCKzZHiq4NK4URJUHF0UHEnddHESPBoZDIfOcIk1GbhiljxZxEZY0O+FcRwSgpPZtEwEZIfwbUGVwJXsQYOYPfYO0+A5Kt2LNWMhmkYA0zw24iLsNeKVuhyXHCckDmAyhp4YgTnVImdeRi42pg7pkxTQ1lrBP0nZmFI/onQherwp8w1HUxDWj1UiPYxzbI7CMIoGNaRK4Zs14xE3dnxMTk/HcjvYKYxGGVA1bVOIclAGVj22gO1c3luLczt7YkaQZquy4lFqXMI5B6Ifq2EKvOs7KoD91FNuWZkrs06PX0VCPjSBI5BzXfpeUd5kjZjAa3ABDl8VHZgYatn94l0VUUV+kHt6Vzcs2PQKDKv2zr1/b4zMuTyKwtWFneDEUiRBWglPlZwR2IQ+QO2njs1VDGKZAdfY7eNbQHj4qIvGqTKyIbUDCtcMbNQXOCMRIUlgeHnNopAe/eJEn1XKXKOkq7Zz9dve2XPt3sZ4Ftym80trqnGt+jK/cdOXDSO7WFek9u1U8gjSthqQih9pM09azSmovc2RVduFqN50jOuLbL4GxZjlHcyTEsn1oZ8RtuiunNVcIP/ktqK8RtKPw7zX+2l1vldzwbLOwpsa8YS2QiFM2c1aWs+wJyj2jQaW9ITN9/uhWXN9fDdnd7e8Nb4gpFgJrrqkCqWAXdbPKSYmYyo9o6060Eep/gXssvofWhkmag8n8k1AE0O34HegppXfIVOBRztOnI9jkB2WLgLsbfcgur1dv9V27Fk4MRNPKOd/dD4hH1+HA31yF5BWBgc5vNHA/h367cbnk7jj7Yx3IlnZZzzgxPyNrzGrWxwMhDJ5Ht2lXyw7QbE38Uzw3SZ6Ho+47hrrOSZcPfsFzS+nDojsPsa1z65pD9Cn96rF/vzMkA/govdtLbO9wtSGb8SiJl7fElnqr4k6cXPHlNuJR3je+P97fou18BPl652Q==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PacketReceipt queries if a given packet sequence has been received on the\nqueried chain"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/channel/v1/channels/{channel_id}/ports/{port_id}/packet_receipts/{sequence}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+PacketReceipt queries if a given packet sequence has been received on the
+queried chain
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"channel unique identifier","name":"channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"port unique identifier","name":"port_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"packet sequence","name":"sequence","in":"path","required":true,"schema":{"type":"string","format":"uint64"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryPacketReceiptResponse defines the client query response for a packet\nreceipt which also includes a proof, and the height from which the proof was\nretrieved","properties":{"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}},"received":{"type":"boolean","title":"success flag for if receipt exists"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

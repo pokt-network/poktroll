@@ -1,0 +1,75 @@
+---
+id: evidence-query-spendable-balances
+title: "SpendableBalances queries the spendable balance of all coins for a single
+account."
+description: "When called from another module, this query might consume a high amount of"
+sidebar_label: "SpendableBalances queries the spendable balance of all coins for a single
+account."
+hide_title: true
+hide_table_of_contents: true
+api: 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
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SpendableBalances queries the spendable balance of all coins for a single\naccount."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/bank/v1beta1/spendable_balances/{address}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+When called from another module, this query might consume a high amount of
+gas if the pagination field is incorrectly set.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"address is the address to query spendable balances for.","name":"address","in":"path","required":true,"schema":{"type":"string"}},{"description":"key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.","name":"pagination.key","in":"query","schema":{"type":"string","format":"byte"}},{"description":"offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.","name":"pagination.offset","in":"query","schema":{"type":"string","format":"uint64"}},{"description":"limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.","name":"pagination.limit","in":"query","schema":{"type":"string","format":"uint64"}},{"description":"count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.","name":"pagination.count_total","in":"query","schema":{"type":"boolean"}},{"description":"reverse is set to true if results are to be returned in the descending order.","name":"pagination.reverse","in":"query","schema":{"type":"boolean"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QuerySpendableBalancesResponse defines the gRPC response structure for querying\nan account's spendable balances.","type":"object","properties":{"balances":{"description":"balances is the spendable balances of all the coins.","type":"array","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"pagination":{"description":"pagination defines the pagination in the response.","type":"object","properties":{"next_key":{"description":"next_key is the key to be passed to PageRequest.key to\nquery the next page most efficiently. It will be empty if\nthere are no more results.","type":"string","format":"byte"},"total":{"type":"string","format":"uint64","title":"total is total number of results available if PageRequest.count_total\nwas set, its value is undefined otherwise"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

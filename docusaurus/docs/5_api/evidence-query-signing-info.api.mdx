@@ -1,0 +1,72 @@
+---
+id: evidence-query-signing-info
+title: "SigningInfo queries the signing info of given cons address"
+description: "SigningInfo queries the signing info of given cons address"
+sidebar_label: "SigningInfo queries the signing info of given cons address"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk1v4zYQ/SuELk2A2NrdFj341DQI2hyKpom3PawDg5LGFhOJ1JIjOYbh/943kuzIH2iKbn0xRc7n45sZbiLWyxBNvkR/1OTX0dNV5Crymo2zd1k0iW4bk5FNqT2eP5qlNXZ5Zxcuuooq7XVJTF4MbKKMQupNJapQTJ0Nc51lnkJQJijOSe0+2amvYk+Fzp4yMKjcAjYtLB5pY9eIxUpzjrWnr7XxhODY13QVhTSnUkeTTcTrSnQDe9iMttsnEQ4VTFGQ808fPsjfYZzXKtRpCjeLulA78TH8IAQmy6Khq6owaQtK/BxEbXPq1iXPlDIU2XAhGy1kA8QeeuM7NHbOlBhQC+fb3VYrHqiph/ubmQXOucsEdC8XxKZLqdHFvAdxLiC28fT+j892fo9AVwIoBaZMQUMJ8uoN+UOw/tSFyTQ7P4wvo4WxBCXR746/C4deJLnSWYMj2UMUxs9sYRqywgedsmkMrwX2YzQP890FdnrbQpKMXudusQjEp/d8J6dqlZs0FyCMTT2VuF+kTY1wkU1JwxxEKnHQyiCMg6Rw6YvSNpvZeanXc5XrpgMTElpVnkapK0vDCrrW8VhN89aRQPpc21QCUSvDueQ/s53mvDUb5itE71aqLSkgiqIqW1DlwtrExJB8lCYEOOyiSQyXuhrA1qNxFQHxUgMGoMI//iDwPGtTwF9t2RSn8EyRfWBdVqoV6IEShweAdEZUVpMU8f4CEboV/P4xEhihkUhJNF0au+xTB6/kz1VnfyRE7VO/qHvsLjsUwljdsQRXyynC0o0zGfKwJHWt/XpmPeksfDOEAMjzHORd5nxKwRONt1bwa6uiNPe4vmG60kEtjA84VCnIJdukfn9oD2o76gAX5+zKJLCz0vmOYforR3sQkFrmHbA4h52ECJnv9dXFiynkGl3NguteGKQkvtzBibVyaP1HLOhIjqK1Sjpx47rGKL6lzLVdKyfBzCx4vzDLGr1aIE8IBWOcH0CdOFeQtmjV3U/azULXxZnyvbZAg14rNAWpWO/h6n/p1of9JXUZDaRwj7QELw+v9vtPURsq426GrUh7r9cyrZjK8L6vn7rj07l1JW3OSPy6uB+qtBCVwunlWcU9iEPkhq1apq6h82NgKcV83P77sTOJltQmICN4EsWpC6ULcSh0yGEjbj4mQONjPBw3Id4Mp/gW6oF8s3st1B5dKMqZqzCJ45Bra50dLb1raOSrdCwGx5V7Ye+KYgzSnQyjx05H/QxJGZK4lPfNltqgL/C/s/xbJ9wZf5IJ003YQ+mbHGKAj/M6EXOx2B5Bb+X8S7xzpB5uH6fq+v5u2Bam03vZUjcACqXQ8xjjULz0T6H3DAsXBdUumH7VtgGZgzisXECLswOT30SJg+T3HGR65bgqgIS4bG9h09PlS9TRRQjQEwbLnjKyOSQNvicHjz/AniMBMbPZJDrQZ19st7LdPiGxj2WjvdGJYCrvUBNkDdYudBHoJOJ9q4guHvq35KX6j8/Vs9nv2oGVZoDGWcsXli+0Pn7abp8gn2M4yfBD7J3INR6kFQ+UT1qasHFfm7/cTlH8fwOEdTGJ
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SigningInfo queries the signing info of given cons address"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/slashing/v1beta1/signing_infos/{cons_address}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+SigningInfo queries the signing info of given cons address
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"cons_address is the address to query signing info of","name":"cons_address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QuerySigningInfoResponse is the response type for the Query/SigningInfo RPC\nmethod","properties":{"val_signing_info":{"title":"val_signing_info is the signing info of requested val cons address","description":"ValidatorSigningInfo defines a validator's signing info for monitoring their\nliveness activity.","type":"object","properties":{"address":{"type":"string"},"index_offset":{"description":"Index which is incremented every time a validator is bonded in a block and\n_may_ have signed a pre-commit or not. This in conjunction with the\nsigned_blocks_window param determines the index in the missed block bitmap.","type":"string","format":"int64"},"jailed_until":{"description":"Timestamp until which the validator is jailed due to liveness downtime.","type":"string","format":"date-time"},"missed_blocks_counter":{"description":"A counter of missed (unsigned) blocks. It is used to avoid unnecessary\nreads in the missed block bitmap.","type":"string","format":"int64"},"start_height":{"type":"string","format":"int64","title":"Height at which validator was first a candidate OR was un-jailed"},"tombstoned":{"description":"Whether or not a validator has been tombstoned (killed out of validator\nset). It is set once the validator commits an equivocation or for any other\nconfigured misbehavior.","type":"boolean"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

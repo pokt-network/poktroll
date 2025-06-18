@@ -1,0 +1,75 @@
+---
+id: evidence-msg-submit-evidence
+title: "SubmitEvidence submits an arbitrary Evidence of misbehavior such as equivocation or
+counterfactual signing."
+description: "SubmitEvidence submits an arbitrary Evidence of misbehavior such as equivocation or"
+sidebar_label: "SubmitEvidence submits an arbitrary Evidence of misbehavior such as equivocation or
+counterfactual signing."
+hide_title: true
+hide_table_of_contents: true
+api: eJzNVsFu2zAM/RVB5yRuu1tO7YoC66FYkGantBhom7HV2pImyWmDIP8+0nZSJ87SbdiG9VAoFEU+PT5SXssAmZfjubzzmXwcSGPRQVBG36ZyLG+WKkWdIG1+va/iUoWtRQ6kw28V+vDRpCs5XsvE6IA68BKsLVRSh4mevNFs80mOJfAqRZ84ZXmXUlDo/cjCoXXoKZQXIEr0HjIUIYcgfGWtcWT39YmgdCbAxSo4cKsHvYtgFqJUPsYclso48k5yAV4QXrU0DS5B9sRUBNktIAkVFMKrTFPEEV0trCwSNhM/YRLot3XMS1Do+QK45YDWpz0vm+2dmw+OMsjNZiAhTRUDgWLSPUI7+/xsk4kUF0qjJyZQ4PGbjiQdb7lB1+d6tyVUE4evTL8gqakQhImY9xx1m6HDxg78ZtND+V9WkQWqHJKQg6twwwZvjfZNbS7OzvoMXXGahNAuqkJs3TnWn1L3tI25V07yinr0tX5M/vuSzMHn/exs3UtUG4jXrob6FR7IhXEl0GVlvArYVLwu+QKqIhxhTYtK46slZJgKdI7K8lvknb5kYtJuMykKmpHMO3DJ9OFC1lADqMJ3vME5WJGvClj6v9K5vNcK/djBo31zUPWmI6hj9FtHiF9siAf9444oMeSGB7s1vr4zBJKNjBLjS+NHO0ksz2Mi8HzUFyYd8uiW6PjRWMvKFayzEKwfR5HPQWujh5kzSxw6m4w4zMia5+BMUYwSU8oeA80Z8ZE8xXRyTdV7P2wJSmsMPxf5rnFugtMTx7Kbvr1dN69Q2gIPB/vlQf32BmvHqvTC9DviOqekIlMhr2IGFzHSIaF4Me452sIW05v7mbia3HILqsAg5KfZbMImcU3dYwps24dqyVk0lOz0XmAGxjVqwLQroQ0NXwy8yfUvQXdC/mMl7tG1a5aAryGyBXHHIGsVrFuRzuUJkVLAA5lSnXPWOJ1br2Pw+MUVmw2bqfCOPljmtFyCUxAz7fNHypcjpFxd0vUzrriKzdwazhgduxdVPUoOZxhLtjlxRY+HDSd9HzttOPl8PyPnuP2EKusBJx288OtF/8dS8icZn66nUm1bywJ0VtVjRjYx+e87BImB3g==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SubmitEvidence submits an arbitrary Evidence of misbehavior such as equivocation or\ncounterfactual signing."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.evidence.v1beta1.Msg/SubmitEvidence"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+SubmitEvidence submits an arbitrary Evidence of misbehavior such as equivocation or
+counterfactual signing.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgSubmitEvidence represents a message that supports submitting arbitrary\nEvidence of misbehavior such as equivocation or counterfactual signing.","type":"object","properties":{"evidence":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"evidence defines the evidence of misbehavior."},"submitter":{"description":"submitter is the signer account address of evidence.","type":"string"}}}}},"description":"MsgSubmitEvidence represents a message that supports submitting arbitrary\nEvidence of misbehavior such as equivocation or counterfactual signing.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgSubmitEvidenceResponse defines the Msg/SubmitEvidence response type.","type":"object","properties":{"hash":{"description":"hash defines the hash of the evidence.","type":"string","format":"byte"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

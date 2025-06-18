@@ -1,0 +1,64 @@
+---
+id: github-compokt-networkpoktroll-query-params-mixin-17
+title: "Parameters queries the parameters of the module."
+description: "Parameters queries the parameters of the module."
+sidebar_label: "Parameters queries the parameters of the module."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVttuGzcQ/ZUBnxpA1iYu2gJ6qqMGqYG4UG31yS4EijvaZcwlNyRXFwj+98yQK2VrKbURvayWmjlz5syF2osoqyAm9+LvDv1O/DsSrkUvo3b2uhQT8VHHultOXdO6x/gXxo3zj/zVO2OSy2ImvWzCjd5q++43MRIeQ+tsQELdi8u3b/lRYlBet4xKmFcQOqUwhFVn4GA+JlflbEQb2UO2rdEq8Sg+B3bbi6BqbOQpXuKRadz2aKDDERnirkVYOQ+xRkjGRbaG29kUGoy1Kzk82xGcW35GFem99axF1DmVNrmcRs/nUDtTBpDGpCjpECP6AG5FJ0SncWVn8OU4BOE2i8b5gAuplOtsXGiS38eFW6PfeB3xlMVrvFgUCSuUsfMkiJEVbGqtaj7vApYQHaCVS4NFqQM/Hywn4/EiQ2lbcTo3HAWUkbphI+jjBVjuUvKyI0Up4G78YO86wpffIGCjjZk82Au4rqwjGj/pMY7BoFzjG7j69CnjEhnKjwKmDoC7WlpLz0OkQqpIJBjmDzSkc/LErQ6Zo1W11DYTnR54XvXOKXgmw2wtbiBgPCZ2Yg8r75pcVe/WuiRuN6HKCN+LMOeKZ1m5yVPzYSbXdr51NB4jWHYRQu06U8ISoZe8BCJOgcpOceqDflk6RzJZ8TQSG6nX2Fc76bWoZFisMHfQM3sC0NHwyffdzrTG+Y5IOjBO3wsEAAkgpbgN9LuMqb5TGmYuAm6pWGZHRUHSWbWXv/z6+A6Criz6oZ2M3AUhJsPcYn25c7VzY9C4hiArzLV3YF0EdUCwFIX4+aNR/0qc7CsgxVP/GdFwrWRn4pndZaGzuG1pckke9J5QfmiF/f8SUK7EgZUm0Ao9mZHMjYz56OdLkahS8mZYeOm93JEtjXwTXo71e/75aBaip+IKlkGWpWb+0syGLkmiXrVzjkcRh8rNvq3EL7SDCenspsTBosyrmXwrTLRlrOml4Pvnwua7qDhcRkWjq3xvFf2mHomAnnYfX2970XlDvnWMbZgURcgL5aKiicYL36rxkmQcH8DGyjXieQKHJfSeLPnmIPFfhm2oMYnq65BvsnEGp6tY25U7bcFp2m1VupgZ7rwecPvhbg5Xs+vB/P85n8/4iGcu0HLo+5VmgaNYqgNr/QIw9xyrmsn039Ic0hblH2m7xUbaAeQPlP4/KR87LOI2Fi0NbdqCSft93xb3YsiWu+XAl/ro0BqpiVJzkLo18WS//X4pA/7jzdMTH39Jf4Qm9/R1Lb3mpcdvFK9GWdIQcjc94o6XAf2Labkz19J0afKejzxX8djFHz/MaTi+Aj1bZL4=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the parameters of the module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/migration/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the parameters of the module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"params holds all the parameters of this module.","type":"object","properties":{"allow_morse_account_import_overwrite":{"description":"allow_morse_account_import_overwrite is a feature flag which is used to enable/disable\nthe re-importing of Morse claimable accounts by the authority.\nSuch a re-import will:\n- Ignore (i.e. leave) ALL claimed destination Shannon accounts/actors\n- Delete ALL existing onchain MorseClaimableAccounts\n- Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts\nThis is useful for testing purposes, but should be disabled in production.","type":"boolean"},"waive_morse_claim_gas_fees":{"type":"boolean","title":"waive_morse_claim_gas_fees is a feature flag used to enable/disable the waiving of gas fees for txs that:\n- Contain exactly one secp256k1 signer\n- Contain at least one Morse account/actor claim messages\n- Do not contain any other messages other than Morse account/actor claim messages"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

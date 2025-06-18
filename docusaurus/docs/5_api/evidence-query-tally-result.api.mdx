@@ -1,0 +1,72 @@
+---
+id: evidence-query-tally-result
+title: "TallyResult queries the tally of a proposal vote."
+description: "TallyResult queries the tally of a proposal vote."
+sidebar_label: "TallyResult queries the tally of a proposal vote."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVsFu2zAM/RVBpw1I47YbdshpWVFsPQzI0uxUBIFiM7ZaW3Il2W1g5N9HSnZgJ23TNYdGJflIinyk0nAnUssnd/xPBWbLlyOuSzDCSa1uEj7h17VMQMXg1auFyPPtHGyVOz7ipTCiAAeGHDQ8ARsbWRIUgaXRpbYiX8mEJbCRCixzGbBKyccKGEr1xgs6wzF6VOhviEWh9O6Ey/Bs4LGSBjAzZyoYcRtnUAg+abjblgS1zkiVouVGm0I4lFRSuW9f+W63JLgttbJgCXF5fk5fw7SnzFZxDNZuqpx15pRarJUD5QghyjKXsa9RdG8J1vQSGfrzdeuVbd66ZDKUowvBKH+GSXupR0UexuazK4ZVznRCabTX1Ot7iH0PDPXLyXAlR4jjJLx40AWqI1gHCfO6057F2joh1SrWVSjCMMJA3d1NVcUaDPW5VbNaO0xAKyYGbR/2boc80K8F6jTHMZT+H/dP0mWrGtxbgQ5sXgxJNoxs3h18C/a1mHvVcShUvTNC+xmh742gQT3muMIphOcS+4wEAGOQdR+i+tuUiXUCPSscQ0jB9EcTRV8uuU8V6ZHbnrUwRmxp+B0U9nSs70F9uAaoDCJJJOUv8lkf4ktU4KCL9EXgvoj9yvUGmeEAGdmOUxgwIvq+M75bVM0wuwhOISxNXGQTHsXaFtpGqa6j+iLqUDZqestvF4WBxj0Hpu72bGVydJA5V9pJFNlMKKXVWWp0DWemjMdrLOa41A/O6Dwfx7rgh9e4DRj2Ay1pv2ALTrstcIAVuPd5/h2Mg/Ml7fCNPibiVUZLIcURqtbkLiLfZ4h70uYh6gKx+fXtgk1nN8R16XJq06/FYkYidoWk1SgKrBWxZ237jJxyTMyjqoZk2hMOtWMWW4VK7IMrhOq5/AgBBnfeE83Bs4vKHAtAkXzxm5YcdzyQA7FID/xbX7SE9xTB82T4QgaWYJkzTJjwTbMWFv6afLcj8aN/2yd3eKyFkWJNNaQXW1o6Izk36BeOUt0vAv5p3j68n9mHHvYXL92NuiKG1yKv6D88PsD24EfAbonmGYgE9wclHiym+FCXroc92lZEvf38/bxe4Fz/A/u1KLQ=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"TallyResult queries the tally of a proposal vote."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/gov/v1/proposals/{proposal_id}/tally"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+TallyResult queries the tally of a proposal vote.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"proposal_id defines the unique id of the proposal.","name":"proposal_id","in":"path","required":true,"schema":{"type":"string","format":"uint64"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryTallyResultResponse is the response type for the Query/Tally RPC method.","type":"object","properties":{"tally":{"description":"tally defines the requested tally.","type":"object","properties":{"abstain_count":{"description":"abstain_count is the number of abstain votes on a proposal.","type":"string"},"no_count":{"description":"no_count is the number of no votes on a proposal.","type":"string"},"no_with_veto_count":{"description":"no_with_veto_count is the number of no with veto votes on a proposal.","type":"string"},"yes_count":{"description":"yes_count is the number of yes votes on a proposal.","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

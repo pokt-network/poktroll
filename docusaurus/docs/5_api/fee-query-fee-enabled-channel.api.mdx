@@ -1,0 +1,72 @@
+---
+id: fee-query-fee-enabled-channel
+title: "FeeEnabledChannel returns true if the provided port and channel identifiers belong to a fee enabled channel"
+description: "FeeEnabledChannel returns true if the provided port and channel identifiers belong to a fee enabled channel"
+sidebar_label: "FeeEnabledChannel returns true if the provided port and channel identifiers belong to a fee enabled channel"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VcFu2zAM/RVBpw1I47a75bSu6LYeBmRpdiqCQrFpW60sqRKdNQjy7yNtJ3UWbx3WYb3UkfhI6vGR3EhURZSTW/m1hrCWi5F0HoJC7ex1JifyI0Bzc0cfV1YtDWSXpbIWjBxJr4KqACGwh43MIKZBe8YSsrb6sQaRttZCZ2BR5xoCAS3ByKS7u9MZnWkGeYUlfQd4rHUASgBDDSMZ0xIqJScbiWvPyIhB20Jut6NfhPUu4GBMvnhNwAUbR+9shMj356en/O8wiQsR6zSFGPPaiJ35mOKkziLlxAjlvdFpw3RyHxm2OQ7rlveQIgFRo+GDphhHtZh1IUQGubYQBZawjyvYl8hdaE6PsCL4lGsZuPCo21flAHfQmvWyWTpnQNleOt2JyI0qKKCnmEy5LZpY5EV0XvY6iKiwjkQk/42It1zVBgcotKK28OTp+YSGECj/f8Lk4UNTl0HPSpPTopEL8VUpbI/encsmVVTaxJ61CkGtWUkIVXw51vv2ekDEUmWZ5vyVmfYhDUUV6UgVg8A9iX3mBioMWAdLqiBtC503taHUVtQfWdspymYDnRrFEozjYjqhhqopOTssHU+KApoXcz9NZKKXaUJ1iQmhktVZ0gFisnlu+m3Csemo68lt0pcdNSGE1W621MGQ2xLRx0mSRPbh7ElBj4ATEvB4ScUZe/eAwRkzTl0lf6blpsWID2QpZtNLybPjJbeV0pQs/pnnL61x63zBAyZ3x8KmomgrCo1lvWR3Cfs+Idx3Fx6SXSAxu7qZi4vpda/ZPs/nUz4Sl9QE1HddF6i06YJuvr3kmJXMrLbJdF/COhSRCkiX3kWslO25/L+COmBrL3mEJ0y8Ieo4x6Zsm05st5LERkCWGzcuMDGrM2anEx19Tg52TaM7Pn3eBn3pUe1KYoFdbzZLFeFbMNstHz82W3JyS58rFTSbt6tPx25Y5spEOHrFflrJN7Nu1bwVv9uQg8/ejR3LQ2elTM2/6PMB1ofbtFmLr0jpeHv+RT47brcLMi1BZeSIuWpvL2g/euzhjqY4t9B+uny6mtO8+wFmyAtQ
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"FeeEnabledChannel returns true if the provided port and channel identifiers belong to a fee enabled channel"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/apps/fee/v1/channels/{channel_id}/ports/{port_id}/fee_enabled"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+FeeEnabledChannel returns true if the provided port and channel identifiers belong to a fee enabled channel
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"unique channel identifier","name":"channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"unique port identifier","name":"port_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryFeeEnabledChannelResponse defines the response type for the FeeEnabledChannel rpc","properties":{"fee_enabled":{"type":"boolean","title":"boolean flag representing the fee enabled channel status"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

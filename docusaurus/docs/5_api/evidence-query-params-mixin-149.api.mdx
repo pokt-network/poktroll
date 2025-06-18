@@ -1,0 +1,64 @@
+---
+id: evidence-query-params-mixin-149
+title: "Parameters queries the staking parameters."
+description: "Parameters queries the staking parameters."
+sidebar_label: "Parameters queries the staking parameters."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVktv2kAQ/iurPbUS4CSNKpVT0yhqc4hEU3pCFVrswd6wD2d3TUAo/70za4NNICVpLrHn+c03D7PhQeSeDyf8ZwVuzf/0uC3BiSCtuc34kN8sZQYmhaiejoQT2t/JlTTnl194jzvwpTUeMMSGX5yd0b8MfOpkSSEwwBXzVZqC9/NKsa35AF1TawKYQB6iLJVMY9LkwZPbhvu0AC0O40UgNY77JhqTfheZhXUJbG4dCwWwaJzU1ux+dM00hMJmlJ7sMJydPUAa8L10VHiQdSlldDnMXstZYVXmmVAqZolCCOA8s3OUIBxts0rB6Twza7IpEmz1Ya5WxzKYSwM+ZiOxmClgqZWGRb00kbtOOh+cNDl/7nFEE6xDdtUU2XZN3v1MhzZEKSUzlZ6Bo7JaG7a1CZZhKR4VncwSu5qDQwE2QYtQiz5fEhYtVq+D6Ci32VG0S0YtBYlSxypDHGB9WL2CPNbOUO2g8/4BoWFnpEvQ3358B8KlUDITWOwrIFt9B6fUle6w1dq8NbE009RqLb3HTFPcQKDs++3ESDIoEhwx34JJCyFN/wnXlqFVxNVasmgZChGYaEGyVBjycznpQLotscQBgtsRPg1SwyEr+/otkPicVa7pz7zt25FBbf56GHkuKhWOHBKDAWBV4hpBxsC52PH/uCf/3sjUZl3mj/fs0wWPUIOQyneshXNijbYygPanc32t1S/bTDSILJOEX6hR1yVSpPGaivyo447ELnOj9j494kGUzSHxQSxoidrzRTTWFxK9coiARSjwJUmt19YnjU+yPJ9h8edJcyd73INbAm3MZMMrp+iohFD6YZL4QhhjTT93dgl9V6YDch2UdhGcVWqAw8lfIv5V+7BvaEl3G9k+HVbj3BsIb4t8VxvXwfGrJ83cHs7cNe0Sy/HsVDMKl1DsPvo9WbdItonY/c2vMbsa3XYW9Md4PCIRu8b5tCiqB1SkcUCNoDXipwLTkBGrNZjmiRkbmMfmoLK0PmhhOiHf1eu9YnfDFGAVklJh5XH3ifVNMwcTXs8BNbyOiE/NLMRhidOAdBYIjMw3m5nw8Nup52cSP8YfGcMJPi6Fk/QZozf6TIHIcM1ofBawpnXHHw0lTSBeqSru1sulprbtpvX7zRjH/y8uXCCZ
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the staking parameters."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/staking/v1beta1/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the staking parameters.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"params holds all the parameters of this module.","type":"object","properties":{"bond_denom":{"description":"bond_denom defines the bondable coin denomination.","type":"string"},"historical_entries":{"description":"historical_entries is the number of historical entries to persist.","type":"integer","format":"int64"},"max_entries":{"description":"max_entries is the max entries for either unbonding delegation or redelegation (per pair/trio).","type":"integer","format":"int64"},"max_validators":{"description":"max_validators is the maximum number of validators.","type":"integer","format":"int64"},"min_commission_rate":{"type":"string","title":"min_commission_rate is the chain-wide minimum commission rate that a validator can charge their delegators"},"unbonding_time":{"description":"unbonding_time is the time duration of unbonding.","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

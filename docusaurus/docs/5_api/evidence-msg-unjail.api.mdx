@@ -1,0 +1,78 @@
+---
+id: evidence-msg-unjail
+title: "Unjail defines a method for unjailing a jailed validator, thus returning
+them into the bonded validator set, so they can begin receiving provisions
+and rewards again."
+description: "Unjail defines a method for unjailing a jailed validator, thus returning"
+sidebar_label: "Unjail defines a method for unjailing a jailed validator, thus returning
+them into the bonded validator set, so they can begin receiving provisions
+and rewards again."
+hide_title: true
+hide_table_of_contents: true
+api: eJzVVU1T4zAM/Ssen9sE2FtPCwwzy4HZTimnwjBKrCaGxM7aTqHT6X9fyc5C+FjYA5ftoXVl6flJepZ3MkDl5WwlL3wlbybSduggaGvOlZzJs41WaEqkzdsrcwe6kRPp8FePPpxYtZWznSytCWgCL6HrGl3G8PzOW8M2X9bYAq/CtkPCtMUdloFwgg4NGwg8YQuFa23Qi1CjIGs+mIcDRQSYyM4xyaDRM+oGGq0gWHcLSrnROT44bSq5508irR1SUsH1GA2+s8YnkKODA/5R6EunO+ZPAMfC92WJ3q975pDcMyLwdRkvBtS/Zz7sR6SUCblC34R3+BrRG3zs6CxUAp2z7mtovyx4aRWOvDSBVujIbW1dCyGZvh3JSDVQFn7kDc7Blnx1wNZ/ftb3tP22pxNJ3dbMH5r5OCSWqKWmQfVu4P5PEceVeyU/EC2G2ipBGVFJeY+CycwrKu2T5CbUr95TkUPvDLlcG+pfKyh/GztZWKPG/sJjmAgfN7eiBCMKrLQhgBL1hs+g9DfaEyt/bcAo2nkAp4hSBdpwExMz4txZH+sFoaZ/eWl9a33mG/A1AWWbw4KKf5g9i4mcPboNOr7uO9m7huLqEDo/y3NfgzHWTCs6H6euKzMOzzp7H5xtmqy0rXxdtcsUI07IUyzmp9Txz2FbysNg+Dfki+ScwGk4sVQXz9Pn7BHarsH3psBTw0lqZm3fXpbTmrBFpamBBXPImdCUDnuw7j7/w04szi6X4nh+Prq8P5bLOZvEKXXJNjjcLCjjzTLQstNnwEyMW5HIDCthbGCJ8Ca3twUzgvyPRPqi1E93MOBjyLuGfDjBKJTdoN+V/EC/BDgomCRQs+zJf7crwOOVa/Z7NpMmHL1GK1puwGkouFWrGzqnRlA0nljy97jlzqcxOF2m14Ty7uNkej0SWc0p4phegS586Hszupnzn5dLci6G97GN81I6eOC3k75nUvI7y9FxyEXbTjZgqj5OLZkw+fMbrueyrQ==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Unjail defines a method for unjailing a jailed validator, thus returning\nthem into the bonded validator set, so they can begin receiving provisions\nand rewards again."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.slashing.v1beta1.Msg/Unjail"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Unjail defines a method for unjailing a jailed validator, thus returning
+them into the bonded validator set, so they can begin receiving provisions
+and rewards again.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"MsgUnjail defines the Msg/Unjail request type","properties":{"validator_addr":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgUnjailResponse defines the Msg/Unjail response type"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

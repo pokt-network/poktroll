@@ -1,0 +1,75 @@
+---
+id: evidence-query-unbonding-delegation
+title: "UnbondingDelegation queries unbonding info for given validator delegator
+pair."
+description: "UnbondingDelegation queries unbonding info for given validator delegator"
+sidebar_label: "UnbondingDelegation queries unbonding info for given validator delegator
+pair."
+hide_title: true
+hide_table_of_contents: true
+api: eJytV8Fu4zYQ/RWCl24Bx9rdFj341DQN2hwKpEn2tAmMsTS2uKZILUk5MQz/e2coWZYsNd5mm0tkcjjz+OZxhtzJACsvZ5/l3xW6rXyaSFuig6CsucnkTF5vVIYmxTg9/2QW1mTKrH5HjatoJSeyBAcFBnTsaCcz9KlTZZycyQ1olUGwbg5Z5kSGS2XQi5CjaKcET6GnUSu+ciCxtG5Kng35HfigccWeSwg5fTv8WimHBDa4CifSpzkWIGc7GbYlr/bBEWK5309OsWX1LsawtVPnsPV9vBnbExv70hqPnuc/vn/P//p4L4Wv0pTALCstDuaMJbUmoAm8AspSqzSmJvniedmuE7bvLyb1mMq7xqNQvvUuGChvObISFyQjKng0d7dXgkSQ24wBNduziy+YBpaIY1kFVW+uig6GeOrxXh6qQyyhDKEoYjRhlwIOKaLf5yP2s0QMDoMPTJgGhkDytxlmrRAoeE8hneiHdE4kZcO1sbthmgkBDk82eNyPaIymj0TsawbHyOAcbFl9AQvfEVjLRx/FSAqvyeW25R5MB1ntRDyrkJMwNG7ABE420KGE6YDsBWigkjHcezPRS3CwazTxdDlMUW1QQBCpLUqNJ6k9knucngdVjAQ6MThksjLqRcQBFvRxf6+Fm8hadqwQCHgRAzIGh5G2eY5qlYcRDH2DA4bm13Ou0vxEAMHatSg1pPgqDGXCLz8zBGVUUKDn/8r3icEY742J3gouElmlSej/KRct/LnKhoWtA7uqcZMLFTSb3BiiqCAlx9NNYXOKRimiKktwuO0EtVQRLnHHit/2AzK3Vmdzh8t5aqu6/p2h7Rj+nizSQJFK64kD2qxadkL94DuZycGLBaIRPtiyJIoWW4Ev1PEMaFFYps1TEacWc9KrRivNwORMpWntRxLQ/PH5XkKlR3R4yScZX0o6weQanSPpv6l3vF5hGXnHitjGFbqTBPz0UUaoAZTuVqmz1asf69d6eqTDS6JOMX7Qt90lkaKCOIXV6MKWxDNFMl4BWJP9vhTryYo0ZDqXmrZBPJoSVExe3SDJ9QrjrviWMJNJan1hfeIDrMljsvmwIIY+JK0rn+z6mtknx15Ak/3WtU+ORyTr3tM8us3hklY5TZHzEEo/SxKfgzHWXKyc3eCFK9MpI5iWdh2c1XpKNWDQQu7rNeI3shTU/SXfr865LUAZg+HbPP9VG9fOn7jeLe1Q31c5mRH5Ia8W7C5h3xe07tm6dXIIJO6u7x/E5e1NpwL8+fBwy0Piili0NFQfBkjjYWjud+ccs6CZ1eZo11/C2CA85ZgmqbyEAkzH5f+vqx4jrboDlaiE+gndSLlucmp2jeY+y1pzrIpadfTV6E52ihgbzAbX7474eH5wBR7VHyUwJyo49m63AI+fnN7veTheq2n8iQM7BQvODj8klOdvOi9L0B4H22wrl3x311y0fxTf9d4YJe5Qo8y2ZqbiX/S5xu3wbRIfGW/B/V1vkTfgPkna/olW5AgZ1Wzmvja6pNdGGTrLBx2Cz2Vb1f64fqBa+g/KPCBC
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UnbondingDelegation queries unbonding info for given validator delegator\npair."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/staking/v1beta1/validators/{validator_addr}/delegations/{delegator_addr}/unbonding_delegation"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UnbondingDelegation queries unbonding info for given validator delegator
+pair.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"validator_addr defines the validator address to query for.","name":"validator_addr","in":"path","required":true,"schema":{"type":"string"}},{"description":"delegator_addr defines the delegator address to query for.","name":"delegator_addr","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryDelegationResponse is response type for the Query/UnbondingDelegation\nRPC method.","type":"object","properties":{"unbond":{"description":"unbond defines the unbonding information of a delegation.","type":"object","properties":{"delegator_address":{"description":"delegator_address is the encoded address of the delegator.","type":"string"},"entries":{"description":"entries are the unbonding delegation entries.\n\nunbonding delegation entries","type":"array","items":{"type":"object","description":"UnbondingDelegationEntry defines an unbonding object with relevant metadata.","properties":{"balance":{"description":"balance defines the tokens to receive at completion.","type":"string"},"completion_time":{"description":"completion_time is the unix time for unbonding completion.","type":"string","format":"date-time"},"creation_height":{"description":"creation_height is the height which the unbonding took place.","type":"string","format":"int64"},"initial_balance":{"description":"initial_balance defines the tokens initially scheduled to receive at completion.","type":"string"},"unbonding_id":{"type":"string","format":"uint64","title":"Incrementing id that uniquely identifies this entry"},"unbonding_on_hold_ref_count":{"type":"string","format":"int64","title":"Strictly positive if this entry's unbonding has been stopped by external modules"}}}},"validator_address":{"description":"validator_address is the encoded address of the validator.","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

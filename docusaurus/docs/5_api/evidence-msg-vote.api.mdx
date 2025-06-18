@@ -1,0 +1,72 @@
+---
+id: evidence-msg-vote
+title: "Vote defines a method to add a vote on a specific proposal."
+description: "Vote defines a method to add a vote on a specific proposal."
+sidebar_label: "Vote defines a method to add a vote on a specific proposal."
+hide_title: true
+hide_table_of_contents: true
+api: eJylVt9v4kYQ/ldW+0zgeq36wFNJSnU8XEDBl6qKIjTYg70Xe9fdHXNBiP/9ZmxDDM5dqoYHZGa//ebXN2P2miANevygP4dUPw60K9EDGWdniR7r6dYkaGPkw9W9I9QD7fHfCgNdu2Snx3sdO0toSR6hLHMT15dHX4OzYgtxhgXIU4Ih9qaUUyZmQuFTCW6MxaBAFRgCpKjIqRgCsWXLgCF7pF2JfMWtv2JM/Lv0EiQZDMJbIEEC9IqP44kyzG93CvzakAe/U6cTIAKOMBGvlKG6P3cZyBub6oOUpSG99NHYT2kIh4StGnufasD3N1DlXDB9P4+mq/kims1vV19ul4vpzeyv2fRPxqCtCunJjxHdk3+mywvL5HoZTWa3F9bbec+w+nsWfVrdT6O5fjw0lXUB8pVJ+ql2Ds/yraxhRSi2uk1tOAJfy37jfAGSfGUs/f6blFbq5fvuarO07lhTryBJPKtEMckbjg7yGbxDc6Jy45HLQL7CgxhC6WxoNPfxw4d+wBMVqjhmxk2VqyNcuN43Inct01nN+WxU53L0oyT//rAcy9BKrhey5e7hc8lQngH0ngv7vyL/+YjGLsEOijuPKbe8owY2/fpR16ESmDx00OA97BhrCIvwtq8/muN9TxADzfIxEj/ki+6VukStEl67+KqWekKizNVbhJ20MlK8F0AFLq7ZmPhMrA1cZsqFOgWgjH+NYhcKF4ap2w63vwyPTWZAQL9FL3t6ryufMzYjKsN4NAoZWOvsVerdFq98GQ/XXMJh6Z7Iuzwfxq7Ql8EvmzvqmpHqbnHDhX+btgBjLdJ/Y/7cgBtyfquIYu5eXhzTZyjKHM/X98uScKcq/3D/nW2ql5vtLuksbmM3ri/8m4wDVKmhrFpLIiPJ6ooj/ub80+iYorqbLiM1WcxkrgxJwPpTFC3EpG54SFyO7ZRAXE+JhUJAbxHXa4/72W665klZRyogyaHoogDboXyf4M6yP0mc8JlGZc6lEJ+1APatFh90T4vy8hA1cjszkS1j9vs1BPzi88NBzNxfz38KHvhxC97AWir2IC+WDCGRxrB8n3AnDWg2y1UkkQg8r+phv9wyoszmxoR3a0k/xT52JmsxX0YMXrd/U4p6BWkP32S58/dYn4RW743attc52LSqF4FuOOXzHQtjKXA=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Vote defines a method to add a vote on a specific proposal."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.gov.v1.Msg/Vote"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Vote defines a method to add a vote on a specific proposal.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgVote defines a message to cast a vote.","type":"object","properties":{"metadata":{"description":"metadata is any arbitrary metadata attached to the Vote.","type":"string"},"option":{"description":"option defines the vote option.","type":"string","default":"VOTE_OPTION_UNSPECIFIED","enum":["VOTE_OPTION_UNSPECIFIED","VOTE_OPTION_YES","VOTE_OPTION_ABSTAIN","VOTE_OPTION_NO","VOTE_OPTION_NO_WITH_VETO"]},"proposal_id":{"description":"proposal_id defines the unique id of the proposal.","type":"string","format":"uint64"},"voter":{"description":"voter is the voter address for the proposal.","type":"string"}}}}},"description":"MsgVote defines a message to cast a vote.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgVoteResponse defines the Msg/Vote response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

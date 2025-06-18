@@ -1,0 +1,72 @@
+---
+id: evidence-msg-deposit-mixin-120
+title: "Deposit defines a method to add deposit on a specific proposal."
+description: "Deposit defines a method to add deposit on a specific proposal."
+sidebar_label: "Deposit defines a method to add deposit on a specific proposal."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk1v2zAM/SuCzq3TdsMOOa3rCqyHbkGbndJikG3a1mqLniSnCYL895GyndhN0A7bcghskuLH4yPljfQqd3K6kLcul48nEmuwyms0N6mcyuulTsEkQMofn6FGp/2tXmlzfnEmT6SFXw04/wnTtZxuZILGg/H8qOq61EnwM/np0LDMJQVUip9ScInVNWspBvnuXIsUMm3ACSUqcE7lIDwK18QV6RRpWyuSKSNgpZ3XJhe1RZKrMqKM/LoGconxT0g8vbMOrNfgQlYVNm1+4wxaOfuNoY8CqYjX/QvagXNlrVrTK9lUwe3LoGPnV6jNoDCPT2DEs/ZFqMhgpU3AiWpKua42mejBPJiv3+bXUzEvoBOKTEOZCu3Y7obenwudFEJXdQkVIe+EJ9ukcR4rQtAXmD4Yp3MK0FiKzv3Stq0sxxwJHY/RKzB1lTlvCWi55dIo4SMa+rGyA+sQ4Z1qhwRn2jdUpSml50iaWcqcVX1T3QD4fRq99odOD2MNlKNojdFEV0FSzEYxDkOcyAxtpQgD2WjjP7wPFW5ftvZ/MrfvjZx628CWBa5G49qWXJydHRZ6SQGShMJlTSl6c/b1z4N41zkb4UfqSV9uH00wboeD14OVqaY8Mm+XhpoBq5pMiYxgLfHir/J/fdwTTGFgRY2EHOywuSR6d9Hy2itdDqf5zSkfx/rYqg8H40QSuzXnr8rZ8EiAqCPL8Yk6wrhjdOMxD8xK0x3ReJ0IRwDrTCcjnrX2PCboQhnKF/Q2SdBV6KIcl9HyPCY4zqNBw8nQgV2C5atiIxtb0pnC+9pNJxNXKGPQnOYWl3Bq6yTi81GNT95iWUYJrYyXhdy3Z8QnshR3sytqwttuK6WNAf9nnm9b49Y5XWzMnrv9hXW9Urw2h/tusX/cL4Ju4+368jjac3u70UoarCptMjycgKuCshM53QJNzFVMuKRTSvcZ7dOkr0/cXd/PxeXshgdMe85WfpnPZywSVzQtSKJ2XFQSxsWoio3ecsyJcTPbZLonYdALBz4sWCJHpczA5b8zb4TAju8eVn5SlwQHxw0M2HSkXMjjpCRfPS2pGwXzmGw3m1g5+G7L7ZbF1GhLXyULelwqq1XM6C0eKUYBKqU1wO1+gnW4ocO6OZ1zRmxeNmEDvFw9TNH2xCWt3dq/avs4GLXZt/s5Gcfdd1IV9pK06pn3Pv1PpeQPLz4dlkmQbWSpTN6E7SBbn/z7Dc11a/8=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Deposit defines a method to add deposit on a specific proposal."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.gov.v1beta1.Msg/Deposit"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Deposit defines a method to add deposit on a specific proposal.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgDeposit defines a message to submit a deposit to an existing proposal.","type":"object","properties":{"amount":{"description":"amount to be deposited by depositor.","type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"depositor":{"description":"depositor defines the deposit addresses from the proposals.","type":"string"},"proposal_id":{"description":"proposal_id defines the unique id of the proposal.","type":"string","format":"uint64"}}}}},"description":"MsgDeposit defines a message to submit a deposit to an existing proposal.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgDepositResponse defines the Msg/Deposit response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

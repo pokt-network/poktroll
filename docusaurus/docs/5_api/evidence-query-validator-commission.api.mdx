@@ -1,0 +1,72 @@
+---
+id: evidence-query-validator-commission
+title: "ValidatorCommission queries accumulated commission for a validator."
+description: "ValidatorCommission queries accumulated commission for a validator."
+sidebar_label: "ValidatorCommission queries accumulated commission for a validator."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk1z0zAQ/SsanWCmjaHccqKEDnAASglcaIZR5I2tVh9GWqdkMvnv7NpO6tQeCgO9VF7tvtW+fVplK1EVSU6/yU81xI1cnMhQQVRogn+Xy6m8WJscvIZm+/tXZU2uMMRZcM6kRF7yRFYqKgcIkYG2Moeko6kYggDW+5DvKs8jpCRyWBkPSWAJ4rAr9rsYxA/OJVYhTgjcE/QYDG0Zxq8UlrSO8KM2EejIGGs4kUmX4JScbiVuKgZIGI0v5G63YOdUBZ8g8f7Zs2f87/jU5yLVWlOaVW3F3p2Po4NH8MgRqqqs0Q1V2U3isO0wbVjegEYKRIOWDQ2RIzxedUmEaZnZJxUMxGSw9do34dlIvLi6nAnqQhlybknkNqJpS9T33RpUer931Jie+bhPETSYNeRMxsMaf5e181Uxqg33DsGlMZ6OT/ca9CyY+6Mp0scteHFnsKQPkmZwxjc9EMrnjUkbp6xQLtQeJ9f+2n/4OL+YijmV0RrFyoDNmWjlBWUQd6XRpTCusuCouR0DdcLgOkqvfTIF5ampLWKvNbHciCIUgcrGMBnU3yYbkSAXSeceE+fhj31WqrY4ok0vag8/K+KLzgAxNl35DxJ92L4cel6GQAuI5EZadApb04uzthxUxqa/afNxrpft9pCPE0nX3fD5lb3shzQUObqgqhgNPJDYZ27s2vCwMawsrWtXW8Wc9sTPF0/dy5/57S7ZVBbQVMIDaCozHZILKcsNn2FZN5yvny+JmufZIT5l28Ek22W6P00TxPV+lNbREnSJWKVplqVSeR/8aRHDGk5jpSeMPqnCLcZg7YRgBhfocxsjXpEnjwhq1+OwThnvAf8M+X3r3IIveCqvwlC0s5LcREHXtl4yXMbYpxR3F+Jttk8kri4+z8X55bvewHw7n1+yScxI4IFMrcKVbhTePQ+PAbNKmdXuTWpXwgcUiZpIm1VI6JTvQf4fsRyxcJApwk/MKkuUcO6mHdtOSN9kKySO7UmJPjsx8eogJ/qYjj2NPUVRS0oqjpG326VK8CXa3Y7NzTtL9gUjRqOWzDc/4CbxmiS+UjbBoIjDgJFPrrpR+FT86zs/ysx+mvhNW3XNX7S8hc3ob4LdgoJKUDkNKq6k9Tunl7zCHsJgLLJuD9f6zcWcBsgvY44/4g==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ValidatorCommission queries accumulated commission for a validator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/distribution/v1beta1/validators/{validator_address}/commission"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ValidatorCommission queries accumulated commission for a validator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"validator_address defines the validator address to query for.","name":"validator_address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryValidatorCommissionResponse is the response type for the\nQuery/ValidatorCommission RPC method","properties":{"commission":{"description":"commission defines the commission the validator received.","type":"object","properties":{"commission":{"type":"array","items":{"type":"object","description":"DecCoin defines a token with a denomination and a decimal amount.\n\nNOTE: The amount field is an Dec which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

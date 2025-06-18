@@ -1,0 +1,72 @@
+---
+id: evidence-query-evidence
+title: "Evidence queries evidence based on evidence hash."
+description: "Evidence queries evidence based on evidence hash."
+sidebar_label: "Evidence queries evidence based on evidence hash."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFVVFP2zAQ/iuWnzapNMDe+jTGqsHDpK4UadJWITe5NAbHNrbTUUX977tzkpLSMjamaX1pcr7v/N3nL+eaB7H0fPSNf6nArfl8wI0FJ4I0+jLjIz5eyQx0CnH5pnvjA26FEyUEcISueQY+ddISDlGF8AXLIJcaPAsFMGiBLK6YPAYd3FfgA2Tb5SEW1li2LYFvkspZEeiZ8qUDpBVcBQPu0wJKwUc1D2tLGB+c1Eu+2QyeEuo2uNlj9gKh7/ojWAepwOiIXfsGMGCCXYy/MkwxGaY3Gw+Y1IgWWa+NnY27fu6j1s83MOC5caUIGFmsA2BDc+reW6M9eMo/PT6mv90mz5iv0hS8zyvFunTikhodQAdCCGuVTOP5JreeYHWPxm69eObdkU/bekz6Vqv2nagz5BujEZJ0GDadnDM0SWGiJG2TZnELaSALOfJakE1LnVI9OZ7JfN8sHzh2LrJMEnuhJn0Irhz2A7YRKqf9s37cxB/Bc1GpcEB0zSoNDxaJEtA5VOJV2v+6Z/JZL0ti0SW4vlMw9O6UR6pBSOV72cI5QX6TAUr/T/SltRKdJ5YHgVsR+8ptXUKfA9Z5HBIL4VFLo3fHBqnZmAnBS4i8aTCMeJIaXxqfdOnJ6mSBIpw8BmoqsKFPDtyqm1mVUzRoQrB+lCS+EFobfbR0ZgVHzqZDqjG05i44o9QwNSV/2sJVg2EfMJPMzmnyvFS2FFJrCL9X+XOT3BSf0/zIzb4JzwtMY0sZimpB5RKqfYS4H8bdJd1GbDq+mrGzySV9izIoOqKL2WxCIXaOhjUKWseKNDq2HWIvFSbXkaoNmfaJaROYx2PCRWt8KIXulXzN4e/0vDVZgIeQWIUC0E5R/Lo1xjfeGAOx8HhztebYDY7ifEaBC6RKyLomItdObTYUbkZ2vOmkFwtFt1AulIc9WtsP/j9cOgcluYP1gYtoJVRFudFVK+EkNfWHDb6ZtjfyW/Y3N/5B1t3o0us+2a6b2MRmjnkFto6DkIg3S2d4BdrQA+2NXep4O0g+jWc4oH4CWrQp2g==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Evidence queries evidence based on evidence hash."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/evidence/v1beta1/evidence/{hash}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Evidence queries evidence based on evidence hash.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"hash defines the evidence hash of the requested evidence.","name":"hash","in":"path","required":true,"schema":{"type":"string"}},{"description":"evidence_hash defines the hash of the requested evidence.\nDeprecated: Use hash, a HEX encoded string, instead.","name":"evidence_hash","in":"query","schema":{"type":"string","format":"byte"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryEvidenceResponse is the response type for the Query/Evidence RPC method.","type":"object","properties":{"evidence":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"evidence returns the requested evidence."}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

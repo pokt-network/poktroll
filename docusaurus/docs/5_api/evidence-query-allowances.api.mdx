@@ -1,0 +1,72 @@
+---
+id: evidence-query-allowances
+title: "Allowances returns all the grants for the given grantee address."
+description: "Allowances returns all the grants for the given grantee address."
+sidebar_label: "Allowances returns all the grants for the given grantee address."
+hide_title: true
+hide_table_of_contents: true
+api: eJzlWN1v2zYQ/1cIvmwDXLvthj34aVlRdMEwLEvSvdRBQEsniy1NqiTl1DD8v/eOH5Ycy4mb5aHAgACRRN7x7ne/+6A33IuF49MP/J8W7JrfjLhpwAovjT4v+ZS/XckSdAFh+fZMKXMn8NXxEW+EFUvwYEl+wzW+oMDCCu0BcF1qfG2Er/HZwudWWkCN3rYw4q6oYSn4dMP9uiEx563UC77djja8BFdY2ZANuPIJ1kw6JthKqBaYBd9aDSWTml2IBVyCa4x2MNbwxd/SZm/YHBZSz/RnMhrVMl8Do3XWoARbGucZVJUsJGiv1mP2t1ZrZjQwU+Ff5cAzYxkqm2lXm1aVqJHh1zG6kvxETVIHnMa4L7sbTuTH/Rvxytil8PhlvvYw5G86P7is2yVYWWSbfC08K4Qma1qHGNzVoFkCqNViJaQScwXjmT4PGhQ413lK8hoFCREUesBtFr2e6YfcjhJP8LyV2v/6y5DvSi5lMJwC5o0XiiCYgyULLbhWeRfju8cD2h1XQ4DJ/Qp9rzDKy8YjOp7dSaVYCZWgTagh0ykqI8/nawaiqJlommF/g3HP6m5hWu1vo5/odAixYZQhjB6kLmUhPMS495ykjYmXUheqLWGmBQvaCKgh8KSHJTIqM4ShdazzjUB8f+4QuHsmGWIIntpA4TPfOoISB8csUk0utLE9Ss509GgYy94xjyI6N0aB0EMAWlhh+YH74MmOLMLCEcKQJkCEMRmMLcEOG5pO+AYjb6jaxZrkaMPrly/p377hZ8y1BZZRV7WK5e1kQWGwempPEkhERfFHiclHR2Kb3rn7+kJ57qpzLoo5lfIJjKwNsaevQWjSSbHLizcMK3ptSjIleWbmHzH4VO8ttQYvo1uiawUH1nRrAf/d6w+OxfZQBhtSq6DMi4+2d6ywVoSySsTtAb0zx0uv6MM7Eg0M8IGAKbx//ntF7xR8CwVGGFM+nIKlwNcMcVcsgP3lAd+Gzt3f+ltcHuhjXJSlJECEuuiL4MoRtHJpF3pNKTsXThYjhpLSlPQUNhJ20MN0zFFhbroHkcgQJx6gSZZaQioSmL8WD6QUyHFBCzp7cJvQBnfasBXDV7W6dL0oZXezCfaYCfYhE8IWsuL+6bhD2qOHbgnlLlcPj+4VOCz9UhMfdb/s5UzoZ+DD8c5TxuFhu/kjObobRfBAR80aX+LAgkXE+XFcT0PKoxPKeWphqC71tGqmKTIQUkwblLG5QQyAdTB44IZQfU/oXF2u7frCsd7cNRiswX1vewV/pu9EqNcj7Eou9eEwwMQglSxQ7k46CDGOcU69e6CU4kiDyKUOBdZiTJ9UUR8OfGHKfp4jMrBAuvfQwk8/v+bBVI8o9IvWo8XsPxcVWltiXiHkQ4I7EPeQ68p0bI6Osi9QMWSk2+XHQq6wq+diklKYwI3dgrI8TIJh2p/ySWEcUniChSrITFav5ojJq0nXGCabpG1L3RTsKl8jWouc5LX3jZtOJg4nVm30i4U1K3hhm2JMisaN+eStUQppteT33bqKMux33EktjdPc8JjapZBa47Rykua/4uao/IZGg8ocEvNNjdsQOl+3c1I3Id0vUO7O2E+TfBC7fHt1zc4uzntp9sf19QV9Ym+QxDhXJBaLIrA4X7QeUUxMJFSjMekJC0UYH2mxwSKzFLqn8hkIsQfBjofUZSeNQjzo4BCLTSLLBx7JQpmU6IKPiTD4JPpXzmludAh6jeaT+GaDjRLeW7Xd0uc4oRGTSumoEiE7K6EcHNi2Kwzf3RVzELXQdA6vncFkXAgsP93l7/SWeZrnu5vnE53/jq6Zpzmcr55P9Pf/cs88Dcz9u+cTIX3um+dppne30c7sG3qxkuz+xrL342X6Ve4ndsyCPL/ovVKTLcvVeHuDW2sQJc3/aEJcPcMLbtNn7cH4RbbvJoh3b69xUPkKrChGcA==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Allowances returns all the grants for the given grantee address."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/feegrant/v1beta1/allowances/{grantee}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Allowances returns all the grants for the given grantee address.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"grantee","in":"path","required":true,"schema":{"type":"string"}},{"description":"key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.","name":"pagination.key","in":"query","schema":{"type":"string","format":"byte"}},{"description":"offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.","name":"pagination.offset","in":"query","schema":{"type":"string","format":"uint64"}},{"description":"limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.","name":"pagination.limit","in":"query","schema":{"type":"string","format":"uint64"}},{"description":"count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.","name":"pagination.count_total","in":"query","schema":{"type":"boolean"}},{"description":"reverse is set to true if results are to be returned in the descending order.","name":"pagination.reverse","in":"query","schema":{"type":"boolean"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryAllowancesResponse is the response type for the Query/Allowances RPC method.","type":"object","properties":{"allowances":{"description":"allowances are allowance's granted for grantee by granter.","type":"array","items":{"type":"object","title":"Grant is stored in the KVStore to record a grant with full context","properties":{"allowance":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"allowance can be any of basic, periodic, allowed fee allowance."},"grantee":{"description":"grantee is the address of the user being granted an allowance of another user's funds.","type":"string"},"granter":{"description":"granter is the address of the user granting an allowance of their funds.","type":"string"}}}},"pagination":{"description":"pagination defines an pagination for the response.","type":"object","properties":{"next_key":{"description":"next_key is the key to be passed to PageRequest.key to\nquery the next page most efficiently. It will be empty if\nthere are no more results.","type":"string","format":"byte"},"total":{"type":"string","format":"uint64","title":"total is total number of results available if PageRequest.count_total\nwas set, its value is undefined otherwise"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

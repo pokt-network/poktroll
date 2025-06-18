@@ -1,0 +1,72 @@
+---
+id: fee-query-total-timeout-fees
+title: "TotalTimeoutFees returns the total timeout fees for a packet given its identifier"
+description: "TotalTimeoutFees returns the total timeout fees for a packet given its identifier"
+sidebar_label: "TotalTimeoutFees returns the total timeout fees for a packet given its identifier"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVUtv00AQ/iurPacxFMQhJ0pVRA9AaHOjVbRZj+1p7F13dzYlivLfmfU6UZIailArRbXn8c3rm/FGkiq9nPyUPwK4tbwfSduCU4TWXOdyIj8DdJr5zJKqZ9iADcRCL0eyVU41QOAiwEbm4LXDNrqyo66UMVCLYPAxgMAcDGGB4NjRsBubtEovgeaYj3tjfmQtmk5HFT87eAzogDMhF2Akva6gUXKykbRuI4Ynh6aU2+3oTwm01tEL4aPJq8ZO0MIzAhgNQzEPdP8TdCQL6xpFLAlo6MN7TuM+uvvWGs/jYY/zN2/iv+PULoQPWoP3RajFznzMeNoa4iZFD9W2NeqOBNmDj26b54nYxQNoYkdCqqOg48kpTW76CCKHAg14QRXsw4oIJbiQTnrqKlyrI8tcZCRhqomSfl5A/56SUc6p9UEuEY8inuhH0fuJIlEXCRr/vDmXFs0+U8UISzDiCaniF2aQbdB0XRHK5PwTqrHB0PjO3Jlv32dXEzHjuEkomGx1LtBHu2t+f6pQVwKbtoaG+5w6oYMn2wjeosrmd8ZjyQGCi8X3RBCLtShtabkNZOOcTtt/3J8UfICkI9kVMETf/i9aFCrUNEAaw3sMv1qOyBmBczyyV+HOcfLa5nBgxbyGstvYPddZ9O48FUMK6yEK7Ef791gfk3pgmaXKc4z5q3p66NK1qOHNUeWg476Jh517Tmrg+Zo0/cTQQ2p2y6B2pC1xxfxD5srR/UpsYfASurri5ZjIDBc64+77jIGy1dusP4A+2wwd2m0Wr96Rsj+D22x3m460O+E269KeH20iHypwq92XILiaE6qIWj/JMh9jWnNWOruCM17q8YKHx9GW5GxdjzWz8rRtt8lHfGJLcTO9lPHGvgTbKOTi6N+QvybjBH4fj3BhBw5CxWY8B6rCIsJlEfuM/Z6sW2a7QOLm6nYmLqbXBxfoy2w2jSJxyUtia+i3ROluS/rPwUvAkemxqymZ/kkYGz8txJT7DY7ywgo=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"TotalTimeoutFees returns the total timeout fees for a packet given its identifier"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/apps/fee/v1/channels/{packet_id.channel_id}/ports/{packet_id.port_id}/sequences/{packet_id.sequence}/total_timeout_fees"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+TotalTimeoutFees returns the total timeout fees for a packet given its identifier
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"channel unique identifier","name":"packet_id.channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"channel port identifier","name":"packet_id.port_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"packet sequence","name":"packet_id.sequence","in":"path","required":true,"schema":{"type":"string","format":"uint64"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryTotalTimeoutFeesResponse defines the response type for the TotalTimeoutFees rpc","properties":{"timeout_fees":{"type":"array","title":"the total packet timeout fees","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

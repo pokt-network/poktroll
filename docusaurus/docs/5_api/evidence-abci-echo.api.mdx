@@ -1,0 +1,72 @@
+---
+id: evidence-abci-echo
+title: "EvidenceABCI_Echo"
+description: "EvidenceABCI_Echo"
+sidebar_label: "EvidenceABCI_Echo"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VE1v2zAM/SuCzk1cdLeclgYB1sOwoMlOQTHIMmOrlSVNotMERv/7SDnt3A8su2w+JDL1+PhMPaqXqOokZ1s5v17cyLsL6QNEhca7m0rO5HJvKnAaePfHUjdeXsgIPztIeO2ro5z1UnuH4JCXKgRrdM4u7pN3HEu6gVbxCo8BiNKX96CReELkWmgg8W4LKakaRsCE0bhaPvEzVDURSBTGDnIgBe/SkH11ecl/FSQdTWABRDAXqdOaeHedFc/wKVX+L5JJYgU71Vn8QJkTnYNDIFaoBMTo478QqH01VmeItIZIsJ2PrcIh9OlKZqmojE0jtIpRHQlrENp0vtbnYft9Ky6kqirD+pVdjVNyi870MCsbd+4jQ7aAjWe3Bp+yMIUNvRXUwgpiS984VaU2U84pTjkJ4h4iO7+XXbQEbxBDmhVFapRz3k3q6PcwiUFPS+rNNPgHjN7aqfatfKtqPeSIa0KK29WCOnqetlXGOcC/Y/46gAdyGlO2wu3vQVweVBssvHLlSyfpDN3Ov3fhoiFSURtsupKLF6xkQlUefXwonmWJ2+V6I+arG9KGBrmI/LLZrDgkFuRYT6HBskpnyzrVMugcMQvjMxjEnFbCeRQJkDf5OFvlRpTPpy/4KMXpKF991IuNEA5YBEtfyFT5LPqTM7byI2cQUyak5jbsI4L1fakSfI/26YnD1O1IV96WlnsVjSq5F9s7om9AEV820wMcubXDAE82LIbhtssz9XaY2SdDxpxuqoB/xN6NrL76tt4QuDxdwm2edBnVI1/Q9DuTku9yzs7jmWO9tMrV3eCOgZOfXxwrFy4=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"EvidenceABCI_Echo"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/tendermint.abci.ABCI/Echo"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+EvidenceABCI_Echo
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"message":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"message":{"type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

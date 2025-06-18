@@ -1,0 +1,72 @@
+---
+id: evidence-query-address-bytes-to-string
+title: "AddressBytesToString converts Account Address bytes to string"
+description: "AddressBytesToString converts Account Address bytes to string"
+sidebar_label: "AddressBytesToString converts Account Address bytes to string"
+hide_title: true
+hide_table_of_contents: true
+api: eJylVU1v2zAM/SuCThuQxv245bS0KLYeBmRpdiqCQpYZW60tqRKdNTDy30f6I02aYhm2XCzLfE/k0yPTSFR5lJMH+aOGsJHLkXQegkLj7F0mJ/J2bTKwGtrPj9MsCxDj9QYhLtw9BmNzOZJeBVUBQmCmRlp6Iajqgh9TjqYoY2nTKyxoHeClNgHoBAw1jGTUBVRKThqJG8/gOHCvXKgU0g7TyO12yeDonY1ESvGX5+f8yCDqYDznTbFTEWut6fBVXYohfExs2lkEi4xQ3pdGt5UmT5FhzV4a7/g+qHve0woTBRawO0ZwBYLSFj2qCxfBa0EiFS7jRPoyXfoEGlnCwLqj6YoapOtVOJJl2/5GlOVK1SV+kLAVtYVXT+SQCQiB0vknHf6cp3YZ7EUZIs0h7N8abV1dyjZVVKaMe9EqBLVhXyBU8fRZX7rPx1KMWC7D+atytg9pJapIR5V/CNyJeOqqBcm1Jtooplq72uJwtaL1tkAndn7trpiIcmhrYL9PZKJdrFxMVI1Fsr5ISYyLJAVdXF0mzUGjbAkUIayHZqpDSfgC0cdJksRCWevsWR7cGs7IUmOmGnv3jMGV5Vi7Sr6v6L7DiGuKFPPZDd3GadpKGWsB/475exfckS+501fu2JM3BYWJ3GBRp0yXMPcZ4X658JwMB4n57f1CTGd33CQGS76xb4vFjLfEDfnX0VZnYKVbA/fj5hQxm5BV7ZLpV8I6FJFuij56F7FSdo/yf71wUP/OfwivmPiSxOBT24toep88yM4nhGWn0KP3Cq06t9BicjhYSe+CMmdw06Qqws9Qbre8/dKO9MkDLdcqGJWymGSpzERek0lXqoxwlOduOMhP835OfxZvM+sw/6GZLbfyWpU1v9HyGTZH/wHbJQEKUBnNCE6kiyEdweMe+mgisad2ffX1dkG9+xsLdFyo
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"AddressBytesToString converts Account Address bytes to string"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/auth/v1beta1/bech32/{address_bytes}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+AddressBytesToString converts Account Address bytes to string
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"address_bytes","in":"path","required":true,"schema":{"type":"string","format":"byte"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"AddressBytesToStringResponse is the response type for AddressString rpc method.","type":"object","properties":{"address_string":{"type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

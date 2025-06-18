@@ -1,0 +1,72 @@
+---
+id: fee-query-interchain-account
+title: "InterchainAccount returns the interchain account address for a given owner address on a given connection"
+description: "InterchainAccount returns the interchain account address for a given owner address on a given connection"
+sidebar_label: "InterchainAccount returns the interchain account address for a given owner address on a given connection"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VcFu2zAM/RVBpw1Io7a75bSu6LYeBmRpdiqCQpEZW60tqZKcLjDy7yNlx3GWYB16aA+NLIqP1OMj1fAo88An9/xnDX7DFyNuHXgZtTW3GZ/wrwDJ8nBrInhVSG2ulLK1iXzEnfSyAtwnhIYb/EAX+2LAo1Ub/HAyFrj28FxrD4gYfQ0jHlQBleSThseNI6cQvTY5325HPY6yxoCiTB509ma8BR0OzpoAgeyX5+f0k0FQXjtCx9NXLNRKQQirumS742OMgzlEwLuih3Su1CoxIx4DuTWDsId4ibIjxmYdMIsF9FEYJcxW1qfd5CiOPNlses2Q6cJmlFV3R7t8RH6oDp6KFnV7Q5llCB5OkUF/I8x1JesynqDBsNrAb4eokDHwHrN6Exv/TlDZDAanNILmSTHIQiVju/XpkqdUo9Tl8C7Se7khNUSowuuxPrfmEzojnjTlL8vp0CVRVCGBMj/p2JM4ZO64Yh5i7U1IVdW9lcnO3BUpFV6yXK/BsNQ4vcWa3rDvBE6pkQwwZg5tD2JDTLjQSyWwKEHsgz10wYKgwnlbluDF+kKkOEE06Xcr9ui4d9B0W8QP4Ne7Bq99iaGKGF2YCBEKaYw1Z7m3azjzTo2XWK2xs08p1ljZiv/N013rw77gSRI1p35/DbbCuxiI/4f8oz3cgi9oaqzssdKvUzFyHYt6SXCCsM/Q78X6J7ELxGY3d3N2Nb2lntOxJB18n8+ntMWukS+LW21bSJXaohtdrwGTtInVNpluxYyNLGBR0ehsiJU0A8h3VNgBVX0DRPgdhSsxBCWYatZ06rvnqD50JP2lQX2kwI6lVoP4sb7Af60OcTHZPRkDKdL24QuAxSyQFgrXNEsZ4Jcvt1vafk5v1+Qel2vptVxSpVCvmQ60xmZZyTLA0c36ecY/zLoH5SPbz9fDG+/mj6Hps5ZlTV+4fIJN/+iRmt8x6CE/2wU6FCAzTIRu355BtYCLA++jyU1d0g+VbzdznHF/ALW12Kk=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"InterchainAccount returns the interchain account address for a given owner address on a given connection"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/apps/interchain_accounts/controller/v1/owners/{owner}/connections/{connection_id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+InterchainAccount returns the interchain account address for a given owner address on a given connection
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"owner","in":"path","required":true,"schema":{"type":"string"}},{"name":"connection_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryInterchainAccountResponse the response type for the Query/InterchainAccount RPC method.","type":"object","properties":{"address":{"type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

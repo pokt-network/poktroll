@@ -1,0 +1,72 @@
+---
+id: fee-query-client-state
+title: "ClientState queries an IBC light client."
+description: "ClientState queries an IBC light client."
+sidebar_label: "ClientState queries an IBC light client."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vk1vGzcQ/SsETy0ga5O06EGnOkba+NDAddyTZRgUd7TLaJdck1zZqqD/3jfcj6wtBW4K1JAhipzPN2+G3MuoiiAXt/LPlvxO3s2ka8iraJy9zOVC/kaUTu4vKkM2fo4qkpzJRnlVUyTPunuZU9DeNKwFHZ1ERWBZ0Vrz0JIwObbM2pCHtoXuKHdvcmwZVmxULLH29NAaT3AffUszGXRJtZKLvYy7hhVD9MYW8nC4Y+HQOBso8Pm7N2/463k45yK0WlMI67YSg/gcfrSzEQGwhmqayuiUdvYlsNp+4va5vYTHBI7r3qQwQcSSRheCoxVr59Nu0somauL66mJpAWLp8rl4TwEQdQam+M2EicJYXbV8qkTjnVsLZfMkWZIpyijW3tVL+1gaXabtTuhRBcQCqGhLOefbo+dWX0hHLqLnWkfTYddXI3mdYP0N6V+74+OSzKTKc8NQqepqqoKTaGJFLwmiQnDaYJWLRxPLHkJwJsQpaw4pArc+9jmTwLhWqKNc7RI7Bz81+U01wIEPPZmAimsard13CB4X+RObrKpdCueatiZg/2MHN+qMiniqERyiVlGQAvJ9MVAG+NwQNQhuaQfdT229oo4KAfSfi4/uEYXxIrgaJWfC2NCixFXhPHCog6jVTujSOaaSW1rwiuK07MYKDXgVfzvbgR4EzYu5KJXPmXqbMOtgPqsRorG0tCtPaoPQYFrZAqS6tGwUTrRCG82eZdxH/SLj4CCk4tL2gXAjGdsyfZ1YkaidNRH/OiGYNFVgl0jYouAnQF0ilMh8RY4nqDpU9GsFFHtxJ73kKqrUfEvLYSIvy1FpV2NsccEKQAZ2KeiXyK43OnRq0/oGmAdmTNvAGNtExy3t2hP9naBLBA5HXeH7nCa0+iZXW2PjLz9PcptUlhvBpLKIwjBmg2Em7ujEpuJ8v5PBQCridOIAVt16jyUAZWf93wzNsVZtdaJPzi0mPD01KBOQJe8B4n+asa8MJ5dPpw2yoiJdJWOm2PrpnUyhoiOqMJFW3qsd3zGR6vC/jDY+q3HDqOKk4gjiFLnpVYBphzENUltx+f5CVF1XJQEGsbskoFOk5kjX5EJmZqUz7TxlnWS2fZtNh3jI9uMNe4BaIL8dLuzWV7BQxtiERZYFTALr7Fnh3ZbOfKPnK4A4b9wmeldVc3SOfBn+504HFxeaDVcZoH/dbI3GsxT/neU/OuHO+B0/EdbumIAXJc+/Ag3TrthcxrbPoPeI6ZcNjsT1h8834vzqcjpLbm6ueEtcgKyuop6tSie29m+U1wwz4xjVLph+JTBYBA8yvmZciLWyE5PfUfhnqY68ivQUs6ZC3uwgYb7vSXErQYqUiE/5JEtYbN+Ov3py4Pfi6wMM8JYIlA3s9yvcA3/56nDg7Yf0LlzcYrlV3qgVY8dPPhN4DVauVRXoKNax8eUP1/177kfx6svwZIZDG1tu4q2qWv6F5YZ2z16RhzsIl6RyHooIsTs/x9uviRPNoznE5Bpb7PcPN+jYfwA7KPGt
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ClientState queries an IBC light client."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/client/v1/client_states/{client_id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ClientState queries an IBC light client.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"client state unique identifier","name":"client_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryClientStateResponse is the response type for the Query/ClientState RPC\nmethod. Besides the client state, it includes a proof and the height from\nwhich the proof was retrieved.","type":"object","properties":{"client_state":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"title":"client state associated with the request identifier"},"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

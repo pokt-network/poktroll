@@ -1,0 +1,64 @@
+---
+id: evidence-query-current-plan
+title: "CurrentPlan queries the current upgrade plan."
+description: "CurrentPlan queries the current upgrade plan."
+sidebar_label: "CurrentPlan queries the current upgrade plan."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VsFu4zYQ/RVC59jOpkUPOTXJBl2jKJAm3lMcBDQ1srihSC1JOTEM/3vfULIi29mkXaC+WCJn3sy8eRxqk0W5DNn5ffZ3Q36dPZxkriYvo3Z2mmfn2fVK52QVpe3Hq8Z7svHGSJudZJ5C7Wwg+G+ys9NT/sspKK9r9of3hQiNUhRC0RixMx/DVTkbAcQesq6NVini5Ftgt00WVEmVPMZLWQySuO0ghQ4iltSHEHFdkyicT6vJazJwE7c3V3NbUSxdztmwNdDd4hupiPfaMwlRt5XVXO1RKry6C6taaNHUSy9zErz3MW5JelnGY+QZENs9IaN4LrUqU5QdetWEKBaIQh4VVjQsIUSv7RLvvCMBnmkbf/s1257goXAc7NAy6mh44cKuxaAXItSkdKFVH5cBRHQcWltlmpxy4exIlVLbuUWjSyGDkGKpo1CuqvAXS1SwkkbnMjofsNyYXMgmOiSHQMase/joOEsrKzqm5I5iyzRv933tPMdiVqIRaetZG8MJNgHJLdZDs3xuV+QDl+aKtBFcEZ+l59CpctQPDlLd0oh5huI633mWKpI2DyJvmLi5ZYRCe/TikpbaXhqnnkSrKSGLSHs5slISueiWmMb0aoJLeQLKiZwiNIJuAwCu8jW5XdIKeiuRgaHE8YrsKwHTQlg3t7tgrZkHG5GlsyOnRHsWBL9AyMDucXAi0K6OvbmVITQQVtu/PaqA5Zo4csUILSXO1+7VOdMIhP58aQWsw9x6kjjOIMXm+1gpHL3oeCzgLevyLSV8ptoTFEr5eRtrIbnVXfiAGlfUFpn3luM3LIVxS63mtufEU+VW2C+8q1Kad5//HM/ttGgJLDRBucyki4KqOq5PUJAg753vVRdL757tu8eRWRul0lDiTpmPCsKw8TFE7A7O6A8Gx+/t9uFR3gJR5rlmpqS5Gbpg58c0fu2yuEpJ3HEOXbk9OUMup5dX+yT2ZhipiULImQlkw8rljaFebM1it3J6NmqL/lmOt92PKytkY94YpBc4IZZecJ6ReAfzU5fQ++1QLh92AwOXluQPZvAvZ1lKNUptwsBaei/XsNWRqvC/tJ73KlzBcvmmY0/ikLnhXfkdtyeg3r3o2rEHxyWlnGUs8TJRLlQuTDrryerTAvV/mnQoj3X7GRHI84zDR8gma7yBYxljHc4nk4BBZjGFlx66GvlajRlgXLun6J0xY8zk7DD1u9YHQzlKvudB+8ewFa4wS/HfIf/VGrfgD68X6wGFfC3yXVg2C4abMPYIfs/OP012gcTt9d1MXNxMBxfxl9nshpfEFYTqsNQqVaqk1PaCzD4CZrV1Nwesd3cIHywMf96sXYhV+2HTQf7Xpu/V2wsr0kucwETbNOGY+E0niPusFUTWTz48daLgIoeyAK8lMmSnzYYn91dvtlte/p4+VM/v8biSXssFk3b/gGAlAdInHT3RmgcAvj1rFiQ+QZp02g6POfevF+8f1zMciH8Afm/tvQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CurrentPlan queries the current upgrade plan."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/upgrade/v1beta1/current_plan"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CurrentPlan queries the current upgrade plan.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryCurrentPlanResponse is the response type for the Query/CurrentPlan RPC\nmethod.","type":"object","properties":{"plan":{"description":"plan is the current upgrade plan.","type":"object","properties":{"height":{"description":"The height at which the upgrade must be performed.","type":"string","format":"int64"},"info":{"type":"string","title":"Any application specific upgrade info to be included on-chain\nsuch as a git commit that validators could automatically upgrade to"},"name":{"description":"Sets the name for the upgrade. This name will be used by the upgraded\nversion of the software to apply any special \"on-upgrade\" commands during\nthe first BeginBlock method after the upgrade is applied. It is also used\nto detect whether a software version can handle a given upgrade. If no\nupgrade handler with this name has been set in the software, it will be\nassumed that the software is out-of-date when the upgrade Time or Height is\nreached and the software will exit.","type":"string"},"time":{"description":"Deprecated: Time based upgrades have been deprecated. Time based upgrade logic\nhas been removed from the SDK.\nIf this field is not empty, an error will be thrown.","type":"string","format":"date-time"},"upgraded_client_state":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"Deprecated: UpgradedClientState field has been deprecated. IBC upgrade logic has been\nmoved to the IBC module in the sub module 02-client.\nIf this field is not empty, an error will be thrown."}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: evidence-query-validator-outstanding-rewards
+title: "ValidatorOutstandingRewards queries rewards of a validator address."
+description: "ValidatorOutstandingRewards queries rewards of a validator address."
+sidebar_label: "ValidatorOutstandingRewards queries rewards of a validator address."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk2P2zYQ/SsDnRLAayXpzadutosmhzRbx80lNhY0NZYYU6RCjuwYhv97ZiRZlWthk7T1xRI/3sy89zjUMSGVx2T2KfmzxnBIVpPEVxgUGe/eZsksud+ZDJ3GZvrxo7ImU+TD+5oiKZcZl89xr0IWk0lSqaBKJAwCeEwyjDqYSqAYaHfe+qiyLGCMkOHGOIxABUI/C+dZ8vBFYsLGhymDO4Yeg+EpI/iVooKfA36pTUBOnUKNkyTqAkuVzI4JHSoBiBQ46eR0WsniWHkXMcr8qxcv5O8y61uItdYcZlNbOC+XdLR3hI5kh6oqa3RDWfo5yrbjIOwlXkPjEyzOuxBgWl7OIUGyFypkdOkamPQJHJg/3AFrUfhMsu1q9+vPqEmUCqIymbby0Cl4le1TAQJWnBxTEMH/PQvPanezN1RkQe3dc+igl05SVwOZWfmvFbpodihSU1B6OwFlrd9HiKasLEJUztABmEq9jT9VRrdQhaAOYhDCcjjeA1yW+xvqO29cb0zFmW3RgdTDL3wOfGlcIzRwuc2QNqWyoEpfO5ou3dL98X5xP4MFa9cOwsagzURP5YAjwL4wuoCmwrKhT3TWdSRfdootmZac49RMMJwNDesD5D73XDP56VXxbbARn0uRnPfYCeh/smajaksjB8BB3UiliXPAEFi7f3UOntZO+wwHqwyD5hh4GfumVNQO/fKqLYeUsT8l82WsX9vpaz4mCfcUI/kr+zDc0lBUchdQ+ejGnsQfPTzS2UwjbvvuNxeHo2ttwm/rCIbLsalEutwsSbWPpY9pZiSHdd1wvnu5Zmpepj1OTI9X7fKUDk7rY+h7d8SwOzfuOliOURBVcZamsVDOeXeTB7/Dm1DpqYSZVn5LwVs71Wyuf9b+od0Dr3mltCLW7fuwpTLOIf0Y8rt2cQu+kjtg46/de1fwMsj5/NZrgUsF+4b37X3YpudAML//sIDbh7fSYgxZ0fbNYvEgQ3DHTvc81Fpd6cbq3WX0PWCxq7Da3YDtEzhPEFlNnqx8pFK5AeT/45oLFnq/En6ltLJMicRu5Dh2jvqUtI6SvQNP8WvnKnnqfcUvs7GLeMxarE3BVUqI43GtIv4V7Okkw831zuMrgQ5GrYV4+W4wUZ7Z9BtlI15V07ec5Nm8a47P4b9+XoxSdO4v7tCWX8sbP27xMPopclrxpgJVxq1LKmnX3fIHREUDhKtGKQbuD/rv9wtuKd8AuZNxjw==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ValidatorOutstandingRewards queries rewards of a validator address."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/distribution/v1beta1/validators/{validator_address}/outstanding_rewards"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ValidatorOutstandingRewards queries rewards of a validator address.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"validator_address defines the validator address to query for.","name":"validator_address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryValidatorOutstandingRewardsResponse is the response type for the\nQuery/ValidatorOutstandingRewards RPC method.","type":"object","properties":{"rewards":{"description":"ValidatorOutstandingRewards represents outstanding (un-withdrawn) rewards\nfor a validator inexpensive to track, allows simple sanity checks.","type":"object","properties":{"rewards":{"type":"array","items":{"type":"object","description":"DecCoin defines a token with a denomination and a decimal amount.\n\nNOTE: The amount field is an Dec which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: evidence-abci-verify-vote-extension
+title: "EvidenceABCI_VerifyVoteExtension"
+description: "EvidenceABCI_VerifyVoteExtension"
+sidebar_label: "EvidenceABCI_VerifyVoteExtension"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vktv2zgQ/isELz1sbBVpsQef6hguml00NRKne0iNgJJGEhuK1JIjJ67h/94Zyg/VMZp2gfVBFoYz37y+GWotUZVBju7k+GJyKRdn0jXgFWpnL3M5ktOlzsFmwKf3n8HrYvXZIUyfEGwgJXkmPfzbQsALl6/kaC0zZ+kM+VU1jdFZBEu+BlImWcgqqBW/4aoB8uDSr5Ah4aBGw4LOi8AKxJJcCej5ajyHhxoCI1QqVD2kgF7bkrQK52tFEch0hdBDZki2Ea6I8Klx2QO9KaSHDsJDBnoJeec3c95DaJzNg0AnN2eyAl1W+FOP2uKfb1l3qYzOFTp/r/KccMLvBroH6AIMurQU2YmqsDOS3B8kL3ra8K/rnPZAfUbfQhRwvqGr7vnr1/yXQ8i8bjACy7EIbZZROkVrxE59SA7+c9t/bGlAhW147lcMxPX0r+lkPhLXwJaU1oliiEdtOC7WiMcUEmUoGmqtq2uNIu2YFcDm4Idf7KWNfc7QrISuGwM1m0RwYgRWbWDKCEO8sJR21NkmFwQdEGStVkIVBWF8sRNXA168n7+iw1QbjeTO7YglzpM3f3SNjXEzr0ShLQm+wYGRFNUHR85QWEdVEKFyrcmFhSV4kcI2Pci57Md9zqFQreFG3179ffXpnyuSgW1rnvCDZDyZTGdzeulqKhebLSP25s/6bkVr4amJjgV4T7z8H9qfUcI9LZomKMEfDdibcxlDRaVNf6yU92pFuhqhDi/7etcdH88Kl4FGVnP8ysz6JrFENbFAlScN90XsV+4XNihRpnK8bRsXYpwKaa/JBCNJa0p5qNJMDxkiOQ0RwBM7eJGvZesNWVeITRglSaiUtc4OSu+WMPBNNkypcsPGPaB3xgxpLuRxzDedjbggTXE9m1C9X4atlbYW8NeQP3bKHTjdOkyU68NFMn1SPIuHJX9g+G4JHyQnVm3v8Gg17rtFPLGFe870SUWhiVLT6KecQsL5DCjWR+cfkl1ytI1u5mI8u+xt7Q/z+YxFYkJT4Qxsx0JlcSysqlnpJeC4zqmTXTDbN1oEdAMA8iFzpFa2B7ljmGB+iO31yQQRfYb8kOWeu0ilSRpDKTN2bPF6y787eYp/hHSKgdTCislLVut1qgLcerPZsJh66unD4G7BjfJapVyru0W8ThXBR8o+wIpL3y2RwZxji31t41wfLxRmY2cxpruowZ/qLnrzNft0w1sv3X6q1HHbSK8e+TOGniMp+QMoLndWiLK1NMqWbZx52WHy7zssWzr+
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"EvidenceABCI_VerifyVoteExtension"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/tendermint.abci.ABCI/VerifyVoteExtension"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+EvidenceABCI_VerifyVoteExtension
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"Verify the vote extension","properties":{"hash":{"type":"string","format":"byte","title":"the hash of the block that this received vote corresponds to"},"height":{"type":"string","format":"int64"},"validator_address":{"type":"string","format":"byte","title":"the validator that signed the vote extension"},"vote_extension":{"type":"string","format":"byte"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"status":{"description":" - REJECT: Rejecting the vote extension will reject the entire precommit by the sender.\nIncorrectly implementing this thus has liveness implications as it may affect\nCometBFT's ability to receive 2/3+ valid votes to finalize the block.\nHonest nodes should never be rejected.","type":"string","default":"UNKNOWN","enum":["UNKNOWN","ACCEPT","REJECT"]}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

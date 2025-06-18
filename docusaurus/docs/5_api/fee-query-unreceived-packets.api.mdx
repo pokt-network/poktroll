@@ -1,0 +1,75 @@
+---
+id: fee-query-unreceived-packets
+title: "UnreceivedPackets returns all the unreceived IBC packets associated with a
+channel and sequences."
+description: "UnreceivedPackets returns all the unreceived IBC packets associated with a"
+sidebar_label: "UnreceivedPackets returns all the unreceived IBC packets associated with a
+channel and sequences."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VktvGzcQ/isDnlpA1sZp0YNOdYy08aGB6zgnyxAo7miX0S7JkFw5qqD/3hnurt6WUyOoAUNckjPzzTcPzkpEWQQxehB/N+iX4nEgrEMvo7bmJhcj8QdiOpl8Nh4V6gXmt1LNMQYxEE56WWNEzxpWIsegvHYsS5KqlMZgBY3RXxsEnaOJeqbRk6Ahse2Vic5pT7OQk7GktcevjfZIAKJvcCCCKrGWYrQScelYMkSvTSHW68GhWWd9PGeTz3+owUqHCHYGLtECgTShURh2TKaTibJ1rWNNkCa7l87CiMsqWde1o8UJXNJ7uWQtEetwjHcgZtbXMtJOo0387VexHoham5v2+uV6/chWg7MmYJJ/++YN/+z7eAWhUQQ3zJoK+utD0q6sieQQS0jnKq1S5mRfAoutjuHa6RdUkQSjjsmzlFxHuXXXmQAdIJa4MQmsBsgl3h2bJJwdSl9veA5wd3sNlKGl5YA7z7kddetoiboo47GvH5mwqlomw3e40IH2P6TLDEcb5ZGVYw4yAkpVQqsKnkpdIcwRHVE/Nr3sx6aeYkIMgRJiCB/sEy5oJ9gaQbFfJjQBZFVYr2NZB6jlElRpLXtsx+RfoMxiBZ0lbUCRJ5J/rck1Qw+Aw2IIpfQ5MzQPAwhRRryoCaI2RNfUo5wTNOC6KzDAjWGlZERJiv5gz+MO9YHHwdIlGcemA8Lx16YhXdHCFKG2Rkf6V4nBJCkDmySHDchwgtQxQaFIJR85MZ5JlG0EJFuxJ63kMsqUI2PDMMkvw6io8qhVccAKoozKVZJ8Sd51SruEAtd4R5wHLufGkTLWKU0+NjOP+E+irtKcWEfZ5DufJtu0eqkSt77tRPaJEkCnsEChmbNeMRfuxohJwfnvRnoFKYjJSOsP06oa72lJhLIxanRi26WO+02vte9+zaYITzXC7+9O7d+AanImm+pEeV4ZsoXfHGUH2ULvKXY/pCPtx1PZHHduETos0jOyQUxbv7wVCSoVYnWKpEO3n7H1e3t84q0RMm+LW1a3uyKJopr6sSxOCm5I3GXuqMsSb7HxhjtPlZJhJ4g37667QNJxCFZpyXxzeoIcm/5xp+LYBprp75rtSBSpmtO7NhKZnqpMWY9ZJ5gtLvtlyFbbOWCd8ftMW90zTd+HjycfPv+grrOtExO3mVQC+kU/pjS+IkhljC6MsiywbWsuCm8XeOGdGk4pnkNn59HbqhqSEXHI5KdWBt7RTX5iBE8FL6mtqfUYjN+n+a/2cqv8kYeEmT2uheuSX4CCYtJMWV3Gui9I7on6f9Ybgrv3n+7h6vZmt5ve39/yFlxT3dg0WnDhSJUKp5tbXlLMyc+stmC6FVBrBW7ldEjNNNbS7Kj8X3Jwj6RNcUT8FjNXEWMMLUVr1eXng6D8TBT4xESrmFaLy+0np9Fob2JNqcq725nyOFvT+dkB8ETCUsRL4o6RrVZTepw/+2q95u2vaUwfPdByIb2WUw4nz9468JoqbyargEckbNqi+OmuGzJ/hnMj+knW+v5muLstZNXwFy3nuNwf59OY/BpIz47vr8DTh+XVYM6M9q+BcyYL1o8kXqLM+VWncLYSVzRzu7ij6+hF496wabl/vr+n3v8vYxfrGQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UnreceivedPackets returns all the unreceived IBC packets associated with a\nchannel and sequences."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/channel/v1/channels/{channel_id}/ports/{port_id}/packet_commitments/{packet_commitment_sequences}/unreceived_packets"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UnreceivedPackets returns all the unreceived IBC packets associated with a
+channel and sequences.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"channel unique identifier","name":"channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"port unique identifier","name":"port_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"list of packet sequences","name":"packet_commitment_sequences","in":"path","required":true,"style":"simple","schema":{"type":"array","items":{"type":"string","format":"uint64"},"minItems":1}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryUnreceivedPacketsResponse is the response type for the\nQuery/UnreceivedPacketCommitments RPC method","properties":{"height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}},"sequences":{"type":"array","title":"list of unreceived packet sequences","items":{"type":"string","format":"uint64"}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

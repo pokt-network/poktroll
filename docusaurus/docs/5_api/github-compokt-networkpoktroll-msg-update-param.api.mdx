@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-msg-update-param
+title: "GithubCompoktNetworkpoktrollMsg_UpdateParam"
+description: "GithubCompoktNetworkpoktrollMsg_UpdateParam"
+sidebar_label: "GithubCompoktNetworkpoktrollMsg_UpdateParam"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVk1v4zYQ/SsDnlogsRfbogefmg2CNofdNRLvKQ4MWhpLXEukSlJxDCP/vW8ofyixt26B7m0N26DI+Z73htqoqIugRg/qYyjU44VyDXsdjbO3uRqpP0ws2/m1qxu3jJ84rpxfytK7qoLC7EuT68hj7XWtLpTnv1oO8YPL12q0UZmzkW2UpW6aymTJ7vBrcFb2QlZyrWUV1w3DmZt/5SzCTuMlimg4JN0wy5xJKjmHzJtGzED+GruU88JYDqQpuiVbWiFiPORsXW1s8kja5viRrl1r42Bqp/bT58nNiCYlbzdpYbjKyQSRu8XzqjRZSaZuKq6RQ6AI2awN0dVUcyxdPrXBFHDQeniXzI3nnOZrKlzhkEF0A6RyJrXkvFeCEL2xhXq5UCmBEycvOENFWmPjb78en1+ohfO1hk21FRH5FgF7E9fHNdwfSe6So85zJCRrHUk6iFZ3J7XL24rpJ1Rct5WUxNHzsHBP1NpKVNwT+xVsoek/93I/5GR1zSdTkqR2JVSj6FtOG6FxNnSVev/u3XHwVxTaLIPrRVvRTlw8/0/IawTX4dhvwnvYQ0+Kk0Q5sg+EBvTqdR4EtX6e5VxxASblM/lf6fUJr6flXkUBEVO3Ndm2nrMnt6C9WOqnpoCKVzy1vbJQpoVGnWE0dQBeAAz4tgGIRpcbz08oJyHohC6bMY4DuD61RvQDJ/eeK70maSrtuUFzzlwt8TlHlfYFH0PjJGjB3lmIesk/iL9nyZYqWwaeIIQFF/m5gUuExN4Dit+BF5nL+zxGy7hg328jtn5532UTtalCT1p7r9eQNZHrcN7X793xcTkw1vLcSPy6GvdVUomAuKCLb02broj9yv23i64DAtQaF1LIOpZ4GjYuW3Ic9Go7gPLwtXJgj0Epd+5Gtb6CXhljE0bDYSi1tc5eFh6j9NI32WCO8g12cQxAJPU28PtOhz5Aku7G1yj6ebO1NtYi0H9l+WMn3BnHG4Kg5e5w0988ayHLm5t6B/ADxbe47iG9d40dxHp31WGzuzh6qsYu3Im5UCJUKlIrJaWh5Hdpu24Od8nS3c39hK7Gt8JSEyV09edkMpYtugZVHLY6rugscWXr/pxhCUw62wWzXZF1kQJHORS0YHr2THawoy3u6A3wCOChDjy0Q8+rjPfgjvwch02F9MVPav9mi8oHdRqVsNXHJRpbCpghv9nMMdG/+OrlRbbRaY9uPGD5pL3Rc6nYwyP8lKxz8F6AvOR1GsxpvlxOJCoRr9pE+bezRjDaaVzh/m7iP8o+9vg2/nw/gfB8+4ZZp0GkvF7J2yf+R0rJK6xop+mR9jaq0rZo0zhQnU35/A2SVebe
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GithubCompoktNetworkpoktrollMsg_UpdateParam"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.application.Msg/UpdateParam"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GithubCompoktNetworkpoktrollMsg_UpdateParam
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"as_coin":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"as_uint64":{"type":"string","format":"uint64"},"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"name":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"max_delegated_gateways":{"description":"max_delegated_gateways defines the maximum number of gateways that a single\napplication can delegate to. This is used to prevent performance issues\nin case the relay ring signature becomes too large.","type":"string","format":"uint64"},"min_stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

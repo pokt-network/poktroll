@@ -1,0 +1,72 @@
+---
+id: evidence-msg-create-validator
+title: "CreateValidator defines a method for creating a new validator."
+description: "CreateValidator defines a method for creating a new validator."
+sidebar_label: "CreateValidator defines a method for creating a new validator."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1V0tv2zgQ/iuETl0gsdv05lPTJMAGRbdG4uwlCQxKGkusJVIlKTuGkf++M6ReluR1irY+iZzhvL+Z8T6wPDHB7DH4apLg+SxQBWhuhZK3cTALbjYiBhkBEpdXGriFf3kmYm6VDs4CDT9KMPazinfBbB9ESlqQlj55UWQicnKm342SdGeiFHJOXzGYSIuCqKgDZfdEsxhWQoJhnN1ff2E5GMMTYCukRMQpZIIkCVu2qZ9M0By7KwDlqfA7RBbPhSZnrADjrctzYYzwxhyacNXQ7tAO0+i3KTAhhRU8Y+17ph2TVSwEVhqIDyx7kvxnzMr5yzJKuUxgSWKHtvUYDmxDmsjLnMVcZDu0lGwwwNTKURsrOrafMU5hXWkekfyOfcZqtD54PXMaj9ty1IhegNg2FVHaNYJLBhvAj5TrBN5iybgVTrrwyvtKveyYkhNDBglpNqdVvaKyhn/J41hjzQ01X0OhAcsa4hl78IG+rl+xS/8K08BGSlpQVdWvJ09ycZCgSiMLd1RZXMat9T2ahhWGEN0j7w3PgfEoUqW0FO8MWoC0wt/F9OZJKumKBKs2Sj9eMKmsA+hfo6E/cHwYh+bUweqmg9+GfhoBMVgs35FoV4RKA1PosWbKURGPFXXUeGpaVtjdUGZNac2WrciGaEQiuS01sHfwMmEPc6UtQ7++wC5EgI1HLFdSrEGPoMYTOpFKy5zLc8xUzEPMmaQ0Ug85QO2oEgNRqdHEJTVbLOehtj7HqKfYiEXmVNbsrGIf1bqF0IgxKFaEUR01LRNyfQRyuZBLA9lqWVV7VWwD/UUZrmHXIR0ppU+ePJCAIhBFwhs27z4hUhPxLvAHNiBXORKBKyW6GLBqDZJthU3xgOWk0EXnlwM1hofnBFZsAE/yn2+LmxmjRuAv2UpAFlOnQL5bj2jsoCIvMsixMquOVxqrchyKNlXxk2xKlVrDj1JobH7hjiUqURgbq07jzysf9dk5MBZP9zv7U4O8diSYWV0CzQEwhZLG23vx/v0wDZfMlFGE8ldlxmp2kvXblpK7SujB7EO2ad/nWjujoA3DX0duxctsBL6XkpUSXgpkxUyC1h2JP+XPqW0o7gJFoNAEaKfD3OTc+quPF74Imv5ccXOt+Q55Ed25+TOopObgq+XN5Xe89jxWTpadZ0NJhTLOC25TPE0jZXJlJsbyNb6cbD6EGJEPk5HcB9SgNe44tFHvg1Jn+D61tjCz6dTgEocz+DzRagPnuogmJGdSqLXVKssmuMoEfZ/u/Rv2GTnZ3fwK83FaLPZ2KcG+TfJXz+yF4/5PhXTX7vU3L5zaz3CBHuytdXa6+2N7d3ge37Za7sHyUVVgy9FO+I7eegC3V8Nx2dKaodad4WMDqX3SzqFPY/OhP0Xah83wqJtt11fXY7uoEHKlRiZNiqliCY6WMqSUTim/55i7rdLraZ1sdndzv2CX81tqPMJS6oK/F4s5XbEr7CIKr3wbqdYH2j6Q6ZRg5yNWtjem+qIlElcI64Y0ogbXmo7IX0Zkrw6qmFt4sdMiw2iQWoeGfQXWx+A4WFFeH65Y7ylhHd/t97TZPejs9ZWuEQAaE/34TLnTgtY0OqG+FLc2KjLEt6sF3ABcRz5fkHVNqofdmaDrX1zipCrs//I+d9rR/Nv9ApnD6m927lo3ImrrcLXF74D+t9Nr12/d3T7IEJyla6CBl0m//wCbuK68
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CreateValidator defines a method for creating a new validator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.staking.v1beta1.Msg/CreateValidator"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CreateValidator defines a method for creating a new validator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgCreateValidator defines a SDK message for creating a new validator.","type":"object","properties":{"commission":{"description":"CommissionRates defines the initial commission rates to be used for creating\na validator.","type":"object","properties":{"max_change_rate":{"description":"max_change_rate defines the maximum daily increase of the validator commission, as a fraction.","type":"string"},"max_rate":{"description":"max_rate defines the maximum commission rate which validator can ever charge, as a fraction.","type":"string"},"rate":{"description":"rate is the commission rate charged to delegators, as a fraction.","type":"string"}}},"delegator_address":{"description":"Deprecated: Use of Delegator Address in MsgCreateValidator is deprecated.\nThe validator address bytes and delegator address bytes refer to the same account while creating validator (defer\nonly in bech32 notation).","type":"string"},"description":{"description":"Description defines a validator description.","type":"object","properties":{"details":{"description":"details define other optional details.","type":"string"},"identity":{"description":"identity defines an optional identity signature (ex. UPort or Keybase).","type":"string"},"moniker":{"description":"moniker defines a human-readable name for the validator.","type":"string"},"security_contact":{"description":"security_contact defines an optional email for security contact.","type":"string"},"website":{"description":"website defines an optional website link.","type":"string"}}},"min_self_delegation":{"type":"string"},"pubkey":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}},"validator_address":{"type":"string"},"value":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}},"description":"MsgCreateValidator defines a SDK message for creating a new validator.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgCreateValidatorResponse defines the Msg/CreateValidator response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

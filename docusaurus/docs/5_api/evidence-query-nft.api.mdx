@@ -1,0 +1,72 @@
+---
+id: evidence-query-nft
+title: "NFT queries an NFT based on its class and id."
+description: "NFT queries an NFT based on its class and id."
+sidebar_label: "NFT queries an NFT based on its class and id."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vt9P2zAQ/lcsP21SaYA9TMrTGGIbD9tYx54QQq7jNIbENj6nUFX533dnpyWlFTC28VAc+358d/fd2UsexAx4fsF/tMov+OWIW6e8CNqa04Ln/GSuC2WkisdX3z6d8xF3wotGBeVJcckLBdJrRyqoIGsBcKULhv+s1CKogt3pULFQKWbKgPoGtQeSuKNJ04lQ4dqr21Z7hc6Db9WIg6xUI3i+5GHhSA+C12bGu2702Dd61cAEa42+bRUj5EGXWnlmy+g/4e/9/4XnSxIGZw0ooPPD/X36t4nmiEErpQIo25qtxMfoR1oTEBlpCOdqLWO6s2sgteW2Wzu9VpISF3SoaSMWA2OZ9EYpagpv5YSRIiutj7tROkNxNjk7Zli4ylLkzlOlg04RUGXIY+/B3hnMWm82fYiiQPuwSmUq5WbE5KNQpTYKVummeB+Hsel5TYOtPD8E/CSp0MuIgW50LTBgG/coxV7IMER9Mjl+f3jAO0Qtws78bgL7kI538I6jVU0xi/psqNI9ICYXkYyGYY0ZOCWRiZLF/Qc2jtl3lwwRrqeT8CJ2o5XW66fM4PGaGlQwJISIqCBYJD8aK5msBDZGsnVVCaieMRhlErq46gEVVrYNomTOakM1my4Yoev6P+JPKdo67Ggeg3Gqe0wb6SnvEfE/6aFH5LPFsMSEcqY8imGGGhHS1rvDSBrMk65hIC28FwuaIUE18F/4RGcN0lfMdiquk/i4CZEfHk0Q++hzKoAKa5gOwGIv4QmyqaBM9gMh5zMVMdMszHkmLTQWMmzzbH4wxdgPaA3ZctWLXbbEH9QA5eeru6D1NSpXITjIswwqYYw1ezNv52rPOzkmQ2Nnb4K3dT2WttmaIT+TDvuIkjSwOI3558w2SFejwsssf03CyfglXQGl3SbgMbUAm+GQaadkLiPbe6h3Z/1NtnLEJic/z9nR2emgH76cn5/RFjtGslrcSmzFaRQHbbp8njNMjKOsJjD9ihkbGGCZ8NBZCI0wA5N/WviNeNfkCuo+ZK5e939NZ4kUFzyRgq7QOP17YqRv2s4Hd3qOv5jdCnGS6nJJYH75uuto+zY+N/ILXM6F12JKqaPHhAZaIx9LUYPaQrnue/5m0l/Xb9kL3hw7o1v1saEunou6pS9c3qjF8H0SHxqvwfXC98grsBGqS5SqlChwXlHm0sERvjhcGKhsTUei/LrnP5/gldH9Bk2Uc2g=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"NFT queries an NFT based on its class and id."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/nft/v1beta1/nfts/{class_id}/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+NFT queries an NFT based on its class and id.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"class_id associated with the nft","name":"class_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"id is a unique identifier of the NFT","name":"id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryNFTResponse is the response type for the Query/NFT RPC method","properties":{"nft":{"title":"owner is the owner address of the nft","description":"NFT defines the NFT.","type":"object","properties":{"class_id":{"type":"string","title":"class_id associated with the NFT, similar to the contract address of ERC721"},"data":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"title":"data is an app specific data of the NFT. Optional"},"id":{"type":"string","title":"id is a unique identifier of the NFT"},"uri":{"type":"string","title":"uri for the NFT metadata stored off chain"},"uri_hash":{"type":"string","title":"uri_hash is a hash of the document pointed by uri"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

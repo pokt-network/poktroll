@@ -1,0 +1,72 @@
+---
+id: evidence-msg-submit-proposal-mixin-120
+title: "SubmitProposal defines a method to create new proposal given a content."
+description: "SubmitProposal defines a method to create new proposal given a content."
+sidebar_label: "SubmitProposal defines a method to create new proposal given a content."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vktz2kgQ/itTc9mLDbaztQdOcVyuWh+cUDZ7wi5XS2qkCdKMdqYFpij++3ZLCAQiIZVkOVDz6Hd//Y3WmiANejTVjyHVrxfaleiBjLMPiR7p+4VJ0MbIl2/PVVQYGntXugD5o3k39vrmSl9oj/9WGOiTS1Z6tNaxs4SWZAllmZu4Njf8GpyVsxBnWICsEgyxN6Xcsit2cehBJTgzFoMCq0IyH7CAolWJijIgFaqydJ4CL0SJjE0V+MiQB796sWVr5K6JZsBxijI7ctFXjIn3IoOeDIajsL8v+LG53okF8uxcbzYXGpLESDqQj7sqfHOY69aXMoGTQdUG+0dQcRsu6xjLxiB/S5BvDfVLdiTQmmu3C8irbbWKKpCK2BOYRPF+V566eiGwvU6FwHtY8dYQFuFUQQ7DuHPG7pulyM3RqqWhjDeMHlcYW0OAG5lIM6FwFaf4Yl/s5y+T+5GacNDNoZoZzBNJhOUeeL/MTJwpU5Q5FlyXJsGYs3GFKpAyl7zYYFJ2UHn2LlA0HhMVrVTqUsd5khv0Wtg4O9FDSY0DPtVd6W9TNvT9VrQ3bQ8gjut8GBEcV1Bu1uk0+k6xOw56OPn/Z6ItmB6Rr3AjB6F0NjR1urm66qd6y+bjmJOaVblqxcXW7xr8p63NXbJSOZYaHtWi9V1X4PyAt+m/meRb/asvD9xW1jC5KT496CDk/Q5e6JnzBXD+ujKW/vqz6Wnd1BlU+YkBvrXsAN9LDpcxi947/3MVPUdtSZewODhMGcSdgPnow00DfwKTd4f+LBn8MjvKXcF4gvSk4snJ+NZYbEmBSUjFHoFQWVzu6S41C+Ym2NOseBYFgYALdTpAGe+GsQuFC4PULQaL64jLcj3oY5DleZoX6OUJXevK56yaEZVhNByGDKx19jL1boGXvowHYmZQujl5l+eDmImml1ejoz6xpHoa33FPzpstwFiL9GOWHxvhxjg/+AKmp/0Lfv8OQrZHL+LHHk/2Hqfpnlb3E7Fl053ea5dDD6zNXH887jKOlXtGWRVJTkNJ8JKDXzo/H7bZqqf754m6HT/IRBqS2PXfk8lYjoTqguOjZpYgrrOxUIjQOcMSmLS2CWa7UtYx0SLJpSCmANsx+ftgeVCJ3VAQvtOwzLks4r/GxXqL2Kk+jVi2dYRZbkImWGeV9TqCgP/4fLORY0aB52+4KS8X4A1EUszpK7vKEBLpGXd5jqv60a9DvZxIYCLO3xrCFsc0JfhtNG750Sjpu7KvnXEcf3mesHC0/aosag7THpbyavH/SGv5WhXtmnjqs7XOwaZVzSS6sSm//wBrreLC
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SubmitProposal defines a method to create new proposal given a content."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.gov.v1beta1.Msg/SubmitProposal"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+SubmitProposal defines a method to create new proposal given a content.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary\nproposal Content.","type":"object","properties":{"content":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"content is the proposal's content."},"initial_deposit":{"description":"initial_deposit is the deposit value that must be paid at proposal submission.","type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"proposer":{"description":"proposer is the account address of the proposer.","type":"string"}}}}},"description":"MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary\nproposal Content.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgSubmitProposalResponse defines the Msg/SubmitProposal response type.","type":"object","properties":{"proposal_id":{"description":"proposal_id defines the unique id of the proposal.","type":"string","format":"uint64"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

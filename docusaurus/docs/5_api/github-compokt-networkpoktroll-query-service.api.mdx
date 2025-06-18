@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-query-service
+title: "Queries a list of Service items."
+description: "Queries a list of Service items."
+sidebar_label: "Queries a list of Service items."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vl1PKzcQ/SuWX4AqJFfcqg+RqpZSei8PfBRy2wdAK2d3kvVlYy+2lxBF+e89s94NGxIKUlWEFO/uzPjMmTNjL2VQUy+Ht/LPitxC3vekLcmpoK05y+RQftEhr8Yndlbah3BBYW7dAy+dLYraJbkh96RTkj1ZKqdmFMhxwKXMyKdOlxwKgUaXv18mZ+dX15d/nQ7F3yRSWxWZ8FVZWhfElELQZip8jObFeCEMovURl38RQWdYa45VqpBj7eix0o4AM7iKetKnOc2UHC5lWJTs4YNDTLla3bOxL63x5Pn70adP/LOJ8BhgUmztJ1UhWnPeP7UmkAnsocqy0GlNz+C7Z7fl9rZ2/J3SwIQ4JjPouGmT2i7DoEPBLxouxQwo1JREsIJMqkpfFSqQqIx+rEgoA96wpQk6FToDND3RYF1MrBOqpVBYI0JOwsSibcFJUdMqUIKgwSf4kDgq1GKbl5NoKGpD0ZIu4CFqj3rbkGvf7swJbRSgJ2EyU2BQVtqEn37spDzKWQo+CDth7DAv6I24QiMjcjPPtmkXVf/OnFeIMcazBzZVWDP1oKZmYFrYsSrE3mbGweL/gYxPZlURNOpKbo8ZT1WRRr7DBrbdoLA1m7wQmMAi8SWlKEqatNB/Fm/wvdv8B/E+2CTmlTypoiK56nGDbBXvW5TMi0qaBOhfitWW5g9Y0rOalQX1xDxXQeiJmJOYQ3lMFEuBwA5Lznvs1wgwhcgUatUmM66CmGOOCG9nUG+WaQaHiqCxJnrqAYdjR4gLocMvnE3s+tf57F+W0flAfK3QAgChMjWGZjp2XK+PpVhPpavLm1Fyfnx2cXE6Gopr4p3X5a0fkGz73IUDlHZuUAnkhIHht+GyumsT0ZjEXFOgDtBpByR0dAYSfP1uw9hRSvqJuPXmymUYjYo13rR3MzL20BQmzZn2ikdHN5o1xeLV/iCuKrNW422hYj2qOP7FPvWn/bdke9C7Myj2TD0gPmK4Jp5nrnRANneGk/+N0vzz0Xr3zcI01AwiH9ZtFWrV/PVA60RB+TumNjIx9IwGYkLJOev+j+Gd2qw7uTHFaEquO9nw6vORrKFC/YXvWCvnMFjRoIFm/v29fo2ft4+xnnxpnquuS01Rc2jsclyT2GWOj2+4o2ELHWdce/zUOJk8nOa55WsAjuf6gMe5O5QDvgAcNufKoL0NDJqirn+XOlvBiR/bK0HlCvjnIZR+OBj4XBljzeHU2Sc6dGXaH4O6fhuwD+nJ16Bvog90FZS4vjoB4e+HnaEtAPdjkc+jcQx+zzeOid1xKNatNq1vRxxuNyfi+vRmJI6vzjoj5+todMWvxAkkagtqNKrSWqPNXee9wKwzZjWCaVbC2IDWCvyxxJmE8dgJ+YFyb6S4VlGg5zAoC+TLgWuul40UbmUXHSukxdeTL8P3ZTXEEQVKc4Bj5+WSR9k3V6xW/PqxvoIOb7F8Uk7zVI8XSe15DR1OVOFpC+e6xeX+dXM7ORD/4b65M++2lQ03cjxyhxLLB1rEu+nqHlY5TiOMBUYdPxzjRlmGjsvWEGKNrfvsy+kI7foPksIfqg==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Queries a list of Service items."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/service/service/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Queries a list of Service items.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"TODO_IMPROVE: We could support getting services by name.","name":"id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"service":{"type":"object","title":"Service message to encapsulate unique and semantic identifiers for a service on the network","properties":{"compute_units_per_relay":{"description":"Compute units required per relay for this service","type":"string","format":"uint64","title":"The cost of a single relay for this service in terms of compute units.\nMust be used alongside the global 'compute_units_to_tokens_multiplier' to calculate the cost of a relay for this service.\ncost_per_relay_for_specific_service = compute_units_per_relay_for_specific_service * compute_units_to_tokens_multiplier_global_value"},"id":{"description":"Unique identifier for the service","type":"string","title":"For example, what if we want to request a session for a certain service but with some additional configs that identify it?"},"name":{"description":"(Optional) Human readable description of the service","type":"string","title":"TODO_POST_MAINNET: Rename service.name to service.description"},"owner_address":{"description":"The owner address that created the service.\nIt is the address that receives rewards based on the Service's onchain usage\nIt is the only address that can update the service configuration (e.g. compute_units_per_relay),\nor make other updates to it.\n\nThe Bech32 address of the service owner / creator","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

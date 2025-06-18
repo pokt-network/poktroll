@@ -1,0 +1,75 @@
+---
+id: fee-msg-channel-close-confirm
+title: "ChannelCloseConfirm defines a rpc handler method for
+MsgChannelCloseConfirm."
+description: "ChannelCloseConfirm defines a rpc handler method for"
+sidebar_label: "ChannelCloseConfirm defines a rpc handler method for
+MsgChannelCloseConfirm."
+hide_title: true
+hide_table_of_contents: true
+api: eJzNV8Fu4zYQ/RWCZ8febosefGqSptgA3d3ASU9xEFDSWOKaIlWSitc1/O99Q8mxNnbitthDAzig6JnHmTdvRvRGRlUGOb2XH0MpH0bSNeRV1M5eF3IqfyPC/uNlpawlc2lcoEtnF9rXciQ9/dlSiBeuWMvpRubORrKRl6ppjM4TzORLcJb3Ql5RrXhVUMi9bvhbHAH8I/CioIW2FIQSdShFALDI1niakVFr8iI6ATdtxcXcYq3ypXUrQ0VJIlYkckBi6RZpBXARooqU3H7/fHv1q3C2BzgfI5e4bgjBuOwL5RHPjWcioqaQUuswHnXBT71tiF7bUm5HyLxF6r5RPq4f26b0qqDHwOzYnA49RnLhfK3AlGy1jT//xBiN8/E1fATjFo8V6bKKhwR+YjBj1invGT3pgP0PyVjoILTNPdXgjwqhoiCVV6KDEqtKGxJLogYHze3O91NbZ8ww4IKqaSw+uBU9YSe4Gsw6i2qEFqUxpfM6VnUQtVqDaIf6geG59RQoJoD+JNCcg06mG/6F5tCDoHE5FpXyhQAhyzDqanRWI0TUfm4zT2qJ0PpqBnFtGRSH5CoQ7IcZ91G/yDg4GKk4t30gLFJtIVtWQkaidlZHfPLEYPJUgY9EwlaocITUOUKJQaQcjygn6mh4Y18Bxae4o6cUKirBCBAxwkRelqPKXQ0xccFKUBaiUPCvkF0PCrpSYE3rG3AeWOdtAzDGVLaY24Un+itRZzSYCAeS9n1OA1mdUuk+t0FlVxCATmURpWbOdsAs3OdDbCrOvz9kB5CK2DV2yodpzVvvsQShfNj2uU80KvrmSdk6EkcXdGmPBbXdJrT/45jikashDDmNvqXEcGi4IVNN3797dzgezkVo85xCWLRG7MwZ67vO61kP/EwIZwfTyTHSdlGAEhB/OH53/C9Ua44MvHMrWktfG5iiRch7dMN/SuzE0HfFcHhDnlRCLgMhYevH9zKFitFmwsBaea/WsNWR6nD6rF+6rw+VOJKq6MalMjdDl0RRjbKq8qjjURG/rWDf5JjGtjDQbU2xcmkuz+3xijPTnRWAMYVSUipWeJroLB/nztO4V/X46YfxK2KAVyCPtwtfQjay9QYAVYxNmE4mge2dPSu9e6IzxDfOwPS4ccvonTE4g/2/zfG28xEXsBSzm0vU5zRsjQ6zFP8Z8sfOuAPHlYmFNdvfha6+qrox9PLesB9EJ64Le8PnO8Fg68VV4GCM700Phu/BjaKblHuP3UAcGGq7cIcd2E2kEqO/zZiqCfN2Bk5WeI9PdiSK2dXtnTi/uR6+Fe/ubnhLoPzBYatrV5WnbCyuGzA6BcyBsWK6YPqVwCtS8Cs5XaZCrJUdQH5v5X/Dx3P3RfoaJ40BORxFEt2mb4p7+UpTAOxYW0BXFTcVHDebDNedP7zZbnkbOvG4cN9j+aS8VhkTe/+AAyuCknzqoyWtOetuEp7dcXhsbto0nF5ORW6RzuMcr4omvmn7MOj7m8+3dzDO+p8AdRqZ0qsV6w//p1LyT4p03Uty5b2NNHjrtWlwyQ6T//4GPyZ4Hw==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ChannelCloseConfirm defines a rpc handler method for\nMsgChannelCloseConfirm."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.core.channel.v1.Msg/ChannelCloseConfirm"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ChannelCloseConfirm defines a rpc handler method for
+MsgChannelCloseConfirm.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgChannelCloseConfirm defines a msg sent by a Relayer to Chain B\nto acknowledge the change of channel state to CLOSED on Chain A.","type":"object","properties":{"channel_id":{"type":"string"},"counterparty_upgrade_sequence":{"type":"string","format":"uint64"},"port_id":{"type":"string"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}},"proof_init":{"type":"string","format":"byte"},"signer":{"type":"string"}}}}},"description":"MsgChannelCloseConfirm defines a msg sent by a Relayer to Chain B\nto acknowledge the change of channel state to CLOSED on Chain A.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgChannelCloseConfirmResponse defines the Msg/ChannelCloseConfirm response\ntype.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

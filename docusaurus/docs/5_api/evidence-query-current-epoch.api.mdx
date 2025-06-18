@@ -1,0 +1,72 @@
+---
+id: evidence-query-current-epoch
+title: "CurrentEpoch provide current epoch of specified identifier"
+description: "CurrentEpoch provide current epoch of specified identifier"
+sidebar_label: "CurrentEpoch provide current epoch of specified identifier"
+hide_title: true
+hide_table_of_contents: true
+api: eJylVMFu2zAM/RVB5zRuu2GHnNYFwdbDgKzNTl1RKDJtq7UlTaKzBkb+faTsZk5TIMOWSxKb7/Hx8UmdRFVGObuT31oIW3k/kc5DUGicvc7lTC42JgerIb1+mLchgMWFd7qSE+lVUA0gBGbopKU/BGEAmsJAoBJj6cnPxD2RUVfQKDnrJG49l0YMxpZyt6O+AaJ3NkLk95fn5/yVQ9TBeFZD1VcitlpDjEVbi5fyKfFqZ5F6MkJ5Xxud9GePkWHdqO0hX5ppPNLNwClyKIyFKLACUd4s5/tughS3GtsAonDhh02T0QhCWQFMIdZbYTCKPyawwGFct34EjWxcYJfR9MPqXsJDIjh2ZyKpVaOQrbX44T3ZxZ8JTVOotsY3jLKitfDsqRnkAkJw4d/8OqHb5TCqInFQpqWP9b67lEkqKlPHUbUKQXEmDEITT/f62L8+Ts5Eqjw3rF/VyzEkWdRQWlT5JnBv4ti5cRoEKeD0i2E/w4JdISI5y7vNxUHW6ShUjg9NCWkAhbRNmWkXGxezhI7Z5mJNXlxkh0unswFh83KQ2lATsEL0cZZlsVLWOntWkhw4C15PmWHq3RMGV9dT7Rr5eo7bHiM+UaWgANMOTtM2ylgL+HfMX/vinvyeD3rhjpM4r6hMlAards10GXOfEe6XC0/ZSyNxs7hdiavlNR8VgzXv6ctqteRHYk6pdfSoj63SKbbDVXOKmKPHrvZihl/COhSRVkQvvYvYKDui/K8EHAy/jxzCM2a+Jie4ZdpCN6TjTvbpIGyfD/oxJIQHPsgImVyRXAZ13VpF+B7q3Y4f9/crJyc3Ua1roBAWqo4wkU+wfX0lb1Tdsqy0to0KhhGEvidxFaicipiqR17RhetxhDq6MJhln/zPixUdrd+oKjuE
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CurrentEpoch provide current epoch of specified identifier"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/epochs/v1beta1/current_epoch"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CurrentEpoch provide current epoch of specified identifier
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"identifier","in":"query","schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryCurrentEpochResponse defines the gRPC response structure for\nquerying an epoch by its identifier.","type":"object","properties":{"current_epoch":{"type":"string","format":"int64"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

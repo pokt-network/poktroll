@@ -1,0 +1,75 @@
+---
+id: evidence-msg-undelegate
+title: "Undelegate defines a method for performing an undelegation from a
+delegate and a validator."
+description: "Undelegate defines a method for performing an undelegation from a"
+sidebar_label: "Undelegate defines a method for performing an undelegation from a
+delegate and a validator."
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsFy0zAQ/RWNzk1C4ZYTpXSGDgNk2nBqOx3F3tgistZI67SZTP6dXdlpHBpaYGC40ENjS6unt09vV15rMkXU4yv9IRb65khjDcGQRX+e67E+W9ocfAY8efvZ5+CgMAT6SAf42kCkN5iv9HitM/QEnuTR1LWzWYIYfYnoZSxmJVRGnnKIWbC1zDI8w+5QVQ5z6yEqoy7fvlcVxGgKUHMMijnxT2V9oYxXzXYJg6h5wEqZ6x2K8TkjLI2zuSEMQyZLqxp4N5x9gYz4vQ6SJVmIiXCFTUt9n9wpWt/jRLgAr+4slfzCoiDTaSmkHfkn4Qyv/bX/+Gl6NlbTErpBNbfgcmWjxJ3z+11ps1LZqnZQsW5REcdmTSROpgIqMb/20Ra8QRN4d1HbBsjVbKUKLJATIPyVzLq4SIE11JsjnRI4MLNJc0lKDLcmz3n7eBDhQeEnojYd3j84861kekyhgY0MxBp9bJV5+eLF4wM/UbHJMqYwb5zahgvWn3D3RYf3kLGcOEeMemJs91Qi43/j/ppxGdOSk6GOegDm4FuG3RDOd0ZiUhkLFQU0Q0lINLklW8Fj+CMtXjRMSbPDYJCiNg/+npvGHTiIE/Et3NecIu8GIbCtf8tXT6uVYd6nbBm0gNDnzEOvXrbqkbGuX6omBLPiWEtQxef3et1OH5Kf24AV/sZN+kuSRF1h/6BFPG4SBztE668/0RxaJN6nxphyNFTy2yjDWGEcRjILhh4uj2es1/Fwv0w5PkJYQpBrc62b4HhpSVTH8WgUS+M9+kERcAmDUGdDgRjWuKCAzg3Zafr7ZC/bNeoNR6qLySkf1POwlbHeA/0c8oc2uAXnS14cdrG7wc/ujfh/v/K2T7sS6Epvrxgf3RS78AMXRG+p9XM80LpKZqoK7lXNTDIaSXoDpn6HYTHa5qouzi6n6mRyrndF/246nciQOuXqQgddeZksJeONVLV+Djjda3ywLZnuSXkkFYFkUvxSGd+D/MtO3ZPnoXgI7mlUO9ZKSCWrrDsTX+kfm5jxejZmH5Rif16yXs9MhM/BbTYyzMYI/Fl3dSOHGKyZicJXN7xVCSbn1iK+X8Aq3TWphQ2mQiydeZO6yvftTCzdrjjhK7amJ2NvehU6+XQ55eBZ96FZpV6ng7mTO57/j7WWj1ZZnRpUGltrZ3zRpI6jW0z5+wZ8u+F3
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Undelegate defines a method for performing an undelegation from a\ndelegate and a validator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.staking.v1beta1.Msg/Undelegate"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Undelegate defines a method for performing an undelegation from a
+delegate and a validator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUndelegate defines a SDK message for performing an undelegation from a\ndelegate and a validator.","type":"object","properties":{"amount":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"delegator_address":{"type":"string"},"validator_address":{"type":"string"}}}}},"description":"MsgUndelegate defines a SDK message for performing an undelegation from a\ndelegate and a validator.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUndelegateResponse defines the Msg/Undelegate response type.","type":"object","properties":{"amount":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}},"title":"amount returns the amount of undelegated coins"},"completion_time":{"type":"string","format":"date-time"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

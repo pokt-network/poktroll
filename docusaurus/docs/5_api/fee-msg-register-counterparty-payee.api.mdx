@@ -1,0 +1,84 @@
+---
+id: fee-msg-register-counterparty-payee
+title: "RegisterCounterpartyPayee defines a rpc handler method for MsgRegisterCounterpartyPayee
+RegisterCounterpartyPayee is called by the relayer on each channelEnd and allows them to specify the counterparty
+payee address before relaying. This ensures they will be properly compensated for forward relaying since
+the destination chain must include the registered counterparty payee address in the acknowledgement. This function
+may be called more than once by a relayer, in which case, the latest counterparty payee address is always used."
+description: "RegisterCounterpartyPayee defines a rpc handler method for MsgRegisterCounterpartyPayee"
+sidebar_label: "RegisterCounterpartyPayee defines a rpc handler method for MsgRegisterCounterpartyPayee
+RegisterCounterpartyPayee is called by the relayer on each channelEnd and allows them to specify the counterparty
+payee address before relaying. This ensures they will be properly compensated for forward relaying since
+the destination chain must include the registered counterparty payee address in the acknowledgement. This function
+may be called more than once by a relayer, in which case, the latest counterparty payee address is always used."
+hide_title: true
+hide_table_of_contents: true
+api: eJztV01v4zYQ/SsEz4683d58ajZI0T0sajjuKQkCWhpL3FCkSlJxBCP/vW8o2dZ6Y3sLtLc14FgZD998vZmhtzKqMsjZvfwSSvk4ka4hr6J29nMhZ/J3IsifFlTqEMnfuNbio1E+dnPVEcmJ9PR3SyF+ckUnZ1uZO2jYyI+qaYzOE9j0a3CWZSGvqFb8FLuGYMGtvlIegRN1NCyAvZPmREFrbSmIWJEYDAsGEmvnk/D0Ud/ksNJ4DjBqCsnZSllL5kkXI49C9NqWI49aq2FJDMpCF4hPrzV5+TZBvAdDT03KyRkodnF8QqQTQhWFpxAYr3E+/pg/rHnkjCcDPH/Jg0HtYJZffSW1J9iOvqUkCI2zoc/Vxw8f+KOgkHvdcFGBdi1Cm+fAWLdG7NQzOfl/abAYDB3RYRD+Cz70cQNFtSa+E50VraXXBp5RIch7gP4nQR6x0BVj0miAlijiRCKIWsVe9OtHmVyNSpsw0lbeqw66OlIdLtv6rf/6mB+cBrBBs//KzMdHUopqlFiV7x582yVxnLnLHay4AAItVRgwsaZYuSJV7VzhH+xpYB1EroxBoVadGLPcWUEqr3b9e2sLofhtjNsk6tQiOhFQZb3uT4479MF+06JiRXByAEcCMrGsYJlsaH1PxE5stDHQE33mTQe8uoGGYhZxiHhvlC/2ICJomyM4to08Rm0TkdhjbUXdYshBwbQFDYH1OQDa6VmCE0lZ5c/WbZCWkmpwdfB33dqcTTzYWnXs65C6mmOLSBSylhNnUu3yOGHETaU5kyrQJKEbxATvzrmBUpuN6oJoAxXcNX2tQZLGhURQFSv8N9WrPBu1UcjWRNnLLxkIMT23gAL5F/K8w7ay9QZQVYxNmE2ngSvu7FXp3QtdgW/ZCv2TNe45emdMhrrIY+be9WfEJ2iKxfwGXXcZtkadLMUfQ/7SK/fg2Lg8LhaHJXr7qurG0PF6Okzy9zbO4dv9/jiI9lth37QYF3btvh94N4lwpY5Vu+IYphzQFZzdOP883UUnFrd3S3E9/zwa138sl3MWiRtUzhkapqPK03S0qmalS8DsGJeyd2Z4EtZFESj2yzHEWtkR5M9B83PQnBo033B7v7givcZpYxAwMyp19naYQffyzAwC4OkphDaueJoBYrtdweu/vHl7YzH62uNifI/HF+W1WnG73D/CdEWq4K7E2Hqmjruvv05cLdlRVjdt2vDHVwueSP2Ja9y9mnhW93E0cOd/3i2hvBqu6nW6d0ivNjwk8HcmJf8ASJGzQpJtpVG2bNP2lz0mv/4BEmttNg==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"RegisterCounterpartyPayee defines a rpc handler method for MsgRegisterCounterpartyPayee\nRegisterCounterpartyPayee is called by the relayer on each channelEnd and allows them to specify the counterparty\npayee address before relaying. This ensures they will be properly compensated for forward relaying since\nthe destination chain must include the registered counterparty payee address in the acknowledgement. This function\nmay be called more than once by a relayer, in which case, the latest counterparty payee address is always used."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.applications.fee.v1.Msg/RegisterCounterpartyPayee"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+RegisterCounterpartyPayee defines a rpc handler method for MsgRegisterCounterpartyPayee
+RegisterCounterpartyPayee is called by the relayer on each channelEnd and allows them to specify the counterparty
+payee address before relaying. This ensures they will be properly compensated for forward relaying since
+the destination chain must include the registered counterparty payee address in the acknowledgement. This function
+may be called more than once by a relayer, in which case, the latest counterparty payee address is always used.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"MsgRegisterCounterpartyPayee defines the request type for the RegisterCounterpartyPayee rpc","properties":{"channel_id":{"type":"string","title":"unique channel identifier"},"counterparty_payee":{"type":"string","title":"the counterparty payee address"},"port_id":{"type":"string","title":"unique port identifier"},"relayer":{"type":"string","title":"the relayer address"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgRegisterCounterpartyPayeeResponse defines the response type for the RegisterCounterpartyPayee rpc"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

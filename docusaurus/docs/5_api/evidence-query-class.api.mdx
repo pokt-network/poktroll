@@ -1,0 +1,72 @@
+---
+id: evidence-query-class
+title: "Class queries an NFT class based on its id"
+description: "Class queries an NFT class based on its id"
+sidebar_label: "Class queries an NFT class based on its id"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VsFuGzcQ/RWCpxaQtbFzKKBTHdVtfUjrKsrJMBwud1bLeJekyVklgqB/zwwpKStLsRMg9UVrcmbezOObIdcS1SLKya38r4ewkncj6TwEhcbZ60pO5NXSVGA1pO37aatilCPpVVAdIAR2XcsKog7GsxO5aDa6N5WgH6eNQqjEJ4ONwAaErZH8LXkPLGnFsKdX2NB3gMfeBCB4DD2MZNQNdEpO1hJXnv0iBmMXcrO5Y+PonY0Qef/i1Sv+OcznUsRea4ix7luxMx8TjnYWwSJ7KO9bo1PZxcfIbutjWFd+BM3po8GWFxIpiZPZNqwwMZW5gxHsKmoX0mqyL5KDmN1MBVHYOK7eB2YdTa4i0XJcR1oWFdTGQkbJK67eMZvQuLKnCR/GrxSeLOvQ6ve8fUz6SKqqMpyUam+GLpuvzDDEjgviVkQP2tRGc8kqbW6z/ufPeS5jLP71OaakOAeVP01hAPPVjNGUKIOBWgyXCYeZSRicQTrjQzAS4DMYJOQh5701jz2dM3UFUjwIR5XsUUYims60ig7f5fMiwQWlURCBpJB0dFez6W8X55xGbopvJ8L7B6k0fafsWQAitGxJALz/zWQOS46rrnTtc2jZIrFqhSrLAMvcygmGFf0SrX0wzwHQ9r4xspD32ojoqP2pllroRhmKe01QlEeuXuTOTN65mZStUskf/iD3D0IhgZU9QjzK6L5RsXkhrWST9ZS+tpxWTvcdnbrwzlhmolwJsh5CbP9Yv7XqWzwxjCwpCD5TO3AECIFq+Ckz6ckIcdVQS5zvAgKZEWedwrz0+iK3GirTxoG1CkGteCYjdPF/GRS811EDqMVJxz2JQ+bySVPvUYsnUe41LkoVWS40AzCKdJ1sJ+tELiAlzBfLRBbaxc7FgpRbLM9LKvy8SBEgFuvdZbQh+whhubvc+kB9IhtEHydFERtlrbNni+CWcBa8HnOYsXcPGFzbjrXr5NPM32Uf8YYsee4T6y+H7Uj3FvD7Ir/Nxjn4Hd+mtTvW3pR7SSzoKu5LDldw7DPy++TCQ7EDErOrd3NxeXM9aIq/5/MbXhJT0qmjpSxUGmWMsr3NXwrMYmNWczLbL2EdikiHRJveRaSJNgj5Q2d++s5A+IyFb6nyPAHS0Mt6uJVZD/wgSc+SrSa4uqwK+prsHynEa0MZst96zfDvQ7vZ8PJjejtNbulzqYLhaZzfRSbyN+mwVm2EoxT3zS5/mW3fPL+K73g+nSxt17yWW3ep2p7/o88HWA2fWps7sm3ozqBxwDnm7Ut6IHkcOB4NH5bVvqv+uppTm34BhfOTFg==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Class queries an NFT class based on its id"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/nft/v1beta1/classes/{class_id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Class queries an NFT class based on its id
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"class_id associated with the nft","name":"class_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryClassResponse is the response type for the Query/Class RPC method","properties":{"class":{"description":"class defines the class of the nft type.","type":"object","properties":{"data":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"title":"data is the app specific metadata of the NFT class. Optional"},"description":{"type":"string","title":"description is a brief description of nft classification. Optional"},"id":{"type":"string","title":"id defines the unique identifier of the NFT classification, similar to the contract address of ERC721"},"name":{"type":"string","title":"name defines the human-readable name of the NFT classification. Optional"},"symbol":{"type":"string","title":"symbol is an abbreviated name for nft classification. Optional"},"uri":{"type":"string","title":"uri for the class metadata stored off chain. It can define schema for Class and NFT `Data` attributes. Optional"},"uri_hash":{"type":"string","title":"uri_hash is a hash of the document pointed by uri. Optional"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

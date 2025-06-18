@@ -1,0 +1,72 @@
+---
+id: evidence-msg-send-mixin-135
+title: "Send defines a method to send a nft from one account to another account."
+description: "Send defines a method to send a nft from one account to another account."
+sidebar_label: "Send defines a method to send a nft from one account to another account."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vk1vGjEQ/SuWz3yERFUlTk0QUnOIigg9oSgyu7O7Trz21vYSEMp/74y9GzYBQZW2HJA9nnnzPPM8sONe5I6Pl/zO5fyhx00FVnhp9G3Kx3y6linoBPDw8R50eic3Uo+uvvAet/CrBudvTLrl4x1PjPagPS1FVSmZBJDhkzOabC4poBS0SsElVlZ0igkQmHCZhcqCQwDHBCvBOZED84Y5OhRMZ55l1pTMaGAiSUytPR0LbXwBtjUNkJffVoDAZvUEicd9ZelKXoILNJVw7lGmtG48nbdS5xQpvSJD68NSyKQGxzAFq7XE+zIqh5eZxJwmCwdELUSgNV66x5wspRKWGJIL1caKxDORpnhLR6HT+eTr5Yi/9vhpMqdpxISEhzQIzEICcg32FGTrw2TEfNt36DVwVP7TYNGjheog0Na86FioAEef3n/vP+lSWsCieltDKImrjHax/5cXF4civGauThJMmtWKte6E9XeinjdI7xqIZ8Pmxs0pVfZQuG2xMlErf4SyRinApkJXSBlYa+znmJ95LiaFjpdE0Bz10OOZsaXw0XR1yQNVL6RyHW9hrdiir/RQuvO5vsXjj1KjMqCsJPEXatYNCSVqxHIs8KjiQvHbjpDWfGHSz0ktxiJmZVy4j/AF7oaJcaVxA0QarEcrrMto0Lad05uy+Nho5u54bRUGFN5XbjwcukJobXQ/t2YNfVslAwoeVObZW6PUIDElP7hOjGE36Mnmswm24jxsKaTW4P8M+S46R3D8hSANzffDf7oRZaXg/XDdz4n3u/142tvaGfPWNwzSmTnU/KRAJiyXvqhXxHhI9PtI7cXY52F7Fzaf3i/Y9ey2M6S+LxYzMrEJvg+DpvhAcCRTFi1KcjoHTMSocZFMs2KoClROGJakglLoDuQ/1Nq7UrxJ3cPGDyuFdSECoe27RoZLflyGiBWEiJ0sSLbouNuthIOfVr2+khlba/E3fYnLtbBSrKiGywdMUIAIrULlPsOWWhLHTH9BdMhd1eHlfxw5JMoYcY2DtvInfR86L2v2436BzqvmX0YZ5hG34oXEhN9jzuk/C0WHIRJsO66EzuswFXjEpM9vMgEfWw==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Send defines a method to send a nft from one account to another account."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.nft.v1beta1.Msg/Send"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Send defines a method to send a nft from one account to another account.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgSend represents a message to send a nft from one account to another account.","type":"object","properties":{"class_id":{"type":"string","title":"class_id defines the unique identifier of the nft classification, similar to the contract address of ERC721"},"id":{"type":"string","title":"id defines the unique identification of nft"},"receiver":{"type":"string","title":"receiver is the receiver address of nft"},"sender":{"type":"string","title":"sender is the address of the owner of nft"}}}}},"description":"MsgSend represents a message to send a nft from one account to another account.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgSendResponse defines the Msg/Send response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

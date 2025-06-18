@@ -1,0 +1,78 @@
+---
+id: evidence-msg-community-pool-spend
+title: "CommunityPoolSpend defines a governance operation for sending tokens from
+the community pool in the x/distribution module to another account, which
+could be the governance module itself. The authority is defined in the
+keeper."
+description: "WARNING: This method will fail if an external community pool is used."
+sidebar_label: "CommunityPoolSpend defines a governance operation for sending tokens from
+the community pool in the x/distribution module to another account, which
+could be the governance module itself. The authority is defined in the
+keeper."
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVk1vGzcQ/SsETw1gr5L0plMdw2h9iCPYKnqwjIDaHe0y5pJbkmtZEPzf+4bUxzqS7abIrToIXHI4nHnz5pFrWVEove6idlaO5V9n11eXV7+PxbTRQbQUG1eJpTZGLJQ2Qi+EsoIeI3mrjChd2/ZWx5XonMNqEH2gqpAnMqo6yPGt/BxqeXciXUde8RGXFQ65eNAV2ZKw+PV862ICDzcd2Qq7Pf3dU4ifXLWS47UsnY1kIw9V1xldJlejb4FDXstQNtQqHj3PBe4PvYuKFtpSEArZhaBqEgvnRcCStrWI7p5sEAvvWhEb2mc4synF6ACAw4oXqixdb2OxhSo7wzCuOoRozApAUdlHqsSDVjiwdg+MGzKHN+86F4DhUscmHbVfFa2rekNiTikkrGVH/KV6lMQjoITyqiMk6ubfqIz4Zqfko6aQsGo5Ph5t7JT3agUzHakNg/nd/uf4nTttB3AlaHK4CtPWtdqmQgCRimmRzytmdmavvkwvmEO0mRQLTaZicGB3ie9lo8tG6LYz1KK0IYPdhwjcM+tmNugaB/QepzMhtAeQ8xVwqh0Sja54O+MQPUCTT5waAj6ygt+J3IF6SKLdUqosJ1RViIjHKgpmpncmr2yq9gsgU73hnJx4HKGsoreGt3CBl/AFMr8blG8fpKdSd5qOppAj/b8xfFt4OY6+pwRR6JwNud4f378/rNiZCH1ZIthFb8TWnH39TBm53vjdgc05bA9jDAf5zOzxOm0APWzkbakTjY4kaEEoeuxgCuDJe1T3P+X5unyUrqKBlYbTmjzMwKZWxTz168fcXBG3Q/gRqXl+1m95+ZD06M2q0hy/MpPhlgTRBsEXuiVbsJZgAVRMx6rY4GtUutC6UFSaN8x7PqB4+DBHHh8KVGt09FoK5EFgvtfWsvcGfpoYuzAejUKjrHX2tPag+KnvyoJdFZ27Z3kwBZrsQF5v8h7xCZbienIOIN922yptLcV/5/lzNs7OcQszA673V+vFo2L9HQrn7X64hXInnTts754J5t5uoF4DTdN24Q45fN4gNlFDGfo55zDihE4R7NL5+9E2O3F9cTMVZ5NLbhEdOVb5x3Q64SlxDr47TGXCqzIR3qqWjd5yzIFxKXMwm5GA7EEmIy8yXVplBy5fFdqBsu2eOi+p7sw+k93N08kmBXkcDRm5VclDST7JF+jM4gv36pxe0FcdA5lFkW/i4U2WQ682587sPRHiLr6n0uDt9fOehrlTI0xHnQENGO/E+/WmPW/lG+0JL0caFLxsuMuxf72eq0B/evP0xNOgvAdVbzF8UF6rOTPp9g7nNqQqiBoT/55Wqcwp39MpR8nmpk969r2QcrPmHWe4bLr4qu3dQIgmX26mMJ5v3rZtUlnp1ZI7CP9jKfm9zLuTNKa5tTTK1n3SOpl98u8fcFg3Kw==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CommunityPoolSpend defines a governance operation for sending tokens from\nthe community pool in the x/distribution module to another account, which\ncould be the governance module itself. The authority is defined in the\nkeeper."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.distribution.v1beta1.Msg/CommunityPoolSpend"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+WARNING: This method will fail if an external community pool is used.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgCommunityPoolSpend defines a message for sending tokens from the community\npool to another account. This message is typically executed via a governance\nproposal with the governance module being the executing authority.","type":"object","properties":{"amount":{"type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"recipient":{"type":"string"}}}}},"description":"MsgCommunityPoolSpend defines a message for sending tokens from the community\npool to another account. This message is typically executed via a governance\nproposal with the governance module being the executing authority.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgCommunityPoolSpendResponse defines the response to executing a\nMsgCommunityPoolSpend message.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

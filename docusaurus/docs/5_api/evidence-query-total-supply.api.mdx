@@ -1,0 +1,73 @@
+---
+id: evidence-query-total-supply
+title: "TotalSupply queries the total supply of all coins."
+description: "When called from another module, this query might consume a high amount of"
+sidebar_label: "TotalSupply queries the total supply of all coins."
+hide_title: true
+hide_table_of_contents: true
+api: eJzlV1Fv2zYQ/iuEnl277YY95GltEWx52Jq1LvZQBwUtnSw2FKmRlD3DyH/fd6RkKbaTeEGBFViRIpF0PN5399135C4ryOdONUFZk11kf1ZkRC61pkKUztZCGhsqcqK2RatpIkKlvPirJbcVtVpVQeTW+LYmIUWFZyFr25ogbLkwK+mFKrGCRCNXykjeQ5SKdCHgRJncOkd50FvhKUyzSRbkymcXn7M/2H92M8lsQy4uuyoQ3OVaFWRyip+/zG2Q+mPbNHqLpY10sqZAjh3sDlDd0pZ3lGItdUvCUWidAUJlxLVc0QfyDVDQ1NDf4QsbByuWhJAXJkJVZhVh8HfGQkiHD4LKUuWKDBBMxXsDHNYQoOOnBCJhnYCzhfGVbYF5ST1Og1AR1pCVKezwXnGwcUc8+LyiWmYXuyxsGzb3wSEQfCmtq2XAm+U2UHZ3NznE2+0fIRsUx6m8jylUEjWThqNpPXKw4Yp3CWqNXEul5VLTdGGuogdN3g9Ieb3BQs4IFj0CWyTUC/MY7LTiGchbZcJPP57CrlWtYuBcsMAc4RQsQWFE6Mi3OvhU33s8YOv0NRaY4ZfAXqLKdROQnSA2SmtRUCnZCB56OiVnjHy5FSRzNEHTnMYbg/umcHNuty8JJ0DHElsRHOLiP5QpVC4DpbqPQLJhx0s0om4LWhgp8q55TyZPBarBqJ4hAtGNGxtJ/HTlkbiDkCwzBLs2aPWebwNBmYNTkaimVsa6ESUXJiE6ncvRNk9mdGmtJmlOJdDRGqJBh8lTA1mkowcIw54IGUYzWFeQOx1ot8O/CBLK5zpN8mzw+uVL/nU/8DfCt3mO7ixbLXpzjgCKHNCqvAJE1Fx/rJh99bxsd7yvXX5FaVh+VdD8IurrSF57fey7qt9MsINIA34bV81Gy8SH63cLA1GubMEK7VjNg0qQhvwcIxuRCu2mDPnDITI07B71IZj72/XKfrzZXvM7cHv5x36eBRIPaUigcD5M0/duMDw5Fa462YC7TkcwGHmgUqSVsVjj+qb0IxwPiT0MIuPPUIuhoPtefEgPh6YG78doR022MBsZe2QCJfCd9sWhkYpUiHhS2CjPMwmB+jSbh0ilc3I7CisZ9Invnjrxya0ynluGRee4au/weU8OCVy3kIyNCtBevDa27pkiTYH/3bEE4rQwv7+fX16IOfbozir7EwnsrvC8qRQ0XNWNphplTNHlrQ84DiU2Y6RDqyTEALs7pEqxbEH9V3ZlQbxgn2Zk2vy4jkhcBHDiS/+PLeIUOiEKGM7gY6e15Bya85tow/3gc1vQyAp8oxW5MQfx6ofXCUwAt/wJGuxL+/heP6fPx9mYZLIoFMcv9fV4SUxRDWUEkR9MI1tEZbrIVvEI0shQ4WGWW48+ni2luZ2tXy0R/quZ74+Znty6P2O2Dm2YVSE0/mI28zgYGWterJxd0wvX5FNeOm3sbXBWa3RSnU0OqvUxrRFvYclqmfF4esptLZUxGIpnef4tGSfnNzyBSnuimyqYiRXap12yuxn7foF1G+tuZ/1G4sPlx7l4c301auFf5/NrfiXegWEYXx3FZB4p1s3CpxwzTTirKZjuL2hjPKXwxwa6WkszcjkeM6zEisYHvkFKcJNJUjI9TNFu6IX/+taT6BkwRmaNRiUYcmTBriPl5yyREsZMS/zqiJntVRa1rZAltt3tltLTJ6fv7vh1Om/ES5HyrPGgfCm1p0cS8r1dmE6mKI7z40tUDBkfYjOdD/k7vTOdh3x/j3om+O/o0nQe4P4i9Uy8/5db03nJvH+TemZKv/U96rzQh7vVEPYNPzjFcUP2brCsIgmvUQOThze4ODVj/hwdhtjL/oDwy+Ucx4Z/ABjqzUA=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"TotalSupply queries the total supply of all coins."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/bank/v1beta1/supply"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+When called from another module, this query might consume a high amount of
+gas if the pagination field is incorrectly set.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.","name":"pagination.key","in":"query","schema":{"type":"string","format":"byte"}},{"description":"offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.","name":"pagination.offset","in":"query","schema":{"type":"string","format":"uint64"}},{"description":"limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.","name":"pagination.limit","in":"query","schema":{"type":"string","format":"uint64"}},{"description":"count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.","name":"pagination.count_total","in":"query","schema":{"type":"boolean"}},{"description":"reverse is set to true if results are to be returned in the descending order.","name":"pagination.reverse","in":"query","schema":{"type":"boolean"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryTotalSupplyResponse is the response type for the Query/TotalSupply RPC\nmethod","properties":{"pagination":{"description":"pagination defines the pagination in the response.","type":"object","properties":{"next_key":{"description":"next_key is the key to be passed to PageRequest.key to\nquery the next page most efficiently. It will be empty if\nthere are no more results.","type":"string","format":"byte"},"total":{"type":"string","format":"uint64","title":"total is total number of results available if PageRequest.count_total\nwas set, its value is undefined otherwise"}}},"supply":{"type":"array","title":"supply is the supply of the coins","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

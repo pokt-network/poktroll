@@ -1,0 +1,64 @@
+---
+id: evidence-service-status
+title: "Status queries for the node status."
+description: "Status queries for the node status."
+sidebar_label: "Status queries for the node status."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVd9P2zAQ/lcsP7cNsGkPPI0htPEwqYLuCaHKca6JqWN79qWjivq/7y5JuxQQMPrixLnvu1/fXVuJqkzy/E7eQtwYDfJ+In2AqNB4d13Ic3m1MQU4DYPB8hYVNklOZIQUvEtA8FaenZzwUUDS0QQGE/RCpEZrSGnVWLE3nxFUe4fgkBEqBGt05y57SAxrZdIV1Oo5H7uGm4FHFLAyDpLACg7kImFsNDYRxMrH7lPq4hV+JZRwvuj84zYA8fn8ATTSe4icM5o+FwppWalU8fNgSbTGlWRJrLWiwGW+RWAmg5YNCCMYw37Yq25ipAxFbr1ey91EgoqW+HGZ0EdYVmDKCl/10BiHXz6PfOwpelLRUwi1Ucaq3IIwbkiYHLDLj/g4intwwVxoavKs6vAqXUH9mbLpiPEo2H80xLlR1hDCx/+u9gHZ15zaxyItRL7ti89ScIm6XoEqIMpd95uQnFaqsfiCUp1oHDwGkgPRQIxE/SHBvq4sTfobWVHxoaTwRonS1acz2YWK1Nc0slYxqi3ZGoQ6ve3ra//5aVG5DKooDMev7HwM6UpE/UmqfBF4KOLTmaRC/24gEsth6njShtHj+tWAledtUkIXqULqt8y0T7VPWa4SZIzINqc55X2apf2SSbR1IPKGamUTLYEqxJDOsyxVyjnvpiU1H6Yx6BlDZ8GvMXprZ9rX8lmwPUZ8I0txM7+kQr9NWyvjHOD7mH/2xj057VLjVv653C4rMhOlwarJmS5j7inh/vi4zvaOxM3V7UJczK9Hyv+xWMz5SlySNL2FQZtKd9p0qmajt4i74aOq9sEMT9QyFAm6aQ8+Ya3ciPJ9bT7K8iAghEfMgqWUmbsrdztI4E72EiAsi4AOZqRjEAIroJcC1bKiqBjStmz7K9rdjq85pi3d3/NGiYZXIb91C7CbftbOGrY85vRvFFiAtECaYW0fDzP37CDW71cLkv1f03B/WQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Status queries for the node status."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/node/v1beta1/status"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Status queries for the node status.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"StateResponse defines the response structure for the status of a node.","type":"object","properties":{"app_hash":{"type":"string","format":"byte","title":"app hash of the current block"},"earliest_store_height":{"type":"string","format":"uint64","title":"earliest block height available in the store"},"height":{"type":"string","format":"uint64","title":"current block height"},"timestamp":{"type":"string","format":"date-time","title":"block height timestamp"},"validator_hash":{"type":"string","format":"byte","title":"validator hash provided by the consensus header"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

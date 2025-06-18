@@ -1,0 +1,64 @@
+---
+id: evidence-reflection-service-get-chain-descriptor
+title: "GetChainDescriptor returns the description of the chain"
+description: "GetChainDescriptor returns the description of the chain"
+sidebar_label: "GetChainDescriptor returns the description of the chain"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVMFu2zAM/RVB5zRuu1tP67qi62FAkGanoihkmYnV2pIm0VkDI/8+UnIyJynQYVgvVWjy8fHpUb1EtYry6lHOYdmARuPsA4S10SCfJtJ5CIpj95W8krdrU4HVcJL6fAd4Uytjv0LUwXh0QU5kgOidjUDwvbw8P+d/1ZBAtQR4LWKnNcS47BqxS59SqXYWwSJXKO8boxOJ4iVyWS+jrqFVfMKNBwJy5QsRokI02HDglNB8gBcmCqxh344O2AULlSg36cNpqZjPbgjbB5YDTR5Ic06iMLRMAZEHLCGKEXGRvxm7dKFNEaZ6RP0Q3lSj8SIGY1ej8Uy1G2NAruR2+JuQxkvVNfiO3FZ0Ft489aNxIQQa7b+ofqSMq2CUZQh0BWyIPH0OfbqUiSoq08RRtgpBbSjXILTx416f8+djpVgGVVWG+atmNi5JErXkObV6t3Av4li5dzyRbZMvYZQs3PLPvUjuhLXj5VlBYq+wph+FdrF1sShVhCLs16lYX5SkyEVB8j9X+17FDizSukHgde1lFxoCqhF9vCqKWCtrnT1bBbeGs+D1lIGm3r1icE0z1a6Vx0M95BrxhTKTxbeTj2FbYmIB/w75e07O4PSc8AKc2jIpK1YG665kuIKxz6julwuvxa6RmN8+LMT17H60Bt8WixmHxA1Z2FEoe1jp5GGrWk76CJh9yKpmMsNJWIci0pXRR+8itsqOIP/dDgeT782H8IaFbziF+qUr6AerPMpsFapls6RndWcX+jEYhk6HlmElUktSvSb+DNT3jPAjNNsth392EDYUp+NaBaNKlvTxiQjUoCpaWHbZK2z44aBH2rN916rp0pYePw98u3ur390uaJF+A3RtPjg=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GetChainDescriptor returns the description of the chain"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/reflection/v1beta1/app_descriptor/chain"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GetChainDescriptor returns the description of the chain
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"GetChainDescriptorResponse is the response returned by the GetChainDescriptor RPC","properties":{"chain":{"title":"chain describes application chain information","type":"object","properties":{"id":{"type":"string","title":"id is the chain id"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,75 @@
+---
+id: evidence-msg-update-params-mixin-140
+title: "UpdateParams defines a governance operation for updating the x/protocolpool module parameters.
+The authority is defined in the keeper."
+description: "UpdateParams defines a governance operation for updating the x/protocolpool module parameters."
+sidebar_label: "UpdateParams defines a governance operation for updating the x/protocolpool module parameters.
+The authority is defined in the keeper."
+hide_title: true
+hide_table_of_contents: true
+api: eJzNVktv2zgQ/isETy3gWGm32INPm6ZebA/ZGol7SoKAEscSa4rU8uE4MPLfO0NajmznsVj0sD7Y0nCeH7+Z8YYHUXs+ueYXvua3I247cCIoa75KPuHTlZJgKsDDu++dFAFmwonWX6i1Mh8+nfIRd/BPBB8+W/nAJxteWRPABHoUXadVlZwVP7w1JPNVA62gJwm+cqqjUwyEAYb+mfIsNMBQXOzJt9FYeOhgjNHpF81t+QOqgO+dowKCAp8yiKGxToWH44C7oz6UkNKBp2cRGFXhrM4nrZVRA3snYSGiDii0bF3UdsWi0WRiV+Du0RcW/n6QlA9OmZo/YlYp+eMkspyhY2UgB1sXWEKwldWdtZolDQjgUtSYoBjfmBvz97f5dMLO9J5KGxGaEpiPBD3ItxGSirIsIyV0t0jomuoZuL4M9P7s1XrodnbsnTIMM8Ga7IKV2lZL/z4juohGeiYcsF1IkMxGPHG2JTc35qD2jPsxoCO+sK4VyDEelQm/fyKIwYhSg7zbKwi5a5/DfZqVh0V9SapMoygXlW1z8pS20NreY8p4DeVeEXgd80ZlylomVlZJ5jswEnNlQbUDZZIgDuCVS56WYJIR0U2ZaKPvcTKSlVHWEPygfuGceMBXFSBXdUC07Wf0i3qL3ilRPgkuwiMJfGeNz8z5eHp6DOwZUq+qsCcWUbNenXz9mrFwufW41zF9GIYwxCpEvCvkB4M1VBlxcWMOIWgxRVE/M0F6/FKnP1OfwfuDdYeqeIHgHAb6T2W+3pWVlTDQQpJDDW5IfBT99pGnVINQesiGl1jyQqw/8vExmUYcR6Ki/IWeDU0SRFsEX2ThIQn34O+vT7CaZqcRuGLYbvOk60ujLnXQ8VDcDuSnwZdaEFt0ONNzDMloIuHZEgD90x2hSWNpuXXWJzhEaPCtqKxvrR8PI41XH8aHbYIWHhxmTVtzw6PTaNyE0PlJUfhGGGPNSe2wrhPXVeMS72fc2SWtEz2ubMsPkbnKNuwzarLL2Tne6ttuW6GMgfDvPF9k5ewcdzzR8fJpbU/Xou00HCzMp2k72F4vbIsn3VfH8HWvd0v8UGZhjzvsvMFkWa1CE0sqqqAKTzD7e+uWRV8uu5xezdnZ7Cs1sAqUPP9rPp+RiJ1jN1oU5XYUVWpHg1RBpbccU0vR3eZktk/M2MA8hLTKkTStMAOX/x9m7yG568sA61B0GmGl/BOxNlvSX/OXSY/+9miPvGmoYdBosymFh+9OPz6SGFngkATX+LgSThEB6A2DNSAkzi3qkyUQT87zfDyZU2qkrmMaWYezklogW5zhOunCq7q3g56efbuao3K5/TfapkHKnbinfYbfE87pPy5ZJ0Yn2YZrYeqYxhnPPunzE8YG/fY=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UpdateParams defines a governance operation for updating the x/protocolpool module parameters.\nThe authority is defined in the keeper."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.protocolpool.v1.Msg/UpdateParams"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UpdateParams defines a governance operation for updating the x/protocolpool module parameters.
+The authority is defined in the keeper.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParams is the Msg/UpdateParams request type.","type":"object","properties":{"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"params":{"description":"params defines the x/protocolpool parameters to update.\n\nNOTE: All parameters must be supplied.","type":"object","properties":{"distribution_frequency":{"description":"DistributionFrequency is the frequency (in terms of blocks) that funds are distributed out from the\nx/protocolpool module.","type":"string","format":"uint64"},"enabled_distribution_denoms":{"description":"EnabledDistributionDenoms lists the denoms that are allowed to be distributed.\nThis is to avoid spending time distributing undesired tokens to continuous funds and budgets.","type":"array","items":{"type":"string"}}}}}}}},"description":"MsgUpdateParams is the Msg/UpdateParams request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

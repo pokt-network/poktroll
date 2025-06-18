@@ -1,0 +1,75 @@
+---
+id: fee-query-consensus-state
+title: "ConsensusState queries a consensus state associated with a client state at
+a given height."
+description: "ConsensusState queries a consensus state associated with a client state at"
+sidebar_label: "ConsensusState queries a consensus state associated with a client state at
+a given height."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1V9ty2zYQ/RUMn5oZWUzSTh/0VNeTNn5oxrXdp8jjAckViYgEaACUrWr07z0LXkxdEsdu7IljDYDdPbt79qJN5GXuotnn6O+G7Dq6mUSmJiu9Mvo8i2bRH0Th5vbMaEfaNe7KS0/RJKqllRV5siy+iTJyqVU1C0IsLRVpL1SG/9VCkYWAxvPh6lZlOFL8tpa+wGdLd42yBKPeNjSJXFpQJaPZJvLrmgWdt0rn0XY7ObDWYxOOwQlLK+VwJXRTJWPb/cXtcPESBJNoYWwlPU4apf2vvzwLU0EqL/wRTMPFq2EqAcT5zpAwK7LWIkVO+II6XALJKjMhdSbukHfVXbaScMUAy1wfkKHzZcdA78ldYNYR6IkxJUkNpDfsqKtZq+MH79++5T+76E+Fa9KUnFs0peifT6EYofagFEvIui5VGugbf3Estjm0a5IvlDI8r3zJB4Hhuz5ddvqFagPQ2xOsQyDW4TQIxruSc315cSZQGYVhiteWC8qr1rGBFbeBFcdA7Qr81l4fKYJIZpliR2V5MRbZPvq1z0HpnEkVPmXiXvkiuHBQqUL6cJGrFQ1s3QZcZvFN4iXrwIXeekV2WZIIcgL/6EE55CmlQVtPlINUf2KVZbkOQC67AvnYEhQJUTq1VAEwHAFakmnR0/e+ULC5JKoBDqnoZD+Feg/qHKg6FR/NPYH/wpkKMRjiJMvcWISmcqKSa5EWxnDOzVyDAOTHhaK0SBF0yX+NblPhBE3zqSikzZgjSzdpI39SAaLS4EZiSS4BDaqlzlFd55qVwkgqQf7Jjscd6j2PncEj6ee6A8L0V7rhSjUiIVEZrTx+0xDBICkdmyROqHRHgjoHFO9E8JEz+JU6ecyAZCvmqJVMehmqZK4ZJvzSjCo1FSYGJyxHyNBLJOQLeNcp7UuqbmyNmDtmTFNDGetEO5rrhSX6N4QuUNYd1Mp+J/2OJvno2yizXBtKj4qgV8zE3R8hzzYyDIIQnXEJOpE21uIjAsrGup8JimMhm/JInZxq0Wh6qJEmRBbtHEH8IZ1xv2tl4x4ErygP03PwFEc/v48CVFRE6UavpbWS27/yVLlXaXh8V2EuyPyo4BDEceR2e/Yw66R4qmfKPl3dNWpH7vRKjnvX/WdRHuopzPJZFKskjVNM0LhVEa/exXsDwcWbYT/axj1V4s0e67Zxa2t00R5sec6SXfVbWWNLGC68r90sjh16jjb6JLeY/Se2TqcJ0jWtzdJbU5ZT1Gi0H6irVkb8jpcCky3iteIptRVKXJP/Ps1/tY9b5Te8NCzMIdXPCu60OVLQJKwuZt0nkLtHn417Q+Lyw9W1OL04H3et6+sLPhKcc2wcXV3INNRFt7k8pZi5zVFtwXSfBFqY4JbJA804X0k9Uvm6FNuJzkB6Tw8+rkuEijGFNG06+n2OQL/guw0hCCbwYfWuDcgODXE0Gy/qQwfE+eESPex7s/0WjHQWCAxb32wSTLh/bLnd8nG7FYZvDsrJpOQVdyFLRweuDU3sFffXo+Fb0vrITruSZcNvA1dX0ioG/0xHfrrs1vo3h/vX19D07VSvxyB6lI/JCmv/i5A8+S3qBbj2yfLj0Q2J+T/o+jX3ZstslhkPdmS0fXWKbx31OPUHs5SpMPT8Pz9cY+r8BypFeq0=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ConsensusState queries a consensus state associated with a client state at\na given height."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/client/v1/consensus_states/{client_id}/revision/{revision_number}/height/{revision_height}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ConsensusState queries a consensus state associated with a client state at
+a given height.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"client identifier","name":"client_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"consensus state revision number","name":"revision_number","in":"path","required":true,"schema":{"type":"string","format":"uint64"}},{"description":"consensus state revision height","name":"revision_height","in":"path","required":true,"schema":{"type":"string","format":"uint64"}},{"description":"latest_height overrrides the height field and queries the latest stored\nConsensusState","name":"latest_height","in":"query","schema":{"type":"boolean"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryConsensusStateResponse is the response type for the Query/ConsensusState\nRPC method","properties":{"consensus_state":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"title":"consensus state associated with the client identifier at the given height"},"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

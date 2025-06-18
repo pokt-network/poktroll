@@ -1,0 +1,67 @@
+---
+id: evidence-reflection-service-list-all-interfaces
+title: "ListAllInterfaces lists all the interfaces registered in the interface
+registry."
+description: "ListAllInterfaces lists all the interfaces registered in the interface"
+sidebar_label: "ListAllInterfaces lists all the interfaces registered in the interface
+registry."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VE1v2zAM/SuCzmncdrec1hVFF2ADgiQ7dUWhyLStVpY0Ss4aGP3vI+3ETZp+DAOWSyyKjx+Pj2plUmWUkxs5h8KCTsa7BeDaaJC3I+kDoGLbNJcTebU2OTgNR65330xMF9ZOXQIslIYoRxIhBu8ifU9aeX56yn85RI0mMJTiXYjYaHKORWPFzn1MUO0pkEuMUCFYo7sasvvIsFZGXUGtjuMdVTHfxhQmilTBkEOkTQDhi854hBLz2SVXwU4U1a/uqVk6B2Q6kuk7Mjv/O6fq3nRYzQsHrkE5oRDVhlMra7c1lVQAIORiQMS99B2AjiZB3WXZ2mNC40r51P9GlLxQjU2vsOxE4+AxUBOUAxA9/hvZ7/OhfQ57XtxLCUhuhcdapd706Vx2pSZl7H4zbzX5Rq7P/fUxFyOp8txw/crO9iEdRTSFqMpXgQOJ7+pJWLLEYXTP8zqc4uHlT9df4obZriFVnpephK4vlSo6ZNrH2sdspSJkOKxXtj5bEVdnmdlfrEhLB8hL28oGLcGrlEKcZFmslHPenZTo13CCQY8ZPg7+IaG3dqx9LV82uegx4gt5svJpQB+HrZVxDtLfRf7eO/fB6VExrvDHMr2syE2UJlXNisNlHPuEcL89PmS7RGJ+tViKi9mUF8Qky0P8ulzO2CQuSdKeTL2mle40zcvHdH8QmHXJrPbFbL+E80lEGhRdBh9TrdxeyP8hjwNOBpkmeExZsEQQV9INp91K50b20iEsi6d7d3fyocNWQLxazxKiGVTUDYPbllE/0D49sflXA7ghO32uFRq1YoJvbilpBSqndWbNPcCGnxV6uQNLeK1s0+3wy8eDZz3I/fpqSWv2ByuoR7c=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ListAllInterfaces lists all the interfaces registered in the interface\nregistry."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/reflection/v1beta1/interfaces"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ListAllInterfaces lists all the interfaces registered in the interface
+registry.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"ListAllInterfacesResponse is the response type of the ListAllInterfaces RPC.","type":"object","properties":{"interface_names":{"description":"interface_names is an array of all the registered interfaces.","type":"array","items":{"type":"string"}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: evidence-query-group-policy-info
+title: "GroupPolicyInfo queries group policy info based on account address of group policy."
+description: "GroupPolicyInfo queries group policy info based on account address of group policy."
+sidebar_label: "GroupPolicyInfo queries group policy info based on account address of group policy."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vktv20YQ/iuL7SEtIIl2GrSATnVcI/WhgOu4J9sQRsuRuDG5S+9DjiDov2eG5CqUKD8QIL6Ymp355vXN7G5kgKWX01v5X0S3lvcjaWt0ELQ1l7mcyouVztEobI5nn5yN9ZUttVpfmoWVI1mDgwoDOgbZyBy9crpmczKGPHfovdBehAIFKGWjCSKJ7aIRLxlU1A3qhCANAX43JoFmrBpCQd8OH6N2SKEFF3EkvSqwAjndyLCu2cwHp81Sbrf3rOxrazx6Pn9/csL/9iM8Ez4qRW4WsRRJnYNQ1gQ0gS2grim0piTZF89mm57bfbymTAdVuu5gUxkanexAaedccB4cQZePnX9BFbjSjjsTdJuN5vIP3LM0uTl08Ey1X3aTmjDw9Hprn3GU+jMiiEqbY8gkfhNlGs2j0MohBMxnEIb438/YCYigK/QBqlr4GpVerAlDPBVo6Kyfg3gCLzrjodORXFhXsT+Zk8aYUTmSnCA9OZ61ID2iPlPxv9rjIZ+5YLnmJKC86ps0XvoZHvjs8iLlAQHeeZGUd50iuEZlpvNh8dJJ6k80+jGiuPx7rzMvlidqE/74wG5obwAV68j0krkOJQuSTtMrsxbg5jo4cGuxO4EQgMYxF8EOGX5nWORQ2apCk5NWG0iKt49P9nOk82hyUaDD6Z0pQqj9NMtyq/xEWV9ZPzEYnqx7yFYnkw9/ZpXNY4k+a7z+kqo5bt2PTznPFW1HbY9QvTtg39F3CThQD0IVYJbYRNSRkDp1ONBUq6hCdLQyCgh35snGMu8YSma5XiwoCRoempxYUsbMaBeNYYIz6ayH8k2t6v6YZwsgqCN71BAV8CsRjaZDoHPW/dg6fXk4lM37s0Hh4RJdP2QS/f6+HbwAuvQ9bXAO1nydBKz8TxnEbUNq72F51HBXxH7lDrtK4+R4VPdWT7PX58Ac4S6+vmyJ1oXl+3uJTWZ8eU5l1jK45Wq2Om0/ujUxYyfZpgPdkpVHt0oXe3QlAaRx8MRPQywn+xWOXa0mcyr3pLYPwdmypEmp5GGin1sb8ZE0xfXVOTXpddgKtKF5exvyv61yC34/euaOPC9ITSx1KOKc4TLGHqehTo7E9cXnG3F2ddnbRf/c3FyxSJwTrS2JWl6DanjdPVteA95bCLsNYGwQnlpFhzSWoQLTg/w5FNmryo6sAb+GrC6pRBxL055NR59b2dJHdhcE/V+dph99EpFsmh4O1IaCEmLrzYbD+9+V2y2LH5sH5/SWPlfgNMy5xvyE1J6/ibwLKD0OAt2tEvnrdfcY/E382EvzaM5pWxjeFSsoI/+izwdc916l23tSLRByWj8cdXt6Rm/JOvTsBsuOebkbzk8XN7QWvgFanhWu
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GroupPolicyInfo queries group policy info based on account address of group policy."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/group/v1/group_policy_info/{address}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GroupPolicyInfo queries group policy info based on account address of group policy.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"address is the account address of the group policy.","name":"address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryGroupPolicyInfoResponse is the Query/GroupPolicyInfo response type.","type":"object","properties":{"info":{"description":"info is the GroupPolicyInfo of the group policy.","type":"object","properties":{"address":{"description":"address is the account address of group policy.","type":"string"},"admin":{"description":"admin is the account address of the group admin.","type":"string"},"created_at":{"description":"created_at is a timestamp specifying when a group policy was created.","type":"string","format":"date-time"},"decision_policy":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"decision_policy specifies the group policy's decision policy."},"group_id":{"description":"group_id is the unique ID of the group.","type":"string","format":"uint64"},"metadata":{"type":"string","title":"metadata is any arbitrary metadata attached to the group policy.\nthe recommended format of the metadata is to be found here:\nhttps://docs.cosmos.network/v0.47/modules/group#decision-policy-1"},"version":{"description":"version is used to track changes to a group's GroupPolicyInfo structure that\nwould create a different result on a running proposal.","type":"string","format":"uint64"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

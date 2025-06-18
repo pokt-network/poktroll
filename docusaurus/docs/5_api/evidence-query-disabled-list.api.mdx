@@ -1,0 +1,64 @@
+---
+id: evidence-query-disabled-list
+title: "DisabledList returns a list of disabled message urls"
+description: "DisabledList returns a list of disabled message urls"
+sidebar_label: "DisabledList returns a list of disabled message urls"
+hide_title: true
+hide_table_of_contents: true
+api: eJydVMFu2zAM/RVB5yRuu1tO67pgK7ABWZqdgqFQZMZWI0uaRGcNjPz7SNsJvKZdi+YSmSIfycdHNRJVkeR0JX/UEPfy10j6AFGh8e42l1M525kcnIb2+v6zSWptIf9mEsqRjJCCdwkIoJFXFxf8l0PS0QQGoPBrkWqtIaVNbcXRfUKh2jsEhxyhQrBGtymzh8RhjUy6hEqd4w0LWPRwwiSBJZzgBe4DiI2PrbUtPBvGicX8RlSApc+5EvYmZL9+AM1NhcgMoOm6yvvAe8stk6F3VzGqPXkbhCoN7AmjcYU8dL8Rlb9RtcVnmHGidvAYKCnkAmKket9F0P/r1z6HgZch0AIiuRE/lcLO9OFKtqWiMja9ockXcn3srs+5GEmV54brV3Y+DGkpqkgeqng28ETiSxogyrCOLgkleEDCb8RxYqLHFXWkpjgNT5ziC2hLV1jSR6Z9qnzKtIm6NpjtLrMeoJv4SCaIO4i8I40kKIopEUOaZlkqlXPejYvodzCOQU/WROEk+C1Gb+1E+0o+Lf6uixGfyJOFSMS/Dlsp4xzg25C/d84dOO2zcRt/Lr+bktxEYbCs1wyXMfaY4v74uM2OicRidrcU1/Nb3hODlofzdbmcs0nckFQ9mTqtKt1q1amKnV4DZr0xq10x/Uk4jyLRdOgy+ISVcgPId479n7ZPCkN4xCxY4oCTtfw3vSRWspME99WJgk67S4YaCoOYLT0/CSvZNGuV4Ge0hwObf7cv6XRFx52KhkP4i/KUoHJaPlbSFvb8CNDbGFp8Zet2456uOk/wpNwvsyUtxV9BzAEn
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"DisabledList returns a list of disabled message urls"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/circuit/v1/disable_list"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+DisabledList returns a list of disabled message urls
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"DisabledListResponse is the response type for the Query/DisabledList RPC method.","type":"object","properties":{"disabled_list":{"type":"array","items":{"type":"string"}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

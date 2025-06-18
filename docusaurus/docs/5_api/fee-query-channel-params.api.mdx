@@ -1,0 +1,64 @@
+---
+id: fee-query-channel-params
+title: "ChannelParams queries all parameters of the ibc channel submodule."
+description: "ChannelParams queries all parameters of the ibc channel submodule."
+sidebar_label: "ChannelParams queries all parameters of the ibc channel submodule."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVt9v2zYQ/lcIPbWAY6VdsYc8LQu6NQ8rstR7iouAps4Sa4pUScqpZ/h/73ek5NhxsKzDAgSST/fzu++O3BZR1qG4uCv+7Mlvis+TwnXkZdTOXlfFRfEbUfpyf9VIa8ncSC/bUEwKT6FzNhCMt8Xb83N+VBSU1x0bw/RShF4pCmHZGzGqT2GqnI1kI1vIrjNapXDll8Bm2yKohlp56i/lcZTG7eBU6CBiQ/sgIm46EkvnkzTZlUeG4vbmSrQUG1dxQqyOAG7xhVTE784zCFHn4rpc8kk+WS4qWmpLOYEkokg+CLdMktZVvaGXg/Rd7WVF91G35Pp4Gm2WP+zDSSvoG6meP0MoKwOxCNH3KvY+V3/+7kzlsgUelUFe07mdNYBLW2V6REDKakVRGL0ktVGG9ppCBvFAxvCTKxkyTN9DI1d06PNSrKXRlRiz5BZLbYMgDVsvHHJDQgsXG0ZGCq4zRNl2KKQSC+PUSjSk6yaKV4G+9mQVvX4ZtmxyitZH51tpzCZlfktrHSD/kP3n6j214CBVQkZBUjVj9IdGA4QVUadtPbej7ce+XVDmU0CLp+KDe6A1JMG1xOUGsqEHaKZ2HjWDGK3cCNU4x3x0cwtyAmd2METSVihUIvnpbKU5dQA2radA1lfcwVWYoKUy0lmLFNHguV14kiukJrizNRp4bdkpgiiJaZwcVTxk/aTi4KAk49wOiXCztO2Zw04smLNWR/yrhGCylIFDomA70uEY1DlSiUGkGp9pWtTRsOCxA5KjuGejVDLKNMFzy2miLstZKddivLhhNTMrgjgucWtwOo571/sOmKcJ7Ds4Y58g2dwuPdHfCTqjgUQ4YZMfarp/pNVQCeYKhjBYMrHwpei1jT+/O6jtoLMPIIBObRG1ZsxGx8Vu8hjEpub8eJDRQWpiCpLrYVhV7z1eASgH2+3Ychi0HwuUJ/JxSl+hHgvEAzFXw2shl1hzPC0Ynbz60h5BE8ZFkYwFL7Pd/m+COV3K3jwzspdW9Ja+dWAMmkzew9V/OjX+eWMoV9GBFuqmGl04wAKin94WKVUMpwkH2tJ7uYGujtSGl2P9kj8/xZ1hkFUeeGluDk0SRIAtyPpZwz2Ih8gdH23YnV7zAYHVfXoe6YUS45kQ+sXj8ZRPQ3ir0wR3Mjb4UUK/VM5TORiV6zdlN94BAnmsQL4+4ADzBvpNjF24KMvA2s6e1d6t6cx3aroAmNPOraJ3xkwxzMXTMj5lG/ErNPmARgtedttiF1iK/87zH1k5O8dVR9ulOyUi4ATZa8xwv2B3Jfs+g90DFnI5BhK37z/NxOXN9eF6m81uWCSuQFoHUWatVIm1Fq1gfF9wzMxjVHMyw5vArhO8W/ER2y220h64/F8IcATCnnmRvsWyM0CEQ6dubAdy3BXwlUr0qdLsFG/rN4lAiSRAuUG+rL3dLnBC/eXNbsfir+nCeXGH17X0Wi4YwrvPiNLgNsOLEaxa0YZXA66RHbMSl4w+zeHTBcDd3DP49/czjMp3fM/gKA==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ChannelParams queries all parameters of the ibc channel submodule."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/channel/v1/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ChannelParams queries all parameters of the ibc channel submodule.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryChannelParamsResponse is the response type for the Query/ChannelParams RPC method.","type":"object","properties":{"params":{"description":"params defines the parameters of the module.","type":"object","properties":{"upgrade_timeout":{"description":"Timeout defines an execution deadline structure for 04-channel handlers.\nThis includes packet lifecycle handlers as well as the upgrade handshake handlers.\nA valid Timeout contains either one or both of a timestamp and block height (sequence).","type":"object","properties":{"height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}},"timestamp":{"type":"string","format":"uint64","title":"block timestamp (in nanoseconds) after which the packet or upgrade times out"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

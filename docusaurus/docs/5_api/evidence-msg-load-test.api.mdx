@@ -1,0 +1,72 @@
+---
+id: evidence-msg-load-test
+title: "LoadTest defines a method for executing a sequence of load test operations."
+description: "LoadTest defines a method for executing a sequence of load test operations."
+sidebar_label: "LoadTest defines a method for executing a sequence of load test operations."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVt9v2jAQ/lcsP6/Q/dAeeFpbVdqkVUUte0JV5SRH4tWxPftCQYj/fXdJCKGwQrfxgBKf7/P9+O5zVhJVHuVoKm9iLh/eSechKNTOfsvkSF7PdQY2BTI+fncqm0BE+U4G+FXR06XLlnK0kqmzCBb5UXlvdFoDDH9GZ3ktpgWUip8yiGnQnq0ETqAbzFsfRQYzbSEKJUqIUeUgGFdpq21Oi5HPpFCEmwlDbgLJT3ThxgHFhUsPBOySn5BynD6wHTXEOkxlDAR+avdFDIRN+2YulIril8kSQa65CrG3T4WglrRNI5T99e6c3bxuvdD9NBpr0qSRUA5FqcLTNvTBXqQqRXcg0DWfZIBC3JoS5wwoyzZY6IjxsI1Cb+vUs2tqW04V6RWAlj5/YocnWD4asDkWrxas6hwiQHbi1rkyFbwFvf29LPT/JxATWwdOBEMFa16InmxNWz6cn++z+ELEKk3pwFllxGY7Y/37VNy1aK9nhgXwuZXByKmpQ8kdHw50qMwjhOBCPLGNjQvqEk5vIrdwpijWA4W0orKw8BQdZKKO5O/qeUQFXAZHZ+Djh2bYqMbmTUqwe9aXxrw3x4Stskxz/MqM+y51idomH3I8OAcbvuzwBAuXCcpJwALSCk+fgcaVYL2rxd4rnlI5TF0sXRx0AjaYvx8QWYe9eyFCmAPzZ7qSVTDkVSD6OBoOY6GsdfYsD24OZ8GnhINq4N0TBmfMIHXlno7eNz7iknaKu/EVteQ4bElTYQFPQ75pNjfgdPkxl+62d9v1QpXeQP/u2PK7viKmnVZvDRuJZgXZinLz1pfh812R3QI0Srp935XLjgsPLOt25vYn6aqgvESusagSzn/IxTijRJ9deBpuKiPuru8n4mL8jbVBI+cpv04mY14SVxQiXR7t2FGOfIpVPOryGHAt8USDJpj2SViHRD9kIxOrVLYH+X8ZvFONboYQFjj0hkrDMdQ8WrXknso/kJvAOnoTPwqeCNq9WiUqwo9g1mtepogCfQhNH7hXQauEaznl/hSgMqYN8YR6za1pROxswjG1rWVdeSloTPXG44IuF4+v7n3oDe349n5Cm5P206ys1U4G9cy3G/2PZM3d7lOgXltJo2xe1ZojG0z+/QbLPYpG
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"LoadTest defines a method for executing a sequence of load test operations."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.benchmark.v1.Msg/LoadTest"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+LoadTest defines a method for executing a sequence of load test operations.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgLoadTestOps defines a message containing a sequence of load test operations.","type":"object","properties":{"caller":{"type":"string","format":"byte"},"ops":{"type":"array","items":{"type":"object","description":"Op is a message describing a benchmark operation.","properties":{"actor":{"type":"string"},"delete":{"type":"boolean"},"exists":{"type":"boolean"},"iterations":{"type":"integer","format":"int64"},"key_length":{"type":"string","format":"uint64"},"seed":{"type":"string","format":"uint64"},"value_length":{"type":"string","format":"uint64"}}}}}}}},"description":"MsgLoadTestOps defines a message containing a sequence of load test operations.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgLoadTestResponse defines a message containing the results of a load test operation.","type":"object","properties":{"total_errors":{"type":"string","format":"uint64"},"total_time":{"type":"string","format":"uint64"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

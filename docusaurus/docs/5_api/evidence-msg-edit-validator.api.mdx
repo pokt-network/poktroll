@@ -1,0 +1,72 @@
+---
+id: evidence-msg-edit-validator
+title: "EditValidator defines a method for editing an existing validator."
+description: "EditValidator defines a method for editing an existing validator."
+sidebar_label: "EditValidator defines a method for editing an existing validator."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vt9v2zYQ/lcI7mEbYMtt8jDAT0tTDwuKYobjbg9JYNDS2WJNkRpJ+UcN/++7E2VLtpS5Bdo8BBbv+B1599133HMvlo4Pn/hHt+QvPW5ysMJLox8SPuSjtUxAx4DG2SiR/m+hZCK8sbzHLfxbgPPvTLLjwz2PjfagPf0Uea5kXKIMPjujac3FKWSCfiXgYitzsmIERD4DZgkspAbHBHt8/4Fl4JxYAlugBdBP6iUTmsFWuvL3+rgvwhP5XQ4IaeafIfb4nVu6jZfgwgGzTDqHYWd4Q6ClaoPzFrEIQHpFC/8Ay4WjM1hYgKUMMG+YT4Fp2LAaiRESHihhmdTMgVrg+RUsy7sz4Z619D87po1nGXrRQXeEVOT4GyL2sCht4TPplREwP2Al3usLJAF/I5Vic3jWX8Aa/PIp7mIbUUIlIROFdCmTC0pOQEO7Y5JqkkASPevJ6I8h++nm9rdbfuidF+GyJu/rr0Y51o0SnezX056AF1K5dpTKUEVgBu9umSmtQrHK2sCvqoSHJ05iqXZtzKOlPrauIU9GJ5da+MIC+wW2Efs0NtYzvNcH2M2Fg187g2ZGyxXYdszK0MhUWmCx+xZEIuYKKSOyQGCqbhdh6yAO4sLiEWfUTSL27WiXHp03xU6Tqgx5dGeVe2fUDcydDB1xHqwydMY42pTUqw7UA6VM6hn1xKzuiXbXod8pJzORJBY7vsPrUCL+OO0gNZMWUPS8LeBACy432gUS37x5087OHXNFHGOQRaHY0Z2wvpMUTirI07WIP+g0OL/0MTKjjLX78Zi4hShUB5/uUC80bHN0RbkBaxuI33SXa+KbNBWXdGkJNEWwOJnwYen2JkjTSTAqb2Gt2KEv0i1z12P9HsxtCvU48ksG/o6bWwJbA11e4V6bfa9RLwOfmuTrWBd8ESw3rryI8Cl+DWLjMuMi58UK90Trt3NMytuoVXxOkmHXYGmE73lhFe5Ovc/dcDBwqdDa6P7SmjX0bR5HhBLlZuWtUSrCMcYvL/UY9rB36Mkm43ssyHVYVButwX8d8sfgHMDxwUFMmtRPidFWZLmCzoFdD+rW+KooU3vUM6JeO0l4vdQW3Np2ksXmFOiStHpLh5I155ZemHYH3qeYEbbEqV7MKXMDSmMfU7QxdjU45pRNRo9Tdjd+aDxT/pxOx7TE7rFbDS6Fdq3mBo0ddLoGXAowEigcpvpVvkoceDISNXGeNSC/B/MvKlh1nIetH+QKE0KRS97tq6Z44q83BeKdtwXyKqWOwl37Pc30T1YdDrSMRLNIiqcXKhY+s+aUyacXjJbivCZyYB+tgHhzH6SvP6WzlbUtSjW6lEFqkbDjDsdB7v/X96XR9OO/HqfoPK9e0FmpkdyKDc0j/D/knB7ktLsUtnJtz5XA516pVDxg0t9/ab0wkA==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"EditValidator defines a method for editing an existing validator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.staking.v1beta1.Msg/EditValidator"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+EditValidator defines a method for editing an existing validator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgEditValidator defines a SDK message for editing an existing validator.","type":"object","properties":{"commission_rate":{"type":"string","title":"We pass a reference to the new commission rate and min self delegation as\nit's not mandatory to update. If not updated, the deserialized rate will be\nzero with no way to distinguish if an update was intended.\nREF: #2373"},"description":{"description":"Description defines a validator description.","type":"object","properties":{"details":{"description":"details define other optional details.","type":"string"},"identity":{"description":"identity defines an optional identity signature (ex. UPort or Keybase).","type":"string"},"moniker":{"description":"moniker defines a human-readable name for the validator.","type":"string"},"security_contact":{"description":"security_contact defines an optional email for security contact.","type":"string"},"website":{"description":"website defines an optional website link.","type":"string"}}},"min_self_delegation":{"type":"string"},"validator_address":{"type":"string"}}}}},"description":"MsgEditValidator defines a SDK message for editing an existing validator.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgEditValidatorResponse defines the Msg/EditValidator response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

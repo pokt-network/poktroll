@@ -1,0 +1,72 @@
+---
+id: evidence-msg-multi-send
+title: "MultiSend defines a method for sending coins from some accounts to other accounts."
+description: "MultiSend defines a method for sending coins from some accounts to other accounts."
+sidebar_label: "MultiSend defines a method for sending coins from some accounts to other accounts."
+hide_title: true
+hide_table_of_contents: true
+api: eJztVk1v2zgQ/SsEL3vxR9u9+bRJEKA5ZGMk7l6coKWkscRaIlWSsmMY+e/7hpJtJXbTbdHc1geDIoePM+/NDLmVQeVeTuby2ufyYSBtTU4Fbc1VJifycqUzMilh8fN1UwZ9RyaTA+noW0M+nNtsIydbmVoTyAQeqroudRoRxl+9NTzn04IqxaOMfOp0zatAB+oeVDiqHXmgeKGMUC7RwSm3ERVbDLUZdCPbBOF5Q0Xeq5xGcCdsagKeTb5SGvBdOw4jaPJ8qDZ1E/zx8VdxfiAwW+tAIiFtcvEFjpAKlH0ZCGvKjVBladceY4rnkhMRcCRmhfZC+3uD8NIlZZgX/ZD+8OIfVeoMYOfK67TnqXJObfCJY6vo2csITngqKptR6QVoMV6lvNR5chSxyjJw2Qf2wSE4+TSAVtr0V37SlQtsB2MLbQhCiWCXZMRahwIfSBVbaRPFh4hZFLKyjQmje3Nv/r6ZXU7AGnWTYqGpBGtR8Ct8rwudFkJXdUlVTIQA27TxwVZQOxQ2uzde5zigQXiCk1A78J5sRG5zCw6CPUFGPOwkF9HhEyvtD8XQhF3q/BpbNxHglHId9P/avY12rX5v1G52zstJcA098YSvrfGtzx/evTvuNWfCN2kKiEVTip05Y/2G1nnbwe2lZephMO5H25kwWccdc8fWQmHHCeeNaAw91jCFYuScdb8Ww+t9OkWV9Kw0QHNyMFtYV6nQTv35oRU/KF3+VCk8P+uvdvk4ewZcgJr9V+W0vyVS1CXBKy3jhUx7BQ5l11aDQFAxsfjOiXUtFg614m2FGktTznsoaYWFmm4/w3S3AECvrY+RqVDga5xaX1k/SpRZjlbvE1D0fvQsDWDrya3I8YW/lY0rsa0IofaT8dgXyhhrhrmzKxq6Oh0xwqi2y+BsWY5SVNvL8O7aPeIcluJ2egFpfgxbKW0Mhf+GfN0at+B4nnBO3R4eH5ePijtO/5af91roTp1955wfWsphreskeykf+KB96/8teEgMbRb2uLQuCgQocvTgJmEixszKEBGvrVuOdxSJ28u7mTibXnHl6sABy4+z2ZSnxAXK0GKqrUNcL3yKURUb/QiYa4nzoXWmGwljuecFXuQUq5TpQb5JSj8jZV9bgR7DuC7BELsS82rbZftcfifbAXbId+hYcI3AfLtNlKdPrnx64mlkkMPTdY7hSjmtEuZ0zjoVpPDGi9IuaRNvzdjdhjN2is3LJjacl52Oc7/dcYZOX4dXbR96ZTy9uZvBOOke01Vsg9KpNV81+J9Iye9y3h17V5zbylKZvInNSLaY/PsXrUQupg==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"MultiSend defines a method for sending coins from some accounts to other accounts."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.bank.v1beta1.Msg/MultiSend"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+MultiSend defines a method for sending coins from some accounts to other accounts.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgMultiSend represents an arbitrary multi-in, multi-out send message.","type":"object","properties":{"inputs":{"description":"Inputs, despite being `repeated`, only allows one sender input. This is\nchecked in MsgMultiSend's ValidateBasic.","type":"array","items":{"type":"object","description":"Input models transaction input.","properties":{"address":{"type":"string"},"coins":{"type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}},"outputs":{"type":"array","items":{"type":"object","description":"Output models transaction outputs.","properties":{"address":{"type":"string"},"coins":{"type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}}},"description":"MsgMultiSend represents an arbitrary multi-in, multi-out send message.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgMultiSendResponse defines the Msg/MultiSend response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

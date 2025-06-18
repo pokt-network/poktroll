@@ -1,0 +1,75 @@
+---
+id: evidence-msg-create-vesting-account
+title: "CreateVestingAccount defines a method that enables creating a vesting
+account."
+description: "CreateVestingAccount defines a method that enables creating a vesting"
+sidebar_label: "CreateVestingAccount defines a method that enables creating a vesting
+account."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vk1v2zgQ/SsET1vAsdtu0YNPTYMAm0O3RuLdSxIENDWW2FAcLTlyYhj57ztDyYkaO0636AqwQXE+OG/4+KiNJlMmPb3UX1Kpr0caG4iGHIazQk/16coVECyw8eYkgiH4GxK5UB5bi20gPdIR/ml57jMWaz3daIuBgA08NE3jnc3JJt8SBplLtoLayKiAZKNrxMoL8QL78qsCli5AUkbVkJIpQVFlSEEwC8/TVmLYne2rLvAqmC50zLXRugFOjotvYKXWJgo8cpByfXWGwKPez8Ro1uzmCOq0W+MJujAoiPAWgrpzVPELdwlrFzJYZULBP9XlH1+Fq/Dn1/npVM0r6CfV0oEvlEvid8bvd5WzlXJ146Hm9iWGCcq2ibBm5FRhcRWSK3mBNvLq0nQXoVCLtSqxRAZG+BOIE0XumX4Y6Qxgj4UfMXqzhmJgXiB6MEEiIRQ35GrYbRhbFC63O6NMUm1w90qc1W/cywTMliK9GRTeLzvSS4y14VK1C/Txg6yzjFjfmKJg/GkvBMID5i2Q/590273RU4otPMhEajCkbgvev32726hjlVprea1l69XWXXL92tN03md+BCgkY9/J3i5s61DSyV1ubRu6NK2nPZACbzbcN+zKNIUYMf4cssOMtljAwIvJAiXEZ/z5/X3HcDLOp0Pn/fBanzrzLrVGmnnnpH7jZ8OQ3KKeQy9wcpeVr1JS1OA/MbIL4dQNpgzLUMVvE4upxjTuQ8ardwtu0bvxS4zgyARxBVHui41uo+ckFVGTppNJqkwIGI7KiCs4io0dS7Jxg7cU0fuxZXV5jvSii1Gf2VOdz054l15PWxsXAtCPZf7SOXfJ+XYTep0/XVin90YUdyiNl0/DJzHqxfFx464HkiiHfCiCAwn7TrCe5oc6NZAvF5a459KpGIIq+ZZpFwJ1IriPGNMdxtvJtgnq/PRiro5nZ5LekUDSf8znM5lSJ3zmWK37Q2dsPnTB5GJfSyyFyY53xfQjFZBYvEmMQqnahEHKX8/f7zryeIoI7mnSeG6P1JFps+mpfalfpjbn20tu3tNKjgcHbzYLk+Cv6B8eZJrpEvnb5pKHKxOdlCxvvGgFpmC1EdLcwjp/ImRVO5pLieLu2yw0zxVOiN5F8PLQ0EHf68EJnn29mLPzov/aqrP86Wju5OLh/6nW8g0n0Vmz8txGexPKNouQ7nLK8y+YAIpx
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CreateVestingAccount defines a method that enables creating a vesting\naccount."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.vesting.v1beta1.Msg/CreateVestingAccount"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CreateVestingAccount defines a method that enables creating a vesting
+account.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgCreateVestingAccount defines a message that enables creating a vesting\naccount.","type":"object","properties":{"amount":{"type":"array","items":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"delayed":{"type":"boolean"},"end_time":{"description":"end of vesting as unix time (in seconds).","type":"string","format":"int64"},"from_address":{"type":"string"},"to_address":{"type":"string"}}}}},"description":"MsgCreateVestingAccount defines a message that enables creating a vesting\naccount.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgCreateVestingAccountResponse defines the Msg/CreateVestingAccount response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
