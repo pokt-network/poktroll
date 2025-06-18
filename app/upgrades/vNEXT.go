@@ -43,13 +43,13 @@ const (
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
-//   - Update the recovery allowlist to include the additional accounts
-//   - Slim down excessively sized proof module events. This involves a change in multiple event
-//     protobuf types. Since nodes syncing from genesis are expected to be running distinct binaries,
-//     swapping between them at the respective onchain upgrade heights, there is no state migration
-//     required. This WILL have an impact on offchain observers who consume/operate on historical data.
-//     Proper protobuf type (pkg-level) versioning is required to mitigate this.
-//     See: https://github.com/pokt-network/poktroll/issues/1517.
+//  1. Update the recovery allowlist to include the additional accounts
+//  2. Slim down excessively sized proof module events:
+//     - Changes multiple event protobuf types.
+//     - Nodes syncing from genesis will run distinct binaries and swap them at the respective onchain upgrade heights—no state migration required.
+//     - WILL impact offchain observers who consume/operate on historical data.
+//     - Proper protobuf type (pkg-level) versioning is required to mitigate this.
+//     - See: https://github.com/pokt-network/poktroll/issues/1517.
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.

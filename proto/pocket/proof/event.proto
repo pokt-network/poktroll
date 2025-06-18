@@ -48,11 +48,10 @@ message EventProofValidityChecked {
   // Next index: 6
 
   // The following fields were removed to minimize block size.
-  // (see https://github.com/pokt-network/poktroll/issues/1497)
+  // See https://github.com/pokt-network/poktroll/issues/1497.
   reserved 1; // pocket.proof.Proof proof = 1 [(gogoproto.jsontag) = "proof"];
   reserved 3; // pocket.proof.ClaimProofStatus proof_status = 3 [(gogoproto.jsontag) = "proof_status"];
 
-  // TODO_UP_NEXT(@bryanchriswhite, #1497): Dehydrate the claim's root hash.
   pocket.proof.Claim claim = 5 [(gogoproto.jsontag) = "claim"];
   uint64 block_height = 2 [(gogoproto.jsontag) = "block_height"];
   // reason is the string representation of the error that led to the proof being
