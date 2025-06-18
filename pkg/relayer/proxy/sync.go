@@ -18,6 +18,17 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
+func closeBody(body io.ReadCloser, logger polylog.Logger) {
+	if body == nil {
+		// just in case it comes before the body really exists
+		return
+	}
+	e := body.Close()
+	if e != nil {
+		logger.Error().Err(e).Msg("failed to close the request body")
+	}
+}
+
 // serveSyncRequest serves a synchronous relay request by forwarding the request
 // to the service's backend URL and returning the response to the client.
 func (server *relayMinerHTTPServer) serveSyncRequest(
@@ -27,7 +38,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 ) (*types.RelayRequest, error) {
 	startTime := time.Now()
 	// defaulted to 500 and only set to 200 at the very end to avoid need write it everywhere
-	statusCode := uint(200)
+	statusCode := 500
 
 	logger := server.logger.With("relay_request_type", "synchronous")
 	requestStartTime := time.Now()
@@ -42,12 +53,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Warn().Err(err).Msg("failed creating relay request")
 		return relayRequest, err
 	}
-	defer func(Body io.ReadCloser) {
-		e := Body.Close()
-		if e != nil {
-			logger.Error().Err(e).Msg("failed to close the request body")
-		}
-	}(request.Body)
+	defer closeBody(request.Body, logger)
 
 	if err = relayRequest.ValidateBasic(); err != nil {
 		logger.Warn().Err(err).Msg("failed validating relay request")
@@ -165,9 +171,9 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		"service_id", serviceId,
 		"supplier_operator_address", meta.SupplierOperatorAddress,
 	).Add(1)
-	defer func(startTime time.Time, statusCode *uint) {
+	defer func(startTime time.Time, statusCode *int) {
 		// Capture the relay request duration metric.
-		relayer.CaptureRelayDuration(serviceId, startTime, int(*statusCode))
+		relayer.CaptureRelayDuration(serviceId, startTime, *statusCode)
 	}(startTime, &statusCode)
 
 	relayer.RelayRequestSizeBytes.With("service_id", serviceId).
@@ -183,12 +189,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("failed to build the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer func(Body io.ReadCloser) {
-		e := Body.Close()
-		if e != nil {
-			logger.Error().Err(e).Msg("failed to close the request body")
-		}
-	}(httpRequest.Body)
+	defer closeBody(httpRequest.Body, logger)
 
 	// Configure the HTTP client to use the appropriate transport based on the
 	// backend URL scheme.
@@ -209,15 +210,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	if err != nil {
 		// Do not expose connection errors with the backend service to the client.
 		// Capture the service call request duration metric.
-		relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, 500)
+		relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, statusCode)
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
-	defer func(Body io.ReadCloser) {
-		e := Body.Close()
-		if e != nil {
-			logger.Error().Err(e).Msg("failed to close the response body")
-		}
-	}(httpResponse.Body)
+	defer closeBody(httpResponse.Body, logger)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 	// If the backend service returns a 5xx error, we consider it an internal error
