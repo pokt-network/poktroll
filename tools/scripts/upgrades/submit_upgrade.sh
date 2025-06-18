@@ -111,31 +111,35 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
-# Validate environment
+# Validate environment and set Grafana dashboard link
 case $ENVIRONMENT in
 local)
     RPC_ENDPOINT="localhost:26657"
     FROM_ACCOUNT="pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
     CHAIN_ID="pocket"
     NODE_FLAG="--node=localhost:26657"
+    GRAFANA_DASHBOARD="NA"
     ;;
 alpha)
     RPC_ENDPOINT="https://shannon-testnet-grove-rpc.alpha.poktroll.com"
     FROM_ACCOUNT="pnf_alpha"
     CHAIN_ID="pocket-alpha"
     NODE_FLAG="--node=https://shannon-testnet-grove-rpc.alpha.poktroll.com"
+    GRAFANA_DASHBOARD="https://grafana.poktroll.com/goto/6u7cD7PHg?orgId=1"
     ;;
 beta)
     RPC_ENDPOINT="https://shannon-testnet-grove-rpc.beta.poktroll.com"
     FROM_ACCOUNT="pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
     CHAIN_ID="pocket-beta"
     NODE_FLAG="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+    GRAFANA_DASHBOARD="https://grafana.poktroll.com/goto/6u7cD7PHg?orgId=1"
     ;;
 main)
     RPC_ENDPOINT="https://shannon-grove-rpc.mainnet.poktroll.com"
     FROM_ACCOUNT="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
     CHAIN_ID="pocket"
     NODE_FLAG="--node=https://shannon-grove-rpc.mainnet.poktroll.com"
+    GRAFANA_DASHBOARD="https://grafana.poktroll.com/goto/tcccD7EHR?orgId=1"
     ;;
 *)
     print_error "Unknown environment '$ENVIRONMENT'. Use: local, alpha, beta, or main"
@@ -173,10 +177,10 @@ echo ""
 # Step 1: Export environment variables
 print_step "Step 1: Setting up environment variables"
 echo ""
-print_command "export RPC_ENDPOINT=$RPC_ENDPOINT"
-print_command "export UPGRADE_TX_JSON=\"$UPGRADE_TX_JSON\""
-print_command "export NETWORK=$ENVIRONMENT"
-print_command "export FROM_ACCOUNT=$FROM_ACCOUNT"
+print_command "$ export RPC_ENDPOINT=$RPC_ENDPOINT"
+print_command "$ export UPGRADE_TX_JSON=\"$UPGRADE_TX_JSON\""
+print_command "$ export NETWORK=$ENVIRONMENT"
+print_command "$ export FROM_ACCOUNT=$FROM_ACCOUNT"
 echo ""
 
 # Step 2: Get current height and calculate upgrade height
@@ -212,10 +216,10 @@ print_step "Step 3: Submit the upgrade transaction"
 echo ""
 print_header "🚀 COPY-PASTE COMMAND TO SUBMIT UPGRADE:"
 echo ""
-echo -e "${CYAN}pocketd \\"
-echo -e "${CYAN}  --keyring-backend=\"$KEYRING_BACKEND\" --home=\"$HOME_DIR\" \\"
-echo -e "${CYAN}  --fees=$FEES --network=${ENVIRONMENT} \\"
-echo -e "${CYAN}  tx authz exec ${UPGRADE_TX_JSON} --from=${FROM_ACCOUNT}${NC}"
+echo -e "${CYAN}$ pocketd \\"
+echo -e "${CYAN}    --keyring-backend=\"$KEYRING_BACKEND\" --home=\"$HOME_DIR\" \\"
+echo -e "${CYAN}    --fees=$FEES --network=${ENVIRONMENT} \\"
+echo -e "${CYAN}    tx authz exec ${UPGRADE_TX_JSON} --from=${FROM_ACCOUNT}${NC}"
 echo ""
 
 # Step 4: Verification and monitoring commands
@@ -223,15 +227,22 @@ print_step "Step 4: Verification and monitoring commands"
 echo ""
 print_header "📋 COPY-PASTE COMMANDS FOR MONITORING:"
 echo ""
-echo -e "${CYAN}# 1. Watch the upgrade plan:${NC}"
-echo -e "${CYAN}watch -n 5 \"pocketd query upgrade plan --network=${ENVIRONMENT}\"${NC}"
+# Grafana dashboard link for monitoring
+if [ "$GRAFANA_DASHBOARD" != "NA" ]; then
+    echo -e "${NC}# 0. Monitor the upgrade via Grafana dashboard:${NC}"
+    echo -e "${CYAN}  $GRAFANA_DASHBOARD${NC}"
+    echo -e "${YELLOW}  Please monitor the upgrade process using the above Grafana dashboard link.${NC}"
+    echo ""
+fi
+echo -e "${NC}# 1. Watch the upgrade plan:${NC}"
+echo -e "${CYAN}$ watch -n 5 \"pocketd query upgrade plan --network=${ENVIRONMENT}\"${NC}"
 echo ""
-echo -e "${CYAN}# 2. Watch node version:${NC}"
-echo -e "${CYAN}watch -n 5 \"curl -s ${RPC_ENDPOINT}/abci_info | jq '.result.response.version'\"${NC}"
+echo -e "${NC}# 2. Watch node version:${NC}"
+echo -e "${CYAN}$ watch -n 5 \"curl -s ${RPC_ENDPOINT}/abci_info | jq '.result.response.version'\"${NC}"
 echo ""
-echo -e "${CYAN}# 3. Watch the transaction (replace TX_HASH with actual hash from step 3):${NC}"
-echo -e "${CYAN}export TX_HASH=\"<REPLACE_WITH_ACTUAL_TX_HASH>\"${NC}"
-echo -e "${CYAN}watch -n 5 \"pocketd query tx --type=hash $\{TX_HASH\} --network=${ENVIRONMENT}\"${NC}"
+echo -e "${NC}# 3. Watch the transaction (replace TX_HASH with actual hash from step 3):${NC}"
+echo -e "${CYAN}$ export TX_HASH=\"<REPLACE_WITH_ACTUAL_TX_HASH>\"${NC}"
+echo -e "${CYAN}$ watch -n 5 \"pocketd query tx --type=hash $\{TX_HASH\} --network=${ENVIRONMENT}\"${NC}"
 echo ""
 
 # Step 5: Post-upgrade checklist
@@ -247,7 +258,7 @@ echo ""
 echo "3. Only proceed to the next environment (Alpha → Beta → MainNet) after current upgrade succeeds"
 echo ""
 echo "4. Generate release notes using:"
-echo -e "   ${CYAN}./tools/scripts/upgrades/prepare_upgrade_release_notes.sh $VERSION${NC}"
+echo -e "   ${CYAN}$ ./tools/scripts/upgrades/prepare_upgrade_release_notes.sh $VERSION${NC}"
 echo ""
 
 # Final warnings
@@ -257,11 +268,11 @@ print_warning "DO NOT PROCEED to the next environment until changes are merged a
 echo ""
 if [ "$ENVIRONMENT" = "alpha" ]; then
     print_warning "After Alpha succeeds, run this script for Beta:"
-    print_command "./tools/scripts/upgrades/submit_upgrade.sh beta $VERSION"
+    print_command "$ ./tools/scripts/upgrades/submit_upgrade.sh beta $VERSION"
     echo ""
 elif [ "$ENVIRONMENT" = "beta" ]; then
     print_warning "After Beta succeeds, run this script for MainNet:"
-    print_command "./tools/scripts/upgrades/submit_upgrade.sh main $VERSION"
+    print_command "$ ./tools/scripts/upgrades/submit_upgrade.sh main $VERSION"
     echo ""
 elif [ "$ENVIRONMENT" = "main" ]; then
     print_success "This is MainNet - final environment!"

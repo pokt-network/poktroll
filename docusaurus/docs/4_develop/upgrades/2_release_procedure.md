@@ -20,10 +20,11 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
 
 ## Table of Contents <!-- omit in toc -->
 
+- [0. Communicate](#0-communicate)
 - [1. Prepare a New Upgrade Handler](#1-prepare-a-new-upgrade-handler)
 - [2. Create a GitHub Release](#2-create-a-github-release)
 - [3. Prepare the Upgrade Transactions](#3-prepare-the-upgrade-transactions)
-- [4. Test the New Release Locally](#4-test-the-new-release-locally)
+- [4. \[Complex Upgrades Only\] Test the New Release Locally](#4-complex-upgrades-only-test-the-new-release-locally)
 - [5. Submit the Upgrade on each network](#5-submit-the-upgrade-on-each-network)
 - [6. Update the release notes](#6-update-the-release-notes)
   - [6.1 Update the GitHub Release Notes](#61-update-the-github-release-notes)
@@ -36,9 +37,13 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
 - [9. Finish off checklist](#9-finish-off-checklist)
 - [TODOs \& Improvements](#todos--improvements)
 
+## 0. Communicate
+
+Start a discord thread similar to [this v0.1.21 thread](https://discord.com/channels/824324475256438814/1384985059873918986) to communicate updates along the way in case of any issues.
+
 ## 1. Prepare a New Upgrade Handler
 
-1. Identify the version of the last [release](https://github.com/pokt-network/poktroll/releases) (e.g. `v0.1.20`)
+1. Identify the version of the [latest release](https://github.com/pokt-network/poktroll/releases/latest) from the [full list of releases](https://github.com/pokt-network/poktroll/releases) (e.g. `v0.1.20`)
 2. Prepare a new upgrade handler by copying `vNEXT.go` to the next release (e.g. `v0.1.21`) like so:
 
    ```bash
@@ -46,15 +51,25 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
    ```
 
 3. Open `v0.1.21.go` and replace all instances of `vNEXT` with `v0.1.21`.
-4. Open `app/upgrades.go` and add the new upgrade to `allUpgrades`, commenting out the old upgrade.
-5. Prepare a new `vNEXT.go` by copying `vNEXT_Template.go` to `vNEXT.go` like so:
+4. Remove all the general purpose template comments from `v0.1.21.go`.
+5. Open `app/upgrades.go` and:
+
+   - Comment out the old upgrade
+   - Add the new upgrade to `allUpgrades`
+
+6. Prepare a new `vNEXT.go` by copying `vNEXT_Template.go` to `vNEXT.go` like so:
 
    ```bash
    cp app/upgrades/vNEXT_Template.go app/upgrades/vNEXT.go
    ```
 
-6. Open `vNEXT.go` and remove all instances of `Template`.
-7. Create a PR with these changes ([example](https://github.com/pokt-network/poktroll/pull/1489)) and merge it.
+7. Open `vNEXT.go` and remove all instances of `Template`.
+8. Create a PR with these changes and merge it. ([Example](https://github.com/pokt-network/poktroll/pull/1520)):
+
+```bash
+ git commit -am "Adding v0.1.21.go upgrade handler"
+ git push
+```
 
 ## 2. Create a GitHub Release
 
@@ -62,12 +77,13 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
 
    ```bash
    make release_tag_bug_fix
-   # or
+   # OR
    make release_tag_minor_release
    ```
 
 2. **Publish the release** by:
 
+   - Following the onscreen instructions from `make target` (e.g. pushing the tag)
    - [Drafting a new release](https://github.com/pokt-network/poktroll/releases/new)
    - Use the tag above to auto-generate the release notes
 
@@ -77,7 +93,7 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
 
 Wait for the [`Release Artifacts`](https://github.com/pokt-network/poktroll/actions/workflows/release-artifacts.yml) CI job to build artifacts for your release.
 
-It'll take ~20 minutes and will be auto-attached to the release once complete.
+It'll take ~20 minutes and will be auto-attached to the release under the `Assets` section once complete.
 
 :::
 
@@ -89,22 +105,22 @@ Generate the new upgrade transaction JSON files like so:
 ./tools/scripts/upgrades/prepare_upgrade_tx.sh v<YOUR_VERSION>.<YOUR_RELEASE>.<YOUR_PATCH>
 ```
 
-This will create:
-
-```bash
-tools/scripts/upgrades/upgrade_tx_vX.Y.Z_alpha.json
-tools/scripts/upgrades/upgrade_tx_vX.Y.Z_beta.json
-tools/scripts/upgrades/upgrade_tx_vX.Y.Z_local.json
-tools/scripts/upgrades/upgrade_tx_vX.Y.Z_main.json
-```
-
 For example:
 
 ```bash
-./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.20
+./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.21
 ```
 
-_Note that the `height` is not populated in the `*.json` files. You will need to update the `height` before submitting each one. More on this later..._
+This will create:
+
+```bash
+tools/scripts/upgrades/upgrade_tx_v0.1.21_alpha.json
+tools/scripts/upgrades/upgrade_tx_v0.1.21_beta.json
+tools/scripts/upgrades/upgrade_tx_v0.1.21_local.json
+tools/scripts/upgrades/upgrade_tx_v0.1.21_main.json
+```
+
+_Note that the `height` is not populated in the `*.json` files. This will be updated in subsequent steps below._
 
 <details>
 <summary>Example JSON snippet:</summary>
@@ -162,7 +178,7 @@ Expected output should look like the following:
 
 </details>
 
-## 4. Test the New Release Locally
+## 4. [Complex Upgrades Only] Test the New Release Locally
 
 :::warning Chain Halt Risk
 
@@ -176,13 +192,28 @@ If you find an issue, you'll need to:
 
 1. Delete the previous release
 2. Delete the previous tag
-3. Prepare a new release
-4. Regenerate the artifacts
+3. Implement and merge in the fix
+4. Prepare a new release
+5. Regenerate the artifacts
+6. Repeat the process above
 
 ## 5. Submit the Upgrade on each network
 
+:::note Familiarize yourself with the playbook
+
+If this is your first time submitting a tx upgrade, run the following command and
+familiarize yourself with the playbook that gets generated before procedding:
+
+```bash
+./tools/scripts/upgrades/submit_upgrade.sh beta v0.42.69
+```
+
+Then proceed to generate the real commands.
+
+:::
+
 If you are submitting the upgrade for `v0.1.21`, follow the instructions
-generated by the `prepare_upgrade_tx.sh` script.
+generated by the `prepare_upgrade_tx.sh` script for each environment.
 
 ```bash
 ./tools/scripts/upgrades/submit_upgrade.sh alpha v0.1.21
