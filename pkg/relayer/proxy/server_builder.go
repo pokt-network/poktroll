@@ -59,6 +59,7 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 			servers[serverConfig.ListenAddress] = NewHTTPServer(
 				logger,
 				serverConfig,
+				rp.connectionPoolConfig,
 				rp.servedRelaysPublishCh,
 				rp.relayAuthenticator,
 				rp.relayMeter,

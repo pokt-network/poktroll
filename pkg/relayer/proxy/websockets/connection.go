@@ -26,6 +26,9 @@ const (
 	// Send pings to peer with this period.
 	// Must be less than pongWaitSec.
 	pingPeriodSec = (pongWaitSec * 9) / 10
+
+	// Reduced cleanup delay to minimize file descriptor usage
+	cleanupDelayMs = 1 * time.Second
 )
 
 // messageSource represents the source of a message in a bidirectional connection.
@@ -262,7 +265,8 @@ func (c *connection) cleanup() {
 	}
 
 	// Wait for the control message to be received by the peer.
-	time.Sleep(writeWaitSec)
+	// Reduced delay to minimize file descriptor usage during high traffic.
+	time.Sleep(cleanupDelayMs)
 	if err := c.Close(); err != nil {
 		logger.Error().Err(err).Msg("failed to close connection")
 	}

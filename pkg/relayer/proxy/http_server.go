@@ -2,9 +2,11 @@ package proxy
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -65,6 +67,13 @@ type relayMinerHTTPServer struct {
 	blockClient        client.BlockClient
 	sharedQueryClient  client.SharedQueryClient
 	sessionQueryClient client.SessionQueryClient
+
+	// HTTP client pool for backend requests to avoid creating new connections per request
+	httpClientPool     map[string]*http.Client
+	httpClientPoolMu   sync.RWMutex
+	
+	// Connection pool configuration
+	connectionPoolConfig *config.RelayMinerConnectionPool
 }
 
 // NewHTTPServer creates a new RelayServer that listens for incoming relay requests
@@ -75,6 +84,7 @@ type relayMinerHTTPServer struct {
 func NewHTTPServer(
 	logger polylog.Logger,
 	serverConfig *config.RelayMinerServerConfig,
+	connectionPoolConfig *config.RelayMinerConnectionPool,
 	servedRelaysProducer chan<- *types.Relay,
 	relayAuthenticator relayer.RelayAuthenticator,
 	relayMeter relayer.RelayMeter,
@@ -94,6 +104,11 @@ func NewHTTPServer(
 		WriteTimeout: config.DefaultRequestTimeoutSeconds * time.Second,
 	}
 
+	// Use default connection pool config if none provided
+	if connectionPoolConfig == nil {
+		connectionPoolConfig = config.GetDefaultConnectionPool()
+	}
+
 	return &relayMinerHTTPServer{
 		logger:                         logger,
 		server:                         httpServer,
@@ -104,6 +119,8 @@ func NewHTTPServer(
 		blockClient:                    blockClient,
 		sharedQueryClient:              sharedQueryClient,
 		sessionQueryClient:             sessionQueryClient,
+		httpClientPool:                 make(map[string]*http.Client),
+		connectionPoolConfig:           connectionPoolConfig,
 	}
 }
 
@@ -136,8 +153,6 @@ func (server *relayMinerHTTPServer) Stop(ctx context.Context) error {
 // Ping tries to dial the suppliers backend URLs to test the connection.
 func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 	for _, supplierCfg := range server.serverConfig.SupplierConfigsMap {
-		c := &http.Client{Timeout: 2 * time.Second}
-
 		backendUrl := *supplierCfg.ServiceConfig.BackendUrl
 		if backendUrl.Scheme == "ws" || backendUrl.Scheme == "wss" {
 			// TODO_IMPROVE: Consider testing websocket connectivity by establishing
@@ -154,7 +169,10 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 				backendUrl.Scheme = "https"
 			}
 		}
-		resp, err := c.Head(backendUrl.String())
+
+		// Use pooled HTTP client for ping requests to avoid creating new connections
+		client := server.getHTTPClient(backendUrl.Scheme)
+		resp, err := client.Head(backendUrl.String())
 		if err != nil {
 			return fmt.Errorf(
 				"failed to ping backend %q for serviceId %q: %w",
@@ -218,6 +236,68 @@ func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string)
 	}
 
 	return timeout
+}
+
+// getHTTPClient returns a cached HTTP client for the given backend URL scheme.
+// This avoids creating new connections for every request, significantly reducing 
+// file descriptor usage and improving performance.
+func (server *relayMinerHTTPServer) getHTTPClient(scheme string) *http.Client {
+	server.httpClientPoolMu.RLock()
+	if client, exists := server.httpClientPool[scheme]; exists {
+		server.httpClientPoolMu.RUnlock()
+		return client
+	}
+	server.httpClientPoolMu.RUnlock()
+
+	// Create new client with connection pooling and timeouts
+	server.httpClientPoolMu.Lock()
+	defer server.httpClientPoolMu.Unlock()
+
+	// Double-check in case another goroutine created it while we were waiting
+	if client, exists := server.httpClientPool[scheme]; exists {
+		return client
+	}
+
+	var client *http.Client
+	switch scheme {
+	case "https":
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{},
+			// Connection pooling settings to reuse connections
+			MaxIdleConns:        server.connectionPoolConfig.MaxIdleConns,
+			MaxIdleConnsPerHost: server.connectionPoolConfig.MaxIdleConnsPerHost,
+			IdleConnTimeout:     time.Duration(server.connectionPoolConfig.IdleConnTimeoutSec) * time.Second,
+			// Prevent connection leaks
+			DisableKeepAlives:   false,
+			// Timeouts to prevent hanging connections
+			DialContext: (&net.Dialer{
+				Timeout: time.Duration(server.connectionPoolConfig.DialTimeoutSec) * time.Second,
+			}).DialContext,
+			TLSHandshakeTimeout: time.Duration(server.connectionPoolConfig.TLSHandshakeTimeoutSec) * time.Second,
+		}
+		client = &http.Client{
+			Transport: transport,
+			Timeout:   config.DefaultRequestTimeoutSeconds * time.Second,
+		}
+	default:
+		// For HTTP, use a transport with connection pooling
+		transport := &http.Transport{
+			MaxIdleConns:        server.connectionPoolConfig.MaxIdleConns,
+			MaxIdleConnsPerHost: server.connectionPoolConfig.MaxIdleConnsPerHost,
+			IdleConnTimeout:     time.Duration(server.connectionPoolConfig.IdleConnTimeoutSec) * time.Second,
+			DisableKeepAlives:   false,
+			DialContext: (&net.Dialer{
+				Timeout: time.Duration(server.connectionPoolConfig.DialTimeoutSec) * time.Second,
+			}).DialContext,
+		}
+		client = &http.Client{
+			Transport: transport,
+			Timeout:   config.DefaultRequestTimeoutSeconds * time.Second,
+		}
+	}
+
+	server.httpClientPool[scheme] = client
+	return client
 }
 
 // isWebSocketRequest checks if the request is trying to upgrade to WebSocket.

@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"slices"
@@ -175,18 +174,9 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 	defer httpRequest.Body.Close()
 
-	// Configure the HTTP client to use the appropriate transport based on the
-	// backend URL scheme.
-	var client *http.Client
-	switch serviceConfig.BackendUrl.Scheme {
-	case "https":
-		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{},
-		}
-		client = &http.Client{Transport: transport}
-	default:
-		client = http.DefaultClient
-	}
+	// Use pooled HTTP client to avoid creating new connections per request.
+	// This significantly reduces file descriptor usage and improves performance.
+	client := server.getHTTPClient(serviceConfig.BackendUrl.Scheme)
 
 	// Send the relay request to the native service.
 	httpResponse, err := client.Do(httpRequest)
