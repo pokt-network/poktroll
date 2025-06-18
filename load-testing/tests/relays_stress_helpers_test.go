@@ -1473,11 +1473,13 @@ func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	s.Helper()
 
 	proofParamsCache := querycache.NewNoOpParamsCache[prooftypes.Params]()
+	proofCache := querycache.NewNoOpKeyValueCache[prooftypes.Claim]()
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
 		s.blockClient,
 		proofParamsCache,
+		proofCache,
 	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
@@ -1539,7 +1541,10 @@ func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
-	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	serviceParamsCache := querycache.NewNoOpParamsCache[servicetypes.Params]()
+
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient, serviceParamsCache))
 
 	serviceQueryclient, err := query.NewServiceQuerier(deps)
 	require.NoError(s, err)

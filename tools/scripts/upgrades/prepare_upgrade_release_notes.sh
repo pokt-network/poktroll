@@ -225,11 +225,19 @@ generate_markdown() {
 
     # Extract values from results string
     local alpha_height=$(get_result_value "$results" 0)
+    local alpha_height_url="https://shannon-alpha.trustsoothe.io/block/${alpha_height}"
     local alpha_tx=$(get_result_value "$results" 1)
+    local alpha_tx_url="https://shannon-alpha.trustsoothe.io/tx/${alpha_tx}"
+
     local beta_height=$(get_result_value "$results" 2)
+    local beta_height_url="https://shannon-beta.trustsoothe.io/block/${beta_height}"
     local beta_tx=$(get_result_value "$results" 3)
+    local beta_tx_url="https://shannon-beta.trustsoothe.io/tx/${beta_tx}"
+
     local main_height=$(get_result_value "$results" 4)
+    local main_height_url="https://shannon-mainnet.trustsoothe.io/block/${main_height}"
     local main_tx=$(get_result_value "$results" 5)
+    local main_tx_url="https://shannon-mainnet.trustsoothe.io/tx/${main_tx}"
 
     # Add query time header
     echo "Query Time: $(date)"
@@ -238,24 +246,24 @@ generate_markdown() {
     cat <<EOF
 ## Protocol Upgrades
 
+| Network       | Upgrade Height | Upgrade Transaction Hash | Notes |
+| ------------- | -------------- | ------------------------ | ----- |
+| Alpha TestNet | [${alpha_height:-⚪}](${alpha_height_url:-⚪}) | [${alpha_tx:-⚪}](${alpha_tx_url:-⚪}) | ⚪ |
+| Beta TestNet  | [${beta_height:-⚪}](${beta_height_url:-⚪}) | [${beta_tx:-⚪}](${beta_tx_url:-⚪}) | ⚪ |
+| MainNet       | [${main_height:-⚪}](${main_height_url:-⚪}) | [${main_tx:-⚪}](${main_tx_url:-⚪}) | ⚪ |
+
 | Category                     | Applicable | Notes                                |
 | ---------------------------- | ---------- | ------------------------------------ |
 | Planned Upgrade              | ✅         | Update recovery allowlist.           |
 | Consensus Breaking Change    | ❌         | No, see upgrade here: #1457          |
 | Manual Intervention Required | ❓         |                                      |
 
-| Network       | Upgrade Height | Upgrade Transaction Hash | Notes |
-| ------------- | -------------- | ------------------------ | ----- |
-| Alpha TestNet | ${alpha_height:-⚪} | ${alpha_tx:-⚪} | ⚪ |
-| Beta TestNet  | ${beta_height:-⚪} | ${beta_tx:-⚪} | ⚪ |
-| MainNet       | ${main_height:-⚪} | ${main_tx:-⚪} | ⚪ |
-
 **Legend**:
 
-- ⚠️ - Warning/Caution Required
-- ✅ - Yes
-- ❌ - No
-- ⚪ - Will be filled out throughout the release process / To Be Determined
+- ⚠️ - Warning / Caution / Special Note
+- ✅ - Yes / Success
+- ❌ - No / Failed
+- ⚪ - TODO / TBD
 - ❓ - Unknown / Needs Discussion
 
 EOF
@@ -268,11 +276,19 @@ generate_json_output() {
 
     # Extract values from results string
     local alpha_height=$(get_result_value "$results" 0)
+    local alpha_height_url="https://shannon-alpha.trustsoothe.io/block/${alpha_height}"
     local alpha_tx=$(get_result_value "$results" 1)
+    local alpha_tx_url="https://shannon-alpha.trustsoothe.io/tx/${alpha_tx}"
+
     local beta_height=$(get_result_value "$results" 2)
+    local beta_height_url="https://shannon-beta.trustsoothe.io/block/${beta_height}"
     local beta_tx=$(get_result_value "$results" 3)
+    local beta_tx_url="https://shannon-beta.trustsoothe.io/tx/${beta_tx}"
+
     local main_height=$(get_result_value "$results" 4)
+    local main_height_url="https://shannon-mainnet.trustsoothe.io/block/${main_height}"
     local main_tx=$(get_result_value "$results" 5)
+    local main_tx_url="https://shannon-mainnet.trustsoothe.io/tx/${main_tx}"
 
     cat <<EOF
 {
@@ -282,17 +298,23 @@ generate_json_output() {
     "alpha": {
       "name": "Alpha TestNet",
       "upgrade_height": "$alpha_height",
-      "upgrade_tx_hash": "$alpha_tx"
+      "upgrade_height_url": "$alpha_height_url",
+      "upgrade_tx_hash": "$alpha_tx",
+      "upgrade_tx_url": "$alpha_tx_url"
     },
     "beta": {
       "name": "Beta TestNet",
       "upgrade_height": "$beta_height",
-      "upgrade_tx_hash": "$beta_tx"
+      "upgrade_height_url": "$beta_height_url",
+      "upgrade_tx_hash": "$beta_tx",
+      "upgrade_tx_url": "$beta_tx_url"
     },
     "main": {
       "name": "MainNet",
       "upgrade_height": "$main_height",
-      "upgrade_tx_hash": "$main_tx"
+      "upgrade_height_url": "$main_height_url",
+      "upgrade_tx_hash": "$main_tx",
+      "upgrade_tx_url": "$main_tx_url"
     }
   }
 }
