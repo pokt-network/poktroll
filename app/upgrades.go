@@ -98,7 +98,12 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.20 - upgrade to:
 	// - Add zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that are non-custodial and had no corresponding `MorseAuthAccount`
 	// - Update the Morse account recovery allowlist with exchange allowlist updates and invalid addresses
-	upgrades.Upgrade_0_1_20,
+	// upgrades.Upgrade_0_1_20,
+
+	// v0.1.21 - upgrade to:
+	// - Update the Morse account recovery allowlist with exchange allowlist updates and invalid addresses
+	// - Slim down excessively sized proof module events:
+	upgrades.Upgrade_0_1_21,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
