@@ -317,6 +317,7 @@ func (m *EventProofUpdated) GetClaimedUpokt() *types.Coin {
 // Event emitted after a proof has been checked for validity in the proof module's
 // EndBlocker.
 type EventProofValidityChecked struct {
+	// TODO_UP_NEXT(@bryanchriswhite, #1497): Dehydrate the claim's root hash.
 	Claim       *Claim `protobuf:"bytes,5,opt,name=claim,proto3" json:"claim"`
 	BlockHeight uint64 `protobuf:"varint,2,opt,name=block_height,json=blockHeight,proto3" json:"block_height"`
 	// reason is the string representation of the error that led to the proof being
