@@ -80,7 +80,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 ) []relayer.SessionTree {
 	// Guard against empty sessionTrees to prevent index out of bounds errors
 	if len(sessionTrees) == 0 {
-		rs.logger.Warn().Msg("received empty sessionTrees array")
+		rs.logger.Warn().Msg("⚠️ Received empty session trees array - no sessions to process")
 		return nil
 	}
 
@@ -98,7 +98,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to get shared params")
+		logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Unable to calculate proof timing, which may prevent rewards and cause slashing.")
 		failedSubmitProofsSessionsCh <- sessionTrees
 		return nil
 	}
@@ -109,20 +109,23 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// its hash to seed the pseudo-random number generator for the proof submission
 	// distribution (i.e. earliestSupplierProofCommitHeight).
 	logger = logger.With("proof_window_open_height", proofWindowOpenHeight)
-	logger.Info().Msg("waiting & blocking until the proof window open height")
+	logger.Info().Msgf(
+		"⏱️ Waiting for network-defined proof window to open at block height %d before submitting proofs",
+		proofWindowOpenHeight,
+	)
 
 	proofsWindowOpenBlock := rs.waitForBlock(ctx, proofWindowOpenHeight)
-	// TODO_MAINNET: If a relayminer is cold-started with persisted but unproven ("late")
-	// sessions, the proofsWindowOpenBlock will never be observed. Where a "late" session
-	// is one whic is unclaimed and whose earliest claim commit height has already elapsed.
-	//
-	// In this case, we should
-	// use a block query client to populate the block client replay observable at the time
-	// of block client construction. This check and failure branch can be removed once this
-	// is implemented.
 	if proofsWindowOpenBlock == nil {
-		logger.Warn().Msg("failed to observe earliest proof commit height offset seed block height")
-		failedSubmitProofsSessionsCh <- sessionTrees
+		// Ignore this failure during shutdown:
+		// - When `stopping == true`, context cancellations and observable failures are expected.
+		// - Avoid interpreting them as session failures, to ensure session trees are persisted.
+		//
+		// In normal operation (`stopping == false`), this is a critical error and must be handled.
+		if !rs.stopping.Load() {
+			logger.Error().Msg("❌️ Failed to observe required block for proof timing. ❗Check node connectivity and sync status. ❗These session proofs cannot be processed, rewards may be lost and supplier may be slashed.")
+			failedSubmitProofsSessionsCh <- sessionTrees
+		}
+
 		return nil
 	}
 
@@ -135,7 +138,10 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	)
 
 	logger = logger.With("earliest_supplier_proof_commit_height", earliestSupplierProofsCommitHeight)
-	logger.Info().Msg("waiting & blocking for proof path seed block height")
+	logger.Info().Msgf(
+		"⌛ Waiting for the assigned proof submission timing at block %d.",
+		earliestSupplierProofsCommitHeight,
+	)
 
 	// earliestSupplierProofsCommitHeight - 1 is the block that will have its hash
 	// used as the source of entropy for all the session trees in that batch,
@@ -144,10 +150,26 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	proofPathSeedBlock := rs.waitForBlock(ctx, proofPathSeedBlockHeight)
 
 	logger = logger.With("proof_path_seed_block", fmt.Sprintf("%x", proofPathSeedBlock.Hash()))
-	logger.Info().Msg("observed proof path seed block height")
+	logger.Info().Msg(
+		"🔭 Successfully observed proof path seed block. Using block hash for deterministic proof path generation.",
+	)
 
 	successProofs, failedProofs := rs.proveClaims(ctx, sessionTrees, proofPathSeedBlock)
 	failedSubmitProofsSessionsCh <- failedProofs
+
+	if len(successProofs) > 0 {
+		logger.Info().Msgf(
+			"🚀 Proof generation phase complete: %d sessions ready for onchain submission",
+			len(successProofs),
+		)
+	}
+
+	if len(failedProofs) > 0 {
+		logger.Warn().Msgf(
+			"⚠️ Proof generation failed for %d sessions. ❗Check storage health and data integrity.",
+			len(failedProofs),
+		)
+	}
 
 	return successProofs
 }
@@ -192,7 +214,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("failed to get shared params")
+			rs.logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Rewards may not be secured and supplier may be slashed.")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
@@ -200,19 +222,16 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// Submit proofs for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.SubmitProofs(ctx, proofWindowCloseHeight, proofMsgs...); err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("failed to submit proofs")
+			rs.logger.Error().Err(err).Msg("❌ Failed to submit proofs to the network. ❗Check node connectivity and transaction fees. ❗Rewards may not be secured and supplier may be slashed.")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		for _, sessionTree := range sessionTrees {
-			rs.removeFromRelayerSessions(sessionTree)
-			if err := sessionTree.Delete(); err != nil {
-				// Do not fail the entire operation if a session tree cannot be deleted
-				// as this does not affect the C&P lifecycle.
-				rs.logger.Error().Err(err).Msg("failed to delete session tree")
-			}
-		}
+		rs.logger.Info().Msgf(
+			"🎯 Successfully submitted %d proofs to the network - rewards secured!",
+			len(sessionTrees),
+		)
 
+		rs.deleteSessionTrees(ctx, sessionTrees)
 		return either.Success(sessionTrees), false
 	}
 }
@@ -227,6 +246,7 @@ func (rs *relayerSessionsManager) proveClaims(
 	proofPathSeedBlock client.Block,
 ) (successProofs []relayer.SessionTree, failedProofs []relayer.SessionTree) {
 	logger := rs.logger.With("method", "proveClaims")
+	logger.Info().Msgf("🔍 Analyzing %d session trees to determine proof requirements", len(sessionTrees))
 
 	// sessionTreesWithProofRequired will accumulate all the sessionTrees that
 	// will require a proof to be submitted.
@@ -239,7 +259,7 @@ func (rs *relayerSessionsManager) proveClaims(
 		// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
 		if err != nil {
 			failedProofs = append(failedProofs, sessionTree)
-			logger.Error().Err(err).Msg("failed to determine if proof is required, skipping claim creation")
+			logger.Error().Err(err).Msg("⚠️ Failed to determine if proof is required for session. ❗Check network connectivity")
 			continue
 		}
 
@@ -247,14 +267,14 @@ func (rs *relayerSessionsManager) proveClaims(
 		if isProofRequired {
 			sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
 		} else {
-			rs.removeFromRelayerSessions(sessionTree)
-			if err := sessionTree.Delete(); err != nil {
-				// Do not fail the entire operation if a session tree cannot be deleted
-				// as this does not affect the C&P lifecycle.
-				logger.Error().Err(err).Msg("failed to delete session tree")
-			}
+			rs.deleteSessionTree(sessionTree)
 		}
 	}
+
+	logger.Info().Msgf(
+		"📊 Proof analysis complete: %d sessions require proofs, %d sessions skipped (no proof needed)",
+		len(sessionTreesWithProofRequired), len(sessionTrees)-len(sessionTreesWithProofRequired),
+	)
 
 	// Separate the sessionTrees into those that failed to generate a proof
 	// and those that succeeded, before returning each of them.
@@ -268,7 +288,7 @@ func (rs *relayerSessionsManager) proveClaims(
 
 		// If the proof cannot be generated, add the sessionTree to the failedProofs.
 		if _, err := sessionTree.ProveClosest(path); err != nil {
-			logger.Error().Err(err).Msg("failed to generate proof")
+			logger.Error().Err(err).Msg("⚠️ Failed to generate cryptographic proof for session. ❗Check session tree integrity and storage health.")
 
 			failedProofs = append(failedProofs, sessionTree)
 			continue
@@ -277,6 +297,20 @@ func (rs *relayerSessionsManager) proveClaims(
 		// If the proof was generated successfully, add the sessionTree to the
 		// successProofs slice that will be sent to the proof submission step.
 		successProofs = append(successProofs, sessionTree)
+	}
+
+	if len(successProofs) > 0 {
+		logger.Info().Msgf(
+			"✅ Successfully generated %d cryptographic proofs ready for submission",
+			len(successProofs),
+		)
+	}
+
+	if len(failedProofs) > 0 {
+		logger.Warn().Msgf(
+			"⚠️ Failed to generate proofs for %d sessions. ❗Check storage health and data integrity.",
+			len(failedProofs),
+		)
 	}
 
 	return successProofs, failedProofs
@@ -334,7 +368,7 @@ func (rs *relayerSessionsManager) isProofRequired(
 	// Require a proof if the claimed amount meets or exceeds the threshold.
 	// TODO_MAINNET: This should be proportional to the supplier's stake as well.
 	if claimedAmount.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
-		logger.Info().Msg("compute units is above threshold, claim requires proof")
+		logger.Info().Msg("💎 Claim value exceeds threshold - proof required to secure high-value rewards")
 
 		return true, nil
 	}
@@ -353,20 +387,11 @@ func (rs *relayerSessionsManager) isProofRequired(
 	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
 	// with probability equal to the proof_request_probability.
 	if proofRequirementSampleValue <= proofParams.GetProofRequestProbability() {
-		logger.Info().Msg("claim hash seed is below proof request probability, claim requires proof")
+		logger.Info().Msg("🎲 Random selection requires proof - contributing to network security through probabilistic verification")
 
 		return true, nil
 	}
 
-	logger.Info().Msg("claim does not require proof")
+	logger.Info().Msg("✅ Proof not required for this claim - proceeding without proof submission")
 	return false, nil
-}
-
-// claimFromSessionTree creates a claim object from the given SessionTree.
-func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
-	return prooftypes.Claim{
-		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
-		SessionHeader:           sessionTree.GetSessionHeader(),
-		RootHash:                sessionTree.GetClaimRoot(),
-	}
 }
