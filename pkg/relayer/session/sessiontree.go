@@ -340,6 +340,11 @@ func (st *sessionTree) GetClaimRoot() []byte {
 func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
+	// After deletion, set treeStore to nil to:
+	// - Prevent double-close operations.
+	// - Avoid panics from future use of a closed kvstore instance.
+	// - Signal that the treeStore is no longer valid.
+	defer func() { st.treeStore = nil }()
 
 	st.isClaiming = false
 

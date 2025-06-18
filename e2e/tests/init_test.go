@@ -36,6 +36,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -189,6 +190,7 @@ func (s *suite) Before() {
 
 	s.deps = depinject.Supply(
 		events.NewEventsQueryClient(testclient.CometLocalWebsocketURL),
+		polylog.Ctx(s.ctx),
 	)
 
 	// Start the NewBlockEventsReplayClient before the test so that it can't miss any block events.
