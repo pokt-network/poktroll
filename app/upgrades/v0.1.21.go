@@ -34,10 +34,6 @@ var Upgrade_0_1_21 = Upgrade{
 		keepers *keepers.Keepers,
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
-		// Add new parameters by:
-		// 1. Inspecting the diff between v0.1.20..v0.1.21
-		// 2. Manually inspect changes in ignite's config.yml
-		// 3. Update the upgrade handler here accordingly
 		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.20..v0.1.21
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
