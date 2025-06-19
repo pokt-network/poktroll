@@ -681,6 +681,10 @@ func (rs *relayerSessionsManager) deleteSessionTree(sessionTree relayer.SessionT
 		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress(),
 	)
 
+	// IMPORTANT: Create sessionSMT BEFORE deleting the tree
+	// This ensures we retrieve the SMT root while the KVStore is still open.
+	sessionSMT := sessionSMTFromSessionTree(sessionTree)
+
 	// Delete the session tree from the KVStore and close the underlying store.
 	if err := sessionTree.Delete(); err != nil {
 		logger.Error().Err(err).Msg("❌️ Failed to delete session tree from kvstore. ❗Check disk permissions and kvstore integrity. ❗Session data may persist incorrectly.")
@@ -688,7 +692,6 @@ func (rs *relayerSessionsManager) deleteSessionTree(sessionTree relayer.SessionT
 
 	// Delete the persisted session tree metadata from the disk store.
 	// This is necessary to ensure that the session is not restored on the next startup.
-	sessionSMT := sessionSMTFromSessionTree(sessionTree)
 	if err := rs.deletePersistedSessionTree(sessionSMT); err != nil {
 		logger.Error().
 			Err(err).
