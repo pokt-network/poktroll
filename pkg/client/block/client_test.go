@@ -15,6 +15,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
@@ -84,7 +85,9 @@ func TestBlockClient(t *testing.T) {
 		}).
 		AnyTimes()
 
-	deps := depinject.Supply(eventsQueryClient, cometClientMock)
+	logger := polylog.Ctx(ctx)
+
+	deps := depinject.Supply(eventsQueryClient, cometClientMock, logger)
 
 	// Set up block client.
 	blockClient, err := block.NewBlockClient(ctx, deps)

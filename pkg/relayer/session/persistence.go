@@ -155,7 +155,7 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 
 		// Scenarios 2: The claim window is still open.
 		// The session has still a chance to reach settlement by creating the claim and submitting the proof.
-		sessionTree, treeErr := importSessionTree(sessionSMT, claim, rs.storesDirectory, rs.logger)
+		sessionTree, treeErr := importSessionTree(sessionSMT, claim, rs.storesDirectory, sessionLogger)
 		if treeErr != nil {
 			sessionLogger.Error().Err(treeErr).Msg("failed to import session tree")
 			continue
@@ -180,6 +180,9 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 // - The full persisted session tree on-disk key/value store
 // - The session tree metadata entry from the in-memory store
 func (rs *relayerSessionsManager) deletePersistedSessionTree(sessionSMT *prooftypes.SessionSMT) error {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
 	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
 	sessionId := sessionSMT.SessionHeader.SessionId
 	sessionEndHeight := sessionSMT.SessionHeader.SessionEndBlockHeight
@@ -223,11 +226,7 @@ func (rs *relayerSessionsManager) persistSessionMetadata(sessionTree relayer.Ses
 	sessionId := sessionTree.GetSessionHeader().SessionId
 	sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
 
-	sessionSMT := &prooftypes.SessionSMT{
-		SessionHeader:           sessionTree.GetSessionHeader(),
-		SupplierOperatorAddress: supplierOperatorAddress,
-		SmtRoot:                 sessionTree.GetSMSTRoot(),
-	}
+	sessionSMT := sessionSMTFromSessionTree(sessionTree)
 	logger := rs.logger.With(
 		"method", "persistSessionMetadata",
 		"supplier_operator_address", supplierOperatorAddress,
@@ -254,6 +253,9 @@ func (rs *relayerSessionsManager) persistSessionMetadata(sessionTree relayer.Ses
 // supplierOperatorAddress->blockHeight->sessionId->sessionTree.
 // Return true if the session was inserted, false if it already exists.
 func (rs *relayerSessionsManager) insertSessionTree(sessionTree relayer.SessionTree) bool {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
 	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress()
 	sessionId := sessionTree.GetSessionHeader().SessionId
 	sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
@@ -296,6 +298,9 @@ func (rs *relayerSessionsManager) insertSessionTree(sessionTree relayer.SessionT
 // proveClaimedSessions processes the claimed sessions and sends them to the
 // relayer for proof submission without going through the whole pipeline.
 func (rs *relayerSessionsManager) proveClaimedSessions(ctx context.Context) {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
 	// Iterate over all supplier clients so we can submit proofs for all claimed sessions.
 	for supplierOperatorAddress, supplierClient := range rs.supplierClients.SupplierClients {
 		// TODO_TECHDEBT(@bryanchriswhite): Close the channel when all the sessions have been processed.

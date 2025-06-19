@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
@@ -105,7 +106,9 @@ func TestReplayClient_Remapping(t *testing.T) {
 	// Setup the events query client dependency
 	dialerOpt := events.WithDialer(dialerMock)
 	queryClient := events.NewEventsQueryClient("", dialerOpt)
-	deps := depinject.Supply(queryClient)
+
+	logger := polylog.Ctx(ctx)
+	deps := depinject.Supply(queryClient, logger)
 
 	// Create the replay client
 	replayClient, err := events.NewEventsReplayClient[messageEvent](

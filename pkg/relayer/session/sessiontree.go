@@ -128,6 +128,8 @@ func importSessionTree(
 ) (relayer.SessionTree, error) {
 	sessionId := sessionSMT.SessionHeader.SessionId
 	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
+	applicationAddress := sessionSMT.SessionHeader.ApplicationAddress
+	serviceId := sessionSMT.SessionHeader.ServiceId
 	smtRoot := sessionSMT.SmtRoot
 	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionId)
 
@@ -147,8 +149,10 @@ func importSessionTree(
 	}
 
 	logger = logger.With(
-		"session_id", sessionId,
+		"service_id", serviceId,
+		"application_address", applicationAddress,
 		"supplier_operator_address", supplierOperatorAddress,
+		"session_id", sessionId,
 	)
 
 	// SCENARIO 1: Session has been claimed
@@ -157,10 +161,7 @@ func importSessionTree(
 	if claim != nil {
 		sessionTree.claimedRoot = claim.RootHash
 		sessionTree.isClaiming = true
-		logger.Info().Msgf(
-			"imported session tree with committed onchain claim - root hash: %x",
-			claim.RootHash,
-		)
+		logger.Info().Msg("imported a session tree WITH A PREVIOUSLY COMMITTED onchain claim")
 		return sessionTree, nil
 	}
 
@@ -182,7 +183,7 @@ func importSessionTree(
 	sessionTree.claimedRoot = nil  // explicitly set for posterity
 	sessionTree.isClaiming = false // explicitly set for posterity
 
-	logger.Info().Msg("the imported session tree with no committed onchain claim")
+	logger.Info().Msg("imported a session tree WITHOUT A PREVIOUSLY COMMITTED onchain claim")
 
 	return sessionTree, nil
 }
@@ -339,6 +340,11 @@ func (st *sessionTree) GetClaimRoot() []byte {
 func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
+	// After deletion, set treeStore to nil to:
+	// - Prevent double-close operations.
+	// - Avoid panics from future use of a closed kvstore instance.
+	// - Signal that the treeStore is no longer valid.
+	defer func() { st.treeStore = nil }()
 
 	st.isClaiming = false
 

@@ -1,0 +1,16 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.gateway.MsgUpdateParams",
+        "authority": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
+        "params": {
+          "min_stake": {
+            "denom": "upokt",
+            "amount": "1000000"
+          }
+        }
+      }
+    ]
+  }
+}

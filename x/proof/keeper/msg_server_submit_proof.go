@@ -144,7 +144,6 @@ func (k msgServer) SubmitProof(
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
 				Claim:                    claim,
-				Proof:                    proof,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
@@ -155,7 +154,6 @@ func (k msgServer) SubmitProof(
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
 				Claim:                    claim,
-				Proof:                    proof,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
