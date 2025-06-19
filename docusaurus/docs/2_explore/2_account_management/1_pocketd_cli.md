@@ -232,7 +232,7 @@ git clone git@github.com:pokt-network/poktroll.git poktroll
 cd poktroll
 
 # Create a new dev git tag and follow the on-screen instructions
-make release_tag_dev
+make release_tag_rc
 
 # Push the tag to GitHub
 git push origin $(git tag)
