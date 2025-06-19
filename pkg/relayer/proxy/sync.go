@@ -49,12 +49,15 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Check if the request's selected supplier is available for relaying.
 	availableSuppliers := server.relayAuthenticator.GetSupplierOperatorAddresses()
+
 	if !slices.Contains(availableSuppliers, meta.SupplierOperatorAddress) {
-		logger.Warn().Msgf(
-			"supplier %q operator address is not available in [%s]",
-			meta.SupplierOperatorAddress,
-			strings.Join(availableSuppliers, ", "),
-		)
+		logger.Warn().
+			Msgf(
+				"❌ The request's selected supplier with operator_address (%q) is not available for relaying! "+
+					"This could be a network or configuration issue. Available suppliers: [%s] 🚦",
+				meta.SupplierOperatorAddress,
+				strings.Join(availableSuppliers, ", "),
+			)
 		return relayRequest, ErrRelayerProxySupplierNotReachable
 	}
 
