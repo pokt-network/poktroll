@@ -89,10 +89,11 @@ func (sync *relayMinerHTTPServer) replyWithError(
 }
 
 // TODO_TECHDEBT(@red-0ne): Revisit all the RelayMiner's returned errors and ensure:
-//   - It is always returning a registered error (i.e. implements the sdkError interface).
-//   - All registered errors have meaningful and short description, the wrapped error
+//   - It is always returning a registered error (i.e. implements the sdkError interface,
+//     i.e. no fmt.Errorf)
+//   - All registered errors have meaningful and short description, the wrapping error
 //     will provide more context
-//   - The errors belong to the correct codespace
+//   - The errors belong to the right codespace
 //
 // unpackSDKError attempts to extract an sdkError from the provided error chain.
 //
@@ -100,7 +101,7 @@ func (sync *relayMinerHTTPServer) replyWithError(
 //   - If srcError or any error in its unwrap chain implements the sdkError interface,
 //     it returns a RelayMinerError constructed from that sdkError.
 //   - If no sdkError is found after unwrapping, it returns a default RelayMinerError
-//     indicating an unrecognized error.
+//     indicating an unrecognized error while preserving the original error message.
 func unpackSDKError(srcError error) *types.RelayMinerError {
 	// If srcError is nil, return nil
 	if srcError == nil {
