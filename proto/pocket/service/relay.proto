@@ -49,10 +49,28 @@ message RelayResponse {
   // The payload is passed directly from the service and as such can be any
   // format the service responds with: JSON-RPC, REST, gRPC, etc.
   bytes payload = 2;
+  // relay_miner_error is the error returned by the RelayMiner if any.
+  // If the RelayMiner did not return an error, this field will be empty.
+  RelayMinerError relay_miner_error = 3; // Error returned by the RelayMiner if any.
 }
 
 // RelayResponseMetadata contains the metadata for a RelayResponse.
 message RelayResponseMetadata {
   session.SessionHeader session_header = 1; // Session header associated with the relay.
   bytes supplier_operator_signature = 2; // Signature of the supplier's operator on the response.
+}
+
+// RelayMinerError contains the error details returned by the RelayMiner.
+message RelayMinerError {
+  // codespace is the error's registered codespace.
+  // It is used to group errors by their source or module.
+	string codespace = 1;
+  // code is the specific registered error code.
+	uint32 code = 2;
+  // description is a human-readable description of the error.
+  // It should be concise and provide enough context to understand the error.
+	string description = 3;
+  // message is a more detailed message about the error.
+  // It can include additional context or information about the error.
+	string message = 4;
 }

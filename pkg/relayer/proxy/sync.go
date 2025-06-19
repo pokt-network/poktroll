@@ -54,7 +54,11 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			meta.SupplierOperatorAddress,
 			strings.Join(availableSuppliers, ", "),
 		)
-		return relayRequest, ErrRelayerProxySupplierNotReachable
+		return relayRequest, ErrRelayerProxySupplierNotReachable.Wrapf(
+			"request's supplier %q operator address is not available in [%s]",
+			meta.SupplierOperatorAddress,
+			strings.Join(availableSuppliers, ", "),
+		)
 	}
 
 	// Set per-request timeouts based on the service ID configuration.

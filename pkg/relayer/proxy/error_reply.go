@@ -3,10 +3,26 @@ package proxy
 import (
 	"net/http"
 
+	sdkerrors "cosmossdk.io/errors"
+
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
+
+// wrappedError is an interface for errors that has been wrapped using Error.Wrap
+// and can be unwrapped to reveal the underlying cause.
+type wrappedError interface {
+	Unwrap() error
+}
+
+// sdkError is an interface for the RelayMiner components' registered errors.
+// It exposes methods to retrieve the codespace, error code, and error message.
+type sdkError interface {
+	Codespace() string
+	Error() string
+	ABCICode() uint32
+}
 
 // replyWithError builds the appropriate error format according to the RelayRequest
 // using the passed in error and writes it to the writer.
@@ -57,7 +73,7 @@ func (sync *relayMinerHTTPServer) replyWithError(
 			SessionHeader: relayRequest.Meta.SessionHeader,
 			// The supplier does not sign the error response, so we leave the signature empty.
 		},
-		Payload: []byte(replyError.Error()),
+		RelayMinerError: unpackSDKError(replyError),
 	}
 
 	relayResponseBz, err := relayResponse.Marshal()
@@ -69,5 +85,59 @@ func (sync *relayMinerHTTPServer) replyWithError(
 	if _, err = writer.Write(relayResponseBz); err != nil {
 		errorLogger.Err(err).Msg("failed writing error relay response")
 		return
+	}
+}
+
+// TODO_TECHDEBT(@red-0ne): Revisit all the RelayMiner's returned errors and ensure:
+//   - It is always returning a registered error (i.e. implements the sdkError interface).
+//   - All registered errors have meaningful and short description, the wrapped error
+//     will provide more context
+//   - The errors belong to the correct codespace
+//
+// unpackSDKError attempts to extract an sdkError from the provided error chain.
+//
+//   - If srcError is nil, it returns nil.
+//   - If srcError or any error in its unwrap chain implements the sdkError interface,
+//     it returns a RelayMinerError constructed from that sdkError.
+//   - If no sdkError is found after unwrapping, it returns a default RelayMinerError
+//     indicating an unrecognized error.
+func unpackSDKError(srcError error) *types.RelayMinerError {
+	// If srcError is nil, return nil
+	if srcError == nil {
+		return nil
+	}
+
+	errorMessage := srcError.Error()
+	currentError := srcError
+	// Create a default RelayMinerError to return if no sdkError is found
+	defaultError := &types.RelayMinerError{
+		Codespace:   sdkerrors.UndefinedCodespace,
+		Description: "Unregistered error",
+		Message:     errorMessage,
+	}
+
+	// Unwrap srcError until we find an sdkError
+	for {
+		// If srcError casts to sdkError, return it
+		if sdkErr, ok := currentError.(sdkError); ok {
+			return &types.RelayMinerError{
+				Codespace:   sdkErr.Codespace(),
+				Code:        sdkErr.ABCICode(),
+				Description: sdkErr.Error(),
+				Message:     errorMessage,
+			}
+		}
+
+		// Try to unwrap the error
+		wrapper, ok := currentError.(wrappedError)
+		if !ok {
+			// Can't unwrap further but no sdkError found, return default error
+			return defaultError
+		}
+
+		// Unwrap and check for nil
+		if currentError = wrapper.Unwrap(); currentError == nil {
+			return defaultError
+		}
 	}
 }
