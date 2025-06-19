@@ -254,9 +254,9 @@ generate_markdown() {
 
 | Category                     | Applicable | Notes                                |
 | ---------------------------- | ---------- | ------------------------------------ |
-| Planned Upgrade              | ✅         | Update recovery allowlist.           |
-| Consensus Breaking Change    | ❌         | No, see upgrade here: #1457          |
-| Manual Intervention Required | ❓         |                                      |
+| Planned Upgrade              | ⚪         | UPDATE ME           |
+| Consensus Breaking Change    | ⚪         | UPDATE ME          |
+| Manual Intervention Required | ⚪         | UPDATE ME                                     |
 
 **Legend**:
 
