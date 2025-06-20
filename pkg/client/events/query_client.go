@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
+	"sync/atomic"
 
 	"go.uber.org/multierr"
 
@@ -41,28 +42,36 @@ type eventsQueryClient struct {
 	dialer client.Dialer
 	// eventsBytesAndConnsMu protects the eventsBytesAndConns map.
 	eventsBytesAndConnsMu sync.RWMutex
-	// eventsBytesAndConns maps event subscription queries to their respective
-	// eventsBytes observable, connection, and isClosed status.
-	eventsBytesAndConns map[string]*eventsBytesAndConn
+	// eventsBytesInfo maps event subscription queries to their respective
+	// connection information.
+	eventsBytesInfo map[string]*eventsBytesInfo
+	// connId is an atomic counter which is used to assign unique IDs to
+	// connections. It is incremented atomically to ensure thread safety.
+	connId atomic.Uint64
 
 	logger polylog.Logger
 }
 
-// eventsBytesAndConn is a struct which holds an eventsBytes observable & the
-// corresponding connection which produces its inputs.
-type eventsBytesAndConn struct {
+// eventsBytesInfo is a struct which holds an the information needed for managing
+// event subscriptions.
+type eventsBytesInfo struct {
 	// eventsBytes is an observable which is notified about chain event messages
 	// matching the given query. It receives an either.Bytes which is
 	// either an error or the event message bytes.
 	eventsBytes observable.Observable[either.Bytes]
-	conn        client.Connection
-}
-
-// Close unsubscribes all observers of eventsBytesAndConn's observable and also
-// closes its connection.
-func (ebc *eventsBytesAndConn) Close() {
-	ebc.eventsBytes.UnsubscribeAll()
-	_ = ebc.conn.Close()
+	// eventsBzPublishCh is a channel used to publish either events bytes or an
+	// error received from the connection to the eventsBytes observable.
+	eventsBzPublishCh chan<- either.Bytes
+	// conn is the websocket connection to the cometbft node.
+	conn client.Connection
+	// query is the event subscription query for which this eventsBytes observable was created.
+	query string
+	// connId is a unique identifier for the connection, used for logging and debugging.
+	connId uint64
+	// ctx is the context used to manage the lifecycle of the eventsBytes observable.
+	ctx context.Context
+	// cancelCtx is a function used to cancel the context used to trigger resources cleanup
+	cancelCtx context.CancelFunc
 }
 
 // NewEventsQueryClient returns a new events query client which is used to
@@ -72,8 +81,8 @@ func (ebc *eventsBytesAndConn) Close() {
 //   - WithDialer
 func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	evtClient := &eventsQueryClient{
-		cometWebsocketURL:   cometWebsocketURL,
-		eventsBytesAndConns: make(map[string]*eventsBytesAndConn),
+		cometWebsocketURL: cometWebsocketURL,
+		eventsBytesInfo:   make(map[string]*eventsBytesInfo),
 	}
 
 	for _, opt := range opts {
@@ -107,9 +116,24 @@ func (eqc *eventsQueryClient) EventsBytes(
 	defer eqc.eventsBytesAndConnsMu.Unlock()
 
 	// Check if an event subscription already exists for the given query.
-	if eventsBzConn := eqc.eventsBytesAndConns[query]; eventsBzConn != nil {
+	if eventsBzConn := eqc.eventsBytesInfo[query]; eventsBzConn != nil {
 		// If found it is returned.
 		return eventsBzConn.eventsBytes, nil
+	}
+
+	// Check and close any existing connection for the given query.
+	// This is to ensure that we do not have multiple subscriptions for the same
+	// query, which could lead to duplicate event notifications.
+	if oldConn, ok := eqc.eventsBytesInfo[query]; ok {
+		// If an old connection exists for the given query, close it.
+		eqc.logger.Warn().Msgf(
+			"♻️ Replacing existing event subscription for query %s and id %d with a new one",
+			query,
+			oldConn.connId,
+		)
+
+		// cancel the old context to stop the unsubscribe goroutine
+		oldConn.cancelCtx()
 	}
 
 	// Otherwise, create a new event subscription for the given query.
@@ -119,10 +143,10 @@ func (eqc *eventsQueryClient) EventsBytes(
 	}
 
 	// Insert the new eventsBytes into the eventsBytesAndConns map.
-	eqc.eventsBytesAndConns[query] = eventsBzConn
+	eqc.eventsBytesInfo[query] = eventsBzConn
 
 	// Unsubscribe from the eventsBytes when the context is done.
-	go eqc.goUnsubscribeOnDone(ctx, query)
+	go eqc.goUnsubscribeOnDone(eventsBzConn)
 
 	// Return the new eventsBytes observable for the given query.
 	return eventsBzConn.eventsBytes, nil
@@ -130,20 +154,37 @@ func (eqc *eventsQueryClient) EventsBytes(
 
 // Close unsubscribes all observers from all event subscription observables.
 func (eqc *eventsQueryClient) Close() {
-	eqc.close()
+	for _, eventsBzConn := range eqc.eventsBytesInfo {
+		eqc.close(eventsBzConn)
+	}
 }
 
 // close unsubscribes all observers from all event subscription observables.
-func (eqc *eventsQueryClient) close() {
+func (eqc *eventsQueryClient) close(evtConn *eventsBytesInfo) {
 	eqc.eventsBytesAndConnsMu.Lock()
 	defer eqc.eventsBytesAndConnsMu.Unlock()
 
-	for query, eventsBzConn := range eqc.eventsBytesAndConns {
-		// Unsubscribe all observers of the eventsBzConn observable and close the
-		// connection for the given query.
-		eventsBzConn.Close()
-		// remove isClosed eventsBytesAndConns
-		delete(eqc.eventsBytesAndConns, query)
+	if _, ok := eqc.eventsBytesInfo[evtConn.query]; ok {
+		// Unsubscribe all observers of the given query's eventsBzConn's observable
+		// and close its connection.
+		close(evtConn.eventsBzPublishCh) // close the publish channel to stop the goroutine
+		_ = evtConn.conn.Close()
+		// Remove the eventsBytesAndConn for the given query.
+		delete(eqc.eventsBytesInfo, evtConn.query)
+		eqc.logger.Info().Msgf(
+			"🗑️ Unsubscribed from events for query %s and id %d",
+			evtConn.query,
+			evtConn.connId,
+		)
+	} else {
+		// Log a warning if the query was not found in the eventsBytesAndConns map.
+		if eqc.logger != nil {
+			eqc.logger.Warn().Msgf(
+				"⚠️ Failed to unsubscribe from events for query %s: subscription with id %d not found",
+				evtConn.query,
+				evtConn.connId,
+			)
+		}
 	}
 }
 
@@ -151,26 +192,36 @@ func (eqc *eventsQueryClient) close() {
 func (eqc *eventsQueryClient) newEventsBytesAndConn(
 	ctx context.Context,
 	query string,
-) (*eventsBytesAndConn, error) {
+) (*eventsBytesInfo, error) {
+	ctx, cancel := context.WithCancel(ctx)
+
 	// Get a connection for the query.
 	conn, err := eqc.openEventsBytesAndConn(ctx, query)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
 	// Construct an eventsBytes for the given query.
 	eventsBzObservable, eventsBzPublishCh := channel.NewObservable[either.Bytes]()
 
+	evtConn := &eventsBytesInfo{
+		eventsBytes:       eventsBzObservable,
+		eventsBzPublishCh: eventsBzPublishCh,
+		connId:            eqc.connId.Add(1),
+		conn:              conn,
+		query:             query,
+		ctx:               ctx,
+		cancelCtx:         cancel,
+	}
+
 	// Publish either events bytes or an error received from the connection to
 	// the eventsBz observable.
 	// NB: intentionally not retrying on error, leaving that to the caller.
 	// (see: https://github.com/pokt-network/poktroll/pull/64#discussion_r1373826542)
-	go eqc.goPublishEventsBz(ctx, conn, eventsBzPublishCh)
+	go eqc.goPublishEventsBz(evtConn)
 
-	return &eventsBytesAndConn{
-		eventsBytes: eventsBzObservable,
-		conn:        conn,
-	}, nil
+	return evtConn, nil
 }
 
 // openEventsBytesAndConn gets a connection using the configured dialer and sends
@@ -205,7 +256,7 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 		// that "connection established" appears after any "connection closed" logs
 		// from concurrent goPublishEventsBz goroutines.
 		go eqc.logger.Info().Msgf(
-			"connection established to comet websocket endpoint %s",
+			"🛜 Connection established to comet websocket endpoint %s",
 			eqc.cometWebsocketURL,
 		)
 	}
@@ -215,15 +266,11 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 
 // goPublishEventsBz blocks on reading messages from a websocket connection.
 // It is intended to be called from within a go routine.
-func (eqc *eventsQueryClient) goPublishEventsBz(
-	ctx context.Context,
-	conn client.Connection,
-	eventsBzPublishCh chan<- either.Bytes,
-) {
+func (eqc *eventsQueryClient) goPublishEventsBz(evtConn *eventsBytesInfo) {
 	// Read and handle messages from the websocket. This loop will exit when the
 	// websocket connection is isClosed and/or returns an error.
 	for {
-		eventBz, err := conn.Receive()
+		eventBz, err := evtConn.conn.Receive()
 		if err != nil {
 			// TODO_CONSIDERATION: should we close the publish channel here too?
 
@@ -236,40 +283,30 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 			// | this method return the same error.
 
 			// Only propagate error if it's not a context cancellation error.
-			if !errors.Is(ctx.Err(), context.Canceled) {
+			if !errors.Is(evtConn.ctx.Err(), context.Canceled) {
 				// Populate the error side (left) of the either and publish it.
-				eventsBzPublishCh <- either.Error[[]byte](err)
+				evtConn.eventsBzPublishCh <- either.Error[[]byte](err)
 			}
 
-			eqc.close()
+			// cancel the context to stop the unsubscribe goroutine
+			evtConn.cancelCtx()
 
 			return
 		}
 
 		// Populate the []byte side (right) of the either and publish it.
-		eventsBzPublishCh <- either.Success(eventBz)
+		evtConn.eventsBzPublishCh <- either.Success(eventBz)
 	}
 }
 
 // goUnsubscribeOnDone unsubscribes from the subscription when the context is done.
 // It is intended to be called  in a goroutine.
 func (eqc *eventsQueryClient) goUnsubscribeOnDone(
-	ctx context.Context,
-	query string,
+	evtConn *eventsBytesInfo,
 ) {
 	// Wait for the context to be done.
-	<-ctx.Done()
-	// Only close the eventsBytes for the given query.
-	eqc.eventsBytesAndConnsMu.Lock()
-	defer eqc.eventsBytesAndConnsMu.Unlock()
-
-	if eventsBzConn, ok := eqc.eventsBytesAndConns[query]; ok {
-		// Unsubscribe all observers of the given query's eventsBzConn's observable
-		// and close its connection.
-		eventsBzConn.Close()
-		// Remove the eventsBytesAndConn for the given query.
-		delete(eqc.eventsBytesAndConns, query)
-	}
+	<-evtConn.ctx.Done()
+	eqc.close(evtConn)
 }
 
 // eventSubscriptionRequest returns a JSON-RPC request for subscribing to events

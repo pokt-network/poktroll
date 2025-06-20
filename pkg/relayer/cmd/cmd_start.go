@@ -93,7 +93,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	cmd.SetContext(ctx)
 
 	// Handle interrupt/kill signals asynchronously
-	signals.GoOnExitSignal(cancelCtx)
+	signals.GoOnExitSignal(logger, cancelCtx)
 
 	// Read relay miner config file
 	configContent, err := os.ReadFile(flagRelayMinerConfig)

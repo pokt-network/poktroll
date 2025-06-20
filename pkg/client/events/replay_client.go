@@ -27,18 +27,16 @@ const (
 	// eventsBytesRetryDelay is the delay between retry attempts when the events
 	// bytes observable returns an error.
 	eventsBytesRetryDelay = time.Second
-
-	// replayObsCacheBufferSize is the replay buffer size of the
-	// replayObsCache replay observable which is used to cache the replay
-	// observable that is notified of new events.
-	// It, replayObsCache, is updated with a new "active" observable when a new
-	// events query subscription is created, for example, after a non-persistent
-	// connection error.
-	replayObsCacheBufferSize = 1
 )
 
 // Enforce the EventsReplayClient interface is implemented by the replayClient type.
 var _ client.EventsReplayClient[any] = (*replayClient[any])(nil)
+
+// Define connection state for tracking and logging transitions
+type connState struct {
+	status    string
+	timestamp time.Time
+}
 
 // NewEventsFn is a function that takes a byte slice and returns a new instance
 // of the generic type T.
@@ -67,21 +65,6 @@ type replayClient[T any] struct {
 	// replayed to new observers.
 	// NB: This is not the buffer size of the replayObsCache
 	replayObsBufferSize int
-	// replayObsCache is a replay observable with a buffer size of 1, which
-	// holds the "active latest replay observable" which is notified when new
-	// events are received by the events query client subscription created in
-	// goPublishEvents. This observable (and the one it emits) closes when the
-	// events bytes observable returns an error and is updated with a new
-	// "active" observable after a new events query subscription is created.
-	//
-	// TODO_TECHDEBT(@bryanchriswhite): Look into making this a regular observable as
-	// we may no longer depend on it being replayable.
-	replayObsCache observable.ReplayObservable[observable.ReplayObservable[T]]
-	// replayObsCachePublishCh is the publish channel for replayObsCache.
-	// It's used to set and subsequently update replayObsCache the events replay
-	// observable;
-	// For example when the connection is re-established after erroring.
-	replayObsCachePublishCh chan<- observable.ReplayObservable[T]
 	// eventTypeObs is the replay observable for the generic type T.
 	eventTypeObs observable.ReplayObservable[T]
 	// replayClientCancelCtx is the function to cancel the context of the replay client.
@@ -91,6 +74,8 @@ type replayClient[T any] struct {
 	// in the event that it encounters an error or its connection is interrupted.
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
+	// Track connection state transitions
+	currentState *connState
 }
 
 // NewEventsReplayClient creates a new EventsReplayClient from the given
@@ -125,17 +110,6 @@ func NewEventsReplayClient[T any](
 		opt(rClient)
 	}
 
-	// TODO_TECHDEBT(@bryanchriswhite): Look into making this a regular observable as
-	// we may no longer depend on it being replayable.
-	replayObsCache, replayObsCachePublishCh := channel.NewReplayObservable[observable.ReplayObservable[T]](
-		ctx,
-		// Buffer size of 1 as the cache only needs to hold the latest
-		// active replay observable.
-		replayObsCacheBufferSize,
-	)
-	rClient.replayObsCache = replayObsCache
-	rClient.replayObsCachePublishCh = replayObsCachePublishCh
-
 	// Inject dependencies
 	if err := depinject.Inject(deps, &rClient.eventsClient, &rClient.logger); err != nil {
 		return nil, err
@@ -148,6 +122,12 @@ func NewEventsReplayClient[T any](
 		ctx,
 		rClient.replayObsBufferSize,
 	)
+
+	// Initialize connection state tracking
+	rClient.currentState = &connState{
+		status:    "initial",
+		timestamp: time.Now(),
+	}
 
 	// Concurrently publish events to the observable emitted by replayObsCache.
 	go rClient.goPublishEvents(ctx, replayEventTypeObsPublishCh)
@@ -195,6 +175,10 @@ func (rClient *replayClient[T]) Close() {
 func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh chan<- T) {
 	numRetries := 0
 
+	rClient.logger.Info().
+		Str("state", rClient.currentState.status).
+		Msgf("🚀 Starting event subscription for query: %s", rClient.queryString)
+
 	for {
 		// Check if retry limit has been exceeded
 		if numRetries > rClient.connRetryLimit {
@@ -210,8 +194,22 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 		select {
 		case <-ctx.Done():
 			// If the context is done, exit the loop and stop processing events.
+			rClient.logger.Info().Msgf(
+				"🛑 Context canceled. Stopping event subscription for query: %s",
+				rClient.queryString,
+			)
 			return
 		default:
+			// Log connection attempt state
+			if rClient.currentState.status != "connected" {
+				rClient.logger.Info().Msgf(
+					"🔄 Attempting to establish event subscription for query: %s (attempt %d/%d)",
+					rClient.queryString,
+					numRetries+1,
+					rClient.connRetryLimit,
+				)
+			}
+
 			// Create a cancellable context for this connection attempt
 			eventsBzCtx, cancelEventsBzObs := context.WithCancel(ctx)
 
@@ -219,6 +217,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 			// This will return an observable that emits either event bytes or an error
 			eventsBytesObs, err := rClient.eventsClient.EventsBytes(eventsBzCtx, rClient.queryString)
 			if err != nil {
+				rClient.updateState("failed")
 				rClient.logger.Error().Err(err).Msgf(
 					"🔌 Failed to establish websocket connection to blockchain node for event subscription '%s'. Retrying connection (%d/%d)",
 					rClient.queryString,
@@ -234,6 +233,13 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 				continue
 			}
 
+			// Connection successful and verified
+			rClient.updateState("connected")
+			rClient.logger.Info().Msgf(
+				"📶 Successfully established verified websocket connection to blockchain node for event subscription %q.",
+				rClient.queryString,
+			)
+
 			// Reset the retry counter since we successfully established a connection
 			numRetries = 0
 
@@ -245,12 +251,16 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 				// Extract event bytes or error from the Either type
 				eventBz, eitherErr := eitherEventBz.ValueOrError()
 				if eitherErr != nil {
+					rClient.updateState("disconnected")
 					rClient.logger.Error().Err(eitherErr).Msgf(
 						"📡 Lost connection to event stream for query: %s. Attempting to reconnect (%d/%d)",
 						rClient.queryString,
 						numRetries+1,
 						rClient.connRetryLimit,
 					)
+
+					// Make sure to properly clean up before attempting to reconnect
+					cancelEventsBzObs()
 
 					// Connection error occurred - exit event loop to retry
 					break
@@ -261,25 +271,31 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 				if err != nil {
 					if ErrEventsUnmarshalEvent.Is(err) {
 						// Event bytes were not the expected type - skip this message and continue
-						rClient.logger.Info().Msgf(
-							"ℹ️ Received blockchain event that doesn't match subscription filter for query: %s. Skipping event (this is expected)",
+						rClient.logger.Debug().Err(err).Msgf(
+							"❓️ Received blockchain event that doesn't match subscription filter for query: %s. Skipping event (this is expected)",
 							rClient.queryString,
 						)
 						continue
 					}
 
-					// Unexpected decoding error - exit event loop to retry
+					// Unexpected decoding error - log the specific error and decide whether to reconnect
+					rClient.updateState("decode_error")
 					rClient.logger.Error().Err(err).Msgf(
 						"⚠️ Failed to decode blockchain event data for query: %s. Reconnecting to refresh event stream (%d/%d)",
 						rClient.queryString,
 						numRetries+1,
 						rClient.connRetryLimit,
 					)
+
+					// Make sure to properly clean up before attempting to reconnect
+					cancelEventsBzObs()
+
+					// Exit the event loop to retry connection
 					break
 				}
 
 				// Successfully decoded event - publish it to the channel
-				rClient.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+				rClient.logger.Info().Msgf(
 					"📦 Publishing blockchain event for query: %s",
 					rClient.queryString,
 				)
@@ -291,7 +307,36 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 
 			// Increment retry counter and delay
 			numRetries++
+			rClient.updateState("waiting_retry")
+			rClient.logger.Info().Msgf(
+				"⏳ Waiting %s before attempting to reconnect for query: %s (attempt %d/%d)",
+				eventsBytesRetryDelay,
+				rClient.queryString,
+				numRetries,
+				rClient.connRetryLimit,
+			)
 			time.Sleep(eventsBytesRetryDelay)
 		}
+	}
+}
+
+// updateState updates and tracks connection state transitions
+func (rClient *replayClient[T]) updateState(newStatus string) {
+	prevStatus := rClient.currentState.status
+	duration := time.Since(rClient.currentState.timestamp).Round(time.Millisecond)
+
+	// Only log transitions between different states
+	if prevStatus != newStatus {
+		rClient.logger.Info().
+			Str("prev_state", prevStatus).
+			Str("new_state", newStatus).
+			Dur("duration_in_prev_state", duration).
+			Msgf("🔄 Connection state transition for query: %s", rClient.queryString)
+	}
+
+	// Update current state
+	rClient.currentState = &connState{
+		status:    newStatus,
+		timestamp: time.Now(),
 	}
 }
