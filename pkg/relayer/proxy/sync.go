@@ -218,7 +218,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
-	_, responseBz, err := SerializeHTTPResponse(httpResponse, logger)
+	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse)
 	if err != nil {
 		return relayRequest, err
 	}
