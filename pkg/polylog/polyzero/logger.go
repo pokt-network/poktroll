@@ -31,7 +31,7 @@ func NewLogger(
 ) polylog.Logger {
 	ze := &zerologLogger{
 		level:  zerolog.DebugLevel,
-		Logger: zerolog.New(os.Stderr).With().Timestamp().Logger(),
+		Logger: zerolog.New(os.Stderr),
 	}
 
 	for _, opt := range opts {
