@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"errors"
 	"net/http"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -33,16 +34,23 @@ func (sync *relayMinerHTTPServer) replyWithError(
 	relayRequest *types.RelayRequest,
 	writer http.ResponseWriter,
 ) {
-	// Indicate whether the original error should be sent to the client or send
-	// a generic error reply.
-	// TODO_TECHDEBT: Reenable internal error obfuscation once we are confident
-	// that the relayer proxy is stable w.r.t. protocol compliance.
-	// if errors.Is(replyError, ErrRelayerProxyInternalError) {
-	// 	replyError = ErrRelayerProxyInternalError
-	// }
 	listenAddress := sync.serverConfig.ListenAddress
+	serviceId := relayRequest.Meta.SessionHeader.ServiceId
 
-	// Initialize a generic RelayRequest if the one provided is nil.
+	errorLogger := sync.logger.With(
+		"service_id", serviceId,
+		"listen_address", listenAddress,
+	).Error()
+
+	// Indicate whether the original error should be sent to the client or send a generic error reply.
+	if errors.Is(replyError, ErrRelayerProxyInternalError) {
+		// TODO_TECHDEBT: Reenable internal error obfuscation once we are confident
+		// that the relayer proxy is stable w.r.t. protocol compliance.
+		// replyError = ErrRelayerProxyInternalError
+		errorLogger.Err(replyError).Msgf("⚠️ Temporarily Overriding %v error until the RelayMiner is stable w.r.t. protocol compliance", ErrRelayerProxyInternalError)
+	}
+
+	// Initialize a serializable (empty) RelayRequest if the one provided is nil.
 	if relayRequest == nil {
 		relayRequest = &types.RelayRequest{
 			Meta: types.RelayRequestMetadata{
@@ -51,19 +59,12 @@ func (sync *relayMinerHTTPServer) replyWithError(
 		}
 	}
 
-	// Ensure the session header is initialized.
+	// Ensure the session header is initialized to a proper structure.
 	if relayRequest.Meta.SessionHeader == nil {
 		relayRequest.Meta.SessionHeader = &sessiontypes.SessionHeader{}
 	}
 
 	// Fill in the needed missing fields of the RelayRequest with empty values.
-	serviceId := relayRequest.Meta.SessionHeader.ServiceId
-
-	errorLogger := sync.logger.With(
-		"service_id", serviceId,
-		"listen_address", listenAddress,
-	).Error()
-
 	relayer.RelaysErrorsTotal.With("service_id", serviceId).Add(1)
 
 	// Create an unsigned RelayResponse with the error reply as payload and the
@@ -89,10 +90,8 @@ func (sync *relayMinerHTTPServer) replyWithError(
 }
 
 // TODO_TECHDEBT(@red-0ne): Revisit all the RelayMiner's returned errors and ensure:
-//   - It is always returning a registered error (i.e. implements the sdkError interface,
-//     i.e. no fmt.Errorf)
-//   - All registered errors have meaningful and short description, the wrapping error
-//     will provide more context
+//   - It is always returning a registered error (i.e. implements the sdkError interface and not a fmt.Errorf)
+//   - All registered errors have meaningful and short description, the wrapping error will provide more context
 //   - The errors belong to the right codespace
 //
 // unpackSDKError attempts to extract an sdkError from the provided error chain.
@@ -110,6 +109,7 @@ func unpackSDKError(srcError error) *types.RelayMinerError {
 
 	errorMessage := srcError.Error()
 	currentError := srcError
+
 	// Create a default RelayMinerError to return if no sdkError is found
 	defaultError := &types.RelayMinerError{
 		Codespace:   sdkerrors.UndefinedCodespace,
