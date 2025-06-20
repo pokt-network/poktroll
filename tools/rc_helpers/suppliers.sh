@@ -1,9 +1,17 @@
 #!/bin/bash
 
+# TODO_IMPROVE: Reference these helpers in the proper documentation in dev.poktroll.com
+
+# Some background
+# - $(pocket query tx --query ...) Queries “inputs” to block processing
+# - $(pocket query block-results --query ...) Queries “outputs” of block processing
+# - Events may be emitted during the input phase OR the output phase
+# - There is no single query to process both in full detail
+
 echo "Run the following --help messages to get more information about the commands"
 echo "shannon_query_unique_claim_suppliers_addresses --help"
 echo "shannon_query_supplier_tx_events --help"
-echo "shannon_query_supplier_tx_events --help"
+echo "shannon_query_supplier_block_events --help"
 
 # -----------------------------------------------
 # shannon_query_unique_claim_suppliers_addresses
