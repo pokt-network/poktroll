@@ -6,11 +6,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-const shutdownTimeout = 30 * time.Second
+const shutDownTimeout = 30 * time.Second
 
 // ExitCode is a global variable that is intended to be used by CLI commands to
 // hold the current exit code and subsequently used in ExitWithCodeIfNonZero.
@@ -60,8 +61,8 @@ func GoOnExitSignal(logger polylog.Logger, onInterrupt func()) {
 			logger.Warn().Msgf("⚠️ Received another signal %s during shutdown, 🗡️ exiting immediately.", sig)
 			// Exit immediately if another signal is received during shutdown
 			os.Exit(130) // UNIX convention, use 128 + 2 to indicate a double interrupt (SIGINT)
-		case <-time.After(shutdownTimeout):
-			logger.Warn().Msgf("⌛ Graceful shutdown timed out after %s, 🗡️ exiting immediately.", shutdownTimeout)
+		case <-time.After(shutDownTimeout):
+			logger.Warn().Msgf("⌛ Graceful shutdown timed out after %s, 🗡️ exiting immediately.", shutDownTimeout)
 			os.Exit(1) // Exit immediately if the shutdown takes too long
 		}
 	}()
