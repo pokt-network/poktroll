@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	io "io"
 	"net/http"
 	"slices"
 	"strings"
@@ -17,17 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
-
-func closeRequestBody(logger polylog.Logger, body io.ReadCloser) {
-	if body == nil {
-		logger.Warn().Msg("⚠️ SHOULD NEVER HAPPEN ⚠️ Attempting to close request body when it is nil.")
-		return
-	}
-	e := body.Close()
-	if e != nil {
-		logger.Error().Err(e).Msg("❌ failed to close the request body")
-	}
-}
 
 // serveSyncRequest serves a synchronous relay request by forwarding the request
 // to the service's backend URL and returning the response to the client.
@@ -191,11 +179,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("failed to build the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-<<<<<<< HEAD
-	defer closeBody(httpRequest.Body, server.logger)
-=======
 	defer closeRequestBody(logger, httpRequest.Body)
->>>>>>> main
 
 	// Configure the HTTP client to use the appropriate transport based on the
 	// backend URL scheme.

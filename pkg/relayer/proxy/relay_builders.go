@@ -11,7 +11,8 @@ import (
 // newRelayRequest builds a RelayRequest from an http.Request.
 func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	requestBody, err := io.ReadAll(request.Body)
-	defer closeBody(request.Body, sync.logger)
+	defer closeRequestBody(sync.logger, request.Body)
+
 	if err != nil {
 		return &types.RelayRequest{}, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}

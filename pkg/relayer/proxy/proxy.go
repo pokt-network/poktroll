@@ -205,19 +205,21 @@ func (rp *relayerProxy) PingAll(ctx context.Context) error {
 
 	if err != nil {
 		rp.logger.Error().Err(err).
-			Msg("an unexpected error occured while pinging backend URL(s)")
+			Msg("❌ Unexpected error occurred while pinging backend URL(s)")
 		return err
 	}
 
 	return nil
 }
 
-// closeBody attempts to close the provided request body and logs any error that occurs.
-func closeBody(body io.ReadCloser, logger polylog.Logger) {
-	if body != nil {
-		if err := body.Close(); err != nil {
-			// Log the error but do not return it, as this is a best-effort operation.
-			logger.Warn().Err(err).Msg("failed to close request body")
-		}
+// closeRequestBody attempts to close the provided request body and logs any error that occurs.
+func closeRequestBody(logger polylog.Logger, body io.ReadCloser) {
+	if body == nil {
+		logger.Warn().Msg("⚠️ SHOULD NEVER HAPPEN ⚠️ Attempting to close request body when it is nil.")
+		return
+	}
+	e := body.Close()
+	if e != nil {
+		logger.Error().Err(e).Msg("❌ failed to close the request body")
 	}
 }
