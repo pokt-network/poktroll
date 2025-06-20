@@ -15,6 +15,10 @@ RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin poc
 COPY --chown=pocket:pocket release_binaries/pocket_linux_$TARGETARCH /bin/pocketd
 COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
 
+# Set Go GC tuning defaults for production memory behavior
+ENV GODEBUG="madvdontneed=1"
+ENV GOGC="50"
+
 USER pocket
 
 ENTRYPOINT ["pocketd"]
