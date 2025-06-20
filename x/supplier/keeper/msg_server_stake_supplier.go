@@ -141,6 +141,14 @@ func (k Keeper) StakeSupplier(
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 
 	if !isSupplierFound {
+		// Ensure that a stake amount is provided if the supplier is being created.
+		if msg.Stake == nil {
+			return nil, status.Error(
+				codes.InvalidArgument,
+				suppliertypes.ErrSupplierInvalidStake.Wrap("nil supplier stake").Error(),
+			)
+		}
+
 		supplierCurrentStake = sdk.NewInt64Coin(pocket.DenomuPOKT, 0)
 		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.OperatorAddress))
 		supplier = k.createSupplier(ctx, msg)
@@ -180,6 +188,15 @@ func (k Keeper) StakeSupplier(
 			)
 			logger.Info(fmt.Sprintf("ERROR: %s", err))
 
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+
+		// Ensure that only the operator can change the service configurations.
+		if !msg.IsSigner(supplier.OperatorAddress) && len(msg.Services) > 0 {
+			err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
+				"only the operator account is authorized to update the service configurations",
+			)
+			logger.Info(fmt.Sprintf("ERROR: %s", err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
@@ -268,9 +285,8 @@ func (k Keeper) updateSupplier(
 	supplier *sharedtypes.Supplier,
 	msg *suppliertypes.MsgStakeSupplier,
 ) error {
-	// Validate that the stake is not being lowered
 	if msg.Stake == nil {
-		return suppliertypes.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
+		msg.Stake = supplier.Stake
 	}
 
 	supplier.Stake = msg.Stake
@@ -281,10 +297,12 @@ func (k Keeper) updateSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
-	// Mark all the supplier's service configurations as to be deactivated at the
-	// start of the next session.
-	for _, oldServiceConfigUpdate := range supplier.ServiceConfigHistory {
-		oldServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
+	// If new service configs were provided, mark all the supplier's service
+	// configurations as to be deactivated at the start of the next session.
+	if len(msg.Services) > 0 {
+		for _, oldServiceConfigUpdate := range supplier.ServiceConfigHistory {
+			oldServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
+		}
 	}
 
 	// Initialize the supplier's service configurations with the new ones from the msg.
