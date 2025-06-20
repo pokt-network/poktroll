@@ -49,6 +49,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Extract the relay request from the request body.
 	logger.Debug().Msg("extracting relay request from request body")
+	// TODO_IN_THIS_PR: Using shannon-sdk request serializatino
 	relayRequest, err := server.newRelayRequest(request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("failed creating relay request")

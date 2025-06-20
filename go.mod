@@ -8,7 +8,7 @@ module github.com/pokt-network/poktroll
 // this go module by commenting out the `module` directive above, and uncommenting
 // the `module` and `replace` directives below.
 //
-// 1. Commment above / uncomment below...
+// 1. Comment above / uncomment below...
 // 2. go mod tidy
 // 3. ignite scaffold ...
 // 4. make proto_fix_self_import && make proto_regen
@@ -21,15 +21,15 @@ module github.com/pokt-network/poktroll
 
 go 1.24.3
 
-// replace (
-// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
-// github.com/pokt-network/shannon-sdk => ../shannon-sdk
+replace (
+	// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
+	github.com/pokt-network/shannon-sdk => ../shannon-sdk
 
 // DEVELOPER_TIP: Uncomment to use a local copy of smt for development purposes.
 // github.com/pokt-network/smt => ../smt
 // github.com/pokt-network/smt/kvstore/badger => ../smt/kvstore/badger
 // github.com/pokt-network/smt/kvstore/pebble => ../smt/kvstore/pebble
-// )
+)
 
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.6
 

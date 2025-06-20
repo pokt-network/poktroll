@@ -20,7 +20,8 @@ spec:
           ports:
             - containerPort: 8547
           command: ["anvil"]
-          args: ["-p", "8547", "-b", "5", "--host", "0.0.0.0"]
+          # 30 second block times is used to enable producing large blocks for local load testing
+          args: ["-p", "8547", "-b", "30", "--host", "0.0.0.0"]
 ---
 apiVersion: v1
 kind: Service

@@ -1598,21 +1598,16 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 
 			relaysSent := s.numRelaysSent.Add(1) - 1
 
-			// Generate the relay payload with unique request IDs.
-			relayPayload := fmt.Sprintf(relayPayloadFmt, relayRequestMethod, relaysSent+1)
+			// Use provided payload if present, otherwise generate as before.
+			// var relayPayload string
+			// if relayBatchInfo.RelayPayload != "" {
+			// 	relayPayload = relayBatchInfo.RelayPayload
+			// } else {
+			// 	relayPayload = fmt.Sprintf(relayPayloadFmt, relayRequestMethod, relaysSent+1)
+			// }
+			relayPayload := fmt.Sprintf(relayPayloadHeight, relaysSent+1)
 
-			// Send the relay request.
 			s.sendRelay(relaysSent, relayPayload)
-
-			//logger.Debug().
-			//	Int64("session_num", relayBatchInfo.sessionNumber).
-			//	Int64("block_height", relayBatchInfo.blockHeight).
-			//	Str("app", appAddress).
-			//	Str("gw", gwAddress).
-			//	Int("total_apps", len(relayBatchInfo.appAccounts)).
-			//	Int("total_gws", len(relayBatchInfo.gateways)).
-			//	Str("time", time.Now().Format(time.RFC3339Nano)).
-			//	Msgf("sending relay #%d", relaysSent)
 
 			batchWaitGroup.Done()
 		})

@@ -46,6 +46,8 @@ func sendJSONRPCResponse(t *testing.T, w http.ResponseWriter) {
 	require.NoError(t, err)
 }
 
+// TODO_IN_THIS_PR: Delete this and use the sdk instead.
+
 // PrepareJSONRPCRequest constructs a hard-coded JSON-RPC http.Request and
 // returns the corresponding sdk serialized POKTHTTPRequest.
 //

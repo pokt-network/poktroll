@@ -20,6 +20,7 @@ Pocket Network load-testing suite.
     - [Test Execution](#test-execution)
     - [Result Analysis](#result-analysis)
 - [Developing Custom Tests](#developing-custom-tests)
+  - [TODO: Improve this docs](#todo-improve-this-docs)
 
 ## Overview
 
@@ -117,3 +118,45 @@ For tests conducted against community-hosted suppliers and gateways, analysis is
 ## Developing Custom Tests
 
 For custom test development, refer to the [gocuke documentation](https://github.com/regen-network/gocuke?tab=readme-ov-file#quick-start). The [anvil test](https://github.com/pokt-network/poktroll/blob/main/load-testing/tests/anvil_test.go) provides a small but practical reference implementation.
+
+#### TODO: Improve this docs
+
+Ref: https://www.notion.so/buildwithgrove/PATH-Shannon-to-214a36edfff6809c9c5bf7cb7d8d8d23?source=copy_link
+
+```
+
+make localnet_up
+
+npm install -g ethers
+
+curl -X POST http://localhost:8547 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "anvil_setBalance",
+    "params": [
+      "0x1fccd9b92Ab5284C6487fF0536D07Da2F7bddF19",
+      "0xFFFFFFFFFFFFFFFFFFFFFFFF"
+    ],
+    "id": 1
+  }'
+
+curl -s -X POST http://localhost:8547 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc":"2.0",
+    "method":"eth_getBlockByNumber",
+    "params":["0x8", true],
+    "id":1
+  }' | jq .
+
+NODE_PATH=$(npm root -g) node anvil_ethers.js
+
+make test_load_relays_stress_localnet_single_supplier
+
+
+http://localhost:3003/d/CgCw8jKZz3/protocol-go-runtime-exporter?orgId=1&from=now-1h&to=now&timezone=browser&var-datasource=prometheus&var-job=relayminer1&var-instance=$__all&refresh=5s
+
+
+http://localhost:3003/d/relayminer/protocol-relayminer?orgId=1&var-relayminer=&from=now-5m&to=now&timezone=browser&refresh=5s
+```

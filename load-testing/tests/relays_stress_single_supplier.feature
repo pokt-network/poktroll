@@ -13,7 +13,8 @@ Feature: Loading gateway server with relays
       | application | 4                | 10             | 12         |
       | gateway     | 1                | 10             | 1          |
       | supplier    | 1                | 10             | 1          |
-    When a load of concurrent relay requests are sent from the applications
+    # When a load of concurrent relay requests are sent from the applications
+    When a load of concurrent "eth_getBlockByNumber" relay requests for height "0x6f6" are sent from the applications
     Then the number of failed relay requests is "0"
     # TODO_IMPROVE(@red-0ne): Implement the following steps
     # Then "0" over servicing events are observed
