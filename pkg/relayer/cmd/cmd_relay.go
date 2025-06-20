@@ -138,6 +138,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	loggerOpts := []polylog.LoggerOption{
 		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
 		polyzero.WithOutput(os.Stderr),
+		polyzero.WithTimestamp(),
 	}
 
 	// Construct logger and associate with command context

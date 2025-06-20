@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -10,7 +9,8 @@ import (
 
 // newRelayRequest builds a RelayRequest from an http.Request.
 func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
-	requestBody, err := io.ReadAll(request.Body)
+	// Replace DefaultMaxBodySize with config options
+	requestBody, err := SafeReadBody(sync.logger, request.Body, defaultMaxBodySize)
 	if err != nil {
 		return nil, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
