@@ -1,0 +1,75 @@
+---
+id: evidence-msg-withdraw-delegator-reward
+title: "WithdrawDelegatorReward defines a method to withdraw rewards of delegator
+from a single validator."
+description: "WithdrawDelegatorReward defines a method to withdraw rewards of delegator"
+sidebar_label: "WithdrawDelegatorReward defines a method to withdraw rewards of delegator
+from a single validator."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFVk1vGjEQ/SuWzwSS9MapaYrUHNogQtUDoMjsDrsOXs/W9oYgxH/vjA2ENAHaqmpXAq3H4/l6b8a7kkEVXnZH8rMv5KQlsQangkZ7k8uu7D3qHGwGtHn/TYcyd2rxEQwUKqAbwEK5XLakg+8N+PAB86XsrmSGNoAN/Krq2ugs2us8eLQs81kJleK3HHzmdM275It8HHAhHNQOPNn0Ik9bdEQsNtrKiIBCbbfQje3MYUUSr21hQDwqo3PeaFOwYVkDecPpA2SB1rXjlIMGn0La2LhXeU4+o3BzxAdH9uS6JXcGj2jx0/o/KTIe2gEBGFwDaxb4Gq1PKV6en78u/pXwTZZRJrPGiK062/rrYA42ximXmbbgRShBkHrngP7YbsMRXOHTEKoKmxTwRk85p5akpgNU+0jtzr8M/Rq13QWnqO5zSEDE+lustE3gKJvTTyR/7bEd2y+3w15XDCmhJBQzDSYX2rPeDa0Xpc5KoavaQBWx5uSzxgfCsoJQIqXrdUEOGspabIEU06UosEBKNGD7dMbPTI0BH2DnlqEz1ZjwBiWsaCw81VQjigCcQ/dnzDgOV4Y57GlpMlqAI7UZukqFJHp3mZIJShv/O9C+9PU+bb+uRktSI2uOX5n+/pFYoor6QhVvHnyzzQ/1+DOpEtbc09sOp9Kyjhc4+8UuTzbIXY0+pqpCSatOhr5C3841BzltOKb248WUanfRPtJnZIGhGzzP8t6TYqIeGIvbGrw5DfcYqO0MX5PrulTUZQWF0kzbGVadGufhzEJYoJvHhUNjxKB3NxRX/Rtueh04FvlpOOyzSFwTEZFEiYkqi0y0qmKlU4bjEAfnUzCbN2ExCA+BN7mmlbJ7Jv8NqC+qtKNbgKfQqQ2VjGNrnOG9hPdInsCbjB5CnK77krlDRlarqfLw1Zn1msXEAUd3+WjC6Dqtplz60YScl6Byas/uaCXnsIzjMo6BsyGHGsnQxM78eSSsW9sTV3TR1OGo7mSP3v3buyEpTzdfF1WcF5LS4ZuO/rtS8mcLn45NHmUraZQtmti1Mtnk5wdyLTUM
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"WithdrawDelegatorReward defines a method to withdraw rewards of delegator\nfrom a single validator."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.distribution.v1beta1.Msg/WithdrawDelegatorReward"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+WithdrawDelegatorReward defines a method to withdraw rewards of delegator
+from a single validator.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgWithdrawDelegatorReward represents delegation withdrawal to a delegator\nfrom a single validator.","type":"object","properties":{"delegator_address":{"type":"string"},"validator_address":{"type":"string"}}}}},"description":"MsgWithdrawDelegatorReward represents delegation withdrawal to a delegator\nfrom a single validator.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgWithdrawDelegatorRewardResponse defines the Msg/WithdrawDelegatorReward\nresponse type.","type":"object","properties":{"amount":{"type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

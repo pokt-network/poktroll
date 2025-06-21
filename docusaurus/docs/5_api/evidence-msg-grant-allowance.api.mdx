@@ -1,0 +1,75 @@
+---
+id: evidence-msg-grant-allowance
+title: "GrantAllowance grants fee allowance to the grantee on the granter's
+account with the provided expiration time."
+description: "GrantAllowance grants fee allowance to the grantee on the granter's"
+sidebar_label: "GrantAllowance grants fee allowance to the grantee on the granter's
+account with the provided expiration time."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VktvGjEQ/iuWL70QSNIbp9AoanOoihJ6IlFl7NldJ157a3t5CPHfO+NlyQKBSlVbDsj2fPP+ZmDNo8gDH07515Dz5x53FXgRtbP3ig/53VwrsBJQ+OOzFzaOjHELgS+8xz38rCHET06t+HDNpbMRbKSjqCqjZTIzeAnO0luQBZSCTgqC9LoiKbpA0/uWmVAqMAyj1CEghmXOswQBYNGxUIFVrK7ovFN6si5jGUBgmXcliwWakdLVNjIUNNq+j0HHVQXo1c1eQEa8V54yjhpCCnyXHl7OQ28a8Q4Wotc255tNj2MCmrITZtxVQcl+6jtvTArLZhiyXVG4MxG07FEJtFN0SkBQlCDbKfU5GsybuhyXdStgOjTFUMpDCGSdrnUAjw4xYNYAFfp+M00wYR0ifYJ+wLLWVoVOAdt02xD8qRD8uRAShKI49I4I7U86pc9hMf8zj4j82gMOSfQ1bOghVM6GhhzXl5fH9RixUEuJJchqw1o42fpbk/OwtckUZNpCU3ZEDU7A2hgYlfd4ONoqZ6I28Z10LKstLCuEIn3AeyzvH2V1fs6kU90x02g0R7b1OLazFLF5+njNU6hRaBM6aOG9WCFWRyjDP5lpkpXYU5G/q/guVQ94moYg7A83kZK6144x0vftivP4ZFtaLnQskgxToW2NrVhWutnhLOoy9aKEWDha6JULKW0RC7wNpAulC310nSz351czrOFV/5g0qESde3jb+XdLUVYGjtbmzYkN0XnrLI0OTNvMHdPsthDashyzrGd96cpB5V7jhYW4cP41Xbwzhj3cPU7YaHxPLNaRwuJfJpMxPbFbpKQzsOWkkImTVpQE+p1hCmwOPjTBbE8MdyMLEElIFS2F7Zj8/+3dq9iOhBGWcVAZLB/FWXtDsqbzU36m82jwoPf4v6Ag4qDeeo2/TvDdm82GnpENHn/9p3icC6/FjCo/fUZ/BQhFDZ6u+SusqJHNPriYUHQEN3Ua0cPdsOm1GiPcllU8i33ucHv87XGC4Nn2/0iZFgf3YkHrGr+HnNP/G9JO057e1twIm9dpfHljkz6/AMO0OpU=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GrantAllowance grants fee allowance to the grantee on the granter's\naccount with the provided expiration time."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.feegrant.v1beta1.Msg/GrantAllowance"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GrantAllowance grants fee allowance to the grantee on the granter's
+account with the provided expiration time.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgGrantAllowance adds permission for Grantee to spend up to Allowance\nof fees from the account of Granter.","type":"object","properties":{"allowance":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"allowance can be any of basic, periodic, allowed fee allowance."},"grantee":{"description":"grantee is the address of the user being granted an allowance of another user's funds.","type":"string"},"granter":{"description":"granter is the address of the user granting an allowance of their funds.","type":"string"}}}}},"description":"MsgGrantAllowance adds permission for Grantee to spend up to Allowance\nof fees from the account of Granter.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgGrantAllowanceResponse defines the Msg/GrantAllowanceResponse response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

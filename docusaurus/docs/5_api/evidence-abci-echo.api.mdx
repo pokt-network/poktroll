@@ -1,0 +1,72 @@
+---
+id: evidence-abci-echo
+title: "EvidenceABCI_Echo"
+description: "EvidenceABCI_Echo"
+sidebar_label: "EvidenceABCI_Echo"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VMFuGjEQ/ZWVzwSi9MapBCGVU1FCTwhVg3dgHby2a88SEOLfO+OFdJOgcmr3APZ45s3zm/EcFcEmqeFCjR7HU7XsKR8wAhnvpqUaqsnOlOg0yunPia686qmIvxpM9OjLgxoelfaO0JEsIQRrdI4evCTvxJZ0hTXIig4BGdKvXlAT44QouchgktMaU4INdhwTReM26iRfm9VEZFIUG8yGFLxLbfTD/b38lZh0NEEIMMCoSI3WjLtubHFx73Pm/0KZKZa4hsbSFWauaBzuA6NiWWCMPv4LgtqXXXaGQTcY2W3tYw3Umr48qEyVwNjU8YYY4cC+hrBOt3N9bY8/S9FTUJZG+IOddUOyRDc0zMy6yl1ryBqp8tKtwadMDKji3YAlLDHWfMc+rLTpS8zgHCNSPv1p5Mke6mDxXVXfmLAGbu0/V3FcgXHFxlDVrPra14Pgt3TnkF593OZN9NYWT5PneTGaTTkrGZIk6tt8PhNTMeaKeza1JQedS+6gFqdbwEJshzG1ZM6rwnkqEpIcihw1uA7kRb1CpCjOUry71FsZCPc0CJZvKFBNtHLWKrtQ15RlpAzIM6SSOrDb8biChD+iPZ3EzGpHHhkLXu4gGliJFoslw1cIjMebo9riQaRtH8DdXMiIu21yT358DKfeJWLELz3QX32XnVaZfX+es/PqPMTq/FJUhFcZcPw7VEpmoUTn9s62o7LgNk3bHS2mfL8BRRLTAQ==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"EvidenceABCI_Echo"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/tendermint.abci.ABCI/Echo"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+EvidenceABCI_Echo
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"message":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"message":{"type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

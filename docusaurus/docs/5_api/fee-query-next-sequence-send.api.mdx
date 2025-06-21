@@ -1,0 +1,72 @@
+---
+id: fee-query-next-sequence-send
+title: "NextSequenceSend returns the next send sequence for a given channel."
+description: "NextSequenceSend returns the next send sequence for a given channel."
+sidebar_label: "NextSequenceSend returns the next send sequence for a given channel."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk1vGzcQ/SsDnlpAsZK06EGnGEba+GK4tnuyDIPijnYZ7ZIbkitbFfTf+4ZafVmK06YxZIgiOV/vzQxnqZIuoxrdqz87Dgv1MFC+5aCT9e6yUCP1O3M+ebzi53TLXzp2hm/ZFWqgWh10w4mDKFiqgqMJthVRCJpKO8c1dc5CiGzBLtmp5QBBB7HdlUcryqwItTpVWAfYsYFhP4WOByqaihutRkuVFq1IxhSsK9VqNXhptvUhvWZTzv+PwQe5HFvvIkc5f//2rXwdOnFOsTOGY5x2NW2un8GO8S7BJ5HQbVtbk4Eefo4itjw26yef2SQIJptq2chcvKTiprdANlKqmCQajolECU19kM2xy6LDkwro5vqCwGTlM61BUiDZdYAOdx9jfxkLMH8Ey0DBSqMRl+qsS7/9uuexyNNGnkSeXNdMwMkqm/LTV/VNFon3tDUcZjVTliN8+NnGJJq32h4rtmWVjkm5EpV1vcgQ3fDcRux/ypcFOOtM4AbkcEE6EWtT0VoVPVUWNmfMLZwbu43sVQ4jq4tIrjP65J94jp3oGyYjjLjYRdJ16YNNVROp0QsylffgKvmxQ2pwygp6S9aRAfRavr0rrLgeic/KM6p0KITMWRxQTDrxmwYuWgdmJ4H1DK6RFFTJkS6dKIURo5Gmg4OIe69fRBw9Luk0dr0jkqjWIYvgJ02YGu9swr/JCGZJHcUkAnak4wlQx3AlRcoxCoNfyegdA1qs+JNWCp10TuexEzcRlxOvjG/Qg4SwEpAh4zXkK0TXK+1zn9outMA8SsZ0LZSJTu2KsZsG5r8zdLUFEvEo/UMf015a/fvc32P2CQlgMy1UWsFso1gSd2ukr4z/bGSjIJOYjazjEVhNFwKWAFSM9X8DFMdUd/WJOjl36J/83IImIMshAMQf0sMOgTW+4L1biIrL3Ki3kWLrl/cqu4qKqOPebR2CXkgPT9zEb9v6sD4+8XwoXayrTNfX+yIZogYdXJcnBbcgHnSYl201cOqCWxdH3wexu22Gkp66T4f+LRSA+0Y8UmUunPxEjdTQTszQ+MDD/upw/m6zjMPl7i1dDeWNw1b/1K2GJ1q4PH9Tf0z+RSW9p0SydpMzlBd0zdIbx+kJnSf/CL6u6ebj7R2dX1/u1/Hd3bVs0QUSxdfcZ4o2OVP61/dbioVtdNC4dqZfEYqapIlIi/cxNdrtqfxBoB/AsOU7QX7Y1sBEjHehlrM1IfcKhOQgQ451rQqr+bvdT+kno4MxJ3Mju7tB5AQ9mDIqRCpWlssJmvhfoV6tZPtLHtNG91jOdbB6IuDL8GWjrJE2U11HPgpoW7Xqp5t+2PmZXpvRTiKwKT8nxTfXdSe/sJzx4nCey4PZ97j01fntO/zZQLx6wNWKdSGtFVitT88xobVpT+6om8mwty3GPz7eoe7/AQgP+JM=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"NextSequenceSend returns the next send sequence for a given channel."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/ibc/core/channel/v1/channels/{channel_id}/ports/{port_id}/next_sequence_send"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+NextSequenceSend returns the next send sequence for a given channel.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"channel unique identifier","name":"channel_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"port unique identifier","name":"port_id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryNextSequenceSendResponse is the request type for the\nQuery/QueryNextSequenceSend RPC method","properties":{"next_sequence_send":{"type":"string","format":"uint64","title":"next sequence send number"},"proof":{"type":"string","format":"byte","title":"merkle proof of existence"},"proof_height":{"description":"Normally the RevisionHeight is incremented at each height while keeping\nRevisionNumber the same. However some consensus algorithms may choose to\nreset the height in certain conditions e.g. hard forks, state-machine\nbreaking changes In these cases, the RevisionNumber is incremented so that\nheight continues to be monitonically increasing even as the RevisionHeight\ngets reset","type":"object","title":"Height is a monotonically increasing data type\nthat can be compared against another Height for the purposes of updating and\nfreezing clients","properties":{"revision_height":{"type":"string","format":"uint64","title":"the height within the given revision"},"revision_number":{"type":"string","format":"uint64","title":"the revision that the client is currently on"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

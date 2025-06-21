@@ -1,0 +1,64 @@
+---
+id: evidence-reflection-service-get-tx-descriptor
+title: "GetTxDescriptor returns information on the used transaction object and available msgs that can be used"
+description: "GetTxDescriptor returns information on the used transaction object and available msgs that can be used"
+sidebar_label: "GetTxDescriptor returns information on the used transaction object and available msgs that can be used"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9Vk1v20gM/SuDObWAa7XdW08t0qBbYBcIXPfUFMFIoqVpRjPaIeXYMPLfS87YjmSl3ctigyCeL5KP75F0DppMg/rdN72CjYOKbPBfIG5tBfr7QoceopGzz7V+p6+3tgZfwezp3Seg9e4jYBVtTyHqhY6AffAI7Pug375+LR/18QEbsrcPCoeqAsTN4NTp+ZJNq+AJPImF6Xtnq4Sg+IFidtBYtdAZWdG+B3YUyh+Mhg3JkpODCzSro29lUVEL51i8oCF6qFW5TxcXdmp1c8Ve+ygskM2p0C79PUaineJroQWV9ZsQu4RV8W+HjYQzpCrjVQmKbx9MrDkchRRulNytNy74BtlRvmJiepKn0Xg0iWuJRKEcNirlvZilPwXKrDpvOpgTf7o58XH2e74Im0yUeZgAkIDqBefBuSIZroT0jHbL9S5dvrz1lsStD6Q6MJ4kVxz6PkRSfXD7LsS+tdilEBeucaGydTLATBQTN2CS6NbHc92pylkuEZQXg68hCpxa2YR7nxhv+cAxkwp7qOzGVvNUrFf8cCTD8olVpGh9ox8XWoQcVZuJ0exHxZZ0dhYJp8qN3DIViKbhGnmB9f3yb2xesgNL0OHvypjfjYoxa1iyE6OqgF3AV+zs5HpSaTU4u4XIIB4stfx+lPmsThj/nSC4G6Kb18r4VkljGpY+Jbrm06+rv0RI5jin9Qx/Tz8Ldr0xg6NnRoFnFWHHQglzECPn+59MhGmqVahh9Mqy0wZkWOXGzUd/vNUJKmfqntP9l7JNY73P14cZHwtt6toKfuNuxiaJoqOczxmeSRwzdzmy8kibDSMRLLXRuAcyciWNY7acrSm5X2ZjS8y0AKM2yJdAAylZQy1vilyJRWkQiqf2LLZvSibwTcFq3dVndAXtRjvhklHOq+Gq5SJTDZfuUC6r0BV9uKdXHughxPu0icE5tbr+slYfbj6POubP9fpGjtQVV05wcCwdzlei5Gmo/82xyM/dgxnMcZUmGnLqfMmziTrjRy7/NxUmRJ1LhGBHRe+YNYF37OOs0DedFWJb0Sh9MZ9U4s1RJ15NlRJOJ1rx/wItpy0ODwfx9DW6x0c5/meAuOdzXm5NtAJfdgykBcOTmTcHfQ97afM0GyWscUPqqctmfvw+qrRP12su+58nUhen
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GetTxDescriptor returns information on the used transaction object and available msgs that can be used"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/reflection/v1beta1/app_descriptor/tx_descriptor"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GetTxDescriptor returns information on the used transaction object and available msgs that can be used
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"GetTxDescriptorResponse is the response returned by the GetTxDescriptor RPC","properties":{"tx":{"title":"tx provides information on msgs that can be forwarded to the application\nalongside the accepted transaction protobuf type","type":"object","properties":{"fullname":{"description":"fullname is the protobuf fullname of the raw transaction type (for instance the tx.Tx type)\nit is not meant to support polymorphism of transaction types, it is supposed to be used by\nreflection clients to understand if they can handle a specific transaction type in an application.","type":"string"},"msgs":{"type":"array","title":"msgs lists the accepted application messages (sdk.Msg)","items":{"type":"object","title":"MsgDescriptor describes a cosmos-sdk message that can be delivered with a transaction","properties":{"msg_type_url":{"description":"msg_type_url contains the TypeURL of a sdk.Msg.","type":"string"}}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

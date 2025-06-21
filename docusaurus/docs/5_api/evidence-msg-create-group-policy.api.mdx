@@ -1,0 +1,72 @@
+---
+id: evidence-msg-create-group-policy
+title: "CreateGroupPolicy creates a new group policy using given DecisionPolicy."
+description: "CreateGroupPolicy creates a new group policy using given DecisionPolicy."
+sidebar_label: "CreateGroupPolicy creates a new group policy using given DecisionPolicy."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VsFu2zAM/RVBl13SpOuGHXJq1xZbD8OCNjsFRcHYjKPWljyJThsE+feRctK4sZEWW+dDIpEUSZHv0V5pgizo4UT/CJm+7WlXogcyzl6leqgvFyZFmyAr7849AuE376py5HKTLHVPe/xdYaCvLl3q4UonzhJakiWUJdtET4P74KzIQjLHAmSVYki8KUXLUdh7y7kyQdEcFesGbeUmrqJliX3OQ/7ZkZveY0K8L73cgwyGmEtaGNsOG8XbOJAkrrKkIE09hqDcLIozCaqiZSNOIG9sptc99piYwO7uyrokHORwLqe1erXvin1xaCOpQT5qHolRmnnvxVShZMGMjRsZ16oPQW2NN5K+JB1N7kzaLslWs61KZQ0XWl1dvKhHuxI9PXO+AO68roylL58lTIEEKVBHw7caCQN2qcBPDXnwS/WsASJguKSKXOtaHZ2QZ79O/w4r2RuPXCjyFa5FEEpnQ93Kk+Pj9tXOVKiShBE0q3K1NRdf78iN643b1y6zsXorSSLwu2hSM+IwUSw+5kuVxCzSt3QrtmsGVU4dRbSMPHxiXIsz9N75v6vl4SsnLm1SkYGLGfommFn06aTmOYHJQ8MavAcZgYawCP+F9+vIoRAg6zzYifk2DOqWMM+kRS8ao6rAnlRmFmjVxWZOjJ57xlScO3kJlC7E+wDNeTdIXChc6NeTYPGx34k+tpduXO/eD5dPUJQ5Nubxbnh0TNHT1qjdTa3dwd2IaRgaO3NtTJ3Pgad9ZmheTfuJKwale6Aji/To/EPceJfn6vryZqzORlcCWkOSr/4+Ho9EpM4Zf45FNQAhiQC0UIjRa44lsQX6UCezWSnrSAUkUUqVC7ANl+/YyxeleIYS4RMNypzrIglUPhdd3eaJ7mgzO2o3mr8Z5gIQPrJaTSHgL5+v1yLm1nvu5YSXC/AGplLNyS2HmiOkTLThZKUfcClXrQl9NJbExDyvIsf2yb3ubU+c8ZAt6aDtbQPDo583Yzaebj5Uish87eFRpjz/DrWWbx85HekaZSudg82qyD9d+5TnD6h0RAM=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CreateGroupPolicy creates a new group policy using given DecisionPolicy."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.group.v1.Msg/CreateGroupPolicy"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CreateGroupPolicy creates a new group policy using given DecisionPolicy.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgCreateGroupPolicy is the Msg/CreateGroupPolicy request type.","type":"object","properties":{"admin":{"description":"admin is the account address of the group admin.","type":"string"},"decision_policy":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"decision_policy specifies the group policy's decision policy."},"group_id":{"description":"group_id is the unique ID of the group.","type":"string","format":"uint64"},"metadata":{"description":"metadata is any arbitrary metadata attached to the group policy.","type":"string"}}}}},"description":"MsgCreateGroupPolicy is the Msg/CreateGroupPolicy request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgCreateGroupPolicyResponse is the Msg/CreateGroupPolicy response type.","type":"object","properties":{"address":{"description":"address is the account address of the newly created group policy.","type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
