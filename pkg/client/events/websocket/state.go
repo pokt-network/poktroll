@@ -4,12 +4,12 @@ import (
 	"time"
 )
 
-// ConnStateStatus represents the status of the underlying websocket connection
-type ConnStateStatus int
+// WebsocketConnectionState represents the status of the underlying websocket connection
+type WebsocketConnectionState int
 
 const (
 	// ConnStateInitial represents the initial state of the underlying websocket connection
-	ConnStateInitial ConnStateStatus = iota
+	ConnStateInitial WebsocketConnectionState = iota
 	// ConnStateConnected represents a connected state
 	ConnStateConnected
 	// ConnStateDisconnected represents a disconnected state
@@ -23,7 +23,7 @@ const (
 )
 
 // String returns the string representation of ConnStateStatus
-func (s ConnStateStatus) String() string {
+func (s WebsocketConnectionState) String() string {
 	return [...]string{
 		"initial",
 		"connected",
@@ -35,7 +35,7 @@ func (s ConnStateStatus) String() string {
 }
 
 // Define connection state for tracking and logging transitions
-type ConnState struct {
-	Status    ConnStateStatus
+type WebsocketConnState struct {
+	Status    WebsocketConnectionState
 	Timestamp time.Time
 }

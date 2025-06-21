@@ -70,7 +70,7 @@ type replayClient[T any] struct {
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
 	// Track connection state transitions
-	currentState *websocket.ConnState
+	currentWebsocketState *websocket.WebsocketConnState
 }
 
 // NewEventsReplayClient creates a new EventsReplayClient from the given
@@ -119,7 +119,7 @@ func NewEventsReplayClient[T any](
 	)
 
 	// Initialize connection state tracking
-	rClient.currentState = &websocket.ConnState{
+	rClient.currentWebsocketState = &websocket.WebsocketConnState{
 		Status:    websocket.ConnStateInitial,
 		Timestamp: time.Now(),
 	}
@@ -171,15 +171,15 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 	numRetries := 0
 
 	rClient.logger.Info().
-		Str("state", rClient.currentState.Status.String()).
-		Msgf("🚀 Starting event subscription for query: %s", rClient.queryString)
+		Str("websocket_state", rClient.currentWebsocketState.Status.String()).
+		Msgf("🚀 Starting websocket event subscription for query: %s", rClient.queryString)
 
 	for {
 		// Check if retry limit has been exceeded
 		if numRetries > rClient.connRetryLimit {
 			// If the number of retries exceeds the connection retry limit, exit the loop.
 			rClient.logger.Error().Msgf(
-				"⚠️ Max connection retries (%d) reached for event subscription. Query: %s. Subscription aborted.",
+				"⚠️ Max connection retries (%d) reached for websocket event subscription. Query: %s. Subscription aborted.",
 				rClient.connRetryLimit,
 				rClient.queryString,
 			)
@@ -190,15 +190,15 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 		case <-ctx.Done():
 			// If the context is done, exit the loop and stop processing events.
 			rClient.logger.Info().Msgf(
-				"🛑 Stopping event subscription for query: %s",
+				"🛑 Stopping websocket event subscription for query: %s",
 				rClient.queryString,
 			)
 			return
 		default:
 			// Log connection attempt state
-			if rClient.currentState.Status != websocket.ConnStateConnected {
+			if rClient.currentWebsocketState.Status != websocket.ConnStateConnected {
 				rClient.logger.Info().Msgf(
-					"🔄 Attempting to establish event subscription for query: %s (attempt %d/%d)",
+					"🔄 Attempting to establish websocket event subscription for query: %s (attempt %d/%d)",
 					rClient.queryString,
 					numRetries+1,
 					rClient.connRetryLimit,
@@ -250,7 +250,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 				if eitherErr != nil {
 					rClient.updateState(websocket.ConnStateDisconnected)
 					rClient.logger.Error().Err(eitherErr).Msgf(
-						"📡 Lost connection to event stream for query: %s. Attempting to reconnect (%d/%d)",
+						"📡 Lost connection to websocket event stream for query: %s. Attempting to reconnect (%d/%d)",
 						rClient.queryString,
 						numRetries+1,
 						rClient.connRetryLimit,
@@ -318,21 +318,21 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 }
 
 // updateState updates and tracks connection state transitions
-func (rClient *replayClient[T]) updateState(newStatus websocket.ConnStateStatus) {
-	prevStatus := rClient.currentState.Status
-	duration := time.Since(rClient.currentState.Timestamp).Round(time.Millisecond)
+func (rClient *replayClient[T]) updateState(newStatus websocket.WebsocketConnectionState) {
+	prevStatus := rClient.currentWebsocketState.Status
+	duration := time.Since(rClient.currentWebsocketState.Timestamp).Round(time.Millisecond)
 
 	// Only log transitions between different states
 	if prevStatus != newStatus {
 		rClient.logger.Info().
-			Str("prev_state", prevStatus.String()).
-			Str("new_state", newStatus.String()).
+			Str("prev_ws_state", prevStatus.String()).
+			Str("new_ws_state", newStatus.String()).
 			Dur("duration_in_prev_state", duration).
 			Msgf("🔄 Connection state transition for query: %s", rClient.queryString)
 	}
 
 	// Update current state
-	rClient.currentState = &websocket.ConnState{
+	rClient.currentWebsocketState = &websocket.WebsocketConnState{
 		Status:    newStatus,
 		Timestamp: time.Now(),
 	}
