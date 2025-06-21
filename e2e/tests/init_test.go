@@ -187,9 +187,10 @@ func (s *suite) Before() {
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
 	s.proofQueryClient = prooftypes.NewQueryClient(clientCtx)
+	logger := polylog.Ctx(s.ctx)
 
 	s.deps = depinject.Supply(
-		events.NewEventsQueryClient(testclient.CometLocalWebsocketURL),
+		events.NewEventsQueryClient(testclient.CometLocalWebsocketURL, events.WithLogger(logger)),
 		polylog.Ctx(s.ctx),
 	)
 
