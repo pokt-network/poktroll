@@ -24,6 +24,7 @@ type BankKeeper interface {
 // ApplicationKeeper defines the expected application keeper to retrieve applications
 type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
+	GetDehydratedApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
 }
 
 // SupplierKeeper defines the expected interface needed to retrieve suppliers

@@ -132,9 +132,19 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Prepare the test application.
 	application := apptypes.Application{
-		Address:        sample.AccAddress(),
-		Stake:          &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+		Address:             sample.AccAddress(),
+		Stake:               &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
+		ServiceConfigs:      []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+		ServiceUsageMetrics: make(map[string]*sharedtypes.ServiceUsageMetrics),
+	}
+
+	hydratedApplication := apptypes.Application{
+		Address:        application.Address,
+		Stake:          application.Stake,
+		ServiceConfigs: application.ServiceConfigs,
+		ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
+			service.Id: {ServiceId: service.Id},
+		},
 	}
 
 	supplierOwnerAddr := sample.AccAddress()
@@ -157,6 +167,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		OperatorAddress: supplierOwnerAddr,
 		Stake:           &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		Services:        services,
+		ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
+			service.Id: {ServiceId: service.Id},
+		},
 	}
 
 	sdkCtx := cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -167,12 +180,24 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockApplicationKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	// Get test application if the address matches.
 	mockApplicationKeeper.EXPECT().
-		GetApplication(gomock.Any(), gomock.Eq(application.Address)).
+		GetApplication(gomock.Any(), gomock.Eq(hydratedApplication.Address)).
+		Return(hydratedApplication, true).
+		AnyTimes()
+	mockApplicationKeeper.EXPECT().
+		GetDehydratedApplication(gomock.Any(), gomock.Eq(application.Address)).
 		Return(application, true).
 		AnyTimes()
 	// Get zero-value application if the address does not match.
 	mockApplicationKeeper.EXPECT().
 		GetApplication(gomock.Any(), gomock.Not(application.Address)).
+		Return(apptypes.Application{}, false).
+		AnyTimes()
+	mockApplicationKeeper.EXPECT().
+		GetServiceUsageMetrics(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(*hydratedApplication.ServiceUsageMetrics[service.Id]).
+		AnyTimes()
+	mockApplicationKeeper.EXPECT().
+		GetDehydratedApplication(gomock.Any(), gomock.Not(application.Address)).
 		Return(apptypes.Application{}, false).
 		AnyTimes()
 	// Mock SetApplication.
@@ -228,6 +253,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 			return services
 		}).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		GetServiceUsageMetrics(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(*supplier.ServiceUsageMetrics[service.Id]).
 		AnyTimes()
 
 	// Mock the bank keeper.

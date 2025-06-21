@@ -23,4 +23,5 @@ var (
 	ErrAppParamInvalid                = sdkerrors.Register(ModuleName, 1115, "the provided param is invalid")
 	ErrAppEmitEvent                   = sdkerrors.Register(ModuleName, 1116, "unable to emit onchain event")
 	ErrQueryAppsInvalidGatewayAddress = sdkerrors.Register(ModuleName, 1117, "invalid gateway address querying for apps with delegatee gateway address")
+	ErrAppMissingServiceUsageMetrics  = sdkerrors.Register(ModuleName, 1118, "missing service usage metrics for application")
 )
