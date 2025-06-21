@@ -73,8 +73,9 @@ type eventsBytesInfo struct {
 	ctx context.Context
 	// cancelCtx: Cancels the context to trigger resource cleanup.
 	cancelCtx context.CancelFunc
+
 	// isClosed: Indicates whether the connection is closed.
-	isClosed bool
+	isClosed atomic.Bool
 }
 
 // NewEventsQueryClient returns a new events query client which is used to
@@ -169,7 +170,7 @@ func (eqc *eventsQueryClient) close(evtConn *eventsBytesInfo) {
 
 	if _, ok := eqc.eventsBytesInfo[evtConn.query]; ok {
 		// mark the connection as closed
-		evtConn.isClosed = true
+		evtConn.isClosed.Store(true)
 
 		// Unsubscribe all observers for the given query's eventsBzConn's observable and close its connection.
 		close(evtConn.eventsBzPublishCh) // close the publish channel to stop the goroutine
@@ -274,7 +275,7 @@ func (eqc *eventsQueryClient) goPublishEventsBz(evtConn *eventsBytesInfo) {
 	// websocket connection is isClosed and/or returns an error.
 	for {
 		eventBz, err := evtConn.conn.Receive()
-		if evtConn.isClosed {
+		if evtConn.isClosed.Load() {
 			// If the context is done, we should stop reading messages.
 			return
 		}
