@@ -18,15 +18,25 @@ const (
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
 type YAMLRelayMinerConfig struct {
-	DefaultSigningKeyNames       []string                       `yaml:"default_signing_key_names"`
-	DefaultRequestTimeoutSeconds uint64                         `yaml:"default_request_timeout_seconds"`
-	Metrics                      YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
-	PocketNode                   YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
-	Pprof                        YAMLRelayMinerPprofConfig      `yaml:"pprof"`
-	SmtStorePath                 string                         `yaml:"smt_store_path"`
-	Suppliers                    []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
-	Ping                         YAMLRelayMinerPingConfig       `yaml:"ping"`
-	EnableOverServicing          bool                           `yaml:"enable_over_servicing"`
+	DefaultSigningKeyNames       []string                        `yaml:"default_signing_key_names"`
+	DefaultRequestTimeoutSeconds uint64                          `yaml:"default_request_timeout_seconds"`
+	ConnectionPool               YAMLRelayMinerConnectionPool    `yaml:"connection_pool"`
+	Metrics                      YAMLRelayMinerMetricsConfig     `yaml:"metrics"`
+	PocketNode                   YAMLRelayMinerPocketNodeConfig  `yaml:"pocket_node"`
+	Pprof                        YAMLRelayMinerPprofConfig       `yaml:"pprof"`
+	SmtStorePath                 string                          `yaml:"smt_store_path"`
+	Suppliers                    []YAMLRelayMinerSupplierConfig  `yaml:"suppliers"`
+	Ping                         YAMLRelayMinerPingConfig        `yaml:"ping"`
+	EnableOverServicing          bool                            `yaml:"enable_over_servicing"`
+}
+
+// YAMLRelayMinerConnectionPool represents the configuration for HTTP connection pooling
+type YAMLRelayMinerConnectionPool struct {
+	MaxIdleConns        int `yaml:"max_idle_conns"`
+	MaxIdleConnsPerHost int `yaml:"max_idle_conns_per_host"`
+	IdleConnTimeoutSec  int `yaml:"idle_conn_timeout_sec"`
+	DialTimeoutSec      int `yaml:"dial_timeout_sec"`
+	TLSHandshakeTimeoutSec int `yaml:"tls_handshake_timeout_sec"`
 }
 
 // YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
@@ -90,6 +100,7 @@ type YAMLRelayMinerPprofConfig struct {
 type RelayMinerConfig struct {
 	DefaultSigningKeyNames       []string
 	DefaultRequestTimeoutSeconds uint64
+	ConnectionPool               *RelayMinerConnectionPool
 	Metrics                      *RelayMinerMetricsConfig
 	PocketNode                   *RelayMinerPocketNodeConfig
 	Pprof                        *RelayMinerPprofConfig
@@ -97,6 +108,26 @@ type RelayMinerConfig struct {
 	SmtStorePath                 string
 	Ping                         *RelayMinerPingConfig
 	EnableOverServicing          bool
+}
+
+// RelayMinerConnectionPool represents the HTTP connection pooling configuration
+type RelayMinerConnectionPool struct {
+	MaxIdleConns           int
+	MaxIdleConnsPerHost    int
+	IdleConnTimeoutSec     int
+	DialTimeoutSec         int
+	TLSHandshakeTimeoutSec int
+}
+
+// GetDefaultConnectionPool returns default connection pool settings optimized for file descriptor usage
+func GetDefaultConnectionPool() *RelayMinerConnectionPool {
+	return &RelayMinerConnectionPool{
+		MaxIdleConns:           100,
+		MaxIdleConnsPerHost:    10,
+		IdleConnTimeoutSec:     90,
+		DialTimeoutSec:         30,
+		TLSHandshakeTimeoutSec: 10,
+	}
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:

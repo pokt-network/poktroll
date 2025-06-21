@@ -23,3 +23,11 @@ func WithPingEnabled(pingEnabled bool) relayer.RelayerProxyOption {
 		relProxy.(*relayerProxy).pingEnabled = pingEnabled
 	}
 }
+
+// WithConnectionPoolConfig sets the HTTP connection pool configuration for the RelayerProxy.
+// This allows fine-tuning of connection pooling parameters to optimize file descriptor usage.
+func WithConnectionPoolConfig(connectionPoolConfig *config.RelayMinerConnectionPool) relayer.RelayerProxyOption {
+	return func(relProxy relayer.RelayerProxy) {
+		relProxy.(*relayerProxy).connectionPoolConfig = connectionPoolConfig
+	}
+}

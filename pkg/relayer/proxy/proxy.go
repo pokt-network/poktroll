@@ -59,6 +59,9 @@ type relayerProxy struct {
 	// is its configuration.
 	serverConfigs map[string]*config.RelayMinerServerConfig
 
+	// connectionPoolConfig contains HTTP connection pooling settings
+	connectionPoolConfig *config.RelayMinerConnectionPool
+
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays relayer.RelaysObservable
 
