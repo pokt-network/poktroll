@@ -288,8 +288,9 @@ func (eqc *eventsQueryClient) goPublishEventsBz(evtConn *eventsBytesInfo) {
 	// websocket connection is isClosed and/or returns an error.
 	for {
 		eventBz, err := evtConn.conn.Receive()
+		// Prevent late messages from being published to the closed eventsBzPublishCh.
+		// This is done by checking the isClosed flag before publishing the eventBz.
 		if evtConn.isClosed.Load() {
-			// If the context is done, we should stop reading messages.
 			return
 		}
 
