@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events/websocket"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testchannel"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
@@ -48,7 +49,8 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 
 	// Set up events query client.
 	dialerOpt := events.WithDialer(dialerMock)
-	queryClient := events.NewEventsQueryClient("", dialerOpt)
+	loggerOpt := events.WithLogger(polylog.Ctx(rootCtx))
+	queryClient := events.NewEventsQueryClient("", dialerOpt, loggerOpt)
 	t.Cleanup(queryClient.Close)
 
 	for queryIdx := 0; queryIdx < queryLimit; queryIdx++ {
@@ -173,7 +175,8 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 		MinTimes(handleEventsLimit)
 
 	dialerOpt := events.WithDialer(dialerMock)
-	queryClient := events.NewEventsQueryClient("", dialerOpt)
+	loggerOpt := events.WithLogger(polylog.Ctx(ctx))
+	queryClient := events.NewEventsQueryClient("", dialerOpt, loggerOpt)
 
 	// set up query observer
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
@@ -206,7 +209,8 @@ func TestEventsQueryClient_Subscribe_DialError(t *testing.T) {
 	dialerMock := testeventsquery.NewOneTimeMockDialer(t, eitherErrDial)
 
 	dialerOpt := events.WithDialer(dialerMock)
-	queryClient := events.NewEventsQueryClient("", dialerOpt)
+	loggerOpt := events.WithLogger(polylog.Ctx(ctx))
+	queryClient := events.NewEventsQueryClient("", dialerOpt, loggerOpt)
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
 	require.Nil(t, eventsObservable)
 	require.True(t, errors.Is(err, events.ErrEventsDial))
@@ -221,7 +225,8 @@ func TestEventsQueryClient_Subscribe_RequestError(t *testing.T) {
 		Times(1)
 
 	dialerOpt := events.WithDialer(dialerMock)
-	queryClient := events.NewEventsQueryClient("url_ignored", dialerOpt)
+	loggerOpt := events.WithLogger(polylog.Ctx(ctx))
+	queryClient := events.NewEventsQueryClient("url_ignored", dialerOpt, loggerOpt)
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
 	require.Nil(t, eventsObservable)
 	require.True(t, errors.Is(err, events.ErrEventsSubscribe))
@@ -264,7 +269,8 @@ func TestEventsQueryClient_Subscribe_ReceiveError(t *testing.T) {
 		MinTimes(handleEventLimit)
 
 	dialerOpt := events.WithDialer(dialerMock)
-	queryClient := events.NewEventsQueryClient("", dialerOpt)
+	loggerOpt := events.WithLogger(polylog.Ctx(ctx))
+	queryClient := events.NewEventsQueryClient("", dialerOpt, loggerOpt)
 
 	// set up query observer
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))

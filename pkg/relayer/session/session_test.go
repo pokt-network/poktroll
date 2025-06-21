@@ -154,14 +154,14 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	lowCUPRService := sharedtypes.Service{
 		Id:                   "lowCUPRService",
-		ComputeUnitsPerRelay: 10000,
+		ComputeUnitsPerRelay: 1,
 	}
 	testqueryclients.AddToExistingServices(t, lowCUPRService)
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, lowCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	highCUPRService := sharedtypes.Service{
 		Id:                   "highCUPRService",
-		ComputeUnitsPerRelay: 20000,
+		ComputeUnitsPerRelay: 2,
 	}
 	testqueryclients.AddToExistingServices(t, highCUPRService)
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, highCUPRService.Id, protocol.BaseRelayDifficultyHashBz)

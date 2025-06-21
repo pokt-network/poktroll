@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"sync"
 	"sync/atomic"
 
@@ -20,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
@@ -75,6 +73,8 @@ type eventsBytesInfo struct {
 	ctx context.Context
 	// cancelCtx: Cancels the context to trigger resource cleanup.
 	cancelCtx context.CancelFunc
+	// isClosed: Indicates whether the connection is closed.
+	isClosed bool
 }
 
 // NewEventsQueryClient returns a new events query client which is used to
@@ -83,15 +83,7 @@ type eventsBytesInfo struct {
 // Available options:
 //   - WithDialer
 func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
-	// Set up logger options
-	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
-	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.ParseLevel(polyzero.InfoLevel.String())),
-		polyzero.WithOutput(os.Stderr),
-	}
-
 	evtClient := &eventsQueryClient{
-		logger:            polyzero.NewLogger(loggerOpts...),
 		cometWebsocketURL: cometWebsocketURL,
 		eventsBytesInfo:   make(map[string]*eventsBytesInfo),
 	}
@@ -176,6 +168,9 @@ func (eqc *eventsQueryClient) close(evtConn *eventsBytesInfo) {
 	defer eqc.eventsBytesAndConnsMu.Unlock()
 
 	if _, ok := eqc.eventsBytesInfo[evtConn.query]; ok {
+		// mark the connection as closed
+		evtConn.isClosed = true
+
 		// Unsubscribe all observers for the given query's eventsBzConn's observable and close its connection.
 		close(evtConn.eventsBzPublishCh) // close the publish channel to stop the goroutine
 		_ = evtConn.conn.Close()
@@ -279,6 +274,11 @@ func (eqc *eventsQueryClient) goPublishEventsBz(evtConn *eventsBytesInfo) {
 	// websocket connection is isClosed and/or returns an error.
 	for {
 		eventBz, err := evtConn.conn.Receive()
+		if evtConn.isClosed {
+			// If the context is done, we should stop reading messages.
+			return
+		}
+
 		if err != nil {
 			// TODO_CONSIDERATION: should we close the publish channel here too?
 

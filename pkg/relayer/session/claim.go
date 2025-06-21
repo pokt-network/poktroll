@@ -32,7 +32,7 @@ import (
 // 1. Choose a reasonable (empirically observed) p90 of claim & proof sizes across most chains
 // 2. TODO_FUTURE: Compute the gas cost dynamically based on the size of the branch being proven.
 // TODO_TECHDEBT(@olshansk): Temporarily setting this to 1uPOKT to see more claims & proofs on chain
-var ClaimAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 1)
+var ClaimAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 2)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims
