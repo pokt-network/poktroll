@@ -82,15 +82,19 @@ message RelayResponseMetadata {
 //
 // Contains error details returned by the RelayMiner.
 message RelayMinerError {
-  // Registered codespace for the error (groups errors by source/module).
+  // Registered codespace for the error (groups errors by source/module, e.g. `relayer_proxy`).
+  // See: https://github.com/pokt-network/poktroll/blob/main/pkg/relayer/proxy/errors.go#L8
   string codespace = 1;
 
-  // Specific registered error code.
+  // Specific registered error code (e.g. `1` for `ErrRelayerProxyInvalidSession`)
+  // See: https://github.com/pokt-network/poktroll/blob/main/pkg/relayer/proxy/errors.go#L9
   uint32 code = 2;
 
   // Human-readable, concise error description.
+  // Example `invalid session in relayer request` for `ErrRelayerProxyInvalidSession`.
   string description = 3;
 
   // Detailed error message (may include additional context).
+  // Example: ErrRelayerProxyInvalidSession.Wrapf("application %q has %d service configs", ...)
   string message = 4;
 }

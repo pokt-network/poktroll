@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"errors"
-	"io"
 
 	"cosmossdk.io/depinject"
 	"golang.org/x/sync/errgroup"
@@ -210,16 +209,4 @@ func (rp *relayerProxy) PingAll(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// closeRequestBody attempts to close the provided request body and logs any error that occurs.
-func closeRequestBody(logger polylog.Logger, body io.ReadCloser) {
-	if body == nil {
-		logger.Warn().Msg("⚠️ SHOULD NEVER HAPPEN ⚠️ Attempting to close request body when it is nil.")
-		return
-	}
-	e := body.Close()
-	if e != nil {
-		logger.Error().Err(e).Msg("❌ failed to close the request body")
-	}
 }

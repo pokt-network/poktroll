@@ -34,6 +34,20 @@ func (sync *relayMinerHTTPServer) replyWithError(
 	relayRequest *types.RelayRequest,
 	writer http.ResponseWriter,
 ) {
+	// Initialize a serializable (empty) RelayRequest if the one provided is nil.
+	if relayRequest == nil {
+		relayRequest = &types.RelayRequest{
+			Meta: types.RelayRequestMetadata{
+				SessionHeader: &sessiontypes.SessionHeader{},
+			},
+		}
+	}
+
+	// Ensure the session header is initialized to a proper structure.
+	if relayRequest.Meta.SessionHeader == nil {
+		relayRequest.Meta.SessionHeader = &sessiontypes.SessionHeader{}
+	}
+
 	listenAddress := sync.serverConfig.ListenAddress
 	serviceId := relayRequest.Meta.SessionHeader.ServiceId
 
@@ -50,20 +64,6 @@ func (sync *relayMinerHTTPServer) replyWithError(
 		errorLogger.Err(replyError).Msgf("⚠️ Temporarily Overriding %v error until the RelayMiner is stable w.r.t. protocol compliance", ErrRelayerProxyInternalError)
 	}
 
-	// Initialize a serializable (empty) RelayRequest if the one provided is nil.
-	if relayRequest == nil {
-		relayRequest = &types.RelayRequest{
-			Meta: types.RelayRequestMetadata{
-				SessionHeader: &sessiontypes.SessionHeader{},
-			},
-		}
-	}
-
-	// Ensure the session header is initialized to a proper structure.
-	if relayRequest.Meta.SessionHeader == nil {
-		relayRequest.Meta.SessionHeader = &sessiontypes.SessionHeader{}
-	}
-
 	// Fill in the needed missing fields of the RelayRequest with empty values.
 	relayer.RelaysErrorsTotal.With("service_id", serviceId).Add(1)
 
@@ -74,6 +74,8 @@ func (sync *relayMinerHTTPServer) replyWithError(
 			SessionHeader: relayRequest.Meta.SessionHeader,
 			// The supplier does not sign the error response, so we leave the signature empty.
 		},
+		// TODO_FOLLOWUP: Send an empty payload once PATH supports reading errors form RelayMinerError.
+		Payload:         []byte(replyError.Error()),
 		RelayMinerError: unpackSDKError(replyError),
 	}
 

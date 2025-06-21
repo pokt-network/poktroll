@@ -40,7 +40,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Warn().Err(err).Msg("failed creating relay request")
 		return relayRequest, err
 	}
-	defer CloseRequestBody(logger, request.Body)
 
 	if err = relayRequest.ValidateBasic(); err != nil {
 		logger.Warn().Err(err).Msg("failed validating relay request")

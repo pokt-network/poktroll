@@ -25,8 +25,10 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Relay contains both the RelayRequest (signed by the Application) and the RelayResponse (signed by the Supplier).
-// The serialized tuple is inserted into the SMST leaves as values in the Claim/Proof lifecycle.
+// Relay message
+//
+// - Contains both the RelayRequest (signed by the Application) and RelayResponse (signed by the Supplier).
+// - The serialized tuple is stored in SMST leaves as values during the Claim/Proof lifecycle.
 type Relay struct {
 	Req *RelayRequest  `protobuf:"bytes,1,opt,name=req,proto3" json:"req,omitempty"`
 	Res *RelayResponse `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`
@@ -75,19 +77,22 @@ func (m *Relay) GetRes() *RelayResponse {
 	return nil
 }
 
-// RelayRequestMetadata contains the metadata for a RelayRequest.
+// RelayRequestMetadata
+//
+// Contains metadata for a RelayRequest.
 type RelayRequestMetadata struct {
+	// Session header associated with the relay.
 	SessionHeader *types.SessionHeader `protobuf:"bytes,1,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
-	// The request signature is a serialized ring signature that may have been
-	// by either the application itself or one of the gateways that the
-	// application has delegated to. The signature is made using the ring of the
-	// application in both cases.
+	// Signature for the request:
+	// - Serialized ring signature, created by either the application itself or a delegated gateway.
+	// - Always uses the application's ring.
 	Signature []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
-	// TODO_MAINNET: make sure we're checking/verifying this address onchain (if needed).
-	// Relevant conversation: https://github.com/pokt-network/poktroll/pull/567#discussion_r1628722168
+	// TODO_MAINNET: Ensure this address is checked/verified onchain if needed.
+	// See: https://github.com/pokt-network/poktroll/pull/567#discussion_r1628722168
 	//
-	// The supplier operator address the relay is sent to. It is being used on the
-	// RelayMiner to route to the correct supplier.
+	// Supplier operator address:
+	// - The Bech32 address of the supplier operator the relay is sent to.
+	// - Used by the RelayMiner to route to the correct supplier.
 	SupplierOperatorAddress string `protobuf:"bytes,3,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 }
 
@@ -141,12 +146,14 @@ func (m *RelayRequestMetadata) GetSupplierOperatorAddress() string {
 	return ""
 }
 
-// RelayRequest holds the request details for a relay.
+// RelayRequest
+//
+// Holds the request details for a relay.
 type RelayRequest struct {
 	Meta RelayRequestMetadata `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
-	// payload is the serialized payload for the request.
-	// The payload is passed directly to the service and as such can be any
-	// format that the service supports: JSON-RPC, REST, gRPC, etc.
+	// Serialized request payload:
+	// - Passed directly to the service.
+	// - Can be any supported format: JSON-RPC, REST, gRPC, etc.
 	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 
@@ -193,15 +200,17 @@ func (m *RelayRequest) GetPayload() []byte {
 	return nil
 }
 
-// RelayResponse contains the response details for a RelayRequest.
+// RelayResponse
+//
+// Contains the response details for a RelayRequest.
 type RelayResponse struct {
 	Meta RelayResponseMetadata `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
-	// payload is the serialized payload for the response.
-	// The payload is passed directly from the service and as such can be any
-	// format the service responds with: JSON-RPC, REST, gRPC, etc.
+	// Serialized response payload:
+	// - Passed directly from the service.
+	// - Can be any supported format: JSON-RPC, REST, gRPC, etc.
 	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
-	// relay_miner_error is the error returned by the RelayMiner if any.
-	// If the RelayMiner did not return an error, this field will be empty.
+	// Error returned by the RelayMiner, if applicable.
+	// - If no error occurred, this field is empty.
 	RelayMinerError *RelayMinerError `protobuf:"bytes,3,opt,name=relay_miner_error,json=relayMinerError,proto3" json:"relay_miner_error,omitempty"`
 }
 
@@ -255,10 +264,14 @@ func (m *RelayResponse) GetRelayMinerError() *RelayMinerError {
 	return nil
 }
 
-// RelayResponseMetadata contains the metadata for a RelayResponse.
+// RelayResponseMetadata
+//
+// Contains metadata for a RelayResponse.
 type RelayResponseMetadata struct {
-	SessionHeader             *types.SessionHeader `protobuf:"bytes,1,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
-	SupplierOperatorSignature []byte               `protobuf:"bytes,2,opt,name=supplier_operator_signature,json=supplierOperatorSignature,proto3" json:"supplier_operator_signature,omitempty"`
+	// Session header associated with the relay.
+	SessionHeader *types.SessionHeader `protobuf:"bytes,1,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
+	// Signature of the supplier's operator on the response.
+	SupplierOperatorSignature []byte `protobuf:"bytes,2,opt,name=supplier_operator_signature,json=supplierOperatorSignature,proto3" json:"supplier_operator_signature,omitempty"`
 }
 
 func (m *RelayResponseMetadata) Reset()         { *m = RelayResponseMetadata{} }
@@ -304,18 +317,21 @@ func (m *RelayResponseMetadata) GetSupplierOperatorSignature() []byte {
 	return nil
 }
 
-// RelayMinerError contains the error details returned by the RelayMiner.
+// RelayMinerError
+//
+// Contains error details returned by the RelayMiner.
 type RelayMinerError struct {
-	// codespace is the error's registered codespace.
-	// It is used to group errors by their source or module.
+	// Registered codespace for the error (groups errors by source/module, e.g. `relayer_proxy`).
+	// See: https://github.com/pokt-network/poktroll/blob/main/pkg/relayer/proxy/errors.go#L8
 	Codespace string `protobuf:"bytes,1,opt,name=codespace,proto3" json:"codespace,omitempty"`
-	// code is the specific registered error code.
+	// Specific registered error code (e.g. `1` for `ErrRelayerProxyInvalidSession`)
+	// See: https://github.com/pokt-network/poktroll/blob/main/pkg/relayer/proxy/errors.go#L9
 	Code uint32 `protobuf:"varint,2,opt,name=code,proto3" json:"code,omitempty"`
-	// description is a human-readable description of the error.
-	// It should be concise and provide enough context to understand the error.
+	// Human-readable, concise error description.
+	// Example `invalid session in relayer request` for `ErrRelayerProxyInvalidSession`.
 	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	// message is a more detailed message about the error.
-	// It can include additional context or information about the error.
+	// Detailed error message (may include additional context).
+	// Example: ErrRelayerProxyInvalidSession.Wrapf("application %q has %d service configs", ...)
 	Message string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
 }
 
