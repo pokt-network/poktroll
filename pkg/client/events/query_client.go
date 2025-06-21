@@ -168,8 +168,21 @@ func (eqc *eventsQueryClient) close(evtConn *eventsBytesInfo) {
 	eqc.eventsBytesAndConnsMu.Lock()
 	defer eqc.eventsBytesAndConnsMu.Unlock()
 
+	// close handles the complete cleanup of an event subscription's resources to ensure proper termination:
+	// 1. Sets the isClosed flag atomically to signal any goroutines to stop processing
+	// 2. Closes the event publishing channel to terminate all downstream observers
+	// 3. Closes the websocket connection to the CometBFT node
+	// 4. Removes the subscription from the tracking map to prevent memory leaks
+	//
+	// This multi-step cleanup process ensures:
+	// - Thread safety through mutex locking
+	// - Prevention of goroutine leaks
+	// - Avoidance of "send on closed channel" panics from late messages
+	// - Proper resource cleanup of network connections
+	// - Memory management by removing completed subscriptions
 	if _, ok := eqc.eventsBytesInfo[evtConn.query]; ok {
-		// mark the connection as closed
+		// mark the connection as closed to prevent late messages from being published
+		// to the closed eventsBzPublishCh.
 		evtConn.isClosed.Store(true)
 
 		// Unsubscribe all observers for the given query's eventsBzConn's observable and close its connection.
@@ -185,7 +198,7 @@ func (eqc *eventsQueryClient) close(evtConn *eventsBytesInfo) {
 		)
 	} else {
 		eqc.logger.Warn().Msgf(
-			"⚠️ Failed to unsubscribe from events for query %s: subscription with id %d not found",
+			"⚠️ Failed to the event websocket connection for query %s: subscription with id %d not found. ❗ The connection has already been closed.",
 			evtConn.query,
 			evtConn.connId,
 		)
@@ -257,8 +270,8 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 		return nil, multierr.Combine(subscribeErr, closeErr)
 	}
 
-	// Log in a separate goroutine to prevent message ordering issues and ensure
-	// that "connection established" appears after any "connection closed" logs
+	// DEV_NOTE: The info log is done in a separate goroutine to prevent message ordering issues.
+	// It ensures that "connection established" appears after any "connection closed" logs
 	// from concurrent goPublishEventsBz goroutines.
 	go eqc.logger.Info().Msgf(
 		"🛜 Connection established to comet websocket endpoint %s",
@@ -297,7 +310,9 @@ func (eqc *eventsQueryClient) goPublishEventsBz(evtConn *eventsBytesInfo) {
 				evtConn.eventsBzPublishCh <- either.Error[[]byte](err)
 			}
 
-			// cancel the context to stop the unsubscribe goroutine
+			// Cancel the context to stop the unsubscribe goroutine
+			// The cleanup logic is handled in the goUnsubscribeOnDone goroutine which
+			// waits for the context to be done.
 			evtConn.cancelCtx()
 
 			return

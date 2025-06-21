@@ -8,6 +8,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/events/websocket"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -29,44 +30,8 @@ const (
 	eventsBytesRetryDelay = time.Second
 )
 
-// ConnStateStatus represents the status of the underlying websocket connection
-type ConnStateStatus int
-
-const (
-	// ConnStateInitial represents the initial state of the underlying websocket connection
-	ConnStateInitial ConnStateStatus = iota
-	// ConnStateConnected represents a connected state
-	ConnStateConnected
-	// ConnStateDisconnected represents a disconnected state
-	ConnStateDisconnected
-	// ConnStateWaitingRetry represents a state where the client is waiting to retry connection
-	ConnStateWaitingRetry
-	// ConnStateFailed represents a failed connection state
-	ConnStateFailed
-	// ConnStateDecodeError represents a state where there was an error decoding events
-	ConnStateDecodeError
-)
-
-// String returns the string representation of ConnStateStatus
-func (s ConnStateStatus) String() string {
-	return [...]string{
-		"initial",
-		"connected",
-		"disconnected",
-		"waiting_retry",
-		"failed",
-		"decode_error",
-	}[s]
-}
-
 // Enforce the EventsReplayClient interface is implemented by the replayClient type.
 var _ client.EventsReplayClient[any] = (*replayClient[any])(nil)
-
-// Define connection state for tracking and logging transitions
-type connState struct {
-	status    ConnStateStatus
-	timestamp time.Time
-}
 
 // NewEventsFn is a function that takes a byte slice and returns a new instance
 // of the generic type T.
@@ -105,7 +70,7 @@ type replayClient[T any] struct {
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
 	// Track connection state transitions
-	currentState *connState
+	currentState *websocket.ConnState
 }
 
 // NewEventsReplayClient creates a new EventsReplayClient from the given
@@ -154,9 +119,9 @@ func NewEventsReplayClient[T any](
 	)
 
 	// Initialize connection state tracking
-	rClient.currentState = &connState{
-		status:    ConnStateInitial,
-		timestamp: time.Now(),
+	rClient.currentState = &websocket.ConnState{
+		Status:    websocket.ConnStateInitial,
+		Timestamp: time.Now(),
 	}
 
 	// Concurrently publish events to the observable emitted by replayObsCache.
@@ -206,7 +171,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 	numRetries := 0
 
 	rClient.logger.Info().
-		Str("state", rClient.currentState.status.String()).
+		Str("state", rClient.currentState.Status.String()).
 		Msgf("🚀 Starting event subscription for query: %s", rClient.queryString)
 
 	for {
@@ -225,13 +190,13 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 		case <-ctx.Done():
 			// If the context is done, exit the loop and stop processing events.
 			rClient.logger.Info().Msgf(
-				"🛑 Context canceled. Stopping event subscription for query: %s",
+				"🛑 Stopping event subscription for query: %s",
 				rClient.queryString,
 			)
 			return
 		default:
 			// Log connection attempt state
-			if rClient.currentState.status != ConnStateConnected {
+			if rClient.currentState.Status != websocket.ConnStateConnected {
 				rClient.logger.Info().Msgf(
 					"🔄 Attempting to establish event subscription for query: %s (attempt %d/%d)",
 					rClient.queryString,
@@ -249,7 +214,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 			// This will return an observable that emits either event bytes or an error
 			eventsBytesObs, err := rClient.eventsClient.EventsBytes(eventsBzCtx, rClient.queryString)
 			if err != nil {
-				rClient.updateState(ConnStateFailed)
+				rClient.updateState(websocket.ConnStateFailed)
 				rClient.logger.Error().Err(err).Msgf(
 					"🔌 Failed to establish websocket connection to blockchain node for event subscription '%s'. Retrying connection (%d/%d)",
 					rClient.queryString,
@@ -266,7 +231,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 			}
 
 			// Connection successful and verified
-			rClient.updateState(ConnStateConnected)
+			rClient.updateState(websocket.ConnStateConnected)
 			rClient.logger.Info().Msgf(
 				"📶 Successfully established verified websocket connection to blockchain node for event subscription %q.",
 				rClient.queryString,
@@ -283,7 +248,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 				// Extract event bytes or error from the Either type
 				eventBz, eitherErr := eitherEventBz.ValueOrError()
 				if eitherErr != nil {
-					rClient.updateState(ConnStateDisconnected)
+					rClient.updateState(websocket.ConnStateDisconnected)
 					rClient.logger.Error().Err(eitherErr).Msgf(
 						"📡 Lost connection to event stream for query: %s. Attempting to reconnect (%d/%d)",
 						rClient.queryString,
@@ -304,14 +269,14 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 					if ErrEventsUnmarshalEvent.Is(err) {
 						// Event bytes were not the expected type - skip this message and continue
 						rClient.logger.Debug().Err(err).Msgf(
-							"❓️ Received blockchain event that doesn't match subscription filter for query: %s. Skipping event (this is expected)",
+							"❓️ Received blockchain event that doesn't match subscription filter for query: %s. Skipping event",
 							rClient.queryString,
 						)
 						continue
 					}
 
 					// Unexpected decoding error - log the specific error and decide whether to reconnect
-					rClient.updateState(ConnStateDecodeError)
+					rClient.updateState(websocket.ConnStateDecodeError)
 					rClient.logger.Error().Err(err).Msgf(
 						"⚠️ Failed to decode blockchain event data for query: %s. Reconnecting to refresh event stream (%d/%d)",
 						rClient.queryString,
@@ -339,7 +304,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 
 			// Increment retry counter and delay
 			numRetries++
-			rClient.updateState(ConnStateWaitingRetry)
+			rClient.updateState(websocket.ConnStateWaitingRetry)
 			rClient.logger.Info().Msgf(
 				"⏳ Waiting %s before attempting to reconnect for query: %s (attempt %d/%d)",
 				eventsBytesRetryDelay,
@@ -353,9 +318,9 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 }
 
 // updateState updates and tracks connection state transitions
-func (rClient *replayClient[T]) updateState(newStatus ConnStateStatus) {
-	prevStatus := rClient.currentState.status
-	duration := time.Since(rClient.currentState.timestamp).Round(time.Millisecond)
+func (rClient *replayClient[T]) updateState(newStatus websocket.ConnStateStatus) {
+	prevStatus := rClient.currentState.Status
+	duration := time.Since(rClient.currentState.Timestamp).Round(time.Millisecond)
 
 	// Only log transitions between different states
 	if prevStatus != newStatus {
@@ -367,8 +332,8 @@ func (rClient *replayClient[T]) updateState(newStatus ConnStateStatus) {
 	}
 
 	// Update current state
-	rClient.currentState = &connState{
-		status:    newStatus,
-		timestamp: time.Now(),
+	rClient.currentState = &websocket.ConnState{
+		Status:    newStatus,
+		Timestamp: time.Now(),
 	}
 }
