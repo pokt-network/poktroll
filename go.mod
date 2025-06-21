@@ -108,7 +108,7 @@ require (
 	golang.org/x/term v0.32.0
 )
 
-require github.com/go-chi/chi/v5 v5.2.1
+require github.com/go-chi/chi/v5 v5.2.2
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
