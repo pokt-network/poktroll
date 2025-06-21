@@ -16,7 +16,7 @@ import (
 
 var (
 	// LogLevel is a global variable that is intended to hold the value of the
-	// "--log-level" flag when a command which has called PreRunESetup() is executed.
+	// "--log_level" flag when a command which has called PreRunESetup() is executed.
 	LogLevel string
 
 	// LogOutput is a global variable that is intended to hold the value of the
@@ -35,7 +35,7 @@ const unknownLevel = "???"
 // of a Cobra command.
 //
 // TODO_CONSIDERATION: Apply this pattern to all CLI commands.
-func PreRunESetup(_ *cobra.Command, _ []string) error {
+func PreRunESetup(cmd *cobra.Command, _ []string) error {
 	var (
 		logWriter io.Writer
 		err       error
@@ -55,6 +55,10 @@ func PreRunESetup(_ *cobra.Command, _ []string) error {
 		polyzero.WithLevel(logLevel),
 		polyzero.WithSetupFn(NewSetupConsoleWriter(logWriter)),
 	)
+
+	// Set the logger on the context and update the command's context.
+	loggerCtx := Logger.WithContext(cmd.Context())
+	cmd.SetContext(loggerCtx)
 
 	return nil
 }
