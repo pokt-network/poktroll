@@ -33,9 +33,6 @@ const config = {
     ],
   ],
 
-  // TODO(@olshansk): Figure out how to make this work in production.
-  // More details here: https://github.com/nichnarmada/docusaurus-plugin-chat-page/issues/5
-
   plugins: [
     [
       require.resolve("docusaurus-plugin-chat-page"),

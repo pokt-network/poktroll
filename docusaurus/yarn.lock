@@ -4681,9 +4681,9 @@ dns-packet@^5.2.2:
   dependencies:
     "@leichtgewicht/ip-codec" "^2.0.1"
 
-"docusaurus-plugin-chat-page@github:olshansk/docusaurus-plugin-chat-page#main":
+docusaurus-plugin-chat-page@olshansk/docusaurus-plugin-chat-page:
   version "0.1.6"
-  resolved "https://codeload.github.com/olshansk/docusaurus-plugin-chat-page/tar.gz/8e7644d2566a96712d73b7aa4c1c86e0da2f5ab4"
+  resolved "https://codeload.github.com/olshansk/docusaurus-plugin-chat-page/tar.gz/d174139a2215af7fc87d13238cfa5439d5a45601"
   dependencies:
     "@docusaurus/utils" "^3.7.0"
     execa "^9.6.0"
