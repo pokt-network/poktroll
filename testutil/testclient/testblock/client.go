@@ -12,8 +12,10 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
@@ -24,13 +26,14 @@ import (
 func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 
-	queryClient := testeventsquery.NewLocalnetClient(t)
+	loggerOpt := events.WithLogger(polylog.Ctx(ctx))
+	queryClient := testeventsquery.NewLocalnetClient(t, loggerOpt)
 	require.NotNil(t, queryClient)
 
 	cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
 	require.NoError(t, err)
 
-	deps := depinject.Supply(queryClient, cometClient)
+	deps := depinject.Supply(queryClient, cometClient, polylog.Ctx(ctx))
 	bClient, err := block.NewBlockClient(ctx, deps)
 	require.NoError(t, err)
 

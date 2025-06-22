@@ -22,6 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -263,7 +264,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Cancel the context if this process is interrupted or exits.
 	// Delete the keyring entries for the application accounts since they are
 	// not persisted across test runs.
-	signals.GoOnExitSignal(func() {
+	signals.GoOnExitSignal(polylog.Ctx(s.ctx), func() {
 		for _, app := range append(s.activeApplications, s.preparedApplications...) {
 			accAddress := sdk.MustAccAddressFromBech32(app.address)
 

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
+	"sync/atomic"
 
 	"go.uber.org/multierr"
 
@@ -22,47 +23,59 @@ import (
 
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
 
-// TODO_TECHDEBT: the cosmos-sdk CLI code seems to use a cometbft RPC client
-// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
-// replace this custom websocket client with that.
-// See:
-// - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110
-// - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L656
-// - https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114
-// - https://github.com/pokt-network/poktroll/pull/64#discussion_r1372378241
+// TODO_TECHDEBT:
+// - The cosmos-sdk CLI uses a cometbft RPC client with a `#Subscribe()` method for similar event subscription.
+// - Consider replacing this custom websocket client with that approach.
+// - References:
+//   - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110
+//   - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L656
+//   - https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114
+//   - https://github.com/pokt-network/poktroll/pull/64#discussion_r1372378241
 
-// eventsQueryClient implements the EventsQueryClient interface.
+// Implements client.EventsQueryClient.
 type eventsQueryClient struct {
-	// cometWebsocketURL is the websocket URL for the cometbft node. It is assigned
-	// in NewEventsQueryClient.
-	cometWebsocketURL string
-	// dialer is responsible for creating the connection instance which
-	// facilitates communication with the cometbft node via message passing.
-	dialer client.Dialer
-	// eventsBytesAndConnsMu protects the eventsBytesAndConns map.
-	eventsBytesAndConnsMu sync.RWMutex
-	// eventsBytesAndConns maps event subscription queries to their respective
-	// eventsBytes observable, connection, and isClosed status.
-	eventsBytesAndConns map[string]*eventsBytesAndConn
-
 	logger polylog.Logger
+
+	// cometWebsocketURL: Websocket URL for the cometbft node. Set in NewEventsQueryClient.
+	cometWebsocketURL string
+
+	// dialer: Creates the connection instance for cometbft node communication.
+	dialer client.Dialer
+
+	// eventsBytesAndConnsMu: Protects access to the eventsBytesAndConns map.
+	eventsBytesAndConnsMu sync.RWMutex
+
+	// eventsBytesInfo: Maps event subscription queries to their connection info.
+	eventsBytesInfo map[string]*eventsBytesInfo
+
+	// connId: Atomic counter for assigning unique connection IDs. Ensures thread safety.
+	connId atomic.Uint64
 }
 
-// eventsBytesAndConn is a struct which holds an eventsBytes observable & the
-// corresponding connection which produces its inputs.
-type eventsBytesAndConn struct {
-	// eventsBytes is an observable which is notified about chain event messages
-	// matching the given query. It receives an either.Bytes which is
-	// either an error or the event message bytes.
+// Holds information for managing event subscriptions.
+type eventsBytesInfo struct {
+	// eventsBytes: Observable notified about chain event messages matching the query.
+	// Receives either an error or the event message bytes (either.Bytes).
 	eventsBytes observable.Observable[either.Bytes]
-	conn        client.Connection
-}
 
-// Close unsubscribes all observers of eventsBytesAndConn's observable and also
-// closes its connection.
-func (ebc *eventsBytesAndConn) Close() {
-	ebc.eventsBytes.UnsubscribeAll()
-	_ = ebc.conn.Close()
+	// eventsBzPublishCh: Channel to publish event bytes or errors to the eventsBytes observable.
+	eventsBzPublishCh chan<- either.Bytes
+
+	// query: Event subscription query for which this observable was created.
+	query string
+
+	// conn: Websocket connection to the cometbft node.
+	conn client.Connection
+	// connId: Unique identifier for the connection (for logging/debugging).
+	connId uint64
+
+	// ctx: Context managing the lifecycle of the eventsBytes observable.
+	ctx context.Context
+	// cancelCtx: Cancels the context to trigger resource cleanup.
+	cancelCtx context.CancelFunc
+
+	// isClosed: Indicates whether the connection is closed.
+	isClosed atomic.Bool
 }
 
 // NewEventsQueryClient returns a new events query client which is used to
@@ -72,8 +85,8 @@ func (ebc *eventsBytesAndConn) Close() {
 //   - WithDialer
 func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	evtClient := &eventsQueryClient{
-		cometWebsocketURL:   cometWebsocketURL,
-		eventsBytesAndConns: make(map[string]*eventsBytesAndConn),
+		cometWebsocketURL: cometWebsocketURL,
+		eventsBytesInfo:   make(map[string]*eventsBytesInfo),
 	}
 
 	for _, opt := range opts {
@@ -107,9 +120,24 @@ func (eqc *eventsQueryClient) EventsBytes(
 	defer eqc.eventsBytesAndConnsMu.Unlock()
 
 	// Check if an event subscription already exists for the given query.
-	if eventsBzConn := eqc.eventsBytesAndConns[query]; eventsBzConn != nil {
+	if eventsBzConn := eqc.eventsBytesInfo[query]; eventsBzConn != nil {
 		// If found it is returned.
 		return eventsBzConn.eventsBytes, nil
+	}
+
+	// Check and close any existing connection for the given query.
+	// This ensures that we do not have multiple subscriptions for the same query.
+	// This is to prevent duplicate event notifications.
+	if oldConn, ok := eqc.eventsBytesInfo[query]; ok {
+		// If an old connection exists for the given query, close it.
+		eqc.logger.Warn().Msgf(
+			"♻️ Replacing existing event subscription for query %s and id %d with a new one",
+			query,
+			oldConn.connId,
+		)
+
+		// cancel the old context to stop the unsubscribe goroutine
+		oldConn.cancelCtx()
 	}
 
 	// Otherwise, create a new event subscription for the given query.
@@ -119,10 +147,10 @@ func (eqc *eventsQueryClient) EventsBytes(
 	}
 
 	// Insert the new eventsBytes into the eventsBytesAndConns map.
-	eqc.eventsBytesAndConns[query] = eventsBzConn
+	eqc.eventsBytesInfo[query] = eventsBzConn
 
 	// Unsubscribe from the eventsBytes when the context is done.
-	go eqc.goUnsubscribeOnDone(ctx, query)
+	go eqc.goUnsubscribeOnDone(eventsBzConn)
 
 	// Return the new eventsBytes observable for the given query.
 	return eventsBzConn.eventsBytes, nil
@@ -130,47 +158,90 @@ func (eqc *eventsQueryClient) EventsBytes(
 
 // Close unsubscribes all observers from all event subscription observables.
 func (eqc *eventsQueryClient) Close() {
-	eqc.close()
-}
-
-// close unsubscribes all observers from all event subscription observables.
-func (eqc *eventsQueryClient) close() {
-	eqc.eventsBytesAndConnsMu.Lock()
-	defer eqc.eventsBytesAndConnsMu.Unlock()
-
-	for query, eventsBzConn := range eqc.eventsBytesAndConns {
-		// Unsubscribe all observers of the eventsBzConn observable and close the
-		// connection for the given query.
-		eventsBzConn.Close()
-		// remove isClosed eventsBytesAndConns
-		delete(eqc.eventsBytesAndConns, query)
+	for _, eventsBzConn := range eqc.eventsBytesInfo {
+		eqc.close(eventsBzConn)
 	}
 }
 
-// newEventwsBzAndConn creates a new eventsBytes and connection for the given query.
+// close unsubscribes all observers from all event subscription observables.
+func (eqc *eventsQueryClient) close(evtConn *eventsBytesInfo) {
+	eqc.eventsBytesAndConnsMu.Lock()
+	defer eqc.eventsBytesAndConnsMu.Unlock()
+
+	// close handles the complete cleanup of an event subscription's resources to ensure proper termination:
+	// 1. Sets the isClosed flag atomically to signal any goroutines to stop processing
+	// 2. Closes the event publishing channel to terminate all downstream observers
+	// 3. Closes the websocket connection to the CometBFT node
+	// 4. Removes the subscription from the tracking map to prevent memory leaks
+	//
+	// This multi-step cleanup process ensures:
+	// - Thread safety through mutex locking
+	// - Prevention of goroutine leaks
+	// - Avoidance of "send on closed channel" panics from late messages
+	// - Proper resource cleanup of network connections
+	// - Memory management by removing completed subscriptions
+	if _, ok := eqc.eventsBytesInfo[evtConn.query]; ok {
+		// mark the connection as closed to prevent late messages from being published
+		// to the closed eventsBzPublishCh.
+		evtConn.isClosed.Store(true)
+
+		// Unsubscribe all observers for the given query's eventsBzConn's observable and close its connection.
+		close(evtConn.eventsBzPublishCh) // close the publish channel to stop the goroutine
+		_ = evtConn.conn.Close()
+
+		// Remove the eventsBytesAndConn for the given query.
+		delete(eqc.eventsBytesInfo, evtConn.query)
+		eqc.logger.Info().Msgf(
+			"🗑️ Unsubscribed from events for query %s and id %d",
+			evtConn.query,
+			evtConn.connId,
+		)
+	} else {
+		eqc.logger.Warn().Msgf(
+			"⚠️ Failed to the event websocket connection for query %s: subscription with id %d not found. ❗ The connection has already been closed.",
+			evtConn.query,
+			evtConn.connId,
+		)
+	}
+}
+
+// newEventsBytesAndConn creates a new eventsBytes and connection for the given query.
 func (eqc *eventsQueryClient) newEventsBytesAndConn(
 	ctx context.Context,
 	query string,
-) (*eventsBytesAndConn, error) {
+) (*eventsBytesInfo, error) {
+	ctx, cancel := context.WithCancel(ctx)
+
 	// Get a connection for the query.
 	conn, err := eqc.openEventsBytesAndConn(ctx, query)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
 	// Construct an eventsBytes for the given query.
 	eventsBzObservable, eventsBzPublishCh := channel.NewObservable[either.Bytes]()
 
+	evtConn := &eventsBytesInfo{
+		eventsBytes:       eventsBzObservable,
+		eventsBzPublishCh: eventsBzPublishCh,
+
+		query: query,
+
+		conn:   conn,
+		connId: eqc.connId.Add(1),
+
+		ctx:       ctx,
+		cancelCtx: cancel,
+	}
+
 	// Publish either events bytes or an error received from the connection to
 	// the eventsBz observable.
 	// NB: intentionally not retrying on error, leaving that to the caller.
 	// (see: https://github.com/pokt-network/poktroll/pull/64#discussion_r1373826542)
-	go eqc.goPublishEventsBz(ctx, conn, eventsBzPublishCh)
+	go eqc.goPublishEventsBz(evtConn)
 
-	return &eventsBytesAndConn{
-		eventsBytes: eventsBzObservable,
-		conn:        conn,
-	}, nil
+	return evtConn, nil
 }
 
 // openEventsBytesAndConn gets a connection using the configured dialer and sends
@@ -199,31 +270,30 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 		return nil, multierr.Combine(subscribeErr, closeErr)
 	}
 
-	// Log the successful connection establishment if a logger is configured.
-	if eqc.logger != nil {
-		// Log in a separate goroutine to prevent message ordering issues and ensure
-		// that "connection established" appears after any "connection closed" logs
-		// from concurrent goPublishEventsBz goroutines.
-		go eqc.logger.Info().Msgf(
-			"connection established to comet websocket endpoint %s",
-			eqc.cometWebsocketURL,
-		)
-	}
+	// DEV_NOTE: The info log is done in a separate goroutine to prevent message ordering issues.
+	// It ensures that "connection established" appears after any "connection closed" logs
+	// from concurrent goPublishEventsBz goroutines.
+	go eqc.logger.Info().Msgf(
+		"🛜 Connection established to comet websocket endpoint %s",
+		eqc.cometWebsocketURL,
+	)
 
 	return conn, nil
 }
 
 // goPublishEventsBz blocks on reading messages from a websocket connection.
 // It is intended to be called from within a go routine.
-func (eqc *eventsQueryClient) goPublishEventsBz(
-	ctx context.Context,
-	conn client.Connection,
-	eventsBzPublishCh chan<- either.Bytes,
-) {
+func (eqc *eventsQueryClient) goPublishEventsBz(evtConn *eventsBytesInfo) {
 	// Read and handle messages from the websocket. This loop will exit when the
 	// websocket connection is isClosed and/or returns an error.
 	for {
-		eventBz, err := conn.Receive()
+		eventBz, err := evtConn.conn.Receive()
+		// Prevent late messages from being published to the closed eventsBzPublishCh.
+		// This is done by checking the isClosed flag before publishing the eventBz.
+		if evtConn.isClosed.Load() {
+			return
+		}
+
 		if err != nil {
 			// TODO_CONSIDERATION: should we close the publish channel here too?
 
@@ -236,40 +306,32 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 			// | this method return the same error.
 
 			// Only propagate error if it's not a context cancellation error.
-			if !errors.Is(ctx.Err(), context.Canceled) {
+			if !errors.Is(evtConn.ctx.Err(), context.Canceled) {
 				// Populate the error side (left) of the either and publish it.
-				eventsBzPublishCh <- either.Error[[]byte](err)
+				evtConn.eventsBzPublishCh <- either.Error[[]byte](err)
 			}
 
-			eqc.close()
+			// Cancel the context to stop the unsubscribe goroutine
+			// The cleanup logic is handled in the goUnsubscribeOnDone goroutine which
+			// waits for the context to be done.
+			evtConn.cancelCtx()
 
 			return
 		}
 
 		// Populate the []byte side (right) of the either and publish it.
-		eventsBzPublishCh <- either.Success(eventBz)
+		evtConn.eventsBzPublishCh <- either.Success(eventBz)
 	}
 }
 
 // goUnsubscribeOnDone unsubscribes from the subscription when the context is done.
 // It is intended to be called  in a goroutine.
 func (eqc *eventsQueryClient) goUnsubscribeOnDone(
-	ctx context.Context,
-	query string,
+	evtConn *eventsBytesInfo,
 ) {
 	// Wait for the context to be done.
-	<-ctx.Done()
-	// Only close the eventsBytes for the given query.
-	eqc.eventsBytesAndConnsMu.Lock()
-	defer eqc.eventsBytesAndConnsMu.Unlock()
-
-	if eventsBzConn, ok := eqc.eventsBytesAndConns[query]; ok {
-		// Unsubscribe all observers of the given query's eventsBzConn's observable
-		// and close its connection.
-		eventsBzConn.Close()
-		// Remove the eventsBytesAndConn for the given query.
-		delete(eqc.eventsBytesAndConns, query)
-	}
+	<-evtConn.ctx.Done()
+	eqc.close(evtConn)
 }
 
 // eventSubscriptionRequest returns a JSON-RPC request for subscribing to events

@@ -2,6 +2,7 @@ package polyzero
 
 import (
 	"io"
+	"os"
 
 	"github.com/rs/zerolog"
 
@@ -30,6 +31,14 @@ func WithLevel(level polylog.Level) polylog.LoggerOption {
 func WithTimestampKey(key string) polylog.LoggerOption {
 	return func(_ polylog.Logger) {
 		zerolog.TimestampFieldName = key
+	}
+}
+
+// WithTimestamp configures the logger to include a timestamp field using zerolog's built-in Timestamp().
+func WithTimestamp() polylog.LoggerOption {
+	return func(logger polylog.Logger) {
+		// Fallback to os.Stderr, as in NewLogger, since zerolog.Logger does not expose Writer().
+		logger.(*zerologLogger).Logger = zerolog.New(os.Stderr).With().Timestamp().Logger()
 	}
 }
 

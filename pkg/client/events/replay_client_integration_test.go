@@ -105,7 +105,8 @@ func TestReplayClient_Remapping(t *testing.T) {
 
 	// Setup the events query client dependency
 	dialerOpt := events.WithDialer(dialerMock)
-	queryClient := events.NewEventsQueryClient("", dialerOpt)
+	loggerOpt := events.WithLogger(polylog.Ctx(ctx))
+	queryClient := events.NewEventsQueryClient("", dialerOpt, loggerOpt)
 
 	logger := polylog.Ctx(ctx)
 	deps := depinject.Supply(queryClient, logger)

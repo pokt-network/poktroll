@@ -26,12 +26,13 @@ import (
 // - Value may change as network parameters change
 // - This value is a function of the claim & proof message sizes
 //
-// TODO(@bryanchriswhite, #1507): ClaimAndProofGasCost value should be a function of
+// TODO_IMPORTANT(#1507): ClaimAndProofGasCost value should be a function of
 // the biggest Relay (in num of bytes) and tx_size_cost_per_byte auth module param.
 // There should be a two step approach to this:
-// 1. Choose a reasonable (emperically observed) p90 of claim & proof sizes across most chains
+// 1. Choose a reasonable (empirically observed) p90 of claim & proof sizes across most chains
 // 2. TODO_FUTURE: Compute the gas cost dynamically based on the size of the branch being proven.
-var ClaimAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 10_000)
+// TODO_TECHDEBT(@olshansk): Temporarily setting this to 1uPOKT to see more claims & proofs on chain
+var ClaimAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 2)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims
