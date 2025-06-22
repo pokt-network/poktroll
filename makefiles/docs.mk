@@ -19,8 +19,12 @@ docusaurus_start: check_yarn check_node ## Start the Docusaurus server
 .PHONY: docusaurus_start_update_plugin
 docusaurus_start_update_plugin: ## Update the docusaurus-plugin-chat-page to the latest commit
 	@echo "🔄 Fetching latest commit SHA for docusaurus-plugin-chat-page..."
-	@SHA=$$(git ls-remote https://github.com/buildwithgrove/docusaurus-plugin-chat-page.git main | cut -f1); \
+	@SHA=$$(git ls-remote https://github.com/olshansk/docusaurus-plugin-chat-page.git main | cut -f1); \
 	echo "📌 Pinning to commit $$SHA"; \
-	sed -i.bak -E 's|("docusaurus-plugin-chat-page":\s*)"github:[^"]+"|\1"github:buildwithgrove/docusaurus-plugin-chat-page#'"$$SHA"'"|' docusaurus/package.json; \
+	sed -i.bak -E 's|("docusaurus-plugin-chat-page":\s*)"github:[^"]+"|\1"github:olshansk/docusaurus-plugin-chat-page#'"$$SHA"'"|' docusaurus/package.json; \
 	rm -f docusaurus/package.json.bak; \
 	cd docusaurus && yarn cache clean docusaurus-plugin-chat-page
+
+.PHONY: docusaurus_chat_yarn_link
+docusaurus_chat_yarn_link: ## Yarn link docusaurus-plugin-chat-page
+	(cd docusaurus && yarn link docusaurus-plugin-chat-page)
