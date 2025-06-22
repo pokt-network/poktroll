@@ -20,7 +20,7 @@
     "@easyops-cn/docusaurus-search-local": "^0.46.1",
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
-    "docusaurus-plugin-chat-page": "olshansk/docusaurus-plugin-chat-page",
+    "docusaurus-plugin-chat-page": "olshansk/docusaurus-plugin-chat-page#main",
     "execa": "^9.6.0",
     "katex": "^0.16.22",
     "prism-react-renderer": "^2.3.0",
