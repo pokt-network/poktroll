@@ -36,3 +36,17 @@ docusaurus_update_dependencies: ## Force re-fetch of docusaurus-plugin-chat-page
 
 	@echo "⬇️  Reinstalling dependencies from latest main..."
 	(cd docusaurus && yarn install --force)
+
+
+.PHONY: clean_embeddings
+clean_embeddings: ## Remove embedding cache files from all Docusaurus sites
+	@echo "🧹 Cleaning embedding cache files..."
+	@find . -name ".docusaurus" -type d -exec find {} -name "*embeddings.json" -delete \; 2>/dev/null || true
+	@find . -name ".docusaurus" -type d -exec find {} -name "docusaurus-plugin-chat-page-embeddings.json" -delete \; 2>/dev/null || true
+	@echo "✅ Embedding cache files cleaned"
+
+.PHONY: clean_docusaurus_cache
+clean_docusaurus_cache: ## Remove all Docusaurus cache directories
+	@echo "🧹 Cleaning all Docusaurus cache directories..."
+	@find . -name ".docusaurus" -type d -exec rm -rf {} + 2>/dev/null || true
+	@echo "✅ Docusaurus cache directories cleaned"

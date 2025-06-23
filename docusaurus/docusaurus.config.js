@@ -49,8 +49,9 @@ const config = {
           maxTokens: 1000,
         },
         embeddingCache: {
-          enabled: true, // toggle this to false to rebuild embeddings or true to used the existing (i.e. cached) embeddings
-          strategy: "manual", // Avoid regeneration every time for speed & price (just a v1)
+          mode: "auto",
+          // mode: "skip",
+          // strategy: "manual", // Avoid regeneration every time for speed & price (just a v1)
           path: "embeddings.json",
         },
         embedding: {
