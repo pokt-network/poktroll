@@ -2,10 +2,14 @@ package polyzero
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"math/rand"
 	"os"
+	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/diode"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
@@ -29,9 +33,34 @@ type zerologLogger struct {
 func NewLogger(
 	opts ...polylog.LoggerOption,
 ) polylog.Logger {
+	var output io.Writer
+
+	logOutput := os.Getenv("LOGS_OUTPUT")
+
+	// Optional: disable stdout/stderr logs via env to avoid breaking anything that is currently expecting it been writing
+	if logOutput == "discard" {
+		output = io.Discard
+		// Or use specialized writer to avoid locks due to the number of writings
+	} else if logOutput == "diode" {
+		// never lock - thread safe log writer
+		output = diode.NewWriter(os.Stdout, 1000, 10*time.Millisecond, func(missed int) {
+			// this can be removed
+			fmt.Printf("Logger Dropped %d messages", missed)
+		})
+		// otherwise it will just remain with the default one
+	} else if logOutput == "stdout" {
+		output = os.Stdout
+	} else {
+		output = os.Stderr
+	}
+
+	// @TECH_NOTE
+	// another option but requires a bit more of work is mixed such as writing Error, Fatal, Panic levels to stderr
+	// and everything else to stdout
+
 	ze := &zerologLogger{
-		level:  zerolog.DebugLevel,
-		Logger: zerolog.New(os.Stderr),
+		level:  zerolog.InfoLevel,
+		Logger: zerolog.New(output),
 	}
 
 	for _, opt := range opts {
