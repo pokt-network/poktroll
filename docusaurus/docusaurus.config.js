@@ -37,7 +37,10 @@ const config = {
     [
       require.resolve("docusaurus-plugin-chat-page"),
       {
-        baseURL: "https://dev.poktroll.com",
+        baseURL:
+          process.env.NODE_ENV === "development"
+            ? "http://localhost:4000"
+            : "https://dev.poktroll.com",
         path: "chat",
         openai: {
           apiKey: process.env.OPENAI_API_KEY,
