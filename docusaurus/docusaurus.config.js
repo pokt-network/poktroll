@@ -53,7 +53,8 @@ const config = {
         },
         embeddingCache: {
           // mode: "auto",
-          mode: "skip",
+          // mode: "skip",
+          mode: "use",
           // strategy: "manual", // Avoid regeneration every time for speed & price (just a v1)
           path: "embeddings.json",
         },
