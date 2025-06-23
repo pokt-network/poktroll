@@ -23,9 +23,6 @@ var (
 	// CometLocalTCPURL provides a default URL pointing to the localnet TCP endpoint.
 	CometLocalTCPURL = "tcp://localhost:26657"
 
-	// CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
-	CometLocalWebsocketURL = "ws://localhost:26657/websocket"
-
 	// TxConfig provided by app.AppConfig(), intended as a convenience for use in tests.
 	TxConfig client.TxConfig
 	// Marshaler provided by app.AppConfig(), intended as a convenience for use in tests.
@@ -58,7 +55,6 @@ func init() {
 	// If VALIDATOR_RPC_ENDPOINT environment variable is set, use it to override the default localnet endpoint.
 	if endpoint := os.Getenv("VALIDATOR_RPC_ENDPOINT"); endpoint != "" {
 		CometLocalTCPURL = fmt.Sprintf("tcp://%s", endpoint)
-		CometLocalWebsocketURL = fmt.Sprintf("ws://%s/websocket", endpoint)
 	}
 }
 

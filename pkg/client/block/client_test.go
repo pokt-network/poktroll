@@ -6,9 +6,7 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	"github.com/cometbft/cometbft/libs/json"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	"github.com/cometbft/cometbft/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -17,7 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 const (
@@ -32,44 +29,16 @@ func TestBlockClient(t *testing.T) {
 		expectedHeight = int64(1)
 		expectedHash   = []byte("test_hash")
 
-		expectedBlockEvent = &testBlockEvent{
-			Data: testBlockEventDataStruct{
-				Value: testBlockEventValueStruct{
-					Block: &types.Block{
-						Header: types.Header{
-							Height: 1,
-							Time:   time.Now(),
-						},
-					},
-					BlockID: types.BlockID{
-						Hash: expectedHash,
-					},
-				},
-			},
-		}
 		ctx = context.Background()
 	)
 
-	expectedEventBz, err := json.Marshal(expectedBlockEvent)
-	require.NoError(t, err)
-
-	expectedRPCResponse := &rpctypes.RPCResponse{
-		Result: expectedEventBz,
-	}
-
-	expectedRPCResponseBz, err := json.Marshal(expectedRPCResponse)
-	require.NoError(t, err)
-
-	eventsQueryClient := testeventsquery.NewAnyTimesEventsBytesEventsQueryClient(
-		ctx, t,
-		committedBlocksQuery,
-		expectedRPCResponseBz,
-	)
-
+	logger := polylog.Ctx(ctx)
 	ctrl := gomock.NewController(t)
-	cometClientMock := mockclient.NewMockCometRPC(ctrl)
 
-	cometClientMock.EXPECT().
+	// Set up the CometBFT HTTP client mock
+	cometHTTPClientMock := mockclient.NewMockClient(ctrl)
+
+	cometHTTPClientMock.EXPECT().
 		Block(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, height *int64) (*coretypes.ResultBlock, error) {
 			return &coretypes.ResultBlock{
@@ -84,10 +53,11 @@ func TestBlockClient(t *testing.T) {
 			}, nil
 		}).
 		AnyTimes()
+	cometHTTPClientMock.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(make(chan coretypes.ResultEvent), nil)
 
-	logger := polylog.Ctx(ctx)
-
-	deps := depinject.Supply(eventsQueryClient, cometClientMock, logger)
+	deps := depinject.Supply(cometHTTPClientMock, logger)
 
 	// Set up block client.
 	blockClient, err := block.NewBlockClient(ctx, deps)

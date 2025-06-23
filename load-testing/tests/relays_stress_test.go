@@ -4,7 +4,6 @@ package tests
 
 import (
 	"context"
-	"net/url"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -20,6 +19,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -98,10 +98,10 @@ type relaysSuite struct {
 	// cancelCtx is the cancel function for the global context.
 	cancelCtx context.CancelFunc
 
-	// blockClient notifies the test suite of new blocks committed.
-	blockClient client.BlockClient
+	// cometClient notifies the test suite of new blocks committed.
+	cometClient client.BlockClient
 	// latestBlock is continuously updated with the latest committed block.
-	latestBlock client.Block
+	latestBlock block.CometBlockResult
 	// sessionInfoObs is the observable that maps committed blocks to session information.
 	// It is used to determine when to stake new actors and when they become active.
 	sessionInfoObs observable.Observable[*sessionInfoNotif]
@@ -304,17 +304,6 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	if !s.isEphemeralChain {
 		testclient.CometLocalTCPURL = loadTestParams.RPCNode
 
-		webSocketURL, err := url.Parse(loadTestParams.RPCNode)
-		require.NoError(s, err)
-
-		// TestNet nodes may be exposed over HTTPS, so adjust the scheme accordingly.
-		if webSocketURL.Scheme == "https" {
-			webSocketURL.Scheme = "wss"
-		} else {
-			webSocketURL.Scheme = "ws"
-		}
-		testclient.CometLocalWebsocketURL = webSocketURL.String() + "/websocket"
-
 		// Update the block duration when running the test on a non-ephemeral chain.
 		// TODO_TECHDEBT: Get the block duration value from the chain.
 		blockDurationSec = 60
@@ -435,7 +424,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// It runs at the same frequency as committed blocks (i.e. 1:1).
 	s.sessionInfoObs = channel.Map(
 		s.ctx,
-		s.blockClient.CommittedBlocksSequence(s.ctx),
+		s.cometClient.CommittedBlocksSequence(s.ctx),
 		s.mapSessionInfoForLoadTestDurationFn(relayBatchInfoPublishCh),
 	)
 

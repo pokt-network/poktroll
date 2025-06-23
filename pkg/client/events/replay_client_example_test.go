@@ -2,13 +2,12 @@ package events_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"cosmossdk.io/depinject"
 
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 const (
@@ -39,33 +38,20 @@ func eventTypeFactory(ctx context.Context) events.NewEventsFn[EventType] {
 	// Define a decoder function that can take the raw event bytes
 	// received from the EventsQueryClient and convert them into
 	// the desired type for the EventsReplayClient
-	return func(eventBz []byte) (EventType, error) {
-		eventMsg := new(eventType)
-		logger := polylog.Ctx(ctx)
-
-		if err := json.Unmarshal(eventBz, eventMsg); err != nil {
-			return nil, err
+	return func(eventResult *coretypes.ResultEvent) (EventType, error) {
+		eventMsg, ok := eventResult.Data.(eventType)
+		if !ok {
+			return nil, fmt.Errorf("unable to decode event data: %T", eventResult.Data)
 		}
 
-		// Confirm the event is correct by checking its fields
-		if eventMsg.Name == "" {
-			logger.Error().Str("eventBz", string(eventBz)).Msg("event type is not correct")
-			return nil, events.ErrEventsUnmarshalEvent.
-				Wrapf("with eventType data: %s", string(eventBz))
-		}
-
-		return eventMsg, nil
+		return &eventMsg, nil
 	}
 }
 
 func (e *eventType) GetName() string { return e.Name }
 
 func ExampleNewEventsReplayClient() {
-	// Create the events query client and a depinject config to supply
-	// it into the EventsReplayClient
-	// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsQueryClient
-	evtClient := events.NewEventsQueryClient(cometWebsocketURL)
-	depConfig := depinject.Supply(evtClient)
+	depConfig := depinject.Supply()
 
 	// Create a context (this should be cancellable to close the EventsReplayClient)
 	ctx, cancel := context.WithCancel(context.Background())

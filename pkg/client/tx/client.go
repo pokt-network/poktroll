@@ -1,7 +1,6 @@
 package tx
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -11,8 +10,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/json"
-	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -205,13 +203,12 @@ func NewTxClient(
 	eventQuery := fmt.Sprintf(txWithSenderAddrQueryFmt, txnClient.signingAddr)
 
 	// Initialize and events replay client.
-	txnClient.eventsReplayClient, err = events.NewEventsReplayClient[*abci.TxResult](
+	txnClient.eventsReplayClient, err = events.NewEventsReplayClient(
 		ctx,
 		deps,
 		eventQuery,
 		UnmarshalTxResult,
 		defaultTxReplayLimit,
-		events.WithConnRetryLimit[*abci.TxResult](txnClient.connRetryLimit),
 	)
 	if err != nil {
 		return nil, err
@@ -746,29 +743,14 @@ func (txnClient *txClient) getFeeAmount(
 	return feeCoins, nil
 }
 
-// UnmarshalTxResult attempts to deserialize a slice of bytes into a TxResult
-// It checks if the given bytes correspond to a valid transaction event.
-// If the resulting TxResult has empty transaction bytes, it assumes that
-// the message was not a transaction results and returns an error.
-func UnmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
-	var rpcResponse rpctypes.RPCResponse
-
-	// Try to deserialize the provided bytes into an RPCResponse.
-	if err := json.Unmarshal(txResultBz, &rpcResponse); err != nil {
-		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
+// UnmarshalTxResult extracts an ABCI transaction result from a Comet ResultEvent.
+// It takes a coretypes.ResultEvent attempts to extract and return the TxResult.
+func UnmarshalTxResult(resultEvt *coretypes.ResultEvent) (*abci.TxResult, error) {
+	// Attempt to cast the event data to EventDataTx
+	txResult, ok := resultEvt.Data.(comettypes.EventDataTx)
+	if !ok {
+		return nil, events.ErrEventsUnmarshalEvent.Wrapf("expected EventDataTx, got %T", resultEvt.Data)
 	}
 
-	var cometTxEvent CometTxEvent
-	// Try to deserialize the provided bytes into a CometTxEvent.
-	if err := json.Unmarshal(rpcResponse.Result, &cometTxEvent); err != nil {
-		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
-	}
-
-	// Check if the TxResult has empty transaction bytes, which indicates
-	// the message might not be a valid transaction event.
-	if bytes.Equal(cometTxEvent.Data.Value.TxResult.Tx, []byte{}) {
-		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an abci.TxResult")
-	}
-
-	return &cometTxEvent.Data.Value.TxResult, nil
+	return &txResult.TxResult, nil
 }

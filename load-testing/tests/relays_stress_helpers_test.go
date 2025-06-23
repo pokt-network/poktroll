@@ -5,22 +5,17 @@ package tests
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
-	"testing"
 	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/json"
-	cmtcoretypes "github.com/cometbft/cometbft/rpc/core/types"
-	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -43,7 +38,6 @@ import (
 	testdelays "github.com/pokt-network/poktroll/testutil/delays"
 	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testclient"
-	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -89,49 +83,51 @@ type actorLoadTestIncrementPlan struct {
 // onchain.
 func (s *relaysSuite) setupEventListeners(rpcNode string) {
 	// Set up the blockClient that will be notifying the suite about the committed blocks.
-	eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
-	s.committedEventsObs = eventsObs
+	// TODO_IN_THIS_PR: Re-enable the event listeners using ComstBFT's CometClient.
+	//eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
+	//s.committedEventsObs = eventsObs
 
-	extractBlockEvents := func(ctx context.Context, block client.Block) {
-		// Query the block results endpoint for each observed block to get the tx and block events.
-		// Ref: https://docs.cometbft.com/main/rpc/#/Info/block_results
-		blockResultsUrl := fmt.Sprintf("%s/block_results?height=%d", rpcNode, block.Height())
-		blockResultsResp, err := http.DefaultClient.Get(blockResultsUrl)
-		require.NoError(s, err)
+	//extractBlockEvents := func(ctx context.Context, block block.CometBlockResult) {
+	//// Query the block results endpoint for each observed block to get the tx and block events.
+	//// Ref: https://docs.cometbft.com/main/rpc/#/Info/block_results
+	//blockResultsUrl := fmt.Sprintf("%s/block_results?height=%d", rpcNode, block.Height())
+	//blockResultsResp, err := http.DefaultClient.Get(blockResultsUrl)
+	//require.NoError(s, err)
 
-		defer blockResultsResp.Body.Close()
+	//defer blockResultsResp.Body.Close()
 
-		blockResultsRespBz, err := io.ReadAll(blockResultsResp.Body)
-		require.NoError(s, err)
+	//blockResultsRespBz, err := io.ReadAll(blockResultsResp.Body)
+	//require.NoError(s, err)
 
-		var rpcResponse rpctypes.RPCResponse
-		err = json.Unmarshal(blockResultsRespBz, &rpcResponse)
-		require.NoError(s, err)
+	//var rpcResponse rpctypes.RPCResponse
+	//err = json.Unmarshal(blockResultsRespBz, &rpcResponse)
+	//require.NoError(s, err)
 
-		var blockResults cmtcoretypes.ResultBlockResults
-		err = json.Unmarshal(rpcResponse.Result, &blockResults)
-		require.NoError(s, err)
+	//var blockResults cmtcoretypes.ResultBlockResults
+	//err = json.Unmarshal(rpcResponse.Result, &blockResults)
+	//require.NoError(s, err)
 
-		numEvents := len(blockResults.TxsResults) + len(blockResults.FinalizeBlockEvents)
-		events := make([]types.Event, 0, numEvents)
+	//numEvents := len(blockResults.TxsResults) + len(blockResults.FinalizeBlockEvents)
+	//events := make([]types.Event, 0, numEvents)
 
-		// Flatten all tx result events and block event results into one slice.
-		for _, txResult := range blockResults.TxsResults {
-			events = append(events, txResult.Events...)
-		}
+	//// Flatten all tx result events and block event results into one slice.
+	//for _, txResult := range blockResults.TxsResults {
+	//events = append(events, txResult.Events...)
+	//}
 
-		events = append(events, blockResults.FinalizeBlockEvents...)
+	//events = append(events, blockResults.FinalizeBlockEvents...)
 
-		s.latestBlock = block
-		eventsObsCh <- events
-	}
+	//s.latestBlock = block
+	//eventsObsCh <- events
+	//}
 
-	s.blockClient = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T))
-	channel.ForEach(
-		s.ctx,
-		s.blockClient.CommittedBlocksSequence(s.ctx),
-		extractBlockEvents,
-	)
+	//s.cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
+	//require.NoError(s, err)
+	//channel.ForEach(
+	//	s.ctx,
+	//	s.cometClient.CommittedBlocksSequence(s.ctx),
+	//	extractBlockEvents,
+	//)
 }
 
 // initFundingAccount initializes the account that will be funding the onchain actors.
@@ -1421,7 +1417,7 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.blockClient,
+		s.cometClient,
 		sharedParamsCache,
 		blockhashCache,
 	)
@@ -1449,7 +1445,7 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.blockClient,
+		s.cometClient,
 		appParmsCache,
 		appsCache,
 	)
@@ -1477,7 +1473,7 @@ func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.blockClient,
+		s.cometClient,
 		proofParamsCache,
 		proofCache,
 	)
@@ -1534,7 +1530,7 @@ func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.blockClient,
+		s.cometClient,
 		servicesCache,
 		relayMiningDifficultyCache,
 	)

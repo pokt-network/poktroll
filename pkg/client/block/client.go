@@ -12,11 +12,12 @@ import (
 )
 
 const (
-	// committedBlocksQuery is the query used to subscribe to new committed block
-	// events used by the EventsQueryClient to subscribe to new block events from
-	// the chain.
-	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-	committedBlocksQuery = "tm.event='NewBlock'"
+	// committedBlocksQuery is the subscription query for block events.
+	// - Uses 'NewBlockHeader' events instead of 'NewBlock' for efficiency
+	// - 'NewBlock' has complete data but higher bandwidth requirements
+	// - Only header information is needed for most block tracking operations
+	// - See: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
+	committedBlocksQuery = "tm.event='NewBlockHeader'"
 
 	// defaultBlocksReplayLimit is the number of blocks that the replay
 	// observable returned by LastNBlocks() will be able to replay.
@@ -33,12 +34,10 @@ const (
 // the interface.
 //
 // Required dependencies:
-// - client.EventsQueryClient
 // - client.BlockQueryClient
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
-	opts ...client.BlockClientOption,
 ) (_ client.BlockClient, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -50,17 +49,12 @@ func NewBlockClient(
 		close:                cancel,
 	}
 
-	for _, opt := range opts {
-		opt(bClient)
-	}
-
-	bClient.eventsReplayClient, err = events.NewEventsReplayClient[client.Block](
+	bClient.eventsReplayClient, err = events.NewEventsReplayClient(
 		ctx,
 		deps,
 		committedBlocksQuery,
 		UnmarshalNewBlock,
 		defaultBlocksReplayLimit,
-		events.WithConnRetryLimit[client.Block](bClient.connRetryLimit),
 	)
 	if err != nil {
 		cancel()
@@ -127,7 +121,6 @@ func (b *blockReplayClient) LastBlock(ctx context.Context) (block client.Block) 
 // Close closes the underlying websocket connection for the EventsQueryClient
 // and closes all downstream connections.
 func (b *blockReplayClient) Close() {
-	b.eventsReplayClient.Close()
 	b.close()
 }
 

@@ -17,7 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 type signAndBroadcastFn func(context.Context, int64, cosmostypes.Msg) (*cosmostypes.TxResponse, either.AsyncError)
@@ -31,12 +30,13 @@ func NewLocalnetClient(t *testing.T, opts ...client.TxClientOption) client.TxCli
 
 	ctx := context.Background()
 	txCtx := NewLocalnetContext(t)
-	eventsQueryClient := testeventsquery.NewLocalnetClient(t)
+	ctrl := gomock.NewController(t)
+	cometHTTPClientMock := mockclient.NewMockClient(ctrl)
 	blockClient := testblock.NewLocalnetClient(ctx, t)
 
 	deps := depinject.Supply(
 		txCtx,
-		eventsQueryClient,
+		cometHTTPClientMock,
 		blockClient,
 	)
 
