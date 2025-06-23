@@ -29,7 +29,7 @@ def check_and_load_ibc(chart_prefix, ibc_config):
 #   - Deploys Agoric via Helm/k8s
 #   - Sets up Agoric k8s resource with port-forwards
 def check_and_load_agoric(chart_prefix, ibc_config):
-    if ibc_config["relay_pairs_enabled"]["pocket-agoriclocal"]:
+    if ibc_config["relay_pairs_enabled"].get("pocket-agoriclocal", False):
         docker_build(
             "agoric",
             context=os.path.join(".", "localnet", "kubernetes"),  # needs any folder, less context is faster
@@ -95,7 +95,7 @@ def load_ibc_relayer_server_resources(chart_prefix, pair):
 
     # Deploy helm chart
     helm_resource(
-        "ibc-relayer",
+        "ibc-relayer-" + pair,
         chart_prefix + "ibc-relayer",
         flags=[
             "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
@@ -111,7 +111,7 @@ def load_ibc_relayer_server_resources(chart_prefix, pair):
 
     # Update k8s resource with new name, lebels, and port-forwards
     k8s_resource(
-        "ibc-relayer",
+        "ibc-relayer-" + pair,
         new_name=pair_pretty(pair) + " IBC Relayer",
         labels=["IBC"],
         resource_deps=resource_deps,
@@ -141,7 +141,7 @@ def load_ibc_relayer_setup_resources(chart_prefix, pair):
 
     # Deploy helm chart
     helm_resource(
-        "ibc-relayer-setup",
+        "ibc-relayer-setup-" + pair,
         chart_prefix + "ibc-relayer",
         flags=[
             "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
@@ -159,7 +159,7 @@ def load_ibc_relayer_setup_resources(chart_prefix, pair):
     # port-forwards, and the manual trigger mode.
     k8s_resource(
         # workload=release_name,
-        "ibc-relayer-setup",
+        "ibc-relayer-setup-" + pair,
         new_name=pair_pretty(pair) + " IBC Setup",
         labels=["IBC"],
         trigger_mode=TRIGGER_MODE_MANUAL,
@@ -180,6 +180,7 @@ def load_ibc_relayer(chart_prefix, pair):
 # - Iterates through all enabled relay pairs and loads relayer resources for each
 def load_ibc_resources(chart_prefix, ibc_config):
     check_and_load_agoric(chart_prefix, ibc_config)
+    check_and_load_axelar(chart_prefix, ibc_config)
 
     if len(ibc_config["relay_pairs_enabled"]) > 0:
         docker_build(
