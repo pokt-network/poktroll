@@ -20,7 +20,6 @@ keys:
   - name: pocket
     # LocalNet app1 mnemonic; SHOULD match config.yml.
     mnemonic: "mention spy involve verb exercise fiction catalog order agent envelope mystery text defy sing royal fringe return face alpha knife wonder vocal virus drum"
-    coin_type: 118
   - name: agoriclocal
     mnemonic: "beach prize number regular tiger aware ring shiver path dizzy please bacon steel car crash youth rural history furnace possible property chicken entire system"
     coin_type: 564
