@@ -1,3 +1,5 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "cleanUrls": true,
+  "buildCommand": "yarn build",
+  "outputDirectory": "build"
 }
