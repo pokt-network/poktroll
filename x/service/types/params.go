@@ -18,7 +18,8 @@ var (
 
 	KeyAddServiceFee       = []byte("AddServiceFee")
 	ParamAddServiceFee     = "add_service_fee"
-	MinAddServiceFee       = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1_000_000_000))
+	MinAddServiceFee       = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1))
+	
 	KeyTargetNumRelays     = []byte("TargetNumRelays")
 	ParamTargetNumRelays   = "target_num_relays"
 	DefaultTargetNumRelays = uint64(10e4)
