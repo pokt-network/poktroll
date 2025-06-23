@@ -28,3 +28,11 @@ docusaurus_start_update_plugin: ## Update the docusaurus-plugin-chat-page to the
 .PHONY: docusaurus_chat_yarn_link
 docusaurus_chat_yarn_link: ## Yarn link docusaurus-plugin-chat-page
 	(cd docusaurus && yarn link docusaurus-plugin-chat-page)
+
+.PHONY: docusaurus_update_dependencies
+docusaurus_update_dependencies: ## Force re-fetch of docusaurus-plugin-chat-page from main branch
+	@echo "🧼 Cleaning yarn cache for docusaurus-plugin-chat-page..."
+	(cd docusaurus && yarn cache clean docusaurus-plugin-chat-page)
+
+	@echo "⬇️  Reinstalling dependencies from latest main..."
+	(cd docusaurus && yarn install --force)
