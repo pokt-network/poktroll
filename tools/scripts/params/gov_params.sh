@@ -608,7 +608,7 @@ EOF
     echo ""
     echo "To submit your parameter update transaction, run:"
     echo ""
-    echo "  pocketd tx authz exec $OUTPUT_FILE_UPDATE --from=$FROM_KEY --keyring-backend=test --chain-id=$CHAIN_ID $NODE --yes --home=$HOME_DIR --fees=200upokt"
+    echo "  pocketd tx authz exec $OUTPUT_FILE_UPDATE --from=$FROM_KEY --keyring-backend=test --chain-id=$CHAIN_ID $NODE --yes --home=$HOME_DIR --gas=auto --fees=10upokt"
     echo ""
     echo "Template file location: $OUTPUT_FILE_UPDATE"
     echo "Message type used: $MESSAGE_TYPE"
