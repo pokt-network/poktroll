@@ -16,10 +16,10 @@ var (
 
 	// TODO_MAINNET: Determine a sensible default/min values.
 
-	KeyAddServiceFee       = []byte("AddServiceFee")
-	ParamAddServiceFee     = "add_service_fee"
-	MinAddServiceFee       = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1))
-	
+	KeyAddServiceFee   = []byte("AddServiceFee")
+	ParamAddServiceFee = "add_service_fee"
+	MinAddServiceFee   = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1))
+
 	KeyTargetNumRelays     = []byte("TargetNumRelays")
 	ParamTargetNumRelays   = "target_num_relays"
 	DefaultTargetNumRelays = uint64(10e4)
