@@ -31,38 +31,42 @@ func GoOnExitSignal(logger polylog.Logger, onInterrupt func()) {
 	go func() {
 		// Set up sigCh to receive when this process receives an interrupt or
 		// terminate signal.
-		// Use a buffered channel with large capacity to prevent signal loss
-		sigCh := make(chan os.Signal, 5)
+		// Use a buffered channel with smaller capacity to reduce memory overhead
+		sigCh := make(chan os.Signal, 1)
 
-		// Register the signals we want to listen for.
+		// Register only the most common signals to reduce overhead
 		// DEV_NOTE: SIGKILL cannot be trapped, so we don't listen for it.
-		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGABRT)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 		// Block until we receive an interrupt or kill signal (OS-agnostic)
 		sig := <-sigCh
-		logger.Info().Msgf("🔚 Received signal %s, starting graceful shutdown...", sig)
+		logger.Info().Msgf("Received signal %s, starting graceful shutdown...", sig)
 
 		// Create a channel to track shutdown completion
 		done := make(chan struct{})
 
 		// Start the graceful shutdown in a goroutine
 		go func() {
+			defer close(done)
 			// Call the onInterrupt callback.
 			onInterrupt()
-			close(done)
 		}()
+
+		// Create a timer for the timeout to avoid potential timer leak
+		timer := time.NewTimer(shutDownTimeout)
+		defer timer.Stop()
 
 		// Wait for either completion or another signal or timeout
 		select {
 		case <-done:
-			logger.Info().Msg("✅ Graceful shutdown completed successfully.")
+			logger.Info().Msg("Graceful shutdown completed successfully.")
 			return
 		case sig := <-sigCh:
-			logger.Warn().Msgf("⚠️ Received another signal %s during shutdown, 🗡️ exiting immediately.", sig)
+			logger.Warn().Msgf("Received another signal %s during shutdown, exiting immediately.", sig)
 			// Exit immediately if another signal is received during shutdown
 			os.Exit(130) // UNIX convention, use 128 + 2 to indicate a double interrupt (SIGINT)
-		case <-time.After(shutDownTimeout):
-			logger.Warn().Msgf("⌛ Graceful shutdown timed out after %s, 🗡️ exiting immediately.", shutDownTimeout)
+		case <-timer.C:
+			logger.Warn().Msgf("Graceful shutdown timed out after %s, exiting immediately.", shutDownTimeout)
 			os.Exit(1) // Exit immediately if the shutdown takes too long
 		}
 	}()

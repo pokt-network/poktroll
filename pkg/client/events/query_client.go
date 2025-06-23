@@ -75,7 +75,9 @@ type eventsBytesInfo struct {
 	cancelCtx context.CancelFunc
 
 	// isClosed: Indicates whether the connection is closed.
-	isClosed atomic.Bool
+	// Use regular bool with mutex protection to reduce atomic contention.
+	isClosed   bool
+	isClosedMu sync.RWMutex
 }
 
 // NewEventsQueryClient returns a new events query client which is used to
@@ -183,7 +185,9 @@ func (eqc *eventsQueryClient) close(evtConn *eventsBytesInfo) {
 	if _, ok := eqc.eventsBytesInfo[evtConn.query]; ok {
 		// mark the connection as closed to prevent late messages from being published
 		// to the closed eventsBzPublishCh.
-		evtConn.isClosed.Store(true)
+		evtConn.isClosedMu.Lock()
+		evtConn.isClosed = true
+		evtConn.isClosedMu.Unlock()
 
 		// Unsubscribe all observers for the given query's eventsBzConn's observable and close its connection.
 		close(evtConn.eventsBzPublishCh) // close the publish channel to stop the goroutine
@@ -284,15 +288,35 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 // goPublishEventsBz blocks on reading messages from a websocket connection.
 // It is intended to be called from within a go routine.
 func (eqc *eventsQueryClient) goPublishEventsBz(evtConn *eventsBytesInfo) {
+	// Use defer to recover from potential panics due to race conditions
+	defer func() {
+		if r := recover(); r != nil {
+			// Log the panic but don't crash the program
+			if eqc.logger != nil {
+				eqc.logger.Warn().Msgf("Recovered from panic in goPublishEventsBz: %v", r)
+			}
+		}
+	}()
+
 	// Read and handle messages from the websocket. This loop will exit when the
 	// websocket connection is isClosed and/or returns an error.
 	for {
-		eventBz, err := evtConn.conn.Receive()
-		// Prevent late messages from being published to the closed eventsBzPublishCh.
-		// This is done by checking the isClosed flag before publishing the eventBz.
-		if evtConn.isClosed.Load() {
+		// Check context cancellation before each receive to avoid unnecessary work
+		select {
+		case <-evtConn.ctx.Done():
+			return
+		default:
+		}
+
+		// Check if connection is closed to avoid unnecessary reads in tight loop
+		evtConn.isClosedMu.RLock()
+		closed := evtConn.isClosed
+		evtConn.isClosedMu.RUnlock()
+		if closed {
 			return
 		}
+
+		eventBz, err := evtConn.conn.Receive()
 
 		if err != nil {
 			// TODO_CONSIDERATION: should we close the publish channel here too?
@@ -307,8 +331,8 @@ func (eqc *eventsQueryClient) goPublishEventsBz(evtConn *eventsBytesInfo) {
 
 			// Only propagate error if it's not a context cancellation error.
 			if !errors.Is(evtConn.ctx.Err(), context.Canceled) {
-				// Populate the error side (left) of the either and publish it.
-				evtConn.eventsBzPublishCh <- either.Error[[]byte](err)
+				// Use a safe send helper to avoid panic
+				eqc.safeSend(evtConn, either.Error[[]byte](err))
 			}
 
 			// Cancel the context to stop the unsubscribe goroutine
@@ -319,8 +343,27 @@ func (eqc *eventsQueryClient) goPublishEventsBz(evtConn *eventsBytesInfo) {
 			return
 		}
 
-		// Populate the []byte side (right) of the either and publish it.
-		evtConn.eventsBzPublishCh <- either.Success(eventBz)
+		// Use a safe send helper to avoid panic
+		eqc.safeSend(evtConn, either.Success(eventBz))
+	}
+}
+
+// safeSend safely sends a message to the eventsBzPublishCh channel, handling race conditions
+func (eqc *eventsQueryClient) safeSend(evtConn *eventsBytesInfo, msg either.Bytes) {
+	// Check if connection is closed before sending to avoid panic
+	evtConn.isClosedMu.RLock()
+	closed := evtConn.isClosed
+	evtConn.isClosedMu.RUnlock()
+	if closed {
+		return
+	}
+
+	// Use select to avoid blocking if channel is full or closed
+	select {
+	case evtConn.eventsBzPublishCh <- msg:
+	case <-evtConn.ctx.Done():
+	default:
+		// Channel is full or closed, drop the message
 	}
 }
 

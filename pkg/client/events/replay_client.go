@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"math"
+	"math/rand"
 	"time"
 
 	"cosmossdk.io/depinject"
@@ -222,10 +223,20 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, publishCh c
 					rClient.connRetryLimit,
 				)
 
-				// Connection failed - clean up and retry
+				// Connection failed - clean up and retry with exponential backoff
 				cancelEventsBzObs()
 				numRetries++
-				time.Sleep(eventsBytesRetryDelay)
+
+				// Exponential backoff with jitter to prevent thundering herd
+				backoffDelay := eventsBytesRetryDelay * time.Duration(1<<uint(min(numRetries-1, 5)))
+				jitter := time.Duration(rand.Intn(1000)) * time.Millisecond
+				totalDelay := backoffDelay + jitter
+
+				select {
+				case <-time.After(totalDelay):
+				case <-ctx.Done():
+					return
+				}
 
 				continue
 			}
