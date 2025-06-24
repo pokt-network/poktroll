@@ -1,0 +1,28 @@
+name: Telegram Release Notifier
+
+on:
+  release:
+    types: [published, edited]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.release.draft == false &&
+      github.event.release.prerelease == false &&
+      github.event.release.published_at != github.event.release.created_at
+    steps:
+      - name: Send release to Telegram group
+        run: |
+          CHAT_ID="-1002895286734"
+
+          MESSAGE="📦 *${{ github.event.release.name }}*
+
+          [View Release](${{ github.event.release.html_url }})
+
+          ${{ github.event.release.body }}"
+
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_ID" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"
