@@ -30,13 +30,14 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/load-testing/config"
-	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
 	testdelays "github.com/pokt-network/poktroll/testutil/delays"
-	"github.com/pokt-network/poktroll/testutil/events"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -45,6 +46,11 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+)
+
+const (
+	newBlockEventQuery = "tm.event='NewBlock'"
+	blocksReplayLimit  = 1
 )
 
 // actorLoadTestIncrementPlans is a struct that holds the parameters for incrementing
@@ -83,51 +89,30 @@ type actorLoadTestIncrementPlan struct {
 // onchain.
 func (s *relaysSuite) setupEventListeners(rpcNode string) {
 	// Set up the blockClient that will be notifying the suite about the committed blocks.
-	// TODO_IN_THIS_PR: Re-enable the event listeners using ComstBFT's CometClient.
-	//eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
-	//s.committedEventsObs = eventsObs
+	eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
+	s.committedEventsObs = eventsObs
 
-	//extractBlockEvents := func(ctx context.Context, block block.CometBlockResult) {
-	//// Query the block results endpoint for each observed block to get the tx and block events.
-	//// Ref: https://docs.cometbft.com/main/rpc/#/Info/block_results
-	//blockResultsUrl := fmt.Sprintf("%s/block_results?height=%d", rpcNode, block.Height())
-	//blockResultsResp, err := http.DefaultClient.Get(blockResultsUrl)
-	//require.NoError(s, err)
+	cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
+	require.NoError(s, err)
 
-	//defer blockResultsResp.Body.Close()
+	deps := depinject.Supply(cometClient)
+	s.eventsReplayClient, err = events.NewEventsReplayClient(
+		s.ctx,
+		deps,
+		newBlockEventQuery,
+		block.UnmarshalNewBlockEvent,
+		blocksReplayLimit,
+	)
+	require.NoError(s, err)
 
-	//blockResultsRespBz, err := io.ReadAll(blockResultsResp.Body)
-	//require.NoError(s, err)
-
-	//var rpcResponse rpctypes.RPCResponse
-	//err = json.Unmarshal(blockResultsRespBz, &rpcResponse)
-	//require.NoError(s, err)
-
-	//var blockResults cmtcoretypes.ResultBlockResults
-	//err = json.Unmarshal(rpcResponse.Result, &blockResults)
-	//require.NoError(s, err)
-
-	//numEvents := len(blockResults.TxsResults) + len(blockResults.FinalizeBlockEvents)
-	//events := make([]types.Event, 0, numEvents)
-
-	//// Flatten all tx result events and block event results into one slice.
-	//for _, txResult := range blockResults.TxsResults {
-	//events = append(events, txResult.Events...)
-	//}
-
-	//events = append(events, blockResults.FinalizeBlockEvents...)
-
-	//s.latestBlock = block
-	//eventsObsCh <- events
-	//}
-
-	//s.cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
-	//require.NoError(s, err)
-	//channel.ForEach(
-	//	s.ctx,
-	//	s.cometClient.CommittedBlocksSequence(s.ctx),
-	//	extractBlockEvents,
-	//)
+	channel.ForEach(
+		s.ctx,
+		s.eventsReplayClient.EventsSequence(s.ctx),
+		func(ctx context.Context, block *block.CometNewBlockEvent) {
+			s.latestBlock = block
+			eventsObsCh <- block.Events()
+		},
+	)
 }
 
 // initFundingAccount initializes the account that will be funding the onchain actors.
@@ -184,7 +169,7 @@ func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 // such that the corresponding pipeline branch will send a relay batch.
 func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 	relayBatchInfoPublishCh chan<- *relayBatchInfoNotif,
-) channel.MapFn[client.Block, *sessionInfoNotif] {
+) channel.MapFn[*block.CometNewBlockEvent, *sessionInfoNotif] {
 	var (
 		// The test suite is initially waiting for the next session to start.
 		waitingForFirstSession = true
@@ -193,7 +178,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 	return func(
 		ctx context.Context,
-		block client.Block,
+		block *block.CometNewBlockEvent,
 	) (_ *sessionInfoNotif, skip bool) {
 		blockHeight := block.Height()
 		if blockHeight <= s.latestBlock.Height() {
@@ -1150,7 +1135,7 @@ func (s *relaysSuite) ensureStakedActors(
 	// Add 1 second to the block duration to make sure the deadline is after the next block.
 	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
 	ctx, cancel := context.WithDeadline(ctx, deadline)
-	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
+	typedEventsObs := testevents.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {
 			switch e := event.(type) {
@@ -1203,7 +1188,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 
 	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
 	ctx, cancel := context.WithDeadline(ctx, deadline)
-	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
+	typedEventsObs := testevents.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {
 			redelegationEvent, ok := event.(*apptypes.EventRedelegation)
@@ -1396,7 +1381,7 @@ func (s *relaysSuite) parseActorLoadTestIncrementPlans(
 
 // forEachSettlement asynchronously captures the settlement events and processes them.
 func (s *relaysSuite) forEachSettlement(ctx context.Context) {
-	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
+	typedEventsObs := testevents.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(
 		s.ctx,
 		typedEventsObs,
@@ -1417,7 +1402,7 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.cometClient,
+		s.eventsReplayClient,
 		sharedParamsCache,
 		blockhashCache,
 	)
@@ -1445,7 +1430,7 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.cometClient,
+		s.eventsReplayClient,
 		appParmsCache,
 		appsCache,
 	)
@@ -1473,7 +1458,7 @@ func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.cometClient,
+		s.eventsReplayClient,
 		proofParamsCache,
 		proofCache,
 	)
@@ -1530,7 +1515,7 @@ func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
 	deps := depinject.Supply(
 		s.txContext.GetClientCtx(),
 		logger,
-		s.cometClient,
+		s.eventsReplayClient,
 		servicesCache,
 		relayMiningDifficultyCache,
 	)

@@ -13,7 +13,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-const RelayMinerClient = "relayer-miner-client"
+// subscriptionClient is the name of the subscription client used to subscribe
+// to events via the CometBFT WebSocket connection.
+const subscriptionClient = "replay-client"
 
 // Enforce the EventsReplayClient interface is implemented by the replayClient type.
 var _ client.EventsReplayClient[any] = (*replayClient[any])(nil)
@@ -86,7 +88,7 @@ func NewEventsReplayClient[T any](
 		rClient.replayObsBufferSize,
 	)
 
-	resultEventCh, err := rClient.cometClient.Subscribe(ctx, RelayMinerClient, rClient.queryString)
+	resultEventCh, err := rClient.cometClient.Subscribe(ctx, subscriptionClient, rClient.queryString)
 	if err != nil {
 		return nil, err
 	}

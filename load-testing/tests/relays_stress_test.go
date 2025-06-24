@@ -98,10 +98,10 @@ type relaysSuite struct {
 	// cancelCtx is the cancel function for the global context.
 	cancelCtx context.CancelFunc
 
-	// cometClient notifies the test suite of new blocks committed.
-	cometClient client.BlockClient
+	// eventsReplayClient notifies the test suite of new blocks committed.
+	eventsReplayClient client.EventsReplayClient[*block.CometNewBlockEvent]
 	// latestBlock is continuously updated with the latest committed block.
-	latestBlock block.CometBlockResult
+	latestBlock *block.CometNewBlockEvent
 	// sessionInfoObs is the observable that maps committed blocks to session information.
 	// It is used to determine when to stake new actors and when they become active.
 	sessionInfoObs observable.Observable[*sessionInfoNotif]
@@ -424,7 +424,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// It runs at the same frequency as committed blocks (i.e. 1:1).
 	s.sessionInfoObs = channel.Map(
 		s.ctx,
-		s.cometClient.CommittedBlocksSequence(s.ctx),
+		s.eventsReplayClient.EventsSequence(s.ctx),
 		s.mapSessionInfoForLoadTestDurationFn(relayBatchInfoPublishCh),
 	)
 
