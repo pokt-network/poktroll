@@ -12,7 +12,8 @@ import (
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
-	for _, supplierOperatorAddress := range rp.relayAuthenticator.GetSupplierOperatorAddresses() {
+	configuredSuppliers := rp.relayAuthenticator.GetSupplierOperatorAddresses()
+	for _, supplierOperatorAddress := range configuredSuppliers {
 		// TODO_MAINNET: We currently block RelayMiner from starting if at least one address
 		// is not staked or staked incorrectly. As node runners will maintain many different
 		// suppliers on one RelayMiner, and we expect them to stake and restake often - it might
@@ -27,6 +28,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// Log all the RelayMiner's configured services for the supplier.
 		rp.logRelayMinerConfiguredServices(supplierOperatorAddress)
 	}
+
+	// Log the number of suppliers
+	rp.logger.Info().Msgf("⚙️ %d Suppliers configured in this RelayMiner", len(configuredSuppliers))
 
 	var err error
 	if rp.servers, err = rp.initializeProxyServers(); err != nil {
@@ -91,7 +95,7 @@ func (rp *relayerProxy) logRelayMinerConfiguredServices(supplierOperatorAddress 
 		availableServices = append(availableServices, serviceId)
 	}
 	rp.logger.Info().Msgf(
-		"[RelayMiner] configured services for supplier %q: [%s]",
+		"[RelayMiner] ⚙️ configured services for supplier %q: [%s]",
 		supplierOperatorAddress,
 		strings.Join(availableServices, ", "),
 	)
@@ -116,7 +120,7 @@ func (rp *relayerProxy) logSupplierServices(ctx context.Context, supplierOperato
 		configuredServices = append(configuredServices, serviceConfig.ServiceId)
 	}
 	rp.logger.Info().Msgf(
-		"[Supplier] staked services %q: [%s]",
+		"[Supplier] 📥 staked services %q: [%s]",
 		supplierOperatorAddress,
 		strings.Join(configuredServices, ", "),
 	)

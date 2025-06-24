@@ -102,6 +102,30 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	// Print full-node configuration guidelines with a single print command.
+	// Not using logger here to avoid multiple log entries and json formatting issues.
+	fmt.Printf(`
+================ RPC NODE CONFIGURATION GUIDE ================
+🔧 RPC NODE CONFIG: When running multiple RelayMiners or Suppliers, adjust these settings in config.toml:
+
+🩺 Subscription Formula:
+   max_subscriptions_per_client > Total Suppliers across ALL RelayMiners + Total RelayMiners
+   (Each Supplier needs one subscription + each RelayMiner needs one for block events)
+
+🔌 Connection Formula:
+   max_open_connections > 2 x Total RelayMiners
+   (Each RelayMiner typically needs at least 2 connections)
+
+💡 Example Setup:
+   • RelayMiner 1: 2 Suppliers
+   • RelayMiner 2: 3 Suppliers
+   • RelayMiner 3: 1 Supplier
+
+   ✅ max_subscriptions_per_client > 6 + 3 = 9
+   ✅ max_open_connections > 2 x 3 = 6
+===============================================================
+`)
+
 	// Parse relay miner configuration
 	// TODO_IMPROVE: Add logger level/output options to config.
 	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(configContent)

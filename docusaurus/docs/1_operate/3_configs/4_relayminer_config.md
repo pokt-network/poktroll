@@ -45,6 +45,11 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [Overview](#overview)
   - [Key Requirements for Operators](#key-requirements-for-operators)
   - [Recommendations for Supplier Operators](#recommendations-for-supplier-operators)
+- [RPC Node Configuration for RelayMiners](#rpc-node-configuration-for-relayminers)
+  - [CometBFT Subscription \& Connection Limits](#cometbft-subscription--connection-limits)
+    - [Required Configuration Adjustments:](#required-configuration-adjustments)
+    - [How to Calculate Safe Values:](#how-to-calculate-safe-values)
+    - [Example Configurations:](#example-configurations)
 
 ## Introduction
 
@@ -574,4 +579,61 @@ can disrupt the operator’s participation in the Pocket Network. To maintain a
 smooth operation, avoid being slashed, and earn your rewards, operators must plan
 and manage their account balance as part of their operational procedures.
 
+:::
+
+## RPC Node Configuration for RelayMiners
+
+:::caution Important RPC Node Configuration
+Whether running a single RelayMiner with many suppliers or multiple RelayMiners, you **MUST** adjust your RPC node's `config.toml` settings to accommodate the total number of suppliers and RelayMiner instances.
+:::
+
+### CometBFT Subscription & Connection Limits
+
+Each RelayMiner requires event subscriptions for each supplier it manages, plus one additional subscription for block events. If these limits are not properly configured, your RelayMiner may experience disconnections, missed events, or other operational issues.
+
+#### Required Configuration Adjustments:
+
+```toml
+# In your RPC node's config.toml:
+
+# [rpc] section
+
+# Must be > (Total Suppliers across ALL RelayMiners + Number of RelayMiners)
+max_subscriptions_per_client = <VALUE>
+
+# Must be > (2 × Number of RelayMiners)
+max_open_connections = <VALUE>
+```
+
+#### How to Calculate Safe Values:
+
+| Parameter | Formula | Explanation |
+|-----------|---------|-------------|
+| `max_subscriptions_per_client` | > Total Suppliers + Number of RelayMiners | Each supplier requires 1 subscription + 1 for each RelayMiner's block events |
+| `max_open_connections` | > 2 × Number of RelayMiners | Each RelayMiner typically requires at least 2 connections |
+
+#### Example Configurations:
+
+**Scenario 1: Single RelayMiner with Many Suppliers**
+- 1 RelayMiner managing 20 suppliers
+
+You would need:
+```toml
+max_subscriptions_per_client = 25  # 20 suppliers + 1 RelayMiner = 21, rounded up to 25 for safety
+max_open_connections = 5           # 2 × 1 RelayMiner = 2, rounded up to 5 for safety
+```
+
+**Scenario 2: Multiple RelayMiners**
+- RelayMiner 1: managing 2 suppliers
+- RelayMiner 2: managing 3 suppliers
+- RelayMiner 3: managing 1 supplier
+
+You would need:
+```toml
+max_subscriptions_per_client = 15   # (2+3+1) suppliers + 3 RelayMiners = 9, rounded up to 15 for safety
+max_open_connections = 10           # 2 × 3 RelayMiners = 6, rounded up to 10 for safety
+```
+
+:::tip
+Always configure these values with some headroom above the calculated minimum to accommodate potential additional connections or subscriptions. For large-scale deployments with many suppliers, consider significantly increasing these values or splitting RelayMiners across multiple RPC nodes to ensure stability and performance.
 :::
