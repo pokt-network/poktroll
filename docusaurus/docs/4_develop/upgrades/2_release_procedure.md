@@ -34,8 +34,6 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
 - [9. Communicate the Update](#9-communicate-the-update)
   - [9.1 Community Discord Server](#91-community-discord-server)
   - [9.2 Update the GitHub Release](#92-update-the-github-release)
-- [Quick Summary](#quick-summary)
-- [🔜 As of writing this release, `v0.1.23` is planned for sometime early next week.](#-as-of-writing-this-release-v0123-is-planned-for-sometime-early-next-week)
   - [9.3 Telegram Release Bot](#93-telegram-release-bot)
 - [10. Troubleshooting \& Canceling an Upgrade](#10-troubleshooting--canceling-an-upgrade)
 
@@ -332,7 +330,7 @@ For a full example see the release notes for [v0.1.22](https://github.com/pokt-n
 <details>
 <summary>Example Release Template</summary>
 
-## Quick Summary
+Quick Summary
 
 **❓ What changed**: Minor onchain changes to support Morse to Shannon migration and many client changes to improve RelayMiner performance.
 
@@ -342,7 +340,7 @@ For a full example see the release notes for [v0.1.22](https://github.com/pokt-n
 
 🙏 As always, thank you for your support, cooperation and feedback!
 
-## 🔜 As of writing this release, `v0.1.23` is planned for sometime early next week.
+🔜 As of writing this release, `v0.1.23` is planned for sometime early next week.
 
 **Endpoint Reminder** - As a reminder, you can use our public endpoint which is always up to date: https://shannon-grove-rpc.mainnet.poktroll.com.
 
