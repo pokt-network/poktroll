@@ -360,6 +360,18 @@ Go to [this link](https://github.com/pokt-network/poktroll/actions/workflows/not
 
 This will send the details in the GitHub release to all exchanges.
 
+:::warning TODO: Releases that are too long
+
+You might get an error that the [message is too long](https://github.com/pokt-network/poktroll/actions/runs/15860176445/job/44715185450).
+
+If this happens, then:
+
+1. Remove unnecessary content from the release notes
+2. Run the workflow again
+3. Revert the release with all the details
+
+:::
+
 ## 10. Troubleshooting & Canceling an Upgrade
 
 - 🌿 Grove Only: [Infrastructure Helper Scripts](https://github.com/buildwithgrove/infrastructure/tree/main/scripts)
