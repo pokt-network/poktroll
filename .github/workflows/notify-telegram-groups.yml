@@ -41,7 +41,7 @@ jobs:
           # POKT Network | AscendEX
           CHAT_10="-4565872373"
 
-          MESSAGE="📦 New Release: *${{ github.event.release.name }}*\n[View Release](${{ github.event.release.html_url }})\n\n${{ github.event.release.body }}"
+          MESSAGE="📣 The *${{ github.event.release.name }} release is live! 📣 *\n[View the full release here](${{ github.event.release.html_url }}).\n\n${{ github.event.release.body }}"
 
           # Send to Pocket Network Bot Testing Group
           echo "Sending to Pocket Network Bot Testing Group ($CHAT_1)"
