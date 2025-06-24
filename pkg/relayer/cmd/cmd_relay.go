@@ -357,7 +357,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Error().Err(err).Msgf("❌ Error sending relay request %d", i)
 			return err
 		}
-		defer httpResp.Body.Close()
 
 		// Read the response
 		respBz, err := io.ReadAll(httpResp.Body)
@@ -365,6 +364,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Error().Err(err).Msgf("❌ Error reading response %d", i)
 			return err
 		}
+
+		httpResp.Body.Close()
 
 		// Ensure the supplier operator signature is present
 		supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
