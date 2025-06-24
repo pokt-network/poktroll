@@ -103,7 +103,11 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.21 - upgrade to:
 	// - Update the Morse account recovery allowlist with exchange allowlist updates and invalid addresses
 	// - Slim down excessively sized proof module events:
-	upgrades.Upgrade_0_1_21,
+	// upgrades.Upgrade_0_1_21,
+
+	// v0.1.22 - upgrade to:
+	// - Update the Morse account recovery allowlist
+	upgrades.Upgrade_0_1_22,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
