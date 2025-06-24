@@ -79,7 +79,7 @@ jobs:
           )
 
           # Create message with proper escaping
-          MESSAGE=$(printf "📣 The *%s release is live! 📣 *\n[View the full release here](%s).\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$RELEASE_BODY")
+          MESSAGE=$(printf "📣 The *%s release is live! 📣 *\n\n[View the full release here](%s).\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$RELEASE_BODY")
 
           # Send to Pocket Network Bot Testing Group
           echo "Sending to Pocket Network Bot Testing Group ($CHAT_1)"
@@ -88,65 +88,65 @@ jobs:
             --data-urlencode text="$MESSAGE" \
             -d parse_mode="Markdown"
 
-          # # Send to BitGet <> Pocket Network (POKT)
-          # echo "Sending to BitGet <> Pocket Network (POKT) ($CHAT_2)"
-          # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-          #   -d chat_id="$CHAT_2" \
-          #   --data-urlencode text="$MESSAGE" \
-          #   -d parse_mode="Markdown"
+          # Send to BitGet <> Pocket Network (POKT)
+          echo "Sending to BitGet <> Pocket Network (POKT) ($CHAT_2)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_2" \
+            --data-urlencode text="$MESSAGE" \
+            -d parse_mode="Markdown"
 
-          # # Send to ByBit <> POKT
-          # echo "Sending to ByBit <> POKT ($CHAT_3)"
-          # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-          #   -d chat_id="$CHAT_3" \
-          #   --data-urlencode text="$MESSAGE" \
-          #   -d parse_mode="Markdown"
+          # Send to ByBit <> POKT
+          echo "Sending to ByBit <> POKT ($CHAT_3)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_3" \
+            --data-urlencode text="$MESSAGE" \
+            -d parse_mode="Markdown"
 
-          # # Send to CoinEx <> POKT
-          # echo "Sending to CoinEx <> POKT ($CHAT_4)"
-          # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-          #   -d chat_id="$CHAT_4" \
-          #   --data-urlencode text="$MESSAGE" \
-          #   -d parse_mode="Markdown"
+          # Send to CoinEx <> POKT
+          echo "Sending to CoinEx <> POKT ($CHAT_4)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_4" \
+            --data-urlencode text="$MESSAGE" \
+            -d parse_mode="Markdown"
 
-          # # Send to Mr. Yang <> Grove / POKT
-          # echo "Sending to Mr. Yang <> Grove / POKT ($CHAT_5)"
-          # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-          #   -d chat_id="$CHAT_5" \
-          #   --data-urlencode text="$MESSAGE" \
-          #   -d parse_mode="Markdown"
+          # Send to Mr. Yang <> Grove / POKT
+          echo "Sending to Mr. Yang <> Grove / POKT ($CHAT_5)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_5" \
+            --data-urlencode text="$MESSAGE" \
+            -d parse_mode="Markdown"
 
-          # # Send to MEXC <> POKT
-          # echo "Sending to MEXC <> POKT ($CHAT_6)"
-          # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-          #   -d chat_id="$CHAT_6" \
-          #   --data-urlencode text="$MESSAGE" \
-          #   -d parse_mode="Markdown"
+          # Send to MEXC <> POKT
+          echo "Sending to MEXC <> POKT ($CHAT_6)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_6" \
+            --data-urlencode text="$MESSAGE" \
+            -d parse_mode="Markdown"
 
-          # # Send to OKX <> Pocket Network
-          # echo "Sending to OKX <> Pocket Network ($CHAT_7)"
-          # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-          #   -d chat_id="$CHAT_7" \
-          #   --data-urlencode text="$MESSAGE" \
-          #   -d parse_mode="Markdown"
+          # Send to OKX <> Pocket Network
+          echo "Sending to OKX <> Pocket Network ($CHAT_7)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_7" \
+            --data-urlencode text="$MESSAGE" \
+            -d parse_mode="Markdown"
 
-          # # Send to OrangeX <> Grove (POKT)
-          # echo "Sending to OrangeX <> Grove (POKT) ($CHAT_8)"
-          # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-          #   -d chat_id="$CHAT_8" \
-          #   --data-urlencode text="$MESSAGE" \
-          #   -d parse_mode="Markdown"
+          # Send to OrangeX <> Grove (POKT)
+          echo "Sending to OrangeX <> Grove (POKT) ($CHAT_8)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_8" \
+            --data-urlencode text="$MESSAGE" \
+            -d parse_mode="Markdown"
 
-          # # Send to POKT & Gate.io
-          # echo "Sending to POKT & Gate.io ($CHAT_9)"
-          # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-          #   -d chat_id="$CHAT_9" \
-          #   --data-urlencode text="$MESSAGE" \
-          #   -d parse_mode="Markdown"
+          # Send to POKT & Gate.io
+          echo "Sending to POKT & Gate.io ($CHAT_9)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_9" \
+            --data-urlencode text="$MESSAGE" \
+            -d parse_mode="Markdown"
 
-          # # Send to POKT Network | AscendEX
-          # echo "Sending to POKT Network | AscendEX ($CHAT_10)"
-          # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-          #   -d chat_id="$CHAT_10" \
-          #   --data-urlencode text="$MESSAGE" \
-          #   -d parse_mode="Markdown"
+          # Send to POKT Network | AscendEX
+          echo "Sending to POKT Network | AscendEX ($CHAT_10)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_10" \
+            --data-urlencode text="$MESSAGE" \
+            -d parse_mode="Markdown"
