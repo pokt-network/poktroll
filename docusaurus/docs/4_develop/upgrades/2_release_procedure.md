@@ -33,8 +33,10 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
 - [8. Update the `homebrew-tap` Formula](#8-update-the-homebrew-tap-formula)
 - [9. Communicate the Update](#9-communicate-the-update)
   - [9.1 Community Discord Server](#91-community-discord-server)
-  - [9.2 CEXs on Telegram](#92-cexs-on-telegram)
+  - [9.2 CEXs on Telegram (GitHub Workflow)](#92-cexs-on-telegram-github-workflow)
   - [9.3 Example Release Template](#93-example-release-template)
+- [Quick Summary](#quick-summary)
+- [🔜 As of writing this release, `v0.1.23` is planned for sometime early next week.](#-as-of-writing-this-release-v0123-is-planned-for-sometime-early-next-week)
 - [10. Troubleshooting \& Canceling an Upgrade](#10-troubleshooting--canceling-an-upgrade)
 
 ## 0. Communicate
@@ -312,51 +314,58 @@ Publish the announcement in the following channels:
 - [Discord Beta TestNet Announcement Channel](https://discord.com/channels/553741558869131266/1384589692355477696)
 - [Discord MainNet Announcement Channel](https://discord.com/channels/553741558869131266/1384589604153331732)
 
-### 9.2 CEXs on Telegram
+### 9.2 CEXs on Telegram (GitHub Workflow)
 
 Use the template below as a starting point for your release announcement.
+
+Add it to the top of your GitHub release notes BEFORE setting it as `latest release`.
 
 In particular, call out:
 
 - Any other upcoming releases in the near future
 - Provide support if they need help running a node
 
+:::important Telegram Release Bot
+
+Once you set it as `latest release`, the [GitHub workflow](https://github.com/pokt-network/poktroll/blob/main/.github/workflows/notify-telegram-groups.yml) will automatically notify the Telegram groups.
+
+Note that the bot:
+
+- Does not post on draft
+- Does not post on pre-release
+- Posts on final/latest release
+- Posts on edit of latest release
+
+:::
+
 ### 9.3 Example Release Template
 
 Below is an early version of a release template you can share with exchanges or the community. Use it as a reference but not verbatim.
 
-Please update it in the docs as we iterate on it
+For a full example see [v0.1.22](https://github.com/pokt-network/poktroll/releases/tag/v0.1.22).
 
 <details>
 <summary>Example Release Template</summary>
 
-📣 The `v0.1.XXX` release is live! 📣
+## Quick Summary
 
-`v0.1.XXX` has been rolled out on Alpha, Beta and MainNet!
+**❓ What changed**: Minor onchain changes to support Morse to Shannon migration and many client changes to improve RelayMiner performance.
 
-✍ You can find the full release notes at : [poktroll/releases/tag/v0.1.XXX](https://github.com/pokt-network/poktroll/releases/tag/v0.1.XXX).
+💾 The latest snapshot is available [here](https://snapshots.us-nj.poktroll.com).
 
-💾 The latest snapshot has been generated and uploaded [here](https://snapshots.us-nj.poktroll.com).
-
-📸 Call to action: UPDATE ME.
-
-❓ What changed: UPDATE ME.
-
-❗ If you encounter any issues or bugs, please open up a [GitHub issue](https://github.com/pokt-network/poktroll/issues/new/choose) for things that are important. For anything urgent: tag us here.
+❗️ If you encounter any issues or bugs, please open up a [GitHub issue](https://github.com/pokt-network/poktroll/issues/new/choose) or just ping the team!
 
 🙏 As always, thank you for your support, cooperation and feedback!
 
-—
+## 🔜 As of writing this release, `v0.1.23` is planned for sometime early next week.
 
-🔜 Just a heads up that `v0.1.XXY` will likely be released sometime next week.
-
----
-
-**Endpoint Reminder** - As a reminder, you can use our public endpoint which is always up to date: https://shannon-grove-rpc.mainnet.poktroll.com/.
+**Endpoint Reminder** - As a reminder, you can use our public endpoint which is always up to date: https://shannon-grove-rpc.mainnet.poktroll.com.
 
 If you use the Cosmos SDK [cosmovisor](https://docs.cosmos.network/main/build/tooling/cosmovisor), or the [full node script](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) built by [Grove](https://www.grove.city/), your nodes should have automatically upgraded.
 
 **🌿 Open Offer from Grove** - As a close partner, we’re also happy to spin up a dedicated endpoint for your exchange specifically. Just let us know if you ever need this in the future!
+
+---
 
 </details>
 
