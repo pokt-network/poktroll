@@ -39,6 +39,11 @@ func (blockEvent *CometNewBlockEvent) Events() []abcitypes.Event {
 	return blockEvent.ResultFinalizeBlock.Events
 }
 
+// Events returns the list of ABCI events emitted during block finalization.
+func (blockEvent *CometNewBlockEvent) TxResults() []*abcitypes.ExecTxResult {
+	return blockEvent.ResultFinalizeBlock.TxResults
+}
+
 // CometNewBlockHeader wraps EventDataNewBlockHeader to provide additional methods for block header data.
 // - Used to receive a minimal information about a new block
 // - Omits transmitting the entire tx list and finalization events.

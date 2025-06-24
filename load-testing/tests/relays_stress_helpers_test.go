@@ -51,7 +51,7 @@ import (
 
 const (
 	newBlockEventQuery = "tm.event='NewBlock'"
-	blocksReplayLimit  = 1
+	blocksReplayLimit  = 10
 )
 
 // actorLoadTestIncrementPlans is a struct that holds the parameters for incrementing
@@ -95,6 +95,7 @@ func (s *relaysSuite) setupEventListeners(rpcNode string) {
 
 	cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
 	require.NoError(s, err)
+	err = cometClient.Start()
 
 	logger := polylog.Ctx(s.ctx)
 
@@ -108,14 +109,27 @@ func (s *relaysSuite) setupEventListeners(rpcNode string) {
 	)
 	require.NoError(s, err)
 
+	initialBlockReceived := make(chan struct{})
 	channel.ForEach(
 		s.ctx,
 		s.eventsReplayClient.EventsSequence(s.ctx),
 		func(ctx context.Context, block *block.CometNewBlockEvent) {
+			if s.latestBlock == nil {
+				close(initialBlockReceived)
+			}
 			s.latestBlock = block
-			eventsObsCh <- block.Events()
+			fmt.Printf("Latest block height: %d\n", block.Height())
+			txResultEvents := make([]types.Event, 0)
+			for _, txResult := range block.TxResults() {
+				txResultEvents = append(txResultEvents, txResult.Events...)
+			}
+			txResultEvents = append(txResultEvents, block.Events()...)
+
+			eventsObsCh <- txResultEvents
 		},
 	)
+
+	<-initialBlockReceived
 }
 
 // initFundingAccount initializes the account that will be funding the onchain actors.
