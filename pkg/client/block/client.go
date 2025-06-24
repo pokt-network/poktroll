@@ -98,11 +98,6 @@ type blockReplayClient struct {
 
 	// close is a function that cancels the context of the blockReplayClient.
 	close context.CancelFunc
-
-	// connRetryLimit is the number of times the underlying replay client
-	// should retry in the event that it encounters an error or its connection is interrupted.
-	// If connRetryLimit is < 0, it will retry indefinitely.
-	connRetryLimit int
 }
 
 // CommittedBlocksSequence returns a replay observable of new block events.

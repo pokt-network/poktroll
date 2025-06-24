@@ -15,8 +15,6 @@ const (
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
 	eventQueryString = "message.action='messageActionName'"
-	// Define the websocket URL the EventsQueryClient will subscribe to
-	cometWebsocketURL = "ws://example.com:26657/websocket"
 	// the amount of events we want before they are emitted
 	replayObsBufferSize = 1
 )

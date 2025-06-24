@@ -19,9 +19,6 @@ import (
 
 const (
 	testTimeoutDuration = 100 * time.Millisecond
-
-	// duplicates pkg/client/block/client.go's committedBlocksQuery for testing purposes
-	committedBlocksQuery = "tm.event='NewBlock'"
 )
 
 func TestBlockClient(t *testing.T) {
@@ -121,22 +118,4 @@ func TestBlockClient(t *testing.T) {
 	}
 
 	blockClient.Close()
-}
-
-// TODO_TECHDEBT: Fix duplicate definitions of this type across tests & source code.
-// This duplicates the unexported `cometBlockEvent` from `pkg/client/block/block.go`.
-// We need to answer the following questions to avoid this:
-//   - Should tests be their own packages? (i.e. `package block` vs `package block_test`)
-//   - Should we prefer export types which are not required for API consumption?
-//   - Should we use `//go:build“ test constraint on new files using it for testing purposes?
-//   - Should we enforce all tests to use `-tags=test`?
-type testBlockEvent struct {
-	Data testBlockEventDataStruct `json:"data"`
-}
-type testBlockEventDataStruct struct {
-	Value testBlockEventValueStruct `json:"value"`
-}
-type testBlockEventValueStruct struct {
-	Block   *types.Block  `json:"block"`
-	BlockID types.BlockID `json:"block_id"`
 }
