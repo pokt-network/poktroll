@@ -33,10 +33,10 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
 - [8. Update the `homebrew-tap` Formula](#8-update-the-homebrew-tap-formula)
 - [9. Communicate the Update](#9-communicate-the-update)
   - [9.1 Community Discord Server](#91-community-discord-server)
-  - [9.2 CEXs on Telegram (GitHub Workflow)](#92-cexs-on-telegram-github-workflow)
-  - [9.3 Example Release Template](#93-example-release-template)
+  - [9.2 Update the GitHub Release](#92-update-the-github-release)
 - [Quick Summary](#quick-summary)
 - [🔜 As of writing this release, `v0.1.23` is planned for sometime early next week.](#-as-of-writing-this-release-v0123-is-planned-for-sometime-early-next-week)
+  - [9.3 Telegram Release Bot](#93-telegram-release-bot)
 - [10. Troubleshooting \& Canceling an Upgrade](#10-troubleshooting--canceling-an-upgrade)
 
 ## 0. Communicate
@@ -314,35 +314,20 @@ Publish the announcement in the following channels:
 - [Discord Beta TestNet Announcement Channel](https://discord.com/channels/553741558869131266/1384589692355477696)
 - [Discord MainNet Announcement Channel](https://discord.com/channels/553741558869131266/1384589604153331732)
 
-### 9.2 CEXs on Telegram (GitHub Workflow)
+### 9.2 Update the GitHub Release
 
-Use the template below as a starting point for your release announcement.
-
-Add it to the top of your GitHub release notes BEFORE setting it as `latest release`.
-
-In particular, call out:
+Use the template below as a start point for your release announcement. In particular, call out:
 
 - Any other upcoming releases in the near future
 - Provide support if they need help running a node
 
-:::important Telegram Release Bot
+Once you've updated the GitHub release notes, set it as `latest release`.
 
-Once you set it as `latest release`, the [GitHub workflow](https://github.com/pokt-network/poktroll/blob/main/.github/workflows/notify-telegram-groups.yml) will automatically notify the Telegram groups.
+:::tip v0.1.22 Example
 
-Note that the bot:
-
-- Does not post on draft
-- Does not post on pre-release
-- Posts on final/latest release
-- Posts on edit of latest release
+For a full example see the release notes for [v0.1.22](https://github.com/pokt-network/poktroll/releases/tag/v0.1.22).
 
 :::
-
-### 9.3 Example Release Template
-
-Below is an early version of a release template you can share with exchanges or the community. Use it as a reference but not verbatim.
-
-For a full example see [v0.1.22](https://github.com/pokt-network/poktroll/releases/tag/v0.1.22).
 
 <details>
 <summary>Example Release Template</summary>
@@ -368,6 +353,14 @@ If you use the Cosmos SDK [cosmovisor](https://docs.cosmos.network/main/build/to
 ---
 
 </details>
+
+### 9.3 Telegram Release Bot
+
+After setting it as `latest release`, use the [GitHub workflow](https://github.com/pokt-network/poktroll/blob/main/.github/workflows/notify-telegram-groups.yml) to automatically notify the Telegram groups.
+
+Go to [this link](https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml) and click `Run workflow`.
+
+This will send the details in the GitHub release to all exchanges.
 
 ## 10. Troubleshooting & Canceling an Upgrade
 
