@@ -21,18 +21,21 @@ jobs:
           RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
-          # Extract release details
+          # Extract release details and properly escape for GitHub Actions
           RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name')
-          RELEASE_BODY=$(echo "$RELEASE_INFO" | jq -r '.body')
           RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url')
 
           echo "Latest release: $RELEASE_NAME"
           echo "Release URL: $RELEASE_URL"
 
-          # Set outputs
+          # Handle multiline release body properly
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
-          echo "release_body=$RELEASE_BODY" >> $GITHUB_OUTPUT
           echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+
+          # Use EOF delimiter for multiline content
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_INFO" | jq -r '.body' >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Send release to Telegram groups
         run: |
@@ -76,7 +79,7 @@ jobs:
             -d text="$MESSAGE" \
             -d parse_mode="Markdown"
 
-          # # Send to BitGet <> Pocket Network (POKT)
+          # Send to BitGet <> Pocket Network (POKT)
           # echo "Sending to BitGet <> Pocket Network (POKT) ($CHAT_2)"
           # curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
           #   -d chat_id="$CHAT_2" \
