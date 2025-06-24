@@ -358,29 +358,30 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		httpResp, err := http.DefaultClient.Do(httpReq)
 		if err != nil {
 			logger.Error().Err(err).Msgf("❌ Error sending relay request %d", i)
-			return err
+			continue
 		}
-		// This is intentionally not a defer because the loop could introduce memory leaks,
-		// performance issues and bad connection management for high flagRelayRequestCount values
-		httpResp.Body.Close()
 
 		if httpResp.StatusCode != http.StatusOK {
 			logger.Error().Err(err).Msgf("❌ Error sending relay request %d due to response status code %d", i, httpResp.StatusCode)
-			return err
+			continue
 		}
 
 		// Read the response
 		respBz, err := io.ReadAll(httpResp.Body)
 		if err != nil {
 			logger.Error().Err(err).Msgf("❌ Error reading response %d", i)
-			return err
+			continue
 		}
+
+		// This is intentionally not a defer because the loop could introduce memory leaks,
+		// performance issues and bad connection management for high flagRelayRequestCount values
+		httpResp.Body.Close()
 
 		// Ensure the supplier operator signature is present
 		supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
 		if supplierSignerAddress == "" {
 			logger.Error().Msg("❌ Supplier operator signature is missing")
-			return errors.New("Relay response missing supplier operator signature")
+			continue
 		}
 
 		// Ensure the supplier operator address matches the expected address
@@ -390,7 +391,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			}
 		} else if supplierSignerAddress != flagRelaySupplier {
 			logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
-			return errors.New("Relay response supplier operator signature does not match")
+			continue
 		}
 
 		// Validate the relay response
@@ -402,20 +403,20 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		)
 		if err != nil {
 			logger.Error().Err(err).Msgf("❌ Error validating response %d", i)
-			return err
+			continue
 		}
 		// Deserialize the relay response
 		backendHttpResponse, err := sdktypes.DeserializeHTTPResponse(relayResp.Payload)
 		if err != nil {
 			logger.Error().Err(err).Msgf("❌ Error deserializing response payload %d", i)
-			return err
+			continue
 		}
 
-		var jsonMap map[string]interface{}
 		// Unmarshal the HTTP response body into jsonMap
+		var jsonMap map[string]interface{}
 		if err := json.Unmarshal(backendHttpResponse.BodyBz, &jsonMap); err != nil {
-			logger.Error().Err(err).Msgf("❌ Error deserializing response payload %d", i)
-			return err
+			logger.Error().Err(err).Msgf("❌ Error unmarshaling response into a JSON map %d", i)
+			continue
 		}
 
 		// Log response details
