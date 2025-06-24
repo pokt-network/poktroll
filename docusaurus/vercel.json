@@ -1,0 +1,5 @@
+{
+  "cleanUrls": true,
+  "buildCommand": "yarn build",
+  "outputDirectory": "build"
+}
