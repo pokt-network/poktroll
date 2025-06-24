@@ -18,7 +18,7 @@ var httpStreamingTypes = []string{
 	"application/x-ndjson",
 }
 
-var streamDelimitter = "||POKT_STREAM||"
+const streamDelimitter = "||POKT_STREAM||"
 
 // Custom split function for POKT events.
 // The POKT streams contains a signature and the body of the request to the
@@ -50,16 +50,15 @@ func ScanEvents(data []byte, atEOF bool) (advance int, token []byte, err error) 
 //
 // Returns:
 //   - boolean whether the backend response should be streamed or not
-func IsStreamingResponse(response *http.Response) (isStreaming bool) {
+func IsStreamingResponse(response *http.Response) bool {
 	// Check if this is a streaming response
-	contentType := response.Header.Get("Content-Type")
+	contentType := strings.ToLower(response.Header.Get("Content-Type"))
 	for _, streamType := range httpStreamingTypes {
-		if strings.Contains(strings.ToLower(contentType), streamType) {
-			isStreaming = true
+		if strings.Contains(contentType, streamType) {
+			return true
 		}
 	}
-
-	return
+	return false
 }
 
 // Handles the streaming backend responses.
@@ -70,11 +69,12 @@ func IsStreamingResponse(response *http.Response) (isStreaming bool) {
 // - Writes and flush to the requesting app
 //
 // This will handle any stream where the delimiter is a newline (`\n`)
-func (server *relayMinerHTTPServer) HandleHttpStream(response *http.Response,
+func (server *relayMinerHTTPServer) HandleHttpStream(
+	response *http.Response,
 	writer http.ResponseWriter,
 	meta types.RelayRequestMetadata,
-	logger polylog.Logger) (relayResponse *types.RelayResponse, responseSize float64, err error) {
-
+	logger polylog.Logger,
+) (relayResponse *types.RelayResponse, responseSize float64, err error) {
 	// Set headers
 	writer.Header().Set("Connection", "close")
 	// Copy the response back to the original request
@@ -88,60 +88,54 @@ func (server *relayMinerHTTPServer) HandleHttpStream(response *http.Response,
 	if !ok {
 		logger.Error().Msg("Streaming not supported.")
 		return nil, 0, fmt.Errorf("❌ failed to open stream request")
-	} else {
-		// Create scanner with default delimiter (\n)
-		scanner := bufio.NewScanner(response.Body)
-		// Scan for chunks
-		for scanner.Scan() {
-			line := scanner.Bytes()
-			// Add back the newline that we stripped at Scan
-			line = append(line, '\n')
+	}
 
-			// logger.Debug().
-			// 	Int("lineSize", len(line)).
-			// 	// Str("line", string(line)).
-			// 	Msg("Recieved stream chunk.")
+	// Create scanner with default delimiter (\n)
+	scanner := bufio.NewScanner(response.Body)
+	// Scan for chunks
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		// Add back the newline that we stripped at Scan
+		line = append(line, '\n')
 
-			// Create the POKT HTTP response structure
-			poktHTTPResponse := &sdktypes.POKTHTTPResponse{
-				StatusCode: uint32(http.StatusOK),
-				Header:     make(map[string]*sdktypes.Header, 0),
-				BodyBz:     line,
-			}
-			// Deterministic marshaling of response
-			marshalOpts := proto.MarshalOptions{Deterministic: true}
-			poktHTTPResponseBz, err := marshalOpts.Marshal(poktHTTPResponse)
-			if err != nil {
-				return nil, 0, fmt.Errorf("❌ failed to marshal POKT HTTP response: %w", err)
-			}
-
-			// Sign response
-			relayResponse, err = server.newRelayResponse(poktHTTPResponseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
-			if err != nil {
-				return nil, 0, err
-			}
-			// Marshal response
-			signedLine, err := relayResponse.Marshal()
-			if err != nil {
-				return nil, 0, err
-			}
-
-			// track size, the sum of all chunks
-			responseSize += float64(relayResponse.Size())
-
-			// Append custom delimiter (used by app to detect POKT streaming)
-			signedLine = append(signedLine, []byte(streamDelimitter)...)
-
-			// Write to client
-			writer.Write(signedLine)
-
-			// Flush to ensure the stream goes asap to the app
-			flusher.Flush()
-
-			// logger.Debug().
-			// 	Int("responseSize", relayResponse.Size()).
-			// 	Msg("Stream chunk relayed.")
+		// Create the POKT HTTP response structure
+		poktHTTPResponse := &sdktypes.POKTHTTPResponse{
+			StatusCode: uint32(http.StatusOK),
+			Header:     make(map[string]*sdktypes.Header, 0),
+			BodyBz:     line,
 		}
+		// Deterministic marshaling of response
+		marshalOpts := proto.MarshalOptions{Deterministic: true}
+		poktHTTPResponseBz, err := marshalOpts.Marshal(poktHTTPResponse)
+		if err != nil {
+			return nil, 0, fmt.Errorf("❌ failed to marshal POKT HTTP response: %w", err)
+		}
+
+		// Sign response
+		relayResponse, err = server.newRelayResponse(poktHTTPResponseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
+		if err != nil {
+			return nil, 0, err
+		}
+		// Marshal response
+		signedLine, err := relayResponse.Marshal()
+		if err != nil {
+			return nil, 0, err
+		}
+
+		// track size, the sum of all chunks
+		responseSize += float64(relayResponse.Size())
+
+		// Append custom delimiter (used by app to detect POKT streaming)
+		signedLine = append(signedLine, []byte(streamDelimitter)...)
+
+		// Write to client
+		_, err = writer.Write(signedLine)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		// Flush to ensure the stream goes asap to the app
+		flusher.Flush()
 	}
 
 	return
