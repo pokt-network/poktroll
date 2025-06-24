@@ -31,6 +31,7 @@ func NewLocalnetClient(t *testing.T, opts ...client.TxClientOption) client.TxCli
 	ctx := context.Background()
 	txCtx := NewLocalnetContext(t)
 	ctrl := gomock.NewController(t)
+
 	cometHTTPClientMock := mockclient.NewMockClient(ctrl)
 	blockClient := testblock.NewLocalnetClient(ctx, t)
 

@@ -93,7 +93,7 @@ func (s *relaysSuite) setupEventListeners(rpcNode string) {
 	eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
 	s.committedEventsObs = eventsObs
 
-	cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
+	cometClient, err := sdkclient.NewClientFromNode(testclient.LocalCometTCPURL)
 	require.NoError(s, err)
 
 	err = cometClient.Start()

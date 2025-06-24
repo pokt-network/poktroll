@@ -302,7 +302,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// CometLocalWebsocketURL to the TestNetNode URL. These variables are used
 	// by the testtx txClient to send transactions to the network.
 	if !s.isEphemeralChain {
-		testclient.CometLocalTCPURL = loadTestParams.RPCNode
+		testclient.LocalCometTCPURL = loadTestParams.RPCNode
 
 		// Update the block duration when running the test on a non-ephemeral chain.
 		// TODO_TECHDEBT: Get the block duration value from the chain.

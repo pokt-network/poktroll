@@ -6,6 +6,7 @@ import (
 
 // polylogCometLoggerWrapper is an adapter that implements the CometBFT log.Logger
 // interface using the application's polylog.Logger.
+//
 // This wrapper allows our application logger to be used with CometBFT components
 // that expect a specific logging interface.
 type polylogCometLoggerWrapper struct {

@@ -743,8 +743,7 @@ func (txnClient *txClient) getFeeAmount(
 	return feeCoins, nil
 }
 
-// UnmarshalTxResult extracts an ABCI transaction result from a Comet ResultEvent.
-// It takes a coretypes.ResultEvent attempts to extract and return the TxResult.
+// UnmarshalTxResult extracts an abci.TxResult from a coretypes.ResultEvent.
 func UnmarshalTxResult(resultEvt *coretypes.ResultEvent) (*abci.TxResult, error) {
 	// Attempt to cast the event data to EventDataTx
 	txResult, ok := resultEvt.Data.(comettypes.EventDataTx)

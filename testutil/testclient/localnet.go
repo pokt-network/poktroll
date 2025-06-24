@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	// CometLocalTCPURL provides a default URL pointing to the localnet TCP endpoint.
-	CometLocalTCPURL = "tcp://localhost:26657"
+	// LocalCometTCPURL provides a default URL pointing to the localnet TCP endpoint.
+	LocalCometTCPURL = "tcp://localhost:26657"
 
 	// TxConfig provided by app.AppConfig(), intended as a convenience for use in tests.
 	TxConfig client.TxConfig
@@ -54,7 +54,7 @@ func init() {
 
 	// If VALIDATOR_RPC_ENDPOINT environment variable is set, use it to override the default localnet endpoint.
 	if endpoint := os.Getenv("VALIDATOR_RPC_ENDPOINT"); endpoint != "" {
-		CometLocalTCPURL = fmt.Sprintf("tcp://%s", endpoint)
+		LocalCometTCPURL = fmt.Sprintf("tcp://%s", endpoint)
 	}
 }
 
@@ -99,10 +99,11 @@ func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
 	mockFlagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	// TODO_IMPROVE: It would be nice if the value could be set correctly based
 	// on whether the test using it is running in tilt or not.
-	mockFlagSet.String(flags.FlagNode, CometLocalTCPURL, "use localnet pocketd node")
+	mockFlagSet.String(flags.FlagNode, LocalCometTCPURL, "use localnet pocketd node")
 	mockFlagSet.String(flags.FlagHome, "", "use localnet pocketd node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
 	mockFlagSet.String(flags.FlagChainID, app.Name, "use pocket chain-id")
+
 	err := mockFlagSet.Parse([]string{})
 	require.NoError(t, err)
 

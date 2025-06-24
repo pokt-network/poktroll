@@ -188,7 +188,8 @@ func (s *suite) Before() {
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
 	s.proofQueryClient = prooftypes.NewQueryClient(clientCtx)
-	cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
+
+	cometClient, err := sdkclient.NewClientFromNode(testclient.LocalCometTCPURL)
 	require.NoError(s, err)
 
 	cometClient.Start()

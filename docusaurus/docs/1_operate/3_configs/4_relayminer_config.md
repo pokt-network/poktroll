@@ -166,6 +166,7 @@ stake can cover in a given session. This means the Supplier will mine relays for
 "free" without being compensated onchain for the additional service.
 
 Over-servicing is commonly used by Suppliers to:
+
 - Build goodwill with Applications
 - Improve their off-chain quality-of-service rating
 
@@ -607,28 +608,32 @@ max_open_connections = <VALUE>
 
 #### How to Calculate Safe Values:
 
-| Parameter | Formula | Explanation |
-|-----------|---------|-------------|
+| Parameter                      | Formula                                   | Explanation                                                                  |
+| ------------------------------ | ----------------------------------------- | ---------------------------------------------------------------------------- |
 | `max_subscriptions_per_client` | > Total Suppliers + Number of RelayMiners | Each supplier requires 1 subscription + 1 for each RelayMiner's block events |
-| `max_open_connections` | > 2 × Number of RelayMiners | Each RelayMiner typically requires at least 2 connections |
+| `max_open_connections`         | > 2 × Number of RelayMiners               | Each RelayMiner typically requires at least 2 connections                    |
 
 #### Example Configurations:
 
 **Scenario 1: Single RelayMiner with Many Suppliers**
+
 - 1 RelayMiner managing 20 suppliers
 
 You would need:
+
 ```toml
 max_subscriptions_per_client = 25  # 20 suppliers + 1 RelayMiner = 21, rounded up to 25 for safety
 max_open_connections = 5           # 2 × 1 RelayMiner = 2, rounded up to 5 for safety
 ```
 
 **Scenario 2: Multiple RelayMiners**
+
 - RelayMiner 1: managing 2 suppliers
 - RelayMiner 2: managing 3 suppliers
 - RelayMiner 3: managing 1 supplier
 
 You would need:
+
 ```toml
 max_subscriptions_per_client = 15   # (2+3+1) suppliers + 3 RelayMiners = 9, rounded up to 15 for safety
 max_open_connections = 10           # 2 × 3 RelayMiners = 6, rounded up to 10 for safety

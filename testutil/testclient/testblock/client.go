@@ -23,7 +23,7 @@ import (
 func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 
-	cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
+	cometClient, err := sdkclient.NewClientFromNode(testclient.LocalCometTCPURL)
 	require.NoError(t, err)
 
 	deps := depinject.Supply(cometClient, polylog.Ctx(ctx))
