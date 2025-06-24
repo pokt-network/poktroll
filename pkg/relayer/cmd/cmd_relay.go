@@ -342,83 +342,63 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Endpoint URL parsed: %v", reqUrl)
 
-	// Send multiple requests sequentially as specified by the count flag
-	for i := 1; i <= flagRelayRequestCount; i++ {
-		if flagRelayRequestCount > 1 {
-			logger.Info().Msgf("📤 Sending request %d of %d", i, flagRelayRequestCount)
-		}
+	// Create the HTTP request with the relay request body
+	httpReq := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqUrl,
+		Body:   io.NopCloser(bytes.NewReader(relayReqBz)),
+	}
 
-		// Create the HTTP request with the relay request body
-		httpReq := &http.Request{
-			Method: http.MethodPost,
-			URL:    reqUrl,
-			Header: http.Header{
-				"Content-Type": []string{"application/json"},
-			},
-			Body: io.NopCloser(bytes.NewReader(relayReqBz)),
-		}
+	// Send the request HTTP request containing the signed relay request
+	httpResp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error sending relay request")
+		return err
+	}
+	defer httpResp.Body.Close()
 
-		// Send the HTTP request containing the signed relay request
-		httpResp, err := http.DefaultClient.Do(httpReq)
-		if err != nil {
-			logger.Error().Err(err).Msgf("❌ Error sending relay request %d", i)
-			continue
-		}
+	// Ensure the supplier operator signature is present
+	supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
+	if supplierSignerAddress == "" {
+		logger.Error().Msg("❌ Supplier operator signature is missing")
+		return errors.New("Relay response missing supplier operator signature")
+	}
+	// Ensure the supplier operator address matches the expected address
+	if flagRelaySupplier == "" {
+		logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
+	} else if supplierSignerAddress != flagRelaySupplier {
+		logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
+		return errors.New("Relay response supplier operator signature does not match")
+	}
 
-		if httpResp.StatusCode != http.StatusOK {
-			logger.Error().Err(err).Msgf("❌ Error sending relay request %d due to response status code %d", i, httpResp.StatusCode)
-			continue
-		}
+	logger.Info().Msgf("🔍 Backend response header, Content-Type: %s", httpResp.Header.Get("Content-Type"))
 
-		// This is intentionally not a defer because the loop could introduce memory leaks,
-		// performance issues and bad connection management for high flagRelayRequestCount values
-		closeError := httpResp.Body.Close()
-		if closeError != nil {
-			logger.Error().Err(closeError).Msg("❌ Error closing body response")
-			continue
-		}
-
-		// Ensure the supplier operator signature is present
-		supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
-		if supplierSignerAddress == "" {
-			logger.Error().Msg("❌ Supplier operator signature is missing")
-			continue
-		}
-
-		// Ensure the supplier operator address matches the expected address
-		if flagRelaySupplier == "" {
-			if flagRelayRequestCount == 1 {
-				logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
-			}
-		} else if supplierSignerAddress != flagRelaySupplier {
-			logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
-			continue
-		}
-
-		logger.Info().Msgf("🔍 Content-Type: %s", httpResp.Header.Get("Content-Type"))
-
-		// Handle response according to type
-		if proxy.IsStreamingResponse(httpResp) {
-			streamErr := processStreamRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
-			if streamErr != nil {
-				logger.Error().Err(streamErr).Msg("❌ Stream failed...")
-				continue
-			}
-		} else {
-			// Normal, non-streaming request
-			streamErr := processNormalRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
-			if streamErr != nil {
-				logger.Error().Err(streamErr).Msg("❌ Request failed...")
-				continue
-			}
-		}
+	// Handle response according to type
+	if proxy.IsStreamingResponse(httpResp) {
+		return processStreamRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
+	} else {
+		// Normal, non-streaming request
+		return processNormalRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
 	}
 
 	return nil
 }
 
-func processStreamRequest(ctx context.Context, httpResp *http.Response, supplierSignerAddress string, accountClient sdk.AccountClient, logger polylog.Logger) error {
+// Handles the Pocket Network stream response from a Relay Miner.
+//
+// This functions uses an scanner that chunks the incomming response using the
+// defined split function.
+// Then it checks if the chunk is correctly signed, and tries to unmarshal it
+// if the stream is of type SSE.
+func processStreamRequest(ctx context.Context,
+	httpResp *http.Response,
+	supplierSignerAddress string,
+	accountClient sdk.AccountClient,
+	logger polylog.Logger) error {
 	logger.Info().Msgf("🌊 Handling streaming response with status:")
+
+	// Check if this is SSE (used below, if this is SSE we will unmarshal)
+	isSSE := strings.EqualFold(httpResp.Header.Get("Content-Type"), "text/event-stream")
 
 	// Start handling the body chunks
 	scanner := bufio.NewScanner(httpResp.Body)
@@ -438,37 +418,41 @@ func processStreamRequest(ctx context.Context, httpResp *http.Response, supplier
 			return err
 		}
 
-		if strings.Contains(strings.ToLower(httpResp.Header.Get("Content-Type")), "text/event-stream") {
-			// This is SSE, unmarshal
+		// get string body
+		stringBody := string(backendHttpResponse.BodyBz)
 
-			trimmedPrefix := strings.TrimPrefix(string(backendHttpResponse.BodyBz), "data: ")
-			stringJson := strings.TrimSuffix(trimmedPrefix, "\n")
-			if len(stringJson) == 0 {
-				// this was probably a delimiter
-				continue
-			} else if stringJson == "[DONE]" {
-				// SSE end
-				logger.Info().Msgf("✅ SSE Done")
-			} else {
-				// Umarshal
-				err = unmarshalAndPrintResponse([]byte(stringJson), logger)
-				if err != nil {
-					logger.Info().Msgf("Received: %s", string(backendHttpResponse.BodyBz))
-					logger.Info().Msgf("Stripped: %s", stringJson)
-					return err
-				}
-			}
-
-		} else {
-			// Just print content
-			logger.Info().Msgf(string(backendHttpResponse.BodyBz))
+		if !isSSE {
+			// Just print content and continue
+			logger.Info().Msgf("Chunk String Content: %s", stringBody)
+			continue
 		}
 
+		// This is SSE, unmarshal
+		trimmedPrefix := strings.TrimPrefix(stringBody, "data: ")
+		stringJson := strings.TrimSuffix(trimmedPrefix, "\n")
+		if len(stringJson) == 0 {
+			// this was probably a delimiter
+			continue
+		} else if stringJson == "[DONE]" {
+			// SSE end
+			logger.Info().Msgf("✅ SSE Done")
+		} else {
+			// Umarshal
+			err = unmarshalAndPrintResponse([]byte(stringJson), logger)
+			if err != nil {
+				logger.Info().Msgf("Received: %s | Stripped: %s", stringBody, stringJson)
+				return err
+			}
+		}
 	}
 	return nil
 }
 
-func processNormalRequest(ctx context.Context, httpResp *http.Response, supplierSignerAddress string, accountClient sdk.AccountClient, logger polylog.Logger) error {
+func processNormalRequest(ctx context.Context,
+	httpResp *http.Response,
+	supplierSignerAddress string,
+	accountClient sdk.AccountClient,
+	logger polylog.Logger) error {
 	// Read the response
 	respBz, err := io.ReadAll(httpResp.Body)
 	if err != nil {
@@ -492,7 +476,11 @@ func processNormalRequest(ctx context.Context, httpResp *http.Response, supplier
 	return nil
 }
 
-func checkAndGetBackendResponse(ctx context.Context, supplierSignerAddress string, respBz []byte, accountClient sdk.AccountClient, logger polylog.Logger) (backendHttpResponse *sdktypes.POKTHTTPResponse, err error) {
+func checkAndGetBackendResponse(ctx context.Context,
+	supplierSignerAddress string,
+	respBz []byte,
+	accountClient sdk.AccountClient,
+	logger polylog.Logger) (backendHttpResponse *sdktypes.POKTHTTPResponse, err error) {
 	// Validate the relay response
 	relayResp, err := sdk.ValidateRelayResponse(
 		ctx,
