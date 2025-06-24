@@ -72,7 +72,11 @@ jobs:
           # Safely construct message using printf to avoid command execution
           RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
           RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
-          RELEASE_BODY="${{ steps.get_release.outputs.release_body }}"
+          # Read release body and escape it properly to prevent command execution
+          RELEASE_BODY=$(cat << 'EOF'
+            ${{ steps.get_release.outputs.release_body }}
+          EOF
+          )
 
           # Create message with proper escaping
           MESSAGE=$(printf "📣 The *%s release is live! 📣 *\n[View the full release here](%s).\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$RELEASE_BODY")
