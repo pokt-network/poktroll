@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
@@ -22,6 +24,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -367,16 +370,13 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		// Read the response
-		respBz, err := io.ReadAll(httpResp.Body)
-		if err != nil {
-			logger.Error().Err(err).Msgf("❌ Error reading response %d", i)
-			continue
-		}
-
 		// This is intentionally not a defer because the loop could introduce memory leaks,
 		// performance issues and bad connection management for high flagRelayRequestCount values
-		httpResp.Body.Close()
+		closeError := httpResp.Body.Close()
+		if closeError != nil {
+			logger.Error().Err(closeError).Msg("❌ Error closing body response")
+			continue
+		}
 
 		// Ensure the supplier operator signature is present
 		supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
@@ -395,73 +395,155 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		// Validate the relay response
-		relayResp, err := sdk.ValidateRelayResponse(
-			ctx,
-			sdk.SupplierAddress(supplierSignerAddress),
-			respBz,
-			&accountClient,
-		)
-		if err != nil {
-			logger.Error().Err(err).Msgf("❌ Error validating response %d", i)
-			continue
-		}
-		// Deserialize the relay response
-		backendHttpResponse, err := sdktypes.DeserializeHTTPResponse(relayResp.Payload)
-		if err != nil {
-			logger.Error().Err(err).Msgf("❌ Error deserializing response payload %d", i)
-			continue
-		}
+		logger.Info().Msgf("🔍 Content-Type: %s", httpResp.Header.Get("Content-Type"))
 
-		// Unmarshal the HTTP response body into jsonMap
-		var jsonMap map[string]interface{}
-		if err := json.Unmarshal(backendHttpResponse.BodyBz, &jsonMap); err != nil {
-			logger.Error().Err(err).Msgf("❌ Error unmarshaling response into a JSON map %d", i)
-			continue
-		}
-
-		// Log response details
-		if flagRelayRequestCount > 1 {
-			logger.Info().Msgf("✅ Request %d: Status code %d, Response size %d bytes", i, backendHttpResponse.StatusCode, len(respBz))
+		// Handle response according to type
+		if proxy.IsStreamingResponse(httpResp) {
+			streamErr := processStreamRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
+			if streamErr != nil {
+				logger.Error().Err(streamErr).Msg("❌ Stream failed...")
+				continue
+			}
 		} else {
-			logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
-			logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
-			logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
-		}
-
-		// If "jsonrpc" key exists, try to further deserialize "result".
-		// Only do this once for the first request.
-		if flagRelayRequestCount == 1 || i == 1 {
-			if _, ok := jsonMap["jsonrpc"]; ok {
-				resultRaw, exists := jsonMap["result"]
-				if exists {
-					switch v := resultRaw.(type) {
-					case map[string]interface{}:
-						logger.Info().Msgf("✅ Further deserialized 'result' (object): %+v", v)
-					case []interface{}:
-						logger.Info().Msgf("✅ Further deserialized 'result' (array): %+v", v)
-					case string:
-						logger.Info().Msgf("✅ Further deserialized 'result' (string): %s", v)
-					case float64, bool, nil:
-						logger.Info().Msgf("✅ Further deserialized 'result' (primitive): %+v", v)
-					default:
-						logger.Warn().Msgf("⚠️ 'result' is of an unhandled type: %T, value: %+v", v, v)
-					}
-				}
-				if flagRelayRequestCount > 1 {
-					logger.Debug().Msg("⚠️ Will be skipping JSON-RPC deserialization for subsequent requests")
-				}
+			// Normal, non-streaming request
+			streamErr := processNormalRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
+			if streamErr != nil {
+				logger.Error().Err(streamErr).Msg("❌ Request failed...")
+				continue
 			}
 		}
-	}
-
-	if flagRelayRequestCount > 1 {
-		logger.Info().Msgf("✅ Successfully sent %d relay requests", flagRelayRequestCount)
 	}
 
 	return nil
 }
 
+func processStreamRequest(ctx context.Context, httpResp *http.Response, supplierSignerAddress string, accountClient sdk.AccountClient, logger polylog.Logger) error {
+	logger.Info().Msgf("🌊 Handling streaming response with status:")
+
+	// Start handling the body chunks
+	scanner := bufio.NewScanner(httpResp.Body)
+	// Assign the custom stream splitter
+	scanner.Split(proxy.ScanEvents)
+	// Scan
+	for scanner.Scan() {
+		// Get chunck
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+		logger.Info().Msgf("📦 Read chunk of length %d", len(line))
+		// Check and retrieve backend chunk
+		backendHttpResponse, err := checkAndGetBackendResponse(ctx, supplierSignerAddress, line, accountClient, logger)
+		if err != nil {
+			return err
+		}
+
+		if strings.Contains(strings.ToLower(httpResp.Header.Get("Content-Type")), "text/event-stream") {
+			// This is SSE, unmarshal
+
+			trimmedPrefix := strings.TrimPrefix(string(backendHttpResponse.BodyBz), "data: ")
+			stringJson := strings.TrimSuffix(trimmedPrefix, "\n")
+			if len(stringJson) == 0 {
+				// this was probably a delimiter
+				continue
+			} else if stringJson == "[DONE]" {
+				// SSE end
+				logger.Info().Msgf("✅ SSE Done")
+			} else {
+				// Umarshal
+				err = unmarshalAndPrintResponse([]byte(stringJson), logger)
+				if err != nil {
+					logger.Info().Msgf("Received: %s", string(backendHttpResponse.BodyBz))
+					logger.Info().Msgf("Stripped: %s", stringJson)
+					return err
+				}
+			}
+
+		} else {
+			// Just print content
+			logger.Info().Msgf(string(backendHttpResponse.BodyBz))
+		}
+
+	}
+	return nil
+}
+
+func processNormalRequest(ctx context.Context, httpResp *http.Response, supplierSignerAddress string, accountClient sdk.AccountClient, logger polylog.Logger) error {
+	// Read the response
+	respBz, err := io.ReadAll(httpResp.Body)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error reading response")
+		return err
+	}
+	logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
+
+	// Check signature and get backend response
+	backendHttpResponse, err := checkAndGetBackendResponse(ctx, supplierSignerAddress, respBz, accountClient, logger)
+	if err != nil {
+		return err
+	}
+	logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
+
+	err = unmarshalAndPrintResponse(backendHttpResponse.BodyBz, logger)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkAndGetBackendResponse(ctx context.Context, supplierSignerAddress string, respBz []byte, accountClient sdk.AccountClient, logger polylog.Logger) (backendHttpResponse *sdktypes.POKTHTTPResponse, err error) {
+	// Validate the relay response
+	relayResp, err := sdk.ValidateRelayResponse(
+		ctx,
+		sdk.SupplierAddress(supplierSignerAddress),
+		respBz,
+		&accountClient,
+	)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error validating response")
+		return
+	}
+	// Deserialize the relay response
+	backendHttpResponse, err = sdktypes.DeserializeHTTPResponse(relayResp.Payload)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error deserializing response payload")
+		return
+	}
+
+	return
+}
+
+func unmarshalAndPrintResponse(BodyBz []byte, logger polylog.Logger) error {
+	var jsonMap map[string]interface{}
+	// Unmarshal the HTTP response body into jsonMap
+	if err := json.Unmarshal(BodyBz, &jsonMap); err != nil {
+		logger.Error().Err(err).Msg("❌ Error deserializing backend response payload")
+		return err
+	}
+	logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
+
+	// If "jsonrpc" key exists, try to further deserialize "result"
+	if _, ok := jsonMap["jsonrpc"]; ok {
+		resultRaw, exists := jsonMap["result"]
+		if exists {
+			switch v := resultRaw.(type) {
+			case map[string]interface{}:
+				logger.Info().Msgf("✅ Further deserialized 'result' (object): %+v", v)
+			case []interface{}:
+				logger.Info().Msgf("✅ Further deserialized 'result' (array): %+v", v)
+			case string:
+				logger.Info().Msgf("✅ Further deserialized 'result' (string): %s", v)
+			case float64, bool, nil:
+				logger.Info().Msgf("✅ Further deserialized 'result' (primitive): %+v", v)
+			default:
+				logger.Warn().Msgf("⚠️ 'result' is of an unhandled type: %T, value: %+v", v, v)
+			}
+		}
+	}
+
+	return nil
+}
 // If a supplier is specified but not in the session, try to fetch it directly.
 // TODO_UPNEXT(@olshansk): Add support for sending a relay to a supplier that is not in the session.
 // This will require starting a relayminer in debug mode to avoid validating the session header.
