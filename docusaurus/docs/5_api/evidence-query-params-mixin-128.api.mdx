@@ -1,0 +1,64 @@
+---
+id: evidence-query-params-mixin-128
+title: "Params returns the total set of minting parameters."
+description: "Params returns the total set of minting parameters."
+sidebar_label: "Params returns the total set of minting parameters."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVcFu2zAM/RVB56xuu2EYclpRFFsPA7IuOwVFIMtMrEaWPInOEgT595GSG7htkAz1xTal90S+R9o7iWoZ5Xgmf3YQtvJxJH0LQaHx7r6SY3m3NhU4DWl5PlFBNfGH2Rh3df1FjmSA2HoXgSh28vrykm8VRB1MyxREcCNipzXEuOiseN5+QVDtHYJDRqi2tUanQ4unyLCdjLqGRr3lS4nkPB56NmGiwBoO7AK3LYiFDymaAEVGiIfJrWgAa19xCryPKH35BBrpvQ1cPJpcTpsgbzPIcVHBwjjIJ6cQIIQo/CJFGl91Fs4fUlqvV3FOkfkWVOBQD4gYjFsSgAppFOkkO+Pw8yemNGh5C2xa4oRKZBZBLCKx7Edy6ZWdl95VUB0jfabgbZwzQTW5ITJCKPRUOtEYt7DJmHmjNqeIaNk0XSMOAEFdBK8ojDtJYdxZCo7Mda3cEv4nG+VcRwVmABEf4aZTcU497ptThKmlSCftiQS9YJTc99eIOmShOotH2t+Jzh18ghCoK981BafbSPtqqAclB0sIw+ah0MdrmVJFZWwc7FYhqC3tNQhNPH/W17z8WiuWQVWV4fyVnQwhSaKGvgHqmGsDEYfK9RMbALvg8pihRzIzArIT7ADBB7PHeubh5saGlLnCml4K7WPjY8GYYn1VkgRXRT/fqbv8W+dua0VWLw3WXXmhfVO0foUfHOBfH1bpJXhrxcPdr6m4mdwPeuX7dDrhkLgllz2Fss1KJ5sdZcv5nSFmq9ZUVE6mfxLOI9fPi62P2Cg3oHyfYi+qPniDsMGitSQBn9UFm7+IrOZMZjVlnh269YomvZOm9BupKT3eu9uVKsLvYPd7Dv9Jv5nxjB7XKhhVsmKzRzqjBlVRy45nO7mCLY8O/TbaRK9sl/r09YDsHweGf7ubUiv9A8yoZK4=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Params returns the total set of minting parameters."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/mint/v1beta1/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Params returns the total set of minting parameters.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is the response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"params defines the parameters of the module.","type":"object","properties":{"blocks_per_year":{"type":"string","format":"uint64","title":"expected blocks per year"},"goal_bonded":{"type":"string","title":"goal of percent bonded atoms"},"inflation_max":{"type":"string","title":"maximum inflation rate"},"inflation_min":{"type":"string","title":"minimum inflation rate"},"inflation_rate_change":{"type":"string","title":"maximum annual change in inflation rate"},"mint_denom":{"type":"string","title":"type of coin to mint"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

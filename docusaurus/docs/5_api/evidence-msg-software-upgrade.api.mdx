@@ -1,0 +1,72 @@
+---
+id: evidence-msg-software-upgrade
+title: "SoftwareUpgrade is a governance operation for initiating a software upgrade."
+description: "SoftwareUpgrade is a governance operation for initiating a software upgrade."
+sidebar_label: "SoftwareUpgrade is a governance operation for initiating a software upgrade."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1V21v2zYQ/iuEPm1A7CReu27+1CQN0GAYFiTul8VFQUsniw1FaiRlxwj83/ccJdnyS1Kg6/whMXnHe3nu4R39nAQ598n4IfnTz5PPJ4mtyMmgrLnJknFyvVAZmZQg/HJv87CUjj5VcyczSk4SR//U5MOlzVbJ+DlJrQlkAn+VVaVVGu2cfvXW8J5PCyolf8vIp05VLIUP2N4zLZQXoSAByem+qPUpwqqiIWLg/zBiZ18pDVhXjjMIinyMow6FdSqsDt1uRJ03mWWOPH+XQXAuzupGUtqs1iR+yiiXtQ7YtOLpdG4Xojaaj9gFuSVsIf2fe0H54JSZJ2tEpaU5DIF3O+91mx/vfTuvgtS8CIcWJ7DUyASSWBYqLXaslzWgm8ELudy6krLDaE8SlkgYT5QJv77h8JXJLTvb1wwqaN64MCvRK7nwFaUqV+nGLxtg1Gb8NdV1RpmwZpAWUpmp8TXClF5IMVcMfVniXyzDQmqVyWCdx3atM4GqWQQHR1qvNuaD5SiNLOkQknsKDcIsFsitD8hQTAoUIIqWSmsOsPYIbrbqq2VTgwp7Ts3mUeBbWnJSnDnyBwYxb6nFNEFy7dlpEjOSJvMiqxm4qWELuXKoxSXNlbnUNn0UJYGQyDAPtBMjMySCi2qJmxCX2tsYJ0xZkVEAR1BtGMBRuQ2uCzoFzwpEABIzxgsyWwBucmHs1HTOGjUHNAJTpwOnQHlmhHOeEIHZweBEoFwtelMjva9BrKZ+O1DBlq3DwOYDlJQ4XrOT50TBEerzsSGw8lPjSKJrABST7dqK7uhJhaPXLahjTPhAlSMwlLJx42smudSte48cF9QkmW00h0c0hbZzlU7NBhNHJTpAJnJnyxjm/Yc/hlNzkzcA5orAXEbSBkFlFVYnSEiQc9ZtWBcKZ5fm1evIqA1iakixY+aXFMQw4YsPkPbu6AuN430j3r/Ka1hE/1OMlNS3/SOQvAxj25WzqxjEPcfQprsBp4/lzeXVLogbtalpIASdGUBWbLtuR7Z61u2cjQZN0t+L8br57Cf23wYRr5UjTM3galrzhq+s8Q3uo7OzQ0JeIKs0xQDJay06dbb1wybpXWv09URaneMjtUMqjr4jOaCVGHpC40OFW7y/K5XXeZvarE9bTCaak9sbVr+MkhhqkEr7nrZ0Tq6gqwKV/n+5IywrUUg5P3rwKN2OcA3NmZ8SRuLJJTYvsTi0lIFjLM283+C7Lp6wex4f/KqwPuYkQ4HVaWp9af2w01ycz4DP+fAIE3CIy3K3fdVdP8my0rT3ktq2pu5Z0z1HtpLmxbBdN7O5/3KI69HZ6M3g7N1g9Pvk/O347fl49Nvw7N3538krDe79AbrbB8ouwlf8vOA3RVHPhhjCp5V9DANDYWndY1zgiafF3fX9RFzc3vQeNB8nk1veElfgsdXUElmmkchtMt8yzGRsJzC0u1nMDQpDNL4KUamyQbA1+YM5sQPHhpaBnsIpSqdMHCROs6yhy0PyMl1gb58w+L1QMNtw7vmZZ+Qnp9dr3gaFHKjygK8L6ZScMawPn+GvIJx0WDwnj8Rsumo6xGDC0bG6ruOl3e8W65PuxAWaZhVe1f3cuxC3f91PoDxrf6aUsZUkTi65a+PvOEn4dw+fjvc/7j0n4Pa8jhc6aWzy518+IqxZ
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SoftwareUpgrade is a governance operation for initiating a software upgrade."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.upgrade.v1beta1.Msg/SoftwareUpgrade"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+SoftwareUpgrade is a governance operation for initiating a software upgrade.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.","type":"object","properties":{"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"plan":{"description":"plan is the upgrade plan.","type":"object","properties":{"height":{"description":"The height at which the upgrade must be performed.","type":"string","format":"int64"},"info":{"type":"string","title":"Any application specific upgrade info to be included on-chain\nsuch as a git commit that validators could automatically upgrade to"},"name":{"description":"Sets the name for the upgrade. This name will be used by the upgraded\nversion of the software to apply any special \"on-upgrade\" commands during\nthe first BeginBlock method after the upgrade is applied. It is also used\nto detect whether a software version can handle a given upgrade. If no\nupgrade handler with this name has been set in the software, it will be\nassumed that the software is out-of-date when the upgrade Time or Height is\nreached and the software will exit.","type":"string"},"time":{"description":"Deprecated: Time based upgrades have been deprecated. Time based upgrade logic\nhas been removed from the SDK.\nIf this field is not empty, an error will be thrown.","type":"string","format":"date-time"},"upgraded_client_state":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"Deprecated: UpgradedClientState field has been deprecated. IBC upgrade logic has been\nmoved to the IBC module in the sub module 02-client.\nIf this field is not empty, an error will be thrown."}}}}}}},"description":"MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgSoftwareUpgradeResponse is the Msg/SoftwareUpgrade response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

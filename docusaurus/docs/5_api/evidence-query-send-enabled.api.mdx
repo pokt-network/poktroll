@@ -1,0 +1,74 @@
+---
+id: evidence-query-send-enabled
+title: "SendEnabled queries for SendEnabled entries."
+description: "This query only returns denominations that have specific SendEnabled settings."
+sidebar_label: "SendEnabled queries for SendEnabled entries."
+hide_title: true
+hide_table_of_contents: true
+api: eJzlV99vGzcM/leIe9oAz267YQ99WhAEW4ABy9L0qQ4C3R3Pp0aWbpLOqWHkfx8pyT75RxLXyEOABgGSk0iKH/mRlFZFja6ysvPS6OJjcdNKB//1aJdgtFqCRd9b7aBGbeZSCxZz4FvhoRULBNdhJRtZwSfU9YUWpcIaHHov9cyNp/pML7d0o2pt0IE2yYYYrCRNeJBKQe+QxJH0G9ErP9WdsGLuxun7ztGRdxjPHIHQdVRjuyUmz8mbcklW1qjGxajwYuaKj1+Kf3mhuB0VpkMbvLusKQQXC0keVxi27zJcpBo8QI+WDax2YhdwOpAueL3BlJaXpocHoT0oY+6h78bwNzJ6nHeePDQwQw+C/EftrUTHnmo6bGOYviUfE3DQB37rlKlp39seR4WrWpyL4uOq8MuOtYS1guWkR1Ie1h2Z17Pi8fFxtIvgHpfsvoCFUH0WQqnhSszwGl1H6cexxm/+joXJ7RJnUk918IpTx9h5HzrSgLlxHrChOEjCpZZj+IdpZTSCaei3oYyDsUDGptq1plc1J49WM/xkKdFnTHK7cdgDngCOisbYufC0Ui49FgfwpvMDZN3P0VK60lrgaSU0e0NEJG61qCEFqNdiIaRiVhDHL4MFhc4NSFlfkyJHhJSegQ0R9VQ/BztqnIC8l9r//tsh7ErOpV+T1RsvFIegRMseWnRUYS7md4sHLB13Q4IZfkPYG5+ITDZDFaYiZQtrOkVjjJxKEkXVgui6w3iDc68KtzK99ncRJ4EOKTbApQP8j9S1rITHmPcMJAsmXkpdqb7GqRYQrHGgDgUvFBxsGALkHQzYOIifL7k37riU+i33Db/m20BQ5uAYItXkTBubUXKqI6LDscyOeTGipTEKhT4UQIsLanu4Gzw5kEVYfIIwbIn6KBeDsTXaw46mE77DSerdNvWk0OE+vHvHf7YdPwPXVxVVZ9MrWIuzB5XRnkqVNYiIivNPGpOvjtVW2bnb9sJcyMbCuisy5aXGWFDXV+ebs5gTIhuQ2SSKgEz5lXLO48XyKPIyohlCs+9Exqf82G2aJRpHwBBGeyORmRzZRhPVdL0STDfZpEyFYZXE1ibIYReYF2r8Zc/X82Hf783kSI1nM0TIdcdtlj7iqAlnjuN+Gi8vzpbL1HzK9ViVzVSTEhGTyakN6dh1absMx1MjgwRC3RzRc0hUesUim4p+qqsOrYGinqPNSnWqH0SotBH1E5c6aBg9Md81GAb2IB2GUV7kt6EjbgGbzG3nJ7/GzUXnqNNJHVkRW3l+DDgvfO/gJ2pE7AxtR0npaJiTIEv9PN6jRxA6cCOhO82e/0Oxpx/2OIyWA5VOE5fokRooWkuN96SCf57dVbh1baQo/ThDm1OCln79UARXPaXafU8+ts/6I27vX95Ghahryf4LdZWrhBDNqd0Rrw7e+h6ThG8NX3dn4V7RCd/Sx6QyjspqUgp9P1m8L8n995MtZnFzbsx+7M9bQUSZSd/2JfF4PunMvf9Fo38w9j58WEOVeX3x6QbOri6zcvnr5uaKl+Cc8kTJTokSVUhUGhMvGeZg8/SIzqT/wlOA70202VGzmAudmcypzu2FwhdGdb6e3cW34K4GLv0YT6ZIIk+9d9IpyjSHtLcqjimmzpciUoeEmTz0J9Gn2GlNNLNbygVrrFalcPjZqsdHXo4DP7yrpEt9oBHK4TPBf/0310GoYZYN77DQjWmhCNeko519a8+rZ6DuPblOhPxGX1jHId+8uk4E/4aeWMcBXj+7TsT7o7yxjgvm9rvrxJC+9qvrONeHl9jg9i1/WMl+U4++JbUWBVkNDTtaOKNnVpfzZ++WxVY2N48/L27oPvI/GYlG+A==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SendEnabled queries for SendEnabled entries."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/bank/v1beta1/send_enabled"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+This query only returns denominations that have specific SendEnabled settings.
+Any denomination that does not have a specific setting will use the default
+params.default_send_enabled, and will not be returned by this query.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"denoms is the specific denoms you want look up. Leave empty to get all entries.","name":"denoms","in":"query","explode":true,"schema":{"type":"array","items":{"type":"string"}}},{"description":"key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.","name":"pagination.key","in":"query","schema":{"type":"string","format":"byte"}},{"description":"offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.","name":"pagination.offset","in":"query","schema":{"type":"string","format":"uint64"}},{"description":"limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.","name":"pagination.limit","in":"query","schema":{"type":"string","format":"uint64"}},{"description":"count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.","name":"pagination.count_total","in":"query","schema":{"type":"boolean"}},{"description":"reverse is set to true if results are to be returned in the descending order.","name":"pagination.reverse","in":"query","schema":{"type":"boolean"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QuerySendEnabledResponse defines the RPC response of a SendEnable query.","type":"object","properties":{"pagination":{"description":"pagination defines the pagination in the response. This field is only\npopulated if the denoms field in the request is empty.","type":"object","properties":{"next_key":{"description":"next_key is the key to be passed to PageRequest.key to\nquery the next page most efficiently. It will be empty if\nthere are no more results.","type":"string","format":"byte"},"total":{"type":"string","format":"uint64","title":"total is total number of results available if PageRequest.count_total\nwas set, its value is undefined otherwise"}}},"send_enabled":{"type":"array","items":{"type":"object","description":"SendEnabled maps coin denom to a send_enabled status (whether a denom is\nsendable).","properties":{"denom":{"type":"string"},"enabled":{"type":"boolean"}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

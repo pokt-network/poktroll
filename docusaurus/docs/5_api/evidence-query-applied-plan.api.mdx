@@ -1,0 +1,72 @@
+---
+id: evidence-query-applied-plan
+title: "AppliedPlan queries a previously applied upgrade plan by its name."
+description: "AppliedPlan queries a previously applied upgrade plan by its name."
+sidebar_label: "AppliedPlan queries a previously applied upgrade plan by its name."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVE1v2zAM/SuCThuQ1W037JBTg6LYesuy7NQVhSwzthpZUiU5bWDkv4+UlcBZihUolktoSXx8fPzoeRR14NM7/qMDv+X3E24deBGVNbcVn/KbjarASEjXDzPntIJqroXhE+6EFy1E8ATQ8wqC9MqRKzoavGIqsNgAS7ZdJVsMEMwhBouWPREwW1l/hoj0MPvilyIcJ2KDtoenTnlAStF3MOFBNtAKPu153DryCdErU/Pd7p4eB2dNgED3l+fn9HfMbsZCJyWEsOo02z8nBtKaCCaSR2IqkxTFYyC3fhT2GC/JM1JnkSH3CuxDMGJL2abT5FWM3Nhifv3boKaNrYhNzs2WjyAjKe6pOlENmTWg6iaekhnO96FLbeWa5TMR2XOjZJNuUgmeRdjXZBQxqznhSLUVGAOLEb9+QXnpN8GAK9HpV2LPDOsMvDjki0UG7zHVd+n779SlrWD0CslBDf4vvp8veaIahdJh9Fp4L7bUXxHa8Hasq+H6tNMmXFSVIv5Cz8cuSaIWu0vUrzoeRDxSbtQGNBQIxQRzHjbKdkFvD5PTudqLKpev3DIVQ5owkndoHUSrISVCwzPlhbShtaHInsXmokRRLoqM+EBIRU8YuzR2K3ta2OtGKMNqFZuuPJO2LZxdx08G4rP16/ThrdZscfNzyWbzW2olFTWl/X25nNMRu8YmsBpyFwiZuiCP/FvAVMkNbpqBTLaYsZEFzBQvnQ2xFWYE+V8EPRLhUMkIL7HA57ihMHTnNd0NYt/xQWz0zbhoZcHRGkuOn9PEFVdWg/TJue9LEeCX17sdHaftiOdoboRXoiRFadeqQDZWeiV0gBOehzHjHxZ5c35k71rJr2a8HyRDY7QRuqMvNNew3a/v3T2+awDz94nxcDXDpeviyOlkCdD+PnTxt5sljssfjRhReQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"AppliedPlan queries a previously applied upgrade plan by its name."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/upgrade/v1beta1/applied_plan/{name}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+AppliedPlan queries a previously applied upgrade plan by its name.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"name is the name of the applied plan to query for.","name":"name","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryAppliedPlanResponse is the response type for the Query/AppliedPlan RPC\nmethod.","type":"object","properties":{"height":{"description":"height is the block height at which the plan was applied.","type":"string","format":"int64"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: evidence-msg-send
+title: "Send defines a method for sending coins from one account to another account."
+description: "Send defines a method for sending coins from one account to another account."
+sidebar_label: "Send defines a method for sending coins from one account to another account."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VUtv4jAQ/iuWzxTa7o3Tdiuk7WG3qGVPFFWOMyQuiSdrO1CE+O874wQIpQ/tKxLInpfn8X32RgaVeTmcym8+k7OexAqcCgbtTSqHcrQ0KVgNpHy8B5vKnnTwswYfvmC6lsON1GgD2MBLVVWF0dF58OTRsszrHErFqxS8dqZiLQWmgBxPOKgceArghRIleK8yEAGFZ6VGY72YOywFWhBKa6xtYLWyGHJwfconrCuggJg8gQ60rxyXEAz4mFPJLrxq7ZRzak1mJkDpO/K9/3Ge15SCSGFuLHCGARdgxcqEnDbUGSyNjQVTRin9RHNe/8E+2O+3k9FQTHJohWJuoEiF8Wx3Q/tVbnQuTFkVUMYOUElC1z5QvSWEHNMH601GB9TUI8GNNw5SkaxFhhlSoQH7H1fsgzM2k1sujRJ+RUNfT3KbH1Wa0lH+Ve+A76ibGP9rxrvS5TC4GrYs8BVa31R8eX5+CrAr4Wut6bB5XYidOcf6O8DetZH2mOCZkW7QVtpquTun4Nw1aa7qIrySshW1heeKTGnK4By6P8v8fUpoTKFjZShoBo7M5uhKFRrRp8sGMEGZwv8OfY7P+tyoT+HSk4Qlw/mrYtx1iS1qQfIGzk6RFpt/YGlDHkH1RIyR48cw24m40Y0/xa3Qx5pUyGk30OhL9P1E2UV/eZFQcy76u9mTGQ/i7nA7jp4VU7vLyelhuatoz8p9ibOXXDyYdinYYaaxczyF03Wu6O7K6K6qk77GclDhIpxZCCt0i7hxWBTibnQ/EVfjGw5vAucrv04mYxaJa4IekqjBntIRe1aVbPRRYE5sCc43ybQrQc2mmQRWcnNLZTsh//EYj9qxR1KA5zCoCuoNJ1G7gnXNhKfyjQlTsDhjGk3OkCDLzSZRHn64YrtlMU3d0Xs4peVSOaMSbuR0RifkoFKiF89+Aev4pEQan004HzYv6sisl5Te9nYeV3SRVeFd21kHtePb+wkZJ+0LXUa+S6dWfJPS/1BKfufZO5I0yjayUDarI+tkE5O/X56a26M=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Send defines a method for sending coins from one account to another account."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.bank.v1beta1.Msg/Send"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Send defines a method for sending coins from one account to another account.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgSend represents a message to send coins from one account to another.","type":"object","properties":{"amount":{"type":"array","items":{"type":"object","description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}},"from_address":{"type":"string"},"to_address":{"type":"string"}}}}},"description":"MsgSend represents a message to send coins from one account to another.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgSendResponse defines the Msg/Send response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
