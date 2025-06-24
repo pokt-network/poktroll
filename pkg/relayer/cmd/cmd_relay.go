@@ -368,21 +368,32 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		return errors.New("Relay response supplier operator signature does not match")
 	}
 
-	logger.Info().Msgf("🔍 Content-Type: %s", httpResp.Header.Get("Content-Type"))
+	logger.Info().Msgf("🔍 Backend response header, Content-Type: %s", httpResp.Header.Get("Content-Type"))
 
 	// Handle response according to type
 	if proxy.IsStreamingResponse(httpResp) {
 		return processStreamRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
-
 	} else {
 		// Normal, non-streaming request
 		return processNormalRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
 	}
 }
 
-func processStreamRequest(ctx context.Context, httpResp *http.Response, supplierSignerAddress string, accountClient sdk.AccountClient, logger polylog.Logger) error {
-
+// Handles the Pocket Network stream response from a Relay Miner.
+//
+// This functions uses an scanner that chunks the incomming response using the
+// defined split function.
+// Then it checks if the chunk is correctly signed, and tries to unmarshal it
+// if the stream is of type SSE.
+func processStreamRequest(ctx context.Context,
+	httpResp *http.Response,
+	supplierSignerAddress string,
+	accountClient sdk.AccountClient,
+	logger polylog.Logger) error {
 	logger.Info().Msgf("🌊 Handling streaming response with status:")
+
+	// Check if this is SSE (used below, if this is SSE we will unmarshal)
+	isSSE := strings.EqualFold(httpResp.Header.Get("Content-Type"), "text/event-stream")
 
 	// Start handling the body chunks
 	scanner := bufio.NewScanner(httpResp.Body)
@@ -402,38 +413,41 @@ func processStreamRequest(ctx context.Context, httpResp *http.Response, supplier
 			return err
 		}
 
-		if strings.Contains(strings.ToLower(httpResp.Header.Get("Content-Type")), "text/event-stream") {
-			// This is SSE, unmarshal
+		// get string body
+		stringBody := string(backendHttpResponse.BodyBz)
 
-			trimmedPrefix := strings.TrimPrefix(string(backendHttpResponse.BodyBz), "data: ")
-			stringJson := strings.TrimSuffix(trimmedPrefix, "\n")
-			if len(stringJson) == 0 {
-				// this was probably a delimiter
-				continue
-			} else if stringJson == "[DONE]" {
-				// SSE end
-				logger.Info().Msgf("✅ SSE Done")
-			} else {
-				// Umarshal
-				err = unmarshalAndPrintResponse([]byte(stringJson), logger)
-				if err != nil {
-					logger.Info().Msgf("Received: %s", string(backendHttpResponse.BodyBz))
-					logger.Info().Msgf("Stripped: %s", stringJson)
-					return err
-				}
-			}
-
-		} else {
-			// Just print content
-			logger.Info().Msgf(string(backendHttpResponse.BodyBz))
+		if !isSSE {
+			// Just print content and continue
+			logger.Info().Msgf("Chunk String Content: %s", stringBody)
+			continue
 		}
 
+		// This is SSE, unmarshal
+		trimmedPrefix := strings.TrimPrefix(stringBody, "data: ")
+		stringJson := strings.TrimSuffix(trimmedPrefix, "\n")
+		if len(stringJson) == 0 {
+			// this was probably a delimiter
+			continue
+		} else if stringJson == "[DONE]" {
+			// SSE end
+			logger.Info().Msgf("✅ SSE Done")
+		} else {
+			// Umarshal
+			err = unmarshalAndPrintResponse([]byte(stringJson), logger)
+			if err != nil {
+				logger.Info().Msgf("Received: %s | Stripped: %s", stringBody, stringJson)
+				return err
+			}
+		}
 	}
 	return nil
 }
 
-func processNormalRequest(ctx context.Context, httpResp *http.Response, supplierSignerAddress string, accountClient sdk.AccountClient, logger polylog.Logger) error {
-
+func processNormalRequest(ctx context.Context,
+	httpResp *http.Response,
+	supplierSignerAddress string,
+	accountClient sdk.AccountClient,
+	logger polylog.Logger) error {
 	// Read the response
 	respBz, err := io.ReadAll(httpResp.Body)
 	if err != nil {
@@ -457,7 +471,11 @@ func processNormalRequest(ctx context.Context, httpResp *http.Response, supplier
 	return nil
 }
 
-func checkAndGetBackendResponse(ctx context.Context, supplierSignerAddress string, respBz []byte, accountClient sdk.AccountClient, logger polylog.Logger) (backendHttpResponse *sdktypes.POKTHTTPResponse, err error) {
+func checkAndGetBackendResponse(ctx context.Context,
+	supplierSignerAddress string,
+	respBz []byte,
+	accountClient sdk.AccountClient,
+	logger polylog.Logger) (backendHttpResponse *sdktypes.POKTHTTPResponse, err error) {
 	// Validate the relay response
 	relayResp, err := sdk.ValidateRelayResponse(
 		ctx,
