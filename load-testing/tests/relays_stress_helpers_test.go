@@ -35,6 +35,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sync2"
 	testdelays "github.com/pokt-network/poktroll/testutil/delays"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
@@ -95,7 +96,9 @@ func (s *relaysSuite) setupEventListeners(rpcNode string) {
 	cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
 	require.NoError(s, err)
 
-	deps := depinject.Supply(cometClient)
+	logger := polylog.Ctx(s.ctx)
+
+	deps := depinject.Supply(cometClient, logger)
 	s.eventsReplayClient, err = events.NewEventsReplayClient(
 		s.ctx,
 		deps,
