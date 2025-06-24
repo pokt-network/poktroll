@@ -89,6 +89,20 @@ func NewSupplyCometClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 			return nil, err
 		}
 
+		var logger polylog.Logger
+		err = depinject.Inject(deps, &logger)
+		if err != nil {
+			return nil, err
+		}
+
+		// Convert polylog logger to comet logger implementation:
+		// - CometBFT client requires a logger implementing the CometBFT log.Logger interface
+		// - Our application standardizes on polylog logger throughout the codebase
+		// - The wrapper in polylog/comet_logger.go adapts between these interfaces
+		// - This approach maintains consistent logging patterns across the application
+		cometLogger := polylog.ToCometLogger(logger.With("component", "comet-client"))
+		cometClient.SetLogger(cometLogger)
+
 		// IMPORTANT: The CometBFT client must be started immediately after creation.
 		// This ensures the client is fully initialized before any dependent components
 		// attempt to use it for subscriptions, preventing connection errors.
