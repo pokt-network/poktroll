@@ -95,7 +95,9 @@ func (s *relaysSuite) setupEventListeners(rpcNode string) {
 
 	cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
 	require.NoError(s, err)
+
 	err = cometClient.Start()
+	require.NoError(s, err)
 
 	logger := polylog.Ctx(s.ctx)
 
@@ -118,7 +120,6 @@ func (s *relaysSuite) setupEventListeners(rpcNode string) {
 				close(initialBlockReceived)
 			}
 			s.latestBlock = block
-			fmt.Printf("Latest block height: %d\n", block.Height())
 			txResultEvents := make([]types.Event, 0)
 			for _, txResult := range block.TxResults() {
 				txResultEvents = append(txResultEvents, txResult.Events...)
