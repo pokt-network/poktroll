@@ -229,7 +229,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		logger.Error().Err(err).Msgf("❌ Error fetching session for app %s and service ID %s", app.Address, serviceId)
 		return err
 	}
-	logger.Info().Msgf("✅ Session with id %s fetched for app %s and service ID %s with %d suppliers", session.SessionId, app.Address, serviceId, len(session.Suppliers))
+	logger.Info().Msgf("✅ Session with id %s at height 	%d fetched for app %s and service ID %s with %d suppliers", session.SessionId, blockHeight, app.Address, serviceId, len(session.Suppliers))
 
 	// Select an endpoint from the session
 	sessionFilter := sdk.SessionFilter{
@@ -338,7 +338,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Endpoint URL parsed: %v", reqUrl)
 
-	// Send multiple requests as specified by the count flag
+	// Send multiple requests sequentially as specified by the count flag
 	for i := 1; i <= flagRelayRequestCount; i++ {
 		if flagRelayRequestCount > 1 {
 			logger.Info().Msgf("📤 Sending request %d of %d", i, flagRelayRequestCount)
@@ -348,13 +348,24 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		httpReq := &http.Request{
 			Method: http.MethodPost,
 			URL:    reqUrl,
-			Body:   io.NopCloser(bytes.NewReader(relayReqBz)),
+			Header: http.Header{
+				"Content-Type": []string{"application/json"},
+			},
+			Body: io.NopCloser(bytes.NewReader(relayReqBz)),
 		}
 
-		// Send the request HTTP request containing the signed relay request
+		// Send the HTTP request containing the signed relay request
 		httpResp, err := http.DefaultClient.Do(httpReq)
 		if err != nil {
 			logger.Error().Err(err).Msgf("❌ Error sending relay request %d", i)
+			return err
+		}
+		// This is intentionally not a defer because the loop could introduce memory leaks,
+		// performance issues and bad connection management for high flagRelayRequestCount values
+		httpResp.Body.Close()
+
+		if httpResp.StatusCode != http.StatusOK {
+			logger.Error().Err(err).Msgf("❌ Error sending relay request %d due to response status code %d", i, httpResp.StatusCode)
 			return err
 		}
 
@@ -364,8 +375,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Error().Err(err).Msgf("❌ Error reading response %d", i)
 			return err
 		}
-
-		httpResp.Body.Close()
 
 		// Ensure the supplier operator signature is present
 		supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
