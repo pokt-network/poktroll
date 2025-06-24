@@ -58,6 +58,8 @@ message QueryAllSuppliersRequest {
   oneof filter {
     string service_id = 2; // unique service identifier to filter by
   }
+
+  bool dehydrated = 3; // if true, return suppliers without service_config_history and rev_share details
 }
 
 message QueryAllSuppliersResponse {

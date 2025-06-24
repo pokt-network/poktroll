@@ -26,14 +26,19 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Long: `Retrieves a paginated list of all suppliers currently registered on Pocket Network, including all their details.
 
 The command supports optional filtering by service ID and pagination parameters.
-Returns supplier addresses, staked amounts, service details, and current status.`,
+Returns supplier addresses, staked amounts, service details, and current status.
+
+Use the --dehydrated flag to exclude service_config_history and rev_share details for more compact output.`,
 
 					Example: `	pocketd query supplier list-suppliers
 	pocketd query supplier list-suppliers --service-id anvil
+	pocketd query supplier list-suppliers --dehydrated
 	pocketd query supplier list-suppliers --page 2 --limit 50
-	pocketd query supplier list-suppliers --service-id anvil --page 1 --limit 100`,
+	pocketd query supplier list-suppliers --service-id anvil --page 1 --limit 100
+	pocketd query supplier list-suppliers --service-id anvil --dehydrated`,
 					FlagOptions: map[string]*autocliv1.FlagOptions{
 						"service_id": {Name: "service-id", Shorthand: "s", Usage: "service id to filter by", Hidden: false},
+						"dehydrated": {Name: "dehydrated", Shorthand: "d", Usage: "return suppliers without service_config_history and rev_share details", Hidden: false},
 					},
 				},
 				{
