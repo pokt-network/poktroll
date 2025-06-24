@@ -216,11 +216,11 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	// Check if the response is a stream
-	streamThis := IsStreamingResponse(httpResponse)
+	isStream := IsStreamingResponse(httpResponse)
 	// Create empty relay response
 	var relayResponse *types.RelayResponse
 	var responseSize float64
-	if streamThis {
+	if isStream {
 		logger.Debug().Msg("Handling streaming request.")
 
 		// Process and assign the relay response
@@ -228,7 +228,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		if err != nil {
 			return relayRequest, err
 		}
-
 	} else {
 		logger.Debug().Msg("Handling normal request.")
 
