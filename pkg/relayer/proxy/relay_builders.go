@@ -11,9 +11,9 @@ import (
 // newRelayRequest builds a RelayRequest from an http.Request.
 func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	// Replace DefaultMaxBodySize with config options
-	requestBody, err := SafeReadBody(sync.logger, request.Body, defaultMaxBodySize)
+	requestBody, err := SafeRequestReadBody(sync.logger, request, sync.serverConfig.MaxBodySize)
 	if err != nil {
-		return &types.RelayRequest{}, ErrRelayerProxyInternalError.Wrap(err.Error())
+		return &types.RelayRequest{}, err
 	}
 
 	sync.logger.Debug().Msg("unmarshaling relay request")

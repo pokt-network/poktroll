@@ -210,7 +210,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("failed to build the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer CloseRequestBody(logger, httpRequest.Body)
+	defer CloseBody(logger, httpRequest.Body)
 
 	// Configure HTTP client based on backend URL scheme.
 	var client http.Client
@@ -268,7 +268,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	defer CloseRequestBody(logger, httpResponse.Body)
+	defer CloseBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 
@@ -281,44 +281,66 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
 	}
 
-	// Serialize the service response to be sent back to the client.
-	// This will include the status code, headers, and body.
-	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse)
-	if err != nil {
-		return relayRequest, err
+	// Check if the response is a stream
+	isStream := IsStreamingResponse(httpResponse)
+	// Create empty relay response
+	var relayResponse *types.RelayResponse
+	var responseSize float64
+	if isStream {
+		logger.Debug().Msg("Handling streaming request.")
+
+		// Process and assign the relay response
+		relayResponse, responseSize, err = server.HandleHttpStream(httpResponse, writer, meta, logger)
+		if err != nil {
+			return relayRequest, err
+		}
+	} else {
+		logger.Debug().Msg("Handling normal request.")
+
+		// Serialize the service response to be sent back to the client.
+		// This will include the status code, headers, and body.
+		_, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
+		if err != nil {
+			return relayRequest, err
+		}
+
+		logger.Debug().
+			Str("relay_request_session_header", meta.SessionHeader.String()).
+			Msg("building relay response protobuf from service response")
+
+		// Build the relay response using the original service's response.
+		// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
+		// was verified to be valid and has to be the same as the relayResponse session header.
+		relayResponse, err = server.newRelayResponse(responseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
+		if err != nil {
+			// The client should not have knowledge about the RelayMiner's issues with
+			// building the relay response. Reply with an internal error so that the
+			// original error is not exposed to the client.
+			return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
+		}
+
+		// Send the relay response to the client.
+		if err = server.sendRelayResponse(relayResponse, writer); err != nil {
+			// If the originHost cannot be parsed, reply with an internal error so that
+			// the original error is not exposed to the client.
+			clientError := ErrRelayerProxyInternalError.Wrap(err.Error())
+			logger.Warn().Err(err).Msg("failed sending relay response")
+			return relayRequest, clientError
+		}
+
+		// Set response size
+		responseSize = float64(relayResponse.Size())
+
 	}
 
-	logger.Debug().
-		Str("relay_request_session_header", meta.SessionHeader.String()).
-		Msg("building relay response protobuf from service response")
-
-	// Build the relay response using the original service's response.
-	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
-	// was verified to be valid and has to be the same as the relayResponse session header.
-	relayResponse, err := server.newRelayResponse(responseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
-	if err != nil {
-		// The client should not have knowledge about the RelayMiner's issues with
-		// building the relay response. Reply with an internal error so that the
-		// original error is not exposed to the client.
-		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
-	}
-
+	// Create the relay response
 	relay := &types.Relay{Req: relayRequest, Res: relayResponse}
-
-	// Send the relay response to the client.
-	if err = server.sendRelayResponse(relay.Res, writer); err != nil {
-		// If the originHost cannot be parsed, reply with an internal error so that
-		// the original error is not exposed to the client.
-		clientError := ErrRelayerProxyInternalError.Wrap(err.Error())
-		logger.Warn().Err(err).Msg("failed sending relay response")
-		return relayRequest, clientError
-	}
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("relay request served successfully")
 
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 
-	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
+	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(responseSize)
 
 	// Verify relay reward eligibility a SECOND time AFTER completing backend request.
 	//

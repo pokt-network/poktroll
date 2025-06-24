@@ -1,9 +1,12 @@
 package polyzero
 
 import (
+	"bufio"
 	"context"
+	"io"
 	"math/rand"
 	"os"
+	"time"
 
 	"github.com/rs/zerolog"
 
@@ -29,9 +32,35 @@ type zerologLogger struct {
 func NewLogger(
 	opts ...polylog.LoggerOption,
 ) polylog.Logger {
+	var output io.Writer = os.Stderr
+
+	// NOTE: all this value, like the size of buffer, the time for a flush is probably a good idea to make them configurable
+	//   with a safe default value.
+	// NOTE2: using this approach my iops get reduced over 17% in comparison to the normal approach, because it synchronously
+	//   writes to stderr which containers write to disk, which leads to an increase of iops when using logs at info level
+	// NOTE3: there is SO MANY logs right now, that are info and should be debugged.
+
+	// Optional: disable stdout/stderr logs via env to avoid breaking anything that is currently expecting it been writing
+	// to os.Stderr
+	if os.Getenv("DISABLE_STDOUT_LOGS") == "1" {
+		output = io.Discard
+	} else {
+		// Use a 64KB buffered writer
+		buf := bufio.NewWriterSize(os.Stderr, 64*1024)
+
+		// Periodic flusher to avoid full buffer delay
+		go func() {
+			for range time.Tick(1 * time.Second) {
+				_ = buf.Flush()
+			}
+		}()
+
+		output = buf
+	}
+
 	ze := &zerologLogger{
 		level:  zerolog.DebugLevel,
-		Logger: zerolog.New(os.Stderr),
+		Logger: zerolog.New(output),
 	}
 
 	for _, opt := range opts {
