@@ -40,6 +40,12 @@ jobs:
           
           # POKT Network | AscendEX
           CHAT_10="-4565872373"
+          
+          # Uphold <> Grove (POKT)
+          CHAT_11="-1002227693360"
+          
+          # Pokt <> Kraken {EF introduction}
+          CHAT_12="-1002405763552"
 
           MESSAGE="📦 New Release: *${{ github.event.release.name }}*\n[View Release](${{ github.event.release.html_url }})\n\n${{ github.event.release.body }}"
 
@@ -110,5 +116,19 @@ jobs:
           echo "Sending to POKT Network | AscendEX ($CHAT_10)"
           curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
             -d chat_id="$CHAT_10" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"
+            
+          # Send to Uphold <> Grove (POKT)
+          echo "Sending to Uphold <> Grove (POKT) ($CHAT_11)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_11" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"
+            
+          # Send to Pokt <> Kraken {EF introduction}
+          echo "Sending to Pokt <> Kraken {EF introduction} ($CHAT_12)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_12" \
             -d text="$MESSAGE" \
             -d parse_mode="Markdown"
