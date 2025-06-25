@@ -8,31 +8,27 @@ RED := \033[0;31m
 BOLD := \033[1m
 RESET := \033[0m
 
-# Common variables
-GITHUB_REPO_URL := https://github.com/pokt-network/poktroll/releases/new
-INFO_URL := https://dev.poktroll.com/explore/account_management/pocketd_cli?_highlight=cli
-
 # Reusable function to print formatted messages
 define print_success
-	@echo ""
-	@echo "$(GREEN)########################################$(RESET)"
-	@echo "$(GREEN)$(BOLD) ✓ $(1)$(RESET)"
-	@echo "$(GREEN)########################################$(RESET)"
-	@echo ""
+	echo ""
+	echo "$(GREEN)########################################$(RESET)"
+	echo "$(GREEN)$(BOLD) ✓ $(1)$(RESET)"
+	echo "$(GREEN)########################################$(RESET)"
+	echo ""
 endef
 
 define print_info_section
-	@echo "$(CYAN)$(BOLD)$(1):$(RESET)"
+	echo "$(CYAN)$(BOLD)$(1):$(RESET)"
 endef
 
 define print_command
-	@echo "  $(YELLOW)$(1)$(RESET)"
+	echo "  $(YELLOW)$(1)$(RESET)"
 endef
 
 define print_url
-	@echo "$(BLUE)$(1)$(RESET)"
+	echo "$(BLUE)$(1)$(RESET)"
 endef
 
 define print_warning
-	@echo "$(RED)⚠️  $(1)$(RESET)"
+	echo "$(RED)⚠️  $(1)$(RESET)"
 endef
