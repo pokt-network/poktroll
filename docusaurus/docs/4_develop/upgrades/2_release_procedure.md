@@ -76,9 +76,9 @@ Start a discord thread similar to [this v0.1.21 thread](https://discord.com/chan
 1. **Tag the release** using one of the following and follow on-screen prompts:
 
    ```bash
-   make release_tag_bug_fix
+   make release_tag_minor
    # OR
-   make release_tag_minor_release
+   make release_tag_major
    ```
 
 2. **Publish the release** by:
