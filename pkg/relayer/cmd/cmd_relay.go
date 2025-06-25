@@ -39,6 +39,7 @@ var (
 	flagRelaySupplier                  string // Supplier address
 	flagRelayPayload                   string // Relay payload
 	flagSupplierPublicEndpointOverride string // Optional endpoint override
+	flagRelayRequestCount              int    // Number of requests to send
 
 	// Cosmos flags for 'pocketd relayminer relay' subcommand
 	flagNodeGRPCURLRelay      string
@@ -110,6 +111,7 @@ For more info, run 'relay --help'.`,
 	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
 	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
 	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
+	cmd.Flags().IntVar(&flagRelayRequestCount, "count", 1, "(Optional) Number of requests to send (default: 1)")
 
 	_ = cmd.MarkFlagRequired("app")
 	_ = cmd.MarkFlagRequired("payload")
@@ -146,7 +148,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	ctx = logger.WithContext(ctx)
 	cmd.SetContext(ctx)
 
-	logger.Info().Msgf("About to send a relay to supplier '%s' for app '%s'", flagRelaySupplier, flagRelayApp)
+	logger.Info().Msgf("About to send %d relay(s) to supplier '%s' for app '%s'", flagRelayRequestCount, flagRelaySupplier, flagRelayApp)
 
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
@@ -227,7 +229,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		logger.Error().Err(err).Msgf("❌ Error fetching session for app %s and service ID %s", app.Address, serviceId)
 		return err
 	}
-	logger.Info().Msgf("✅ Session fetched: %v", session)
+	logger.Info().Msgf("✅ Session with id %s at height 	%d fetched for app %s and service ID %s with %d suppliers", session.SessionId, blockHeight, app.Address, serviceId, len(session.Suppliers))
 
 	// Select an endpoint from the session
 	sessionFilter := sdk.SessionFilter{
@@ -243,7 +245,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		logger.Error().Msg("❌ No endpoints available")
 		return err
 	}
-	logger.Info().Msgf("✅ Endpoints fetched: %v", endpoints)
+	logger.Info().Msgf("✅ %d endpoints fetched", len(endpoints))
 
 	var endpoint sdk.Endpoint
 	if flagRelaySupplier != "" {
@@ -336,88 +338,124 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Endpoint URL parsed: %v", reqUrl)
 
-	// Create the HTTP request with the relay request body
-	httpReq := &http.Request{
-		Method: http.MethodPost,
-		URL:    reqUrl,
-		Body:   io.NopCloser(bytes.NewReader(relayReqBz)),
-	}
+	// Send multiple requests sequentially as specified by the count flag
+	for i := 1; i <= flagRelayRequestCount; i++ {
+		if flagRelayRequestCount > 1 {
+			logger.Info().Msgf("📤 Sending request %d of %d", i, flagRelayRequestCount)
+		}
 
-	// Send the request HTTP request containing the signed relay request
-	httpResp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error sending relay request")
-		return err
-	}
-	defer httpResp.Body.Close()
+		// Create the HTTP request with the relay request body
+		httpReq := &http.Request{
+			Method: http.MethodPost,
+			URL:    reqUrl,
+			Header: http.Header{
+				"Content-Type": []string{"application/json"},
+			},
+			Body: io.NopCloser(bytes.NewReader(relayReqBz)),
+		}
 
-	// Read the response
-	respBz, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error reading response")
-		return err
-	}
-	logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
+		// Send the HTTP request containing the signed relay request
+		httpResp, err := http.DefaultClient.Do(httpReq)
+		if err != nil {
+			logger.Error().Err(err).Msgf("❌ Error sending relay request %d", i)
+			continue
+		}
 
-	// Ensure the supplier operator signature is present
-	supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
-	if supplierSignerAddress == "" {
-		logger.Error().Msg("❌ Supplier operator signature is missing")
-		return errors.New("Relay response missing supplier operator signature")
-	}
+		if httpResp.StatusCode != http.StatusOK {
+			logger.Error().Err(err).Msgf("❌ Error sending relay request %d due to response status code %d", i, httpResp.StatusCode)
+			continue
+		}
 
-	// Ensure the supplier operator address matches the expected address
-	if flagRelaySupplier == "" {
-		logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
-	} else if supplierSignerAddress != flagRelaySupplier {
-		logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
-		return errors.New("Relay response supplier operator signature does not match")
-	}
+		// Read the response
+		respBz, err := io.ReadAll(httpResp.Body)
+		if err != nil {
+			logger.Error().Err(err).Msgf("❌ Error reading response %d", i)
+			continue
+		}
 
-	// Validate the relay response
-	relayResp, err := sdk.ValidateRelayResponse(
-		ctx,
-		sdk.SupplierAddress(supplierSignerAddress),
-		respBz,
-		&accountClient,
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error validating response")
-		return err
-	}
-	// Deserialize the relay response
-	backendHttpResponse, err := sdktypes.DeserializeHTTPResponse(relayResp.Payload)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error deserializing response payload")
-		return err
-	}
-	logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
+		// This is intentionally not a defer because the loop could introduce memory leaks,
+		// performance issues and bad connection management for high flagRelayRequestCount values
+		httpResp.Body.Close()
 
-	var jsonMap map[string]interface{}
-	// Unmarshal the HTTP response body into jsonMap
-	if err := json.Unmarshal(backendHttpResponse.BodyBz, &jsonMap); err != nil {
-		logger.Error().Err(err).Msg("❌ Error deserializing response payload")
-		return err
-	}
-	logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
+		// Ensure the supplier operator signature is present
+		supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
+		if supplierSignerAddress == "" {
+			logger.Error().Msg("❌ Supplier operator signature is missing")
+			continue
+		}
 
-	// If "jsonrpc" key exists, try to further deserialize "result"
-	if _, ok := jsonMap["jsonrpc"]; ok {
-		resultRaw, exists := jsonMap["result"]
-		if exists {
-			switch v := resultRaw.(type) {
-			case map[string]interface{}:
-				logger.Info().Msgf("✅ Further deserialized 'result' (object): %+v", v)
-			case []interface{}:
-				logger.Info().Msgf("✅ Further deserialized 'result' (array): %+v", v)
-			case string:
-				logger.Info().Msgf("✅ Further deserialized 'result' (string): %s", v)
-			case float64, bool, nil:
-				logger.Info().Msgf("✅ Further deserialized 'result' (primitive): %+v", v)
-			default:
-				logger.Warn().Msgf("⚠️ 'result' is of an unhandled type: %T, value: %+v", v, v)
+		// Ensure the supplier operator address matches the expected address
+		if flagRelaySupplier == "" {
+			if flagRelayRequestCount == 1 {
+				logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
+			}
+		} else if supplierSignerAddress != flagRelaySupplier {
+			logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
+			continue
+		}
+
+		// Validate the relay response
+		relayResp, err := sdk.ValidateRelayResponse(
+			ctx,
+			sdk.SupplierAddress(supplierSignerAddress),
+			respBz,
+			&accountClient,
+		)
+		if err != nil {
+			logger.Error().Err(err).Msgf("❌ Error validating response %d", i)
+			continue
+		}
+		// Deserialize the relay response
+		backendHttpResponse, err := sdktypes.DeserializeHTTPResponse(relayResp.Payload)
+		if err != nil {
+			logger.Error().Err(err).Msgf("❌ Error deserializing response payload %d", i)
+			continue
+		}
+
+		// Unmarshal the HTTP response body into jsonMap
+		var jsonMap map[string]interface{}
+		if err := json.Unmarshal(backendHttpResponse.BodyBz, &jsonMap); err != nil {
+			logger.Error().Err(err).Msgf("❌ Error unmarshaling response into a JSON map %d", i)
+			continue
+		}
+
+		// Log response details
+		if flagRelayRequestCount > 1 {
+			logger.Info().Msgf("✅ Request %d: Status code %d, Response size %d bytes", i, backendHttpResponse.StatusCode, len(respBz))
+		} else {
+			logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
+			logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
+			logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
+		}
+
+		// If "jsonrpc" key exists, try to further deserialize "result".
+		// Only do this once for the first request.
+		if flagRelayRequestCount == 1 || i == 1 {
+			if _, ok := jsonMap["jsonrpc"]; ok {
+				resultRaw, exists := jsonMap["result"]
+				if exists {
+					switch v := resultRaw.(type) {
+					case map[string]interface{}:
+						logger.Info().Msgf("✅ Further deserialized 'result' (object): %+v", v)
+					case []interface{}:
+						logger.Info().Msgf("✅ Further deserialized 'result' (array): %+v", v)
+					case string:
+						logger.Info().Msgf("✅ Further deserialized 'result' (string): %s", v)
+					case float64, bool, nil:
+						logger.Info().Msgf("✅ Further deserialized 'result' (primitive): %+v", v)
+					default:
+						logger.Warn().Msgf("⚠️ 'result' is of an unhandled type: %T, value: %+v", v, v)
+					}
+				}
+				if flagRelayRequestCount > 1 {
+					logger.Debug().Msg("⚠️ Will be skipping JSON-RPC deserialization for subsequent requests")
+				}
 			}
 		}
+	}
+
+	if flagRelayRequestCount > 1 {
+		logger.Info().Msgf("✅ Successfully sent %d relay requests", flagRelayRequestCount)
 	}
 
 	return nil
