@@ -2,6 +2,8 @@ load("ext://helm_resource", "helm_resource", "helm_repo")
 
 ibc_relayer_dockerfile_path = os.path.join(".", "localnet", "dockerfiles", "ibc-relayer.dockerfile")
 agoric_dockerfile_path = os.path.join(".", "localnet", "dockerfiles", "agoric-validator.dockerfile")
+# TODO_IN_THIS_COMMIT: axelar-core repo path should be configurable
+axelar_dockerfile_path = os.path.join("..", "axelar-core", "Dockerfile")
 
 # ⚠️ IBC Disabled Resource
 # - Creates a Tilt resource that prints a message indicating IBC is disabled
@@ -56,6 +58,45 @@ def check_and_load_agoric(chart_prefix, ibc_config):
                 "46657:26657",
                 "11090:9090",
                 "40009:40009"
+            ],
+        )
+
+# TODO_IN_THIS_COMMIT: need to ensure local axelar-core repo...
+# Check and Load Axelar
+# - If the pocket-axelarlocal relay pair is enabled:
+#   - Builds Agoric docker image
+#   - Deploys Agoric via Helm/k8s
+#   - Sets up Agoric k8s resource with port-forwards
+def check_and_load_axelar(chart_prefix, ibc_config):
+    if ibc_config["relay_pairs_enabled"].get("pocket-axelarlocal", False):
+        docker_build(
+            "axelar",
+            # TODO_IN_THIS_COMMIT: axelar-core repo path should be configurable
+            context=os.path.join("..", "axelar-core"),
+            dockerfile=axelar_dockerfile_path,
+            # build_args={"WASM": "false"}
+        )
+
+        # Deploy helm chart
+        helm_resource(
+            "axelar-validator",
+            chart_prefix + "axelar-validator",
+            flags=[
+                "--values=./localnet/kubernetes/values-axelar.yaml",
+            ],
+            image_deps=["axelar"],
+            image_keys=[("image.repository", "image.tag")],
+            )
+
+        # Update k8s resource with new name, lebels, and port-forwards
+        k8s_resource(
+            "axelar-validator",
+            new_name="Axelar Local Node",
+            labels=["IBC"],
+            port_forwards=[
+                "56657:26657",
+                "12090:9090",
+                "40010:40010"
             ],
         )
 
