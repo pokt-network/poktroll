@@ -83,6 +83,14 @@ message EventSupplierSlashed {
     cosmos.base.v1beta1.Coin proof_missing_penalty = 2;
 }
 
+// EventClaimDiscarded is emitted when a claim is discarded due to unexpected
+// errors during settlement to prevent chain halt.
+message EventClaimDiscarded {
+    pocket.proof.Claim claim = 1;
+    // The error that caused the claim to be discarded.
+    string error = 2;
+}
+
 // EventApplicationReimbursementRequest is emitted when an application requests
 // a reimbursement.
 message EventApplicationReimbursementRequest {
