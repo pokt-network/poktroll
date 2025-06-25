@@ -1,0 +1,5 @@
+prefix: "daemon"
+kind: "Deployment"
+command:
+  - /root/.hermes/entrypoint.sh
+  - start
