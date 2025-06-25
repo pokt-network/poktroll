@@ -19,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
@@ -75,25 +74,45 @@ func NewSupplyLoggerFromCtx(ctx context.Context) SupplierFn {
 	}
 }
 
-// NewSupplyEventsQueryClientFn supplies a depinject config with an
-// EventsQueryClient from the given queryNodeRPCURL.
-func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
+// NewSupplyCometClientFn supplies a depinject config with an
+// comet HTTP client from the given queryNodeRPCURL.
+func NewSupplyCometClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
+
+		// Inject the logger from the deps
 		var logger polylog.Logger
-		// Inject the logger from the deps config
-		if err := depinject.Inject(deps, &logger); err != nil {
+		err := depinject.Inject(deps, &logger)
+		if err != nil {
 			return nil, err
 		}
 
-		// Convert the host to a websocket URL
-		queryNodeWebsocketURL := events.RPCToWebsocketURL(queryNodeRPCURL)
-		eventsQueryClient := events.NewEventsQueryClient(queryNodeWebsocketURL, events.WithLogger(logger))
+		// Convert the query node RPC URL to a comet client
+		cometClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL.String())
+		if err != nil {
+			return nil, err
+		}
 
-		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
+		// Convert polylog logger to comet logger implementation:
+		// - CometBFT client requires a logger implementing the CometBFT log.Logger interface
+		// - Our application standardizes on polylog logger throughout the codebase
+		// - The wrapper in polylog/comet_logger.go adapts between these interfaces
+		// - This approach maintains consistent logging patterns across the application
+		cometLogger := polylog.ToCometLogger(logger.With("component", "comet-client"))
+		cometClient.SetLogger(cometLogger)
+
+		// IMPORTANT: The CometBFT client MUST be started immediately after creation.
+		// This ensures the client is fully initialized before any dependent components
+		// attempt to use it for subscriptions, preventing connection errors.
+		if err := cometClient.Start(); err != nil {
+			return nil, err
+		}
+
+		// Inject the comet client into the deps
+		return depinject.Configs(deps, depinject.Supply(cometClient)), nil
 	}
 }
 
@@ -404,24 +423,6 @@ func NewSupplySupplierClientsFn(signingKeyNames []string, gasSettingStr string) 
 			suppliers.SupplierClients[supplierClient.OperatorAddress()] = supplierClient
 		}
 		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
-	}
-}
-
-// NewSupplyBlockQueryClientFn returns a function which constructs a
-// BlockQueryClient instance and returns a new depinject.Config which
-// is supplied with the given deps and the new BlockQueryClient.
-func NewSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCUrl.String())
-		if err != nil {
-			return nil, err
-		}
-
-		return depinject.Configs(deps, depinject.Supply(blockQueryClient)), nil
 	}
 }
 
