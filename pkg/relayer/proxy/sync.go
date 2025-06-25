@@ -35,7 +35,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Extract the relay request from the request body.
 	logger.Debug().Msg("extracting relay request from request body")
-	relayRequest, err := server.newRelayRequest(request)
+	relayRequest, err := server.newRelayRequest(request, server.serverConfig.MaxBodySize)
 	if err != nil {
 		logger.Warn().Err(err).Msg("failed creating relay request")
 		return relayRequest, err
@@ -217,7 +217,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
-	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse)
+	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
 	if err != nil {
 		return relayRequest, err
 	}

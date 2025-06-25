@@ -38,6 +38,19 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 			SupplierConfigsMap:   make(map[string]*RelayMinerSupplierConfig),
 		}
 
+		if yamlSupplierConfig.MaxBodySize == "" {
+			serverConfig.MaxBodySize = relayMinerConfig.DefaultMaxBodySize
+		} else {
+			size, sizeErr := parseSize(yamlSupplierConfig.MaxBodySize)
+			if sizeErr != nil {
+				return ErrRelayMinerConfigInvalidMaxBodySize.Wrapf(
+					"invalid max body size %q",
+					yamlSupplierConfig.MaxBodySize,
+				)
+			}
+			serverConfig.MaxBodySize = size
+		}
+
 		// Populate the server fields that are relevant to each supported server type
 		switch listenUrl.Scheme {
 		case "http", "ws":

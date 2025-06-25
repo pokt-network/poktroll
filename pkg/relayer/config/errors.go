@@ -12,4 +12,5 @@ var (
 	ErrRelayMinerConfigInvalidSupplier       = sdkerrors.Register(codespace, 2105, "invalid supplier in RelayMiner config")
 	ErrRelayMinerConfigInvalidServer         = sdkerrors.Register(codespace, 2106, "invalid server in RelayMiner config")
 	ErrRelayMinerConfigInvalidRequestTimeout = sdkerrors.Register(codespace, 2107, "invalid request timeout specified in RelayMiner config")
+	ErrRelayMinerConfigInvalidMaxBodySize    = sdkerrors.Register(codespace, 2107, "invalid max body size specified in RelayMiner config")
 )
