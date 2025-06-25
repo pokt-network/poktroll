@@ -62,7 +62,7 @@ require (
 	github.com/go-kit/kit v0.13.0
 	github.com/gogo/status v1.1.0
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
@@ -108,7 +108,10 @@ require (
 	golang.org/x/term v0.32.0
 )
 
-require github.com/go-chi/chi/v5 v5.2.1
+require (
+	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.2.0
+	github.com/go-chi/chi/v5 v5.2.1
+)
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
@@ -315,6 +318,7 @@ require (
 	github.com/hdevalence/ed25519consensus v0.2.0 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/huandu/skiplist v1.2.1 // indirect
+	github.com/iancoleman/orderedmap v0.3.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
