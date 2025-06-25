@@ -107,7 +107,13 @@ var allUpgrades = []upgrades.Upgrade{
 
 	// v0.1.22 - upgrade to:
 	// - Update the Morse account recovery allowlist
-	upgrades.Upgrade_0_1_22,
+	// upgrades.Upgrade_0_1_22,
+
+	// v0.1.23 - upgrade to:
+	// - RelayMiner improvements (replaced EventsQueryClient with CometBFT client)
+	// - Tokenomics enhancements (non-chain halting claim settlement)
+	// - Service parameter updates and governance parameter adjustments
+	upgrades.Upgrade_0_1_23,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
