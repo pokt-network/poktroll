@@ -52,6 +52,7 @@ func init() {
 		panic(err)
 	}
 
+	// TODO_TECHDEBT: Rename to FULL_NODE_RPC_ENDPOINT (has infra dependencies)
 	// If VALIDATOR_RPC_ENDPOINT environment variable is set, use it to override the default localnet endpoint.
 	if endpoint := os.Getenv("VALIDATOR_RPC_ENDPOINT"); endpoint != "" {
 		LocalCometTCPURL = fmt.Sprintf("tcp://%s", endpoint)

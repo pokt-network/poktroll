@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	// committedBlocksQuery is the subscription query for block events.
+	// cometNewBlockHeaderQuery is the subscription query for block events.
 	// - Uses 'NewBlockHeader' events instead of 'NewBlock' for efficiency
 	// - 'NewBlock' has complete data but higher bandwidth requirements
 	// - Only header information is needed for most block tracking operations
 	// - See: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-	committedBlocksQuery = "tm.event='NewBlockHeader'"
+	cometNewBlockHeaderQuery = "tm.event='NewBlockHeader'"
 
 	// defaultBlocksReplayLimit is the number of blocks that the replay
 	// observable returned by LastNBlocks() will be able to replay.
@@ -26,9 +26,10 @@ const (
 	defaultBlocksReplayLimit = 100
 )
 
-// NewBlockClient creates a new block client from the given dependencies and
-// cometWebsocketURL. It uses a pre-defined committedBlocksQuery to subscribe to
-// newly committed block events which are mapped to Block objects.
+// NewBlockClient creates a new block client from the given dependencies.
+//
+// It uses a pre-defined cometNewBlockHeaderQuery to subscribe to newly
+// committed block events which are mapped to Block objects.
 //
 // This lightly wraps the EventsReplayClient[Block] generic to correctly mock
 // the interface.
@@ -52,7 +53,7 @@ func NewBlockClient(
 	bClient.eventsReplayClient, err = events.NewEventsReplayClient(
 		ctx,
 		deps,
-		committedBlocksQuery,
+		cometNewBlockHeaderQuery,
 		UnmarshalNewBlock,
 		defaultBlocksReplayLimit,
 	)

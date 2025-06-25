@@ -111,15 +111,21 @@ func (s *relaysSuite) setupEventListeners(rpcNode string) {
 	)
 	require.NoError(s, err)
 
-	initialBlockReceived := make(chan struct{})
+	// Channel to signal when the first block has been received over the replay client.
+	initialBlockReceivedCh := make(chan struct{})
+
+	// Iterate over the events sequence from the events replay client.
 	channel.ForEach(
 		s.ctx,
 		s.eventsReplayClient.EventsSequence(s.ctx),
 		func(ctx context.Context, block *block.CometNewBlockEvent) {
+			// Check if this is the first block received over the replay client.
 			if s.latestBlock == nil {
-				close(initialBlockReceived)
+				close(initialBlockReceivedCh)
 			}
 			s.latestBlock = block
+
+			// Publish the events to the observable.
 			txResultEvents := make([]types.Event, 0)
 			for _, txResult := range block.TxResults() {
 				txResultEvents = append(txResultEvents, txResult.Events...)
@@ -130,7 +136,8 @@ func (s *relaysSuite) setupEventListeners(rpcNode string) {
 		},
 	)
 
-	<-initialBlockReceived
+	// Block until the first block has been received over the replay client.
+	<-initialBlockReceivedCh
 }
 
 // initFundingAccount initializes the account that will be funding the onchain actors.
@@ -186,8 +193,8 @@ func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 // Each time it notifies, it also sends a relayBatchInfo to the given relayBatchInfoPublishCh
 // such that the corresponding pipeline branch will send a relay batch.
 func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
-	relayBatchInfoPublishCh chan<- *relayBatchInfoNotif,
-) channel.MapFn[*block.CometNewBlockEvent, *sessionInfoNotif] {
+	relayBatchInfoPublishCh chan<- *relayBatchInfoNotification,
+) channel.MapFn[*block.CometNewBlockEvent, *sessionInfoNotification] {
 	var (
 		// The test suite is initially waiting for the next session to start.
 		waitingForFirstSession = true
@@ -197,13 +204,13 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 	return func(
 		ctx context.Context,
 		block *block.CometNewBlockEvent,
-	) (_ *sessionInfoNotif, skip bool) {
+	) (_ *sessionInfoNotification, skip bool) {
 		blockHeight := block.Height()
 		if blockHeight <= s.latestBlock.Height() {
 			return nil, true
 		}
 
-		sessionInfo := &sessionInfoNotif{
+		sessionInfo := &sessionInfoNotification{
 			blockHeight:             blockHeight,
 			sessionNumber:           sharedtypes.GetSessionNumber(s.sharedParams, blockHeight),
 			sessionStartBlockHeight: sharedtypes.GetSessionStartHeight(s.sharedParams, blockHeight),
@@ -278,12 +285,12 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 		// Inform the relay sending observable of the active applications that
 		// will be sending relays and the gateways that will be receiving them.
-		relayBatchInfoPublishCh <- &relayBatchInfoNotif{
-			sessionInfoNotif: *sessionInfo,
-			prevBatchTime:    prevBatchTime,
-			nextBatchTime:    now,
-			appAccounts:      s.activeApplications,
-			gateways:         s.activeGateways,
+		relayBatchInfoPublishCh <- &relayBatchInfoNotification{
+			sessionInfoNotification: *sessionInfo,
+			prevBatchTime:           prevBatchTime,
+			nextBatchTime:           now,
+			appAccounts:             s.activeApplications,
+			gateways:                s.activeGateways,
 		}
 
 		// Update prevBatchTime after this iteration completes.
@@ -440,14 +447,14 @@ func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementEnd() int64 {
 // & gateways but only funds new applications as they can't be delegated to until after the respective
 // gateway stake tx has been committed. It receives at the same frequency as committed blocks (i.e. 1:1)
 // but only sends conditionally as described here.
-func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() channel.MapFn[*sessionInfoNotif, *stakingInfoNotif] {
+func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() channel.MapFn[*sessionInfoNotification, *stakingInfoNotification] {
 	appsPlan := s.plans.apps
 	gatewaysPlan := s.plans.gateways
 	suppliersPlan := s.plans.suppliers
 
 	// Check if any new actors need to be staked **for use in the next session**
 	// and send the appropriate stake transactions if so.
-	return func(ctx context.Context, notif *sessionInfoNotif) (*stakingInfoNotif, bool) {
+	return func(ctx context.Context, notif *sessionInfoNotification) (*stakingInfoNotification, bool) {
 		var newSuppliers []*accountInfo
 		activeSuppliers := int64(len(s.activeSuppliers))
 		// Suppliers increment is different from the other actors and have a dedicated
@@ -476,11 +483,11 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() chann
 			return nil, true
 		}
 
-		return &stakingInfoNotif{
-			sessionInfoNotif: *notif,
-			newApps:          newApps,
-			newGateways:      newGateways,
-			newSuppliers:     newSuppliers,
+		return &stakingInfoNotification{
+			sessionInfoNotification: *notif,
+			newApps:                 newApps,
+			newGateways:             newGateways,
+			newSuppliers:            newSuppliers,
 		}, false
 	}
 }
@@ -492,8 +499,8 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() chann
 // txs to be committed before sending staking & delegation txs for new applications.
 func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 	ctx context.Context,
-	notif *stakingInfoNotif,
-) (*stakingInfoNotif, bool) {
+	notif *stakingInfoNotification,
+) (*stakingInfoNotification, bool) {
 	// Ensure that new gateways and suppliers are staked.
 	// Ensure that new applications are funded and have an account entry onchain
 	// so that they can stake and delegate in the next block.
@@ -515,7 +522,7 @@ func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 		return nil, true
 	}
 
-	s.sendStakeAndDelegateAppsTxs(&notif.sessionInfoNotif, notif.newApps, notif.newGateways)
+	s.sendStakeAndDelegateAppsTxs(&notif.sessionInfoNotification, notif.newApps, notif.newGateways)
 
 	return notif, false
 }
@@ -594,7 +601,7 @@ func (s *relaysSuite) addPendingFundMsg(addr string, coins sdk.Coins) {
 // sendFundNewAppsTx creates the applications given the next appIncAmt and sends
 // the corresponding funding transaction.
 func (s *relaysSuite) sendFundNewAppsTx(
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	appIncrementPlan *actorLoadTestIncrementPlan,
 ) (newApps []*accountInfo) {
 	appCount := int64(len(s.activeApplications) + len(s.preparedApplications))
@@ -698,7 +705,7 @@ func (s *relaysSuite) addPendingDelegateToGatewayMsg(application, gateway *accou
 // the active and new gateways.
 // It also ensures that new gateways are delegated to by already active applications.
 func (s *relaysSuite) sendStakeAndDelegateAppsTxs(
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	newApps, newGateways []*accountInfo,
 ) {
 
@@ -751,7 +758,7 @@ func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) 
 // TODO_TECHDEBT(@bryanchriswhite): move to a new file.
 func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	sharedParams *sharedtypes.Params,
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
@@ -777,7 +784,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 // available for the beginning of the next one.
 func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	sharedParams *sharedtypes.Params,
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
@@ -844,7 +851,7 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 
 // sendStakeSuppliersTxs increments the number of suppliers to be staked.
 func (s *relaysSuite) sendStakeSuppliersTxs(
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	supplierIncrementPlan *actorLoadTestIncrementPlan,
 ) (newSuppliers []*accountInfo) {
 	supplierCount := int64(len(s.activeSuppliers))
@@ -911,7 +918,7 @@ func (s *relaysSuite) sendInitialActorsStakeMsgs(
 // sendStakeGatewaysTxs stakes the next gatewayInc number of gateways, picks their address
 // from the provisioned gateways list and sends the corresponding stake transactions.
 func (s *relaysSuite) sendStakeGatewaysTxs(
-	sessionInfo *sessionInfoNotif,
+	sessionInfo *sessionInfoNotification,
 	gatewayIncrementPlan *actorLoadTestIncrementPlan,
 ) (newGateways []*accountInfo) {
 	gatewayCount := int64(len(s.activeGateways) + len(s.preparedGateways))
@@ -1289,7 +1296,7 @@ func (s *relaysSuite) getProvisionedActorsCurrentStakedAmount() int64 {
 
 // activatePreparedActors checks if the session has started and activates the
 // prepared actors by moving them to the active list.
-func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
+func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotification) {
 	if notif.blockHeight == notif.sessionStartBlockHeight {
 		logger.Debug().
 			Int64("session_num", notif.sessionNumber).
@@ -1559,7 +1566,7 @@ func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
 // new applications were successfully staked and all application actors are delegated
 // to all gateways. Then it adds the new application actors to the prepared set, to
 // be activated & used in the next session.
-func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(ctx context.Context, notif *stakingInfoNotif) {
+func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(ctx context.Context, notif *stakingInfoNotification) {
 	testdelays.WaitAll(
 		func() { s.ensureStakedActors(ctx, notif.newApps) },
 		func() { s.ensureDelegatedApps(ctx, s.activeApplications, notif.newGateways) },
@@ -1578,7 +1585,7 @@ func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(ctx context.Context
 // to the maximum logical concurrency supported (or configured).
 //
 // See: https://pkg.go.dev/runtime#GOMAXPROCS
-func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchInfo *relayBatchInfoNotif) {
+func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchInfo *relayBatchInfoNotification) {
 	// Limit the number of concurrent requests to maxConcurrentRequestLimit.
 	batchLimiter := sync2.NewLimiter(maxConcurrentRequestLimit)
 

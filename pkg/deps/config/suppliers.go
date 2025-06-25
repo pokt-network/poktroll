@@ -83,14 +83,15 @@ func NewSupplyCometClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 
-		// Convert the host to a websocket URL
-		cometClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL.String())
+		// Inject the logger from the deps
+		var logger polylog.Logger
+		err := depinject.Inject(deps, &logger)
 		if err != nil {
 			return nil, err
 		}
 
-		var logger polylog.Logger
-		err = depinject.Inject(deps, &logger)
+		// Convert the query node RPC URL to a comet client
+		cometClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL.String())
 		if err != nil {
 			return nil, err
 		}
@@ -103,13 +104,14 @@ func NewSupplyCometClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 		cometLogger := polylog.ToCometLogger(logger.With("component", "comet-client"))
 		cometClient.SetLogger(cometLogger)
 
-		// IMPORTANT: The CometBFT client must be started immediately after creation.
+		// IMPORTANT: The CometBFT client MUST be started immediately after creation.
 		// This ensures the client is fully initialized before any dependent components
 		// attempt to use it for subscriptions, preventing connection errors.
 		if err := cometClient.Start(); err != nil {
 			return nil, err
 		}
 
+		// Inject the comet client into the deps
 		return depinject.Configs(deps, depinject.Supply(cometClient)), nil
 	}
 }

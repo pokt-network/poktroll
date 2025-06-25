@@ -30,7 +30,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	// Log the number of suppliers
-	rp.logger.Info().Msgf("⚙️ %d Suppliers configured in this RelayMiner", len(configuredSuppliers))
+	rp.logger.Info().Msgf("[CONFIG] ⚙️ Number of Suppliers configured in this RelayMiner: %d", len(configuredSuppliers))
 
 	var err error
 	if rp.servers, err = rp.initializeProxyServers(); err != nil {
@@ -82,22 +82,21 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 // server configs. This is useful for debugging and understanding which services
 // the RelayMiner is configured to handle.
 func (rp *relayerProxy) logRelayMinerConfiguredServices(supplierOperatorAddress string) {
-
-	availableConfigs := make(map[string]struct{})
+	relayMinerConfiguredServices := make(map[string]struct{})
 	for _, serviceConfig := range rp.serverConfigs {
 		for serviceId := range serviceConfig.SupplierConfigsMap {
-			availableConfigs[serviceId] = struct{}{}
+			relayMinerConfiguredServices[serviceId] = struct{}{}
 		}
 	}
 
-	availableServices := make([]string, 0, len(availableConfigs))
-	for serviceId := range availableConfigs {
-		availableServices = append(availableServices, serviceId)
+	configuredServices := make([]string, 0, len(relayMinerConfiguredServices))
+	for serviceId := range relayMinerConfiguredServices {
+		configuredServices = append(configuredServices, serviceId)
 	}
 	rp.logger.Info().Msgf(
-		"[RelayMiner] ⚙️ configured services for supplier %q: [%s]",
+		"[RelayMiner] ⚙️ List of services RelayMiner is configured to handle on behalf of supplier %q: [%s]",
 		supplierOperatorAddress,
-		strings.Join(availableServices, ", "),
+		strings.Join(configuredServices, ", "),
 	)
 
 }
@@ -115,13 +114,13 @@ func (rp *relayerProxy) logSupplierServices(ctx context.Context, supplierOperato
 		)
 	}
 
-	configuredServices := make([]string, 0)
+	stakedServices := make([]string, 0)
 	for _, serviceConfig := range supplier.Services {
-		configuredServices = append(configuredServices, serviceConfig.ServiceId)
+		stakedServices = append(stakedServices, serviceConfig.ServiceId)
 	}
 	rp.logger.Info().Msgf(
-		"[Supplier] 📥 staked services %q: [%s]",
+		"[Supplier] 📥 List of services staked for by Supplier %q: [%s]",
 		supplierOperatorAddress,
-		strings.Join(configuredServices, ", "),
+		strings.Join(stakedServices, ", "),
 	)
 }

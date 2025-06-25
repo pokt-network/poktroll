@@ -206,9 +206,9 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 
 			// Do not alarm the RelayMiner operator if the error is a client error
 			if ErrRelayerProxyInternalError.Is(err) {
-				server.logger.Error().Err(err).Msgf("❌ Failed serving synchronous relay request. This could be a configuration issue on the RelayMiner! Please check your setup. ⚙️🛠️")
+				server.logger.Error().Err(err).Msgf("❌ Failed serving synchronous relay request. This COULD be a configuration issue on the RelayMiner! Please check your setup. ⚙️🛠️")
 			} else {
-				server.logger.Error().Err(err).Msgf("⚠️ Failed serving synchronous relay request. This is likely a client error.")
+				server.logger.Error().Err(err).Msgf("⚠️ Failed serving synchronous relay request. This MIGHT be a client error.")
 			}
 			return
 		}

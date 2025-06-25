@@ -13,40 +13,48 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-// subscriptionClient is the name of the subscription client used to subscribe
+// subscriptionReplayClient is the name of the subscription client used to subscribe
 // to events via the CometBFT WebSocket connection.
-const subscriptionClient = "replay-client"
+const subscriptionReplayClient = "replay-client"
 
 // Enforce the EventsReplayClient interface is implemented by the replayClient type.
 var _ client.EventsReplayClient[any] = (*replayClient[any])(nil)
 
-// NewEventsFn is a function that takes a byte slice and returns a new instance
-// of the generic type T.
+// NewEventsFn is a function that converts a ResultEvent into a new generic type T instance
 type NewEventsFn[T any] func(*coretypes.ResultEvent) (T, error)
 
-// replayClient implements the EventsReplayClient interface for a generic type T,
-// and replay observable for type T.
+// replayClient:
+// - Implements the EventsReplayClient interface for a generic type T
+// - Provides a replay observable for type T
+
 type replayClient[T any] struct {
 	logger polylog.Logger
-	// queryString is the query string used to subscribe to events of the
-	// desired type.
-	// See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
-	// and: https://docs.cosmos.network/main/learn/advanced/events#default-events
+
+	// queryString:
+	// - Query string used to subscribe to events of the desired type
+	// - See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
+	// - See: https://docs.cosmos.network/main/learn/advanced/events#default-events
 	queryString string
-	// cometClient is the CometBFT client used to subscribe to events via the WebSocket connection.
-	// It provides direct access to the node's RPC endpoints for event subscription.
+
+	// cometClient:
+	// - CometBFT client used to subscribe to events via the WebSocket connection
+	// - Provides direct access to the node's RPC endpoints for event subscription
 	cometClient cometclient.Client
-	// eventDecoder is a function which decodes event subscription into the type
-	// defined by the EventsReplayClient's generic type parameter.
+
+	// eventDecoder:
+	// - Function which decodes event subscription into the type defined by the EventsReplayClient's generic type parameter
 	eventDecoder NewEventsFn[T]
-	// replayObsBufferSize is the buffer size for the replay observable returned
-	// by EventsSequence, this can be any integer and it refers to the number of
-	// notifications the replay observable will hold in its buffer, that can be
-	// replayed to new observers.
-	// NB: This is not the buffer size of the replayObsCache
+
+	// replayObsBufferSize:
+	// - Buffer size for the replay observable returned by EventsSequence
+	// - Can be any integer; refers to the number of notifications the replay observable will hold in its buffer
+	// - Notifications can be replayed to new observers
+	// - NB: This is not the buffer size of the replayObsCache
 	replayObsBufferSize int
+
 	// eventTypeObs is the replay observable for the generic type T.
 	eventTypeObs observable.ReplayObservable[T]
+
 	// replayEventTypeObsCh is the channel used to publish events of type T
 	replayEventTypeObsCh chan<- T
 }
@@ -88,7 +96,7 @@ func NewEventsReplayClient[T any](
 		rClient.replayObsBufferSize,
 	)
 
-	resultEventCh, err := rClient.cometClient.Subscribe(ctx, subscriptionClient, rClient.queryString)
+	resultEventCh, err := rClient.cometClient.Subscribe(ctx, subscriptionReplayClient, rClient.queryString)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +137,7 @@ func (rClient *replayClient[T]) goPublishEvents(resultEventCh <-chan coretypes.R
 			// Attempt to decode the raw event bytes into the target type T
 			event, err := rClient.eventDecoder(&resultEvent)
 			if err != nil {
-				rClient.logger.Error().Msgf("❌ Event decoding failed!. 🔄 Continuing with next event...", err)
+				rClient.logger.Error().Err(err).Msgf("❌ Event decoding failed! 🔄 Skipping and moving to the next event.")
 				continue
 			}
 

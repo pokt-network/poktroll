@@ -100,14 +100,18 @@ type relaysSuite struct {
 
 	// eventsReplayClient notifies the test suite of new blocks committed.
 	eventsReplayClient client.EventsReplayClient[*block.CometNewBlockEvent]
+
 	// latestBlock is continuously updated with the latest committed block.
 	latestBlock *block.CometNewBlockEvent
+
 	// sessionInfoObs is the observable that maps committed blocks to session information.
 	// It is used to determine when to stake new actors and when they become active.
-	sessionInfoObs observable.Observable[*sessionInfoNotif]
+	sessionInfoObs observable.Observable[*sessionInfoNotification]
+
 	// batchInfoObs is the observable mapping session information to batch information.
 	// It is used to determine when to send a batch of relay requests to the network.
-	batchInfoObs observable.Observable[*relayBatchInfoNotif]
+	batchInfoObs observable.Observable[*relayBatchInfoNotification]
+
 	// txContext is the transaction context used to sign and send transactions.
 	txContext client.TxContext
 
@@ -225,26 +229,26 @@ func (ai *accountInfo) addPendingMsg(msg sdk.Msg) {
 	ai.pendingMsgs = append(ai.pendingMsgs, msg)
 }
 
-// sessionInfoNotif is a struct containing the session information of a block.
-type sessionInfoNotif struct {
+// sessionInfoNotification is a struct containing the session information of a block.
+type sessionInfoNotification struct {
 	blockHeight             int64
 	sessionNumber           int64
 	sessionStartBlockHeight int64
 	sessionEndBlockHeight   int64
 }
 
-// relayBatchInfoNotif is a struct containing the batch information used to calculate
+// relayBatchInfoNotification is a struct containing the batch information used to calculate
 // and schedule the relay requests to be sent.
-type relayBatchInfoNotif struct {
-	sessionInfoNotif
+type relayBatchInfoNotification struct {
+	sessionInfoNotification
 	prevBatchTime time.Time
 	nextBatchTime time.Time
 	appAccounts   []*accountInfo
 	gateways      []*accountInfo
 }
 
-type stakingInfoNotif struct {
-	sessionInfoNotif
+type stakingInfoNotification struct {
+	sessionInfoNotification
 	newApps      []*accountInfo
 	newGateways  []*accountInfo
 	newSuppliers []*accountInfo
@@ -416,7 +420,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 	// relayBatchInfoObs maps session information to batch information used to schedule
 	// the relay requests to be sent on the current block.
-	relayBatchInfoObs, relayBatchInfoPublishCh := channel.NewReplayObservable[*relayBatchInfoNotif](s.ctx, 5)
+	relayBatchInfoObs, relayBatchInfoPublishCh := channel.NewReplayObservable[*relayBatchInfoNotification](s.ctx, 5)
 	s.batchInfoObs = relayBatchInfoObs
 
 	// sessionInfoObs asynchronously maps committed blocks to a notification which

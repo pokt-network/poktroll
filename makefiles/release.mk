@@ -72,48 +72,6 @@ release_tag_local_testing: ## Tag a new local testing release (e.g. v1.0.1 -> v1
 	echo "  git push origin $$NEW_TAG"; \
 	echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new";
 
-.PHONY: release_tag_dev
-release_tag_dev: ## Tag a new dev release for unmerged PRs (e.g. v1.0.1-dev-feat-xyz, v1.0.1-dev-pr-123)
-	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | head -n 1))
-	@$(eval CURRENT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD))
-	@$(eval SHORT_COMMIT=$(shell git rev-parse --short HEAD))
-	@$(eval TIMESTAMP=$(shell date +%Y%m%d-%H%M%S))
-	@if [ "$(CURRENT_BRANCH)" = "main" ] || [ "$(CURRENT_BRANCH)" = "master" ]; then \
-		echo "Error: Cannot create dev tag from main/master branch. Switch to a feature branch first."; \
-		exit 1; \
-	fi; \
-	if [ -n "$$(git status --porcelain)" ]; then \
-		echo "Warning: Working directory has uncommitted changes."; \
-		read -p "Continue anyway? (y/N): " confirm; \
-		if [ "$$confirm" != "y" ] && [ "$$confirm" != "Y" ]; then \
-			echo "Aborted."; \
-			exit 1; \
-		fi; \
-	fi; \
-	BRANCH_CLEAN=$$(echo $(CURRENT_BRANCH) | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$$//g'); \
-	NEW_TAG="$(LATEST_TAG)-dev-$$BRANCH_CLEAN-$(SHORT_COMMIT)"; \
-	git tag $$NEW_TAG; \
-	echo "########"; \
-	echo "New dev version tagged: $$NEW_TAG"; \
-	echo "Branch: $(CURRENT_BRANCH)"; \
-	echo "Commit: $(SHORT_COMMIT)"; \
-	echo ""; \
-	echo "Next, do the following:"; \
-	echo "1. Run the following commands to push the new tag:"; \
-	echo "   git push origin $$NEW_TAG"; \
-	echo "2. And draft a new release at https://github.com/pokt-network/poktroll/releases/new"; \
-	echo "   - Mark it as a pre-release"; \
-	echo "   - Include PR/branch information in the description"; \
-	echo ""; \
-	echo "If you need to delete a tag, run:"; \
-	echo "  git tag -d $$NEW_TAG"; \
-	echo "If you need to delete a tag remotely, run:"; \
-	echo "  git push origin --delete $$NEW_TAG"; \
-	echo ""; \
-	echo "Visit this URL for more info: https://dev.poktroll.com/explore/account_management/pocketd_cli?_highlight=cli"; \
-	echo "########"
-
-
 .PHONY: release_tag_rc
 release_tag_rc: ## Tag a new rc release (e.g. v1.0.1 -> v1.0.1-rc1, v1.0.1-rc1 -> v1.0.1-rc2)
 	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | head -n 1))

@@ -4,6 +4,7 @@ import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 )
 
@@ -39,7 +40,7 @@ func (blockEvent *CometNewBlockEvent) Events() []abcitypes.Event {
 	return blockEvent.ResultFinalizeBlock.Events
 }
 
-// Events returns the list of ABCI events emitted during block finalization.
+// TxResults returns the list of ABCI transaction results emitted during block finalization.
 func (blockEvent *CometNewBlockEvent) TxResults() []*abcitypes.ExecTxResult {
 	return blockEvent.ResultFinalizeBlock.TxResults
 }
@@ -61,7 +62,7 @@ func (blockHeader *CometNewBlockHeader) Height() int64 {
 // It uses BlockID.Hash, not LastBlockID.Hash, to ensure the hash corresponds to the current block.
 func (blockHeader *CometNewBlockHeader) Hash() []byte {
 	// Use BlockID.Hash and not LastBlockID.Hash because the latter refers to the
-	// previous block's hash, not the hash of the block being fetched
+	// previous block's hash, not the hash of the block being fetched.
 	// see: https://docs.cometbft.com/v0.37/spec/core/data_structures#blockid
 	// see: https://docs.cometbft.com/v0.37/spec/core/data_structures#header -> LastBlockID
 	return blockHeader.EventDataNewBlockHeader.Header.Hash()
