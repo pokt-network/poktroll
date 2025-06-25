@@ -13,10 +13,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/cmd/signals"
-	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 )
@@ -30,7 +29,7 @@ import (
 // - Cache various data
 // - Rate limit incoming requests
 func startCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmdStart := &cobra.Command{
 		Use:   "start --config <path-to-relay-miner-config-file> --chain-id <chain-id>",
 		Short: "Start a RelayMiner",
 		Long: `Start a RelayMiner Process.
@@ -47,26 +46,28 @@ RelayMiner Responsibilities:
 		RunE: runRelayer,
 	}
 
-	// Custom flags
-	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "(Required) The path to the relayminer config file")
-	cmd.Flags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "(Optional) Enable or disable onchain query caching")
+	// Global logger flags
+	// DEV_NOTE: Since the root command runs logger.PreRunESetup(), we need to ensure that the log level and output flags are registered on this subcommand.
+	cmdStart.PersistentFlags().StringVar(&logger.LogLevel, cosmosflags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
+	cmdStart.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
-	// Cosmos flags
-	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, flags.OmittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
-	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
-	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
-	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
-	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
-	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.7, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
-	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
+	// Custom flags
+	cmdStart.Flags().StringVar(&relayMinerConfigPath, FlagConfig, DefaultFlagConfig, FlagConfigUsage)
+	cmdStart.Flags().BoolVar(&queryCachingEnabled, flags.FlagQueryCaching, flags.DefaultFlagQueryCaching, flags.FlagQueryCachingUsage)
+
+	// Required cosmos-sdk CLI query flags.
+	cmdStart.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, flags.FlagGRPCUsage)
+	cmdStart.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, flags.FlagGRPCInsecureUsage)
+
+	// This command depends on the conventional cosmos-sdk CLI tx flags.
+	cosmosflags.AddTxFlagsToCmd(cmdStart)
 
 	// Required flags
-	_ = cmd.MarkFlagRequired("config")
+	_ = cmdStart.MarkFlagRequired(FlagConfig)
 	// TODO_TECHDEBT(@olshansk): Consider making this part of the relay miner config file or erroring in a more user-friendly way.
-	_ = cmd.MarkFlagRequired(cosmosflags.FlagChainID)
+	_ = cmdStart.MarkFlagRequired(cosmosflags.FlagChainID)
 
-	return cmd
+	return cmdStart
 }
 
 // runRelayer starts the relay miner with the provided configuration and context.
@@ -80,25 +81,16 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
-	// Set up logger options
-	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
-	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
-		polyzero.WithOutput(os.Stderr),
-	}
-
-	// Construct logger and associate with command context
-	logger := polyzero.NewLogger(loggerOpts...)
-	ctx = logger.WithContext(ctx)
-	cmd.SetContext(ctx)
+	// Retrieve the logger from the command context.
+	logger := polylog.Ctx(cmd.Context())
 
 	// Handle interrupt/kill signals asynchronously
 	signals.GoOnExitSignal(logger, cancelCtx)
 
 	// Read relay miner config file
-	configContent, err := os.ReadFile(flagRelayMinerConfig)
+	configContent, err := os.ReadFile(relayMinerConfigPath)
 	if err != nil {
-		fmt.Printf("Could not read config file from: %s\n", flagRelayMinerConfig)
+		fmt.Printf("Could not read config file from: %s\n", relayMinerConfigPath)
 		return err
 	}
 
@@ -106,7 +98,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// TODO_IMPROVE: Add logger level/output options to config.
 	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(configContent)
 	if err != nil {
-		fmt.Printf("Could not parse config file from: %s\n", flagRelayMinerConfig)
+		fmt.Printf("Could not parse config file from: %s\n", relayMinerConfigPath)
 		return err
 	}
 
@@ -116,7 +108,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Log query caching status
-	if flagQueryCaching {
+	if queryCachingEnabled {
 		logger.Info().Msg("query caching ENABLED")
 	} else {
 		logger.Info().Msg("query caching DISABLED")
@@ -185,13 +177,12 @@ func logFlagValues(logger polylog.Logger, cmd *cobra.Command) error {
 	clientCtx := client.GetClientContextFromCmd(cmd)
 
 	logger.Info().Msgf(
-		"Config in use: chain_id: %s, version: %s, home: %s, keyring_backend: %s, keyring_dir: %s, grpc_insecure: %s",
+		"Config in use: chain_id: %s, version: %s, home: %s, keyring_backend: %s, keyring_dir: %s",
 		clientCtx.ChainID,
 		version.NewInfo().Version,
 		clientCtx.HomeDir,
 		clientCtx.Keyring.Backend(),
 		clientCtx.KeyringDir,
-		cmd.Flag(cosmosflags.FlagGRPCInsecure).Value.String(),
 	)
 
 	return nil
