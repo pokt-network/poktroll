@@ -55,6 +55,9 @@ jobs:
           
           # POKT <> Upbit
           CHAT_15="-1002653157934"
+          
+          # KuCoin <> POKT
+          CHAT_16="-775612675"
 
           MESSAGE="📦 New Release: *${{ github.event.release.name }}*\n[View Release](${{ github.event.release.html_url }})\n\n${{ github.event.release.body }}"
 
@@ -160,5 +163,12 @@ jobs:
           echo "Sending to POKT <> Upbit ($CHAT_15)"
           curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
             -d chat_id="$CHAT_15" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"
+            
+          # Send to KuCoin <> POKT
+          echo "Sending to KuCoin <> POKT ($CHAT_16)"
+          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+            -d chat_id="$CHAT_16" \
             -d text="$MESSAGE" \
             -d parse_mode="Markdown"
