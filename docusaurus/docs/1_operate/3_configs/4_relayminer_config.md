@@ -27,6 +27,7 @@ You can find a fully featured example configuration at [relayminer_config_full_e
 - [Global options](#global-options)
   - [`default_signing_key_names`](#default_signing_key_names)
   - [`default_request_timeout_seconds`](#default_request_timeout_seconds)
+  - [`default_max_body_size`](#default_max_body_size)
   - [`smt_store_path`](#smt_store_path)
   - [`enable_over_servicing`](#enable_over_servicing)
   - [`metrics`](#metrics)
@@ -126,6 +127,7 @@ and `supplier` specific sections and configurations.
 ```yaml
 default_signing_key_names: [<string>, <string>]
 default_request_timeout_seconds: <uint64>
+default_max_body_size: <string>
 smt_store_path: <string>
 enable_over_servicing: <boolean>
 ```
@@ -154,6 +156,21 @@ is configured, the `RelayMiner` will use a system default.
 
 This timeout applies to the duration that the `RelayMiner` will wait for a response
 from the backend service before considering the request as timed out.
+
+### `default_max_body_size`
+
+_`Optional`_
+
+The default max payload size for requests and responses. This value is used
+when a supplier does not specify its own `max_body_size` configuration.
+If neither `default_max_body_size` nor supplier-specific `max_body_size`
+is configured, the `RelayMiner` will use a system default.
+
+This max payload size applies to the request and response size that the `RelayMiner` will accepts.
+
+Supports common unit suffixes like `B`, `KB`, `MB`, `GB`, or `TB`
+
+Defaults to: 20MB
 
 ### `smt_store_path`
 
@@ -337,6 +354,22 @@ If not specified, the `default_request_timeout_seconds` will be used.
 This timeout controls how long the `RelayMiner` will wait for a response from
 the backend service before considering the request as failed and returning a
 timeout error to the client.
+
+### `max_body_size`
+
+_`Optional`_
+
+The max body size for relay requests specific to a supplier's service.
+This value overrides the global `default_max_body_size` setting for
+this particular supplier's service.
+
+If not specified, the `default_max_body_size` will be used.
+
+This max payload size applies to the request and response size that the `RelayMiner` will accepts.
+
+Supports common unit suffixes like `B`, `KB`, `MB`, `GB`, or `TB`
+
+Defaults to: 20MB
 
 ### `service_config`
 

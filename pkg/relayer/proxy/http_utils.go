@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"google.golang.org/protobuf/proto"
 
@@ -14,10 +15,6 @@ import (
 )
 
 const (
-	// TODO_IMPROVE: Make this a RelayMiner config parameter
-	// TODO_IMPROVE: Make this configurable on a per-service basis
-	defaultMaxBodySize = 20 * 1024 * 1024 // 20MB max request/response body size
-
 	// Buffer pool allocation size - 8MB should handle most realistic body sizes efficiently
 	bufferPoolSize = 8 * 1024 * 1024 // 8MB
 )
@@ -58,8 +55,8 @@ func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]b
 	defer CloseRequestBody(logger, body)
 
 	if maxSize <= 0 {
-		logger.Warn().Msgf("SHOULD NOT HAPPEN: Max body size is less than or equal to 0, using default max body size of %d", defaultMaxBodySize)
-		maxSize = defaultMaxBodySize
+		logger.Warn().Msgf("SHOULD NOT HAPPEN: Max body size is less than or equal to 0, using default max body size of %d", config.DefaultMaxBodySize)
+		maxSize = config.DefaultMaxBodySize
 	}
 
 	// Create a limited reader that will read at most maxSize+1 bytes
@@ -110,9 +107,10 @@ func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]b
 func SerializeHTTPResponse(
 	logger polylog.Logger,
 	response *http.Response,
+	maxBodySize int64,
 ) (poktHTTPResponse *sdktypes.POKTHTTPResponse, poktHTTPResponseBz []byte, err error) {
 	// Read the response body with size limits
-	responseBodyBz, err := SafeReadBody(logger, response.Body, defaultMaxBodySize)
+	responseBodyBz, err := SafeReadBody(logger, response.Body, maxBodySize)
 	if err != nil {
 		return nil, nil, fmt.Errorf("❌ failed to read response body: %w", err)
 	}

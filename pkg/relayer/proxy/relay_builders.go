@@ -9,9 +9,9 @@ import (
 )
 
 // newRelayRequest builds a RelayRequest from an http.Request.
-func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
+func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request, maxBodySize int64) (*types.RelayRequest, error) {
 	// Replace DefaultMaxBodySize with config options
-	requestBody, err := SafeReadBody(sync.logger, request.Body, defaultMaxBodySize)
+	requestBody, err := SafeReadBody(sync.logger, request.Body, maxBodySize)
 	if err != nil {
 		return &types.RelayRequest{}, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}

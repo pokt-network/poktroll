@@ -20,6 +20,7 @@ const (
 type YAMLRelayMinerConfig struct {
 	DefaultSigningKeyNames       []string                       `yaml:"default_signing_key_names"`
 	DefaultRequestTimeoutSeconds uint64                         `yaml:"default_request_timeout_seconds"`
+	DefaultMaxBodySize           string                         `yaml:"default_max_body_size"`
 	Metrics                      YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
 	PocketNode                   YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
 	Pprof                        YAMLRelayMinerPprofConfig      `yaml:"pprof"`
@@ -70,6 +71,7 @@ type YAMLRelayMinerSupplierConfig struct {
 	ServiceId             string                              `yaml:"service_id"`
 	SigningKeyNames       []string                            `yaml:"signing_key_names"`
 	RequestTimeoutSeconds uint64                              `yaml:"request_timeout_seconds"`
+	MaxBodySize           string                              `yaml:"max_body_size"`
 	XForwardedHostLookup  bool                                `yaml:"x_forwarded_host_lookup"`
 }
 
@@ -101,6 +103,7 @@ type YAMLRelayMinerPprofConfig struct {
 type RelayMinerConfig struct {
 	DefaultSigningKeyNames       []string
 	DefaultRequestTimeoutSeconds uint64
+	DefaultMaxBodySize           int64
 	Metrics                      *RelayMinerMetricsConfig
 	PocketNode                   *RelayMinerPocketNodeConfig
 	Pprof                        *RelayMinerPprofConfig
@@ -144,6 +147,8 @@ type RelayMinerServerConfig struct {
 	XForwardedHostLookup bool
 	// SupplierConfigsMap is a map of serviceIds -> RelayMinerSupplierConfig
 	SupplierConfigsMap map[string]*RelayMinerSupplierConfig
+	// MaxBodySize specifies the maximum allowed size in bytes for the request/response body that the server will accept.
+	MaxBodySize int64
 }
 
 // RelayMinerMetricsConfig is the structure resulting from parsing the metrics
