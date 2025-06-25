@@ -607,7 +607,7 @@ In your RPC node's `config.toml` file, you must adjust the following parameters:
 
 # [rpc] section
 
-# Set max_subscriptions_per_client  > (num_suppliers   + num_relayminers)
+# Set max_subscriptions_per_client  > (num_suppliers + num_relayminers)
 max_subscriptions_per_client = <VALUE>
 
 # Set max_open_connections > (2 * num_relayminers)

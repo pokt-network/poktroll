@@ -49,7 +49,6 @@ type replayClient[T any] struct {
 	// - Buffer size for the replay observable returned by EventsSequence
 	// - Can be any integer; refers to the number of notifications the replay observable will hold in its buffer
 	// - Notifications can be replayed to new observers
-	// - NB: This is not the buffer size of the replayObsCache
 	replayObsBufferSize int
 
 	// eventTypeObs is the replay observable for the generic type T.
