@@ -397,7 +397,10 @@ func processStreamRequest(ctx context.Context,
 	logger.Info().Msgf("🌊 Handling streaming response with status:")
 
 	// Check if this is SSE (used below, if this is SSE we will unmarshal)
-	isSSE := strings.EqualFold(httpResp.Header.Get("Content-Type"), "text/event-stream")
+	isSSE := strings.Contains(strings.ToLower(httpResp.Header.Get("Content-Type")), "text/event-stream")
+	if isSSE {
+		logger.Info().Msgf("🔍 Detected SSE stream, we will try to unmarshal.")
+	}
 
 	// Start handling the body chunks
 	scanner := bufio.NewScanner(httpResp.Body)
