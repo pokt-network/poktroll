@@ -32,6 +32,17 @@ default_ibc_validator_configs = {
         # TODO_IMPROVE: can we consolidate this with the chart_name?
         "image_name": "axelar",
         "port_forwards": ["56657:26657", "12090:9090", "40010:40010"]
+    },
+    "osmosis": {
+        "enabled": False,
+        "chain_id": "osmosis",
+        "values_path": os.path.join("localnet", "kubernetes", "values-osmosis.yaml"),
+        "tilt_ui_name": "Osmosis Validator",
+        "chart_name": "osmosis-validator",
+        "dockerfile_path": os.path.join("localnet", "dockerfiles", "osmosis-validator.dockerfile"),
+        # TODO_IMPROVE: can we consolidate this with the chart_name?
+        "image_name": "osmosis",
+        "port_forwards": ["57657:26657", "13090:9090", "40011:40011"]
     }
 }
 
