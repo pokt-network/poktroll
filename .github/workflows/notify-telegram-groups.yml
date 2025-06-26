@@ -85,6 +85,10 @@ jobs:
           # Function to convert markdown to HTML for better Telegram compatibility
           convert_markdown_to_html() {
             echo "$1" | \
+            # Convert [text](url) links to <a href="url">text</a>
+            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
+            # Convert `code` to <code>code</code>
+            sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
             # Convert **bold** to <b>bold</b>
             sed 's/\*\*\([^*]*\)\*\*/\<b\>\1\<\/b\>/g' | \
             # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
