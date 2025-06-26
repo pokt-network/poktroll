@@ -82,8 +82,26 @@ jobs:
           EOF
           )
 
-          # Create message with HTML formatting (more reliable than Markdown)
-          MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$RELEASE_BODY")
+          # Function to convert markdown to HTML for better Telegram compatibility
+          convert_markdown_to_html() {
+            echo "$1" | \
+            # Convert **bold** to <b>bold</b>
+            sed 's/\*\*\([^*]*\)\*\*/\<b\>\1\<\/b\>/g' | \
+            # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
+            sed 's/\([^*]\)\*\([^*][^*]*[^*]\)\*\([^*]\)/\1\<i\>\2\<\/i\>\3/g' | \
+            # Convert ## headers to <b>headers</b>
+            sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
+            # Convert ### headers to <b>headers</b>
+            sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
+            # Convert ❗️ and other emojis that might be escaped
+            sed 's/❗️/❗/g'
+          }
+
+          # Convert the release body from markdown to HTML
+          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+
+          # Create message with HTML formatting
+          MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
 
           # Function to send message to a chat
           send_message() {
