@@ -82,34 +82,34 @@ jobs:
           EOF
           )
 
-          # Create message with proper escaping for MarkdownV2
-          MESSAGE=$(printf "📣 The *%s release is live\\! 📣*\n[View the full release here](%s)\\.\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$RELEASE_BODY")
+          # Create message with Markdown formatting (simpler than MarkdownV2)
+          MESSAGE=$(printf "📣 The *%s release is live!* 📣\n[View the full release here](%s)\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$RELEASE_BODY")
 
           # Function to send message to a chat
           send_message() {
             local chat_id="$1"
             local chat_name="$2"
-            echo "Sending to $chat_name ($chat_id)"
+            echo "Sending to $chat_id ($chat_name)"
             curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
               -d chat_id="$chat_id" \
-              -d parse_mode="MarkdownV2" \
+              -d parse_mode="Markdown" \
               --data-urlencode text="$MESSAGE"
           }
 
           # Send to all chats
           send_message "$CHAT_1" "Pocket Network Bot Testing Group"
-          # send_message "$CHAT_2" "BitGet <> Pocket Network (POKT)"
-          # send_message "$CHAT_3" "ByBit <> POKT"
-          # send_message "$CHAT_4" "CoinEx <> POKT"
-          # send_message "$CHAT_5" "Mr. Yang <> Grove / POKT"
-          # send_message "$CHAT_6" "MEXC <> POKT"
-          # send_message "$CHAT_7" "OKX <> Pocket Network"
-          # send_message "$CHAT_8" "OrangeX <> Grove (POKT)"
-          # send_message "$CHAT_9" "POKT & Gate.io"
-          # send_message "$CHAT_10" "POKT Network | AscendEX"
-          # send_message "$CHAT_11" "Uphold <> Grove (POKT)"
-          # send_message "$CHAT_12" "Pokt <> Kraken {EF introduction}"
-          # send_message "$CHAT_13" "Bitrue & Pocket Network"
-          # send_message "$CHAT_14" "HTX <> POKT"
-          # send_message "$CHAT_15" "POKT <> Upbit"
-          # send_message "$CHAT_16" "KuCoin <> POKT"
+          send_message "$CHAT_2" "BitGet <> Pocket Network (POKT)"
+          send_message "$CHAT_3" "ByBit <> POKT"
+          send_message "$CHAT_4" "CoinEx <> POKT"
+          send_message "$CHAT_5" "Mr. Yang <> Grove / POKT"
+          send_message "$CHAT_6" "MEXC <> POKT"
+          send_message "$CHAT_7" "OKX <> Pocket Network"
+          send_message "$CHAT_8" "OrangeX <> Grove (POKT)"
+          send_message "$CHAT_9" "POKT & Gate.io"
+          send_message "$CHAT_10" "POKT Network | AscendEX"
+          send_message "$CHAT_11" "Uphold <> Grove (POKT)"
+          send_message "$CHAT_12" "Pokt <> Kraken {EF introduction}"
+          send_message "$CHAT_13" "Bitrue & Pocket Network"
+          send_message "$CHAT_14" "HTX <> POKT"
+          send_message "$CHAT_15" "POKT <> Upbit"
+          send_message "$CHAT_16" "KuCoin <> POKT"
