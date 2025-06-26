@@ -600,10 +600,9 @@ func TestMsgServer_StakeSupplier_SignerOwnerStakeDestination(t *testing.T) {
 
 	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
 
-	// Calculate the operator's initial balance
+	// Calculate and set the operator's initial balance
 	initialStake := minStake * 2
 	supplierStakingFee := supplierModuleKeepers.Keeper.GetParams(ctx).StakingFee
-	expectedSignerBalance := supplierStakingFee.Amount.Int64() + initialStake
 	// Set the operator's initial balance to cover the stake and fee
 	supplierModuleKeepers.SupplierBalanceMap[operatorAddr] = expectedSignerBalance
 
