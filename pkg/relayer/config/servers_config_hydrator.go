@@ -1,6 +1,10 @@
 package config
 
-import "net/url"
+import (
+	"net/url"
+
+	"github.com/docker/go-units"
+)
 
 // HydrateServers populates the servers fields of the RelayMinerConfig.
 func (relayMinerConfig *RelayMinerConfig) HydrateServers(
@@ -41,7 +45,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 		if yamlSupplierConfig.MaxBodySize == "" {
 			serverConfig.MaxBodySize = relayMinerConfig.DefaultMaxBodySize
 		} else {
-			size, sizeErr := parseSize(yamlSupplierConfig.MaxBodySize)
+			size, sizeErr := units.RAMInBytes(yamlSupplierConfig.MaxBodySize)
 			if sizeErr != nil {
 				return ErrRelayMinerConfigInvalidMaxBodySize.Wrapf(
 					"invalid max body size %q",
