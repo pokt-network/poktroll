@@ -147,7 +147,8 @@ func (k Keeper) hydratePartialDehydratedSupplierServiceConfigs(ctx context.Conte
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Get service config history but don't store it in the supplier
-	activeServices := supplier.GetActiveServiceConfigs(currentHeight)
+	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, "")
+	activeServices := sharedtypes.GetActiveServiceConfigsFromHistory(serviceConfigHistory, currentHeight)
 
 	// Remove rev_share information from each service config
 	for _, service := range activeServices {

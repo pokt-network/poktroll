@@ -221,6 +221,7 @@ func TestSupplierQueryDehydrated(t *testing.T) {
 
 			// Should have services
 			require.NotNil(t, supplier.Services, "Hydrated supplier should have services")
+			require.NotEmpty(t, supplier.Services, "Hydrated supplier should have non-empty services")
 
 			// Note: RevShare may be nil in test data, so we don't require it to be present
 			// The key difference is that dehydrated mode explicitly sets RevShare to nil
@@ -254,6 +255,7 @@ func TestSupplierQueryDehydrated(t *testing.T) {
 
 			// Should have services but without rev_share
 			require.NotNil(t, supplier.Services, "Dehydrated supplier should still have services")
+			require.GreaterOrEqual(t, len(supplier.Services), 1)
 
 			// Verify the supplier has the filtered service
 			hasService := false
