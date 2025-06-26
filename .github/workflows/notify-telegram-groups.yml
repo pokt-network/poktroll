@@ -1,6 +1,18 @@
 name: Notify Telegram Groups
 
-# Manually trigger this workflow here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
+### How to use this? ###
+# 1. Finish the release procedure: https://dev.poktroll.com/develop/upgrades/release_procedure?_highlight=release
+# 2. Set the latest release to latest and verify here: https://github.com/pokt-network/poktroll/releases/latest
+# 3. Manually trigger the workflow by either:
+#    - Clicking the "Run workflow" button here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
+#    - Or by running the following command in your terminal: $ gh workflow run notify-telegram-groups.yml
+
+### How to test / debug this? ###
+# 1. Submit a new PR in a new branch that's modifying this file
+# 2. Trigger the workflow by running the following command in your terminal: $ gh workflow run notify-telegram-groups.yml --ref <BRANCH_NAME>
+# 3. Verify the workflow worked by viewing the logs here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
+# 4. Check the output in the telegram bot group: https://web.telegram.org/k/#-2895286734
+
 on:
   workflow_dispatch:
   # Uncomment the lines below to automatically trigger on release publication
@@ -120,18 +132,18 @@ jobs:
 
           # Send to all chats
           send_message "$CHAT_1" "Pocket Network Bot Testing Group"
-          # send_message "$CHAT_2" "BitGet <> Pocket Network (POKT)"
-          # send_message "$CHAT_3" "ByBit <> POKT"
-          # send_message "$CHAT_4" "CoinEx <> POKT"
-          # send_message "$CHAT_5" "Mr. Yang <> Grove / POKT"
-          # send_message "$CHAT_6" "MEXC <> POKT"
-          # send_message "$CHAT_7" "OKX <> Pocket Network"
-          # send_message "$CHAT_8" "OrangeX <> Grove (POKT)"
-          # send_message "$CHAT_9" "POKT & Gate.io"
-          # send_message "$CHAT_10" "POKT Network | AscendEX"
-          # send_message "$CHAT_11" "Uphold <> Grove (POKT)"
-          # send_message "$CHAT_12" "Pokt <> Kraken {EF introduction}"
-          # send_message "$CHAT_13" "Bitrue & Pocket Network"
-          # send_message "$CHAT_14" "HTX <> POKT"
-          # send_message "$CHAT_15" "POKT <> Upbit"
-          # send_message "$CHAT_16" "KuCoin <> POKT"
+          send_message "$CHAT_2" "BitGet <> Pocket Network (POKT)"
+          send_message "$CHAT_3" "ByBit <> POKT"
+          send_message "$CHAT_4" "CoinEx <> POKT"
+          send_message "$CHAT_5" "Mr. Yang <> Grove / POKT"
+          send_message "$CHAT_6" "MEXC <> POKT"
+          send_message "$CHAT_7" "OKX <> Pocket Network"
+          send_message "$CHAT_8" "OrangeX <> Grove (POKT)"
+          send_message "$CHAT_9" "POKT & Gate.io"
+          send_message "$CHAT_10" "POKT Network | AscendEX"
+          send_message "$CHAT_11" "Uphold <> Grove (POKT)"
+          send_message "$CHAT_12" "Pokt <> Kraken {EF introduction}"
+          send_message "$CHAT_13" "Bitrue & Pocket Network"
+          send_message "$CHAT_14" "HTX <> POKT"
+          send_message "$CHAT_15" "POKT <> Upbit"
+          send_message "$CHAT_16" "KuCoin <> POKT"
