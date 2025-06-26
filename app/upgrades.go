@@ -113,7 +113,15 @@ var allUpgrades = []upgrades.Upgrade{
 	// - RelayMiner improvements (replaced EventsQueryClient with CometBFT client)
 	// - Tokenomics enhancements (non-chain halting claim settlement)
 	// - Service parameter updates and governance parameter adjustments
-	upgrades.Upgrade_0_1_23,
+	// upgrades.Upgrade_0_1_23,
+
+	// v0.1.24 - upgrade to:
+	// - Supplier query enhancements (dehydrated flag for list-suppliers)
+	// - Supplier downstaking fixes (funds go to owner address)
+	// - Session parameter updates (numSuppliersPerSession increased to 50)
+	// - CLI improvements (count flag for relay command)
+	// - Telegram bot exchange list updates
+	upgrades.Upgrade_0_1_24,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
