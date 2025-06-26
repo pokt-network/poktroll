@@ -321,3 +321,107 @@ func TestSupplierQueryDehydrated(t *testing.T) {
 		require.Len(t, supplier.Services[0].RevShare, 2, "Should have 2 rev_share entries")
 	})
 }
+
+func TestSupplierShowDehydrated(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 1)
+	supplierOperatorAddr := suppliers[0].OperatorAddress
+
+	t.Run("ShowSupplier_Dehydrated", func(t *testing.T) {
+		request := &types.QueryGetSupplierRequest{
+			OperatorAddress: supplierOperatorAddr,
+			Dehydrated:      true,
+		}
+
+		resp, err := supplierModuleKeepers.Supplier(ctx, request)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		supplier := resp.Supplier
+		// Should not have service config history
+		require.Nil(t, supplier.ServiceConfigHistory, "Dehydrated supplier should not have service config history")
+
+		// Should have services but without rev_share
+		require.NotNil(t, supplier.Services, "Dehydrated supplier should still have services")
+		for _, service := range supplier.Services {
+			require.Nil(t, service.RevShare, "Dehydrated supplier services should not have rev_share")
+			// Should still have other fields like service_id and endpoints
+			require.NotEmpty(t, service.ServiceId, "Service should still have service_id")
+			require.NotNil(t, service.Endpoints, "Service should still have endpoints")
+		}
+	})
+
+	t.Run("ShowSupplier_Hydrated", func(t *testing.T) {
+		request := &types.QueryGetSupplierRequest{
+			OperatorAddress: supplierOperatorAddr,
+			Dehydrated:      false,
+		}
+
+		resp, err := supplierModuleKeepers.Supplier(ctx, request)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		supplier := resp.Supplier
+		// Should have service config history
+		require.NotNil(t, supplier.ServiceConfigHistory, "Hydrated supplier should have service config history")
+		require.NotEmpty(t, supplier.ServiceConfigHistory, "Hydrated supplier should have non-empty service config history")
+
+		// Should have services
+		require.NotNil(t, supplier.Services, "Hydrated supplier should have services")
+
+		// Note: RevShare may be nil in test data, so we don't require it to be present
+		// The key difference is that dehydrated mode explicitly sets RevShare to nil
+	})
+
+	t.Run("ShowSupplier_Dehydrated_WithRevShare", func(t *testing.T) {
+		// Create a supplier with RevShare data to better test dehydration
+		supplierWithRevShare := suppliers[0]
+		supplierWithRevShare.Services[0].RevShare = []*sharedtypes.ServiceRevenueShare{
+			{
+				Address:            sample.AccAddress(),
+				RevSharePercentage: 30,
+			},
+			{
+				Address:            sample.AccAddress(),
+				RevSharePercentage: 70,
+			},
+		}
+		supplierWithRevShare.ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			supplierWithRevShare.OperatorAddress,
+			supplierWithRevShare.Services,
+			1,
+			sharedtypes.NoDeactivationHeight,
+		)
+		supplierModuleKeepers.SetAndIndexDehydratedSupplier(ctx, supplierWithRevShare)
+
+		// Test dehydrated query
+		request := &types.QueryGetSupplierRequest{
+			OperatorAddress: supplierWithRevShare.OperatorAddress,
+			Dehydrated:      true,
+		}
+
+		resp, err := supplierModuleKeepers.Supplier(ctx, request)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		supplier := resp.Supplier
+		require.Nil(t, supplier.ServiceConfigHistory, "Dehydrated supplier should not have service config history")
+		require.NotNil(t, supplier.Services, "Dehydrated supplier should still have services")
+		require.Len(t, supplier.Services, 1)
+		require.Nil(t, supplier.Services[0].RevShare, "Dehydrated supplier services should not have rev_share")
+
+		// Test hydrated query for comparison
+		request.Dehydrated = false
+		resp, err = supplierModuleKeepers.Supplier(ctx, request)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		supplier = resp.Supplier
+		require.NotNil(t, supplier.ServiceConfigHistory, "Hydrated supplier should have service config history")
+		require.NotEmpty(t, supplier.ServiceConfigHistory, "Hydrated supplier should have non-empty service config history")
+		require.NotNil(t, supplier.Services, "Hydrated supplier should have services")
+		require.Len(t, supplier.Services, 1)
+		require.NotNil(t, supplier.Services[0].RevShare, "Hydrated supplier services should have rev_share")
+		require.Len(t, supplier.Services[0].RevShare, 2, "Should have 2 rev_share entries")
+	})
+}
