@@ -1,6 +1,18 @@
 name: Notify Telegram Groups
 
-# Manually trigger this workflow here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
+### How to use this? ###
+# 1. Finish the release procedure: https://dev.poktroll.com/develop/upgrades/release_procedure?_highlight=release
+# 2. Set the latest release to latest and verify here: https://github.com/pokt-network/poktroll/releases/latest
+# 3. Manually trigger the workflow by either:
+#    - Clicking the "Run workflow" button here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
+#    - Or by running the following command in your terminal: $ gh workflow run notify-telegram-groups.yml
+
+### How to test / debug this? ###
+# 1. Submit a new PR in a new branch that's modifying this file
+# 2. Trigger the workflow by running the following command in your terminal: $ gh workflow run notify-telegram-groups.yml --ref <BRANCH_NAME>
+# 3. Verify the workflow worked by viewing the logs here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
+# 4. Check the output in the telegram bot group: https://web.telegram.org/k/#-2895286734
+
 on:
   workflow_dispatch:
   # Uncomment the lines below to automatically trigger on release publication
@@ -41,49 +53,34 @@ jobs:
         run: |
           # Pocket Network Bot Testing Group
           CHAT_1="-1002895286734"
-
           # BitGet <> Pocket Network (POKT)
           CHAT_2="-4954094158"
-
           # ByBit <> POKT
           CHAT_3="-1002730340404"
-
           # CoinEx <> POKT
           CHAT_4="-1001946726820"
-
           # Mr. Yang <> Grove / POKT
           CHAT_5="-1002038833795"
-
           # MEXC <> POKT
           CHAT_6="-1002815210935"
-
           # OKX <> Pocket Network
           CHAT_7="-1001901668586"
-
           # OrangeX <> Grove (POKT)
           CHAT_8="-1002030782436"
-
           # POKT & Gate.io
           CHAT_9="-1001717732565"
-
           # POKT Network | AscendEX
           CHAT_10="-4565872373"
-          
           # Uphold <> Grove (POKT)
           CHAT_11="-1002227693360"
-          
           # Pokt <> Kraken {EF introduction}
           CHAT_12="-1002405763552"
-          
           # Bitrue & Pocket Network
           CHAT_13="-618542738"
-          
           # HTX <> POKT
           CHAT_14="-1002898513049"
-          
           # POKT <> Upbit
           CHAT_15="-1002653157934"
-          
           # KuCoin <> POKT
           CHAT_16="-775612675"
 
@@ -97,101 +94,56 @@ jobs:
           EOF
           )
 
-          # Create message with proper escaping
-          MESSAGE=$(printf "📣 The *%s release is live! 📣 *\n[View the full release here](%s).\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$RELEASE_BODY")
+          # Function to convert markdown to HTML for better Telegram compatibility
+          convert_markdown_to_html() {
+            echo "$1" | \
+            # Convert [text](url) links to <a href="url">text</a>
+            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
+            # Convert `code` to <code>code</code>
+            sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
+            # Convert **bold** to <b>bold</b>
+            sed 's/\*\*\([^*]*\)\*\*/\<b\>\1\<\/b\>/g' | \
+            # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
+            sed 's/\([^*]\)\*\([^*][^*]*[^*]\)\*\([^*]\)/\1\<i\>\2\<\/i\>\3/g' | \
+            # Convert ## headers to <b>headers</b>
+            sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
+            # Convert ### headers to <b>headers</b>
+            sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
+            # Convert ❗️ and other emojis that might be escaped
+            sed 's/❗️/❗/g'
+          }
 
-          # Send to Pocket Network Bot Testing Group
-          echo "Sending to Pocket Network Bot Testing Group ($CHAT_1)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_1" \
-            --data-urlencode text="$MESSAGE"
+          # Convert the release body from markdown to HTML
+          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
 
-          # Send to BitGet <> Pocket Network (POKT)
-          echo "Sending to BitGet <> Pocket Network (POKT) ($CHAT_2)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_2" \
-            --data-urlencode text="$MESSAGE"
+          # Create message with HTML formatting
+          MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
 
-          # Send to ByBit <> POKT
-          echo "Sending to ByBit <> POKT ($CHAT_3)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_3" \
-            --data-urlencode text="$MESSAGE"
+          # Function to send message to a chat
+          send_message() {
+            local chat_id="$1"
+            local chat_name="$2"
+            echo "Sending to $chat_id ($chat_name)"
+            curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+              -d chat_id="$chat_id" \
+              -d parse_mode="HTML" \
+              --data-urlencode text="$MESSAGE"
+          }
 
-          # Send to CoinEx <> POKT
-          echo "Sending to CoinEx <> POKT ($CHAT_4)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_4" \
-            --data-urlencode text="$MESSAGE"
-
-          # Send to Mr. Yang <> Grove / POKT
-          echo "Sending to Mr. Yang <> Grove / POKT ($CHAT_5)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_5" \
-            --data-urlencode text="$MESSAGE"
-
-          # Send to MEXC <> POKT
-          echo "Sending to MEXC <> POKT ($CHAT_6)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_6" \
-            --data-urlencode text="$MESSAGE"
-
-          # Send to OKX <> Pocket Network
-          echo "Sending to OKX <> Pocket Network ($CHAT_7)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_7" \
-            --data-urlencode text="$MESSAGE"
-
-          # Send to OrangeX <> Grove (POKT)
-          echo "Sending to OrangeX <> Grove (POKT) ($CHAT_8)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_8" \
-            --data-urlencode text="$MESSAGE"
-
-          # Send to POKT & Gate.io
-          echo "Sending to POKT & Gate.io ($CHAT_9)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_9" \
-            --data-urlencode text="$MESSAGE"
-
-          # Send to POKT Network | AscendEX
-          echo "Sending to POKT Network | AscendEX ($CHAT_10)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_10" \
-            --data-urlencode text="$MESSAGE" \
-            
-          # Send to Uphold <> Grove (POKT)
-          echo "Sending to Uphold <> Grove (POKT) ($CHAT_11)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_11" \
-            --data-urlencode text="$MESSAGE" \
-            
-          # Send to Pokt <> Kraken {EF introduction}
-          echo "Sending to Pokt <> Kraken {EF introduction} ($CHAT_12)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_12" \
-            --data-urlencode text="$MESSAGE" \
-            
-          # Send to Bitrue & Pocket Network
-          echo "Sending to Bitrue & Pocket Network ($CHAT_13)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_13" \
-            --data-urlencode text="$MESSAGE" \
-            
-          # Send to HTX <> POKT
-          echo "Sending to HTX <> POKT ($CHAT_14)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_14" \
-            --data-urlencode text="$MESSAGE" \
-            
-          # Send to POKT <> Upbit
-          echo "Sending to POKT <> Upbit ($CHAT_15)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_15" \
-            --data-urlencode text="$MESSAGE" \
-            
-          # Send to KuCoin <> POKT
-          echo "Sending to KuCoin <> POKT ($CHAT_16)"
-          curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-            -d chat_id="$CHAT_16" \
-            --data-urlencode text="$MESSAGE" \
+          # Send to all chats
+          send_message "$CHAT_1" "Pocket Network Bot Testing Group"
+          send_message "$CHAT_2" "BitGet <> Pocket Network (POKT)"
+          send_message "$CHAT_3" "ByBit <> POKT"
+          send_message "$CHAT_4" "CoinEx <> POKT"
+          send_message "$CHAT_5" "Mr. Yang <> Grove / POKT"
+          send_message "$CHAT_6" "MEXC <> POKT"
+          send_message "$CHAT_7" "OKX <> Pocket Network"
+          send_message "$CHAT_8" "OrangeX <> Grove (POKT)"
+          send_message "$CHAT_9" "POKT & Gate.io"
+          send_message "$CHAT_10" "POKT Network | AscendEX"
+          send_message "$CHAT_11" "Uphold <> Grove (POKT)"
+          send_message "$CHAT_12" "Pokt <> Kraken {EF introduction}"
+          send_message "$CHAT_13" "Bitrue & Pocket Network"
+          send_message "$CHAT_14" "HTX <> POKT"
+          send_message "$CHAT_15" "POKT <> Upbit"
+          send_message "$CHAT_16" "KuCoin <> POKT"
