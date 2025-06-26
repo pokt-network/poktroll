@@ -183,7 +183,7 @@ func (k Keeper) validateProof(
 		FailureReason: invalidProofReason,
 	}
 
-	if err := sdkCtx.EventManager().EmitTypedEvent(&eventProofValidityChecked); err != nil {
+	if err := types.EmitEventProofValidityChecked(ctx, &eventProofValidityChecked); err != nil {
 		logger.Error(fmt.Sprintf("failed to emit proof validity check event due to: %v", err))
 		return
 	}

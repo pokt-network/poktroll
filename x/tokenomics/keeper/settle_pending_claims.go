@@ -548,8 +548,14 @@ func (k Keeper) slashSupplierStake(
 		ProofMissingPenalty: &slashingCoin,
 	})
 
-	if err := ctx.EventManager().EmitTypedEvents(events...); err != nil {
-		return err
+	// Emit events using the new helper functions
+	for _, event := range events {
+		switch e := event.(type) {
+		case *tokenomicstypes.EventSupplierSlashed:
+			if err := tokenomicstypes.EmitEventSupplierSlashed(ctx, e); err != nil {
+				return err
+			}
+		}
 	}
 
 	// TODO_POST_MAINNET: Handle the case where the total slashing amount is
@@ -716,7 +722,7 @@ func (k Keeper) settleClaim(
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
 				ClaimedUpokt:             &claimeduPOKT,
 			}
-			if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
+			if err = tokenomicstypes.EmitEventClaimExpired(ctx, &claimExpiredEvent); err != nil {
 				return nil, err
 			}
 
@@ -752,7 +758,7 @@ func (k Keeper) settleClaim(
 		SettlementResult:         *claimSettlementContext.settlementResult,
 	}
 
-	if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
+	if err = tokenomicstypes.EmitEventClaimSettled(ctx, &claimSettledEvent); err != nil {
 		return nil, err
 	}
 
@@ -787,7 +793,7 @@ func (k Keeper) discardFaultyClaim(
 		Claim: &dehydratedClaim,
 		Error: err.Error(),
 	}
-	if evtErr := sdkCtx.EventManager().EmitTypedEvent(&claimDiscardedEvent); evtErr != nil {
+	if evtErr := tokenomicstypes.EmitEventClaimDiscarded(sdkCtx, &claimDiscardedEvent); evtErr != nil {
 		logger.Error(fmt.Sprintf(
 			"failed to emit claim discarded event for claim %q: %s",
 			claim.SessionHeader.SessionId, evtErr,

@@ -89,7 +89,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 				SessionEndHeight:   sessionEndHeight,
 				Error:              err.Error(),
 			}
-			if err = sdkCtx.EventManager().EmitTypedEvent(transferErrorEvent); err != nil {
+			if err = apptypes.EmitEventTransferError(ctx, transferErrorEvent); err != nil {
 				err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", transferErrorEvent, err)
 				logger.Error("%s", err)
 				return err
@@ -171,7 +171,7 @@ func (k Keeper) transferApplication(
 		SessionEndHeight:       sessionEndHeight,
 		TransferEndHeight:      transferEndHeight,
 	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(transferEndEvent); err != nil {
+	if err := apptypes.EmitEventTransferEnd(ctx, transferEndEvent); err != nil {
 		err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", transferEndEvent, err)
 		logger.Error(err.Error())
 		return err

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	cosmoslog "cosmossdk.io/log"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/encoding"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -113,8 +112,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 		Amount:               &newMintCoin,
 	}
 
-	eventManger := cosmostypes.UnwrapSDKContext(ctx).EventManager()
-	if err = eventManger.EmitTypedEvent(reimbursementRequestEvent); err != nil {
+	if err = tokenomicstypes.EmitEventApplicationReimbursementRequest(ctx, reimbursementRequestEvent); err != nil {
 		err = tokenomicstypes.ErrTokenomicsEmittingEventFailed.Wrapf(
 			"(%+v): %s",
 			reimbursementRequestEvent, err,

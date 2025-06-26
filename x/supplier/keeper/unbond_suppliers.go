@@ -110,7 +110,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
 		}
-		if eventErr := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); eventErr != nil {
+		if eventErr := suppliertypes.EmitEventSupplierUnbondingEnd(ctx, unbondingEndEvent); eventErr != nil {
 			logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", unbondingEndEvent, eventErr))
 			return numUnbondedSuppliers, eventErr
 		}

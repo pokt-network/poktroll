@@ -87,7 +87,7 @@ func (k msgServer) UnstakeApplication(
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
 	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
+	if err := apptypes.EmitEventApplicationUnbondingBegin(ctx, unbondingBeginEvent); err != nil {
 		err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())

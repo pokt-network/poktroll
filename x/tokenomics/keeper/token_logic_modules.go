@@ -219,8 +219,7 @@ func (k Keeper) ProcessTokenLogicModules(
 			UnbondingEndHeight: unbondingEndHeight,
 		}
 
-		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-		if err = sdkCtx.EventManager().EmitTypedEvent(appUnbondingBeginEvent); err != nil {
+		if err = apptypes.EmitEventApplicationUnbondingBegin(ctx, appUnbondingBeginEvent); err != nil {
 			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", appUnbondingBeginEvent, err)
 			logger.Error(err.Error())
 			return err
@@ -325,8 +324,7 @@ func (k Keeper) ensureClaimAmountLimits(
 		ExpectedBurn:         &totalClaimedCoin,
 		EffectiveBurn:        &maxClaimableCoin,
 	}
-	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
-	if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {
+	if err = tokenomicstypes.EmitEventApplicationOverserviced(ctx, applicationOverservicedEvent); err != nil {
 		return cosmostypes.Coin{},
 			tokenomicstypes.ErrTokenomicsEmittingEventFailed.Wrapf("error emitting event %v", applicationOverservicedEvent)
 	}

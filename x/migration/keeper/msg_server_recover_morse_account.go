@@ -104,7 +104,7 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 		ShannonDestAddress: msg.GetShannonDestAddress(),
 		MorseSrcAddress:    normalizedMorseSrcAddress,
 	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
+	if err := migrationtypes.EmitEventMorseAccountRecovered(ctx, &event); err != nil {
 		return nil, status.Error(
 			codes.Internal,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(

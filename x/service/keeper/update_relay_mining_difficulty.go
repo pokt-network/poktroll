@@ -96,7 +96,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 			PrevNumRelaysEma:         prevDifficulty.NumRelaysEma,
 			NewNumRelaysEma:          newDifficulty.NumRelaysEma,
 		}
-		if err := sdkCtx.EventManager().EmitTypedEvent(&relayMiningDifficultyUpdateEvent); err != nil {
+		if err := types.EmitEventRelayMiningDifficultyUpdated(ctx, &relayMiningDifficultyUpdateEvent); err != nil {
 			return nil, err
 		}
 
