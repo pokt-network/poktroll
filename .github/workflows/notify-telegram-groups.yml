@@ -82,8 +82,8 @@ jobs:
           EOF
           )
 
-          # Create message with Markdown formatting (simpler than MarkdownV2)
-          MESSAGE=$(printf "📣 The *%s release is live!* 📣\n[View the full release here](%s)\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$RELEASE_BODY")
+          # Create message with HTML formatting (more reliable than Markdown)
+          MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$RELEASE_BODY")
 
           # Function to send message to a chat
           send_message() {
@@ -92,7 +92,7 @@ jobs:
             echo "Sending to $chat_id ($chat_name)"
             curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
               -d chat_id="$chat_id" \
-              -d parse_mode="Markdown" \
+              -d parse_mode="HTML" \
               --data-urlencode text="$MESSAGE"
           }
 
