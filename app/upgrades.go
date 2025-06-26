@@ -113,7 +113,7 @@ var allUpgrades = []upgrades.Upgrade{
 	// - RelayMiner improvements (replaced EventsQueryClient with CometBFT client)
 	// - Tokenomics enhancements (non-chain halting claim settlement)
 	// - Service parameter updates and governance parameter adjustments
-	upgrades.Upgrade_0_1_23,
+	// upgrades.Upgrade_0_1_23,
 
 	// v0.1.24 - upgrade to:
 	// - Supplier query enhancements (dehydrated flag for list-suppliers)
