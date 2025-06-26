@@ -19,8 +19,19 @@ default_ibc_validator_configs = {
         "dockerfile_path": os.path.join("localnet", "dockerfiles", "agoric-validator.dockerfile"),
         # TODO_IMPROVE: can we consolidate this with the chart_name?
         "image_name": "agoric",
-        "port_forwards": ["46657:26657", "11090:9090", "40009:40009", ]
+        "port_forwards": ["46657:26657", "11090:9090", "40009:40009"]
         # NOTE: this chain ID is baked into the image genesis.json and is difficult to change.
+    },
+    "axelar": {
+        "enabled": True,
+        "chain_id": "axelar",
+        "values_path": os.path.join("localnet", "kubernetes", "values-axelar.yaml"),
+        "tilt_ui_name": "Axelar Validator",
+        "chart_name": "axelar-validator",
+        "dockerfile_path": os.path.join("localnet", "dockerfiles", "axelar-validator.dockerfile"),
+        # TODO_IMPROVE: can we consolidate this with the chart_name?
+        "image_name": "axelar",
+        "port_forwards": ["56657:26657", "12090:9090", "40010:40010"]
     }
 }
 
@@ -106,7 +117,8 @@ def load_ibc_relayer_server_resources(chart_prefix, ibc_validator_configs):
         flags=[
                   "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
                   "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-daemon.yaml"),
-                  "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
+                  "--values=" + os.path.join("localnet", "kubernetes",
+                                             "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
               ] + chain_config_values_flags,
         resource_deps=resource_deps,
         image_deps=["ibc-relayer"],
