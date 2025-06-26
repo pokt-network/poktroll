@@ -38,7 +38,7 @@ Use the --dehydrated flag to exclude service_config_history and rev_share detail
 	pocketd query supplier list-suppliers --service-id anvil --dehydrated`,
 					FlagOptions: map[string]*autocliv1.FlagOptions{
 						"service_id": {Name: "service-id", Shorthand: "s", Usage: "service id to filter by", Hidden: false},
-						"dehydrated": {Name: "dehydrated", Shorthand: "d", Usage: "return suppliers without service_config_history and rev_share details", Hidden: false},
+						"dehydrated": {Name: "dehydrated", Shorthand: "d", Usage: "return suppliers with some fields omitted for a smaller response payload (e.g. service_config_history, rev_share, etc..)", Hidden: false},
 					},
 				},
 				{

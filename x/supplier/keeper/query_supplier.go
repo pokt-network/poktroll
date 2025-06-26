@@ -84,9 +84,9 @@ func (k Keeper) getAllSuppliers(
 
 			// Conditionally hydrate supplier fields based on dehydrated flag
 			if req.GetDehydrated() {
-				k.hydrateDehydratedSupplierServiceConfigs(ctx, &supplier)
+				k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
 			} else {
-				k.hydrateSupplierServiceConfigs(ctx, &supplier)
+				k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
 			}
 
 			suppliers = append(suppliers, supplier)
@@ -157,9 +157,9 @@ func (k Keeper) getAllServiceSuppliers(
 
 			// Conditionally load service configurations and history into the supplier object
 			if req.GetDehydrated() {
-				k.hydrateDehydratedSupplierServiceConfigs(ctx, &supplier)
+				k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
 			} else {
-				k.hydrateSupplierServiceConfigs(ctx, &supplier)
+				k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
 			}
 
 			// Add the supplier to the results
