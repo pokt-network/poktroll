@@ -294,33 +294,45 @@ func TestSupplierQueryDehydrated(t *testing.T) {
 		request := &types.QueryAllSuppliersRequest{
 			Dehydrated: true,
 			Pagination: &query.PageRequest{
-				Limit: 1,
+				Limit: uint64(len(suppliers)),
 			},
 		}
 
 		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
 		require.NoError(t, err)
-		require.Len(t, resp.Supplier, 1)
+		require.Len(t, resp.Supplier, len(suppliers))
 
-		supplier := resp.Supplier[0]
-		require.Nil(t, supplier.ServiceConfigHistory, "Dehydrated supplier should not have service config history")
-		require.NotNil(t, supplier.Services, "Dehydrated supplier should still have services")
-		require.Len(t, supplier.Services, 1)
-		require.Nil(t, supplier.Services[0].RevShare, "Dehydrated supplier services should not have rev_share")
+		var testSupplierDehydrated sharedtypes.Supplier
+		for _, supplier := range resp.Supplier {
+			if supplier.OperatorAddress == supplierWithRevShare.OperatorAddress {
+				testSupplierDehydrated = supplier
+				break
+			}
+		}
+		require.Nil(t, testSupplierDehydrated.ServiceConfigHistory, "Dehydrated supplier should not have service config history")
+		require.NotNil(t, testSupplierDehydrated.Services, "Dehydrated supplier should still have services")
+		require.Len(t, testSupplierDehydrated.Services, 1)
+		require.Nil(t, testSupplierDehydrated.Services[0].RevShare, "Dehydrated supplier services should not have rev_share")
 
 		// Test hydrated query for comparison
 		request.Dehydrated = false
 		resp, err = supplierModuleKeepers.AllSuppliers(ctx, request)
 		require.NoError(t, err)
-		require.Len(t, resp.Supplier, 1)
+		require.Len(t, resp.Supplier, len(suppliers))
 
-		supplier = resp.Supplier[0]
-		require.NotNil(t, supplier.ServiceConfigHistory, "Hydrated supplier should have service config history")
-		require.NotEmpty(t, supplier.ServiceConfigHistory, "Hydrated supplier should have non-empty service config history")
-		require.NotNil(t, supplier.Services, "Hydrated supplier should have services")
-		require.Len(t, supplier.Services, 1)
-		require.NotNil(t, supplier.Services[0].RevShare, "Hydrated supplier services should have rev_share")
-		require.Len(t, supplier.Services[0].RevShare, 2, "Should have 2 rev_share entries")
+		var testSupplierHydrated sharedtypes.Supplier
+		for _, supplier := range resp.Supplier {
+			if supplier.OperatorAddress == supplierWithRevShare.OperatorAddress {
+				testSupplierHydrated = supplier
+				break
+			}
+		}
+		require.NotNil(t, testSupplierHydrated.ServiceConfigHistory, "Hydrated supplier should have service config history")
+		require.NotEmpty(t, testSupplierHydrated.ServiceConfigHistory, "Hydrated supplier should have non-empty service config history")
+		require.NotNil(t, testSupplierHydrated.Services, "Hydrated supplier should have services")
+		require.Len(t, testSupplierHydrated.Services, 1)
+		require.NotNil(t, testSupplierHydrated.Services[0].RevShare, "Hydrated supplier services should have rev_share")
+		require.Len(t, testSupplierHydrated.Services[0].RevShare, 2, "Should have 2 rev_share entries")
 	})
 }
 
