@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,9 +29,9 @@ var bodyBufPool = sync.Pool{
 	},
 }
 
-// CloseRequestBody safely closes an io.ReadCloser with proper error handling and logging.
+// CloseBody safely closes an io.ReadCloser with proper error handling and logging.
 // It gracefully handles nil readers and logs any errors encountered during closure.
-func CloseRequestBody(logger polylog.Logger, body io.ReadCloser) {
+func CloseBody(logger polylog.Logger, body io.ReadCloser) {
 	if body == nil {
 		logger.Warn().Msg("⚠️ SHOULD NEVER HAPPEN ⚠️ Attempting to close nil request body")
 		return
@@ -52,11 +53,13 @@ func CloseRequestBody(logger polylog.Logger, body io.ReadCloser) {
 //
 // Returns the complete body as a byte slice or an error if reading fails or size limit is exceeded.
 func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]byte, error) {
-	defer CloseRequestBody(logger, body)
+	defer CloseBody(logger, body)
 
 	if maxSize <= 0 {
-		logger.Warn().Msgf("SHOULD NOT HAPPEN: Max body size is less than or equal to 0, using default max body size of %d", config.DefaultMaxBodySize)
-		maxSize = config.DefaultMaxBodySize
+		return nil, config.ErrRelayMinerConfigInvalidMaxBodySize.Wrapf(
+			"invalid max body size %q",
+			maxSize,
+		)
 	}
 
 	// Create a limited reader that will read at most maxSize+1 bytes
@@ -75,12 +78,34 @@ func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]b
 
 	// Check if the body exceeded our size limit
 	if bytesRead > maxSize {
-		err := fmt.Errorf("❌ request body size exceeds maximum allowed body: %d bytes read > %d bytes limit", bytesRead, maxSize)
-		logger.Error().Err(err).Msg("❌ Request/response body too large")
-		return nil, err
+		return nil, ErrRelayerProxyMaxBodyExceeded.Wrapf(
+			"❌ body size exceeds maximum allowed body: %d bytes read > %d bytes limit",
+			bytesRead,
+			maxSize,
+		)
 	}
 
 	return buf.Bytes(), nil
+}
+
+func SafeRequestReadBody(logger polylog.Logger, request *http.Request, maxSize int64) ([]byte, error) {
+	body, err := SafeReadBody(logger, request.Body, maxSize)
+
+	if errors.Is(err, ErrRelayerProxyMaxBodyExceeded) {
+		return nil, ErrRelayerProxyRequestLimitExceed.Wrap(err.Error())
+	}
+
+	return body, err
+}
+
+func SafeResponseReadBody(logger polylog.Logger, response *http.Response, maxSize int64) ([]byte, error) {
+	body, err := SafeReadBody(logger, response.Body, maxSize)
+
+	if errors.Is(err, ErrRelayerProxyMaxBodyExceeded) {
+		return nil, ErrRelayerProxyResponseLimitExceed.Wrap(err.Error())
+	}
+
+	return body, err
 }
 
 // TODO_TECHDEBT: Move this function back to the Shannon SDK. It was moved:
@@ -110,7 +135,7 @@ func SerializeHTTPResponse(
 	maxBodySize int64,
 ) (poktHTTPResponse *sdktypes.POKTHTTPResponse, poktHTTPResponseBz []byte, err error) {
 	// Read the response body with size limits
-	responseBodyBz, err := SafeReadBody(logger, response.Body, maxBodySize)
+	responseBodyBz, err := SafeResponseReadBody(logger, response, maxBodySize)
 	if err != nil {
 		return nil, nil, fmt.Errorf("❌ failed to read response body: %w", err)
 	}

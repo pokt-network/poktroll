@@ -49,7 +49,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Extract the relay request from the request body.
 	logger.Debug().Msg("extracting relay request from request body")
-	relayRequest, err := server.newRelayRequest(request, server.serverConfig.MaxBodySize)
+	relayRequest, err := server.newRelayRequest(request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("failed creating relay request")
 		return relayRequest, err
@@ -210,7 +210,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("failed to build the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer CloseRequestBody(logger, httpRequest.Body)
+	defer CloseBody(logger, httpRequest.Body)
 
 	// Configure HTTP client based on backend URL scheme.
 	var client http.Client
@@ -268,7 +268,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	defer CloseRequestBody(logger, httpResponse.Body)
+	defer CloseBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 

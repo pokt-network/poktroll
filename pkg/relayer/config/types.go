@@ -147,7 +147,7 @@ type RelayMinerServerConfig struct {
 	XForwardedHostLookup bool
 	// SupplierConfigsMap is a map of serviceIds -> RelayMinerSupplierConfig
 	SupplierConfigsMap map[string]*RelayMinerSupplierConfig
-	// MaxBodySize specifies the maximum allowed size in bytes for the request/response body that the server will accept.
+	// MaxBodySize sets the largest request or response body size (in bytes) that the RelayMiner will accept for this service.
 	MaxBodySize int64
 }
 
