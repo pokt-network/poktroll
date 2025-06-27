@@ -109,7 +109,7 @@ func runServe(cmd *cobra.Command, _ []string) error {
 	cmd.SetContext(cmdContext)
 
 	// Register a signal handler to gracefully shut down the server.
-	signals.GoOnExitSignal(func() {
+	signals.GoOnExitSignal(logger.Logger, func() {
 		logger.Logger.Info().Msg("Shutting down...")
 		cmdCancel()
 	})

@@ -98,7 +98,30 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.20 - upgrade to:
 	// - Add zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that are non-custodial and had no corresponding `MorseAuthAccount`
 	// - Update the Morse account recovery allowlist with exchange allowlist updates and invalid addresses
-	upgrades.Upgrade_0_1_20,
+	// upgrades.Upgrade_0_1_20,
+
+	// v0.1.21 - upgrade to:
+	// - Update the Morse account recovery allowlist with exchange allowlist updates and invalid addresses
+	// - Slim down excessively sized proof module events:
+	// upgrades.Upgrade_0_1_21,
+
+	// v0.1.22 - upgrade to:
+	// - Update the Morse account recovery allowlist
+	// upgrades.Upgrade_0_1_22,
+
+	// v0.1.23 - upgrade to:
+	// - RelayMiner improvements (replaced EventsQueryClient with CometBFT client)
+	// - Tokenomics enhancements (non-chain halting claim settlement)
+	// - Service parameter updates and governance parameter adjustments
+	// upgrades.Upgrade_0_1_23,
+
+	// v0.1.24 - upgrade to:
+	// - Supplier query enhancements (dehydrated flag for list-suppliers)
+	// - Supplier downstaking fixes (funds go to owner address)
+	// - Session parameter updates (numSuppliersPerSession increased to 50)
+	// - CLI improvements (count flag for relay command)
+	// - Telegram bot exchange list updates
+	upgrades.Upgrade_0_1_24,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

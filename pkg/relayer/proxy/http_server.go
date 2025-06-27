@@ -16,6 +16,11 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
+// - relayProbabilisticDebugProb is the probability of a debug log being shown for a relay request.
+// - This has to be very low to avoid spamming the logs for RelayMiners that end up serving millions of relays.
+// - In the case of errors, it increases the likelihood of seeing issues in the logs
+var relayProbabilisticDebugProb float64 = 0.0001
+
 var _ relayer.RelayServer = (*relayMinerHTTPServer)(nil)
 
 func init() {
@@ -184,21 +189,27 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 
 	// Determine whether the request is upgrading to websocket.
 	if isWebSocketRequest(request) {
-		server.logger.Debug().Msg("detected asynchronous relay request")
+		server.logger.ProbabilisticDebugInfo(relayProbabilisticDebugProb).Msg("🔍 detected asynchronous relay request")
 
 		if err := server.handleAsyncConnection(ctx, writer, request); err != nil {
 			// Reply with an error if the relay could not be served.
 			server.replyWithError(err, nil, writer)
-			server.logger.Warn().Err(err).Msg("failed serving asynchronous relay request")
+			server.logger.Warn().Err(err).Msg("❌ failed serving asynchronous relay request")
 			return
 		}
 	} else {
-		server.logger.Debug().Msg("detected synchronous relay request")
+		server.logger.ProbabilisticDebugInfo(relayProbabilisticDebugProb).Msg("🔍 detected synchronous relay request")
 
 		if relayRequest, err := server.serveSyncRequest(ctx, writer, request); err != nil {
 			// Reply with an error if the relay could not be served.
 			server.replyWithError(err, relayRequest, writer)
-			server.logger.Warn().Err(err).Msg("failed serving synchronous relay request")
+
+			// Do not alarm the RelayMiner operator if the error is a client error
+			if ErrRelayerProxyInternalError.Is(err) {
+				server.logger.Error().Err(err).Msgf("❌ Failed serving synchronous relay request. This COULD be a configuration issue on the RelayMiner! Please check your setup. ⚙️🛠️")
+			} else {
+				server.logger.Error().Err(err).Msgf("⚠️ Failed serving synchronous relay request. This MIGHT be a client error.")
+			}
 			return
 		}
 	}

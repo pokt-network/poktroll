@@ -25,6 +25,7 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	cometjson "github.com/cometbft/cometbft/libs/json"
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/gorilla/websocket"
@@ -36,6 +37,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -187,12 +189,18 @@ func (s *suite) Before() {
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
 	s.proofQueryClient = prooftypes.NewQueryClient(clientCtx)
 
+	cometClient, err := sdkclient.NewClientFromNode(testclient.LocalCometTCPURL)
+	require.NoError(s, err)
+
+	cometClient.Start()
+
 	s.deps = depinject.Supply(
-		events.NewEventsQueryClient(testclient.CometLocalWebsocketURL),
+		cometClient,
+		polylog.Ctx(s.ctx),
 	)
 
 	// Start the NewBlockEventsReplayClient before the test so that it can't miss any block events.
-	s.newBlockEventsReplayClient, err = events.NewEventsReplayClient[*block.CometNewBlockEvent](
+	s.newBlockEventsReplayClient, err = events.NewEventsReplayClient(
 		s.ctx,
 		s.deps,
 		"tm.event='NewBlock'",

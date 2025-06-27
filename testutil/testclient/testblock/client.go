@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
-	"github.com/cometbft/cometbft/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -14,9 +13,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for
@@ -24,13 +23,10 @@ import (
 func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 
-	queryClient := testeventsquery.NewLocalnetClient(t)
-	require.NotNil(t, queryClient)
-
-	cometClient, err := sdkclient.NewClientFromNode(testclient.CometLocalTCPURL)
+	cometClient, err := sdkclient.NewClientFromNode(testclient.LocalCometTCPURL)
 	require.NoError(t, err)
 
-	deps := depinject.Supply(queryClient, cometClient)
+	deps := depinject.Supply(cometClient, polylog.Ctx(ctx))
 	bClient, err := block.NewBlockClient(ctx, deps)
 	require.NoError(t, err)
 
@@ -129,7 +125,6 @@ func NewAnyTimesBlock(
 	blockMock := mockclient.NewMockBlock(ctrl)
 	blockMock.EXPECT().Height().Return(blockHeight).AnyTimes()
 	blockMock.EXPECT().Hash().Return(blockHash).AnyTimes()
-	blockMock.EXPECT().Txs().Return([]types.Tx{}).AnyTimes()
 
 	return blockMock
 }

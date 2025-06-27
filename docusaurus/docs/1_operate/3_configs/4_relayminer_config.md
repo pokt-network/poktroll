@@ -3,6 +3,14 @@ title: RelayMiner config
 sidebar_position: 4
 ---
 
+:::warning Supplier Public Key Requirement
+
+If you are setting up a `RelayMiner` using a `Supplier` that does not have an onchain public key, you must follow the instructions [**here**](../../2_explore/4_morse_migration/7_claiming_supplier.md#6-ensure-your-shannon-supplier-has-an-onchain-public-key) to ensure your `Supplier` has an onchain public key.
+
+Alternatively, if you have a `Supplier` that has was not staked by the operator, you must follow the instructions [**here**](../1_cheat_sheets/4_supplier_cheatsheet.md#4-suppliers-staked-on-behalf-of-owners).
+
+:::
+
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
 co-processor/sidecar that acts as the real server for querying request, building
 claims, and submitting proofs.
@@ -45,6 +53,11 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [Overview](#overview)
   - [Key Requirements for Operators](#key-requirements-for-operators)
   - [Recommendations for Supplier Operators](#recommendations-for-supplier-operators)
+- [Recommended Full / RPC Node Configuration for RelayMiners](#recommended-full--rpc-node-configuration-for-relayminers)
+  - [Why does a RelayMiner's Full Node need custom configurations?](#why-does-a-relayminers-full-node-need-custom-configurations)
+  - [Required `config.toml` Config Adjustments](#required-configtoml-config-adjustments)
+  - [How to Calculate Scalable Values?](#how-to-calculate-scalable-values)
+  - [Example Full Node Config Changes](#example-full-node-config-changes)
 
 ## Introduction
 
@@ -161,6 +174,7 @@ stake can cover in a given session. This means the Supplier will mine relays for
 "free" without being compensated onchain for the additional service.
 
 Over-servicing is commonly used by Suppliers to:
+
 - Build goodwill with Applications
 - Improve their off-chain quality-of-service rating
 
@@ -573,5 +587,92 @@ Having insufficient funds could lead to rejected `Proof` submissions . This
 can disrupt the operator’s participation in the Pocket Network. To maintain a
 smooth operation, avoid being slashed, and earn your rewards, operators must plan
 and manage their account balance as part of their operational procedures.
+
+:::
+
+## Recommended Full / RPC Node Configuration for RelayMiners
+
+:::critical Must read for all Relay Miners
+
+You must run your own full node (i.e. RPC node) with modified `config.toml` settings for your RelayMiners and Suppliers to scale.
+
+:::
+
+### Why does a RelayMiner's Full Node need custom configurations?
+
+- Each RelayMiner requires an event subscription to each supplier it manages.
+- Each RelayMiner requires another event subscription to block events for basic functionality.
+- If these limits are not properly configured, your RelayMiner may experience:
+  - Disconnections
+  - Missed events
+  - Other operational issues
+
+### Required `config.toml` Config Adjustments
+
+In your RPC node's `config.toml` file, you must adjust the following parameters:
+
+```toml
+
+# [rpc] section
+
+# Set max_subscriptions_per_client  > (num_suppliers + num_relayminers)
+max_subscriptions_per_client = <VALUE>
+
+# Set max_open_connections > (2 * num_relayminers)
+max_open_connections = <VALUE>
+```
+
+### How to Calculate Scalable Values?
+
+| Parameter                      | Formula                           | Explanation                                                                  |
+| ------------------------------ | --------------------------------- | ---------------------------------------------------------------------------- |
+| `max_subscriptions_per_client` | > num_suppliers + num_relayminers | Each supplier requires 1 subscription + 1 for each RelayMiner's block events |
+| `max_open_connections`         | > 2 × num_relayminers             | Each RelayMiner requires at least 2 connections for basic functionality.     |
+
+### Example Full Node Config Changes
+
+**Scenario 1: 1 RelayMiner managing N Suppliers**
+
+Example:
+
+- 1 RelayMiner managing 20 Suppliers
+
+```toml
+# 20 suppliers + 1 RelayMiner = 21 (rounded up to 25 for safety)
+max_subscriptions_per_client = 25
+
+# 2 × 1 RelayMiner = 2 (rounded up to 5 for safety)
+max_open_connections = 5
+```
+
+**Scenario 2: N RelayMiners w/ M Suppliers Each**
+
+Example:
+
+- RelayMiner 1: managing 2 Suppliers
+- RelayMiner 2: managing 3 Suppliers
+- RelayMiner 3: managing 1 Supplier
+
+```toml
+# (2 + 3 + 1) suppliers + 3 RelayMiners = 9 (rounded up to 15 for safety)
+max_subscriptions_per_client = 15
+
+# 2 × 3 RelayMiners = 6 (rounded up to 10 for safety)
+max_open_connections = 10
+```
+
+:::tip Overhead Considerations
+
+Always set these values higher than the calculated minimum to allow for:
+
+- Extra connections
+- Unexpected new subscriptions
+
+For large deployments with many suppliers, do one of the following:
+
+- Increase these values substantially
+- Or, split RelayMiners across multiple RPC nodes
+
+This helps maintain stability and performance as your system scales.
 
 :::
