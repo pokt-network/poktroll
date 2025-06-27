@@ -13,7 +13,7 @@ func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types
 	// Replace DefaultMaxBodySize with config options
 	requestBody, err := SafeRequestReadBody(sync.logger, request, sync.serverConfig.MaxBodySize)
 	if err != nil {
-		return &types.RelayRequest{}, ErrRelayerProxyInternalError.Wrap(err.Error())
+		return &types.RelayRequest{}, err
 	}
 
 	sync.logger.Debug().Msg("unmarshaling relay request")
