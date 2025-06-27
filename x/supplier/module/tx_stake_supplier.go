@@ -18,10 +18,10 @@ const (
 	flagConfigUsage = "Path to the supplier configuration file (YAML format)"
 
 	flagStakeOnly      = "stake-only"
-	flagStakeOnlyUsage = "Update only the supplier stake amount. Config file should contain stake_amount but services section is optional."
+	flagStakeOnlyUsage = "Update only the supplier stake amount. Config file should contain stake_amount but the services section must be empty. Can be signed by owner or operator."
 
 	flagServicesOnly      = "services-only"
-	flagServicesOnlyUsage = "Update only the supplier service configurations. Config file should contain services but stake_amount is optional. Must be signed by operator."
+	flagServicesOnlyUsage = "Update only the supplier service configurations. Config file should contain services but stake_amount must be empty. Must be signed by operator."
 )
 
 var (
@@ -39,7 +39,7 @@ func CmdStakeSupplier() *cobra.Command {
 		Long: `Stake a supplier or update supplier configuration using the specified configuration file.
 This command supports flexible staking operations:
 
-• Initial staking: Requires both stake amount and service configurations
+• Initial staking: Requires TODO_IN_THIS_PR.
 • Stake-only updates: Update stake amount without changing service configurations (--stake-only)
 • Service configuration updates: Update services without changing stake (--services-only)
 
@@ -47,17 +47,18 @@ The command supports both custodial and non-custodial staking workflows and sour
 the necessary information from the provided configuration file.
 
 For more details on the staking process, please refer to the supplier staking documentation at:
-https://dev.poktroll.com/operate/configs/supplier_staking_config
+https://dev.poktroll.com/operate/configs/supplier_staking_config`,
+		Example: `
+  # Initial supplier staking by Operator: Required stake and optional services
+  $ pocketd tx supplier stake-supplier --config stake_config.yaml --from $(OPERATOR_ADDRESS)
 
-Examples:
-  # Initial supplier staking (requires both stake and services in config)
+  # Initial supplier staking by Owner: Required stake and services section must be empty
   $ pocketd tx supplier stake-supplier --config stake_config.yaml --from $(OWNER_ADDRESS)
-  
-  # Update only the stake amount (services section optional in config)
+
+  # Update only the stake amount by Owner: Services section must be empty
   $ pocketd tx supplier stake-supplier --config stake_config.yaml --stake-only --from $(OWNER_ADDRESS)
-  
-  # Update only service configurations (stake_amount optional in config, must be signed by operator)
-  $ pocketd tx supplier stake-supplier --config stake_config.yaml --services-only --from $(OPERATOR_ADDRESS)`,
+
+  TODO_IN_THIS_PR: Add more examples`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
