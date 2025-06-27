@@ -3,9 +3,11 @@ title: RelayMiner config
 sidebar_position: 4
 ---
 
-:::warning Suppliers Migrating From Morse
+:::warning Supplier Public Key Requirement
 
-If you are setting up a `RelayMiner` using a migrated `Supplier` from Morse, you must follow the instructions [**here**](../../2_explore/4_morse_migration/7_claiming_supplier.md#6-ensure-your-shannon-supplier-has-an-onchain-public-key) to ensure your `Supplier` has an onchain public key.
+If you are setting up a `RelayMiner` using a `Supplier` that does not have an onchain public key, you must follow the instructions [**here**](../../2_explore/4_morse_migration/7_claiming_supplier.md#6-ensure-your-shannon-supplier-has-an-onchain-public-key) to ensure your `Supplier` has an onchain public key.
+
+Alternatively, if you have a `Supplier` that has was not staked by the operator, you must follow the instructions [**here**](../1_cheat_sheets/4_supplier_cheatsheet.md#4-suppliers-staked-on-behalf-of-owners).
 
 :::
 

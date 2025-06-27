@@ -27,6 +27,8 @@ Stake an onchain `Supplier` and run an offchain `RelayMiner` in less than an hou
   - [1. Get your public URL](#1-get-your-public-url)
   - [2. Configure your Supplier](#2-configure-your-supplier)
   - [3. Stake your Supplier](#3-stake-your-supplier)
+  - [4. Suppliers staked on behalf of Owners](#4-suppliers-staked-on-behalf-of-owners)
+    - [How to check if you have an onchain account](#how-to-check-if-you-have-an-onchain-account)
 - [RelayMiner Configuration](#relayminer-configuration)
   - [(Optional) Start the anvil node](#optional-start-the-anvil-node)
   - [1. Configure the RelayMiner](#1-configure-the-relayminer)
@@ -282,6 +284,62 @@ And check the status onchain:
 ```bash
 pocketd query supplier show-supplier $SUPPLIER_ADDR $BETA_NODE_FLAGS
 ```
+
+### 4. Suppliers staked on behalf of Owners
+
+:::warning Critical must read for suppliers staked on behalf of owners
+
+Make sure to read this section if your supplier WAS NOT staked by the operator
+
+:::
+
+<details>
+<summary>Additional requirements for suppliers staked on behalf of owners</summary>
+
+**Problem**: Suppliers WITHOUT onchain public keys for their operators CANNOT sign Relay Responses and will be **sanctioned by PATH**.
+
+**Root Cause**: A supplier operator may have an onchain account, but it does not necessarily mean it has an onchain public key until it signs its first onchain transaction.
+
+**Solution**: Submit any onchain transaction where `--from` is the operator address.
+
+Any transaction will work. For example, a small transfer
+
+```bash
+pocketd tx bank send <your_supplier_operator_address> <some_address_you_own> 1upokt --from=<your_supplier_operator_address> ...
+```
+
+#### How to check if you have an onchain account
+
+```bash
+pocketd q auth account <your_supplier_operator_address> ...
+```
+
+Account without public key:
+
+```yaml
+account:
+  type: /cosmos.auth.v1beta1.BaseAccount
+  value:
+    account_number: "..."
+    address: pokt1...
+    sequence: "..."
+```
+
+Account with public key:
+
+```yaml
+account:
+  type: /cosmos.auth.v1beta1.BaseAccount
+  value:
+    account_number: "..."
+    address: pokt1...
+    public_key:
+      type: /cosmos.crypto.secp256k1.PubKey
+      value: Ap/Nr...
+    sequence: "..."
+```
+
+</details>
 
 ## RelayMiner Configuration
 
