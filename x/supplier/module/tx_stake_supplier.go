@@ -15,13 +15,13 @@ import (
 
 const (
 	flagConfig      = "config"
-	flagConfigUsage = "Path to the stake config file"
+	flagConfigUsage = "Path to the supplier configuration file (YAML format)"
 
 	flagStakeOnly      = "stake-only"
-	flagStakeOnlyUsage = "Only update the supplier stake. When set, it is an error to provide a config with service configurations."
+	flagStakeOnlyUsage = "Update only the supplier stake amount. Config file should contain stake_amount but services section is optional."
 
 	flagServicesOnly      = "services-only"
-	flagServicesOnlyUsage = "Only update the supplier service configurations. When set, it is an error to provide a config with a stake amount."
+	flagServicesOnlyUsage = "Update only the supplier service configurations. Config file should contain services but stake_amount is optional. Must be signed by operator."
 )
 
 var (
@@ -34,17 +34,30 @@ var (
 func CmdStakeSupplier() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
-		Use:   "stake-supplier --config <config_file.yaml>",
-		Short: "Stake a supplier",
-		Long: `Stake a supplier using the specified configuration file. This command
-supports both custodial and non-custodial staking of the signer's tokens.
-It sources the necessary information from the provided configuration file.
+		Use:   "stake-supplier --config <config_file.yaml> [--stake-only | --services-only]",
+		Short: "Stake a supplier or update supplier configuration",
+		Long: `Stake a supplier or update supplier configuration using the specified configuration file.
+This command supports flexible staking operations:
+
+• Initial staking: Requires both stake amount and service configurations
+• Stake-only updates: Update stake amount without changing service configurations (--stake-only)
+• Service configuration updates: Update services without changing stake (--services-only)
+
+The command supports both custodial and non-custodial staking workflows and sources
+the necessary information from the provided configuration file.
 
 For more details on the staking process, please refer to the supplier staking documentation at:
 https://dev.poktroll.com/operate/configs/supplier_staking_config
 
-Example:
-$ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backend test  --from $(OWNER_ADDRESS) --network=<network> --home $(POCKETD_HOME)`,
+Examples:
+  # Initial supplier staking (requires both stake and services in config)
+  $ pocketd tx supplier stake-supplier --config stake_config.yaml --from $(OWNER_ADDRESS)
+  
+  # Update only the stake amount (services section optional in config)
+  $ pocketd tx supplier stake-supplier --config stake_config.yaml --stake-only --from $(OWNER_ADDRESS)
+  
+  # Update only service configurations (stake_amount optional in config, must be signed by operator)
+  $ pocketd tx supplier stake-supplier --config stake_config.yaml --services-only --from $(OPERATOR_ADDRESS)`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
@@ -74,7 +87,7 @@ $ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backen
 				case supplierStakeConfigs.OperatorAddress != "":
 					signingKeyNameOrAddress = supplierStakeConfigs.OperatorAddress
 				default:
-					return types.ErrSupplierInvalidAddress.Wrap("no signer address provided")
+					return types.ErrSupplierInvalidAddress.Wrap("unable to determine signer address: config must specify owner_address or operator_address, or use --from flag")
 				}
 
 				if err = cmd.Flags().Set(flags.FlagFrom, signingKeyNameOrAddress); err != nil {
@@ -99,20 +112,39 @@ $ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backen
 				return err
 			}
 
-			if !stakeOnlyFlagValue && len(msg.GetServices()) == 0 {
-				return types.ErrSupplierInvalidServiceConfig.Wrap("no service configurations provided")
+			// Ensure mutually exclusive flags
+			if stakeOnlyFlagValue && servicesOnlyFlagValue {
+				return types.ErrSupplierInvalidServiceConfig.Wrap("--stake-only and --services-only flags are mutually exclusive")
 			}
 
-			if servicesOnlyFlagValue {
+			// Validate flag-specific requirements
+			if stakeOnlyFlagValue {
+				if len(msg.GetServices()) > 0 {
+					return types.ErrSupplierInvalidServiceConfig.Wrap("--stake-only flag specified but config contains service configurations; remove services section from config")
+				}
+				if msg.GetStake() == nil {
+					return types.ErrSupplierInvalidStake.Wrap("--stake-only flag requires stake_amount in config file")
+				}
+			} else if servicesOnlyFlagValue {
+				if msg.GetStake() != nil {
+					return types.ErrSupplierInvalidStake.Wrap("--services-only flag specified but config contains stake_amount; remove stake_amount from config")
+				}
+				if len(msg.GetServices()) == 0 {
+					return types.ErrSupplierInvalidServiceConfig.Wrap("--services-only flag requires services section in config file")
+				}
 				if !msg.IsSigner(msg.GetOperatorAddress()) {
 					return types.ErrSupplierInvalidServiceConfig.Wrap(
-						"only the owner account can update the service configurations",
+						"--services-only flag requires operator to be the transaction signer",
 					)
 				}
-			}
-
-			if !servicesOnlyFlagValue && msg.GetStake() == nil {
-				return types.ErrSupplierInvalidStake.Wrap("nil stake amount")
+			} else {
+				// Default behavior: require both stake and services for new suppliers
+				if len(msg.GetServices()) == 0 {
+					return types.ErrSupplierInvalidServiceConfig.Wrap("no service configurations provided in config file; either provide services or use --stake-only flag")
+				}
+				if msg.GetStake() == nil {
+					return types.ErrSupplierInvalidStake.Wrap("stake amount is required; either provide stake_amount in config or use --services-only flag")
+				}
 			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)

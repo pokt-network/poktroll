@@ -67,7 +67,7 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 			return ErrSupplierInvalidStake.Wrapf("invalid stake amount for supplier: %s <= 0", msg.Stake)
 		}
 		if stake.Denom != pocket.DenomuPOKT {
-			return ErrSupplierInvalidStake.Wrapf("invalid stake amount denom for supplier %s", msg.Stake)
+			return ErrSupplierInvalidStake.Wrapf("invalid stake amount denom for supplier: expected %s, got %s", pocket.DenomuPOKT, stake.Denom)
 		}
 	}
 
