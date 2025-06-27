@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	proxyws "github.com/pokt-network/poktroll/pkg/relayer/proxy/websockets"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -29,6 +30,13 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 
 	// Get the current height session to determine the session parameters.
 	block := server.blockClient.LastBlock(ctx)
+
+	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"📊 Chain head at height %d (block hash: %X) during WebSocket session setup",
+		block.Height(),
+		block.Hash(),
+	)
+
 	session, err := server.sessionQueryClient.GetSession(ctx, appAddress, serviceId, block.Height())
 	if err != nil {
 		return ErrRelayerProxyInternalError.Wrapf("error getting session: %v", err)
