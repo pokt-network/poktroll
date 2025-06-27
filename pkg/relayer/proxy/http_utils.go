@@ -73,13 +73,15 @@ func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]b
 
 	bytesRead, err := buf.ReadFrom(limitedReader)
 	if err != nil {
-		return nil, fmt.Errorf("❌ failed to read request body: %w", err)
+		return nil, ErrRelayerProxyInternalError.Wrapf(
+			"failed to read request body: %s", err.Error(),
+		)
 	}
 
 	// Check if the body exceeded our size limit
 	if bytesRead > maxSize {
 		return nil, ErrRelayerProxyMaxBodyExceeded.Wrapf(
-			"❌ body size exceeds maximum allowed body: %d bytes read > %d bytes limit",
+			"body size exceeds maximum allowed body: %d bytes read > %d bytes limit",
 			bytesRead,
 			maxSize,
 		)
@@ -88,21 +90,25 @@ func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]b
 	return buf.Bytes(), nil
 }
 
+// SafeRequestReadBody reads the HTTP request body up to a specified size limit, enforcing safety and logging errors.
+// Logs and wraps errors for size violations or reading issues, using the provided logger. Returns body as []byte or error.
 func SafeRequestReadBody(logger polylog.Logger, request *http.Request, maxSize int64) ([]byte, error) {
 	body, err := SafeReadBody(logger, request.Body, maxSize)
 
 	if errors.Is(err, ErrRelayerProxyMaxBodyExceeded) {
-		return nil, ErrRelayerProxyRequestLimitExceed.Wrap(err.Error())
+		return nil, ErrRelayerProxyRequestLimitExceeded.Wrap(err.Error())
 	}
 
 	return body, err
 }
 
+// SafeResponseReadBody reads the HTTP response body up to a specified size limit, enforcing safety and logging errors.
+// Logs and wraps errors for size violations or reading issues, using the provided logger. Returns body as []byte or error.
 func SafeResponseReadBody(logger polylog.Logger, response *http.Response, maxSize int64) ([]byte, error) {
 	body, err := SafeReadBody(logger, response.Body, maxSize)
 
 	if errors.Is(err, ErrRelayerProxyMaxBodyExceeded) {
-		return nil, ErrRelayerProxyResponseLimitExceed.Wrap(err.Error())
+		return nil, ErrRelayerProxyResponseLimitExceeded.Wrap(err.Error())
 	}
 
 	return body, err
@@ -137,7 +143,7 @@ func SerializeHTTPResponse(
 	// Read the response body with size limits
 	responseBodyBz, err := SafeResponseReadBody(logger, response, maxBodySize)
 	if err != nil {
-		return nil, nil, fmt.Errorf("❌ failed to read response body: %w", err)
+		return nil, nil, err
 	}
 
 	// Convert HTTP headers to the POKT header format

@@ -16,6 +16,6 @@ var (
 	ErrRelayerProxyCalculateRelayCost        = sdkerrors.Register(codespace, 8, "failed to calculate relay cost")
 	ErrRelayerProxySupplierNotReachable      = sdkerrors.Register(codespace, 9, "supplier(s) not reachable")
 	ErrRelayerProxyMaxBodyExceeded           = sdkerrors.Register(codespace, 10, "max body size exceeded")
-	ErrRelayerProxyResponseLimitExceed       = sdkerrors.Register(codespace, 11, "response limit exceed")
-	ErrRelayerProxyRequestLimitExceed        = sdkerrors.Register(codespace, 12, "request limit exceed")
+	ErrRelayerProxyResponseLimitExceeded     = sdkerrors.Register(codespace, 11, "response limit exceed")
+	ErrRelayerProxyRequestLimitExceeded      = sdkerrors.Register(codespace, 12, "request limit exceed")
 )
