@@ -234,23 +234,16 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.True(t, foundSupplier.IsUnbonding())
 
 	// Stake the supplier again
-	stakeMsg, _ = newSupplierStakeMsg(supplierOperatorAddr, supplierOperatorAddr, initialStake+1, serviceID)
+	stakeMsg, _ = newSupplierStakeMsg(supplierOperatorAddr, supplierOperatorAddr, initialStake+1)
 	_, err = srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	expectedSupplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
 	expectedSupplier.Stake = stakeMsg.GetStake()
-	// Make a copy of the existing service configuration to be added as a new entry in the history
-	newServiceConfigUpdate := *expectedSupplier.ServiceConfigHistory[0]
 	// Set the deactivation height of the current service configuration to the next block after session end
 	// This mimics the behavior of the staking process, which effectively marks all
 	// the previous service configurations as deactivated.
 	expectedSupplier.ServiceConfigHistory[0].DeactivationHeight = sessionEndHeight + 1
-	// Append the copied service configuration as a new entry in the history
-	// This effectively restarts the service with its original configuration after canceling unbonding
-	expectedSupplier.ServiceConfigHistory = append(expectedSupplier.ServiceConfigHistory,
-		&newServiceConfigUpdate,
-	)
 
 	// Assert that the EventSupplierUnbondingCanceled event is emitted.
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
@@ -355,7 +348,7 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Stake the supplier
 	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
-	stakeMsg, expectedSupplier := newSupplierStakeMsg(ownerAddr, ownerAddr, initialStake, serviceID)
+	stakeMsg, expectedSupplier := newSupplierStakeMsg(ownerAddr, ownerAddr, initialStake)
 	stakeMsg.OperatorAddress = supplierOperatorAddr
 	expectedSupplier.OperatorAddress = supplierOperatorAddr
 	for _, serviceConfig := range expectedSupplier.ServiceConfigHistory {
