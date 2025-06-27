@@ -162,7 +162,12 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		logger.Error().Err(err).Msg("❌ Error connecting to gRPC")
 		return err
 	}
-	defer grpcConn.Close()
+	defer func(grpcConn *grpc.ClientConn) {
+		err := grpcConn.Close()
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error closing gRPC connection")
+		}
+	}(grpcConn)
 	logger.Info().Msgf("✅ gRPC connection initialized: %v", grpcConn)
 
 	// Create a connection to the POKT full node
@@ -341,43 +346,63 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Endpoint URL parsed: %v", reqUrl)
 
-	// Create the HTTP request with the relay request body
-	httpReq := &http.Request{
-		Method: http.MethodPost,
-		URL:    reqUrl,
-		Body:   io.NopCloser(bytes.NewReader(relayReqBz)),
-	}
+	// Send multiple requests sequentially as specified by the count flag
+	for i := 1; i <= flagRelayRequestCount; i++ {
+		// Create the HTTP request with the relay request body
+		httpReq := &http.Request{
+			Method: http.MethodPost,
+			URL:    reqUrl,
+			Body:   io.NopCloser(bytes.NewReader(relayReqBz)),
+		}
 
-	// Send the request HTTP request containing the signed relay request
-	httpResp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error sending relay request")
-		return err
-	}
-	defer httpResp.Body.Close()
+		// Send the request HTTP request containing the signed relay request
+		httpResp, err := http.DefaultClient.Do(httpReq)
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error sending relay request")
+			proxy.CloseRequestBody(logger, httpResp.Body)
+			continue
+		}
 
-	// Ensure the supplier operator signature is present
-	supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
-	if supplierSignerAddress == "" {
-		logger.Error().Msg("❌ Supplier operator signature is missing")
-		return errors.New("Relay response missing supplier operator signature")
-	}
-	// Ensure the supplier operator address matches the expected address
-	if flagRelaySupplier == "" {
-		logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
-	} else if supplierSignerAddress != flagRelaySupplier {
-		logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
-		return errors.New("Relay response supplier operator signature does not match")
-	}
+		bodyCloseErr := httpResp.Body.Close()
+		if bodyCloseErr != nil {
+			logger.Error().Err(bodyCloseErr).Msg("❌ Error closing response body")
+			proxy.CloseRequestBody(logger, httpResp.Body)
+			continue
+		}
 
-	logger.Info().Msgf("🔍 Backend response header, Content-Type: %s", httpResp.Header.Get("Content-Type"))
+		// Ensure the supplier operator signature is present
+		supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
+		if supplierSignerAddress == "" {
+			logger.Error().Msg("❌ Supplier operator signature is missing")
+			proxy.CloseRequestBody(logger, httpResp.Body)
+			continue
+		}
+		// Ensure the supplier operator address matches the expected address
+		if flagRelaySupplier == "" {
+			logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
+		} else if supplierSignerAddress != flagRelaySupplier {
+			logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
+			proxy.CloseRequestBody(logger, httpResp.Body)
+			continue
+		}
 
-	// Handle response according to type
-	if proxy.IsStreamingResponse(httpResp) {
-		return processStreamRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
-	} else {
-		// Normal, non-streaming request
-		return processNormalRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
+		logger.Info().Msgf("🔍 Backend response header, Content-Type: %s", httpResp.Header.Get("Content-Type"))
+
+		// Handle response according to type
+		if proxy.IsStreamingResponse(httpResp) {
+			streamErr := processStreamRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
+			proxy.CloseRequestBody(logger, httpResp.Body)
+			if streamErr != nil {
+				logger.Error().Err(streamErr).Msg("❌ Stream errored")
+			}
+		} else {
+			// Normal, non-streaming request
+			reqErr := processNormalRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
+			proxy.CloseRequestBody(logger, httpResp.Body)
+			if reqErr != nil {
+				logger.Error().Err(reqErr).Msg("❌ Request errored")
+			}
+		}
 	}
 
 	return nil
@@ -470,6 +495,14 @@ func processNormalRequest(ctx context.Context,
 	}
 	logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
 
+	// Log response details
+	if flagRelayRequestCount > 1 {
+		logger.Info().Msgf("✅ Status code %d, Response size %d bytes", backendHttpResponse.StatusCode, len(respBz))
+	} else {
+		logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
+		logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
+	}
+
 	err = unmarshalAndPrintResponse(backendHttpResponse.BodyBz, logger)
 	if err != nil {
 		return err
@@ -511,6 +544,7 @@ func unmarshalAndPrintResponse(BodyBz []byte, logger polylog.Logger) error {
 		logger.Error().Err(err).Msg("❌ Error deserializing backend response payload")
 		return err
 	}
+
 	logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
 
 	// If "jsonrpc" key exists, try to further deserialize "result"
@@ -534,6 +568,7 @@ func unmarshalAndPrintResponse(BodyBz []byte, logger polylog.Logger) error {
 
 	return nil
 }
+
 // If a supplier is specified but not in the session, try to fetch it directly.
 // TODO_UPNEXT(@olshansk): Add support for sending a relay to a supplier that is not in the session.
 // This will require starting a relayminer in debug mode to avoid validating the session header.
