@@ -175,7 +175,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("failed to build the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer CloseRequestBody(logger, httpRequest.Body)
+	defer CloseBody(logger, httpRequest.Body)
 
 	// Configure the HTTP client to use the appropriate transport based on the
 	// backend URL scheme.
@@ -199,7 +199,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, statusCode)
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
-	defer CloseRequestBody(logger, httpResponse.Body)
+	defer CloseBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 	// If the backend service returns a 5xx error, we consider it an internal error
@@ -217,7 +217,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
-	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse)
+	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
 	if err != nil {
 		return relayRequest, err
 	}
