@@ -26,7 +26,16 @@
 # 5. Export all module parameters to individual files in a directory
 # 6. Provide instructions for submitting transactions
 
-set -e
+# set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
 
 # Available modules list
 AVAILABLE_MODULES=(
@@ -256,7 +265,6 @@ fi
 # Function to query and display parameters for a single module
 query_module_params() {
     local module=$1
-    local show_header=${2:-true}
 
     # Build the query command
     local query_cmd="pocketd query $module params --home=$HOME_DIR"
@@ -266,13 +274,11 @@ query_module_params() {
     query_cmd="$query_cmd -o json"
     echo $query_cmd
 
-    if [ "$show_header" = true ]; then
-        echo "========================================="
-        echo "Module: $module ($(get_module_description "$module"))"
-        echo "Environment: $ENVIRONMENT"
-        echo "Network: $NETWORK"
-        echo "========================================="
-    fi
+    echo "========================================="
+    echo "Module: $module ($(get_module_description "$module"))"
+    echo -e "Environment: ${CYAN}$ENVIRONMENT${NC}"
+    echo -e "Network: ${CYAN}$NETWORK${NC}"
+    echo "========================================="
 
     # Query parameters
     local params_output
@@ -281,9 +287,6 @@ query_module_params() {
 
     if [ $query_exit_code -ne 0 ] || [ -z "$params_output" ]; then
         echo "❌ Failed to query parameters for module '$module'"
-        if [ "$show_header" = true ]; then
-            echo "   This module may not exist or may not have queryable parameters"
-        fi
         return 1
     fi
 
@@ -317,7 +320,7 @@ query_all_modules() {
 
     for module in "${AVAILABLE_MODULES[@]}"; do
         echo "🔍 Checking module: $module..."
-        if query_module_params "$module" false; then
+        if query_module_params "$module"; then
             successful_modules+=("$module")
         else
             failed_modules+=("$module")
@@ -525,9 +528,9 @@ case $COMMAND in
 
     echo "========================================="
     echo "Querying current $MODULE_NAME parameters"
-    echo "Environment: $ENVIRONMENT"
-    echo "Network: $NETWORK"
-    echo "Command: $QUERY_CMD"
+    echo -e "Environment: ${CYAN}$ENVIRONMENT${NC}"
+    echo -e "Network: ${CYAN}$NETWORK${NC}"
+    echo -e "Command: ${CYAN}$QUERY_CMD${NC}"
     echo "========================================="
     echo ""
 
@@ -569,8 +572,8 @@ case $COMMAND in
 EOF
 
     echo "========================================="
-    echo "Transaction template created: $OUTPUT_FILE_UPDATE"
-    echo "Message type used: $MESSAGE_TYPE"
+    echo -e "Transaction template created: ${CYAN}$OUTPUT_FILE_UPDATE${NC}"
+    echo -e "Message type used: ${CYAN}$MESSAGE_TYPE${NC}"
     echo "========================================="
     echo ""
 
@@ -608,10 +611,10 @@ EOF
     echo ""
     echo "To submit your parameter update transaction, run:"
     echo ""
-    echo "  pocketd tx authz exec $OUTPUT_FILE_UPDATE --from=$FROM_KEY --keyring-backend=test --chain-id=$CHAIN_ID $NODE --yes --home=$HOME_DIR --fees=200upokt"
+    echo -e "${CYAN}pocketd tx authz exec $OUTPUT_FILE_UPDATE --from=$FROM_KEY --keyring-backend=test --chain-id=$CHAIN_ID $NODE --yes --home=$HOME_DIR --gas=auto --fees=10upokt${NC}"
     echo ""
-    echo "Template file location: $OUTPUT_FILE_UPDATE"
-    echo "Message type used: $MESSAGE_TYPE"
+    echo -e "Template file location: ${CYAN}$OUTPUT_FILE_UPDATE${NC}"
+    echo -e "Message type used: ${CYAN}$MESSAGE_TYPE${NC}"
     echo ""
     echo "⚠️  IMPORTANT: Review your changes carefully before submitting!"
     echo "⚠️  Parameter updates affect the entire network and cannot be easily reverted."

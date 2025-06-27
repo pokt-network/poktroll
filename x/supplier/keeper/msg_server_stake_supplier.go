@@ -232,7 +232,7 @@ func (k Keeper) StakeSupplier(
 
 	supplierStakingFee := k.GetParams(ctx).StakingFee
 
-	if err = k.reconcileSupplierStakeDiff(ctx, msgSignerAddress, supplierCurrentStake, *msg.Stake); err != nil {
+	if err = k.reconcileSupplierStakeDiff(ctx, msg, supplierCurrentStake); err != nil {
 		logger.Error(fmt.Sprintf("Could not transfer supplier stake difference due to %s", err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -324,18 +324,31 @@ func (k Keeper) updateSupplier(
 // amounts by either escrowing, when the stake is increased, or unescrowing otherwise.
 func (k Keeper) reconcileSupplierStakeDiff(
 	ctx context.Context,
-	signerAddr sdk.AccAddress,
+	msg *suppliertypes.MsgStakeSupplier,
 	currentStake sdk.Coin,
-	newStake sdk.Coin,
 ) error {
 	logger := k.Logger().With("method", "reconcileSupplierStakeDiff")
+
+	newStake := *msg.Stake
+
+	// Parse the signer address - this is the account that will pay for stake increases
+	signerAccAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		return err
+	}
+
+	// Parse the owner address - this is the account that will receive stake decreases
+	ownerAccAddr, err := sdk.AccAddressFromBech32(msg.OwnerAddress)
+	if err != nil {
+		return err
+	}
 
 	// The Supplier is increasing its stake, so escrow the difference
 	if currentStake.Amount.LT(newStake.Amount) {
 		coinsToEscrow := sdk.NewCoins(newStake.Sub(currentStake))
 
 		// Send the coins from the message signer account to the staked supplier pool
-		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAddr, suppliertypes.ModuleName, coinsToEscrow)
+		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAccAddr, suppliertypes.ModuleName, coinsToEscrow)
 	}
 
 	// Ensure that the new stake is at least the minimum stake which is required for:
@@ -345,7 +358,7 @@ func (k Keeper) reconcileSupplierStakeDiff(
 	if newStake.Amount.LT(minStake.Amount) {
 		err := suppliertypes.ErrSupplierInvalidStake.Wrapf(
 			"supplier with owner %q must stake at least %s",
-			signerAddr, minStake,
+			signerAccAddr, minStake,
 		)
 		return err
 	}
@@ -354,12 +367,12 @@ func (k Keeper) reconcileSupplierStakeDiff(
 	if currentStake.Amount.GT(newStake.Amount) {
 		coinsToUnescrow := sdk.NewCoins(currentStake.Sub(newStake))
 
-		// Send the coins from the staked supplier pool to the message signer account
-		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, signerAddr, coinsToUnescrow)
+		// Send the coins from the staked supplier pool to the supplier owner account
+		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, ownerAccAddr, coinsToUnescrow)
 	}
 
 	// The supplier is not changing its stake. This can happen if the supplier
 	// is updating its service configurations or owner address but not the stake.
-	logger.Info(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", signerAddr.String()))
+	logger.Info(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", msg.OperatorAddress))
 	return nil
 }
