@@ -3,6 +3,12 @@ title: RelayMiner config
 sidebar_position: 4
 ---
 
+:::warning Suppliers Migrating From Morse
+
+If you are setting up a `RelayMiner` using a migrated `Supplier` from Morse, you must follow the instructions [**here**](../../2_explore/4_morse_migration/7_claiming_supplier.md#6-ensure-your-shannon-supplier-has-an-onchain-public-key) to ensure your `Supplier` has an onchain public key.
+
+:::
+
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
 co-processor/sidecar that acts as the real server for querying request, building
 claims, and submitting proofs.

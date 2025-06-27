@@ -30,8 +30,9 @@ Stake an onchain `Supplier` and run an offchain `RelayMiner` in less than an hou
 - [RelayMiner Configuration](#relayminer-configuration)
   - [(Optional) Start the anvil node](#optional-start-the-anvil-node)
   - [1. Configure the RelayMiner](#1-configure-the-relayminer)
-  - [2. Start the RelayMiner](#2-start-the-relayminer)
-  - [3. Test the RelayMiner](#3-test-the-relayminer)
+  - [2. Ensure the RelayMiner is funded with an onchain public key](#2-ensure-the-relayminer-is-funded-with-an-onchain-public-key)
+  - [3. Start the RelayMiner](#3-start-the-relayminer)
+  - [4. Test the RelayMiner](#4-test-the-relayminer)
 
 ## High Level Architecture Diagram
 
@@ -337,7 +338,23 @@ pprof:
 🚀
 ```
 
-### 2. Start the RelayMiner
+### 2. Ensure the RelayMiner is funded with an onchain public key
+
+The RelayMiner is responsible
+
+Supplier Public Key Issue Fix
+Problem: New suppliers without public keys on-chain can't validate relay responses during their first session, even after delivering claims.
+Root Cause: Igniter allows staking without operator signatures, leaving suppliers without required public keys.
+Solution:
+
+Ensure operators sign at least one transaction before staking
+First claim submission will set the public key on-chain
+Monitor for suppliers missing public keys
+
+Consequences: Session-long relay validation failures until public key is established.
+Status: Fleet re-staked, monitoring solution in development.
+
+### 3. Start the RelayMiner
 
 Start the RelayMiner (i.e. the offchain co-processor) server:
 
@@ -350,7 +367,7 @@ pocketd \
   --chain-id=$BETA_NETWORK
 ```
 
-### 3. Test the RelayMiner
+### 4. Test the RelayMiner
 
 After following the instructions in the [Gateway cheatsheet](5_gateway_cheatsheet.md).
 
