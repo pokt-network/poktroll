@@ -575,7 +575,7 @@ func TestRelayProxyPingAllSuite(t *testing.T) {
 func (t *RelayProxyPingAllSuite) SetupSuite() {
 	pingAppPrivateKey := secp256k1.GenPrivKey()
 	defaultRelayMinerServerAddress := "127.0.0.1:8245"
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	supplierEndpointsMap := map[string][]*sharedtypes.SupplierEndpoint{
 		defaultService: {
 			{
 				Url:     "http://supplier1pingall:8645",
@@ -607,7 +607,7 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 	t.relayerProxyBehavior = []func(*testproxy.TestBehavior){
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierOperatorKeyName, 1),
 		testproxy.WithServicesConfigMap(t.servicesConfigMap),
-		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpointsMap),
 		testproxy.WithDefaultApplication(pingAppPrivateKey),
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 		testproxy.WithRelayMeter(),
@@ -660,7 +660,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	pingAppPrivateKey := secp256k1.GenPrivKey()
 
 	// adding supplier endpoint.
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	supplierEndpointsMap := map[string][]*sharedtypes.SupplierEndpoint{
 		firstServiceName: []*sharedtypes.SupplierEndpoint{
 			{
 				Url:     "http://firstservice:8646",
@@ -714,7 +714,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 
 	relayerProxyBehavior := []func(*testproxy.TestBehavior){
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(newSupplierOperatorKeyName, 1),
-		testproxy.WithDefaultSupplier(newSupplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(newSupplierOperatorKeyName, supplierEndpointsMap),
 		testproxy.WithServicesConfigMap(cm),
 		testproxy.WithDefaultApplication(pingAppPrivateKey),
 		testproxy.WithDefaultSessionSupplier(newSupplierOperatorKeyName, defaultService, appPrivateKey),
@@ -755,7 +755,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	failingRelayMinerAddr := "127.0.0.1:8247"
 	failingServiceName := "failingservice"
 
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	serviceEndpointMap := map[string][]*sharedtypes.SupplierEndpoint{
 		failingServiceName: {
 			{
 				Url:     "http://failingservice:8647",
@@ -785,7 +785,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, serviceEndpointMap),
 		testproxy.WithServicesConfigMap(cm),
 	}...)
 
@@ -826,7 +826,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	failingRelayMinerAddr := "127.0.0.1:8248"
 	failingServiceName := "faillingservice"
 
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	supplierEndpointsMap := map[string][]*sharedtypes.SupplierEndpoint{
 		failingServiceName: {
 			{
 				Url:     "http://failingservice:8648",
@@ -856,7 +856,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpointsMap),
 		testproxy.WithServicesConfigMap(cm),
 	}...)
 
@@ -921,7 +921,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	relayminerIPV6ServiceAddr := "localhost:8250"
 	IPV6ServiceName := "ipv6service"
 
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	supplierEndpointMap := map[string][]*sharedtypes.SupplierEndpoint{
 		domainNameServiceName: {
 			{
 				Url:     "http://exampleservice.org:8649",
@@ -974,7 +974,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpointMap),
 		testproxy.WithServicesConfigMap(cm),
 	}...)
 
