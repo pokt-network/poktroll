@@ -61,6 +61,10 @@ type sessionTree struct {
 	// to delete the KVStore when it is no longer needed.
 	storePath string
 
+	// treeStoreCache caches the opened KVStore to avoid reopening during proof generation
+	treeStoreCache pebble.PebbleKVStore
+	treeStoreCacheMu sync.RWMutex
+
 	isClaiming bool
 }
 
@@ -242,13 +246,13 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return st.compactProof, nil
 	}
 
-	// Restore the KVStore from disk since it has been closed after the claim has been generated.
-	st.treeStore, err = pebble.NewKVStore(st.storePath)
+	// Get or create cached KVStore to avoid repeated opening during proof generation
+	kvStore, err := st.getCachedTreeStore()
 	if err != nil {
 		return nil, err
 	}
 
-	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
+	sessionSMT := smt.ImportSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
 
 	// Generate the proof and cache it along with the path for which it was generated.
 	// There is no ProveClosest variant that generates a compact proof directly.
@@ -344,13 +348,27 @@ func (st *sessionTree) Delete() error {
 	// - Prevent double-close operations.
 	// - Avoid panics from future use of a closed kvstore instance.
 	// - Signal that the treeStore is no longer valid.
-	defer func() { st.treeStore = nil }()
+	defer func() { 
+		st.treeStore = nil
+		st.treeStoreCache = nil
+	}()
 
 	st.isClaiming = false
 
 	// NB: We used to call `st.treeStore.ClearAll()` here.
 	// This was intentionally removed to lower the IO load.
 	// When the database is closed, it is deleted it from disk right away.
+
+	// Close cached store if it exists
+	st.treeStoreCacheMu.Lock()
+	if st.treeStoreCache != nil {
+		if err := st.treeStoreCache.Stop(); err != nil {
+			st.treeStoreCacheMu.Unlock()
+			return err
+		}
+		st.treeStoreCache = nil
+	}
+	st.treeStoreCacheMu.Unlock()
 
 	if st.treeStore != nil {
 		if err := st.treeStore.Stop(); err != nil {
@@ -385,6 +403,34 @@ func (st *sessionTree) StartClaiming() error {
 // operator this sessionTree belongs to.
 func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
+}
+
+// getCachedTreeStore returns a cached KVStore instance to avoid reopening during proof generation.
+// This significantly reduces file descriptor usage during proof operations.
+func (st *sessionTree) getCachedTreeStore() (pebble.PebbleKVStore, error) {
+	st.treeStoreCacheMu.RLock()
+	if st.treeStoreCache != nil {
+		defer st.treeStoreCacheMu.RUnlock()
+		return st.treeStoreCache, nil
+	}
+	st.treeStoreCacheMu.RUnlock()
+
+	st.treeStoreCacheMu.Lock()
+	defer st.treeStoreCacheMu.Unlock()
+
+	// Double-check in case another goroutine created it while we were waiting
+	if st.treeStoreCache != nil {
+		return st.treeStoreCache, nil
+	}
+
+	// Create new KVStore and cache it
+	kvStore, err := pebble.NewKVStore(st.storePath)
+	if err != nil {
+		return nil, err
+	}
+
+	st.treeStoreCache = kvStore
+	return kvStore, nil
 }
 
 // Stop the KVStore and free up the in-memory resources used by the session tree.
