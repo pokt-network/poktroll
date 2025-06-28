@@ -227,8 +227,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Check if the context deadline has already been exceeded before making the backend call.
 	// This prevents unnecessary work when the request has already timed out.
-	if err := ctxWithDeadline.Err(); err != nil {
-		logger.Warn().Msg(err.Error())
+	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
+		logger.Warn().Msg(ctxErr.Error())
 
 		return relayRequest, ErrRelayerProxyTimeout.Wrapf(
 			"request to service %s timed out after %s",
