@@ -105,24 +105,27 @@ func (k msgServer) StakeGateway(
 	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
 
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdk.UnwrapSDKContext(ctx).BlockHeight())
-	events := make([]sdk.Msg, 0)
 
 	// If gateway unbonding was canceled, emit the corresponding event.
 	if wasGatewayUnbonding {
-		events = append(events, &types.EventGatewayUnbondingCanceled{
+		unbondingCanceledEvent := &types.EventGatewayUnbondingCanceled{
 			Gateway:          &gateway,
 			SessionEndHeight: sessionEndHeight,
-		})
+		}
+		if err = types.EmitEventGatewayUnbondingCanceled(goCtx, unbondingCanceledEvent); err != nil {
+			err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", unbondingCanceledEvent, err)
+			logger.Error(err.Error())
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	// ALWAYS emit a gateway staked event.
-	events = append(events, &types.EventGatewayStaked{
+	stakedEvent := &types.EventGatewayStaked{
 		Gateway:          &gateway,
 		SessionEndHeight: sessionEndHeight,
-	})
-
-	if err = ctx.EventManager().EmitTypedEvents(events...); err != nil {
-		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", events, err)
+	}
+	if err = types.EmitEventGatewayStaked(goCtx, stakedEvent); err != nil {
+		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", stakedEvent, err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}

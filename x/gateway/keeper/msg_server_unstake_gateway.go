@@ -75,7 +75,7 @@ func (k msgServer) UnstakeGateway(
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
 	}
-	err = ctx.EventManager().EmitTypedEvent(unbondingBeginEvent)
+	err = types.EmitEventGatewayUnbondingBegin(goCtx, unbondingBeginEvent)
 	if err != nil {
 		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
 		logger.Error(err.Error())

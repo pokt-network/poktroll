@@ -112,7 +112,7 @@ func (k msgServer) UnstakeSupplier(
 		SessionEndHeight:   int64(supplier.GetUnstakeSessionEndHeight()),
 		UnbondingEndHeight: unbondingEndHeight,
 	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
+	if err := suppliertypes.EmitEventSupplierUnbondingBegin(ctx, event); err != nil {
 		err = suppliertypes.ErrSupplierEmitEvent.Wrapf("(%+v): %s", event, err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())

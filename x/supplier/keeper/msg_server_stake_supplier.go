@@ -249,10 +249,22 @@ func (k Keeper) StakeSupplier(
 		Supplier:         &supplier,
 		SessionEndHeight: sessionEndHeight,
 	})
-	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
-		err = suppliertypes.ErrSupplierEmitEvent.Wrapf("(%+v): %s", events, err)
-		logger.Error(err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
+	// Emit events using the new helper functions
+	for _, event := range events {
+		switch e := event.(type) {
+		case *suppliertypes.EventSupplierUnbondingCanceled:
+			if err = suppliertypes.EmitEventSupplierUnbondingCanceled(ctx, e); err != nil {
+				err = suppliertypes.ErrSupplierEmitEvent.Wrapf("EventSupplierUnbondingCanceled: %s", err)
+				logger.Error(err.Error())
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+		case *suppliertypes.EventSupplierStaked:
+			if err = suppliertypes.EmitEventSupplierStaked(ctx, e); err != nil {
+				err = suppliertypes.ErrSupplierEmitEvent.Wrapf("EventSupplierStaked: %s", err)
+				logger.Error(err.Error())
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+		}
 	}
 
 	return &supplier, nil

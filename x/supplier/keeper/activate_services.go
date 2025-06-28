@@ -60,7 +60,7 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 			ActivationHeight: currentHeight,
 		}
 		// Emit service activation events.
-		if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
+		if err := suppliertypes.EmitEventSupplierServiceConfigActivated(ctx, event); err != nil {
 			logger.Error(fmt.Sprintf("could not emit event %v", event))
 			return 0, err
 		}

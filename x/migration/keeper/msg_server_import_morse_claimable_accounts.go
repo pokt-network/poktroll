@@ -71,14 +71,13 @@ func (k msgServer) ImportMorseClaimableAccounts(
 
 	// Emit event for Morse claimable accounts import
 	// - Includes: block height, MorseAccountStateHash, and number of accounts
-	if err := sdkCtx.EventManager().EmitTypedEvent(
-		&migrationtypes.EventImportMorseClaimableAccounts{
-			CreatedAtHeight: sdkCtx.BlockHeight(),
-			// DEV_NOTE: The MorseAccountStateHash is validated in msg#ValidateBasic().
-			MorseAccountStateHash: msg.MorseAccountStateHash,
-			NumAccounts:           uint64(len(msg.MorseAccountState.Accounts)),
-		},
-	); err != nil {
+	importEvent := &migrationtypes.EventImportMorseClaimableAccounts{
+		CreatedAtHeight: sdkCtx.BlockHeight(),
+		// DEV_NOTE: The MorseAccountStateHash is validated in msg#ValidateBasic().
+		MorseAccountStateHash: msg.MorseAccountStateHash,
+		NumAccounts:           uint64(len(msg.MorseAccountState.Accounts)),
+	}
+	if err := migrationtypes.EmitEventImportMorseClaimableAccounts(ctx, importEvent); err != nil {
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}

@@ -152,11 +152,22 @@ func (k Keeper) StakeApplication(
 		SessionEndHeight: k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight),
 	})
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
-		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", events, err)
-		logger.Error(err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
+	// Emit events using the new helper functions
+	for _, event := range events {
+		switch e := event.(type) {
+		case *types.EventApplicationUnbondingCanceled:
+			if err = types.EmitEventApplicationUnbondingCanceled(ctx, e); err != nil {
+				err = types.ErrAppEmitEvent.Wrapf("EventApplicationUnbondingCanceled: %s", err)
+				logger.Error(err.Error())
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+		case *types.EventApplicationStaked:
+			if err = types.EmitEventApplicationStaked(ctx, e); err != nil {
+				err = types.ErrAppEmitEvent.Wrapf("EventApplicationStaked: %s", err)
+				logger.Error(err.Error())
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+		}
 	}
 
 	return &foundApp, nil

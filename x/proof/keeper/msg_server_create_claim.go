@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/gogoproto/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -28,7 +26,6 @@ func (k msgServer) CreateClaim(
 	)
 
 	logger := k.Logger().With("method", "CreateClaim")
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger.Info("creating claim")
 
 	// Basic validation of the CreateClaim message.
@@ -118,38 +115,37 @@ func (k msgServer) CreateClaim(
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 
 	// Emit the appropriate event based on whether the claim was created or updated.
-	var claimUpsertEvent proto.Message
 	switch isExistingClaim {
 	case true:
-		claimUpsertEvent = proto.Message(
-			&types.EventClaimUpdated{
-				Claim:                    &claim,
-				NumRelays:                numRelays,
-				NumClaimedComputeUnits:   numClaimComputeUnits,
-				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
-				ClaimedUpokt:             &claimedUPOKT,
-			},
-		)
+		if err = types.EmitEventClaimUpdated(ctx, &types.EventClaimUpdated{
+			Claim:                    &claim,
+			NumRelays:                numRelays,
+			NumClaimedComputeUnits:   numClaimComputeUnits,
+			NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
+			ClaimedUpokt:             &claimedUPOKT,
+		}); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				sharedtypes.ErrSharedEmitEvent.Wrapf(
+					"failed to emit EventClaimUpdated: %v", err,
+				).Error(),
+			)
+		}
 	case false:
-		claimUpsertEvent = proto.Message(
-			&types.EventClaimCreated{
-				Claim:                    &claim,
-				NumRelays:                numRelays,
-				NumClaimedComputeUnits:   numClaimComputeUnits,
-				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
-				ClaimedUpokt:             &claimedUPOKT,
-			},
-		)
-	}
-	if err = sdkCtx.EventManager().EmitTypedEvent(claimUpsertEvent); err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			sharedtypes.ErrSharedEmitEvent.Wrapf(
-				"failed to emit event type %T: %v",
-				claimUpsertEvent,
-				err,
-			).Error(),
-		)
+		if err = types.EmitEventClaimCreated(ctx, &types.EventClaimCreated{
+			Claim:                    &claim,
+			NumRelays:                numRelays,
+			NumClaimedComputeUnits:   numClaimComputeUnits,
+			NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
+			ClaimedUpokt:             &claimedUPOKT,
+		}); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				sharedtypes.ErrSharedEmitEvent.Wrapf(
+					"failed to emit EventClaimCreated: %v", err,
+				).Error(),
+			)
+		}
 	}
 
 	return &types.MsgCreateClaimResponse{

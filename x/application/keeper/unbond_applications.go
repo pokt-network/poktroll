@@ -77,7 +77,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
 		}
-		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); err != nil {
+		if err := apptypes.EmitEventApplicationUnbondingEnd(ctx, unbondingEndEvent); err != nil {
 			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingEndEvent, err)
 			logger.Error(err.Error())
 			return err

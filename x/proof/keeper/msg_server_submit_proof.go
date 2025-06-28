@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/gogoproto/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -35,7 +34,6 @@ func (k msgServer) SubmitProof(
 	ctx context.Context,
 	msg *types.MsgSubmitProof,
 ) (_ *types.MsgSubmitProofResponse, err error) {
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	// Declare claim to reference in telemetry.
 	var (
@@ -137,40 +135,38 @@ func (k msgServer) SubmitProof(
 	k.UpsertProof(ctx, *proof)
 	logger.Info("successfully upserted the proof")
 
-	// Emit the appropriate event based on whether the claim was created or updated.
-	var proofUpsertEvent proto.Message
+	// Emit the appropriate event based on whether the proof was created or updated.
 	switch isExistingProof {
 	case true:
-		proofUpsertEvent = proto.Message(
-			&types.EventProofUpdated{
-				Claim:                    claim,
-				NumRelays:                numRelays,
-				NumClaimedComputeUnits:   numClaimComputeUnits,
-				NumEstimatedComputeUnits: numEstimatedComputeUnits,
-				ClaimedUpokt:             &claimedUPOKT,
-			},
-		)
+		if err = types.EmitEventProofUpdated(ctx, &types.EventProofUpdated{
+			Claim:                    claim,
+			NumRelays:                numRelays,
+			NumClaimedComputeUnits:   numClaimComputeUnits,
+			NumEstimatedComputeUnits: numEstimatedComputeUnits,
+			ClaimedUpokt:             &claimedUPOKT,
+		}); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				sharedtypes.ErrSharedEmitEvent.Wrapf(
+					"failed to emit EventProofUpdated: %v", err,
+				).Error(),
+			)
+		}
 	case false:
-		proofUpsertEvent = proto.Message(
-			&types.EventProofSubmitted{
-				Claim:                    claim,
-				NumRelays:                numRelays,
-				NumClaimedComputeUnits:   numClaimComputeUnits,
-				NumEstimatedComputeUnits: numEstimatedComputeUnits,
-				ClaimedUpokt:             &claimedUPOKT,
-			},
-		)
-	}
-
-	if err = sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent); err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			sharedtypes.ErrSharedEmitEvent.Wrapf(
-				"failed to emit event type %T: %v",
-				proofUpsertEvent,
-				err,
-			).Error(),
-		)
+		if err = types.EmitEventProofSubmitted(ctx, &types.EventProofSubmitted{
+			Claim:                    claim,
+			NumRelays:                numRelays,
+			NumClaimedComputeUnits:   numClaimComputeUnits,
+			NumEstimatedComputeUnits: numEstimatedComputeUnits,
+			ClaimedUpokt:             &claimedUPOKT,
+		}); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				sharedtypes.ErrSharedEmitEvent.Wrapf(
+					"failed to emit EventProofSubmitted: %v", err,
+				).Error(),
+			)
+		}
 	}
 
 	return &types.MsgSubmitProofResponse{
