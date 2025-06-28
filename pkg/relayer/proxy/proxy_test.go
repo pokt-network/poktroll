@@ -1228,3 +1228,137 @@ func sendRequestWithCustomSessionHeight(
 		return testproxy.MarshalAndSend(test, servicesConfigMap, defaultRelayMinerServer, defaultService, req)
 	}
 }
+
+// TestRelayerProxy_TimeoutHandling tests that the HTTP client timeout configuration
+// properly handles both fast and slow backend responses in the full RelayMiner context.
+func TestRelayerProxy_TimeoutHandling(t *testing.T) {
+	tests := []struct {
+		name                string
+		backendDelay        time.Duration
+		configuredTimeout   uint64
+		expectedSuccess     bool
+		expectedMinDuration time.Duration
+		expectedMaxDuration time.Duration
+		serviceNameSuffix   string
+	}{
+		{
+			name:                "fast_backend_succeeds",
+			backendDelay:        1 * time.Second,
+			configuredTimeout:   3,
+			expectedSuccess:     true,
+			expectedMinDuration: 1 * time.Second,
+			expectedMaxDuration: 2999 * time.Millisecond,
+			serviceNameSuffix:   "fast",
+		},
+		{
+			name:                "slow_backend_times_out",
+			backendDelay:        3 * time.Second,
+			configuredTimeout:   2,
+			expectedSuccess:     false,
+			expectedMinDuration: 2 * time.Second,
+			expectedMaxDuration: 2999 * time.Millisecond,
+			serviceNameSuffix:   "slow",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Clear any previous test delays and set the delay for this test
+			testproxy.ClearTestDelays()
+			testproxy.SetTestDelay(defaultService, tt.backendDelay)
+			defer testproxy.ClearTestDelays() // Clean up after test
+
+			// Run tests sequentially to avoid port conflicts
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+
+			// Use the existing default service configuration but modify the timeout
+			// This avoids creating new services that conflict with testproxy framework
+			modifiedServicesConfigMap := make(map[string]*config.RelayMinerServerConfig)
+			for k, v := range servicesConfigMap {
+				// Deep copy the config
+				newConfig := &config.RelayMinerServerConfig{
+					ServerType:         v.ServerType,
+					ListenAddress:      v.ListenAddress,
+					SupplierConfigsMap: make(map[string]*config.RelayMinerSupplierConfig),
+				}
+
+				for serviceId, supplierConfig := range v.SupplierConfigsMap {
+					newSupplierConfig := *supplierConfig // Copy
+					newSupplierConfig.RequestTimeoutSeconds = tt.configuredTimeout
+					newConfig.SupplierConfigsMap[serviceId] = &newSupplierConfig
+				}
+				modifiedServicesConfigMap[k] = newConfig
+			}
+
+			// Use the default supplier endpoints but they'll use our timeout configuration
+			timeoutSupplierEndpoints := supplierEndpoints
+
+			// Setup the RelayerProxy instrumented behavior using the modified configuration
+			timeoutRelayerProxyBehavior := []func(*testproxy.TestBehavior){
+				testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierOperatorKeyName, blockHeight),
+				testproxy.WithServicesConfigMap(modifiedServicesConfigMap),
+				testproxy.WithDefaultSupplier(supplierOperatorKeyName, timeoutSupplierEndpoints),
+				testproxy.WithDefaultApplication(appPrivateKey),
+				testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
+			}
+
+			signingKeyNames := []string{supplierOperatorKeyName}
+			t.Logf("Creating test behavior for %s with timeout %d seconds", tt.name, tt.configuredTimeout)
+
+			test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, timeoutRelayerProxyBehavior...)
+			t.Logf("Test behavior created successfully for %s", tt.name)
+
+			// Create the RelayerProxy
+			rp, err := proxy.NewRelayerProxy(
+				test.Deps,
+				proxy.WithServicesConfigMap(modifiedServicesConfigMap),
+			)
+			require.NoError(t, err)
+
+			// Start RelayerProxy
+			go rp.Start(ctx)
+			time.Sleep(200 * time.Millisecond) // Give more time for startup
+
+			// Create a request to the default service with modified timeout
+			req := testproxy.GenerateRelayRequest(
+				test,
+				appPrivateKey,
+				defaultService,
+				blockHeight,
+				supplierOperatorKeyName,
+				testproxy.PrepareJSONRPCRequest(t),
+			)
+			req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
+
+			// Measure the time it takes for the request to complete
+			startTime := time.Now()
+			errCode, errMsg := testproxy.MarshalAndSend(test, modifiedServicesConfigMap, defaultRelayMinerServer, defaultService, req)
+			elapsed := time.Since(startTime)
+
+			// Verify the expected outcome
+			if tt.expectedSuccess {
+				require.Equal(t, int32(0), errCode, "Request should succeed when backend is faster than timeout")
+				require.Equal(t, "", errMsg, "No error message expected for successful request")
+			} else {
+				// Verify that the request fails with the expected JSON-RPC internal error code
+				// when the backend response time exceeds the configured timeout duration
+				require.Equal(t, testproxy.JSONRPCInternalErrorCode, int(errCode), "Request should fail when backend is slower than timeout, got errCode=%d", errCode)
+
+				// Validate the error message content to ensure it properly indicates
+				// the nature of the timeout failure for debugging and user feedback
+				if errMsg == proxy.ErrRelayerProxyTimeout.Error() {
+					require.Contains(t, errMsg, "internal error", "Error message should indicate proxy timeout error")
+				}
+			}
+
+			// Verify timing bounds
+			require.Less(t, elapsed, tt.expectedMaxDuration, "Request should complete within expected time bounds")
+			require.Greater(t, elapsed, tt.expectedMinDuration, "Request should take at least the expected minimum time")
+
+			// Stop RelayerProxy
+			err = rp.Stop(ctx)
+			require.NoError(t, err)
+		})
+	}
+}
