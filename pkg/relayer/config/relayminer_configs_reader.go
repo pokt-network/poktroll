@@ -1,6 +1,8 @@
 package config
 
 import (
+	"regexp"
+
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -66,6 +68,19 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	relayMinerConfig.Ping = &RelayMinerPingConfig{
 		Enabled: yamlRelayMinerConfig.Ping.Enabled,
 		Addr:    yamlRelayMinerConfig.Ping.Addr,
+	}
+
+	if yamlRelayMinerConfig.Forward.Enabled {
+		// accepts 32 bytes hexadecimal
+		if matched, _ := regexp.MatchString(`^[a-fA-F0-9]{64}$`, yamlRelayMinerConfig.Forward.AuthToken); !matched {
+			return nil, ErrRelayerMinerWrongForwardToken
+		}
+	}
+
+	relayMinerConfig.Forward = &RelayMinerForwardConfig{
+		Enabled:   yamlRelayMinerConfig.Forward.Enabled,
+		Addr:      yamlRelayMinerConfig.Forward.Addr,
+		AuthToken: yamlRelayMinerConfig.Forward.AuthToken,
 	}
 
 	// Hydrate the pocket node urls
