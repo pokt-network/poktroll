@@ -50,7 +50,8 @@ def check_and_load_agoric(chart_prefix, ibc_config):
         # Update k8s resource with new name, lebels, and port-forwards
         k8s_resource(
             "agoric-validator",
-            new_name="Agoric Local Node",
+            # TODO_IN_THIS_COMMIT: consider extracting to const
+            new_name="Agoriclocal Validator",
             labels=["IBC"],
             port_forwards=[
                 "46657:26657",
@@ -64,46 +65,63 @@ def check_and_load_agoric(chart_prefix, ibc_config):
 # - Converts a pair string like "pocket-agoriclocal" to "Pocket->Agoriclocal"
 def pair_pretty(pair):
     chain_a_id, chain_b_id = pair.split("-")
+    if chain_a_id == "pocket":
+        chain_a_id = "pokt"
+
+    if chain_b_id == "pocket":
+        chain_b_id = "pokt"
+
     return chain_a_id.title() + "->" + chain_b_id.title()
 
 
+# TODO_IN_THIS_COMMIT: update comment...
 # Load IBC Relayer Server Resources
 # - Sets up the server-side relayer for a given pair
 # - Adds appropriate resource dependencies based on which chain is "pocket"
-def load_ibc_relayer_server_resources(chart_prefix, pair):
-    chain_a_id, chain_b_id = pair.split("-")
-    pair_ibc_setup_dep = pair_pretty(pair) + " IBC Setup"
+def load_ibc_relayer_server_resources(chart_prefix, pairs):
+    resource_deps = []
+    chain_config_values_flags = []
+    # DEV_NOTE: starlark (tilt) doesn't support python sets.
+    chain_id_set = {}
+    for pair in pairs:
+        chain_a_id, chain_b_id = pair.split("-")
+        chain_id_set[chain_a_id] = True
+        chain_id_set[chain_b_id] = True
 
-    if chain_a_id == "pocket":
-        resource_deps = [
-            "validator",
-            chain_b_id.title() + " Local Node",
-            pair_ibc_setup_dep,
-        ]
-    elif chain_b_id == "pocket":
-        resource_deps = [
-            "validator",
-            chain_a_id.title() + " Local Node",
-            pair_ibc_setup_dep,
-        ]
-    else:
-        resource_deps = [
-            chain_a_id.title() + " Local Node",
-            chain_b_id.title() + " Local Node",
-            pair_ibc_setup_dep,
-        ]
+        # TODO_IN_THIS_COMMIT: extract to constant
+        if chain_a_id == "pocket":
+            resource_deps = [
+                "validator",
+                chain_b_id.title() + " Validator",
+            ]
+        elif chain_b_id == "pocket":
+            resource_deps = [
+                # TODO_IN_THIS_COMMIT: extract to constant
+                "validator",
+                chain_a_id.title() + " Validator",
+            ]
+        else:
+            resource_deps = [
+                chain_a_id.title() + "Validator",
+                chain_b_id.title() + "Validator",
+                # TODO_IN_THIS_COMMIT: extract to constant
+                "IBC Setup",
+            ]
+
+    chain_ids = chain_id_set.keys()
+    for chain_id in chain_ids:
+        chain_config_values_flags.append(
+            "--values=" +
+            os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_id + ".yaml"))
 
     # Deploy helm chart
     helm_resource(
-        "ibc-relayer-" + pair,
+        "ibc-relayer",
         chart_prefix + "ibc-relayer",
         flags=[
-            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
-            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-daemon.yaml"),
-            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pair + ".yaml"),
-            "--set=chain_a_id=" + chain_a_id,
-            "--set=chain_b_id=" + chain_b_id
-        ],
+                  "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
+                  "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-daemon.yaml"),
+              ] + chain_config_values_flags,
         resource_deps=resource_deps,
         image_deps=["ibc-relayer"],
         image_keys=[("image.repository", "image.tag")],
@@ -111,8 +129,8 @@ def load_ibc_relayer_server_resources(chart_prefix, pair):
 
     # Update k8s resource with new name, lebels, and port-forwards
     k8s_resource(
-        "ibc-relayer-" + pair,
-        new_name=pair_pretty(pair) + " IBC Relayer",
+        "ibc-relayer",
+        new_name="🔁 Hermes Relayer",
         labels=["IBC"],
         resource_deps=resource_deps,
     )
@@ -122,21 +140,22 @@ def load_ibc_relayer_server_resources(chart_prefix, pair):
 # - Sets up the CLI/setup resource for a given pair
 # - Adds appropriate resource dependencies based on which chain is "pocket"
 def load_ibc_relayer_setup_resources(chart_prefix, pair):
+    # TODO_IN_THIS_COMMIT: rename to chain_one_id and chain_two_id to disambiguate with a, b, c, d used elsewhere.
     chain_a_id, chain_b_id = pair.split("-")
     if chain_a_id == "pocket":
         resource_deps = [
             "validator",
-            chain_b_id.title() + " Local Node",
+            chain_b_id.title() + " Validator",
         ]
     elif chain_b_id == "pocket":
         resource_deps = [
             "validator",
-            chain_a_id.title() + " Local Node",
+            chain_a_id.title() + " Validator",
         ]
     else:
         resource_deps = [
-            chain_a_id.title() + " Local Node",
-            chain_b_id.title() + " Local Node",
+            chain_a_id.title() + " Validator",
+            chain_b_id.title() + " Validator",
         ]
 
     # Deploy helm chart
@@ -146,7 +165,8 @@ def load_ibc_relayer_setup_resources(chart_prefix, pair):
         flags=[
             "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
             "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-cli.yaml"),
-            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pair + ".yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_a_id + ".yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_b_id + ".yaml"),
             "--set=chain_a_id=" + chain_a_id,
             "--set=chain_b_id=" + chain_b_id
         ],
@@ -160,18 +180,11 @@ def load_ibc_relayer_setup_resources(chart_prefix, pair):
     k8s_resource(
         # workload=release_name,
         "ibc-relayer-setup-" + pair,
-        new_name=pair_pretty(pair) + " IBC Setup",
-        labels=["IBC"],
+        new_name="🏗️ " + pair_pretty(pair),
+        labels=["IBC_Pairs_Setup"],
         trigger_mode=TRIGGER_MODE_MANUAL,
         resource_deps=resource_deps,
     )
-
-
-# Load IBC Relayer
-# - Loads both server and setup resources for a given pair
-def load_ibc_relayer(chart_prefix, pair):
-    load_ibc_relayer_server_resources(chart_prefix, pair)
-    load_ibc_relayer_setup_resources(chart_prefix, pair)
 
 
 # Load IBC Resources
@@ -180,7 +193,6 @@ def load_ibc_relayer(chart_prefix, pair):
 # - Iterates through all enabled relay pairs and loads relayer resources for each
 def load_ibc_resources(chart_prefix, ibc_config):
     check_and_load_agoric(chart_prefix, ibc_config)
-    check_and_load_axelar(chart_prefix, ibc_config)
 
     if len(ibc_config["relay_pairs_enabled"]) > 0:
         docker_build(
@@ -188,6 +200,9 @@ def load_ibc_resources(chart_prefix, ibc_config):
             context=os.path.join(".", "localnet", "ibc-relayer"),  # needs any folder, doesn't matter
             dockerfile=ibc_relayer_dockerfile_path)
 
+        pairs = [key for (key, val) in ibc_config["relay_pairs_enabled"].items() if val == True]
+        load_ibc_relayer_server_resources(chart_prefix, pairs)
+
     for pair, enabled in ibc_config["relay_pairs_enabled"].items():
         if enabled:
-            load_ibc_relayer(chart_prefix, pair)
+            load_ibc_relayer_setup_resources(chart_prefix, pair)

@@ -97,7 +97,7 @@ localnet_config_defaults = {
     "ibc": {
         "enabled": False,
         "relay_pairs_enabled": {
-            "pocket-agoric": False,
+            "pocket-agoriclocal": False,
         }
     }
 }
