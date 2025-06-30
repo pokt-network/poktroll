@@ -183,8 +183,7 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 
 		return 0, ErrRelayAuthenticatorInvalidSession.Wrapf(
 			"session expired, expecting: %d, got: %d. "+
-				"This may indicate a full node synchronization issue. "+
-				"Please verify your full node is in sync and not overwhelmed with websocket connections.",
+				"This may indicate network delay or RelayMiner overload.",
 			sessionEndHeight,
 			currentHeight,
 		)
