@@ -151,23 +151,29 @@ func genRandomizedMinedRelayFixtures(
 				return
 			}
 
+			sessionHeader := &sessiontypes.SessionHeader{
+				ApplicationAddress:      sample.AccAddress(),
+				ServiceId:               flagSvcID,
+				SessionId:               "session_id",
+				SessionStartBlockHeight: 1,
+				SessionEndBlockHeight:   2,
+			}
+
 			// Populate a relay with the minimally sufficient randomized data.
 			relay := servicetypes.Relay{
 				Req: &servicetypes.RelayRequest{
 					Meta: servicetypes.RelayRequestMetadata{
-						SessionHeader: &sessiontypes.SessionHeader{
-							ApplicationAddress:      sample.AccAddress(),
-							ServiceId:               flagSvcID,
-							SessionId:               "session_id",
-							SessionStartBlockHeight: 1,
-							SessionEndBlockHeight:   2,
-						},
-
-						Signature: randBz,
+						SessionHeader: sessionHeader,
+						Signature:     randBz,
 					},
 					Payload: nil,
 				},
-				Res: nil,
+				Res: &servicetypes.RelayResponse{
+					Meta: servicetypes.RelayResponseMetadata{
+						SessionHeader: sessionHeader,
+					},
+					Payload: randBz,
+				},
 			}
 
 			relayBz, err := relay.Marshal()
@@ -176,12 +182,26 @@ func genRandomizedMinedRelayFixtures(
 				return
 			}
 
-			relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
+			// Copy the relay to avoid modifying the original.
+			var relayCopy servicetypes.Relay
+			if err = relayCopy.Unmarshal(relayBz); err != nil {
+				errCh <- err
+				return
+			}
+
+			// Replace the relay response payload with the relay response hash to reduce the size of the onchain proof.
+			relayResponsePayloadHash := protocol.GetRelayHashFromBytes(relay.Res.GetPayload())
+			relayCopy.Res.Payload = relayResponsePayloadHash[:]
+			relayWithHashedResponsePayloadBz, err := relayCopy.Marshal()
+			if err != nil {
+				panic(err)
+			}
+			relayHash := protocol.GetRelayHashFromBytes(relayWithHashedResponsePayloadBz)
 
 			randBzPublishCh <- &relayer.MinedRelay{
 				Relay: relay,
 				Bytes: relayBz,
-				Hash:  relayHashArr[:],
+				Hash:  relayHash[:],
 			}
 		}
 	}()
