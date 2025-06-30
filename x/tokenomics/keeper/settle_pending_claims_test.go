@@ -991,7 +991,7 @@ func (s *TestSuite) TestSettlePendingClaims_ServiceUsageMetrics() {
 
 	// Settle pending claims after proof window closes
 	// Expectation: All claims should be claimed.
-	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
+	_, _, _, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Get the supplier for the claim
