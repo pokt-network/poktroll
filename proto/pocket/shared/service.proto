@@ -103,6 +103,8 @@ message ConfigOption {
 // - Updated during claim settlement
 message ServiceUsageMetrics {
   string service_id = 1;
+  // TODO_TECHDEBT: Account for potential uint64 overflows in the distant future
+  // Use string representation of the total relays and compute units to avoid overflow issues
   uint64 total_relays = 2;
   uint64 total_compute_units = 3;
 }

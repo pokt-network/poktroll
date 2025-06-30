@@ -441,7 +441,9 @@ func (m *ConfigOption) GetValue() string {
 // - Tracks total # of compute units consumed
 // - Updated during claim settlement
 type ServiceUsageMetrics struct {
-	ServiceId         string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	ServiceId string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// TODO_TECHDEBT: Account for potential uint64 overflows in the distant future
+	// Use string representation of the total relays and compute units to avoid overflow issues
 	TotalRelays       uint64 `protobuf:"varint,2,opt,name=total_relays,json=totalRelays,proto3" json:"total_relays,omitempty"`
 	TotalComputeUnits uint64 `protobuf:"varint,3,opt,name=total_compute_units,json=totalComputeUnits,proto3" json:"total_compute_units,omitempty"`
 }
