@@ -29,7 +29,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	logger := server.logger.With("relay_request_type", "synchronous")
 	requestStartTime := time.Now()
-	startHeight := server.blockClient.LastBlock(ctx).Height()
+	startBlock := server.blockClient.LastBlock(ctx)
+	startHeight := startBlock.Height()
+
+	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"📊 Chain head at height %d (block hash: %X) at relay request start",
+		startHeight,
+		startBlock.Hash(),
+	)
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("handling HTTP request")
 
@@ -273,9 +280,13 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// TODO(@Olshansk): Revisit params to enable the above.
 	if err := server.relayAuthenticator.CheckRelayRewardEligibility(ctx, relayRequest); err != nil {
 		processingTime := time.Since(requestStartTime).Milliseconds()
+		endBlock := server.blockClient.LastBlock(ctx)
+		endHeight := endBlock.Height()
 		logger.Warn().Msgf(
-			"⏱️ Backend took %d ms — relay no longer eligible (session expired: block %d → %d). Likely long response time or session too short. Error: %v",
-			processingTime, startHeight, server.blockClient.LastBlock(ctx).Height(), err,
+			"⏱️ Backend took %d ms — relay no longer eligible (session expired: block %d → %d, hash: %X). "+
+				"Likely long response time, session too short, or full node sync issues. "+
+				"Please verify your full node is in sync and not overwhelmed with websocket connections. Error: %v",
+			processingTime, startHeight, endHeight, endBlock.Hash(), err,
 		)
 
 		isOverServicing = true

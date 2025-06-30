@@ -26,14 +26,19 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Long: `Retrieves a paginated list of all suppliers currently registered on Pocket Network, including all their details.
 
 The command supports optional filtering by service ID and pagination parameters.
-Returns supplier addresses, staked amounts, service details, and current status.`,
+Returns supplier addresses, staked amounts, service details, and current status.
+
+Use the --dehydrated flag to exclude service_config_history and rev_share details for more compact output.`,
 
 					Example: `	pocketd query supplier list-suppliers
 	pocketd query supplier list-suppliers --service-id anvil
+	pocketd query supplier list-suppliers --dehydrated
 	pocketd query supplier list-suppliers --page 2 --limit 50
-	pocketd query supplier list-suppliers --service-id anvil --page 1 --limit 100`,
+	pocketd query supplier list-suppliers --service-id anvil --page 1 --limit 100
+	pocketd query supplier list-suppliers --service-id anvil --dehydrated`,
 					FlagOptions: map[string]*autocliv1.FlagOptions{
 						"service_id": {Name: "service-id", Shorthand: "s", Usage: "service id to filter by", Hidden: false},
+						"dehydrated": {Name: "dehydrated", Shorthand: "d", Usage: "return suppliers with some fields omitted for a smaller response payload (e.g. service_config_history, rev_share, etc..)", Hidden: false},
 					},
 				},
 				{
@@ -45,15 +50,21 @@ Returns supplier addresses, staked amounts, service details, and current status.
 
 Returns details include things like:
 - Supplier's staked amount and status
-- List of services they provide`,
+- List of services they provide
+
+Use the --dehydrated flag to exclude service_config_history and rev_share details for more compact output.`,
 
 					Example: `	pocketd query supplier show-supplier pokt1abc...xyz
 	pocketd query supplier show-supplier pokt1abc...xyz --output json
-	pocketd query supplier show-supplier pokt1abc...xyz --height 100`,
+	pocketd query supplier show-supplier pokt1abc...xyz --height 100
+	pocketd query supplier show-supplier pokt1abc...xyz --dehydrated`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{
 							ProtoField: "operator_address",
 						},
+					},
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"dehydrated": {Name: "dehydrated", Shorthand: "d", Usage: "return supplier with some fields omitted for a smaller response payload (e.g. service_config_history, rev_share, etc..)", Hidden: false},
 					},
 				},
 				// this line is used by ignite scaffolding # autocli/query

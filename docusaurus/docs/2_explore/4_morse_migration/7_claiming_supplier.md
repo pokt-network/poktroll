@@ -13,7 +13,9 @@ sidebar_position: 7
   - [3. Claim your Morse Supplier](#3-claim-your-morse-supplier)
   - [4. Example output](#4-example-output)
   - [5. Verify your Shannon supplier](#5-verify-your-shannon-supplier)
-  - [6. What happened?](#6-what-happened)
+  - [6. Ensure your Shannon Supplier has an onchain public key](#6-ensure-your-shannon-supplier-has-an-onchain-public-key)
+    - [How to check if you have an onchain account](#how-to-check-if-you-have-an-onchain-account)
+  - [7. What happened above?](#7-what-happened-above)
 - [Troubleshooting](#troubleshooting)
 
 ## What is this?
@@ -121,7 +123,58 @@ Confirm MsgClaimMorseSupplier: y/[n]: y
 pocketd query supplier <your_shannon_address> --network=<network> #e.g. local, alpha, beta, main
 ```
 
-### 6. What happened?
+### 6. Ensure your Shannon Supplier has an onchain public key
+
+:::warning MUST READ FOR ALL SUPPLIER
+
+Your RelayMiner & Supplier will not work if you don't follow this section.
+
+:::
+
+**Problem**: Migrated Suppliers WITHOUT onchain public keys CANNOT sign Relay Responses and will be **sanctioned by PATH**.
+
+**Root Cause**: A migrated supplier has an onchain account, but it does not have an onchain public key until it signs an onchain transaction.
+
+**Solution**: Submit any onchain transaction where `--from` is the supplier address.
+
+Any transaction will work. For example, a small transfer
+
+```bash
+pocketd tx bank send <your_supplier_address> <some_address_you_own> 1upokt --from=<your_supplier_address> ...
+```
+
+#### How to check if you have an onchain account
+
+```bash
+pocketd q auth account <your_supplier_address> --network=<network> --grpc-insecure=false
+```
+
+Account without public key:
+
+```yaml
+account:
+  type: /cosmos.auth.v1beta1.BaseAccount
+  value:
+    account_number: "..."
+    address: pokt1...
+    sequence: "..."
+```
+
+Account with public key:
+
+```yaml
+account:
+  type: /cosmos.auth.v1beta1.BaseAccount
+  value:
+    account_number: "..."
+    address: pokt1...
+    public_key:
+      type: /cosmos.crypto.secp256k1.PubKey
+      value: Ap/Nr...
+    sequence: "..."
+```
+
+### 7. What happened above?
 
 - **Unstaked balance** of Morse account is minted to your Shannon account
 - **Stake** is set on Shannon using the onchain Morse supplier's stake amount
