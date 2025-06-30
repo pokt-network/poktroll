@@ -54,7 +54,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 
 	service = sharedtypes.Service{
 		Id:                   "svc",
-		ComputeUnitsPerRelay: 2,
+		ComputeUnitsPerRelay: 20000,
 	}
 
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, service.Id, protocol.BaseRelayDifficultyHashBz)
@@ -72,7 +72,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	supplierOperatorAddress := sample.AccAddress()
 	// Set the supplier operator balance to be able to submit the expected number of proofs.
 	feePerProof := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
-	gasCost := session.ClamAndProofGasCost.Amount.Int64()
+	gasCost := session.ClaimAndProofGasCost.Amount.Int64()
 	proofCost := feePerProof + gasCost
 	supplierOperatorBalance := proofCost
 	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
@@ -207,7 +207,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierOperatorAddress := sample.AccAddress()
 
 	proofSubmissionFee := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
-	claimAndProofGasCost := session.ClamAndProofGasCost.Amount.Int64()
+	claimAndProofGasCost := session.ClaimAndProofGasCost.Amount.Int64()
 	// Set the supplier operator balance to be able to submit only a single proof.
 	supplierOperatorBalance := proofSubmissionFee + claimAndProofGasCost + 1
 	supplierClientMock.EXPECT().

@@ -13,7 +13,7 @@
 //     cp ./app/upgrades/vNEXT_Template.go ./app/upgrades/vNEXT.go
 //  3. Look for the word "Template" in `vNEXT.go` and replace it with an empty string.
 //  4. Make all upgrade-specific changes in vNEXT.go only.
-//  5. To reset, restore, or start a new upgrade cycle, repeat fromstep 1.
+//  5. To reset, restore, or start a new upgrade cycle, repeat from step 1.
 //  6. Update the last entry in the `allUpgrades` slice in `app/upgrades.go` to point to the new upgrade version variable.
 //
 // vNEXT_Template.go should NEVER be modified for upgrade-specific logic.

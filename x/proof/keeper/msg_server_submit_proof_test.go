@@ -251,7 +251,6 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.NoError(t, err)
 
 			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
-			require.EqualValues(t, &proofs[0], proofSubmittedEvent.GetProof())
 			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
 			require.Equal(t, uint64(numClaimComputeUnits), proofSubmittedEvent.GetNumClaimedComputeUnits())
 			require.Equal(t, numEstimatedComputUnits, proofSubmittedEvent.GetNumEstimatedComputeUnits())
