@@ -1,5 +1,7 @@
 fund_on_start: true
 
+chain_id: agoriclocal
+
 image:
   repository: agoric
   tag: latest
