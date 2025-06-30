@@ -15,9 +15,10 @@
 ```bash
 make localnet_up
 make acc_initialize_pubkeys
-make test_load_relays_stress_localnet_single_supplier
 
-go test -v ./load-testing/... -tags=e2e,test,load --features-path=tests/relays_stress_single_supplier.feature
+make test_load_anvil
+make test_load_relays_stress_localnet_single_supplier
+# go test -v ./load-testing/... -tags=e2e,test,load --features-path=tests/relays_stress_single_supplier.feature
 ```
 
 ## Check params

@@ -17,6 +17,6 @@ test_load_relays_stress_localnet_multi_suppliers: test_e2e_env warn_message_loca
 	-tags=load,test -run TestLoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest_localnet_multiple_suppliers.yaml
 
-.PHONY test_load_anvil
+.PHONY: test_load_anvil
 test_load_anvil: ## Run the stress test for E2E relays on LocalNet using multiple suppliers.
 	(cd ./tools/scripts/load_anvil && go run main.go)

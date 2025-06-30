@@ -1060,13 +1060,18 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	// when suppliers or gateways are unresponsive.
 	sendRelayRequest := func(gatewayURL, appAddr, payload string) {
 		req, err := http.NewRequest("POST", gatewayURL, strings.NewReader(payload))
+		require.NoError(s, err, "failed to create relay request")
 
 		// This is needed by the PATH Gateway's trusted mode to identify the application
 		// that is sending the relay request.
+		// TODO_TECHDEBT(@olshansk): Use Grove's "centralized" portal mode.
 		req.Header.Add("App-Address", appAddr)
+		// TODO_TECHDEBT(@olshansk): Use subdomains instead of service-id headers
 		req.Header.Add("Target-Service-Id", "anvil")
 		res, err := http.DefaultClient.Do(req)
-		require.NoError(s, err)
+		require.NoError(s, err, "failed to send relay request")
+
+		s.Logf("relay response content length: %v", res.ContentLength)
 
 		if res.StatusCode == http.StatusOK {
 			s.successfulRelays.Add(1)

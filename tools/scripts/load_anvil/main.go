@@ -22,8 +22,8 @@ import (
 func main() {
 	rpcURL := "http://localhost:8547"
 	privateKeyHex := "59c6995e998f97a5a0044976f9d4b4c2b6e6dcd0bdfbff6af5b7d4b8d7c5c6d0"
-	refillEvery := 200       // refill balance every N txs
-	logBlockSizeEvery := 100 // log block size every N txs
+	refillEvery := 200
+	logBlockSizeEvery := 100
 
 	client, err := ethclient.Dial(rpcURL)
 	if err != nil {
@@ -75,13 +75,24 @@ func main() {
 		suffix := fmt.Sprintf("%02x", txCount%256)
 		payload := append(baseData, suffix...)
 
-		tx := types.NewTx(&types.LegacyTx{
-			Nonce:    nonce,
-			GasPrice: new(big.Int).Add(gasPrice, big.NewInt(int64(txCount*1000))),
-			Gas:      10_000_000,
-			To:       &publicAddr,
-			Value:    big.NewInt(0),
-			Data:     payload,
+		// tx := types.NewTx(&types.LegacyTx{
+		// 	Nonce:    nonce,
+		// 	GasPrice: new(big.Int).Add(gasPrice, big.NewInt(int64(txCount*1000))),
+		// 	Gas:      10_000_000,
+		// 	To:       &publicAddr,
+		// 	Value:    big.NewInt(0),
+		// 	Data:     payload,
+		// })
+
+		tx := types.NewTx(&types.DynamicFeeTx{
+			ChainID:   chainID,
+			Nonce:     nonce,
+			GasTipCap: big.NewInt(2_000_000_000),                              // 2 gwei tip
+			GasFeeCap: new(big.Int).Add(gasPrice, big.NewInt(10_000_000_000)), // gasPrice + 10 gwei buffer
+			Gas:       10_000_000,
+			To:        &publicAddr,
+			Value:     big.NewInt(0),
+			Data:      payload,
 		})
 
 		signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(chainID), privateKey)
@@ -89,16 +100,30 @@ func main() {
 			log.Fatalf("Failed to sign tx %d: %v", txCount, err)
 		}
 
-		err = client.SendTransaction(context.Background(), signedTx)
+		// Retry logic for transient send errors
+		maxRetries := 5
+		for retry := 0; retry < maxRetries; retry++ {
+			err = client.SendTransaction(context.Background(), signedTx)
+			if err == nil {
+				break
+			}
+			if strings.Contains(err.Error(), "connect: resource temporarily unavailable") {
+				wait := time.Duration(500*(retry+1)) * time.Millisecond
+				log.Printf("⚠️ Send tx %d failed: %v. Retrying in %v...", txCount, err, wait)
+				time.Sleep(wait)
+				continue
+			} else {
+				log.Fatalf("❌ Failed to send tx %d: %v", txCount, err)
+			}
+		}
 		if err != nil {
-			log.Fatalf("Failed to send tx %d: %v", txCount, err)
+			log.Fatalf("❌ Giving up after retries. Failed to send tx %d: %v", txCount, err)
 		}
 
 		go trackConfirmation(client, signedTx.Hash())
 
 		nonce++
 		txCount++
-
 		time.Sleep(50 * time.Millisecond)
 	}
 }
@@ -167,7 +192,5 @@ func printLatestBlockSizeMB(rpcURL string) {
 	sizeBytes := new(big.Int)
 	sizeBytes.SetString(result.Result.Size[2:], 16) // remove "0x"
 	mb := new(big.Float).Quo(new(big.Float).SetInt(sizeBytes), big.NewFloat(1024*1024))
-	mbStr := fmt.Sprintf("%.2f", mb)
-
-	fmt.Printf("📦 Latest block size: %s MB\n", mbStr)
+	fmt.Printf("📦 Latest block size: %.2f MB\n", mb)
 }
