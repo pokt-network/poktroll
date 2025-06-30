@@ -62,7 +62,7 @@ Returns details include things like:
 		Tx: &autocliv1.ServiceCommandDescriptor{
 			Service:              suppliertypes.Msg_serviceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command (for backwards compatibility)
-			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
+			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				//{
 				//	RpcMethod: "UpdateParams",
 				//	Skip:      true, // skipped because authority gated
@@ -73,12 +73,35 @@ Returns details include things like:
 				//	Short:          "Send a stake-supplier tx",
 				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "stake"}, {ProtoField: "services"}},
 				//},
-				//{
-				//	RpcMethod:      "UnstakeSupplier",
-				//	Use:            "unstake-supplier",
-				//	Short:          "Send a unstake-supplier tx",
-				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
-				//},
+				{
+					RpcMethod: "UnstakeSupplier",
+					Use:       "unstake-supplier [operator_address]",
+					Short:     "Unstake a supplier from Pocket Network",
+					Long: `Unstake a supplier with the provided operator address. This is a broadcast operation that will initiate the unstaking process for the supplier.
+
+The --from flag specifies the signer and can be either:
+- The supplier owner address (who originally staked the supplier)
+- The operator address (the service provider address)
+
+The [operator_address] argument is the operator address of the supplier to unstake.
+The staked funds will always be returned to the owner address, regardless of who initiates the unstaking.
+
+The supplier will continue providing service until the current session ends, at which point it will be deactivated.`,
+
+					Example: `	# Unstake supplier as owner
+	pocketd tx supplier unstake-supplier pokt1abc...xyz --from owner_address --keyring-backend test --network mainnet
+
+	# Unstake supplier as operator  
+	pocketd tx supplier unstake-supplier pokt1abc...xyz --from pokt1abc...xyz --keyring-backend test --network mainnet
+
+	# With custom home directory
+	pocketd tx supplier unstake-supplier pokt1abc...xyz --from grove1 --home ./pocket --keyring-backend test --network mainnet`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{
+							ProtoField: "operator_address",
+						},
+					},
+				},
 				//{
 				//	RpcMethod:      "UpdateParam",
 				//	Use:            "update-param [name] [as-type]",
