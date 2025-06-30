@@ -1,40 +1,185 @@
+#############
+# Variables #
+#############
+
+NETWORK ?= local
+POCKET_ACCOUNT ?= pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 # key name: app1
+AGORIC_ACCOUNT ?= agoric1vaj34dfx94y6nvwt57dfyag5gfsp6eqjmvzu8c # key name: foreigner
+AGORIC_CHAIN_ID ?= agoriclocal
+AXELAR_ACCOUNT ?= axelar1sz7nw80886tuenrhvg2tttlemgfxy734st6f5e # key name: validator
+AXELAR_CHAIN_ID ?= axelar
+OSMOSIS_ACCOUNT ?= osmo1sz7nw80886tuenrhvg2tttlemgfxy734u7l3f2 # key name: validator
+OSMOSIS_CHAIN_ID ?= osmosis
+
+
+
 ###############################
 # Agoric `agd` helper targets #
 ###############################
-.PHONY: agd_shell
-agd_shell: check_kubectl check_docker_ps check_kind
-	kubectl exec -it $$(kubectl get pods|grep agoric-validator|cut -f 1 -d " ") -- bash
+.PHONY: agoric_shell
+agoric_shell: check_kubectl check_docker_ps check_kind
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod_interactive agoric-validator "bash" \
+	'
 
-.PHONY: agd_query_tx
-agd_query_tx:
-	kubectl exec -it $$(kubectl get pods|grep agoric-validator|cut -f 1 -d " ") -- agd query tx $(TX_HASH) --chain-id=agoriclocal
+.PHONY: axelar_shell
+axelar_shell: check_kubectl check_docker_ps check_kind
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod_interactive axelar-validator "bash" \
+	'
 
-.PHONY: agd_query_tx_json
-agd_query_tx_json:
-	kubectl exec -it $$(kubectl get pods|grep agoric-validator|cut -f 1 -d " ") -- agd query tx $(TX_HASH) --chain-id=agoriclocal -o json
+.PHONY: osmosis_shell
+osmosis_shell: check_kubectl check_docker_ps check_kind
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod_interactive osmosis-validator "bash" \
+	'
+
+.PHONY: ibc_localnet_query_tx
+ibc_localnet_query_tx:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod $(POD_REGEX) "$(CHAIN_BIN) query tx $(TX_HASH) --chain-id=$(CHAIN_ID)" \
+	'
+
+.PHONY: ibc_localnet_query_tx_json
+ibc_localnet_query_tx_json:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod $(POD_REGEX) "$(CHAIN_BIN) query tx $(TX_HASH) --chain-id=$(CHAIN_ID)" -o json \
+	'
+
+.PHONY: agoric_query_tx
+agoric_query_tx:
+	POD_REGEX="agoric-validator" CHAIN_BIN="agd" CHAIN_ID="agoric" ${MAKE} ibc_localnet_query_tx
+
+.PHONY: agoric_query_tx_json
+agoric_query_tx_json:
+	POD_REGEX="agoric-validator" CHAIN_BIN="agd" CHAIN_ID="agoriclocal" ${MAKE} ibc_localnet_query_tx
+
+.PHONY: axelar_query_tx
+axelar_query_tx:
+	POD_REGEX="axelar-validator" CHAIN_BIN="agd" CHAIN_ID="axelar" ${MAKE} ibc_localnet_query_tx
+
+.PHONY: axelar_query_tx_json
+axelar_query_tx_json:
+	POD_REGEX="axelar-validator" CHAIN_BIN="agd" CHAIN_ID="axelar" ${MAKE} ibc_localnet_query_tx_json_json
+
+.PHONY: osmosis_query_tx
+osmosis_query_tx:
+	POD_REGEX="osmosis-validator" CHAIN_BIN="agd" CHAIN_ID="osmosis" ${MAKE} ibc_localnet_query_tx
+
+.PHONY: osmosis_query_tx_json
+osmosis_query_tx_json:
+	POD_REGEX="osmosis-validator" CHAIN_BIN="agd" CHAIN_ID="osmosis" ${MAKE} ibc_localnet_query_tx_json_json
+
+
 
 .PHONY: fund_agoric_account
 fund_agoric_account: check_kubectl check_docker_ps check_kind
-	kubectl exec $$(kubectl get pods|grep agoric-validator|cut -f 1 -d " ") -- agd tx bank send validator agoric1vaj34dfx94y6nvwt57dfyag5gfsp6eqjmvzu8c 1000000000ubld --keyring-backend=test --chain-id=agoriclocal --from=validator --yes
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod agoric-validator "\
+			agd tx bank send validator \
+			$(AGORIC_ACCOUNT) \
+			1000000000ubld \
+			--keyring-backend=test \
+			--chain-id=$(AGORIC_CHAIN_ID) \
+			--from=validator \
+			--yes" \
+	'
 
 #####################
 # IBC query targets #
 #####################
-.PHONY: ibc_list_channels
-ibc_list_channels:
-	pocketd --home=$(POCKETD_HOME) q ibc channel channels --node $(POCKET_NODE)
+.PHONY: ibc_list_localnet_pocket_clients
+ibc_list_pocket_clients:
+	pocketd --home=$(POCKETD_HOME) q ibc client states --node=$(POCKET_NODE) --network=$(NETWORK)
 
-.PHONY: ibc_list_connections
-ibc_list_connections:
-	pocketd --home=$(POCKETD_HOME) q ibc connection connections --node $(POCKET_NODE)
+.PHONY: ibc_list_localnet_pocket_connections
+ibc_list_pocket_connections:
+	pocketd --home=$(POCKETD_HOME) q ibc connection connections --node=$(POCKET_NODE) --network=$(NETWORK)
+
+.PHONY: ibc_list_localnet_pocket_channels
+ibc_list_pocket_channels:
+	pocketd --home=$(POCKETD_HOME) q ibc channel channels --node=$(POCKET_NODE) --network=$(NETWORK)
+
+########################
+# Remote State Queries #
+########################
+.PHONY: ibc_query_agoric_balance
+ibc_query_agoric_balance:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod agoric-validator agd query bank balances $(AGORIC_ACCOUNT) \
+	'
+
+.PHONY: ibc_query_axelar_balance
+ibc_query_axelar_balance:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod axelar-validator axelard query bank balances $(AXELAR_ACCOUNT) \
+	'
+
+.PHONY: ibc_query_osmosis_balance
+ibc_query_osmosis_balance:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod osmosis-validator osmosisd query bank balances $(OSMOSIS_ACCOUNT) \
+	'
 
 ########################
 # IBC transfer targets #
 ########################
+
+## Axelar ##
+############
+.PHONY: ibc_test_transfer_axelar_to_pocket
+ibc_test_transfer_axelar_to_pocket:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod axelar-validator \
+			axelard tx ibc-transfer transfer transfer \
+			$${AXELAR_POCKET_SRC_CHANNEL_ID} $(POCKET_ACCOUNT) 1000uaxl \
+			--keyring-backend=test \
+			--chain-id=$(AXELAR_CHAIN_ID) \
+			--from=validator --yes \
+	'
+
+.PHONY: ibc_test_transfer_pocket_to_axelar
+ibc_test_transfer_pocket_to_axelar:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		pocketd --home=$(POCKETD_HOME) tx ibc-transfer transfer transfer \
+		$${POCKET_AXELAR_SRC_CHANNEL_ID} $(AXELAR_ACCOUNT) 1000upokt \
+			--network $(NETWORK) \
+			--keyring-backend=test \
+			--from=app1 --yes \
+	'
+
+## Agoric ##
+############
 .PHONY: ibc_test_transfer_agoric_to_pocket
-ibc_test_transfer:
-	kubectl exec -it $$(kubectl get pods|grep agoric-validator|cut -f 1 -d " ") -- agd tx ibc-transfer transfer transfer channel-0 pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 1000ubld --keyring-backend=test --chain-id=agoriclocal --from=validator --yes
+ibc_test_transfer_agoric_to_pocket:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod agoric-validator \
+			agd tx ibc-transfer transfer transfer \
+			$${AGORIC_POCKET_SRC_CHANNEL_ID} $(POCKET_ACCOUNT) 1000ubld \
+			--keyring-backend=test \
+			--chain-id=$(AGORIC_CHAIN_ID) \
+			--from=validator --yes \
+	'
 
 .PHONY: ibc_test_transfer_pocket_to_agoric
-ibc_test_transfer:
-	pocketd --home=$(POCKETD_HOME) tx ibc-transfer transfer transfer channel-0 agoric1vaj34dfx94y6nvwt57dfyag5gfsp6eqjmvzu8c 1000upokt --node $(POCKET_NODE) --keyring-backend=test --yes
+ibc_test_transfer_pocket_to_agoric:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		pocketd --home=$(POCKETD_HOME) tx ibc-transfer transfer transfer \
+		$${POCKET_AGORIC_SRC_CHANNEL_ID} $(AGORIC_ACCOUNT) 1000upokt \
+			--network=$(NETWORK) \
+			--keyring-backend=test \
+			--from=app1 --yes \
+	'
