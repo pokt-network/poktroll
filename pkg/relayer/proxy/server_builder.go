@@ -2,37 +2,18 @@ package proxy
 
 import (
 	"context"
-	"fmt"
-	"time"
+	"strings"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-)
-
-const (
-	// supplierStakeWaitTime is the time to wait for the supplier to be staked before
-	// attempting to (try again to) retrieve the supplier's onchain record.
-	// This is useful for testing and development purposes, where the supplier
-	// may not be staked before the relay miner starts.
-	supplierStakeWaitTime = 1 * time.Second
-
-	// supplierMaxStakeWaitTimeMinutes is the time to wait before a panic is thrown
-	// if the supplier is still not staked when the time elapses.
-	//
-	// This is intentionally a larger number because if a RelayMiner is provisioned
-	// for this long (either in testing or in prod) without an associated onchain
-	// supplier being stake, we need to communicate it either to the operator or
-	// to the developer.
-	supplierMaxStakeWaitTimeMinutes = 20 * time.Minute
 )
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's onchain advertised services.
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
-	for _, supplierOperatorAddress := range rp.relayAuthenticator.GetSupplierOperatorAddresses() {
+	configuredSuppliers := rp.relayAuthenticator.GetSupplierOperatorAddresses()
+	for _, supplierOperatorAddress := range configuredSuppliers {
 		// TODO_MAINNET: We currently block RelayMiner from starting if at least one address
 		// is not staked or staked incorrectly. As node runners will maintain many different
 		// suppliers on one RelayMiner, and we expect them to stake and restake often - it might
@@ -41,40 +22,15 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// from the supplier configuration. If we don't hear feedback on that prior to launching
 		// MainNet it might not be that big of a deal, though.
 
-		// Prevent the RelayMiner from stopping by waiting until its associated supplier
-		// is staked and its onchain record retrieved.
-		supplier, err := rp.waitForSupplierToStake(ctx, supplierOperatorAddress)
-		if err != nil {
-			return err
-		}
+		// Check if the supplier is staked onchain and log its configured services
+		rp.logSupplierServices(ctx, supplierOperatorAddress)
 
 		// Log all the RelayMiner's configured services for the supplier.
 		rp.logRelayMinerConfiguredServices(supplierOperatorAddress)
-
-		// Check that the supplier's advertised services' endpoints are present in
-		// the server config and handled by a server.
-		// Iterate over the supplier's advertised services then iterate over each
-		// service's endpoint
-		for _, service := range supplier.Services {
-			found := false
-			// Iterate over the server configs and check if a config corresponding to
-			// the service is present.
-			for _, serverConfig := range rp.serverConfigs {
-				if _, ok := serverConfig.SupplierConfigsMap[service.ServiceId]; ok {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
-					"service %s not handled by the relay miner's supplier %s",
-					service.ServiceId,
-					supplierOperatorAddress,
-				)
-			}
-		}
 	}
+
+	// Log the number of suppliers
+	rp.logger.Info().Msgf("[CONFIG] ⚙️ Number of Suppliers configured in this RelayMiner: %d", len(configuredSuppliers))
 
 	var err error
 	if rp.servers, err = rp.initializeProxyServers(); err != nil {
@@ -122,70 +78,49 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 	return servers, nil
 }
 
-// waitForSupplierToStake waits in a loop until it gets the onchain supplier's
-// information back.
-// This is useful for testing and development purposes, in production the supplier
-// is most likely staked before the relay miner starts.
-func (rp *relayerProxy) waitForSupplierToStake(
-	ctx context.Context,
-	supplierOperatorAddress string,
-) (supplier sharedtypes.Supplier, err error) {
-	startTime := time.Now()
-	for {
-		// Get the supplier's onchain record
-		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierOperatorAddress)
-
-		// If the supplier is not found, wait for the supplier to be staked.
-		// This enables provisioning and deploying a RelayMiner without staking a
-		// supplier onchain. For testing purposes, this is particularly useful
-		// to eliminate the needed of additional communication & coordination
-		// between onchain staking and offchain provisioning.
-		if err != nil && suppliertypes.ErrSupplierNotFound.Is(err) {
-			rp.logger.Info().Msgf(
-				"Waiting %d seconds for the supplier with address %s to stake",
-				supplierStakeWaitTime/time.Second,
-				supplierOperatorAddress,
-			)
-			time.Sleep(supplierStakeWaitTime)
-
-			// See the comment above `supplierMaxStakeWaitTimeMinutes` for why
-			// and how this is used.
-			timeElapsed := time.Since(startTime)
-			if timeElapsed > supplierMaxStakeWaitTimeMinutes {
-				panic(fmt.Sprintf("Waited too long (%d minutes) for the supplier to stake. Exiting...", supplierMaxStakeWaitTimeMinutes))
-			}
-
-			continue
-		}
-
-		// If there is an error other than the supplier not being found, return the error
-		if err != nil {
-			return sharedtypes.Supplier{}, err
-		}
-
-		// If the supplier is found, break out of the wait loop.
-		break
-	}
-
-	return supplier, nil
-}
-
 // logRelayMinerConfiguredServices logs the services configured in the RelayMiner
 // server configs. This is useful for debugging and understanding which services
 // the RelayMiner is configured to handle.
 func (rp *relayerProxy) logRelayMinerConfiguredServices(supplierOperatorAddress string) {
-
-	availableConfigs := make(map[string]struct{})
+	relayMinerConfiguredServices := make(map[string]struct{})
 	for _, serviceConfig := range rp.serverConfigs {
 		for serviceId := range serviceConfig.SupplierConfigsMap {
-			availableConfigs[serviceId] = struct{}{}
+			relayMinerConfiguredServices[serviceId] = struct{}{}
 		}
 	}
 
-	availableServices := make([]string, 0, len(availableConfigs))
-	for serviceId := range availableConfigs {
-		availableServices = append(availableServices, serviceId)
+	configuredServices := make([]string, 0, len(relayMinerConfiguredServices))
+	for serviceId := range relayMinerConfiguredServices {
+		configuredServices = append(configuredServices, serviceId)
 	}
-	rp.logger.Info().Msgf("relayminer_configs for supplier %s: %v", supplierOperatorAddress, availableServices)
+	rp.logger.Info().Msgf(
+		"[RelayMiner] ⚙️ List of services RelayMiner is configured to handle on behalf of supplier %q: [%s]",
+		supplierOperatorAddress,
+		strings.Join(configuredServices, ", "),
+	)
 
+}
+
+// logSupplierServices logs the services configured for a supplier.
+// It retrieves the supplier's onchain information and logs the services that the
+// supplier is configured to provide.
+func (rp *relayerProxy) logSupplierServices(ctx context.Context, supplierOperatorAddress string) {
+	supplier, err := rp.supplierQuerier.GetSupplier(ctx, supplierOperatorAddress)
+	if err != nil {
+		rp.logger.Error().Msgf(
+			"failed to get Supplier with address %q onchain information: %s",
+			supplierOperatorAddress,
+			err.Error(),
+		)
+	}
+
+	stakedServices := make([]string, 0)
+	for _, serviceConfig := range supplier.Services {
+		stakedServices = append(stakedServices, serviceConfig.ServiceId)
+	}
+	rp.logger.Info().Msgf(
+		"[Supplier] 📥 List of services staked for by Supplier %q: [%s]",
+		supplierOperatorAddress,
+		strings.Join(stakedServices, ", "),
+	)
 }

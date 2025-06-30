@@ -57,6 +57,9 @@ func (s *Supplier) UpdateServiceUsageMetrics(serviceId string, numRelays, numCom
 	s.ServiceUsageMetrics[serviceId] = serviceUsageMetrics
 }
 
+// TODO_TECHDEBT: Consider removing this method and forcing the use of the keeper directly.
+// This requires the supplier to be hydrated, which is not always the case.
+//
 // GetActiveServiceConfigs returns a list of all service configurations that are active
 // at the specified block height.
 //

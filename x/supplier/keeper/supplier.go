@@ -81,7 +81,7 @@ func (k Keeper) GetSupplier(
 	}
 
 	// Hydrate the supplier with service configurations
-	k.hydrateSupplierServiceConfigs(ctx, &supplier)
+	k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
 	// Hydrate the supplier with service usage metrics
 	k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
 
@@ -111,7 +111,7 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 	for ; iterator.Valid(); iterator.Next() {
 		var supplier sharedtypes.Supplier
 		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
-		k.hydrateSupplierServiceConfigs(ctx, &supplier)
+		k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
 		k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
 
 		suppliers = append(suppliers, supplier)
@@ -148,14 +148,14 @@ func (k Keeper) getSupplierServiceUsageMetricsIterator(
 	return sharedtypes.NewRecordIterator(serviceUsageMetricsIterator, serviceUsageMetricsAccessor)
 }
 
-// hydrateSupplierServiceConfigs populates a supplier with its service configurations
+// hydrateFullSupplierServiceConfigs populates a supplier with all of its service configurations
 // based on the current block height.
 //
 // The function:
 // - Retrieves the supplier's service configuration history
 // - Determines which configurations are active at the current block height
 // - Sets the supplier's active services
-func (k Keeper) hydrateSupplierServiceConfigs(ctx context.Context, supplier *sharedtypes.Supplier) {
+func (k Keeper) hydrateFullSupplierServiceConfigs(ctx context.Context, supplier *sharedtypes.Supplier) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
@@ -199,6 +199,33 @@ func (k Keeper) hydrateSupplierServiceUsageMetrics(
 			}
 		}
 	}
+}
+
+// hydratePartialDehydratedSupplierServiceConfigs populates a supplier with partial (i.e. lightweight)
+// service configurations based on the current block height.
+//
+// It can be used to reduce payload size by excluding fields like service_config_history and rev_share details.
+//
+// The function:
+// - Determines which configurations are active at the current block height
+// - Sets the supplier's active services without rev_share information
+// - Does not populate service_config_history
+func (k Keeper) hydratePartialDehydratedSupplierServiceConfigs(ctx context.Context, supplier *sharedtypes.Supplier) {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	// Get service config history but don't store it in the supplier
+	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, "")
+	activeServices := sharedtypes.GetActiveServiceConfigsFromHistory(serviceConfigHistory, currentHeight)
+
+	// Remove rev_share information from each service config
+	for _, service := range activeServices {
+		service.RevShare = nil
+	}
+	supplier.Services = activeServices
+
+	// Explicitly set ServiceConfigHistory to nil (it's already nil but for clarity)
+	supplier.ServiceConfigHistory = nil
 }
 
 // GetSupplierActiveServiceConfig retrieves a supplier's active service configuration

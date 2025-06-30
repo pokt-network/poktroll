@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -15,6 +15,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
+
+// - relayProbabilisticDebugProb is the probability of a debug log being shown for a relay request.
+// - This has to be very low to avoid spamming the logs for RelayMiners that end up serving millions of relays.
+// - In the case of errors, it increases the likelihood of seeing issues in the logs
+var relayProbabilisticDebugProb float64 = 0.0001
 
 var _ relayer.RelayServer = (*relayMinerHTTPServer)(nil)
 
@@ -47,9 +52,15 @@ type relayMinerHTTPServer struct {
 	// the relay requests and signs the relay responses.
 	relayAuthenticator relayer.RelayAuthenticator
 
-	// servedRelaysProducer is a channel that emits the relays that have been served, allowing
-	// the servedRelays observable to fan-out notifications to its subscribers.
-	servedRelaysProducer chan<- *types.Relay
+	// servedRewardableRelaysProducer is a channel that emits the relays thatL
+	// 	1. Have been successfully served
+	// 	2. Are reward-applicable (i.e. should be inserted into the SMT)
+	// Some examples of relays that shouldn't be emitted to this channel:
+	// 	- Relays that failed to be served
+	// 	- Relays that are not reward-applicable
+	// 	- Relays that are over-serviced
+	// The servedRewardableRelaysProducer observable to fan-out notifications to its subscribers.
+	servedRewardableRelaysProducer chan<- *types.Relay
 
 	// relayMeter is the relay meter that the RelayServer uses to meter the relays and claim the relay price.
 	// It is used to ensure that the relays are metered and priced correctly.
@@ -78,22 +89,26 @@ func NewHTTPServer(
 ) relayer.RelayServer {
 	// Create the HTTP server.
 	httpServer := &http.Server{
-		// TODO_IMPROVE: Make timeouts configurable.
-		IdleTimeout:  60 * time.Second,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		// Keep IdleTimeout reasonable to clean up idle connections
+		IdleTimeout: 60 * time.Second,
+		// Read and Write timeouts are set to reasonable default values to prevent slow-loris
+		// attacks and to ensure that the server does not hang indefinitely on a request.
+		// These defaults are kept as baseline security measures, but per-request timeouts
+		// will override these values based on the configured timeout for each service ID.
+		ReadTimeout:  config.DefaultRequestTimeoutSeconds * time.Second,
+		WriteTimeout: config.DefaultRequestTimeoutSeconds * time.Second,
 	}
 
 	return &relayMinerHTTPServer{
-		logger:               logger,
-		server:               httpServer,
-		relayAuthenticator:   relayAuthenticator,
-		servedRelaysProducer: servedRelaysProducer,
-		serverConfig:         serverConfig,
-		relayMeter:           relayMeter,
-		blockClient:          blockClient,
-		sharedQueryClient:    sharedQueryClient,
-		sessionQueryClient:   sessionQueryClient,
+		logger:                         logger,
+		server:                         httpServer,
+		relayAuthenticator:             relayAuthenticator,
+		servedRewardableRelaysProducer: servedRelaysProducer,
+		serverConfig:                   serverConfig,
+		relayMeter:                     relayMeter,
+		blockClient:                    blockClient,
+		sharedQueryClient:              sharedQueryClient,
+		sessionQueryClient:             sessionQueryClient,
 	}
 }
 
@@ -146,12 +161,18 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 		}
 		resp, err := c.Head(backendUrl.String())
 		if err != nil {
-			return err
+			return fmt.Errorf(
+				"failed to ping backend %q for serviceId %q: %w",
+				backendUrl.String(), supplierCfg.ServiceId, err,
+			)
 		}
 		_ = resp.Body.Close()
 
 		if resp.StatusCode >= http.StatusInternalServerError {
-			return errors.New("ping failed")
+			return fmt.Errorf(
+				"failed to ping backend %q for serviceId %q: received status code %d",
+				backendUrl.String(), supplierCfg.ServiceId, resp.StatusCode,
+			)
 		}
 
 	}
@@ -168,24 +189,46 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 
 	// Determine whether the request is upgrading to websocket.
 	if isWebSocketRequest(request) {
-		server.logger.Debug().Msg("detected asynchronous relay request")
+		server.logger.ProbabilisticDebugInfo(relayProbabilisticDebugProb).Msg("🔍 detected asynchronous relay request")
 
 		if err := server.handleAsyncConnection(ctx, writer, request); err != nil {
 			// Reply with an error if the relay could not be served.
 			server.replyWithError(err, nil, writer)
-			server.logger.Warn().Err(err).Msg("failed serving asynchronous relay request")
+			server.logger.Warn().Err(err).Msg("❌ failed serving asynchronous relay request")
 			return
 		}
 	} else {
-		server.logger.Debug().Msg("detected synchronous relay request")
+		server.logger.ProbabilisticDebugInfo(relayProbabilisticDebugProb).Msg("🔍 detected synchronous relay request")
 
 		if relayRequest, err := server.serveSyncRequest(ctx, writer, request); err != nil {
 			// Reply with an error if the relay could not be served.
 			server.replyWithError(err, relayRequest, writer)
-			server.logger.Warn().Err(err).Msg("failed serving synchronous relay request")
+
+			// Do not alarm the RelayMiner operator if the error is a client error
+			if ErrRelayerProxyInternalError.Is(err) {
+				server.logger.Error().Err(err).Msgf("❌ Failed serving synchronous relay request. This COULD be a configuration issue on the RelayMiner! Please check your setup. ⚙️🛠️")
+			} else {
+				server.logger.Error().Err(err).Msgf("⚠️ Failed serving synchronous relay request. This MIGHT be a client error.")
+			}
 			return
 		}
 	}
+}
+
+// requestTimeoutForServiceId determines the timeout for the relay request
+// based on the service ID.
+//   - It looks up the service ID in the server's configuration and returns the
+//     timeout specified for that service ID.
+//   - If no specific timeout is found, it returns the default timeout.
+func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string) time.Duration {
+	timeout := config.DefaultRequestTimeoutSeconds * time.Second
+
+	// Look up service-specific timeout in server config
+	if supplierConfig, exists := server.serverConfig.SupplierConfigsMap[serviceId]; exists {
+		timeout = time.Duration(supplierConfig.RequestTimeoutSeconds) * time.Second
+	}
+
+	return timeout
 }
 
 // isWebSocketRequest checks if the request is trying to upgrade to WebSocket.

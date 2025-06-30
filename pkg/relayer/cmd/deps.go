@@ -67,8 +67,7 @@ func setupRelayerDependencies(
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
-		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),              // leaf
-		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),               // leaf
+		config.NewSupplyCometClientFn(queryNodeRPCUrl),                    // leaf
 		config.NewSupplyBlockClientFn(queryNodeRPCUrl),                    // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl),            // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
@@ -100,7 +99,7 @@ func setupRelayerDependencies(
 		config.NewSupplyServiceQueryClientFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySessionQuerierFn(),
-		config.SupplyRelayMeter,
+		config.SupplyRelayMeterFn(relayMinerConfig.EnableOverServicing),
 		config.SupplyMiner,
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyBankQuerierFn(),
@@ -113,7 +112,7 @@ func setupRelayerDependencies(
 		// Always use "auto" gas setting for RelayMiner.
 		config.NewSupplySupplierClientsFn(signingKeyNames, cosmosflags.GasFlagAuto),
 		config.NewSupplyRelayAuthenticatorFn(signingKeyNames),
-		config.NewSupplyRelayerProxyFn(servicesConfigMap),
+		config.NewSupplyRelayerProxyFn(servicesConfigMap, relayMinerConfig.Ping.Enabled),
 		config.NewSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 

@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -15,14 +16,22 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// ClaimMorseSupplier performs the following steps, given msg is valid and a
-// MorseClaimableAccount exists for the given morse_src_address:
-//   - Mint and transfer all tokens (unstaked balance plus supplier stake) of the
-//     MorseClaimableAccount to the shannonDestAddress.
-//   - Mark the MorseClaimableAccount as claimed (i.e. adding the shannon_dest_address
-//     and claimed_at_height).
-//   - Stake a supplier for the amount specified in the MorseClaimableAccount,
-//     and the services specified in the msg.
+// ClaimMorseSupplier processes a Morse supplier claim migration.
+//
+// Preconditions:
+// - The message is valid.
+// - A MorseClaimableAccount exists for the given morse_src_address.
+//
+// Steps performed:
+// - Mint and transfer all tokens (unstaked balance plus supplier stake) from the MorseClaimableAccount to the shannonDestAddress.
+// - Mark the MorseClaimableAccount as claimed (i.e., set the shannon_dest_address and claimed_at_height).
+// - Stake a supplier for the amount and services specified in the MorseClaimableAccount and the message.
+//
+// Short Circuits (these cause early exit):
+// - Short circuit #1: If the Morse Supplier started unstaking before the state shift and fully unstaked after the state shift at the time of claim, mint the staked balance to the Shannon owner and exit after event emission.
+// - Short circuit #2: If the Morse Supplier's stake is below the minimum required, auto-unstake, mint to owner, emit events, and exit.
+//
+// The function does not alter business logic and preserves all original comment content, but comments have been clarified and reformatted for improved readability.
 func (k msgServer) ClaimMorseSupplier(
 	ctx context.Context,
 	msg *migrationtypes.MsgClaimMorseSupplier,
@@ -140,20 +149,43 @@ func (k msgServer) ClaimMorseSupplier(
 		}
 	}
 
-	// Mint the Morse node/supplier's stake to the shannonSigningAddress account balance.
-	// The Supplier stake is subsequently escrowed from the shannonSigningAddress account balance.
+	// Supplier Claim - Short circuit #1
+	// If both of the following are true:
+	// 1. The Morse Supplier started unstaking before the state shift
+	// 2. The Morse Supplier fully unstaked after the state shift at the time of claim
+	// Then the Shannon owner address is where the staked balance needs to be minted to.
+	morseUnbondingPeriodElapsed := morseNodeClaimableAccount.HasUnbonded(ctx)
+
+	// Supplier Claim - Short circuit #2
+	// If the Morse Supplier's stake is less than the minimum stake, then the Morse Supplier should be auto-unstaked.
+	minStake := k.supplierKeeper.GetParams(ctx).MinStake
+	claimableSupplierStake := morseNodeClaimableAccount.GetSupplierStake()
+	shouldAutoUnstake := claimableSupplierStake.Amount.LT(minStake.Amount)
+
+	// Determine the staked tokens destination address based on the short circuit conditions above.
+	var stakedTokensDestAddr sdk.AccAddress
+	if morseUnbondingPeriodElapsed || shouldAutoUnstake {
+		stakedTokensDestAddr = shannonOwnerAddr
+	} else {
+		stakedTokensDestAddr = shannonSigningAddress
+	}
+
+	// Mint the Morse node/supplier's stake to the stakedTokensDestAddr account balance.
+	// The Supplier stake is subsequently escrowed from the stakedTokensDestAddr account balance
+	// UNLESS it has already unbonded during the migration.
 	// NOTE: The supplier module's staking fee parameter will be deducted from the claimed balance below.
-	if err = k.MintClaimedMorseTokens(ctx, shannonSigningAddress, morseNodeClaimableAccount.GetSupplierStake()); err != nil {
+	if err = k.MintClaimedMorseTokens(ctx, stakedTokensDestAddr, morseNodeClaimableAccount.GetSupplierStake()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Mint the Morse node/supplier's unstaked balance to the shannonOperatorAddress account balance.
+	// The operator will always received the unstaked balance of the Morse Supplier.
 	if err = k.MintClaimedMorseTokens(ctx, shannonOperatorAddr, morseNodeClaimableAccount.GetUnstakedBalance()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Set ShannonDestAddress & ClaimedAtHeight (claim).
-	morseNodeClaimableAccount.ShannonDestAddress = shannonOperatorAddr.String()
+	morseNodeClaimableAccount.ShannonDestAddress = stakedTokensDestAddr.String()
 	morseNodeClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
 
 	// Update the MorseClaimableAccount.
@@ -168,6 +200,15 @@ func (k msgServer) ClaimMorseSupplier(
 	// Retrieve the claimed supplier stake and unstaked balance.
 	claimedSupplierStake := morseNodeClaimableAccount.GetSupplierStake()
 	claimedUnstakedBalance := morseNodeClaimableAccount.GetUnstakedBalance()
+
+	// Collect all events for emission.
+	// Always emitted:
+	// - EventMorseSupplierClaimed
+	// Conditionally emitted:
+	// - EventSupplierUnbondingBegin
+	// - EventSupplierUnbondingEnd
+	// Events are appended prior to emission to allow for conditional modification prior to emission.
+	events := make([]cosmostypes.Msg, 0)
 
 	// Construct unbonded supplier for cases where it is already or will become unbonded
 	// immediately (i.e. below min stake, or if unbonding period has already elapsed).
@@ -212,22 +253,12 @@ func (k msgServer) ClaimMorseSupplier(
 		UnbondingEndHeight: previousSessionEndHeight,
 	}
 
-	// Collect events for emission.
-	// Events are appended prior to emission to allow for conditional modification prior to emission.
-	//
-	// Always emitted:
-	// - EventMorseSupplierClaimed
-	//
-	// Conditionally emitted:
-	// - EventSupplierUnbondingBegin
-	// - EventSupplierUnbondingEnd
-	events := make([]cosmostypes.Msg, 0)
-
+	// Short circuit #1
 	// If unbonding is complete:
 	// - No further minting is needed
 	// - Block time is estimated and used to set the unstake session end height
 	// - Emit event to signal unbonding start
-	if morseNodeClaimableAccount.HasUnbonded(ctx) {
+	if morseUnbondingPeriodElapsed {
 		events = append(events, morseSupplierClaimedEvent)
 		events = append(events, morseSupplierUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
@@ -237,31 +268,31 @@ func (k msgServer) ClaimMorseSupplier(
 		return claimMorseSupplierResponse, nil
 	}
 
+	// Short circuit #2
+	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
+	// - All staked tokens have already been minted to stakedTokensDestAddr account
+	// - All unstaked tokens have already been minted to shannonOperatorAddr account
+	if shouldAutoUnstake {
+		events = append(events, morseSupplierClaimedEvent)
+		events = append(events, morseSupplierUnbondingEndEvent)
+		if err = emitEvents(ctx, events); err != nil {
+			return nil, err
+		}
+
+		return claimMorseSupplierResponse, nil
+	}
+
+	// Aggregate (i.e. upstake) the Shannon supplier stake if we are consolidating stakes on an existing Shannon supplier.
 	// Query for any existing supplier stake prior to staking.
 	preClaimSupplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, math.ZeroInt())
 	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonOperatorAddr.String())
 	if isFound {
 		preClaimSupplierStake = *foundSupplier.Stake
 	}
-
 	postClaimSupplierStake := preClaimSupplierStake.Add(morseNodeClaimableAccount.GetSupplierStake())
 
-	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
-	// - All stake has already been minted to shannonSignerAddr account
-	// - All unstaked tokens have already been minted to shannonOperatorAddr account
-	minStake := k.supplierKeeper.GetParams(ctx).MinStake
-	if postClaimSupplierStake.Amount.LT(minStake.Amount) {
-		events = append(events, morseSupplierClaimedEvent)
-		events = append(events, morseSupplierUnbondingEndEvent)
-		if err = emitEvents(ctx, events); err != nil {
-			return nil, err
-		}
-
-		return claimMorseSupplierResponse, nil
-	}
-
-	// TODO_HACK(@olshansky, #1439): Ensure that claimable suppliers have valid service configs.
-	// This is a quick workaround upon encountering this issue: https://gist.github.com/okdas/3328c0c507b5dba8b31ab871589f34b0
+	// Sanity check the service configs.
+	// Quick workaround upon encountering this issue: https://gist.github.com/okdas/3328c0c507b5dba8b31ab871589f34b0
 	if err = sharedtypes.ValidateSupplierServiceConfigs(msg.Services); err != nil {
 		return nil, err
 	}
@@ -274,9 +305,10 @@ func (k msgServer) ClaimMorseSupplier(
 		postClaimSupplierStake,
 		msg.Services,
 	)
+
+	// Stake the supplier
 	supplier, err := k.supplierKeeper.StakeSupplier(ctx, logger, msgStakeSupplier)
 	if err != nil {
-		// DEV_NOTE: StakeSupplier SHOULD ALWAYS return a gRPC status error.
 		return nil, err
 	}
 

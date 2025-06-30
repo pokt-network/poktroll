@@ -10,11 +10,12 @@ import (
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -29,8 +30,6 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
-	eventsQueryClient := testeventsquery.NewLocalnetClient(t)
-
 	_, txCtx := testtx.NewAnyTimesTxTxContext(t, keyring)
 
 	// Construct a new mock block client because it is a required dependency. Since
@@ -39,9 +38,12 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 	// argument.
 	blockClientMock := testblock.NewLocalnetClient(ctx, t)
 
+	ctrl := gomock.NewController(t)
+	cometHTTPClientMock := mockclient.NewMockClient(ctrl)
+
 	// Construct a new depinject config with the mocks we created above.
 	txClientDeps := depinject.Supply(
-		eventsQueryClient,
+		cometHTTPClientMock,
 		txCtx,
 		blockClientMock,
 	)

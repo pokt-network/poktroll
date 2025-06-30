@@ -590,6 +590,53 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 	require.EqualValues(t, expectedSupplier, &supplier)
 }
 
+func TestMsgServer_StakeSupplier_SignerOwnerStakeDestination(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	// Generate different addresses for owner and operator
+	ownerAddr := sample.AccAddress()
+	operatorAddr := sample.AccAddress()
+
+	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
+
+	// Calculate and set the operator's initial balance
+	initialStake := minStake * 2
+	supplierStakingFee := supplierModuleKeepers.Keeper.GetParams(ctx).StakingFee
+	expectedSignerBalance := supplierStakingFee.Amount.Int64() + initialStake
+	supplierModuleKeepers.SupplierBalanceMap[operatorAddr] = expectedSignerBalance
+
+	// Prepare the supplier stake message with high initial stake
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake, "svcId")
+	// Use the operator as the signer the initial stake
+	stakeMsg.Signer = operatorAddr
+
+	// Stake the supplier initially
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Verify initial balances - signer should have paid for the stake
+	require.Equal(t, int64(0), supplierModuleKeepers.SupplierBalanceMap[operatorAddr])
+	require.Equal(t, int64(0), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
+
+	// Now decrease the stake using the operator as signer - funds should go to owner
+	lowerStake := minStake + 1
+	decreaseStakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, lowerStake, "svcId")
+	decreaseStakeMsg.Signer = operatorAddr // Use operator as signer for the decrease
+
+	// Update with lower stake
+	_, err = srv.StakeSupplier(ctx, decreaseStakeMsg)
+	require.NoError(t, err)
+
+	// Verify that the stake difference was returned to the owner, not the operator signer
+	stakeDifference := initialStake - lowerStake
+	// Operator should have paid the staking fee but received no stake back
+	expectedOperatorBalance := -supplierStakingFee.Amount.Int64()
+	require.Equal(t, expectedOperatorBalance, supplierModuleKeepers.SupplierBalanceMap[operatorAddr])
+	// Owner should have received the stake difference (return of funds)
+	require.Equal(t, stakeDifference, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
+}
+
 // newSupplierStakeMsg prepares and returns a MsgStakeSupplier that stakes
 // the given supplier operator address, stake amount, and service IDs.
 func newSupplierStakeMsg(

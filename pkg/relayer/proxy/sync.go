@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
-
-	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -22,7 +22,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) (*types.RelayRequest, error) {
+	startTime := time.Now()
+	// Default to a failure (5XX).
+	// Success is implied by reaching the end of the function where status is set to 2XX.
+	statusCode := http.StatusInternalServerError
+
 	logger := server.logger.With("relay_request_type", "synchronous")
+	requestStartTime := time.Now()
+	startHeight := server.blockClient.LastBlock(ctx).Height()
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("handling HTTP request")
 
@@ -33,7 +40,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Warn().Err(err).Msg("failed creating relay request")
 		return relayRequest, err
 	}
-	request.Body.Close()
 
 	if err = relayRequest.ValidateBasic(); err != nil {
 		logger.Warn().Err(err).Msg("failed validating relay request")
@@ -42,6 +48,31 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	meta := relayRequest.Meta
 	serviceId := meta.SessionHeader.ServiceId
+
+	// Check if the request's selected supplier is available for relaying.
+	availableSuppliers := server.relayAuthenticator.GetSupplierOperatorAddresses()
+
+	if !slices.Contains(availableSuppliers, meta.SupplierOperatorAddress) {
+		logger.Warn().
+			Msgf(
+				"❌ The request's selected supplier with operator_address (%q) is not available for relaying! "+
+					"This could be a network or configuration issue. Available suppliers: [%s] 🚦",
+				meta.SupplierOperatorAddress,
+				strings.Join(availableSuppliers, ", "),
+			)
+		return relayRequest, ErrRelayerProxySupplierNotReachable
+	}
+
+	// Set per-request timeouts based on the service ID configuration.
+	// This overrides the server's default timeout values for this specific request.
+	requestTimeout := server.requestTimeoutForServiceId(serviceId)
+	rc := http.NewResponseController(writer)
+	// Set write deadline: ensures the response is sent back promptly to the client.
+	// If the server cannot complete sending the response within this timeout, the connection is closed.
+	if err = rc.SetWriteDeadline(time.Now().Add(requestTimeout)); err != nil {
+		logger.Warn().Err(err).Msg("failed setting write deadline for response controller")
+		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
+	}
 
 	// Track whether the relay completes successfully to handle reward management
 	// A successful relay means that:
@@ -85,7 +116,9 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// TODO_CONSIDERATION: Consider implementing a delay queue instead of rejecting
 	// requests when application stake is insufficient. This would allow processing
 	// once earlier requests complete and free up stake.
-	if server.relayMeter.ShouldRateLimit(ctx, meta) {
+	isOverServicing := server.relayMeter.IsOverServicing(ctx, meta)
+	shouldRateLimit := isOverServicing && !server.relayMeter.AllowOverServicing()
+	if shouldRateLimit {
 		return relayRequest, ErrRelayerProxyRateLimited
 	}
 
@@ -105,7 +138,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	if serviceConfig == nil {
-		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled
+		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+			"service %q not configured",
+			serviceId,
+		)
 	}
 
 	logger = logger.With(
@@ -121,13 +157,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		"service_id", serviceId,
 		"supplier_operator_address", meta.SupplierOperatorAddress,
 	).Add(1)
-	defer func() {
-		startTime := time.Now()
-		duration := time.Since(startTime).Seconds()
-
+	defer func(startTime time.Time, statusCode *int) {
 		// Capture the relay request duration metric.
-		relayer.RelaysDurationSeconds.With("service_id", serviceId).Observe(duration)
-	}()
+		relayer.CaptureRelayDuration(serviceId, startTime, *statusCode)
+	}(startTime, &statusCode)
 
 	relayer.RelayRequestSizeBytes.With("service_id", serviceId).
 		Observe(float64(relayRequest.Size()))
@@ -142,7 +175,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("failed to build the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer httpRequest.Body.Close()
+	defer CloseRequestBody(logger, httpRequest.Body)
 
 	// Configure the HTTP client to use the appropriate transport based on the
 	// backend URL scheme.
@@ -158,13 +191,17 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	// Send the relay request to the native service.
+	serviceCallStartTime := time.Now()
 	httpResponse, err := client.Do(httpRequest)
 	if err != nil {
 		// Do not expose connection errors with the backend service to the client.
+		// Capture the service call request duration metric.
+		relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, statusCode)
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
-	defer httpResponse.Body.Close()
-
+	defer CloseRequestBody(logger, httpResponse.Body)
+	// Capture the service call request duration metric.
+	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 	// If the backend service returns a 5xx error, we consider it an internal error
 	// and do not expose the error to the client.
 	if httpResponse.StatusCode >= 500 {
@@ -180,7 +217,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
-	_, responseBz, err := sdktypes.SerializeHTTPResponse(httpResponse)
+	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse)
 	if err != nil {
 		return relayRequest, err
 	}
@@ -217,12 +254,55 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
 
-	// Emit the relay to the servedRelays observable.
-	server.servedRelaysProducer <- relay
+	// Verify relay reward eligibility a SECOND time AFTER completing the backend request.
+	//
+	// Why is this needed?
+	// - A session may have ended during long running backend requests
+	// - E.g. A RelayMiner is handling a lot of load
+	// - E.g. Sessions are really short
+	// - E.g. Waiting for a response takes a long time (e.g. LLM service)
+	//
+	// What is the result?
+	// - A relay is classified as "over-servicing"
+	// - The relay becomes "reward ineligible"
+	//
+	// What are some mitigations?
+	// - Longer sessions (onchain gov param)
+	// - RelayMiner allows over-servicing (relayminer config but still reward ineligible)
+	// - Increasing the claim window open offset blocks (onchain gov param)
+	// TODO(@Olshansk): Revisit params to enable the above.
+	if err := server.relayAuthenticator.CheckRelayRewardEligibility(ctx, relayRequest); err != nil {
+		processingTime := time.Since(requestStartTime).Milliseconds()
+		logger.Warn().Msgf(
+			"⏱️ Backend took %d ms — relay no longer eligible (session expired: block %d → %d). Likely long response time or session too short. Error: %v",
+			processingTime, startHeight, server.blockClient.LastBlock(ctx).Height(), err,
+		)
 
-	// Mark the relay as successful. This prevents the deferred reward management
-	// function from reverting the accumulated rewards.
-	shouldRewardRelay = true
+		isOverServicing = true
+	}
+
+	// Only emit relays and mark them as rewardable when they are not over-servicing:
+	// - Over-serviced relays exceed the application's allocated stake.
+	// - These are provided as free goodwill by the supplier.
+	// - Not eligible for on-chain compensation (outside protocol's reward mechanism).
+	//
+	// Emitting over-serviced relays would:
+	// - Break the optimistic relay reward accumulation pattern.
+	// - Mix "goodwill service" with "protocol-compensated service".
+	//
+	// Protocol details:
+	// - Relay rewards are optimistically accumulated before forwarding to the relay miner.
+	// - Over-serviced relays must never enter this reward pipeline.
+	if !isOverServicing {
+		// Forward reward-eligible relays for SMT updates (excludes over-serviced relays).
+		server.servedRewardableRelaysProducer <- relay
+
+		// Mark relay as successful and rewardable, so deferred logic doesn't revert it.
+		shouldRewardRelay = true
+	}
+
+	// set to 200 because everything is good about the processed relay.
+	statusCode = http.StatusOK
 	return relayRequest, nil
 }
 

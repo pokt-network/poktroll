@@ -31,6 +31,7 @@ message Claim {
   pocket.session.SessionHeader session_header = 2;
 
   // Root hash from smt.SMST#Root().
+  // TODO_UP_NEXT(@bryanchriswhite, #1497): Dehydrate the claim's root hash from onchain events.
   bytes root_hash = 3;
 
   // Important: This field MUST only be set by proofKeeper#EnsureValidProofSignaturesAndClosestPath

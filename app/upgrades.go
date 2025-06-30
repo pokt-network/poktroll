@@ -81,11 +81,47 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.16 - upgrade to:
 	// - Normalize Morse accounts recovery allowlist addresses (to uppercase).
 	// - Normalize Morse source address when handling Morse account recovery message.
-	upgrades.Upgrade_0_1_16,
+	// upgrades.Upgrade_0_1_16,
 
 	// v0.1.17 - upgrade to:
 	// - Fix for non-deterministic behavior in the unstaking of Morse suppliers
-	upgrades.Upgrade_0_1_17,
+	// upgrades.Upgrade_0_1_17,
+
+	// v0.1.18 - upgrade to:
+	// - Updates the Morse recoverable account allowlists
+	// upgrades.Upgrade_0_1_18,
+
+	// v0.1.19 - upgrade to:
+	// - Fix claiming Morse supplier that's fully unstaked
+	// upgrades.Upgrade_0_1_19,
+
+	// v0.1.20 - upgrade to:
+	// - Add zero-balance/stake `MorseClaimableAccount`s for Morse owner accounts that are non-custodial and had no corresponding `MorseAuthAccount`
+	// - Update the Morse account recovery allowlist with exchange allowlist updates and invalid addresses
+	// upgrades.Upgrade_0_1_20,
+
+	// v0.1.21 - upgrade to:
+	// - Update the Morse account recovery allowlist with exchange allowlist updates and invalid addresses
+	// - Slim down excessively sized proof module events:
+	// upgrades.Upgrade_0_1_21,
+
+	// v0.1.22 - upgrade to:
+	// - Update the Morse account recovery allowlist
+	// upgrades.Upgrade_0_1_22,
+
+	// v0.1.23 - upgrade to:
+	// - RelayMiner improvements (replaced EventsQueryClient with CometBFT client)
+	// - Tokenomics enhancements (non-chain halting claim settlement)
+	// - Service parameter updates and governance parameter adjustments
+	// upgrades.Upgrade_0_1_23,
+
+	// v0.1.24 - upgrade to:
+	// - Supplier query enhancements (dehydrated flag for list-suppliers)
+	// - Supplier downstaking fixes (funds go to owner address)
+	// - Session parameter updates (numSuppliersPerSession increased to 50)
+	// - CLI improvements (count flag for relay command)
+	// - Telegram bot exchange list updates
+	upgrades.Upgrade_0_1_24,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

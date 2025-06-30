@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"slices"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -27,9 +26,11 @@ import (
 func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settledResults tlm.ClaimSettlementResults,
 	expiredResults tlm.ClaimSettlementResults,
+	numDiscardedFaultyClaims uint64,
 	err error,
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
+	logger.Debug("settling expiring claims")
 
 	// Retrieve all expiring claims as an iterator.
 	// DEV_NOTE: This previously retrieve a list but has been change to account for large claim counts.
@@ -42,317 +43,131 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settledResults = make(tlm.ClaimSettlementResults, 0)
 	expiredResults = make(tlm.ClaimSettlementResults, 0)
 	settlementContext := NewSettlementContext(ctx, &k, logger)
-
-	logger.Debug("settling expiring claims")
 	numExpiringClaims := 0
+	numDiscardedFaultyClaims = 0
+
+	// Iterating over all potentially expiring claims.
+	// This loop does the following:
+	// - Retrieve the claim
+	// - Settle the claim
+	// - Remove the claim from the state
+	// - Emit an event
+	// - Update the relevant actors in the state
 	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
 		claim, iterErr := expiringClaimsIterator.Value()
 		if iterErr != nil {
-			return settledResults, expiredResults, iterErr
+			claimKey := string(expiringClaimsIterator.Key())
+			logger.Error(tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+				"[UNEXPECTED ERROR] Critical error during claim settlement during session with key %s. Claim will be discarded to prevent chain halt: %s",
+				claimKey, err,
+			).Error())
+			numDiscardedFaultyClaims++
+			continue
 		}
+
+		// Settle the claim.
+		claimProcessingContext, settlementErr := k.settleClaim(ctx, settlementContext, claim, logger)
+		if settlementErr != nil {
+			// Discard a faulty claim and continue iterating over the next one.
+			k.discardFaultyClaim(ctx, claim, settlementErr, logger)
+			numDiscardedFaultyClaims++
+			continue
+		}
+
+		// If the code path reached this section, we will either:
+		// - Successfully settle the claim
+		// - Successfully expire the claim
 		numExpiringClaims++
 
-		if err = settlementContext.ClaimCacheWarmUp(ctx, &claim); err != nil {
-			return settledResults, expiredResults, err
+		// Identify the stage of the claim (e.g. settled, expired, proven, claimed, etc.)
+		var settlementStage prooftypes.ClaimProofStage
+		if claimProcessingContext.isSettled {
+			// Append the token logic module processing ClaimSettlementResult to the settled results.
+			settledResults = append(settledResults, claimProcessingContext.settlementResult)
+			settlementStage = prooftypes.ClaimProofStage_SETTLED
+		} else {
+			// Append the settlement result to the expired results.
+			expiredResults = append(expiredResults, claimProcessingContext.settlementResult)
+			settlementStage = prooftypes.ClaimProofStage_EXPIRED
 		}
-
-		var (
-			// These values are used for cores business logic; minting, slashing, etc.
-			proofRequirement prooftypes.ProofRequirementReason
-			claimeduPOKT     cosmostypes.Coin
-
-			// These values are used for basic validation, telemetry and observability.
-			numClaimRelays,
-			numClaimComputeUnits,
-			numEstimatedComputeUnits uint64
-		)
-
-		sessionId := claim.GetSessionHeader().GetSessionId()
-
-		// DEV_NOTE: Not every Relay (Request, Response) pair in the session is inserted into the tree.
-		// See the godoc for GetNumRelays for more delays.
-		numClaimRelays, err = claim.GetNumRelays()
-		if err != nil {
-			return settledResults, expiredResults, err
-		}
-
-		// Ensure that the number of relays claimed is greater than 0.
-		// CreateClaim message handler validation already ensures that the number of relays
-		// is greater than 0, but this is a sanity check to ensure that no invalid claims
-		// are processed in the settlement phase.
-		if numClaimRelays == 0 {
-			logger.Error(fmt.Sprintf(
-				"SHOULD NEVER HAPPEN: claim for session ID %q has 0 relays, skipping settlement",
-				sessionId,
-			))
-
-			// TODO_CONSIDERATION: Treat this claim as expired, since it has no relays.
-			// This would result in the Supplier being slashed for submitting a claim with 0 relays.
-			// DEV_NOTE: This scenario should theoretically never occur because claims are only
-			// created when the number of compute units exceeds zero.
-			// CreateClaim message handler should have rejected the claim in the first place.
-			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-			continue
-		}
-
-		// DEV_NOTE: We are assuming that (numClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay)
-		// because this code path is only reached if that has already been validated.
-		numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
-		if err != nil {
-			return settledResults, expiredResults, err
-		}
-
-		// Ensure that the number of compute units claimed is greater than 0.
-		// CreateClaim message handler validation already ensures that the number of compute units
-		// is greater than 0, but this is a sanity check to ensure that no invalid claims
-		// are processed in the settlement phase.
-		if numClaimComputeUnits == 0 {
-			logger.Error(fmt.Sprintf(
-				"SHOULD NEVER HAPPEN: claim for session ID %q has 0 compute units, skipping settlement",
-				sessionId,
-			))
-
-			// TODO_CONSIDERATION: Treat this claim as expired, since it has no compute units.
-			// This would result in the Supplier being slashed for submitting a claim with 0 compute units.
-			// DEV_NOTE: This scenario should theoretically never occur because claims are only
-			// created when the number of compute units exceeds zero.
-			// CreateClaim message handler should have rejected the claim in the first place.
-			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-			continue
-		}
-
-		// Get the relay mining difficulty for the service that this claim is for.
-		serviceId := claim.GetSessionHeader().GetServiceId()
-		var relayMiningDifficulty servicetypes.RelayMiningDifficulty
-		relayMiningDifficulty, err = settlementContext.GetRelayMiningDifficulty(serviceId)
-		if err != nil {
-			return settledResults, expiredResults, err
-		}
-
-		// Retrieve the shared module params.
-		// It contains network wide governance params required to convert claims to POKT (e.g. CUTTM).
-		sharedParams := settlementContext.GetSharedParams()
-
-		// numEstimatedComputeUnits is the probabilistic estimation of the offchain
-		// work done by the relay miner in this session.
-		// It is derived from the claimed work and the relay mining difficulty.
-		numEstimatedComputeUnits, err = claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
-		if err != nil {
-			return settledResults, expiredResults, err
-		}
-
-		// claimeduPOKT is the amount the supplier will receive if the claim is settled.
-		// It is derived from:
-		// - The claim's number of relays
-		// - The service's configured CUPR
-		// - The service's onchain current relay mining difficulty
-		// - Global network parameters (e.g. CUTTM)
-		claimeduPOKT, err = claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
-		if err != nil {
-			return settledResults, expiredResults, err
-		}
-
-		// Using the probabilistic proofs approach, determine if this expiring
-		// claim required an onchain proof
-		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
-		if err != nil {
-			return settledResults, expiredResults, err
-		}
-
-		logger = k.logger.With(
-			"session_id", sessionId,
-			"supplier_operator_address", claim.SupplierOperatorAddress,
-			"num_claim_compute_units", numClaimComputeUnits,
-			"num_relays_in_session_tree", numClaimRelays,
-			"num_estimated_compute_units", numEstimatedComputeUnits,
-			"claimed_upokt", claimeduPOKT,
-			"proof_requirement", proofRequirement,
-		)
-
-		// Initialize a claimSettlementResult to accumulate the results prior to executing state transitions.
-		claimSettlementResult := tlm.NewClaimSettlementResult(claim)
-
-		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
-		if proofIsRequired {
-			// IMPORTANT: Proof validation and claims settlement timing:
-			// 	- Proof validation (proof end blocker): Executes WITHIN proof submission window
-			// 	- Claims settlement (tokenomics end blocker): Executes AFTER window closes
-			// This ensures proofs are validated before claims are settled
-
-			var expirationReason tokenomicstypes.ClaimExpirationReason
-			switch claim.ProofValidationStatus {
-
-			// If the proof is required and not found, the claim is expired.
-			case prooftypes.ClaimProofStatus_PENDING_VALIDATION:
-				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_MISSING
-
-				// If the proof is required and invalid, the claim is expired.
-			case prooftypes.ClaimProofStatus_INVALID:
-				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_INVALID
-
-				// If the proof is required and valid, the claim is settled.
-			case prooftypes.ClaimProofStatus_VALIDATED:
-				expirationReason = tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
-			}
-
-			if claim.ProofValidationStatus != prooftypes.ClaimProofStatus_VALIDATED {
-				// TODO_MAINNET_MIGRATION(@red-0ne): Slash the supplier in proportion to their stake.
-				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new message in case it was sent by accident
-
-				// Proof was required but is invalid or not found.
-				// Emit an event that a claim has expired and being removed without being settled.
-				claimExpiredEvent := tokenomicstypes.EventClaimExpired{
-					Claim:                    &claim,
-					ExpirationReason:         expirationReason,
-					NumRelays:                numClaimRelays,
-					NumClaimedComputeUnits:   numClaimComputeUnits,
-					NumEstimatedComputeUnits: numEstimatedComputeUnits,
-					ClaimedUpokt:             &claimeduPOKT,
-				}
-				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
-					return settledResults, expiredResults, err
-				}
-
-				logger.Info(fmt.Sprintf(
-					"claim expired due to %s",
-					tokenomicstypes.ClaimExpirationReason_name[int32(expirationReason)]),
-				)
-
-				// Collect all the slashed supplier operator addresses to later check
-				// if they have to be unstaked because of stake below the minimum.
-				// The unstaking check is not done here because the slashed supplier may
-				// have other valid claims and the protocol might want to touch the supplier
-				// owner or operator balances if the stake is negative.
-
-				// The claim is no longer necessary, so there's no need for it to take up onchain space.
-				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-
-				// Append the settlement result to the expired results.
-				expiredResults.Append(claimSettlementResult)
-
-				// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
-				defer k.finalizeTelemetry(
-					prooftypes.ClaimProofStage_EXPIRED,
-					claim.SessionHeader.ServiceId,
-					claim.SessionHeader.ApplicationAddress,
-					claim.SupplierOperatorAddress,
-					numClaimRelays,
-					numClaimComputeUnits,
-					err,
-				)
-
-				continue
-			}
-		}
-
-		// TODO_HACK(@red-0ne): This check exists to avoid chain halts when CUPR params are changed.
-		// We log the error, remove the claim, and skip its settlement instead of failing.
-		// This code should be removed once CUPR supports historical values, allowing
-		// claims to be validated against the CUPR value that was active during the session
-		// when the claim was created.
-		service, svcErr := settlementContext.GetService(serviceId)
-		if svcErr != nil {
-			logger.Error(fmt.Sprintf(
-				"error retrieving service %q for claim %q: %s",
-				serviceId, claim.SessionHeader.SessionId, svcErr,
-			))
-			return settledResults, expiredResults, svcErr
-		}
-		expectedClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay
-		if numClaimComputeUnits != expectedClaimComputeUnits {
-			logger.Error(tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
-				"[TOKENOMICS MISMATCH]: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d). Removing claim. See the source code for a TODO_HACK(#1439).",
-				numClaimComputeUnits,
-				numClaimRelays,
-				service.ComputeUnitsPerRelay,
-			).Error())
-
-			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-			continue
-		}
-
-		// TODO_HACK(@red-0ne, #1439): This check exists to avoid chain halts caused by the
-		// claim's suppliers not being staked for the claim's service.
-		if err = k.ensureSupplierIsStakedForService(settlementContext, claim); err != nil {
-			// TODO_POST_MIGRATION_HACK_FIX(@red-0ne, #1439): Emit an event for this to track these errors
-			// and eventually remove it altogether.
-			logger.Error(fmt.Sprintf("[TOKENOMICS MISMATCH]: %s. Skipping and removing a Claim for the wrong service. See the source code for a TODO_HACK.", err))
-
-			k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-			continue
-		}
-
-		// If this code path is reached, then either:
-		// 1. The claim does not require a proof.
-		// 2. The claim requires a proof and a valid proof was found.
-
-		// Manage the mint & burn accounting for the claim.
-		if err = k.ProcessTokenLogicModules(ctx, settlementContext, claimSettlementResult); err != nil {
-			logger.Error(fmt.Sprintf("error processing token logic modules for claim %q: %v", claim.SessionHeader.SessionId, err))
-			return settledResults, expiredResults, err
-		}
-
-		// Append the token logic module processing ClaimSettlementResult to the settled results.
-		settledResults.Append(claimSettlementResult)
-
-		claimSettledEvent := tokenomicstypes.EventClaimSettled{
-			Claim:                    &claim,
-			NumRelays:                numClaimRelays,
-			NumClaimedComputeUnits:   numClaimComputeUnits,
-			NumEstimatedComputeUnits: numEstimatedComputeUnits,
-			ClaimedUpokt:             &claimeduPOKT,
-			ProofRequirement:         proofRequirement,
-			SettlementResult:         *claimSettlementResult,
-		}
-
-		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
-			return settledResults, expiredResults, err
-		}
-
-		logger.Info("claim settled")
-
-		// The claim & proof are no longer necessary, so there's no need for them
-		// to take up onchain space.
-		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-
-		logger.Debug(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 
 		// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
+		// Telemetry will be emitted for all non-faulty (i.e. discarded) claims.
+		// TODO_CONSIDERATION: Consider adding discarded faulty claims to the telemetry.
 		defer k.finalizeTelemetry(
-			prooftypes.ClaimProofStage_SETTLED,
+			settlementStage,
 			claim.SessionHeader.ServiceId,
 			claim.SessionHeader.ApplicationAddress,
 			claim.SupplierOperatorAddress,
-			numClaimRelays,
-			numClaimComputeUnits,
-			err,
+			claimProcessingContext.numClaimRelays,
+			claimProcessingContext.numClaimComputeUnits,
+			settlementErr,
+		)
+
+		// The claim is being settled or expired, so it no longer needs onchain storage.
+		// Remove it from the latest (i.e. pruned) state so it will be maintained by archived nodes.
+		k.proofKeeper.RemoveClaim(ctx, claim.SessionHeader.SessionId, claim.SupplierOperatorAddress)
+
+		logger.Info(
+			"claim processed",
+			"session_id", claim.SessionHeader.SessionId,
+			"supplier", claim.SupplierOperatorAddress,
+			"settled", claimProcessingContext.isSettled,
+			"block_height", blockHeight,
 		)
 	}
 
-	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
+	// Claims settlement results have been computed when this code path is reached.
+	// The onchain data now needs to be updated.
+
+	// Persist the state of all the applications and suppliers involved in the claims.
+	// This is done in a single batch to reduce the number of writes to state storage.
+	settlementContext.FlushAllActorsToStore(ctx)
+
+	logger.Info(
+		"expiring claims processed",
+		"num_expiring_claims", numExpiringClaims,
+		"num_settled", settledResults.GetNumClaims(),
+		"num_expired", expiredResults.GetNumClaims(),
+		"num_discarded_faulty", numDiscardedFaultyClaims,
+		"block_height", blockHeight,
+	)
+
+	// TODO_IMPROVEMENT: Pre-validate all settlement operations before execution
+	//
+	// Goals:
+	// - Validate all settlement and expiration results will succeed before executing any
+	// - Allow discarding the whole settlement batch if any operation would unexpectedly fail
+	// - Prevent chain halts due to failed settlement execution
+	//
+	// Rationale:
+	// - Ignoring errors would lead to partial execution and leave the chain in an inconsistent state
+	// - Not ignoring execution errors would halt the chain
+	// - All-or-nothing approach ensures atomic settlement process and continues chain operation
 
 	// Execute all the pending mint, burn, and transfer operations.
 	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
-		return settledResults, expiredResults, err
+		return settledResults, expiredResults, numDiscardedFaultyClaims, err
 	}
 
 	// Slash all suppliers who failed to submit a required proof.
 	if err = k.ExecutePendingExpiredResults(ctx, settlementContext, expiredResults); err != nil {
-		return settledResults, expiredResults, err
+		return settledResults, expiredResults, numDiscardedFaultyClaims, err
 	}
 
 	// Persist the state of all the applications and suppliers involved in the claims.
 	// This is done in a single batch to reduce the number of writes to state storage.
 	settlementContext.FlushAllActorsToStore(ctx)
 
-	logger.Info(fmt.Sprintf(
-		"settled %d and expired %d claims at block height %d",
-		settledResults.GetNumClaims(),
-		expiredResults.GetNumClaims(),
-		blockHeight,
-	))
+	logger.Info(
+		"claims settlement summary",
+		"num_settled", settledResults.GetNumClaims(),
+		"num_expired", expiredResults.GetNumClaims(),
+		"num_discarded_faulty", numDiscardedFaultyClaims,
+		"block_height", blockHeight,
+	)
 
-	return settledResults, expiredResults, nil
+	return settledResults, expiredResults, numDiscardedFaultyClaims, nil
 }
 
 // ExecutePendingExpiredResults executes all pending supplier slashing operations.
@@ -767,34 +582,225 @@ func (k Keeper) finalizeTelemetry(
 	telemetry.ClaimComputeUnitsCounter(claimProofStage.String(), numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
 }
 
-// ensureSupplierIsStakedForService checks if the supplier is staked for the service
-// that the claim is for. If the supplier is not staked for the service, it returns an error.
-func (k Keeper) ensureSupplierIsStakedForService(
+// settleClaim processes a single claim and determines its settlement outcome.
+//
+// Responsibilities:
+// - Evaluate if the claim should be settled or expired (per business logic rules)
+// - Handle proof requirements, Token Logic Module (TLM) processing, and event emission
+// - Return errors only for unexpected conditions that prevent normal processing (e.g., invalid claim data, cache failures, TLM or event emission errors)
+//   - Normal business outcomes (expired claims, missing proofs, etc.) do NOT return errors—these are reflected in the returned ClaimProcessingContext
+//   - When an error is returned, the claim should be discarded to avoid chain halt
+//
+// Notes:
+// - Does NOT perform state changes directly
+// - Prepares settlement operations for batch execution by ExecutePendingSettledResults and ExecutePendingExpiredResults
+func (k Keeper) settleClaim(
+	ctx cosmostypes.Context,
 	settlementContext *settlementContext,
 	claim prooftypes.Claim,
-) error {
-	supplier, err := settlementContext.GetSupplier(claim.SupplierOperatorAddress)
-	if err != nil {
-		return tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
-			"error retrieving supplier %q for claim %q: %s",
-			claim.SupplierOperatorAddress, claim.SessionHeader.SessionId, err,
-		)
+	logger cosmoslog.Logger,
+) (*claimSettlementContext, error) {
+	if err := settlementContext.ClaimCacheWarmUp(ctx, &claim); err != nil {
+		return nil, err
 	}
 
-	svcIndex := slices.IndexFunc(
-		supplier.Services,
-		func(serviceConfig *sharedtypes.SupplierServiceConfig) bool {
-			return serviceConfig.ServiceId == claim.SessionHeader.ServiceId
-		},
+	var (
+		// These values are used for cores business logic; minting, slashing, etc.
+		proofRequirement prooftypes.ProofRequirementReason
+		claimeduPOKT     cosmostypes.Coin
+
+		// These values are used for basic validation, telemetry and observability.
+		numClaimRelays,
+		numClaimComputeUnits,
+		numEstimatedComputeUnits uint64
 	)
 
-	if svcIndex < 0 {
-		return tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
-			"supplier %q not staked for service %q.",
-			claim.SupplierOperatorAddress,
-			claim.SessionHeader.ServiceId,
-		)
+	sessionId := claim.GetSessionHeader().GetSessionId()
+
+	// DEV_NOTE: Not every Relay (Request, Response) pair in the session is inserted into the tree.
+	// See the godoc for GetNumRelays for more delays.
+	numClaimRelays, err := claim.GetNumRelays()
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	// DEV_NOTE: We are assuming that (numClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay)
+	// because this code path is only reached if that has already been validated.
+	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the relay mining difficulty for the service that this claim is for.
+	serviceId := claim.GetSessionHeader().GetServiceId()
+	var relayMiningDifficulty servicetypes.RelayMiningDifficulty
+	relayMiningDifficulty, err = settlementContext.GetRelayMiningDifficulty(serviceId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieve the shared module params.
+	// It contains network wide governance params required to convert claims to POKT (e.g. CUTTM).
+	sharedParams := settlementContext.GetSharedParams()
+
+	// numEstimatedComputeUnits is the probabilistic estimation of the offchain
+	// work done by the relay miner in this session.
+	// It is derived from the claimed work and the relay mining difficulty.
+	numEstimatedComputeUnits, err = claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+	if err != nil {
+		return nil, err
+	}
+
+	// claimeduPOKT is the amount the supplier will receive if the claim is settled.
+	// It is derived from:
+	// - The claim's number of relays
+	// - The service's configured CUPR
+	// - The service's onchain current relay mining difficulty
+	// - Global network parameters (e.g. CUTTM)
+	claimeduPOKT, err = claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	if err != nil {
+		return nil, err
+	}
+
+	// Using the probabilistic proofs approach, determine if this expiring
+	// claim required an onchain proof
+	proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
+	if err != nil {
+		return nil, err
+	}
+
+	logger = logger.With(
+		"session_id", claim.SessionHeader.SessionId,
+		"supplier_operator_address", claim.SupplierOperatorAddress,
+		"num_claim_compute_units", numClaimComputeUnits,
+		"num_relays_in_session_tree", numClaimRelays,
+		"num_estimated_compute_units", numEstimatedComputeUnits,
+		"claimed_upokt", claimeduPOKT,
+		"proof_requirement", proofRequirement,
+	)
+
+	// Initialize a claimSettlementResult to accumulate the results prior to executing state transitions.
+	claimSettlementContext := &claimSettlementContext{
+		settlementResult:     tlm.NewClaimSettlementResult(claim),
+		numClaimRelays:       numClaimRelays,
+		numClaimComputeUnits: numClaimComputeUnits,
+	}
+
+	proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
+	if proofIsRequired {
+		// IMPORTANT: Proof validation and claims settlement timing:
+		// 	- Proof validation (proof end blocker): Executes WITHIN proof submission window
+		// 	- Claims settlement (tokenomics end blocker): Executes AFTER window closes
+		// This ensures proofs are validated before claims are settled
+
+		var expirationReason tokenomicstypes.ClaimExpirationReason
+		switch claim.ProofValidationStatus {
+
+		// If the proof is required and not found, the claim is expired.
+		case prooftypes.ClaimProofStatus_PENDING_VALIDATION:
+			expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_MISSING
+
+			// If the proof is required and invalid, the claim is expired.
+		case prooftypes.ClaimProofStatus_INVALID:
+			expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_INVALID
+
+			// If the proof is required and valid, the claim is settled.
+		case prooftypes.ClaimProofStatus_VALIDATED:
+			expirationReason = tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
+		}
+
+		if claim.ProofValidationStatus != prooftypes.ClaimProofStatus_VALIDATED {
+			// TODO_MAINNET_MIGRATION(@red-0ne): Slash the supplier in proportion to their stake.
+			// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new message in case it was sent by accident
+
+			// Proof was required but is invalid or not found.
+			// Emit an event that a claim has expired and being removed without being settled.
+			claimExpiredEvent := tokenomicstypes.EventClaimExpired{
+				Claim:                    &claim,
+				ExpirationReason:         expirationReason,
+				NumRelays:                numClaimRelays,
+				NumClaimedComputeUnits:   numClaimComputeUnits,
+				NumEstimatedComputeUnits: numEstimatedComputeUnits,
+				ClaimedUpokt:             &claimeduPOKT,
+			}
+			if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
+				return nil, err
+			}
+
+			logger.Info(fmt.Sprintf(
+				"claim expired due to %s",
+				tokenomicstypes.ClaimExpirationReason_name[int32(expirationReason)]),
+			)
+
+			return claimSettlementContext, nil
+		}
+	}
+
+	// If this code path is reached, then either:
+	// 1. The claim does not require a proof.
+	// 2. The claim requires a proof and a valid proof was found.
+	// Manage the mint & burn accounting for the claim.
+	if err = k.ProcessTokenLogicModules(
+		ctx,
+		settlementContext,
+		claimSettlementContext.settlementResult,
+	); err != nil {
+		logger.Error(fmt.Sprintf("error	 processing token logic modules for claim %q: %v", sessionId, err))
+		return nil, err
+	}
+
+	claimSettledEvent := tokenomicstypes.EventClaimSettled{
+		Claim:                    &claim,
+		NumRelays:                numClaimRelays,
+		NumClaimedComputeUnits:   numClaimComputeUnits,
+		NumEstimatedComputeUnits: numEstimatedComputeUnits,
+		ClaimedUpokt:             &claimeduPOKT,
+		ProofRequirement:         proofRequirement,
+		SettlementResult:         *claimSettlementContext.settlementResult,
+	}
+
+	if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
+		return nil, err
+	}
+
+	claimSettlementContext.isSettled = true
+
+	return claimSettlementContext, nil
+}
+
+// discardFaultyClaim is used to handle unexpected faulty claims.
+// It:
+// - Logs the error
+// - Emits an event
+// - Removes the claim
+//
+// TODO_POST_MIGRATION_INVESTIGATION(@olshansk): Find a mitigation plan for discarded claims.
+// The tradeoff of avoiding chain halts versus handling faulty claims is worth it for now.
+func (k Keeper) discardFaultyClaim(
+	sdkCtx cosmostypes.Context,
+	claim prooftypes.Claim,
+	err error,
+	logger cosmoslog.Logger,
+) {
+	logger.Error(tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+		"[UNEXPECTED ERROR] Critical error during claim settlement during session %q for operator %s and service %s. Claim will be discarded to prevent chain halt: %s",
+		claim.SessionHeader.SessionId, claim.SupplierOperatorAddress, claim.SessionHeader.ServiceId, err,
+	).Error())
+
+	// Emit an event that a claim settlement failed and the claim is being discarded.
+
+	dehydratedClaim := claim.GetDehydratedClaim()
+	claimDiscardedEvent := tokenomicstypes.EventClaimDiscarded{
+		Claim: &dehydratedClaim,
+		Error: err.Error(),
+	}
+	if evtErr := sdkCtx.EventManager().EmitTypedEvent(&claimDiscardedEvent); evtErr != nil {
+		logger.Error(fmt.Sprintf(
+			"failed to emit claim discarded event for claim %q: %s",
+			claim.SessionHeader.SessionId, evtErr,
+		))
+	}
+
+	// Remove the faulty claim from the state.
+	k.proofKeeper.RemoveClaim(sdkCtx, claim.SessionHeader.SessionId, claim.SupplierOperatorAddress)
 }

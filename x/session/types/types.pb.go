@@ -35,8 +35,8 @@ type SessionHeader struct {
 	SessionId               string `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	SessionStartBlockHeight int64  `protobuf:"varint,4,opt,name=session_start_block_height,json=sessionStartBlockHeight,proto3" json:"session_start_block_height,omitempty"`
 	// Note that`session_end_block_height` is a derivative of (`start` + `num_blocks_per_session`)
-	// as goverened by onchain params at the time of the session start.
-	// It is stored as an additional field to simplofy business logic in case
+	// as governed by onchain params at the time of the session start.
+	// It is stored as an additional field to simplify business logic in case
 	// the number of blocks_per_session changes during the session.
 	SessionEndBlockHeight int64 `protobuf:"varint,5,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
 }
@@ -106,7 +106,7 @@ func (m *SessionHeader) GetSessionEndBlockHeight() int64 {
 }
 
 // Session is a fully hydrated session object that contains all the information for the Session
-// and its parcipants.
+// and its participants.
 type Session struct {
 	Header              *SessionHeader     `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
 	SessionId           string             `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`

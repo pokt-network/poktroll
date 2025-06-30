@@ -1,0 +1,17 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/cosmos.slashing.v1beta1.MsgUpdateParams",
+        "authority": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
+        "params": {
+          "signed_blocks_window": "100",
+          "min_signed_per_window": "0.500000000000000000",
+          "downtime_jail_duration": "10m0s",
+          "slash_fraction_double_sign": "0.050000000000000000",
+          "slash_fraction_downtime": "0.010000000000000000"
+        }
+      }
+    ]
+  }
+}

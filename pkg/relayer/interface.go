@@ -74,6 +74,13 @@ type RelayAuthenticator interface {
 		serviceId string,
 	) error
 
+	// CheckRelayRewardEligibility verifies the Relay Request is still reward eligible.
+	// This is done by:
+	// - Retrieving the session header of the relay request
+	// - Ensuring the current block height hasn't reached the beginning of the claim window
+	// Returns an error if the relay is no longer eligible for rewards.
+	CheckRelayRewardEligibility(ctx context.Context, relayRequest *servicetypes.RelayRequest) error
+
 	// SignRelayResponse signs the relay response given a supplier operator address.
 	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierOperatorAddr string) error
 
@@ -197,14 +204,15 @@ type RelayMeter interface {
 	// Start starts the relay meter.
 	Start(ctx context.Context) error
 
-	// ShouldRateLimit checks if the relay request exceeds the rate limit for the given application.
-	// The relay cost is added optimistically to account for concurrent requests
-	// that may arrive before the relay response is signed and sent back to the client.
-	ShouldRateLimit(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) bool
+	// IsOverServicing returns whether the relay would result in over-servicing the application.
+	IsOverServicing(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) bool
 
 	// SetNonApplicableRelayReward updates the relay meter for the given relay request as
 	// non-applicable between a single Application and a single Supplier for a single session.
 	// The volume / reward applicability of the relay is unknown to the relay miner
 	// until the relay is served and the relay response signed.
 	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata)
+
+	// AllowOverServicing returns true if the relay meter is configured to allow over-servicing.
+	AllowOverServicing() bool
 }

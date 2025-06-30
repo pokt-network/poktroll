@@ -39,7 +39,7 @@ func (k Keeper) AllSuppliers(
 }
 
 // Supplier retrieves a specific supplier by operator address.
-// The returned supplier is fully hydrated with its service configurations and history.
+// The returned supplier can be hydrated or dehydrated based on the request flag.
 func (k Keeper) Supplier(
 	ctx context.Context,
 	req *types.QueryGetSupplierRequest,
@@ -48,13 +48,21 @@ func (k Keeper) Supplier(
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	supplier, found := k.GetSupplier(ctx, req.OperatorAddress)
+	// Retrieve a dehydrated supplier first
+	supplier, found := k.GetDehydratedSupplier(ctx, req.OperatorAddress)
 	if !found {
 		err := fmt.Sprintf("supplier with operator address: %q", req.GetOperatorAddress())
 		return nil, status.Error(
 			codes.NotFound,
 			types.ErrSupplierNotFound.Wrap(err).Error(),
 		)
+	}
+
+	// Conditionally hydrate supplier fields based on dehydrated flag
+	if req.GetDehydrated() {
+		k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
+	} else {
+		k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
 	}
 
 	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
@@ -82,9 +90,13 @@ func (k Keeper) getAllSuppliers(
 				return status.Error(codes.Internal, err.Error())
 			}
 
-			// Hydrate all supplier fields
-			k.hydrateSupplierServiceConfigs(ctx, &supplier)
-			k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
+			// Conditionally hydrate supplier fields based on dehydrated flag
+			if req.GetDehydrated() {
+				k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
+			} else {
+				k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
+				k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
+			}
 
 			suppliers = append(suppliers, supplier)
 			return nil
@@ -152,9 +164,13 @@ func (k Keeper) getAllServiceSuppliers(
 				return status.Error(codes.Internal, err.Error())
 			}
 
-			// Hydrate all supplier fields
-			k.hydrateSupplierServiceConfigs(ctx, &supplier)
-			k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
+			// Conditionally load service configurations and history into the supplier object
+			if req.GetDehydrated() {
+				k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
+			} else {
+				k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
+				k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
+			}
 
 			// Add the supplier to the results
 			suppliers = append(suppliers, supplier)

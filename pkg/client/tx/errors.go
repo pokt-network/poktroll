@@ -13,9 +13,9 @@ var (
 	// to the mempool.
 	ErrCheckTx = sdkerrors.Register(codespace, 5, "error during ABCI check tx")
 
-	// ErrTxTimeout is raised when a transaction has taken too long to
+	// ErrTxTimeout is raised by the tx client when a transaction has taken too long to
 	// complete, surpassing a predefined threshold.
-	ErrTxTimeout = sdkerrors.Register(codespace, 6, "tx timed out")
+	ErrTxTimeout = sdkerrors.Register(codespace, 6, "tx client timed out")
 
 	// ErrQueryTx indicates an error occurred while trying to query for the status
 	// of a specific transaction, likely due to issues with the query parameters

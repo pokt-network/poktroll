@@ -16,6 +16,27 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// claimSettlementContext tracks the state and metadata for a claim during settlement.
+//
+// - Holds the result of settlement operations (mint, burn, transfer) for this claim.
+// - Indicates if the claim was settled or expired without settlement.
+// - Records the total relays and compute units associated with the claim.
+type claimSettlementContext struct {
+	// settlementResult holds the tokenomics module operations (mint, burn, transfer)
+	// to be executed when settling this claim.
+	settlementResult *tokenomicstypes.ClaimSettlementResult
+
+	// if true, the claim was successfully settled;
+	// if false, the claim expired without settlement.
+	isSettled bool
+
+	// numClaimRelays is the total number of relays in the claim's session tree.
+	numClaimRelays uint64
+
+	// numClaimComputeUnits is the total compute units claimed by the supplier.
+	numClaimComputeUnits uint64
+}
+
 // settlementContext maintains a cache of all entities involved in the claim settlement process.
 // This structure optimizes claim processing performance by eliminating redundant KV store operations.
 type settlementContext struct {

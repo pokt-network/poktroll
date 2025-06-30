@@ -88,7 +88,7 @@ func (k msgServer) UnstakeSupplier(
 	// session. I.e., onchain sessions' suppliers list MUST NOT change mid-session.
 	// Removing it right away could have undesired effects on the network
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
-	// offchain actors that need to listen to session supplier's change mid-isession, etc).
+	// offchain actors that need to listen to session supplier's change mid-session, etc).
 	supplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
 
 	// Schedule all the old service configurations to be deactivated at the start of the next session

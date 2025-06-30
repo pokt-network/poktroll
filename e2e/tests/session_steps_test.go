@@ -300,7 +300,10 @@ func (s *suite) sendRelaysForSession(
 	for i := 0; i < relayLimit; i++ {
 		payload := fmt.Sprintf(payload_fmt, i+1) // i+1 to avoid id=0 which is invalid
 
-		s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, defaultJSONPRCPath, payload)
+		// Passing "1" as the number of relays per request because we're controlling the total
+		// number of relays by iterating through this loop 'relayLimit' times. Each iteration
+		// sends one relay request over the connection.
+		s.TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPathAndData(appName, supplierOperatorName, "1", serviceId, defaultJSONPRCPath, payload)
 		time.Sleep(10 * time.Millisecond)
 	}
 }
@@ -348,7 +351,7 @@ func (s *suite) waitForNewBlockEvent(
 
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
-			for _, event := range newBlockEvent.Data.Value.ResultFinalizeBlock.Events {
+			for _, event := range newBlockEvent.Events() {
 				// Checks on the event. For example, for a claim Settlement event,
 				// we can parse the claim and verify the compute units.
 				if isEventMatchFn(&event) {
@@ -373,7 +376,7 @@ func (s *suite) waitForBlockHeight(targetHeight int64) {
 				return
 			}
 
-			if newBlockEvent.Data.Value.Block.Header.Height >= targetHeight {
+			if newBlockEvent.Height() >= targetHeight {
 				done()
 				return
 			}
