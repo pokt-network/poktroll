@@ -432,4 +432,3 @@ include ./makefiles/migrate.mk
 include ./makefiles/claudesync.mk
 include ./makefiles/docs.mk
 include ./makefiles/release.mk
-include ./makefiles/queries.mk
