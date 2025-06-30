@@ -36,6 +36,14 @@ func (query *QueryAllSuppliersRequest) ValidateBasic() error {
 			}
 		}
 
+	case *QueryAllSuppliersRequest_OwnerAddress:
+		// If the owner address is set, check if it's valid
+		if filter.OwnerAddress != "" {
+			if _, err := sdk.AccAddressFromBech32(filter.OwnerAddress); err != nil {
+				return ErrSupplierInvalidAddress.Wrapf("invalid owner address %s; (%v)", filter.OwnerAddress, err)
+			}
+		}
+
 	default:
 		// No filter is set
 		logger.Info().Msg("No specific filter set when listing suppliers")

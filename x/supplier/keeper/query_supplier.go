@@ -15,7 +15,8 @@ import (
 )
 
 // AllSuppliers returns a paginated list of all suppliers in the store.
-// If a serviceId is provided, it filters suppliers to only those starting for that service.
+// If a serviceId is provided, it filters suppliers to only those staking for that service.
+// If an ownerAddress is provided, it filters suppliers to only those owned by that address.
 // The returned suppliers are fully hydrated with their service configurations and history.
 func (k Keeper) AllSuppliers(
 	ctx context.Context,
@@ -31,10 +32,12 @@ func (k Keeper) AllSuppliers(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if req.GetServiceId() == "" {
-		return k.getAllSuppliers(ctx, logger, req)
-	} else {
+	if req.GetServiceId() != "" {
 		return k.getAllServiceSuppliers(ctx, logger, req)
+	} else if req.GetOwnerAddress() != "" {
+		return k.getAllOwnerSuppliers(ctx, logger, req)
+	} else {
+		return k.getAllSuppliers(ctx, logger, req)
 	}
 }
 
@@ -171,6 +174,52 @@ func (k Keeper) getAllServiceSuppliers(
 			}
 
 			// Add the supplier to the results
+			suppliers = append(suppliers, supplier)
+			return nil
+		},
+	)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryAllSuppliersResponse{Supplier: suppliers, Pagination: pageRes}, nil
+}
+
+// getAllOwnerSuppliers retrieves all suppliers that are owned by a specific address.
+// It iterates through all suppliers and filters by owner address.
+func (k Keeper) getAllOwnerSuppliers(
+	ctx context.Context,
+	logger log.Logger,
+	req *types.QueryAllSuppliersRequest,
+) (*types.QueryAllSuppliersResponse, error) {
+	supplierStore := k.getSupplierStore(ctx)
+
+	var suppliers []sharedtypes.Supplier
+
+	pageRes, err := query.Paginate(
+		supplierStore,
+		req.Pagination,
+		func(key []byte, value []byte) error {
+			var supplier sharedtypes.Supplier
+			if err := k.cdc.Unmarshal(value, &supplier); err != nil {
+				err = fmt.Errorf("unmarshaling supplier with key (hex): %x: %+v", key, err)
+				logger.Error(err.Error())
+				return status.Error(codes.Internal, err.Error())
+			}
+
+			// Filter by owner address
+			if supplier.OwnerAddress != req.GetOwnerAddress() {
+				return nil
+			}
+
+			// Conditionally hydrate supplier fields based on dehydrated flag
+			if req.GetDehydrated() {
+				k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
+			} else {
+				k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
+			}
+
 			suppliers = append(suppliers, supplier)
 			return nil
 		},
