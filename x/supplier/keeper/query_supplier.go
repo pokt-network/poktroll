@@ -63,6 +63,7 @@ func (k Keeper) Supplier(
 		k.hydratePartialDehydratedSupplierServiceConfigs(ctx, &supplier)
 	} else {
 		k.hydrateFullSupplierServiceConfigs(ctx, &supplier)
+		k.hydrateSupplierServiceUsageMetrics(ctx, &supplier)
 	}
 
 	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
