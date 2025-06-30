@@ -87,6 +87,11 @@ func (mnr *miner) mapMineRelay(
 	ctx context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
+	// Replace the relay response payload with the relay response hash to reduce the size of the onchain proof.
+	relayResponsePayloadHash := protocol.GetRelayHashFromBytes(relay.Res.GetPayload())
+	relay.Res.Payload = relayResponsePayloadHash[:]
+
+	// Marshal and hash the whole relay to measure difficulty.
 	relayBz, err := relay.Marshal()
 	if err != nil {
 		return either.Error[*relayer.MinedRelay](err), false
