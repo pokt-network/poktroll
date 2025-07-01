@@ -123,7 +123,6 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 		relaySessionEndHeight,
 	)
 
-
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
 		"⏳ Checking relay reward eligibility. Checking if the current height (%d) can process relay with session end height (%d) before the grace period ends at height (%d)",
 		currentHeight,
@@ -195,7 +194,7 @@ func (ra *relayAuthenticator) getRelayProcessingBlockHeight(
 	}
 
 	return -1, ErrRelayAuthenticatorInvalidSession.Wrapf(
-		"(⌛) SESSION EXPIRED! Relay block height (%d) is past the session end block height (%d) AND the grace period has elapsed. Make sure that your both your full node and the Gateway's full node are in sync. "
+		"(⌛) SESSION EXPIRED! Relay block height (%d) is past the session end block height (%d) AND the grace period has elapsed. Make sure that your both your full node and the Gateway's full node are in sync. ",
 		sessionEndHeight,
 		currentHeight,
 	)
