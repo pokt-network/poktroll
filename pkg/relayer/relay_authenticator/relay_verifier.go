@@ -96,8 +96,16 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	return ErrRelayAuthenticatorInvalidSessionSupplier
 }
 
-// CheckRelayRewardEligibility verifies the relay's session hasn't expired for reward
-// purposes by ensuring the current block height hasn't reached the claim window yet.
+// CheckRelayRewardEligibility verifies if a relay is still eligible for rewards.
+//
+// A relay is eligible for rewards if it's processed before the grace period ends.
+// This ensures that relays arriving late due to network latency can still be rewarded,
+// but prevents indefinite reward claims for old sessions.
+//
+// Timeline: [Session End] -> [Grace Period] -> [Claim Window] -> [Proof Window]
+//                             ^^^^^^^^^^^^^^^  
+//                             Relays must be processed here to earn rewards
+//
 // Returns an error if the relay is no longer eligible for rewards.
 func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 	ctx context.Context,
@@ -118,32 +126,34 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 		return err
 	}
 
-	relaySessionGracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(
+	gracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(
 		sharedParams,
 		relaySessionEndHeight,
 	)
 
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
-		"⏳ Checking relay reward eligibility. Checking if the current height (%d) can process relay with session end height (%d) before the grace period ends at height (%d)",
+		"⏳ Checking relay reward eligibility: current height (%d), session end (%d), grace period end (%d)",
 		currentHeight,
 		relaySessionEndHeight,
-		relaySessionGracePeriodEndHeight,
+		gracePeriodEndHeight,
 	)
 
-	// If current height is equal or greater than the grace period end height,
-	// the relay is no longer eligible for rewards as the session has expired for reward purposes.
-	if currentHeight >= relaySessionGracePeriodEndHeight {
+	// Check if grace period has elapsed (relay is no longer eligible for rewards)
+	if !isRelayWithinGracePeriod(sharedParams, relaySessionEndHeight, currentHeight) {
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"(⌛) SESSION EXPIRED! The current height (%d) is past the relay session grace period end height (%d). Make sure that your both your full node and the Gateway's full node are in sync. ",
+			"(⌛) REWARD ELIGIBILITY EXPIRED! Current height (%d) is past the grace period end height (%d) "+
+			"for session ending at %d. Grace period: %d blocks. "+
+			"Ensure both your full node and the Gateway's full node are in sync.",
 			currentHeight,
-			relaySessionGracePeriodEndHeight,
+			gracePeriodEndHeight,
+			relaySessionEndHeight,
+			sharedParams.GetGracePeriodEndOffsetBlocks(),
 		)
 	}
 
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
-		"✅ Relay is eligible for rewards - current height (%d) < session grace period end height (%d)",
-		currentHeight,
-		relaySessionGracePeriodEndHeight,
+		"✅ Relay is eligible for rewards - within grace period (ends at height %d)",
+		gracePeriodEndHeight,
 	)
 
 	return nil
@@ -151,9 +161,15 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 
 // getRelayProcessingBlockHeight returns the block height at which the session
 // for the given relayRequest should be processed.
-//   - If the request is within the session bounds, the current block height is returned.
-//   - If the request is outside the session bounds, but within the session's grace period, the session's end block height is returned.
-//   - In all other cases, an error is returned.
+//
+// The function determines the appropriate block height based on the relay timing:
+//   - If the relay arrives during the active session: returns current block height
+//   - If the relay arrives during grace period: returns session end height
+//     (This allows late relays to be processed as if they arrived at session end)
+//   - If the relay arrives after grace period: returns error (relay is too late)
+//
+// Grace period provides a buffer after session end to accommodate network latency
+// and clock differences between nodes.
 func (ra *relayAuthenticator) getRelayProcessingBlockHeight(
 	ctx context.Context,
 	relayRequest *servicetypes.RelayRequest,
@@ -168,35 +184,32 @@ func (ra *relayAuthenticator) getRelayProcessingBlockHeight(
 	)
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
-	// If the session end height is greater than or equal to the current height,
-	// the session is still active and the current block height should be used.
+	// Case 1: Relay arrived during active session - process at current height
 	if sessionEndHeight >= currentHeight {
 		return currentHeight, nil
 	}
 
-	// The session has ended so we need to validate if the session is still within the grace period.
-	// If the session is within the grace period, the session's end block height should be used.
-	// Otherwise, the session is invalid and an error should be returned.
-
-	// Retrieve the shared parameters to check if the session is within the grace period.
+	// Case 2: Session has ended - check if we're within grace period
 	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
 	if err != nil {
 		return -1, err
 	}
 
-	// Do not process the `RelayRequest` if the session has expired and the current
-	// block height is outside the session's grace period.
-	isSessionValid := !sharedtypes.IsGracePeriodElapsed(sharedParams, sessionEndHeight, currentHeight)
-	if !isSessionValid {
-		// The RelayRequest's session has expired but is still within the
-		// grace period, process it as if the session is still active.
+	if isRelayWithinGracePeriod(sharedParams, sessionEndHeight, currentHeight) {
+		// Case 2a: Within grace period - process as if relay arrived at session end
+		// This ensures consistent session assignment for late-arriving relays
 		return sessionEndHeight, nil
 	}
 
+	// Case 3: Grace period has elapsed - relay is too late
+	gracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
 	return -1, ErrRelayAuthenticatorInvalidSession.Wrapf(
-		"(⌛) SESSION EXPIRED! Relay block height (%d) is past the session end block height (%d) AND the grace period has elapsed. Make sure that your both your full node and the Gateway's full node are in sync. ",
-		sessionEndHeight,
+		"(⌛) SESSION EXPIRED! Current height (%d) is past the grace period end height (%d) for session ending at %d. "+
+		"Grace period: %d blocks. Make sure that both your full node and the Gateway's full node are in sync.",
 		currentHeight,
+		gracePeriodEndHeight,
+		sessionEndHeight,
+		sharedParams.GetGracePeriodEndOffsetBlocks(),
 	)
 }
 
@@ -240,4 +253,15 @@ func logSessionIDMismatch(
 			receivedStart, receivedEnd,
 			emoji, syncStatus,
 		))
+}
+
+// isRelayWithinGracePeriod checks if a relay is within the grace period for a given session.
+// Returns true if the relay can still be processed, false if the grace period has elapsed.
+func isRelayWithinGracePeriod(
+	sharedParams *sharedtypes.Params,
+	sessionEndHeight int64,
+	currentHeight int64,
+) bool {
+	gracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
+	return currentHeight < gracePeriodEndHeight
 }

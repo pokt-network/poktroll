@@ -280,13 +280,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// TODO(@Olshansk): Revisit params to enable the above.
 	if err := server.relayAuthenticator.CheckRelayRewardEligibility(ctx, relayRequest); err != nil {
 		processingTime := time.Since(requestStartTime).Milliseconds()
-		endBlock := server.blockClient.LastBlock(ctx)
-		endHeight := endBlock.Height()
+		latestBlock := server.blockClient.LastBlock(ctx)
+		latestBlockHeight := latestBlock.Height()
 		logger.Warn().Msgf(
-			"⏱️ Backend took %d ms — relay no longer eligible (session expired: block %d → %d, hash: %X). "+
-				"Likely long response time, session too short, or full node sync issues. "+
-				"Please verify your full node is in sync and not overwhelmed with websocket connections. Error: %v",
-			processingTime, startHeight, endHeight, endBlock.Hash(), err,
+			"⏱️ Backend took %d ms to process request. Relay no longer eligible. Session expired between height %d and %d. "+
+				"Likely issues: service response time, session too short, or full node sync issues. Error: %v",
+			processingTime, startHeight, latestBlockHeight, latestBlock.Hash(), err,
 		)
 
 		isOverServicing = true

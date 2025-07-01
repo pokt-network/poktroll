@@ -19,6 +19,7 @@ Added new methods to the `FullNode` interface in `/Users/olshansky/workspace/poc
 The grace period logic is implemented in both `LazyFullNode` and `CachingFullNode`:
 
 **Key Algorithm:**
+
 1. Fetch current session from cache/blockchain
 2. Get shared parameters (grace period, blocks per session)
 3. Get current block height
@@ -27,6 +28,7 @@ The grace period logic is implemented in both `LazyFullNode` and `CachingFullNod
 5. Otherwise, return current session
 
 **Grace Period Calculation:**
+
 ```
 Previous Session End Height + GracePeriodEndOffsetBlocks >= Current Height
 ```
@@ -34,6 +36,7 @@ Previous Session End Height + GracePeriodEndOffsetBlocks >= Current Height
 ### 3. Session Usage Updated
 
 Updated session fetching in:
+
 - `mode_centralized.go:118` - Uses `GetSessionWithGracePeriod()` instead of `GetSession()`
 - `mode_delegated.go:45` - Uses `GetSessionWithGracePeriod()` instead of `GetSession()`
 
@@ -47,16 +50,19 @@ Updated session fetching in:
 ## Benefits
 
 ### 1. Eliminates Session Rollover Failures
+
 - During grace period, PATH continues using previous session's endpoints
 - Prevents "no endpoints available" errors during transitions
 - Smooth handoff between sessions
 
 ### 2. Blockchain-Aligned Timing
+
 - Queries actual grace period from shared module parameters
 - No hardcoded timeouts that drift from protocol timing
 - Respects on-chain session configuration
 
 ### 3. Maintains Performance
+
 - Leverages existing cache for current sessions
 - Only fetches additional data when in grace period
 - Graceful fallbacks if blockchain queries fail
