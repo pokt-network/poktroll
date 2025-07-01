@@ -103,8 +103,9 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 // but prevents indefinite reward claims for old sessions.
 //
 // Timeline: [Session End] -> [Grace Period] -> [Claim Window] -> [Proof Window]
-//                             ^^^^^^^^^^^^^^^  
-//                             Relays must be processed here to earn rewards
+//
+//	^^^^^^^^^^^^^^^
+//	Relays must be processed here to earn rewards
 //
 // Returns an error if the relay is no longer eligible for rewards.
 func (ra *relayAuthenticator) CheckRelayRewardEligibility(
@@ -142,8 +143,8 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 	if !isRelayWithinGracePeriod(sharedParams, relaySessionEndHeight, currentHeight) {
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
 			"(⌛) REWARD ELIGIBILITY EXPIRED! Current height (%d) is past the grace period end height (%d) "+
-			"for session ending at %d. Grace period: %d blocks. "+
-			"Ensure both your full node and the Gateway's full node are in sync.",
+				"for session ending at %d. Grace period: %d blocks. "+
+				"Ensure both your full node and the Gateway's full node are in sync.",
 			currentHeight,
 			gracePeriodEndHeight,
 			relaySessionEndHeight,
@@ -152,7 +153,8 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 	}
 
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
-		"✅ Relay is eligible for rewards - within grace period (ends at height %d)",
+		"✅ Relay is eligible for rewards - relay session end height (%d) is within grace period (ends at height %d)",
+		relaySessionEndHeight,
 		gracePeriodEndHeight,
 	)
 
@@ -205,7 +207,7 @@ func (ra *relayAuthenticator) getRelayProcessingBlockHeight(
 	gracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
 	return -1, ErrRelayAuthenticatorInvalidSession.Wrapf(
 		"(⌛) SESSION EXPIRED! Current height (%d) is past the grace period end height (%d) for session ending at %d. "+
-		"Grace period: %d blocks. Make sure that both your full node and the Gateway's full node are in sync.",
+			"Grace period: %d blocks. Make sure that both your full node and the Gateway's full node are in sync.",
 		currentHeight,
 		gracePeriodEndHeight,
 		sessionEndHeight,
