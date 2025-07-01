@@ -55,11 +55,14 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
 
-	// Prepare the keepers
+	// Prepare the keepers with only relay burn equals mint TLM
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
 		cosmoslog.NewNopLogger(),
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
+		testkeeper.WithTokenLogicModules([]tlm.TokenLogicModule{
+			tlm.NewRelayBurnEqualsMintTLM(),
+		}),
 	)
 	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
@@ -217,11 +220,14 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []uint64{12, 38, 50}
 
-	// Prepare the keepers
+	// Prepare the keepers with only relay burn equals mint TLM
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
 		cosmoslog.NewNopLogger(),
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
+		testkeeper.WithTokenLogicModules([]tlm.TokenLogicModule{
+			tlm.NewRelayBurnEqualsMintTLM(),
+		}),
 	)
 	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
@@ -964,9 +970,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 
-	// Set up tokenomics params with the new distribution percentages and no global inflation
+	// Set up tokenomics params with the new distribution percentages and enable distributed settlement
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0 // Disable global inflation for this test
+	tokenomicsParams.EnableDistributeSettlement = true // Enable distributed settlement
 	tokenomicsParams.MintAllocationPercentages = tokenomicstypes.MintAllocationPercentages{
 		Dao:         0.1,
 		Proposer:    0.14,

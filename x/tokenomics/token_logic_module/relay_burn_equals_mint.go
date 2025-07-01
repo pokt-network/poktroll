@@ -44,11 +44,13 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	// order economic effects with more optionality. This could include funds
 	// going to pnf, delegators, enabling bonuses/rebates, etc...
 
-	// Check if global inflation is disabled to determine distribution strategy
+	// Check if distributed settlement is enabled and global inflation is disabled
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
-	if globalInflationPerClaim == 0 {
-		// When global inflation is disabled, distribute the settlement amount according to
-		// mint allocation percentages instead of giving everything to the supplier
+	enableDistributeSettlement := tlmCtx.TokenomicsParams.GetEnableDistributeSettlement()
+	
+	if enableDistributeSettlement && globalInflationPerClaim == 0 {
+		// When distributed settlement is enabled and global inflation is disabled,
+		// distribute the settlement amount according to mint allocation percentages
 		if err := tlm.processDistributedRewardSettlement(ctx, logger, tlmCtx); err != nil {
 			return err
 		}
@@ -116,16 +118,16 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	return nil
 }
 
-// processDistributedRewardSettlement handles the reward distribution logic when global inflation is disabled.
-// This function distributes the settlement amount according to mint allocation percentages instead of
-// giving the full amount to the supplier. The total amount minted equals the settlement amount, but it's
-// distributed among supplier, DAO, proposer, and source owner based on the configured percentages.
+// processDistributedRewardSettlement handles the reward distribution logic when distributed settlement is enabled
+// and global inflation is disabled. This function distributes the settlement amount according to mint allocation
+// percentages instead of giving the full amount to the supplier. The total amount minted equals the settlement
+// amount, but it's distributed among supplier, DAO, proposer, and source owner based on the configured percentages.
 func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
-	logger.Info("Global inflation is disabled, distributing settlement amount according to mint allocation percentages")
+	logger.Info("Distributed settlement is enabled and global inflation is disabled, distributing settlement amount according to mint allocation percentages")
 
 	// === PARAMETER EXTRACTION ===
 	// Get the mint allocation percentages from tokenomics parameters

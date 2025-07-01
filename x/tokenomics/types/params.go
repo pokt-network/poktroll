@@ -25,6 +25,9 @@ var (
 	KeyGlobalInflationPerClaim     = []byte("GlobalInflationPerClaim")
 	ParamGlobalInflationPerClaim   = "global_inflation_per_claim"
 	DefaultGlobalInflationPerClaim = float64(0.1)
+	KeyEnableDistributeSettlement     = []byte("EnableDistributeSettlement")
+	ParamEnableDistributeSettlement   = "enable_distribute_settlement"
+	DefaultEnableDistributeSettlement = false
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -39,11 +42,13 @@ func NewParams(
 	mintAllocationPercentages MintAllocationPercentages,
 	daoRewardAddress string,
 	globalInflationPerClaim float64,
+	enableDistributeSettlement bool,
 ) Params {
 	return Params{
-		MintAllocationPercentages: mintAllocationPercentages,
-		DaoRewardAddress:          daoRewardAddress,
-		GlobalInflationPerClaim:   globalInflationPerClaim,
+		MintAllocationPercentages:  mintAllocationPercentages,
+		DaoRewardAddress:           daoRewardAddress,
+		GlobalInflationPerClaim:    globalInflationPerClaim,
+		EnableDistributeSettlement: enableDistributeSettlement,
 	}
 }
 
@@ -53,6 +58,7 @@ func DefaultParams() Params {
 		DefaultMintAllocationPercentages,
 		DefaultDaoRewardAddress,
 		DefaultGlobalInflationPerClaim,
+		DefaultEnableDistributeSettlement,
 	)
 }
 
@@ -65,9 +71,19 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			ValidateMintAllocationPercentages,
 		),
 		paramtypes.NewParamSetPair(
-			KeyMintAllocationPercentages,
-			&p.MintAllocationPercentages,
-			ValidateMintAllocationPercentages,
+			KeyDaoRewardAddress,
+			&p.DaoRewardAddress,
+			ValidateDaoRewardAddress,
+		),
+		paramtypes.NewParamSetPair(
+			KeyGlobalInflationPerClaim,
+			&p.GlobalInflationPerClaim,
+			ValidateGlobalInflationPerClaim,
+		),
+		paramtypes.NewParamSetPair(
+			KeyEnableDistributeSettlement,
+			&p.EnableDistributeSettlement,
+			ValidateEnableDistributeSettlement,
 		),
 	}
 }
@@ -83,6 +99,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateGlobalInflationPerClaim(params.GlobalInflationPerClaim); err != nil {
+		return err
+	}
+
+	if err := ValidateEnableDistributeSettlement(params.EnableDistributeSettlement); err != nil {
 		return err
 	}
 
@@ -193,6 +213,16 @@ func ValidateGlobalInflationPerClaim(GlobalInflationPerClaimAny any) error {
 
 	if GlobalInflationPerClaim < 0 {
 		return ErrTokenomicsParamInvalid.Wrapf("GlobalInflationPerClaim must be greater than or equal to 0: %f", GlobalInflationPerClaim)
+	}
+
+	return nil
+}
+
+// ValidateEnableDistributeSettlement validates the EnableDistributeSettlement param.
+func ValidateEnableDistributeSettlement(enableDistributeSettlementAny any) error {
+	_, ok := enableDistributeSettlementAny.(bool)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", enableDistributeSettlementAny)
 	}
 
 	return nil
