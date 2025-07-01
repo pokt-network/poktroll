@@ -87,9 +87,9 @@ func (mnr *miner) mapMineRelay(
 	ctx context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
-	// Replace the relay response payload with the relay response hash to reduce the size of the onchain proof.
-	relayResponsePayloadHash := protocol.GetRelayHashFromBytes(relay.Res.GetPayload())
-	relay.Res.Payload = relayResponsePayloadHash[:]
+	// Set the relay response payload to nil to reduce the size of SMST & onchain proofs.
+	// DEV_NOTE: This MUST be done before the onchain difficulty check.
+	relay.Res.Payload = nil
 
 	// Marshal and hash the whole relay to measure difficulty.
 	relayBz, err := relay.Marshal()

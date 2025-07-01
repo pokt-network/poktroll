@@ -68,12 +68,10 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// in order to generate the signable bytes hash without the need restore it.
 	res.Meta.SupplierOperatorSignature = nil
 
-	// If the response payload is not empty, eeplace it with its SHA256 hash
-	// in order to minimize the size of the onchain proof.
-	if len(res.GetPayload()) > 0 {
-		relayResponsePayloadHash := protocol.GetRelayHashFromBytes(res.GetPayload())
-		res.Payload = relayResponsePayloadHash[:]
-	}
+	// Set the response payload to nil to reduce the size of SMST & onchain proofs.
+	// DEV_NOTE: This MUST be done in order to support onchain response signature
+	// verification, without including the entire response payload in the SMST/proof.
+	res.Payload = nil
 
 	responseBz, err := res.Marshal()
 	if err != nil {

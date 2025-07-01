@@ -55,12 +55,16 @@ message RelayRequest {
 //
 // Contains the response details for a RelayRequest.
 message RelayResponse {
+  // Next index: 5
+
   RelayResponseMetadata meta = 1 [(gogoproto.nullable) = false];
 
   // Serialized response payload:
   // - Passed directly from the service.
   // - Can be any supported format: JSON-RPC, REST, gRPC, etc.
   bytes payload = 2;
+
+  bytes payload_hash = 4;
 
   // Error returned by the RelayMiner, if applicable.
   // - If no error occurred, this field is empty.
