@@ -26,6 +26,12 @@ message Params {
   // global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.
   double global_inflation_per_claim = 7 [(gogoproto.jsontag) = "global_inflation_per_claim", (gogoproto.moretags) = "yaml:\"global_inflation_per_claim\""];
 
+  // enable_distribute_settlement controls whether the relay burn equals mint TLM should distribute
+  // the settlement amount according to mint allocation percentages when global inflation is disabled.
+  // When true and global_inflation_per_claim = 0, the settlement is distributed among participants.
+  // When false, the supplier receives 100% of the settlement amount (original behavior).
+  bool enable_distribute_settlement = 8 [(gogoproto.jsontag) = "enable_distribute_settlement", (gogoproto.moretags) = "yaml:\"enable_distribute_settlement\""];
+
   // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
   // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`
   // TODO_IMPROVE: Look into an opportunity to use an enum to avoid using strings throughout the codebase.
