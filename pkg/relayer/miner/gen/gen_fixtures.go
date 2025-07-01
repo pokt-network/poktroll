@@ -146,6 +146,8 @@ func genRandomizedMinedRelayFixtures(
 			}
 
 			randBz := make([]byte, randLength)
+			relayResponsePayloadHash := protocol.GetRelayHashFromBytes(randBz)
+
 			if _, err := rand.Read(randBz); err != nil {
 				errCh <- err
 				return
@@ -172,31 +174,16 @@ func genRandomizedMinedRelayFixtures(
 					Meta: servicetypes.RelayResponseMetadata{
 						SessionHeader: sessionHeader,
 					},
-					Payload: randBz,
+					Payload:     nil,
+					PayloadHash: relayResponsePayloadHash[:],
 				},
 			}
 
 			relayBz, err := relay.Marshal()
 			if err != nil {
-				errCh <- err
-				return
-			}
-
-			// Copy the relay to avoid modifying the original.
-			var relayCopy servicetypes.Relay
-			if err = relayCopy.Unmarshal(relayBz); err != nil {
-				errCh <- err
-				return
-			}
-
-			// Replace the relay response payload with the relay response hash to reduce the size of the onchain proof.
-			relayResponsePayloadHash := protocol.GetRelayHashFromBytes(relay.Res.GetPayload())
-			relayCopy.Res.Payload = relayResponsePayloadHash[:]
-			relayWithHashedResponsePayloadBz, err := relayCopy.Marshal()
-			if err != nil {
 				panic(err)
 			}
-			relayHash := protocol.GetRelayHashFromBytes(relayWithHashedResponsePayloadBz)
+			relayHash := protocol.GetRelayHashFromBytes(relayBz)
 
 			randBzPublishCh <- &relayer.MinedRelay{
 				Relay: relay,
