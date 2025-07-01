@@ -925,3 +925,144 @@ func getNumTokensClaimed(
 	numTokensClaimedRat := new(big.Rat).Mul(numComputeUnits, computeUnitCostUpokt)
 	return numTokensClaimedRat.Num().Int64() / numTokensClaimedRat.Denom().Int64()
 }
+
+func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution(t *testing.T) {
+	// Test Parameters
+	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
+	supplierInitialStake := cosmosmath.NewInt(1000000)
+	supplierRevShareRatios := []uint64{12, 38, 50}
+	// Set the cost denomination of a single compute unit to pPOKT
+	globalComputeUnitCostGranularity := uint64(1000000)
+	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
+	serviceComputeUnitsPerRelay := uint64(1)
+	service := prepareTestService(serviceComputeUnitsPerRelay)
+	numRelays := uint64(1000)
+
+	// Prepare the keepers
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
+		cosmoslog.NewNopLogger(),
+		testkeeper.WithService(*service),
+		testkeeper.WithDefaultModuleBalances(),
+	)
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	keepers.SetService(ctx, *service)
+
+	// Ensure the claim is within relay mining bounds
+	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	numTokensClaimed := getNumTokensClaimed(
+		numRelays,
+		serviceComputeUnitsPerRelay,
+		globalComputeUnitsToTokensMultiplier,
+		globalComputeUnitCostGranularity,
+	)
+	maxClaimableAmountPerSupplier := appInitialStake.Quo(cosmosmath.NewInt(numSuppliersPerSession))
+	require.GreaterOrEqual(t, maxClaimableAmountPerSupplier.Int64(), numTokensClaimed)
+
+	// Set compute_units_to_tokens_multiplier to simplify expectation calculations
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	require.NoError(t, err)
+
+	// Set up tokenomics params with the new distribution percentages and no global inflation
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = 0 // Disable global inflation for this test
+	tokenomicsParams.MintAllocationPercentages = tokenomicstypes.MintAllocationPercentages{
+		Dao:         0.1,
+		Proposer:    0.14,
+		Supplier:    0.73,
+		SourceOwner: 0.03,
+		Application: 0.0,
+	}
+	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	require.NoError(t, err)
+
+	// Add a new application
+	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
+	app := apptypes.Application{
+		Address:        sample.AccAddress(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+	}
+	keepers.SetApplication(ctx, app)
+
+	// Prepare the supplier revenue shares
+	supplierRevShares := make([]*sharedtypes.ServiceRevenueShare, len(supplierRevShareRatios))
+	for i := range supplierRevShares {
+		shareHolderAddress := sample.AccAddress()
+		supplierRevShares[i] = &sharedtypes.ServiceRevenueShare{
+			Address:            shareHolderAddress,
+			RevSharePercentage: supplierRevShareRatios[i],
+		}
+	}
+	services := []*sharedtypes.SupplierServiceConfig{{
+		ServiceId: service.Id,
+		RevShare:  supplierRevShares,
+	}}
+
+	// Add a new supplier
+	supplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierInitialStake)
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		supplierRevShares[0].Address,
+		services, 1, 0,
+	)
+	supplier := sharedtypes.Supplier{
+		OwnerAddress:         supplierRevShares[0].Address,
+		OperatorAddress:      supplierRevShares[0].Address,
+		Stake:                &supplierStake,
+		Services:             services,
+		ServiceConfigHistory: serviceConfigHistory,
+	}
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
+
+	// Get baseline balances
+	daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
+	
+	daoBalanceBefore := getBalance(t, ctx, keepers, daoRewardAddress)
+	sourceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
+
+	// Prepare the claim and process the tokenomics using the existing pattern
+	claim := prepareTestClaim(numRelays, service, &app, &supplier)
+	pendingResult := tlm.NewClaimSettlementResult(claim)
+
+	settlementContext := tokenomicskeeper.NewSettlementContext(
+		ctx,
+		keepers.Keeper,
+		keepers.Keeper.Logger(),
+	)
+
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+	require.NoError(t, err)
+
+	// Process the token logic modules
+	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	require.NoError(t, err)
+
+	// Execute the pending results
+	pendingResults := make(tlm.ClaimSettlementResults, 0)
+	pendingResults.Append(pendingResult)
+	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
+	require.NoError(t, err)
+
+	// Calculate expected distributions
+	// Supplier gets the full settlement amount (as in original behavior)
+	expectedSupplierAmount := cosmosmath.NewInt(numTokensClaimed)
+	// Additional rewards are calculated as percentages of the settlement amount
+	expectedSourceOwnerAmount := cosmosmath.NewInt(int64(float64(numTokensClaimed) * 0.03))
+	expectedDaoAmount := cosmosmath.NewInt(int64(float64(numTokensClaimed) * 0.1))
+
+	// Verify DAO received expected distribution (as additional rewards)
+	daoBalanceAfter := getBalance(t, ctx, keepers, daoRewardAddress)
+	require.Equal(t, expectedDaoAmount, daoBalanceAfter.Amount.Sub(daoBalanceBefore.Amount))
+
+	// Verify source owner received expected distribution (as additional rewards)
+	sourceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
+	require.Equal(t, expectedSourceOwnerAmount, sourceOwnerBalanceAfter.Amount.Sub(sourceOwnerBalanceBefore.Amount))
+
+	// Verify supplier shareholders received expected distribution (full settlement amount)
+	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, expectedSupplierAmount)
+	for shareHolderAddr, expectedShareAmount := range shareAmounts {
+		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
+		require.Equal(t, expectedShareAmount, shareHolderBalance.Amount)
+	}
+}
