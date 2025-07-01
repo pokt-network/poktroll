@@ -24,6 +24,8 @@ def merge_dicts(base, updates):
 # so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
 # environment is not broken for future engineers.
 
+load("./tiltfiles/ibc.tilt", "default_ibc_validator_configs")
+
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
@@ -96,9 +98,7 @@ localnet_config_defaults = {
 
     "ibc": {
         "enabled": False,
-        "relay_pairs_enabled": {
-            "pocket-agoriclocal": False,
-        }
+        "validator_configs": default_ibc_validator_configs,
     }
 }
 
