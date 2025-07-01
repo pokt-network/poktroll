@@ -3,8 +3,8 @@ load("ext://helm_resource", "helm_resource", "helm_repo")
 pocket_chain_id = "pocket"
 pocket_validator_resource_name = "validator"
 
-default_context_path = os.path.join(".", "localnet", "kubernetes")
-ibc_relayer_dockerfile_path = os.path.join(".", "localnet", "dockerfiles", "ibc-relayer.dockerfile")
+default_context_path = os.path.join("localnet", "kubernetes")
+ibc_relayer_dockerfile_path = os.path.join("localnet", "dockerfiles", "ibc-relayer.dockerfile")
 ibc_relayer_config = {
     "dockerfile_path": ibc_relayer_dockerfile_path,
 }
@@ -13,10 +13,10 @@ default_ibc_validator_configs = {
     "agoric": {
         "enabled": False,
         "chain_id": "agoriclocal",
-        "values_path": os.path.join(".", "localnet", "kubernetes", "values-agoric.yaml"),
+        "values_path": os.path.join("localnet", "kubernetes", "values-agoric.yaml"),
         "tilt_ui_name": "Agoric Validator",
         "chart_name": "agoric-validator",
-        "dockerfile_path": os.path.join(".", "localnet", "dockerfiles", "agoric-validator.dockerfile"),
+        "dockerfile_path": os.path.join("localnet", "dockerfiles", "agoric-validator.dockerfile"),
         # TODO_IMPROVE: can we consolidate this with the chart_name?
         "image_name": "agoric",
         "port_forwards": ["46657:26657", "11090:9090", "40009:40009", ]
@@ -106,7 +106,7 @@ def load_ibc_relayer_server_resources(chart_prefix, ibc_validator_configs):
     chain_config_values_flags = []
     for network_name, ibc_validator_config in ibc_validator_configs.items():
         chain_id = ibc_validator_config["chain_id"]
-        tilt_ui_name = "Pokt->" + chain_id.title()
+        tilt_ui_name = "Pokt->" + network_name.title()
         ibc_setup_resource_name = "🏗️ " + tilt_ui_name
         chain_config_values_flags.append(
             "--values=" +
@@ -192,7 +192,7 @@ def check_and_load_ibc_validator(chart_prefix, validator_config):
     image_deps_and_keys = {}
     if validator_config.get("dockerfile_path", False):
         image_name = validator_config["image_name"]
-        context_path = validator_config.get("context", default_context_path)
+        context_path = validator_config.get("docker_context_path", default_context_path)
         dockerfile_path = validator_config.get("dockerfile_path", None)
 
         image_deps_and_keys = {
