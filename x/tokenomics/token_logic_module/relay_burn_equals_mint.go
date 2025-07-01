@@ -44,49 +44,47 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	// order economic effects with more optionality. This could include funds
 	// going to pnf, delegators, enabling bonuses/rebates, etc...
 
-	// First, maintain the original burn=mint behavior: mint full settlement amount to supplier
-	// Mint new uPOKT to the supplier module account.
-	// These funds will be transferred to the supplier's shareholders below.
-	// For reference, see operate/configs/supplier_staking_config.md.
-	tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
-		OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT,
-		DestinationModule: suppliertypes.ModuleName,
-		Coin:              tlmCtx.SettlementCoin,
-	})
-	logger.Info(fmt.Sprintf("operation queued: mint (%v) coins in the supplier module", tlmCtx.SettlementCoin))
-
-	// Update telemetry information
-	if tlmCtx.SettlementCoin.Amount.IsInt64() {
-		defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(tlmCtx.SettlementCoin.Amount.Int64()))
-	}
-
-	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
-	if err := distributeSupplierRewardsToShareHolders(
-		logger,
-		tlmCtx.Result,
-		tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
-		tlmCtx.Supplier,
-		tlmCtx.Service.Id,
-		tlmCtx.SettlementCoin.Amount,
-	); err != nil {
-		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
-			"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
-			tlmCtx.Supplier.OperatorAddress,
-			err,
-		)
-	}
-	logger.Info(fmt.Sprintf("operation queued: send (%v) from the supplier module to the supplier account with address %q", tlmCtx.SettlementCoin, tlmCtx.Supplier.OperatorAddress))
-
-	// Add reward distribution logic for other participants when global inflation is disabled
-	// This replaces the global mint TLM functionality when global_inflation_per_claim = 0
-	// When global inflation is disabled, we still want to distribute additional rewards to
-	// DAO, proposer, and source owner based on the mint allocation percentages, using the
-	// settlement amount as the base for calculations.
+	// Check if global inflation is disabled to determine distribution strategy
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
 	if globalInflationPerClaim == 0 {
-		if err := tlm.processAdditionalRewardDistribution(ctx, logger, tlmCtx); err != nil {
+		// When global inflation is disabled, distribute the settlement amount according to
+		// mint allocation percentages instead of giving everything to the supplier
+		if err := tlm.processDistributedRewardSettlement(ctx, logger, tlmCtx); err != nil {
 			return err
 		}
+	} else {
+		// Original behavior: mint full settlement amount to supplier and distribute to shareholders
+		// Mint new uPOKT to the supplier module account.
+		// These funds will be transferred to the supplier's shareholders below.
+		// For reference, see operate/configs/supplier_staking_config.md.
+		tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
+			OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT,
+			DestinationModule: suppliertypes.ModuleName,
+			Coin:              tlmCtx.SettlementCoin,
+		})
+		logger.Info(fmt.Sprintf("operation queued: mint (%v) coins in the supplier module", tlmCtx.SettlementCoin))
+
+		// Update telemetry information
+		if tlmCtx.SettlementCoin.Amount.IsInt64() {
+			defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(tlmCtx.SettlementCoin.Amount.Int64()))
+		}
+
+		// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
+		if err := distributeSupplierRewardsToShareHolders(
+			logger,
+			tlmCtx.Result,
+			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+			tlmCtx.Supplier,
+			tlmCtx.Service.Id,
+			tlmCtx.SettlementCoin.Amount,
+		); err != nil {
+			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
+				"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
+				tlmCtx.Supplier.OperatorAddress,
+				err,
+			)
+		}
+		logger.Info(fmt.Sprintf("operation queued: send (%v) from the supplier module to the supplier account with address %q", tlmCtx.SettlementCoin, tlmCtx.Supplier.OperatorAddress))
 	}
 
 	// Burn uPOKT from the application module account which was held in escrow
