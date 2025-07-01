@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // TODO_NEXT_UPGRADE: Rename NEXT with the appropriate next
@@ -19,7 +20,8 @@ const (
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
-// - ...
+// - Updates to the Morse account recovery allowlist
+// - Distributed Settlement TLM: enable_distribute_settlement parameter
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
@@ -38,6 +40,13 @@ var Upgrade_NEXT = Upgrade{
 		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			// Initialize the new enable_distribute_settlement parameter with default value
+			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
+			tokenomicsParams.EnableDistributeSettlement = tokenomicstypes.DefaultEnableDistributeSettlement
+			if err := keepers.TokenomicsKeeper.SetParams(ctx, tokenomicsParams); err != nil {
+				return nil, err
+			}
+
 			return vm, nil
 		}
 	},

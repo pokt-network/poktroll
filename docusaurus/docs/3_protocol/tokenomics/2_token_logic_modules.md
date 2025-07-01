@@ -9,6 +9,7 @@ sidebar_position: 2
 - [Background: Max Claimable Amount](#background-max-claimable-amount)
 - [TLM (pre) Processing](#tlm-pre-processing)
 - [TLM: Mint=Burn (MEB)](#tlm-mintburn-meb)
+- [TLM: Distributed Settlement](#tlm-distributed-settlement)
 - [TLM: Global Mint (GM)](#tlm-global-mint-gm)
 - [TLM: Global Mint Reimbursement Request (GMRR)](#tlm-global-mint-reimbursement-request-gmrr)
   - [Self Dealing Attack](#self-dealing-attack)
@@ -206,6 +207,117 @@ flowchart TD
 TODO_MAINNET: If the application stake has dropped to (near?) zero, should
 we unstake it? Should we use it's balance? Should their be a payee of last resort?
 Make sure to document whatever decision we come to.
+
+:::
+
+## TLM: Distributed Settlement
+
+_tl;dr When global inflation is disabled, distribute settlement amount according to mint allocation percentages instead of giving everything to the supplier._
+
+The `Distributed Settlement` feature provides an alternative to the traditional Mint=Burn behavior when global inflation is disabled (`global_inflation_per_claim = 0`). Instead of suppliers receiving 100% of the settlement amount, the tokens are distributed among all stakeholders according to the governance-defined mint allocation percentages.
+
+### Configuration
+
+This feature is controlled by the `enable_distribute_settlement` governance parameter:
+
+- **When `false` (default)**: Traditional behavior - suppliers receive 100% of settlement amount
+- **When `true` AND `global_inflation_per_claim = 0`**: Distributed behavior - settlement split according to mint allocation percentages
+
+### Distributed Settlement Flow
+
+When both conditions are met (`enable_distribute_settlement = true` AND `global_inflation_per_claim = 0`):
+
+1. **Settlement Amount Calculation**: Same as traditional Mint=Burn - based on work done
+2. **Percentage Distribution**: Settlement amount is split according to `mint_allocation_percentages`:
+   - **Supplier**: ~73% (distributed to supplier and revenue shareholders)
+   - **DAO**: ~10% (sent to DAO reward address)
+   - **Proposer**: ~14% (sent to block proposer)
+   - **Source Owner**: ~3% (sent to service owner)
+3. **Application Burn**: Application stake decreases by the full settlement amount (unchanged)
+
+### Key Differences from Global Mint
+
+| Aspect | Global Mint TLM | Distributed Settlement |
+|--------|----------------|----------------------|
+| **Total Token Supply** | Increases (new tokens minted) | Unchanged (no new minting) |
+| **Activation Condition** | `global_inflation_per_claim > 0` | `enable_distribute_settlement = true` AND `global_inflation_per_claim = 0` |
+| **Application Cost** | Settlement + inflation reimbursement | Settlement only |
+| **Supplier Reward** | 100% of settlement + inflation share | Percentage of settlement (e.g., 73%) |
+
+```mermaid
+---
+title: "Token Logic Module: Distributed Settlement"
+---
+flowchart TD
+    SA(["Settlement Amount (SA)"])
+    EDS{"enable_distribute_settlement = true <br> AND <br> global_inflation_per_claim = 0"}
+    
+    subgraph DS[Distributed Settlement]
+        TM[[Tokenomics Module]]
+        MAP[Mint Allocation Percentages]
+        
+        SA_SUPP["Supplier: 73% of SA"]
+        SA_DAO["DAO: 10% of SA"] 
+        SA_PROP["Proposer: 14% of SA"]
+        SA_SO["Source Owner: 3% of SA"]
+        
+        TM -- "💲 MINT SA" --> TM
+        SA --> MAP
+        MAP --> SA_SUPP
+        MAP --> SA_DAO
+        MAP --> SA_PROP
+        MAP --> SA_SO
+    end
+    
+    subgraph TRAD[Traditional Behavior]
+        SM[[Supplier Module]]
+        SA_FULL["Supplier: 100% of SA"]
+        SM -- "💲 MINT SA" --> SA_FULL
+    end
+    
+    subgraph AO[Application Operations]
+        AM[[Application Module]]
+        AA[Application Address]
+        AM -. ⬇️ REDUCE Stake by SA .-> AA
+    end
+    
+    SA --> EDS
+    EDS -- "Yes" --> DS
+    EDS -- "No" --> TRAD
+    
+    DS --> AO
+    TRAD --> AO
+    
+    SA_SUPP --> RSS[Revenue Share Distribution]
+    SA_DAO --> DAO_ADDR[DAO Address]
+    SA_PROP --> PROP_ADDR[Proposer Address]
+    SA_SO --> SO_ADDR[Service Owner Address]
+    
+    classDef module fill:#f9f,color: #333,stroke:#333,stroke-width:2px;
+    classDef address fill:#bbf,color: #333,stroke:#333,stroke-width:2px;
+    classDef question fill:#e3db6d,color: #333,stroke:#333,stroke-width:2px;
+    classDef amount fill:#d4edda,color: #333,stroke:#333,stroke-width:2px;
+    
+    class TM,SM,AM module;
+    class DAO_ADDR,PROP_ADDR,SO_ADDR,AA address;
+    class EDS question;
+    class SA_SUPP,SA_DAO,SA_PROP,SA_SO,SA_FULL amount;
+```
+
+### Use Cases
+
+**Distributed Settlement is ideal when:**
+- Network wants to transition away from inflationary tokenomics
+- Desire to maintain stakeholder rewards without increasing token supply
+- Applications prefer predictable costs without inflation surcharges
+
+**Traditional Mint=Burn is ideal when:**
+- Simplified tokenomics with suppliers receiving full settlement
+- Global inflation is active for network growth incentives
+
+:::note
+
+The distributed settlement feature enables governance to experiment with non-inflationary reward distribution while maintaining the existing mint allocation percentages structure. This provides a bridge between inflationary and deflationary tokenomics models.
 
 :::
 
