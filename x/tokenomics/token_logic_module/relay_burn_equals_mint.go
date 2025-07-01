@@ -116,15 +116,16 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	return nil
 }
 
-// processAdditionalRewardDistribution handles the reward distribution logic when global inflation is disabled.
-// This function replaces the global mint TLM functionality by distributing additional rewards to
-// DAO, proposer, and source owner based on the mint allocation percentages.
-func (tlm tlmRelayBurnEqualsMint) processAdditionalRewardDistribution(
+// processDistributedRewardSettlement handles the reward distribution logic when global inflation is disabled.
+// This function distributes the settlement amount according to mint allocation percentages instead of
+// giving the full amount to the supplier. The total amount minted equals the settlement amount, but it's
+// distributed among supplier, DAO, proposer, and source owner based on the configured percentages.
+func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
-	logger.Info("Global inflation is disabled, applying reward distribution in RelayBurnEqualsMint TLM")
+	logger.Info("Global inflation is disabled, distributing settlement amount according to mint allocation percentages")
 
 	// === PARAMETER EXTRACTION ===
 	// Get the mint allocation percentages from tokenomics parameters
@@ -132,9 +133,15 @@ func (tlm tlmRelayBurnEqualsMint) processAdditionalRewardDistribution(
 	settlementAmount := tlmCtx.SettlementCoin.Amount
 
 	// === ALLOCATION CALCULATIONS ===
-	// Calculate additional rewards for non-supplier participants
-	// Note: we skip the supplier allocation since they already received the full settlement amount
+	// Calculate how much each participant gets from the settlement amount
 	
+	// Calculate supplier allocation
+	supplierAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Supplier)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting supplier allocation percentage: %v", err)
+	}
+	supplierAmount := calculateAllocationAmount(settlementAmount, supplierAllocationRat)
+
 	// Calculate proposer allocation
 	proposerAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Proposer)
 	if err != nil {
@@ -149,69 +156,104 @@ func (tlm tlmRelayBurnEqualsMint) processAdditionalRewardDistribution(
 	}
 	sourceOwnerAmount := calculateAllocationAmount(settlementAmount, sourceOwnerAllocationRat)
 
-	// Calculate DAO allocation
-	daoAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Dao)
-	if err != nil {
-		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting DAO allocation percentage: %v", err)
-	}
-	daoAmount := calculateAllocationAmount(settlementAmount, daoAllocationRat)
+	// DAO gets the remainder to ensure all settlement tokens are distributed
+	daoAmount := settlementAmount.Sub(supplierAmount).Sub(proposerAmount).Sub(sourceOwnerAmount)
 
 	// === MINTING OPERATIONS ===
-	// Calculate total additional rewards to mint and mint them to the tokenomics module
-	totalAdditionalRewards := proposerAmount.Add(sourceOwnerAmount).Add(daoAmount)
-	
-	if !totalAdditionalRewards.IsZero() {
-		additionalRewardsCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, totalAdditionalRewards)
-		
-		// Mint additional rewards to the tokenomics module for distribution
-		tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
-			OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT,
-			DestinationModule: tokenomicstypes.ModuleName,
-			Coin:              additionalRewardsCoin,
-		})
-		logger.Info(fmt.Sprintf("operation queued: mint (%v) additional reward coins to the tokenomics module", additionalRewardsCoin))
+	// Mint the total settlement amount to the tokenomics module for distribution
+	tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
+		OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT,
+		DestinationModule: tokenomicstypes.ModuleName,
+		Coin:              tlmCtx.SettlementCoin,
+	})
+	logger.Info(fmt.Sprintf("operation queued: mint (%v) coins to tokenomics module for distributed settlement", tlmCtx.SettlementCoin))
 
-		// === REWARD DISTRIBUTION ===
-		// Distribute additional rewards to each participant
-		
-		// Distribute to block proposer
-		if !proposerAmount.IsZero() {
-			proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-			proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-			tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-				OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
-				SenderModule:     tokenomicstypes.ModuleName,
-				RecipientAddress: proposerAddr,
-				Coin:             proposerCoin,
-			})
-			logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
-		}
-
-		// Distribute to service source owner
-		if !sourceOwnerAmount.IsZero() {
-			sourceOwnerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, sourceOwnerAmount)
-			tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-				OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
-				SenderModule:     tokenomicstypes.ModuleName,
-				RecipientAddress: tlmCtx.Service.OwnerAddress,
-				Coin:             sourceOwnerCoin,
-			})
-			logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmCtx.Service.OwnerAddress))
-		}
-
-		// Distribute to DAO
-		if !daoAmount.IsZero() {
-			daoCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, daoAmount)
-			daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
-			tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-				OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION,
-				SenderModule:     tokenomicstypes.ModuleName,
-				RecipientAddress: daoRewardAddress,
-				Coin:             daoCoin,
-			})
-			logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
-		}
+	// Update telemetry information
+	if tlmCtx.SettlementCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(tokenomicstypes.ModuleName, float32(tlmCtx.SettlementCoin.Amount.Int64()))
 	}
+
+	// === REWARD DISTRIBUTION ===
+	// Distribute settlement amount to each participant according to allocation percentages
+	
+	// Distribute to supplier and their shareholders
+	if !supplierAmount.IsZero() {
+		supplierCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierAmount)
+		
+		// Transfer from tokenomics module to supplier module
+		tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
+			OpReason:        tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+			SenderModule:    tokenomicstypes.ModuleName,
+			RecipientModule: suppliertypes.ModuleName,
+			Coin:            supplierCoin,
+		})
+
+		// Distribute to supplier's shareholders based on revenue share percentage
+		if err := distributeSupplierRewardsToShareHolders(
+			logger,
+			tlmCtx.Result,
+			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+			tlmCtx.Supplier,
+			tlmCtx.Service.Id,
+			supplierAmount,
+		); err != nil {
+			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
+				"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
+				tlmCtx.Supplier.OperatorAddress,
+				err,
+			)
+		}
+		logger.Info(fmt.Sprintf("operation queued: distribute (%v) to supplier shareholders", supplierCoin))
+	}
+
+	// Distribute to block proposer
+	if !proposerAmount.IsZero() {
+		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
+		proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
+		tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
+			SenderModule:     tokenomicstypes.ModuleName,
+			RecipientAddress: proposerAddr,
+			Coin:             proposerCoin,
+		})
+		logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
+	}
+
+	// Distribute to service source owner
+	if !sourceOwnerAmount.IsZero() {
+		sourceOwnerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, sourceOwnerAmount)
+		tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
+			SenderModule:     tokenomicstypes.ModuleName,
+			RecipientAddress: tlmCtx.Service.OwnerAddress,
+			Coin:             sourceOwnerCoin,
+		})
+		logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmCtx.Service.OwnerAddress))
+	}
+
+	// Distribute to DAO
+	if !daoAmount.IsZero() {
+		daoCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, daoAmount)
+		daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
+		tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION,
+			SenderModule:     tokenomicstypes.ModuleName,
+			RecipientAddress: daoRewardAddress,
+			Coin:             daoCoin,
+		})
+		logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
+	}
+
+	// === VALIDATION ===
+	// Verify all settlement coins are distributed
+	totalDistributed := supplierAmount.Add(proposerAmount).Add(sourceOwnerAmount).Add(daoAmount)
+	if !totalDistributed.Equal(settlementAmount) {
+		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
+			"total distributed amount (%s) does not equal settlement amount (%s)",
+			totalDistributed, settlementAmount,
+		)
+	}
+	logger.Info(fmt.Sprintf("operation queued: distributed (%v) total settlement coins to all participants", totalDistributed))
 
 	return nil
 }
