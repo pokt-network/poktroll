@@ -2,9 +2,11 @@ package relay_authenticator
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -12,12 +14,11 @@ import (
 func (ra *relayAuthenticator) VerifyRelayRequest(
 	ctx context.Context,
 	relayRequest *servicetypes.RelayRequest,
-	supplierServiceId string,
 ) error {
 	// Get the block height at which the relayRequest should be processed.
 	// Check if the relayRequest is on time or within the session's grace period
 	// before attempting to verify the relayRequest signature.
-	sessionBlockHeight, err := ra.getTargetSessionBlockHeight(ctx, relayRequest)
+	relayProcessingBlockHeight, err := ra.getRelayProcessingBlockHeight(ctx, relayRequest)
 	if err != nil {
 		return err
 	}
@@ -28,32 +29,31 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 		return err
 	}
 
-	meta := relayRequest.GetMeta()
-
+	relayMeta := relayRequest.GetMeta()
 	// Extract the session header for usage below.
 	// ringClient.VerifyRelayRequestSignature already verified the header's validity.
-	sessionHeader := meta.SessionHeader
-
+	relaySessionHeader := relayMeta.SessionHeader
+	relayServiceId := relaySessionHeader.GetServiceId()
 	// Application address is used to verify the relayRequest signature.
 	// It is guaranteed to be present in the relayRequest since the signature
 	// has already been verified.
-	appAddress := sessionHeader.GetApplicationAddress()
+	relayAppAddress := relaySessionHeader.GetApplicationAddress()
 
 	ra.logger.Debug().
 		Fields(map[string]any{
-			"session_id":                sessionHeader.GetSessionId(),
-			"application_address":       appAddress,
-			"service_id":                sessionHeader.GetServiceId(),
-			"supplier_operator_address": meta.GetSupplierOperatorAddress(),
+			"session_id":                relaySessionHeader.GetSessionId(),
+			"application_address":       relayAppAddress,
+			"service_id":                relayServiceId,
+			"supplier_operator_address": relayMeta.GetSupplierOperatorAddress(),
 		}).
 		Msg("verifying relay request session")
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
 	session, err := ra.sessionQuerier.GetSession(
 		ctx,
-		appAddress,
-		supplierServiceId,
-		sessionBlockHeight,
+		relayAppAddress,
+		relayServiceId,
+		relayProcessingBlockHeight,
 	)
 	if err != nil {
 		return err
@@ -65,28 +65,30 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	// - the current block height and sessionGracePeriod (which are not provided by the relayRequest)
 	// - serviceId (which is not provided by the relayRequest)
 	// - applicationAddress (which is used to verify the relayRequest signature)
-	if session.SessionId != sessionHeader.GetSessionId() {
+	if session.SessionId != relaySessionHeader.GetSessionId() {
+		logSessionIDMismatch(ra.logger, session, relaySessionHeader, &relayMeta)
+
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"session ID mismatch, expecting: %+v, got: %+v. "+
-				"This may indicate a full node synchronization issue. "+
-				"Please verify your full node is in sync and not overwhelmed with websocket connections.",
-			session.GetSessionId(),
-			relayRequest.Meta.GetSessionHeader().GetSessionId(),
+			"Session ID mismatch: expected %s, got %s (expected block range: [%d-%d], got: [%d-%d]). See logs for details.",
+			session.SessionId, relaySessionHeader.GetSessionId(),
+			session.Header.SessionStartBlockHeight, session.Header.SessionEndBlockHeight,
+			relayMeta.SessionHeader.SessionStartBlockHeight, relayMeta.SessionHeader.SessionEndBlockHeight,
 		)
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
-	_, isSupplierOperatorAddressPresent := ra.operatorAddressToSigningKeyNameMap[meta.GetSupplierOperatorAddress()]
+	_, isSupplierOperatorAddressPresent := ra.operatorAddressToSigningKeyNameMap[relayMeta.GetSupplierOperatorAddress()]
 	if !isSupplierOperatorAddressPresent {
 		return ErrRelayAuthenticatorMissingSupplierOperatorAddress.Wrapf(
 			"supplier operator address %s is not present in the signing key names map",
-			meta.GetSupplierOperatorAddress(),
+			relayMeta.GetSupplierOperatorAddress(),
 		)
 	}
 
 	for _, supplier := range session.Suppliers {
+
 		// Verify if the supplier operator address in the session matches the one in the relayRequest.
-		if supplier.OperatorAddress == meta.GetSupplierOperatorAddress() {
+		if supplier.OperatorAddress == relayMeta.GetSupplierOperatorAddress() {
 			return nil
 		}
 	}
@@ -147,15 +149,15 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 	return nil
 }
 
-// getTargetSessionBlockHeight returns the block height at which the session
+// getRelayProcessingBlockHeight returns the block height at which the session
 // for the given relayRequest should be processed.
-//   - If the session is within the grace period, the session's end block height is returned.
-//   - Otherwise, the current block height is returned.
-//   - If the session has expired, then return an error.
-func (ra *relayAuthenticator) getTargetSessionBlockHeight(
+//   - If the request is within the session bounds, the current block height is returned.
+//   - If the request is outside the session bounds, but within the session's grace period, the session's end block height is returned.
+//   - In all other cases, an error is returned.
+func (ra *relayAuthenticator) getRelayProcessingBlockHeight(
 	ctx context.Context,
 	relayRequest *servicetypes.RelayRequest,
-) (sessionHeight int64, err error) {
+) (relayProcessingBlockHeight int64, err error) {
 	currentBlock := ra.blockClient.LastBlock(ctx)
 	currentHeight := currentBlock.Height()
 
@@ -166,29 +168,78 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	)
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
+	// If the session end height is greater than or equal to the current height,
+	// the session is still active and the current block height should be used.
+	if sessionEndHeight >= currentHeight {
+		return currentHeight, nil
+	}
+
+	// The session has ended so we need to validate if the session is still within the grace period.
+	// If the session is within the grace period, the session's end block height should be used.
+	// Otherwise, the session is invalid and an error should be returned.
+
+	// Retrieve the shared parameters to check if the session is within the grace period.
 	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 
-	// Check if the RelayRequest's session has expired.
-	if sessionEndHeight < currentHeight {
-		// Do not process the `RelayRequest` if the session has expired and the current
-		// block height is outside the session's grace period.
-		if !sharedtypes.IsGracePeriodElapsed(sharedParams, sessionEndHeight, currentHeight) {
-			// The RelayRequest's session has expired but is still within the
-			// grace period, process it as if the session is still active.
-			return sessionEndHeight, nil
-		}
-
-		return 0, ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"session expired, expecting: %d, got: %d. "+
-				"This may indicate network delay or RelayMiner overload.",
-			sessionEndHeight,
-			currentHeight,
-		)
+	// Do not process the `RelayRequest` if the session has expired and the current
+	// block height is outside the session's grace period.
+	isSessionValid := !sharedtypes.IsGracePeriodElapsed(sharedParams, sessionEndHeight, currentHeight)
+	if !isSessionValid {
+		// The RelayRequest's session has expired but is still within the
+		// grace period, process it as if the session is still active.
+		return sessionEndHeight, nil
 	}
 
-	// The RelayRequest's session is active, return the current block height.
-	return currentHeight, nil
+	return -1, ErrRelayAuthenticatorInvalidSession.Wrapf(
+		"(⌛) SESSION EXPIRED: expected session end block height (sessionEndHeight): %d, but got relay at block height (currentHeight): %d. "+
+			"This means the claim window has expired AND the grace period has elapsed. "+
+			"This may indicate network delay or RelayMiner overload.",
+		sessionEndHeight,
+		currentHeight,
+	)
+}
+
+// logSessionIDMismatch logs detailed information about a session ID mismatch during relay verification.
+func logSessionIDMismatch(
+	logger polylog.Logger,
+	session *sessiontypes.Session,
+	relaySessionHeader *sessiontypes.SessionHeader,
+	relayMeta *servicetypes.RelayRequestMetadata,
+) {
+	expectedSessionID := session.SessionId
+	receivedSessionID := relaySessionHeader.GetSessionId()
+	expectedStart := session.Header.SessionStartBlockHeight
+	expectedEnd := session.Header.SessionEndBlockHeight
+	receivedStart := relayMeta.SessionHeader.SessionStartBlockHeight
+	receivedEnd := relayMeta.SessionHeader.SessionEndBlockHeight
+
+	// Determine if we're ahead or behind
+	var syncStatus, emoji string
+	if receivedEnd < expectedStart {
+		syncStatus = "RelayMiner is BEHIND 🐢"
+		emoji = "🐢"
+	} else if receivedStart > expectedEnd {
+		syncStatus = "RelayMiner is AHEAD 🚀"
+		emoji = "🚀"
+	} else {
+		syncStatus = "RelayMiner is OUT OF SYNC ⚠️"
+		emoji = "⚠️"
+	}
+
+	logger.Error().
+		Str("error", "Session ID Mismatch").
+		Msg(fmt.Sprintf(
+			"Session ID mismatch detected while verifying relay request.\n"+
+				"Expected session_id: %s, got: %s.\n"+
+				"Expected block range: [%d-%d], got: [%d-%d].\n"+
+				"%s %s\n"+
+				"Please verify your full node is in sync or not overwhelmed with websocket connections.",
+			expectedSessionID, receivedSessionID,
+			expectedStart, expectedEnd,
+			receivedStart, receivedEnd,
+			emoji, syncStatus,
+		))
 }

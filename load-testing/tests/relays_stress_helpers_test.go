@@ -379,15 +379,19 @@ func (plans *actorLoadTestIncrementPlans) validateIncrementRates(
 
 	require.Truef(t,
 		plans.gateways.blocksPerIncrement%numBlocksPerSession == 0,
-		"gateway increment rate must be a multiple of the session length",
+		"gateway increment rate must be a multiple of the session length but got %d when numBlocksPerSession is %d",
+		plans.gateways.blocksPerIncrement,
+		numBlocksPerSession,
 	)
 	require.Truef(t,
 		plans.suppliers.blocksPerIncrement%numBlocksPerSession == 0,
-		"supplier increment rate must be a multiple of the session length",
+		"supplier increment rate must be a multiple of the session length but got %d when numBlocksPerSession is %d",
+		plans.suppliers.blocksPerIncrement,
+		numBlocksPerSession,
 	)
 	require.Truef(t,
 		plans.apps.blocksPerIncrement%numBlocksPerSession == 0,
-		"app increment rate must be a multiple of the session length",
+		"app increment rate must be a multiple of the session length but got %d when numBlocksPerSession is %d",
 	)
 }
 
@@ -649,7 +653,12 @@ func (s *relaysSuite) createApplicationAccount(
 	privKeyHex := fmt.Sprintf("%x", privKey)
 
 	err := s.txContext.GetKeyring().ImportPrivKeyHex(keyName, privKeyHex, "secp256k1")
-	require.NoError(s, err)
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		err = s.txContext.GetKeyring().Delete(keyName)
+		require.NoError(s, err)
+		err = s.txContext.GetKeyring().ImportPrivKeyHex(keyName, privKeyHex, "secp256k1")
+		require.NoError(s, err)
+	}
 
 	keyRecord, err := s.txContext.GetKeyring().Key(keyName)
 	require.NoError(s, err)
@@ -1071,7 +1080,7 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(s, err, "failed to send relay request")
 
-		s.Logf("relay response content length: %v", res.ContentLength)
+		s.Logf("Relay response content length: %v", res.ContentLength)
 
 		if res.StatusCode == http.StatusOK {
 			s.successfulRelays.Add(1)

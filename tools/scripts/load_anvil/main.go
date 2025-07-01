@@ -64,11 +64,11 @@ func main() {
 	txCount := 0
 
 	for {
-		if txCount > 0 && txCount%refillEvery == 0 {
+		if txCount%refillEvery == 0 {
 			refillBalance(rpcURL, publicAddr)
 		}
 
-		if txCount > 0 && txCount%logBlockSizeEvery == 0 {
+		if txCount%logBlockSizeEvery == 0 {
 			printLatestBlockSizeMB(rpcURL)
 		}
 
@@ -132,7 +132,10 @@ func trackConfirmation(client *ethclient.Client, txHash common.Hash) {
 	for {
 		receipt, err := client.TransactionReceipt(context.Background(), txHash)
 		if err == nil && receipt != nil {
-			fmt.Printf("✅ TX %s mined in block 0x%x\n", txHash.Hex(), receipt.BlockNumber.Uint64())
+			// Pseudo-randomly log mined TXs: only log if txHash ends with '0'.
+			if strings.HasSuffix(txHash.Hex(), "0") {
+				fmt.Printf("✅ (Probabilistic log) TX %s mined in block 0x%x\n", txHash.Hex(), receipt.BlockNumber.Uint64())
+			}
 			return
 		}
 		time.Sleep(200 * time.Millisecond)
