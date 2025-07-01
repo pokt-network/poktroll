@@ -33,8 +33,9 @@ type Params struct {
 	// Suppliers will need to recreate a claim for the previous session (if already created) to
 	// get paid for the additional relays.
 	GracePeriodEndOffsetBlocks uint64 `protobuf:"varint,2,opt,name=grace_period_end_offset_blocks,json=gracePeriodEndOffsetBlocks,proto3" json:"grace_period_end_offset_blocks"`
-	// claim_window_open_offset_blocks is the number of blocks after the session grace
-	// period height, at which the claim window opens.
+	// claim_window_open_offset_blocks is the number of blocks after the session end height, at which the claim window opens.
+	// It must be greater than grace_period_end_offset_blocks to ensure that the seed for the earliest supplier claim commit
+	// height is only observed after the last relay for a given session could be serviced.
 	ClaimWindowOpenOffsetBlocks uint64 `protobuf:"varint,3,opt,name=claim_window_open_offset_blocks,json=claimWindowOpenOffsetBlocks,proto3" json:"claim_window_open_offset_blocks"`
 	// claim_window_close_offset_blocks is the number of blocks after the claim window
 	// open height, at which the claim window closes.
