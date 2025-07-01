@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -68,12 +70,18 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// in order to generate the signable bytes hash without the need restore it.
 	res.Meta.SupplierOperatorSignature = nil
 
+	fmt.Printf(">>> [BEFORE] GetSignableBytesHash(): res.Payload: %x\n", res.Payload)
+	fmt.Printf(">>> [BEFORE] GetSignableBytesHash(): res: %+v\n", res)
+
 	// If the response payload is not empty, eeplace it with its SHA256 hash
 	// in order to minimize the size of the onchain proof.
 	if len(res.GetPayload()) > 0 {
 		relayResponsePayloadHash := protocol.GetRelayHashFromBytes(res.GetPayload())
 		res.Payload = relayResponsePayloadHash[:]
 	}
+
+	fmt.Printf(">>> [AFTER] GetSignableBytesHash(): res.Payload: %x\n", res.Payload)
+	fmt.Printf(">>> [AFTER] GetSignableBytesHash(): res: %+v\n", res)
 
 	responseBz, err := res.Marshal()
 	if err != nil {
