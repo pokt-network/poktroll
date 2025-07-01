@@ -12,9 +12,9 @@ var (
 	ParamMintAllocationPercentages   = "mint_allocation_percentages"
 	DefaultMintAllocationPercentages = MintAllocationPercentages{
 		Dao:         0.1,
-		Proposer:    0.05,
-		Supplier:    0.7,
-		SourceOwner: 0.15,
+		Proposer:    0.14,
+		Supplier:    0.73,
+		SourceOwner: 0.03,
 		Application: 0.0,
 	}
 	KeyDaoRewardAddress   = []byte("DaoRewardAddress")
