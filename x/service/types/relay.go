@@ -67,6 +67,14 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// res and res.Meta are not pointers, so we can set the signature to nil
 	// in order to generate the signable bytes hash without the need restore it.
 	res.Meta.SupplierOperatorSignature = nil
+
+	// If the response payload is not empty, eeplace it with its SHA256 hash
+	// in order to minimize the size of the onchain proof.
+	if len(res.GetPayload()) > 0 {
+		relayResponsePayloadHash := protocol.GetRelayHashFromBytes(res.GetPayload())
+		res.Payload = relayResponsePayloadHash[:]
+	}
+
 	responseBz, err := res.Marshal()
 	if err != nil {
 		return [protocol.RelayHasherSize]byte{}, err
