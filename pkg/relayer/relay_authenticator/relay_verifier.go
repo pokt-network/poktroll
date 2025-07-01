@@ -105,6 +105,7 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 ) error {
 	currentBlock := ra.blockClient.LastBlock(ctx)
 	currentHeight := currentBlock.Height()
+	relaySessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
 		"📊 Chain head at height %d (block hash: %X) during reward eligibility check",
@@ -117,33 +118,33 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 		return err
 	}
 
-	sessionClaimOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
+	sessionGracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(
 		sharedParams,
-		relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight(),
+		relaySessionEndHeight,
 	)
+
 
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
-		"⏳ Checking relay reward eligibility - relay must be processed before claim window opens at height %d",
-		sessionClaimOpenHeight,
+		"⏳ Checking relay reward eligibility. Checking if the current height (%d) can process relay with session end height (%d) before the grace period ends at height (%d)",
+		currentHeight,
+		relaySessionEndHeight,
+		sessionGracePeriodEndHeight,
 	)
 
-	// If current height is equal or greater than the claim window opening height,
-	// the relay is no longer eligible for rewards as the session has expired
-	// for reward purposes
-	if currentHeight >= sessionClaimOpenHeight {
+	// If current height is equal or greater than the grace period end height,
+	// the relay is no longer eligible for rewards as the session has expired for reward purposes.
+	if currentHeight >= sessionGracePeriodEndHeight {
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"session expired, must be before claim window open height (%d), but current height is (%d). "+
-				"This may indicate a full node synchronization issue. "+
-				"Please verify your full node is in sync and not overwhelmed with websocket connections.",
-			sessionClaimOpenHeight,
+			"(⌛) SESSION EXPIRED! Relay block height (%d) is past the session end block height (%d) AND the grace period has elapsed. Make sure that your both your full node and the Gateway's full node are in sync. ",
+			sessionGracePeriodEndHeight,
 			currentHeight,
 		)
 	}
 
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
-		"✅ Relay is eligible for rewards - current height (%d) < claim window open height (%d)",
+		"✅ Relay is eligible for rewards - current height (%d) < session grace period end height (%d)",
 		currentHeight,
-		sessionClaimOpenHeight,
+		sessionGracePeriodEndHeight,
 	)
 
 	return nil
@@ -194,9 +195,7 @@ func (ra *relayAuthenticator) getRelayProcessingBlockHeight(
 	}
 
 	return -1, ErrRelayAuthenticatorInvalidSession.Wrapf(
-		"(⌛) SESSION EXPIRED: expected session end block height (sessionEndHeight): %d, but got relay at block height (currentHeight): %d. "+
-			"This means the claim window has expired AND the grace period has elapsed. "+
-			"This may indicate network delay or RelayMiner overload.",
+		"(⌛) SESSION EXPIRED! Relay block height (%d) is past the session end block height (%d) AND the grace period has elapsed. Make sure that your both your full node and the Gateway's full node are in sync. "
 		sessionEndHeight,
 		currentHeight,
 	)
