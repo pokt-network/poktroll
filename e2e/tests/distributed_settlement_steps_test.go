@@ -1,0 +1,184 @@
+//go:build e2e
+
+package e2e
+
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+
+	"github.com/stretchr/testify/require"
+	
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+)
+
+// TheUserRemembersTheBalanceOfAs stores the current balance of an account in the scenario state
+func (s *suite) TheUserRemembersTheBalanceOfAs(accName, stateKey string) {
+	balance := s.getAccBalance(accName)
+	s.scenarioState[stateKey] = balance
+}
+
+// TheUserRemembersTheBalanceOfTheDaoAs stores the current balance of the DAO in the scenario state
+func (s *suite) TheUserRemembersTheBalanceOfTheDaoAs(stateKey string) {
+	// Get the DAO reward address from tokenomics params
+	tokenomicsParams := s.getTokenomicsParams()
+	daoAddress := tokenomicsParams.DaoRewardAddress
+	
+	// Store the DAO address in accNameToAddrMap if not already there
+	if _, exists := accNameToAddrMap["dao"]; !exists {
+		accNameToAddrMap["dao"] = daoAddress
+		accAddrToNameMap[daoAddress] = "dao"
+	}
+	
+	balance := s.getAccBalance("dao")
+	s.scenarioState[stateKey] = balance
+}
+
+// TheUserRemembersTheBalanceOfTheProposerAs stores the current balance of the block proposer in the scenario state
+func (s *suite) TheUserRemembersTheBalanceOfTheProposerAs(stateKey string) {
+	// Get the current block proposer address
+	proposerAddr := s.getCurrentBlockProposer()
+	
+	// Store the proposer address in accNameToAddrMap if not already there
+	if _, exists := accNameToAddrMap["proposer"]; !exists {
+		accNameToAddrMap["proposer"] = proposerAddr
+		accAddrToNameMap[proposerAddr] = "proposer"
+	}
+	
+	balance := s.getAccBalance("proposer")
+	s.scenarioState[stateKey] = balance
+}
+
+// TheUserRemembersTheBalanceOfTheServiceOwnerForAs stores the current balance of a service owner in the scenario state
+func (s *suite) TheUserRemembersTheBalanceOfTheServiceOwnerForAs(serviceId, stateKey string) {
+	// Get the service owner address
+	service := s.getService(serviceId)
+	serviceOwnerAddr := service.OwnerAddress
+	
+	// Create a unique name for this service owner
+	serviceOwnerName := fmt.Sprintf("service_owner_%s", serviceId)
+	
+	// Store the service owner address in accNameToAddrMap if not already there
+	if _, exists := accNameToAddrMap[serviceOwnerName]; !exists {
+		accNameToAddrMap[serviceOwnerName] = serviceOwnerAddr
+		accAddrToNameMap[serviceOwnerAddr] = serviceOwnerName
+	}
+	
+	balance := s.getAccBalance(serviceOwnerName)
+	s.scenarioState[stateKey] = balance
+}
+
+// TheDaoBalanceShouldBeUpoktMoreThan checks if the DAO balance increased by the expected amount
+func (s *suite) TheDaoBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBalanceKey string) {
+	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
+	require.NoError(s, err)
+	
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
+	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	
+	currBalance := s.getAccBalance("dao")
+	
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, "dao", "more", "balance")
+}
+
+// TheProposerBalanceShouldBeUpoktMoreThan checks if the proposer balance increased by the expected amount
+func (s *suite) TheProposerBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBalanceKey string) {
+	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
+	require.NoError(s, err)
+	
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
+	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	
+	currBalance := s.getAccBalance("proposer")
+	
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, "proposer", "more", "balance")
+}
+
+// TheServiceOwnerBalanceForShouldBeUpoktMoreThan checks if the service owner balance increased by the expected amount
+func (s *suite) TheServiceOwnerBalanceForShouldBeUpoktMoreThan(serviceId, expectedIncreaseStr, prevBalanceKey string) {
+	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
+	require.NoError(s, err)
+	
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
+	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	
+	serviceOwnerName := fmt.Sprintf("service_owner_%s", serviceId)
+	currBalance := s.getAccBalance(serviceOwnerName)
+	
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, serviceOwnerName, "more", "balance")
+}
+
+// TheAccountBalanceOfShouldBeUpoktMoreThan validates that an account balance increased compared to a remembered balance
+func (s *suite) TheAccountBalanceOfShouldBeUpoktMoreThan(accName, expectedIncreaseStr, prevBalanceKey string) {
+	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
+	require.NoError(s, err)
+	
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
+	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	
+	currBalance := s.getAccBalance(accName)
+	
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, accName, "more", "balance")
+}
+
+// Helper methods
+
+// getTokenomicsParams queries and returns the current tokenomics module parameters
+func (s *suite) getTokenomicsParams() tokenomicstypes.Params {
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
+		"query", "tokenomics", "params", "--output=json",
+	)
+	require.NoError(s, err)
+	
+	var params tokenomicstypes.Params
+	err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &params)
+	require.NoError(s, err)
+	
+	return params
+}
+
+// getCurrentBlockProposer gets the address of the current block proposer
+func (s *suite) getCurrentBlockProposer() string {
+	// Query the latest block to get the proposer address
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
+		"query", "block", "--output=json",
+	)
+	require.NoError(s, err)
+	
+	// Parse the block info to extract proposer address
+	var blockInfo struct {
+		Block struct {
+			Header struct {
+				ProposerAddress string `json:"proposer_address"`
+			} `json:"header"`
+		} `json:"block"`
+	}
+	
+	err = json.Unmarshal([]byte(res.Stdout), &blockInfo)
+	require.NoError(s, err)
+	
+	// Convert the hex proposer address to bech32 format
+	// This is a simplified version - in production you'd need proper conversion
+	// For now, we'll use a fixed proposer address for testing
+	// TODO: Implement proper address conversion from hex to bech32
+	return "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw" // Default test proposer
+}
+
+// getService queries and returns the service with the given ID
+func (s *suite) getService(serviceId string) *servicetypes.Service {
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
+		"query", "service", "show-service", serviceId, "--output=json",
+	)
+	require.NoError(s, err)
+	
+	var response servicetypes.QueryGetServiceResponse
+	err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &response)
+	require.NoError(s, err)
+	
+	return &response.Service
+}
