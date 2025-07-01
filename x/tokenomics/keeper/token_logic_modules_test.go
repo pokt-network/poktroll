@@ -1044,22 +1044,23 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
-	// Calculate expected distributions
-	// Supplier gets the full settlement amount (as in original behavior)
-	expectedSupplierAmount := cosmosmath.NewInt(numTokensClaimed)
-	// Additional rewards are calculated as percentages of the settlement amount
+	// Calculate expected distributions from settlement amount
+	// When global inflation is disabled, the settlement amount is distributed according to percentages
+	expectedSupplierAmount := cosmosmath.NewInt(int64(float64(numTokensClaimed) * 0.73))
+	expectedProposerAmount := cosmosmath.NewInt(int64(float64(numTokensClaimed) * 0.14))
 	expectedSourceOwnerAmount := cosmosmath.NewInt(int64(float64(numTokensClaimed) * 0.03))
-	expectedDaoAmount := cosmosmath.NewInt(int64(float64(numTokensClaimed) * 0.1))
+	// DAO gets the remainder to ensure all tokens are distributed
+	expectedDaoAmount := cosmosmath.NewInt(numTokensClaimed).Sub(expectedSupplierAmount).Sub(expectedProposerAmount).Sub(expectedSourceOwnerAmount)
 
-	// Verify DAO received expected distribution (as additional rewards)
+	// Verify DAO received expected distribution from settlement
 	daoBalanceAfter := getBalance(t, ctx, keepers, daoRewardAddress)
 	require.Equal(t, expectedDaoAmount, daoBalanceAfter.Amount.Sub(daoBalanceBefore.Amount))
 
-	// Verify source owner received expected distribution (as additional rewards)
+	// Verify source owner received expected distribution from settlement
 	sourceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
 	require.Equal(t, expectedSourceOwnerAmount, sourceOwnerBalanceAfter.Amount.Sub(sourceOwnerBalanceBefore.Amount))
 
-	// Verify supplier shareholders received expected distribution (full settlement amount)
+	// Verify supplier shareholders received expected distribution (their percentage of settlement)
 	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, expectedSupplierAmount)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
