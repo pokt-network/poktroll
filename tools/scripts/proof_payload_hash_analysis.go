@@ -55,6 +55,9 @@ func main() {
 
 	// Fetch block results from RPC endpoint
 	cometClient, err := sdkclient.NewClientFromNode(rpcEndpoint)
+	if err != nil {
+		log.Fatalf("Error creating Comet client: %v", err)
+	}
 	block, err := cometClient.Block(context.Background(), &blockHeight)
 	if err != nil {
 		log.Fatalf("Error fetching block: %v", err)
@@ -214,7 +217,7 @@ func processProofPayloadHash(msg *prooftypes.MsgSubmitProof, cdc codec.Codec) ([
 	// Get the relay from the proof's value hash
 	relayBz := sparseMerkleProof.GetValueHash(protocol.NewSMTSpec())
 	var relay servicetypes.Relay
-	if err := cdc.Unmarshal(relayBz, &relay); err != nil {
+	if err = cdc.Unmarshal(relayBz, &relay); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal relay: %w", err)
 	}
 
