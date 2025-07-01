@@ -67,12 +67,12 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	// - applicationAddress (which is used to verify the relayRequest signature)
 	if session.SessionId != relaySessionHeader.GetSessionId() {
 		logSessionIDMismatch(ra.logger, session, relaySessionHeader, &relayMeta)
-
+		sessionHeader := session.Header
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
 			"Session ID mismatch: expected %s, got %s (expected block range: [%d-%d], got: [%d-%d]). See logs for details.",
 			session.SessionId, relaySessionHeader.GetSessionId(),
-			session.Header.SessionStartBlockHeight, session.Header.SessionEndBlockHeight,
-			relayMeta.SessionHeader.SessionStartBlockHeight, relayMeta.SessionHeader.SessionEndBlockHeight,
+			sessionHeader.SessionStartBlockHeight, sessionHeader.SessionEndBlockHeight,
+			relaySessionHeader.SessionStartBlockHeight, relaySessionHeader.SessionEndBlockHeight,
 		)
 	}
 
@@ -118,7 +118,7 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 		return err
 	}
 
-	sessionGracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(
+	relaySessionGracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(
 		sharedParams,
 		relaySessionEndHeight,
 	)
@@ -127,23 +127,23 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 		"⏳ Checking relay reward eligibility. Checking if the current height (%d) can process relay with session end height (%d) before the grace period ends at height (%d)",
 		currentHeight,
 		relaySessionEndHeight,
-		sessionGracePeriodEndHeight,
+		relaySessionGracePeriodEndHeight,
 	)
 
 	// If current height is equal or greater than the grace period end height,
 	// the relay is no longer eligible for rewards as the session has expired for reward purposes.
-	if currentHeight >= sessionGracePeriodEndHeight {
+	if currentHeight >= relaySessionGracePeriodEndHeight {
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"(⌛) SESSION EXPIRED! Relay block height (%d) is past the session end block height (%d) AND the grace period has elapsed. Make sure that your both your full node and the Gateway's full node are in sync. ",
-			sessionGracePeriodEndHeight,
+			"(⌛) SESSION EXPIRED! The current height (%d) is past the relay session grace period end height (%d). Make sure that your both your full node and the Gateway's full node are in sync. ",
 			currentHeight,
+			relaySessionGracePeriodEndHeight,
 		)
 	}
 
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
 		"✅ Relay is eligible for rewards - current height (%d) < session grace period end height (%d)",
 		currentHeight,
-		sessionGracePeriodEndHeight,
+		relaySessionGracePeriodEndHeight,
 	)
 
 	return nil
