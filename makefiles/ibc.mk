@@ -106,9 +106,30 @@ ibc_list_pocket_connections:
 ibc_list_pocket_channels:
 	pocketd --home=$(POCKETD_HOME) q ibc channel channels --node=$(POCKET_NODE) --network=$(NETWORK)
 
-########################
-# Remote State Queries #
-########################
+.PHONY: ibc_list_agoric_clients
+ibc_list_agoric_clients:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod agoric-validator agd query ibc client states \
+	'
+
+.PHONY: ibc_list_agoric_connections
+ibc_list_agoric_connections:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod agoric-validator agd query ibc connection connections \
+	'
+
+.PHONY: ibc_list_agoric_connections
+ibc_list_agoric_channels:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod agoric-validator agd query ibc channel channels \
+	'
+
+##########################
+# Remote Balance Queries #
+##########################
 .PHONY: ibc_query_agoric_balance
 ibc_query_agoric_balance:
 	bash -c '\

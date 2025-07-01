@@ -14,7 +14,7 @@ fi
 POCKET_NODE=${POCKET_NODE:-tcp://127.0.0.1:26657} # The pocket node (validator in the localnet context)
 NETWORK=${NETWORK:-local}
 
-# TODO_IN_THIS_COMMIT: comment...
+# Execute a command in a pod matching the given pod name regex.
 kubectl_exec_grep_pod() {
   pod_name_regex="$1"
   shift
@@ -22,7 +22,9 @@ kubectl_exec_grep_pod() {
 }
 
 kubectl_exec_grep_pod_interactive() {
-  kubectl exec -it $(kubectl get pods | grep $1 | cut -f1 -d' ') -- $2
+  pod_name_regex="$1"
+  shift
+  kubectl exec -it $(kubectl get pods | grep $pod_name_regex | cut -f1 -d' ') -- "$@"
 }
 
 
