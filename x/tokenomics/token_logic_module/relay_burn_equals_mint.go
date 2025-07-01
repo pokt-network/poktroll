@@ -84,80 +84,8 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	// settlement amount as the base for calculations.
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
 	if globalInflationPerClaim == 0 {
-		logger.Info("Global inflation is disabled, applying reward distribution in RelayBurnEqualsMint TLM")
-		
-		mintAllocationPercentages := tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
-		settlementAmount := tlmCtx.SettlementCoin.Amount
-
-		// Calculate additional rewards for non-supplier participants
-		// Note: we skip the supplier allocation since they already got the full settlement amount above
-		proposerAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Proposer)
-		if err != nil {
-			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting proposer allocation percentage: %v", err)
-		}
-		proposerAmount := calculateAllocationAmount(settlementAmount, proposerAllocationRat)
-
-		sourceOwnerAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.SourceOwner)
-		if err != nil {
-			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting source owner allocation percentage: %v", err)
-		}
-		sourceOwnerAmount := calculateAllocationAmount(settlementAmount, sourceOwnerAllocationRat)
-
-		daoAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Dao)
-		if err != nil {
-			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting DAO allocation percentage: %v", err)
-		}
-		daoAmount := calculateAllocationAmount(settlementAmount, daoAllocationRat)
-
-		// Calculate total additional rewards to mint
-		totalAdditionalRewards := proposerAmount.Add(sourceOwnerAmount).Add(daoAmount)
-		
-		if !totalAdditionalRewards.IsZero() {
-			additionalRewardsCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, totalAdditionalRewards)
-			
-			// Mint additional rewards to the tokenomics module for distribution
-			tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
-				OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT,
-				DestinationModule: tokenomicstypes.ModuleName,
-				Coin:              additionalRewardsCoin,
-			})
-			logger.Info(fmt.Sprintf("operation queued: mint (%v) additional reward coins to the tokenomics module", additionalRewardsCoin))
-
-			// Distribute additional rewards
-			if !proposerAmount.IsZero() {
-				proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-				proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-				tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-					OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
-					SenderModule:     tokenomicstypes.ModuleName,
-					RecipientAddress: proposerAddr,
-					Coin:             proposerCoin,
-				})
-				logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
-			}
-
-			if !sourceOwnerAmount.IsZero() {
-				sourceOwnerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, sourceOwnerAmount)
-				tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-					OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
-					SenderModule:     tokenomicstypes.ModuleName,
-					RecipientAddress: tlmCtx.Service.OwnerAddress,
-					Coin:             sourceOwnerCoin,
-				})
-				logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmCtx.Service.OwnerAddress))
-			}
-
-			if !daoAmount.IsZero() {
-				daoCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, daoAmount)
-				daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
-				tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-					OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION,
-					SenderModule:     tokenomicstypes.ModuleName,
-					RecipientAddress: daoRewardAddress,
-					Coin:             daoCoin,
-				})
-				logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
-			}
+		if err := tlm.processAdditionalRewardDistribution(ctx, logger, tlmCtx); err != nil {
+			return err
 		}
 	}
 
@@ -186,6 +114,106 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	}
 	tlmCtx.Application.Stake = &newAppStake
 	logger.Info(fmt.Sprintf("operation scheduled: update application %q stake to %v", tlmCtx.Application.Address, newAppStake))
+
+	return nil
+}
+
+// processAdditionalRewardDistribution handles the reward distribution logic when global inflation is disabled.
+// This function replaces the global mint TLM functionality by distributing additional rewards to
+// DAO, proposer, and source owner based on the mint allocation percentages.
+func (tlm tlmRelayBurnEqualsMint) processAdditionalRewardDistribution(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	tlmCtx TLMContext,
+) error {
+	logger.Info("Global inflation is disabled, applying reward distribution in RelayBurnEqualsMint TLM")
+
+	// === PARAMETER EXTRACTION ===
+	// Get the mint allocation percentages from tokenomics parameters
+	mintAllocationPercentages := tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
+	settlementAmount := tlmCtx.SettlementCoin.Amount
+
+	// === ALLOCATION CALCULATIONS ===
+	// Calculate additional rewards for non-supplier participants
+	// Note: we skip the supplier allocation since they already received the full settlement amount
+	
+	// Calculate proposer allocation
+	proposerAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Proposer)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting proposer allocation percentage: %v", err)
+	}
+	proposerAmount := calculateAllocationAmount(settlementAmount, proposerAllocationRat)
+
+	// Calculate source owner allocation
+	sourceOwnerAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.SourceOwner)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting source owner allocation percentage: %v", err)
+	}
+	sourceOwnerAmount := calculateAllocationAmount(settlementAmount, sourceOwnerAllocationRat)
+
+	// Calculate DAO allocation
+	daoAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Dao)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting DAO allocation percentage: %v", err)
+	}
+	daoAmount := calculateAllocationAmount(settlementAmount, daoAllocationRat)
+
+	// === MINTING OPERATIONS ===
+	// Calculate total additional rewards to mint and mint them to the tokenomics module
+	totalAdditionalRewards := proposerAmount.Add(sourceOwnerAmount).Add(daoAmount)
+	
+	if !totalAdditionalRewards.IsZero() {
+		additionalRewardsCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, totalAdditionalRewards)
+		
+		// Mint additional rewards to the tokenomics module for distribution
+		tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
+			OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT,
+			DestinationModule: tokenomicstypes.ModuleName,
+			Coin:              additionalRewardsCoin,
+		})
+		logger.Info(fmt.Sprintf("operation queued: mint (%v) additional reward coins to the tokenomics module", additionalRewardsCoin))
+
+		// === REWARD DISTRIBUTION ===
+		// Distribute additional rewards to each participant
+		
+		// Distribute to block proposer
+		if !proposerAmount.IsZero() {
+			proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
+			proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
+			tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+				OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
+				SenderModule:     tokenomicstypes.ModuleName,
+				RecipientAddress: proposerAddr,
+				Coin:             proposerCoin,
+			})
+			logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
+		}
+
+		// Distribute to service source owner
+		if !sourceOwnerAmount.IsZero() {
+			sourceOwnerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, sourceOwnerAmount)
+			tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+				OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
+				SenderModule:     tokenomicstypes.ModuleName,
+				RecipientAddress: tlmCtx.Service.OwnerAddress,
+				Coin:             sourceOwnerCoin,
+			})
+			logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmCtx.Service.OwnerAddress))
+		}
+
+		// Distribute to DAO
+		if !daoAmount.IsZero() {
+			daoCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, daoAmount)
+			daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
+			tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+				OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION,
+				SenderModule:     tokenomicstypes.ModuleName,
+				RecipientAddress: daoRewardAddress,
+				Coin:             daoCoin,
+			})
+			logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
+		}
+	}
 
 	return nil
 }
