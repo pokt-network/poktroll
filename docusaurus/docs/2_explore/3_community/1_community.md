@@ -64,7 +64,7 @@ Streamlines deployment on Kubernetes clusters
 
 ## [Pocket Knife](https://github.com/buildwithgrove/pocket-knife/)
 
-A CLI wrapper for `pocketd` — streamlined for bulk operations.
+A python syntactic sugar wrapper for `pocketd` — streamlined for bulk operations.
 
 **Features**:
 
