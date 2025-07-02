@@ -25,23 +25,6 @@ default_ibc_validator_configs = {
 }
 
 
-# NOTE: Starlark (tilt) doesn't support multiple kwargs; otherwise,
-# we could simply do `dict(**default_ibc_validator_configs, **ibc_config)`.
-def deep_merge(a, b):
-    result = dict(a)  # shallow copy of a
-
-    for key, b_value in b.items():
-        a_value = a.get(key)
-
-        if type(a_value) == "dict" and type(b_value) == "dict":
-            # Recurse into nested dicts
-            result[key] = deep_merge(a_value, b_value)
-        else:
-            # b overrides a
-            result[key] = b_value
-
-    return result
-
 
 # ⚠️ IBC Disabled Resource
 # - Creates a Tilt resource that prints a message indicating IBC is disabled
@@ -81,17 +64,14 @@ def load_ibc_resources(chart_prefix, validator_configs):
             "Localnet IBC resources disabled. Set `ibc.validator_configs.<network_name>.enabled` to `true` in `localnet_config.yaml` to enable them.")
         return
 
-    # Merge default IBC validator configs with the user-provided ones; user-provided configs take precedence.
-    merged_ibc_validator_configs = deep_merge(default_ibc_validator_configs, validator_configs)
-
     docker_build(
         "ibc-relayer",
         context=os.path.join(".", "localnet", "ibc-relayer"),  # needs any folder, doesn't matter
         dockerfile=ibc_relayer_dockerfile_path)
 
-    load_ibc_relayer_server_resources(chart_prefix, merged_ibc_validator_configs)
+    load_ibc_relayer_server_resources(chart_prefix, validator_configs)
 
-    for network_name, validator_config in merged_ibc_validator_configs.items():
+    for network_name, validator_config in validator_configs.items():
         if not validator_config.get("enabled", False):
             continue
 
