@@ -91,9 +91,12 @@ def load_ibc_resources(chart_prefix, validator_configs):
 
     load_ibc_relayer_server_resources(chart_prefix, merged_ibc_validator_configs)
 
-    for ibc_network_name, ibc_validator_config in merged_ibc_validator_configs.items():
-        load_ibc_relayer_setup_resources(chart_prefix, ibc_network_name, ibc_validator_config)
-        check_and_load_ibc_validator(chart_prefix, ibc_validator_config)
+    for network_name, validator_config in merged_ibc_validator_configs.items():
+        if not validator_config.get("enabled", False):
+            continue
+
+        load_ibc_relayer_setup_resources(chart_prefix, network_name, validator_config)
+        load_ibc_validator(chart_prefix, validator_config)
 
 
 # Load IBC relayer server resources sets up the hermes relayer for
@@ -185,10 +188,7 @@ def load_ibc_relayer_setup_resources(chart_prefix, network_name, validator_confi
 # - If the given validator config is enabled:
 #   - Builds validator docker image
 #   - Deploys up validator k8s resource with port-forwards
-def check_and_load_ibc_validator(chart_prefix, validator_config):
-    if not validator_config.get("enabled", False):
-        return
-
+def load_ibc_validator(chart_prefix, validator_config):
     image_deps_and_keys = {}
     if validator_config.get("dockerfile_path", False):
         image_name = validator_config["image_name"]
