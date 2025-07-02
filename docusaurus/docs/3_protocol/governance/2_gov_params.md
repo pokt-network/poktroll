@@ -56,6 +56,7 @@ Please follow the instructions in [this guide](../../4_develop/developer_guide/a
 | `supplier` | `min_stake` | `cosmos.base.v1beta1.Coin` | min_stake is the minimum amount of uPOKT that a supplier must stake to be included in network sessions and remain staked. |
 | `supplier` | `staking_fee` | `cosmos.base.v1beta1.Coin` | staking_fee is the fee charged by the protocol for staking a supplier. |
 | `tokenomics` | `dao_reward_address` | `string` | dao_reward_address is the address to which mint_allocation_dao percentage of the minted tokens are at the end of claim settlement. |
+| `tokenomics` | `enable_distribute_settlement` | `bool` | enable_distribute_settlement controls whether the relay burn equals mint TLM should distribute the settlement amount according to mint allocation percentages when global inflation is disabled. When true and global_inflation_per_claim = 0, the settlement is distributed among participants. When false, the supplier receives 100% of the settlement amount (original behavior). |
 | `tokenomics` | `global_inflation_per_claim` | `double` | global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement. |
 | `tokenomics` | `mint_allocation_percentages` | `MintAllocationPercentages` | mint_allocation_percentages represents the distribution of newly minted tokens, at the end of claim settlement, as a result of the Global Mint TLM. |
 
