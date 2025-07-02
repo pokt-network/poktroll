@@ -35,7 +35,7 @@ var bodyBufPool = sync.Pool{
 // It gracefully handles nil readers and logs any errors encountered during closure.
 func CloseRequestBody(logger polylog.Logger, body io.ReadCloser) {
 	if body == nil {
-		logger.Warn().Msg("⚠️  SHOULD NEVER HAPPEN ⚠️  Attempting to close nil request body")
+		logger.Warn().Msg("⚠️ SHOULD NEVER HAPPEN ⚠️ Attempting to close nil request body")
 		return
 	}
 

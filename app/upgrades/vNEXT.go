@@ -62,6 +62,8 @@ var (
 )
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
+// This upgrade adds:
+// - Updates to the Morse account recovery allowlist
 // - Set all IBC related parameters to reasonable starting values (required for IBC support)
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
