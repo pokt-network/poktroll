@@ -65,7 +65,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	blockHeight := server.blockClient.LastBlock(ctx).Height()
 
-	logger.With(
+	logger = logger.With(
 		"current_height", blockHeight,
 		"session_id", meta.SessionHeader.SessionId,
 		"session_start_height", meta.SessionHeader.SessionStartBlockHeight,
@@ -102,29 +102,32 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	ctxWithDeadline, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
 
-	//rc := http.NewResponseController(writer)
-	//// Set a write deadline for the HTTP response writer to prevent hanging connections.
-	//// The deadline includes an additional safety buffer to ensure the response can be written.
-	//if err = rc.SetWriteDeadline(deadline.Add(writeDeadlineSafetyDelta)); err != nil {
-	//	logger.Warn().Err(err).Msg("failed setting write deadline for response controller")
-	//	return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
-	//}
+	// TODO_TECHDEBT: Consider re-enabling ResponseController write deadlines
+	// after investigating potential compatibility issues with the current setup.
+	// The commented code below was intended to ensure timely response delivery:
+	//
+	// rc := http.NewResponseController(writer)
+	// if err = rc.SetWriteDeadline(deadline.Add(writeDeadlineSafetyDelta)); err != nil {
+	// 	logger.Warn().Err(err).Msg("failed setting write deadline for response controller")
+	// 	return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
+	// }
 
-	// Track whether the relay completes successfully to handle reward management
+	// Track whether the relay completes successfully to handle reward management.
 	// A successful relay means that:
 	// - The relay request was processed without errors
 	// - The relay response was sent back to the client
 	// - The relay was forwarded to the miner for mining eligibility checking
 	shouldRewardRelay := false
+
 	// Track whether relay rewards have been optimistically accumulated for this request.
 	// Used to determine if rewards need to be reverted on failure.
 	rewardAccounted := false
 
-	// Define a cleanup function to handle reward management for failed relays
+	// Define a cleanup function to handle reward management for failed relays.
 	unclaimOptimisticallyAccumulatedFailedRelayReward := func() {
 		if !shouldRewardRelay && rewardAccounted {
-			// If the relay was not successful, revert any optimistically accumulated rewards.
-			// This handles several failure scenarios such as:
+			// Revert any optimistically accumulated rewards when relay fails.
+			// This covers failure scenarios:
 			// - Request validation failures
 			// - Backend connection errors
 			// - Backend 5xx errors
@@ -137,7 +140,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// (regular return or error).
 	defer unclaimOptimisticallyAccumulatedFailedRelayReward()
 
-	// Use an optimistic relay reward accumulation (before serving) for two critical reasons:
+	// Use optimistic relay reward accumulation (before serving) for:
 	//
 	// 1. Rate Limiting:
 	//    - Prevents concurrent requests from bypassing rate limits
@@ -147,9 +150,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	//    - Immediately rejects relays if the application has insufficient stake
 	//    - Avoids wasting resources on requests that can't be properly rewarded
 	//
-	// Reward accumulation is reverted automatically when:
-	//    - The relay isn't successfully completed
-	//
+	// Reward accumulation is reverted automatically when the relay isn't successfully completed.
 	// This approach prioritizes accurate accounting over optimistic processing.
 	//
 	// TODO_CONSIDERATION: Consider implementing a delay queue instead of rejecting
@@ -160,6 +161,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	if shouldRateLimit {
 		return relayRequest, ErrRelayerProxyRateLimited
 	}
+
 	// Mark that relay rewards have been optimistically accumulated.
 	// This flag enables the cleanup function to revert rewards if the relay fails.
 	rewardAccounted = true
@@ -167,11 +169,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	var serviceConfig *config.RelayMinerSupplierServiceConfig
 
 	// Get the Service and serviceUrl corresponding to the originHost.
-	// TODO_IMPROVE(red-0ne): Checking that the originHost is currently done by
-	// iterating over the server config's suppliers and checking if the originHost
-	// is present in any of the supplier's service's hosts. We could improve this
-	// by building a map at the server initialization level with originHost as the
-	// key so that we can get the service and serviceUrl in O(1) time.
+	// TODO_IMPROVE(red-0ne): Build a map at server initialization with originHost
+	// as the key for O(1) service lookup instead of iterating over suppliers.
 	for _, supplierServiceConfig := range server.serverConfig.SupplierConfigsMap {
 		if serviceId == supplierServiceConfig.ServiceId {
 			serviceConfig = supplierServiceConfig.ServiceConfig
@@ -213,8 +212,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 	defer CloseRequestBody(logger, httpRequest.Body)
 
-	// Configure the HTTP client to use the appropriate transport based on the
-	// backend URL scheme.
+	// Configure HTTP client based on backend URL scheme.
 	var client http.Client
 	switch serviceConfig.BackendUrl.Scheme {
 	case "https":
@@ -223,17 +221,17 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		}
 		client = http.Client{Transport: transport}
 	default:
-		// Copy the default client to avoid modifying the global instance.
-		// This prevents race conditions where concurrent requests would compete
-		// to set different timeout values on the shared http.DefaultClient.
+		// Copy default client to avoid modifying global instance.
+		// Prevents race conditions from concurrent timeout modifications.
 		client = *http.DefaultClient
 	}
-	// Set the HTTP client timeout to match the configured service request timeout.
-	// This ensures backend requests don't exceed the allocated time budget.
+
+	// Set HTTP client timeout to match configured service request timeout.
+	// Ensures backend requests don't exceed allocated time budget.
 	client.Timeout = requestTimeout
 
-	// Check if the context deadline has already been exceeded before making the backend call.
-	// This prevents unnecessary work when the request has already timed out.
+	// Check if context deadline already exceeded before backend call.
+	// Prevents unnecessary work when request has already timed out.
 	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
 		logger.Warn().Msg(ctxErr.Error())
 
@@ -251,8 +249,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		// Capture the service call request duration metric.
 		relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, statusCode)
 
-		// Check if the error is specifically a timeout from the backend service.
-		// URL errors with timeout flag indicate the backend exceeded its response time limit.
+		// Check if error is a backend timeout.
+		// URL errors with timeout flag indicate backend exceeded response time limit.
 		if isTimeoutError(err) {
 			logger.Warn().Msg(err.Error())
 			return relayRequest, ErrRelayerProxyTimeout.Wrapf(
@@ -271,9 +269,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 
 	// Pass through all backend responses including errors.
-	// This allows clients to see the real HTTP status codes from the backend service.
-	// If the backend service returns a non-2XX status code, log it for monitoring purposes,
-	// but don't block the response.
+	// Allows clients to see real HTTP status codes from backend service.
+	// Log non-2XX status codes for monitoring but don't block response.
 	if httpResponse.StatusCode >= http.StatusMultipleChoices {
 		logger.Error().
 			Int("status_code", httpResponse.StatusCode).
@@ -319,22 +316,21 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
 
-	// Verify relay reward eligibility a SECOND time AFTER completing the backend request.
+	// Verify relay reward eligibility a SECOND time AFTER completing backend request.
 	//
-	// Why is this needed?
-	// - A session may have ended during long running backend requests
-	// - E.g. A RelayMiner is handling a lot of load
-	// - E.g. Sessions are really short
-	// - E.g. Waiting for a response takes a long time (e.g. LLM service)
+	// Why needed:
+	// - Session may end during long-running backend requests
+	// - Examples: high load, short sessions, slow services (e.g. LLM)
 	//
-	// What is the result?
-	// - A relay is classified as "over-servicing"
-	// - The relay becomes "reward ineligible"
+	// Result:
+	// - Relay classified as "over-servicing"
+	// - Becomes reward ineligible
 	//
-	// What are some mitigations?
+	// Mitigations:
 	// - Longer sessions (onchain gov param)
-	// - RelayMiner allows over-servicing (relayminer config but still reward ineligible)
-	// - Increasing the claim window open offset blocks (onchain gov param)
+	// - Allow over-servicing (relayminer config, still reward ineligible)
+	// - Increase claim window open offset blocks (onchain gov param)
+	//
 	// TODO(@Olshansk): Revisit params to enable the above.
 	if err := server.relayAuthenticator.CheckRelayRewardEligibility(ctx, relayRequest); err != nil {
 		processingTime := time.Since(requestStartTime).Milliseconds()
@@ -350,18 +346,18 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		isOverServicing = true
 	}
 
-	// Only emit relays and mark them as rewardable when they are not over-servicing:
-	// - Over-serviced relays exceed the application's allocated stake.
-	// - These are provided as free goodwill by the supplier.
-	// - Not eligible for on-chain compensation (outside protocol's reward mechanism).
+	// Only emit relays and mark as rewardable when not over-servicing:
+	// - Over-serviced relays exceed application's allocated stake
+	// - Provided as free goodwill by supplier
+	// - Not eligible for on-chain compensation
 	//
 	// Emitting over-serviced relays would:
-	// - Break the optimistic relay reward accumulation pattern.
-	// - Mix "goodwill service" with "protocol-compensated service".
+	// - Break optimistic relay reward accumulation pattern
+	// - Mix "goodwill service" with "protocol-compensated service"
 	//
 	// Protocol details:
-	// - Relay rewards are optimistically accumulated before forwarding to the relay miner.
-	// - Over-serviced relays must never enter this reward pipeline.
+	// - Relay rewards optimistically accumulated before forwarding to relay miner
+	// - Over-serviced relays must never enter reward pipeline
 	if !isOverServicing {
 		// Forward reward-eligible relays for SMT updates (excludes over-serviced relays).
 		server.servedRewardableRelaysProducer <- relay
@@ -387,23 +383,20 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 
 	relayResponseBzLenStr := fmt.Sprintf("%d", len(relayResponseBz))
 
-	// Send the close and content length headers to the client to ensure that the
-	// connection is closed after the response is sent.
-	// This should be done automatically by the http server but they are set to
-	// ensure deterministic behavior.
+	// Send close and content length headers to ensure connection closure
+	// after response is sent. Set explicitly for deterministic behavior.
 	writer.Header().Set("Connection", "close")
 	writer.Header().Set("Content-Length", relayResponseBzLenStr)
 	_, err = writer.Write(relayResponseBz)
 	return err
 }
 
-// isTimeoutError checks if the error is a timeout error
+// isTimeoutError checks if the error is a timeout error.
 func isTimeoutError(err error) bool {
 	// Check if the error is a context deadline exceeded error.
 	// This is used to determine if the request timed out.
 	if urlErr, ok := err.(*url.Error); ok && urlErr.Timeout() {
 		return true
 	}
-
 	return false
 }

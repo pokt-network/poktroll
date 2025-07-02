@@ -232,9 +232,8 @@ $ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
 
 				server := &http.Server{
 					Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-						// Check if there's a configured test delay for this service ID
+						// Apply configured test delay for service ID if present.
 						if delay, hasDelay := getTestDelay(serviceId); hasDelay {
-							// If a delay is configured, pause execution for that duration
 							time.Sleep(delay)
 						}
 						sendJSONRPCResponse(test.t, w)
