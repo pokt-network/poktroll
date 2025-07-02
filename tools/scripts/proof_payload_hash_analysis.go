@@ -26,7 +26,8 @@ import (
 
 const defaultRPCEndpoint = "https://shannon-grove-rpc.mainnet.poktroll.com"
 
-// Initialize cumulative bytes counters
+// Global counters for tracking the analysis results across all transactions.
+// These accumulate data as we process each block's transactions.
 var originalCumulativeBytes, modifiedCumulativeBytes, failedMsgSubmitProofCount uint64
 var totalTxsWithMsgSubmitProof, totalMsgSubmitProofCount uint64
 
@@ -221,7 +222,10 @@ func processProofPayloadHash(msg *prooftypes.MsgSubmitProof, cdc codec.Codec) ([
 		return nil, fmt.Errorf("failed to unmarshal relay: %w", err)
 	}
 
-	// Replace the RelayResponse.Payload with its SHA256 hash
+	// DEV_NOTE: This analysis assumes the payload will be replaced with its hash in the new design.
+	// However, the actual implementation stores the hash in a separate field (payload_hash)
+	// and clears the payload field entirely for even greater space savings.
+	// This script simulates the original approach for comparison purposes.
 	var payloadModified bool
 	if relay.Res != nil && len(relay.Res.Payload) > 0 {
 		originalPayloadSize := len(relay.Res.Payload)
