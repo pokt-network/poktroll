@@ -148,6 +148,27 @@ ibc_list_axelar_channels:
 		kubectl_exec_grep_pod axelar-validator axelard query ibc channel channels \
 	'
 
+.PHONY: ibc_list_osmosis_clients
+ibc_list_osmosis_clients:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod osmosis-validator osmosisd query ibc client states \
+	'
+
+.PHONY: ibc_list_osmosis_connections
+ibc_list_osmosis_connections:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod osmosis-validator osmosisd query ibc connection connections \
+	'
+
+.PHONY: ibc_list_osmosis_connections
+ibc_list_osmosis_channels:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod osmosis-validator osmosisd query ibc channel channels \
+	'
+
 ##########################
 # Remote Balance Queries #
 ##########################
@@ -221,6 +242,30 @@ ibc_test_transfer_pocket_to_agoric:
 		source ./tools/scripts/ibc-channels.sh && \
 		pocketd --home=$(POCKETD_HOME) tx ibc-transfer transfer transfer \
 		$${POCKET_AGORIC_SRC_CHANNEL_ID} $(AGORIC_ACCOUNT) 1000upokt \
+			--network=$(NETWORK) \
+			--keyring-backend=test \
+			--from=app1 --yes \
+	'
+## Osmosis ##
+############
+.PHONY: ibc_test_transfer_osmosis_to_pocket
+ibc_test_transfer_osmosis_to_pocket:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod osmosis-validator \
+			agd tx ibc-transfer transfer transfer \
+			$${OSMOSIS_POCKET_SRC_CHANNEL_ID} $(POCKET_ACCOUNT) 1000ubld \
+			--keyring-backend=test \
+			--chain-id=$(OSMOSIS_CHAIN_ID) \
+			--from=validator --yes \
+	'
+
+.PHONY: ibc_test_transfer_pocket_to_osmosis
+ibc_test_transfer_pocket_to_osmosis:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		pocketd --home=$(POCKETD_HOME) tx ibc-transfer transfer transfer \
+		$${POCKET_OSMOSIS_SRC_CHANNEL_ID} $(OSMOSIS_ACCOUNT) 1000upokt \
 			--network=$(NETWORK) \
 			--keyring-backend=test \
 			--from=app1 --yes \
