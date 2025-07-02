@@ -36,7 +36,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	logger := server.logger.With("relay_request_type", "synchronous")
 	requestStartTime := time.Now()
-	startHeight := server.blockClient.LastBlock(ctx).Height()
+	startBlock := server.blockClient.LastBlock(ctx)
+	startHeight := startBlock.Height()
+
+	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"📊 Chain head at height %d (block hash: %X) at relay request start",
+		startHeight,
+		startBlock.Hash(),
+	)
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("handling HTTP request")
 
@@ -262,17 +269,15 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	defer CloseRequestBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
-	// If the backend service returns a 5xx error, we consider it an internal error
-	// and do not expose the error to the client.
-	if httpResponse.StatusCode >= 500 {
+
+	// Pass through all backend responses including errors.
+	// This allows clients to see the real HTTP status codes from the backend service.
+	// If the backend service returns a non-2XX status code, log it for monitoring purposes,
+	// but don't block the response.
+	if httpResponse.StatusCode >= http.StatusMultipleChoices {
 		logger.Error().
 			Int("status_code", httpResponse.StatusCode).
-			Msg("backend service returned a server error")
-
-		return relayRequest, ErrRelayerProxyInternalError.Wrapf(
-			"backend service returned an error with status code %d",
-			httpResponse.StatusCode,
-		)
+			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
 	}
 
 	// Serialize the service response to be sent back to the client.
@@ -333,9 +338,13 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// TODO(@Olshansk): Revisit params to enable the above.
 	if err := server.relayAuthenticator.CheckRelayRewardEligibility(ctx, relayRequest); err != nil {
 		processingTime := time.Since(requestStartTime).Milliseconds()
+		endBlock := server.blockClient.LastBlock(ctx)
+		endHeight := endBlock.Height()
 		logger.Warn().Msgf(
-			"⏱️ Backend took %d ms — relay no longer eligible (session expired: block %d → %d). Likely long response time or session too short. Error: %v",
-			processingTime, startHeight, server.blockClient.LastBlock(ctx).Height(), err,
+			"⏱️ Backend took %d ms — relay no longer eligible (session expired: block %d → %d, hash: %X). "+
+				"Likely long response time, session too short, or full node sync issues. "+
+				"Please verify your full node is in sync and not overwhelmed with websocket connections. Error: %v",
+			processingTime, startHeight, endHeight, endBlock.Hash(), err,
 		)
 
 		isOverServicing = true
