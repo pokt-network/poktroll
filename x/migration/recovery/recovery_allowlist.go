@@ -524,6 +524,11 @@ var knownRecoveryRequestedAllowlist = []string{
 	// https://github.com/pokt-network/poktroll/issues/1600
 	"5518F64211EEF89C90B9EC4D70D1A359A2A6B20D",
 	"ADE3FFB9BBD52A5A7FF8F7E59F5FC744F1CFFCCB",
+
+	// TG Convo
+	"27dbe4a03151ff9420567b797fad91d3278417f4",
+	"49fd086026b52777015e3acbd722f89468cc5738",
+	"1b6c77a732d88363af43a5935f773982e4541740",
 }
 
 var moduleAccountsAllowlist = []string{
