@@ -1,0 +1,8 @@
+{
+  "label": "IBC",
+  "position": 9,
+  "link": {
+    "type": "generated-index",
+    "description": "Pocket IBC interoperability documentation."
+  }
+}
