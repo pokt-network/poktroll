@@ -127,6 +127,27 @@ ibc_list_agoric_channels:
 		kubectl_exec_grep_pod agoric-validator agd query ibc channel channels \
 	'
 
+.PHONY: ibc_list_axelar_clients
+ibc_list_axelar_clients:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod axelar-validator axelard query ibc client states \
+	'
+
+.PHONY: ibc_list_axelar_connections
+ibc_list_axelar_connections:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod axelar-validator axelard query ibc connection connections \
+	'
+
+.PHONY: ibc_list_axelar_connections
+ibc_list_axelar_channels:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod axelar-validator axelard query ibc channel channels \
+	'
+
 ##########################
 # Remote Balance Queries #
 ##########################
