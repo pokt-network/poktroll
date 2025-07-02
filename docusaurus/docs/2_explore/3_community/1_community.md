@@ -64,7 +64,7 @@ Streamlines deployment on Kubernetes clusters
 
 ## [Pocket Knife](https://github.com/buildwithgrove/pocket-knife/)
 
-A developer-friendly wrapper around pocketd — your Swiss Army knife for fast, clean, and reliable Pocket Network operations.
+A CLI wrapper for `pocketd` — streamlined for bulk operations.
 
 **Features**:
 
