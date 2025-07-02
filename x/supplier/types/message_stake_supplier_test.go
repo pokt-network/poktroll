@@ -184,7 +184,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 		},
 		{
-			desc: "valid stake - omitted stake",
+			desc: "valid stake - omitted stake because the signer is the operator",
 			msg: MsgStakeSupplier{
 				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,

@@ -13,6 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/cmd"
+	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/yaml"
@@ -21,6 +24,8 @@ import (
 )
 
 func TestCLI_StakeSupplier(t *testing.T) {
+	logger.Logger = polyzero.NewLogger()
+
 	net, _ := networkWithSupplierObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
@@ -197,6 +202,38 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
 				`, ownerAccount.Address.String(), operatorAccount.Address.String()),
+		},
+		// Error Paths - Flag related
+		{
+			desc:          "stake supplier: --stake-only and --services-only flags are mutually exclusive",
+			signerAddress: operatorAccount.Address.String(),
+			ownerAddress:  ownerAccount.Address.String(),
+			config:        defaultConfig,
+			additionalFlags: []string{
+				fmt.Sprintf("--%s=true", "stake-only"),
+				fmt.Sprintf("--%s=true", "services-only"),
+			},
+			expectedErr: cmd.ErrInvalidFlagUsage,
+		},
+		{
+			desc:          "stake supplier: --stake-only with services in config",
+			signerAddress: operatorAccount.Address.String(),
+			ownerAddress:  ownerAccount.Address.String(),
+			config:        servicesOnlyConfig,
+			additionalFlags: []string{
+				fmt.Sprintf("--%s=true", "stake-only"),
+			},
+			expectedErr: cmd.ErrInvalidFlagUsage,
+		},
+		{
+			desc:          "stake supplier: --services-only with stake in config",
+			signerAddress: operatorAccount.Address.String(),
+			ownerAddress:  ownerAccount.Address.String(),
+			config:        stakeOnlyConfig,
+			additionalFlags: []string{
+				fmt.Sprintf("--%s=true", "services-only"),
+			},
+			expectedErr: cmd.ErrInvalidFlagUsage,
 		},
 
 		// Happy Paths - Service Related

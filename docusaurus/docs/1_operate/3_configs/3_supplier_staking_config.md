@@ -208,11 +208,11 @@ corresponding `Supplier` has to be unstaked and a new one staked with the new
 
 ### `stake_amount`
 
-| Scenario                   | Requirement                 |
-|----------------------------|-----------------------------|
-| Initial Supplier Stake     | _`Required`_, _`Non-empty`_ |
-| In/Decrease Supplier Stake | _`Required`_, _`Non-empty`_ |
-| Otherwise                  | _`Optional`_, _`Non-empty`_ |
+| Scenario                   | Requirement  |
+|----------------------------|--------------|
+| Initial Supplier Stake     | _`Required`_ |
+| In/Decrease Supplier Stake | _`Required`_ |
+| Otherwise                  | _`Optional`_ |
 
 ```yaml
 stake_amount: <number>upokt
@@ -223,9 +223,9 @@ This amount covers all the `service`s defined in the `services` section.
 
 ### `default_rev_share_percent`
 
-| Scenario | Requirement                 |
-|----------|-----------------------------|
-| Always   | _`Optional`_, _`Non-empty`_ |
+| Scenario | Requirement   |
+|----------|---------------|
+| Always   | _`Optional`_  |
 
 ```yaml
 default_rev_share_percent:
@@ -263,10 +263,10 @@ MUST be **explicitly** defined in the map if they are to receive a share on the
 
 ### `services`
 
-| Scenario                          | Requirement                 |
-|-----------------------------------|-----------------------------|
-| Initial Supplier Stake            | _`Optional`_, _`Non-empty`_ |
-| Update Supplier Service Config(s) | _`Required`_, _`Non-empty`_ |
+| Scenario                          | Requirement   |
+|-----------------------------------|---------------|
+| Initial Supplier Stake            | _`Optional`_  |
+| Update Supplier Service Config(s) | _`Required`_  |
 
 ```yaml
 services:
@@ -297,9 +297,9 @@ For example, it must match the regex `^[a-zA-Z0-9_-]{1,8}$`, and spaces are disa
 
 #### `endpoints`
 
-| Scenario             | Requirement                 |
-|----------------------|-----------------------------|
-| Always (per service) | _`Required`_, _`Non-empty`_ |
+| Scenario             | Requirement  |
+|----------------------|--------------|
+| Always (per service) | _`Required`_ |
 
 `endpoints` is a list of `endpoint` objects that the `Supplier` will advertise
 to the Pocket Network. Each `endpoint` object consists of a `publicly_exposed_url`
@@ -382,3 +382,22 @@ If `rev_share_percent` is defined for a `service`, then the `owner_address` of t
 `Supplier` MUST be **explicitly** defined in the map if they are to receive a share.
 
 :::
+
+## Configuration Use Case Matrix
+
+
+Action | Signer / Escrowed Balance / Default Fee | Service Configs Provided? | Stake Amount Provided? | Result / Behavior
+-- | -- | -- | -- | --
+Initial Stake | Owner | ❌ No | ✅ Yes | ✅ Stake escrowed, no services configured
+  |   | ✅ Yes | ✅ Yes | ❌ ERROR – owner may not provide service configs
+  |   | ❌ No / ✅ Yes | ❌ No | ❌ ERROR – stake amount must be provided
+  | Operator | ❌ No | ✅ Yes | ✅ Stake escrowed, no services configured
+  |   | ✅ Yes | ✅ Yes | ✅ Stake escrowed, services configured
+  |   | ❌ No / ✅ Yes | ❌ No | ❌ ERROR – stake amount must be provided
+Up/Downstake | Owner | ❌ No | ✅ Yes | ✅ Stake (un)escrowed, no change to service configs
+  |   | ✅ Yes | ❌ No / ✅ Yes | ❌ ERROR – owner may not provide service configs
+  | Operator | ❌ No | ✅ Yes | ✅ Stake (un)escrowed, no change to service configs
+  |   | ✅ Yes | ✅ Yes | ✅ Stake (un)escrowed, services updated
+  |   | ✅ Yes | ❌ No | ✅ Service configs updated
+
+

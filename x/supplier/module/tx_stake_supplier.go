@@ -9,6 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	pocketdcmd "github.com/pokt-network/poktroll/cmd"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/x/supplier/config"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -78,14 +80,16 @@ https://dev.poktroll.com/operate/configs/supplier_staking_config`,
 			}
 
 			// Ensure the --from flag is set before getting the client context.
-			// Default to owner/operator signer in this order::
+			// Default to owner/operator signer in this order:
 			// 1. owner address - rationale: typical stake escrow source
 			// 2. operator address - rationale: --services-only, operator-custodial workflow, etc. use cases
 			if signingKeyNameOrAddress == "" {
 				switch {
 				case supplierStakeConfigs.OwnerAddress != "":
+					logger.Logger.Info().Msgf("⚠️ no signer specified via --from flag; defaulting to owner %s as signer", supplierStakeConfigs.OwnerAddress)
 					signingKeyNameOrAddress = supplierStakeConfigs.OwnerAddress
 				case supplierStakeConfigs.OperatorAddress != "":
+					logger.Logger.Info().Msgf("⚠️ no signer specified via --from flag; defaulting to operator %s as signer", supplierStakeConfigs.OperatorAddress)
 					signingKeyNameOrAddress = supplierStakeConfigs.OperatorAddress
 				default:
 					return types.ErrSupplierInvalidAddress.Wrap("unable to determine signer address: config must specify owner_address or operator_address, or use --from flag")
@@ -119,26 +123,29 @@ https://dev.poktroll.com/operate/configs/supplier_staking_config`,
 			}
 
 			// Validate flag-specific requirements
-			if stakeOnlyFlagValue {
+			switch {
+			case stakeOnlyFlagValue && servicesOnlyFlagValue:
+				return pocketdcmd.ErrInvalidFlagUsage.Wrap("--stake-only and --services-only flags are mutually exclusive")
+			case stakeOnlyFlagValue:
 				if len(msg.GetServices()) > 0 {
-					return types.ErrSupplierInvalidServiceConfig.Wrap("--stake-only flag specified but config contains service configurations; remove services section from config")
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap("--stake-only flag specified but config contains service configurations; remove services section from config")
 				}
 				if msg.GetStake() == nil {
-					return types.ErrSupplierInvalidStake.Wrap("--stake-only flag requires stake_amount in config file")
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap("--stake-only flag requires stake_amount in config file")
 				}
-			} else if servicesOnlyFlagValue {
+			case servicesOnlyFlagValue:
 				if msg.GetStake() != nil {
-					return types.ErrSupplierInvalidStake.Wrap("--services-only flag specified but config contains stake_amount; remove stake_amount from config")
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap("--services-only flag specified but config contains stake_amount; remove stake_amount from config")
 				}
 				if len(msg.GetServices()) == 0 {
-					return types.ErrSupplierInvalidServiceConfig.Wrap("--services-only flag requires services section in config file")
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap("--services-only flag requires services section in config file")
 				}
 				if !msg.IsSigner(msg.GetOperatorAddress()) {
-					return types.ErrSupplierInvalidServiceConfig.Wrap(
+					return pocketdcmd.ErrInvalidFlagUsage.Wrap(
 						"--services-only flag requires operator to be the transaction signer",
 					)
 				}
-			} else {
+			default:
 				// Default behavior: require both stake and services for new suppliers
 				if len(msg.GetServices()) == 0 {
 					return types.ErrSupplierInvalidServiceConfig.Wrap("no service configurations provided in config file; either provide services or use --stake-only flag")

@@ -306,7 +306,7 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 		_, err = srv.StakeSupplier(ctx, updateMsg)
 		require.NoError(t, err)
 
-		// Verify that the supplier stake is unchanged
+		// Verify that the supplier stake is updated
 		supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 		require.True(t, isSupplierFound)
 		require.Equal(t, newStake, supplierFound.Stake.Amount.Int64())
@@ -322,7 +322,7 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 		_, err = srv.StakeSupplier(ctx, updateMsg)
 		require.NoError(t, err)
 
-		// Verify that the supplier stake is updated
+		// Verify that the supplier stake is updated.
 		supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 		require.True(t, isSupplierFound)
 		require.Equal(t, newStake, supplierFound.Stake.Amount.Int64())
@@ -359,7 +359,7 @@ func TestMsgServer_StakeSupplier_SuccessIncreasingStake(t *testing.T) {
 		_, err = srv.StakeSupplier(ctx, updateMsg)
 		require.NoError(t, err)
 
-		// Verify that the supplier stake is unchanged
+		// Verify that the supplier stake is updated.
 		supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 		require.True(t, isSupplierFound)
 		require.Equal(t, newStake, supplierFound.Stake.Amount.Int64())
@@ -375,7 +375,7 @@ func TestMsgServer_StakeSupplier_SuccessIncreasingStake(t *testing.T) {
 		_, err = srv.StakeSupplier(ctx, updateMsg)
 		require.NoError(t, err)
 
-		// Verify that the supplier stake is unchanged
+		// Verify that the supplier stake is updated.
 		supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 		require.True(t, isSupplierFound)
 		require.Equal(t, newStake, supplierFound.Stake.Amount.Int64())
@@ -758,7 +758,6 @@ func TestMsgServer_StakeSupplier_ServicesOnly(t *testing.T) {
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(sdkCtx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Len(t, foundSupplier.ServiceConfigHistory, 1)
-	//require.EqualValues(t, expectedInitialSupplier, &foundSupplier)
 }
 
 func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {

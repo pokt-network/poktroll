@@ -145,7 +145,7 @@ func (k Keeper) StakeSupplier(
 		if msg.Stake == nil {
 			return nil, status.Error(
 				codes.InvalidArgument,
-				suppliertypes.ErrSupplierInvalidStake.Wrap("stake amount is required when creating a new supplier").Error(),
+				suppliertypes.ErrSupplierInvalidStake.Wrap("when staking a new supplier, the stake amount MUST be non-nil").Error(),
 			)
 		}
 

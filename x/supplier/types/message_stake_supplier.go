@@ -3,7 +3,6 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app/pocket"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -53,25 +52,15 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 
 	// Validate the stake, if present.
 	if msg.Stake != nil {
-		// TODO_MAINNET: Centralize stake related verification and share across different
-		// parts of the source code
-		// Validate the stake amount
-		stake, err := sdk.ParseCoinNormalized(msg.Stake.String())
-		if err != nil {
-			return ErrSupplierInvalidStake.Wrapf("cannot parse supplier stake %s; (%s)", msg.Stake, err)
-		}
-		if !stake.IsValid() {
-			return ErrSupplierInvalidStake.Wrapf("invalid supplier stake %s; (%s)", msg.Stake, stake.Validate())
-		}
-		if stake.IsZero() || stake.IsNegative() {
-			return ErrSupplierInvalidStake.Wrapf("invalid stake amount for supplier: %s <= 0", msg.Stake)
-		}
-		if stake.Denom != pocket.DenomuPOKT {
-			return ErrSupplierInvalidStake.Wrapf("invalid stake amount denom for supplier: expected %s, got %s", pocket.DenomuPOKT, stake.Denom)
+		if err := msg.ValidateStake(); err != nil {
+			return ErrSupplierInvalidStake.Wrapf(err.Error())
 		}
 	}
 
-	if !msg.IsSigner(msg.GetOperatorAddress()) && len(msg.GetServices()) > 0 {
+	// Ensure that ONLY the operator account is authorized to update the service configurations.
+	msgHasServiceConfigs := len(msg.GetServices()) != 0
+	isServicesUpdateAuthorized := msg.IsSigner(msg.GetOperatorAddress())
+	if msgHasServiceConfigs && !isServicesUpdateAuthorized {
 		return ErrSupplierInvalidServiceConfig.Wrap("only the operator account is authorized to update the service configurations")
 	}
 
@@ -87,4 +76,11 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 
 func (msg *MsgStakeSupplier) IsSigner(address string) bool {
 	return address == msg.Signer
+}
+
+// ValidateStake performs the following validation steps:
+//   - Validates the stake amount is positive
+//   - Validates the stake denom is upokt
+func (msg *MsgStakeSupplier) ValidateStake() error {
+	return sharedtypes.ValidatePositiveuPOKT(msg.Stake.String())
 }
