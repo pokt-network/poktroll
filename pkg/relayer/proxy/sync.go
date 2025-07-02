@@ -209,17 +209,15 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	defer CloseRequestBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
-	// If the backend service returns a 5xx error, we consider it an internal error
-	// and do not expose the error to the client.
-	if httpResponse.StatusCode >= 500 {
+
+	// Pass through all backend responses including errors.
+	// This allows clients to see the real HTTP status codes from the backend service.
+	// If the backend service returns a non-2XX status code, log it for monitoring purposes,
+	// but don't block the response.
+	if httpResponse.StatusCode >= http.StatusMultipleChoices {
 		logger.Error().
 			Int("status_code", httpResponse.StatusCode).
-			Msg("backend service returned a server error")
-
-		return relayRequest, ErrRelayerProxyInternalError.Wrapf(
-			"backend service returned an error with status code %d",
-			httpResponse.StatusCode,
-		)
+			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
 	}
 
 	// Serialize the service response to be sent back to the client.
