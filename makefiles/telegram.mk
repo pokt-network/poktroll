@@ -3,7 +3,7 @@
 ########################
 
 .PHONY: telegram_broadcast
-telegram_broadcast: ## Broadcast a message to all Telegram groups. Usage: make telegram_broadcast MSG="Your message here"
+telegram_broadcast: ## Broadcast a custom message to all Telegram groups. Usage: make telegram_broadcast MSG="Your message here"
 	@if [ -z "$(MSG)" ]; then \
 		echo "Error: MSG parameter is required. Usage: make telegram_broadcast MSG=\"Your message here\""; \
 		exit 1; \
@@ -13,7 +13,7 @@ telegram_broadcast: ## Broadcast a message to all Telegram groups. Usage: make t
 	@echo "Broadcast initiated. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/telegram-broadcast.yml"
 
 .PHONY: telegram_release_notify
-telegram_release_notify: ## Notify Telegram groups about the latest release
-	@echo "Notifying Telegram groups about the latest release..."
+telegram_release_notify: ## Notify all Telegram groups of the latest release
+	@echo "Notifying Telegram groups of the latest release..."
 	@gh workflow run notify-telegram-groups.yml
 	@echo "Release notification initiated. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml"
