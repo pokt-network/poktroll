@@ -31,10 +31,5 @@ telegram_test_message: ## Test broadcast message to testing group only. Usage: m
 .PHONY: telegram_test_release
 telegram_test_release: ## Test release notification to testing group only
 	@echo "Testing release notification to Telegram testing group..."
-	@$(eval LATEST_RELEASE := $(shell gh release view --json tagName,name,body -q '{tag: .tagName, name: .name, body: .body}'))
-	@$(eval TAG := $(shell echo '$(LATEST_RELEASE)' | jq -r '.tag'))
-	@$(eval NAME := $(shell echo '$(LATEST_RELEASE)' | jq -r '.name'))
-	@$(eval BODY := $(shell echo '$(LATEST_RELEASE)' | jq -r '.body' | head -20))
-	@$(eval MESSAGE := "🚀 <b>Test Release Notification</b>\n\n<b>Version:</b> $(TAG)\n<b>Name:</b> $(NAME)\n\n<b>Highlights:</b>\n$(BODY)\n\n<a href=\"https://github.com/pokt-network/poktroll/releases/tag/$(TAG)\">View Full Release Notes</a>")
-	@gh workflow run telegram-test-message.yml -f message="$$MESSAGE" -f parse_mode="HTML"
-	@echo "Test release notification sent. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/telegram-test-message.yml"
+	@gh workflow run telegram-test-release.yml
+	@echo "Test release notification initiated. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/telegram-test-release.yml"
