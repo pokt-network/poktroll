@@ -230,8 +230,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Ensures backend requests don't exceed allocated time budget.
 	client.Timeout = requestTimeout
 
-	// Check if context deadline already exceeded before backend call.
+	// Check if context deadline already exceeded before making the backend call.
 	// Prevents unnecessary work when request has already timed out.
+	//
+	// DEV_NOTE: Even after deadline, client cancellation or request timeout,
+	//  the request handler's goroutine will continue processing unless explicitly
+	//  checking for context cancellation.
 	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
 		logger.With("current_time", time.Now()).Warn().Msg(ctxErr.Error())
 
