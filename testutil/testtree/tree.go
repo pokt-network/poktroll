@@ -94,7 +94,7 @@ func FillSessionTree(
 	t.Helper()
 
 	for i := 0; i < int(numRelays); i++ {
-		relay := testrelayer.NewSignedEmptyRelay(
+		relay := testrelayer.NewSignedRandRelay(
 			ctx, t,
 			supplierOperatorKeyUid, supplierOperatorAddr,
 			reqHeader, resHeader,

@@ -13,3 +13,8 @@ query_tx_json: ## Query for a transaction by hash and output as JSON.
 .PHONY: query_tx_log
 query_tx_log: ## Query for a transaction and print its raw log.
 	$(MAKE) -s query_tx_json | jq .raw_log
+
+.PHONY: proof_payload_size_analysis
+proof_payload_size_analysis: ## Analyze block size savings from hashing RelayResponse payloads in MsgSubmitProofs.
+
+
