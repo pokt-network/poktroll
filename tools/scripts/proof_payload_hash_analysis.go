@@ -224,7 +224,7 @@ func processProofPayloadHash(msg *prooftypes.MsgSubmitProof, cdc codec.Codec) ([
 
 	// DEV_NOTE: This analysis assumes the payload will be replaced with its hash in the new design.
 	// However, the actual implementation stores the hash in a separate field (payload_hash)
-	// and clears the payload field entirely for even greater space savings.
+	// and clears the payload field entirely.
 	// This script simulates the original approach for comparison purposes.
 	var payloadModified bool
 	if relay.Res != nil && len(relay.Res.Payload) > 0 {
