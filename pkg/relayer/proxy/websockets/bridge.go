@@ -370,7 +370,7 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 	if err := relayResponse.UpdatePayloadHash(); err != nil {
 		logger.Error().Err(err).Msg("unable to update relay response payload hash")
 		b.gatewayConn.handleError(
-			ErrWebsocketsServiceBackendMessage.Wrapf("unable to update relay reponse payload hash: %s", err),
+			ErrWebsocketsServiceBackendMessage.Wrapf("unable to update relay response payload hash: %s", err),
 		)
 		return
 	}
