@@ -209,7 +209,7 @@ func NewSignedRandRelay(
 	t.Helper()
 
 	randBz := make([]byte, 16)
-	_, err := rand.Read(randBz)
+	_, err := rand.Read(randBz) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 	require.NoError(t, err)
 
 	relay := NewEmptyRelay(reqHeader, resHeader, supplierOperatorAddr)

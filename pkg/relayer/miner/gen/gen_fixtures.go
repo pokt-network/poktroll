@@ -146,7 +146,7 @@ func genRandomizedMinedRelayFixtures(
 			}
 
 			randBz := make([]byte, randLength)
-			if _, err := rand.Read(randBz); err != nil {
+			if _, err := rand.Read(randBz); err != nil { //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 				errCh <- err
 				return
 			}
