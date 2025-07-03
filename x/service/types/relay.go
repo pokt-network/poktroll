@@ -108,9 +108,10 @@ func (res *RelayResponse) ValidateBasic() error {
 	// SessionHeader, consider sending an onchain challenge, lowering their
 	// QoS, or other future work.
 
-	if len(res.GetPayloadHash()) == 0 {
-		return ErrServiceInvalidRelayResponse.Wrapf("missing payload hash")
-	}
+	// TODO_TECHDEBT(red-0ne): Reenable once RelayMiners are updated to generate payload hashes.
+	// if len(res.GetPayloadHash()) == 0 {
+	// 	return ErrServiceInvalidRelayResponse.Wrapf("missing payload hash")
+	// }
 
 	meta := res.GetMeta()
 
