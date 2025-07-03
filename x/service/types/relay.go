@@ -72,6 +72,7 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// DEV_NOTE: This MUST be done in order to support onchain response signature
 	// verification, without including the entire response payload in the SMST/proof.
 	res.Payload = nil
+	res.PayloadHash = nil
 
 	responseBz, err := res.Marshal()
 	if err != nil {
@@ -90,6 +91,10 @@ func (res *RelayResponse) ValidateBasic() error {
 	// TODO_POST_MAINNET: if a client gets a response with an invalid/incomplete
 	// SessionHeader, consider sending an onchain challenge, lowering their
 	// QoS, or other future work.
+
+	if len(res.GetPayloadHash()) == 0 {
+		return ErrServiceInvalidRelayResponse.Wrapf("missing payload hash")
+	}
 
 	meta := res.GetMeta()
 
@@ -120,5 +125,18 @@ func (res *RelayResponse) VerifySupplierOperatorSignature(supplierOperatorPubKey
 		return ErrServiceInvalidRelayResponse.Wrap("invalid signature")
 	}
 
+	return nil
+}
+
+// UpdatePayloadHash computes the hash of the response payload and set it on res (this relay response).
+// This is necessary for onchain proof verification without requiring the full payload.
+// If the response payload is empty, an error is returned.
+func (res *RelayResponse) UpdatePayloadHash() error {
+	if len(res.GetPayload()) == 0 {
+		return ErrServiceInvalidRelayResponse.Wrapf("attempted to update payload hash with an empty payload")
+	}
+
+	responseHash := protocol.GetRelayHashFromBytes(res.GetPayload())
+	res.PayloadHash = responseHash[:]
 	return nil
 }

@@ -62,12 +62,14 @@ message RelayResponse {
   // Serialized response payload:
   // - Passed directly from the service.
   // - Can be any supported format: JSON-RPC, REST, gRPC, etc.
+  // - Used when communicating between applications, gatewways, and relayminers
+  // - Omitted when inserting relays into the SMST, and therefore in onchain proofs,
+  //   in order to minimize onchain proof size.
   bytes payload = 2;
 
   // SHA256 hash of the response payload.
   // This field is used for proof verification without requiring the full payload.
   // The hash ensures response integrity while reducing on-chain storage requirements.
-  // TODO_MAINNET: Consider making this field required (validate non-empty) before mainnet.
   bytes payload_hash = 4;
 
   // Error returned by the RelayMiner, if applicable.

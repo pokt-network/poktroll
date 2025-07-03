@@ -208,7 +208,13 @@ type RelayResponse struct {
 	// Serialized response payload:
 	// - Passed directly from the service.
 	// - Can be any supported format: JSON-RPC, REST, gRPC, etc.
-	Payload     []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	// - Used when communicating between applications, gatewways, and relayminers
+	// - Omitted when inserting relays into the SMST, and therefore in onchain proofs,
+	//   in order to minimize onchain proof size.
+	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	// SHA256 hash of the response payload.
+	// This field is used for proof verification without requiring the full payload.
+	// The hash ensures response integrity while reducing on-chain storage requirements.
 	PayloadHash []byte `protobuf:"bytes,4,opt,name=payload_hash,json=payloadHash,proto3" json:"payload_hash,omitempty"`
 	// Error returned by the RelayMiner, if applicable.
 	// - If no error occurred, this field is empty.

@@ -3,7 +3,6 @@ package proxy
 import (
 	"net/http"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -36,15 +35,16 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddr string,
 ) (*types.RelayResponse, error) {
+	relayResponse := &types.RelayResponse{
+		Meta:    types.RelayResponseMetadata{SessionHeader: sessionHeader},
+		Payload: responseBz,
+	}
+
 	// Compute hash of the response payload for proof verification.
 	// This hash will be stored in the RelayResponse and used during proof validation
 	// to verify the integrity of the response without requiring the full payload.
-	responseHash := protocol.GetRelayHashFromBytes(responseBz)
-
-	relayResponse := &types.RelayResponse{
-		Meta:        types.RelayResponseMetadata{SessionHeader: sessionHeader},
-		Payload:     responseBz,
-		PayloadHash: responseHash[:],
+	if err := relayResponse.UpdatePayloadHash(); err != nil {
+		return nil, err
 	}
 
 	// Sign the relay response and add the signature to the relay response metadata
