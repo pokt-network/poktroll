@@ -1,0 +1,42 @@
+name: Telegram Test Message
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Test message to send to testing group only"
+        required: true
+        type: string
+      parse_mode:
+        description: "Parse mode for Telegram message (HTML or Markdown)"
+        required: false
+        type: string
+        default: "HTML"
+
+jobs:
+  test-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send test message to Telegram testing group
+        run: |
+          # Pocket Network Bot Testing Group
+          CHAT_1="-1002895286734"
+
+          # Get the message and parse mode from the workflow inputs
+          MESSAGE="${{ inputs.message }}"
+          PARSE_MODE="${{ inputs.parse_mode }}"
+
+          # Function to send message to a chat
+          send_message() {
+            local chat_id="$1"
+            local chat_name="$2"
+            echo "Sending to $chat_id ($chat_name)"
+            curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+              -d chat_id="$chat_id" \
+              -d parse_mode="$PARSE_MODE" \
+              --data-urlencode text="$MESSAGE"
+            echo
+          }
+
+          # Send to testing group only
+          send_message "$CHAT_1" "Pocket Network Bot Testing Group"
