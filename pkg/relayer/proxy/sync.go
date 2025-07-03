@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	// writeDeadlineSafetyDelta provides extra buffer time beyond the request timeout
+	// writeDeadlineSafetyDuration provides extra buffer time beyond the request timeout
 	// to ensure the HTTP response can be fully written before the connection is closed.
 	// This prevents incomplete responses due to network write timing issues.
-	writeDeadlineSafetyDelta = 1 * time.Second
+	writeDeadlineSafetyDuration = 1 * time.Second
 )
 
 // serveSyncRequest serves a synchronous relay request by forwarding the request
@@ -94,12 +94,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// This overrides the server's default timeout values for this specific request.
 	requestTimeout := server.requestTimeoutForServiceId(serviceId)
 
-	// Calculate the absolute deadline for this request processing cycle.
+	// Calculate the absolute requestDeadline for this request processing cycle.
 	// Includes both the service request timeout and additional buffer for response writing.
-	deadline := time.Now().Add(requestTimeout + writeDeadlineSafetyDelta)
-	logger = logger.With("deadline", deadline)
+	requestDeadline := time.Now().Add(requestTimeout + writeDeadlineSafetyDuration)
+	logger = logger.With("deadline", requestDeadline)
 
-	ctxWithDeadline, cancel := context.WithDeadline(ctx, deadline)
+	ctxWithDeadline, cancel := context.WithDeadline(ctx, requestDeadline)
 	defer cancel()
 
 	// TODO_TECHDEBT: Consider re-enabling ResponseController write deadlines
@@ -121,11 +121,11 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Track whether relay rewards have been optimistically accumulated for this request.
 	// Used to determine if rewards need to be reverted on failure.
-	rewardAccounted := false
+	isRelayRewardAccumulated := false
 
 	// Define a cleanup function to handle reward management for failed relays.
 	unclaimOptimisticallyAccumulatedFailedRelayReward := func() {
-		if !shouldRewardRelay && rewardAccounted {
+		if !shouldRewardRelay && isRelayRewardAccumulated {
 			// Revert any optimistically accumulated rewards when relay fails.
 			// This covers failure scenarios:
 			// - Request validation failures
@@ -164,7 +164,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Mark that relay rewards have been optimistically accumulated.
 	// This flag enables the cleanup function to revert rewards if the relay fails.
-	rewardAccounted = true
+	isRelayRewardAccumulated = true
 
 	var serviceConfig *config.RelayMinerSupplierServiceConfig
 
@@ -185,7 +185,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		)
 	}
 
-	logger = logger.With("destination_url", serviceConfig.BackendUrl.String())
+	logger = logger.With("backend_url", serviceConfig.BackendUrl.String())
 
 	// Increment the relays counter.
 	relayer.RelaysTotal.With(
@@ -233,7 +233,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Check if context deadline already exceeded before backend call.
 	// Prevents unnecessary work when request has already timed out.
 	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
-		logger.Warn().Msg(ctxErr.Error())
+		logger.With("current_time", time.Now()).Warn().Msg(ctxErr.Error())
 
 		return relayRequest, ErrRelayerProxyTimeout.Wrapf(
 			"request to service %s timed out after %s",
@@ -252,7 +252,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		// Check if error is a backend timeout.
 		// URL errors with timeout flag indicate backend exceeded response time limit.
 		if isTimeoutError(err) {
-			logger.Warn().Msg(err.Error())
+			logger.With("current_time", time.Now()).Warn().Msg(err.Error())
 			return relayRequest, ErrRelayerProxyTimeout.Wrapf(
 				"request to service %s timed out after %s",
 				serviceId,
@@ -395,7 +395,8 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 func isTimeoutError(err error) bool {
 	// Check if the error is a context deadline exceeded error.
 	// This is used to determine if the request timed out.
-	if urlErr, ok := err.(*url.Error); ok && urlErr.Timeout() {
+	urlErr, ok := err.(*url.Error)
+	if ok && urlErr.Timeout() {
 		return true
 	}
 	return false
