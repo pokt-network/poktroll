@@ -16,6 +16,22 @@ const (
 	// Etc...
 )
 
+type RPCType string
+
+const (
+	RPCTypeJSONRPC RPCType = "json_rpc"
+	RPCTypeREST    RPCType = "rest"
+)
+
+func (t RPCType) IsValid() bool {
+	switch t {
+	case RPCTypeJSONRPC, RPCTypeREST:
+		return true
+	default:
+		return false
+	}
+}
+
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
 type YAMLRelayMinerConfig struct {
 	DefaultSigningKeyNames       []string                       `yaml:"default_signing_key_names"`
@@ -65,12 +81,13 @@ type YAMLRelayMinerMetricsConfig struct {
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
-	ListenUrl             string                              `yaml:"listen_url"`
-	ServiceConfig         YAMLRelayMinerSupplierServiceConfig `yaml:"service_config"`
-	ServiceId             string                              `yaml:"service_id"`
-	SigningKeyNames       []string                            `yaml:"signing_key_names"`
-	RequestTimeoutSeconds uint64                              `yaml:"request_timeout_seconds"`
-	XForwardedHostLookup  bool                                `yaml:"x_forwarded_host_lookup"`
+	ListenUrl             string                                          `yaml:"listen_url"`
+	DefaultServiceConfig  YAMLRelayMinerSupplierServiceConfig             `yaml:"service_config"`
+	RPCTypeServiceConfigs map[RPCType]YAMLRelayMinerSupplierServiceConfig `yaml:"rpc_type_service_configs"`
+	ServiceId             string                                          `yaml:"service_id"`
+	SigningKeyNames       []string                                        `yaml:"signing_key_names"`
+	RequestTimeoutSeconds uint64                                          `yaml:"request_timeout_seconds"`
+	XForwardedHostLookup  bool                                            `yaml:"x_forwarded_host_lookup"`
 }
 
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
@@ -158,14 +175,20 @@ type RelayMinerMetricsConfig struct {
 type RelayMinerSupplierConfig struct {
 	// ServiceId is the serviceId corresponding to the current configuration.
 	ServiceId string
+
 	// ServerType is the transport protocol used by the supplier, it must match the
 	// type of the relay miner server it is associated with.
-
 	ServerType RelayMinerServerType
+
 	// ServiceConfig is the config of the service that relays will be proxied to.
 	// Other supplier types may embed other fields in the future. eg. "https" may
 	// embed a TLS config.
-	ServiceConfig *RelayMinerSupplierServiceConfig
+	DefaultServiceConfig *RelayMinerSupplierServiceConfig
+
+	// RPCTypeServiceConfigs is a map of RPC types to service configs.
+	// Used to select an alternate service config for a given RPC type.
+	// If the RPC type is not present in the map, the default service config is used.
+	RPCTypeServiceConfigs map[RPCType]*RelayMinerSupplierServiceConfig
 
 	// SigningKeyNames: a list of key names that can accept relays for that supplier.
 	// If empty, we copy the values from `DefaultSigningKeyNames`.
@@ -179,7 +202,7 @@ type RelayMinerSupplierConfig struct {
 // RelayMinerSupplierServiceConfig is the structure resulting from parsing the supplier
 // service sub-section of the RelayMiner config file.
 type RelayMinerSupplierServiceConfig struct {
-	// BackendUrl is the URL of the service that relays will be proxied to.
+	// BackendUrl is the default URL of the service that relays will be proxied to.
 	BackendUrl *url.URL
 	// Authentication is the basic auth structure used to authenticate to the
 	// request being proxied from the current relay miner server.
