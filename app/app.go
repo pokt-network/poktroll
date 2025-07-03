@@ -2,6 +2,8 @@ package app
 
 import (
 	// this line is used by starport scaffolding # stargate/app/moduleImport
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,6 +11,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -33,6 +36,7 @@ import (
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
+	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	"github.com/pokt-network/poktroll/app/keepers"
@@ -310,6 +314,32 @@ func New(
 	// 	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
 	// 	return app.App.InitChainer(ctx, req)
 	// })
+
+	// Applying a custom InitChainer in order to ensure that the interchain accounts host port is bound.
+	app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+		// Initialize the genesis state; this is REQUIRED and would have otherwise been done by the default initChainer.
+		var genesisState map[string]json.RawMessage
+		if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal genesis state: %w", err)
+		}
+		res, err := app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init genesis: %w", err)
+		}
+
+		// bindIcaHostPort binds the "icahost" port to the ICA host submodule if it is not
+		// already bound. This is required to allow remote chains to initiate interchain
+		// account channel handshakes. Port binding ensures the `icahost` module has the
+		// necessary capability to manage incoming connections. Omitting this step (or
+		// rebinding a port) can lead to handshake failures as controllers will see
+		// "port not found" errors if the port lacks a binding.
+		// NOTE: ICA host support may still be disabled by setting the ICA submodule params `host_enabled` to false.
+		if !app.Keepers.IBCKeeper.PortKeeper.IsBound(ctx, icahosttypes.SubModuleName) {
+			_ = app.Keepers.IBCKeeper.PortKeeper.BindPort(ctx, icahosttypes.SubModuleName)
+		}
+
+		return res, nil
+	})
 
 	if err := app.setUpgrades(); err != nil {
 		return nil, err
