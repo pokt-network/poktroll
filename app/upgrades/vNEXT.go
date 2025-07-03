@@ -19,7 +19,9 @@ const (
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
-// - Updates to the Morse account recovery allowlist
+// - Reduced SMST / onchain proof size by persisting payload-dehydrated relay responses
+// - Reduced event related state bloat by removing unnecessary settlement results from events
+// - Updated Morse account recovery allowlist
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
