@@ -1,16 +1,16 @@
-name: Notify Telegram Groups
+name: Telegram Broadcast New Release
 
 ### How to use this? ###
 # 1. Finish the release procedure: https://dev.poktroll.com/develop/upgrades/release_procedure?_highlight=release
 # 2. Set the latest release to latest and verify here: https://github.com/pokt-network/poktroll/releases/latest
 # 3. Manually trigger the workflow by either:
-#    - Clicking the "Run workflow" button here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
-#    - Or by running the following command in your terminal: $ gh workflow run notify-telegram-groups.yml
+#    - Clicking the "Run workflow" button here: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml
+#    - Or by running the following command in your terminal: $ gh workflow run telegram-notify-release.yml
 
 ### How to test / debug this? ###
 # 1. Submit a new PR in a new branch that's modifying this file
-# 2. Trigger the workflow by running the following command in your terminal: $ gh workflow run notify-telegram-groups.yml --ref <BRANCH_NAME>
-# 3. Verify the workflow worked by viewing the logs here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
+# 2. Trigger the workflow by running the following command in your terminal: $ gh workflow run telegram-notify-release.yml --ref <BRANCH_NAME>
+# 3. Verify the workflow worked by viewing the logs here: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml
 # 4. Check the output in the telegram bot group: https://web.telegram.org/k/#-2895286734
 
 on:
@@ -94,10 +94,9 @@ jobs:
           echo "$MESSAGE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-
   send-release:
     needs: notify
     uses: ./.github/workflows/telegram-send-message.yml
     with:
       message: ${{ needs.notify.outputs.message }}
-      parse_mode: 'HTML'
+      parse_mode: "HTML"
