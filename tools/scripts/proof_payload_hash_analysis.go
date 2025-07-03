@@ -1,3 +1,11 @@
+// This tool analyzes a single block at a given height to evaluate the space savings
+// from replacing RelayResponse payloads in MsgSubmitProof messages with their SHA256 hashes.
+// It fetches the block via RPC, scans each transaction for MsgSubmitProofs, and
+// simulates a transformation where the response payload is replaced by its hash.
+// For each modified transaction, it re-encodes the tx and compares the size to the original.
+// The final report includes total bytes saved and the compression ratio, helping evaluate
+// the impact of this optimization on block size.
+
 package main
 
 import (
