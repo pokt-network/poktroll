@@ -25,11 +25,11 @@ telegram_test_message: ## Test broadcast message to testing group only. Usage: m
 		exit 1; \
 	fi
 	@echo "Sending test message to Telegram testing group..."
-	@gh workflow run telegram-test-message.yml -f message="$(MSG)"
-	@echo "Test message sent. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/telegram-test-message.yml"
+	@gh workflow run telegram-broadcast.yml -f message="$(MSG)" -f test_mode=true
+	@echo "Test message sent. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/telegram-broadcast.yml"
 
 .PHONY: telegram_test_release
 telegram_test_release: ## Test release notification to testing group only
 	@echo "Testing release notification to Telegram testing group..."
-	@gh workflow run telegram-test-release.yml
-	@echo "Test release notification initiated. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/telegram-test-release.yml"
+	@gh workflow run telegram-notify-release.yml -f test_mode=true
+	@echo "Test release notification initiated. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml"
