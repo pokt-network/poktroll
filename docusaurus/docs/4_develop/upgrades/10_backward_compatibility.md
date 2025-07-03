@@ -36,40 +36,25 @@ and must be performed in this specific order:
 - **Timing**: Cannot be coordinated; upgrades happen at operator discretion
 
 :::warning
-**Release Classification Required**: Pocket releases should clearly indicate whether they are:
+**Release Classification Required**: In order to prevent RelayMiner operators
+from rushing to deploy new binaries before the corresponding onchain upgrade is live,
+pocketd releases should clearly indicate whether they are:
 - **Off-chain only** (RelayMiner updates)
 - **Onchain only** (Onchain updates)
 - **Both** (RelayMiner and onchain updates)
-
-This prevents RelayMiner operators from rushing to deploy new binaries before the corresponding
-onchain upgrade is live, which would cause their RelayMiners to error due to protocol mismatches.
 :::
 
-:::notice
+:::note
 After all actors have been upgraded, the backward compatibility logic can be removed in a future release.
 :::
 
-## Why This Method Works
-
-The backward compatibility approach works because it follows a **feature detection pattern**:
-
-1. **Field-based Version Detection**: The presence or absence of specific fields in protocol messages indicates which version created the message
-2. **Conditional Processing**: Each component uses conditional logic to handle both old and new message formats
-3. **Graceful Degradation**: When encountering older message formats, components automatically fall back to legacy processing methods
-4. **Forward Compatibility**: New components can process messages from older versions without requiring updates
-
-This approach ensures:
-- **Network continuity**: No service interruption during upgrades
-- **Operational flexibility**: Decentralized operators can upgrade at their own pace
-- **Risk mitigation**: Eliminates the need for synchronized network-wide upgrades
-
 ### Compatibility Matrix
 
-| Gateway Version | Chain Version | RelayMiner Version | Payload Present | PayloadHash Present | Gateway Signature Verification      | Onchain Signature Verification      |
-|-----------------|---------------|--------------------|-----------------|---------------------|-------------------------------------|-------------------------------------|
-| **New**         | Old           | Old                | ✅              | ❌                  | ✅ Compatible (backward-compatible) | ✅ Compatible (aligned)             |
-| **New**         | New           | Old                | ✅              | ❌                  | ✅ Compatible (backward-compatible) | ✅ Compatible (backward-compatible) |
-| **New**         | New           | New                | ❌              | ✅                  | ✅ Compatible (aligned)             | ✅ Compatible (aligned)             |
+| Gateway Version | Chain Version | RelayMiner Version | Payload Present | PayloadHash Present | Gateway Signature Verification | Onchain Signature Verification |
+|-----------------|---------------|--------------------|-----------------|---------------------|--------------------------------|--------------------------------|
+| **New**         | Old           | Old                | ✅              | ❌                  | ✅ Backward-compatible         | ✅ Compatible (aligned)        |
+| **New**         | New           | Old                | ✅              | ❌                  | ✅ Backward-compatible         | ✅ Backward-compatible         |
+| **New**         | New           | New                | ❌              | ✅                  | ✅ Compatible (aligned)        | ✅ Compatible (aligned)        |
 
 ## Example: Relay Response Signature Upgrade
 
