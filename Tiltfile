@@ -291,6 +291,16 @@ actor_number = 0
 for x in range(localnet_config["relayminers"]["count"]):
     actor_number = actor_number + 1
 
+    # Check if specific image configuration exists for this RelayMiner
+    image_repo = "pocketd"
+    image_tag = ""
+    if "images" in localnet_config["relayminers"] and actor_number <= len(localnet_config["relayminers"]["images"]):
+        rm_image = localnet_config["relayminers"]["images"][actor_number - 1]
+        if "repository" in rm_image:
+            image_repo = rm_image["repository"]
+        if "tag" in rm_image:
+            image_tag = rm_image["tag"]
+    
     flags=[
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-common.yaml",
@@ -298,8 +308,11 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
             "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
-            "--set=image.repository=pocketd",
+            "--set=image.repository=" + image_repo,
     ]
+    
+    if image_tag:
+        flags.append("--set=image.tag=" + image_tag)
 
     #############
     # NOTE: To provide a proper configuration for the relayminer, we dynamically
