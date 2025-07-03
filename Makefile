@@ -431,5 +431,6 @@ include ./makefiles/relay.mk
 include ./makefiles/ping.mk
 include ./makefiles/migrate.mk
 include ./makefiles/claudesync.mk
+include ./makefiles/telegram.mk
 include ./makefiles/docs.mk
 include ./makefiles/release.mk
