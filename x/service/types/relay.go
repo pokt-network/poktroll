@@ -71,8 +71,18 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// Set the response payload to nil to reduce the size of SMST & onchain proofs.
 	// DEV_NOTE: This MUST be done in order to support onchain response signature
 	// verification, without including the entire response payload in the SMST/proof.
-	res.Payload = nil
-	res.PayloadHash = nil
+	//
+	// DEV_NOTE: Backward compatibility implementation for signature verification:
+	// During network upgrades, different components (Chain, Gateway, RelayMiner) may run
+	// different software versions. The logic below enables compatibility between all versions
+	// This approach ensures network continuity without requiring synchronized upgrades.
+	//
+	// See: docusaurus/docs/4_develop/upgrades/10_backward_compatibility.md
+	//
+	// TODO_TECHDEBT: Remove this check and use PayloadHash after all actors are upgraded.
+	if res.PayloadHash != nil {
+		res.Payload = nil
+	}
 
 	responseBz, err := res.Marshal()
 	if err != nil {
