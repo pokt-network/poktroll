@@ -41,6 +41,17 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
 
 Start a discord thread similar to [this v0.1.21 thread](https://discord.com/channels/824324475256438814/1384985059873918986) to communicate updates along the way in case of any issues.
 
+:::tip `gh` CLI Telegram Broadcast
+
+If you have the [gh CLI](https://cli.github.com/) installed, you can give exchanges
+a warning that a release will go out over the next few hours or days.
+
+```bash
+make telegram_broadcast MSG="📣 Update from Pocket Network: `v0.1.21` is scheduled for release in approximately 1-3 days 📣"
+```
+
+:::
+
 ## 1. Prepare a New Upgrade Handler
 
 1. Identify the version of the [latest release](https://github.com/pokt-network/poktroll/releases/latest) from the [full list of releases](https://github.com/pokt-network/poktroll/releases) (e.g. `v0.1.20`)
@@ -354,9 +365,19 @@ If you use the Cosmos SDK [cosmovisor](https://docs.cosmos.network/main/build/to
 
 ### 9.3 Telegram Release Bot
 
-After setting it as `latest release`, use the [GitHub workflow](https://github.com/pokt-network/poktroll/blob/main/.github/workflows/notify-telegram-groups.yml) to automatically notify the Telegram groups.
+:::tip `gh` CLI Release Notification
 
-Go to [this link](https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml) and click `Run workflow`.
+If you have the [gh CLI](https://cli.github.com/) installed, you can simply run:
+
+```bash
+make telegram_release_notify
+```
+
+:::
+
+After setting it as `latest release`, use the [GitHub workflow](https://github.com/pokt-network/poktroll/blob/main/.github/workflows/telegram-notify-release.yml) to automatically notify the Telegram groups.
+
+Go to [this link](https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml) and click `Run workflow`.
 
 This will send the details in the GitHub release to all exchanges.
 

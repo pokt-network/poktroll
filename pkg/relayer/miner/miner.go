@@ -72,21 +72,28 @@ func (mnr *miner) MinedRelays(
 	// Map servedRelaysObs to a new observable of an either type, populated with
 	// the minedRelay or an error. It is notified after the relay has been mined
 	// or an error has been encountered, respectively.
-	eitherMinedRelaysObs := channel.Map(ctx, relaysObs, mnr.mapMineRelay)
+	eitherMinedRelaysObs := channel.Map(ctx, relaysObs, mnr.mapMineDehydratedRelay)
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherMinedRelaysObs))
 
 	return filter.EitherSuccess(ctx, eitherMinedRelaysObs)
 }
 
-// mapMineRelay is intended to be used as a MapFn.
+// mapMineDehydratedRelay is intended to be used as a MapFn.
 // 1. It hashes the relay and compares its difficulty to the minimum threshold.
-// 2. If the relay difficulty is sufficient -> return an Either[MineRelay Value]
-// 3. If an error is encountered -> return an Either[error]
-// 4. Otherwise, skip the relay.
-func (mnr *miner) mapMineRelay(
+// 2. It sets the relay response payload to nil to minimize SMST / onchain proof size.
+// 3. If the relay difficulty is sufficient -> return an Either[MineRelay Value]
+// 4. If an error is encountered -> return an Either[error]
+// 5. Otherwise, skip the relay.
+func (mnr *miner) mapMineDehydratedRelay(
 	ctx context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
+	// Set the response payload to nil to reduce the size of SMST & onchain proofs.
+	// DEV_NOTE: This MUST be done in order to support onchain response signature
+	// verification, without including the entire response payload in the SMST/proof.
+	relay.Res.Payload = nil
+
+	// Marshal and hash the whole relay to measure difficulty.
 	relayBz, err := relay.Marshal()
 	if err != nil {
 		return either.Error[*relayer.MinedRelay](err), false

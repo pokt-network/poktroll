@@ -121,7 +121,13 @@ var allUpgrades = []upgrades.Upgrade{
 	// - Session parameter updates (numSuppliersPerSession increased to 50)
 	// - CLI improvements (count flag for relay command)
 	// - Telegram bot exchange list updates
-	upgrades.Upgrade_0_1_24,
+	// upgrades.Upgrade_0_1_24,
+
+	// v0.1.25 - upgrade to:
+	// - Reduced SMST / onchain proof size by persisting payload-dehydrated relay responses
+	// - Reduced event related state bloat by removing unnecessary settlement results from events
+	// - Updated Morse account recovery allowlist
+	upgrades.Upgrade_0_1_25,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

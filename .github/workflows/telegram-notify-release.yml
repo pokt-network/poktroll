@@ -1,16 +1,16 @@
-name: Notify Telegram Groups
+name: Telegram Broadcast New Release
 
 ### How to use this? ###
 # 1. Finish the release procedure: https://dev.poktroll.com/develop/upgrades/release_procedure?_highlight=release
 # 2. Set the latest release to latest and verify here: https://github.com/pokt-network/poktroll/releases/latest
 # 3. Manually trigger the workflow by either:
-#    - Clicking the "Run workflow" button here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
-#    - Or by running the following command in your terminal: $ gh workflow run notify-telegram-groups.yml
+#    - Clicking the "Run workflow" button here: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml
+#    - Or by running the following command in your terminal: $ gh workflow run telegram-notify-release.yml
 
 ### How to test / debug this? ###
 # 1. Submit a new PR in a new branch that's modifying this file
-# 2. Trigger the workflow by running the following command in your terminal: $ gh workflow run notify-telegram-groups.yml --ref <BRANCH_NAME>
-# 3. Verify the workflow worked by viewing the logs here: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml
+# 2. Trigger the workflow by running the following command in your terminal: $ gh workflow run telegram-notify-release.yml --ref <BRANCH_NAME>
+# 3. Verify the workflow worked by viewing the logs here: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml
 # 4. Check the output in the telegram bot group: https://web.telegram.org/k/#-2895286734
 
 on:
@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     # Uncomment the line below when enabling automatic triggers
     # if: github.event.release.prerelease == false
+    outputs:
+      message: ${{ steps.prepare_message.outputs.message }}
     steps:
       - name: Get latest release
         id: get_release
@@ -49,41 +51,9 @@ jobs:
           echo "$RELEASE_INFO" | jq -r '.body' >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Send release to Telegram groups
+      - name: Prepare release message
+        id: prepare_message
         run: |
-          # Pocket Network Bot Testing Group
-          CHAT_1="-1002895286734"
-          # BitGet <> Pocket Network (POKT)
-          CHAT_2="-4954094158"
-          # ByBit <> POKT
-          CHAT_3="-1002730340404"
-          # CoinEx <> POKT
-          CHAT_4="-1001946726820"
-          # Mr. Yang <> Grove / POKT
-          CHAT_5="-1002038833795"
-          # MEXC <> POKT
-          CHAT_6="-1002815210935"
-          # OKX <> Pocket Network
-          CHAT_7="-1001901668586"
-          # OrangeX <> Grove (POKT)
-          CHAT_8="-1002030782436"
-          # POKT & Gate.io
-          CHAT_9="-1001717732565"
-          # POKT Network | AscendEX
-          CHAT_10="-4565872373"
-          # Uphold <> Grove (POKT)
-          CHAT_11="-1002227693360"
-          # Pokt <> Kraken {EF introduction}
-          CHAT_12="-1002405763552"
-          # Bitrue & Pocket Network
-          CHAT_13="-618542738"
-          # HTX <> POKT
-          CHAT_14="-1002898513049"
-          # POKT <> Upbit
-          CHAT_15="-1002653157934"
-          # KuCoin <> POKT
-          CHAT_16="-775612675"
-
           # Safely construct message using printf to avoid command execution
           RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
           RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
@@ -119,31 +89,14 @@ jobs:
           # Create message with HTML formatting
           MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
 
-          # Function to send message to a chat
-          send_message() {
-            local chat_id="$1"
-            local chat_name="$2"
-            echo "Sending to $chat_id ($chat_name)"
-            curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
-              -d chat_id="$chat_id" \
-              -d parse_mode="HTML" \
-              --data-urlencode text="$MESSAGE"
-          }
+          # Use EOF delimiter for multiline content
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-          # Send to all chats
-          send_message "$CHAT_1" "Pocket Network Bot Testing Group"
-          send_message "$CHAT_2" "BitGet <> Pocket Network (POKT)"
-          send_message "$CHAT_3" "ByBit <> POKT"
-          send_message "$CHAT_4" "CoinEx <> POKT"
-          send_message "$CHAT_5" "Mr. Yang <> Grove / POKT"
-          send_message "$CHAT_6" "MEXC <> POKT"
-          send_message "$CHAT_7" "OKX <> Pocket Network"
-          send_message "$CHAT_8" "OrangeX <> Grove (POKT)"
-          send_message "$CHAT_9" "POKT & Gate.io"
-          send_message "$CHAT_10" "POKT Network | AscendEX"
-          send_message "$CHAT_11" "Uphold <> Grove (POKT)"
-          send_message "$CHAT_12" "Pokt <> Kraken {EF introduction}"
-          send_message "$CHAT_13" "Bitrue & Pocket Network"
-          send_message "$CHAT_14" "HTX <> POKT"
-          send_message "$CHAT_15" "POKT <> Upbit"
-          send_message "$CHAT_16" "KuCoin <> POKT"
+  send-release:
+    needs: notify
+    uses: ./.github/workflows/telegram-send-message.yml
+    with:
+      message: ${{ needs.notify.outputs.message }}
+      parse_mode: "HTML"
