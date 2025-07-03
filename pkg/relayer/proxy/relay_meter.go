@@ -113,11 +113,17 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	rmtr.relayMeterMu.Lock()
 	defer rmtr.relayMeterMu.Unlock()
 
+	// Create a context-specific logger to avoid concurrent access issues
+	logger := rmtr.logger.With(
+		"method", "IsOverServicing",
+		"session_id", reqMeta.GetSessionHeader().GetSessionId(),
+	)
+
 	// Ensure that the served application has a relay meter and update the consumed
 	// stake amount.
 	appRelayMeter, err := rmtr.ensureRequestSessionRelayMeter(ctx, reqMeta)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -127,7 +133,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -137,7 +143,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 
 	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -148,7 +154,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	// Get the cost of the relay based on the service and shared parameters.
 	relayCostCoin, err := getSingleRelayCostCoin(sharedParams, &service)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to calculate relay cost in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -168,7 +174,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 
 	// Exponential backoff, only log over-servicing when numOverServicedRelays is a power of 2
 	if shouldLogOverServicing(appRelayMeter.numOverServicedRelays) {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"overservicing enabled, application %q over-serviced %s",
 			appRelayMeter.app.GetAddress(),
 			appRelayMeter.numOverServicedRelays,
