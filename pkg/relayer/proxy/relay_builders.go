@@ -27,15 +27,18 @@ func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types
 	return &relayReq, nil
 }
 
-// newRelayResponse builds a RelayResponse from the serialized response and SessionHeader.
-// It also signs the RelayResponse and assigns it to RelayResponse.Meta.SupplierOperatorSignature.
-// The whole serialized response (i.e. status code, headers and body) is embedded
-// into the RelayResponse.
+// newRelayResponse:
+// - Builds a RelayResponse from the serialized response and SessionHeader.
+// - Signs the RelayResponse and assigns the signature to RelayResponse.Meta.SupplierOperatorSignature.
+// - Embeds the entire serialized response (status code, headers, and body) into the RelayResponse.
 func (sync *relayMinerHTTPServer) newRelayResponse(
 	responseBz []byte,
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddr string,
 ) (*types.RelayResponse, error) {
+	// Compute hash of the response payload for proof verification.
+	// This hash will be stored in the RelayResponse and used during proof validation
+	// to verify the integrity of the response without requiring the full payload.
 	responseHash := protocol.GetRelayHashFromBytes(responseBz)
 
 	relayResponse := &types.RelayResponse{

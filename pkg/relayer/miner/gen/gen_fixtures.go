@@ -146,12 +146,13 @@ func genRandomizedMinedRelayFixtures(
 			}
 
 			randBz := make([]byte, randLength)
-			relayResponsePayloadHash := protocol.GetRelayHashFromBytes(randBz)
-
 			if _, err := rand.Read(randBz); err != nil {
 				errCh <- err
 				return
 			}
+
+			// Compute the relay hash using the random bytes as the relay bytes.
+			relayResponsePayloadHash := protocol.GetRelayHashFromBytes(randBz)
 
 			sessionHeader := &sessiontypes.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
