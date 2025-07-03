@@ -68,18 +68,24 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// in order to generate the signable bytes hash without the need restore it.
 	res.Meta.SupplierOperatorSignature = nil
 
+	// TODO_TECHDEBT: REMOVE THIS BACKWARDS COMPATIBILITY CHECK ONCE ALL ACTORS ARE UPGRADED.
+	// See #1604 for the original implementation and delete after `v0.1.26` release is live
+	//
 	// Set the response payload to nil to reduce the size of SMST & onchain proofs.
-	// DEV_NOTE: This MUST be done in order to support onchain response signature
-	// verification, without including the entire response payload in the SMST/proof.
+	//
+	// DEV_NOTE: This MUST be done in order to support onchain response signature verification,
+	// without including the entire response payload in the SMST/proof.
 	//
 	// DEV_NOTE: Backward compatibility implementation for signature verification:
 	// During network upgrades, different components (Chain, Gateway, RelayMiner) may run
-	// different software versions. The logic below enables compatibility between all versions
-	// This approach ensures network continuity without requiring synchronized upgrades.
+	// different software versions.
+	// The logic below enables compatibility between all versions without requiring synchronized upgrades.
 	//
-	// See: docusaurus/docs/4_develop/upgrades/10_backward_compatibility.md
+	// PayloadHash only gets set as of v0.1.25.
+	// Prior to v0.1.25, the payload was never nill and PayloadHash did not exist.
+	// By only setting the payload to nil if PayloadHash is not nil, we ensure compatibility before and after the upgrade.
 	//
-	// TODO_TECHDEBT: Remove this check and use PayloadHash after all actors are upgraded.
+	// Ref for additional details: docusaurus/docs/4_develop/upgrades/10_backward_compatibility.md
 	if res.PayloadHash != nil {
 		res.Payload = nil
 	}
