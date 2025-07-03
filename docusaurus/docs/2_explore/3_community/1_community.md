@@ -10,6 +10,7 @@ A collection of community-maintained tools and resources for Pocket Network. All
 - [pocketd: Easy Full Node Deployment (with Snapshot)](#pocketd-easy-full-node-deployment-with-snapshot)
 - [shannon-keyring-loader: Bulk Key Import Tool](#shannon-keyring-loader-bulk-key-import-tool)
 - [Helm Chart for RelayMiner \& FullNode](#helm-chart-for-relayminer--fullnode)
+- [Pocket Knife](#pocket-knife)
 
 ---
 
