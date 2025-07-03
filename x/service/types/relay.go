@@ -71,19 +71,15 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// Set the response payload to nil to reduce the size of SMST & onchain proofs.
 	// DEV_NOTE: This MUST be done in order to support onchain response signature
 	// verification, without including the entire response payload in the SMST/proof.
-	// DEV_NOTE: Keep retroactive compatibility in mind, so that if Gateway or RelayMiner
-	// instances that are still running old versions of the software signing the
-	// RelayResponse with Payload would still be able to verify the signature.
-	// After upgrading the chain we need old relay miner responses to still have valid signatures.
-	// - Case 1: Upgraded chain, old path, old relay miner
-	//  - The chain will get the response with the payload, it should verify the signature against the payload.
-	//  - PATH verification would be fine since both are from old version
-	// - Case 2: Upgraded chain, new path, old relay miner
-	//  - Chain will get the response without payload and success at signature verification
-	//  - PATH signature verification would succeed since it checks the payload hash, if not found it would use the payload itself.
-	// - Case 3: Upgraded chain, old path, new relay miner
-	//  - Chain will get the response with the payload hash, it should verify the signature against the payload hash.
-	//  - PATH verification would fail since the new relay miner would sign the payload hash, not the payload.
+	//
+	// DEV_NOTE: Backward compatibility implementation for signature verification:
+	// During network upgrades, different components (Chain, Gateway, RelayMiner) may run
+	// different software versions. The logic below enables compatibility between all versions
+	// This approach ensures network continuity without requiring synchronized upgrades.
+	//
+	// See: docusaurus/docs/4_develop/upgrades/10_backward_compatibility.md
+	//
+	// TODO_TECHDEBT: Remove this check and use PayloadHash after all actors are upgraded.
 	if res.PayloadHash != nil {
 		res.Payload = nil
 	}
