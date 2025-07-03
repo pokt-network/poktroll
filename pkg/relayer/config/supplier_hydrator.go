@@ -18,18 +18,54 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	// `HydrateSuppliers` is a part of `pkg/relayer/config/suppliers_config_hydrator.go`.
 	supplierConfig.SigningKeyNames = yamlSupplierConfig.SigningKeyNames
 
-	backendUrl, err := url.Parse(yamlSupplierConfig.ServiceConfig.BackendUrl)
+	// Hydrate the default service config
+	defaultServiceConfig, err := supplierConfig.hydrateServiceConfig(yamlSupplierConfig.DefaultServiceConfig)
 	if err != nil {
-		return ErrRelayMinerConfigInvalidSupplier.Wrapf(
+		return err
+	}
+	supplierConfig.DefaultServiceConfig = defaultServiceConfig
+
+	// Hydrate the RPC type-specific service configs (if any)
+	supplierConfig.RPCTypeServiceConfigs = make(
+		map[RPCType]*RelayMinerSupplierServiceConfig,
+		len(yamlSupplierConfig.RPCTypeServiceConfigs),
+	)
+	for rpcType, serviceConfig := range yamlSupplierConfig.RPCTypeServiceConfigs {
+		if !rpcType.IsValid() {
+			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
+				"invalid rpc type %s",
+				rpcType,
+			)
+		}
+		rpcTypeServiceConfig, err := supplierConfig.hydrateServiceConfig(serviceConfig)
+		if err != nil {
+			return err
+		}
+		supplierConfig.RPCTypeServiceConfigs[rpcType] = rpcTypeServiceConfig
+	}
+
+	return nil
+}
+
+// hydrateServiceConfig hydrates a single service config by parsing the
+// YAMLRelayMinerSupplierServiceConfig and populating the RelayMinerSupplierServiceConfig
+// structure. It returns the populated RelayMinerSupplierServiceConfig and an error
+// if the service config is invalid.
+func (supplierConfig *RelayMinerSupplierConfig) hydrateServiceConfig(
+	supplierServiceConfigYAML YAMLRelayMinerSupplierServiceConfig,
+) (*RelayMinerSupplierServiceConfig, error) {
+	backendUrl, err := url.Parse(supplierServiceConfigYAML.BackendUrl)
+	if err != nil {
+		return nil, ErrRelayMinerConfigInvalidSupplier.Wrapf(
 			"invalid supplier backend url %s",
 			err.Error(),
 		)
 	}
 
 	if backendUrl.Scheme == "" {
-		return ErrRelayMinerConfigInvalidSupplier.Wrapf(
+		return nil, ErrRelayMinerConfigInvalidSupplier.Wrapf(
 			"missing scheme in supplier backend url %s",
-			yamlSupplierConfig.ServiceConfig.BackendUrl,
+			supplierServiceConfigYAML.BackendUrl,
 		)
 	}
 
@@ -37,21 +73,21 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	// supplier type.
 	// If other supplier types are added in the future, they should be handled
 	// by their own functions.
-	supplierConfig.ServiceConfig = &RelayMinerSupplierServiceConfig{}
+	supplierServiceConfig := &RelayMinerSupplierServiceConfig{}
 	switch backendUrl.Scheme {
 	case "http", "https", "ws", "wss":
 		supplierConfig.ServerType = RelayMinerServerTypeHTTP
-		if err := supplierConfig.ServiceConfig.
-			parseSupplierBackendUrl(yamlSupplierConfig.ServiceConfig); err != nil {
-			return err
+		if err := supplierServiceConfig.
+			parseSupplierBackendUrl(supplierServiceConfigYAML); err != nil {
+			return nil, err
 		}
 	default:
 		// Fail if the supplier type is not supported
-		return ErrRelayMinerConfigInvalidSupplier.Wrapf(
+		return nil, ErrRelayMinerConfigInvalidSupplier.Wrapf(
 			"invalid supplier type %s",
 			backendUrl.Scheme,
 		)
 	}
 
-	return nil
+	return supplierServiceConfig, nil
 }

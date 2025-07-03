@@ -129,26 +129,31 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, ErrRelayerProxyRateLimited
 	}
 
-	var serviceConfig *config.RelayMinerSupplierServiceConfig
-
 	// Get the Service and serviceUrl corresponding to the originHost.
-	// TODO_IMPROVE(red-0ne): Checking that the originHost is currently done by
-	// iterating over the server config's suppliers and checking if the originHost
-	// is present in any of the supplier's service's hosts. We could improve this
-	// by building a map at the server initialization level with originHost as the
-	// key so that we can get the service and serviceUrl in O(1) time.
-	for _, supplierServiceConfig := range server.serverConfig.SupplierConfigsMap {
-		if serviceId == supplierServiceConfig.ServiceId {
-			serviceConfig = supplierServiceConfig.ServiceConfig
-			break
-		}
+	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceId]
+	if !ok {
+		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+			"service %q not configured",
+			serviceId,
+		)
 	}
+
+	// Initialize the service config to the default service config.
+	serviceConfig := supplierConfig.DefaultServiceConfig
 
 	if serviceConfig == nil {
 		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
 			"service %q not configured",
 			serviceId,
 		)
+	}
+
+	// If the RPC-Type header is set, use the RPC type-specific service config.
+	rpcType := config.RPCType(request.Header.Get("RPC-Type"))
+	if rpcType != "" {
+		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
+			serviceConfig = rpcTypeServiceConfig
+		}
 	}
 
 	logger = logger.With(

@@ -72,7 +72,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -127,7 +127,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -194,7 +194,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -210,7 +210,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ollama": {
 								ServiceId:  "ollama",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "ollama.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -270,7 +270,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -283,7 +283,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"7b-llm-model": {
 								ServiceId:  "7b-llm-model",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "llama-endpoint"},
 								},
 								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
@@ -328,7 +328,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
 								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
@@ -375,8 +375,82 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+								},
+								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid: relay miner config with rpc_type_service_configs",
+
+			inputConfigYAML: `
+				pocket_node:
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
+				default_signing_key_names: [ supplier1 ]
+				smt_store_path: smt_stores
+				suppliers:
+				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
+				    service_config:
+				      backend_url: http://anvil.servicer:8545
+				      headers:
+				        X-Default: default-value
+				    rpc_type_service_configs:
+				      json_rpc:
+				        backend_url: http://json_rpc.servicer:8545
+				        headers:
+				          X-Type: json-rpc
+				      rest:
+				        backend_url: http://rest.servicer:8545
+				        headers:
+				          X-Type: rest
+				`,
+
+			expectedErr: nil,
+			expectedConfig: &config.RelayMinerConfig{
+				PocketNode: &config.RelayMinerPocketNodeConfig{
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:26657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+				},
+				DefaultSigningKeyNames:       []string{"supplier1"},
+				SmtStorePath:                 "smt_stores",
+				DefaultRequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
+				Servers: map[string]*config.RelayMinerServerConfig{
+					"http://127.0.0.1:8080": {
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.RelayMinerServerTypeHTTP,
+						XForwardedHostLookup: false,
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+							"ethereum": {
+								ServiceId:  "ethereum",
+								ServerType: config.RelayMinerServerTypeHTTP,
+								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									Headers: map[string]string{
+										"X-Default": "default-value",
+									},
+								},
+								RPCTypeServiceConfigs: map[config.RPCType]*config.RelayMinerSupplierServiceConfig{
+									config.RPCTypeJSONRPC: {
+										BackendUrl: &url.URL{Scheme: "http", Host: "json_rpc.servicer:8545"},
+										Headers: map[string]string{
+											"X-Type": "json-rpc",
+										},
+									},
+									config.RPCTypeREST: {
+										BackendUrl: &url.URL{Scheme: "http", Host: "rest.servicer:8545"},
+										Headers: map[string]string{
+											"X-Type": "rest",
+										},
+									},
 								},
 								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
 							},
@@ -744,8 +818,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 					require.Equal(
 						t,
-						supplier.ServiceConfig.BackendUrl.String(),
-						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.BackendUrl.String(),
+						supplier.DefaultServiceConfig.BackendUrl.String(),
+						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.BackendUrl.String(),
 					)
 
 					require.Equal(
@@ -754,31 +828,73 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].RequestTimeoutSeconds,
 					)
 
-					if supplier.ServiceConfig.Authentication != nil {
+					if supplier.DefaultServiceConfig.Authentication != nil {
 						require.NotNil(
 							t,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Authentication,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.Authentication,
 						)
 
 						require.Equal(
 							t,
-							supplier.ServiceConfig.Authentication.Username,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Authentication.Username,
+							supplier.DefaultServiceConfig.Authentication.Username,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.Authentication.Username,
 						)
 
 						require.Equal(
 							t,
-							supplier.ServiceConfig.Authentication.Password,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Authentication.Password,
+							supplier.DefaultServiceConfig.Authentication.Password,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.Authentication.Password,
 						)
 					}
 
-					for headerKey, headerValue := range supplier.ServiceConfig.Headers {
+					for headerKey, headerValue := range supplier.DefaultServiceConfig.Headers {
 						require.Equal(
 							t,
 							headerValue,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Headers[headerKey],
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.Headers[headerKey],
 						)
+					}
+
+					// Test RPCTypeServiceConfigs if they exist
+					if len(supplier.RPCTypeServiceConfigs) > 0 {
+						require.Equal(
+							t,
+							len(supplier.RPCTypeServiceConfigs),
+							len(config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].RPCTypeServiceConfigs),
+						)
+
+						for rpcType, rpcServiceConfig := range supplier.RPCTypeServiceConfigs {
+							actualRpcServiceConfig := config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].RPCTypeServiceConfigs[rpcType]
+							require.NotNil(t, actualRpcServiceConfig)
+
+							require.Equal(
+								t,
+								rpcServiceConfig.BackendUrl.String(),
+								actualRpcServiceConfig.BackendUrl.String(),
+							)
+
+							if rpcServiceConfig.Authentication != nil {
+								require.NotNil(t, actualRpcServiceConfig.Authentication)
+								require.Equal(
+									t,
+									rpcServiceConfig.Authentication.Username,
+									actualRpcServiceConfig.Authentication.Username,
+								)
+								require.Equal(
+									t,
+									rpcServiceConfig.Authentication.Password,
+									actualRpcServiceConfig.Authentication.Password,
+								)
+							}
+
+							for headerKey, headerValue := range rpcServiceConfig.Headers {
+								require.Equal(
+									t,
+									headerValue,
+									actualRpcServiceConfig.Headers[headerKey],
+								)
+							}
+						}
 					}
 				}
 			}

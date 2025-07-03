@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	proxyws "github.com/pokt-network/poktroll/pkg/relayer/proxy/websockets"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -49,12 +50,29 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	if !ok {
 		return ErrRelayerProxyServiceEndpointNotHandled
 	}
-	supplierServiceConfig := supplierConfig.ServiceConfig
+
+	// Initialize the service config to the default service config.
+	serviceConfig := supplierConfig.DefaultServiceConfig
+
+	if serviceConfig == nil {
+		return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+			"service %q not configured",
+			serviceId,
+		)
+	}
+
+	// If the RPC-Type header is set, use the RPC type-specific service config.
+	rpcType := config.RPCType(request.Header.Get("RPC-Type"))
+	if rpcType != "" {
+		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
+			serviceConfig = rpcTypeServiceConfig
+		}
+	}
 
 	logger = logger.With(
 		"server_addr", server.server.Addr,
 		"session_start_height", sessionHeader.SessionStartBlockHeight,
-		"destination_url", supplierServiceConfig.BackendUrl.String(),
+		"destination_url", serviceConfig.BackendUrl.String(),
 	)
 
 	// Upgrade the HTTP connection to a websocket connection.
@@ -75,7 +93,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 		server.relayMeter,
 		server.servedRewardableRelaysProducer,
 		server.blockClient,
-		supplierServiceConfig,
+		serviceConfig,
 		session,
 		clientConn,
 	)
