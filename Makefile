@@ -433,3 +433,4 @@ include ./makefiles/claudesync.mk
 include ./makefiles/telegram.mk
 include ./makefiles/docs.mk
 include ./makefiles/release.mk
+include ./makefiles/tools.mk

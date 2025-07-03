@@ -15,6 +15,12 @@ name: Telegram Broadcast New Release
 
 on:
   workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "If true, only send to testing group"
+        required: false
+        type: boolean
+        default: false
   # Uncomment the lines below to automatically trigger on release publication
   # This is commented out to avoid premature notifications
   # release:
@@ -87,7 +93,11 @@ jobs:
           HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
 
           # Create message with HTML formatting
-          MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+          else
+            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+          fi
 
           # Use EOF delimiter for multiline content
           echo "message<<EOF" >> $GITHUB_OUTPUT
@@ -100,3 +110,4 @@ jobs:
     with:
       message: ${{ needs.notify.outputs.message }}
       parse_mode: "HTML"
+      test_mode: ${{ inputs.test_mode }}

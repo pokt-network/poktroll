@@ -63,7 +63,7 @@ func RandSmstRootWithSumAndCount(t *testing.T, sum, count uint64) smt.MerkleSumR
 	root := [protocol.TrieRootSize]byte{}
 
 	// Only populate the first 32 bytes with random data, leaving the rest to the sum and relay count.
-	_, err := rand.Read(root[:protocol.TrieHasherSize]) // TODO_IMPROVE: We need a deterministic pseudo-random source.
+	_, err := rand.Read(root[:protocol.TrieHasherSize]) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 	require.NoError(t, err)
 
 	return encodeSmstRoot(root, sum, count)
