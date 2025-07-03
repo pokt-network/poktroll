@@ -433,11 +433,16 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			desc: "relay request signature must be valid",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Set the relay request signature to an invalid byte slice.
-				invalidRequestSignatureRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierOperatorAddr)
+				invalidRequestSignatureRelay := testrelayer.NewSignedRandRelay(
+					ctx, t,
+					supplierOperatorUid,
+					supplierOperatorAddr,
+					validSessionHeader,
+					validSessionHeader,
+					keyRing,
+					ringClient,
+				)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
-
-				// Ensure a valid relay response signature.
-				testrelayer.SignRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierOperatorUid, supplierOperatorAddr, keyRing)
 
 				invalidRequestSignatureRelayBz, marshalErr := invalidRequestSignatureRelay.Marshal()
 				require.NoError(t, marshalErr)
@@ -494,11 +499,16 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			desc: "relay response signature must be valid",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Set the relay response signature to an invalid byte slice.
-				relay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierOperatorAddr)
+				relay := testrelayer.NewSignedRandRelay(
+					ctx, t,
+					supplierOperatorUid,
+					supplierOperatorAddr,
+					validSessionHeader,
+					validSessionHeader,
+					keyRing,
+					ringClient,
+				)
 				relay.Res.Meta.SupplierOperatorSignature = invalidSignatureBz
-
-				// Ensure a valid relay request signature
-				testrelayer.SignRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
 
 				relayBz, marshalErr := relay.Marshal()
 				require.NoError(t, marshalErr)

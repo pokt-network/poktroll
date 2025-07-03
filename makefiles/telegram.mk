@@ -15,5 +15,5 @@ telegram_broadcast: ## Broadcast a custom message to all Telegram groups. Usage:
 .PHONY: telegram_release_notify
 telegram_release_notify: ## Notify all Telegram groups of the latest release
 	@echo "Notifying Telegram groups of the latest release..."
-	@gh workflow run notify-telegram-groups.yml
-	@echo "Release notification initiated. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/notify-telegram-groups.yml"
+	@gh workflow run telegram-notify-release.yml
+	@echo "Release notification initiated. Check the workflow status at: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml"

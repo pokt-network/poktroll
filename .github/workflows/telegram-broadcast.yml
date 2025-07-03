@@ -1,10 +1,10 @@
-name: Telegram Broadcast
+name: Telegram Broadcast Custom Message
 
 on:
   workflow_dispatch:
     inputs:
       message:
-        description: 'Message to broadcast to all Telegram groups'
+        description: "Message to broadcast to all Telegram groups"
         required: true
         type: string
 
@@ -13,4 +13,4 @@ jobs:
     uses: ./.github/workflows/telegram-send-message.yml
     with:
       message: ${{ inputs.message }}
-      parse_mode: 'HTML'
+      parse_mode: "HTML"

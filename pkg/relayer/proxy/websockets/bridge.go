@@ -364,6 +364,17 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 		Payload: msg.data,
 	}
 
+	// Compute hash of the response payload for proof verification.
+	// This hash will be stored in the RelayResponse and used during proof validation
+	// to verify the integrity of the response without requiring the full payload.
+	if err := relayResponse.UpdatePayloadHash(); err != nil {
+		logger.Error().Err(err).Msg("unable to update relay response payload hash")
+		b.gatewayConn.handleError(
+			ErrWebsocketsServiceBackendMessage.Wrapf("unable to update relay response payload hash: %s", err),
+		)
+		return
+	}
+
 	relayer.RelaysTotal.With(
 		"service_id", serviceId,
 		"supplier_operator_address", meta.SupplierOperatorAddress,

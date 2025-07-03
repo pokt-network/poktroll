@@ -151,37 +151,45 @@ func genRandomizedMinedRelayFixtures(
 				return
 			}
 
+			// Compute the relay hash using the random bytes as the relay bytes.
+			relayResponsePayloadHash := protocol.GetRelayHashFromBytes(randBz)
+
+			sessionHeader := &sessiontypes.SessionHeader{
+				ApplicationAddress:      sample.AccAddress(),
+				ServiceId:               flagSvcID,
+				SessionId:               "session_id",
+				SessionStartBlockHeight: 1,
+				SessionEndBlockHeight:   2,
+			}
+
 			// Populate a relay with the minimally sufficient randomized data.
 			relay := servicetypes.Relay{
 				Req: &servicetypes.RelayRequest{
 					Meta: servicetypes.RelayRequestMetadata{
-						SessionHeader: &sessiontypes.SessionHeader{
-							ApplicationAddress:      sample.AccAddress(),
-							ServiceId:               flagSvcID,
-							SessionId:               "session_id",
-							SessionStartBlockHeight: 1,
-							SessionEndBlockHeight:   2,
-						},
-
-						Signature: randBz,
+						SessionHeader: sessionHeader,
+						Signature:     randBz,
 					},
 					Payload: nil,
 				},
-				Res: nil,
+				Res: &servicetypes.RelayResponse{
+					Meta: servicetypes.RelayResponseMetadata{
+						SessionHeader: sessionHeader,
+					},
+					Payload:     nil,
+					PayloadHash: relayResponsePayloadHash[:],
+				},
 			}
 
 			relayBz, err := relay.Marshal()
 			if err != nil {
-				errCh <- err
-				return
+				panic(err)
 			}
-
-			relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
+			relayHash := protocol.GetRelayHashFromBytes(relayBz)
 
 			randBzPublishCh <- &relayer.MinedRelay{
 				Relay: relay,
 				Bytes: relayBz,
-				Hash:  relayHashArr[:],
+				Hash:  relayHash[:],
 			}
 		}
 	}()
