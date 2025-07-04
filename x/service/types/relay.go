@@ -68,7 +68,7 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// in order to generate the signable bytes hash without the need restore it.
 	res.Meta.SupplierOperatorSignature = nil
 
-	// TODO_TECHDEBT: REMOVE THIS BACKWARDS COMPATIBILITY CHECK ONCE ALL ACTORS ARE UPGRADED.
+	// TODO_TECHDEBT(v0.1.26): REMOVE THIS BACKWARDS COMPATIBILITY CHECK ONCE ALL ACTORS ARE UPGRADED.
 	// See #1604 for the original implementation and delete after `v0.1.26` release is live
 	//
 	// Set the response payload to nil to reduce the size of SMST & onchain proofs.

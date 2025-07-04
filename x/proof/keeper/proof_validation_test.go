@@ -564,21 +564,23 @@ func TestEnsureValidProof_Error(t *testing.T) {
 		{
 			desc: "the merkle proof path provided does not match the one expected/enforced by the protocol",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				// TODO_TECHDEBT: This test case cannot be implemented with the current architecture
-				// because path validation and signature validation are tightly coupled in the
-				// EnsureValidProofSignaturesAndClosestPath function. When the proof path is modified,
-				// the relay data extraction gets corrupted, causing signature validation to fail
-				// before path validation is reached.
+				// TODO_TECHDEBT(v0.1.26): Re-enable this test after the v0.1.26 upgrade.
 				//
 				// The test was broken by commit 1ef3ee039 which introduced backward compatibility
 				// changes to relay response signatures. The test fixtures were regenerated but
 				// the fundamental architectural issue prevents this test from working.
+
+				// This test case cannot be implemented with the current architecture
+				// because path validation and signature validation are tightly coupled in the
+				// EnsureValidProofSignaturesAndClosestPath function.
 				//
-				// Possible solutions:
+				// When the proof path is modified, the relay data extraction gets corrupted,
+				// causing signature validation to fail before path validation is reached.
+				//
+				// Possible alternatives not implemented:
 				// 1. Make validateClosestPath public and test it directly
 				// 2. Modify validation order to check paths before signatures
 				// 3. Create separate validation functions for path and signature validation
-				// 4. Remove this test case as path validation is implicitly tested by other cases
 				//
 				// For now, skipping this test to unblock development.
 				t.Skip("Path validation cannot be tested in isolation due to tight coupling with signature validation")
