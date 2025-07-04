@@ -56,6 +56,8 @@ jobs:
           CHAT_15="-1002653157934"
           # KuCoin <> POKT
           CHAT_16="-775612675"
+          # Korbit <> POKT
+          CHAT_17="-1002811115444"
 
           # Get the message and parse mode from the workflow inputs
           MESSAGE="${{ inputs.message }}"
@@ -98,4 +100,5 @@ jobs:
             send_message "$CHAT_14" "HTX <> POKT"
             send_message "$CHAT_15" "POKT <> Upbit"
             send_message "$CHAT_16" "KuCoin <> POKT"
+            send_message "$CHAT_17" "Korbit <> POKT"
           fi
