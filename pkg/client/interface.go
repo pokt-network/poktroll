@@ -29,6 +29,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/hashicorp/go-version"
 	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/either"
@@ -191,6 +192,8 @@ type BlockClient interface {
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.
 	Close()
+	// GetChainVersion returns the current chain version.
+	GetChainVersion() *version.Version
 }
 
 // TxClientOption defines a function type that modifies the TxClient.

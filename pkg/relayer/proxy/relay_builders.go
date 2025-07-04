@@ -3,6 +3,7 @@ package proxy
 import (
 	"net/http"
 
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -40,11 +41,19 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 		Payload: responseBz,
 	}
 
-	// Compute hash of the response payload for proof verification.
-	// This hash will be stored in the RelayResponse and used during proof validation
-	// to verify the integrity of the response without requiring the full payload.
-	if err := relayResponse.UpdatePayloadHash(); err != nil {
-		return nil, err
+	// Compare the chain version with the signingPayloadHashVersion.
+	// - If the chain version is greater than or equal to the signingPayloadHashVersion,
+	//   compute the payload hash and include it in the RelayResponse.
+	// - If the chain version is less than the signingPayloadHashVersion, remain backward
+	//   compatible with older versions of the Network that expect payload only RelayResponses.
+	chainVersion := sync.blockClient.GetChainVersion()
+	if chainVersion.GreaterThanOrEqual(block.SigningPayloadHashVersion) {
+		// Compute hash of the response payload for proof verification.
+		// This hash will be stored in the RelayResponse and used during proof validation
+		// to verify the integrity of the response without requiring the full payload.
+		if err := relayResponse.UpdatePayloadHash(); err != nil {
+			return nil, err
+		}
 	}
 
 	// Sign the relay response and add the signature to the relay response metadata

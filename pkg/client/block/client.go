@@ -2,13 +2,18 @@ package block
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	"cosmossdk.io/depinject"
+	cometclient "github.com/cometbft/cometbft/rpc/client"
+	"github.com/hashicorp/go-version"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 const (
@@ -25,6 +30,20 @@ const (
 	// struct that defaults to this but can be overridden via an option.
 	defaultBlocksReplayLimit = 100
 )
+
+// SigningPayloadHashVersion is the version of the chain that introduced the
+// payload hash in RelayResponse.
+// This is used to determine whether to compute and include the payload hash in
+// the RelayResponse based on the chain version.
+var SigningPayloadHashVersion *version.Version
+
+// init parses the signingPayloadHashVersion string into a comparable version.
+func init() {
+	var err error
+	if SigningPayloadHashVersion, err = version.NewVersion("v0.1.25"); err != nil {
+		panic("failed to parse signing payload hash version: " + err.Error())
+	}
+}
 
 // NewBlockClient creates a new block client from the given dependencies.
 //
@@ -62,13 +81,18 @@ func NewBlockClient(
 		return nil, err
 	}
 
-	if err := depinject.Inject(deps, &bClient.onStartQueryClient); err != nil {
+	if err := depinject.Inject(deps, &bClient.onStartQueryClient, &bClient.cometClient, &bClient.logger); err != nil {
 		return nil, err
 	}
 
 	bClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
 
 	if err := bClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
+		return nil, err
+	}
+
+	// Initialize the chain version to ensure that its never nil
+	if err := bClient.initializeAndUpdateChainVersion(ctx); err != nil {
 		return nil, err
 	}
 
@@ -80,10 +104,20 @@ func NewBlockClient(
 // to new committed block events.
 // It uses a ReplayObservable to retain and replay past observed blocks.
 type blockReplayClient struct {
+	logger polylog.Logger
+
 	// onStartQueryClient is the RPC client that is used to query for the initial block
 	// upon blockReplayClient construction. The result of this query is only used if it
 	// returns before the eventsReplayClient receives its first event.
 	onStartQueryClient client.BlockQueryClient
+
+	// cometClient is the CometBFT client used to get ABCI info for chain version.
+	cometClient cometclient.Client
+
+	// chainVersion is the version of the chain that the block client is connected to.
+	// It is protected by chainVersionMu for concurrent access safety.
+	chainVersion   *version.Version
+	chainVersionMu sync.RWMutex
 
 	// eventsReplayClient is the underlying EventsReplayClient that is used to
 	// subscribe to new committed block events. It uses both the Block type
@@ -91,6 +125,11 @@ type blockReplayClient struct {
 	// These enable the EventsReplayClient to correctly map the raw event bytes
 	// to Block objects and to correctly return a BlockReplayObservable
 	eventsReplayClient client.EventsReplayClient[client.Block]
+
+	// chainVersionQueryCancel cancels any ongoing ABCI info request for chain version updates.
+	// This ensures that when a new block arrives, we cancel the previous request and start fresh.
+	chainVersionQueryCancel context.CancelFunc
+	chainVersionCancelMu    sync.Mutex
 
 	// latestBlockReplayObs is a replay observable that combines blocks observed by
 	// the block query client & the events replay client. It is the "canonical"
@@ -117,7 +156,22 @@ func (b *blockReplayClient) LastBlock(ctx context.Context) (block client.Block) 
 // Close closes the underlying websocket connection for the EventsQueryClient
 // and closes all downstream connections.
 func (b *blockReplayClient) Close() {
+	// Cancel any ongoing chain version query
+	b.chainVersionCancelMu.Lock()
+	if b.chainVersionQueryCancel != nil {
+		b.chainVersionQueryCancel()
+		b.chainVersionQueryCancel = nil
+	}
+	b.chainVersionCancelMu.Unlock()
+
 	b.close()
+}
+
+// GetChainVersion returns the current chain version.
+func (b *blockReplayClient) GetChainVersion() *version.Version {
+	b.chainVersionMu.RLock()
+	defer b.chainVersionMu.RUnlock()
+	return b.chainVersion
 }
 
 // asyncForwardBlockEvent asynchronously observes block event notifications from the
@@ -129,6 +183,37 @@ func (b *blockReplayClient) asyncForwardBlockEvent(
 	channel.ForEach(ctx, b.eventsReplayClient.EventsSequence(ctx),
 		func(ctx context.Context, block client.Block) {
 			latestBlockPublishCh <- block
+
+			// Cancel any ongoing chain version query and start a new one
+			b.chainVersionCancelMu.Lock()
+			if b.chainVersionQueryCancel != nil {
+				b.chainVersionQueryCancel()
+			}
+
+			// Create new context for the chain version query
+			queryCtx, cancel := context.WithCancel(ctx)
+			b.chainVersionQueryCancel = cancel
+			b.chainVersionCancelMu.Unlock()
+
+			// Update chain version on each new block
+			abciInfo, err := b.cometClient.ABCIInfo(queryCtx)
+			if err != nil {
+				// Log error but don't stop the process (context may have been cancelled)
+				b.logger.Debug().Err(err).Msg("failed to get ABCI info for chain version update")
+				return
+			}
+
+			chainVersion, err := version.NewVersion(abciInfo.Response.Version)
+			if err != nil {
+				// Log error but don't stop the process
+				b.logger.Debug().Err(err).Msg("failed to parse chain version")
+				return
+			}
+
+			// Update chain version with mutex protection
+			b.chainVersionMu.Lock()
+			b.chainVersion = chainVersion
+			b.chainVersionMu.Unlock()
 		},
 	)
 }
@@ -187,4 +272,26 @@ func (b *blockReplayClient) queryLatestBlock(
 	}()
 
 	return errCh
+}
+
+// initializeAndUpdateChainVersion initializes the chain version and starts
+// updating it on each block.
+func (b *blockReplayClient) initializeAndUpdateChainVersion(ctx context.Context) error {
+	// Initialize the chain version
+	abciInfo, err := b.cometClient.ABCIInfo(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get ABCI info: %w", err)
+	}
+
+	chainVer, err := version.NewVersion(abciInfo.Response.Version)
+	if err != nil {
+		return fmt.Errorf("failed to parse chain version: %w", err)
+	}
+
+	// Set initial chain version with mutex protection
+	b.chainVersionMu.Lock()
+	b.chainVersion = chainVer
+	b.chainVersionMu.Unlock()
+
+	return nil
 }
