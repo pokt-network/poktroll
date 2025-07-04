@@ -20,8 +20,8 @@ import (
 // 	- Must contain the RelayResponse.Payload for QoS verification
 // 	- Must contain the RelayResponse.PayloadHash for signature verification
 // 4. The RelayMiner forwards the response inside its internal communication channels
-// 5. The RelayMiner nullifies the RelayResponse.Payload prior to marshalling and tree insertion
-// 6. The RelayMiner checks reward eligibility (if a minable relay) using the marshalled bytes of the RelayResponse which
+// 5. The RelayMiner nullifies the RelayResponse.Payload prior to marshaling and tree insertion
+// 6. The RelayMiner checks reward eligibility (if a minable relay) using the marshaled bytes of the RelayResponse which
 //    - Contains RelayResponse.PayloadHash
 //    - Does not contain RelayResponse.Payload
 
