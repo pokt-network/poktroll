@@ -29,12 +29,6 @@ const (
 	// TODO_TECHDEBT: add a `blocksReplayLimit` field to the blockReplayClient
 	// struct that defaults to this but can be overridden via an option.
 	defaultBlocksReplayLimit = 100
-
-	// SigningPayloadHashVersion is the version of the chain that introduced the
-	// payload hash in RelayResponse.
-	// This is used to determine whether to compute and include the payload hash in
-	// the RelayResponse based on the chain version.
-	signingPayloadHashVersion = "v0.1.25"
 )
 
 // TODO(v0.1.26): Remove this after the entire network is on v0.1.26.
@@ -103,7 +97,7 @@ func NewBlockClient(
 	}
 
 	// Initialize the chain version to ensure that its never nil
-	if err := blockClient.initializeAndUpdateChainVersion(ctx); err != nil {
+	if err := blockClient.initializeChainVersion(ctx); err != nil {
 		return nil, err
 	}
 
@@ -185,70 +179,58 @@ func (b *blockReplayClient) GetChainVersion() *version.Version {
 	return b.chainVersion
 }
 
-// updateChainVersion updates the chain version by querying ABCI info.
-// If async is true, it runs in a background goroutine and handles cancellation of previous queries.
-// If async is false, it runs synchronously and is suitable for initialization.
-func (b *blockReplayClient) updateChainVersion(ctx context.Context, async bool) error {
-	var queryCtx context.Context
-	var cancel context.CancelFunc
-
-	if async {
-		// Cancel any ongoing chain version query and start a new one
-		b.chainVersionCancelMu.Lock()
-		if b.chainVersionQueryCancel != nil {
-			b.chainVersionQueryCancel()
-		}
-
-		// Create new context for the chain version query
-		queryCtx, cancel = context.WithCancel(ctx)
-		b.chainVersionQueryCancel = cancel
-		b.chainVersionCancelMu.Unlock()
-	} else {
-		// For synchronous calls (like initialization), use the provided context directly
-		queryCtx = ctx
-		cancel = func() {} // No-op cancel function
+// initializeChainVersion synchronously initializes the chain version.
+// Returns an error if initialization fails.
+func (b *blockReplayClient) initializeChainVersion(ctx context.Context) error {
+	abciInfo, err := b.cometClient.ABCIInfo(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get ABCI info: %w", err)
 	}
 
-	updateFunc := func() error {
-		if async {
-			defer cancel() // Always cleanup the context when done for async calls
-		}
+	chainVersion, err := version.NewVersion(abciInfo.Response.Version)
+	if err != nil {
+		return fmt.Errorf("failed to parse chain version: %w", err)
+	}
 
-		// Update chain version
+	b.chainVersionMu.Lock()
+	b.chainVersion = chainVersion
+	b.chainVersionMu.Unlock()
+
+	return nil
+}
+
+// updateChainVersionAsync updates the chain version in the background.
+// Cancels any previous ongoing query and handles errors gracefully.
+func (b *blockReplayClient) updateChainVersionAsync(ctx context.Context) {
+	// Cancel any ongoing chain version query and start a new one
+	b.chainVersionCancelMu.Lock()
+	if b.chainVersionQueryCancel != nil {
+		b.chainVersionQueryCancel()
+	}
+
+	queryCtx, cancel := context.WithCancel(ctx)
+	b.chainVersionQueryCancel = cancel
+	b.chainVersionCancelMu.Unlock()
+
+	go func() {
+		defer cancel()
+
 		abciInfo, err := b.cometClient.ABCIInfo(queryCtx)
 		if err != nil {
-			if async {
-				// Log error but don't stop the process (context may have been cancelled)
-				b.logger.Debug().Err(err).Msg("failed to get ABCI info for chain version update")
-				return nil // Don't return error for async calls
-			}
-			return fmt.Errorf("failed to get ABCI info: %w", err)
+			b.logger.Debug().Err(err).Msg("failed to get ABCI info for chain version update")
+			return
 		}
 
 		chainVersion, err := version.NewVersion(abciInfo.Response.Version)
 		if err != nil {
-			if async {
-				// Log error but don't stop the process
-				b.logger.Debug().Err(err).Msg("failed to parse chain version")
-				return nil // Don't return error for async calls
-			}
-			return fmt.Errorf("failed to parse chain version: %w", err)
+			b.logger.Debug().Err(err).Msg("failed to parse chain version")
+			return
 		}
 
-		// Update chain version with mutex protection
 		b.chainVersionMu.Lock()
 		b.chainVersion = chainVersion
 		b.chainVersionMu.Unlock()
-
-		return nil
-	}
-
-	if async {
-		go updateFunc()
-		return nil
-	}
-
-	return updateFunc()
+	}()
 }
 
 // asyncForwardBlockEvent does the following:
@@ -262,7 +244,7 @@ func (b *blockReplayClient) asyncForwardBlockEvent(
 	channel.ForEach(ctx, b.eventsReplayClient.EventsSequence(ctx),
 		func(ctx context.Context, block client.Block) {
 			latestBlockPublishCh <- block
-			b.updateChainVersion(ctx, true) // async=true
+			b.updateChainVersionAsync(ctx)
 		},
 	)
 }
