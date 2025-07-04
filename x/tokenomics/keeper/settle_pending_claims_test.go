@@ -286,7 +286,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Skipping this test temporarily to unblock development.
 	t := s.T()
 	t.Skip("Test broken by signature validation changes in commit 1ef3ee039 - causes nil pointer panic in slashing logic")
-	
+
 	// Retrieve default values
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
@@ -454,8 +454,8 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	//
 	// Skipping this test temporarily to unblock development.
 	t := s.T()
-	t.Skip("Test broken by signature validation changes in commit 1ef3ee039 - needs fixture regeneration or validation logic fix")
-	
+	// t.Skip("Test broken by signature validation changes in commit 1ef3ee039 - needs fixture regeneration or validation logic fix")
+
 	// Retrieve default values
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
@@ -916,7 +916,7 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 	// Skipping this test temporarily to unblock development.
 	t := s.T()
 	t.Skip("Test broken by signature validation changes in commit 1ef3ee039 - causes nil pointer panic in slashing logic")
-	
+
 	// Retrieve default values
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)

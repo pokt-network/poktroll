@@ -86,9 +86,9 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 	// By only setting the payload to nil if PayloadHash is not nil, we ensure compatibility before and after the upgrade.
 	//
 	// Ref for additional details: docusaurus/docs/4_develop/upgrades/10_backward_compatibility.md
-	if res.PayloadHash != nil {
-		res.Payload = nil
-	}
+	// if res.PayloadHash != nil {
+	// 	res.Payload = nil
+	// }
 
 	responseBz, err := res.Marshal()
 	if err != nil {
