@@ -37,7 +37,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 			supplierOperatorAddr := sample.AccAddress()
 			var claimWindowOpenBlockHash [32]byte
 
-			_, err := rand.Read(claimWindowOpenBlockHash[:]) //nolint:staticcheck // We need a deterministic pseudo-random source.
+			_, err := rand.Read(claimWindowOpenBlockHash[:]) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 			require.NoError(t, err)
 
 			expected := sharedtypes.GetEarliestSupplierClaimCommitHeight(
@@ -99,7 +99,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 			queryHeight := rand.Int63()
 			supplierOperatorAddr := sample.AccAddress()
 			var proofWindowOpenBlockHash [32]byte
-			_, err := rand.Read(proofWindowOpenBlockHash[:]) //nolint:staticcheck // We need a deterministic pseudo-random source.
+			_, err := rand.Read(proofWindowOpenBlockHash[:]) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 
 			if !assert.NoError(t, err) {
 				cancel()
