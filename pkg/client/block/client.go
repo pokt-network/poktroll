@@ -37,6 +37,7 @@ const (
 	signingPayloadHashVersion = "v0.1.25"
 )
 
+// SigningPayloadHashSemver is the semver version of signingPayloadHashVersion.
 var SigningPayloadHashSemver *version.Version
 
 // init parses the signingPayloadHashVersion string into a comparable version.
