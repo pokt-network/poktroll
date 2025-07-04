@@ -43,7 +43,7 @@ var SigningPayloadHashSemver *version.Version
 // init parses the signingPayloadHashVersion string into a comparable version.
 func init() {
 	var err error
-	if SigningPayloadHashSemver, err = version.NewVersion("v0.1.25"); err != nil {
+	if SigningPayloadHashSemver, err = version.NewVersion(signingPayloadHashVersion); err != nil {
 		panic("failed to parse signing payload hash version: " + err.Error())
 	}
 }
