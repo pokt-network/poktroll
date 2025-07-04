@@ -271,6 +271,102 @@ ibc_test_transfer_pocket_to_osmosis:
 			--from=app1 --yes \
 	'
 
+#################################################
+# Packet Forward Middleware (PFM) test targets #
+#################################################
+
+## PFM: Pocket -> Agoric -> Osmosis ##
+######################################
+.PHONY: ibc_pfm_test_pocket_agoric_osmosis
+ibc_pfm_test_pocket_agoric_osmosis:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		MEMO_JSON="{\"forward\":{\"receiver\":\"$(OSMOSIS_ACCOUNT)\",\"port\":\"transfer\",\"channel\":\"$${AGORIC_OSMOSIS_SRC_CHANNEL_ID}\"}}" && \
+		pocketd --home=$(POCKETD_HOME) tx ibc-transfer transfer transfer \
+			"$${POCKET_AGORIC_SRC_CHANNEL_ID}" "$(AGORIC_ACCOUNT)" "1000upokt" \
+			--memo "$$MEMO_JSON" \
+			--network=$(NETWORK) \
+			--keyring-backend=test \
+			--from=app1 --yes \
+	'
+
+## PFM: Pocket -> Osmosis -> Agoric ##
+######################################
+.PHONY: ibc_pfm_test_pocket_osmosis_agoric
+ibc_pfm_test_pocket_osmosis_agoric:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		MEMO_JSON="{\"forward\":{\"receiver\":\"$(AGORIC_ACCOUNT)\",\"port\":\"transfer\",\"channel\":\"$${OSMOSIS_AGORIC_SRC_CHANNEL_ID}\"}}" && \
+		pocketd --home=$(POCKETD_HOME) tx ibc-transfer transfer transfer \
+			"$${POCKET_OSMOSIS_SRC_CHANNEL_ID}" "$(OSMOSIS_ACCOUNT)" "1000upokt" \
+			--memo "$$MEMO_JSON" \
+			--network=$(NETWORK) \
+			--keyring-backend=test \
+			--from=app1 --yes \
+	'
+
+## PFM: Agoric -> Pocket -> Osmosis ##
+######################################
+.PHONY: ibc_pfm_test_agoric_pocket_osmosis
+ibc_pfm_test_agoric_pocket_osmosis:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		MEMO_JSON="{\"forward\":{\"receiver\":\"$(OSMOSIS_ACCOUNT)\",\"port\":\"transfer\",\"channel\":\"$${POCKET_OSMOSIS_SRC_CHANNEL_ID}\"}}" && \
+		kubectl_exec_grep_pod agoric-validator \
+			agd tx ibc-transfer transfer transfer \
+			"$${AGORIC_POCKET_SRC_CHANNEL_ID}" "$(POCKET_ACCOUNT)" "1000ubld" \
+			--memo "$$MEMO_JSON" \
+			--keyring-backend=test \
+			--chain-id=$(AGORIC_CHAIN_ID) \
+			--from=validator --yes \
+	'
+
+## PFM: Osmosis -> Pocket -> Agoric ##
+######################################
+.PHONY: ibc_pfm_test_osmosis_pocket_agoric
+ibc_pfm_test_osmosis_pocket_agoric:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		MEMO_JSON="{\"forward\":{\"receiver\":\"$(AGORIC_ACCOUNT)\",\"port\":\"transfer\",\"channel\":\"$${POCKET_AGORIC_SRC_CHANNEL_ID}\"}}" && \
+		kubectl_exec_grep_pod osmosis-validator \
+			osmosisd tx ibc-transfer transfer transfer \
+			"$${OSMOSIS_POCKET_SRC_CHANNEL_ID}" "$(POCKET_ACCOUNT)" "1000uosmo" \
+			--memo "$$MEMO_JSON" \
+			--fees=5000uosmo \
+			--keyring-backend=test \
+			--chain-id=$(OSMOSIS_CHAIN_ID) \
+			--from=validator --yes \
+	'
+
+## PFM: Agoric -> Osmosis (direct) ##
+####################################
+.PHONY: ibc_pfm_test_agoric_osmosis_direct
+ibc_pfm_test_agoric_osmosis_direct:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod agoric-validator \
+			agd tx ibc-transfer transfer transfer \
+			"$${AGORIC_OSMOSIS_SRC_CHANNEL_ID}" "$(OSMOSIS_ACCOUNT)" "1000ubld" \
+			--keyring-backend=test \
+			--chain-id=$(AGORIC_CHAIN_ID) \
+			--from=validator --yes \
+	'
+
+## PFM: Osmosis -> Agoric (direct) ##
+####################################
+.PHONY: ibc_pfm_test_osmosis_agoric_direct
+ibc_pfm_test_osmosis_agoric_direct:
+	bash -c '\
+		source ./tools/scripts/ibc-channels.sh && \
+		kubectl_exec_grep_pod osmosis-validator \
+			osmosisd tx ibc-transfer transfer transfer \
+			"$${OSMOSIS_AGORIC_SRC_CHANNEL_ID}" "$(AGORIC_ACCOUNT)" "1000uosmo" \
+			--fees=5000uosmo \
+			--keyring-backend=test \
+			--chain-id=$(OSMOSIS_CHAIN_ID) \
+			--from=validator --yes \
+	'
+
 #############################
 # IBC Restart and Setup    #
 #############################
