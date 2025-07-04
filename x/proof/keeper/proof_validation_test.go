@@ -152,6 +152,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	}
 	keepers.UpsertClaim(ctx, claim)
 
+	// Compute the expected merkle proof path using the block header hash and session ID.
+	// This should be computed once all the session setup is complete.
+	expectedMerkleProofPath = protocol.GetPathForProof(blockHeaderHash, validSessionHeader.GetSessionId())
+
 	// Copy `emptyBlockHash` to `wrongClosestProofPath` to with a missing byte
 	// so the closest proof is invalid (i.e. unmarshalable).
 	invalidClosestProofBytes := make([]byte, len(expectedMerkleProofPath)-1)
@@ -560,41 +564,58 @@ func TestEnsureValidProof_Error(t *testing.T) {
 		{
 			desc: "the merkle proof path provided does not match the one expected/enforced by the protocol",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				// Construct a new valid session tree for this test case because once the
-				// closest proof has already been generated, the path cannot be changed.
-				numRelays := uint64(5)
-				wrongPathSessionTree := testtree.NewFilledSessionTree(
+				// Create a proof with the WRONG path. We'll use wrongClosestProofPath
+				// which contains different bytes than expectedMerkleProofPath.
+				// This will cause path validation to fail, but we need to ensure
+				// the signatures in the proof still validate.
+				
+				// Create a session tree and flush it to get relay data
+				pathTestSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
-					numRelays, service.ComputeUnitsPerRelay,
+					uint64(5), service.ComputeUnitsPerRelay,
 					supplierOperatorUid, supplierOperatorAddr,
 					validSessionHeader, validSessionHeader, validSessionHeader,
 					keyRing,
 					ringClient,
 				)
-
-				wrongPathMerkleRootBz, flushErr := wrongPathSessionTree.Flush()
-				require.NoError(t, flushErr)
-
-				// Re-set the block height to the earliest claim commit height to create a new claim.
+				
+				pathTestMerkleRootBz, err := pathTestSessionTree.Flush()
+				require.NoError(t, err)
+				
+				// Create a claim for this session tree
 				claimCtx := keepertest.SetBlockHeight(ctx, claimMsgHeight)
-
-				// Create an upsert the claim
 				claim := testtree.NewClaim(t,
 					supplierOperatorAddr,
 					validSessionHeader,
-					wrongPathMerkleRootBz,
+					pathTestMerkleRootBz,
 				)
 				keepers.UpsertClaim(claimCtx, *claim)
+				
+				// Create a proof with expectedMerkleProofPath first (this will have valid signatures)
+				validProof := testtree.NewProof(t, supplierOperatorAddr, validSessionHeader, pathTestSessionTree, expectedMerkleProofPath)
+				
+				// Now manually modify just the path in the compact proof to wrongClosestProofPath
+				var compactProof smt.SparseCompactMerkleClosestProof
+				err = compactProof.Unmarshal(validProof.ClosestMerkleProof)
 				require.NoError(t, err)
-
-				// Construct new proof message derived from a session tree
-				// with an invalid relay response signature.
-				return testtree.NewProof(t, supplierOperatorAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
+				
+				// This is the key: change ONLY the path, keeping the same proof structure and relays
+				compactProof.Path = wrongClosestProofPath
+				
+				// Re-marshal with the wrong path
+				modifiedProofBz, err := compactProof.Marshal()
+				require.NoError(t, err)
+				
+				return &prooftypes.Proof{
+					SupplierOperatorAddress: validProof.SupplierOperatorAddress,
+					SessionHeader:          validProof.SessionHeader,
+					ClosestMerkleProof:     modifiedProofBz,
+				}
 			},
 			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
 				"the path of the proof provided (%x) does not match one expected by the onchain protocol (%x)",
 				wrongClosestProofPath,
-				protocol.GetPathForProof(sdkCtx.HeaderHash(), validSessionHeader.GetSessionId()),
+				expectedMerkleProofPath,
 			),
 		},
 		{
@@ -793,6 +814,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				require.ErrorContains(t, err, test.expectedErr.Error())
 				return
 			}
+
 
 			// Ensure the proof satisfies the closest merkle path and has valid relay signatures.
 			if err := keepers.EnsureValidProofSignaturesAndClosestPath(ctx, &foundClaim, proof); err != nil {
