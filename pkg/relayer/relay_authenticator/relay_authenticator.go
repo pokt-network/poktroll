@@ -1,7 +1,10 @@
 package relay_authenticator
 
 import (
+	"context"
+
 	"cosmossdk.io/depinject"
+	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -50,6 +53,11 @@ type relayAuthenticator struct {
 	// 1. Check if an incoming relay request matches a supplier hosted by the relay miner
 	// 2. Get the corresponding keyring signing key name to sign the relay response
 	operatorAddressToSigningKeyNameMap map[string]string
+
+	// nodeStatus is the node status client used to get the current node status from
+	// the blockchain, which is needed to check if the relay proxy should be serving
+	// an incoming relay request.
+	nodeStatus client.NodeStatusClient
 }
 
 // NewRelayAuthenticator creates a new relay authenticator with the given dependencies and options.
@@ -75,6 +83,7 @@ func NewRelayAuthenticator(
 		&ra.sharedQuerier,
 		&ra.blockClient,
 		&ra.ringClient,
+		&ra.nodeStatus,
 	); err != nil {
 		return nil, err
 	}
@@ -88,6 +97,10 @@ func NewRelayAuthenticator(
 	}
 
 	if err := ra.populateOperatorAddressToSigningKeyNameMap(); err != nil {
+		return nil, err
+	}
+
+	if err := ra.populateNodeStatus(); err != nil {
 		return nil, err
 	}
 
@@ -133,5 +146,19 @@ func (ra *relayAuthenticator) populateOperatorAddressToSigningKeyNameMap() error
 		ra.operatorAddressToSigningKeyNameMap[supplierOperatorAddress.String()] = operatorSigningKeyName
 	}
 
+	return nil
+}
+
+func (ra *relayAuthenticator) populateNodeStatus() error {
+	ctx := context.Background()
+	queryClientCtx := context.Background()
+
+	// Get the chain ID from the configured query client context.
+	nodeStatus, err := cmtservice.GetNodeStatus(ctx, ra.quer)
+	if err != nil {
+		return err
+	}
+
+	ra.nodeStatus = nodeStatus
 	return nil
 }

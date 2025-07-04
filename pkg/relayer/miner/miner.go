@@ -91,7 +91,10 @@ func (mnr *miner) mapMineDehydratedRelay(
 	// Set the response payload to nil to reduce the size of SMST & onchain proofs.
 	// DEV_NOTE: This MUST be done in order to support onchain response signature
 	// verification, without including the entire response payload in the SMST/proof.
-	relay.Res.Payload = nil
+	// TODO_TECHDEBT: Remove the if structure.
+	if chain.Version > "0.1.24" {
+		relay.Res.Payload = nil
+	}
 
 	// Marshal and hash the whole relay to measure difficulty.
 	relayBz, err := relay.Marshal()

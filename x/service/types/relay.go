@@ -90,6 +90,10 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 		res.Payload = nil
 	}
 
+	if chain.Version < "0.1.25" {
+		res.PayloadHash = nil
+	}
+
 	responseBz, err := res.Marshal()
 	if err != nil {
 		return [protocol.RelayHasherSize]byte{}, err
