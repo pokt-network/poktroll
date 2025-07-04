@@ -96,7 +96,7 @@ func (mnr *miner) mapMineDehydratedRelay(
 	// - If the chain version is less than the signingPayloadHashVersion, remain backward
 	//   compatible with older versions of the Network that expect payload only RelayResponses.
 	chainVersion := mnr.blockClient.GetChainVersion()
-	if chainVersion.GreaterThanOrEqual(block.SigningPayloadHashVersion) {
+	if chainVersion.GreaterThanOrEqual(block.SigningPayloadHashSemver) {
 		// Set the response payload to nil to reduce the size of SMST & onchain proofs.
 		// DEV_NOTE: This MUST be done in order to support onchain response signature
 		// verification, without including the entire response payload in the SMST/proof.

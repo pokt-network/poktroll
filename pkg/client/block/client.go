@@ -29,18 +29,20 @@ const (
 	// TODO_TECHDEBT: add a `blocksReplayLimit` field to the blockReplayClient
 	// struct that defaults to this but can be overridden via an option.
 	defaultBlocksReplayLimit = 100
+
+	// SigningPayloadHashVersion is the version of the chain that introduced the
+	// payload hash in RelayResponse.
+	// This is used to determine whether to compute and include the payload hash in
+	// the RelayResponse based on the chain version.
+	signingPayloadHashVersion = "v0.1.25"
 )
 
-// SigningPayloadHashVersion is the version of the chain that introduced the
-// payload hash in RelayResponse.
-// This is used to determine whether to compute and include the payload hash in
-// the RelayResponse based on the chain version.
-var SigningPayloadHashVersion *version.Version
+var SigningPayloadHashSemver *version.Version
 
 // init parses the signingPayloadHashVersion string into a comparable version.
 func init() {
 	var err error
-	if SigningPayloadHashVersion, err = version.NewVersion("v0.1.25"); err != nil {
+	if SigningPayloadHashSemver, err = version.NewVersion("v0.1.25"); err != nil {
 		panic("failed to parse signing payload hash version: " + err.Error())
 	}
 }

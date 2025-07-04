@@ -47,7 +47,7 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 	// - If the chain version is less than the signingPayloadHashVersion, remain backward
 	//   compatible with older versions of the Network that expect payload only RelayResponses.
 	chainVersion := sync.blockClient.GetChainVersion()
-	if chainVersion.GreaterThanOrEqual(block.SigningPayloadHashVersion) {
+	if chainVersion.GreaterThanOrEqual(block.SigningPayloadHashSemver) {
 		// Compute hash of the response payload for proof verification.
 		// This hash will be stored in the RelayResponse and used during proof validation
 		// to verify the integrity of the response without requiring the full payload.
