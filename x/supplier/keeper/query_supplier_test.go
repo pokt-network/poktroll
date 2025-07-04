@@ -1,9 +1,12 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
+	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -437,5 +440,210 @@ func TestSupplierShowDehydrated(t *testing.T) {
 		require.Len(t, supplier.Services, 1)
 		require.NotNil(t, supplier.Services[0].RevShare, "Hydrated supplier services should have rev_share")
 		require.Len(t, supplier.Services[0].RevShare, 2, "Should have 2 rev_share entries")
+	})
+}
+
+func TestSupplierQueryFilterByOwnerAddress(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	
+	// Create suppliers with specific owners
+	ownerAddr1 := sample.AccAddress()
+	ownerAddr2 := sample.AccAddress()
+	ownerAddr3 := sample.AccAddress()
+	
+	// Create suppliers with different owners
+	suppliers := make([]sharedtypes.Supplier, 5)
+	for i := range suppliers {
+		supplier := &suppliers[i]
+		supplier.OperatorAddress = sample.AccAddress()
+		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: math.NewInt(int64(i))}
+		supplier.Services = []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: fmt.Sprintf("svc%d", i),
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     fmt.Sprintf("http://localhost:%d", i),
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+		}
+		
+		// Assign owners in a specific pattern
+		switch i {
+		case 0, 1:
+			supplier.OwnerAddress = ownerAddr1 // 2 suppliers owned by ownerAddr1
+		case 2, 3:
+			supplier.OwnerAddress = ownerAddr2 // 2 suppliers owned by ownerAddr2
+		case 4:
+			supplier.OwnerAddress = ownerAddr3 // 1 supplier owned by ownerAddr3
+		}
+		
+		// Create service config history for the supplier
+		supplier.ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			supplier.OperatorAddress,
+			supplier.Services,
+			1,
+			sharedtypes.NoDeactivationHeight,
+		)
+		
+		// Store and index the supplier
+		supplierModuleKeepers.SetAndIndexDehydratedSupplier(ctx, *supplier)
+	}
+
+	t.Run("FilterByOwnerAddress_MultipleSuppliers", func(t *testing.T) {
+		// Test filtering by ownerAddr1 (should return 2 suppliers)
+		request := &types.QueryAllSuppliersRequest{
+			Filter: &types.QueryAllSuppliersRequest_OwnerAddress{
+				OwnerAddress: ownerAddr1,
+			},
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+		require.Len(t, resp.Supplier, 2, "Should return exactly 2 suppliers owned by ownerAddr1")
+
+		// Verify each returned supplier has the correct owner
+		for _, supplier := range resp.Supplier {
+			require.Equal(t, ownerAddr1, supplier.OwnerAddress, "Supplier should be owned by ownerAddr1")
+		}
+	})
+
+	t.Run("FilterByOwnerAddress_SingleSupplier", func(t *testing.T) {
+		// Test filtering by ownerAddr3 (should return 1 supplier)
+		request := &types.QueryAllSuppliersRequest{
+			Filter: &types.QueryAllSuppliersRequest_OwnerAddress{
+				OwnerAddress: ownerAddr3,
+			},
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+		require.Len(t, resp.Supplier, 1, "Should return exactly 1 supplier owned by ownerAddr3")
+
+		// Verify the returned supplier has the correct owner
+		require.Equal(t, ownerAddr3, resp.Supplier[0].OwnerAddress, "Supplier should be owned by ownerAddr3")
+	})
+
+	t.Run("FilterByOwnerAddress_NoResults", func(t *testing.T) {
+		// Test filtering by an address that doesn't own any suppliers
+		nonOwnerAddr := sample.AccAddress()
+		request := &types.QueryAllSuppliersRequest{
+			Filter: &types.QueryAllSuppliersRequest_OwnerAddress{
+				OwnerAddress: nonOwnerAddr,
+			},
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+		require.Len(t, resp.Supplier, 0, "Should return no suppliers for non-owner address")
+	})
+
+	t.Run("FilterByOwnerAddress_WithPagination", func(t *testing.T) {
+		// Test pagination with owner filtering (ownerAddr1 has 2 suppliers)
+		request := &types.QueryAllSuppliersRequest{
+			Filter: &types.QueryAllSuppliersRequest_OwnerAddress{
+				OwnerAddress: ownerAddr1,
+			},
+			Pagination: &query.PageRequest{
+				Limit: 1, // Only get 1 supplier per page
+			},
+		}
+
+		// First page
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+		require.Len(t, resp.Supplier, 1, "First page should return 1 supplier")
+		require.Equal(t, ownerAddr1, resp.Supplier[0].OwnerAddress, "Supplier should be owned by ownerAddr1")
+		require.NotNil(t, resp.Pagination.NextKey, "Should have next page")
+
+		// Second page
+		request.Pagination.Key = resp.Pagination.NextKey
+		resp, err = supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+		require.Len(t, resp.Supplier, 1, "Second page should return 1 supplier")
+		require.Equal(t, ownerAddr1, resp.Supplier[0].OwnerAddress, "Supplier should be owned by ownerAddr1")
+	})
+
+	t.Run("FilterByOwnerAddress_Dehydrated", func(t *testing.T) {
+		// Add RevShare to one of the suppliers to test dehydration
+		supplierWithRevShare := suppliers[0]
+		supplierWithRevShare.Services[0].RevShare = []*sharedtypes.ServiceRevenueShare{
+			{
+				Address:            sample.AccAddress(),
+				RevSharePercentage: 25,
+			},
+			{
+				Address:            sample.AccAddress(),
+				RevSharePercentage: 75,
+			},
+		}
+		supplierWithRevShare.ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			supplierWithRevShare.OperatorAddress,
+			supplierWithRevShare.Services,
+			1,
+			sharedtypes.NoDeactivationHeight,
+		)
+		supplierModuleKeepers.SetAndIndexDehydratedSupplier(ctx, supplierWithRevShare)
+
+		// Test dehydrated query with owner filter
+		request := &types.QueryAllSuppliersRequest{
+			Filter: &types.QueryAllSuppliersRequest_OwnerAddress{
+				OwnerAddress: ownerAddr1,
+			},
+			Dehydrated: true,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+		require.Len(t, resp.Supplier, 2, "Should return 2 dehydrated suppliers owned by ownerAddr1")
+
+		// Verify each returned supplier is dehydrated and has the correct owner
+		for _, supplier := range resp.Supplier {
+			require.Equal(t, ownerAddr1, supplier.OwnerAddress, "Supplier should be owned by ownerAddr1")
+			require.Nil(t, supplier.ServiceConfigHistory, "Dehydrated supplier should not have service config history")
+			require.NotNil(t, supplier.Services, "Dehydrated supplier should still have services")
+			for _, service := range supplier.Services {
+				require.Nil(t, service.RevShare, "Dehydrated supplier services should not have rev_share")
+			}
+		}
+	})
+
+	t.Run("FilterByOwnerAddress_Hydrated", func(t *testing.T) {
+		// Test hydrated query with owner filter
+		request := &types.QueryAllSuppliersRequest{
+			Filter: &types.QueryAllSuppliersRequest_OwnerAddress{
+				OwnerAddress: ownerAddr2,
+			},
+			Dehydrated: false,
+			Pagination: &query.PageRequest{
+				Limit: uint64(len(suppliers)),
+			},
+		}
+
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+		require.NoError(t, err)
+		require.Len(t, resp.Supplier, 2, "Should return 2 hydrated suppliers owned by ownerAddr2")
+
+		// Verify each returned supplier is hydrated and has the correct owner
+		for _, supplier := range resp.Supplier {
+			require.Equal(t, ownerAddr2, supplier.OwnerAddress, "Supplier should be owned by ownerAddr2")
+			require.NotNil(t, supplier.ServiceConfigHistory, "Hydrated supplier should have service config history")
+			require.NotEmpty(t, supplier.ServiceConfigHistory, "Hydrated supplier should have non-empty service config history")
+			require.NotNil(t, supplier.Services, "Hydrated supplier should have services")
+		}
 	})
 }
