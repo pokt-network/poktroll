@@ -37,14 +37,17 @@ const (
 	signingPayloadHashVersion = "v0.1.25"
 )
 
-// SigningPayloadHashSemver is the semver version of signingPayloadHashVersion.
-var SigningPayloadHashSemver *version.Version
+// TODO(v0.1.26): Remove this after the entire network is on v0.1.26.
+//
+// ChainVersionAddPayloadHashInRelayResponse is the version of the chain that:
+// - Introduced the payload hash in RelayResponse.
+// - Removed the full payload from RelayResponse.
+var ChainVersionAddPayloadHashInRelayResponse *version.Version
 
-// init parses the signingPayloadHashVersion string into a comparable version.
 func init() {
 	var err error
-	if SigningPayloadHashSemver, err = version.NewVersion(signingPayloadHashVersion); err != nil {
-		panic("failed to parse signing payload hash version: " + err.Error())
+	if ChainVersionAddPayloadHashInRelayResponse, err = version.NewVersion("v0.1.25"); err != nil {
+		panic("failed to parse chain version add payload hash in relay response: " + err.Error())
 	}
 }
 
@@ -67,12 +70,12 @@ func NewBlockClient(
 	// latestBlockPublishCh is the channel that notifies the latestBlockReplayObs of a
 	// new block, whether it comes from a direct query or an event subscription query.
 	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, 10)
-	bClient := &blockReplayClient{
+	blockClient := &blockReplayClient{
 		latestBlockReplayObs: latestBlockReplayObs,
 		close:                cancel,
 	}
 
-	bClient.eventsReplayClient, err = events.NewEventsReplayClient(
+	blockClient.eventsReplayClient, err = events.NewEventsReplayClient(
 		ctx,
 		deps,
 		cometNewBlockHeaderQuery,
@@ -84,22 +87,27 @@ func NewBlockClient(
 		return nil, err
 	}
 
-	if err := depinject.Inject(deps, &bClient.onStartQueryClient, &bClient.cometClient, &bClient.logger); err != nil {
+	if err := depinject.Inject(
+		deps,
+		&blockClient.onStartQueryClient,
+		&blockClient.cometClient,
+		&blockClient.logger,
+	); err != nil {
 		return nil, err
 	}
 
-	bClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
+	blockClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
 
-	if err := bClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
+	if err := blockClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
 		return nil, err
 	}
 
 	// Initialize the chain version to ensure that its never nil
-	if err := bClient.initializeAndUpdateChainVersion(ctx); err != nil {
+	if err := blockClient.initializeAndUpdateChainVersion(ctx); err != nil {
 		return nil, err
 	}
 
-	return bClient, nil
+	return blockClient, nil
 }
 
 // blockReplayClient is BlockClient implementation that combines a CometRPC client
@@ -159,7 +167,7 @@ func (b *blockReplayClient) LastBlock(ctx context.Context) (block client.Block) 
 // Close closes the underlying websocket connection for the EventsQueryClient
 // and closes all downstream connections.
 func (b *blockReplayClient) Close() {
-	// Cancel any ongoing chain version query
+	// Cancel any ongoing requests to retrieve the chain version
 	b.chainVersionCancelMu.Lock()
 	if b.chainVersionQueryCancel != nil {
 		b.chainVersionQueryCancel()
@@ -177,8 +185,76 @@ func (b *blockReplayClient) GetChainVersion() *version.Version {
 	return b.chainVersion
 }
 
-// asyncForwardBlockEvent asynchronously observes block event notifications from the
-// EventsReplayClient's EventsSequence observable & publishes each to latestBlockPublishCh.
+// updateChainVersion updates the chain version by querying ABCI info.
+// If async is true, it runs in a background goroutine and handles cancellation of previous queries.
+// If async is false, it runs synchronously and is suitable for initialization.
+func (b *blockReplayClient) updateChainVersion(ctx context.Context, async bool) error {
+	var queryCtx context.Context
+	var cancel context.CancelFunc
+
+	if async {
+		// Cancel any ongoing chain version query and start a new one
+		b.chainVersionCancelMu.Lock()
+		if b.chainVersionQueryCancel != nil {
+			b.chainVersionQueryCancel()
+		}
+
+		// Create new context for the chain version query
+		queryCtx, cancel = context.WithCancel(ctx)
+		b.chainVersionQueryCancel = cancel
+		b.chainVersionCancelMu.Unlock()
+	} else {
+		// For synchronous calls (like initialization), use the provided context directly
+		queryCtx = ctx
+		cancel = func() {} // No-op cancel function
+	}
+
+	updateFunc := func() error {
+		if async {
+			defer cancel() // Always cleanup the context when done for async calls
+		}
+
+		// Update chain version
+		abciInfo, err := b.cometClient.ABCIInfo(queryCtx)
+		if err != nil {
+			if async {
+				// Log error but don't stop the process (context may have been cancelled)
+				b.logger.Debug().Err(err).Msg("failed to get ABCI info for chain version update")
+				return nil // Don't return error for async calls
+			}
+			return fmt.Errorf("failed to get ABCI info: %w", err)
+		}
+
+		chainVersion, err := version.NewVersion(abciInfo.Response.Version)
+		if err != nil {
+			if async {
+				// Log error but don't stop the process
+				b.logger.Debug().Err(err).Msg("failed to parse chain version")
+				return nil // Don't return error for async calls
+			}
+			return fmt.Errorf("failed to parse chain version: %w", err)
+		}
+
+		// Update chain version with mutex protection
+		b.chainVersionMu.Lock()
+		b.chainVersion = chainVersion
+		b.chainVersionMu.Unlock()
+
+		return nil
+	}
+
+	if async {
+		go updateFunc()
+		return nil
+	}
+
+	return updateFunc()
+}
+
+// asyncForwardBlockEvent does the following:
+// - Asynchronously observes block event notifications from the EventsReplayClient's EventsSequence observable
+// - Publishes each block to latestBlockPublishCh
+// - Updates the chain version on each block
 func (b *blockReplayClient) asyncForwardBlockEvent(
 	ctx context.Context,
 	latestBlockPublishCh chan<- client.Block,
@@ -186,37 +262,7 @@ func (b *blockReplayClient) asyncForwardBlockEvent(
 	channel.ForEach(ctx, b.eventsReplayClient.EventsSequence(ctx),
 		func(ctx context.Context, block client.Block) {
 			latestBlockPublishCh <- block
-
-			// Cancel any ongoing chain version query and start a new one
-			b.chainVersionCancelMu.Lock()
-			if b.chainVersionQueryCancel != nil {
-				b.chainVersionQueryCancel()
-			}
-
-			// Create new context for the chain version query
-			queryCtx, cancel := context.WithCancel(ctx)
-			b.chainVersionQueryCancel = cancel
-			b.chainVersionCancelMu.Unlock()
-
-			// Update chain version on each new block
-			abciInfo, err := b.cometClient.ABCIInfo(queryCtx)
-			if err != nil {
-				// Log error but don't stop the process (context may have been cancelled)
-				b.logger.Debug().Err(err).Msg("failed to get ABCI info for chain version update")
-				return
-			}
-
-			chainVersion, err := version.NewVersion(abciInfo.Response.Version)
-			if err != nil {
-				// Log error but don't stop the process
-				b.logger.Debug().Err(err).Msg("failed to parse chain version")
-				return
-			}
-
-			// Update chain version with mutex protection
-			b.chainVersionMu.Lock()
-			b.chainVersion = chainVersion
-			b.chainVersionMu.Unlock()
+			b.updateChainVersion(ctx, true) // async=true
 		},
 	)
 }
@@ -275,26 +321,4 @@ func (b *blockReplayClient) queryLatestBlock(
 	}()
 
 	return errCh
-}
-
-// initializeAndUpdateChainVersion initializes the chain version and starts
-// updating it on each block.
-func (b *blockReplayClient) initializeAndUpdateChainVersion(ctx context.Context) error {
-	// Initialize the chain version
-	abciInfo, err := b.cometClient.ABCIInfo(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get ABCI info: %w", err)
-	}
-
-	chainVer, err := version.NewVersion(abciInfo.Response.Version)
-	if err != nil {
-		return fmt.Errorf("failed to parse chain version: %w", err)
-	}
-
-	// Set initial chain version with mutex protection
-	b.chainVersionMu.Lock()
-	b.chainVersion = chainVer
-	b.chainVersionMu.Unlock()
-
-	return nil
 }

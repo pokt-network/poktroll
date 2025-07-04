@@ -187,11 +187,14 @@ type BlockClient interface {
 	// CommittedBlocksSequence returns a BlockObservable that emits the
 	// latest blocks that have been committed to the chain.
 	CommittedBlocksSequence(context.Context) BlockReplayObservable
+
 	// LastBlock returns the latest block that has been committed onchain.
 	LastBlock(context.Context) Block
+
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.
 	Close()
+
 	// GetChainVersion returns the current chain version.
 	GetChainVersion() *version.Version
 }
