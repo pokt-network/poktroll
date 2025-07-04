@@ -95,17 +95,8 @@ func (mnr *miner) mapMineDehydratedRelay(
 	ctx context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
-	// TODO(v0.1.26): Remove this check once the chain version is updated.
-	// Compare the chain version with the signingPayloadHashVersion.
-	// - If chainVersion >= ChainVersionAddPayloadHashInRelayResponse:
-	//   - Compute the payload hash
-	//   - Include it in the RelayResponse.
-	// - If chainVersion < ChainVersionAddPayloadHashInRelayResponse:
-	//   - Remain backward compatible with older versions of the Network
-	//   - Include the full payload in the RelayResponse.
-	//   - Do not compute the PayloadHash at all
 	chainVersion := mnr.blockClient.GetChainVersion()
-	if chainVersion.GreaterThanOrEqual(block.ChainVersionAddPayloadHashInRelayResponse) {
+	if block.IsChainAfterAddPayloadHashInRelayResponse(chainVersion) {
 		// Set the response payload to nil to reduce the size of SMST & onchain proofs.
 		// DEV_NOTE: This MUST be done in order to support onchain response signature
 		// verification, without including the entire response payload in the SMST/proof.

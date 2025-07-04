@@ -31,20 +31,6 @@ const (
 	defaultBlocksReplayLimit = 100
 )
 
-// TODO(v0.1.26): Remove this after the entire network is on v0.1.26.
-//
-// ChainVersionAddPayloadHashInRelayResponse is the version of the chain that:
-// - Introduced the payload hash in RelayResponse.
-// - Removed the full payload from RelayResponse.
-var ChainVersionAddPayloadHashInRelayResponse *version.Version
-
-func init() {
-	var err error
-	if ChainVersionAddPayloadHashInRelayResponse, err = version.NewVersion("v0.1.25"); err != nil {
-		panic("failed to parse chain version add payload hash in relay response: " + err.Error())
-	}
-}
-
 // NewBlockClient creates a new block client from the given dependencies.
 //
 // It uses a pre-defined cometNewBlockHeaderQuery to subscribe to newly
