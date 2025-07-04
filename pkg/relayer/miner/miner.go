@@ -8,6 +8,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -27,6 +28,7 @@ type miner struct {
 	// serviceQueryClient is used to query for the relay difficulty target hash of a service.
 	// relay_difficulty is the target hash which a relay hash must be less than to be volume/reward applicable.
 	serviceQueryClient client.ServiceQueryClient
+	blockClient        client.BlockClient
 	relayMeter         relayer.RelayMeter
 }
 
@@ -44,7 +46,12 @@ func NewMiner(
 ) (*miner, error) {
 	mnr := &miner{}
 
-	if err := depinject.Inject(deps, &mnr.serviceQueryClient, &mnr.relayMeter); err != nil {
+	if err := depinject.Inject(
+		deps,
+		&mnr.serviceQueryClient,
+		&mnr.relayMeter,
+		&mnr.blockClient,
+	); err != nil {
 		return nil, err
 	}
 
@@ -88,10 +95,13 @@ func (mnr *miner) mapMineDehydratedRelay(
 	ctx context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
-	// Set the response payload to nil to reduce the size of SMST & onchain proofs.
-	// DEV_NOTE: This MUST be done in order to support onchain response signature
-	// verification, without including the entire response payload in the SMST/proof.
-	relay.Res.Payload = nil
+	chainVersion := mnr.blockClient.GetChainVersion()
+	if block.IsChainAfterAddPayloadHashInRelayResponse(chainVersion) {
+		// Set the response payload to nil to reduce the size of SMST & onchain proofs.
+		// DEV_NOTE: This MUST be done in order to support onchain response signature
+		// verification, without including the entire response payload in the SMST/proof.
+		relay.Res.Payload = nil
+	}
 
 	// Marshal and hash the whole relay to measure difficulty.
 	relayBz, err := relay.Marshal()
