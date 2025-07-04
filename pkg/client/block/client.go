@@ -76,13 +76,16 @@ func NewBlockClient(
 		return nil, err
 	}
 
+	// Start asynchronously forwarding block events to the latestBlockPublishCh
 	blockClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
 
-	if err := blockClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
+	// Get access to the latest block one time and publish it to the latestBlockPublishCh
+	// TODO_CONSIDERATION: Should we make this initializeInitialBlock (sync) instead of getInitialBlockAsync (async)?
+	if err := blockClient.getInitialBlockAsync(ctx, latestBlockPublishCh); err != nil {
 		return nil, err
 	}
 
-	// Initialize the chain version to ensure that its never nil
+	// Initialize the chain version one time to ensure that its never nil
 	if err := blockClient.initializeChainVersion(ctx); err != nil {
 		return nil, err
 	}
@@ -235,12 +238,12 @@ func (b *blockReplayClient) asyncForwardBlockEvent(
 	)
 }
 
-// getInitialBlock fetches the latest committed onchain block at the time the
-// client starts up, while concurrently waiting for the next block event,
-// publishing whichever occurs first to latestBlockPublishCh.
-// This is necessary to ensure that the most recent block is available to the
-// blockReplayClient when it is first created.
-func (b *blockReplayClient) getInitialBlock(
+// getInitialBlockAsync:
+// - Fetches the latest committed onchain block at client startup.
+// - Concurrently waits for the next block event.
+// - Publishes whichever occurs first to latestBlockPublishCh.
+// - Ensures the most recent block is available to blockReplayClient when first created.
+func (b *blockReplayClient) getInitialBlockAsync(
 	ctx context.Context,
 	latestBlockPublishCh chan<- client.Block,
 ) error {
@@ -249,7 +252,7 @@ func (b *blockReplayClient) getInitialBlock(
 
 	// Query the latest block asynchronously.
 	blockQueryResultCh := make(chan client.Block)
-	queryErrCh := b.queryLatestBlock(ctx, blockQueryResultCh)
+	queryErrCh := b.queryLatestBlockAsync(ctx, blockQueryResultCh)
 
 	// Wait for either the latest block query response, error, or the first block
 	// event to arrive & use whichever occurs first or return an error.
@@ -268,10 +271,11 @@ func (b *blockReplayClient) getInitialBlock(
 	return nil
 }
 
-// queryLatestBlock uses comet RPC block client to asynchronously query for
-// the latest block. It returns an error channel which may be sent a block query error.
-// It is *NOT* intended to be called in a goroutine.
-func (b *blockReplayClient) queryLatestBlock(
+// queryLatestBlockAsync:
+// - Uses comet RPC block client to asynchronously query for the latest block.
+// - Returns an error channel which may be sent a block query error.
+// - *NOT* intended to be called in a goroutine.
+func (b *blockReplayClient) queryLatestBlockAsync(
 	ctx context.Context,
 	blockQueryResultCh chan<- client.Block,
 ) <-chan error {
