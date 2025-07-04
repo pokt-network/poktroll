@@ -669,7 +669,9 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 	numSessionTreesDeleted := 0
 	for _, sessionTree := range sessionTrees {
 		sessionId := sessionTree.GetSessionHeader().GetSessionId()
-		logger.Info().Str("session_id", sessionId).Msg("🗑️ Deleting session tree - cleaning up outdated or unclaimable session")
+		// Create a new logger instance for each iteration to avoid concurrent access issues
+		sessionLogger := logger.With("session_id", sessionId)
+		sessionLogger.Info().Msg("🗑️ Deleting session tree - cleaning up outdated or unclaimable session")
 
 		// Remove the session tree from the relayerSessions.
 		rs.deleteSessionTree(sessionTree)

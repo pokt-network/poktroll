@@ -127,7 +127,11 @@ var allUpgrades = []upgrades.Upgrade{
 	// - Reduced SMST / onchain proof size by persisting payload-dehydrated relay responses
 	// - Reduced event related state bloat by removing unnecessary settlement results from events
 	// - Updated Morse account recovery allowlist
-	upgrades.Upgrade_0_1_25,
+	// upgrades.Upgrade_0_1_25,
+
+	// v0.1.26 - upgrade to:
+	// - Implement backward compatible relay response signature verification to enable smooth protocol upgrades
+	upgrades.Upgrade_0_1_26,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

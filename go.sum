@@ -1288,8 +1288,8 @@ github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRI
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pokt-network/ring-go v0.1.0 h1:hF7mDR4VVCIqqDAsrloP8azM9y1mprc99YgnTjKSSwk=
 github.com/pokt-network/ring-go v0.1.0/go.mod h1:8NHPH7H3EwrPX3XHfpyRI6bz4gApkE3+fd0XZRbMWP0=
-github.com/pokt-network/shannon-sdk v0.0.0-20250603210336-969a825fddd5 h1:TTtN4ln+AWWPb8wbUZESAyZqUWFxV/kQNkNCEE6FgmM=
-github.com/pokt-network/shannon-sdk v0.0.0-20250603210336-969a825fddd5/go.mod h1:D7ZoOsLtOzDD7Vj9bnIIPFDbqfcUBR0Ic995vyfbdQM=
+github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770 h1:ztJnRBnkdNCSkRi6yT7ATQ1mw/i28JQKzhLoUXXHkzw=
+github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770/go.mod h1:qy22/ATxOZ20moRaPx6DJupFdWCwoV0pSR89qNTtX6w=
 github.com/pokt-network/smt v0.13.0 h1:C2F8FlJh34aU+DVeRU/Bt8BOkFXn4QjWMK+nbT9PUj4=
 github.com/pokt-network/smt v0.13.0/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
 github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188 h1:QK1WmFKQ/OzNVob/br55Brh+EFbWhcdq41WGC8UMihM=

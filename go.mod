@@ -62,7 +62,7 @@ require (
 	github.com/go-kit/kit v0.13.0
 	github.com/gogo/status v1.1.0
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
@@ -103,12 +103,15 @@ require (
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20250603210336-969a825fddd5
+	github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770
 	go.uber.org/mock v0.5.2
 	golang.org/x/term v0.32.0
 )
 
-require github.com/go-chi/chi/v5 v5.2.1
+require (
+	github.com/go-chi/chi/v5 v5.2.1
+	github.com/hashicorp/go-version v1.7.0
+)
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
@@ -309,7 +312,6 @@ require (
 	github.com/hashicorp/go-immutable-radix/v2 v2.1.0 // indirect
 	github.com/hashicorp/go-plugin v1.6.3 // indirect
 	github.com/hashicorp/go-safetemp v1.0.0 // indirect
-	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/yamux v0.1.2 // indirect
