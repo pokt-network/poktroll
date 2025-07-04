@@ -54,11 +54,12 @@ func (s *SupplierModuleSuite) StakeSupplier(
 		serviceConfigs[serviceIdx] = SupplierServiceConfigFromServiceIdAndOperatorAddress(serviceId, supplierAddress)
 	}
 
+	stakeCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, stakeAmtUpokt)
 	stakeSupplierMsg := suppliertypes.NewMsgStakeSupplier(
 		supplierAddress,
 		supplierAddress,
 		supplierAddress,
-		cosmostypes.NewInt64Coin(pocket.DenomuPOKT, stakeAmtUpokt),
+		&stakeCoin,
 		serviceConfigs,
 	)
 
