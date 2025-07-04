@@ -155,6 +155,10 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		return settledResults, expiredResults, numDiscardedFaultyClaims, err
 	}
 
+	// Persist the state of all the applications and suppliers involved in the claims.
+	// This is done in a single batch to reduce the number of writes to state storage.
+	settlementContext.FlushAllActorsToStore(ctx)
+
 	logger.Info(
 		"claims settlement summary",
 		"num_settled", settledResults.GetNumClaims(),
@@ -524,8 +528,11 @@ func (k Keeper) slashSupplierStake(
 			serviceConfig.DeactivationHeight = unstakeSessionEndHeight
 		}
 
+		dehydratedSupplier := *supplierToSlash
+		dehydratedSupplier.ServiceUsageMetrics = make(map[string]*sharedtypes.ServiceUsageMetrics)
+
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:         supplierToSlash,
+			Supplier:         &dehydratedSupplier,
 			Reason:           suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight: unstakeSessionEndHeight,
 			// Handling unbonding for slashed suppliers:

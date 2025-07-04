@@ -127,3 +127,21 @@ func padBytesToLength(valueToPad []byte, length int) []byte {
 	copy(paddedScaledDifficultyHash[paddingOffset:], valueToPad)
 	return paddedScaledDifficultyHash
 }
+
+// GetNumEstimatedRelays calculates the estimated number of relays based on the
+// number of mined relays and the relay mining difficulty.
+// It uses the relay mining difficulty multiplier to scale the number of relays
+// to estimate the total number of relays that were actually served off-chain.
+func GetNumEstimatedRelays(
+	numRelays uint64,
+	targetHash []byte,
+) (numEstimatedRelays uint64) {
+	difficultyMultiplier := GetRelayDifficultyMultiplier(targetHash)
+	numRelaysRat := new(big.Rat).SetUint64(numRelays)
+	numEstimatedRelaysRat := new(big.Rat).Mul(difficultyMultiplier, numRelaysRat)
+
+	numerator := numEstimatedRelaysRat.Num()
+	denominator := numEstimatedRelaysRat.Denom()
+
+	return new(big.Int).Div(numerator, denominator).Uint64()
+}
