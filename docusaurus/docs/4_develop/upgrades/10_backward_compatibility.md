@@ -1,4 +1,21 @@
-# Protocol Upgrade Backward Compatibility Strategy
+---
+sidebar_position: 10
+title: Protocol Upgrade Backward Compatibility Strategy
+---
+
+- [Overview](#overview)
+- [Upgrade Methodology](#upgrade-methodology)
+  - [1. Gateway Logic (Application/Gateway)](#1-gateway-logic-applicationgateway)
+  - [2. Onchain Logic (Validators/Full Nodes)](#2-onchain-logic-validatorsfull-nodes)
+  - [3. RelayMiner Logic](#3-relayminer-logic)
+  - [Compatibility Matrix](#compatibility-matrix)
+- [Example: Relay Response Signature Upgrade](#example-relay-response-signature-upgrade)
+  - [Background](#background)
+  - [Backward Compatibility Implementation](#backward-compatibility-implementation)
+- [Detailed Compatibility Cases](#detailed-compatibility-cases)
+  - [Case 1: New Gateway + Old Chain + Old RelayMiner](#case-1-new-gateway--old-chain--old-relayminer)
+  - [Case 2: New Gateway + Upgraded Chain + Old RelayMiner](#case-2-new-gateway--upgraded-chain--old-relayminer)
+  - [Case 3: New Gateway + Upgraded Chain + New RelayMiner](#case-3-new-gateway--upgraded-chain--new-relayminer)
 
 ## Overview
 
@@ -18,40 +35,48 @@ for participants that cannot be centrally coordinated to upgrade simultaneously.
 Upgrades are performed in a way that allows new and old components to coexist
 and must be performed in this specific order:
 
-### 1. **Gateway Logic (Application/Gateway)**
+### 1. Gateway Logic (Application/Gateway)
+
 - **Upgrade approach**: Update Gateway logic to be backward compatible with old RelayMiners and onchain logic
 - **Control level**: Full control - presently operated by Grove, allowing coordinated upgrades
 - **Timing**:
   - Gateways must be capable of working with both old and new RelayMiners.
   - Gateways must be able to query non-upgraded full nodes.
 
-### 2. **Onchain Logic (Validators/Full Nodes)**
+### 2. Onchain Logic (Validators/Full Nodes)
+
 - **Upgrade approach**: Update onchain logic to be backward compatible with old RelayMiners
 - **Control level**: The upgrade becomes canonical once blocks are produced with the new logic
 - **Timing**: Coordinated upgrade through network consensus
 
-### 3. **RelayMiner Logic**
+### 3. RelayMiner Logic
+
 - **Upgrade approach**: RelayMiners upgrade independently when ready
 - **Control level**: No control - operated by independent third parties
 - **Timing**: Cannot be coordinated; upgrades happen at operator discretion
 
 :::warning
+
 **Release Classification Required**: In order to prevent RelayMiner operators
 from rushing to deploy new binaries before the corresponding onchain upgrade is live,
 pocketd releases should clearly indicate whether they are:
+
 - **Off-chain only** (RelayMiner updates)
 - **Onchain only** (Onchain updates)
 - **Both** (RelayMiner and onchain updates)
+
 :::
 
 :::note
+
 After all actors have been upgraded, the backward compatibility logic can be removed in a future release.
+
 :::
 
 ### Compatibility Matrix
 
 | Gateway Version | Chain Version | RelayMiner Version | Payload Present | PayloadHash Present | Gateway Signature Verification | Onchain Signature Verification |
-|-----------------|---------------|--------------------|-----------------|---------------------|--------------------------------|--------------------------------|
+| --------------- | ------------- | ------------------ | --------------- | ------------------- | ------------------------------ | ------------------------------ |
 | **New**         | Old           | Old                | ✅              | ❌                  | ✅ Backward-compatible         | ✅ Compatible (aligned)        |
 | **New**         | New           | Old                | ✅              | ❌                  | ✅ Backward-compatible         | ✅ Backward-compatible         |
 | **New**         | New           | New                | ❌              | ✅                  | ✅ Compatible (aligned)        | ✅ Compatible (aligned)        |
@@ -61,6 +86,7 @@ After all actors have been upgraded, the backward compatibility logic can be rem
 The following example demonstrates this methodology applied to a relay response signature upgrade:
 
 ### Background
+
 - **Old behavior**: RelayMiners sign the full response payload
 - **New behavior**: RelayMiners sign only the payload hash (for efficiency and reduced SMST/proof size)
 - Signature generation and verification logic is shared between all actors
@@ -84,22 +110,27 @@ if res.PayloadHash != nil {
 ## Detailed Compatibility Cases
 
 ### Case 1: New Gateway + Old Chain + Old RelayMiner
+
 **Scenario**: Gateway has been upgraded, but RelayMiner and onchain logic are still running old software
 
 **Behavior**:
+
 - RelayMiner sends response with full `Payload` (no `PayloadHash`)
 - Gateway receives response with payload present and verifies signature against the full payload (backward-compatible logic)
 - Chain receives a proof with payload present and verifies signature (aligned on old logic)
 - ✅ **Result**: All components work correctly despite mixed versions
 
 **Why it works**:
+
 - The Gateway has backward-compatible logic that detects the absence of `PayloadHash` and falls back to using the full `Payload` for verification
 - Onchain and RelayMiner logic are aligned, so they can process the full payload without issues
 
 ### Case 2: New Gateway + Upgraded Chain + Old RelayMiner
+
 **Scenario**: Both onchain and Gateway are upgraded but RelayMiners are still running old software
 
 **Behavior**:
+
 - RelayMiner sends response with full `Payload` (no `PayloadHash`)
 - Gateway receives response with payload present and verifies signature against the full payload (backward-compatible logic)
 - Chain receives a proof with payload present and verifies signature against the full payload (backward-compatible logic)
@@ -107,11 +138,12 @@ if res.PayloadHash != nil {
 
 **Why it works**: The signature verification logic detects the absence of `PayloadHash` and falls back to using the full `Payload` for verification.
 
-
 ### Case 3: New Gateway + Upgraded Chain + New RelayMiner
+
 **Scenario**: All components are running new software
 
 **Behavior**:
+
 - RelayMiner computes payload hash and sends response with `PayloadHash` (no `Payload`)
 - Gateway receives response with payload hash present and verifies signature against the payload hash (aligned with new logic)
 - Chain receives a proof with payload hash present and verifies signature against the payload hash (aligned with new logic)
