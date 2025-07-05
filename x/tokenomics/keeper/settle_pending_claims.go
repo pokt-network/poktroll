@@ -749,6 +749,7 @@ func (k Keeper) settleClaim(
 		NumEstimatedComputeUnits: numEstimatedComputeUnits,
 		ClaimedUpokt:             &claimeduPOKT,
 		ProofRequirement:         proofRequirement,
+		SettlementResult:         *claimSettlementContext.settlementResult,
 	}
 
 	if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
