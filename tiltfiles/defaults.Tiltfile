@@ -121,3 +121,4 @@ def get_defaults():
     localnet_config_defaults = default_stream[0] if len(default_stream) > 0 else {}
 
     return localnet_config_defaults
+

@@ -4,8 +4,7 @@ load("ext://configmap", "configmap_create")
 load("ext://secret", "secret_create_generic")
 load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
-load("./tiltfiles/utils.Tiltfile", "deep_merge_dicts")
-load("./tiltfiles/defaults.Tiltfile", "get_defaults")
+load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
 
 # A list of directories where changes trigger a hot-reload of the validator
@@ -15,19 +14,8 @@ hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
 # so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
 # environment is not broken for future engineers.
 
-# Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
-localnet_config_path = "localnet_config.yaml"
-# Load defaults
-localnet_config_defaults = get_defaults()
-# Load the existing config file, if it exists, or use an empty dict as fallback
-localnet_config_file = read_yaml(localnet_config_path, default={})
-# Localnet config - this also enforce that any new default value will be updated to existent file.
-localnet_config = deep_merge_dicts(localnet_config_defaults, localnet_config_file)
-
-# Check if there are differences or if the file doesn't exist
-if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_config_path)):
-    print("Updating " + localnet_config_path + " with defaults")
-    local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
+# Read configs
+localnet_config = read_configs()
 
 # Configure helm chart reference.
 # If using a local repo, set the path to the local repo; otherwise, use our own helm repo.

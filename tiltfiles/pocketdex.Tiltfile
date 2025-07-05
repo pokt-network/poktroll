@@ -55,6 +55,7 @@ def load_pocketdex(pocketdex_root_path, pocketdex_repo_branch, pocketdex_entrypo
         base_path=pocketdex_root_path,
         genesis_file_path=genesis_file_path,
         indexer_params_overwrite=pocketdex_params.get('overwrite', {}),
+        indexer_resource_deps=['validator'],
         pgadmin_enabled=pgadmin.get('enabled'),
         pgadmin_email=pgadmin.get('email'),
         pgadmin_password=pgadmin.get('password'),
@@ -76,6 +77,7 @@ def check_and_load_pocketdex(indexer_config):
         pocketdex_root_path = indexer_config.get("repo_path", "../pocketdex")
         pocketdex_repo_url = indexer_config.get("repo_url", "https://github.com/pokt-network/pocketdex")
         pocketdex_repo_branch =  indexer_config.get("repo_branch", "main")
+        # REQUIREMENT: this file needs to have a pocketdex function
         pocketdex_entrypoint_path = indexer_config.get("entrypoint_path", "tilt/Tiltfile")
         pocketdex_params = indexer_config.get("params", {})
 
