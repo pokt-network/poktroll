@@ -62,6 +62,12 @@ func (s *Service) ValidateBasic() error {
 	return nil
 }
 
+// UpdateServiceUsageMetrics increments the service usage metrics of the service
+func (s *Service) UpdateServiceUsageMetrics(numRelays, numComputeUnits uint64) {
+	s.TotalRelays += numRelays
+	s.TotalComputeUnits += numComputeUnits
+}
+
 // IsValidServiceId checks if the input string is a valid serviceId
 func IsValidServiceId(serviceId string) error {
 	// ServiceId CANNOT be empty

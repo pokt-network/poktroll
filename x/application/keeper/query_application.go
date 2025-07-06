@@ -29,10 +29,11 @@ func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicat
 
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	applicationStore := prefix.NewStore(store, types.KeyPrefix(types.ApplicationKeyPrefix))
+	applicationAccessor := getApplicationAccessorFn(k.cdc, logger)
 
 	pageRes, err := query.Paginate(applicationStore, req.Pagination, func(key []byte, value []byte) error {
-		var application types.Application
-		if err := k.cdc.Unmarshal(value, &application); err != nil {
+		application, err := applicationAccessor(value)
+		if err != nil {
 			logger.Error(fmt.Sprintf("unmarshaling application with key (hex): %x: %+v", key, err))
 			return status.Error(codes.Internal, err.Error())
 		}
@@ -43,11 +44,7 @@ func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicat
 			return nil
 		}
 
-		// Ensure that the PendingUndelegations is an empty map and not nil when
-		// unmarshalling an app that has no pending undelegations.
-		if application.PendingUndelegations == nil {
-			application.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
-		}
+		k.hydrateApplicationServiceUsageMetrics(ctx, &application)
 
 		apps = append(apps, application)
 		return nil
