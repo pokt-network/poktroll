@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"syscall"
 	"testing"
@@ -112,11 +113,27 @@ func New(t *testing.T, configs ...Config) *Network {
 	_, err = net.WaitForHeight(1)
 	require.NoError(t, err)
 	
-	// Custom cleanup with additional delay to ensure all goroutines are stopped
+	// Custom cleanup with aggressive goroutine monitoring and delays
 	t.Cleanup(func() {
+		// Record initial goroutine count
+		initialGoroutines := runtime.NumGoroutine()
+		
 		net.Cleanup()
-		// Wait even longer to ensure all consensus reactor goroutines are properly stopped
-		time.Sleep(2 * time.Second)
+		
+		// Wait for goroutines to finish with shorter polling
+		maxWait := 5 * time.Second
+		start := time.Now()
+		for time.Since(start) < maxWait {
+			currentGoroutines := runtime.NumGoroutine()
+			// If goroutine count has stabilized (reduced significantly), we can proceed
+			if currentGoroutines <= initialGoroutines/2 {
+				break
+			}
+			time.Sleep(200 * time.Millisecond)
+		}
+		
+		// Final safety delay - reduced but still effective
+		time.Sleep(1 * time.Second)
 		releaseGlobalTestLock(lockFile)
 	})
 	
