@@ -17,10 +17,19 @@ var _ = strconv.IntSize
 func networkWithGatewayObjects(t *testing.T, n int) (*network.Network, []types.Gateway) {
 	t.Helper()
 
+	// Configure the testing network
 	cfg := network.DefaultConfig()
 	gatewayGenesisState := network.DefaultGatewayModuleGenesisState(t, n)
 	buf, err := cfg.Codec.MarshalJSON(gatewayGenesisState)
 	require.NoError(t, err)
 	cfg.GenesisState[types.ModuleName] = buf
-	return network.New(t, cfg), gatewayGenesisState.GatewayList
+
+	// Start the network
+	net := network.New(t, cfg)
+
+	// Wait for the network to be fully initialized to avoid race conditions
+	// with consensus reactor goroutines
+	require.NoError(t, net.WaitForNextBlock())
+
+	return net, gatewayGenesisState.GatewayList
 }

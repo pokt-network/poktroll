@@ -110,8 +110,13 @@ func networkWithClaimObjects(
 	cfg.GenesisState[apptypes.ModuleName] = appGenesisBuffer
 	cfg.GenesisState[prooftypes.ModuleName] = proofGenesisBuffer
 
-	// Construct the network with the configuration.
+	// Start the network
 	net = network.New(t, cfg)
+
+	// Wait for the network to be fully initialized to avoid race conditions
+	// with consensus reactor goroutines
+	require.NoError(t, net.WaitForNextBlock())
+
 	// Only the first validator's client context is populated.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk/testutil/network#pkg-overview)
 	clientCtx = net.Validators[0].ClientCtx

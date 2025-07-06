@@ -39,5 +39,11 @@ func networkWithApplicationsAndSupplier(t *testing.T, n int) (
 	cfg.GenesisState[suppliertypes.ModuleName] = buf
 
 	// Start the network
-	return network.New(t, cfg), supplierGenesisState.SupplierList, applicationGenesisState.ApplicationList
+	net := network.New(t, cfg)
+
+	// Wait for the network to be fully initialized to avoid race conditions
+	// with consensus reactor goroutines
+	require.NoError(t, net.WaitForNextBlock())
+
+	return net, supplierGenesisState.SupplierList, applicationGenesisState.ApplicationList
 }
