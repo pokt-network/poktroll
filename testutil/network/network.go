@@ -3,6 +3,7 @@ package network
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -31,7 +32,11 @@ type (
 	Config  = network.Config
 )
 
-var addrCodec = addresscodec.NewBech32Codec(app.AccountAddressPrefix)
+var (
+	addrCodec = addresscodec.NewBech32Codec(app.AccountAddressPrefix)
+	// Global mutex to ensure only one network test runs at a time across all modules
+	networkMutex sync.Mutex
+)
 
 func init() {
 	cmd.InitSDKConfig()
@@ -39,8 +44,18 @@ func init() {
 
 // New creates instance with fully configured cosmos network.
 // Accepts optional config, that will be used in place of the DefaultConfig() if provided.
+// Uses a global mutex to prevent inter-module race conditions with shared resources.
 func New(t *testing.T, configs ...Config) *Network {
 	t.Helper()
+
+	// Acquire global mutex to prevent inter-module race conditions
+	networkMutex.Lock()
+
+	// Ensure mutex is released when test completes
+	t.Cleanup(func() {
+		networkMutex.Unlock()
+	})
+
 	if len(configs) > 1 {
 		panic("at most one config should be provided")
 	}

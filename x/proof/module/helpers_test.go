@@ -12,7 +12,6 @@ import (
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -38,7 +37,7 @@ func networkWithClaimObjects(
 	numSuppliers int,
 	numApps int,
 	sharedParams *sharedtypes.Params,
-) (net *network.Network, claims []types.Claim, clientCtx cosmosclient.Context) {
+) (net *network.Network, claims []prooftypes.Claim, clientCtx cosmosclient.Context) {
 	t.Helper()
 
 	// Initialize a network config.
@@ -146,7 +145,7 @@ func newTestClaim(
 	supplierOperatorAddr string,
 	sessionStartHeight int64,
 	appAddr string,
-) *types.Claim {
+) *prooftypes.Claim {
 	t.Helper()
 
 	// NB: These byte slices mock the root hash and block hash that would be
@@ -163,7 +162,7 @@ func newTestClaim(
 	)
 
 	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
-	return &types.Claim{
+	return &prooftypes.Claim{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,

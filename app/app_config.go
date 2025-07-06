@@ -45,7 +45,6 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/x/bank"         // import for side-effects
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	_ "github.com/cosmos/cosmos-sdk/x/consensus" // import for side-effects
-	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	consensustypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	_ "github.com/cosmos/cosmos-sdk/x/crisis" // import for side-effects
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
@@ -133,7 +132,7 @@ var (
 		vestingtypes.ModuleName,
 		circuittypes.ModuleName,
 		group.ModuleName,
-		consensusparamtypes.ModuleName,
+		consensustypes.ModuleName,
 		circuittypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,

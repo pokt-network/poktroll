@@ -1,50 +1,54 @@
-linters-settings:
-  govet:
-    enable:
-      - shadow
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
-    - gosimple
-    - goimports
     - govet
     - ineffassign
     - staticcheck
     - unused
-
+  settings:
+    govet:
+      enable:
+        - shadow
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - revive
+        path: ^x/.+/module\.go$
+      - linters:
+          - unused
+        path: ^x/.+/cli/tx\.go$
+      - linters:
+          - revive
+        path: .*/simulation/.*|_simulation\.go$
+      - linters:
+          - revive
+        path: ^x/.+/codec.go$
+      - linters:
+          - errcheck
+        path: _test\.go$
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-use-default: true
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    # Exclude cosmos-sdk module genesis.go files as they are generated with an
-    # empty import block containing a comment used by ignite CLI.
-    - path: ^x/.+/genesis\.go$
-      linters:
-        - goimports
-    # Exclude cosmos-sdk module module.go files as they are generated with unused
-    # parameters and unchecked errors.
-    - path: ^x/.+/module\.go$
-      linters:
-        - revive
-        - errcheck
-    # Exclude cosmos-sdk module tx.go files as they are generated with unused
-    # constants.
-    - path: ^x/.+/cli/tx\.go$
-      linters:
-        - unused
-    # Exclude simulation code as it's generated with lots of unused parameters.
-    - path: .*/simulation/.*|_simulation\.go$
-      linters:
-        - revive
-    # Exclude cosmos-sdk module codec files as they are scaffolded with a unused
-    # paramerters and a comment used by ignite CLI.
-    - path: ^x/.+/codec.go$
-      linters:
-        - revive
-    # Exclude test files from errcheck linter
-    - path: _test\.go$
-      linters:
-        - errcheck
+formatters:
+  enable:
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - ^x/.+/genesis\.go$
