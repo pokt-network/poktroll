@@ -3,7 +3,10 @@ package network
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -35,7 +38,7 @@ type (
 
 var (
 	addrCodec = addresscodec.NewBech32Codec(app.AccountAddressPrefix)
-	// Global mutex to ensure only one network test runs at a time across all modules
+	// Global mutex to ensure only one network test runs at a time within a single process
 	networkMutex sync.Mutex
 )
 
@@ -43,19 +46,57 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
+// acquireGlobalTestLock creates a file-based lock to coordinate tests across processes
+func acquireGlobalTestLock(t *testing.T) *os.File {
+	tempDir := os.TempDir()
+	lockPath := filepath.Join(tempDir, "poktroll_network_test.lock")
+	
+	// Try to create/open the lock file
+	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0666)
+	require.NoError(t, err, "Failed to create global test lock file")
+	
+	// Acquire exclusive lock (will block until available)
+	for {
+		err = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+		if err == nil {
+			// Successfully acquired lock
+			break
+		}
+		if err == syscall.EWOULDBLOCK {
+			// Lock held by another process, wait and retry
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		// Some other error
+		lockFile.Close()
+		require.NoError(t, err, "Failed to acquire global test lock")
+	}
+	
+	return lockFile
+}
+
+// releaseGlobalTestLock releases the file-based lock
+func releaseGlobalTestLock(lockFile *os.File) {
+	if lockFile != nil {
+		syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+		lockFile.Close()
+	}
+}
+
 // New creates instance with fully configured cosmos network.
 // Accepts optional config, that will be used in place of the DefaultConfig() if provided.
-// Uses a global mutex to prevent inter-module race conditions with shared resources.
+// Uses both in-process mutex and cross-process file lock to prevent all race conditions.
 func New(t *testing.T, configs ...Config) *Network {
 	t.Helper()
 
-	// Acquire global mutex to prevent inter-module race conditions
+	// First acquire in-process mutex
 	networkMutex.Lock()
+	defer networkMutex.Unlock()
 
-	// Ensure mutex is released when test completes
-	t.Cleanup(func() {
-		networkMutex.Unlock()
-	})
+	// Then acquire cross-process file lock
+	lockFile := acquireGlobalTestLock(t)
+
+	// Lock will be released in the custom cleanup function below
 
 	if len(configs) > 1 {
 		panic("at most one config should be provided")
@@ -70,7 +111,15 @@ func New(t *testing.T, configs ...Config) *Network {
 	require.NoError(t, err, "TODO_FLAKY: This config setup is periodically flaky")
 	_, err = net.WaitForHeight(1)
 	require.NoError(t, err)
-	t.Cleanup(net.Cleanup)
+	
+	// Custom cleanup with additional delay to ensure all goroutines are stopped
+	t.Cleanup(func() {
+		net.Cleanup()
+		// Wait even longer to ensure all consensus reactor goroutines are properly stopped
+		time.Sleep(2 * time.Second)
+		releaseGlobalTestLock(lockFile)
+	})
+	
 	return net
 }
 
