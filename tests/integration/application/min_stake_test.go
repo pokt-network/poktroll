@@ -27,6 +27,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 )
 
@@ -109,7 +110,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	s.setBlockHeight(settlementSessionEndHeight)
 
 	// Settle pending claims; this should cause the application to be unbonded.
-	_, _, _, err := s.keepers.Keeper.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
+	_, _, _, err := s.keepers.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
 	require.NoError(s.T(), err)
 
 	expectedApp := s.getExpectedApp(claim)
@@ -250,7 +251,7 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(s.T(), err)
 
-	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
+	globalInflationPerClaim := (*tokenomicskeeper.Keeper)(s.keepers.Keeper).GetParams(s.ctx).GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	require.NoError(s.T(), err)
 
@@ -340,7 +341,7 @@ func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 	expectedAppBurn := expectedAppBurnRat.Num().Int64() / expectedAppBurnRat.Denom().Int64()
 	expectedAppBurnCoin := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, int64(expectedAppBurn))
 
-	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
+	globalInflationPerClaim := (*tokenomicskeeper.Keeper)(s.keepers.Keeper).GetParams(s.ctx).GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	require.NoError(s.T(), err)
 

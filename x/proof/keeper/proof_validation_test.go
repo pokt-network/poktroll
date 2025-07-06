@@ -41,7 +41,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 	// Ensure the minimum relay difficulty bits is set to zero so that test cases
 	// don't need to mine for valid relays.
-	err := keepers.Keeper.SetParams(ctx, testProofParams)
+	err := keepers.SetParams(ctx, testProofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.

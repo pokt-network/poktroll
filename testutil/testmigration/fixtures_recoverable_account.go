@@ -147,21 +147,21 @@ type MorseFixturesConfig struct {
 // GetTotalAccounts calculates the total number of accounts based on the configuration.
 func (cfg *MorseFixturesConfig) GetTotalAccounts() uint64 {
 	// Calculate the total number of accounts based on the configuration
-	return cfg.ValidAccountsConfig.NumAccounts +
-		cfg.ValidAccountsConfig.NumApplications +
-		cfg.ValidAccountsConfig.NumValidators +
-		cfg.ValidAccountsConfig.NumModuleAccounts +
+	return cfg.NumAccountsValid +
+		cfg.NumApplicationsValid +
+		cfg.NumValidatorsValid +
+		cfg.NumModuleAccounts +
 		// 1 account for the operator and 1 for the owner (unstaked balances)
-		(cfg.ValidAccountsConfig.NumNonCustodialValidators * 2) +
-		cfg.InvalidAccountsConfig.NumAddressTooShort +
-		cfg.InvalidAccountsConfig.NumAddressTooLong +
-		cfg.InvalidAccountsConfig.NumNonHexAddress +
-		cfg.OrphanedActorsConfig.NumApplications +
-		cfg.OrphanedActorsConfig.NumValidators +
-		cfg.UnbondingActorsConfig.NumApplicationsUnbondingBegan +
-		cfg.UnbondingActorsConfig.NumApplicationsUnbondingEnded +
-		cfg.UnbondingActorsConfig.NumValidatorsUnbondingBegan +
-		cfg.UnbondingActorsConfig.NumValidatorsUnbondingEnded
+		(cfg.NumNonCustodialValidators * 2) +
+		cfg.NumAddressTooShort +
+		cfg.NumAddressTooLong +
+		cfg.NumNonHexAddress +
+		cfg.NumApplicationsOrphaned +
+		cfg.NumValidatorsOrphaned +
+		cfg.NumApplicationsUnbondingBegan +
+		cfg.NumApplicationsUnbondingEnded +
+		cfg.NumValidatorsUnbondingBegan +
+		cfg.NumValidatorsUnbondingEnded
 }
 
 // UnstakedAccountBalancesConfigFn is a function that returns the balance for an unstaked
@@ -200,9 +200,9 @@ type ApplicationStakesConfigFn func(
 // ValidAccountsConfig defines the number of valid accounts to generate
 // for each account type in the test fixtures.
 type ValidAccountsConfig struct {
-	NumAccounts               uint64 // Number of regular externally owned accounts
-	NumApplications           uint64 // Number of application accounts
-	NumValidators             uint64 // Number of validator accounts
+	NumAccountsValid          uint64 // Number of regular externally owned accounts
+	NumApplicationsValid      uint64 // Number of application accounts
+	NumValidatorsValid        uint64 // Number of validator accounts
 	NumNonCustodialValidators uint64 // Number of non-custodial validator accounts
 	NumModuleAccounts         uint64 // Number of module accounts
 }
@@ -210,8 +210,8 @@ type ValidAccountsConfig struct {
 // OrphanedActorsConfig defines the number of orphaned staked actors to generate.
 // Orphaned actors have a staked position but no corresponding unstaked account.
 type OrphanedActorsConfig struct {
-	NumApplications uint64 // Number of orphaned application accounts
-	NumValidators   uint64 // Number of orphaned validator accounts
+	NumApplicationsOrphaned uint64 // Number of orphaned application accounts
+	NumValidatorsOrphaned   uint64 // Number of orphaned validator accounts
 }
 
 // InvalidAccountsConfig defines the number of invalid accounts to generate
@@ -427,35 +427,35 @@ func (mf *MorseMigrationFixtures) generate() error {
 	// Auth accounts section - Create unstaked accounts of various types
 
 	// Generate valid regular externally owned accounts (EOAs)
-	for i := range mf.config.ValidAccountsConfig.NumAccounts {
+	for i := range mf.config.NumAccountsValid {
 		if _, err := mf.addAccount(i, MorseEOA); err != nil {
 			return err
 		}
 	}
 
 	// Generate module accounts which represent system accounts
-	for i := range mf.config.ValidAccountsConfig.NumModuleAccounts {
+	for i := range mf.config.NumModuleAccounts {
 		if _, err := mf.addAccount(i, MorseModule); err != nil {
 			return err
 		}
 	}
 
 	// Generate invalid accounts with addresses that are too short
-	for i := range mf.config.InvalidAccountsConfig.NumAddressTooShort {
+	for i := range mf.config.NumAddressTooShort {
 		if _, err := mf.addAccount(i, MorseInvalidTooShort); err != nil {
 			return err
 		}
 	}
 
 	// Generate invalid accounts with addresses that are too long
-	for i := range mf.config.InvalidAccountsConfig.NumAddressTooLong {
+	for i := range mf.config.NumAddressTooLong {
 		if _, err := mf.addAccount(i, MorseInvalidTooLong); err != nil {
 			return err
 		}
 	}
 
 	// Generate accounts with invalid hex characters in the address
-	for i := range mf.config.InvalidAccountsConfig.NumNonHexAddress {
+	for i := range mf.config.NumNonHexAddress {
 		if _, err := mf.addAccount(i, MorseNonHex); err != nil {
 			return err
 		}
@@ -464,28 +464,28 @@ func (mf *MorseMigrationFixtures) generate() error {
 	// Application accounts section - Create staked application accounts
 
 	// Generate standard applications with both staked and unstaked accounts
-	for i := range mf.config.ValidAccountsConfig.NumApplications {
+	for i := range mf.config.NumApplicationsValid {
 		if err := mf.addApplication(i, MorseApplication); err != nil {
 			return err
 		}
 	}
 
 	// Generate orphaned application accounts without corresponding unstaked accounts
-	for i := range mf.config.OrphanedActorsConfig.NumApplications {
+	for i := range mf.config.NumApplicationsOrphaned {
 		if err := mf.addApplication(i, MorseOrphanedApplication); err != nil {
 			return err
 		}
 	}
 
 	// Generate unbonding application accounts with both staked unstaked accounts
-	for i := range mf.config.UnbondingActorsConfig.NumApplicationsUnbondingBegan {
+	for i := range mf.config.NumApplicationsUnbondingBegan {
 		if err := mf.addApplication(i, MorseUnbondingApplication); err != nil {
 			return err
 		}
 	}
 
 	// Generate unbonded application accounts with both staked unstaked accounts
-	for i := range mf.config.UnbondingActorsConfig.NumApplicationsUnbondingEnded {
+	for i := range mf.config.NumApplicationsUnbondingEnded {
 		if err := mf.addApplication(i, MorseUnbondedApplication); err != nil {
 			return err
 		}
@@ -494,21 +494,21 @@ func (mf *MorseMigrationFixtures) generate() error {
 	// Validator accounts section - Create staked validator accounts
 
 	// Generate standard validators with both staked and unstaked accounts
-	for i := range mf.config.ValidAccountsConfig.NumValidators {
+	for i := range mf.config.NumValidatorsValid {
 		if err := mf.addValidator(i, MorseValidator); err != nil {
 			return err
 		}
 	}
 
 	// Generate orphaned validator accounts without corresponding unstaked accounts
-	for i := range mf.config.OrphanedActorsConfig.NumValidators {
+	for i := range mf.config.NumValidatorsOrphaned {
 		if err := mf.addValidator(i, MorseOrphanedValidator); err != nil {
 			return err
 		}
 	}
 
 	// Generate non-custodial validators with both staked and unstaked operator accounts and unstaked owne
-	for i := range mf.config.ValidAccountsConfig.NumNonCustodialValidators {
+	for i := range mf.config.NumNonCustodialValidators {
 		if _, err := mf.addAccount(i, MorseNonCustodialOwnerAccount); err != nil {
 			return err
 		}
@@ -519,14 +519,14 @@ func (mf *MorseMigrationFixtures) generate() error {
 	}
 
 	// Generate unbonding validator accounts with both staked unstaked accounts
-	for i := range mf.config.UnbondingActorsConfig.NumValidatorsUnbondingBegan {
+	for i := range mf.config.NumValidatorsUnbondingBegan {
 		if err := mf.addValidator(i, MorseUnbondingValidator); err != nil {
 			return err
 		}
 	}
 
 	// Generate unbonded validator accounts with both staked unstaked accounts
-	for i := range mf.config.UnbondingActorsConfig.NumValidatorsUnbondingEnded {
+	for i := range mf.config.NumValidatorsUnbondingEnded {
 		if err := mf.addValidator(i, MorseUnbondedValidator); err != nil {
 			return err
 		}

@@ -16,16 +16,16 @@ import (
 )
 
 const (
-	// Time allowed (in seconds) to write a message to the peer.
-	writeWaitSec = 10 * time.Second
+	// Time allowed to write a message to the peer.
+	writeWait = 10 * time.Second
 
-	// Time allowed (in seconds) to wait for the next pong message to be received
+	// Time allowed to wait for the next pong message to be received
 	// from the peer before the connection closes.
-	pongWaitSec = 30 * time.Second
+	pongWait = 30 * time.Second
 
 	// Send pings to peer with this period.
-	// Must be less than pongWaitSec.
-	pingPeriodSec = (pongWaitSec * 9) / 10
+	// Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
 )
 
 // messageSource represents the source of a message in a bidirectional connection.
@@ -175,11 +175,11 @@ func (c *connection) connLoop() {
 func (c *connection) pingLoop() {
 	logger := c.logger.With("connection_context", "pingLoop")
 
-	ticker := time.NewTicker(pingPeriodSec)
+	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
 
 	// Set the read deadline for the first pong message.
-	if err := c.SetReadDeadline(time.Now().Add(pongWaitSec)); err != nil {
+	if err := c.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
 		logger.Error().Err(err).Msg("failed to set initial read deadline")
 		c.handleError(ErrWebsocketsConnection.Wrapf("failed to set initial read deadline: %v", err))
 		return
@@ -187,7 +187,7 @@ func (c *connection) pingLoop() {
 
 	// Each time a pong message is received, set the read deadline for the next one.
 	c.SetPongHandler(func(string) error {
-		if err := c.SetReadDeadline(time.Now().Add(pongWaitSec)); err != nil {
+		if err := c.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
 			logger.Error().Err(err).Msg("failed to set pong handler read deadline")
 			c.handleError(ErrWebsocketsConnection.Wrapf("failed to set pong handler read deadline: %v", err))
 			return err
@@ -203,7 +203,7 @@ func (c *connection) pingLoop() {
 
 		// Send a ping message to the peer at regular intervals.
 		case <-ticker.C:
-			if err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(writeWaitSec)); err != nil {
+			if err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(writeWait)); err != nil {
 				logger.Error().Err(err).Msg("failed to send ping to connection")
 				c.handleError(ErrWebsocketsConnection.Wrapf("failed to send ping to connection: %v", err))
 				return
@@ -256,13 +256,13 @@ func (c *connection) cleanup() {
 
 	// Format and send the close message.
 	closeMsg := websocket.FormatCloseMessage(closeCode, closeText)
-	deadline := time.Now().Add(writeWaitSec)
+	deadline := time.Now().Add(writeWait)
 	if err := c.WriteControl(websocket.CloseMessage, closeMsg, deadline); err != nil {
 		logger.Error().Err(err).Msg("failed to send close message")
 	}
 
 	// Wait for the control message to be received by the peer.
-	time.Sleep(writeWaitSec)
+	time.Sleep(writeWait)
 	if err := c.Close(); err != nil {
 		logger.Error().Err(err).Msg("failed to close connection")
 	}

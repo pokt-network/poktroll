@@ -116,7 +116,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Sign and broadcast the message.
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, errCh := eitherErr.SyncOrAsyncError()
+	errCh, err := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
 	// Construct the expected RPC response from the expected transaction bytes.
@@ -256,7 +256,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	}
 
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, _ = eitherErr.SyncOrAsyncError()
+	_, err = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrInvalidMsg)
 
 	time.Sleep(10 * time.Millisecond)
@@ -331,7 +331,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 
 	// Sign and broadcast the message.
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, _ = eitherErr.SyncOrAsyncError()
+	_, err = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrCheckTx)
 	require.ErrorContains(t, err, expectedErrMsg)
 }
@@ -404,7 +404,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 
 	// Sign and broadcast the message in a transaction.
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, errCh := eitherErr.SyncOrAsyncError()
+	errCh, err := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
 	for i := int64(0); i < timeoutHeight; i++ {

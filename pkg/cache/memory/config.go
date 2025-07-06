@@ -82,7 +82,7 @@ func (cfg *keyValueCacheConfig) Validate() error {
 
 // Validate ensures that the historicalKeyValueCacheConfig isn't configured with incompatible options.
 func (cfg *historicalKeyValueCacheConfig) Validate() error {
-	if err := cfg.keyValueCacheConfig.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return err
 	}
 

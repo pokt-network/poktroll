@@ -51,11 +51,11 @@ func init() {
 func acquireGlobalTestLock(t *testing.T) *os.File {
 	tempDir := os.TempDir()
 	lockPath := filepath.Join(tempDir, "poktroll_network_test.lock")
-	
+
 	// Try to create/open the lock file
 	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0666)
 	require.NoError(t, err, "Failed to create global test lock file")
-	
+
 	// Acquire exclusive lock (will block until available)
 	for {
 		err = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
@@ -72,14 +72,14 @@ func acquireGlobalTestLock(t *testing.T) *os.File {
 		lockFile.Close()
 		require.NoError(t, err, "Failed to acquire global test lock")
 	}
-	
+
 	return lockFile
 }
 
 // releaseGlobalTestLock releases the file-based lock
 func releaseGlobalTestLock(lockFile *os.File) {
 	if lockFile != nil {
-		syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+		_ = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
 		lockFile.Close()
 	}
 }
@@ -112,14 +112,14 @@ func New(t *testing.T, configs ...Config) *Network {
 	require.NoError(t, err, "TODO_FLAKY: This config setup is periodically flaky")
 	_, err = net.WaitForHeight(1)
 	require.NoError(t, err)
-	
+
 	// Custom cleanup with aggressive goroutine monitoring and delays
 	t.Cleanup(func() {
 		// Record initial goroutine count
 		initialGoroutines := runtime.NumGoroutine()
-		
+
 		net.Cleanup()
-		
+
 		// Wait for goroutines to finish with shorter polling
 		maxWait := 5 * time.Second
 		start := time.Now()
@@ -131,12 +131,12 @@ func New(t *testing.T, configs ...Config) *Network {
 			}
 			time.Sleep(200 * time.Millisecond)
 		}
-		
+
 		// Final safety delay - reduced but still effective
 		time.Sleep(1 * time.Second)
 		releaseGlobalTestLock(lockFile)
 	})
-	
+
 	return net
 }
 
