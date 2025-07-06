@@ -142,7 +142,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	settlementContext := tokenomicskeeper.NewSettlementContext(
 		ctx,
 		keepers.Keeper,
-		keepers.Keeper.Logger(),
+		keepers.Logger(),
 	)
 
 	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
@@ -314,7 +314,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	settlementContext := tokenomicskeeper.NewSettlementContext(
 		ctx,
 		keepers.Keeper,
-		keepers.Keeper.Logger(),
+		keepers.Logger(),
 	)
 
 	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
@@ -495,7 +495,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	settlementContext := tokenomicskeeper.NewSettlementContext(
 		ctx,
 		keepers.Keeper,
-		keepers.Keeper.Logger(),
+		keepers.Logger(),
 	)
 
 	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)

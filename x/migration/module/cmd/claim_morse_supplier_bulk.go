@@ -494,7 +494,7 @@ func getMorseAccountsFromFile(morseNodesFile string) ([]MorseAccountInfo, error)
 	}
 
 	if len(morsePrivateKeys) == 0 {
-		return nil, fmt.Errorf("Zero morse private keys found in %s. Check the logs and the input file before trying again.", morseNodesFile)
+		return nil, fmt.Errorf("zero morse private keys found in %s; check the logs and the input file before trying again", morseNodesFile)
 	}
 
 	// Parse each hex-encoded Morse private key and derive its address.

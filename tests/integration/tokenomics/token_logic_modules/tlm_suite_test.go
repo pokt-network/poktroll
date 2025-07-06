@@ -157,7 +157,7 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 			RootHash:                proof.SmstRootWithSumAndCount(1000, 1000),
 		}
 
-		keepers.ProofKeeper.UpsertClaim(s.ctx, claim)
+		keepers.UpsertClaim(s.ctx, claim)
 	}
 }
 

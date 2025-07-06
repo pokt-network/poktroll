@@ -102,7 +102,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 
 	// Create a claim whose settlement amount drops the application below min stake
 	claim := s.getClaim(sessionHeader)
-	s.keepers.ProofKeeper.UpsertClaim(s.ctx, *claim)
+	s.keepers.UpsertClaim(s.ctx, *claim)
 
 	// Set the current height to the claim settlement session end height.
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
@@ -126,14 +126,14 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	s.setBlockHeight(unbondingSessionEndHeight)
 
 	// Run app module end blockers to complete unbonding.
-	err = s.keepers.ApplicationKeeper.EndBlockerUnbondApplications(s.ctx)
+	err = s.keepers.EndBlockerUnbondApplications(s.ctx)
 	require.NoError(s.T(), err)
 
 	// Assert that the EventApplicationUnbondingEnd event is emitted.
 	s.assertUnbondingEndEventObserved(expectedApp)
 
 	// Assert that the application was unbonded.
-	_, isAppFound := s.keepers.ApplicationKeeper.GetApplication(s.ctx, s.appBech32)
+	_, isAppFound := s.keepers.GetApplication(s.ctx, s.appBech32)
 	require.False(s.T(), isAppFound)
 
 	// Assert that the application's stake was returned to its bank balance.
@@ -142,7 +142,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 
 // addService adds the test service to the service module state.
 func (s *applicationMinStakeTestSuite) addService() {
-	s.keepers.ServiceKeeper.SetService(s.ctx, sharedtypes.Service{
+	s.keepers.SetService(s.ctx, sharedtypes.Service{
 		Id:                   s.serviceId,
 		ComputeUnitsPerRelay: 1,
 		OwnerAddress:         sample.AccAddress(), // random address.
@@ -151,7 +151,7 @@ func (s *applicationMinStakeTestSuite) addService() {
 
 // stakeApp stakes an application for service 1 with min stake.
 func (s *applicationMinStakeTestSuite) stakeApp() {
-	s.keepers.ApplicationKeeper.SetApplication(s.ctx, apptypes.Application{
+	s.keepers.SetApplication(s.ctx, apptypes.Application{
 		Address:        s.appBech32,
 		Stake:          s.appStake,
 		ServiceConfigs: s.appServiceConfigs,
@@ -177,7 +177,7 @@ func (s *applicationMinStakeTestSuite) stakeSupplier() {
 		1,
 		sharedtypes.NoDeactivationHeight,
 	)
-	s.keepers.SupplierKeeper.SetAndIndexDehydratedSupplier(s.ctx, sharedtypes.Supplier{
+	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, sharedtypes.Supplier{
 		OwnerAddress:         s.supplierBech32,
 		OperatorAddress:      s.supplierBech32,
 		Stake:                &suppliertypes.DefaultMinStake,
@@ -192,7 +192,7 @@ func (s *applicationMinStakeTestSuite) getSessionHeader() *sessiontypes.SessionH
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sessionRes, err := s.keepers.SessionKeeper.GetSession(s.ctx, &sessiontypes.QueryGetSessionRequest{
+	sessionRes, err := s.keepers.GetSession(s.ctx, &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: s.appBech32,
 		ServiceId:          s.serviceId,
 		BlockHeight:        currentHeight,
@@ -219,7 +219,7 @@ func (s *applicationMinStakeTestSuite) getClaim(
 func (s *applicationMinStakeTestSuite) getAppBalance() *cosmostypes.Coin {
 	s.T().Helper()
 
-	appBalRes, err := s.keepers.BankKeeper.Balance(s.ctx, &banktypes.QueryBalanceRequest{
+	appBalRes, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
 		Address: s.appBech32, Denom: pocket.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
@@ -289,7 +289,7 @@ func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expecte
 
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
-	sessionEndHeight := s.keepers.SharedKeeper.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
+	sessionEndHeight := s.keepers.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:        expectedApp,
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,

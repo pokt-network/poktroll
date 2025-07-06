@@ -692,11 +692,11 @@ func (mf *MorseMigrationFixtures) addApplication(
 	switch applicationType {
 	// Set the unstaking time for unbonding and unbonded applications
 	case MorseUnbondingApplication, MorseUnbondedApplication:
-		if mf.config.UnstakingTimeConfig.ApplicationUnstakingTimeFn == nil {
+		if mf.config.ApplicationUnstakingTimeFn == nil {
 			panic("UnstakingTimeConfigFn is required when using UnbondingActorsConfig")
 		}
 
-		unstakingTime := mf.config.UnstakingTimeConfig.ApplicationUnstakingTimeFn(
+		unstakingTime := mf.config.ApplicationUnstakingTimeFn(
 			allAccountsIndex,
 			actorIndex,
 			applicationType,
@@ -793,12 +793,12 @@ func (mf *MorseMigrationFixtures) addValidator(
 
 	// For unbonding and unbonded suppliers, set the unstaking time.
 	case MorseUnbondingValidator, MorseUnbondedValidator:
-		if mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn == nil {
+		if mf.config.ValidatorUnstakingTimeFn == nil {
 			panic("UnstakingTimeConfigFn is required when using UnbondingActorsConfig")
 		}
 
-		if mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn != nil {
-			unstakingTime := mf.config.UnstakingTimeConfig.ValidatorUnstakingTimeFn(
+		if mf.config.ValidatorUnstakingTimeFn != nil {
+			unstakingTime := mf.config.ValidatorUnstakingTimeFn(
 				allAccountsIndex,
 				actorIndex,
 				validatorType,

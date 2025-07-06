@@ -22,7 +22,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/testutil/testtree"
-	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -637,7 +636,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				return proof
 
 			},
-			expectedErr: types.ErrProofInvalidRelayDifficulty, // Asserting on the default error but validation of values is done above
+			expectedErr: prooftypes.ErrProofInvalidRelayDifficulty, // Asserting on the default error but validation of values is done above
 		},
 		{
 			desc: "claim must exist for proof message",
