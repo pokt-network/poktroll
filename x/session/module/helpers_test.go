@@ -45,5 +45,8 @@ func networkWithApplicationsAndSupplier(t *testing.T, n int) (
 	// with consensus reactor goroutines
 	require.NoError(t, net.WaitForNextBlock())
 
+	// Additional wait to ensure all consensus components are fully initialized
+	require.NoError(t, net.WaitForNextBlock())
+
 	return net, supplierGenesisState.SupplierList, applicationGenesisState.ApplicationList
 }

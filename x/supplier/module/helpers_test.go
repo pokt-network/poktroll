@@ -33,5 +33,8 @@ func networkWithSupplierObjects(t *testing.T, n int) (*network.Network, []shared
 	// with consensus reactor goroutines
 	require.NoError(t, net.WaitForNextBlock())
 
+	// Additional wait to ensure all consensus components are fully initialized
+	require.NoError(t, net.WaitForNextBlock())
+
 	return net, supplierGenesisState.SupplierList
 }

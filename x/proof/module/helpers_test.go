@@ -115,6 +115,9 @@ func networkWithClaimObjects(
 	// Wait for the network to be fully initialized to avoid race conditions
 	// with consensus reactor goroutines
 	require.NoError(t, net.WaitForNextBlock())
+	
+	// Additional wait to ensure all consensus components are fully initialized
+	require.NoError(t, net.WaitForNextBlock())
 
 	// Only the first validator's client context is populated.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk/testutil/network#pkg-overview)

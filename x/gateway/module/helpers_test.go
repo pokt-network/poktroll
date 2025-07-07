@@ -31,5 +31,8 @@ func networkWithGatewayObjects(t *testing.T, n int) (*network.Network, []types.G
 	// with consensus reactor goroutines
 	require.NoError(t, net.WaitForNextBlock())
 
+	// Additional wait to ensure all consensus components are fully initialized
+	require.NoError(t, net.WaitForNextBlock())
+
 	return net, gatewayGenesisState.GatewayList
 }

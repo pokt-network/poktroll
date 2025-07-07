@@ -144,6 +144,10 @@ func New(t *testing.T, configs ...Config) *Network {
 
 		// Step 5: Release the global lock
 		releaseGlobalTestLock(lockFile)
+		
+		// Step 6: Release the in-process mutex
+		// This ensures complete serialization of network operations
+		networkMutex.Unlock()
 	})
 
 	return net
