@@ -68,36 +68,50 @@ jobs:
           # Use printf to safely handle content with special characters
           RELEASE_BODY=$(printf '%s' "${{ steps.get_release.outputs.release_body }}")
 
-          # Function to safely escape content for Telegram (no markdown conversion)
-          escape_for_telegram() {
+          # Function to convert markdown to HTML BEFORE escaping
+          convert_markdown_to_html() {
             echo "$1" | \
-            # Escape HTML special characters
-            sed 's/&/\&amp;/g' | \
-            sed 's/</\&lt;/g' | \
-            sed 's/>/\&gt;/g' | \
-            # Remove carriage returns that can cause issues
+            # Convert markdown first (before any escaping)
+            # Convert ## headers to <b>headers</b>
+            sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
+            sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
+            # Convert **bold** to <b>bold</b>
+            sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
+            # Convert [text](url) links to <a href="url">text</a>
+            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
+            # Remove carriage returns
             tr -d '\r'
           }
 
-          # Simply escape the release body without trying to convert markdown
-          ESCAPED_RELEASE_BODY=$(escape_for_telegram "$RELEASE_BODY")
+          # Function to escape HTML entities AFTER markdown conversion
+          escape_html_entities() {
+            echo "$1" | \
+            # Only escape content that's NOT inside HTML tags
+            # This is tricky with sed, so we'll just escape the basic ones carefully
+            sed 's/&\([^a-zA-Z]\)/\&amp;\1/g' | \
+            sed 's/&$/\&amp;/g'
+          }
+
+          # Convert markdown to HTML first, then escape what needs escaping
+          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          SAFE_RELEASE_BODY=$(escape_html_entities "$HTML_RELEASE_BODY")
 
           # Debug: Print the processed values
           echo "DEBUG: RELEASE_NAME='$RELEASE_NAME'"
-          echo "DEBUG: First 200 chars of ESCAPED_RELEASE_BODY:"
-          echo "$ESCAPED_RELEASE_BODY" | head -c 200
+          echo "DEBUG: First 200 chars of SAFE_RELEASE_BODY:"
+          echo "$SAFE_RELEASE_BODY" | head -c 200
           echo "..."
 
           # Create message with HTML formatting - escape the release name too
-          ESCAPED_RELEASE_NAME=$(echo "$RELEASE_NAME" | sed 's/&/\&amp;/g' | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g')
+          ESCAPED_RELEASE_NAME=$(echo "$RELEASE_NAME" | sed 's/&/\&amp;/g')
 
           # Also escape the URL to be safe
           ESCAPED_RELEASE_URL=$(echo "$RELEASE_URL" | sed 's/&/\&amp;/g')
 
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE=$(printf "🧪 TEST RELEASE NOTIFICATION 🧪\n\n📣 The %s release is live! 📣\n%s\n\n%s" "$ESCAPED_RELEASE_NAME" "$ESCAPED_RELEASE_URL" "$ESCAPED_RELEASE_BODY")
+            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$ESCAPED_RELEASE_NAME" "$ESCAPED_RELEASE_URL" "$SAFE_RELEASE_BODY")
           else
-            MESSAGE=$(printf "📣 The %s release is live! 📣\n%s\n\n%s" "$ESCAPED_RELEASE_NAME" "$ESCAPED_RELEASE_URL" "$ESCAPED_RELEASE_BODY")
+            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$ESCAPED_RELEASE_NAME" "$ESCAPED_RELEASE_URL" "$SAFE_RELEASE_BODY")
           fi
 
           # Debug: Print the first 200 chars of the message
