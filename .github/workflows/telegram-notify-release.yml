@@ -32,7 +32,7 @@ jobs:
     # Uncomment the line below when enabling automatic triggers
     # if: github.event.release.prerelease == false
     outputs:
-      message: ${{ steps.decode_message.outputs.message }}
+      message: ${{ steps.prepare_message.outputs.message }}
     steps:
       - name: Get latest release
         id: get_release
@@ -42,8 +42,8 @@ jobs:
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
           # Extract release details and properly escape for GitHub Actions
-          RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name // "Unknown Release"')
-          RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url // ""')
+          RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name')
+          RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url')
 
           echo "Latest release: $RELEASE_NAME"
           echo "Release URL: $RELEASE_URL"
@@ -52,91 +52,67 @@ jobs:
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
 
-          # Use EOF delimiter for multiline content and handle null values
-          echo "release_body<<RELEASE_BODY_END" >> $GITHUB_OUTPUT
-          echo "$RELEASE_INFO" | jq -r '.body // "No release notes available."' >> $GITHUB_OUTPUT
-          echo "RELEASE_BODY_END" >> $GITHUB_OUTPUT
+          # Use EOF delimiter for multiline content
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_INFO" | jq -r '.body' >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Prepare release message
         id: prepare_message
         run: |
-          # Create a Python script to properly handle HTML escaping and message formatting
-          cat > format_message.py << 'SCRIPT_END'
-          import os
-          import html
-          import base64
+          # Safely construct message using printf to avoid command execution
+          RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
+          RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
 
-          def format_telegram_message(release_name, release_url, release_body, test_mode=False):
-              # Escape HTML entities properly
-              escaped_name = html.escape(release_name or "Unknown Release")
-              escaped_body = html.escape(release_body or "No release notes available.")
+          # Read release body and escape it properly to prevent command execution
+          # Use printf to safely handle content with special characters
+          RELEASE_BODY=$(printf '%s' "${{ steps.get_release.outputs.release_body }}")
 
-              # Truncate body if it's too long (Telegram has message limits)
-              max_body_length = 3000  # Leave room for other parts of message
-              if len(escaped_body) > max_body_length:
-                  escaped_body = escaped_body[:max_body_length] + "..."
+          # Function to convert markdown to HTML for better Telegram compatibility
+          convert_markdown_to_html() {
+            echo "$1" | \
+            # First escape HTML special characters
+            sed 's/&/\&amp;/g' | \
+            sed 's/</\&lt;/g' | \
+            sed 's/>/\&gt;/g' | \
+            # Convert ## headers to <b>headers</b> BEFORE processing bold text
+            sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
+            # Convert ### headers to <b>headers</b>
+            sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
+            # Convert `code` to <code>code</code> first (before bold/italic)
+            sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
+            # Convert **bold** to <b>bold</b> - use non-greedy match
+            sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
+            # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
+            sed 's/\([^*]\)\*\([^*]\+\)\*\([^*]\)/\1<i>\2<\/i>\3/g' | \
+            # Convert [text](url) links to <a href="url">text</a>
+            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g'
+          }
 
-              if test_mode:
-                  message = f"🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>{escaped_name} release is live!</b> 📣\n<a href=\"{release_url}\">View the full release here</a>\n\n{escaped_body}"
-              else:
-                  message = f"📣 The <b>{escaped_name} release is live!</b> 📣\n<a href=\"{release_url}\">View the full release here</a>\n\n{escaped_body}"
+          # Convert the release body from markdown to HTML
+          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
 
-              return message
-
-          # Read environment variables
-          release_name = os.environ.get('RELEASE_NAME', '')
-          release_url = os.environ.get('RELEASE_URL', '')
-          release_body = os.environ.get('RELEASE_BODY', '')
-          test_mode = os.environ.get('TEST_MODE', 'false').lower() == 'true'
-
-          # Format the message
-          message = format_telegram_message(release_name, release_url, release_body, test_mode)
-
-          # Encode as base64 to avoid delimiter issues
-          encoded_message = base64.b64encode(message.encode('utf-8')).decode('ascii')
-
-          # Write both versions
-          with open('formatted_message.txt', 'w', encoding='utf-8') as f:
-              f.write(message)
-
-          with open('encoded_message.txt', 'w') as f:
-              f.write(encoded_message)
-
-          print("Message formatted successfully")
-          print(f"Message length: {len(message)} characters")
-          print(f"Encoded message: {encoded_message[:100]}...")
-          SCRIPT_END
-
-          # Set environment variables for Python script
-          export RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
-          export RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
-          export RELEASE_BODY="${{ steps.get_release.outputs.release_body }}"
-          export TEST_MODE="${{ inputs.test_mode }}"
-
-          # Run Python script to format message
-          python3 format_message.py
-
-          # Read the base64 encoded message (no delimiters needed for single line)
-          ENCODED_MESSAGE=$(cat encoded_message.txt)
-          echo "encoded_message=${ENCODED_MESSAGE}" >> $GITHUB_OUTPUT
-
-          # Debug output
-          echo "DEBUG: Message preview (first 200 chars):"
-          head -c 200 formatted_message.txt
+          # Debug: Print the HTML to see what's being generated
+          echo "DEBUG: HTML_RELEASE_BODY:"
+          echo "$HTML_RELEASE_BODY" | head -c 200
           echo "..."
 
-      - name: Decode and set final message
-        id: decode_message
-        run: |
-          # Decode the base64 message back to original format
-          echo "${{ steps.prepare_message.outputs.encoded_message }}" | base64 -d > final_message.txt
+          # Create message with HTML formatting
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+          else
+            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+          fi
 
-          # Set the decoded message as output using a very unique delimiter
-          echo "message<<MSG_DELIMITER_XYZ123" >> $GITHUB_OUTPUT
-          cat final_message.txt >> $GITHUB_OUTPUT
-          echo "MSG_DELIMITER_XYZ123" >> $GITHUB_OUTPUT
+          # Debug: Print the first 200 chars of the message
+          echo "DEBUG: First 200 chars of MESSAGE:"
+          echo "$MESSAGE" | head -c 200
+          echo "..."
 
-          echo "Message successfully decoded and set as output"
+          # Use EOF delimiter for multiline content
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
   send-release:
     needs: notify
