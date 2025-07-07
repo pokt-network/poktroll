@@ -141,7 +141,7 @@ ibc_list_axelar_connections:
 		kubectl_exec_grep_pod axelar-validator axelard query ibc connection connections \
 	'
 
-.PHONY: ibc_list_axelar_connections
+.PHONY: ibc_list_axelar_channels
 ibc_list_axelar_channels:
 	bash -c '\
 		source ./tools/scripts/ibc-channels.sh && \
