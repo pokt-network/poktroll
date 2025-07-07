@@ -123,4 +123,4 @@ jobs:
     with:
       message: ${{ needs.notify.outputs.message }}
       parse_mode: "HTML"
-      test_mode: ${{ inputs.test_mode }
+      test_mode: ${{ inputs.test_mode }}
