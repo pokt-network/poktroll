@@ -36,12 +36,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          RELEASE_NAME="v0.1.26"
-          RELEASE_URL="https://github.com/pokt-network/poktroll/releases/tag/v0.1.26"
-          RELEASE_BODY="Empty2"
+          RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
+          RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
+          RELEASE_BODY="${{ steps.get_release.outputs.release_body }}"
 
           escape_markdown() {
-            echo "$1" | sed -E 's/([_\*\[\]\(\)~`>#+\-=|{}.!\\])/\\\1/g'
+            echo "$1" | sed -E 's/([_\*\[\]\(\)~`>#+|{}.!\\-])/\\\1/g'
           }
 
           convert_markdown_to_markdownv2() {
@@ -71,7 +71,6 @@ jobs:
           echo "message<<EOF" >> $GITHUB_OUTPUT
           echo "$MESSAGE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
   send-release:
     needs: notify
     uses: ./.github/workflows/telegram-send-message.yml
