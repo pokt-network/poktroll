@@ -102,19 +102,33 @@ jobs:
           echo "$HTML_RELEASE_BODY" | head -c 200
           echo "..."
 
-          # Create message with HTML formatting
+          # Create message with HTML formatting (using printf to ensure proper escaping)
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE="🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪
+            MESSAGE=$(cat << 'TELEGRAM_MESSAGE_EOF'
+            🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪
 
-            📣 The <b>$RELEASE_NAME release is live!</b> 📣
-            <a href="$RELEASE_URL">View the full release here</a>
+            📣 The <b>RELEASE_NAME_PLACEHOLDER release is live!</b> 📣
+            <a href="RELEASE_URL_PLACEHOLDER">View the full release here</a>
 
-            $HTML_RELEASE_BODY"
+            RELEASE_BODY_PLACEHOLDER
+            TELEGRAM_MESSAGE_EOF
+            )
+            # Replace placeholders with actual values
+            MESSAGE="${MESSAGE//RELEASE_NAME_PLACEHOLDER/$RELEASE_NAME}"
+            MESSAGE="${MESSAGE//RELEASE_URL_PLACEHOLDER/$RELEASE_URL}"
+            MESSAGE="${MESSAGE//RELEASE_BODY_PLACEHOLDER/$HTML_RELEASE_BODY}"
           else
-            MESSAGE="📣 The <b>$RELEASE_NAME release is live!</b> 📣
-            <a href="$RELEASE_URL">View the full release here</a>
+            MESSAGE=$(cat << 'TELEGRAM_MESSAGE_EOF'
+            📣 The <b>RELEASE_NAME_PLACEHOLDER release is live!</b> 📣
+            <a href="RELEASE_URL_PLACEHOLDER">View the full release here</a>
 
-            $HTML_RELEASE_BODY"
+            RELEASE_BODY_PLACEHOLDER
+            TELEGRAM_MESSAGE_EOF
+            )
+                        # Replace placeholders with actual values
+            MESSAGE="${MESSAGE//RELEASE_NAME_PLACEHOLDER/$RELEASE_NAME}"
+            MESSAGE="${MESSAGE//RELEASE_URL_PLACEHOLDER/$RELEASE_URL}"
+            MESSAGE="${MESSAGE//RELEASE_BODY_PLACEHOLDER/$HTML_RELEASE_BODY}"
           fi
 
           # Debug: Print the first 200 chars of the message
