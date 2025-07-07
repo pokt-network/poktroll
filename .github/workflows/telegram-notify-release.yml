@@ -68,36 +68,45 @@ jobs:
           # Use printf to safely handle content with special characters
           RELEASE_BODY=$(printf '%s' "${{ steps.get_release.outputs.release_body }}")
 
-          # Function to convert markdown to HTML for better Telegram compatibility
-          convert_markdown_to_html() {
+          # Function to safely escape text for Telegram HTML
+          escape_html() {
             echo "$1" | \
-            # First escape HTML special characters
             sed 's/&/\&amp;/g' | \
             sed 's/</\&lt;/g' | \
             sed 's/>/\&gt;/g' | \
-            # Convert `code` to <code>code</code> first (before bold/italic)
-            sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
-            # Convert **bold** to <b>bold</b>
-            sed 's/\*\*\([^*]*\)\*\*/<b>\1<\/b>/g' | \
-            # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
-            sed 's/\([^*]\)\*\([^*][^*]*[^*]\)\*\([^*]\)/\1<i>\2<\/i>\3/g' | \
-            # Convert [text](url) links to <a href="url">text</a>
-            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
-            # Convert ## headers to <b>headers</b>
-            sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert ### headers to <b>headers</b>
-            sed 's/^### \(.*\)$/<b>\1<\/b>/g'
+            sed 's/"/\&quot;/g'
           }
 
-          # Convert the release body from markdown to HTML
-          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          # Escape the release name and body for HTML
+          ESCAPED_RELEASE_NAME=$(escape_html "$RELEASE_NAME")
+          ESCAPED_RELEASE_BODY=$(escape_html "$RELEASE_BODY")
+
+          # Debug: Print the escaped values
+          echo "DEBUG: RELEASE_NAME='$RELEASE_NAME'"
+          echo "DEBUG: ESCAPED_RELEASE_NAME='$ESCAPED_RELEASE_NAME'"
+          echo "DEBUG: First 200 chars of ESCAPED_RELEASE_BODY:"
+          echo "$ESCAPED_RELEASE_BODY" | head -c 200
+          echo "..."
 
           # Create message with HTML formatting
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE="🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪
+
+            📣 The <b>${ESCAPED_RELEASE_NAME} release is live!</b> 📣
+            <a href=\"${RELEASE_URL}\">View the full release here</a>
+
+            ${ESCAPED_RELEASE_BODY}"
           else
-            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE="📣 The <b>${ESCAPED_RELEASE_NAME} release is live!</b> 📣
+            <a href=\"${RELEASE_URL}\">View the full release here</a>
+
+            ${ESCAPED_RELEASE_BODY}"
           fi
+
+          # Debug: Print the first 200 chars of the message
+          echo "DEBUG: First 200 chars of MESSAGE:"
+          echo "$MESSAGE" | head -c 200
+          echo "..."
 
           # Use EOF delimiter for multiline content
           echo "message<<EOF" >> $GITHUB_OUTPUT
