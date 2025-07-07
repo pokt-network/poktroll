@@ -61,52 +61,44 @@ jobs:
         id: prepare_message
         run: |
           # Create a Python script to properly handle HTML escaping and message formatting
-          cat > format_message.py << 'PYTHON_EOF'
-import os
-import html
-import sys
+          cat > format_message.py << 'EOF'
+          import os
+          import html
+          import sys
 
-def format_telegram_message(release_name, release_url, release_body, test_mode=False):
-    # Escape HTML entities properly
-    escaped_name = html.escape(release_name or "Unknown Release")
-    escaped_body = html.escape(release_body or "No release notes available.")
+          def format_telegram_message(release_name, release_url, release_body, test_mode=False):
+              # Escape HTML entities properly
+              escaped_name = html.escape(release_name or "Unknown Release")
+              escaped_body = html.escape(release_body or "No release notes available.")
 
-    # Truncate body if it's too long (Telegram has message limits)
-    max_body_length = 3000  # Leave room for other parts of message
-    if len(escaped_body) > max_body_length:
-        escaped_body = escaped_body[:max_body_length] + "..."
+              # Truncate body if it's too long (Telegram has message limits)
+              max_body_length = 3000  # Leave room for other parts of message
+              if len(escaped_body) > max_body_length:
+                  escaped_body = escaped_body[:max_body_length] + "..."
 
-    if test_mode:
-        message = f"""🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪
+              if test_mode:
+                  message = f"🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>{escaped_name} release is live!</b> 📣\n<a href=\"{release_url}\">View the full release here</a>\n\n{escaped_body}"
+              else:
+                  message = f"📣 The <b>{escaped_name} release is live!</b> 📣\n<a href=\"{release_url}\">View the full release here</a>\n\n{escaped_body}"
 
-📣 The <b>{escaped_name} release is live!</b> 📣
-<a href="{release_url}">View the full release here</a>
+              return message
 
-{escaped_body}"""
-    else:
-        message = f"""📣 The <b>{escaped_name} release is live!</b> 📣
-<a href="{release_url}">View the full release here</a>
+          # Read environment variables
+          release_name = os.environ.get('RELEASE_NAME', '')
+          release_url = os.environ.get('RELEASE_URL', '')
+          release_body = os.environ.get('RELEASE_BODY', '')
+          test_mode = os.environ.get('TEST_MODE', 'false').lower() == 'true'
 
-{escaped_body}"""
+          # Format the message
+          message = format_telegram_message(release_name, release_url, release_body, test_mode)
 
-    return message
+          # Write to output file
+          with open('formatted_message.txt', 'w', encoding='utf-8') as f:
+              f.write(message)
 
-# Read environment variables
-release_name = os.environ.get('RELEASE_NAME', '')
-release_url = os.environ.get('RELEASE_URL', '')
-release_body = os.environ.get('RELEASE_BODY', '')
-test_mode = os.environ.get('TEST_MODE', 'false').lower() == 'true'
-
-# Format the message
-message = format_telegram_message(release_name, release_url, release_body, test_mode)
-
-# Write to output file
-with open('formatted_message.txt', 'w', encoding='utf-8') as f:
-    f.write(message)
-
-print("Message formatted successfully")
-print(f"Message length: {len(message)} characters")
-PYTHON_EOF
+          print("Message formatted successfully")
+          print(f"Message length: {len(message)} characters")
+          EOF
 
           # Set environment variables for Python script
           export RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
