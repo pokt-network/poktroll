@@ -119,5 +119,5 @@ jobs:
     uses: ./.github/workflows/telegram-send-message.yml
     with:
       message: ${{ needs.notify.outputs.message }}
-      parse_mode: "Markdown"
+      parse_mode: "HTML"
       test_mode: ${{ inputs.test_mode }}
