@@ -16,4 +16,5 @@ var (
 	ErrRelayerProxyCalculateRelayCost        = sdkerrors.Register(codespace, 8, "failed to calculate relay cost")
 	ErrRelayerProxySupplierNotReachable      = sdkerrors.Register(codespace, 9, "supplier(s) not reachable")
 	ErrRelayerProxyTimeout                   = sdkerrors.Register(codespace, 10, "relayer proxy request timed out")
+	ErrRelayerProxyUnmarshalingRelayRequest  = sdkerrors.Register(codespace, 11, "failed to unmarshal relay request")
 )
