@@ -32,6 +32,9 @@ func networkWithApplicationObjects(t *testing.T, n int) (*network.Network, []typ
 	// Wait for the network to be fully initialized to avoid race conditions
 	// with consensus reactor goroutines
 	require.NoError(t, net.WaitForNextBlock())
+	
+	// Additional wait to ensure all consensus components are fully initialized
+	require.NoError(t, net.WaitForNextBlock())
 
 	return net, appGenesisState.ApplicationList
 }

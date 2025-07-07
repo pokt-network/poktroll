@@ -113,27 +113,34 @@ func New(t *testing.T, configs ...Config) *Network {
 	_, err = net.WaitForHeight(1)
 	require.NoError(t, err)
 
-	// Custom cleanup with aggressive goroutine monitoring and delays
+	// Custom cleanup with enhanced CometBFT shutdown handling
 	t.Cleanup(func() {
 		// Record initial goroutine count
 		initialGoroutines := runtime.NumGoroutine()
 
+		// Step 1: Give consensus reactors time to finish current operations
+		// This helps prevent the panic where consensus reactor tries to access closed leveldb
+		time.Sleep(1 * time.Second)
+
+		// Step 2: Call standard cleanup
 		net.Cleanup()
 
-		// Wait for goroutines to finish with shorter polling
-		maxWait := 5 * time.Second
+		// Step 3: Wait for goroutines to finish with extended timeout
+		maxWait := 10 * time.Second
 		start := time.Now()
 		for time.Since(start) < maxWait {
 			currentGoroutines := runtime.NumGoroutine()
-			// If goroutine count has stabilized (reduced significantly), we can proceed
-			if currentGoroutines <= initialGoroutines/2 {
+			// If goroutine count has stabilized (reduced to 1/3 or less), we can proceed
+			if currentGoroutines <= initialGoroutines/3 || currentGoroutines < 50 {
 				break
 			}
 			time.Sleep(200 * time.Millisecond)
 		}
 
-		// Final safety delay - reduced but still effective
-		time.Sleep(1 * time.Second)
+		// Step 4: Final safety delay to ensure leveldb is fully closed
+		time.Sleep(2 * time.Second)
+		
+		// Step 5: Release the global lock
 		releaseGlobalTestLock(lockFile)
 	})
 
