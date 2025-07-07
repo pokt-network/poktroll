@@ -613,7 +613,7 @@ func (txnClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 			case err, ok := <-txErrCh:
 				if ok {
 					// Unexpected state: error channel should be closed after processing.
-					panic(fmt.Errorf("Expected txErrCh to be closed; received err: %w", err))
+					panic(fmt.Errorf("expected txErrCh to be closed; received err: %w", err))
 				}
 				// Remove the processed transaction.
 				delete(txsByHash, txHash)
