@@ -162,7 +162,7 @@ ibc_list_osmosis_connections:
 		kubectl_exec_grep_pod osmosis-validator osmosisd query ibc connection connections \
 	'
 
-.PHONY: ibc_list_osmosis_connections
+.PHONY: ibc_list_osmosis_channels
 ibc_list_osmosis_channels:
 	bash -c '\
 		source ./tools/scripts/ibc-channels.sh && \
@@ -253,8 +253,8 @@ ibc_test_transfer_osmosis_to_pocket:
 	bash -c '\
 		source ./tools/scripts/ibc-channels.sh && \
 		kubectl_exec_grep_pod osmosis-validator \
-			agd tx ibc-transfer transfer transfer \
-			$${OSMOSIS_POCKET_SRC_CHANNEL_ID} $(POCKET_ACCOUNT) 1000ubld \
+			osmosisd tx ibc-transfer transfer transfer \
+			$${OSMOSIS_POCKET_SRC_CHANNEL_ID} $(POCKET_ACCOUNT) 1000uosmo \
 			--keyring-backend=test \
 			--chain-id=$(OSMOSIS_CHAIN_ID) \
 			--from=validator --yes \
