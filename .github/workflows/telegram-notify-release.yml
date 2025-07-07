@@ -36,23 +36,20 @@ jobs:
         run: |
           set -euo pipefail
 
-          RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
-          RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
-          RELEASE_BODY="${{ steps.get_release.outputs.release_body }}"
+          RELEASE_NAME="v0.1.26"
+          RELEASE_URL="https://github.com/pokt-network/poktroll/releases/tag/v0.1.26"
+          RELEASE_BODY="Empty2"
 
-          # Escape characters for Telegram MarkdownV2
           escape_markdown() {
-            echo "$1" | sed -E \
-              -e 's/([_*$begin:math:display$$end:math:display$()~`>#+\-=|{}.!\\])/\\\1/g'
+            echo "$1" | sed -E 's/([_\*\[\]\(\)~`>#+\-=|{}.!\\])/\\\1/g'
           }
 
-          # Convert some basic markdown to Telegram-compatible MarkdownV2
           convert_markdown_to_markdownv2() {
             echo "$1" | \
-            sed -E 's/\*\*([^*]+)\*\*/\\*\\*\1\\*\\*/g' | \
-            sed -E 's/\*([^*]+)\*/\\*\1\\*/g' | \
-            sed -E 's/`([^`]+)`/\\`\1\\`/g' | \
-            sed -E 's/$begin:math:display$([^$end:math:display$]+)\]$begin:math:text$([^$end:math:text$]+)\)/[\1](\2)/g'
+              sed -E 's/\*\*([^*]+)\*\*/\\*\\*\1\\*\\*/g' | \
+              sed -E 's/\*([^*]+)\*/\\*\1\\*/g' | \
+              sed -E 's/`([^`]+)`/\\`\1\\`/g' | \
+              sed -E 's/\[([^\]]+)\]\(([^\)]+)\)/[\1](\2)/g'
           }
 
           SAFE_BODY=$(escape_markdown "$RELEASE_BODY")
@@ -62,7 +59,6 @@ jobs:
             TELEGRAM_BODY="_No additional release notes provided_"
           fi
 
-          # Escape name and URL too
           ESCAPED_NAME=$(escape_markdown "$RELEASE_NAME")
           ESCAPED_URL=$(escape_markdown "$RELEASE_URL")
 
