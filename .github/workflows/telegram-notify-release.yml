@@ -68,38 +68,33 @@ jobs:
           # Use printf to safely handle content with special characters
           RELEASE_BODY=$(printf '%s' "${{ steps.get_release.outputs.release_body }}")
 
-          # Function to convert markdown to HTML BEFORE escaping
-          convert_markdown_to_html() {
-            echo "$1" | \
-            # Convert markdown first (before any escaping)
-            # Convert ## headers to <b>headers</b>
-            sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
-            sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert **bold** to <b>bold</b>
-            sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
-            # Convert [text](url) links to <a href="url">text</a>
-            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
-            # Remove carriage returns
-            tr -d '\r'
+          # Function to safely convert markdown to HTML with proper escaping
+          convert_to_safe_html() {
+            # First, escape all HTML entities in the raw text
+            local content=$(echo "$1" | \
+              sed 's/&/\&amp;/g' | \
+              sed 's/</\&lt;/g' | \
+              sed 's/>/\&gt;/g' | \
+              tr -d '\r')
+
+            # Now convert markdown to HTML by replacing the escaped versions
+            echo "$content" | \
+              # Convert ## headers to <b>headers</b>
+              sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
+              sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
+              # Convert **bold** to <b>bold</b>
+              sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
+              # Convert [text](url) links - this is tricky because we escaped < and >
+              sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g'
           }
 
-          # Function to escape HTML entities AFTER markdown conversion
-          escape_html_entities() {
-            echo "$1" | \
-            # Only escape content that's NOT inside HTML tags
-            # This is tricky with sed, so we'll just escape the basic ones carefully
-            sed 's/&\([^a-zA-Z]\)/\&amp;\1/g' | \
-            sed 's/&$/\&amp;/g'
-          }
-
-          # Convert markdown to HTML first, then escape what needs escaping
-          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
-          SAFE_RELEASE_BODY=$(escape_html_entities "$HTML_RELEASE_BODY")
+          # Convert to safe HTML
+          HTML_RELEASE_BODY=$(convert_to_safe_html "$RELEASE_BODY")
 
           # Debug: Print the processed values
           echo "DEBUG: RELEASE_NAME='$RELEASE_NAME'"
-          echo "DEBUG: First 200 chars of SAFE_RELEASE_BODY:"
-          echo "$SAFE_RELEASE_BODY" | head -c 200
+          echo "DEBUG: First 200 chars of HTML_RELEASE_BODY:"
+          echo "$HTML_RELEASE_BODY" | head -c 200
           echo "..."
 
           # Create message with HTML formatting - escape the release name too
@@ -108,10 +103,13 @@ jobs:
           # Also escape the URL to be safe
           ESCAPED_RELEASE_URL=$(echo "$RELEASE_URL" | sed 's/&/\&amp;/g')
 
+          # Create message with HTML formatting - escape the release name too
+          ESCAPED_RELEASE_NAME=$(echo "$RELEASE_NAME" | sed 's/&/\&amp;/g' | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g')
+
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$ESCAPED_RELEASE_NAME" "$ESCAPED_RELEASE_URL" "$SAFE_RELEASE_BODY")
+            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$ESCAPED_RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
           else
-            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$ESCAPED_RELEASE_NAME" "$ESCAPED_RELEASE_URL" "$SAFE_RELEASE_BODY")
+            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$ESCAPED_RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
           fi
 
           # Debug: Print the first 200 chars of the message
