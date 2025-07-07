@@ -3,6 +3,7 @@ package supplier_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -41,6 +42,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%t", flags.FlagUnordered, true),
+		fmt.Sprintf("--%s=%s", flags.TimeoutDuration, 5*time.Second),
 	}
 
 	defaultConfig := fmt.Sprintf(`

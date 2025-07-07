@@ -7,7 +7,6 @@ import (
 	"net/url"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
@@ -669,7 +668,7 @@ func SupplyTxFactory(
 		return nil, err
 	}
 
-	clientCtx := cosmosclient.Context(txClientCtx)
+	clientCtx := sdkclient.Context(txClientCtx)
 	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
 	if err != nil {
 		return nil, err

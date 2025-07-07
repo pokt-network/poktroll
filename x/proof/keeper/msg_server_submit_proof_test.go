@@ -7,9 +7,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -98,7 +96,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// Set proof keeper params to disable relay mining and always require a proof.
 			proofParams := keepers.Keeper.GetParams(ctx)
 			proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-			err := keepers.Keeper.SetParams(ctx, proofParams)
+			err := keepers.SetParams(ctx, proofParams)
 			require.NoError(t, err)
 
 			// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -273,7 +271,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Set proof keeper params to disable relaymining and always require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-	err := keepers.Keeper.SetParams(ctx, proofParams)
+	err := keepers.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -447,7 +445,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Ensure the minimum relay difficulty bits is set to zero so that test cases
 	// don't need to mine for valid relays.
-	err := keepers.Keeper.SetParams(ctx, testProofParams)
+	err := keepers.SetParams(ctx, testProofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -718,7 +716,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	// Set proof keeper params to disable relay mining but never require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = 0
-	err := keepers.Keeper.SetParams(ctx, proofParams)
+	err := keepers.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -927,14 +925,14 @@ func createClaimAndStoreBlockHash(
 // fundSupplierOperatorAccount sends enough coins to the supplier operator account
 // to cover the cost of the proof submission.
 func fundSupplierOperatorAccount(t *testing.T, ctx context.Context, keepers *keepertest.ProofModuleKeepers, supplierOperatorAddr string) {
-	supplierOperatorAccAddr, err := sdk.AccAddressFromBech32(supplierOperatorAddr)
+	supplierOperatorAccAddr, err := cosmostypes.AccAddressFromBech32(supplierOperatorAddr)
 	require.NoError(t, err)
 
 	err = keepers.SendCoinsFromModuleToAccount(
 		ctx,
 		suppliertypes.ModuleName,
 		supplierOperatorAccAddr,
-		types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(100000000))),
+		cosmostypes.NewCoins(cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(100000000))),
 	)
 	require.NoError(t, err)
 
