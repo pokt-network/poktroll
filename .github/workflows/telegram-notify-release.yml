@@ -90,18 +90,34 @@ jobs:
           }
 
           # Convert the release body from markdown to HTML
-          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          # TEMPORARILY DISABLED to isolate the issue
+          # HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          HTML_RELEASE_BODY="$RELEASE_BODY"
 
           # Debug: Print the HTML to see what's being generated
           echo "DEBUG: HTML_RELEASE_BODY:"
-          echo "$HTML_RELEASE_BODY" | head -c 200
+          echo "$HTML_RELEASE_BODY"
           echo "..."
 
-          # Create message with HTML formatting
+          # Create message with Markdown formatting
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪📣 The <b>%s release is live!</b> 📣<a href=\"%s\">View the full release here</a>%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE=$(cat <<EOF
+          🧪 **TEST RELEASE NOTIFICATION** 🧪
+
+          📣 **${RELEASE_NAME} release is live!** 📣
+          [View the full release here](${RELEASE_URL})
+
+          ${HTML_RELEASE_BODY}
+          EOF
+          )
           else
-            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣<a href=\"%s\">View the full release here</a>%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE=$(cat <<EOF
+          📣 **${RELEASE_NAME} release is live!** 📣
+          [View the full release here](${RELEASE_URL})
+
+          ${HTML_RELEASE_BODY}
+          EOF
+          )
           fi
 
           # Debug: Print the first 200 chars of the message
@@ -119,5 +135,5 @@ jobs:
     uses: ./.github/workflows/telegram-send-message.yml
     with:
       message: ${{ needs.notify.outputs.message }}
-      parse_mode: "HTML"
+      parse_mode: "Markdown"
       test_mode: ${{ inputs.test_mode }}
