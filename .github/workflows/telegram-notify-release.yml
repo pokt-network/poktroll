@@ -42,8 +42,8 @@ jobs:
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
           # Extract release details and properly escape for GitHub Actions
-          RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name')
-          RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url')
+          RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name // "Unknown Release"')
+          RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url // ""')
 
           echo "Latest release: $RELEASE_NAME"
           echo "Release URL: $RELEASE_URL"
@@ -52,10 +52,10 @@ jobs:
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
 
-          # Use EOF delimiter for multiline content
-          echo "release_body<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_INFO" | jq -r '.body' >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Use a more unique delimiter to avoid conflicts
+          echo "release_body<<RELEASE_BODY_DELIMITER" >> $GITHUB_OUTPUT
+          echo "$RELEASE_INFO" | jq -r '.body // "No release notes available."' >> $GITHUB_OUTPUT
+          echo "RELEASE_BODY_DELIMITER" >> $GITHUB_OUTPUT
 
       - name: Prepare release message
         id: prepare_message
@@ -68,40 +68,50 @@ jobs:
           # Use printf to safely handle content with special characters
           RELEASE_BODY=$(printf '%s' "${{ steps.get_release.outputs.release_body }}")
 
-          # Function to convert markdown to HTML for better Telegram compatibility
-          convert_markdown_to_html() {
+          # Function to convert markdown to HTML and escape properly for Telegram
+          convert_and_escape() {
             echo "$1" | \
             # First escape HTML special characters
             sed 's/&/\&amp;/g' | \
             sed 's/</\&lt;/g' | \
             sed 's/>/\&gt;/g' | \
-            # Convert ## headers to <b>headers</b> BEFORE processing bold text
+            sed 's/"/\&quot;/g' | \
+            sed "s/'/\&#39;/g" | \
+            # Convert markdown headers to bold (## Header -> <b>Header</b>)
             sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert ### headers to <b>headers</b>
             sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert `code` to <code>code</code> first (before bold/italic)
-            sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
-            # Convert **bold** to <b>bold</b> - use non-greedy match
+            # Convert **bold** to <b>bold</b> (restore from escaped)
             sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
-            # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
-            sed 's/\([^*]\)\*\([^*]\+\)\*\([^*]\)/\1<i>\2<\/i>\3/g' | \
-            # Convert [text](url) links to <a href="url">text</a>
-            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g'
+            # Convert [text](url) links to <a href="url">text</a> (restore from escaped)
+            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
+            # Remove carriage returns that can cause issues
+            tr -d '\r'
           }
 
-          # Convert the release body from markdown to HTML
-          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          # Convert and escape the release body
+          PROCESSED_RELEASE_BODY=$(convert_and_escape "$RELEASE_BODY")
 
-          # Debug: Print the HTML to see what's being generated
-          echo "DEBUG: HTML_RELEASE_BODY:"
-          echo "$HTML_RELEASE_BODY" | head -c 200
+          # Debug: Print the processed values
+          echo "DEBUG: RELEASE_NAME='$RELEASE_NAME'"
+          echo "DEBUG: First 200 chars of PROCESSED_RELEASE_BODY:"
+          echo "$PROCESSED_RELEASE_BODY" | head -c 200
           echo "..."
 
-          # Create message with HTML formatting
+          # Create message with HTML formatting - escape the release name too
+          ESCAPED_RELEASE_NAME=$(echo "$RELEASE_NAME" | sed 's/&/\&amp;/g' | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g')
+
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
-          else
-            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE="🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪
+
+            📣 The <b>${ESCAPED_RELEASE_NAME} release is live!</b> 📣
+            <a href=\"${RELEASE_URL}\">View the full release here</a>
+
+            ${PROCESSED_RELEASE_BODY}"
+                      else
+                        MESSAGE="📣 The <b>${ESCAPED_RELEASE_NAME} release is live!</b> 📣
+            <a href=\"${RELEASE_URL}\">View the full release here</a>
+
+            ${PROCESSED_RELEASE_BODY}"
           fi
 
           # Debug: Print the first 200 chars of the message
@@ -109,10 +119,10 @@ jobs:
           echo "$MESSAGE" | head -c 200
           echo "..."
 
-          # Use EOF delimiter for multiline content
-          echo "message<<EOF" >> $GITHUB_OUTPUT
+          # Use a unique delimiter that won't appear in release notes
+          echo "message<<MESSAGE_CONTENT_DELIMITER" >> $GITHUB_OUTPUT
           echo "$MESSAGE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "MESSAGE_CONTENT_DELIMITER" >> $GITHUB_OUTPUT
 
   send-release:
     needs: notify
