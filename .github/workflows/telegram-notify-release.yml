@@ -71,10 +71,15 @@ jobs:
           # Function to convert markdown to HTML for better Telegram compatibility
           convert_markdown_to_html() {
             echo "$1" | \
-            # First escape HTML special characters (FIXED: removed backslashes)
-            sed 's/&/\&amp;/g' | \
-            sed 's/</\&lt;/g' | \
-            sed 's/>/\&gt;/g' | \
+            # First escape HTML special characters
+            sed 's/&/&amp;/g' | \
+            sed 's/</&lt;/g' | \
+            sed 's/>/&gt;/g' | \
+            # Remove markdown table formatting (Telegram doesn't support tables)
+            # Remove table header separators like | ----- | ----- |
+            sed '/^[[:space:]]*|[[:space:]]*[-:][[:space:]]*|/d' | \
+            # Convert table rows to simple list format
+            sed 's/^[[:space:]]*|[[:space:]]*\([^|]*\)[[:space:]]*|[[:space:]]*\([^|]*\)[[:space:]]*|[[:space:]]*\([^|]*\)[[:space:]]*|[[:space:]]*\([^|]*\)[[:space:]]*|[[:space:]]*$/• \1: \2 | \3 | \4/g' | \
             # Convert ## headers to <b>headers</b> BEFORE processing bold text
             sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
             # Convert ### headers to <b>headers</b>
@@ -99,9 +104,17 @@ jobs:
 
           # Create message with HTML formatting
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE="🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪
+
+            📣 The <b>$RELEASE_NAME release is live!</b> 📣
+            <a href="$RELEASE_URL">View the full release here</a>
+
+            $HTML_RELEASE_BODY"
           else
-            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE="📣 The <b>$RELEASE_NAME release is live!</b> 📣
+            <a href="$RELEASE_URL">View the full release here</a>
+
+            $HTML_RELEASE_BODY"
           fi
 
           # Debug: Print the first 200 chars of the message
@@ -109,10 +122,12 @@ jobs:
           echo "$MESSAGE" | head -c 200
           echo "..."
 
-          # Use EOF delimiter for multiline content
-          echo "message<<EOF" >> $GITHUB_OUTPUT
-          echo "$MESSAGE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Use a unique EOF delimiter to avoid conflicts
+          {
+            echo "message<<GITHUB_OUTPUT_EOF"
+            echo "$MESSAGE"
+            echo "GITHUB_OUTPUT_EOF"
+          } >> $GITHUB_OUTPUT
 
   send-release:
     needs: notify
