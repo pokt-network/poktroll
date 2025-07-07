@@ -34,45 +34,43 @@ jobs:
       - name: Prepare release message
         id: prepare_message
         run: |
+          set -euo pipefail
+
           RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
           RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
           RELEASE_BODY="${{ steps.get_release.outputs.release_body }}"
 
-          # Escape characters Telegram HTML mode can't handle
-          escape_html() {
-            echo "$1" | sed \
-              -e 's/&/\&amp;/g' \
-              -e 's/</\&lt;/g' \
-              -e 's/>/\&gt;/g'
+          # Escape characters for Telegram MarkdownV2
+          escape_markdown() {
+            echo "$1" | sed -E \
+              -e 's/([_*$begin:math:display$$end:math:display$()~`>#+\-=|{}.!\\])/\\\1/g'
           }
 
-          # Convert markdown to Telegram-compatible HTML
-          convert_markdown_to_html() {
+          # Convert some basic markdown to Telegram-compatible MarkdownV2
+          convert_markdown_to_markdownv2() {
             echo "$1" | \
-            sed -E 's/`([^`]+)`/<code>\1<\/code>/g' | \
-            sed -E 's/\*\*([^*]+)\*\*/<b>\1<\/b>/g' | \
-            sed -E 's/\*([^*]+)\*/<i>\1<\/i>/g' | \
-            sed -E 's/\[([^\]]+)\]\(([^\)]+)\)/<a href="\2">\1<\/a>/g'
+            sed -E 's/\*\*([^*]+)\*\*/\\*\\*\1\\*\\*/g' | \
+            sed -E 's/\*([^*]+)\*/\\*\1\\*/g' | \
+            sed -E 's/`([^`]+)`/\\`\1\\`/g' | \
+            sed -E 's/$begin:math:display$([^$end:math:display$]+)\]$begin:math:text$([^$end:math:text$]+)\)/[\1](\2)/g'
           }
 
-          # Sanitize body
-          SAFE_BODY=$(escape_html "$RELEASE_BODY")
-          HTML_RELEASE_BODY=$(convert_markdown_to_html "$SAFE_BODY")
+          SAFE_BODY=$(escape_markdown "$RELEASE_BODY")
+          TELEGRAM_BODY=$(convert_markdown_to_markdownv2 "$SAFE_BODY")
 
-          # Fallback if body is empty
-          if [ -z "$HTML_RELEASE_BODY" ]; then
-            HTML_RELEASE_BODY="<i>No additional release notes provided.</i>"
+          if [ -z "$TELEGRAM_BODY" ]; then
+            TELEGRAM_BODY="_No additional release notes provided_"
           fi
+
+          # Escape name and URL too
+          ESCAPED_NAME=$(escape_markdown "$RELEASE_NAME")
+          ESCAPED_URL=$(escape_markdown "$RELEASE_URL")
 
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s</b> release is live! 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE=$(printf "🧪 *TEST RELEASE NOTIFICATION* 🧪\n\n📣 The *%s* release is live! 📣\n[View the full release here](%s)\n\n%s" "$ESCAPED_NAME" "$ESCAPED_URL" "$TELEGRAM_BODY")
           else
-            MESSAGE=$(printf "📣 The <b>%s</b> release is live! 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE=$(printf "📣 The *%s* release is live! 📣\n[View the full release here](%s)\n\n%s" "$ESCAPED_NAME" "$ESCAPED_URL" "$TELEGRAM_BODY")
           fi
-
-          echo "DEBUG: First 200 characters of MESSAGE:"
-          echo "$MESSAGE" | head -c 200
-          echo
 
           echo "message<<EOF" >> $GITHUB_OUTPUT
           echo "$MESSAGE" >> $GITHUB_OUTPUT
@@ -83,5 +81,5 @@ jobs:
     uses: ./.github/workflows/telegram-send-message.yml
     with:
       message: ${{ needs.notify.outputs.message }}
-      parse_mode: "HTML"
+      parse_mode: "MarkdownV2"
       test_mode: ${{ inputs.test_mode }}
