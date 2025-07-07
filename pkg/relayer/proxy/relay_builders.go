@@ -24,7 +24,7 @@ func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types
 		bodyBzBase64 := base64.StdEncoding.EncodeToString(requestBody)
 		sync.logger.With("body_bytes", bodyBzBase64).Debug().Msgf("unmarshaling relay request failed")
 		return &types.RelayRequest{}, ErrRelayerProxyUnmarshalingRelayRequest.Wrapf(
-			"failed to unmarshal relay request with body %s: %s", bodyBzBase64, err.Error(),
+			"failed to unmarshal relay request with body %q: %s", bodyBzBase64, err.Error(),
 		)
 	}
 
