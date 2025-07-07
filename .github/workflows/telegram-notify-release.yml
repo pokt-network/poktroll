@@ -1,18 +1,5 @@
 name: Telegram Broadcast New Release
 
-### How to use this? ###
-# 1. Finish the release procedure: https://dev.poktroll.com/develop/upgrades/release_procedure?_highlight=release
-# 2. Set the latest release to latest and verify here: https://github.com/pokt-network/poktroll/releases/latest
-# 3. Manually trigger the workflow by either:
-#    - Clicking the "Run workflow" button here: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml
-#    - Or by running the following command in your terminal: $ gh workflow run telegram-notify-release.yml
-
-### How to test / debug this? ###
-# 1. Submit a new PR in a new branch that's modifying this file
-# 2. Trigger the workflow by running the following command in your terminal: $ gh workflow run telegram-notify-release.yml --ref <BRANCH_NAME>
-# 3. Verify the workflow worked by viewing the logs here: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml
-# 4. Check the output in the telegram bot group: https://web.telegram.org/k/#-2895286734
-
 on:
   workflow_dispatch:
     inputs:
@@ -21,10 +8,6 @@ on:
         required: false
         type: boolean
         default: false
-  # Uncomment the lines below to automatically trigger on release publication
-  # This is commented out to avoid premature notifications
-  # release:
-  #   types: [published]
 
 jobs:
   notify:
@@ -38,9 +21,9 @@ jobs:
           RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
-          RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name')
-          RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url')
-          RELEASE_BODY=$(echo "$RELEASE_INFO" | jq -r '.body')
+          RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name // "Unnamed Release"')
+          RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url // ""')
+          RELEASE_BODY=$(echo "$RELEASE_INFO" | jq -r '.body // ""')
 
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
@@ -55,7 +38,7 @@ jobs:
           RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
           RELEASE_BODY="${{ steps.get_release.outputs.release_body }}"
 
-          # Escape HTML special characters for Telegram
+          # Escape characters Telegram HTML mode can't handle
           escape_html() {
             echo "$1" | sed \
               -e 's/&/\&amp;/g' \
@@ -63,7 +46,7 @@ jobs:
               -e 's/>/\&gt;/g'
           }
 
-          # Convert escaped Markdown to Telegram-compatible HTML
+          # Convert markdown to Telegram-compatible HTML
           convert_markdown_to_html() {
             echo "$1" | \
             sed -E 's/`([^`]+)`/<code>\1<\/code>/g' | \
@@ -72,8 +55,14 @@ jobs:
             sed -E 's/\[([^\]]+)\]\(([^\)]+)\)/<a href="\2">\1<\/a>/g'
           }
 
+          # Sanitize body
           SAFE_BODY=$(escape_html "$RELEASE_BODY")
           HTML_RELEASE_BODY=$(convert_markdown_to_html "$SAFE_BODY")
+
+          # Fallback if body is empty
+          if [ -z "$HTML_RELEASE_BODY" ]; then
+            HTML_RELEASE_BODY="<i>No additional release notes provided.</i>"
+          fi
 
           if [ "${{ inputs.test_mode }}" = "true" ]; then
             MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s</b> release is live! 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
@@ -81,9 +70,9 @@ jobs:
             MESSAGE=$(printf "📣 The <b>%s</b> release is live! 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
           fi
 
-          echo "DEBUG: First 200 chars of MESSAGE:"
+          echo "DEBUG: First 200 characters of MESSAGE:"
           echo "$MESSAGE" | head -c 200
-          echo "..."
+          echo
 
           echo "message<<EOF" >> $GITHUB_OUTPUT
           echo "$MESSAGE" >> $GITHUB_OUTPUT
