@@ -92,7 +92,9 @@ func New(t *testing.T, configs ...Config) *Network {
 
 	// First acquire in-process mutex
 	networkMutex.Lock()
-	defer networkMutex.Unlock()
+	// NOTE: We intentionally do NOT defer the unlock here.
+	// The mutex will be released in the cleanup function to ensure
+	// serialization of network creation AND cleanup across all modules.
 
 	// Then acquire cross-process file lock
 	lockFile := acquireGlobalTestLock(t)
@@ -139,7 +141,7 @@ func New(t *testing.T, configs ...Config) *Network {
 
 		// Step 4: Final safety delay to ensure leveldb is fully closed
 		time.Sleep(2 * time.Second)
-		
+
 		// Step 5: Release the global lock
 		releaseGlobalTestLock(lockFile)
 	})
