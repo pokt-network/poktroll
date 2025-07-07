@@ -71,20 +71,22 @@ jobs:
           # Function to convert markdown to HTML for better Telegram compatibility
           convert_markdown_to_html() {
             echo "$1" | \
-            # Convert [text](url) links to <a href="url">text</a>
-            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
-            # Convert `code` to <code>code</code>
+            # First escape HTML special characters
+            sed 's/&/\&amp;/g' | \
+            sed 's/</\&lt;/g' | \
+            sed 's/>/\&gt;/g' | \
+            # Convert `code` to <code>code</code> first (before bold/italic)
             sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
             # Convert **bold** to <b>bold</b>
-            sed 's/\*\*\([^*]*\)\*\*/\<b\>\1\<\/b\>/g' | \
+            sed 's/\*\*\([^*]*\)\*\*/<b>\1<\/b>/g' | \
             # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
-            sed 's/\([^*]\)\*\([^*][^*]*[^*]\)\*\([^*]\)/\1\<i\>\2\<\/i\>\3/g' | \
+            sed 's/\([^*]\)\*\([^*][^*]*[^*]\)\*\([^*]\)/\1<i>\2<\/i>\3/g' | \
+            # Convert [text](url) links to <a href="url">text</a>
+            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
             # Convert ## headers to <b>headers</b>
             sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
             # Convert ### headers to <b>headers</b>
-            sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert ❗️ and other emojis that might be escaped
-            sed 's/❗️/❗/g'
+            sed 's/^### \(.*\)$/<b>\1<\/b>/g'
           }
 
           # Convert the release body from markdown to HTML
