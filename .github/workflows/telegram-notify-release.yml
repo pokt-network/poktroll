@@ -29,119 +29,65 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
-    # Uncomment the line below when enabling automatic triggers
-    # if: github.event.release.prerelease == false
     outputs:
       message: ${{ steps.prepare_message.outputs.message }}
     steps:
       - name: Get latest release
         id: get_release
         run: |
-          # Get latest release info from GitHub API
           RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
-          # Extract release details and properly escape for GitHub Actions
           RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name')
           RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url')
+          RELEASE_BODY=$(echo "$RELEASE_INFO" | jq -r '.body')
 
-          echo "Latest release: $RELEASE_NAME"
-          echo "Release URL: $RELEASE_URL"
-
-          # Handle multiline release body properly
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
-
-          # Use EOF delimiter for multiline content
           echo "release_body<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_INFO" | jq -r '.body' >> $GITHUB_OUTPUT
+          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Prepare release message
         id: prepare_message
         run: |
-          # Safely construct message using printf to avoid command execution
           RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
           RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
+          RELEASE_BODY="${{ steps.get_release.outputs.release_body }}"
 
-          # Read release body and escape it properly to prevent command execution
-          # Use printf to safely handle content with special characters
-          RELEASE_BODY=$(printf '%s' "${{ steps.get_release.outputs.release_body }}")
-
-          # Function to convert markdown to HTML for better Telegram compatibility
-          convert_markdown_to_html() {
-            echo "$1" | \
-            # First escape HTML special characters
-            sed 's/&/&amp;/g' | \
-            sed 's/</&lt;/g' | \
-            sed 's/>/&gt;/g' | \
-            # Remove markdown table formatting (Telegram doesn't support tables)
-            # Remove table header separators like | ----- | ----- |
-            sed '/^[[:space:]]*|[[:space:]]*[-:][[:space:]]*|/d' | \
-            # Convert table rows to simple list format
-            sed 's/^[[:space:]]*|[[:space:]]*\([^|]*\)[[:space:]]*|[[:space:]]*\([^|]*\)[[:space:]]*|[[:space:]]*\([^|]*\)[[:space:]]*|[[:space:]]*\([^|]*\)[[:space:]]*|[[:space:]]*$/• \1: \2 | \3 | \4/g' | \
-            # Convert ## headers to <b>headers</b> BEFORE processing bold text
-            sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert ### headers to <b>headers</b>
-            sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert `code` to <code>code</code> first (before bold/italic)
-            sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
-            # Convert **bold** to <b>bold</b> - use non-greedy match
-            sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
-            # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
-            sed 's/\([^*]\)\*\([^*]\+\)\*\([^*]\)/\1<i>\2<\/i>\3/g' | \
-            # Convert [text](url) links to <a href="url">text</a>
-            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g'
+          # Escape HTML special characters for Telegram
+          escape_html() {
+            echo "$1" | sed \
+              -e 's/&/\&amp;/g' \
+              -e 's/</\&lt;/g' \
+              -e 's/>/\&gt;/g'
           }
 
-          # Convert the release body from markdown to HTML
-          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          # Convert escaped Markdown to Telegram-compatible HTML
+          convert_markdown_to_html() {
+            echo "$1" | \
+            sed -E 's/`([^`]+)`/<code>\1<\/code>/g' | \
+            sed -E 's/\*\*([^*]+)\*\*/<b>\1<\/b>/g' | \
+            sed -E 's/\*([^*]+)\*/<i>\1<\/i>/g' | \
+            sed -E 's/\[([^\]]+)\]\(([^\)]+)\)/<a href="\2">\1<\/a>/g'
+          }
 
-          # Debug: Print the HTML to see what's being generated
-          echo "DEBUG: HTML_RELEASE_BODY:"
-          echo "$HTML_RELEASE_BODY" | head -c 200
-          echo "..."
+          SAFE_BODY=$(escape_html "$RELEASE_BODY")
+          HTML_RELEASE_BODY=$(convert_markdown_to_html "$SAFE_BODY")
 
-          # Create message with HTML formatting (using printf to ensure proper escaping)
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE=$(cat << 'TELEGRAM_MESSAGE_EOF'
-            🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪
-
-            📣 The <b>RELEASE_NAME_PLACEHOLDER release is live!</b> 📣
-            <a href="RELEASE_URL_PLACEHOLDER">View the full release here</a>
-
-            RELEASE_BODY_PLACEHOLDER
-            TELEGRAM_MESSAGE_EOF
-            )
-            # Replace placeholders with actual values
-            MESSAGE="${MESSAGE//RELEASE_NAME_PLACEHOLDER/$RELEASE_NAME}"
-            MESSAGE="${MESSAGE//RELEASE_URL_PLACEHOLDER/$RELEASE_URL}"
-            MESSAGE="${MESSAGE//RELEASE_BODY_PLACEHOLDER/$HTML_RELEASE_BODY}"
+            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s</b> release is live! 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
           else
-            MESSAGE=$(cat << 'TELEGRAM_MESSAGE_EOF'
-            📣 The <b>RELEASE_NAME_PLACEHOLDER release is live!</b> 📣
-            <a href="RELEASE_URL_PLACEHOLDER">View the full release here</a>
-
-            RELEASE_BODY_PLACEHOLDER
-            TELEGRAM_MESSAGE_EOF
-            )
-                        # Replace placeholders with actual values
-            MESSAGE="${MESSAGE//RELEASE_NAME_PLACEHOLDER/$RELEASE_NAME}"
-            MESSAGE="${MESSAGE//RELEASE_URL_PLACEHOLDER/$RELEASE_URL}"
-            MESSAGE="${MESSAGE//RELEASE_BODY_PLACEHOLDER/$HTML_RELEASE_BODY}"
+            MESSAGE=$(printf "📣 The <b>%s</b> release is live! 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
           fi
 
-          # Debug: Print the first 200 chars of the message
           echo "DEBUG: First 200 chars of MESSAGE:"
           echo "$MESSAGE" | head -c 200
           echo "..."
 
-          # Use a unique EOF delimiter to avoid conflicts
-          {
-            echo "message<<GITHUB_OUTPUT_EOF"
-            echo "$MESSAGE"
-            echo "GITHUB_OUTPUT_EOF"
-          } >> $GITHUB_OUTPUT
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
   send-release:
     needs: notify
