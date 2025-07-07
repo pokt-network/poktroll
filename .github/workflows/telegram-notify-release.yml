@@ -99,9 +99,9 @@ jobs:
 
           # Create message with HTML formatting
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪\n\n📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE=$(printf "🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪<br><br>📣 The <b>%s release is live!</b> 📣<br><a href=\"%s\">View the full release here</a><br><br>%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
           else
-            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣\n<a href=\"%s\">View the full release here</a>\n\n%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
+            MESSAGE=$(printf "📣 The <b>%s release is live!</b> 📣<br><a href=\"%s\">View the full release here</a><br><br>%s" "$RELEASE_NAME" "$RELEASE_URL" "$HTML_RELEASE_BODY")
           fi
 
           # Debug: Print the first 200 chars of the message
