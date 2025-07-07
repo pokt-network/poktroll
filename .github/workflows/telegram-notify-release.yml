@@ -32,7 +32,7 @@ jobs:
     # Uncomment the line below when enabling automatic triggers
     # if: github.event.release.prerelease == false
     outputs:
-      message: ${{ steps.prepare_message.outputs.message }}
+      message: ${{ steps.decode_message.outputs.message }}
     steps:
       - name: Get latest release
         id: get_release
@@ -64,7 +64,7 @@ jobs:
           cat > format_message.py << 'SCRIPT_END'
           import os
           import html
-          import sys
+          import base64
 
           def format_telegram_message(release_name, release_url, release_body, test_mode=False):
               # Escape HTML entities properly
@@ -92,12 +92,19 @@ jobs:
           # Format the message
           message = format_telegram_message(release_name, release_url, release_body, test_mode)
 
-          # Write to output file
+          # Encode as base64 to avoid delimiter issues
+          encoded_message = base64.b64encode(message.encode('utf-8')).decode('ascii')
+
+          # Write both versions
           with open('formatted_message.txt', 'w', encoding='utf-8') as f:
               f.write(message)
 
+          with open('encoded_message.txt', 'w') as f:
+              f.write(encoded_message)
+
           print("Message formatted successfully")
           print(f"Message length: {len(message)} characters")
+          print(f"Encoded message: {encoded_message[:100]}...")
           SCRIPT_END
 
           # Set environment variables for Python script
@@ -109,15 +116,27 @@ jobs:
           # Run Python script to format message
           python3 format_message.py
 
-          # Read the formatted message and set as output using a unique delimiter
-          echo "message<<TELEGRAM_MESSAGE_END" >> $GITHUB_OUTPUT
-          cat formatted_message.txt >> $GITHUB_OUTPUT
-          echo "TELEGRAM_MESSAGE_END" >> $GITHUB_OUTPUT
+          # Read the base64 encoded message (no delimiters needed for single line)
+          ENCODED_MESSAGE=$(cat encoded_message.txt)
+          echo "encoded_message=${ENCODED_MESSAGE}" >> $GITHUB_OUTPUT
 
           # Debug output
           echo "DEBUG: Message preview (first 200 chars):"
           head -c 200 formatted_message.txt
           echo "..."
+
+      - name: Decode and set final message
+        id: decode_message
+        run: |
+          # Decode the base64 message back to original format
+          echo "${{ steps.prepare_message.outputs.encoded_message }}" | base64 -d > final_message.txt
+
+          # Set the decoded message as output using a very unique delimiter
+          echo "message<<MSG_DELIMITER_XYZ123" >> $GITHUB_OUTPUT
+          cat final_message.txt >> $GITHUB_OUTPUT
+          echo "MSG_DELIMITER_XYZ123" >> $GITHUB_OUTPUT
+
+          echo "Message successfully decoded and set as output"
 
   send-release:
     needs: notify
