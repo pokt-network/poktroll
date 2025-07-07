@@ -60,7 +60,7 @@ def load_pocketdex(pocketdex_root_path, pocketdex_repo_branch, pocketdex_entrypo
         pgadmin_email=pgadmin.get('email'),
         pgadmin_password=pgadmin.get('password'),
         apps_labels=['pocketdex'],
-        tools_labels=['pocketdex-db'],
+        tools_labels=['pocketdex-tools'],
         helm_repo_labels=['pocketdex-helm-repo'],
         only_db=False, # we do not want this on here
     )
