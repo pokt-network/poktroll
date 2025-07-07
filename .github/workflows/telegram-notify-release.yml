@@ -65,11 +65,8 @@ jobs:
           RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
 
           # Read release body and escape it properly to prevent command execution
-          # Use heredoc to safely handle content with special characters
-          RELEASE_BODY=$(cat << 'EOF'
-${{ steps.get_release.outputs.release_body }}
-EOF
-          )
+          # Use printf to safely handle content with special characters
+          RELEASE_BODY=$(printf '%s' "${{ steps.get_release.outputs.release_body }}")
 
           # Function to convert markdown to HTML for better Telegram compatibility
           convert_markdown_to_html() {
