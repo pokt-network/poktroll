@@ -100,18 +100,13 @@ jobs:
           # Create message with HTML formatting - escape the release name too
           ESCAPED_RELEASE_NAME=$(echo "$RELEASE_NAME" | sed 's/&/\&amp;/g' | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g')
 
+          # Also escape the URL to be safe
+          ESCAPED_RELEASE_URL=$(echo "$RELEASE_URL" | sed 's/&/\&amp;/g')
+
           if [ "${{ inputs.test_mode }}" = "true" ]; then
-            MESSAGE="🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪
-
-            📣 The <b>${ESCAPED_RELEASE_NAME} release is live!</b> 📣
-            <a href=\"${RELEASE_URL}\">View the full release here</a>
-
-            ${PROCESSED_RELEASE_BODY}"
-                      else
-                        MESSAGE="📣 The <b>${ESCAPED_RELEASE_NAME} release is live!</b> 📣
-            <a href=\"${RELEASE_URL}\">View the full release here</a>
-
-            ${PROCESSED_RELEASE_BODY}"
+            MESSAGE=$(printf "🧪 TEST RELEASE NOTIFICATION 🧪\n\n📣 The %s release is live! 📣\n%s\n\n%s" "$ESCAPED_RELEASE_NAME" "$ESCAPED_RELEASE_URL" "$PROCESSED_RELEASE_BODY")
+          else
+            MESSAGE=$(printf "📣 The %s release is live! 📣\n%s\n\n%s" "$ESCAPED_RELEASE_NAME" "$ESCAPED_RELEASE_URL" "$PROCESSED_RELEASE_BODY")
           fi
 
           # Debug: Print the first 200 chars of the message
