@@ -10,7 +10,6 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	cosmosmath "cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -62,7 +61,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
 	)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Ensure the claim is within relay mining bounds
@@ -143,7 +142,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	settlementContext := tokenomicskeeper.NewSettlementContext(
 		ctx,
 		keepers.Keeper,
-		keepers.Keeper.Logger(),
+		keepers.Logger(),
 	)
 
 	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
@@ -179,7 +178,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Assert that app module balance is *decreased* by the appropriate amount
 	// NB: The application module account burns the amount of uPOKT that was held in escrow
 	// on behalf of the applications which were serviced in a given session.
-	expectedAppModuleEndBalance := appModuleStartBalance.Sub(sdk.NewCoin(pocket.DenomuPOKT, appBurn))
+	expectedAppModuleEndBalance := appModuleStartBalance.Sub(cosmostypes.NewCoin(pocket.DenomuPOKT, appBurn))
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
@@ -224,7 +223,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
 	)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Set up the relays to exceed the max claimable amount
@@ -315,7 +314,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	settlementContext := tokenomicskeeper.NewSettlementContext(
 		ctx,
 		keepers.Keeper,
-		keepers.Keeper.Logger(),
+		keepers.Logger(),
 	)
 
 	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
@@ -340,7 +339,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Determine the expected app end stake amount and the expected app burn
 	appBurn := cosmosmath.NewInt(maxClaimableAmountPerSupplier)
-	appBurnCoin := sdk.NewCoin(pocket.DenomuPOKT, appBurn)
+	appBurnCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, appBurn)
 	expectedAppEndStakeAmount := appInitialStake.Sub(appBurn)
 
 	// Assert that `applicationAddress` staked balance has decreased by the max claimable amount
@@ -381,7 +380,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Check that the expected burn >> effective burn because application is overserviced
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	events := sdkCtx.EventManager().Events()
 	appOverservicedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventApplicationOverserviced](t, events)
 	require.Len(t, appOverservicedEvents, 1, "unexpected number of event overserviced events")
@@ -424,7 +423,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		testkeeper.WithDefaultModuleBalances(),
 	}
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Set the dao_reward_address param on the tokenomics keeper.
@@ -487,7 +486,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	propBalanceBefore := getBalance(t, ctx, keepers, proposerAddress)
 	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
-	supplierShareholderBalancesBeforeSettlementMap := make(map[string]*sdk.Coin, len(supplierRevShares))
+	supplierShareholderBalancesBeforeSettlementMap := make(map[string]*cosmostypes.Coin, len(supplierRevShares))
 	for _, revShare := range supplierRevShares {
 		addr := revShare.Address
 		supplierShareholderBalancesBeforeSettlementMap[addr] = getBalance(t, ctx, keepers, addr)
@@ -496,7 +495,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	settlementContext := tokenomicskeeper.NewSettlementContext(
 		ctx,
 		keepers.Keeper,
-		keepers.Keeper.Logger(),
+		keepers.Logger(),
 	)
 
 	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
@@ -520,7 +519,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	propBalanceAfter := getBalance(t, ctx, keepers, proposerAddress)
 	serviceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceAfter := getBalance(t, ctx, keepers, appAddress)
-	supplierShareholderBalancesAfter := make(map[string]*sdk.Coin, len(supplierRevShares))
+	supplierShareholderBalancesAfter := make(map[string]*cosmostypes.Coin, len(supplierRevShares))
 	for _, revShare := range supplierRevShares {
 		addr := revShare.Address
 		supplierShareholderBalancesAfter[addr] = getBalance(t, ctx, keepers, addr)

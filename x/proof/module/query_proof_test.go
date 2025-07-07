@@ -40,7 +40,15 @@ func networkWithProofObjects(t *testing.T, n int) (*network.Network, []types.Pro
 	buf, err := cfg.Codec.MarshalJSON(&state)
 	require.NoError(t, err)
 	cfg.GenesisState[types.ModuleName] = buf
-	return network.New(t, cfg), state.ProofList
+
+	// Start the network
+	net := network.New(t, cfg)
+
+	// Wait for the network to be fully initialized to avoid race conditions
+	// with consensus reactor goroutines
+	require.NoError(t, net.WaitForNextBlock())
+
+	return net, state.ProofList
 }
 
 func TestShowProof(t *testing.T) {

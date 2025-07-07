@@ -105,10 +105,10 @@ func (k msgServer) CreateClaim(
 		)
 	}
 
-	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierOperatorAddress())
+	_, isExistingClaim = k.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierOperatorAddress())
 
 	// Upsert the claim
-	k.Keeper.UpsertClaim(ctx, claim)
+	k.UpsertClaim(ctx, claim)
 	logger.Info("successfully upserted the claim")
 
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.

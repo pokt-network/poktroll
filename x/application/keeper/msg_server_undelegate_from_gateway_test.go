@@ -13,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gwtypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -35,7 +34,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	}
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
@@ -52,7 +51,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 
 	// Prepare the delegation messages and delegate the application to the gateways
 	for _, gatewayAddr := range expectedGatewayAddresses {
-		delegateMsg := &types.MsgDelegateToGateway{
+		delegateMsg := &apptypes.MsgDelegateToGateway{
 			AppAddress:     appAddr,
 			GatewayAddress: gatewayAddr,
 		}
@@ -97,7 +96,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	}
 
 	// Prepare an undelegation message
-	undelegateMsg := &types.MsgUndelegateFromGateway{
+	undelegateMsg := &apptypes.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: expectedGatewayAddresses[3],
 	}
@@ -153,7 +152,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2, gwtypes.GatewayNotUnstaking)
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
@@ -168,14 +167,14 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Prepare the undelegation message
-	undelegateMsg := &types.MsgUndelegateFromGateway{
+	undelegateMsg := &apptypes.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr1,
 	}
 
 	// Attempt to undelgate the application from the gateway
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
-	require.ErrorContains(t, err, types.ErrAppNotDelegated.Error())
+	require.ErrorContains(t, err, apptypes.ErrAppNotDelegated.Error())
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
@@ -188,7 +187,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.Equal(t, 0, len(redelegationEvents))
 
 	// Prepare a delegation message
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr2,
 	}
@@ -244,7 +243,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gwtypes.GatewayNotUnstaking)
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
@@ -260,7 +259,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.True(t, isAppFound)
 
 	// Prepare the delegation message and delegate the application to the gateway
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr,
 	}
@@ -304,7 +303,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	keepertest.RemoveGatewayFromStakedGatewayMap(t, gatewayAddr)
 
 	// Prepare an undelegation message
-	undelegateMsg := &types.MsgUndelegateFromGateway{
+	undelegateMsg := &apptypes.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr,
 	}
@@ -472,7 +471,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 	sdkCtx = sdkCtx.WithBlockHeight(undelegationHeight + 1)
 
 	// Delegate back the application to the gateway that was undelegated from.
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &apptypes.MsgDelegateToGateway{
 		AppAddress:     app.Address,
 		GatewayAddress: gatewayAddrToRedelegate,
 	}
@@ -554,18 +553,18 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnbondingGateway(t *testi
 func createAppStakeDelegateAndUndelegate(
 	ctx context.Context,
 	t *testing.T,
-	srv types.MsgServer,
+	srv apptypes.MsgServer,
 	k keeper.Keeper,
 	undelegationHeight int64,
 ) (
 	sdkCtx sdk.Context,
-	app types.Application,
+	app apptypes.Application,
 	delegateAddr,
 	pendingUndelegateFromAddr string,
 ) {
 	// Generate an application address and stake the application.
 	appAddr := sample.AccAddress()
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
@@ -582,7 +581,7 @@ func createAppStakeDelegateAndUndelegate(
 	delegateAddr = sample.AccAddress()
 	keepertest.AddGatewayToStakedGatewayMap(t, delegateAddr, sessionEndHeight)
 
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: delegateAddr,
 	}
@@ -592,7 +591,7 @@ func createAppStakeDelegateAndUndelegate(
 	pendingUndelegateFromAddr = sample.AccAddress()
 	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateFromAddr, sessionEndHeight)
 
-	delegateMsg = &types.MsgDelegateToGateway{
+	delegateMsg = &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: pendingUndelegateFromAddr,
 	}
@@ -603,7 +602,7 @@ func createAppStakeDelegateAndUndelegate(
 	sdkCtx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(undelegationHeight)
 
 	// Undelegate from the first gateway.
-	undelegateMsg := &types.MsgUndelegateFromGateway{
+	undelegateMsg := &apptypes.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: pendingUndelegateFromAddr,
 	}

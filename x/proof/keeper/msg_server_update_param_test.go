@@ -5,7 +5,6 @@ import (
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
@@ -16,7 +15,7 @@ import (
 )
 
 func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
-	var expectedProofRequestProbability float64 = 0.1
+	expectedProofRequestProbability := 0.1
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -43,7 +42,7 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 }
 
 func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
-	var expectedProofRequirementThreshold = sdk.NewCoin(pocket.DenomuPOKT, math.NewInt(100))
+	var expectedProofRequirementThreshold = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(100))
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)

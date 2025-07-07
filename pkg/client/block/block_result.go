@@ -11,13 +11,13 @@ import (
 type CometBlockResult coretypes.ResultBlock
 
 func (cbr *CometBlockResult) Height() int64 {
-	return cbr.Block.Header.Height
+	return (*coretypes.ResultBlock)(cbr).Block.Height
 }
 
 func (cbr *CometBlockResult) Hash() []byte {
-	return cbr.BlockID.Hash
+	return (*coretypes.ResultBlock)(cbr).BlockID.Hash
 }
 
 func (cbr *CometBlockResult) Txs() []types.Tx {
-	return cbr.Block.Data.Txs
+	return (*coretypes.ResultBlock)(cbr).Block.Txs
 }

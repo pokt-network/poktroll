@@ -10,7 +10,6 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -26,7 +25,6 @@ import (
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
-	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
@@ -650,7 +648,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	sessionOneEndHeight := sessionOneClaim.GetSessionHeader().GetSessionEndBlockHeight()
 
 	// Add a second claim with a session header corresponding to the next session.
-	sessionTwoClaim := testutilproof.BaseClaim(
+	sessionTwoClaim := testproof.BaseClaim(
 		sessionOneClaim.GetSessionHeader().GetServiceId(),
 		sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
 		sessionOneClaim.GetSupplierOperatorAddress(),
@@ -751,7 +749,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	//   despite having multiple expired claims for the same supplier
 	expiredClaimsMap := make(map[string]*prooftypes.Claim, numExpiredClaims)
 	for range numExpiredClaims {
-		appStake := types.NewCoin("upokt", math.NewInt(1000000))
+		appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 		appAddr := sample.AccAddress()
 		app := apptypes.Application{
 			Address:        appAddr,
@@ -1010,7 +1008,7 @@ func (s *TestSuite) createTestActors(
 		preGeneratedAccts,
 	).String()
 
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 
 	// Setup the test for each service:
 	// - Create and store the service in the service keeper.
@@ -1055,7 +1053,7 @@ func (s *TestSuite) createTestActors(
 	}
 
 	// Make the supplier staked for each tested service.
-	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStakeAmt))
+	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(supplierStakeAmt))
 	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:         supplierOwnerAddr,
