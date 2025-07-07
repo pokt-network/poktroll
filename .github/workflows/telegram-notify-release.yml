@@ -53,15 +53,15 @@ jobs:
           echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
 
           # Use EOF delimiter for multiline content and handle null values
-          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          echo "release_body<<RELEASE_BODY_END" >> $GITHUB_OUTPUT
           echo "$RELEASE_INFO" | jq -r '.body // "No release notes available."' >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "RELEASE_BODY_END" >> $GITHUB_OUTPUT
 
       - name: Prepare release message
         id: prepare_message
         run: |
           # Create a Python script to properly handle HTML escaping and message formatting
-          cat > format_message.py << 'EOF'
+          cat > format_message.py << 'SCRIPT_END'
           import os
           import html
           import sys
@@ -98,7 +98,7 @@ jobs:
 
           print("Message formatted successfully")
           print(f"Message length: {len(message)} characters")
-          EOF
+          SCRIPT_END
 
           # Set environment variables for Python script
           export RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
@@ -109,10 +109,10 @@ jobs:
           # Run Python script to format message
           python3 format_message.py
 
-          # Read the formatted message and set as output
-          echo "message<<EOF" >> $GITHUB_OUTPUT
+          # Read the formatted message and set as output using a unique delimiter
+          echo "message<<TELEGRAM_MESSAGE_END" >> $GITHUB_OUTPUT
           cat formatted_message.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "TELEGRAM_MESSAGE_END" >> $GITHUB_OUTPUT
 
           # Debug output
           echo "DEBUG: Message preview (first 200 chars):"
