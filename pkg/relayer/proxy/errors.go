@@ -19,4 +19,5 @@ var (
 	ErrRelayerProxyMaxBodyExceeded           = sdkerrors.Register(codespace, 11, "max body size exceeded")
 	ErrRelayerProxyResponseLimitExceeded     = sdkerrors.Register(codespace, 12, "response limit exceed")
 	ErrRelayerProxyRequestLimitExceeded      = sdkerrors.Register(codespace, 13, "request limit exceed")
+	ErrRelayerProxyUnmarshalingRelayRequest  = sdkerrors.Register(codespace, 14, "failed to unmarshal relay request")
 )

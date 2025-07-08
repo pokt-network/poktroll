@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -20,8 +21,12 @@ func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types
 
 	var relayReq types.RelayRequest
 	if err := relayReq.Unmarshal(requestBody); err != nil {
-		sync.logger.Debug().Msg("unmarshaling relay request failed")
-		return &types.RelayRequest{}, err
+		bodyBzBase64 := base64.StdEncoding.EncodeToString(requestBody)
+		// TODO_TECHDEBT(@red-0ne): Remove this debug log once the issue is resolved.
+		sync.logger.With("body_bytes", bodyBzBase64).Debug().Msgf("unmarshaling relay request failed")
+		return &types.RelayRequest{}, ErrRelayerProxyUnmarshalingRelayRequest.Wrapf(
+			"failed to unmarshal relay request with body %q: %s", bodyBzBase64, err.Error(),
+		)
 	}
 
 	return &relayReq, nil
