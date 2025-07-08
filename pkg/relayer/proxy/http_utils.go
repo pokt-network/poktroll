@@ -87,7 +87,12 @@ func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]b
 		)
 	}
 
-	return buf.Bytes(), nil
+	// CRITICAL: Copy the buffer data before returning it to avoid race conditions.
+	// The buffer will be returned to the pool via defer, but the caller needs
+	// a stable copy of the data that won't be affected by future pool usage.
+	result := make([]byte, buf.Len())
+	copy(result, buf.Bytes())
+	return result, nil
 }
 
 // SafeRequestReadBody reads the HTTP request body up to a specified size limit, enforcing safety and logging errors.
