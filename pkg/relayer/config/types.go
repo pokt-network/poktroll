@@ -21,11 +21,12 @@ type RPCType string
 const (
 	RPCTypeJSONRPC RPCType = "json_rpc"
 	RPCTypeREST    RPCType = "rest"
+	RPCTypeWS      RPCType = "websocket"
 )
 
 func (t RPCType) IsValid() bool {
 	switch t {
-	case RPCTypeJSONRPC, RPCTypeREST:
+	case RPCTypeJSONRPC, RPCTypeREST, RPCTypeWS:
 		return true
 	default:
 		return false

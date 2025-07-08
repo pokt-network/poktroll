@@ -16,6 +16,9 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
+// rpcTypeHeader is the header key for the RPC type, provided by the client.
+const rpcTypeHeader = "Rpc-Type"
+
 const (
 	// writeDeadlineSafetyDuration provides extra buffer time beyond the request timeout
 	// to ensure the HTTP response can be fully written before the connection is closed.
@@ -177,6 +180,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Initialize the service config to the default service config.
 	serviceConfig := supplierConfig.DefaultServiceConfig
+	// Set a string that will be logged to indicate the service config type.
+	serviceConfigTypeLog := "default"
 
 	if serviceConfig == nil {
 		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
@@ -185,20 +190,25 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		)
 	}
 
-	// If the RPC-Type header is set, use the RPC type-specific service config.
-	rpcType := config.RPCType(request.Header.Get("RPC-Type"))
+	// If the 'Rpc-Type' header is set, use the RPC type specific service config.
+	rpcType := config.RPCType(request.Header.Get(rpcTypeHeader))
 	if rpcType != "" {
+		// If the RPC type is set for the service, use the RPC type specific service config.
 		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
 			serviceConfig = rpcTypeServiceConfig
+			// Update the service config type log to indicate the RPC type.
+			serviceConfigTypeLog = string(rpcType)
 		}
 	}
 
+	// Hydrate the logger with relevant values.
 	logger = logger.With(
 		"service_id", serviceId,
 		"server_addr", server.server.Addr,
 		"application_address", meta.SessionHeader.ApplicationAddress,
 		"session_start_height", meta.SessionHeader.SessionStartBlockHeight,
 		"destination_url", serviceConfig.BackendUrl.String(),
+		"service_config_type", serviceConfigTypeLog,
 	)
 
 	// Increment the relays counter.
