@@ -123,6 +123,7 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     print("Using local helm chart repo " + helm_chart_local_repo)
     # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
 
+
 # Configure PATH references
 grove_chart_prefix = "buildwithgrove/"
 if localnet_config["grove_helm_chart_local_repo"]["enabled"]:
@@ -286,14 +287,14 @@ actor_number = 0
 for x in range(localnet_config["relayminers"]["count"]):
     actor_number = actor_number + 1
 
-    flags = [
-        "--values=./localnet/kubernetes/values-common.yaml",
-        "--values=./localnet/kubernetes/values-relayminer-common.yaml",
-        "--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + ".yaml",
-        "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
-        "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
-        "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
-        "--set=image.repository=pocketd",
+    flags=[
+            "--values=./localnet/kubernetes/values-common.yaml",
+            "--values=./localnet/kubernetes/values-relayminer-common.yaml",
+            "--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + ".yaml",
+            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
+            "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
+            "--set=image.repository=pocketd",
     ]
 
     #############
@@ -305,29 +306,27 @@ for x in range(localnet_config["relayminers"]["count"]):
 
     supplier_number = 0
 
-    flags.append("--set=config.suppliers[" + str(supplier_number) + "].service_id=anvil")
-    flags.append("--set=config.suppliers[" + str(supplier_number) + "].listen_url=http://0.0.0.0:8545")
-    flags.append("--set=config.suppliers[" + str(supplier_number) + "].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvil")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
     supplier_number = supplier_number + 1
 
-    flags.append("--set=config.suppliers[" + str(supplier_number) + "].service_id=anvilws")
-    flags.append("--set=config.suppliers[" + str(supplier_number) + "].listen_url=http://0.0.0.0:8545")
-    flags.append("--set=config.suppliers[" + str(supplier_number) + "].service_config.backend_url=ws://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvilws")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=ws://anvil:8547/")
     supplier_number = supplier_number + 1
 
     if localnet_config["rest"]["enabled"]:
-        flags.append("--set=config.suppliers[" + str(supplier_number) + "].service_id=rest")
-        flags.append("--set=config.suppliers[" + str(supplier_number) + "].listen_url=http://0.0.0.0:8545")
-        flags.append(
-            "--set=config.suppliers[" + str(supplier_number) + "].service_config.backend_url=http://rest:10000/")
-        supplier_number = supplier_number + 1
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=rest")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://rest:10000/")
+       supplier_number = supplier_number + 1
 
     if localnet_config["ollama"]["enabled"]:
-        flags.append("--set=config.suppliers[" + str(supplier_number) + "].service_id=ollama")
-        flags.append("--set=config.suppliers[" + str(supplier_number) + "].listen_url=http://0.0.0.0:8545")
-        flags.append(
-            "--set=config.suppliers[" + str(supplier_number) + "].service_config.backend_url=http://ollama:11434/")
-        supplier_number = supplier_number + 1
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=ollama")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://ollama:11434/")
+       supplier_number = supplier_number + 1
 
     helm_resource(
         "relayminer" + str(actor_number),
@@ -357,8 +356,7 @@ for x in range(localnet_config["relayminers"]["count"]):
             # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6070/debug/pprof/goroutine`
             str(6069 + actor_number)
             + ":6060",  # Relayminer pprof port. relayminer1 - exposes 6070, relayminer2 exposes 6071, etc.
-            str(7000 + actor_number) + ":8081",
-            # Relayminer ping port. relayminer1 - exposes 7001, relayminer2 exposes 7002, etc.
+            str(7000 + actor_number) + ":8081", # Relayminer ping port. relayminer1 - exposes 7001, relayminer2 exposes 7002, etc.
         ],
     )
 
@@ -386,9 +384,9 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=config.fromConfigMap.name=path-config-" + str(actor_number),
         "--set=config.fromConfigMap.key=.config.yaml",
         # GUARD values
-        "--set=guard.global.namespace=default",  # Ensure GUARD runs in the default namespace
-        "--set=guard.global.serviceName=path" + str(actor_number) + "-http",  # Override the default service name
-        "--set=guard.services[0].serviceId=anvil",  # Ensure HTTPRoute resources are created for Anvil
+        "--set=guard.global.namespace=default", # Ensure GUARD runs in the default namespace
+        "--set=guard.global.serviceName=path" + str(actor_number) + "-http", # Override the default service name
+        "--set=guard.services[0].serviceId=anvil", # Ensure HTTPRoute resources are created for Anvil
         "--set=observability.enabled=false",
 
         # TODO_IMPROVE(@okdas): Turn on guard when we are ready for it - e2e tests currently are not setup to use it.
@@ -399,12 +397,12 @@ for x in range(localnet_config["path_gateways"]["count"]):
     if localnet_config["path_local_repo"]["enabled"]:
         path_image_deps = ["path-local"]
         path_image_keys = [("image.repository", "image.tag")]
-        path_deps = ["path-local"]
+        path_deps=["path-local"]
         resource_flags.append("--set=global.imagePullPolicy=Never")
     else:
         path_image_deps = []
         path_image_keys = []
-        path_deps = []
+        path_deps=[]
 
     configmap_create(
         "path-config-" + str(actor_number),
@@ -438,15 +436,15 @@ for x in range(localnet_config["path_gateways"]["count"]):
         # Changing this port will make E2E start failing.
         # See the `envoy proxy` k8s resource below for in progress work.
         port_forwards=[
-            # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
-            # https://github.com/buildwithgrove/path/blob/main/config/router.go
-            str(3068 + actor_number) + ":3069"
+                # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
+                # https://github.com/buildwithgrove/path/blob/main/config/router.go
+                str(3068 + actor_number) + ":3069"
         ],
         extra_pod_selectors=[
             {"app.kubernetes.io/instance": "path" + str(actor_number)},
             {"app.kubernetes.io/name": "path" + str(actor_number)},
         ],
-        discovery_strategy="selectors-only",  # Extra pod selectors didn't work without this
+        discovery_strategy="selectors-only", # Extra pod selectors didn't work without this
     )
 
     # DO NOT DELETE, this is an example of how we'll turn on envoy proxy in the future
@@ -458,6 +456,7 @@ for x in range(localnet_config["path_gateways"]["count"]):
     #     port_forwards=["3070:3070"],
     # )
 
+
 # Provision Validators
 k8s_resource(
     "validator",
@@ -466,7 +465,7 @@ k8s_resource(
         "26657",  # CometBFT JSON-RPC
         "9090",  # the gRPC server address
         "40004",  # use with `dlv` when it's turned on in `localnet_config.yaml`
-        "1317",  # CosmosSDK REST API
+        "1317", # CosmosSDK REST API
         # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6050/debug/pprof/goroutine`
         "6050:6060",
     ],
@@ -517,6 +516,7 @@ load("./tiltfiles/pocketdex.tilt", "check_and_load_pocketdex")
 #   2. Prints a message if true or false
 check_and_load_pocketdex(localnet_config["indexer"])
 
+
 ### Pocketd Faucet
 if localnet_config["faucet"]["enabled"]:
     helm_resource(
@@ -539,6 +539,7 @@ if localnet_config["faucet"]["enabled"]:
             "8080:8080",
         ],
     )
+
 
 ### IBC relayer(s) & alt-chain node(s)
 load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
