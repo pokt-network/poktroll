@@ -83,7 +83,12 @@ func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]b
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	// CRITICAL: Copy the buffer data before returning it to avoid race conditions.
+	// The buffer will be returned to the pool via defer, but the caller needs
+	// a stable copy of the data that won't be affected by future pool usage.
+	result := make([]byte, buf.Len())
+	copy(result, buf.Bytes())
+	return result, nil
 }
 
 // TODO_TECHDEBT: Move this function back to the Shannon SDK. It was moved:
