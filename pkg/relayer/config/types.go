@@ -186,9 +186,11 @@ type RelayMinerSupplierConfig struct {
 	// type of the relay miner server it is associated with.
 	ServerType RelayMinerServerType
 
-	// ServiceConfig is the config of the service that relays will be proxied to.
+	// ServiceConfig is the default config of the service that relays will be proxied to.
 	// Other supplier types may embed other fields in the future. eg. "https" may
 	// embed a TLS config.
+	//
+	// It is used if a request has no matching service config in RPCTypeServiceConfigs.
 	DefaultServiceConfig *RelayMinerSupplierServiceConfig
 
 	// RPCTypeServiceConfigs is a map of RPC types to service configs.
@@ -208,7 +210,7 @@ type RelayMinerSupplierConfig struct {
 // RelayMinerSupplierServiceConfig is the structure resulting from parsing the supplier
 // service sub-section of the RelayMiner config file.
 type RelayMinerSupplierServiceConfig struct {
-	// BackendUrl is the default URL of the service that relays will be proxied to.
+	// BackendUrl is the URL of the service that relays will be proxied to.
 	BackendUrl *url.URL
 	// Authentication is the basic auth structure used to authenticate to the
 	// request being proxied from the current relay miner server.

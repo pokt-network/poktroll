@@ -459,6 +459,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				},
 			},
 		},
+
 		// Invalid Configs
 		{
 			desc: "invalid: invalid tx node grpc url",
@@ -720,6 +721,28 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  - service_id: ethereum
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
+				`,
+
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
+		},
+		{
+			desc: "invalid: relay miner config with invalid rpc_type in rpc_type_service_configs",
+
+			inputConfigYAML: `
+				pocket_node:
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
+				default_signing_key_names: [ supplier1 ]
+				smt_store_path: smt_stores
+				suppliers:
+				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
+				    service_config:
+				      backend_url: http://anvil.servicer:8545
+				    rpc_type_service_configs:
+				      invalid_rpc_type:
+				        backend_url: http://invalid.servicer:8545
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
