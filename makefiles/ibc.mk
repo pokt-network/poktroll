@@ -65,15 +65,15 @@ axelar_query_tx:
 
 .PHONY: axelar_query_tx_json
 axelar_query_tx_json:
-	POD_REGEX="axelar-validator" CHAIN_BIN="agd" CHAIN_ID="axelar" ${MAKE} ibc_localnet_query_tx_json_json
+	POD_REGEX="axelar-validator" CHAIN_BIN="axelard" CHAIN_ID="axelar" ${MAKE} ibc_localnet_query_tx_json
 
 .PHONY: osmosis_query_tx
 osmosis_query_tx:
-	POD_REGEX="osmosis-validator" CHAIN_BIN="agd" CHAIN_ID="osmosis" ${MAKE} ibc_localnet_query_tx
+	POD_REGEX="osmosis-validator" CHAIN_BIN="osmosisd" CHAIN_ID="osmosis" ${MAKE} ibc_localnet_query_tx
 
 .PHONY: osmosis_query_tx_json
 osmosis_query_tx_json:
-	POD_REGEX="osmosis-validator" CHAIN_BIN="agd" CHAIN_ID="osmosis" ${MAKE} ibc_localnet_query_tx_json_json
+	POD_REGEX="osmosis-validator" CHAIN_BIN="osmosisd" CHAIN_ID="osmosis" ${MAKE} ibc_localnet_query_tx_json
 
 
 
@@ -120,7 +120,7 @@ ibc_list_agoric_connections:
 		kubectl_exec_grep_pod agoric-validator agd query ibc connection connections \
 	'
 
-.PHONY: ibc_list_agoric_connections
+.PHONY: ibc_list_agoric_channels
 ibc_list_agoric_channels:
 	bash -c '\
 		source ./tools/scripts/ibc-channels.sh && \
@@ -204,3 +204,11 @@ ibc_test_transfer_pocket_to_agoric:
 			--keyring-backend=test \
 			--from=app1 --yes \
 	'
+
+#############################
+# IBC Restart and Setup    #
+#############################
+
+.PHONY: ibc_restart_setup
+ibc_restart_setup: ## Restart IBC validators and setup connections using the dynamic restart script
+	bash ./tools/scripts/restart-ibc-setup.sh
