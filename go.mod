@@ -110,6 +110,7 @@ require (
 
 require (
 	github.com/go-chi/chi/v5 v5.2.1
+	github.com/docker/go-units v0.5.0
 	github.com/hashicorp/go-version v1.7.0
 )
 
@@ -235,7 +236,6 @@ require (
 	github.com/docker/docker v28.1.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
-	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/dvsekhvalnov/jose2go v1.6.0 // indirect
 	github.com/emicklei/dot v1.6.2 // indirect
