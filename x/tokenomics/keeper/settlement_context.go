@@ -93,13 +93,14 @@ func NewSettlementContext(
 
 		serviceMap:               make(map[string]*sharedtypes.Service),
 		relayMiningDifficultyMap: make(map[string]servicetypes.RelayMiningDifficulty),
-		sharedParams:             tokenomicsKeeper.sharedKeeper.GetParams(ctx),
-		tokenomicsParams:         tokenomicsKeeper.GetParams(ctx),
+
+		sharedParams:     tokenomicsKeeper.sharedKeeper.GetParams(ctx),
+		tokenomicsParams: tokenomicsKeeper.GetParams(ctx),
 	}
 }
 
 // FlushAllActorsToStore batch save all accumulated applications and suppliers to the store.
-// It is intended to be called after all claims have been processed.
+// It is intended to be called AFTER all claims have been processed.
 
 // This optimization:
 //   - Reduces redundant writes to state storage by updating each record only once.
@@ -254,7 +255,8 @@ func (sctx *settlementContext) cacheSupplier(
 		// to the claim's service ID.
 		sctx.cacheSupplierServiceConfig(ctx, cachedSupplier, serviceId)
 
-		return nil // Supplier already cached
+		// Supplier is already cached
+		return nil
 	}
 
 	// Retrieve the onchain staked dehydrated supplier record:
@@ -311,7 +313,8 @@ func (sctx *settlementContext) cacheSupplierServiceConfig(
 // This prevents repeated KV store lookups for the same application across multiple claims.
 func (sctx *settlementContext) cacheApplication(ctx context.Context, appAddress string) error {
 	if _, ok := sctx.applicationMap[appAddress]; ok {
-		return nil // Application already cached
+		// Application is already cached
+		return nil
 	}
 
 	// Retrieve the onchain staked application record
@@ -341,12 +344,14 @@ func (sctx *settlementContext) cacheApplication(ctx context.Context, appAddress 
 // This prevents repeated KV store lookups across multiple claims targeting the same service.
 func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, serviceId string) error {
 	if _, ok := sctx.serviceMap[serviceId]; ok {
-		return nil // Service already cached
+		// Service is already cached
+		return nil
 	}
 
 	// Retrieve the service record
 	service, isServiceFound := sctx.keeper.serviceKeeper.GetService(ctx, serviceId)
 	if !isServiceFound {
+		sctx.logger.Warn(fmt.Sprintf("service with ID %q not found", serviceId))
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", serviceId)
 	}
 	sctx.serviceMap[serviceId] = &service

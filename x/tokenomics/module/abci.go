@@ -35,6 +35,10 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 		expiredResults.GetNumClaims(),
 		numDiscardedFaultyClaims,
 	))
+	// Secondary warning log to alert of non-zero discarded faulty claims.
+	if numDiscardedFaultyClaims > 0 {
+		logger.Warn(fmt.Sprintf("discarded %d faulty claims", numDiscardedFaultyClaims))
+	}
 
 	// Update the relay mining difficulty for every service that settled pending claims.
 	settledRelaysPerServiceIdMap, err := settledResults.GetRelaysPerServiceMap()
