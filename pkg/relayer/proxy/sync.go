@@ -16,9 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// rpcTypeHeader is the header key for the RPC type, provided by the client.
-const rpcTypeHeader = "Rpc-Type"
-
 const (
 	// writeDeadlineSafetyDuration provides extra buffer time beyond the request timeout
 	// to ensure the HTTP response can be fully written before the connection is closed.

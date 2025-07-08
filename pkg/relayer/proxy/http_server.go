@@ -17,6 +17,9 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
+// rpcTypeHeader is the header key for the RPC type, provided by the client.
+const rpcTypeHeader = "Rpc-Type"
+
 // - relayProbabilisticDebugProb is the probability of a debug log being shown for a relay request.
 // - This has to be very low to avoid spamming the logs for RelayMiners that end up serving millions of relays.
 // - In the case of errors, it increases the likelihood of seeing issues in the logs
@@ -264,13 +267,7 @@ func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string)
 
 // isWebSocketRequest checks if the request is trying to upgrade to WebSocket.
 func isWebSocketRequest(r *http.Request) bool {
-	// Check if the request is trying to upgrade to WebSocket as per the RFC 6455.
-	// The request must have the "Upgrade" and "Connection" headers set to
-	// "websocket" and "Upgrade" respectively.
-	// refer to: https://datatracker.ietf.org/doc/html/rfc6455#section-4.2.1
-	upgradeHeader := r.Header.Get("Upgrade")
-	connectionHeader := r.Header.Get("Connection")
-
-	return http.CanonicalHeaderKey(upgradeHeader) == "Websocket" &&
-		http.CanonicalHeaderKey(connectionHeader) == "Upgrade"
+	// The request must have the "Rpc-Type" header set to "websocket".
+	// This will be handled in the client, likely a PATH gateway.
+	return r.Header.Get(rpcTypeHeader) == string(config.RPCTypeWS)
 }

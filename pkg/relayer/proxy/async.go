@@ -23,6 +23,25 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	serviceId := request.Header.Get("Target-Service-Id")
 	appAddress := request.Header.Get("App-Address")
 
+	// Determine the supplier's service configuration.
+	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceId]
+	if !ok {
+		return ErrRelayerProxyServiceEndpointNotHandled
+	}
+
+	// Get the websocket service config. We can safely use the `config.RPCTypeWS`
+	// as `handleAsyncConnection` is only called for requests with the 'Rpc-Type'
+	// header set to 'websocket'.
+	//
+	// IMPORTANT: This will return an error if the service is not configured for websocket RPC type.
+	websocketServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[config.RPCTypeWS]
+	if !ok {
+		return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+			"service %q not configured for websocket RPC type",
+			serviceId,
+		)
+	}
+
 	logger := server.logger.With(
 		"relay_request_type", "asynchronous",
 		"service_id", serviceId,
@@ -45,34 +64,10 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 
 	sessionHeader := session.Header
 
-	// Determine the supplier's service configuration.
-	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceId]
-	if !ok {
-		return ErrRelayerProxyServiceEndpointNotHandled
-	}
-
-	// Initialize the service config to the default service config.
-	serviceConfig := supplierConfig.DefaultServiceConfig
-
-	if serviceConfig == nil {
-		return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
-			"service %q not configured",
-			serviceId,
-		)
-	}
-
-	// If the RPC-Type header is set, use the RPC type-specific service config.
-	rpcType := config.RPCType(request.Header.Get("RPC-Type"))
-	if rpcType != "" {
-		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
-			serviceConfig = rpcTypeServiceConfig
-		}
-	}
-
 	logger = logger.With(
 		"server_addr", server.server.Addr,
 		"session_start_height", sessionHeader.SessionStartBlockHeight,
-		"destination_url", serviceConfig.BackendUrl.String(),
+		"destination_url", websocketServiceConfig.BackendUrl.String(),
 	)
 
 	// Upgrade the HTTP connection to a websocket connection.
@@ -93,7 +88,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 		server.relayMeter,
 		server.servedRewardableRelaysProducer,
 		server.blockClient,
-		serviceConfig,
+		websocketServiceConfig,
 		session,
 		clientConn,
 	)
