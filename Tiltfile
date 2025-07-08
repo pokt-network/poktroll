@@ -4,25 +4,16 @@ load("ext://configmap", "configmap_create")
 load("ext://secret", "secret_create_generic")
 load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
+load("./tiltfiles/starlark.tilt", "deep_merge_dicts")
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
 
-
-# merge_dicts updates the base dictionary with the updates dictionary.
-def merge_dicts(base, updates):
-    for k, v in updates.items():
-        if k in base and type(base[k]) == "dict" and type(v) == "dict":
-            # Assume nested dict and merge
-            for vk, vv in v.items():
-                base[k][vk] = vv
-        else:
-            # Replace or set the value
-            base[k] = v
-
 # TODO_IMPROVE: Non urgent requirement, but we need to find a way to ensure that the Tiltfile works (e.g. through config checks)
 # so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
 # environment is not broken for future engineers.
+
+load("./tiltfiles/ibc.tilt", "default_ibc_validator_configs")
 
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
@@ -92,6 +83,11 @@ localnet_config_defaults = {
 
     "faucet": {
         "enabled": True,
+    },
+
+    "ibc": {
+        "enabled": False,
+        "validator_configs": default_ibc_validator_configs,
     }
 }
 
@@ -100,9 +96,9 @@ localnet_config = {}
 # Load the existing config file, if it exists, or use an empty dict as fallback
 localnet_config_file = read_yaml(localnet_config_path, default={})
 # Merge defaults into the localnet_config first
-merge_dicts(localnet_config, localnet_config_defaults)
+localnet_config = deep_merge_dicts(localnet_config, localnet_config_defaults)
 # Then merge file contents over defaults
-merge_dicts(localnet_config, localnet_config_file)
+localnet_config = deep_merge_dicts(localnet_config, localnet_config_file)
 # Check if there are differences or if the file doesn't exist
 if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_config_path)):
     print("Updating " + localnet_config_path + " with defaults")
@@ -543,3 +539,8 @@ if localnet_config["faucet"]["enabled"]:
             "8080:8080",
         ],
     )
+
+
+### IBC relayer(s) & alt-chain node(s)
+load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+check_and_load_ibc(chart_prefix, localnet_config["ibc"])
