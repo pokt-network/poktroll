@@ -1,6 +1,6 @@
 ---
 title: Intro to Relay Mining Token Mint & Burn
-sidebar_position: 4
+sidebar_position: 3
 ---
 
 A gentle high-level introduction to token minting and burning, intended to understand

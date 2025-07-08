@@ -1,6 +1,6 @@
 ---
 title: Token Logic Modules
-sidebar_position: 2
+sidebar_position: 4
 ---
 
 ## Token Logic Modules <!-- omit in toc -->
@@ -10,6 +10,10 @@ sidebar_position: 2
 - [TLM (pre) Processing](#tlm-pre-processing)
 - [TLM: Mint=Burn (MEB)](#tlm-mintburn-meb)
 - [TLM: Distributed Settlement](#tlm-distributed-settlement)
+  - [Configuration](#configuration)
+  - [Distributed Settlement Flow](#distributed-settlement-flow)
+  - [Key Differences from Global Mint](#key-differences-from-global-mint)
+  - [Use Cases](#use-cases)
 - [TLM: Global Mint (GM)](#tlm-global-mint-gm)
 - [TLM: Global Mint Reimbursement Request (GMRR)](#tlm-global-mint-reimbursement-request-gmrr)
   - [Self Dealing Attack](#self-dealing-attack)
@@ -237,12 +241,12 @@ When both conditions are met (`enable_distribute_settlement = true` AND `global_
 
 ### Key Differences from Global Mint
 
-| Aspect | Global Mint TLM | Distributed Settlement |
-|--------|----------------|----------------------|
-| **Total Token Supply** | Increases (new tokens minted) | Unchanged (no new minting) |
-| **Activation Condition** | `global_inflation_per_claim > 0` | `enable_distribute_settlement = true` AND `global_inflation_per_claim = 0` |
-| **Application Cost** | Settlement + inflation reimbursement | Settlement only |
-| **Supplier Reward** | 100% of settlement + inflation share | Percentage of settlement (e.g., 73%) |
+| Aspect                   | Global Mint TLM                      | Distributed Settlement                                                     |
+| ------------------------ | ------------------------------------ | -------------------------------------------------------------------------- |
+| **Total Token Supply**   | Increases (new tokens minted)        | Unchanged (no new minting)                                                 |
+| **Activation Condition** | `global_inflation_per_claim > 0`     | `enable_distribute_settlement = true` AND `global_inflation_per_claim = 0` |
+| **Application Cost**     | Settlement + inflation reimbursement | Settlement only                                                            |
+| **Supplier Reward**      | 100% of settlement + inflation share | Percentage of settlement (e.g., 73%)                                       |
 
 ```mermaid
 ---
@@ -251,16 +255,16 @@ title: "Token Logic Module: Distributed Settlement"
 flowchart TD
     SA(["Settlement Amount (SA)"])
     EDS{"enable_distribute_settlement = true <br> AND <br> global_inflation_per_claim = 0"}
-    
+
     subgraph DS[Distributed Settlement]
         TM[[Tokenomics Module]]
         MAP[Mint Allocation Percentages]
-        
+
         SA_SUPP["Supplier: 73% of SA"]
-        SA_DAO["DAO: 10% of SA"] 
+        SA_DAO["DAO: 10% of SA"]
         SA_PROP["Proposer: 14% of SA"]
         SA_SO["Source Owner: 3% of SA"]
-        
+
         TM -- "💲 MINT SA" --> TM
         SA --> MAP
         MAP --> SA_SUPP
@@ -268,36 +272,36 @@ flowchart TD
         MAP --> SA_PROP
         MAP --> SA_SO
     end
-    
+
     subgraph TRAD[Traditional Behavior]
         SM[[Supplier Module]]
         SA_FULL["Supplier: 100% of SA"]
         SM -- "💲 MINT SA" --> SA_FULL
     end
-    
+
     subgraph AO[Application Operations]
         AM[[Application Module]]
         AA[Application Address]
         AM -. ⬇️ REDUCE Stake by SA .-> AA
     end
-    
+
     SA --> EDS
     EDS -- "Yes" --> DS
     EDS -- "No" --> TRAD
-    
+
     DS --> AO
     TRAD --> AO
-    
+
     SA_SUPP --> RSS[Revenue Share Distribution]
     SA_DAO --> DAO_ADDR[DAO Address]
     SA_PROP --> PROP_ADDR[Proposer Address]
     SA_SO --> SO_ADDR[Service Owner Address]
-    
+
     classDef module fill:#f9f,color: #333,stroke:#333,stroke-width:2px;
     classDef address fill:#bbf,color: #333,stroke:#333,stroke-width:2px;
     classDef question fill:#e3db6d,color: #333,stroke:#333,stroke-width:2px;
     classDef amount fill:#d4edda,color: #333,stroke:#333,stroke-width:2px;
-    
+
     class TM,SM,AM module;
     class DAO_ADDR,PROP_ADDR,SO_ADDR,AA address;
     class EDS question;
@@ -307,11 +311,13 @@ flowchart TD
 ### Use Cases
 
 **Distributed Settlement is ideal when:**
+
 - Network wants to transition away from inflationary tokenomics
 - Desire to maintain stakeholder rewards without increasing token supply
 - Applications prefer predictable costs without inflation surcharges
 
 **Traditional Mint=Burn is ideal when:**
+
 - Simplified tokenomics with suppliers receiving full settlement
 - Global inflation is active for network growth incentives
 
