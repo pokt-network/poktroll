@@ -28,11 +28,10 @@ message Params {
   // GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
   double global_inflation_per_claim = 7 [(gogoproto.jsontag) = "global_inflation_per_claim", (gogoproto.moretags) = "yaml:\"global_inflation_per_claim\""];
 
-  // enable_distribute_settlement controls whether the relay burn equals mint TLM should distribute
-  // the settlement amount according to mint allocation percentages when global inflation is disabled.
-  // When true and global_inflation_per_claim = 0, the settlement is distributed among participants.
-  // When false, the supplier receives 100% of the settlement amount (original behavior).
-  bool enable_distribute_settlement = 8 [(gogoproto.jsontag) = "enable_distribute_settlement", (gogoproto.moretags) = "yaml:\"enable_distribute_settlement\""];
+  // claim_settlement_distribution controls how the settlement amount is distributed
+  // when global inflation is disabled (global_inflation_per_claim = 0).
+  // MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.
+  ClaimSettlementDistribution claim_settlement_distribution = 8 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claim_settlement_distribution", (gogoproto.moretags) = "yaml:\"claim_settlement_distribution\""];
 }
 
 // MintAllocationPercentages captures the distribution of newly minted tokens.
@@ -52,8 +51,8 @@ message MintAllocationPercentages {
   // source_owner - % of newley minted tokens sent to the service source owner account address.
   double source_owner = 4 [(gogoproto.jsontag) = "source_owner", (gogoproto.moretags) = "yaml:\"source_owner\""];
 
-  // allocation_application - % of newley minted tokens sent to the application account address.
-  double allocation_application = 5 [(gogoproto.jsontag) = "allocation_application", (gogoproto.moretags) = "yaml:\"allocation_application\""];
+  // application - % of newley minted tokens sent to the application account address.
+  double application = 5 [(gogoproto.jsontag) = "application", (gogoproto.moretags) = "yaml:\"application\""];
 }
 
 // ClaimSettlementDistribution captures the distribution of claimable tokens.
@@ -72,6 +71,6 @@ message ClaimSettlementDistribution {
   // source_owner - % of claimable tokens sent to the service source owner account address.
   double source_owner = 4 [(gogoproto.jsontag) = "source_owner", (gogoproto.moretags) = "yaml:\"source_owner\""];
 
-  // allocation_application - % of claimable tokens sent to the application account address.
-  double allocation_application = 5 [(gogoproto.jsontag) = "allocation_application", (gogoproto.moretags) = "yaml:\"allocation_application\""];
+  // application - % of claimable tokens sent to the application account address.
+  double application = 5 [(gogoproto.jsontag) = "application", (gogoproto.moretags) = "yaml:\"application\""];
 }

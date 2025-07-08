@@ -40,9 +40,9 @@ var Upgrade_NEXT = Upgrade{
 		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			// Initialize the new enable_distribute_settlement parameter with default value
+			// Initialize the new claim_settlement_distribution parameter with default value
 			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
-			tokenomicsParams.EnableDistributeSettlement = tokenomicstypes.DefaultEnableDistributeSettlement
+			tokenomicsParams.ClaimSettlementDistribution = tokenomicstypes.DefaultClaimSettlementDistribution
 			if err := keepers.TokenomicsKeeper.SetParams(ctx, tokenomicsParams); err != nil {
 				return nil, err
 			}

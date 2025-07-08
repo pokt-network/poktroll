@@ -44,13 +44,12 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	// order economic effects with more optionality. This could include funds
 	// going to pnf, delegators, enabling bonuses/rebates, etc...
 
-	// Check if distributed settlement is enabled and global inflation is disabled
+	// Check if global inflation is disabled
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
-	enableDistributeSettlement := tlmCtx.TokenomicsParams.GetEnableDistributeSettlement()
-	
-	if enableDistributeSettlement && globalInflationPerClaim == 0 {
-		// When distributed settlement is enabled and global inflation is disabled,
-		// distribute the settlement amount according to mint allocation percentages
+
+	if globalInflationPerClaim == 0 {
+		// When global inflation is disabled, distribute the settlement amount
+		// according to claim settlement distribution percentages
 		if err := tlm.processDistributedRewardSettlement(ctx, logger, tlmCtx); err != nil {
 			return err
 		}
@@ -118,48 +117,55 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	return nil
 }
 
-// processDistributedRewardSettlement handles the reward distribution logic when distributed settlement is enabled
-// and global inflation is disabled. This function distributes the settlement amount according to mint allocation
-// percentages instead of giving the full amount to the supplier. The total amount minted equals the settlement
-// amount, but it's distributed among supplier, DAO, proposer, and source owner based on the configured percentages.
+// processDistributedRewardSettlement handles the reward distribution logic when global inflation is disabled.
+// This function distributes the settlement amount according to claim settlement distribution percentages
+// instead of giving the full amount to the supplier. The total amount minted equals the settlement
+// amount, but it's distributed among supplier, DAO, proposer, source owner, and application based on the configured percentages.
 func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
-	logger.Info("Distributed settlement is enabled and global inflation is disabled, distributing settlement amount according to mint allocation percentages")
+	logger.Info("Global inflation is disabled, distributing settlement amount according to claim settlement distribution percentages")
 
 	// === PARAMETER EXTRACTION ===
-	// Get the mint allocation percentages from tokenomics parameters
-	mintAllocationPercentages := tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
+	// Get the claim settlement distribution from tokenomics parameters
+	claimSettlementDistribution := tlmCtx.TokenomicsParams.GetClaimSettlementDistribution()
 	settlementAmount := tlmCtx.SettlementCoin.Amount
 
 	// === ALLOCATION CALCULATIONS ===
 	// Calculate how much each participant gets from the settlement amount
-	
+
 	// Calculate supplier allocation
-	supplierAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Supplier)
+	supplierAllocationRat, err := encoding.Float64ToRat(claimSettlementDistribution.Supplier)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting supplier allocation percentage: %v", err)
 	}
 	supplierAmount := calculateAllocationAmount(settlementAmount, supplierAllocationRat)
 
 	// Calculate proposer allocation
-	proposerAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Proposer)
+	proposerAllocationRat, err := encoding.Float64ToRat(claimSettlementDistribution.Proposer)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting proposer allocation percentage: %v", err)
 	}
 	proposerAmount := calculateAllocationAmount(settlementAmount, proposerAllocationRat)
 
 	// Calculate source owner allocation
-	sourceOwnerAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.SourceOwner)
+	sourceOwnerAllocationRat, err := encoding.Float64ToRat(claimSettlementDistribution.SourceOwner)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting source owner allocation percentage: %v", err)
 	}
 	sourceOwnerAmount := calculateAllocationAmount(settlementAmount, sourceOwnerAllocationRat)
 
+	// Calculate application allocation
+	applicationAllocationRat, err := encoding.Float64ToRat(claimSettlementDistribution.Application)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting application allocation percentage: %v", err)
+	}
+	applicationAmount := calculateAllocationAmount(settlementAmount, applicationAllocationRat)
+
 	// DAO gets the remainder to ensure all settlement tokens are distributed
-	daoAmount := settlementAmount.Sub(supplierAmount).Sub(proposerAmount).Sub(sourceOwnerAmount)
+	daoAmount := settlementAmount.Sub(supplierAmount).Sub(proposerAmount).Sub(sourceOwnerAmount).Sub(applicationAmount)
 
 	// === MINTING OPERATIONS ===
 	// Mint the total settlement amount to the tokenomics module for distribution
@@ -177,11 +183,11 @@ func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
 
 	// === REWARD DISTRIBUTION ===
 	// Distribute settlement amount to each participant according to allocation percentages
-	
+
 	// Distribute to supplier and their shareholders
 	if !supplierAmount.IsZero() {
 		supplierCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierAmount)
-		
+
 		// Transfer from tokenomics module to supplier module
 		tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
 			OpReason:        tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
@@ -246,9 +252,21 @@ func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
 		logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
 	}
 
+	// Distribute to application
+	if !applicationAmount.IsZero() {
+		applicationCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, applicationAmount)
+		tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_APPLICATION_REWARD_DISTRIBUTION,
+			SenderModule:     tokenomicstypes.ModuleName,
+			RecipientAddress: tlmCtx.Application.Address,
+			Coin:             applicationCoin,
+		})
+		logger.Info(fmt.Sprintf("operation queued: send (%v) to application %s", applicationCoin, tlmCtx.Application.Address))
+	}
+
 	// === VALIDATION ===
 	// Verify all settlement coins are distributed
-	totalDistributed := supplierAmount.Add(proposerAmount).Add(sourceOwnerAmount).Add(daoAmount)
+	totalDistributed := supplierAmount.Add(proposerAmount).Add(sourceOwnerAmount).Add(daoAmount).Add(applicationAmount)
 	if !totalDistributed.Equal(settlementAmount) {
 		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
 			"total distributed amount (%s) does not equal settlement amount (%s)",

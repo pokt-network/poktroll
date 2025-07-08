@@ -59,17 +59,17 @@ func (k Keeper) ProcessTokenLogicModules(
 	sessionHeader := pendingResult.Claim.GetSessionHeader()
 	if sessionHeader == nil {
 		logger.Error("received a nil session header")
-		return tokenomicstypes.ErrTokenomicsSessionHeaderNil
+		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
 	}
 	if err := sessionHeader.ValidateBasic(); err != nil {
 		logger.Error("received an invalid session header", "error", err)
-		return tokenomicstypes.ErrTokenomicsSessionHeaderInvalid
+		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid
 	}
 
 	// Retrieve and validate the root of the claim to determine the amount of work done
 	root := (smt.MerkleSumRoot)(pendingResult.Claim.GetRootHash())
 	if !root.HasDigestSize(protocol.TrieHasherSize) {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"root hash has invalid digest size (%d), expected (%d)",
 			root.DigestSize(), protocol.TrieHasherSize,
 		)
@@ -78,17 +78,17 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieve the sum (i.e. number of compute units) to determine the amount of work done
 	numClaimComputeUnits, err := pendingResult.Claim.GetNumClaimedComputeUnits()
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
 	}
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
 	// https://www.notion.so/buildwithgrove/RelayMiningDifficulty-and-low-volume-7aab3edf6f324786933af369c2fa5f01?pvs=4
 	if numClaimComputeUnits == 0 {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("root hash has zero relays")
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrap("root hash has zero relays")
 	}
 
 	numRelays, err := pendingResult.Claim.GetNumRelays()
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numRelays: %s", err)
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numRelays: %s", err)
 	}
 
 	/*
@@ -135,7 +135,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
 	expectedClaimComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	if numClaimComputeUnits != expectedClaimComputeUnits {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"mismatch: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d)",
 			numClaimComputeUnits,
 			numRelays,

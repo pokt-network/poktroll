@@ -272,6 +272,14 @@ func (s *ParamsSuite) RunUpdateParamAsSigner(
 		asMintAllocationPercentagesField.Set(reflect.New(paramReflectValue.Type()))
 		// =~ *msg.AsType.AsMintAllocationPercentages = paramReflectValue.Interface().(MintAllocationPercentages)
 		asMintAllocationPercentagesField.Elem().Set(paramReflectValue)
+	case ParamTypeClaimSettlementDistribution:
+		// Similar to MintAllocationPercentages, ClaimSettlementDistribution is a struct (not a pointer)
+		// because it is not nullable. We need to create a pointer to assign the paramValue to.
+		asClaimSettlementDistributionField := msgAsTypeValue.Elem().FieldByName("AsClaimSettlementDistribution")
+		// =~ msg.AsType.AsClaimSettlementDistribution = new(MsgUpdateParam_AsClaimSettlementDistribution)
+		asClaimSettlementDistributionField.Set(reflect.New(paramReflectValue.Type()))
+		// =~ *msg.AsType.AsClaimSettlementDistribution = paramReflectValue.Interface().(ClaimSettlementDistribution)
+		asClaimSettlementDistributionField.Elem().Set(paramReflectValue)
 	default:
 		t.Fatalf("ERROR: unknown field type %q", paramType)
 	}

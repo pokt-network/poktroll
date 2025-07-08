@@ -18,22 +18,23 @@ import (
 
 // claimSettlementContext tracks the state and metadata for a claim during settlement.
 //
-// - Holds the result of settlement operations (mint, burn, transfer) for this claim.
-// - Indicates if the claim was settled or expired without settlement.
-// - Records the total relays and compute units associated with the claim.
+// It includes but is not limited to:
+// - Holding the result of settlement operations for a single claim: mint, burn, and transfer.
+// - Indicating if the claim was settled or expired without settlement.
+// - Recording the total relays and compute units associated with the claim.
 type claimSettlementContext struct {
 	// settlementResult holds the tokenomics module operations (mint, burn, transfer)
 	// to be executed when settling this claim.
 	settlementResult *tokenomicstypes.ClaimSettlementResult
 
-	// if true, the claim was successfully settled;
-	// if false, the claim expired without settlement.
+	// If true, the claim was successfully settled;
+	// Iff false, the claim expired without settlement.
 	isSettled bool
 
-	// numClaimRelays is the total number of relays in the claim's session tree.
+	// numClaimRelays is the total number of claimed relays by the supplier.
 	numClaimRelays uint64
 
-	// numClaimComputeUnits is the total compute units claimed by the supplier.
+	// numClaimComputeUnits is the total number of claimed compute units by the supplier.
 	numClaimComputeUnits uint64
 }
 
@@ -124,7 +125,7 @@ func (sctx *settlementContext) FlushAllActorsToStore(ctx context.Context) {
 // ClaimCacheWarmUp warms up the settlement context's cache by based on the claim's properties.
 func (sctx *settlementContext) ClaimCacheWarmUp(ctx context.Context, claim *prooftypes.Claim) error {
 	if claim.SessionHeader == nil {
-		return tokenomicstypes.ErrTokenomicsSessionHeaderNil
+		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
 	}
 
 	// Cache service and difficulty

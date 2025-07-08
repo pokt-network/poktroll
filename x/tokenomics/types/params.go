@@ -21,13 +21,19 @@ var (
 	ParamDaoRewardAddress = "dao_reward_address"
 	// DefaultDaoRewardAddress is the localnet DAO account address as specified in the config.yml.
 	// It is only used in tests.
-	DefaultDaoRewardAddress        = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-	KeyGlobalInflationPerClaim     = []byte("GlobalInflationPerClaim")
-	ParamGlobalInflationPerClaim   = "global_inflation_per_claim"
-	DefaultGlobalInflationPerClaim = float64(0.1)
-	KeyEnableDistributeSettlement     = []byte("EnableDistributeSettlement")
-	ParamEnableDistributeSettlement   = "enable_distribute_settlement"
-	DefaultEnableDistributeSettlement = false
+	DefaultDaoRewardAddress            = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+	KeyGlobalInflationPerClaim         = []byte("GlobalInflationPerClaim")
+	ParamGlobalInflationPerClaim       = "global_inflation_per_claim"
+	DefaultGlobalInflationPerClaim     = float64(0.1)
+	KeyClaimSettlementDistribution     = []byte("ClaimSettlementDistribution")
+	ParamClaimSettlementDistribution   = "claim_settlement_distribution"
+	DefaultClaimSettlementDistribution = ClaimSettlementDistribution{
+		Dao:         0.1,
+		Proposer:    0.05,
+		Supplier:    0.7,
+		SourceOwner: 0.15,
+		Application: 0.0,
+	}
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -42,13 +48,13 @@ func NewParams(
 	mintAllocationPercentages MintAllocationPercentages,
 	daoRewardAddress string,
 	globalInflationPerClaim float64,
-	enableDistributeSettlement bool,
+	claimSettlementDistribution ClaimSettlementDistribution,
 ) Params {
 	return Params{
-		MintAllocationPercentages:  mintAllocationPercentages,
-		DaoRewardAddress:           daoRewardAddress,
-		GlobalInflationPerClaim:    globalInflationPerClaim,
-		EnableDistributeSettlement: enableDistributeSettlement,
+		MintAllocationPercentages:   mintAllocationPercentages,
+		DaoRewardAddress:            daoRewardAddress,
+		GlobalInflationPerClaim:     globalInflationPerClaim,
+		ClaimSettlementDistribution: claimSettlementDistribution,
 	}
 }
 
@@ -58,7 +64,7 @@ func DefaultParams() Params {
 		DefaultMintAllocationPercentages,
 		DefaultDaoRewardAddress,
 		DefaultGlobalInflationPerClaim,
-		DefaultEnableDistributeSettlement,
+		DefaultClaimSettlementDistribution,
 	)
 }
 
@@ -81,9 +87,9 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			ValidateGlobalInflationPerClaim,
 		),
 		paramtypes.NewParamSetPair(
-			KeyEnableDistributeSettlement,
-			&p.EnableDistributeSettlement,
-			ValidateEnableDistributeSettlement,
+			KeyClaimSettlementDistribution,
+			&p.ClaimSettlementDistribution,
+			ValidateClaimSettlementDistribution,
 		),
 	}
 }
@@ -102,7 +108,7 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
-	if err := ValidateEnableDistributeSettlement(params.EnableDistributeSettlement); err != nil {
+	if err := ValidateClaimSettlementDistribution(params.ClaimSettlementDistribution); err != nil {
 		return err
 	}
 
@@ -129,9 +135,9 @@ func ValidateMintAllocationSourceOwner(mintAllocationSourceOwner any) error {
 	return validateParamValueGTEZero(mintAllocationSourceOwner, "source owner")
 }
 
-// ValidateMintAllocationApplication validates the MintAllocationApplication param.
-func ValidateMintAllocationApplication(mintAllocationApplication any) error {
-	return validateParamValueGTEZero(mintAllocationApplication, "application")
+// ValidateMintApplication validates the MintApplication param.
+func ValidateMintApplication(mintApplication any) error {
+	return validateParamValueGTEZero(mintApplication, "application")
 }
 
 func validateParamValueGTEZero(value any, actorName string) error {
@@ -167,7 +173,7 @@ func ValidateMintAllocationPercentages(mintAllocationPercentagesAny any) error {
 		return err
 	}
 
-	if err := ValidateMintAllocationApplication(mintAllocationPercentages.Application); err != nil {
+	if err := ValidateMintApplication(mintAllocationPercentages.Application); err != nil {
 		return err
 	}
 
@@ -218,11 +224,40 @@ func ValidateGlobalInflationPerClaim(GlobalInflationPerClaimAny any) error {
 	return nil
 }
 
-// ValidateEnableDistributeSettlement validates the EnableDistributeSettlement param.
-func ValidateEnableDistributeSettlement(enableDistributeSettlementAny any) error {
-	_, ok := enableDistributeSettlementAny.(bool)
+// ValidateClaimSettlementDistribution validates the ClaimSettlementDistribution param.
+func ValidateClaimSettlementDistribution(claimSettlementDistributionAny any) error {
+	claimSettlementDistribution, ok := claimSettlementDistributionAny.(ClaimSettlementDistribution)
 	if !ok {
-		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", enableDistributeSettlementAny)
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type for claim_settlement_distribution: %T", claimSettlementDistributionAny)
+	}
+
+	// Validate individual percentages
+	if err := validateParamValueGTEZero(claimSettlementDistribution.Dao, "DAO"); err != nil {
+		return err
+	}
+
+	if err := validateParamValueGTEZero(claimSettlementDistribution.Proposer, "proposer"); err != nil {
+		return err
+	}
+
+	if err := validateParamValueGTEZero(claimSettlementDistribution.Supplier, "supplier"); err != nil {
+		return err
+	}
+
+	if err := validateParamValueGTEZero(claimSettlementDistribution.SourceOwner, "source owner"); err != nil {
+		return err
+	}
+
+	if err := validateParamValueGTEZero(claimSettlementDistribution.Application, "application"); err != nil {
+		return err
+	}
+
+	// Validate sum equals 1
+	const epsilon = 1e-10 // Small epsilon value for floating-point comparison
+	sum := claimSettlementDistribution.Sum()
+	// TODO_MAINNET_CRITICAL(@red-0ne): I prefer using big.Rat and have a strict 1.0 sum. These might add up or skew our tokenomics a bit.
+	if math.Abs(sum-1) > epsilon {
+		return ErrTokenomicsParamInvalid.Wrapf("claim settlement distribution percentages do not add to 1.0: got %f", sum)
 	}
 
 	return nil

@@ -29,7 +29,7 @@ func (k msgServer) UpdateParam(
 	if k.GetAuthority() != msg.Authority {
 		return nil, status.Error(
 			codes.PermissionDenied,
-			tokenomicstypes.ErrTokenomicsInvalidSigner.Wrapf(
+			tokenomicstypes.ErrTokenomicsInvalidAuthoritySigner.Wrapf(
 				"invalid authority; expected %s, got %s",
 				k.GetAuthority(), msg.Authority,
 			).Error(),
@@ -48,6 +48,9 @@ func (k msgServer) UpdateParam(
 	case tokenomicstypes.ParamGlobalInflationPerClaim:
 		logger = logger.With("param_value", msg.GetAsFloat())
 		params.GlobalInflationPerClaim = msg.GetAsFloat()
+	case tokenomicstypes.ParamClaimSettlementDistribution:
+		logger = logger.With("param_value", msg.GetAsClaimSettlementDistribution())
+		params.ClaimSettlementDistribution = *msg.GetAsClaimSettlementDistribution()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,

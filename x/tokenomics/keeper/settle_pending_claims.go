@@ -266,7 +266,7 @@ func (k Keeper) executePendingModuleMints(
 			return err
 		}
 		if err := k.bankKeeper.MintCoins(ctx, mint.DestinationModule, cosmostypes.NewCoins(mint.Coin)); err != nil {
-			return tokenomicstypes.ErrTokenomicsSettlementModuleMint.Wrapf(
+			return tokenomicstypes.ErrTokenomicsSettlementMint.Wrapf(
 				"destination module %q minting %s: %s", mint.DestinationModule, mint.Coin, err,
 			)
 		}
@@ -292,7 +292,7 @@ func (k Keeper) executePendingModuleBurns(
 		}
 
 		if err := k.bankKeeper.BurnCoins(ctx, burn.DestinationModule, cosmostypes.NewCoins(burn.Coin)); err != nil {
-			return tokenomicstypes.ErrTokenomicsSettlementModuleBurn.Wrapf(
+			return tokenomicstypes.ErrTokenomicsSettlementBurn.Wrapf(
 				"destination module %q burning %s: %s", burn.DestinationModule, burn.Coin, err,
 			)
 		}

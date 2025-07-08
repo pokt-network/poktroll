@@ -776,7 +776,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				return claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderNil,
+			expectErr:   tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil,
 		},
 		{
 			desc: "claim with invalid session id",
@@ -786,7 +786,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				return claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
+			expectErr:   tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid,
 		},
 		{
 			desc: "claim with invalid application address",
@@ -796,7 +796,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				return claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
+			expectErr:   tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid,
 		},
 		{
 			desc: "claim with invalid supplier operator address",
@@ -950,7 +950,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
 	)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Ensure the claim is within relay mining bounds
@@ -970,11 +970,11 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 
-	// Set up tokenomics params with the new distribution percentages and enable distributed settlement
+	// Set up tokenomics params with the new distribution percentages
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0 // Disable global inflation for this test
-	tokenomicsParams.EnableDistributeSettlement = true // Enable distributed settlement
-	tokenomicsParams.MintAllocationPercentages = tokenomicstypes.MintAllocationPercentages{
+	// When global inflation is 0, claim settlement distribution is used automatically
+	tokenomicsParams.ClaimSettlementDistribution = tokenomicstypes.ClaimSettlementDistribution{
 		Dao:         0.1,
 		Proposer:    0.14,
 		Supplier:    0.73,
@@ -1024,7 +1024,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 	// Get baseline balances
 	daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
-	
+
 	daoBalanceBefore := getBalance(t, ctx, keepers, daoRewardAddress)
 	sourceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 
@@ -1035,7 +1035,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	settlementContext := tokenomicskeeper.NewSettlementContext(
 		ctx,
 		keepers.Keeper,
-		keepers.Keeper.Logger(),
+		keepers.Logger(),
 	)
 
 	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)

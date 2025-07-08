@@ -26,7 +26,7 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 				Authority: "invalid_address",
 				Params:    tokenomicstypes.Params{},
 			},
-			expectedErr: tokenomicstypes.ErrTokenomicsAddressInvalid,
+			expectedErr: tokenomicstypes.ErrTokenomicsAuthorityAddressInvalid,
 		},
 		{
 			desc: "invalid: empty params",

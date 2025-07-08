@@ -20,7 +20,7 @@ func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	if msg.Authority != k.GetAuthority() {
 		return nil, status.Error(
 			codes.PermissionDenied,
-			types.ErrTokenomicsInvalidSigner.Wrapf(
+			types.ErrTokenomicsInvalidAuthoritySigner.Wrapf(
 				"invalid authority; expected %s, got %s",
 				k.GetAuthority(),
 				msg.Authority,

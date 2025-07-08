@@ -14,8 +14,9 @@ Feature: Distributed Settlement Tokenomics
         And the "tokenomics" module parameters are set as follows
             | name                         | value | type  |
             | global_inflation_per_claim   | 0     | float |
-            | enable_distribute_settlement | true  | bool  |
         And all "tokenomics" module params should be updated
+        # Use default claim_settlement_distribution percentages:
+        # Supplier 70%, DAO 10%, Proposer 5%, Source Owner 15%, Application 0%
         
         # Configure proof parameters to ensure proof is required
         And the "proof" module parameters are set as follows
@@ -47,24 +48,24 @@ Feature: Distributed Settlement Tokenomics
         
         # Validate the distributed settlement
         # Total settlement: 10 relays * 100 compute units * 42 multiplier = 42000 uPOKT
-        # Distribution: Supplier 73% (30660), DAO 10% (4200), Proposer 14% (5880), Source Owner 3% (1260)
+        # Distribution: Supplier 70% (29400), DAO 10% (4200), Proposer 5% (2100), Source Owner 15% (6300)
         
-        # The supplier should receive 73% of the settlement amount
-        Then the account balance of "supplier1" should be "30660" uPOKT "more" than "supplier1_initial_balance"
+        # The supplier should receive 70% of the settlement amount
+        Then the account balance of "supplier1" should be "29400" uPOKT "more" than "supplier1_initial_balance"
         
         # The DAO should receive 10% of the settlement amount
         And the DAO balance should be "4200" uPOKT "more" than "dao_initial_balance"
         
-        # The proposer should receive 14% of the settlement amount
-        And the proposer balance should be "5880" uPOKT "more" than "proposer_initial_balance"
+        # The proposer should receive 5% of the settlement amount
+        And the proposer balance should be "2100" uPOKT "more" than "proposer_initial_balance"
         
-        # The service owner should receive 3% of the settlement amount
-        And the service owner balance for "anvil" should be "1260" uPOKT "more" than "service_owner_initial_balance"
+        # The service owner should receive 15% of the settlement amount
+        And the service owner balance for "anvil" should be "6300" uPOKT "more" than "service_owner_initial_balance"
         
         # The application stake should decrease by the full settlement amount
         And the "application" stake of "app1" should be "42000" uPOKT "less" than before
 
-    Scenario: Traditional settlement when distributed settlement is disabled
+    Scenario: Traditional settlement when global inflation is enabled
         # Baseline
         Given the user has the pocketd binary installed
         # Network preparation and validation
@@ -74,11 +75,11 @@ Feature: Distributed Settlement Tokenomics
         And the "application" account for "app2" is staked
         And the service "anvil" registered for application "app2" has a compute units per relay of "100"
         
-        # Configure tokenomics parameters with distributed settlement disabled
+        # Configure tokenomics parameters with global inflation enabled
+        # When global inflation > 0, settlement uses traditional mint allocation percentages
         And the "tokenomics" module parameters are set as follows
             | name                         | value | type  |
-            | global_inflation_per_claim   | 0     | float |
-            | enable_distribute_settlement | false | bool  |
+            | global_inflation_per_claim   | 0.1   | float |
         And all "tokenomics" module params should be updated
         
         # Configure proof parameters to ensure proof is required

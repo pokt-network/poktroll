@@ -218,25 +218,26 @@ Make sure to document whatever decision we come to.
 
 _tl;dr When global inflation is disabled, distribute settlement amount according to mint allocation percentages instead of giving everything to the supplier._
 
-The `Distributed Settlement` feature provides an alternative to the traditional Mint=Burn behavior when global inflation is disabled (`global_inflation_per_claim = 0`). Instead of suppliers receiving 100% of the settlement amount, the tokens are distributed among all stakeholders according to the governance-defined mint allocation percentages.
+The `Distributed Settlement` feature provides an alternative to the traditional Mint=Burn behavior when global inflation is disabled (`global_inflation_per_claim = 0`). Instead of suppliers receiving 100% of the settlement amount, the tokens are distributed among all stakeholders according to the governance-defined claim settlement distribution percentages.
 
 ### Configuration
 
-This feature is controlled by the `enable_distribute_settlement` governance parameter:
+This feature is automatically activated when `global_inflation_per_claim = 0` and uses the `claim_settlement_distribution` governance parameter to determine how to split the settlement amount:
 
-- **When `false` (default)**: Traditional behavior - suppliers receive 100% of settlement amount
-- **When `true` AND `global_inflation_per_claim = 0`**: Distributed behavior - settlement split according to mint allocation percentages
+- **When `global_inflation_per_claim > 0`**: Traditional global mint behavior with mint allocation percentages
+- **When `global_inflation_per_claim = 0`**: Distributed settlement using claim settlement distribution percentages
 
 ### Distributed Settlement Flow
 
-When both conditions are met (`enable_distribute_settlement = true` AND `global_inflation_per_claim = 0`):
+When `global_inflation_per_claim = 0`:
 
 1. **Settlement Amount Calculation**: Same as traditional Mint=Burn - based on work done
-2. **Percentage Distribution**: Settlement amount is split according to `mint_allocation_percentages`:
-   - **Supplier**: ~73% (distributed to supplier and revenue shareholders)
-   - **DAO**: ~10% (sent to DAO reward address)
-   - **Proposer**: ~14% (sent to block proposer)
-   - **Source Owner**: ~3% (sent to service owner)
+2. **Percentage Distribution**: Settlement amount is split according to `claim_settlement_distribution`:
+   - **Supplier**: 70% (distributed to supplier and revenue shareholders)
+   - **DAO**: 10% (sent to DAO reward address)
+   - **Proposer**: 5% (sent to block proposer)
+   - **Source Owner**: 15% (sent to service owner)
+   - **Application**: 0% (can be configured if needed)
 3. **Application Burn**: Application stake decreases by the full settlement amount (unchanged)
 
 ### Key Differences from Global Mint
@@ -244,9 +245,9 @@ When both conditions are met (`enable_distribute_settlement = true` AND `global_
 | Aspect                   | Global Mint TLM                      | Distributed Settlement                                                     |
 | ------------------------ | ------------------------------------ | -------------------------------------------------------------------------- |
 | **Total Token Supply**   | Increases (new tokens minted)        | Unchanged (no new minting)                                                 |
-| **Activation Condition** | `global_inflation_per_claim > 0`     | `enable_distribute_settlement = true` AND `global_inflation_per_claim = 0` |
+| **Activation Condition** | `global_inflation_per_claim > 0`     | `global_inflation_per_claim = 0` |
 | **Application Cost**     | Settlement + inflation reimbursement | Settlement only                                                            |
-| **Supplier Reward**      | 100% of settlement + inflation share | Percentage of settlement (e.g., 73%)                                       |
+| **Supplier Reward**      | 100% of settlement + inflation share | Percentage of settlement (e.g., 70%)                                       |
 
 ```mermaid
 ---
@@ -254,16 +255,16 @@ title: "Token Logic Module: Distributed Settlement"
 ---
 flowchart TD
     SA(["Settlement Amount (SA)"])
-    EDS{"enable_distribute_settlement = true <br> AND <br> global_inflation_per_claim = 0"}
+    EDS{"global_inflation_per_claim = 0"}
 
     subgraph DS[Distributed Settlement]
         TM[[Tokenomics Module]]
-        MAP[Mint Allocation Percentages]
+        MAP[Claim Settlement Distribution]
 
-        SA_SUPP["Supplier: 73% of SA"]
+        SA_SUPP["Supplier: 70% of SA"]
         SA_DAO["DAO: 10% of SA"]
-        SA_PROP["Proposer: 14% of SA"]
-        SA_SO["Source Owner: 3% of SA"]
+        SA_PROP["Proposer: 5% of SA"]
+        SA_SO["Source Owner: 15% of SA"]
 
         TM -- "💲 MINT SA" --> TM
         SA --> MAP

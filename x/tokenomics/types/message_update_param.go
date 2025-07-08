@@ -14,6 +14,8 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 	switch asType := asTypeAny.(type) {
 	case MintAllocationPercentages:
 		asTypeIface = &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: &asType}
+	case ClaimSettlementDistribution:
+		asTypeIface = &MsgUpdateParam_AsClaimSettlementDistribution{AsClaimSettlementDistribution: &asType}
 	case string:
 		asTypeIface = &MsgUpdateParam_AsString{AsString: asType}
 	case float64:
@@ -35,7 +37,7 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Validate the address
 	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
-		return ErrTokenomicsAddressInvalid.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
+		return ErrTokenomicsAuthorityAddressInvalid.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
 	}
 
 	// Parameter value cannot be nil.
@@ -60,6 +62,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateGlobalInflationPerClaim(msg.GetAsFloat())
+	case ParamClaimSettlementDistribution:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsClaimSettlementDistribution](msg); err != nil {
+			return err
+		}
+		return ValidateClaimSettlementDistribution(*msg.GetAsClaimSettlementDistribution())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

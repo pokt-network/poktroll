@@ -43,7 +43,7 @@ message ModToModTransfer {
 
 // SettlementOpReason is a distinct, tlm-specific causal reason for a given operation.
 enum SettlementOpReason {
-  // Next free index: 18
+  // Next free index: 19
 
   // *** All TLMs ***
 
@@ -66,6 +66,7 @@ enum SettlementOpReason {
   TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION = 15;
   TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION = 16;
   TLM_RELAY_BURN_EQUALS_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION = 17;
+  TLM_RELAY_BURN_EQUALS_MINT_APPLICATION_REWARD_DISTRIBUTION = 18;
 
   // *** GlobalMintTLM ***
 
