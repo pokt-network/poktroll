@@ -157,7 +157,7 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 			RootHash:                proof.SmstRootWithSumAndCount(1000, 1000),
 		}
 
-		keepers.ProofKeeper.UpsertClaim(s.ctx, claim)
+		keepers.UpsertClaim(s.ctx, claim)
 	}
 }
 
@@ -187,7 +187,7 @@ func (s *tokenLogicModuleTestSuite) setBlockHeight(height int64) {
 // assertNoPendingClaims asserts that no pending claims exist.
 func (s *tokenLogicModuleTestSuite) assertNoPendingClaims(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
-	pendingClaimsIterator := s.keepers.Keeper.GetExpiringClaimsIterator(sdkCtx)
+	pendingClaimsIterator := s.keepers.GetExpiringClaimsIterator(sdkCtx)
 	defer pendingClaimsIterator.Close()
 
 	numExpiringClaims := 0

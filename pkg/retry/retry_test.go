@@ -20,11 +20,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
-var testErr = fmt.Errorf("test error")
+var errTest = fmt.Errorf("test error")
 
 // TestOnError verifies the behavior of the OnError function in the retry package.
 // It ensures that the function correctly retries a failing operation for a specified
@@ -62,7 +61,7 @@ func TestOnError(t *testing.T) {
 
 		// Create a channel to return an error, simulating a failing operation.
 		errCh := make(chan error, 1)
-		errCh <- testErr
+		errCh <- errTest
 
 		// Increment the call count safely across goroutine boundaries.
 		atomic.AddInt32(&testFnCallCount, 1)
@@ -116,7 +115,7 @@ func TestOnError(t *testing.T) {
 	// Verify that the OnError function returned the expected error.
 	select {
 	case err := <-retryOnErrorErrCh:
-		require.ErrorIs(t, err, testErr, "OnError did not return the expected error")
+		require.ErrorIs(t, err, errTest, "OnError did not return the expected error")
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("expected error from OnError, but none received")
 	}
@@ -167,7 +166,7 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 			return errCh
 		}
 
-		errCh <- testErr
+		errCh <- errTest
 		return errCh
 	}
 
@@ -270,10 +269,10 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 		if count == int32(retryLimit) {
 			go func() {
 				time.Sleep(retryResetTimeout)
-				errCh <- testErr
+				errCh <- errTest
 			}()
 		} else {
-			errCh <- testErr
+			errCh <- errTest
 		}
 
 		// Increment the invocation count atomically
@@ -328,7 +327,7 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 
 	select {
 	case err := <-retryOnErrorErrCh:
-		require.ErrorIs(t, err, testErr)
+		require.ErrorIs(t, err, errTest)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatalf("expected error from OnError, but none received")
 	}
@@ -377,10 +376,10 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 		if count == int32(retryLimit) {
 			go func() {
 				time.Sleep(retryResetTimeout)
-				errCh <- testErr
+				errCh <- errTest
 			}()
 		} else {
-			errCh <- testErr
+			errCh <- errTest
 		}
 		return errCh
 	}

@@ -508,7 +508,7 @@ func querySupplier(
 			return sdk.Endpoint(endpoint), nil
 		}
 	}
-	return nil, errors.New("No endpoint found")
+	return nil, errors.New("no endpoint found")
 }
 
 // Struct to comply with interface requiring Header, Supplier, and Endpoint fields

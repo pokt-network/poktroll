@@ -12,7 +12,6 @@ import (
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -38,7 +37,7 @@ func networkWithClaimObjects(
 	numSuppliers int,
 	numApps int,
 	sharedParams *sharedtypes.Params,
-) (net *network.Network, claims []types.Claim, clientCtx cosmosclient.Context) {
+) (net *network.Network, claims []prooftypes.Claim, clientCtx cosmosclient.Context) {
 	t.Helper()
 
 	// Initialize a network config.
@@ -110,8 +109,16 @@ func networkWithClaimObjects(
 	cfg.GenesisState[apptypes.ModuleName] = appGenesisBuffer
 	cfg.GenesisState[prooftypes.ModuleName] = proofGenesisBuffer
 
-	// Construct the network with the configuration.
+	// Start the network
 	net = network.New(t, cfg)
+
+	// Wait for the network to be fully initialized to avoid race conditions
+	// with consensus reactor goroutines
+	require.NoError(t, net.WaitForNextBlock())
+
+	// Additional wait to ensure all consensus components are fully initialized
+	require.NoError(t, net.WaitForNextBlock())
+
 	// Only the first validator's client context is populated.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk/testutil/network#pkg-overview)
 	clientCtx = net.Validators[0].ClientCtx
@@ -141,7 +148,7 @@ func newTestClaim(
 	supplierOperatorAddr string,
 	sessionStartHeight int64,
 	appAddr string,
-) *types.Claim {
+) *prooftypes.Claim {
 	t.Helper()
 
 	// NB: These byte slices mock the root hash and block hash that would be
@@ -158,7 +165,7 @@ func newTestClaim(
 	)
 
 	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
-	return &types.Claim{
+	return &prooftypes.Claim{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,

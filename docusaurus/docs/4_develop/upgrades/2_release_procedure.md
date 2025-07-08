@@ -373,6 +373,12 @@ If you have the [gh CLI](https://cli.github.com/) installed, you can simply run:
 make telegram_release_notify
 ```
 
+You can also test the release notification by running:
+
+```bash
+make telegram_test_release
+```
+
 :::
 
 After setting it as `latest release`, use the [GitHub workflow](https://github.com/pokt-network/poktroll/blob/main/.github/workflows/telegram-notify-release.yml) to automatically notify the Telegram groups.

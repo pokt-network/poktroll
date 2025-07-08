@@ -7,10 +7,16 @@ on:
         description: "Message to broadcast to all Telegram groups"
         required: true
         type: string
+      test_mode:
+        description: "If true, only send to testing group"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   broadcast:
     uses: ./.github/workflows/telegram-send-message.yml
     with:
       message: ${{ inputs.message }}
-      parse_mode: "HTML"
+      parse_mode: "MarkdownV2"
+      test_mode: ${{ inputs.test_mode }}

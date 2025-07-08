@@ -12,6 +12,11 @@ on:
         required: false
         type: string
         default: "HTML"
+      test_mode:
+        description: "If true, only send to testing group"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   send-message:
@@ -51,6 +56,8 @@ jobs:
           CHAT_15="-1002653157934"
           # KuCoin <> POKT
           CHAT_16="-775612675"
+          # Korbit <> POKT
+          CHAT_17="-1002811115444"
 
           # Get the message and parse mode from the workflow inputs
           MESSAGE="${{ inputs.message }}"
@@ -68,20 +75,30 @@ jobs:
             echo
           }
 
-          # Send to all chats
-          send_message "$CHAT_1" "Pocket Network Bot Testing Group"
-          send_message "$CHAT_2" "BitGet <> Pocket Network (POKT)"
-          send_message "$CHAT_3" "ByBit <> POKT"
-          send_message "$CHAT_4" "CoinEx <> POKT"
-          send_message "$CHAT_5" "Mr. Yang <> Grove / POKT"
-          send_message "$CHAT_6" "MEXC <> POKT"
-          send_message "$CHAT_7" "OKX <> Pocket Network"
-          send_message "$CHAT_8" "OrangeX <> Grove (POKT)"
-          send_message "$CHAT_9" "POKT & Gate.io"
-          send_message "$CHAT_10" "POKT Network | AscendEX"
-          send_message "$CHAT_11" "Uphold <> Grove (POKT)"
-          send_message "$CHAT_12" "Pokt <> Kraken {EF introduction}"
-          send_message "$CHAT_13" "Bitrue & Pocket Network"
-          send_message "$CHAT_14" "HTX <> POKT"
-          send_message "$CHAT_15" "POKT <> Upbit"
-          send_message "$CHAT_16" "KuCoin <> POKT"
+          # Check if test mode is enabled
+          TEST_MODE="${{ inputs.test_mode }}"
+          
+          if [ "$TEST_MODE" = "true" ]; then
+            # Only send to testing group
+            echo "TEST MODE: Sending only to testing group"
+            send_message "$CHAT_1" "Pocket Network Bot Testing Group"
+          else
+            # Send to all chats
+            send_message "$CHAT_1" "Pocket Network Bot Testing Group"
+            send_message "$CHAT_2" "BitGet <> Pocket Network (POKT)"
+            send_message "$CHAT_3" "ByBit <> POKT"
+            send_message "$CHAT_4" "CoinEx <> POKT"
+            send_message "$CHAT_5" "Mr. Yang <> Grove / POKT"
+            send_message "$CHAT_6" "MEXC <> POKT"
+            send_message "$CHAT_7" "OKX <> Pocket Network"
+            send_message "$CHAT_8" "OrangeX <> Grove (POKT)"
+            send_message "$CHAT_9" "POKT & Gate.io"
+            send_message "$CHAT_10" "POKT Network | AscendEX"
+            send_message "$CHAT_11" "Uphold <> Grove (POKT)"
+            send_message "$CHAT_12" "Pokt <> Kraken {EF introduction}"
+            send_message "$CHAT_13" "Bitrue & Pocket Network"
+            send_message "$CHAT_14" "HTX <> POKT"
+            send_message "$CHAT_15" "POKT <> Upbit"
+            send_message "$CHAT_16" "KuCoin <> POKT"
+            send_message "$CHAT_17" "Korbit <> POKT"
+          fi

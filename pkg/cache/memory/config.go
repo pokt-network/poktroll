@@ -82,9 +82,6 @@ func (cfg *keyValueCacheConfig) Validate() error {
 
 // Validate ensures that the historicalKeyValueCacheConfig isn't configured with incompatible options.
 func (cfg *historicalKeyValueCacheConfig) Validate() error {
-	if err := cfg.keyValueCacheConfig.Validate(); err != nil {
-		return err
-	}
 
 	if cfg.maxVersionAge < 0 {
 		return cache.ErrKeyValueCacheConfigValidation.Wrapf("maxVersionAge MUST be >= 0, got: %d", cfg.maxVersionAge)

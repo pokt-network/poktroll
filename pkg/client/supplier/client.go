@@ -106,7 +106,7 @@ func (sClient *supplierClient) SubmitProofs(
 		}
 	}
 
-	err, errCh := eitherErr.SyncOrAsyncError()
+	errCh, err := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
 	}
@@ -172,7 +172,7 @@ func (sClient *supplierClient) CreateClaims(
 		}
 	}
 
-	err, errCh := eitherErr.SyncOrAsyncError()
+	errCh, err := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
 	}
