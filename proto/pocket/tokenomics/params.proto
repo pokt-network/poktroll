@@ -35,10 +35,32 @@ message Params {
   bool enable_distribute_settlement = 8 [(gogoproto.jsontag) = "enable_distribute_settlement", (gogoproto.moretags) = "yaml:\"enable_distribute_settlement\""];
 }
 
-// MintAllocationPercentages is the distribution of newly minted tokens,.
+// MintAllocationPercentages captures the distribution of newly minted tokens.
+// The sum of all new tokens minted must equal 1.
 // GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
 // TODO: Remove this once global inflation is disabled in perpetuity.
 message MintAllocationPercentages {
+
+  // dao - % of newley minted tokens sent to the DAO reward address.
+  double dao = 1 [(gogoproto.jsontag) = "dao", (gogoproto.moretags) = "yaml:\"dao\""];
+
+  // proposer - % of newley minted tokens sent to the block proposer account address.
+  double proposer = 2 [(gogoproto.jsontag) = "proposer", (gogoproto.moretags) = "yaml:\"proposer\""];
+
+  // supplier - % of newley minted tokens sent to the block supplier account address.
+  double supplier = 3 [(gogoproto.jsontag) = "supplier", (gogoproto.moretags) = "yaml:\"supplier\""];
+
+  // source_owner - % of newley minted tokens sent to the service source owner account address.
+  double source_owner = 4 [(gogoproto.jsontag) = "source_owner", (gogoproto.moretags) = "yaml:\"source_owner\""];
+
+  // allocation_application - % of newley minted tokens sent to the application account address.
+  double allocation_application = 5 [(gogoproto.jsontag) = "allocation_application", (gogoproto.moretags) = "yaml:\"allocation_application\""];
+}
+
+// ClaimSettlementDistribution captures the distribution of claimable tokens.
+// The sum of all tokens being burnt from the application's stake must equal 1.
+// GlobalMintEqualsBurnTLM: Only used by the GlobalMintEqualsBurnTLM at the end of claim settlement.
+message ClaimSettlementDistribution {
 
   // dao is the percentage of the minted tokens which are sent
   // to the DAO reward address during claim settlement.
@@ -46,7 +68,6 @@ message MintAllocationPercentages {
 
   // proposer is the percentage of the minted tokens which are sent
   // to the block proposer account address during claim settlement.
-
   double proposer = 2 [(gogoproto.jsontag) = "proposer", (gogoproto.moretags) = "yaml:\"proposer\""];
 
   // supplier is the percentage of the minted tokens which are sent
