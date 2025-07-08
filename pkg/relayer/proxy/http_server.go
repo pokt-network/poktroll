@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -141,40 +142,63 @@ func (server *relayMinerHTTPServer) Stop(ctx context.Context) error {
 // Ping tries to dial the suppliers backend URLs to test the connection.
 func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 	for _, supplierCfg := range server.serverConfig.SupplierConfigsMap {
-		c := &http.Client{Timeout: 2 * time.Second}
+		// Initialize the backend URLs to test with the default service config.
+		backendUrls := []*url.URL{
+			supplierCfg.DefaultServiceConfig.BackendUrl,
+		}
 
-		backendUrl := *supplierCfg.DefaultServiceConfig.BackendUrl
-		if backendUrl.Scheme == "ws" || backendUrl.Scheme == "wss" {
-			// TODO_IMPROVE: Consider testing websocket connectivity by establishing
-			// a websocket connection instead of using an HTTP connection.
-			server.logger.Warn().Msgf(
-				"backend URL %s scheme is a %s, switching to http to check connectivity",
-				backendUrl.String(),
-				backendUrl.Scheme,
-			)
+		// Add the RPC type specific service configs to the backend URLs to test, if any.
+		for _, rpcTypeBackendURL := range supplierCfg.RPCTypeServiceConfigs {
+			backendUrls = append(backendUrls, rpcTypeBackendURL.BackendUrl)
+		}
 
-			if backendUrl.Scheme == "ws" {
-				backendUrl.Scheme = "http"
-			} else {
-				backendUrl.Scheme = "https"
+		// Test the connectivity of all the backend URLs for the supplier.
+		for _, backendUrl := range backendUrls {
+			if err := server.testBackendURL(backendUrl, supplierCfg.ServiceId); err != nil {
+				return err
 			}
 		}
-		resp, err := c.Head(backendUrl.String())
-		if err != nil {
-			return fmt.Errorf(
-				"failed to ping backend %q for serviceId %q: %w",
-				backendUrl.String(), supplierCfg.ServiceId, err,
-			)
-		}
-		_ = resp.Body.Close()
 
-		if resp.StatusCode >= http.StatusInternalServerError {
-			return fmt.Errorf(
-				"failed to ping backend %q for serviceId %q: received status code %d",
-				backendUrl.String(), supplierCfg.ServiceId, resp.StatusCode,
-			)
-		}
+	}
 
+	return nil
+}
+
+// testBackendURL tests the connectivity of a backend URL for a given service ID.
+func (server *relayMinerHTTPServer) testBackendURL(backendUrl *url.URL, serviceId string) error {
+	// Initialize the HTTP client for the backend URL.
+	c := &http.Client{Timeout: 2 * time.Second}
+
+	if backendUrl.Scheme == "ws" || backendUrl.Scheme == "wss" {
+		// TODO_IMPROVE: Consider testing websocket connectivity by establishing
+		// a websocket connection instead of using an HTTP connection.
+		server.logger.Warn().Msgf(
+			"backend URL %s scheme is a %s, switching to http to check connectivity",
+			backendUrl.String(),
+			backendUrl.Scheme,
+		)
+
+		if backendUrl.Scheme == "ws" {
+			backendUrl.Scheme = "http"
+		} else {
+			backendUrl.Scheme = "https"
+		}
+	}
+
+	resp, err := c.Head(backendUrl.String())
+	if err != nil {
+		return fmt.Errorf(
+			"failed to ping backend %q for serviceId %q: %w",
+			backendUrl.String(), serviceId, err,
+		)
+	}
+	_ = resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusInternalServerError {
+		return fmt.Errorf(
+			"failed to ping backend %q for serviceId %q: received status code %d",
+			backendUrl.String(), serviceId, resp.StatusCode,
+		)
 	}
 
 	return nil
