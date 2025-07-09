@@ -132,6 +132,7 @@ Feature: Tokenomics Namespace
         And all "proof" module params should be updated
 
         # Record initial balances
+        And the user remembers the balance of "app1" as "app11_initial_balance"
         And the user remembers the balance of "supplier1" as "supplier1_initial_balance"
         And the user remembers the balance of the DAO as "dao_initial_balance"
         And the user remembers the balance of the proposer as "proposer_initial_balance"
@@ -146,8 +147,16 @@ Feature: Tokenomics Namespace
         And the user should wait for the ClaimSettled event with "THRESHOLD" proof requirement to be broadcast
 
         # Validate the distributed settlement
-        # Total settlement: 10 relays * 100 compute units * 42 multiplier = 42000 uPOKT
-        # Distribution: Supplier 70% (29400), DAO 10% (4200), Proposer 5% (2100), Source Owner 15% (6300)
+        #
+        # Total settlement:
+        #   42000 uPOKT = 10 relays * 100 compute units * 42 multiplier
+        #
+        # Distribution:
+        # - Supplier 70% (29400)
+        # - DAO 10% (4200)
+        # - Proposer 5% (2100)
+        # - Source Owner 15% (6300)
+        # - Application 0% (0)
 
         # The supplier should receive 70% of the settlement amount
         Then the account balance of "supplier1" should be "29400" uPOKT "more" than "supplier1_initial_balance"
