@@ -388,7 +388,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	return relayRequest, nil
 }
 
-// serviceConfigTypeDefault is the string value used to log the service config type.
+// serviceConfigTypeDefault indicates that the service config being used is
+// the default service config, as opposed to an RPC-type specific config.
 const serviceConfigTypeDefault = "default"
 
 // getServiceConfig returns the service config for the service.
