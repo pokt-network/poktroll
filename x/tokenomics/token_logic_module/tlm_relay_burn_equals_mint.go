@@ -67,7 +67,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) Process(
 
 	// Check if global inflation is disabled
 	// When global inflation is disabled, distribute the settlement amount
-	// according to claim settlement distribution percentages
+	// according to mint equals burn claim distribution percentages
 	if err := tlmbem.processRewardDistribution(); err != nil {
 		logger.Error(fmt.Sprintf("error processing reward distribution: %v", err))
 		return err
@@ -121,15 +121,15 @@ func (tlmbem *tlmRelayBurnEqualsMint) processTokenomicsMint() error {
 }
 
 // processRewardDistribution handles the reward distribution logic when global inflation is disabled.
-// This function distributes the settlement amount according to claim settlement distribution percentages
+// This function distributes the settlement amount according to mint equals burn claim distribution percentages
 // instead of giving the full amount to the supplier. The total amount minted equals the settlement
 // amount, but it's distributed among supplier, DAO, proposer, source owner, and application based on the configured percentages.
 func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
-	tlmbem.logger.Info("Global inflation is disabled, distributing settlement amount according to claim settlement distribution percentages")
+	tlmbem.logger.Info("Global inflation is disabled, distributing settlement amount according to mint equals burn claim distribution percentages")
 
 	// === PARAMETER EXTRACTION ===
 
-	// Get the claim settlement distribution from tokenomics parameters
+	// Get the mint equals burn claim distribution from tokenomics parameters
 	mintEqualsBurnClaimDistribution := tlmbem.tlmCtx.TokenomicsParams.GetMintEqualsBurnClaimDistribution()
 	settlementAmount := tlmbem.tlmCtx.SettlementCoin.Amount
 

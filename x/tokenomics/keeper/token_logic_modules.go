@@ -162,9 +162,9 @@ func (k Keeper) ProcessTokenLogicModules(
 		"application", application.Address,
 	)
 
-	// Ensure the claim amount is within the limits set by Relay Mining.
+	// Ensure the claim amount is within the limits set by RelayMining.
 	// If not, update the settlement amount and emit relevant events.
-	// TODO_MAINNET_MIGRATION(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
+	// TODO_IMPROVE: Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
 	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
@@ -226,7 +226,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		}
 	}
 
-	// TODO_MAINNET_MIGRATION(@bryanchriswhite): If the application stake has dropped to (near?) zero:
+	// TODO_IMPROVE: If the application stake has dropped to (near?) zero:
 	// - Unstake it
 	// - Emit an event
 	// - Ensure this doesn't happen
@@ -237,13 +237,14 @@ func (k Keeper) ProcessTokenLogicModules(
 	return nil
 }
 
-// ensureClaimAmountLimits checks if the application was overserviced and handles
-// the case if it was.
-// Per Algorithm #1 in the Relay Mining paper, the maximum amount that a single supplier
-// can claim in a session is AppStake/NumSuppliersPerSession.
+// ensureClaimAmountLimits checks and handles overserviced applications.
+//
+// Per Algorithm #1 in the Relay Mining paper, the maximum amount that a single
+// supplier can claim in a session is AppStake/NumSuppliersPerSession.
+// Ref: https://arxiv.org/pdf/2305.10672
+//
 // If this is not the case, then the supplier essentially did "free work" and the
 // actual claim amount is less than what was claimed.
-// Ref: https://arxiv.org/pdf/2305.10672
 func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,

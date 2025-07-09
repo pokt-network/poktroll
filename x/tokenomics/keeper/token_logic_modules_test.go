@@ -87,8 +87,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
-	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
-	// Once it is a governance param, update it using the keeper above.
+
+	// Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0
 	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
@@ -179,7 +179,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.Equal(t, expectedAppEndStakeAmount, actualAppEndStakeAmount)
 
 	// Assert that app module balance is *decreased* by the appropriate amount
-	// NB: The application module account burns the amount of uPOKT that was held in escrow
+	// DEV_NOTE: The application module account burns the amount of uPOKT that was held in escrow
 	// on behalf of the applications which were serviced in a given session.
 	expectedAppModuleEndBalance := appModuleStartBalance.Sub(cosmostypes.NewCoin(pocket.DenomuPOKT, appBurn))
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
@@ -192,7 +192,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.Equal(t, &supplierStake, supplier.GetStake())
 
 	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
-	// NB: Supplier rewards are minted to the supplier module account but then immediately
+	// DEV_NOTE: Supplier rewards are minted to the supplier module account but then immediately
 	// distributed to the supplier accounts which provided service in a given session.
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
@@ -264,8 +264,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
-	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
-	// Once it is a governance param, update it using the keeper above.
+
+	// Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0
 	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
@@ -360,7 +360,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	require.Less(t, maxClaimableAmountPerSupplier, numTokensClaimed)
 
 	// Assert that app module balance is *decreased* by the appropriate amount
-	// NB: The application module account burns the amount of uPOKT that was held in escrow
+	// DEV_NOTE: The application module account burns the amount of uPOKT that was held in escrow
 	// on behalf of the applications which were serviced in a given session.
 	expectedAppModuleEndBalance := appModuleStartBalance.Sub(appBurnCoin)
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
@@ -373,7 +373,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	require.Equal(t, &supplierStake, supplier.GetStake())
 
 	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
-	// NB: Supplier rewards are minted to the supplier module account but then immediately
+	// DEV_NOTE: Supplier rewards are minted to the supplier module account but then immediately
 	// distributed to the supplier accounts which provided service in a given session.
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
@@ -868,15 +868,15 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 }
 
 func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {
-	t.Skip("TODO_MAINNET_MIGRATION(@red-0ne): Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")
+	t.Skip("TODO_TEST: Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")
 }
 
 func TestProcessTokenLogicModules_AppStakeTooLowRoundingToZero(t *testing.T) {
-	t.Skip("TODO_MAINNET_MIGRATION(@red-0ne): Test application stake that is too low which results in stake/num_suppliers rounding down to zero")
+	t.Skip("TODO_TEST: Test application stake that is too low which results in stake/num_suppliers rounding down to zero")
 }
 
 func TestProcessTokenLogicModules_AppStakeDropsBelowMinStakeAfterSession(t *testing.T) {
-	t.Skip("TODO_MAINNET_MIGRATION(@red-0ne): Test that application stake being auto-unbonding after the stake drops below the required minimum when settling session accounting")
+	t.Skip("TODO_TEST: Test that application stake being auto-unbonding after the stake drops below the required minimum when settling session accounting")
 }
 
 // prepareTestClaim uses the given number of relays and compute unit per relay in the
@@ -999,7 +999,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	// Set up tokenomics params with the new distribution percentages
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0 // Disable global inflation for this test
-	// When global inflation is 0, claim settlement distribution is used automatically
+	// When global inflation is 0, mint equals burn claim distribution is used automatically
 	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
 		Dao:         0.1,
 		Proposer:    0.14,

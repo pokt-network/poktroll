@@ -25,9 +25,9 @@ var (
 	ParamMintAllocationPercentages   = "mint_allocation_percentages"
 	DefaultMintAllocationPercentages = MintAllocationPercentages{
 		Dao:         0.1,
-		Proposer:    0.14,
-		Supplier:    0.73,
-		SourceOwner: 0.03,
+		Proposer:    0.05,
+		Supplier:    0.7,
+		SourceOwner: 0.15,
 		Application: 0.0,
 	}
 
@@ -36,9 +36,9 @@ var (
 	ParamMintEqualsBurnClaimDistribution   = "mint_equals_burn_claim_distribution"
 	DefaultMintEqualsBurnClaimDistribution = MintEqualsBurnClaimDistribution{
 		Dao:         0.1,
-		Proposer:    0.14,
-		Supplier:    0.73,
-		SourceOwner: 0.03,
+		Proposer:    0.05,
+		Supplier:    0.7,
+		SourceOwner: 0.15,
 		Application: 0.0,
 	}
 
@@ -264,7 +264,7 @@ func ValidateMintEqualsBurnClaimDistribution(mintEqualsBurnClaimDistributionAny 
 	sum := mintEqualsBurnClaimDistribution.Sum()
 	// TODO_MAINNET_CRITICAL(@red-0ne): I prefer using big.Rat and have a strict 1.0 sum. These might add up or skew our tokenomics a bit.
 	if math.Abs(sum-1) > epsilon {
-		return ErrTokenomicsParamInvalid.Wrapf("claim settlement distribution percentages do not add to 1.0: got %f", sum)
+		return ErrTokenomicsParamInvalid.Wrapf("mint equals burn claim distribution percentages do not add to 1.0: got %f", sum)
 	}
 
 	return nil

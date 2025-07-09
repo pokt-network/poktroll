@@ -7,7 +7,7 @@ sidebar_position: 5
   - [TLM: Distributed Settlement](#tlm-distributed-settlement)
   - [Configuration](#configuration)
   - [Distributed Settlement Flow](#distributed-settlement-flow)
-  - [Key Differences from Global Mint](#key-differences-from-global-mint)
+  - [Behavioral Differences](#behavioral-differences)
   - [Use Cases](#use-cases)
 
 ## TLM: Mint=Burn (MEB)
@@ -87,14 +87,14 @@ Make sure to document whatever decision we come to.
 
 _tl;dr Distribute the application settlement amount according to onchain allocation percentages instead of giving everything to the supplier._
 
-The `Distributed Settlement` feature provides an alternative to the traditional Mint=Burn behavior when global inflation is disabled (`global_inflation_per_claim = 0`). Instead of suppliers receiving 100% of the settlement amount, the tokens are distributed among all stakeholders according to the governance-defined claim settlement distribution percentages.
+The `Distributed Settlement` feature provides an alternative to the traditional Mint=Burn behavior when global inflation is disabled (`global_inflation_per_claim = 0`). Instead of suppliers receiving 100% of the settlement amount, the tokens are distributed among all stakeholders according to the governance-defined mint equals burn claim distribution percentages.
 
 ### Configuration
 
 This feature is automatically activated when `global_inflation_per_claim = 0` and uses the `mint_equals_burn_claim_distribution` governance parameter to determine how to split the settlement amount:
 
-- **When `global_inflation_per_claim > 0`**: Traditional global mint behavior with mint allocation percentages
-- **When `global_inflation_per_claim = 0`**: Distributed settlement using claim settlement distribution percentages
+- **When `global_inflation_per_claim > 0`**: Traditional behavior where suppliers receive 100% of settlement
+- **When `global_inflation_per_claim = 0`**: Distributed settlement using mint equals burn claim distribution percentages
 
 ### Distributed Settlement Flow
 
@@ -109,14 +109,14 @@ When `global_inflation_per_claim = 0`:
    - **Application**: 0% (can be configured if needed)
 3. **Application Burn**: Application stake decreases by the full settlement amount (unchanged)
 
-### Key Differences from Global Mint
+### Behavioral Differences
 
-| Aspect                   | Global Mint TLM                      | Distributed Settlement               |
-| ------------------------ | ------------------------------------ | ------------------------------------ |
-| **Total Token Supply**   | Increases (new tokens minted)        | Unchanged (no new minting)           |
+| Aspect                   | Traditional Mode                      | Distributed Settlement               |
+| ------------------------ | ------------------------------------- | ------------------------------------ |
+| **Total Token Supply**   | Unchanged (no new minting)           | Unchanged (no new minting)           |
 | **Activation Condition** | `global_inflation_per_claim > 0`     | `global_inflation_per_claim = 0`     |
-| **Application Cost**     | Settlement + inflation reimbursement | Settlement only                      |
-| **Supplier Reward**      | 100% of settlement + inflation share | Percentage of settlement (e.g., 70%) |
+| **Application Cost**     | Settlement only                       | Settlement only                      |
+| **Supplier Reward**      | 100% of settlement                    | Percentage of settlement (e.g., 70%) |
 
 ```mermaid
 ---
@@ -189,10 +189,10 @@ flowchart TD
 **Traditional Mint=Burn is ideal when:**
 
 - Simplified tokenomics with suppliers receiving full settlement
-- Global inflation is active for network growth incentives
+- Network prefers straightforward reward distribution without stakeholder splitting
 
 :::note
 
-The distributed settlement feature enables governance to experiment with non-inflationary reward distribution while maintaining the existing mint allocation percentages structure. This provides a bridge between inflationary and deflationary tokenomics models.
+The distributed settlement feature enables governance to experiment with stakeholder reward distribution without requiring additional token minting. This provides flexibility in how settlement amounts are allocated among network participants.
 
 :::

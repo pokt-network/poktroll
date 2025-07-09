@@ -103,7 +103,7 @@ func (m *Params) GetMintEqualsBurnClaimDistribution() MintEqualsBurnClaimDistrib
 // MintAllocationPercentages captures the distribution of newly minted tokens.
 // The sum of all new tokens minted must equal 1.
 // GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
-// TODO: Remove this once global inflation is disabled in perpetuity.
+// TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
 type MintAllocationPercentages struct {
 	// dao - % of newley minted tokens sent to the DAO reward address.
 	Dao float64 `protobuf:"fixed64,1,opt,name=dao,proto3" json:"dao" yaml:"dao"`

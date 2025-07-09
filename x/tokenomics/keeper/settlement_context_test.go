@@ -51,7 +51,7 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-// TODO_TECHDEBT(@bryanchriswhite): Consolidate the setup for all tests that use TokenomicsModuleKeepers
+// TODO_IMPROVE: Consolidate the setup for all tests that use TokenomicsModuleKeepers
 type TestSuite struct {
 	suite.Suite
 
@@ -139,10 +139,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 
 	// Validate that one claim still remains.
 	claims := s.keepers.GetAllClaims(ctx)
-	// TODO_TECHDEBT(@bryanchriswhite): Ensure docusaurus docs include a note regarding
-	// preferring `require.Equal()` over `require.Len()` due to poor developer experience
-	// when debugging failing tests which use the latter. TL;DR, the error message prints
-	// the list in one line and is difficult and slow to parse. Then reference the doc here.
+	// DEV_NOTE: Using `require.Equal()` over `require.Len()` so errors are seeing to read.
 	require.Equal(t, 1, len(claims))
 
 	// Calculate a block height which is within the proof window.

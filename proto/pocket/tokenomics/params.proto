@@ -37,7 +37,7 @@ message Params {
 // MintAllocationPercentages captures the distribution of newly minted tokens.
 // The sum of all new tokens minted must equal 1.
 // GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
-// TODO: Remove this once global inflation is disabled in perpetuity.
+// TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
 message MintAllocationPercentages {
   // dao - % of newley minted tokens sent to the DAO reward address.
   double dao = 1 [(gogoproto.jsontag) = "dao", (gogoproto.moretags) = "yaml:\"dao\""];

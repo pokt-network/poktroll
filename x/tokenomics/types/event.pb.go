@@ -5,13 +5,15 @@ package types
 
 import (
 	fmt "fmt"
-	types1 "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/cosmos/gogoproto/gogoproto"
-	proto "github.com/cosmos/gogoproto/proto"
-	types "github.com/pokt-network/poktroll/x/proof/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+	io "io"
+	math "math"
+	math_bits "math/bits"
+osmos/gogoproto/proto"
+
+	types "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -420,7 +422,7 @@ func (m *EventClaimDiscarded) GetError() string {
 
 // EventApplicationReimbursementRequest is emitted when an application requests a reimbursement from the DAO.
 // It is intended to prevent self dealing attacks when global inflation is enabled.
-// TODO: Remove this once global inflation is disabled in perpetuity.
+// TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
 type EventApplicationReimbursementRequest struct {
 	// The application address consuming onchain services requesting reimbursement.
 	ApplicationAddr string `protobuf:"bytes,1,opt,name=application_addr,json=applicationAddr,proto3" json:"application_addr,omitempty"`
