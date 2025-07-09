@@ -179,7 +179,11 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Get the service config from the supplier config.
 	// This will use either the RPC type specific service config or the default service config.
-	serviceConfig, serviceConfigTypeLog := getServiceConfig(supplierConfig, request)
+	serviceConfig, serviceConfigTypeLog, err := getServiceConfig(supplierConfig, request)
+	if err != nil {
+		return relayRequest, err
+	}
+
 	if serviceConfig == nil {
 		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
 			"service %q not configured",
@@ -397,6 +401,7 @@ func getServiceConfig(
 ) (
 	serviceConfig *config.RelayMinerSupplierServiceConfig,
 	serviceConfigTypeLog string,
+	err error,
 ) {
 	// If the following are true:
 	// 	- The RPC type is set for the service
@@ -405,18 +410,25 @@ func getServiceConfig(
 	rpcTypeHeaderValue := request.Header.Get(rpcTypeHeader)
 
 	if rpcTypeHeaderValue != "" {
-		// Convert string header value to RPCType
-		rpcTypeInt, parseErr := strconv.Atoi(rpcTypeHeaderValue)
-		if parseErr == nil {
-			rpcType := sharedtypes.RPCType(rpcTypeInt)
-			if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
-				return rpcTypeServiceConfig, fmt.Sprintf("%s_SERVICE_CONFIG", rpcType.String())
-			}
+		// Attempt to convert string header value to int32.
+		// For example, "1" -> RPCType_GRPC, "2" -> RPCType_WEBSOCKET, etc.
+		rpcTypeInt, err := strconv.Atoi(rpcTypeHeaderValue)
+		if err != nil {
+			return nil, "", ErrRelayerProxyInternalError.Wrapf(
+				"unable to parse rpc type header value %q",
+				rpcTypeHeaderValue,
+			)
+		}
+
+		// If the header is successfully parsed, use the RPC type specific service config.
+		rpcType := sharedtypes.RPCType(rpcTypeInt)
+		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
+			return rpcTypeServiceConfig, fmt.Sprintf("%s_SERVICE_CONFIG", rpcType.String()), nil
 		}
 	}
 
 	// If the RPC type is not set, use the default service config.
-	return supplierConfig.ServiceConfig, serviceConfigTypeDefault
+	return supplierConfig.ServiceConfig, serviceConfigTypeDefault, nil
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.
