@@ -9,18 +9,6 @@ sidebar_position: 4
 
 ## Introduction
 
-:::warning
-
-This is an active WIP and the [resources here](1_resources.md) are the best starting references to learn more.
-
-In particular:
-
-- This is better than what exists in production (Morse) today in enabling permissionless demand
-- This should be seen as an interim solution to avoid delaying the Shannon upgrade
-- The goal is to iterate and experiment with tokenomics post upgrade
-
-:::
-
 Token Logic Module (TLM) processing consists of the following sequential steps:
 
 1. `TLM pre-processing` - General pre-processing to determine the number of tokens to settle per claim.
@@ -116,13 +104,5 @@ up to `n` times its stake for a given session number by performing
 
 To avoid thy type of over-servicing, The Pocket protocol requires `Application`s
 to only be able to stake for EXACTLY ONE service.
-
-:::
-
-:::note
-
-TODO_POST_MAINNET: After the Shannon upgrade, the team at Grove has a lot of ideas
-related to onchain reputation, [supplier overlay networks](https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7?pvs=4), and
-much more, all of which is out of scope for the initial implementation.
 
 :::
