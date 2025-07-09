@@ -30,7 +30,7 @@ flowchart TD
         PROP_DIST[Proposer Distribution]
         SUPP_DIST[Supplier Distribution]
         SRC_DIST[Source Owner Distribution]
-        
+
         MEC --> DAO_DIST
         MEC --> PROP_DIST
         MEC --> SUPP_DIST
@@ -90,14 +90,15 @@ The `MintEqualsBurnClaimDistribution` parameters control how the settlement amou
 
 These percentages must sum to 1.0 (100%) to ensure all settlement tokens are properly distributed.
 
-## Default Distribution
+### Default Distribution
 
 The default distribution percentages are:
+- **DAO**: 10% (0.1)
+- **Proposer**: 5% (0.05)
+- **Supplier**: 70% (0.7)
+- **Source Owner**: 15% (0.15)
+- **Application**: 0% (0.0)
 
-- **DAO**: 10%
-- **Proposer**: 5%
-- **Supplier**: 70%
-- **Source Owner**: 15%
-- **Application**: 0%
+### Parameter Governance
 
-This means that for every 1000 uPOKT in a settlement, 100 uPOKT goes to the DAO, 50 uPOKT to the proposer, 700 uPOKT to suppliers (shared among their revenue shareholders), and 150 uPOKT to the service source owner.
+This parameter can be updated through governance proposals using the `MsgUpdateParams` message. All distribution percentages must be non-negative and sum to exactly 1.0.
