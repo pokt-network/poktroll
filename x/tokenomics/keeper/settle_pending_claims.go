@@ -264,14 +264,16 @@ func (k Keeper) executePendingModuleMints(
 		if err := mint.Validate(); err != nil {
 			return err
 		}
+
 		if err := k.bankKeeper.MintCoins(ctx, mint.DestinationModule, cosmostypes.NewCoins(mint.Coin)); err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementMint.Wrapf(
 				"destination module %q minting %s: %v", mint.DestinationModule, mint.Coin, err,
 			)
 		}
+		telemetry.MintedTokensFromModule(mint.DestinationModule, float32(mint.Coin.Amount.Int64()))
 
 		logger.Info(fmt.Sprintf(
-			"executing operation: minting %s coins to the %q module account, reason: %q",
+			"minting %s coins to the %q module account, reason: %q",
 			mint.Coin, mint.DestinationModule, mint.OpReason.String(),
 		))
 	}
@@ -295,9 +297,10 @@ func (k Keeper) executePendingModuleBurns(
 				"destination module %q burning %s: %v", burn.DestinationModule, burn.Coin, err,
 			)
 		}
+		telemetry.BurnedTokensFromModule(burn.DestinationModule, float32(burn.Coin.Amount.Int64()))
 
 		logger.Info(fmt.Sprintf(
-			"executing operation: burning %s coins from the %q module account, reason: %q",
+			"burning %s coins from the %q module account, reason: %q",
 			burn.Coin, burn.DestinationModule, burn.OpReason.String(),
 		))
 	}

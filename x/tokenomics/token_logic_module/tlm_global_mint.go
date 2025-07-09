@@ -11,92 +11,116 @@ import (
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/encoding"
+	"github.com/pokt-network/poktroll/telemetry"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 var _ TokenLogicModule = (*tlmGlobalMint)(nil)
 
-type tlmGlobalMint struct{}
+type tlmGlobalMint struct {
+	ctx    context.Context
+	logger cosmoslog.Logger
+	tlmCtx *TLMContext
+}
 
 // NewGlobalMintTLM creates a new instance of the GlobalMint TLM.
 func NewGlobalMintTLM() TokenLogicModule {
 	return &tlmGlobalMint{}
 }
 
-func (tlm tlmGlobalMint) GetId() TokenLogicModuleId {
+func (tlmgm *tlmGlobalMint) GetId() TokenLogicModuleId {
 	return TLMGlobalMint
 }
 
 // Process processes the business logic for the GlobalMint TLM.
-func (tlm tlmGlobalMint) Process(
+func (tlmgm *tlmGlobalMint) Process(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
+	tlmgm.ctx = ctx
+	tlmgm.logger = logger
+	tlmgm.tlmCtx = &tlmCtx
+
 	logger = logger.With(
-		"method", "tlmGlobalMint#Process",
+		"tlm", "TLMGlobalMint",
+		"method", "Process",
 		"session_id", tlmCtx.Result.GetSessionId(),
 	)
 
-	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
-	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
+	newMintCoin, err := tlmgm.processInflationMint()
 	if err != nil {
-		logger.Error(fmt.Sprintf("error converting global inflation per claim due to: %v", err))
+		logger.Error(fmt.Sprintf("error processing inflation mint: %v", err))
 		return err
 	}
-
-	if globalInflationPerClaim == 0 {
-		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
+	if newMintCoin.IsZero() {
+		logger.Debug("newMintCoin is zero. Skipping Global Mint TLM.")
 		return nil
 	}
 
-	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmCtx.SettlementCoin, globalInflationPerClaimRat)
-	if newMintCoin.IsZero() {
-		return tokenomicstypes.ErrTokenomicsCoinIsZero.Wrapf("newMintCoin cannot be zero, TLMContext: %+v", tlmCtx)
+	if err := tlmgm.processMintDistribution(newMintCoin); err != nil {
+		logger.Error(fmt.Sprintf("error processing mint distribution: %v", err))
+		return err
 	}
 
-	// Mint new uPOKT to the tokenomics module account
-	tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
+	return nil
+}
+
+// processInflationMint processes the inflation mint TLM and returns the minted amount.
+func (tlmgm *tlmGlobalMint) processInflationMint() (cosmostypes.Coin, error) {
+	// Retrieve the global inflation per claim
+	globalInflationPerClaim := tlmgm.tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
+	if globalInflationPerClaim == 0 {
+		tlmgm.logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
+		return cosmostypes.Coin{}, nil
+	}
+
+	// Convert to rat for safe numeric operators
+	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
+	if err != nil {
+		tlmgm.logger.Error(fmt.Sprintf("error converting global inflation per claim due to: %v", err))
+		return cosmostypes.Coin{}, err
+	}
+
+	// Determine how much new uPOKT to mint based on global inflation
+	newMintCoin := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmgm.tlmCtx.SettlementCoin, globalInflationPerClaimRat)
+	if newMintCoin.IsZero() {
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsCoinIsZero.Wrapf("newMintCoin cannot be zero, TLMContext: %+v", tlmgm.tlmCtx)
+	}
+
+	// Mint new uPOKT to the tokenomics module account from which the rewards will be distributed.
+	tlmgm.tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
 		OpReason:          tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_INFLATION,
 		DestinationModule: tokenomicstypes.ModuleName,
 		Coin:              newMintCoin,
 	})
-	logger.Info(fmt.Sprintf("operation queued: mint (%s) to the tokenomics module account", newMintCoin))
+	telemetry.MintedTokensFromModule(tokenomicstypes.ModuleName, float32(tlmgm.tlmCtx.SettlementCoin.Amount.Int64()))
+	tlmgm.logger.Info(fmt.Sprintf("operation queued: mint (%s) to the tokenomics module account", newMintCoin))
 
-	mintAllocationPercentages := tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
+	return newMintCoin, nil
+}
 
-	// Send a portion of the rewards to the application
-	appMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Application)
-	if err != nil {
-		logger.Error(fmt.Sprintf("error converting application mint allocation percentage due to: %v", err))
-		return err
-	}
+func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin) error {
+	// === PARAMETER EXTRACTION ===
 
-	appCoin := sendRewardsToAccount(
-		logger,
-		tlmCtx.Result,
-		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION,
-		tokenomicstypes.ModuleName,
-		tlmCtx.Application.GetAddress(),
-		appMintAllocationRat,
-		newMintCoin,
-	)
-	logMsg := fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, tlmCtx.Application.GetAddress())
-	logRewardOperation(logger, logMsg, &appCoin)
+	// Get the mint allocation percentages from tokenomics parameters
+	mintAllocationPercentages := tlmgm.tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
+
+	// === ALLOCATION CALCULATIONS ===
+	// Calculate how much each participant gets from the settlement amount
 
 	// Send a portion of the rewards to the supplier shareholders.
 	supplierMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Supplier)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error converting supplier mint allocation percentage due to: %v", err))
+		tlmgm.logger.Error(fmt.Sprintf("error converting supplier mint allocation percentage due to: %v", err))
 		return err
 	}
 
-	supplierCoinsToShareAmt := calculateAllocationAmount(newMintCoin.Amount, supplierMintAllocationRat)
+	supplierCoinsToShareAmt := calculateAllocationAmount(tlmgm.tlmCtx.SettlementCoin.Amount, supplierMintAllocationRat)
 	supplierCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierCoinsToShareAmt)
 	// Send funds from the tokenomics module to the supplier module account
-	tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
+	tlmgm.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
 		OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER,
 		SenderModule:    tokenomicstypes.ModuleName,
 		RecipientModule: suppliertypes.ModuleName,
@@ -104,50 +128,68 @@ func (tlm tlmGlobalMint) Process(
 	})
 	// Distribute the rewards from within the supplier's module account.
 	if err = distributeSupplierRewardsToShareHolders(
-		logger,
-		tlmCtx.Result,
+		tlmgm.logger,
+		tlmgm.tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
-		tlmCtx.Supplier,
-		tlmCtx.Service.Id,
+		tlmgm.tlmCtx.Supplier,
+		tlmgm.tlmCtx.Service.Id,
 		supplierCoinsToShareAmt,
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
 			"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
-			tlmCtx.Supplier.OperatorAddress,
+			tlmgm.tlmCtx.Supplier.OperatorAddress,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmCtx.Supplier.OperatorAddress))
+	tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmgm.tlmCtx.Supplier.OperatorAddress))
+
+	// Send a portion of the rewards to the application
+	appMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Application)
+	if err != nil {
+		tlmgm.logger.Error(fmt.Sprintf("error converting application mint allocation percentage due to: %v", err))
+		return err
+	}
+	appCoin := sendRewardsToAccount(
+		tlmgm.logger,
+		tlmgm.tlmCtx.Result,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION,
+		tokenomicstypes.ModuleName,
+		tlmgm.tlmCtx.Application.GetAddress(),
+		appMintAllocationRat,
+		newMintCoin,
+	)
+	logMsg := fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, tlmgm.tlmCtx.Application.GetAddress())
+	logRewardOperation(tlmgm.logger, logMsg, &appCoin)
 
 	// Send a portion of the rewards to the source owner
 	sourceOwnerMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.SourceOwner)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error converting source owner mint allocation percentage due to: %v", err))
+		tlmgm.logger.Error(fmt.Sprintf("error converting source owner mint allocation percentage due to: %v", err))
 		return err
 	}
 
 	serviceCoin := sendRewardsToAccount(
-		logger,
-		tlmCtx.Result,
+		tlmgm.logger,
+		tlmgm.tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
-		tlmCtx.Service.OwnerAddress,
+		tlmgm.tlmCtx.Service.OwnerAddress,
 		sourceOwnerMintAllocationRat,
 		newMintCoin,
 	)
-	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, tlmCtx.Service.OwnerAddress)
-	logRewardOperation(logger, logMsg, &serviceCoin)
+	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, tlmgm.tlmCtx.Service.OwnerAddress)
+	logRewardOperation(tlmgm.logger, logMsg, &serviceCoin)
 
 	// Send a portion of the rewards to the block proposer
-	proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
+	proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(tlmgm.ctx).BlockHeader().ProposerAddress).String()
 	proposerMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Proposer)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error converting proposer mint allocation percentage due to: %v", err))
+		tlmgm.logger.Error(fmt.Sprintf("error converting proposer mint allocation percentage due to: %v", err))
 		return err
 	}
 	proposerCoin := sendRewardsToAccount(
-		logger,
-		tlmCtx.Result,
+		tlmgm.logger,
+		tlmgm.tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
 		proposerAddr,
@@ -155,12 +197,12 @@ func (tlm tlmGlobalMint) Process(
 		newMintCoin,
 	)
 	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr)
-	logRewardOperation(logger, logMsg, &proposerCoin)
+	logRewardOperation(tlmgm.logger, logMsg, &proposerCoin)
 
 	// Send a portion of the rewards to the DAO
-	daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
+	daoRewardAddress := tlmgm.tlmCtx.TokenomicsParams.GetDaoRewardAddress()
 	daoCoin := sendRewardsToDAOAccount(
-		tlmCtx.Result,
+		tlmgm.tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
 		daoRewardAddress,
@@ -168,21 +210,19 @@ func (tlm tlmGlobalMint) Process(
 		appCoin, supplierCoin, proposerCoin, serviceCoin,
 	)
 	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, daoRewardAddress)
-	logRewardOperation(logger, logMsg, &daoCoin)
+	logRewardOperation(tlmgm.logger, logMsg, &daoCoin)
 
 	// Check and log the total amount of coins distributed
-	if err := ensureMintedCoinsAreDistributed(logger, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin); err != nil {
+	if err := ensureMintedCoinsAreDistributed(tlmgm.logger, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// ensureMintedCoinsAreDistributed checks whether the total amount of minted coins
-// is correctly distributed to the application, supplier, DAO, source owner, and proposer.
-// If the total distributed coins do not equal the amount of newly minted coins, an error
-// is returned. If the discrepancy is within the allowable tolerance, a warning is logged
-// and nil is returned.
+// ensureMintedCoinsAreDistributed checks whether the total amount of minted coins is correctly distributed.
+// If the total distributed coins do not equal the amount of newly minted coins, an error is returned.
+// If the discrepancy is within the allowable (roundable) tolerance, a warning is logged and nil is returned.
 func ensureMintedCoinsAreDistributed(
 	logger cosmoslog.Logger,
 	appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin cosmostypes.Coin,
