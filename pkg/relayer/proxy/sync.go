@@ -179,10 +179,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Get the service config from the supplier config.
 	// This will use either the RPC type specific service config or the default service config.
-	serviceConfig, serviceConfigTypeLog, err := getServiceConfig(supplierConfig, request)
-	if err != nil {
-		return relayRequest, err
-	}
+	serviceConfig, serviceConfigTypeLog := getServiceConfig(supplierConfig, request)
 	if serviceConfig == nil {
 		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
 			"service %q not configured",
@@ -400,7 +397,6 @@ func getServiceConfig(
 ) (
 	serviceConfig *config.RelayMinerSupplierServiceConfig,
 	serviceConfigTypeLog string,
-	err error,
 ) {
 	// If the following are true:
 	// 	- The RPC type is set for the service
@@ -414,13 +410,13 @@ func getServiceConfig(
 		if parseErr == nil {
 			rpcType := sharedtypes.RPCType(rpcTypeInt)
 			if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
-				return rpcTypeServiceConfig, rpcTypeHeaderValue, nil
+				return rpcTypeServiceConfig, rpcTypeHeaderValue
 			}
 		}
 	}
 
 	// If the RPC type is not set, use the default service config.
-	return supplierConfig.ServiceConfig, serviceConfigTypeDefault, nil
+	return supplierConfig.ServiceConfig, serviceConfigTypeDefault
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.
