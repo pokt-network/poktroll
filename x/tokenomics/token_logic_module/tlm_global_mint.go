@@ -34,6 +34,13 @@ func (tlmgm *tlmGlobalMint) GetId() TokenLogicModuleId {
 }
 
 // Process processes the business logic for the GlobalMint TLM.
+//
+// The GlobalMint TLM is responsible for minting new tokens based on the global
+// inflation rate and distributing them to various network participants.
+// It enables:
+//  1. Sustainable network growth through controlled inflation
+//  2. Incentive alignment for all network participants
+//  3. Decentralized reward distribution
 func (tlmgm *tlmGlobalMint) Process(
 	ctx context.Context,
 	logger cosmoslog.Logger,
@@ -49,6 +56,7 @@ func (tlmgm *tlmGlobalMint) Process(
 		"session_id", tlmCtx.Result.GetSessionId(),
 	)
 
+	// Mint new tokens based on global inflation
 	newMintCoin, err := tlmgm.processInflationMint()
 	if err != nil {
 		logger.Error(fmt.Sprintf("error processing inflation mint: %v", err))
@@ -59,6 +67,7 @@ func (tlmgm *tlmGlobalMint) Process(
 		return nil
 	}
 
+	// Distribute minted tokens according to configured percentages
 	if err := tlmgm.processMintDistribution(newMintCoin); err != nil {
 		logger.Error(fmt.Sprintf("error processing mint distribution: %v", err))
 		return err
@@ -67,8 +76,11 @@ func (tlmgm *tlmGlobalMint) Process(
 	return nil
 }
 
-// processInflationMint processes the inflation mint TLM and returns the minted amount.
+// processInflationMint calculates and mints new tokens based on the global inflation rate.
+// The amount minted is proportional to the settlement amount and the configured inflation percentage.
 func (tlmgm *tlmGlobalMint) processInflationMint() (cosmostypes.Coin, error) {
+	// === PARAMETER EXTRACTION ===
+
 	// Retrieve the global inflation per claim
 	globalInflationPerClaim := tlmgm.tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
 	if globalInflationPerClaim == 0 {
@@ -83,11 +95,15 @@ func (tlmgm *tlmGlobalMint) processInflationMint() (cosmostypes.Coin, error) {
 		return cosmostypes.Coin{}, err
 	}
 
+	// === MINT CALCULATION ===
+
 	// Determine how much new uPOKT to mint based on global inflation
 	newMintCoin := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmgm.tlmCtx.SettlementCoin, globalInflationPerClaimRat)
 	if newMintCoin.IsZero() {
 		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsCoinIsZero.Wrapf("newMintCoin cannot be zero, TLMContext: %+v", tlmgm.tlmCtx)
 	}
+
+	// === MINT OPERATION ===
 
 	// Mint new uPOKT to the tokenomics module account from which the rewards will be distributed.
 	tlmgm.tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
@@ -101,214 +117,149 @@ func (tlmgm *tlmGlobalMint) processInflationMint() (cosmostypes.Coin, error) {
 	return newMintCoin, nil
 }
 
+// processMintDistribution handles the distribution of newly minted tokens to network participants.
+// This function distributes the minted amount according to mint allocation percentages
+// configured in the tokenomics parameters. The distribution includes rewards for suppliers,
+// applications, service source owners, block proposers, and the DAO.
 func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin) error {
+	tlmgm.logger.Info("Distributing newly minted tokens according to mint allocation percentages")
+
 	// === PARAMETER EXTRACTION ===
 
 	// Get the mint allocation percentages from tokenomics parameters
 	mintAllocationPercentages := tlmgm.tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
 
 	// === ALLOCATION CALCULATIONS ===
-	// Calculate how much each participant gets from the settlement amount
+	// Calculate how much each participant gets from the newly minted amount
 
-	// Send a portion of the rewards to the supplier shareholders.
+	// Calculate supplier allocation
 	supplierMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Supplier)
 	if err != nil {
-		tlmgm.logger.Error(fmt.Sprintf("error converting supplier mint allocation percentage due to: %v", err))
-		return err
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting supplier mint allocation percentage: %v", err)
 	}
+	supplierCoinsToShareAmt := calculateAllocationAmount(newMintCoin.Amount, supplierMintAllocationRat)
 
-	supplierCoinsToShareAmt := calculateAllocationAmount(tlmgm.tlmCtx.SettlementCoin.Amount, supplierMintAllocationRat)
-	supplierCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierCoinsToShareAmt)
-	// Send funds from the tokenomics module to the supplier module account
-	tlmgm.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
-		OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER,
-		SenderModule:    tokenomicstypes.ModuleName,
-		RecipientModule: suppliertypes.ModuleName,
-		Coin:            supplierCoin,
-	})
-	// Distribute the rewards from within the supplier's module account.
-	if err = distributeSupplierRewardsToShareHolders(
-		tlmgm.logger,
-		tlmgm.tlmCtx.Result,
-		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
-		tlmgm.tlmCtx.Supplier,
-		tlmgm.tlmCtx.Service.Id,
-		supplierCoinsToShareAmt,
-	); err != nil {
-		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
-			"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
-			tlmgm.tlmCtx.Supplier.OperatorAddress,
-			err,
-		)
-	}
-	tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmgm.tlmCtx.Supplier.OperatorAddress))
-
-	// Send a portion of the rewards to the application
+	// Calculate application allocation
 	appMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Application)
 	if err != nil {
-		tlmgm.logger.Error(fmt.Sprintf("error converting application mint allocation percentage due to: %v", err))
-		return err
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting application mint allocation percentage: %v", err)
 	}
-	appCoin := sendRewardsToAccount(
-		tlmgm.logger,
-		tlmgm.tlmCtx.Result,
-		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION,
-		tokenomicstypes.ModuleName,
-		tlmgm.tlmCtx.Application.GetAddress(),
-		appMintAllocationRat,
-		newMintCoin,
-	)
-	logMsg := fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, tlmgm.tlmCtx.Application.GetAddress())
-	logRewardOperation(tlmgm.logger, logMsg, &appCoin)
+	appAmount := calculateAllocationAmount(newMintCoin.Amount, appMintAllocationRat)
 
-	// Send a portion of the rewards to the source owner
+	// Calculate source owner allocation
 	sourceOwnerMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.SourceOwner)
 	if err != nil {
-		tlmgm.logger.Error(fmt.Sprintf("error converting source owner mint allocation percentage due to: %v", err))
-		return err
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting source owner mint allocation percentage: %v", err)
 	}
+	sourceOwnerAmount := calculateAllocationAmount(newMintCoin.Amount, sourceOwnerMintAllocationRat)
 
-	serviceCoin := sendRewardsToAccount(
-		tlmgm.logger,
-		tlmgm.tlmCtx.Result,
-		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
-		tokenomicstypes.ModuleName,
-		tlmgm.tlmCtx.Service.OwnerAddress,
-		sourceOwnerMintAllocationRat,
-		newMintCoin,
-	)
-	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, tlmgm.tlmCtx.Service.OwnerAddress)
-	logRewardOperation(tlmgm.logger, logMsg, &serviceCoin)
-
-	// Send a portion of the rewards to the block proposer
-	proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(tlmgm.ctx).BlockHeader().ProposerAddress).String()
+	// Calculate proposer allocation
 	proposerMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Proposer)
 	if err != nil {
-		tlmgm.logger.Error(fmt.Sprintf("error converting proposer mint allocation percentage due to: %v", err))
-		return err
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting proposer mint allocation percentage: %v", err)
 	}
-	proposerCoin := sendRewardsToAccount(
-		tlmgm.logger,
-		tlmgm.tlmCtx.Result,
-		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
-		tokenomicstypes.ModuleName,
-		proposerAddr,
-		proposerMintAllocationRat,
-		newMintCoin,
-	)
-	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr)
-	logRewardOperation(tlmgm.logger, logMsg, &proposerCoin)
+	proposerAmount := calculateAllocationAmount(newMintCoin.Amount, proposerMintAllocationRat)
 
-	// Send a portion of the rewards to the DAO
-	daoRewardAddress := tlmgm.tlmCtx.TokenomicsParams.GetDaoRewardAddress()
-	daoCoin := sendRewardsToDAOAccount(
-		tlmgm.tlmCtx.Result,
-		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
-		tokenomicstypes.ModuleName,
-		daoRewardAddress,
-		newMintCoin,
-		appCoin, supplierCoin, proposerCoin, serviceCoin,
-	)
-	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, daoRewardAddress)
-	logRewardOperation(tlmgm.logger, logMsg, &daoCoin)
+	// === REWARD DISTRIBUTION ===
+	// Distribute newly minted tokens to each participant according to allocation percentages
 
-	// Check and log the total amount of coins distributed
-	if err := ensureMintedCoinsAreDistributed(tlmgm.logger, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin); err != nil {
-		return err
-	}
+	// Distribute to supplier and their shareholders
+	if !supplierCoinsToShareAmt.IsZero() {
+		supplierCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierCoinsToShareAmt)
 
-	return nil
-}
-
-// ensureMintedCoinsAreDistributed checks whether the total amount of minted coins is correctly distributed.
-// If the total distributed coins do not equal the amount of newly minted coins, an error is returned.
-// If the discrepancy is within the allowable (roundable) tolerance, a warning is logged and nil is returned.
-func ensureMintedCoinsAreDistributed(
-	logger cosmoslog.Logger,
-	appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin cosmostypes.Coin,
-) error {
-	// Compute the difference between the total distributed coins and the amount of newly minted coins
-	totalMintDistributedCoin := appCoin.Add(supplierCoin).Add(daoCoin).Add(serviceCoin).Add(proposerCoin)
-
-	coinDifference := totalMintDistributedCoin.Sub(newMintCoin)
-	if !coinDifference.IsZero() {
-		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
-			"the total distributed coins (%s) do not equal the amount of newly minted coins (%s)"+
-				"appCoin: %s, supplierCoin: %s, daoCoin: %s, serviceCoin: %s, proposerCoin: %s",
-			totalMintDistributedCoin, newMintCoin, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin)
-	}
-
-	logger.Info(fmt.Sprintf("operation queued: distribute (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
-
-	return nil
-}
-
-// sendRewardsToDAOAccount calculates and sends rewards to the DAO account.
-// The DAO reward amount is computed as the difference between the total settlement amount
-// and the sum of all other actors' rewards (application, supplier, proposer, and source owner).
-// This difference-based approach, rather than using a fixed percentage, ensures that any
-// rounding remainders from the integer division of other rewards are captured in the DAO's share.
-// The tokenomics.Params validation guarantees that allocation percentages sum to 100%,
-// ensuring this calculation's correctness.
-func sendRewardsToDAOAccount(
-	result *tokenomicstypes.ClaimSettlementResult,
-	opReason tokenomicstypes.SettlementOpReason,
-	senderModule string,
-	recipientAddr string,
-	settlementCoin, appRewards, supplierRewards, proposerRewards, sourceOwnerRewards cosmostypes.Coin,
-) cosmostypes.Coin {
-	coinToDAOAcc := settlementCoin.
-		Sub(appRewards).
-		Sub(supplierRewards).
-		Sub(proposerRewards).
-		Sub(sourceOwnerRewards)
-
-	if !coinToDAOAcc.IsZero() {
-		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         opReason,
-			SenderModule:     senderModule,
-			RecipientAddress: recipientAddr,
-			Coin:             coinToDAOAcc,
+		// Transfer from tokenomics module to supplier module
+		tlmgm.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
+			OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER,
+			SenderModule:    tokenomicstypes.ModuleName,
+			RecipientModule: suppliertypes.ModuleName,
+			Coin:            supplierCoin,
 		})
+
+		// Distribute to supplier's shareholders based on revenue share percentage
+		if err := distributeSupplierRewardsToShareHolders(
+			tlmgm.logger,
+			tlmgm.tlmCtx.Result,
+			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
+			tlmgm.tlmCtx.Supplier,
+			tlmgm.tlmCtx.Service.Id,
+			supplierCoinsToShareAmt,
+		); err != nil {
+			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
+				"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
+				tlmgm.tlmCtx.Supplier.OperatorAddress,
+				err,
+			)
+		}
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to supplier shareholders", supplierCoin))
 	}
 
-	return coinToDAOAcc
-}
-
-// sendRewardsToAccount sends (settlementAmtFloat * allocation) tokens from the
-// tokenomics module account to the specified address.
-func sendRewardsToAccount(
-	logger cosmoslog.Logger,
-	result *tokenomicstypes.ClaimSettlementResult,
-	opReason tokenomicstypes.SettlementOpReason,
-	senderModule string,
-	recipientAddr string,
-	allocationRat *big.Rat,
-	settlementCoin cosmostypes.Coin,
-) cosmostypes.Coin {
-	logger = logger.With(
-		"method", "mintRewardsToAccount",
-		"session_id", result.GetSessionId(),
-	)
-
-	coinsToAccAmt := calculateAllocationAmount(settlementCoin.Amount, allocationRat)
-	coinToAcc := cosmostypes.NewCoin(pocket.DenomuPOKT, coinsToAccAmt)
-
-	if coinToAcc.IsZero() {
-		return cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
+	// Distribute to application
+	if !appAmount.IsZero() {
+		appCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, appAmount)
+		tlmgm.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION,
+			SenderModule:     tokenomicstypes.ModuleName,
+			RecipientAddress: tlmgm.tlmCtx.Application.GetAddress(),
+			Coin:             appCoin,
+		})
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to application %s", appCoin, tlmgm.tlmCtx.Application.GetAddress()))
 	}
 
-	result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-		OpReason:         opReason,
-		SenderModule:     senderModule,
-		RecipientAddress: recipientAddr,
-		Coin:             coinToAcc,
-	})
+	// Distribute to service source owner
+	if !sourceOwnerAmount.IsZero() {
+		sourceOwnerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, sourceOwnerAmount)
+		tlmgm.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
+			SenderModule:     tokenomicstypes.ModuleName,
+			RecipientAddress: tlmgm.tlmCtx.Service.OwnerAddress,
+			Coin:             sourceOwnerCoin,
+		})
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
+	}
 
-	logger.Info(fmt.Sprintf("operation queued: send (%v) coins from the tokenomics module to the account with address %q", coinToAcc, recipientAddr))
+	// Distribute to block proposer
+	if !proposerAmount.IsZero() {
+		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
+		proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(tlmgm.ctx).BlockHeader().ProposerAddress).String()
+		tlmgm.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
+			SenderModule:     tokenomicstypes.ModuleName,
+			RecipientAddress: proposerAddr,
+			Coin:             proposerCoin,
+		})
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
+	}
 
-	return coinToAcc
+	// Distribute to DAO
+	// DAO gets the remainder to ensure all minted tokens are distributed
+	daoAmount := newMintCoin.Amount.Sub(supplierCoinsToShareAmt).Sub(appAmount).Sub(sourceOwnerAmount).Sub(proposerAmount)
+	if !daoAmount.IsZero() {
+		daoCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, daoAmount)
+		daoRewardAddress := tlmgm.tlmCtx.TokenomicsParams.GetDaoRewardAddress()
+		tlmgm.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
+			SenderModule:     tokenomicstypes.ModuleName,
+			RecipientAddress: daoRewardAddress,
+			Coin:             daoCoin,
+		})
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
+	}
+
+	// === VALIDATION ===
+
+	// Verify all minted coins are distributed
+	totalDistributed := supplierCoinsToShareAmt.Add(appAmount).Add(sourceOwnerAmount).Add(proposerAmount).Add(daoAmount)
+	if !totalDistributed.Equal(newMintCoin.Amount) {
+		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
+			"total distributed amount (%s) does not equal minted amount (%s)",
+			totalDistributed, newMintCoin.Amount,
+		)
+	}
+	tlmgm.logger.Info(fmt.Sprintf("operation queued: distributed (%v) total minted coins to all participants", totalDistributed))
+
+	return nil
 }
+
 
 // CalculateGlobalPerClaimMintInflationFromSettlementAmount calculates the amount
 // of uPOKT to mint based on the global per claim inflation rate as a function of
