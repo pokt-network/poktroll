@@ -16,66 +16,84 @@ owners, and the DAO.
 
 ```mermaid
 ---
-title: "Token Logic Module: Mint=Burn"
+title: "Token Logic Module: Mint=Burn Mechanism"
 ---
 flowchart TD
-    SA(["Settlement Amount (SA)"])
+    %% Input
+    SA(["Settlement Amount (SA)<br/>💰 Token Value"])
 
-    SA -- 💲 MINT SA coins --> TD
-    SA -- 🔥 BURN SA coins--> AM
+    %% Primary Operations
+    SA -->|"🪙 MINT SA tokens"| TD
+    SA -->|"🔥 BURN SA tokens"| AM
 
+    %% Token Distribution Layer
     subgraph TD[Token Distribution]
-        MEC[MintEqualsBurnClaimDistribution]
-        DAO_DIST[DAO Distribution]
-        PROP_DIST[Proposer Distribution]
-        SUPP_DIST[Supplier Distribution]
-        SRC_DIST[Source Owner Distribution]
+        MEC[["MintEqualsBurnClaimDistribution"]]
 
-        MEC --> DAO_DIST
-        MEC --> PROP_DIST
-        MEC --> SUPP_DIST
-        MEC --> SRC_DIST
-    end
-
-    subgraph SO[Supplier Operations]
-        SM[[Supplier Module]]
-        SD(Distribute Supplier Share)
-
-        SUPP_DIST --> SM
-        SM --> SD
-        SD -->|"⬆️ INCREASE Balance <br> (% of supplier share)"| OA
-        SD -->|"⬆️ INCREASE Balance <br> (% of supplier share)"| RSH1
-        SD -->|"⬆️ INCREASE Balance <br> (% of supplier share)"| RSH2
-        SD -->|"⬆️ INCREASE Balance <br> (% of supplier share)"| OPA
-
-        subgraph RSA[Revenue Share Addresses]
-            OA[Owner Address]
-            OPA[Operator Address]
-            RSH1[Revenue shareholder 1]
-            RSH2[Revenue shareholder ...]
+        subgraph DIST[Distribution Allocations]
+            DAO_DIST["DAO Distribution<br/>(X%)"]
+            PROP_DIST["Proposer Distribution<br/>(Y%)"]
+            SUPP_DIST["Supplier Distribution<br/>(Z%)"]
+            SRC_DIST["Source Owner Distribution<br/>(W%)"]
         end
+
+        MEC ==> DAO_DIST
+        MEC ==> PROP_DIST
+        MEC ==> SUPP_DIST
+        MEC ==> SRC_DIST
     end
 
+    %% Supplier Operations
+    subgraph SO[Supplier Operations]
+        SM[["Supplier Module"]]
+
+        subgraph SD[Distribution Logic]
+            SDC{{"Distribute<br/>Supplier Share"}}
+        end
+
+        SUPP_DIST ==> SM
+        SM ==> SDC
+
+        subgraph RSA[Revenue Share Recipients]
+            OA["Owner Address<br/>💼"]
+            OPA["Operator Address<br/>⚙️"]
+            RSH1["Revenue Shareholder 1<br/>👤"]
+            RSH2["Revenue Shareholder N<br/>👥"]
+        end
+
+        SDC -->|"⬆️ INCREASE Balance<br/>(% of supplier share)"| OA
+        SDC -->|"⬆️ INCREASE Balance<br/>(% of supplier share)"| OPA
+        SDC -->|"⬆️ INCREASE Balance<br/>(% of supplier share)"| RSH1
+        SDC -->|"⬆️ INCREASE Balance<br/>(% of supplier share)"| RSH2
+    end
+
+    %% Application Operations
     subgraph AO[Application Operations]
-        AM[[Application Module]]
-        AK[(Application Keeper)]
-        AA[Application Address]
+        AM[["Application Module"]]
+        AK[("Application Keeper")]
+        AA["Application Address"]
 
-        AM -.- AK
-        AM -. ⬇️ REDUCE Stake by SA .-> AA
+        AM -.->|monitors| AK
+        AM ==>|"⬇️ REDUCE Stake<br/>by SA amount"| AA
     end
 
-    DAO_DIST -->|"⬆️ INCREASE Balance"| DAO_ADDR[DAO Address]
-    PROP_DIST -->|"⬆️ INCREASE Balance"| PROP_ADDR[Proposer Address]
-    SRC_DIST -->|"⬆️ INCREASE Balance"| SRC_ADDR[Source Owner Address]
+    %% Direct Recipients
+    DAO_DIST ==>|"⬆️ INCREASE Balance"| DAO_ADDR["DAO Treasury"]
+    PROP_DIST ==>|"⬆️ INCREASE Balance"| PROP_ADDR["Proposer Address"]
+    SRC_DIST ==>|"⬆️ INCREASE Balance"| SRC_ADDR["Source Owner"]
 
-    classDef module fill:#f9f,color: #333,stroke:#333,stroke-width:2px;
-    classDef address fill:#bbf,color: #333,stroke:#333,stroke-width:2px;
-    classDef distribution fill:#e8b761,color: #333,stroke:#333,stroke-width:2px;
+    %% Styling
+    classDef module fill:#ff99ff,color:#333,stroke:#333,stroke-width:3px,font-weight:bold;
+    classDef address fill:#9999ff,color:#333,stroke:#333,stroke-width:2px;
+    classDef distribution fill:#ffcc66,color:#333,stroke:#333,stroke-width:2px;
+    classDef process fill:#66ff99,color:#333,stroke:#333,stroke-width:2px;
+    classDef keeper fill:#ff9999,color:#333,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5;
 
-    class SM,AM module;
+    class SM,AM,MEC module;
     class RSH1,RSH2,OA,OPA,AA,DAO_ADDR,PROP_ADDR,SRC_ADDR address;
-    class MEC,DAO_DIST,PROP_DIST,SUPP_DIST,SRC_DIST distribution;
+    class DAO_DIST,PROP_DIST,SUPP_DIST,SRC_DIST distribution;
+    class SDC process;
+    class AK keeper;
 ```
 
 ## MintEqualsBurnClaimDistribution Parameters
@@ -93,6 +111,7 @@ These percentages must sum to 1.0 (100%) to ensure all settlement tokens are pro
 ### Default Distribution
 
 The default distribution percentages are:
+
 - **DAO**: 10% (0.1)
 - **Proposer**: 5% (0.05)
 - **Supplier**: 70% (0.7)
