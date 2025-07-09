@@ -975,8 +975,11 @@ func getNumTokensClaimed(
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution(t *testing.T) {
 	// Test configuration constants
 	const (
-		testApplicationStakeMultiplier  = 2
-		testSupplierInitialStakeUpokt   = 1000000
+		// Initial stakes and helpers
+		testApplicationStakeMultiplier = 2
+		testSupplierInitialStakeUpokt  = 1000000
+
+		// Tokenomics Governance Parameters
 		testComputeUnitCostGranularity  = 1000000
 		testServiceComputeUnitsPerRelay = 1
 		testNumberOfRelaysInClaim       = 1000
@@ -995,15 +998,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 		testSupplierRevShareShareholder3Percentage = 50
 	)
 
-	// Calculate derived test values
+	// Prepare initial stake values
 	testApplicationInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(testApplicationStakeMultiplier))
 	testSupplierInitialStake := cosmosmath.NewInt(testSupplierInitialStakeUpokt)
-	testComputeUnitsToTokensMultiplier := uint64(1) * testComputeUnitCostGranularity
-	testSupplierRevSharePercentages := []uint64{
-		testSupplierRevShareShareholder1Percentage,
-		testSupplierRevShareShareholder2Percentage,
-		testSupplierRevShareShareholder3Percentage,
-	}
 
 	// Setup test service
 	testService := prepareTestService(testServiceComputeUnitsPerRelay)
@@ -1019,6 +1016,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 	// Validate claim is within relay mining bounds
 	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	testComputeUnitsToTokensMultiplier := uint64(1) * testComputeUnitCostGranularity
 	totalTokensClaimedInSession := getNumTokensClaimed(
 		testNumberOfRelaysInClaim,
 		testServiceComputeUnitsPerRelay,
@@ -1059,6 +1057,11 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 	// Create supplier revenue share configuration
 	supplierRevenueShareholders := make([]*sharedtypes.ServiceRevenueShare, len(testSupplierRevSharePercentages))
+	testSupplierRevSharePercentages := []uint64{
+		testSupplierRevShareShareholder1Percentage,
+		testSupplierRevShareShareholder2Percentage,
+		testSupplierRevShareShareholder3Percentage,
+	}
 	for i := range supplierRevenueShareholders {
 		shareholderAddress := sample.AccAddress()
 		supplierRevenueShareholders[i] = &sharedtypes.ServiceRevenueShare{
@@ -1088,20 +1091,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	}
 	keepers.SetAndIndexDehydratedSupplier(ctx, testSupplier)
 
-	// Get block proposer address for balance verification
+	// Get addresses for balance verification
 	blockProposerAddress := cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress
 	blockProposerAccountAddress := cosmostypes.AccAddress(blockProposerAddress).String()
-
-	// Capture baseline balances for all actors before settlement
 	daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
 	serviceSourceOwnerAddress := testService.OwnerAddress
 
+	// Capture baseline balances for all actors before settlement
 	daoBalanceBeforeSettlement := getBalance(t, ctx, keepers, daoRewardAddress)
 	proposerBalanceBeforeSettlement := getBalance(t, ctx, keepers, blockProposerAccountAddress)
 	sourceOwnerBalanceBeforeSettlement := getBalance(t, ctx, keepers, serviceSourceOwnerAddress)
 	applicationBalanceBeforeSettlement := getBalance(t, ctx, keepers, testApplicationAddress)
-
-	// Capture supplier shareholder balances before settlement
 	supplierShareholderBalancesBeforeSettlement := make(map[string]*cosmostypes.Coin)
 	for _, shareholder := range supplierRevenueShareholders {
 		supplierShareholderBalancesBeforeSettlement[shareholder.Address] = getBalance(t, ctx, keepers, shareholder.Address)
@@ -1110,13 +1110,11 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	// Prepare claim and execute settlement
 	testClaim := prepareTestClaim(testNumberOfRelaysInClaim, testService, &testApplication, &testSupplier)
 	settlementResult := tlm.NewClaimSettlementResult(testClaim)
-
 	settlementContext := tokenomicskeeper.NewSettlementContext(
 		ctx,
 		keepers.Keeper,
 		keepers.Logger(),
 	)
-
 	err = settlementContext.ClaimCacheWarmUp(ctx, &testClaim)
 	require.NoError(t, err)
 
@@ -1132,7 +1130,6 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 	// Calculate expected reward distributions from total settlement amount
 	totalSettlementAmount := cosmosmath.NewInt(totalTokensClaimedInSession)
-
 	expectedDaoRewardAmount := cosmosmath.NewInt(int64(float64(totalTokensClaimedInSession) * testMintEqualsBurnDaoPercentage))
 	expectedProposerRewardAmount := cosmosmath.NewInt(int64(float64(totalTokensClaimedInSession) * testMintEqualsBurnProposerPercentage))
 	expectedSupplierRewardAmount := cosmosmath.NewInt(int64(float64(totalTokensClaimedInSession) * testMintEqualsBurnSupplierPercentage))
