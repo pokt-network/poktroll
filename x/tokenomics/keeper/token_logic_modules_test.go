@@ -1056,12 +1056,12 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	keepers.SetApplication(ctx, testApplication)
 
 	// Create supplier revenue share configuration
-	supplierRevenueShareholders := make([]*sharedtypes.ServiceRevenueShare, len(testSupplierRevSharePercentages))
 	testSupplierRevSharePercentages := []uint64{
 		testSupplierRevShareShareholder1Percentage,
 		testSupplierRevShareShareholder2Percentage,
 		testSupplierRevShareShareholder3Percentage,
 	}
+	supplierRevenueShareholders := make([]*sharedtypes.ServiceRevenueShare, len(testSupplierRevSharePercentages))
 	for i := range supplierRevenueShareholders {
 		shareholderAddress := sample.AccAddress()
 		supplierRevenueShareholders[i] = &sharedtypes.ServiceRevenueShare{
