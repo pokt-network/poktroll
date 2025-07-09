@@ -8,6 +8,19 @@ import (
 )
 
 var (
+	// DAO TLM Params
+	// DefaultDaoRewardAddress is the localnet DAO account address as specified in the config.yml.
+	// It is only used in tests.
+	KeyDaoRewardAddress     = []byte("DaoRewardAddress")
+	ParamDaoRewardAddress   = "dao_reward_address"
+	DefaultDaoRewardAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+
+	// GlobalInflation TLM Params
+	KeyGlobalInflationPerClaim     = []byte("GlobalInflationPerClaim")
+	ParamGlobalInflationPerClaim   = "global_inflation_per_claim"
+	DefaultGlobalInflationPerClaim = float64(0.1)
+
+	// GlobalInflation Supporting TLM Params
 	KeyMintAllocationPercentages     = []byte("MintAllocationPercentages")
 	ParamMintAllocationPercentages   = "mint_allocation_percentages"
 	DefaultMintAllocationPercentages = MintAllocationPercentages{
@@ -17,21 +30,15 @@ var (
 		SourceOwner: 0.03,
 		Application: 0.0,
 	}
-	KeyDaoRewardAddress   = []byte("DaoRewardAddress")
-	ParamDaoRewardAddress = "dao_reward_address"
-	// DefaultDaoRewardAddress is the localnet DAO account address as specified in the config.yml.
-	// It is only used in tests.
-	DefaultDaoRewardAddress            = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-	KeyGlobalInflationPerClaim         = []byte("GlobalInflationPerClaim")
-	ParamGlobalInflationPerClaim       = "global_inflation_per_claim"
-	DefaultGlobalInflationPerClaim     = float64(0.1)
+
+	// MintEqualsBurn Supporting TLM Params
 	KeyClaimSettlementDistribution     = []byte("ClaimSettlementDistribution")
 	ParamClaimSettlementDistribution   = "claim_settlement_distribution"
 	DefaultClaimSettlementDistribution = ClaimSettlementDistribution{
 		Dao:         0.1,
-		Proposer:    0.05,
-		Supplier:    0.7,
-		SourceOwner: 0.15,
+		Proposer:    0.14,
+		Supplier:    0.73,
+		SourceOwner: 0.03,
 		Application: 0.0,
 	}
 

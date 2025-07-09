@@ -22,6 +22,7 @@ const (
 // This upgrade adds:
 // - Updates to the Morse account recovery allowlist
 // - Distributed Settlement TLM: enable_distribute_settlement parameter
+// - Reward distribution for the mint=burn TLM
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.

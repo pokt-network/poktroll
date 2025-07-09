@@ -5,11 +5,7 @@ package token_logic_module
 
 import (
 	"errors"
-	"fmt"
 	"sort"
-
-	"cosmossdk.io/log"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -149,16 +145,4 @@ func WithModToAcctTransfers(transfers []tokenomicstypes.ModToAcctTransfer) resul
 	return func(r *tokenomicstypes.ClaimSettlementResult) {
 		r.ModToAcctTransfers = transfers
 	}
-}
-
-// logRewardOperation logs (at the info level) whether a particular reward operation
-// was queued or not by appending a corresponding prefix to the given message.
-func logRewardOperation(logger log.Logger, msg string, reward *cosmostypes.Coin) {
-	var opMsgPrefix string
-	if reward.IsZero() {
-		opMsgPrefix = "operation skipped:"
-	} else {
-		opMsgPrefix = "operation queued:"
-	}
-	logger.Info(fmt.Sprintf("%s: %s", opMsgPrefix, msg))
 }
