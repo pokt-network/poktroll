@@ -1,5 +1,8 @@
 package token_logic_module
 
+// DEV_NOTE: This is defined in the token_logic_module package to avoid circular dependencies
+// while enabling tlm_suite_test.
+
 import (
 	"errors"
 	"fmt"

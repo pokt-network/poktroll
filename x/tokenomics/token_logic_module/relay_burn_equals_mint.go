@@ -17,32 +17,46 @@ import (
 
 var _ TokenLogicModule = (*tlmRelayBurnEqualsMint)(nil)
 
-type tlmRelayBurnEqualsMint struct{}
+type tlmRelayBurnEqualsMint struct {
+	ctx    context.Context
+	logger cosmoslog.Logger
+	tlmCtx *TLMContext
+}
 
 // NewRelayBurnEqualsMintTLM returns a new RelayBurnEqualsMint TLM.
 func NewRelayBurnEqualsMintTLM() TokenLogicModule {
 	return &tlmRelayBurnEqualsMint{}
 }
 
-func (tlm tlmRelayBurnEqualsMint) GetId() TokenLogicModuleId {
+func (tlmbem *tlmRelayBurnEqualsMint) GetId() TokenLogicModuleId {
 	return TLMRelayBurnEqualsMint
 }
 
 // Process processes the business logic for the RelayBurnEqualsMint TLM.
-func (tlm tlmRelayBurnEqualsMint) Process(
+func (tlmbem *tlmRelayBurnEqualsMint) Process(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
+	tlmbem.ctx = ctx
+	tlmbem.logger = logger
+	tlmbem.tlmCtx = &tlmCtx
+
 	logger = logger.With(
 		"method", "TokenLogicModuleRelayBurnEqualsMint",
 		"session_id", tlmCtx.Result.GetSessionId(),
 	)
 
-	// DEV_NOTE: We are doing a mint & burn + transfer, instead of a simple transfer
-	// of funds from the application stake to the supplier balance in order to enable second
-	// order economic effects with more optionality. This could include funds
-	// going to pnf, delegators, enabling bonuses/rebates, etc...
+	// DEV_NOTE: Mint & burn involves minting & burning to module accounts as interim steps.
+	// This enables:
+	// 1. Second order economic effects with more optionality.
+	// 2. More complex tokenomics distributions in the future.
+	// 3. Centralized tracking of token transfers
+
+	if err := tlmbem.processApplicationBurn(); err != nil {
+		logger.Error(fmt.Sprintf("error processing application burn: %v", err))
+		return err
+	}
 
 	// Check if global inflation is disabled
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
@@ -50,7 +64,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	if globalInflationPerClaim == 0 {
 		// When global inflation is disabled, distribute the settlement amount
 		// according to claim settlement distribution percentages
-		if err := tlm.processDistributedRewardSettlement(ctx, logger, tlmCtx); err != nil {
+		if err := tlmbem.processDistributedRewardSettlement(); err != nil {
 			return err
 		}
 	} else {
@@ -88,31 +102,35 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 		logger.Info(fmt.Sprintf("operation queued: send (%v) from the supplier module to the supplier account with address %q", tlmCtx.SettlementCoin, tlmCtx.Supplier.OperatorAddress))
 	}
 
+	return nil
+}
+
+func (tlmbem *tlmRelayBurnEqualsMint) processApplicationBurn() error {
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
-	tlmCtx.Result.AppendBurn(tokenomicstypes.MintBurnOp{
+	tlmbem.tlmCtx.Result.AppendBurn(tokenomicstypes.MintBurnOp{
 		OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_APPLICATION_STAKE_BURN,
 		DestinationModule: apptypes.ModuleName,
-		Coin:              tlmCtx.SettlementCoin,
+		Coin:              tlmbem.tlmCtx.SettlementCoin,
 	})
-	logger.Info(fmt.Sprintf("operation queued: burn (%v) from the application module account", tlmCtx.SettlementCoin))
+	tlmbem.logger.Info(fmt.Sprintf("operation queued: burn (%v) from the application module account", tlmbem.tlmCtx.SettlementCoin))
 
 	// Update telemetry information
-	if tlmCtx.SettlementCoin.Amount.IsInt64() {
-		defer telemetry.BurnedTokensFromModule(apptypes.ModuleName, float32(tlmCtx.SettlementCoin.Amount.Int64()))
+	if tlmbem.tlmCtx.SettlementCoin.Amount.IsInt64() {
+		defer telemetry.BurnedTokensFromModule(apptypes.ModuleName, float32(tlmbem.tlmCtx.SettlementCoin.Amount.Int64()))
 	}
 
 	// Update the application's onchain stake
-	newAppStake, err := tlmCtx.Application.Stake.SafeSub(tlmCtx.SettlementCoin)
+	newAppStake, err := tlmbem.tlmCtx.Application.Stake.SafeSub(tlmbem.tlmCtx.SettlementCoin)
 	// DEV_NOTE: This should never occur because:
-	//   1. Application overservicing SHOULD be mitigated by the protocol.
+	//   1. Application over-servicing SHOULD be mitigated by the protocol.
 	//   2. tokenomicskeeper.Keeper#ensureClaimAmountLimits deducts the
 	//      overserviced amount from the claimable amount ("free work").
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", tlmCtx.Application.Address, newAppStake)
+		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", tlmbem.tlmCtx.Application.Address, newAppStake)
 	}
-	tlmCtx.Application.Stake = &newAppStake
-	logger.Info(fmt.Sprintf("operation scheduled: update application %q stake to %v", tlmCtx.Application.Address, newAppStake))
+	tlmbem.tlmCtx.Application.Stake = &newAppStake
+	tlmbem.logger.Info(fmt.Sprintf("operation scheduled: update application %q stake to %v", tlmbem.tlmCtx.Application.Address, newAppStake))
 
 	return nil
 }
@@ -121,17 +139,13 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 // This function distributes the settlement amount according to claim settlement distribution percentages
 // instead of giving the full amount to the supplier. The total amount minted equals the settlement
 // amount, but it's distributed among supplier, DAO, proposer, source owner, and application based on the configured percentages.
-func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
-	ctx context.Context,
-	logger cosmoslog.Logger,
-	tlmCtx TLMContext,
-) error {
-	logger.Info("Global inflation is disabled, distributing settlement amount according to claim settlement distribution percentages")
+func (tlmbem *tlmRelayBurnEqualsMint) processDistributedRewardSettlement() error {
+	tlmbem.logger.Info("Global inflation is disabled, distributing settlement amount according to claim settlement distribution percentages")
 
 	// === PARAMETER EXTRACTION ===
 	// Get the claim settlement distribution from tokenomics parameters
-	claimSettlementDistribution := tlmCtx.TokenomicsParams.GetClaimSettlementDistribution()
-	settlementAmount := tlmCtx.SettlementCoin.Amount
+	claimSettlementDistribution := tlmbem.tlmCtx.TokenomicsParams.GetClaimSettlementDistribution()
+	settlementAmount := tlmbem.tlmCtx.SettlementCoin.Amount
 
 	// === ALLOCATION CALCULATIONS ===
 	// Calculate how much each participant gets from the settlement amount
@@ -169,16 +183,16 @@ func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
 
 	// === MINTING OPERATIONS ===
 	// Mint the total settlement amount to the tokenomics module for distribution
-	tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
+	tlmbem.tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
 		OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT,
 		DestinationModule: tokenomicstypes.ModuleName,
-		Coin:              tlmCtx.SettlementCoin,
+		Coin:              tlmbem.tlmCtx.SettlementCoin,
 	})
-	logger.Info(fmt.Sprintf("operation queued: mint (%v) coins to tokenomics module for distributed settlement", tlmCtx.SettlementCoin))
+	tlmbem.logger.Info(fmt.Sprintf("operation queued: mint (%v) coins to tokenomics module for distributed settlement", tlmbem.tlmCtx.SettlementCoin))
 
 	// Update telemetry information
-	if tlmCtx.SettlementCoin.Amount.IsInt64() {
-		defer telemetry.MintedTokensFromModule(tokenomicstypes.ModuleName, float32(tlmCtx.SettlementCoin.Amount.Int64()))
+	if tlmbem.tlmCtx.SettlementCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(tokenomicstypes.ModuleName, float32(tlmbem.tlmCtx.SettlementCoin.Amount.Int64()))
 	}
 
 	// === REWARD DISTRIBUTION ===
@@ -189,7 +203,7 @@ func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
 		supplierCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierAmount)
 
 		// Transfer from tokenomics module to supplier module
-		tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
+		tlmbem.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
 			OpReason:        tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
 			SenderModule:    tokenomicstypes.ModuleName,
 			RecipientModule: suppliertypes.ModuleName,
@@ -198,70 +212,70 @@ func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
 
 		// Distribute to supplier's shareholders based on revenue share percentage
 		if err := distributeSupplierRewardsToShareHolders(
-			logger,
-			tlmCtx.Result,
+			tlmbem.logger,
+			tlmbem.tlmCtx.Result,
 			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
-			tlmCtx.Supplier,
-			tlmCtx.Service.Id,
+			tlmbem.tlmCtx.Supplier,
+			tlmbem.tlmCtx.Service.Id,
 			supplierAmount,
 		); err != nil {
 			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
 				"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
-				tlmCtx.Supplier.OperatorAddress,
+				tlmbem.tlmCtx.Supplier.OperatorAddress,
 				err,
 			)
 		}
-		logger.Info(fmt.Sprintf("operation queued: distribute (%v) to supplier shareholders", supplierCoin))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to supplier shareholders", supplierCoin))
 	}
 
 	// Distribute to block proposer
 	if !proposerAmount.IsZero() {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-		proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-		tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+		proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(tlmbem.ctx).BlockHeader().ProposerAddress).String()
+		tlmbem.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
 			SenderModule:     tokenomicstypes.ModuleName,
 			RecipientAddress: proposerAddr,
 			Coin:             proposerCoin,
 		})
-		logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
 	}
 
 	// Distribute to service source owner
 	if !sourceOwnerAmount.IsZero() {
 		sourceOwnerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, sourceOwnerAmount)
-		tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+		tlmbem.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
 			SenderModule:     tokenomicstypes.ModuleName,
-			RecipientAddress: tlmCtx.Service.OwnerAddress,
+			RecipientAddress: tlmbem.tlmCtx.Service.OwnerAddress,
 			Coin:             sourceOwnerCoin,
 		})
-		logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmCtx.Service.OwnerAddress))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmbem.tlmCtx.Service.OwnerAddress))
 	}
 
 	// Distribute to DAO
 	if !daoAmount.IsZero() {
 		daoCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, daoAmount)
-		daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
-		tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+		daoRewardAddress := tlmbem.tlmCtx.TokenomicsParams.GetDaoRewardAddress()
+		tlmbem.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION,
 			SenderModule:     tokenomicstypes.ModuleName,
 			RecipientAddress: daoRewardAddress,
 			Coin:             daoCoin,
 		})
-		logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
 	}
 
 	// Distribute to application
 	if !applicationAmount.IsZero() {
 		applicationCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, applicationAmount)
-		tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+		tlmbem.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_APPLICATION_REWARD_DISTRIBUTION,
 			SenderModule:     tokenomicstypes.ModuleName,
-			RecipientAddress: tlmCtx.Application.Address,
+			RecipientAddress: tlmbem.tlmCtx.Application.Address,
 			Coin:             applicationCoin,
 		})
-		logger.Info(fmt.Sprintf("operation queued: send (%v) to application %s", applicationCoin, tlmCtx.Application.Address))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to application %s", applicationCoin, tlmbem.tlmCtx.Application.Address))
 	}
 
 	// === VALIDATION ===
@@ -273,7 +287,7 @@ func (tlm tlmRelayBurnEqualsMint) processDistributedRewardSettlement(
 			totalDistributed, settlementAmount,
 		)
 	}
-	logger.Info(fmt.Sprintf("operation queued: distributed (%v) total settlement coins to all participants", totalDistributed))
+	tlmbem.logger.Info(fmt.Sprintf("operation queued: distributed (%v) total settlement coins to all participants", totalDistributed))
 
 	return nil
 }

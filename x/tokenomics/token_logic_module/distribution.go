@@ -85,7 +85,7 @@ func distributeSupplierRewardsToShareHolders(
 // shareholder based on the rev share percentage of the service.
 // It returns a map of the shareholder address to the amount of uPOKT to distribute.
 // The first shareholder gets any remainder resulting from the integer division.
-// NB: It is publicly exposed to be used in the tests.
+// DEV_NOTE: It is publicly exposed to be used in the tests.
 func GetShareAmountMap(
 	serviceRevShare []*sharedtypes.ServiceRevenueShare,
 	amountToDistribute math.Int,

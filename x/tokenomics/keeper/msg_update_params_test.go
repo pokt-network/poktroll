@@ -110,7 +110,9 @@ func TestMsgUpdateParams(t *testing.T) {
 						SourceOwner: 0.1,
 						Application: 0.6,
 					},
-					DaoRewardAddress: sample.AccAddress(),
+					DaoRewardAddress:            sample.AccAddress(),
+					GlobalInflationPerClaim:     0,
+					ClaimSettlementDistribution: tokenomicstypes.DefaultClaimSettlementDistribution,
 				},
 			},
 
