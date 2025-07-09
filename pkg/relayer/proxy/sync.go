@@ -410,7 +410,7 @@ func getServiceConfig(
 		if parseErr == nil {
 			rpcType := sharedtypes.RPCType(rpcTypeInt)
 			if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
-				return rpcTypeServiceConfig, fmt.Sprintf("RPC_TYPE_%s", rpcType.String())
+				return rpcTypeServiceConfig, fmt.Sprintf("%s_SERVICE_CONFIG", rpcType.String())
 			}
 		}
 	}
