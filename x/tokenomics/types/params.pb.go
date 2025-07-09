@@ -6,13 +6,14 @@ package types
 import (
 	encoding_binary "encoding/binary"
 	fmt "fmt"
+	io "io"
+	math "math"
+	math_bits "math/bits"
+
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
-	io "io"
-	math "math"
-	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -36,10 +37,10 @@ type Params struct {
 	// global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount to be minted on settlement.
 	// GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
 	GlobalInflationPerClaim float64 `protobuf:"fixed64,7,opt,name=global_inflation_per_claim,json=globalInflationPerClaim,proto3" json:"global_inflation_per_claim" yaml:"global_inflation_per_claim"`
-	// claim_settlement_distribution controls how the settlement amount is distributed
+	// mint_equals_burn_claim_distribution controls how the settlement amount is distributed
 	// when global inflation is disabled (global_inflation_per_claim = 0).
 	// MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.
-	ClaimSettlementDistribution ClaimSettlementDistribution `protobuf:"bytes,8,opt,name=claim_settlement_distribution,json=claimSettlementDistribution,proto3" json:"claim_settlement_distribution" yaml:"claim_settlement_distribution"`
+	MintEqualsBurnClaimDistribution MintEqualsBurnClaimDistribution `protobuf:"bytes,8,opt,name=mint_equals_burn_claim_distribution,json=mintEqualsBurnClaimDistribution,proto3" json:"mint_equals_burn_claim_distribution" yaml:"mint_equals_burn_claim_distribution"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -92,11 +93,11 @@ func (m *Params) GetGlobalInflationPerClaim() float64 {
 	return 0
 }
 
-func (m *Params) GetClaimSettlementDistribution() ClaimSettlementDistribution {
+func (m *Params) GetMintEqualsBurnClaimDistribution() MintEqualsBurnClaimDistribution {
 	if m != nil {
-		return m.ClaimSettlementDistribution
+		return m.MintEqualsBurnClaimDistribution
 	}
-	return ClaimSettlementDistribution{}
+	return MintEqualsBurnClaimDistribution{}
 }
 
 // MintAllocationPercentages captures the distribution of newly minted tokens.
@@ -180,10 +181,10 @@ func (m *MintAllocationPercentages) GetApplication() float64 {
 	return 0
 }
 
-// ClaimSettlementDistribution captures the distribution of claimable tokens.
+// MintEqualsBurnClaimDistribution captures the distribution of claimable tokens.
 // The sum of all tokens being burnt from the application's stake must equal 1.
 // GlobalMintEqualsBurnTLM: Only used by the GlobalMintEqualsBurnTLM at the end of claim settlement.
-type ClaimSettlementDistribution struct {
+type MintEqualsBurnClaimDistribution struct {
 	// dao - % of claimable tokens sent to the DAO reward address.
 	Dao float64 `protobuf:"fixed64,1,opt,name=dao,proto3" json:"dao" yaml:"dao"`
 	// proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.
@@ -196,16 +197,16 @@ type ClaimSettlementDistribution struct {
 	Application float64 `protobuf:"fixed64,5,opt,name=application,proto3" json:"application" yaml:"application"`
 }
 
-func (m *ClaimSettlementDistribution) Reset()         { *m = ClaimSettlementDistribution{} }
-func (m *ClaimSettlementDistribution) String() string { return proto.CompactTextString(m) }
-func (*ClaimSettlementDistribution) ProtoMessage()    {}
-func (*ClaimSettlementDistribution) Descriptor() ([]byte, []int) {
+func (m *MintEqualsBurnClaimDistribution) Reset()         { *m = MintEqualsBurnClaimDistribution{} }
+func (m *MintEqualsBurnClaimDistribution) String() string { return proto.CompactTextString(m) }
+func (*MintEqualsBurnClaimDistribution) ProtoMessage()    {}
+func (*MintEqualsBurnClaimDistribution) Descriptor() ([]byte, []int) {
 	return fileDescriptor_577bb6b98de8f6d1, []int{2}
 }
-func (m *ClaimSettlementDistribution) XXX_Unmarshal(b []byte) error {
+func (m *MintEqualsBurnClaimDistribution) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClaimSettlementDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MintEqualsBurnClaimDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	b = b[:cap(b)]
 	n, err := m.MarshalToSizedBuffer(b)
 	if err != nil {
@@ -213,47 +214,47 @@ func (m *ClaimSettlementDistribution) XXX_Marshal(b []byte, deterministic bool) 
 	}
 	return b[:n], nil
 }
-func (m *ClaimSettlementDistribution) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ClaimSettlementDistribution.Merge(m, src)
+func (m *MintEqualsBurnClaimDistribution) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintEqualsBurnClaimDistribution.Merge(m, src)
 }
-func (m *ClaimSettlementDistribution) XXX_Size() int {
+func (m *MintEqualsBurnClaimDistribution) XXX_Size() int {
 	return m.Size()
 }
-func (m *ClaimSettlementDistribution) XXX_DiscardUnknown() {
-	xxx_messageInfo_ClaimSettlementDistribution.DiscardUnknown(m)
+func (m *MintEqualsBurnClaimDistribution) XXX_DiscardUnknown() {
+	xxx_messageInfo_MintEqualsBurnClaimDistribution.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ClaimSettlementDistribution proto.InternalMessageInfo
+var xxx_messageInfo_MintEqualsBurnClaimDistribution proto.InternalMessageInfo
 
-func (m *ClaimSettlementDistribution) GetDao() float64 {
+func (m *MintEqualsBurnClaimDistribution) GetDao() float64 {
 	if m != nil {
 		return m.Dao
 	}
 	return 0
 }
 
-func (m *ClaimSettlementDistribution) GetProposer() float64 {
+func (m *MintEqualsBurnClaimDistribution) GetProposer() float64 {
 	if m != nil {
 		return m.Proposer
 	}
 	return 0
 }
 
-func (m *ClaimSettlementDistribution) GetSupplier() float64 {
+func (m *MintEqualsBurnClaimDistribution) GetSupplier() float64 {
 	if m != nil {
 		return m.Supplier
 	}
 	return 0
 }
 
-func (m *ClaimSettlementDistribution) GetSourceOwner() float64 {
+func (m *MintEqualsBurnClaimDistribution) GetSourceOwner() float64 {
 	if m != nil {
 		return m.SourceOwner
 	}
 	return 0
 }
 
-func (m *ClaimSettlementDistribution) GetApplication() float64 {
+func (m *MintEqualsBurnClaimDistribution) GetApplication() float64 {
 	if m != nil {
 		return m.Application
 	}
@@ -263,7 +264,7 @@ func (m *ClaimSettlementDistribution) GetApplication() float64 {
 func init() {
 	proto.RegisterType((*Params)(nil), "pocket.tokenomics.Params")
 	proto.RegisterType((*MintAllocationPercentages)(nil), "pocket.tokenomics.MintAllocationPercentages")
-	proto.RegisterType((*ClaimSettlementDistribution)(nil), "pocket.tokenomics.ClaimSettlementDistribution")
+	proto.RegisterType((*MintEqualsBurnClaimDistribution)(nil), "pocket.tokenomics.MintEqualsBurnClaimDistribution")
 }
 
 func init() { proto.RegisterFile("pocket/tokenomics/params.proto", fileDescriptor_577bb6b98de8f6d1) }
@@ -340,7 +341,7 @@ func (this *Params) Equal(that interface{}) bool {
 	if this.GlobalInflationPerClaim != that1.GlobalInflationPerClaim {
 		return false
 	}
-	if !this.ClaimSettlementDistribution.Equal(&that1.ClaimSettlementDistribution) {
+	if !this.MintEqualsBurnClaimDistribution.Equal(&that1.MintEqualsBurnClaimDistribution) {
 		return false
 	}
 	return true
@@ -381,14 +382,14 @@ func (this *MintAllocationPercentages) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *ClaimSettlementDistribution) Equal(that interface{}) bool {
+func (this *MintEqualsBurnClaimDistribution) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
 	}
 
-	that1, ok := that.(*ClaimSettlementDistribution)
+	that1, ok := that.(*MintEqualsBurnClaimDistribution)
 	if !ok {
-		that2, ok := that.(ClaimSettlementDistribution)
+		that2, ok := that.(MintEqualsBurnClaimDistribution)
 		if ok {
 			that1 = &that2
 		} else {
@@ -438,7 +439,7 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
-		size, err := m.ClaimSettlementDistribution.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MintEqualsBurnClaimDistribution.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -526,7 +527,7 @@ func (m *MintAllocationPercentages) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *ClaimSettlementDistribution) Marshal() (dAtA []byte, err error) {
+func (m *MintEqualsBurnClaimDistribution) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -536,12 +537,12 @@ func (m *ClaimSettlementDistribution) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClaimSettlementDistribution) MarshalTo(dAtA []byte) (int, error) {
+func (m *MintEqualsBurnClaimDistribution) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ClaimSettlementDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MintEqualsBurnClaimDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -605,7 +606,7 @@ func (m *Params) Size() (n int) {
 	if m.GlobalInflationPerClaim != 0 {
 		n += 9
 	}
-	l = m.ClaimSettlementDistribution.Size()
+	l = m.MintEqualsBurnClaimDistribution.Size()
 	n += 1 + l + sovParams(uint64(l))
 	return n
 }
@@ -634,7 +635,7 @@ func (m *MintAllocationPercentages) Size() (n int) {
 	return n
 }
 
-func (m *ClaimSettlementDistribution) Size() (n int) {
+func (m *MintEqualsBurnClaimDistribution) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -771,7 +772,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			m.GlobalInflationPerClaim = float64(math.Float64frombits(v))
 		case 8:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClaimSettlementDistribution", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MintEqualsBurnClaimDistribution", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -798,7 +799,7 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ClaimSettlementDistribution.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MintEqualsBurnClaimDistribution.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -928,7 +929,7 @@ func (m *MintAllocationPercentages) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClaimSettlementDistribution) Unmarshal(dAtA []byte) error {
+func (m *MintEqualsBurnClaimDistribution) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -951,10 +952,10 @@ func (m *ClaimSettlementDistribution) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ClaimSettlementDistribution: wiretype end group for non-group")
+			return fmt.Errorf("proto: MintEqualsBurnClaimDistribution: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ClaimSettlementDistribution: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MintEqualsBurnClaimDistribution: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

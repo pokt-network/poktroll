@@ -14,8 +14,8 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 	switch asType := asTypeAny.(type) {
 	case MintAllocationPercentages:
 		asTypeIface = &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: &asType}
-	case ClaimSettlementDistribution:
-		asTypeIface = &MsgUpdateParam_AsClaimSettlementDistribution{AsClaimSettlementDistribution: &asType}
+	case MintEqualsBurnClaimDistribution:
+		asTypeIface = &MsgUpdateParam_AsMintEqualsBurnClaimDistribution{AsMintEqualsBurnClaimDistribution: &asType}
 	case string:
 		asTypeIface = &MsgUpdateParam_AsString{AsString: asType}
 	case float64:
@@ -62,11 +62,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateGlobalInflationPerClaim(msg.GetAsFloat())
-	case ParamClaimSettlementDistribution:
-		if err := genericParamTypeIs[*MsgUpdateParam_AsClaimSettlementDistribution](msg); err != nil {
+	case ParamMintEqualsBurnClaimDistribution:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsMintEqualsBurnClaimDistribution](msg); err != nil {
 			return err
 		}
-		return ValidateClaimSettlementDistribution(*msg.GetAsClaimSettlementDistribution())
+		return ValidateMintEqualsBurnClaimDistribution(*msg.GetAsMintEqualsBurnClaimDistribution())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

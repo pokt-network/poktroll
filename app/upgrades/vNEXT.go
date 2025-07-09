@@ -41,9 +41,9 @@ var Upgrade_NEXT = Upgrade{
 		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			// Initialize the new claim_settlement_distribution parameter with default value
+			// Initialize the new mint_equals_burn_claim_distribution parameter with default value
 			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
-			tokenomicsParams.ClaimSettlementDistribution = tokenomicstypes.DefaultClaimSettlementDistribution
+			tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.DefaultMintEqualsBurnClaimDistribution
 			if err := keepers.TokenomicsKeeper.SetParams(ctx, tokenomicsParams); err != nil {
 				return nil, err
 			}

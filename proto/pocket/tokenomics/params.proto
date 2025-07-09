@@ -28,10 +28,10 @@ message Params {
   // GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
   double global_inflation_per_claim = 7 [(gogoproto.jsontag) = "global_inflation_per_claim", (gogoproto.moretags) = "yaml:\"global_inflation_per_claim\""];
 
-  // claim_settlement_distribution controls how the settlement amount is distributed
+  // mint_equals_burn_claim_distribution controls how the settlement amount is distributed
   // when global inflation is disabled (global_inflation_per_claim = 0).
   // MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.
-  ClaimSettlementDistribution claim_settlement_distribution = 8 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claim_settlement_distribution", (gogoproto.moretags) = "yaml:\"claim_settlement_distribution\""];
+  MintEqualsBurnClaimDistribution mint_equals_burn_claim_distribution = 8 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mint_equals_burn_claim_distribution", (gogoproto.moretags) = "yaml:\"mint_equals_burn_claim_distribution\""];
 }
 
 // MintAllocationPercentages captures the distribution of newly minted tokens.
@@ -55,10 +55,10 @@ message MintAllocationPercentages {
   double application = 5 [(gogoproto.jsontag) = "application", (gogoproto.moretags) = "yaml:\"application\""];
 }
 
-// ClaimSettlementDistribution captures the distribution of claimable tokens.
+// MintEqualsBurnClaimDistribution captures the distribution of claimable tokens.
 // The sum of all tokens being burnt from the application's stake must equal 1.
 // GlobalMintEqualsBurnTLM: Only used by the GlobalMintEqualsBurnTLM at the end of claim settlement.
-message ClaimSettlementDistribution {
+message MintEqualsBurnClaimDistribution {
   // dao - % of claimable tokens sent to the DAO reward address.
   double dao = 1 [(gogoproto.jsontag) = "dao", (gogoproto.moretags) = "yaml:\"dao\""];
 

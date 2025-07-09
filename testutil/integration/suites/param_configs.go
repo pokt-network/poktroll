@@ -21,14 +21,14 @@ import (
 type ParamType = string
 
 const (
-	ParamTypeInt64                       ParamType = "int64"
-	ParamTypeUint64                      ParamType = "uint64"
-	ParamTypeFloat64                     ParamType = "float64"
-	ParamTypeString                      ParamType = "string"
-	ParamTypeBytes                       ParamType = "uint8"
-	ParamTypeCoin                        ParamType = "Coin"
-	ParamTypeMintAllocationPercentages   ParamType = "MintAllocationPercentages"
-	ParamTypeClaimSettlementDistribution ParamType = "ClaimSettlementDistribution"
+	ParamTypeInt64                           ParamType = "int64"
+	ParamTypeUint64                          ParamType = "uint64"
+	ParamTypeFloat64                         ParamType = "float64"
+	ParamTypeString                          ParamType = "string"
+	ParamTypeBytes                           ParamType = "uint8"
+	ParamTypeCoin                            ParamType = "Coin"
+	ParamTypeMintAllocationPercentages       ParamType = "MintAllocationPercentages"
+	ParamTypeMintEqualsBurnClaimDistribution ParamType = "MintEqualsBurnClaimDistribution"
 )
 
 // ModuleParamConfig holds type information about a module's parameters update
@@ -240,16 +240,16 @@ var (
 			QueryParamsResponse:     tokenomicstypes.QueryParamsResponse{},
 		},
 		ValidParams: tokenomicstypes.Params{
-			MintAllocationPercentages:   tokenomicstypes.DefaultMintAllocationPercentages,
-			DaoRewardAddress:            sample.AccAddress(),
-			GlobalInflationPerClaim:     0.666,
-			ClaimSettlementDistribution: tokenomicstypes.DefaultClaimSettlementDistribution,
+			MintAllocationPercentages:       tokenomicstypes.DefaultMintAllocationPercentages,
+			DaoRewardAddress:                sample.AccAddress(),
+			GlobalInflationPerClaim:         0.666,
+			MintEqualsBurnClaimDistribution: tokenomicstypes.DefaultMintEqualsBurnClaimDistribution,
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeMintAllocationPercentages:   tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{},
-			ParamTypeClaimSettlementDistribution: tokenomicstypes.MsgUpdateParam_AsClaimSettlementDistribution{},
-			ParamTypeString:                      tokenomicstypes.MsgUpdateParam_AsString{},
-			ParamTypeFloat64:                     tokenomicstypes.MsgUpdateParam_AsFloat{},
+			ParamTypeMintAllocationPercentages:       tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{},
+			ParamTypeMintEqualsBurnClaimDistribution: tokenomicstypes.MsgUpdateParam_AsMintEqualsBurnClaimDistribution{},
+			ParamTypeString:                          tokenomicstypes.MsgUpdateParam_AsString{},
+			ParamTypeFloat64:                         tokenomicstypes.MsgUpdateParam_AsFloat{},
 		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,

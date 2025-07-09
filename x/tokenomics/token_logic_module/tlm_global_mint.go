@@ -85,14 +85,14 @@ func (tlmgm *tlmGlobalMint) processInflationMint() (cosmostypes.Coin, error) {
 	globalInflationPerClaim := tlmgm.tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
 	if globalInflationPerClaim == 0 {
 		tlmgm.logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
-		return cosmostypes.Coin{}, nil
+		return cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0), nil
 	}
 
 	// Convert to rat for safe numeric operators
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	if err != nil {
 		tlmgm.logger.Error(fmt.Sprintf("error converting global inflation per claim due to: %v", err))
-		return cosmostypes.Coin{}, err
+		return cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0), err
 	}
 
 	// === MINT CALCULATION ===
@@ -100,7 +100,7 @@ func (tlmgm *tlmGlobalMint) processInflationMint() (cosmostypes.Coin, error) {
 	// Determine how much new uPOKT to mint based on global inflation
 	newMintCoin := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmgm.tlmCtx.SettlementCoin, globalInflationPerClaimRat)
 	if newMintCoin.IsZero() {
-		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsCoinIsZero.Wrapf("newMintCoin cannot be zero, TLMContext: %+v", tlmgm.tlmCtx)
+		return cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0), tokenomicstypes.ErrTokenomicsCoinIsZero.Wrapf("newMintCoin cannot be zero, TLMContext: %+v", tlmgm.tlmCtx)
 	}
 
 	// === MINT OPERATION ===
@@ -259,7 +259,6 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 
 	return nil
 }
-
 
 // CalculateGlobalPerClaimMintInflationFromSettlementAmount calculates the amount
 // of uPOKT to mint based on the global per claim inflation rate as a function of

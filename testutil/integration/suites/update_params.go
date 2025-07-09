@@ -245,41 +245,60 @@ func (s *ParamsSuite) RunUpdateParamAsSigner(
 	msgAsTypeType := reflect.TypeOf(msgAsTypeStruct)
 	msgAsTypeValue := reflect.New(msgAsTypeType)
 	switch paramType {
+
+	// Uint64
 	case ParamTypeUint64:
 		// =~ msg.AsType.AsUint64 = paramReflectValue.Interface().(uint64)
 		msgAsTypeValue.Elem().FieldByName("AsUint64").Set(paramReflectValue)
+
+	// Int64
 	case ParamTypeInt64:
 		// =~ msg.AsType.AsInt64 = paramReflectValue.Interface().(int64)
 		msgAsTypeValue.Elem().FieldByName("AsInt64").Set(paramReflectValue)
+
+	// Float64
 	case ParamTypeFloat64:
 		// =~ msg.AsType.AsFloat = paramReflectValue.Interface().(float64)
 		msgAsTypeValue.Elem().FieldByName("AsFloat").Set(paramReflectValue)
+
+	// String
 	case ParamTypeString:
 		// =~ msg.AsType.AsString = paramReflectValue.Interface().(string)
 		msgAsTypeValue.Elem().FieldByName("AsString").Set(paramReflectValue)
+
+	// Bytes
 	case ParamTypeBytes:
 		// =~ msg.AsType.AsBytes = paramReflectValue.Interface().([]byte)
 		msgAsTypeValue.Elem().FieldByName("AsBytes").Set(paramReflectValue)
+
+	// Coin
 	case ParamTypeCoin:
 		// =~ msg.AsType.AsCoin = paramReflectValue.Interface().(*cosmostypes.Coin)
 		msgAsTypeValue.Elem().FieldByName("AsCoin").Set(paramReflectValue)
+
+	// MintAllocationPercentages
 	case ParamTypeMintAllocationPercentages:
-		// DEB_NOTE: Params.MintAllocationPercentages is a struct (not a pointer) because
-		// it is not nullable. As a result, in this case, we need to create a pointer to
-		// assign the paramValue to (because it won't be a pointer itself).
+		// DEV_NOTE: Params.MintAllocationPercentages is a struct (not a pointer) because it is not nullable.
+		// As a result, in this case, we need to create a pointer to assign the paramValue to
+		// because it won't be a pointer itself.
 		asMintAllocationPercentagesField := msgAsTypeValue.Elem().FieldByName("AsMintAllocationPercentages")
 		// =~ msg.AsType.AsMintAllocationPercentages = new(MsgUpdateParam_AsMintAllocationPercentages)
 		asMintAllocationPercentagesField.Set(reflect.New(paramReflectValue.Type()))
 		// =~ *msg.AsType.AsMintAllocationPercentages = paramReflectValue.Interface().(MintAllocationPercentages)
 		asMintAllocationPercentagesField.Elem().Set(paramReflectValue)
-	case ParamTypeClaimSettlementDistribution:
-		// Similar to MintAllocationPercentages, ClaimSettlementDistribution is a struct (not a pointer)
-		// because it is not nullable. We need to create a pointer to assign the paramValue to.
-		asClaimSettlementDistributionField := msgAsTypeValue.Elem().FieldByName("AsClaimSettlementDistribution")
-		// =~ msg.AsType.AsClaimSettlementDistribution = new(MsgUpdateParam_AsClaimSettlementDistribution)
-		asClaimSettlementDistributionField.Set(reflect.New(paramReflectValue.Type()))
-		// =~ *msg.AsType.AsClaimSettlementDistribution = paramReflectValue.Interface().(ClaimSettlementDistribution)
-		asClaimSettlementDistributionField.Elem().Set(paramReflectValue)
+
+	// MintEqualsBurnClaimDistribution
+	case ParamTypeMintEqualsBurnClaimDistribution:
+		// DEV_NOTE: Params.MintEqualsBurnClaimDistribution is a struct (not a pointer) because it is not nullable.
+		// As a result, in this case, we need to create a pointer to assign the paramValue to
+		// because it won't be a pointer itself.
+		asMintEqualsBurnClaimDistributionField := msgAsTypeValue.Elem().FieldByName("AsMintEqualsBurnClaimDistribution")
+		// =~ msg.AsType.AsMintEqualsBurnClaimDistribution = new(MsgUpdateParam_AsMintEqualsBurnClaimDistribution)
+		asMintEqualsBurnClaimDistributionField.Set(reflect.New(paramReflectValue.Type()))
+		// =~ *msg.AsType.AsMintEqualsBurnClaimDistribution = paramReflectValue.Interface().(MintEqualsBurnClaimDistribution)
+		asMintEqualsBurnClaimDistributionField.Elem().Set(paramReflectValue)
+
+	// Default
 	default:
 		t.Fatalf("ERROR: unknown field type %q", paramType)
 	}
@@ -290,13 +309,13 @@ func (s *ParamsSuite) RunUpdateParamAsSigner(
 
 	// Send an authz MsgExec from the authority address.
 	execMsg := authz.NewMsgExec(signerAddr, []cosmostypes.Msg{msgUpdateParam})
-	msgRespsBz, err := s.RunAuthzExecMsg(t, signerAddr, &execMsg)
+	msgRespBz, err := s.RunAuthzExecMsg(t, signerAddr, &execMsg)
 	if err != nil {
 		return nil, err
 	}
 
-	require.Equal(t, 1, len(msgRespsBz), "expected exactly 1 message response")
-	return msgRespsBz[0], err
+	require.Equal(t, 1, len(msgRespBz), "expected exactly 1 message response")
+	return msgRespBz[0], err
 }
 
 // RequireModuleHasDefaultParams asserts that the given module's parameters are set

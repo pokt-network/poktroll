@@ -7,6 +7,10 @@ import (
 	context "context"
 	encoding_binary "encoding/binary"
 	fmt "fmt"
+	io "io"
+	math "math"
+	math_bits "math/bits"
+
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/msgservice"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
@@ -16,9 +20,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	io "io"
-	math "math"
-	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -134,7 +135,7 @@ type MsgUpdateParam struct {
 	//	*MsgUpdateParam_AsMintAllocationPercentages
 	//	*MsgUpdateParam_AsString
 	//	*MsgUpdateParam_AsFloat
-	//	*MsgUpdateParam_AsClaimSettlementDistribution
+	//	*MsgUpdateParam_AsMintEqualsBurnClaimDistribution
 	AsType isMsgUpdateParam_AsType `protobuf_oneof:"as_type"`
 }
 
@@ -182,14 +183,14 @@ type MsgUpdateParam_AsString struct {
 type MsgUpdateParam_AsFloat struct {
 	AsFloat float64 `protobuf:"fixed64,5,opt,name=as_float,json=asFloat,proto3,oneof" json:"as_float"`
 }
-type MsgUpdateParam_AsClaimSettlementDistribution struct {
-	AsClaimSettlementDistribution *ClaimSettlementDistribution `protobuf:"bytes,6,opt,name=as_claim_settlement_distribution,json=asClaimSettlementDistribution,proto3,oneof" json:"as_claim_settlement_distribution" yaml:"as_claim_settlement_distribution"`
+type MsgUpdateParam_AsMintEqualsBurnClaimDistribution struct {
+	AsMintEqualsBurnClaimDistribution *MintEqualsBurnClaimDistribution `protobuf:"bytes,6,opt,name=as_mint_equals_burn_claim_distribution,json=asMintEqualsBurnClaimDistribution,proto3,oneof" json:"as_mint_equals_burn_claim_distribution" yaml:"as_mint_equals_burn_claim_distribution"`
 }
 
-func (*MsgUpdateParam_AsMintAllocationPercentages) isMsgUpdateParam_AsType()   {}
-func (*MsgUpdateParam_AsString) isMsgUpdateParam_AsType()                      {}
-func (*MsgUpdateParam_AsFloat) isMsgUpdateParam_AsType()                       {}
-func (*MsgUpdateParam_AsClaimSettlementDistribution) isMsgUpdateParam_AsType() {}
+func (*MsgUpdateParam_AsMintAllocationPercentages) isMsgUpdateParam_AsType()       {}
+func (*MsgUpdateParam_AsString) isMsgUpdateParam_AsType()                          {}
+func (*MsgUpdateParam_AsFloat) isMsgUpdateParam_AsType()                           {}
+func (*MsgUpdateParam_AsMintEqualsBurnClaimDistribution) isMsgUpdateParam_AsType() {}
 
 func (m *MsgUpdateParam) GetAsType() isMsgUpdateParam_AsType {
 	if m != nil {
@@ -233,9 +234,9 @@ func (m *MsgUpdateParam) GetAsFloat() float64 {
 	return 0
 }
 
-func (m *MsgUpdateParam) GetAsClaimSettlementDistribution() *ClaimSettlementDistribution {
-	if x, ok := m.GetAsType().(*MsgUpdateParam_AsClaimSettlementDistribution); ok {
-		return x.AsClaimSettlementDistribution
+func (m *MsgUpdateParam) GetAsMintEqualsBurnClaimDistribution() *MintEqualsBurnClaimDistribution {
+	if x, ok := m.GetAsType().(*MsgUpdateParam_AsMintEqualsBurnClaimDistribution); ok {
+		return x.AsMintEqualsBurnClaimDistribution
 	}
 	return nil
 }
@@ -246,7 +247,7 @@ func (*MsgUpdateParam) XXX_OneofWrappers() []interface{} {
 		(*MsgUpdateParam_AsMintAllocationPercentages)(nil),
 		(*MsgUpdateParam_AsString)(nil),
 		(*MsgUpdateParam_AsFloat)(nil),
-		(*MsgUpdateParam_AsClaimSettlementDistribution)(nil),
+		(*MsgUpdateParam_AsMintEqualsBurnClaimDistribution)(nil),
 	}
 }
 
@@ -634,16 +635,16 @@ func (m *MsgUpdateParam_AsFloat) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	dAtA[i] = 0x29
 	return len(dAtA) - i, nil
 }
-func (m *MsgUpdateParam_AsClaimSettlementDistribution) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgUpdateParam_AsMintEqualsBurnClaimDistribution) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *MsgUpdateParam_AsClaimSettlementDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MsgUpdateParam_AsMintEqualsBurnClaimDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.AsClaimSettlementDistribution != nil {
+	if m.AsMintEqualsBurnClaimDistribution != nil {
 		{
-			size, err := m.AsClaimSettlementDistribution.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.AsMintEqualsBurnClaimDistribution.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -780,14 +781,14 @@ func (m *MsgUpdateParam_AsFloat) Size() (n int) {
 	n += 9
 	return n
 }
-func (m *MsgUpdateParam_AsClaimSettlementDistribution) Size() (n int) {
+func (m *MsgUpdateParam_AsMintEqualsBurnClaimDistribution) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.AsClaimSettlementDistribution != nil {
-		l = m.AsClaimSettlementDistribution.Size()
+	if m.AsMintEqualsBurnClaimDistribution != nil {
+		l = m.AsMintEqualsBurnClaimDistribution.Size()
 		n += 1 + l + sovTx(uint64(l))
 	}
 	return n
@@ -1185,7 +1186,7 @@ func (m *MsgUpdateParam) Unmarshal(dAtA []byte) error {
 			m.AsType = &MsgUpdateParam_AsFloat{float64(math.Float64frombits(v))}
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AsClaimSettlementDistribution", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AsMintEqualsBurnClaimDistribution", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1212,11 +1213,11 @@ func (m *MsgUpdateParam) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &ClaimSettlementDistribution{}
+			v := &MintEqualsBurnClaimDistribution{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.AsType = &MsgUpdateParam_AsClaimSettlementDistribution{v}
+			m.AsType = &MsgUpdateParam_AsMintEqualsBurnClaimDistribution{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -32,9 +32,9 @@ var (
 	}
 
 	// MintEqualsBurn Supporting TLM Params
-	KeyClaimSettlementDistribution     = []byte("ClaimSettlementDistribution")
-	ParamClaimSettlementDistribution   = "claim_settlement_distribution"
-	DefaultClaimSettlementDistribution = ClaimSettlementDistribution{
+	KeyMintEqualsBurnClaimDistribution     = []byte("MintEqualsBurnClaimDistribution")
+	ParamMintEqualsBurnClaimDistribution   = "mint_equals_burn_claim_distribution"
+	DefaultMintEqualsBurnClaimDistribution = MintEqualsBurnClaimDistribution{
 		Dao:         0.1,
 		Proposer:    0.14,
 		Supplier:    0.73,
@@ -55,13 +55,13 @@ func NewParams(
 	mintAllocationPercentages MintAllocationPercentages,
 	daoRewardAddress string,
 	globalInflationPerClaim float64,
-	claimSettlementDistribution ClaimSettlementDistribution,
+	mintEqualsBurnClaimDistribution MintEqualsBurnClaimDistribution,
 ) Params {
 	return Params{
-		MintAllocationPercentages:   mintAllocationPercentages,
-		DaoRewardAddress:            daoRewardAddress,
-		GlobalInflationPerClaim:     globalInflationPerClaim,
-		ClaimSettlementDistribution: claimSettlementDistribution,
+		MintAllocationPercentages:       mintAllocationPercentages,
+		DaoRewardAddress:                daoRewardAddress,
+		GlobalInflationPerClaim:         globalInflationPerClaim,
+		MintEqualsBurnClaimDistribution: mintEqualsBurnClaimDistribution,
 	}
 }
 
@@ -71,7 +71,7 @@ func DefaultParams() Params {
 		DefaultMintAllocationPercentages,
 		DefaultDaoRewardAddress,
 		DefaultGlobalInflationPerClaim,
-		DefaultClaimSettlementDistribution,
+		DefaultMintEqualsBurnClaimDistribution,
 	)
 }
 
@@ -94,9 +94,9 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			ValidateGlobalInflationPerClaim,
 		),
 		paramtypes.NewParamSetPair(
-			KeyClaimSettlementDistribution,
-			&p.ClaimSettlementDistribution,
-			ValidateClaimSettlementDistribution,
+			KeyMintEqualsBurnClaimDistribution,
+			&p.MintEqualsBurnClaimDistribution,
+			ValidateMintEqualsBurnClaimDistribution,
 		),
 	}
 }
@@ -115,7 +115,7 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
-	if err := ValidateClaimSettlementDistribution(params.ClaimSettlementDistribution); err != nil {
+	if err := ValidateMintEqualsBurnClaimDistribution(params.MintEqualsBurnClaimDistribution); err != nil {
 		return err
 	}
 
@@ -231,37 +231,37 @@ func ValidateGlobalInflationPerClaim(GlobalInflationPerClaimAny any) error {
 	return nil
 }
 
-// ValidateClaimSettlementDistribution validates the ClaimSettlementDistribution param.
-func ValidateClaimSettlementDistribution(claimSettlementDistributionAny any) error {
-	claimSettlementDistribution, ok := claimSettlementDistributionAny.(ClaimSettlementDistribution)
+// ValidateMintEqualsBurnClaimDistribution validates the MintEqualsBurnClaimDistribution param.
+func ValidateMintEqualsBurnClaimDistribution(mintEqualsBurnClaimDistributionAny any) error {
+	mintEqualsBurnClaimDistribution, ok := mintEqualsBurnClaimDistributionAny.(MintEqualsBurnClaimDistribution)
 	if !ok {
-		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type for claim_settlement_distribution: %T", claimSettlementDistributionAny)
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type for mint_equals_burn_claim_distribution: %T", mintEqualsBurnClaimDistributionAny)
 	}
 
 	// Validate individual percentages
-	if err := validateParamValueGTEZero(claimSettlementDistribution.Dao, "DAO"); err != nil {
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.Dao, "DAO"); err != nil {
 		return err
 	}
 
-	if err := validateParamValueGTEZero(claimSettlementDistribution.Proposer, "proposer"); err != nil {
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.Proposer, "proposer"); err != nil {
 		return err
 	}
 
-	if err := validateParamValueGTEZero(claimSettlementDistribution.Supplier, "supplier"); err != nil {
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.Supplier, "supplier"); err != nil {
 		return err
 	}
 
-	if err := validateParamValueGTEZero(claimSettlementDistribution.SourceOwner, "source owner"); err != nil {
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.SourceOwner, "source owner"); err != nil {
 		return err
 	}
 
-	if err := validateParamValueGTEZero(claimSettlementDistribution.Application, "application"); err != nil {
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.Application, "application"); err != nil {
 		return err
 	}
 
 	// Validate sum equals 1
 	const epsilon = 1e-10 // Small epsilon value for floating-point comparison
-	sum := claimSettlementDistribution.Sum()
+	sum := mintEqualsBurnClaimDistribution.Sum()
 	// TODO_MAINNET_CRITICAL(@red-0ne): I prefer using big.Rat and have a strict 1.0 sum. These might add up or skew our tokenomics a bit.
 	if math.Abs(sum-1) > epsilon {
 		return ErrTokenomicsParamInvalid.Wrapf("claim settlement distribution percentages do not add to 1.0: got %f", sum)

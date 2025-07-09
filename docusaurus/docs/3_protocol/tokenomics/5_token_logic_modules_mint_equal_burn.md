@@ -91,7 +91,7 @@ The `Distributed Settlement` feature provides an alternative to the traditional 
 
 ### Configuration
 
-This feature is automatically activated when `global_inflation_per_claim = 0` and uses the `claim_settlement_distribution` governance parameter to determine how to split the settlement amount:
+This feature is automatically activated when `global_inflation_per_claim = 0` and uses the `mint_equals_burn_claim_distribution` governance parameter to determine how to split the settlement amount:
 
 - **When `global_inflation_per_claim > 0`**: Traditional global mint behavior with mint allocation percentages
 - **When `global_inflation_per_claim = 0`**: Distributed settlement using claim settlement distribution percentages
@@ -101,7 +101,7 @@ This feature is automatically activated when `global_inflation_per_claim = 0` an
 When `global_inflation_per_claim = 0`:
 
 1. **Settlement Amount Calculation**: Same as traditional Mint=Burn - based on work done
-2. **Percentage Distribution**: Settlement amount is split according to `claim_settlement_distribution`:
+2. **Percentage Distribution**: Settlement amount is split according to `mint_equals_burn_claim_distribution`:
    - **Supplier**: 70% (distributed to supplier and revenue shareholders)
    - **DAO**: 10% (sent to DAO reward address)
    - **Proposer**: 5% (sent to block proposer)

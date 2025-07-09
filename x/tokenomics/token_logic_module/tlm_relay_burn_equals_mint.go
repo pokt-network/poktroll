@@ -130,35 +130,35 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 	// === PARAMETER EXTRACTION ===
 
 	// Get the claim settlement distribution from tokenomics parameters
-	claimSettlementDistribution := tlmbem.tlmCtx.TokenomicsParams.GetClaimSettlementDistribution()
+	mintEqualsBurnClaimDistribution := tlmbem.tlmCtx.TokenomicsParams.GetMintEqualsBurnClaimDistribution()
 	settlementAmount := tlmbem.tlmCtx.SettlementCoin.Amount
 
 	// === ALLOCATION CALCULATIONS ===
 	// Calculate how much each participant gets from the settlement amount
 
 	// Calculate supplier allocation
-	supplierAllocationRat, err := encoding.Float64ToRat(claimSettlementDistribution.Supplier)
+	supplierAllocationRat, err := encoding.Float64ToRat(mintEqualsBurnClaimDistribution.Supplier)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting supplier allocation percentage: %v", err)
 	}
 	supplierAmount := calculateAllocationAmount(settlementAmount, supplierAllocationRat)
 
 	// Calculate proposer allocation
-	proposerAllocationRat, err := encoding.Float64ToRat(claimSettlementDistribution.Proposer)
+	proposerAllocationRat, err := encoding.Float64ToRat(mintEqualsBurnClaimDistribution.Proposer)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting proposer allocation percentage: %v", err)
 	}
 	proposerAmount := calculateAllocationAmount(settlementAmount, proposerAllocationRat)
 
 	// Calculate source owner allocation
-	sourceOwnerAllocationRat, err := encoding.Float64ToRat(claimSettlementDistribution.SourceOwner)
+	sourceOwnerAllocationRat, err := encoding.Float64ToRat(mintEqualsBurnClaimDistribution.SourceOwner)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting source owner allocation percentage: %v", err)
 	}
 	sourceOwnerAmount := calculateAllocationAmount(settlementAmount, sourceOwnerAllocationRat)
 
 	// Calculate application allocation
-	applicationAllocationRat, err := encoding.Float64ToRat(claimSettlementDistribution.Application)
+	applicationAllocationRat, err := encoding.Float64ToRat(mintEqualsBurnClaimDistribution.Application)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting application allocation percentage: %v", err)
 	}
