@@ -1,5 +1,10 @@
 package flags
 
+import (
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/spf13/cobra"
+)
+
 const (
 	// OmittedDefaultFlagValue is used whenever a flag is required but no reasonable default value can be provided.
 	// In most cases, this forces the user to specify the flag value to avoid unintended behavior.
@@ -49,3 +54,23 @@ const (
 	BetaNetworkName  = "beta"
 	MainNetworkName  = "main"
 )
+
+// AddTxFlagsToCmd adds the standard transaction flags to the given command
+// and updates the help text to use "upokt" instead of "uatom" denomination.
+func AddTxFlagsToCmd(cmd *cobra.Command) {
+	// Add the standard cosmos-sdk transaction flags
+	flags.AddTxFlagsToCmd(cmd)
+
+	// Update the help text for flags that reference "uatom" to use "upokt"
+	if feesFlag := cmd.Flags().Lookup(flags.FlagFees); feesFlag != nil {
+		feesFlag.Usage = "Fees to pay along with transaction; eg: 10upokt"
+	}
+
+	if gasPricesFlag := cmd.Flags().Lookup(flags.FlagGasPrices); gasPricesFlag != nil {
+		gasPricesFlag.Usage = "Gas prices in decimal format to determine the transaction fee (e.g. 0.1upokt)"
+	}
+
+	if gasFlag := cmd.Flags().Lookup(flags.FlagGas); gasFlag != nil {
+		gasFlag.Usage = "gas limit to set per-transaction; set to \"auto\" to calculate sufficient gas automatically. Note: \"auto\" option doesn't always report accurate results. Set a valid coin value to adjust the result. Can be used instead of \"fees\". (default 200upokt)"
+	}
+}

@@ -210,7 +210,7 @@ Some of the parameters you can configure include:
 - `~/validator.json`: The path to your validator JSON file.
 - `--from=validator`: Specifies the local key to sign the transaction.
 - `--network=<network>`: Replace `<network>` with the name of the network you are joining (e.g., `beta` for testnet, `main` for mainnet).
-- `--fees 20000upokt`: Transaction fees currently configured on both beta and mainnet.
+- `--fees 200upokt`: Transaction fees currently configured on both beta and mainnet.
 
 After running the command, you should see a transaction confirmation with an output hash.
 

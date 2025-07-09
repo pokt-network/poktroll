@@ -154,6 +154,9 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 		panic(err)
 	}
 
+	// Fix bank command help text to use "upokt" instead of "uatom"
+	fixBankCommandHelpText(rootCmd)
+
 	// add relayer command
 	rootCmd.AddCommand(
 		relayercmd.RelayerCmd(),
@@ -163,6 +166,47 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	rootCmd.PersistentFlags().String(flags.FlagNetwork, flags.DefaultNetwork, flags.FlagNetworkUsage)
 
 	return rootCmd
+}
+
+// fixBankCommandHelpText updates the help text for bank commands to use "upokt" instead of "uatom"
+func fixBankCommandHelpText(rootCmd *cobra.Command) {
+	// Find the tx command
+	txCmd := findSubCommand(rootCmd, "tx")
+	if txCmd == nil {
+		return
+	}
+	
+	// Find the bank command
+	bankCmd := findSubCommand(txCmd, "bank")
+	if bankCmd == nil {
+		return
+	}
+	
+	// Update all bank subcommands
+	for _, cmd := range bankCmd.Commands() {
+		// Update the help text for transaction flags that reference "uatom"
+		if feesFlag := cmd.Flags().Lookup("fees"); feesFlag != nil {
+			feesFlag.Usage = "Fees to pay along with transaction; eg: 10upokt"
+		}
+		
+		if gasPricesFlag := cmd.Flags().Lookup("gas-prices"); gasPricesFlag != nil {
+			gasPricesFlag.Usage = "Gas prices in decimal format to determine the transaction fee (e.g. 0.1upokt)"
+		}
+		
+		if gasFlag := cmd.Flags().Lookup("gas"); gasFlag != nil {
+			gasFlag.Usage = "gas limit to set per-transaction; set to \"auto\" to calculate sufficient gas automatically. Note: \"auto\" option doesn't always report accurate results. Set a valid coin value to adjust the result. Can be used instead of \"fees\". (default 200upokt)"
+		}
+	}
+}
+
+// findSubCommand finds a subcommand by name
+func findSubCommand(cmd *cobra.Command, name string) *cobra.Command {
+	for _, subCmd := range cmd.Commands() {
+		if subCmd.Name() == name {
+			return subCmd
+		}
+	}
+	return nil
 }
 
 func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) (err error) {

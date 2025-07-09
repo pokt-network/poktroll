@@ -8,10 +8,10 @@ import (
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	pocketflags "github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -67,7 +67,7 @@ $ pocketd tx service add-service "svc1" "service_one" 1 --keyring-backend test -
 		},
 	}
 
-	flags.AddTxFlagsToCmd(cmd)
+	pocketflags.AddTxFlagsToCmd(cmd)
 
 	return cmd
 }

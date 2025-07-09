@@ -9,7 +9,7 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/cmd/flags"
+	pocketflags "github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -37,22 +37,22 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 	// Add a string flag for providing a passphrase to decrypt the Morse keyfile.
 	claimAcctCmd.Flags().StringVarP(
 		&morseKeyfileDecryptPassphrase,
-		flags.FlagPassphrase,
-		flags.FlagPassphraseShort,
+		pocketflags.FlagPassphrase,
+		pocketflags.FlagPassphraseShort,
 		"",
-		flags.FlagPassphraseUsage,
+		pocketflags.FlagPassphraseUsage,
 	)
 
 	// Add a bool flag indicating whether to skip the passphrase prompt.
 	claimAcctCmd.Flags().BoolVar(
 		&noPassphrase,
-		flags.FlagNoPassphrase,
+		pocketflags.FlagNoPassphrase,
 		false,
-		flags.FlagNoPassphraseUsage,
+		pocketflags.FlagNoPassphraseUsage,
 	)
 
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
-	cosmosflags.AddTxFlagsToCmd(claimAcctCmd)
+	pocketflags.AddTxFlagsToCmd(claimAcctCmd)
 
 	return claimAcctCmd
 }
@@ -122,7 +122,7 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := pocketflags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}

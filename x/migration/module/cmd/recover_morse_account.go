@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
-	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -11,7 +10,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/cmd/flags"
+	pocketflags "github.com/pokt-network/poktroll/cmd/flags"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -48,11 +47,11 @@ pocketd tx migration recover-account dao pnf --from=pnf --network=main --keyring
 	}
 
 	// Add standard Cosmos SDK transaction flags
-	cosmosflags.AddTxFlagsToCmd(recoverCmd)
+	pocketflags.AddTxFlagsToCmd(recoverCmd)
 
 	// Add common pocket specific flags
-	recoverCmd.Flags().String(flags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
-	recoverCmd.Flags().String(flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
+	recoverCmd.Flags().String(pocketflags.FlagLogLevel, pocketflags.DefaultLogLevel, pocketflags.FlagLogLevelUsage)
+	recoverCmd.Flags().String(pocketflags.FlagLogOutput, pocketflags.DefaultLogOutput, pocketflags.FlagLogOutputUsage)
 
 	return recoverCmd
 }

@@ -7,14 +7,13 @@ import (
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
-	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/cmd/flags"
+	pocketflags "github.com/pokt-network/poktroll/cmd/flags"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -45,10 +44,10 @@ For more documentation, refer to: https://dev.poktroll.com/operate/morse_migrati
 	}
 
 	// Add Cosmos SDK standard flags to the command
-	cosmosflags.AddTxFlagsToCmd(importMorseAcctsCmd)
+	pocketflags.AddTxFlagsToCmd(importMorseAcctsCmd)
 
-	importMorseAcctsCmd.Flags().String(flags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
-	importMorseAcctsCmd.Flags().String(flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
+	importMorseAcctsCmd.Flags().String(pocketflags.FlagLogLevel, pocketflags.DefaultLogLevel, pocketflags.FlagLogLevelUsage)
+	importMorseAcctsCmd.Flags().String(pocketflags.FlagLogOutput, pocketflags.DefaultLogOutput, pocketflags.FlagLogOutputUsage)
 	importMorseAcctsCmd.Flags().BoolVar(&updateHashOnly, flagUpdateHashOnly, false, "Update the hash of the Morse account state JSON file after auto-unstaking accounts")
 
 	return importMorseAcctsCmd
@@ -151,7 +150,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	)
 
 	// Initialize the tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := pocketflags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
