@@ -19,7 +19,7 @@ import (
 )
 
 // rpcTypeHeader is the header key for the RPC type, provided by the client.
-const rpcTypeHeader = "Rpc-Type"
+const RPCTypeHeader = "Rpc-Type"
 
 // - relayProbabilisticDebugProb is the probability of a debug log being shown for a relay request.
 // - This has to be very low to avoid spamming the logs for RelayMiners that end up serving millions of relays.
@@ -270,5 +270,5 @@ func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string)
 func isWebSocketRequest(r *http.Request) bool {
 	// The request must have the "Rpc-Type" header set to "websocket".
 	// This will be handled in the client, likely a PATH gateway.
-	return r.Header.Get(rpcTypeHeader) == string(sharedtypes.RPCType_WEBSOCKET)
+	return r.Header.Get(RPCTypeHeader) == string(sharedtypes.RPCType_WEBSOCKET)
 }

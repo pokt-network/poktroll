@@ -407,7 +407,7 @@ func getServiceConfig(
 	// 	- The RPC type is set for the service
 	// 	- The RPC type specific service config is available
 	// Then, use the RPC type specific service config.
-	rpcTypeHeaderValue := request.Header.Get(rpcTypeHeader)
+	rpcTypeHeaderValue := request.Header.Get(RPCTypeHeader)
 
 	if rpcTypeHeaderValue != "" {
 		// Attempt to convert string header value to int32.

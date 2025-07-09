@@ -70,14 +70,14 @@ type YAMLRelayMinerMetricsConfig struct {
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
-	ListenUrl             string                                                `yaml:"listen_url"`
-	ServiceConfig         YAMLRelayMinerSupplierServiceConfig                   `yaml:"service_config"`
-	RPCTypeServiceConfigs map[types.RPCType]YAMLRelayMinerSupplierServiceConfig `yaml:"rpc_type_service_configs"`
-	ServiceId             string                                                `yaml:"service_id"`
-	SigningKeyNames       []string                                              `yaml:"signing_key_names"`
-	RequestTimeoutSeconds uint64                                                `yaml:"request_timeout_seconds"`
-	MaxBodySize           string                                                `yaml:"max_body_size"`
-	XForwardedHostLookup  bool                                                  `yaml:"x_forwarded_host_lookup"`
+	ListenUrl             string                                         `yaml:"listen_url"`
+	ServiceConfig         YAMLRelayMinerSupplierServiceConfig            `yaml:"service_config"`
+	RPCTypeServiceConfigs map[string]YAMLRelayMinerSupplierServiceConfig `yaml:"rpc_type_service_configs"`
+	ServiceId             string                                         `yaml:"service_id"`
+	SigningKeyNames       []string                                       `yaml:"signing_key_names"`
+	RequestTimeoutSeconds uint64                                         `yaml:"request_timeout_seconds"`
+	MaxBodySize           string                                         `yaml:"max_body_size"`
+	XForwardedHostLookup  bool                                           `yaml:"x_forwarded_host_lookup"`
 }
 
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier

@@ -2,6 +2,7 @@ package config
 
 import (
 	"net/url"
+	"strings"
 
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -39,11 +40,9 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	// For example, if the supplier is configured to handle REST and JSON-RPC,
 	// there will be two RPC type-specific service configs.
 	for rpcType, serviceConfig := range yamlSupplierConfig.RPCTypeServiceConfigs {
-		if !rpcTypeIsValid(rpcType) {
-			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
-				"invalid rpc type %s",
-				rpcType,
-			)
+		rpcType, err := getRPCTypeFromConfig(rpcType)
+		if err != nil {
+			return err
 		}
 
 		rpcTypeServiceConfig, err := supplierConfig.hydrateServiceConfig(serviceConfig)
@@ -55,6 +54,27 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	}
 
 	return nil
+}
+
+// getRPCTypeFromConfig converts the string RPC type to the
+// types.RPCType enum and performs validation.
+//
+// eg. "rest" -> types.RPCType_REST
+func getRPCTypeFromConfig(rpcType string) (types.RPCType, error) {
+	rpcTypeInt, ok := types.RPCType_value[strings.ToUpper(rpcType)]
+	if !ok {
+		return 0, ErrRelayMinerConfigInvalidSupplier.Wrapf(
+			"invalid rpc type %s",
+			rpcType,
+		)
+	}
+	if !rpcTypeIsValid(types.RPCType(rpcTypeInt)) {
+		return 0, ErrRelayMinerConfigInvalidSupplier.Wrapf(
+			"invalid rpc type %s",
+			rpcType,
+		)
+	}
+	return types.RPCType(rpcTypeInt), nil
 }
 
 // rpcTypeIsValid checks if the RPC type is valid.
