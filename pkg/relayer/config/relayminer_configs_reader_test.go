@@ -11,6 +11,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/testutil/yaml"
+	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func Test_ParseRelayMinerConfig_ReferenceExample(t *testing.T) {
@@ -438,14 +439,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 										"X-Default": "default-value",
 									},
 								},
-								RPCTypeServiceConfigs: map[config.RPCType]*config.RelayMinerSupplierServiceConfig{
-									config.RPCTypeJSONRPC: {
+								RPCTypeServiceConfigs: map[types.RPCType]*config.RelayMinerSupplierServiceConfig{
+									types.RPCType_JSON_RPC: {
 										BackendUrl: &url.URL{Scheme: "http", Host: "json_rpc.servicer:8545"},
 										Headers: map[string]string{
 											"X-Type": "json-rpc",
 										},
 									},
-									config.RPCTypeREST: {
+									types.RPCType_REST: {
 										BackendUrl: &url.URL{Scheme: "http", Host: "rest.servicer:8545"},
 										Headers: map[string]string{
 											"X-Type": "rest",

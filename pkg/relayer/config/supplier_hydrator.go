@@ -1,6 +1,10 @@
 package config
 
-import "net/url"
+import (
+	"net/url"
+
+	"github.com/pokt-network/poktroll/x/shared/types"
+)
 
 // HydrateSupplier populates a single supplier's fields of the RelayMinerConfig
 // that are relevant to each supplier in the "suppliers" section of the config file.
@@ -27,7 +31,7 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 
 	// Hydrate the RPC type-specific service configs (if any)
 	supplierConfig.RPCTypeServiceConfigs = make(
-		map[RPCType]*RelayMinerSupplierServiceConfig,
+		map[types.RPCType]*RelayMinerSupplierServiceConfig,
 		len(yamlSupplierConfig.RPCTypeServiceConfigs),
 	)
 
@@ -35,7 +39,7 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	// For example, if the supplier is configured to handle REST and JSON-RPC,
 	// there will be two RPC type-specific service configs.
 	for rpcType, serviceConfig := range yamlSupplierConfig.RPCTypeServiceConfigs {
-		if !rpcType.IsValid() {
+		if !rpcTypeIsValid(rpcType) {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
 				"invalid rpc type %s",
 				rpcType,
@@ -51,6 +55,20 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	}
 
 	return nil
+}
+
+// rpcTypeIsValid checks if the RPC type is valid.
+// It is used to validate the RPC type-specific service configs.
+func rpcTypeIsValid(rpcType types.RPCType) bool {
+	switch rpcType {
+	case types.RPCType_GRPC,
+		types.RPCType_WEBSOCKET,
+		types.RPCType_JSON_RPC,
+		types.RPCType_REST:
+		return true
+	default:
+		return false
+	}
 }
 
 // hydrateServiceConfig hydrates a single service config by parsing the

@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	proxyws "github.com/pokt-network/poktroll/pkg/relayer/proxy/websockets"
+	"github.com/pokt-network/poktroll/x/shared/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -30,12 +30,12 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	}
 
 	// Get the websocket service config.
-	// We can safely use the `config.RPCTypeWS` as
+	// We can safely use the `types.RPCType_WEBSOCKET` as
 	// `handleAsyncConnection`SHOULD ONLY be called for requests
 	// with the 'Rpc-Type' header set to 'websocket'.
 	//
 	// IMPORTANT: This will return an error if the service is not configured for websocket RPC type.
-	websocketServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[config.RPCTypeWS]
+	websocketServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[types.RPCType_WEBSOCKET]
 	if !ok {
 		return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
 			"service %q not configured for websocket RPC type",

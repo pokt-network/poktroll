@@ -15,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // rpcTypeHeader is the header key for the RPC type, provided by the client.
@@ -269,5 +270,5 @@ func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string)
 func isWebSocketRequest(r *http.Request) bool {
 	// The request must have the "Rpc-Type" header set to "websocket".
 	// This will be handled in the client, likely a PATH gateway.
-	return r.Header.Get(rpcTypeHeader) == string(config.RPCTypeWS)
+	return r.Header.Get(rpcTypeHeader) == string(sharedtypes.RPCType_WEBSOCKET)
 }

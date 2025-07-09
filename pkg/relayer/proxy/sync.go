@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -406,9 +408,13 @@ func getServiceConfig(
 	rpcTypeHeaderValue := request.Header.Get(rpcTypeHeader)
 
 	if rpcTypeHeaderValue != "" {
-		rpcType := config.RPCType(rpcTypeHeaderValue)
-		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
-			return rpcTypeServiceConfig, string(rpcType), nil
+		// Convert string header value to RPCType
+		rpcTypeInt, parseErr := strconv.Atoi(rpcTypeHeaderValue)
+		if parseErr == nil {
+			rpcType := sharedtypes.RPCType(rpcTypeInt)
+			if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
+				return rpcTypeServiceConfig, rpcTypeHeaderValue, nil
+			}
 		}
 	}
 

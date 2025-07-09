@@ -1,6 +1,10 @@
 package config
 
-import "net/url"
+import (
+	"net/url"
+
+	"github.com/pokt-network/poktroll/x/shared/types"
+)
 
 type RelayMinerServerType int
 
@@ -15,23 +19,6 @@ const (
 	// RelayMinerServerTypeUNIXSocket
 	// Etc...
 )
-
-type RPCType string
-
-const (
-	RPCTypeJSONRPC RPCType = "json_rpc"
-	RPCTypeREST    RPCType = "rest"
-	RPCTypeWS      RPCType = "websocket"
-)
-
-func (t RPCType) IsValid() bool {
-	switch t {
-	case RPCTypeJSONRPC, RPCTypeREST, RPCTypeWS:
-		return true
-	default:
-		return false
-	}
-}
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
 type YAMLRelayMinerConfig struct {
@@ -83,14 +70,14 @@ type YAMLRelayMinerMetricsConfig struct {
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
-	ListenUrl             string                                          `yaml:"listen_url"`
-	ServiceConfig         YAMLRelayMinerSupplierServiceConfig             `yaml:"service_config"`
-	RPCTypeServiceConfigs map[RPCType]YAMLRelayMinerSupplierServiceConfig `yaml:"rpc_type_service_configs"`
-	ServiceId             string                                          `yaml:"service_id"`
-	SigningKeyNames       []string                                        `yaml:"signing_key_names"`
-	RequestTimeoutSeconds uint64                                          `yaml:"request_timeout_seconds"`
-	MaxBodySize           string                                          `yaml:"max_body_size"`
-	XForwardedHostLookup  bool                                            `yaml:"x_forwarded_host_lookup"`
+	ListenUrl             string                                                `yaml:"listen_url"`
+	ServiceConfig         YAMLRelayMinerSupplierServiceConfig                   `yaml:"service_config"`
+	RPCTypeServiceConfigs map[types.RPCType]YAMLRelayMinerSupplierServiceConfig `yaml:"rpc_type_service_configs"`
+	ServiceId             string                                                `yaml:"service_id"`
+	SigningKeyNames       []string                                              `yaml:"signing_key_names"`
+	RequestTimeoutSeconds uint64                                                `yaml:"request_timeout_seconds"`
+	MaxBodySize           string                                                `yaml:"max_body_size"`
+	XForwardedHostLookup  bool                                                  `yaml:"x_forwarded_host_lookup"`
 }
 
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
@@ -204,7 +191,7 @@ type RelayMinerSupplierConfig struct {
 	// by the client.
 	//
 	// If the RPC type is not present in the map, the default service config is used.
-	RPCTypeServiceConfigs map[RPCType]*RelayMinerSupplierServiceConfig
+	RPCTypeServiceConfigs map[types.RPCType]*RelayMinerSupplierServiceConfig
 
 	// SigningKeyNames: a list of key names that can accept relays for that supplier.
 	// If empty, we copy the values from `DefaultSigningKeyNames`.
