@@ -386,14 +386,17 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	return relayRequest, nil
 }
 
+// serviceConfigTypeDefault is the string value used to log the service config type.
 const serviceConfigTypeDefault = "default"
 
+// getServiceConfig returns the service config for the service.
+// This will use either the RPC type specific service config or the default service config.
 func getServiceConfig(
 	supplierConfig *config.RelayMinerSupplierConfig,
 	request *http.Request,
 ) (
 	serviceConfig *config.RelayMinerSupplierServiceConfig,
-	serviceTypeLogValue string,
+	serviceConfigTypeLog string,
 	err error,
 ) {
 	// If the following are true:
@@ -404,14 +407,13 @@ func getServiceConfig(
 
 	if rpcTypeHeaderValue != "" {
 		rpcType := config.RPCType(rpcTypeHeaderValue)
-
 		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
 			return rpcTypeServiceConfig, string(rpcType), nil
 		}
 	}
 
 	// If the RPC type is not set, use the default service config.
-	return supplierConfig.DefaultServiceConfig, serviceConfigTypeDefault, nil
+	return supplierConfig.ServiceConfig, serviceConfigTypeDefault, nil
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.

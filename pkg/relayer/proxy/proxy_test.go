@@ -93,7 +93,7 @@ func init() {
 				defaultService: {
 					ServiceId:  defaultService,
 					ServerType: config.RelayMinerServerTypeHTTP,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 					SigningKeyNames: []string{supplierOperatorKeyName},
@@ -101,7 +101,7 @@ func init() {
 				secondaryService: {
 					ServiceId:  secondaryService,
 					ServerType: config.RelayMinerServerTypeHTTP,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
 					},
 					SigningKeyNames: []string{supplierOperatorKeyName},
@@ -115,7 +115,7 @@ func init() {
 				thirdService: {
 					ServiceId:  thirdService,
 					ServerType: config.RelayMinerServerTypeHTTP,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
 					},
 				},
@@ -248,7 +248,7 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 					ServiceId: defaultService,
 					// The proxy is configured with an unsupported transport type
 					ServerType: config.RelayMinerServerType(100),
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 				},
@@ -291,7 +291,7 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 				defaultService: {
 					ServiceId:  defaultService,
 					ServerType: config.RelayMinerServerTypeHTTP,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 				},
@@ -592,7 +592,7 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 				defaultService: {
 					ServiceId:  defaultService,
 					ServerType: config.RelayMinerServerTypeHTTP,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
 							Host:   "127.0.0.1:8645",
@@ -683,7 +683,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 				firstServiceName: {
 					ServiceId:  firstServiceName,
 					ServerType: config.RelayMinerServerTypeHTTP,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
 							Host:   "127.0.0.1:8646",
@@ -700,7 +700,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 				secondServiceName: {
 					ServiceId:  secondServiceName,
 					ServerType: config.RelayMinerServerTypeHTTP,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
 							Host:   "127.0.0.1:8647",
@@ -772,7 +772,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 				failingServiceName: &config.RelayMinerSupplierConfig{
 					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceId:  failingServiceName,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
 							Host:   "127.0.0.1:8647",
@@ -843,7 +843,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 				failingServiceName: &config.RelayMinerSupplierConfig{
 					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceId:  failingServiceName,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
 							Host:   "127.0.0.1:8648",
@@ -944,7 +944,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 				domainNameServiceName: &config.RelayMinerSupplierConfig{
 					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceId:  domainNameServiceName,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
 							Host:   "exampleservice.org:8649",
@@ -961,7 +961,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 				IPV6ServiceName: &config.RelayMinerSupplierConfig{
 					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceId:  IPV6ServiceName,
-					DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
 							Host:   "[::1]:8650",

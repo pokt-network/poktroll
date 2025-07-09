@@ -19,17 +19,21 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	supplierConfig.SigningKeyNames = yamlSupplierConfig.SigningKeyNames
 
 	// Hydrate the default service config
-	defaultServiceConfig, err := supplierConfig.hydrateServiceConfig(yamlSupplierConfig.DefaultServiceConfig)
+	defaultServiceConfig, err := supplierConfig.hydrateServiceConfig(yamlSupplierConfig.ServiceConfig)
 	if err != nil {
 		return err
 	}
-	supplierConfig.DefaultServiceConfig = defaultServiceConfig
+	supplierConfig.ServiceConfig = defaultServiceConfig
 
 	// Hydrate the RPC type-specific service configs (if any)
 	supplierConfig.RPCTypeServiceConfigs = make(
 		map[RPCType]*RelayMinerSupplierServiceConfig,
 		len(yamlSupplierConfig.RPCTypeServiceConfigs),
 	)
+
+	// Loop through the RPC type-specific service configs and hydrate them.
+	// For example, if the supplier is configured to handle REST and JSON-RPC,
+	// there will be two RPC type-specific service configs.
 	for rpcType, serviceConfig := range yamlSupplierConfig.RPCTypeServiceConfigs {
 		if !rpcType.IsValid() {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
@@ -37,10 +41,12 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 				rpcType,
 			)
 		}
+
 		rpcTypeServiceConfig, err := supplierConfig.hydrateServiceConfig(serviceConfig)
 		if err != nil {
 			return err
 		}
+
 		supplierConfig.RPCTypeServiceConfigs[rpcType] = rpcTypeServiceConfig
 	}
 

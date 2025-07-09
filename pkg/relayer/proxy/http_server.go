@@ -147,7 +147,7 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 	for _, supplierCfg := range server.serverConfig.SupplierConfigsMap {
 		// Initialize the backend URLs to test with the default service config.
 		backendUrls := []*url.URL{
-			supplierCfg.DefaultServiceConfig.BackendUrl,
+			supplierCfg.ServiceConfig.BackendUrl,
 		}
 
 		// Add the RPC type specific service configs to the backend URLs to test, if any.

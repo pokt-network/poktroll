@@ -72,7 +72,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -127,7 +127,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -194,7 +194,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -210,7 +210,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ollama": {
 								ServiceId:  "ollama",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "ollama.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -270,7 +270,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
@@ -283,7 +283,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"7b-llm-model": {
 								ServiceId:  "7b-llm-model",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "llama-endpoint"},
 								},
 								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
@@ -328,7 +328,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
 								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
@@ -375,7 +375,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
 								RequestTimeoutSeconds: config.DefaultRequestTimeoutSeconds,
@@ -432,7 +432,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
-								DefaultServiceConfig: &config.RelayMinerSupplierServiceConfig{
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Headers: map[string]string{
 										"X-Default": "default-value",
@@ -841,8 +841,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 					require.Equal(
 						t,
-						supplier.DefaultServiceConfig.BackendUrl.String(),
-						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.BackendUrl.String(),
+						supplier.ServiceConfig.BackendUrl.String(),
+						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.BackendUrl.String(),
 					)
 
 					require.Equal(
@@ -851,30 +851,30 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].RequestTimeoutSeconds,
 					)
 
-					if supplier.DefaultServiceConfig.Authentication != nil {
+					if supplier.ServiceConfig.Authentication != nil {
 						require.NotNil(
 							t,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.Authentication,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Authentication,
 						)
 
 						require.Equal(
 							t,
-							supplier.DefaultServiceConfig.Authentication.Username,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.Authentication.Username,
+							supplier.ServiceConfig.Authentication.Username,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Authentication.Username,
 						)
 
 						require.Equal(
 							t,
-							supplier.DefaultServiceConfig.Authentication.Password,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.Authentication.Password,
+							supplier.ServiceConfig.Authentication.Password,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Authentication.Password,
 						)
 					}
 
-					for headerKey, headerValue := range supplier.DefaultServiceConfig.Headers {
+					for headerKey, headerValue := range supplier.ServiceConfig.Headers {
 						require.Equal(
 							t,
 							headerValue,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].DefaultServiceConfig.Headers[headerKey],
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Headers[headerKey],
 						)
 					}
 

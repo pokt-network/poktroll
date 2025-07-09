@@ -29,9 +29,10 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 		return ErrRelayerProxyServiceEndpointNotHandled
 	}
 
-	// Get the websocket service config. We can safely use the `config.RPCTypeWS`
-	// as `handleAsyncConnection` is only called for requests with the 'Rpc-Type'
-	// header set to 'websocket'.
+	// Get the websocket service config.
+	// We can safely use the `config.RPCTypeWS` as
+	// `handleAsyncConnection`SHOULD ONLY be called for requests
+	// with the 'Rpc-Type' header set to 'websocket'.
 	//
 	// IMPORTANT: This will return an error if the service is not configured for websocket RPC type.
 	websocketServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[config.RPCTypeWS]

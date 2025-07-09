@@ -84,7 +84,7 @@ type YAMLRelayMinerMetricsConfig struct {
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
 	ListenUrl             string                                          `yaml:"listen_url"`
-	DefaultServiceConfig  YAMLRelayMinerSupplierServiceConfig             `yaml:"service_config"`
+	ServiceConfig         YAMLRelayMinerSupplierServiceConfig             `yaml:"service_config"`
 	RPCTypeServiceConfigs map[RPCType]YAMLRelayMinerSupplierServiceConfig `yaml:"rpc_type_service_configs"`
 	ServiceId             string                                          `yaml:"service_id"`
 	SigningKeyNames       []string                                        `yaml:"signing_key_names"`
@@ -186,15 +186,23 @@ type RelayMinerSupplierConfig struct {
 	// type of the relay miner server it is associated with.
 	ServerType RelayMinerServerType
 
-	// ServiceConfig is the default config of the service that relays will be proxied to.
-	// Other supplier types may embed other fields in the future. eg. "https" may
-	// embed a TLS config.
+	// [REQUIRED] ServiceConfig is the default config of the service that relays will be
+	// proxied to. It is required in all cases to provide a service config for the supplier.
 	//
 	// It is used if a request has no matching service config in RPCTypeServiceConfigs.
-	DefaultServiceConfig *RelayMinerSupplierServiceConfig
+	ServiceConfig *RelayMinerSupplierServiceConfig
 
-	// RPCTypeServiceConfigs is a map of RPC types to service configs.
+	// [OPTIONAL] RPCTypeServiceConfigs is a map of RPC types to service configs.
 	// Used to select an alternate service config for a given RPC type.
+	//
+	// For example, if a service exposes two separate endpoints for REST and JSON-RPC,
+	// it can be configured to handle them separately by providing two RPC-type specific
+	// service configs.
+	//
+	// If the supplier is configured to handle multiple RPC types, the service config
+	// will be selected based on the `Rpc-Type` header of the request, which is set
+	// by the client.
+	//
 	// If the RPC type is not present in the map, the default service config is used.
 	RPCTypeServiceConfigs map[RPCType]*RelayMinerSupplierServiceConfig
 
