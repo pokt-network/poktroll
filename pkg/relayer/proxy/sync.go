@@ -166,7 +166,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// This flag enables the cleanup function to revert rewards if the relay fails.
 	isRelayRewardAccumulated = true
 
-	// Get the Service and serviceUrl corresponding to the originHost.
+	// Get the supplier config for the service.
 	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceId]
 	if !ok {
 		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
@@ -175,27 +175,17 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		)
 	}
 
-	// Initialize the service config to the default service config.
-	serviceConfig := supplierConfig.DefaultServiceConfig
-	// Set a string that will be logged to indicate the service config type.
-	serviceConfigTypeLog := "default"
-
+	// Get the service config from the supplier config.
+	// This will use either the RPC type specific service config or the default service config.
+	serviceConfig, serviceConfigTypeLog, err := getServiceConfig(supplierConfig, request)
+	if err != nil {
+		return relayRequest, err
+	}
 	if serviceConfig == nil {
 		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
 			"service %q not configured",
 			serviceId,
 		)
-	}
-
-	// If the 'Rpc-Type' header is set, use the RPC type specific service config.
-	rpcType := config.RPCType(request.Header.Get(rpcTypeHeader))
-	if rpcType != "" {
-		// If the RPC type is set for the service, use the RPC type specific service config.
-		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
-			serviceConfig = rpcTypeServiceConfig
-			// Update the service config type log to indicate the RPC type.
-			serviceConfigTypeLog = string(rpcType)
-		}
 	}
 
 	// Hydrate the logger with relevant values.
@@ -394,6 +384,34 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// set to 200 because everything is good about the processed relay.
 	statusCode = http.StatusOK
 	return relayRequest, nil
+}
+
+const serviceConfigTypeDefault = "default"
+
+func getServiceConfig(
+	supplierConfig *config.RelayMinerSupplierConfig,
+	request *http.Request,
+) (
+	serviceConfig *config.RelayMinerSupplierServiceConfig,
+	serviceTypeLogValue string,
+	err error,
+) {
+	// If the following are true:
+	// 	- The RPC type is set for the service
+	// 	- The RPC type specific service config is available
+	// Then, use the RPC type specific service config.
+	rpcTypeHeaderValue := request.Header.Get(rpcTypeHeader)
+
+	if rpcTypeHeaderValue != "" {
+		rpcType := config.RPCType(rpcTypeHeaderValue)
+
+		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
+			return rpcTypeServiceConfig, string(rpcType), nil
+		}
+	}
+
+	// If the RPC type is not set, use the default service config.
+	return supplierConfig.DefaultServiceConfig, serviceConfigTypeDefault, nil
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.
