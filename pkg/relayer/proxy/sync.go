@@ -387,7 +387,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 // serviceConfigTypeDefault indicates that the service config being used is
 // the default service config, as opposed to an RPC-type specific config.
-const serviceConfigTypeDefault = "default"
+const serviceConfigTypeDefault = "DEFAULT_SERVICE_CONFIG"
 
 // getServiceConfig returns the service config for the service.
 // This will use either the RPC type specific service config or the default service config.
@@ -410,7 +410,7 @@ func getServiceConfig(
 		if parseErr == nil {
 			rpcType := sharedtypes.RPCType(rpcTypeInt)
 			if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
-				return rpcTypeServiceConfig, rpcTypeHeaderValue
+				return rpcTypeServiceConfig, fmt.Sprintf("RPC_TYPE_%s", rpcType.String())
 			}
 		}
 	}
