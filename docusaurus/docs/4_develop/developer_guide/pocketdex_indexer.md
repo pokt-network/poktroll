@@ -8,6 +8,7 @@ title: Pocketdex Indexer
   - [Postgres - CLI](#postgres---cli)
 - [Debugging](#debugging)
   - [Port already in use](#port-already-in-use)
+  - [Yarn dependency installation failure](#yarn-dependency-installation-failure)
 
 :::warning
 
@@ -79,21 +80,28 @@ If you see the pocketdex indexer failing to build in Tilt with yarn dependency e
 
 This typically indicates issues with corrupted dependencies or improperly initialized git submodules. To resolve:
 
-1. **Change to the pocketdex directory**: Navigate to the pocketdex directory:
+1. **Change to the local pocketdex directory**: Navigate to the pocketdex directory:
+
    ```bash
    cd ../pocketdex
    ```
 
 2. **Clean all dependencies**: Run the cleanup script to remove all node_modules and dist directories:
+
    ```bash
    yarn run clean:all
    ```
 
 3. **Update git submodules**: Ensure all submodules are properly cloned and checked out:
+
    ```bash
    git submodule update --init
    ```
 
 4. **Restart the indexer in Tilt**: After cleaning, trigger a rebuild of the indexer resource in the Tilt UI
 
+:::note Why does this happen?
+
 This error often occurs when git submodules aren't properly initialized or when there are stale/corrupted dependencies from previous builds.
+
+:::
