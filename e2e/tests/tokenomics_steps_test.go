@@ -8,9 +8,9 @@ import (
 	"strconv"
 
 	"github.com/stretchr/testify/require"
-	
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // TheUserRemembersTheBalanceOfAs stores the current balance of an account in the scenario state
@@ -24,13 +24,13 @@ func (s *suite) TheUserRemembersTheBalanceOfTheDaoAs(stateKey string) {
 	// Get the DAO reward address from tokenomics params
 	tokenomicsParams := s.getTokenomicsParams()
 	daoAddress := tokenomicsParams.DaoRewardAddress
-	
+
 	// Store the DAO address in accNameToAddrMap if not already there
 	if _, exists := accNameToAddrMap["dao"]; !exists {
 		accNameToAddrMap["dao"] = daoAddress
 		accAddrToNameMap[daoAddress] = "dao"
 	}
-	
+
 	balance := s.getAccBalance("dao")
 	s.scenarioState[stateKey] = balance
 }
@@ -39,13 +39,13 @@ func (s *suite) TheUserRemembersTheBalanceOfTheDaoAs(stateKey string) {
 func (s *suite) TheUserRemembersTheBalanceOfTheProposerAs(stateKey string) {
 	// Get the current block proposer address
 	proposerAddr := s.getCurrentBlockProposer()
-	
+
 	// Store the proposer address in accNameToAddrMap if not already there
 	if _, exists := accNameToAddrMap["proposer"]; !exists {
 		accNameToAddrMap["proposer"] = proposerAddr
 		accAddrToNameMap[proposerAddr] = "proposer"
 	}
-	
+
 	balance := s.getAccBalance("proposer")
 	s.scenarioState[stateKey] = balance
 }
@@ -55,16 +55,16 @@ func (s *suite) TheUserRemembersTheBalanceOfTheServiceOwnerForAs(serviceId, stat
 	// Get the service owner address
 	service := s.getService(serviceId)
 	serviceOwnerAddr := service.OwnerAddress
-	
+
 	// Create a unique name for this service owner
 	serviceOwnerName := fmt.Sprintf("service_owner_%s", serviceId)
-	
+
 	// Store the service owner address in accNameToAddrMap if not already there
 	if _, exists := accNameToAddrMap[serviceOwnerName]; !exists {
 		accNameToAddrMap[serviceOwnerName] = serviceOwnerAddr
 		accAddrToNameMap[serviceOwnerAddr] = serviceOwnerName
 	}
-	
+
 	balance := s.getAccBalance(serviceOwnerName)
 	s.scenarioState[stateKey] = balance
 }
@@ -73,12 +73,12 @@ func (s *suite) TheUserRemembersTheBalanceOfTheServiceOwnerForAs(serviceId, stat
 func (s *suite) TheDaoBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBalanceKey string) {
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
 	require.NoError(s, err)
-	
+
 	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
 	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
-	
+
 	currBalance := s.getAccBalance("dao")
-	
+
 	// Validate the change in balance
 	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, "dao", "more", "balance")
 }
@@ -87,12 +87,12 @@ func (s *suite) TheDaoBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBala
 func (s *suite) TheProposerBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBalanceKey string) {
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
 	require.NoError(s, err)
-	
+
 	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
 	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
-	
+
 	currBalance := s.getAccBalance("proposer")
-	
+
 	// Validate the change in balance
 	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, "proposer", "more", "balance")
 }
@@ -101,13 +101,13 @@ func (s *suite) TheProposerBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, pre
 func (s *suite) TheServiceOwnerBalanceForShouldBeUpoktMoreThan(serviceId, expectedIncreaseStr, prevBalanceKey string) {
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
 	require.NoError(s, err)
-	
+
 	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
 	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
-	
+
 	serviceOwnerName := fmt.Sprintf("service_owner_%s", serviceId)
 	currBalance := s.getAccBalance(serviceOwnerName)
-	
+
 	// Validate the change in balance
 	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, serviceOwnerName, "more", "balance")
 }
@@ -116,12 +116,12 @@ func (s *suite) TheServiceOwnerBalanceForShouldBeUpoktMoreThan(serviceId, expect
 func (s *suite) TheAccountBalanceOfShouldBeUpoktMoreThan(accName, expectedIncreaseStr, prevBalanceKey string) {
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
 	require.NoError(s, err)
-	
+
 	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
 	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
-	
+
 	currBalance := s.getAccBalance(accName)
-	
+
 	// Validate the change in balance
 	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, accName, "more", "balance")
 }
@@ -134,11 +134,11 @@ func (s *suite) getTokenomicsParams() tokenomicstypes.Params {
 		"query", "tokenomics", "params", "--output=json",
 	)
 	require.NoError(s, err)
-	
+
 	var params tokenomicstypes.Params
 	err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &params)
 	require.NoError(s, err)
-	
+
 	return params
 }
 
@@ -149,7 +149,7 @@ func (s *suite) getCurrentBlockProposer() string {
 		"query", "block", "--output=json",
 	)
 	require.NoError(s, err)
-	
+
 	// Parse the block info to extract proposer address
 	var blockInfo struct {
 		Block struct {
@@ -158,10 +158,10 @@ func (s *suite) getCurrentBlockProposer() string {
 			} `json:"header"`
 		} `json:"block"`
 	}
-	
+
 	err = json.Unmarshal([]byte(res.Stdout), &blockInfo)
 	require.NoError(s, err)
-	
+
 	// Convert the hex proposer address to bech32 format
 	// This is a simplified version - in production you'd need proper conversion
 	// For now, we'll use a fixed proposer address for testing
@@ -175,10 +175,10 @@ func (s *suite) getService(serviceId string) *servicetypes.Service {
 		"query", "service", "show-service", serviceId, "--output=json",
 	)
 	require.NoError(s, err)
-	
+
 	var response servicetypes.QueryGetServiceResponse
 	err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &response)
 	require.NoError(s, err)
-	
+
 	return &response.Service
 }

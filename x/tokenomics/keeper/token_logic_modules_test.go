@@ -43,7 +43,7 @@ func init() {
 // TODO_IMPROVE: Consider using a TestSuite, similar to `x/tokenomics/keeper/keeper_settle_pending_claims_test.go`
 // for the TLM based tests in this file.
 
-func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
+func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *testing.T) {
 	// Test Parameters
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
@@ -91,6 +91,13 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0
+	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
+		Dao:         0,
+		Proposer:    0,
+		Supplier:    1,
+		SourceOwner: 0,
+		Application: 0,
+	}
 	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
 	require.NoError(t, err)
 
@@ -211,7 +218,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 // DEV_NOTE: Most of the setup here is a copy-paste of TLMBurnEqualsMintValid
 // except that the application stake is calculated to explicitly be too low to
 // handle all the relays completed.
-func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
+func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaimableAmount_Valid(t *testing.T) {
 	// Test Parameters
 	// Set the cost denomination of a single compute unit to pPOKT (i.e. 1/compute_unit_cost_granularity)
 	globalComputeUnitCostGranularity := uint64(1000000)
@@ -268,6 +275,13 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	// Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0
+	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
+		Dao:         0,
+		Proposer:    0,
+		Supplier:    1,
+		SourceOwner: 0,
+		Application: 0,
+	}
 	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
 	require.NoError(t, err)
 
@@ -963,6 +977,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []uint64{12, 38, 50}
+
 	// Set the cost denomination of a single compute unit to pPOKT
 	globalComputeUnitCostGranularity := uint64(1000000)
 	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
@@ -999,7 +1014,6 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	// Set up tokenomics params with the new distribution percentages
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0 // Disable global inflation for this test
-	// When global inflation is 0, mint equals burn claim distribution is used automatically
 	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
 		Dao:         0.1,
 		Proposer:    0.14,
@@ -1050,7 +1064,6 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 	// Get baseline balances
 	daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
-
 	daoBalanceBefore := getBalance(t, ctx, keepers, daoRewardAddress)
 	sourceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 

@@ -40,10 +40,9 @@ func distributeSupplierRewardsToShareHolders(
 	// This should theoretically never happen because the following validation
 	// is done during staking: MsgStakeSupplier.ValidateBasic() -> ValidateSupplierServiceConfigs() -> ValidateServiceRevShare().
 	// The check is here just for redundancy.
-	// TODO_MAINNET_MIGRATION(@red-0ne): Double check this doesn't happen.
 	if serviceRevShares == nil {
 		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
-			"service %q not found for supplier %v",
+			"SHOULD NEVER HAPPEN: service %q not found for supplier %v",
 			serviceId,
 			supplier,
 		)
@@ -61,11 +60,9 @@ func distributeSupplierRewardsToShareHolders(
 			continue
 		}
 
-		// TODO_TECHDEBT(@red-0ne): Refactor to reuse the sendRewardsToAccount helper here.
-		shareAmountCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, shareAmount)
-
 		// Queue the sending of the newley minted uPOKT from the supplier module
 		// account to the supplier's shareholders.
+		shareAmountCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, shareAmount)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         settlementOpReason,
 			SenderModule:     suppliertypes.ModuleName,

@@ -399,7 +399,7 @@ func (k Keeper) GetExpiringClaimsIterator(
 
 // slashSupplierStake slashes the stake of a supplier and transfers the total
 // slashing amount from the supplier bank module to the tokenomics module account.
-// TODO: Slash the supplier in proportion to their stake.
+// TODO_FUTURE: Slash the supplier in proportion to their stake.
 func (k Keeper) slashSupplierStake(
 	ctx cosmostypes.Context,
 	settlementContext *settlementContext,

@@ -197,7 +197,7 @@ func ValidateMintAllocationSum(mintAllocationPercentage MintAllocationPercentage
 	sum := mintAllocationPercentage.Sum()
 	// TODO_MAINNET_CRITICAL(@red-0ne): I prefer using big.Rat and have a strict 1.0 sum. These might add up or skew our tokenomics a bit.
 	if math.Abs(sum-1) > epsilon {
-		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f", sum)
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f which is greater than the acceptable epsilon of %f", sum, epsilon)
 	}
 
 	return nil

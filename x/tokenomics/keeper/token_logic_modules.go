@@ -92,7 +92,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	/*
-		TODO_POST_MAINNET(@olshansk): Fix the roo.Count and root.Sum confusion.
+		TODO_TECHDEBT(@olshansk): Fix the roo.Count and root.Sum confusion.
 
 		Because of how things have evolved, we are now using root.Count (numRelays)
 		instead of root.Sum (numComputeUnits) to determine the amount of work done.
