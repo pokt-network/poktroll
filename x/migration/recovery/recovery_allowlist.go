@@ -443,6 +443,19 @@ var knownRecoveryRequestedAllowlist = []string{
 	"AC698834363E25FCC3A13B10450FA039BE7DA450",
 	"BF326BD2D014C7ADD09BD42C3842AFD5CDBD2E7E",
 	"63103DC4836FC2DF0F15FDA60DD7171AAE6AD642",
+
+	// https://github.com/pokt-network/poktroll/issues/1654
+	"250be0ddbff278fc0679ceeba4656082c9da18d3",
+	"5d13809a533b30dce1058512748c7a1546db8b21",
+	"8db868ef3c34744e060c43eec6b2d393a6771ec1",
+	"95bfb0fef50d14e2a94f1b754d365682f5df6d89",
+	"a1f332398ec1fc3b1045a419be6439c4c5bd9a21",
+	"b9c49639ccf26f382ba95b00bc0965161afd7e59",
+	"ba51c0ae21782f928848f93e1505ff2c7dea8632",
+	"c4b38de73ed204cac4f29f7dc013c61b3ff32a5c",
+	"cc6a2ae94728ee5c69eb1fa7152013f7433ffef4",
+	"ea0993dfe4fdc737f53961e0fdc23017eaa12483",
+	"ee357e786fb6b7daec45d3c532362803e204509c",
 }
 
 var moduleAccountsAllowlist = []string{
