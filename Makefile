@@ -151,23 +151,24 @@ proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanat
 	done
 
 
-.PHONY: proto_clean
-proto_clean: ## Delete existing .pb.go, .pb.gw.go (avoid cleaning *.pulsar.go files here)
-	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
+# .PHONY: proto_clean
+# proto_clean: ## Delete existing .pb.go, .pb.gw.go (avoid cleaning *.pulsar.go files here)
+# 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 
-## TODO_TECHDEBT(@bryanchriswhite): Investigate if / how this can be integrated with `proto_regen`
-.PHONY: proto_clean_pulsar
-proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
-	$(MAKE) proto_regen
-	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
+# ## TODO_TECHDEBT(@bryanchriswhite): Investigate if / how this can be integrated with `proto_regen`
+# .PHONY: proto_clean_pulsar
+# proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
+# 	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
+# 	$(MAKE) proto_regen
+# 	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
-.PHONY: proto_ignite_gen
-proto_ignite_gen: ## Generate protobuf artifacts using ignite
-	ignite generate proto-go --yes
+# .PHONY: proto_ignite_gen
+# proto_ignite_gen: ## Generate protobuf artifacts using ignite
+# 	ignite generate proto-go --yes
 
 .PHONY: proto_regen
-proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
+proto_regen: # proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
+	ignite generate proto-go --yes
 
 #######################
 ### Docker  Helpers ###
