@@ -59,6 +59,22 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid,
 		},
+		{
+			desc: "invalid: mint equals burn claim distribution params don't sum to 1",
+			msg: tokenomicstypes.MsgUpdateParams{
+				Authority: sample.AccAddress(),
+				Params: tokenomicstypes.Params{
+					MintEqualsBurnClaimDistribution: tokenomicstypes.MintEqualsBurnClaimDistribution{
+						Dao:         0.1,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.1,
+					},
+				},
+			},
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid,
+		},
 	}
 
 	for _, test := range tests {

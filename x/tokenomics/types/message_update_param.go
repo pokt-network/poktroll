@@ -52,6 +52,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateMintAllocationPercentages(*msg.GetAsMintAllocationPercentages())
+	case ParamMintEqualsBurnClaimDistribution:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsMintEqualsBurnClaimDistribution](msg); err != nil {
+			return err
+		}
+		return ValidateMintEqualsBurnClaimDistribution(*msg.GetAsMintEqualsBurnClaimDistribution())
 	case ParamDaoRewardAddress:
 		if err := genericParamTypeIs[*MsgUpdateParam_AsString](msg); err != nil {
 			return err
@@ -62,11 +67,6 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateGlobalInflationPerClaim(msg.GetAsFloat())
-	case ParamMintEqualsBurnClaimDistribution:
-		if err := genericParamTypeIs[*MsgUpdateParam_AsMintEqualsBurnClaimDistribution](msg); err != nil {
-			return err
-		}
-		return ValidateMintEqualsBurnClaimDistribution(*msg.GetAsMintEqualsBurnClaimDistribution())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

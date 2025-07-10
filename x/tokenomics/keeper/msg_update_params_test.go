@@ -89,13 +89,74 @@ func TestMsgUpdateParams(t *testing.T) {
 						Proposer:    0.1,
 						Supplier:    0.1,
 						SourceOwner: 0.1,
-						Application: 0.7,
+						Application: 0.6,
 					},
 				},
 			},
 
 			shouldError:    true,
 			expectedErrMsg: "GlobalInflationPerClaim must be greater than or equal to 0:",
+		},
+		{
+			desc: "invalid: mint allocation percentages don't sum to 1",
+
+			req: &tokenomicstypes.MsgUpdateParams{
+				Authority: tokenomicsKeeper.GetAuthority(),
+				Params: tokenomicstypes.Params{
+					// GlobalInflationPerClaim MUST be positive.
+					GlobalInflationPerClaim: 0.1,
+
+					// DaoRewardAddress MUST NOT be empty string
+					// when MintAllocationDao is greater than 0.
+					DaoRewardAddress: sample.AccAddress(),
+
+					// MintAllocationXXX params MUST sum to 1.
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.7,
+					},
+				},
+			},
+
+			shouldError:    true,
+			expectedErrMsg: "MintAllocationPercentages must sum to 1:",
+		},
+		{
+			desc: "invalid: mint equals burn claim distribution percentages don't sum to 1",
+
+			req: &tokenomicstypes.MsgUpdateParams{
+				Authority: tokenomicsKeeper.GetAuthority(),
+				Params: tokenomicstypes.Params{
+					// GlobalInflationPerClaim MUST be positive.
+					GlobalInflationPerClaim: 0.1,
+
+					// DaoRewardAddress MUST NOT be empty string
+					// when MintAllocationDao is greater than 0.
+					DaoRewardAddress: sample.AccAddress(),
+
+					// MintAllocationXXX params MUST sum to 1.
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.6,
+					},
+					MintEqualsBurnClaimDistribution: tokenomicstypes.MintEqualsBurnClaimDistribution{
+						Dao:         0,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.7,
+					},
+				},
+			},
+
+			shouldError:    true,
+			expectedErrMsg: "MintEqualsBurnClaimDistribution must sum to 1:",
 		},
 		{
 			desc: "valid: successful param update",
