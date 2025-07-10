@@ -45,8 +45,11 @@ jobs:
       - name: Verify all proto files have stable marshaler configured
         run: make check_proto_unstable_marshalers
 
-      - name: Run golangci-lint
-        run: make go_lint
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1
+          args: --timeout 20m --verbose
 
       - name: Test
         run: make test_all

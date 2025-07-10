@@ -88,11 +88,6 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			}
 		}
 
-		// TODO_CONSIDERATION: Should we hydrate the supplier service configurations
-		// to expose the full supplier information to the event?
-		// This can result in a lot of state bloat.
-		// k.hydrateSupplierServiceConfigs(ctx, &supplier)
-
 		// Remove the supplier from the store.
 		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))

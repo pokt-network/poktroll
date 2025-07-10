@@ -87,11 +87,11 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 	s.ServiceSuite.SetApp(s.GetApp())
 	s.AppSuite.SetApp(s.GetApp())
 	s.SupplierSuite.SetApp(s.GetApp())
-	s.ParamsSuite.SetApp(s.GetApp())
+	s.SetApp(s.GetApp())
 
 	// Set up authz accounts and grants
-	s.ParamsSuite.SetupTestAuthzAccounts(s.T())
-	s.ParamsSuite.SetupTestAuthzGrants(s.T())
+	s.SetupTestAuthzAccounts(s.T())
+	s.SetupTestAuthzGrants(s.T())
 }
 
 func TestMigrationModuleSuite(t *testing.T) {
@@ -199,10 +199,10 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_Overwrite() 
 	// Set allow_morse_account_import_overwrite to true.
 	params.AllowMorseAccountImportOverwrite = true
 	msgUpdateParams := &migrationtypes.MsgUpdateParams{
-		Authority: s.ParamsSuite.AuthorityAddr.String(),
+		Authority: s.AuthorityAddr.String(),
 		Params:    params,
 	}
-	_, err = s.ParamsSuite.RunUpdateParams(s.T(), msgUpdateParams)
+	_, err = s.RunUpdateParams(s.T(), msgUpdateParams)
 	require.NoError(s.T(), err)
 
 	// Ensure that allow_morse_account_import_overwrite was updated to true.

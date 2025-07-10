@@ -157,7 +157,7 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 			RootHash:                proof.SmstRootWithSumAndCount(1000, 1000),
 		}
 
-		keepers.ProofKeeper.UpsertClaim(s.ctx, claim)
+		keepers.UpsertClaim(s.ctx, claim)
 	}
 }
 
@@ -168,12 +168,13 @@ func (s *tokenLogicModuleTestSuite) settleClaims(t *testing.T) (settledResults, 
 	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParams(), 1)
 	s.setBlockHeight(settlementHeight)
 
-	settledPendingResults, expiredPendingResults, err := s.keepers.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
+	settledPendingResults, expiredPendingResults, numDiscardedFaultyClaims, err := s.keepers.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
 	require.NoError(t, err)
 
 	require.NotZero(t, len(settledPendingResults))
 	// TODO_IMPROVE: enhance the test scenario to include expiring claims to increase coverage.
 	require.Zero(t, len(expiredPendingResults))
+	require.Zero(t, numDiscardedFaultyClaims)
 
 	return settledPendingResults, expiredPendingResults
 }
@@ -186,7 +187,7 @@ func (s *tokenLogicModuleTestSuite) setBlockHeight(height int64) {
 // assertNoPendingClaims asserts that no pending claims exist.
 func (s *tokenLogicModuleTestSuite) assertNoPendingClaims(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
-	pendingClaimsIterator := s.keepers.Keeper.GetExpiringClaimsIterator(sdkCtx)
+	pendingClaimsIterator := s.keepers.GetExpiringClaimsIterator(sdkCtx)
 	defer pendingClaimsIterator.Close()
 
 	numExpiringClaims := 0

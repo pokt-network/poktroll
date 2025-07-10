@@ -46,6 +46,11 @@ message QueryParamsResponse {
 message QueryGetSupplierRequest {
   string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // TODO_TECHDEBT: Add the ability to query for a supplier by owner_id
+
+  // if true, return a dehydrated version of the supplier.
+  // Why? This enables smaller response payloads to reduce payload size.
+  // Example: Removes service_config_history and rev_share details from the response. See the implementation for more details.
+  bool dehydrated = 2;
 }
 
 message QueryGetSupplierResponse {
@@ -58,6 +63,11 @@ message QueryAllSuppliersRequest {
   oneof filter {
     string service_id = 2; // unique service identifier to filter by
   }
+
+  // if true, return a dehydrated version of the supplier.
+  // Why? This enables smaller response payloads to reduce pagination of the supplier list.
+  // Example: Removes service_config_history and rev_share details from the response. See the implementation for more details.
+  bool dehydrated = 3;
 }
 
 message QueryAllSuppliersResponse {

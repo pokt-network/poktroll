@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 var (

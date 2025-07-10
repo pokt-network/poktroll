@@ -11,7 +11,6 @@ import (
 	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +39,7 @@ func CreatePreGeneratedKeyringAccounts(
 			uid,
 			preGeneratedAccount.Mnemonic,
 			keyring.DefaultBIP39Passphrase,
-			types.FullFundraiserPath,
+			cosmostypes.FullFundraiserPath,
 			hd.Secp256k1,
 		)
 		assert.NoError(t, err)

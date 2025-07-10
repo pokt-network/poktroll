@@ -275,7 +275,7 @@ func New(
 	// The ante handler waives fees for txs which contain ONLY morse claim
 	// messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and
 	// MsgClaimMorseSupplier), and is signed by a single secp256k1 signer.
-	app.App.BaseApp.SetAnteHandler(newMorseClaimGasFeesWaiverAnteHandlerFn(app))
+	app.SetAnteHandler(newMorseClaimGasFeesWaiverAnteHandlerFn(app))
 
 	// Register legacy modules
 	app.registerIBCModules()

@@ -67,7 +67,9 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	// - applicationAddress (which is used to verify the relayRequest signature)
 	if session.SessionId != sessionHeader.GetSessionId() {
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"session ID mismatch, expecting: %+v, got: %+v",
+			"session ID mismatch, expecting: %+v, got: %+v. "+
+				"This may indicate a full node synchronization issue. "+
+				"Please verify your full node is in sync and not overwhelmed with websocket connections.",
 			session.GetSessionId(),
 			relayRequest.Meta.GetSessionHeader().GetSessionId(),
 		)
@@ -99,7 +101,14 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 	ctx context.Context,
 	relayRequest *servicetypes.RelayRequest,
 ) error {
-	currentHeight := ra.blockClient.LastBlock(ctx).Height()
+	currentBlock := ra.blockClient.LastBlock(ctx)
+	currentHeight := currentBlock.Height()
+
+	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"📊 Chain head at height %d (block hash: %X) during reward eligibility check",
+		currentHeight,
+		currentBlock.Hash(),
+	)
 
 	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
 	if err != nil {
@@ -121,7 +130,9 @@ func (ra *relayAuthenticator) CheckRelayRewardEligibility(
 	// for reward purposes
 	if currentHeight >= sessionClaimOpenHeight {
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"session expired, must be before claim window open height (%d), but current height is (%d)",
+			"session expired, must be before claim window open height (%d), but current height is (%d). "+
+				"This may indicate a full node synchronization issue. "+
+				"Please verify your full node is in sync and not overwhelmed with websocket connections.",
 			sessionClaimOpenHeight,
 			currentHeight,
 		)
@@ -145,7 +156,14 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	ctx context.Context,
 	relayRequest *servicetypes.RelayRequest,
 ) (sessionHeight int64, err error) {
-	currentHeight := ra.blockClient.LastBlock(ctx).Height()
+	currentBlock := ra.blockClient.LastBlock(ctx)
+	currentHeight := currentBlock.Height()
+
+	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"📊 Chain head at height %d (block hash: %X) during session validation",
+		currentHeight,
+		currentBlock.Hash(),
+	)
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
 	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
@@ -164,7 +182,8 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 		}
 
 		return 0, ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"session expired, expecting: %d, got: %d",
+			"session expired, expecting: %d, got: %d. "+
+				"This may indicate network delay or RelayMiner overload.",
 			sessionEndHeight,
 			currentHeight,
 		)

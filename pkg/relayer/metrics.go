@@ -22,6 +22,17 @@ const (
 )
 
 var (
+	defaultBuckets = []float64{
+		// Sub-50ms (cache hits, internal optimization, fast responses, potential internal errors, etc.)
+		0.01, 0.05,
+		// Primary range: 50ms to 1s (majority of traffic, normal responses, etc...)
+		0.1, 0.2, 0.4, 0.5, 0.75, 1.0,
+		// Long tail: > 1s (slow queries, rollovers, cold state, failed, etc.)
+		2.0, 5.0, 10.0, 30.0,
+	}
+)
+
+var (
 	// RelaysTotal is a Counter metric for the total requests processed by the relay miner.
 	// It increments to track proxy requests and is labeled by 'service_id',
 	// essential for monitoring load and traffic on different proxies and services.
@@ -56,12 +67,10 @@ var (
 		Help:      "Total number of successful requests processed, labeled by service ID.",
 	}, []string{"service_id"})
 
-	// RelaysDurationSeconds observes request durations in the relay miner.
-	// This histogram, labeled by 'service_id' and 'status_code', measures response times,
-	// vital for performance analysis under different loads.
+	// RelaysDurationSeconds observes the end-to-end duration of the request in the relay miner.
 	//
-	// Buckets:
-	// - 0.1s to 15s range, capturing response times from very fast to upper limit.
+	// It includes the duration of the request to the backend service/data node AS WELL AS
+	// the duration of the RelayMiner's internal overhead.
 	//
 	// Usage:
 	// - Analyze typical response times and long-tail latency issues.
@@ -70,17 +79,16 @@ var (
 		Subsystem: relayMinerProcess,
 		Name:      relayDurationSeconds,
 		Help:      "Histogram of request durations for performance analysis.",
-		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 15},
+		Buckets:   defaultBuckets,
 	}, []string{"service_id", "status_code"})
 
-	// ServiceDurationSeconds observes request durations of the request to the service in the relay miner
+	// ServiceDurationSeconds observes the duration of the request to the backend service/data node outside of the RelayMiner.
+	//
 	// This histogram, labeled by 'service_id' and 'status_code', measures response times,
 	// vital for performance analysis under different loads.
-	// The principle on this is to allow us to understand the difference on request duration between relay miner
-	// and service execution.
 	//
-	// Buckets:
-	// - 0.1s to 15s range, capturing response times from very fast to upper limit.
+	// It is a complementary metric to RelaysDurationSeconds allowing to isolate the
+	// performance of the data node and the overhead of the RelayMiner's internal processing.
 	//
 	// Usage:
 	// - Analyze typical response times and long-tail latency issues.
@@ -89,7 +97,7 @@ var (
 		Subsystem: relayMinerProcess,
 		Name:      serviceDurationSeconds,
 		Help:      "Histogram of service call durations for performance analysis.",
-		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 15},
+		Buckets:   defaultBuckets,
 	}, []string{"service_id", "status_code"})
 
 	// RelayResponseSizeBytes is a histogram metric for observing response size distribution.
@@ -120,23 +128,25 @@ var (
 	}, []string{"service_id"})
 )
 
-// CaptureServiceDuration records the duration of a service call, labeled by service ID and HTTP status code.
-// It calculates the elapsed time since the provided start time and updates the ServiceDurationSeconds histogram.
-func CaptureServiceDuration(serviceId string, startTime time.Time, statusCode int) {
+// CaptureRelayDuration records the internal end-to-end duration of handling a relay which includes
+// the network call to the backend data / service node.
+// It calculates the elapsed time since the RelayMiner started processing the request BEFORE doing all of its internal processing.
+func CaptureRelayDuration(serviceId string, startTime time.Time, statusCode int) {
 	duration := time.Since(startTime).Seconds()
 
-	ServiceDurationSeconds.
+	RelaysDurationSeconds.
 		With("service_id", serviceId).
 		With("status_code", fmt.Sprintf("%d", statusCode)).
 		Observe(duration)
 }
 
-// CaptureRelayDuration records the duration of a relay handling, labeled by service ID and HTTP status code.
-// It calculates the elapsed time since the provided start time and updates the ServiceDurationSeconds histogram.
-func CaptureRelayDuration(serviceId string, startTime time.Time, statusCode int) {
+// CaptureServiceDuration records the duration of a request to the backend data / service node explicitly.
+// It is labeled by service ID and HTTP status code.
+// It calculates the elapsed time since the RelayMiner started the outbound network call AFTER doing all of its internal processing.
+func CaptureServiceDuration(serviceId string, startTime time.Time, statusCode int) {
 	duration := time.Since(startTime).Seconds()
 
-	RelaysDurationSeconds.
+	ServiceDurationSeconds.
 		With("service_id", serviceId).
 		With("status_code", fmt.Sprintf("%d", statusCode)).
 		Observe(duration)
