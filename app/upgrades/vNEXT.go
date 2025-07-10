@@ -169,12 +169,26 @@ var Upgrade_NEXT = Upgrade{
 			// This fixes the "next client sequence is nil" error when creating IBC clients
 			keepers.IBCKeeper.ClientKeeper.SetNextClientSequence(sdkCtx, 0)
 
+			// Initialize IBC connection sequence to enable IBC connection creation
+			// This fixes the "next connection sequence is nil" error when creating IBC connections
+			keepers.IBCKeeper.ConnectionKeeper.SetNextConnectionSequence(sdkCtx, 0)
+
+			// Initialize IBC channel sequence to enable IBC channel creation
+			// This fixes the "next channel sequence is nil" error when creating IBC channels
+			keepers.IBCKeeper.ChannelKeeper.SetNextChannelSequence(sdkCtx, 0)
+
 			// Set IBC transfer params
 			keepers.TransferKeeper.SetParams(sdkCtx, ibcTransferParams)
 
 			// Set IBC interchain accounts host & controller params
 			keepers.ICAHostKeeper.SetParams(sdkCtx, ibcIcaHostParams)
 			keepers.ICAControllerKeeper.SetParams(sdkCtx, ibcIcaControllerParams)
+
+			// Bind transfer port to enable IBC token transfers
+			// This fixes the "capability not found" error when creating transfer channels
+			if !keepers.IBCKeeper.PortKeeper.IsBound(sdkCtx, ibctransfertypes.ModuleName) {
+				_ = keepers.IBCKeeper.PortKeeper.BindPort(sdkCtx, ibctransfertypes.ModuleName)
+			}
 
 			return nil
 		}
@@ -183,6 +197,10 @@ var Upgrade_NEXT = Upgrade{
 			if err := setIBCParams(ctx); err != nil {
 				return vm, err
 			}
+
+			// Set IBC module version to prevent re-initialization via InitGenesis
+			// This ensures IBC modules don't try to initialize again after upgrade
+			vm["ibc"] = 1
 
 			return vm, nil
 		}
