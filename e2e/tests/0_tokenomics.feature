@@ -170,14 +170,11 @@ Feature: Tokenomics Namespace
         #   42000 uPOKT = 10 relays * 100 compute units * 42 multiplier
         #
         # Distribution:
-        # - Supplier 70% (29400)
         # - DAO 10% (4200)
         # - Proposer 5% (2100)
         # - Source Owner 15% (6300)
-        # - Application 0% (0)
-
-        # The supplier should receive 70% of the settlement amount minus transaction fees
-        Then the account balance of "supplier1" should be "29319" uPOKT "more" than "supplier1_initial_balance"
+        # - Application 0% (-4200)
+        # - Supplier 70% (29400)
 
         # The DAO should receive 10% of the settlement amount
         And the DAO balance should be "4200" uPOKT "more" than "dao_initial_balance"
@@ -187,6 +184,9 @@ Feature: Tokenomics Namespace
 
         # The service owner should receive 15% of the settlement amount
         And the service owner balance for "anvil" should be "6300" uPOKT "more" than "service_owner_initial_balance"
+
+        # The supplier should receive 70% of the settlement amount minus transaction fees
+        Then the account balance of "supplier1" should be "29315" uPOKT "more" than "supplier1_initial_balance"
 
         # The application stake should decrease by the full settlement amount
         And the "application" stake of "app1" should be "42000" uPOKT "less" than before

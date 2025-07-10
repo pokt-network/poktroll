@@ -106,6 +106,7 @@ type cliBlockQueryResponse struct {
 }
 
 func init() {
+	// TODO_TECHDEBT: Use `-o json` everywhere these regexes are used, remove them, and use proper parsing.
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 	addrAndAmountRe = regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)

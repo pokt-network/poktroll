@@ -11,8 +11,8 @@ accounts:
   - name: pnf
     mnemonic: "crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade"
     coins:
-      - 69000000000000000042upokt
-      - 69000000000000000042mact
+      - 6900000000042upokt
+      - 6900000000042mact
   - name: validator1
     mnemonic: "creek path rule retire evolve vehicle bargain champion roof whisper prize endorse unknown anchor fashion energy club sauce elder parent cotton old affair visa"
     coins:
@@ -64,11 +64,11 @@ accounts:
   - name: source_owner_anvil
     mnemonic: "burden effort glue note honey erupt fiscal vote gold addict toy flag spare wrap chest table bomb sort arena phone sadness sustain urge wink"
     coins:
-      - 6900000000000upokt
+      - 6900000000042upokt
   - name: source_owner_ollama
     mnemonic: "initial scorpion soccer decrease sorry convince donor canoe bid pill monster today cycle slot judge bulb dismiss reject hurt mesh glare fork sustain wash"
     coins:
-      - 6900000000000upokt
+      - 6900000000042upokt
   - name: unauthorized
     mnemonic: "abuse tumble whip pioneer immense pipe method note upon glory switch rail metal camp gasp top require rain party total struggle glance between fossil"
     coins:
