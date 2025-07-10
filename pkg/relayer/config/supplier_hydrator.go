@@ -84,7 +84,8 @@ func rpcTypeIsValid(rpcType types.RPCType) bool {
 	case types.RPCType_GRPC,
 		types.RPCType_WEBSOCKET,
 		types.RPCType_JSON_RPC,
-		types.RPCType_REST:
+		types.RPCType_REST,
+		types.RPCType_HYBRID:
 		return true
 	default:
 		return false

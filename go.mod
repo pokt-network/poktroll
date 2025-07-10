@@ -62,7 +62,7 @@ require (
 	github.com/go-kit/kit v0.13.0
 	github.com/gogo/status v1.1.0
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.4
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
@@ -109,8 +109,8 @@ require (
 )
 
 require (
-	github.com/go-chi/chi/v5 v5.2.1
 	github.com/docker/go-units v0.5.0
+	github.com/go-chi/chi/v5 v5.2.1
 	github.com/hashicorp/go-version v1.7.0
 )
 
