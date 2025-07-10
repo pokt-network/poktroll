@@ -159,7 +159,6 @@ proto_clean: ## Delete existing .pb.go, .pb.gw.go (avoid cleaning *.pulsar.go fi
 .PHONY: proto_clean_pulsar
 proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
 	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
-	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
 	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
