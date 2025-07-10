@@ -106,7 +106,7 @@ func New(t *testing.T, configs ...Config) *Network {
 	}
 	var cfg network.Config
 	if len(configs) == 0 {
-		cfg = DefaultConfig()
+		cfg = DefaultConfigWithPorts()
 	} else {
 		cfg = configs[0]
 	}
@@ -156,6 +156,15 @@ func New(t *testing.T, configs ...Config) *Network {
 // DefaultConfig will initialize config for the network with custom application,
 // genesis and single validator. All other parameters are inherited from cosmos-sdk/testutil/network.DefaultConfig
 func DefaultConfig() network.Config {
+	cfg, err := network.DefaultConfigWithAppConfig(app.AppConfig())
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
+// DefaultConfigWithPorts allocates ports safely within the lock and returns the config
+func DefaultConfigWithPorts() network.Config {
 	cfg, err := network.DefaultConfigWithAppConfig(app.AppConfig())
 	if err != nil {
 		panic(err)
