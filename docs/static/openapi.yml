@@ -18,7 +18,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the x/auth module
         parameters. The authority defaults to the x/gov module account.
-      operationId: EvidenceMsg_UpdateParams
+      operationId: CircuitMsg_UpdateParams
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -43,7 +43,7 @@ paths:
         Exec attempts to execute the provided messages using
         authorizations granted to the grantee. Each message should have only
         one signer corresponding to the granter of the authorization.
-      operationId: EvidenceMsg_Exec
+      operationId: CircuitMsg_Exec
       parameters:
         - description: |-
             MsgExec attempts to execute the provided messages using
@@ -72,7 +72,7 @@ paths:
         account with the provided expiration time. If there is already a grant
         for the given (granter, grantee, Authorization) triple, then the grant
         will be overwritten.
-      operationId: EvidenceMsg_Grant
+      operationId: CircuitMsg_Grant
       parameters:
         - description: |-
             MsgGrant is a request type for Grant method. It declares authorization to the grantee
@@ -98,7 +98,7 @@ paths:
       summary: |-
         Revoke revokes any authorization corresponding to the provided method name on the
         granter's account that has been granted to the grantee.
-      operationId: EvidenceMsg_Revoke
+      operationId: CircuitMsg_Revoke
       parameters:
         - description: |-
             MsgRevoke revokes any authorization with the provided sdk.Msg type on the
@@ -122,7 +122,7 @@ paths:
       tags:
         - Query
       summary: AppOptions returns the autocli options for all of the modules in an app.
-      operationId: EvidenceQuery_AppOptions
+      operationId: CircuitQuery_AppOptions
       parameters:
         - description: AppOptionsRequest is the RemoteInfoService/AppOptions request type.
           name: body
@@ -144,7 +144,7 @@ paths:
       tags:
         - Msg
       summary: MultiSend defines a method for sending coins from some accounts to other accounts.
-      operationId: EvidenceMsg_MultiSend
+      operationId: CircuitMsg_MultiSend
       parameters:
         - description: MsgMultiSend represents an arbitrary multi-in, multi-out send message.
           name: body
@@ -166,7 +166,7 @@ paths:
       tags:
         - Msg
       summary: Send defines a method for sending coins from one account to another account.
-      operationId: EvidenceMsg_Send
+      operationId: CircuitMsg_Send
       parameters:
         - description: MsgSend represents a message to send coins from one account to another.
           name: body
@@ -192,7 +192,7 @@ paths:
         on any number of Denoms. Only the entries to add or update should be
         included. Entries that already exist in the store, but that aren't
         included in this message, will be left unchanged.
-      operationId: EvidenceMsg_SetSendEnabled
+      operationId: CircuitMsg_SetSendEnabled
       parameters:
         - description: |-
             MsgSetSendEnabled is the Msg/SetSendEnabled request type.
@@ -221,7 +221,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/bank module parameters.
         The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin70
+      operationId: CircuitMsg_UpdateParamsMixin117
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -243,7 +243,7 @@ paths:
       tags:
         - Msg
       summary: LoadTest defines a method for executing a sequence of load test operations.
-      operationId: EvidenceMsg_LoadTest
+      operationId: CircuitMsg_LoadTest
       parameters:
         - description: MsgLoadTestOps defines a message containing a sequence of load test operations.
           name: body
@@ -267,7 +267,7 @@ paths:
       summary: |-
         AuthorizeCircuitBreaker allows a super-admin to grant (or revoke) another
         account's circuit breaker permissions.
-      operationId: EvidenceMsg_AuthorizeCircuitBreaker
+      operationId: CircuitMsg_AuthorizeCircuitBreaker
       parameters:
         - description: MsgAuthorizeCircuitBreaker defines the Msg/AuthorizeCircuitBreaker request type.
           name: body
@@ -291,7 +291,7 @@ paths:
       summary: |-
         ResetCircuitBreaker resumes processing of Msg's in the state machine that
         have been been paused using TripCircuitBreaker.
-      operationId: EvidenceMsg_ResetCircuitBreaker
+      operationId: CircuitMsg_ResetCircuitBreaker
       parameters:
         - description: MsgResetCircuitBreaker defines the Msg/ResetCircuitBreaker request type.
           name: body
@@ -313,7 +313,7 @@ paths:
       tags:
         - Msg
       summary: TripCircuitBreaker pauses processing of Msg's in the state machine.
-      operationId: EvidenceMsg_TripCircuitBreaker
+      operationId: CircuitMsg_TripCircuitBreaker
       parameters:
         - description: MsgTripCircuitBreaker defines the Msg/TripCircuitBreaker request type.
           name: body
@@ -337,7 +337,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/consensus module parameters.
         The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin85
+      operationId: CircuitMsg_UpdateParamsMixin132
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -359,7 +359,7 @@ paths:
       tags:
         - Msg
       summary: IncreaseCount increments the counter by the specified amount.
-      operationId: EvidenceMsg_IncreaseCount
+      operationId: CircuitMsg_IncreaseCount
       parameters:
         - description: MsgIncreaseCounter defines a count Msg service counter.
           name: body
@@ -381,7 +381,7 @@ paths:
       tags:
         - Query
       summary: GetCount queries the parameters of x/Counter module.
-      operationId: EvidenceQuery_GetCount
+      operationId: CircuitQuery_GetCount
       parameters:
         - description: QueryGetCountRequest defines the request type for querying x/mock count.
           name: body
@@ -405,7 +405,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/crisis module
         parameters. The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin89
+      operationId: CircuitMsg_UpdateParamsMixin136
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -427,7 +427,7 @@ paths:
       tags:
         - Msg
       summary: VerifyInvariant defines a method to verify a particular invariant.
-      operationId: EvidenceMsg_VerifyInvariant
+      operationId: CircuitMsg_VerifyInvariant
       parameters:
         - description: MsgVerifyInvariant represents a message to verify a particular invariance.
           name: body
@@ -454,7 +454,7 @@ paths:
         the community pool in the x/distribution module to another account, which
         could be the governance module itself. The authority is defined in the
         keeper.
-      operationId: EvidenceMsg_CommunityPoolSpend
+      operationId: CircuitMsg_CommunityPoolSpend
       parameters:
         - description: |-
             MsgCommunityPoolSpend defines a message for sending tokens from the community
@@ -481,7 +481,7 @@ paths:
       summary: |-
         DepositValidatorRewardsPool defines a method to provide additional rewards
         to delegators to a specific validator.
-      operationId: EvidenceMsg_DepositValidatorRewardsPool
+      operationId: CircuitMsg_DepositValidatorRewardsPool
       parameters:
         - description: |-
             DepositValidatorRewardsPool defines the request structure to provide
@@ -508,7 +508,7 @@ paths:
       summary: |-
         FundCommunityPool defines a method to allow an account to directly
         fund the community pool.
-      operationId: EvidenceMsg_FundCommunityPool
+      operationId: CircuitMsg_FundCommunityPool
       parameters:
         - description: |-
             MsgFundCommunityPool allows an account to directly
@@ -534,7 +534,7 @@ paths:
       summary: |-
         SetWithdrawAddress defines a method to change the withdraw address
         for a delegator (or validator self-delegation).
-      operationId: EvidenceMsg_SetWithdrawAddress
+      operationId: CircuitMsg_SetWithdrawAddress
       parameters:
         - description: |-
             MsgSetWithdrawAddress sets the withdraw address for
@@ -560,7 +560,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/distribution
         module parameters. The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin100
+      operationId: CircuitMsg_UpdateParamsMixin147
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -584,7 +584,7 @@ paths:
       summary: |-
         WithdrawDelegatorReward defines a method to withdraw rewards of delegator
         from a single validator.
-      operationId: EvidenceMsg_WithdrawDelegatorReward
+      operationId: CircuitMsg_WithdrawDelegatorReward
       parameters:
         - description: |-
             MsgWithdrawDelegatorReward represents delegation withdrawal to a delegator
@@ -610,7 +610,7 @@ paths:
       summary: |-
         WithdrawValidatorCommission defines a method to withdraw the
         full commission to the validator address.
-      operationId: EvidenceMsg_WithdrawValidatorCommission
+      operationId: CircuitMsg_WithdrawValidatorCommission
       parameters:
         - description: |-
             MsgWithdrawValidatorCommission withdraws the full commission to the validator
@@ -636,7 +636,7 @@ paths:
       summary: |-
         SubmitEvidence submits an arbitrary Evidence of misbehavior such as equivocation or
         counterfactual signing.
-      operationId: EvidenceMsg_SubmitEvidence
+      operationId: CircuitMsg_SubmitEvidence
       parameters:
         - description: |-
             MsgSubmitEvidence represents a message that supports submitting arbitrary
@@ -662,7 +662,7 @@ paths:
       summary: |-
         GrantAllowance grants fee allowance to the grantee on the granter's
         account with the provided expiration time.
-      operationId: EvidenceMsg_GrantAllowance
+      operationId: CircuitMsg_GrantAllowance
       parameters:
         - description: |-
             MsgGrantAllowance adds permission for Grantee to spend up to Allowance
@@ -686,7 +686,7 @@ paths:
       tags:
         - Msg
       summary: PruneAllowances prunes expired fee allowances, currently up to 75 at a time.
-      operationId: EvidenceMsg_PruneAllowances
+      operationId: CircuitMsg_PruneAllowances
       parameters:
         - description: MsgPruneAllowances prunes expired fee allowances.
           name: body
@@ -710,7 +710,7 @@ paths:
       summary: |-
         RevokeAllowance revokes any fee allowance of granter's account that
         has been granted to the grantee.
-      operationId: EvidenceMsg_RevokeAllowance
+      operationId: CircuitMsg_RevokeAllowance
       parameters:
         - description: MsgRevokeAllowance removes any existing Allowance from Granter to Grantee.
           name: body
@@ -732,7 +732,7 @@ paths:
       tags:
         - Msg
       summary: CancelProposal defines a method to cancel governance proposal
-      operationId: EvidenceMsg_CancelProposal
+      operationId: CircuitMsg_CancelProposal
       parameters:
         - description: MsgCancelProposal is the Msg/CancelProposal request type.
           name: body
@@ -754,7 +754,7 @@ paths:
       tags:
         - Msg
       summary: Deposit defines a method to add deposit on a specific proposal.
-      operationId: EvidenceMsg_Deposit
+      operationId: CircuitMsg_Deposit
       parameters:
         - description: MsgDeposit defines a message to submit a deposit to an existing proposal.
           name: body
@@ -778,7 +778,7 @@ paths:
       summary: |-
         ExecLegacyContent defines a Msg to be in included in a MsgSubmitProposal
         to execute a legacy content-based proposal.
-      operationId: EvidenceMsg_ExecLegacyContent
+      operationId: CircuitMsg_ExecLegacyContent
       parameters:
         - description: |-
             MsgExecLegacyContent is used to wrap the legacy content field into a message.
@@ -802,7 +802,7 @@ paths:
       tags:
         - Msg
       summary: SubmitProposal defines a method to create new proposal given the messages.
-      operationId: EvidenceMsg_SubmitProposal
+      operationId: CircuitMsg_SubmitProposal
       parameters:
         - description: |-
             MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary
@@ -828,7 +828,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/gov module
         parameters. The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin116
+      operationId: CircuitMsg_UpdateParamsMixin163
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -850,7 +850,7 @@ paths:
       tags:
         - Msg
       summary: Vote defines a method to add a vote on a specific proposal.
-      operationId: EvidenceMsg_Vote
+      operationId: CircuitMsg_Vote
       parameters:
         - description: MsgVote defines a message to cast a vote.
           name: body
@@ -872,7 +872,7 @@ paths:
       tags:
         - Msg
       summary: VoteWeighted defines a method to add a weighted vote on a specific proposal.
-      operationId: EvidenceMsg_VoteWeighted
+      operationId: CircuitMsg_VoteWeighted
       parameters:
         - description: MsgVoteWeighted defines a message to cast a vote.
           name: body
@@ -894,7 +894,7 @@ paths:
       tags:
         - Msg
       summary: Deposit defines a method to add deposit on a specific proposal.
-      operationId: EvidenceMsg_DepositMixin120
+      operationId: CircuitMsg_DepositMixin167
       parameters:
         - description: MsgDeposit defines a message to submit a deposit to an existing proposal.
           name: body
@@ -916,7 +916,7 @@ paths:
       tags:
         - Msg
       summary: SubmitProposal defines a method to create new proposal given a content.
-      operationId: EvidenceMsg_SubmitProposalMixin120
+      operationId: CircuitMsg_SubmitProposalMixin167
       parameters:
         - description: |-
             MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary
@@ -940,7 +940,7 @@ paths:
       tags:
         - Msg
       summary: Vote defines a method to add a vote on a specific proposal.
-      operationId: EvidenceMsg_VoteMixin120
+      operationId: CircuitMsg_VoteMixin167
       parameters:
         - description: MsgVote defines a message to cast a vote.
           name: body
@@ -962,7 +962,7 @@ paths:
       tags:
         - Msg
       summary: VoteWeighted defines a method to add a weighted vote on a specific proposal.
-      operationId: EvidenceMsg_VoteWeightedMixin120
+      operationId: CircuitMsg_VoteWeightedMixin167
       parameters:
         - description: MsgVoteWeighted defines a message to cast a vote.
           name: body
@@ -984,7 +984,7 @@ paths:
       tags:
         - Msg
       summary: CreateGroup creates a new group with an admin account address, a list of members and some optional metadata.
-      operationId: EvidenceMsg_CreateGroup
+      operationId: CircuitMsg_CreateGroup
       parameters:
         - description: MsgCreateGroup is the Msg/CreateGroup request type.
           name: body
@@ -1006,7 +1006,7 @@ paths:
       tags:
         - Msg
       summary: CreateGroupPolicy creates a new group policy using given DecisionPolicy.
-      operationId: EvidenceMsg_CreateGroupPolicy
+      operationId: CircuitMsg_CreateGroupPolicy
       parameters:
         - description: MsgCreateGroupPolicy is the Msg/CreateGroupPolicy request type.
           name: body
@@ -1028,7 +1028,7 @@ paths:
       tags:
         - Msg
       summary: CreateGroupWithPolicy creates a new group with policy.
-      operationId: EvidenceMsg_CreateGroupWithPolicy
+      operationId: CircuitMsg_CreateGroupWithPolicy
       parameters:
         - description: MsgCreateGroupWithPolicy is the Msg/CreateGroupWithPolicy request type.
           name: body
@@ -1050,7 +1050,7 @@ paths:
       tags:
         - Msg
       summary: Exec executes a proposal.
-      operationId: EvidenceMsg_ExecMixin124
+      operationId: CircuitMsg_ExecMixin171
       parameters:
         - description: MsgExec is the Msg/Exec request type.
           name: body
@@ -1072,7 +1072,7 @@ paths:
       tags:
         - Msg
       summary: LeaveGroup allows a group member to leave the group.
-      operationId: EvidenceMsg_LeaveGroup
+      operationId: CircuitMsg_LeaveGroup
       parameters:
         - description: MsgLeaveGroup is the Msg/LeaveGroup request type.
           name: body
@@ -1094,7 +1094,7 @@ paths:
       tags:
         - Msg
       summary: SubmitProposal submits a new proposal.
-      operationId: EvidenceMsg_SubmitProposalMixin124
+      operationId: CircuitMsg_SubmitProposalMixin171
       parameters:
         - description: MsgSubmitProposal is the Msg/SubmitProposal request type.
           name: body
@@ -1116,7 +1116,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupAdmin updates the group admin with given group id and previous admin address.
-      operationId: EvidenceMsg_UpdateGroupAdmin
+      operationId: CircuitMsg_UpdateGroupAdmin
       parameters:
         - description: MsgUpdateGroupAdmin is the Msg/UpdateGroupAdmin request type.
           name: body
@@ -1138,7 +1138,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupMembers updates the group members with given group id and admin address.
-      operationId: EvidenceMsg_UpdateGroupMembers
+      operationId: CircuitMsg_UpdateGroupMembers
       parameters:
         - description: MsgUpdateGroupMembers is the Msg/UpdateGroupMembers request type.
           name: body
@@ -1160,7 +1160,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupMetadata updates the group metadata with given group id and admin address.
-      operationId: EvidenceMsg_UpdateGroupMetadata
+      operationId: CircuitMsg_UpdateGroupMetadata
       parameters:
         - description: MsgUpdateGroupMetadata is the Msg/UpdateGroupMetadata request type.
           name: body
@@ -1182,7 +1182,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupPolicyAdmin updates a group policy admin.
-      operationId: EvidenceMsg_UpdateGroupPolicyAdmin
+      operationId: CircuitMsg_UpdateGroupPolicyAdmin
       parameters:
         - description: MsgUpdateGroupPolicyAdmin is the Msg/UpdateGroupPolicyAdmin request type.
           name: body
@@ -1204,7 +1204,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupPolicyDecisionPolicy allows a group policy's decision policy to be updated.
-      operationId: EvidenceMsg_UpdateGroupPolicyDecisionPolicy
+      operationId: CircuitMsg_UpdateGroupPolicyDecisionPolicy
       parameters:
         - description: MsgUpdateGroupPolicyDecisionPolicy is the Msg/UpdateGroupPolicyDecisionPolicy request type.
           name: body
@@ -1226,7 +1226,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupPolicyMetadata updates a group policy metadata.
-      operationId: EvidenceMsg_UpdateGroupPolicyMetadata
+      operationId: CircuitMsg_UpdateGroupPolicyMetadata
       parameters:
         - description: MsgUpdateGroupPolicyMetadata is the Msg/UpdateGroupPolicyMetadata request type.
           name: body
@@ -1248,7 +1248,7 @@ paths:
       tags:
         - Msg
       summary: Vote allows a voter to vote on a proposal.
-      operationId: EvidenceMsg_VoteMixin124
+      operationId: CircuitMsg_VoteMixin171
       parameters:
         - description: MsgVote is the Msg/Vote request type.
           name: body
@@ -1270,7 +1270,7 @@ paths:
       tags:
         - Msg
       summary: WithdrawProposal withdraws a proposal.
-      operationId: EvidenceMsg_WithdrawProposal
+      operationId: CircuitMsg_WithdrawProposal
       parameters:
         - description: MsgWithdrawProposal is the Msg/WithdrawProposal request type.
           name: body
@@ -1294,7 +1294,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/mint module
         parameters. The authority is defaults to the x/gov module account.
-      operationId: EvidenceMsg_UpdateParamsMixin129
+      operationId: CircuitMsg_UpdateParamsMixin176
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -1316,7 +1316,7 @@ paths:
       tags:
         - Msg
       summary: Send defines a method to send a nft from one account to another account.
-      operationId: EvidenceMsg_SendMixin135
+      operationId: CircuitMsg_SendMixin182
       parameters:
         - description: MsgSend represents a message to send a nft from one account to another account.
           name: body
@@ -1338,7 +1338,7 @@ paths:
       tags:
         - Msg
       summary: CancelContinuousFund defines a method for cancelling continuous fund.
-      operationId: EvidenceMsg_CancelContinuousFund
+      operationId: CircuitMsg_CancelContinuousFund
       parameters:
         - description: MsgCancelContinuousFund defines a message to cancel continuous funds for a specific recipient.
           name: body
@@ -1364,7 +1364,7 @@ paths:
         the community pool in the x/protocolpool module to another account, which
         could be the governance module itself. The authority is defined in the
         keeper.
-      operationId: EvidenceMsg_CommunityPoolSpendMixin140
+      operationId: CircuitMsg_CommunityPoolSpendMixin187
       parameters:
         - description: |-
             MsgCommunityPoolSpend defines a message for sending tokens from the community
@@ -1393,7 +1393,7 @@ paths:
         This ContinuousFund can be indefinite or run until a given expiry time.
         Funds come from validator block rewards from x/distribution, but may also come from
         any user who funds the ProtocolPoolEscrow module account directly through x/bank.
-      operationId: EvidenceMsg_CreateContinuousFund
+      operationId: CircuitMsg_CreateContinuousFund
       parameters:
         - description: MsgCreateContinuousFund defines a message for adding continuous funds.
           name: body
@@ -1417,7 +1417,7 @@ paths:
       summary: |-
         FundCommunityPool defines a method to allow an account to directly
         fund the community pool.
-      operationId: EvidenceMsg_FundCommunityPoolMixin140
+      operationId: CircuitMsg_FundCommunityPoolMixin187
       parameters:
         - description: |-
             MsgFundCommunityPool allows an account to directly
@@ -1443,7 +1443,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/protocolpool module parameters.
         The authority is defined in the keeper.
-      operationId: EvidenceMsg_UpdateParamsMixin140
+      operationId: CircuitMsg_UpdateParamsMixin187
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -1468,7 +1468,7 @@ paths:
         Unjail defines a method for unjailing a jailed validator, thus returning
         them into the bonded validator set, so they can begin receiving provisions
         and rewards again.
-      operationId: EvidenceMsg_Unjail
+      operationId: CircuitMsg_Unjail
       parameters:
         - name: body
           in: body
@@ -1491,7 +1491,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/slashing module
         parameters. The authority defaults to the x/gov module account.
-      operationId: EvidenceMsg_UpdateParamsMixin146
+      operationId: CircuitMsg_UpdateParamsMixin193
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -1515,7 +1515,7 @@ paths:
       summary: |-
         BeginRedelegate defines a method for performing a redelegation
         of coins from a delegator and source validator to a destination validator.
-      operationId: EvidenceMsg_BeginRedelegate
+      operationId: CircuitMsg_BeginRedelegate
       parameters:
         - description: |-
             MsgBeginRedelegate defines a SDK message for performing a redelegation
@@ -1541,7 +1541,7 @@ paths:
       summary: |-
         CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation
         and delegate back to previous validator.
-      operationId: EvidenceMsg_CancelUnbondingDelegation
+      operationId: CircuitMsg_CancelUnbondingDelegation
       parameters:
         - name: body
           in: body
@@ -1562,7 +1562,7 @@ paths:
       tags:
         - Msg
       summary: CreateValidator defines a method for creating a new validator.
-      operationId: EvidenceMsg_CreateValidator
+      operationId: CircuitMsg_CreateValidator
       parameters:
         - description: MsgCreateValidator defines a SDK message for creating a new validator.
           name: body
@@ -1586,7 +1586,7 @@ paths:
       summary: |-
         Delegate defines a method for performing a delegation of coins
         from a delegator to a validator.
-      operationId: EvidenceMsg_Delegate
+      operationId: CircuitMsg_Delegate
       parameters:
         - description: |-
             MsgDelegate defines a SDK message for performing a delegation of coins
@@ -1610,7 +1610,7 @@ paths:
       tags:
         - Msg
       summary: EditValidator defines a method for editing an existing validator.
-      operationId: EvidenceMsg_EditValidator
+      operationId: CircuitMsg_EditValidator
       parameters:
         - description: MsgEditValidator defines a SDK message for editing an existing validator.
           name: body
@@ -1634,7 +1634,7 @@ paths:
       summary: |-
         Undelegate defines a method for performing an undelegation from a
         delegate and a validator.
-      operationId: EvidenceMsg_Undelegate
+      operationId: CircuitMsg_Undelegate
       parameters:
         - description: |-
             MsgUndelegate defines a SDK message for performing an undelegation from a
@@ -1660,7 +1660,7 @@ paths:
       summary: |-
         UpdateParams defines an operation for updating the x/staking module
         parameters.
-      operationId: EvidenceMsg_UpdateParamsMixin151
+      operationId: CircuitMsg_UpdateParamsMixin198
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -1682,7 +1682,7 @@ paths:
       tags:
         - ABCIListenerService
       summary: ListenCommit is the corresponding endpoint for ABCIListener.ListenCommit
-      operationId: EvidenceABCIListenerService_ListenCommit
+      operationId: CircuitABCIListenerService_ListenCommit
       parameters:
         - name: body
           in: body
@@ -1703,7 +1703,7 @@ paths:
       tags:
         - ABCIListenerService
       summary: ListenFinalizeBlock is the corresponding endpoint for ABCIListener.ListenEndBlock
-      operationId: EvidenceABCIListenerService_ListenFinalizeBlock
+      operationId: CircuitABCIListenerService_ListenFinalizeBlock
       parameters:
         - name: body
           in: body
@@ -1726,7 +1726,7 @@ paths:
       summary: |-
         CancelUpgrade is a governance operation for cancelling a previously
         approved software upgrade.
-      operationId: EvidenceMsg_CancelUpgrade
+      operationId: CircuitMsg_CancelUpgrade
       parameters:
         - description: MsgCancelUpgrade is the Msg/CancelUpgrade request type.
           name: body
@@ -1748,7 +1748,7 @@ paths:
       tags:
         - Msg
       summary: SoftwareUpgrade is a governance operation for initiating a software upgrade.
-      operationId: EvidenceMsg_SoftwareUpgrade
+      operationId: CircuitMsg_SoftwareUpgrade
       parameters:
         - description: MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.
           name: body
@@ -1772,7 +1772,7 @@ paths:
       summary: |-
         CreatePeriodicVestingAccount defines a method that enables creating a
         periodic vesting account.
-      operationId: EvidenceMsg_CreatePeriodicVestingAccount
+      operationId: CircuitMsg_CreatePeriodicVestingAccount
       parameters:
         - description: |-
             MsgCreateVestingAccount defines a message that enables creating a vesting
@@ -1798,7 +1798,7 @@ paths:
       summary: |-
         CreatePermanentLockedAccount defines a method that enables creating a permanent
         locked account.
-      operationId: EvidenceMsg_CreatePermanentLockedAccount
+      operationId: CircuitMsg_CreatePermanentLockedAccount
       parameters:
         - description: |-
             MsgCreatePermanentLockedAccount defines a message that enables creating a permanent
@@ -1824,7 +1824,7 @@ paths:
       summary: |-
         CreateVestingAccount defines a method that enables creating a vesting
         account.
-      operationId: EvidenceMsg_CreateVestingAccount
+      operationId: CircuitMsg_CreateVestingAccount
       parameters:
         - description: |-
             MsgCreateVestingAccount defines a message that enables creating a vesting
@@ -1848,7 +1848,7 @@ paths:
       tags:
         - Query
       summary: AccountInfo queries account info which is common to all account types.
-      operationId: EvidenceQuery_AccountInfo
+      operationId: CircuitQuery_AccountInfo
       parameters:
         - type: string
           description: address is the account address string.
@@ -1872,7 +1872,7 @@ paths:
       tags:
         - Query
       summary: Accounts returns all the existing accounts.
-      operationId: EvidenceQuery_Accounts
+      operationId: CircuitQuery_Accounts
       parameters:
         - type: string
           format: byte
@@ -1923,7 +1923,7 @@ paths:
       tags:
         - Query
       summary: Account returns account details based on address.
-      operationId: EvidenceQuery_Account
+      operationId: CircuitQuery_Account
       parameters:
         - type: string
           description: address defines the address to query for.
@@ -1944,7 +1944,7 @@ paths:
       tags:
         - Query
       summary: AccountAddressByID returns account address based on account number.
-      operationId: EvidenceQuery_AccountAddressByID
+      operationId: CircuitQuery_AccountAddressByID
       parameters:
         - type: string
           format: int64
@@ -1976,7 +1976,7 @@ paths:
       tags:
         - Query
       summary: Bech32Prefix queries bech32Prefix
-      operationId: EvidenceQuery_Bech32Prefix
+      operationId: CircuitQuery_Bech32Prefix
       responses:
         "200":
           description: A successful response.
@@ -1991,7 +1991,7 @@ paths:
       tags:
         - Query
       summary: AddressBytesToString converts Account Address bytes to string
-      operationId: EvidenceQuery_AddressBytesToString
+      operationId: CircuitQuery_AddressBytesToString
       parameters:
         - type: string
           format: byte
@@ -2012,7 +2012,7 @@ paths:
       tags:
         - Query
       summary: AddressStringToBytes converts Address string to bytes
-      operationId: EvidenceQuery_AddressStringToBytes
+      operationId: CircuitQuery_AddressStringToBytes
       parameters:
         - type: string
           name: address_string
@@ -2032,7 +2032,7 @@ paths:
       tags:
         - Query
       summary: ModuleAccounts returns all the existing module accounts.
-      operationId: EvidenceQuery_ModuleAccounts
+      operationId: CircuitQuery_ModuleAccounts
       responses:
         "200":
           description: A successful response.
@@ -2047,7 +2047,7 @@ paths:
       tags:
         - Query
       summary: ModuleAccountByName returns the module account info by module name
-      operationId: EvidenceQuery_ModuleAccountByName
+      operationId: CircuitQuery_ModuleAccountByName
       parameters:
         - type: string
           name: name
@@ -2067,7 +2067,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters.
-      operationId: EvidenceQuery_Params
+      operationId: CircuitQuery_Params
       responses:
         "200":
           description: A successful response.
@@ -2082,7 +2082,7 @@ paths:
       tags:
         - Query
       summary: Returns list of `Authorization`, granted to the grantee by the granter.
-      operationId: EvidenceQuery_Grants
+      operationId: CircuitQuery_Grants
       parameters:
         - type: string
           name: granter
@@ -2143,7 +2143,7 @@ paths:
       tags:
         - Query
       summary: GranteeGrants returns a list of `GrantAuthorization` by grantee.
-      operationId: EvidenceQuery_GranteeGrants
+      operationId: CircuitQuery_GranteeGrants
       parameters:
         - type: string
           name: grantee
@@ -2198,7 +2198,7 @@ paths:
       tags:
         - Query
       summary: GranterGrants returns list of `GrantAuthorization`, granted by granter.
-      operationId: EvidenceQuery_GranterGrants
+      operationId: CircuitQuery_GranterGrants
       parameters:
         - type: string
           name: granter
@@ -2256,7 +2256,7 @@ paths:
       tags:
         - Query
       summary: AllBalances queries the balance of all coins for a single account.
-      operationId: EvidenceQuery_AllBalances
+      operationId: CircuitQuery_AllBalances
       parameters:
         - type: string
           description: address is the address to query balances for.
@@ -2316,7 +2316,7 @@ paths:
       tags:
         - Query
       summary: Balance queries the balance of a single coin for a single account.
-      operationId: EvidenceQuery_Balance
+      operationId: CircuitQuery_Balance
       parameters:
         - type: string
           description: address is the address to query balances for.
@@ -2346,7 +2346,7 @@ paths:
       summary: |-
         DenomOwners queries for all account addresses that own a particular token
         denomination.
-      operationId: EvidenceQuery_DenomOwners
+      operationId: CircuitQuery_DenomOwners
       parameters:
         - pattern: .+
           type: string
@@ -2405,7 +2405,7 @@ paths:
       summary: |-
         DenomOwnersByQuery queries for all account addresses that own a particular token
         denomination.
-      operationId: EvidenceQuery_DenomOwnersByQuery
+      operationId: CircuitQuery_DenomOwnersByQuery
       parameters:
         - type: string
           description: denom defines the coin denomination to query all account holders for.
@@ -2462,7 +2462,7 @@ paths:
       summary: |-
         DenomsMetadata queries the client metadata for all registered coin
         denominations.
-      operationId: EvidenceQuery_DenomsMetadata
+      operationId: CircuitQuery_DenomsMetadata
       parameters:
         - type: string
           format: byte
@@ -2513,7 +2513,7 @@ paths:
       tags:
         - Query
       summary: DenomMetadata queries the client metadata of a given coin denomination.
-      operationId: EvidenceQuery_DenomMetadata
+      operationId: CircuitQuery_DenomMetadata
       parameters:
         - pattern: .+
           type: string
@@ -2535,7 +2535,7 @@ paths:
       tags:
         - Query
       summary: DenomMetadataByQueryString queries the client metadata of a given coin denomination.
-      operationId: EvidenceQuery_DenomMetadataByQueryString
+      operationId: CircuitQuery_DenomMetadataByQueryString
       parameters:
         - type: string
           description: denom is the coin denom to query the metadata for.
@@ -2555,7 +2555,7 @@ paths:
       tags:
         - Query
       summary: Params queries the parameters of x/bank module.
-      operationId: EvidenceQuery_ParamsMixin69
+      operationId: CircuitQuery_ParamsMixin116
       responses:
         "200":
           description: A successful response.
@@ -2574,7 +2574,7 @@ paths:
       tags:
         - Query
       summary: SendEnabled queries for SendEnabled entries.
-      operationId: EvidenceQuery_SendEnabled
+      operationId: CircuitQuery_SendEnabled
       parameters:
         - type: array
           items:
@@ -2637,7 +2637,7 @@ paths:
       summary: |-
         SpendableBalances queries the spendable balance of all coins for a single
         account.
-      operationId: EvidenceQuery_SpendableBalances
+      operationId: CircuitQuery_SpendableBalances
       parameters:
         - type: string
           description: address is the address to query spendable balances for.
@@ -2698,7 +2698,7 @@ paths:
       summary: |-
         SpendableBalanceByDenom queries the spendable balance of a single denom for
         a single account.
-      operationId: EvidenceQuery_SpendableBalanceByDenom
+      operationId: CircuitQuery_SpendableBalanceByDenom
       parameters:
         - type: string
           description: address is the address to query balances for.
@@ -2726,7 +2726,7 @@ paths:
       tags:
         - Query
       summary: TotalSupply queries the total supply of all coins.
-      operationId: EvidenceQuery_TotalSupply
+      operationId: CircuitQuery_TotalSupply
       parameters:
         - type: string
           format: byte
@@ -2780,7 +2780,7 @@ paths:
       tags:
         - Query
       summary: SupplyOf queries the supply of a single coin.
-      operationId: EvidenceQuery_SupplyOf
+      operationId: CircuitQuery_SupplyOf
       parameters:
         - type: string
           description: denom is the coin denom to query balances for.
@@ -2800,7 +2800,7 @@ paths:
       tags:
         - Service
       summary: Config queries for the operator configuration.
-      operationId: EvidenceService_Config
+      operationId: CircuitService_Config
       responses:
         "200":
           description: A successful response.
@@ -2815,7 +2815,7 @@ paths:
       tags:
         - Service
       summary: Status queries for the node status.
-      operationId: EvidenceService_Status
+      operationId: CircuitService_Status
       responses:
         "200":
           description: A successful response.
@@ -2833,7 +2833,7 @@ paths:
         GetAuthnDescriptor returns information on how to authenticate transactions in the application
         NOTE: this RPC is still experimental and might be subject to breaking changes or removal in
         future releases of the cosmos-sdk.
-      operationId: EvidenceReflectionService_GetAuthnDescriptor
+      operationId: CircuitReflectionService_GetAuthnDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2848,7 +2848,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetChainDescriptor returns the description of the chain
-      operationId: EvidenceReflectionService_GetChainDescriptor
+      operationId: CircuitReflectionService_GetChainDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2863,7 +2863,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetCodecDescriptor returns the descriptor of the codec of the application
-      operationId: EvidenceReflectionService_GetCodecDescriptor
+      operationId: CircuitReflectionService_GetCodecDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2878,7 +2878,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetConfigurationDescriptor returns the descriptor for the sdk.Config of the application
-      operationId: EvidenceReflectionService_GetConfigurationDescriptor
+      operationId: CircuitReflectionService_GetConfigurationDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2893,7 +2893,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetQueryServicesDescriptor returns the available gRPC queryable services of the application
-      operationId: EvidenceReflectionService_GetQueryServicesDescriptor
+      operationId: CircuitReflectionService_GetQueryServicesDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2908,7 +2908,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetTxDescriptor returns information on the used transaction object and available msgs that can be used
-      operationId: EvidenceReflectionService_GetTxDescriptor
+      operationId: CircuitReflectionService_GetTxDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2925,7 +2925,7 @@ paths:
       summary: |-
         ListAllInterfaces lists all the interfaces registered in the interface
         registry.
-      operationId: EvidenceReflectionService_ListAllInterfaces
+      operationId: CircuitReflectionService_ListAllInterfaces
       responses:
         "200":
           description: A successful response.
@@ -2942,7 +2942,7 @@ paths:
       summary: |-
         ListImplementations list all the concrete types that implement a given
         interface.
-      operationId: EvidenceReflectionService_ListImplementations
+      operationId: CircuitReflectionService_ListImplementations
       parameters:
         - type: string
           description: interface_name defines the interface to query the implementations for.
@@ -2966,7 +2966,7 @@ paths:
         ABCIQuery defines a query handler that supports ABCI queries directly to the
         application, bypassing Tendermint completely. The ABCI query must contain
         a valid and supported path, including app, custom, p2p, and store.
-      operationId: EvidenceService_ABCIQuery
+      operationId: CircuitService_ABCIQuery
       parameters:
         - type: string
           format: byte
@@ -2996,7 +2996,7 @@ paths:
       tags:
         - Service
       summary: GetLatestBlock returns the latest block.
-      operationId: EvidenceService_GetLatestBlock
+      operationId: CircuitService_GetLatestBlock
       responses:
         "200":
           description: A successful response.
@@ -3011,7 +3011,7 @@ paths:
       tags:
         - Service
       summary: GetBlockByHeight queries block for given height.
-      operationId: EvidenceService_GetBlockByHeight
+      operationId: CircuitService_GetBlockByHeight
       parameters:
         - type: string
           format: int64
@@ -3032,7 +3032,7 @@ paths:
       tags:
         - Service
       summary: GetNodeInfo queries the current node info.
-      operationId: EvidenceService_GetNodeInfo
+      operationId: CircuitService_GetNodeInfo
       responses:
         "200":
           description: A successful response.
@@ -3047,7 +3047,7 @@ paths:
       tags:
         - Service
       summary: GetSyncing queries node syncing.
-      operationId: EvidenceService_GetSyncing
+      operationId: CircuitService_GetSyncing
       responses:
         "200":
           description: A successful response.
@@ -3062,7 +3062,7 @@ paths:
       tags:
         - Service
       summary: GetLatestValidatorSet queries latest validator-set.
-      operationId: EvidenceService_GetLatestValidatorSet
+      operationId: CircuitService_GetLatestValidatorSet
       parameters:
         - type: string
           format: byte
@@ -3113,7 +3113,7 @@ paths:
       tags:
         - Service
       summary: GetValidatorSetByHeight queries validator-set at a given height.
-      operationId: EvidenceService_GetValidatorSetByHeight
+      operationId: CircuitService_GetValidatorSetByHeight
       parameters:
         - type: string
           format: int64
@@ -3169,7 +3169,7 @@ paths:
       tags:
         - Query
       summary: Account returns account permissions.
-      operationId: EvidenceQuery_AccountsMixin81
+      operationId: CircuitQuery_AccountsMixin128
       parameters:
         - type: string
           format: byte
@@ -3220,7 +3220,7 @@ paths:
       tags:
         - Query
       summary: Account returns account permissions.
-      operationId: EvidenceQuery_AccountMixin81
+      operationId: CircuitQuery_AccountMixin128
       parameters:
         - type: string
           name: address
@@ -3240,7 +3240,7 @@ paths:
       tags:
         - Query
       summary: DisabledList returns a list of disabled message urls
-      operationId: EvidenceQuery_DisabledList
+      operationId: CircuitQuery_DisabledList
       responses:
         "200":
           description: A successful response.
@@ -3255,7 +3255,7 @@ paths:
       tags:
         - Query
       summary: Params queries the parameters of x/consensus module.
-      operationId: EvidenceQuery_ParamsMixin84
+      operationId: CircuitQuery_ParamsMixin131
       responses:
         "200":
           description: A successful response.
@@ -3271,7 +3271,7 @@ paths:
       tags:
         - Query
       summary: CommunityPool queries the community pool coins.
-      operationId: EvidenceQuery_CommunityPool
+      operationId: CircuitQuery_CommunityPool
       responses:
         "200":
           description: A successful response.
@@ -3288,7 +3288,7 @@ paths:
       summary: |-
         DelegationTotalRewards queries the total rewards accrued by each
         validator.
-      operationId: EvidenceQuery_DelegationTotalRewards
+      operationId: CircuitQuery_DelegationTotalRewards
       parameters:
         - type: string
           description: delegator_address defines the delegator address to query for.
@@ -3309,7 +3309,7 @@ paths:
       tags:
         - Query
       summary: DelegationRewards queries the total rewards accrued by a delegation.
-      operationId: EvidenceQuery_DelegationRewards
+      operationId: CircuitQuery_DelegationRewards
       parameters:
         - type: string
           description: delegator_address defines the delegator address to query for.
@@ -3335,7 +3335,7 @@ paths:
       tags:
         - Query
       summary: DelegatorValidators queries the validators of a delegator.
-      operationId: EvidenceQuery_DelegatorValidators
+      operationId: CircuitQuery_DelegatorValidators
       parameters:
         - type: string
           description: delegator_address defines the delegator address to query for.
@@ -3356,7 +3356,7 @@ paths:
       tags:
         - Query
       summary: DelegatorWithdrawAddress queries withdraw address of a delegator.
-      operationId: EvidenceQuery_DelegatorWithdrawAddress
+      operationId: CircuitQuery_DelegatorWithdrawAddress
       parameters:
         - type: string
           description: delegator_address defines the delegator address to query for.
@@ -3377,7 +3377,7 @@ paths:
       tags:
         - Query
       summary: Params queries params of the distribution module.
-      operationId: EvidenceQuery_ParamsMixin99
+      operationId: CircuitQuery_ParamsMixin146
       responses:
         "200":
           description: A successful response.
@@ -3392,7 +3392,7 @@ paths:
       tags:
         - Query
       summary: ValidatorDistributionInfo queries validator commission and self-delegation rewards for validator
-      operationId: EvidenceQuery_ValidatorDistributionInfo
+      operationId: CircuitQuery_ValidatorDistributionInfo
       parameters:
         - type: string
           description: validator_address defines the validator address to query for.
@@ -3413,7 +3413,7 @@ paths:
       tags:
         - Query
       summary: ValidatorCommission queries accumulated commission for a validator.
-      operationId: EvidenceQuery_ValidatorCommission
+      operationId: CircuitQuery_ValidatorCommission
       parameters:
         - type: string
           description: validator_address defines the validator address to query for.
@@ -3434,7 +3434,7 @@ paths:
       tags:
         - Query
       summary: ValidatorOutstandingRewards queries rewards of a validator address.
-      operationId: EvidenceQuery_ValidatorOutstandingRewards
+      operationId: CircuitQuery_ValidatorOutstandingRewards
       parameters:
         - type: string
           description: validator_address defines the validator address to query for.
@@ -3455,7 +3455,7 @@ paths:
       tags:
         - Query
       summary: ValidatorSlashes queries slash events of a validator.
-      operationId: EvidenceQuery_ValidatorSlashes
+      operationId: CircuitQuery_ValidatorSlashes
       parameters:
         - type: string
           description: validator_address defines the validator address to query for.
@@ -3521,7 +3521,7 @@ paths:
       tags:
         - Query
       summary: CurrentEpoch provide current epoch of specified identifier
-      operationId: EvidenceQuery_CurrentEpoch
+      operationId: CircuitQuery_CurrentEpoch
       parameters:
         - type: string
           name: identifier
@@ -3540,7 +3540,7 @@ paths:
       tags:
         - Query
       summary: EpochInfos provide running epochInfos
-      operationId: EvidenceQuery_EpochInfos
+      operationId: CircuitQuery_EpochInfos
       responses:
         "200":
           description: A successful response.
@@ -3555,7 +3555,7 @@ paths:
       tags:
         - Query
       summary: AllEvidence queries all evidence.
-      operationId: EvidenceQuery_AllEvidence
+      operationId: CircuitQuery_AllEvidence
       parameters:
         - type: string
           format: byte
@@ -3606,7 +3606,7 @@ paths:
       tags:
         - Query
       summary: Evidence queries evidence based on evidence hash.
-      operationId: EvidenceQuery_Evidence
+      operationId: CircuitQuery_Evidence
       parameters:
         - type: string
           description: hash defines the evidence hash of the requested evidence.
@@ -3634,7 +3634,7 @@ paths:
       tags:
         - Query
       summary: Allowance returns granted allwance to the grantee by the granter.
-      operationId: EvidenceQuery_Allowance
+      operationId: CircuitQuery_Allowance
       parameters:
         - type: string
           description: granter is the address of the user granting an allowance of their funds.
@@ -3660,7 +3660,7 @@ paths:
       tags:
         - Query
       summary: Allowances returns all the grants for the given grantee address.
-      operationId: EvidenceQuery_Allowances
+      operationId: CircuitQuery_Allowances
       parameters:
         - type: string
           name: grantee
@@ -3715,7 +3715,7 @@ paths:
       tags:
         - Query
       summary: AllowancesByGranter returns all the grants given by an address
-      operationId: EvidenceQuery_AllowancesByGranter
+      operationId: CircuitQuery_AllowancesByGranter
       parameters:
         - type: string
           name: granter
@@ -3770,7 +3770,7 @@ paths:
       tags:
         - Query
       summary: Constitution queries the chain's constitution.
-      operationId: EvidenceQuery_Constitution
+      operationId: CircuitQuery_Constitution
       responses:
         "200":
           description: A successful response.
@@ -3785,7 +3785,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the gov module.
-      operationId: EvidenceQuery_ParamsMixin115
+      operationId: CircuitQuery_ParamsMixin162
       parameters:
         - type: string
           description: |-
@@ -3808,7 +3808,7 @@ paths:
       tags:
         - Query
       summary: Proposals queries all proposals based on given status.
-      operationId: EvidenceQuery_Proposals
+      operationId: CircuitQuery_Proposals
       parameters:
         - enum:
             - PROPOSAL_STATUS_UNSPECIFIED
@@ -3892,7 +3892,7 @@ paths:
       tags:
         - Query
       summary: Proposal queries proposal details based on ProposalID.
-      operationId: EvidenceQuery_Proposal
+      operationId: CircuitQuery_Proposal
       parameters:
         - type: string
           format: uint64
@@ -3914,7 +3914,7 @@ paths:
       tags:
         - Query
       summary: Deposits queries all deposits of a single proposal.
-      operationId: EvidenceQuery_Deposits
+      operationId: CircuitQuery_Deposits
       parameters:
         - type: string
           format: uint64
@@ -3971,7 +3971,7 @@ paths:
       tags:
         - Query
       summary: Deposit queries single deposit information based on proposalID, depositAddr.
-      operationId: EvidenceQuery_Deposit
+      operationId: CircuitQuery_Deposit
       parameters:
         - type: string
           format: uint64
@@ -3998,7 +3998,7 @@ paths:
       tags:
         - Query
       summary: TallyResult queries the tally of a proposal vote.
-      operationId: EvidenceQuery_TallyResult
+      operationId: CircuitQuery_TallyResult
       parameters:
         - type: string
           format: uint64
@@ -4020,7 +4020,7 @@ paths:
       tags:
         - Query
       summary: Votes queries votes of a given proposal.
-      operationId: EvidenceQuery_Votes
+      operationId: CircuitQuery_Votes
       parameters:
         - type: string
           format: uint64
@@ -4077,7 +4077,7 @@ paths:
       tags:
         - Query
       summary: Vote queries voted information based on proposalID, voterAddr.
-      operationId: EvidenceQuery_Vote
+      operationId: CircuitQuery_Vote
       parameters:
         - type: string
           format: uint64
@@ -4104,7 +4104,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the gov module.
-      operationId: EvidenceQuery_ParamsMixin119
+      operationId: CircuitQuery_ParamsMixin166
       parameters:
         - type: string
           description: |-
@@ -4127,7 +4127,7 @@ paths:
       tags:
         - Query
       summary: Proposals queries all proposals based on given status.
-      operationId: EvidenceQuery_ProposalsMixin119
+      operationId: CircuitQuery_ProposalsMixin166
       parameters:
         - enum:
             - PROPOSAL_STATUS_UNSPECIFIED
@@ -4211,7 +4211,7 @@ paths:
       tags:
         - Query
       summary: Proposal queries proposal details based on ProposalID.
-      operationId: EvidenceQuery_ProposalMixin119
+      operationId: CircuitQuery_ProposalMixin166
       parameters:
         - type: string
           format: uint64
@@ -4233,7 +4233,7 @@ paths:
       tags:
         - Query
       summary: Deposits queries all deposits of a single proposal.
-      operationId: EvidenceQuery_DepositsMixin119
+      operationId: CircuitQuery_DepositsMixin166
       parameters:
         - type: string
           format: uint64
@@ -4290,7 +4290,7 @@ paths:
       tags:
         - Query
       summary: Deposit queries single deposit information based on proposalID, depositor address.
-      operationId: EvidenceQuery_DepositMixin119
+      operationId: CircuitQuery_DepositMixin166
       parameters:
         - type: string
           format: uint64
@@ -4317,7 +4317,7 @@ paths:
       tags:
         - Query
       summary: TallyResult queries the tally of a proposal vote.
-      operationId: EvidenceQuery_TallyResultMixin119
+      operationId: CircuitQuery_TallyResultMixin166
       parameters:
         - type: string
           format: uint64
@@ -4339,7 +4339,7 @@ paths:
       tags:
         - Query
       summary: Votes queries votes of a given proposal.
-      operationId: EvidenceQuery_VotesMixin119
+      operationId: CircuitQuery_VotesMixin166
       parameters:
         - type: string
           format: uint64
@@ -4396,7 +4396,7 @@ paths:
       tags:
         - Query
       summary: Vote queries voted information based on proposalID, voterAddr.
-      operationId: EvidenceQuery_VoteMixin119
+      operationId: CircuitQuery_VoteMixin166
       parameters:
         - type: string
           format: uint64
@@ -4423,7 +4423,7 @@ paths:
       tags:
         - Query
       summary: GroupInfo queries group info based on group id.
-      operationId: EvidenceQuery_GroupInfo
+      operationId: CircuitQuery_GroupInfo
       parameters:
         - type: string
           format: uint64
@@ -4445,7 +4445,7 @@ paths:
       tags:
         - Query
       summary: GroupMembers queries members of a group by group id.
-      operationId: EvidenceQuery_GroupMembers
+      operationId: CircuitQuery_GroupMembers
       parameters:
         - type: string
           format: uint64
@@ -4502,7 +4502,7 @@ paths:
       tags:
         - Query
       summary: GroupPoliciesByAdmin queries group policies by admin address.
-      operationId: EvidenceQuery_GroupPoliciesByAdmin
+      operationId: CircuitQuery_GroupPoliciesByAdmin
       parameters:
         - type: string
           description: admin is the admin address of the group policy.
@@ -4558,7 +4558,7 @@ paths:
       tags:
         - Query
       summary: GroupPoliciesByGroup queries group policies by group id.
-      operationId: EvidenceQuery_GroupPoliciesByGroup
+      operationId: CircuitQuery_GroupPoliciesByGroup
       parameters:
         - type: string
           format: uint64
@@ -4615,7 +4615,7 @@ paths:
       tags:
         - Query
       summary: GroupPolicyInfo queries group policy info based on account address of group policy.
-      operationId: EvidenceQuery_GroupPolicyInfo
+      operationId: CircuitQuery_GroupPolicyInfo
       parameters:
         - type: string
           description: address is the account address of the group policy.
@@ -4636,7 +4636,7 @@ paths:
       tags:
         - Query
       summary: Groups queries all groups in state.
-      operationId: EvidenceQuery_Groups
+      operationId: CircuitQuery_Groups
       parameters:
         - type: string
           format: byte
@@ -4687,7 +4687,7 @@ paths:
       tags:
         - Query
       summary: GroupsByAdmin queries groups by admin address.
-      operationId: EvidenceQuery_GroupsByAdmin
+      operationId: CircuitQuery_GroupsByAdmin
       parameters:
         - type: string
           description: admin is the account address of a group's admin.
@@ -4743,7 +4743,7 @@ paths:
       tags:
         - Query
       summary: GroupsByMember queries groups by member address.
-      operationId: EvidenceQuery_GroupsByMember
+      operationId: CircuitQuery_GroupsByMember
       parameters:
         - type: string
           description: address is the group member address.
@@ -4799,7 +4799,7 @@ paths:
       tags:
         - Query
       summary: Proposal queries a proposal based on proposal id.
-      operationId: EvidenceQuery_ProposalMixin123
+      operationId: CircuitQuery_ProposalMixin170
       parameters:
         - type: string
           format: uint64
@@ -4826,7 +4826,7 @@ paths:
         which might not be final. On the other hand, if the proposal is final,
         then it simply returns the `final_tally_result` state stored in the
         proposal itself.
-      operationId: EvidenceQuery_TallyResultMixin123
+      operationId: CircuitQuery_TallyResultMixin170
       parameters:
         - type: string
           format: uint64
@@ -4848,7 +4848,7 @@ paths:
       tags:
         - Query
       summary: ProposalsByGroupPolicy queries proposals based on account address of group policy.
-      operationId: EvidenceQuery_ProposalsByGroupPolicy
+      operationId: CircuitQuery_ProposalsByGroupPolicy
       parameters:
         - type: string
           description: address is the account address of the group policy related to proposals.
@@ -4904,7 +4904,7 @@ paths:
       tags:
         - Query
       summary: VoteByProposalVoter queries a vote by proposal id and voter.
-      operationId: EvidenceQuery_VoteByProposalVoter
+      operationId: CircuitQuery_VoteByProposalVoter
       parameters:
         - type: string
           format: uint64
@@ -4931,7 +4931,7 @@ paths:
       tags:
         - Query
       summary: VotesByProposal queries a vote by proposal id.
-      operationId: EvidenceQuery_VotesByProposal
+      operationId: CircuitQuery_VotesByProposal
       parameters:
         - type: string
           format: uint64
@@ -4988,7 +4988,7 @@ paths:
       tags:
         - Query
       summary: VotesByVoter queries a vote by voter.
-      operationId: EvidenceQuery_VotesByVoter
+      operationId: CircuitQuery_VotesByVoter
       parameters:
         - type: string
           description: voter is a proposal voter account address.
@@ -5044,7 +5044,7 @@ paths:
       tags:
         - Query
       summary: AnnualProvisions current minting annual provisions value.
-      operationId: EvidenceQuery_AnnualProvisions
+      operationId: CircuitQuery_AnnualProvisions
       responses:
         "200":
           description: A successful response.
@@ -5059,7 +5059,7 @@ paths:
       tags:
         - Query
       summary: Inflation returns the current minting inflation value.
-      operationId: EvidenceQuery_Inflation
+      operationId: CircuitQuery_Inflation
       responses:
         "200":
           description: A successful response.
@@ -5074,7 +5074,7 @@ paths:
       tags:
         - Query
       summary: Params returns the total set of minting parameters.
-      operationId: EvidenceQuery_ParamsMixin128
+      operationId: CircuitQuery_ParamsMixin175
       responses:
         "200":
           description: A successful response.
@@ -5089,7 +5089,7 @@ paths:
       tags:
         - Query
       summary: Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721
-      operationId: EvidenceQuery_BalanceMixin134
+      operationId: CircuitQuery_BalanceMixin181
       parameters:
         - type: string
           description: owner is the owner address of the nft
@@ -5115,7 +5115,7 @@ paths:
       tags:
         - Query
       summary: Classes queries all NFT classes
-      operationId: EvidenceQuery_Classes
+      operationId: CircuitQuery_Classes
       parameters:
         - type: string
           format: byte
@@ -5166,7 +5166,7 @@ paths:
       tags:
         - Query
       summary: Class queries an NFT class based on its id
-      operationId: EvidenceQuery_Class
+      operationId: CircuitQuery_Class
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5189,7 +5189,7 @@ paths:
       summary: |-
         NFTs queries all NFTs of a given class or owner,choose at least one of the two, similar to tokenByIndex in
         ERC721Enumerable
-      operationId: EvidenceQuery_NFTs
+      operationId: CircuitQuery_NFTs
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5248,7 +5248,7 @@ paths:
       tags:
         - Query
       summary: NFT queries an NFT based on its class and id.
-      operationId: EvidenceQuery_NFT
+      operationId: CircuitQuery_NFT
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5274,7 +5274,7 @@ paths:
       tags:
         - Query
       summary: Owner queries the owner of the NFT based on its class and id, same as ownerOf in ERC721
-      operationId: EvidenceQuery_Owner
+      operationId: CircuitQuery_Owner
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5300,7 +5300,7 @@ paths:
       tags:
         - Query
       summary: Supply queries the number of NFTs from the given class, same as totalSupply of ERC721.
-      operationId: EvidenceQuery_Supply
+      operationId: CircuitQuery_Supply
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5323,7 +5323,7 @@ paths:
       summary: |-
         Params queries a specific parameter of a module, given its subspace and
         key.
-      operationId: EvidenceQuery_ParamsMixin137
+      operationId: CircuitQuery_ParamsMixin184
       parameters:
         - type: string
           description: subspace defines the module to query the parameter for.
@@ -5347,7 +5347,7 @@ paths:
       tags:
         - Query
       summary: Subspaces queries for all registered subspaces and all keys for a subspace.
-      operationId: EvidenceQuery_Subspaces
+      operationId: CircuitQuery_Subspaces
       responses:
         "200":
           description: A successful response.
@@ -5362,7 +5362,7 @@ paths:
       tags:
         - Query
       summary: CommunityPool queries the community pool coins.
-      operationId: EvidenceQuery_CommunityPoolMixin139
+      operationId: CircuitQuery_CommunityPoolMixin186
       responses:
         "200":
           description: A successful response.
@@ -5377,7 +5377,7 @@ paths:
       tags:
         - Query
       summary: ContinuousFunds queries all continuous funds in the store.
-      operationId: EvidenceQuery_ContinuousFunds
+      operationId: CircuitQuery_ContinuousFunds
       responses:
         "200":
           description: A successful response.
@@ -5392,7 +5392,7 @@ paths:
       tags:
         - Query
       summary: ContinuousFund queries a continuous fund by the recipient is is associated with.
-      operationId: EvidenceQuery_ContinuousFund
+      operationId: CircuitQuery_ContinuousFund
       parameters:
         - type: string
           description: recipient is the recipient address to query unclaimed budget amount for.
@@ -5413,7 +5413,7 @@ paths:
       tags:
         - Query
       summary: Params returns the total set of x/protocolpool parameters.
-      operationId: EvidenceQuery_ParamsMixin139
+      operationId: CircuitQuery_ParamsMixin186
       responses:
         "200":
           description: A successful response.
@@ -5428,7 +5428,7 @@ paths:
       tags:
         - Query
       summary: Params queries the parameters of slashing module
-      operationId: EvidenceQuery_ParamsMixin144
+      operationId: CircuitQuery_ParamsMixin191
       responses:
         "200":
           description: A successful response.
@@ -5443,7 +5443,7 @@ paths:
       tags:
         - Query
       summary: SigningInfos queries signing info of all validators
-      operationId: EvidenceQuery_SigningInfos
+      operationId: CircuitQuery_SigningInfos
       parameters:
         - type: string
           format: byte
@@ -5494,7 +5494,7 @@ paths:
       tags:
         - Query
       summary: SigningInfo queries the signing info of given cons address
-      operationId: EvidenceQuery_SigningInfo
+      operationId: CircuitQuery_SigningInfo
       parameters:
         - type: string
           description: cons_address is the address to query signing info of
@@ -5518,7 +5518,7 @@ paths:
       tags:
         - Query
       summary: DelegatorDelegations queries all delegations of a given delegator address.
-      operationId: EvidenceQuery_DelegatorDelegations
+      operationId: CircuitQuery_DelegatorDelegations
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5577,7 +5577,7 @@ paths:
       tags:
         - Query
       summary: Redelegations queries redelegations of given address.
-      operationId: EvidenceQuery_Redelegations
+      operationId: CircuitQuery_Redelegations
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5646,7 +5646,7 @@ paths:
       summary: |-
         DelegatorUnbondingDelegations queries all unbonding delegations of a given
         delegator address.
-      operationId: EvidenceQuery_DelegatorUnbondingDelegations
+      operationId: CircuitQuery_DelegatorUnbondingDelegations
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5707,7 +5707,7 @@ paths:
       summary: |-
         DelegatorValidators queries all validators info for given delegator
         address.
-      operationId: EvidenceQuery_DelegatorValidatorsMixin149
+      operationId: CircuitQuery_DelegatorValidatorsMixin196
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5765,7 +5765,7 @@ paths:
       summary: |-
         DelegatorValidator queries validator info for given delegator validator
         pair.
-      operationId: EvidenceQuery_DelegatorValidator
+      operationId: CircuitQuery_DelegatorValidator
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5791,7 +5791,7 @@ paths:
       tags:
         - Query
       summary: HistoricalInfo queries the historical info for given height.
-      operationId: EvidenceQuery_HistoricalInfo
+      operationId: CircuitQuery_HistoricalInfo
       parameters:
         - type: string
           format: int64
@@ -5813,7 +5813,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the staking parameters.
-      operationId: EvidenceQuery_ParamsMixin149
+      operationId: CircuitQuery_ParamsMixin196
       responses:
         "200":
           description: A successful response.
@@ -5828,7 +5828,7 @@ paths:
       tags:
         - Query
       summary: Pool queries the pool info.
-      operationId: EvidenceQuery_Pool
+      operationId: CircuitQuery_Pool
       responses:
         "200":
           description: A successful response.
@@ -5846,7 +5846,7 @@ paths:
       tags:
         - Query
       summary: Validators queries all validators that match the given status.
-      operationId: EvidenceQuery_Validators
+      operationId: CircuitQuery_Validators
       parameters:
         - type: string
           description: status enables to query for validators matching a given status.
@@ -5901,7 +5901,7 @@ paths:
       tags:
         - Query
       summary: Validator queries validator info for given validator address.
-      operationId: EvidenceQuery_Validator
+      operationId: CircuitQuery_Validator
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -5925,7 +5925,7 @@ paths:
       tags:
         - Query
       summary: ValidatorDelegations queries delegate info for given validator.
-      operationId: EvidenceQuery_ValidatorDelegations
+      operationId: CircuitQuery_ValidatorDelegations
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -5981,7 +5981,7 @@ paths:
       tags:
         - Query
       summary: Delegation queries delegate info for given validator delegator pair.
-      operationId: EvidenceQuery_Delegation
+      operationId: CircuitQuery_Delegation
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -6009,7 +6009,7 @@ paths:
       summary: |-
         UnbondingDelegation queries unbonding info for given validator delegator
         pair.
-      operationId: EvidenceQuery_UnbondingDelegation
+      operationId: CircuitQuery_UnbondingDelegation
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -6038,7 +6038,7 @@ paths:
       tags:
         - Query
       summary: ValidatorUnbondingDelegations queries unbonding delegations of a validator.
-      operationId: EvidenceQuery_ValidatorUnbondingDelegations
+      operationId: CircuitQuery_ValidatorUnbondingDelegations
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -6094,7 +6094,7 @@ paths:
       tags:
         - Service
       summary: TxDecode decodes the transaction.
-      operationId: EvidenceService_TxDecode
+      operationId: CircuitService_TxDecode
       parameters:
         - description: |-
             TxDecodeRequest is the request type for the Service.TxDecode
@@ -6118,7 +6118,7 @@ paths:
       tags:
         - Service
       summary: TxDecodeAmino decodes an Amino transaction from encoded bytes to JSON.
-      operationId: EvidenceService_TxDecodeAmino
+      operationId: CircuitService_TxDecodeAmino
       parameters:
         - description: |-
             TxDecodeAminoRequest is the request type for the Service.TxDecodeAmino
@@ -6142,7 +6142,7 @@ paths:
       tags:
         - Service
       summary: TxEncode encodes the transaction.
-      operationId: EvidenceService_TxEncode
+      operationId: CircuitService_TxEncode
       parameters:
         - description: |-
             TxEncodeRequest is the request type for the Service.TxEncode
@@ -6166,7 +6166,7 @@ paths:
       tags:
         - Service
       summary: TxEncodeAmino encodes an Amino transaction from JSON to encoded bytes.
-      operationId: EvidenceService_TxEncodeAmino
+      operationId: CircuitService_TxEncodeAmino
       parameters:
         - description: |-
             TxEncodeAminoRequest is the request type for the Service.TxEncodeAmino
@@ -6190,7 +6190,7 @@ paths:
       tags:
         - Service
       summary: Simulate simulates executing a transaction for estimating gas usage.
-      operationId: EvidenceService_Simulate
+      operationId: CircuitService_Simulate
       parameters:
         - description: |-
             SimulateRequest is the request type for the Service.Simulate
@@ -6214,7 +6214,7 @@ paths:
       tags:
         - Service
       summary: GetTxsEvent fetches txs by event.
-      operationId: EvidenceService_GetTxsEvent
+      operationId: CircuitService_GetTxsEvent
       parameters:
         - type: array
           items:
@@ -6307,7 +6307,7 @@ paths:
       tags:
         - Service
       summary: BroadcastTx broadcast transaction.
-      operationId: EvidenceService_BroadcastTx
+      operationId: CircuitService_BroadcastTx
       parameters:
         - description: |-
             BroadcastTxRequest is the request type for the Service.BroadcastTxRequest
@@ -6331,7 +6331,7 @@ paths:
       tags:
         - Service
       summary: GetBlockWithTxs fetches a block with decoded txs.
-      operationId: EvidenceService_GetBlockWithTxs
+      operationId: CircuitService_GetBlockWithTxs
       parameters:
         - type: string
           format: int64
@@ -6388,7 +6388,7 @@ paths:
       tags:
         - Service
       summary: GetTx fetches a tx by hash.
-      operationId: EvidenceService_GetTx
+      operationId: CircuitService_GetTx
       parameters:
         - type: string
           description: hash is the tx hash to query, encoded as a hex string.
@@ -6409,7 +6409,7 @@ paths:
       tags:
         - Query
       summary: AppliedPlan queries a previously applied upgrade plan by its name.
-      operationId: EvidenceQuery_AppliedPlan
+      operationId: CircuitQuery_AppliedPlan
       parameters:
         - type: string
           description: name is the name of the applied plan to query for.
@@ -6430,7 +6430,7 @@ paths:
       tags:
         - Query
       summary: Returns the account with authority to conduct upgrades
-      operationId: EvidenceQuery_Authority
+      operationId: CircuitQuery_Authority
       responses:
         "200":
           description: A successful response.
@@ -6445,7 +6445,7 @@ paths:
       tags:
         - Query
       summary: CurrentPlan queries the current upgrade plan.
-      operationId: EvidenceQuery_CurrentPlan
+      operationId: CircuitQuery_CurrentPlan
       responses:
         "200":
           description: A successful response.
@@ -6460,7 +6460,7 @@ paths:
       tags:
         - Query
       summary: ModuleVersions queries the list of module versions from state.
-      operationId: EvidenceQuery_ModuleVersions
+      operationId: CircuitQuery_ModuleVersions
       parameters:
         - type: string
           description: |-
@@ -6489,7 +6489,7 @@ paths:
         UpgradedConsensusState RPC not supported with legacy querier
         This rpc is deprecated now that IBC has its own replacement
         (https://github.com/cosmos/ibc-go/blob/2c880a22e9f9cc75f62b527ca94aa75ce1106001/proto/ibc/core/client/v1/query.proto#L54)
-      operationId: EvidenceQuery_UpgradedConsensusState
+      operationId: CircuitQuery_UpgradedConsensusState
       parameters:
         - type: string
           format: int64
@@ -6699,7 +6699,7 @@ paths:
       tags:
         - Msg
       summary: UpdateParams defines a rpc handler for MsgUpdateParams.
-      operationId: FeeMsg_UpdateParamsMixin189
+      operationId: FeeMsg_UpdateParamsMixin68
       parameters:
         - name: body
           in: body
@@ -6741,7 +6741,7 @@ paths:
       tags:
         - Msg
       summary: UpdateParams defines a rpc handler for MsgUpdateParams.
-      operationId: FeeMsg_UpdateParamsMixin197
+      operationId: FeeMsg_UpdateParamsMixin76
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -7972,7 +7972,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the ICA host submodule.
-      operationId: FeeQuery_ParamsMixin188
+      operationId: FeeQuery_ParamsMixin67
       responses:
         "200":
           description: A successful response.
@@ -8132,7 +8132,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the ibc-transfer module.
-      operationId: FeeQuery_ParamsMixin195
+      operationId: FeeQuery_ParamsMixin74
       responses:
         "200":
           description: A successful response.
@@ -9588,10 +9588,9 @@ paths:
             - Mint claimed balance to the given Shannon account
 
             NOTE:
+            - A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.
             - The Shannon account specified must be the message signer
             - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
-
-            Next free index: 6
           name: body
           in: body
           required: true
@@ -10156,10 +10155,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
         - type: string
@@ -10250,10 +10246,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -10338,10 +10331,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -10426,10 +10416,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
         - type: string
@@ -10528,10 +10515,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
         - type: string
@@ -10630,10 +10614,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -10703,10 +10684,7 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
       responses:
@@ -10851,15 +10829,19 @@ paths:
           name: pagination.count_total
           in: query
         - type: boolean
-          description: |-
-            reverse is set to true if results are to be returned in the descending order.
-
-            Since: cosmos-sdk 0.43
+          description: reverse is set to true if results are to be returned in the descending order.
           name: pagination.reverse
           in: query
         - type: string
           description: unique service identifier to filter by
           name: service_id
+          in: query
+        - type: boolean
+          description: |-
+            if true, return a dehydrated version of the supplier.
+            Why? This enables smaller response payloads to reduce pagination of the supplier list.
+            Example: Removes service_config_history and rev_share details from the response. See the implementation for more details.
+          name: dehydrated
           in: query
       responses:
         "200":
@@ -10882,6 +10864,13 @@ paths:
           name: operator_address
           in: path
           required: true
+        - type: boolean
+          description: |-
+            if true, return a dehydrated version of the supplier.
+            Why? This enables smaller response payloads to reduce payload size.
+            Example: Removes service_config_history and rev_share details from the response. See the implementation for more details.
+          name: dehydrated
+          in: query
       responses:
         "200":
           description: A successful response.
@@ -10910,7 +10899,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_ApplySnapshotChunk
+      operationId: CircuitABCI_ApplySnapshotChunk
       parameters:
         - name: body
           in: body
@@ -10930,7 +10919,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_CheckTx
+      operationId: CircuitABCI_CheckTx
       parameters:
         - name: body
           in: body
@@ -10950,7 +10939,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_Commit
+      operationId: CircuitABCI_Commit
       parameters:
         - name: body
           in: body
@@ -10970,7 +10959,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_Echo
+      operationId: CircuitABCI_Echo
       parameters:
         - name: body
           in: body
@@ -10990,7 +10979,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_ExtendVote
+      operationId: CircuitABCI_ExtendVote
       parameters:
         - name: body
           in: body
@@ -11010,7 +10999,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_FinalizeBlock
+      operationId: CircuitABCI_FinalizeBlock
       parameters:
         - name: body
           in: body
@@ -11030,7 +11019,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_Flush
+      operationId: CircuitABCI_Flush
       parameters:
         - name: body
           in: body
@@ -11050,7 +11039,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_Info
+      operationId: CircuitABCI_Info
       parameters:
         - name: body
           in: body
@@ -11070,7 +11059,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_InitChain
+      operationId: CircuitABCI_InitChain
       parameters:
         - name: body
           in: body
@@ -11090,7 +11079,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_ListSnapshots
+      operationId: CircuitABCI_ListSnapshots
       parameters:
         - name: body
           in: body
@@ -11110,7 +11099,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_LoadSnapshotChunk
+      operationId: CircuitABCI_LoadSnapshotChunk
       parameters:
         - name: body
           in: body
@@ -11130,7 +11119,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_OfferSnapshot
+      operationId: CircuitABCI_OfferSnapshot
       parameters:
         - name: body
           in: body
@@ -11150,7 +11139,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_PrepareProposal
+      operationId: CircuitABCI_PrepareProposal
       parameters:
         - name: body
           in: body
@@ -11170,7 +11159,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_ProcessProposal
+      operationId: CircuitABCI_ProcessProposal
       parameters:
         - name: body
           in: body
@@ -11190,7 +11179,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_Query
+      operationId: CircuitABCI_Query
       parameters:
         - name: body
           in: body
@@ -11210,7 +11199,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: EvidenceABCI_VerifyVoteExtension
+      operationId: CircuitABCI_VerifyVoteExtension
       parameters:
         - name: body
           in: body
@@ -12236,10 +12225,7 @@ definitions:
         type: string
         format: uint64
       reverse:
-        description: |-
-          reverse is set to true if results are to be returned in the descending order.
-
-          Since: cosmos-sdk 0.43
+        description: reverse is set to true if results are to be returned in the descending order.
         type: boolean
   cosmos.base.query.v1beta1.PageResponse:
     description: |-
@@ -19926,10 +19912,9 @@ definitions:
       - Mint claimed balance to the given Shannon account
 
       NOTE:
+      - A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.
       - The Shannon account specified must be the message signer
       - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
-
-      Next free index: 6
     type: object
     title: 'MsgClaimMorseAccount is used to:'
     properties:
@@ -19950,8 +19935,7 @@ definitions:
         description: |-
           The bech32-encoded address of the Shannon account which is signing for this message.
           This account is liable for any fees incurred by violating the constraints of Morse
-          account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
-          claim messages AND has EXACTLY ONE signer.
+          account/actor claim message fee waiving.
         type: string
   pocket.migration.MsgClaimMorseAccountResponse:
     description: |-
@@ -20305,7 +20289,7 @@ definitions:
     description: |-
       Params defines the parameters for the module.
 
-      Next free index: 3
+      Next free index: 4
     type: object
     properties:
       allow_morse_account_import_overwrite:
@@ -20317,6 +20301,11 @@ definitions:
           - Delete ALL existing onchain MorseClaimableAccounts
           - Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts
           This is useful for testing purposes, but should be disabled in production.
+        type: boolean
+      morse_account_claiming_enabled:
+        description: |-
+          morse_account_claiming_enabled is a feature flag which is used to enable/disable the processing of Morse account/actor claim messages
+          (i.e. `MsgClaimMorseAccount`, `MorseClaimApplication`, and `MorseClaimSupplier`).
         type: boolean
       waive_morse_claim_gas_fees:
         type: boolean
@@ -20355,7 +20344,9 @@ definitions:
         title: 'Important: This field MUST only be set by proofKeeper#EnsureValidProofSignaturesAndClosestPath'
         $ref: '#/definitions/pocket.proof.ClaimProofStatus'
       root_hash:
-        description: Root hash from smt.SMST#Root().
+        description: |-
+          Root hash from smt.SMST#Root().
+          TODO_UP_NEXT(@bryanchriswhite, #1497): Dehydrate the claim's root hash from onchain events.
         type: string
         format: byte
       session_header:
@@ -20738,7 +20729,7 @@ definitions:
   pocket.session.Session:
     description: |-
       Session is a fully hydrated session object that contains all the information for the Session
-      and its parcipants.
+      and its participants.
     type: object
     properties:
       application:
@@ -20753,7 +20744,7 @@ definitions:
         title: The number of blocks per session when this session started
       session_id:
         type: string
-        title: A unique pseudoranom ID for this session
+        title: A unique pseudorandom ID for this session
       session_number:
         type: string
         format: int64
@@ -20779,15 +20770,15 @@ definitions:
       session_end_block_height:
         description: |-
           Note that`session_end_block_height` is a derivative of (`start` + `num_blocks_per_session`)
-          as goverened by onchain params at the time of the session start.
-          It is stored as an additional field to simplofy business logic in case
+          as governed by onchain params at the time of the session start.
+          It is stored as an additional field to simplify business logic in case
           the number of blocks_per_session changes during the session.
 
           The height at which this session ended, this is the last block of the session
         type: string
         format: int64
       session_id:
-        description: A unique pseudoranom ID for this session
+        description: A unique pseudorandom ID for this session
         type: string
         title: 'NOTE: session_id can be derived from the above values using onchain but is included in the header for convenience'
       session_start_block_height:
@@ -21230,38 +21221,57 @@ definitions:
         $ref: '#/definitions/pocket.supplier.Params'
   pocket.tokenomics.MintAllocationPercentages:
     description: |-
-      MintAllocationPercentages represents the distribution of newly minted tokens,
-      at the end of claim settlement, as a result of the Global Mint TLM.
+      MintAllocationPercentages captures the distribution of newly minted tokens.
+      The sum of all new tokens minted must equal 1.
+      GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
+      TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
     type: object
     properties:
       application:
-        description: |-
-          allocation_application is the percentage of the minted tokens which are sent
-          to the application account address during claim settlement.
+        description: application - % of newley minted tokens sent to the application account address.
         type: number
         format: double
       dao:
-        description: |-
-          dao is the percentage of the minted tokens which are sent
-          to the DAO reward address during claim settlement.
+        description: dao - % of newley minted tokens sent to the DAO reward address.
         type: number
         format: double
       proposer:
-        description: |-
-          proposer is the percentage of the minted tokens which are sent
-          to the block proposer account address during claim settlement.
+        description: proposer - % of newley minted tokens sent to the block proposer (i.e. validator0 account address.
         type: number
         format: double
       source_owner:
-        description: |-
-          source_owner is the percentage of the minted tokens which are sent
-          to the service source owner account address during claim settlement.
+        description: source_owner - % of newley minted tokens sent to the service source owner account address.
         type: number
         format: double
       supplier:
-        description: |-
-          supplier is the percentage of the minted tokens which are sent
-          to the block supplier account address during claim settlement.
+        description: supplier - % of newley minted tokens sent to the block supplier account address.
+        type: number
+        format: double
+  pocket.tokenomics.MintEqualsBurnClaimDistribution:
+    description: |-
+      MintEqualsBurnClaimDistribution captures the distribution of claimable tokens.
+      The sum of all tokens being burnt from the application's stake must equal 1.
+      GlobalMintEqualsBurnTLM: Only used by the GlobalMintEqualsBurnTLM at the end of claim settlement.
+    type: object
+    properties:
+      application:
+        description: application - % of claimable tokens sent to the application account address.
+        type: number
+        format: double
+      dao:
+        description: dao - % of claimable tokens sent to the DAO reward address.
+        type: number
+        format: double
+      proposer:
+        description: proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.
+        type: number
+        format: double
+      source_owner:
+        description: source_owner - % of claimable tokens sent to the service source owner account address.
+        type: number
+        format: double
+      supplier:
+        description: supplier - % of claimable tokens sent to the block supplier account address.
         type: number
         format: double
   pocket.tokenomics.MsgUpdateParam:
@@ -21273,6 +21283,8 @@ definitions:
         format: double
       as_mint_allocation_percentages:
         $ref: '#/definitions/pocket.tokenomics.MintAllocationPercentages'
+      as_mint_equals_burn_claim_distribution:
+        $ref: '#/definitions/pocket.tokenomics.MintEqualsBurnClaimDistribution'
       as_string:
         type: string
       authority:
@@ -21280,13 +21292,9 @@ definitions:
         type: string
       name:
         type: string
-        title: |-
-          The (name, as_type) tuple must match the corresponding name and type as
-          specified in the `Params` message in `proof/params.proto.`
+        title: The (name, as_type) tuple must match the corresponding name and type as specified in the `Params` message in `proof/params.proto.`
   pocket.tokenomics.MsgUpdateParamResponse:
-    description: |-
-      MsgUpdateParamResponse defines the response structure for executing a
-      MsgUpdateParam message after a single param update.
+    description: MsgUpdateParamResponse defines the response structure for executing a MsgUpdateParam message after a single param update.
     type: object
     properties:
       params:
@@ -21299,14 +21307,10 @@ definitions:
         description: authority is the address that controls the module (defaults to x/gov unless overwritten).
         type: string
       params:
-        description: |-
-          params defines the x/tokenomics parameters to update.
-          NOTE: All parameters must be supplied.
+        description: params defines the tokenomics parameters to update.
         $ref: '#/definitions/pocket.tokenomics.Params'
   pocket.tokenomics.MsgUpdateParamsResponse:
-    description: |-
-      MsgUpdateParamsResponse defines the response structure for executing a
-      MsgUpdateParams message.
+    description: MsgUpdateParamsResponse defines the response structure for executing a MsgUpdateParams message.
     type: object
     properties:
       params:
@@ -21317,20 +21321,27 @@ definitions:
     properties:
       dao_reward_address:
         description: |-
-          dao_reward_address is the address to which mint_allocation_dao percentage of the
-          minted tokens are at the end of claim settlement.
+          dao_reward_address is where the DAO's portion of claims submitted are distributed.
 
           Bech32 cosmos address
         type: string
       global_inflation_per_claim:
-        description: global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.
+        description: |-
+          global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount to be minted on settlement.
+          GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
         type: number
         format: double
       mint_allocation_percentages:
         description: |-
-          mint_allocation_percentages represents the distribution of newly minted tokens,
-          at the end of claim settlement, as a result of the Global Mint TLM.
+          mint_allocation_percentages represents the distribution of newly minted tokens.
+          GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
         $ref: '#/definitions/pocket.tokenomics.MintAllocationPercentages'
+      mint_equals_burn_claim_distribution:
+        description: |-
+          mint_equals_burn_claim_distribution controls how the settlement amount is distributed
+          when global inflation is disabled (global_inflation_per_claim = 0).
+          MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.
+        $ref: '#/definitions/pocket.tokenomics.MintEqualsBurnClaimDistribution'
   pocket.tokenomics.QueryParamsResponse:
     description: QueryParamsResponse is response type for the Query/Params RPC method.
     type: object

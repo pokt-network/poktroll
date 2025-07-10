@@ -22,7 +22,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the x/auth module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "EvidenceMsg_UpdateParams",
+                "operationId": "CircuitMsg_UpdateParams",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -56,7 +56,7 @@
                     "Msg"
                 ],
                 "summary": "Exec attempts to execute the provided messages using\nauthorizations granted to the grantee. Each message should have only\none signer corresponding to the granter of the authorization.",
-                "operationId": "EvidenceMsg_Exec",
+                "operationId": "CircuitMsg_Exec",
                 "parameters": [
                     {
                         "description": "MsgExec attempts to execute the provided messages using\nauthorizations granted to the grantee. Each message should have only\none signer corresponding to the granter of the authorization.",
@@ -90,7 +90,7 @@
                     "Msg"
                 ],
                 "summary": "Grant grants the provided authorization to the grantee on the granter's\naccount with the provided expiration time. If there is already a grant\nfor the given (granter, grantee, Authorization) triple, then the grant\nwill be overwritten.",
-                "operationId": "EvidenceMsg_Grant",
+                "operationId": "CircuitMsg_Grant",
                 "parameters": [
                     {
                         "description": "MsgGrant is a request type for Grant method. It declares authorization to the grantee\non behalf of the granter with the provided expiration time.",
@@ -124,7 +124,7 @@
                     "Msg"
                 ],
                 "summary": "Revoke revokes any authorization corresponding to the provided method name on the\ngranter's account that has been granted to the grantee.",
-                "operationId": "EvidenceMsg_Revoke",
+                "operationId": "CircuitMsg_Revoke",
                 "parameters": [
                     {
                         "description": "MsgRevoke revokes any authorization with the provided sdk.Msg type on the\ngranter's account with that has been granted to the grantee.",
@@ -158,7 +158,7 @@
                     "Query"
                 ],
                 "summary": "AppOptions returns the autocli options for all of the modules in an app.",
-                "operationId": "EvidenceQuery_AppOptions",
+                "operationId": "CircuitQuery_AppOptions",
                 "parameters": [
                     {
                         "description": "AppOptionsRequest is the RemoteInfoService/AppOptions request type.",
@@ -192,7 +192,7 @@
                     "Msg"
                 ],
                 "summary": "MultiSend defines a method for sending coins from some accounts to other accounts.",
-                "operationId": "EvidenceMsg_MultiSend",
+                "operationId": "CircuitMsg_MultiSend",
                 "parameters": [
                     {
                         "description": "MsgMultiSend represents an arbitrary multi-in, multi-out send message.",
@@ -226,7 +226,7 @@
                     "Msg"
                 ],
                 "summary": "Send defines a method for sending coins from one account to another account.",
-                "operationId": "EvidenceMsg_Send",
+                "operationId": "CircuitMsg_Send",
                 "parameters": [
                     {
                         "description": "MsgSend represents a message to send coins from one account to another.",
@@ -260,7 +260,7 @@
                     "Msg"
                 ],
                 "summary": "SetSendEnabled is a governance operation for setting the SendEnabled flag\non any number of Denoms. Only the entries to add or update should be\nincluded. Entries that already exist in the store, but that aren't\nincluded in this message, will be left unchanged.",
-                "operationId": "EvidenceMsg_SetSendEnabled",
+                "operationId": "CircuitMsg_SetSendEnabled",
                 "parameters": [
                     {
                         "description": "MsgSetSendEnabled is the Msg/SetSendEnabled request type.\n\nOnly entries to add/update/delete need to be included.\nExisting SendEnabled entries that are not included in this\nmessage are left unchanged.",
@@ -294,7 +294,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/bank module parameters.\nThe authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin70",
+                "operationId": "CircuitMsg_UpdateParamsMixin117",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -328,7 +328,7 @@
                     "Msg"
                 ],
                 "summary": "LoadTest defines a method for executing a sequence of load test operations.",
-                "operationId": "EvidenceMsg_LoadTest",
+                "operationId": "CircuitMsg_LoadTest",
                 "parameters": [
                     {
                         "description": "MsgLoadTestOps defines a message containing a sequence of load test operations.",
@@ -362,7 +362,7 @@
                     "Msg"
                 ],
                 "summary": "AuthorizeCircuitBreaker allows a super-admin to grant (or revoke) another\naccount's circuit breaker permissions.",
-                "operationId": "EvidenceMsg_AuthorizeCircuitBreaker",
+                "operationId": "CircuitMsg_AuthorizeCircuitBreaker",
                 "parameters": [
                     {
                         "description": "MsgAuthorizeCircuitBreaker defines the Msg/AuthorizeCircuitBreaker request type.",
@@ -396,7 +396,7 @@
                     "Msg"
                 ],
                 "summary": "ResetCircuitBreaker resumes processing of Msg's in the state machine that\nhave been been paused using TripCircuitBreaker.",
-                "operationId": "EvidenceMsg_ResetCircuitBreaker",
+                "operationId": "CircuitMsg_ResetCircuitBreaker",
                 "parameters": [
                     {
                         "description": "MsgResetCircuitBreaker defines the Msg/ResetCircuitBreaker request type.",
@@ -430,7 +430,7 @@
                     "Msg"
                 ],
                 "summary": "TripCircuitBreaker pauses processing of Msg's in the state machine.",
-                "operationId": "EvidenceMsg_TripCircuitBreaker",
+                "operationId": "CircuitMsg_TripCircuitBreaker",
                 "parameters": [
                     {
                         "description": "MsgTripCircuitBreaker defines the Msg/TripCircuitBreaker request type.",
@@ -464,7 +464,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/consensus module parameters.\nThe authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin85",
+                "operationId": "CircuitMsg_UpdateParamsMixin132",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -498,7 +498,7 @@
                     "Msg"
                 ],
                 "summary": "IncreaseCount increments the counter by the specified amount.",
-                "operationId": "EvidenceMsg_IncreaseCount",
+                "operationId": "CircuitMsg_IncreaseCount",
                 "parameters": [
                     {
                         "description": "MsgIncreaseCounter defines a count Msg service counter.",
@@ -532,7 +532,7 @@
                     "Query"
                 ],
                 "summary": "GetCount queries the parameters of x/Counter module.",
-                "operationId": "EvidenceQuery_GetCount",
+                "operationId": "CircuitQuery_GetCount",
                 "parameters": [
                     {
                         "description": "QueryGetCountRequest defines the request type for querying x/mock count.",
@@ -566,7 +566,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/crisis module\nparameters. The authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin89",
+                "operationId": "CircuitMsg_UpdateParamsMixin136",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -600,7 +600,7 @@
                     "Msg"
                 ],
                 "summary": "VerifyInvariant defines a method to verify a particular invariant.",
-                "operationId": "EvidenceMsg_VerifyInvariant",
+                "operationId": "CircuitMsg_VerifyInvariant",
                 "parameters": [
                     {
                         "description": "MsgVerifyInvariant represents a message to verify a particular invariance.",
@@ -635,7 +635,7 @@
                     "Msg"
                 ],
                 "summary": "CommunityPoolSpend defines a governance operation for sending tokens from\nthe community pool in the x/distribution module to another account, which\ncould be the governance module itself. The authority is defined in the\nkeeper.",
-                "operationId": "EvidenceMsg_CommunityPoolSpend",
+                "operationId": "CircuitMsg_CommunityPoolSpend",
                 "parameters": [
                     {
                         "description": "MsgCommunityPoolSpend defines a message for sending tokens from the community\npool to another account. This message is typically executed via a governance\nproposal with the governance module being the executing authority.",
@@ -669,7 +669,7 @@
                     "Msg"
                 ],
                 "summary": "DepositValidatorRewardsPool defines a method to provide additional rewards\nto delegators to a specific validator.",
-                "operationId": "EvidenceMsg_DepositValidatorRewardsPool",
+                "operationId": "CircuitMsg_DepositValidatorRewardsPool",
                 "parameters": [
                     {
                         "description": "DepositValidatorRewardsPool defines the request structure to provide\nadditional rewards to delegators from a specific validator.",
@@ -704,7 +704,7 @@
                     "Msg"
                 ],
                 "summary": "FundCommunityPool defines a method to allow an account to directly\nfund the community pool.",
-                "operationId": "EvidenceMsg_FundCommunityPool",
+                "operationId": "CircuitMsg_FundCommunityPool",
                 "parameters": [
                     {
                         "description": "MsgFundCommunityPool allows an account to directly\nfund the community pool.",
@@ -738,7 +738,7 @@
                     "Msg"
                 ],
                 "summary": "SetWithdrawAddress defines a method to change the withdraw address\nfor a delegator (or validator self-delegation).",
-                "operationId": "EvidenceMsg_SetWithdrawAddress",
+                "operationId": "CircuitMsg_SetWithdrawAddress",
                 "parameters": [
                     {
                         "description": "MsgSetWithdrawAddress sets the withdraw address for\na delegator (or validator self-delegation).",
@@ -772,7 +772,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/distribution\nmodule parameters. The authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin100",
+                "operationId": "CircuitMsg_UpdateParamsMixin147",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -806,7 +806,7 @@
                     "Msg"
                 ],
                 "summary": "WithdrawDelegatorReward defines a method to withdraw rewards of delegator\nfrom a single validator.",
-                "operationId": "EvidenceMsg_WithdrawDelegatorReward",
+                "operationId": "CircuitMsg_WithdrawDelegatorReward",
                 "parameters": [
                     {
                         "description": "MsgWithdrawDelegatorReward represents delegation withdrawal to a delegator\nfrom a single validator.",
@@ -840,7 +840,7 @@
                     "Msg"
                 ],
                 "summary": "WithdrawValidatorCommission defines a method to withdraw the\nfull commission to the validator address.",
-                "operationId": "EvidenceMsg_WithdrawValidatorCommission",
+                "operationId": "CircuitMsg_WithdrawValidatorCommission",
                 "parameters": [
                     {
                         "description": "MsgWithdrawValidatorCommission withdraws the full commission to the validator\naddress.",
@@ -874,7 +874,7 @@
                     "Msg"
                 ],
                 "summary": "SubmitEvidence submits an arbitrary Evidence of misbehavior such as equivocation or\ncounterfactual signing.",
-                "operationId": "EvidenceMsg_SubmitEvidence",
+                "operationId": "CircuitMsg_SubmitEvidence",
                 "parameters": [
                     {
                         "description": "MsgSubmitEvidence represents a message that supports submitting arbitrary\nEvidence of misbehavior such as equivocation or counterfactual signing.",
@@ -908,7 +908,7 @@
                     "Msg"
                 ],
                 "summary": "GrantAllowance grants fee allowance to the grantee on the granter's\naccount with the provided expiration time.",
-                "operationId": "EvidenceMsg_GrantAllowance",
+                "operationId": "CircuitMsg_GrantAllowance",
                 "parameters": [
                     {
                         "description": "MsgGrantAllowance adds permission for Grantee to spend up to Allowance\nof fees from the account of Granter.",
@@ -942,7 +942,7 @@
                     "Msg"
                 ],
                 "summary": "PruneAllowances prunes expired fee allowances, currently up to 75 at a time.",
-                "operationId": "EvidenceMsg_PruneAllowances",
+                "operationId": "CircuitMsg_PruneAllowances",
                 "parameters": [
                     {
                         "description": "MsgPruneAllowances prunes expired fee allowances.",
@@ -976,7 +976,7 @@
                     "Msg"
                 ],
                 "summary": "RevokeAllowance revokes any fee allowance of granter's account that\nhas been granted to the grantee.",
-                "operationId": "EvidenceMsg_RevokeAllowance",
+                "operationId": "CircuitMsg_RevokeAllowance",
                 "parameters": [
                     {
                         "description": "MsgRevokeAllowance removes any existing Allowance from Granter to Grantee.",
@@ -1010,7 +1010,7 @@
                     "Msg"
                 ],
                 "summary": "CancelProposal defines a method to cancel governance proposal",
-                "operationId": "EvidenceMsg_CancelProposal",
+                "operationId": "CircuitMsg_CancelProposal",
                 "parameters": [
                     {
                         "description": "MsgCancelProposal is the Msg/CancelProposal request type.",
@@ -1044,7 +1044,7 @@
                     "Msg"
                 ],
                 "summary": "Deposit defines a method to add deposit on a specific proposal.",
-                "operationId": "EvidenceMsg_Deposit",
+                "operationId": "CircuitMsg_Deposit",
                 "parameters": [
                     {
                         "description": "MsgDeposit defines a message to submit a deposit to an existing proposal.",
@@ -1078,7 +1078,7 @@
                     "Msg"
                 ],
                 "summary": "ExecLegacyContent defines a Msg to be in included in a MsgSubmitProposal\nto execute a legacy content-based proposal.",
-                "operationId": "EvidenceMsg_ExecLegacyContent",
+                "operationId": "CircuitMsg_ExecLegacyContent",
                 "parameters": [
                     {
                         "description": "MsgExecLegacyContent is used to wrap the legacy content field into a message.\nThis ensures backwards compatibility with v1beta1.MsgSubmitProposal.",
@@ -1112,7 +1112,7 @@
                     "Msg"
                 ],
                 "summary": "SubmitProposal defines a method to create new proposal given the messages.",
-                "operationId": "EvidenceMsg_SubmitProposal",
+                "operationId": "CircuitMsg_SubmitProposal",
                 "parameters": [
                     {
                         "description": "MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary\nproposal Content.",
@@ -1146,7 +1146,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/gov module\nparameters. The authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin116",
+                "operationId": "CircuitMsg_UpdateParamsMixin163",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -1180,7 +1180,7 @@
                     "Msg"
                 ],
                 "summary": "Vote defines a method to add a vote on a specific proposal.",
-                "operationId": "EvidenceMsg_Vote",
+                "operationId": "CircuitMsg_Vote",
                 "parameters": [
                     {
                         "description": "MsgVote defines a message to cast a vote.",
@@ -1214,7 +1214,7 @@
                     "Msg"
                 ],
                 "summary": "VoteWeighted defines a method to add a weighted vote on a specific proposal.",
-                "operationId": "EvidenceMsg_VoteWeighted",
+                "operationId": "CircuitMsg_VoteWeighted",
                 "parameters": [
                     {
                         "description": "MsgVoteWeighted defines a message to cast a vote.",
@@ -1248,7 +1248,7 @@
                     "Msg"
                 ],
                 "summary": "Deposit defines a method to add deposit on a specific proposal.",
-                "operationId": "EvidenceMsg_DepositMixin120",
+                "operationId": "CircuitMsg_DepositMixin167",
                 "parameters": [
                     {
                         "description": "MsgDeposit defines a message to submit a deposit to an existing proposal.",
@@ -1282,7 +1282,7 @@
                     "Msg"
                 ],
                 "summary": "SubmitProposal defines a method to create new proposal given a content.",
-                "operationId": "EvidenceMsg_SubmitProposalMixin120",
+                "operationId": "CircuitMsg_SubmitProposalMixin167",
                 "parameters": [
                     {
                         "description": "MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary\nproposal Content.",
@@ -1316,7 +1316,7 @@
                     "Msg"
                 ],
                 "summary": "Vote defines a method to add a vote on a specific proposal.",
-                "operationId": "EvidenceMsg_VoteMixin120",
+                "operationId": "CircuitMsg_VoteMixin167",
                 "parameters": [
                     {
                         "description": "MsgVote defines a message to cast a vote.",
@@ -1350,7 +1350,7 @@
                     "Msg"
                 ],
                 "summary": "VoteWeighted defines a method to add a weighted vote on a specific proposal.",
-                "operationId": "EvidenceMsg_VoteWeightedMixin120",
+                "operationId": "CircuitMsg_VoteWeightedMixin167",
                 "parameters": [
                     {
                         "description": "MsgVoteWeighted defines a message to cast a vote.",
@@ -1384,7 +1384,7 @@
                     "Msg"
                 ],
                 "summary": "CreateGroup creates a new group with an admin account address, a list of members and some optional metadata.",
-                "operationId": "EvidenceMsg_CreateGroup",
+                "operationId": "CircuitMsg_CreateGroup",
                 "parameters": [
                     {
                         "description": "MsgCreateGroup is the Msg/CreateGroup request type.",
@@ -1418,7 +1418,7 @@
                     "Msg"
                 ],
                 "summary": "CreateGroupPolicy creates a new group policy using given DecisionPolicy.",
-                "operationId": "EvidenceMsg_CreateGroupPolicy",
+                "operationId": "CircuitMsg_CreateGroupPolicy",
                 "parameters": [
                     {
                         "description": "MsgCreateGroupPolicy is the Msg/CreateGroupPolicy request type.",
@@ -1452,7 +1452,7 @@
                     "Msg"
                 ],
                 "summary": "CreateGroupWithPolicy creates a new group with policy.",
-                "operationId": "EvidenceMsg_CreateGroupWithPolicy",
+                "operationId": "CircuitMsg_CreateGroupWithPolicy",
                 "parameters": [
                     {
                         "description": "MsgCreateGroupWithPolicy is the Msg/CreateGroupWithPolicy request type.",
@@ -1486,7 +1486,7 @@
                     "Msg"
                 ],
                 "summary": "Exec executes a proposal.",
-                "operationId": "EvidenceMsg_ExecMixin124",
+                "operationId": "CircuitMsg_ExecMixin171",
                 "parameters": [
                     {
                         "description": "MsgExec is the Msg/Exec request type.",
@@ -1520,7 +1520,7 @@
                     "Msg"
                 ],
                 "summary": "LeaveGroup allows a group member to leave the group.",
-                "operationId": "EvidenceMsg_LeaveGroup",
+                "operationId": "CircuitMsg_LeaveGroup",
                 "parameters": [
                     {
                         "description": "MsgLeaveGroup is the Msg/LeaveGroup request type.",
@@ -1554,7 +1554,7 @@
                     "Msg"
                 ],
                 "summary": "SubmitProposal submits a new proposal.",
-                "operationId": "EvidenceMsg_SubmitProposalMixin124",
+                "operationId": "CircuitMsg_SubmitProposalMixin171",
                 "parameters": [
                     {
                         "description": "MsgSubmitProposal is the Msg/SubmitProposal request type.",
@@ -1588,7 +1588,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupAdmin updates the group admin with given group id and previous admin address.",
-                "operationId": "EvidenceMsg_UpdateGroupAdmin",
+                "operationId": "CircuitMsg_UpdateGroupAdmin",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupAdmin is the Msg/UpdateGroupAdmin request type.",
@@ -1622,7 +1622,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupMembers updates the group members with given group id and admin address.",
-                "operationId": "EvidenceMsg_UpdateGroupMembers",
+                "operationId": "CircuitMsg_UpdateGroupMembers",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupMembers is the Msg/UpdateGroupMembers request type.",
@@ -1656,7 +1656,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupMetadata updates the group metadata with given group id and admin address.",
-                "operationId": "EvidenceMsg_UpdateGroupMetadata",
+                "operationId": "CircuitMsg_UpdateGroupMetadata",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupMetadata is the Msg/UpdateGroupMetadata request type.",
@@ -1690,7 +1690,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupPolicyAdmin updates a group policy admin.",
-                "operationId": "EvidenceMsg_UpdateGroupPolicyAdmin",
+                "operationId": "CircuitMsg_UpdateGroupPolicyAdmin",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupPolicyAdmin is the Msg/UpdateGroupPolicyAdmin request type.",
@@ -1724,7 +1724,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupPolicyDecisionPolicy allows a group policy's decision policy to be updated.",
-                "operationId": "EvidenceMsg_UpdateGroupPolicyDecisionPolicy",
+                "operationId": "CircuitMsg_UpdateGroupPolicyDecisionPolicy",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupPolicyDecisionPolicy is the Msg/UpdateGroupPolicyDecisionPolicy request type.",
@@ -1758,7 +1758,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateGroupPolicyMetadata updates a group policy metadata.",
-                "operationId": "EvidenceMsg_UpdateGroupPolicyMetadata",
+                "operationId": "CircuitMsg_UpdateGroupPolicyMetadata",
                 "parameters": [
                     {
                         "description": "MsgUpdateGroupPolicyMetadata is the Msg/UpdateGroupPolicyMetadata request type.",
@@ -1792,7 +1792,7 @@
                     "Msg"
                 ],
                 "summary": "Vote allows a voter to vote on a proposal.",
-                "operationId": "EvidenceMsg_VoteMixin124",
+                "operationId": "CircuitMsg_VoteMixin171",
                 "parameters": [
                     {
                         "description": "MsgVote is the Msg/Vote request type.",
@@ -1826,7 +1826,7 @@
                     "Msg"
                 ],
                 "summary": "WithdrawProposal withdraws a proposal.",
-                "operationId": "EvidenceMsg_WithdrawProposal",
+                "operationId": "CircuitMsg_WithdrawProposal",
                 "parameters": [
                     {
                         "description": "MsgWithdrawProposal is the Msg/WithdrawProposal request type.",
@@ -1860,7 +1860,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/mint module\nparameters. The authority is defaults to the x/gov module account.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin129",
+                "operationId": "CircuitMsg_UpdateParamsMixin176",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -1894,7 +1894,7 @@
                     "Msg"
                 ],
                 "summary": "Send defines a method to send a nft from one account to another account.",
-                "operationId": "EvidenceMsg_SendMixin135",
+                "operationId": "CircuitMsg_SendMixin182",
                 "parameters": [
                     {
                         "description": "MsgSend represents a message to send a nft from one account to another account.",
@@ -1928,7 +1928,7 @@
                     "Msg"
                 ],
                 "summary": "CancelContinuousFund defines a method for cancelling continuous fund.",
-                "operationId": "EvidenceMsg_CancelContinuousFund",
+                "operationId": "CircuitMsg_CancelContinuousFund",
                 "parameters": [
                     {
                         "description": "MsgCancelContinuousFund defines a message to cancel continuous funds for a specific recipient.",
@@ -1962,7 +1962,7 @@
                     "Msg"
                 ],
                 "summary": "CommunityPoolSpend defines a governance operation for sending tokens from\nthe community pool in the x/protocolpool module to another account, which\ncould be the governance module itself. The authority is defined in the\nkeeper.",
-                "operationId": "EvidenceMsg_CommunityPoolSpendMixin140",
+                "operationId": "CircuitMsg_CommunityPoolSpendMixin187",
                 "parameters": [
                     {
                         "description": "MsgCommunityPoolSpend defines a message for sending tokens from the community\npool to another account. This message is typically executed via a governance\nproposal with the governance module being the executing authority.",
@@ -1996,7 +1996,7 @@
                     "Msg"
                 ],
                 "summary": "CreateContinuousFund defines a method to distribute a percentage of funds to an address continuously.\nThis ContinuousFund can be indefinite or run until a given expiry time.\nFunds come from validator block rewards from x/distribution, but may also come from\nany user who funds the ProtocolPoolEscrow module account directly through x/bank.",
-                "operationId": "EvidenceMsg_CreateContinuousFund",
+                "operationId": "CircuitMsg_CreateContinuousFund",
                 "parameters": [
                     {
                         "description": "MsgCreateContinuousFund defines a message for adding continuous funds.",
@@ -2030,7 +2030,7 @@
                     "Msg"
                 ],
                 "summary": "FundCommunityPool defines a method to allow an account to directly\nfund the community pool.",
-                "operationId": "EvidenceMsg_FundCommunityPoolMixin140",
+                "operationId": "CircuitMsg_FundCommunityPoolMixin187",
                 "parameters": [
                     {
                         "description": "MsgFundCommunityPool allows an account to directly\nfund the community pool.",
@@ -2064,7 +2064,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/protocolpool module parameters.\nThe authority is defined in the keeper.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin140",
+                "operationId": "CircuitMsg_UpdateParamsMixin187",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -2098,7 +2098,7 @@
                     "Msg"
                 ],
                 "summary": "Unjail defines a method for unjailing a jailed validator, thus returning\nthem into the bonded validator set, so they can begin receiving provisions\nand rewards again.",
-                "operationId": "EvidenceMsg_Unjail",
+                "operationId": "CircuitMsg_Unjail",
                 "parameters": [
                     {
                         "name": "body",
@@ -2131,7 +2131,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a governance operation for updating the x/slashing module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin146",
+                "operationId": "CircuitMsg_UpdateParamsMixin193",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -2165,7 +2165,7 @@
                     "Msg"
                 ],
                 "summary": "BeginRedelegate defines a method for performing a redelegation\nof coins from a delegator and source validator to a destination validator.",
-                "operationId": "EvidenceMsg_BeginRedelegate",
+                "operationId": "CircuitMsg_BeginRedelegate",
                 "parameters": [
                     {
                         "description": "MsgBeginRedelegate defines a SDK message for performing a redelegation\nof coins from a delegator and source validator to a destination validator.",
@@ -2199,7 +2199,7 @@
                     "Msg"
                 ],
                 "summary": "CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation\nand delegate back to previous validator.",
-                "operationId": "EvidenceMsg_CancelUnbondingDelegation",
+                "operationId": "CircuitMsg_CancelUnbondingDelegation",
                 "parameters": [
                     {
                         "name": "body",
@@ -2232,7 +2232,7 @@
                     "Msg"
                 ],
                 "summary": "CreateValidator defines a method for creating a new validator.",
-                "operationId": "EvidenceMsg_CreateValidator",
+                "operationId": "CircuitMsg_CreateValidator",
                 "parameters": [
                     {
                         "description": "MsgCreateValidator defines a SDK message for creating a new validator.",
@@ -2266,7 +2266,7 @@
                     "Msg"
                 ],
                 "summary": "Delegate defines a method for performing a delegation of coins\nfrom a delegator to a validator.",
-                "operationId": "EvidenceMsg_Delegate",
+                "operationId": "CircuitMsg_Delegate",
                 "parameters": [
                     {
                         "description": "MsgDelegate defines a SDK message for performing a delegation of coins\nfrom a delegator to a validator.",
@@ -2300,7 +2300,7 @@
                     "Msg"
                 ],
                 "summary": "EditValidator defines a method for editing an existing validator.",
-                "operationId": "EvidenceMsg_EditValidator",
+                "operationId": "CircuitMsg_EditValidator",
                 "parameters": [
                     {
                         "description": "MsgEditValidator defines a SDK message for editing an existing validator.",
@@ -2334,7 +2334,7 @@
                     "Msg"
                 ],
                 "summary": "Undelegate defines a method for performing an undelegation from a\ndelegate and a validator.",
-                "operationId": "EvidenceMsg_Undelegate",
+                "operationId": "CircuitMsg_Undelegate",
                 "parameters": [
                     {
                         "description": "MsgUndelegate defines a SDK message for performing an undelegation from a\ndelegate and a validator.",
@@ -2368,7 +2368,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines an operation for updating the x/staking module\nparameters.",
-                "operationId": "EvidenceMsg_UpdateParamsMixin151",
+                "operationId": "CircuitMsg_UpdateParamsMixin198",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -2402,7 +2402,7 @@
                     "ABCIListenerService"
                 ],
                 "summary": "ListenCommit is the corresponding endpoint for ABCIListener.ListenCommit",
-                "operationId": "EvidenceABCIListenerService_ListenCommit",
+                "operationId": "CircuitABCIListenerService_ListenCommit",
                 "parameters": [
                     {
                         "name": "body",
@@ -2435,7 +2435,7 @@
                     "ABCIListenerService"
                 ],
                 "summary": "ListenFinalizeBlock is the corresponding endpoint for ABCIListener.ListenEndBlock",
-                "operationId": "EvidenceABCIListenerService_ListenFinalizeBlock",
+                "operationId": "CircuitABCIListenerService_ListenFinalizeBlock",
                 "parameters": [
                     {
                         "name": "body",
@@ -2468,7 +2468,7 @@
                     "Msg"
                 ],
                 "summary": "CancelUpgrade is a governance operation for cancelling a previously\napproved software upgrade.",
-                "operationId": "EvidenceMsg_CancelUpgrade",
+                "operationId": "CircuitMsg_CancelUpgrade",
                 "parameters": [
                     {
                         "description": "MsgCancelUpgrade is the Msg/CancelUpgrade request type.",
@@ -2502,7 +2502,7 @@
                     "Msg"
                 ],
                 "summary": "SoftwareUpgrade is a governance operation for initiating a software upgrade.",
-                "operationId": "EvidenceMsg_SoftwareUpgrade",
+                "operationId": "CircuitMsg_SoftwareUpgrade",
                 "parameters": [
                     {
                         "description": "MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.",
@@ -2536,7 +2536,7 @@
                     "Msg"
                 ],
                 "summary": "CreatePeriodicVestingAccount defines a method that enables creating a\nperiodic vesting account.",
-                "operationId": "EvidenceMsg_CreatePeriodicVestingAccount",
+                "operationId": "CircuitMsg_CreatePeriodicVestingAccount",
                 "parameters": [
                     {
                         "description": "MsgCreateVestingAccount defines a message that enables creating a vesting\naccount.",
@@ -2570,7 +2570,7 @@
                     "Msg"
                 ],
                 "summary": "CreatePermanentLockedAccount defines a method that enables creating a permanent\nlocked account.",
-                "operationId": "EvidenceMsg_CreatePermanentLockedAccount",
+                "operationId": "CircuitMsg_CreatePermanentLockedAccount",
                 "parameters": [
                     {
                         "description": "MsgCreatePermanentLockedAccount defines a message that enables creating a permanent\nlocked account.",
@@ -2604,7 +2604,7 @@
                     "Msg"
                 ],
                 "summary": "CreateVestingAccount defines a method that enables creating a vesting\naccount.",
-                "operationId": "EvidenceMsg_CreateVestingAccount",
+                "operationId": "CircuitMsg_CreateVestingAccount",
                 "parameters": [
                     {
                         "description": "MsgCreateVestingAccount defines a message that enables creating a vesting\naccount.",
@@ -2638,7 +2638,7 @@
                     "Query"
                 ],
                 "summary": "AccountInfo queries account info which is common to all account types.",
-                "operationId": "EvidenceQuery_AccountInfo",
+                "operationId": "CircuitQuery_AccountInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -2671,7 +2671,7 @@
                     "Query"
                 ],
                 "summary": "Accounts returns all the existing accounts.",
-                "operationId": "EvidenceQuery_Accounts",
+                "operationId": "CircuitQuery_Accounts",
                 "parameters": [
                     {
                         "type": "string",
@@ -2729,7 +2729,7 @@
                     "Query"
                 ],
                 "summary": "Account returns account details based on address.",
-                "operationId": "EvidenceQuery_Account",
+                "operationId": "CircuitQuery_Account",
                 "parameters": [
                     {
                         "type": "string",
@@ -2761,7 +2761,7 @@
                     "Query"
                 ],
                 "summary": "AccountAddressByID returns account address based on account number.",
-                "operationId": "EvidenceQuery_AccountAddressByID",
+                "operationId": "CircuitQuery_AccountAddressByID",
                 "parameters": [
                     {
                         "type": "string",
@@ -2801,7 +2801,7 @@
                     "Query"
                 ],
                 "summary": "Bech32Prefix queries bech32Prefix",
-                "operationId": "EvidenceQuery_Bech32Prefix",
+                "operationId": "CircuitQuery_Bech32Prefix",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2824,7 +2824,7 @@
                     "Query"
                 ],
                 "summary": "AddressBytesToString converts Account Address bytes to string",
-                "operationId": "EvidenceQuery_AddressBytesToString",
+                "operationId": "CircuitQuery_AddressBytesToString",
                 "parameters": [
                     {
                         "type": "string",
@@ -2856,7 +2856,7 @@
                     "Query"
                 ],
                 "summary": "AddressStringToBytes converts Address string to bytes",
-                "operationId": "EvidenceQuery_AddressStringToBytes",
+                "operationId": "CircuitQuery_AddressStringToBytes",
                 "parameters": [
                     {
                         "type": "string",
@@ -2887,7 +2887,7 @@
                     "Query"
                 ],
                 "summary": "ModuleAccounts returns all the existing module accounts.",
-                "operationId": "EvidenceQuery_ModuleAccounts",
+                "operationId": "CircuitQuery_ModuleAccounts",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2910,7 +2910,7 @@
                     "Query"
                 ],
                 "summary": "ModuleAccountByName returns the module account info by module name",
-                "operationId": "EvidenceQuery_ModuleAccountByName",
+                "operationId": "CircuitQuery_ModuleAccountByName",
                 "parameters": [
                     {
                         "type": "string",
@@ -2941,7 +2941,7 @@
                     "Query"
                 ],
                 "summary": "Params queries all parameters.",
-                "operationId": "EvidenceQuery_Params",
+                "operationId": "CircuitQuery_Params",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2964,7 +2964,7 @@
                     "Query"
                 ],
                 "summary": "Returns list of `Authorization`, granted to the grantee by the granter.",
-                "operationId": "EvidenceQuery_Grants",
+                "operationId": "CircuitQuery_Grants",
                 "parameters": [
                     {
                         "type": "string",
@@ -3038,7 +3038,7 @@
                     "Query"
                 ],
                 "summary": "GranteeGrants returns a list of `GrantAuthorization` by grantee.",
-                "operationId": "EvidenceQuery_GranteeGrants",
+                "operationId": "CircuitQuery_GranteeGrants",
                 "parameters": [
                     {
                         "type": "string",
@@ -3102,7 +3102,7 @@
                     "Query"
                 ],
                 "summary": "GranterGrants returns list of `GrantAuthorization`, granted by granter.",
-                "operationId": "EvidenceQuery_GranterGrants",
+                "operationId": "CircuitQuery_GranterGrants",
                 "parameters": [
                     {
                         "type": "string",
@@ -3167,7 +3167,7 @@
                     "Query"
                 ],
                 "summary": "AllBalances queries the balance of all coins for a single account.",
-                "operationId": "EvidenceQuery_AllBalances",
+                "operationId": "CircuitQuery_AllBalances",
                 "parameters": [
                     {
                         "type": "string",
@@ -3238,7 +3238,7 @@
                     "Query"
                 ],
                 "summary": "Balance queries the balance of a single coin for a single account.",
-                "operationId": "EvidenceQuery_Balance",
+                "operationId": "CircuitQuery_Balance",
                 "parameters": [
                     {
                         "type": "string",
@@ -3277,7 +3277,7 @@
                     "Query"
                 ],
                 "summary": "DenomOwners queries for all account addresses that own a particular token\ndenomination.",
-                "operationId": "EvidenceQuery_DenomOwners",
+                "operationId": "CircuitQuery_DenomOwners",
                 "parameters": [
                     {
                         "pattern": ".+",
@@ -3343,7 +3343,7 @@
                     "Query"
                 ],
                 "summary": "DenomOwnersByQuery queries for all account addresses that own a particular token\ndenomination.",
-                "operationId": "EvidenceQuery_DenomOwnersByQuery",
+                "operationId": "CircuitQuery_DenomOwnersByQuery",
                 "parameters": [
                     {
                         "type": "string",
@@ -3407,7 +3407,7 @@
                     "Query"
                 ],
                 "summary": "DenomsMetadata queries the client metadata for all registered coin\ndenominations.",
-                "operationId": "EvidenceQuery_DenomsMetadata",
+                "operationId": "CircuitQuery_DenomsMetadata",
                 "parameters": [
                     {
                         "type": "string",
@@ -3465,7 +3465,7 @@
                     "Query"
                 ],
                 "summary": "DenomMetadata queries the client metadata of a given coin denomination.",
-                "operationId": "EvidenceQuery_DenomMetadata",
+                "operationId": "CircuitQuery_DenomMetadata",
                 "parameters": [
                     {
                         "pattern": ".+",
@@ -3498,7 +3498,7 @@
                     "Query"
                 ],
                 "summary": "DenomMetadataByQueryString queries the client metadata of a given coin denomination.",
-                "operationId": "EvidenceQuery_DenomMetadataByQueryString",
+                "operationId": "CircuitQuery_DenomMetadataByQueryString",
                 "parameters": [
                     {
                         "type": "string",
@@ -3529,7 +3529,7 @@
                     "Query"
                 ],
                 "summary": "Params queries the parameters of x/bank module.",
-                "operationId": "EvidenceQuery_ParamsMixin69",
+                "operationId": "CircuitQuery_ParamsMixin116",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3553,7 +3553,7 @@
                     "Query"
                 ],
                 "summary": "SendEnabled queries for SendEnabled entries.",
-                "operationId": "EvidenceQuery_SendEnabled",
+                "operationId": "CircuitQuery_SendEnabled",
                 "parameters": [
                     {
                         "type": "array",
@@ -3622,7 +3622,7 @@
                     "Query"
                 ],
                 "summary": "SpendableBalances queries the spendable balance of all coins for a single\naccount.",
-                "operationId": "EvidenceQuery_SpendableBalances",
+                "operationId": "CircuitQuery_SpendableBalances",
                 "parameters": [
                     {
                         "type": "string",
@@ -3688,7 +3688,7 @@
                     "Query"
                 ],
                 "summary": "SpendableBalanceByDenom queries the spendable balance of a single denom for\na single account.",
-                "operationId": "EvidenceQuery_SpendableBalanceByDenom",
+                "operationId": "CircuitQuery_SpendableBalanceByDenom",
                 "parameters": [
                     {
                         "type": "string",
@@ -3727,7 +3727,7 @@
                     "Query"
                 ],
                 "summary": "TotalSupply queries the total supply of all coins.",
-                "operationId": "EvidenceQuery_TotalSupply",
+                "operationId": "CircuitQuery_TotalSupply",
                 "parameters": [
                     {
                         "type": "string",
@@ -3786,7 +3786,7 @@
                     "Query"
                 ],
                 "summary": "SupplyOf queries the supply of a single coin.",
-                "operationId": "EvidenceQuery_SupplyOf",
+                "operationId": "CircuitQuery_SupplyOf",
                 "parameters": [
                     {
                         "type": "string",
@@ -3817,7 +3817,7 @@
                     "Service"
                 ],
                 "summary": "Config queries for the operator configuration.",
-                "operationId": "EvidenceService_Config",
+                "operationId": "CircuitService_Config",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3840,7 +3840,7 @@
                     "Service"
                 ],
                 "summary": "Status queries for the node status.",
-                "operationId": "EvidenceService_Status",
+                "operationId": "CircuitService_Status",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3863,7 +3863,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetAuthnDescriptor returns information on how to authenticate transactions in the application\nNOTE: this RPC is still experimental and might be subject to breaking changes or removal in\nfuture releases of the cosmos-sdk.",
-                "operationId": "EvidenceReflectionService_GetAuthnDescriptor",
+                "operationId": "CircuitReflectionService_GetAuthnDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3886,7 +3886,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetChainDescriptor returns the description of the chain",
-                "operationId": "EvidenceReflectionService_GetChainDescriptor",
+                "operationId": "CircuitReflectionService_GetChainDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3909,7 +3909,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetCodecDescriptor returns the descriptor of the codec of the application",
-                "operationId": "EvidenceReflectionService_GetCodecDescriptor",
+                "operationId": "CircuitReflectionService_GetCodecDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3932,7 +3932,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetConfigurationDescriptor returns the descriptor for the sdk.Config of the application",
-                "operationId": "EvidenceReflectionService_GetConfigurationDescriptor",
+                "operationId": "CircuitReflectionService_GetConfigurationDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3955,7 +3955,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetQueryServicesDescriptor returns the available gRPC queryable services of the application",
-                "operationId": "EvidenceReflectionService_GetQueryServicesDescriptor",
+                "operationId": "CircuitReflectionService_GetQueryServicesDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -3978,7 +3978,7 @@
                     "ReflectionService"
                 ],
                 "summary": "GetTxDescriptor returns information on the used transaction object and available msgs that can be used",
-                "operationId": "EvidenceReflectionService_GetTxDescriptor",
+                "operationId": "CircuitReflectionService_GetTxDescriptor",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4001,7 +4001,7 @@
                     "ReflectionService"
                 ],
                 "summary": "ListAllInterfaces lists all the interfaces registered in the interface\nregistry.",
-                "operationId": "EvidenceReflectionService_ListAllInterfaces",
+                "operationId": "CircuitReflectionService_ListAllInterfaces",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4024,7 +4024,7 @@
                     "ReflectionService"
                 ],
                 "summary": "ListImplementations list all the concrete types that implement a given\ninterface.",
-                "operationId": "EvidenceReflectionService_ListImplementations",
+                "operationId": "CircuitReflectionService_ListImplementations",
                 "parameters": [
                     {
                         "type": "string",
@@ -4056,7 +4056,7 @@
                     "Service"
                 ],
                 "summary": "ABCIQuery defines a query handler that supports ABCI queries directly to the\napplication, bypassing Tendermint completely. The ABCI query must contain\na valid and supported path, including app, custom, p2p, and store.",
-                "operationId": "EvidenceService_ABCIQuery",
+                "operationId": "CircuitService_ABCIQuery",
                 "parameters": [
                     {
                         "type": "string",
@@ -4103,7 +4103,7 @@
                     "Service"
                 ],
                 "summary": "GetLatestBlock returns the latest block.",
-                "operationId": "EvidenceService_GetLatestBlock",
+                "operationId": "CircuitService_GetLatestBlock",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4126,7 +4126,7 @@
                     "Service"
                 ],
                 "summary": "GetBlockByHeight queries block for given height.",
-                "operationId": "EvidenceService_GetBlockByHeight",
+                "operationId": "CircuitService_GetBlockByHeight",
                 "parameters": [
                     {
                         "type": "string",
@@ -4158,7 +4158,7 @@
                     "Service"
                 ],
                 "summary": "GetNodeInfo queries the current node info.",
-                "operationId": "EvidenceService_GetNodeInfo",
+                "operationId": "CircuitService_GetNodeInfo",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4181,7 +4181,7 @@
                     "Service"
                 ],
                 "summary": "GetSyncing queries node syncing.",
-                "operationId": "EvidenceService_GetSyncing",
+                "operationId": "CircuitService_GetSyncing",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4204,7 +4204,7 @@
                     "Service"
                 ],
                 "summary": "GetLatestValidatorSet queries latest validator-set.",
-                "operationId": "EvidenceService_GetLatestValidatorSet",
+                "operationId": "CircuitService_GetLatestValidatorSet",
                 "parameters": [
                     {
                         "type": "string",
@@ -4262,7 +4262,7 @@
                     "Service"
                 ],
                 "summary": "GetValidatorSetByHeight queries validator-set at a given height.",
-                "operationId": "EvidenceService_GetValidatorSetByHeight",
+                "operationId": "CircuitService_GetValidatorSetByHeight",
                 "parameters": [
                     {
                         "type": "string",
@@ -4327,7 +4327,7 @@
                     "Query"
                 ],
                 "summary": "Account returns account permissions.",
-                "operationId": "EvidenceQuery_AccountsMixin81",
+                "operationId": "CircuitQuery_AccountsMixin128",
                 "parameters": [
                     {
                         "type": "string",
@@ -4385,7 +4385,7 @@
                     "Query"
                 ],
                 "summary": "Account returns account permissions.",
-                "operationId": "EvidenceQuery_AccountMixin81",
+                "operationId": "CircuitQuery_AccountMixin128",
                 "parameters": [
                     {
                         "type": "string",
@@ -4416,7 +4416,7 @@
                     "Query"
                 ],
                 "summary": "DisabledList returns a list of disabled message urls",
-                "operationId": "EvidenceQuery_DisabledList",
+                "operationId": "CircuitQuery_DisabledList",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4439,7 +4439,7 @@
                     "Query"
                 ],
                 "summary": "Params queries the parameters of x/consensus module.",
-                "operationId": "EvidenceQuery_ParamsMixin84",
+                "operationId": "CircuitQuery_ParamsMixin131",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4463,7 +4463,7 @@
                     "Query"
                 ],
                 "summary": "CommunityPool queries the community pool coins.",
-                "operationId": "EvidenceQuery_CommunityPool",
+                "operationId": "CircuitQuery_CommunityPool",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4486,7 +4486,7 @@
                     "Query"
                 ],
                 "summary": "DelegationTotalRewards queries the total rewards accrued by each\nvalidator.",
-                "operationId": "EvidenceQuery_DelegationTotalRewards",
+                "operationId": "CircuitQuery_DelegationTotalRewards",
                 "parameters": [
                     {
                         "type": "string",
@@ -4518,7 +4518,7 @@
                     "Query"
                 ],
                 "summary": "DelegationRewards queries the total rewards accrued by a delegation.",
-                "operationId": "EvidenceQuery_DelegationRewards",
+                "operationId": "CircuitQuery_DelegationRewards",
                 "parameters": [
                     {
                         "type": "string",
@@ -4557,7 +4557,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorValidators queries the validators of a delegator.",
-                "operationId": "EvidenceQuery_DelegatorValidators",
+                "operationId": "CircuitQuery_DelegatorValidators",
                 "parameters": [
                     {
                         "type": "string",
@@ -4589,7 +4589,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorWithdrawAddress queries withdraw address of a delegator.",
-                "operationId": "EvidenceQuery_DelegatorWithdrawAddress",
+                "operationId": "CircuitQuery_DelegatorWithdrawAddress",
                 "parameters": [
                     {
                         "type": "string",
@@ -4621,7 +4621,7 @@
                     "Query"
                 ],
                 "summary": "Params queries params of the distribution module.",
-                "operationId": "EvidenceQuery_ParamsMixin99",
+                "operationId": "CircuitQuery_ParamsMixin146",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4644,7 +4644,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorDistributionInfo queries validator commission and self-delegation rewards for validator",
-                "operationId": "EvidenceQuery_ValidatorDistributionInfo",
+                "operationId": "CircuitQuery_ValidatorDistributionInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -4676,7 +4676,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorCommission queries accumulated commission for a validator.",
-                "operationId": "EvidenceQuery_ValidatorCommission",
+                "operationId": "CircuitQuery_ValidatorCommission",
                 "parameters": [
                     {
                         "type": "string",
@@ -4708,7 +4708,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorOutstandingRewards queries rewards of a validator address.",
-                "operationId": "EvidenceQuery_ValidatorOutstandingRewards",
+                "operationId": "CircuitQuery_ValidatorOutstandingRewards",
                 "parameters": [
                     {
                         "type": "string",
@@ -4740,7 +4740,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorSlashes queries slash events of a validator.",
-                "operationId": "EvidenceQuery_ValidatorSlashes",
+                "operationId": "CircuitQuery_ValidatorSlashes",
                 "parameters": [
                     {
                         "type": "string",
@@ -4819,7 +4819,7 @@
                     "Query"
                 ],
                 "summary": "CurrentEpoch provide current epoch of specified identifier",
-                "operationId": "EvidenceQuery_CurrentEpoch",
+                "operationId": "CircuitQuery_CurrentEpoch",
                 "parameters": [
                     {
                         "type": "string",
@@ -4849,7 +4849,7 @@
                     "Query"
                 ],
                 "summary": "EpochInfos provide running epochInfos",
-                "operationId": "EvidenceQuery_EpochInfos",
+                "operationId": "CircuitQuery_EpochInfos",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -4872,7 +4872,7 @@
                     "Query"
                 ],
                 "summary": "AllEvidence queries all evidence.",
-                "operationId": "EvidenceQuery_AllEvidence",
+                "operationId": "CircuitQuery_AllEvidence",
                 "parameters": [
                     {
                         "type": "string",
@@ -4930,7 +4930,7 @@
                     "Query"
                 ],
                 "summary": "Evidence queries evidence based on evidence hash.",
-                "operationId": "EvidenceQuery_Evidence",
+                "operationId": "CircuitQuery_Evidence",
                 "parameters": [
                     {
                         "type": "string",
@@ -4969,7 +4969,7 @@
                     "Query"
                 ],
                 "summary": "Allowance returns granted allwance to the grantee by the granter.",
-                "operationId": "EvidenceQuery_Allowance",
+                "operationId": "CircuitQuery_Allowance",
                 "parameters": [
                     {
                         "type": "string",
@@ -5008,7 +5008,7 @@
                     "Query"
                 ],
                 "summary": "Allowances returns all the grants for the given grantee address.",
-                "operationId": "EvidenceQuery_Allowances",
+                "operationId": "CircuitQuery_Allowances",
                 "parameters": [
                     {
                         "type": "string",
@@ -5072,7 +5072,7 @@
                     "Query"
                 ],
                 "summary": "AllowancesByGranter returns all the grants given by an address",
-                "operationId": "EvidenceQuery_AllowancesByGranter",
+                "operationId": "CircuitQuery_AllowancesByGranter",
                 "parameters": [
                     {
                         "type": "string",
@@ -5136,7 +5136,7 @@
                     "Query"
                 ],
                 "summary": "Constitution queries the chain's constitution.",
-                "operationId": "EvidenceQuery_Constitution",
+                "operationId": "CircuitQuery_Constitution",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -5159,7 +5159,7 @@
                     "Query"
                 ],
                 "summary": "Params queries all parameters of the gov module.",
-                "operationId": "EvidenceQuery_ParamsMixin115",
+                "operationId": "CircuitQuery_ParamsMixin162",
                 "parameters": [
                     {
                         "type": "string",
@@ -5191,7 +5191,7 @@
                     "Query"
                 ],
                 "summary": "Proposals queries all proposals based on given status.",
-                "operationId": "EvidenceQuery_Proposals",
+                "operationId": "CircuitQuery_Proposals",
                 "parameters": [
                     {
                         "enum": [
@@ -5276,7 +5276,7 @@
                     "Query"
                 ],
                 "summary": "Proposal queries proposal details based on ProposalID.",
-                "operationId": "EvidenceQuery_Proposal",
+                "operationId": "CircuitQuery_Proposal",
                 "parameters": [
                     {
                         "type": "string",
@@ -5309,7 +5309,7 @@
                     "Query"
                 ],
                 "summary": "Deposits queries all deposits of a single proposal.",
-                "operationId": "EvidenceQuery_Deposits",
+                "operationId": "CircuitQuery_Deposits",
                 "parameters": [
                     {
                         "type": "string",
@@ -5375,7 +5375,7 @@
                     "Query"
                 ],
                 "summary": "Deposit queries single deposit information based on proposalID, depositAddr.",
-                "operationId": "EvidenceQuery_Deposit",
+                "operationId": "CircuitQuery_Deposit",
                 "parameters": [
                     {
                         "type": "string",
@@ -5415,7 +5415,7 @@
                     "Query"
                 ],
                 "summary": "TallyResult queries the tally of a proposal vote.",
-                "operationId": "EvidenceQuery_TallyResult",
+                "operationId": "CircuitQuery_TallyResult",
                 "parameters": [
                     {
                         "type": "string",
@@ -5448,7 +5448,7 @@
                     "Query"
                 ],
                 "summary": "Votes queries votes of a given proposal.",
-                "operationId": "EvidenceQuery_Votes",
+                "operationId": "CircuitQuery_Votes",
                 "parameters": [
                     {
                         "type": "string",
@@ -5514,7 +5514,7 @@
                     "Query"
                 ],
                 "summary": "Vote queries voted information based on proposalID, voterAddr.",
-                "operationId": "EvidenceQuery_Vote",
+                "operationId": "CircuitQuery_Vote",
                 "parameters": [
                     {
                         "type": "string",
@@ -5554,7 +5554,7 @@
                     "Query"
                 ],
                 "summary": "Params queries all parameters of the gov module.",
-                "operationId": "EvidenceQuery_ParamsMixin119",
+                "operationId": "CircuitQuery_ParamsMixin166",
                 "parameters": [
                     {
                         "type": "string",
@@ -5586,7 +5586,7 @@
                     "Query"
                 ],
                 "summary": "Proposals queries all proposals based on given status.",
-                "operationId": "EvidenceQuery_ProposalsMixin119",
+                "operationId": "CircuitQuery_ProposalsMixin166",
                 "parameters": [
                     {
                         "enum": [
@@ -5671,7 +5671,7 @@
                     "Query"
                 ],
                 "summary": "Proposal queries proposal details based on ProposalID.",
-                "operationId": "EvidenceQuery_ProposalMixin119",
+                "operationId": "CircuitQuery_ProposalMixin166",
                 "parameters": [
                     {
                         "type": "string",
@@ -5704,7 +5704,7 @@
                     "Query"
                 ],
                 "summary": "Deposits queries all deposits of a single proposal.",
-                "operationId": "EvidenceQuery_DepositsMixin119",
+                "operationId": "CircuitQuery_DepositsMixin166",
                 "parameters": [
                     {
                         "type": "string",
@@ -5770,7 +5770,7 @@
                     "Query"
                 ],
                 "summary": "Deposit queries single deposit information based on proposalID, depositor address.",
-                "operationId": "EvidenceQuery_DepositMixin119",
+                "operationId": "CircuitQuery_DepositMixin166",
                 "parameters": [
                     {
                         "type": "string",
@@ -5810,7 +5810,7 @@
                     "Query"
                 ],
                 "summary": "TallyResult queries the tally of a proposal vote.",
-                "operationId": "EvidenceQuery_TallyResultMixin119",
+                "operationId": "CircuitQuery_TallyResultMixin166",
                 "parameters": [
                     {
                         "type": "string",
@@ -5843,7 +5843,7 @@
                     "Query"
                 ],
                 "summary": "Votes queries votes of a given proposal.",
-                "operationId": "EvidenceQuery_VotesMixin119",
+                "operationId": "CircuitQuery_VotesMixin166",
                 "parameters": [
                     {
                         "type": "string",
@@ -5909,7 +5909,7 @@
                     "Query"
                 ],
                 "summary": "Vote queries voted information based on proposalID, voterAddr.",
-                "operationId": "EvidenceQuery_VoteMixin119",
+                "operationId": "CircuitQuery_VoteMixin166",
                 "parameters": [
                     {
                         "type": "string",
@@ -5949,7 +5949,7 @@
                     "Query"
                 ],
                 "summary": "GroupInfo queries group info based on group id.",
-                "operationId": "EvidenceQuery_GroupInfo",
+                "operationId": "CircuitQuery_GroupInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -5982,7 +5982,7 @@
                     "Query"
                 ],
                 "summary": "GroupMembers queries members of a group by group id.",
-                "operationId": "EvidenceQuery_GroupMembers",
+                "operationId": "CircuitQuery_GroupMembers",
                 "parameters": [
                     {
                         "type": "string",
@@ -6048,7 +6048,7 @@
                     "Query"
                 ],
                 "summary": "GroupPoliciesByAdmin queries group policies by admin address.",
-                "operationId": "EvidenceQuery_GroupPoliciesByAdmin",
+                "operationId": "CircuitQuery_GroupPoliciesByAdmin",
                 "parameters": [
                     {
                         "type": "string",
@@ -6113,7 +6113,7 @@
                     "Query"
                 ],
                 "summary": "GroupPoliciesByGroup queries group policies by group id.",
-                "operationId": "EvidenceQuery_GroupPoliciesByGroup",
+                "operationId": "CircuitQuery_GroupPoliciesByGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -6179,7 +6179,7 @@
                     "Query"
                 ],
                 "summary": "GroupPolicyInfo queries group policy info based on account address of group policy.",
-                "operationId": "EvidenceQuery_GroupPolicyInfo",
+                "operationId": "CircuitQuery_GroupPolicyInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -6211,7 +6211,7 @@
                     "Query"
                 ],
                 "summary": "Groups queries all groups in state.",
-                "operationId": "EvidenceQuery_Groups",
+                "operationId": "CircuitQuery_Groups",
                 "parameters": [
                     {
                         "type": "string",
@@ -6269,7 +6269,7 @@
                     "Query"
                 ],
                 "summary": "GroupsByAdmin queries groups by admin address.",
-                "operationId": "EvidenceQuery_GroupsByAdmin",
+                "operationId": "CircuitQuery_GroupsByAdmin",
                 "parameters": [
                     {
                         "type": "string",
@@ -6334,7 +6334,7 @@
                     "Query"
                 ],
                 "summary": "GroupsByMember queries groups by member address.",
-                "operationId": "EvidenceQuery_GroupsByMember",
+                "operationId": "CircuitQuery_GroupsByMember",
                 "parameters": [
                     {
                         "type": "string",
@@ -6399,7 +6399,7 @@
                     "Query"
                 ],
                 "summary": "Proposal queries a proposal based on proposal id.",
-                "operationId": "EvidenceQuery_ProposalMixin123",
+                "operationId": "CircuitQuery_ProposalMixin170",
                 "parameters": [
                     {
                         "type": "string",
@@ -6432,7 +6432,7 @@
                     "Query"
                 ],
                 "summary": "TallyResult returns the tally result of a proposal. If the proposal is\nstill in voting period, then this query computes the current tally state,\nwhich might not be final. On the other hand, if the proposal is final,\nthen it simply returns the `final_tally_result` state stored in the\nproposal itself.",
-                "operationId": "EvidenceQuery_TallyResultMixin123",
+                "operationId": "CircuitQuery_TallyResultMixin170",
                 "parameters": [
                     {
                         "type": "string",
@@ -6465,7 +6465,7 @@
                     "Query"
                 ],
                 "summary": "ProposalsByGroupPolicy queries proposals based on account address of group policy.",
-                "operationId": "EvidenceQuery_ProposalsByGroupPolicy",
+                "operationId": "CircuitQuery_ProposalsByGroupPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -6530,7 +6530,7 @@
                     "Query"
                 ],
                 "summary": "VoteByProposalVoter queries a vote by proposal id and voter.",
-                "operationId": "EvidenceQuery_VoteByProposalVoter",
+                "operationId": "CircuitQuery_VoteByProposalVoter",
                 "parameters": [
                     {
                         "type": "string",
@@ -6570,7 +6570,7 @@
                     "Query"
                 ],
                 "summary": "VotesByProposal queries a vote by proposal id.",
-                "operationId": "EvidenceQuery_VotesByProposal",
+                "operationId": "CircuitQuery_VotesByProposal",
                 "parameters": [
                     {
                         "type": "string",
@@ -6636,7 +6636,7 @@
                     "Query"
                 ],
                 "summary": "VotesByVoter queries a vote by voter.",
-                "operationId": "EvidenceQuery_VotesByVoter",
+                "operationId": "CircuitQuery_VotesByVoter",
                 "parameters": [
                     {
                         "type": "string",
@@ -6701,7 +6701,7 @@
                     "Query"
                 ],
                 "summary": "AnnualProvisions current minting annual provisions value.",
-                "operationId": "EvidenceQuery_AnnualProvisions",
+                "operationId": "CircuitQuery_AnnualProvisions",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -6724,7 +6724,7 @@
                     "Query"
                 ],
                 "summary": "Inflation returns the current minting inflation value.",
-                "operationId": "EvidenceQuery_Inflation",
+                "operationId": "CircuitQuery_Inflation",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -6747,7 +6747,7 @@
                     "Query"
                 ],
                 "summary": "Params returns the total set of minting parameters.",
-                "operationId": "EvidenceQuery_ParamsMixin128",
+                "operationId": "CircuitQuery_ParamsMixin175",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -6770,7 +6770,7 @@
                     "Query"
                 ],
                 "summary": "Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721",
-                "operationId": "EvidenceQuery_BalanceMixin134",
+                "operationId": "CircuitQuery_BalanceMixin181",
                 "parameters": [
                     {
                         "type": "string",
@@ -6809,7 +6809,7 @@
                     "Query"
                 ],
                 "summary": "Classes queries all NFT classes",
-                "operationId": "EvidenceQuery_Classes",
+                "operationId": "CircuitQuery_Classes",
                 "parameters": [
                     {
                         "type": "string",
@@ -6867,7 +6867,7 @@
                     "Query"
                 ],
                 "summary": "Class queries an NFT class based on its id",
-                "operationId": "EvidenceQuery_Class",
+                "operationId": "CircuitQuery_Class",
                 "parameters": [
                     {
                         "type": "string",
@@ -6899,7 +6899,7 @@
                     "Query"
                 ],
                 "summary": "NFTs queries all NFTs of a given class or owner,choose at least one of the two, similar to tokenByIndex in\nERC721Enumerable",
-                "operationId": "EvidenceQuery_NFTs",
+                "operationId": "CircuitQuery_NFTs",
                 "parameters": [
                     {
                         "type": "string",
@@ -6969,7 +6969,7 @@
                     "Query"
                 ],
                 "summary": "NFT queries an NFT based on its class and id.",
-                "operationId": "EvidenceQuery_NFT",
+                "operationId": "CircuitQuery_NFT",
                 "parameters": [
                     {
                         "type": "string",
@@ -7008,7 +7008,7 @@
                     "Query"
                 ],
                 "summary": "Owner queries the owner of the NFT based on its class and id, same as ownerOf in ERC721",
-                "operationId": "EvidenceQuery_Owner",
+                "operationId": "CircuitQuery_Owner",
                 "parameters": [
                     {
                         "type": "string",
@@ -7047,7 +7047,7 @@
                     "Query"
                 ],
                 "summary": "Supply queries the number of NFTs from the given class, same as totalSupply of ERC721.",
-                "operationId": "EvidenceQuery_Supply",
+                "operationId": "CircuitQuery_Supply",
                 "parameters": [
                     {
                         "type": "string",
@@ -7079,7 +7079,7 @@
                     "Query"
                 ],
                 "summary": "Params queries a specific parameter of a module, given its subspace and\nkey.",
-                "operationId": "EvidenceQuery_ParamsMixin137",
+                "operationId": "CircuitQuery_ParamsMixin184",
                 "parameters": [
                     {
                         "type": "string",
@@ -7116,7 +7116,7 @@
                     "Query"
                 ],
                 "summary": "Subspaces queries for all registered subspaces and all keys for a subspace.",
-                "operationId": "EvidenceQuery_Subspaces",
+                "operationId": "CircuitQuery_Subspaces",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7139,7 +7139,7 @@
                     "Query"
                 ],
                 "summary": "CommunityPool queries the community pool coins.",
-                "operationId": "EvidenceQuery_CommunityPoolMixin139",
+                "operationId": "CircuitQuery_CommunityPoolMixin186",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7162,7 +7162,7 @@
                     "Query"
                 ],
                 "summary": "ContinuousFunds queries all continuous funds in the store.",
-                "operationId": "EvidenceQuery_ContinuousFunds",
+                "operationId": "CircuitQuery_ContinuousFunds",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7185,7 +7185,7 @@
                     "Query"
                 ],
                 "summary": "ContinuousFund queries a continuous fund by the recipient is is associated with.",
-                "operationId": "EvidenceQuery_ContinuousFund",
+                "operationId": "CircuitQuery_ContinuousFund",
                 "parameters": [
                     {
                         "type": "string",
@@ -7217,7 +7217,7 @@
                     "Query"
                 ],
                 "summary": "Params returns the total set of x/protocolpool parameters.",
-                "operationId": "EvidenceQuery_ParamsMixin139",
+                "operationId": "CircuitQuery_ParamsMixin186",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7240,7 +7240,7 @@
                     "Query"
                 ],
                 "summary": "Params queries the parameters of slashing module",
-                "operationId": "EvidenceQuery_ParamsMixin144",
+                "operationId": "CircuitQuery_ParamsMixin191",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7263,7 +7263,7 @@
                     "Query"
                 ],
                 "summary": "SigningInfos queries signing info of all validators",
-                "operationId": "EvidenceQuery_SigningInfos",
+                "operationId": "CircuitQuery_SigningInfos",
                 "parameters": [
                     {
                         "type": "string",
@@ -7321,7 +7321,7 @@
                     "Query"
                 ],
                 "summary": "SigningInfo queries the signing info of given cons address",
-                "operationId": "EvidenceQuery_SigningInfo",
+                "operationId": "CircuitQuery_SigningInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -7354,7 +7354,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorDelegations queries all delegations of a given delegator address.",
-                "operationId": "EvidenceQuery_DelegatorDelegations",
+                "operationId": "CircuitQuery_DelegatorDelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -7420,7 +7420,7 @@
                     "Query"
                 ],
                 "summary": "Redelegations queries redelegations of given address.",
-                "operationId": "EvidenceQuery_Redelegations",
+                "operationId": "CircuitQuery_Redelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -7498,7 +7498,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorUnbondingDelegations queries all unbonding delegations of a given\ndelegator address.",
-                "operationId": "EvidenceQuery_DelegatorUnbondingDelegations",
+                "operationId": "CircuitQuery_DelegatorUnbondingDelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -7564,7 +7564,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorValidators queries all validators info for given delegator\naddress.",
-                "operationId": "EvidenceQuery_DelegatorValidatorsMixin149",
+                "operationId": "CircuitQuery_DelegatorValidatorsMixin196",
                 "parameters": [
                     {
                         "type": "string",
@@ -7629,7 +7629,7 @@
                     "Query"
                 ],
                 "summary": "DelegatorValidator queries validator info for given delegator validator\npair.",
-                "operationId": "EvidenceQuery_DelegatorValidator",
+                "operationId": "CircuitQuery_DelegatorValidator",
                 "parameters": [
                     {
                         "type": "string",
@@ -7668,7 +7668,7 @@
                     "Query"
                 ],
                 "summary": "HistoricalInfo queries the historical info for given height.",
-                "operationId": "EvidenceQuery_HistoricalInfo",
+                "operationId": "CircuitQuery_HistoricalInfo",
                 "parameters": [
                     {
                         "type": "string",
@@ -7701,7 +7701,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the staking parameters.",
-                "operationId": "EvidenceQuery_ParamsMixin149",
+                "operationId": "CircuitQuery_ParamsMixin196",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7724,7 +7724,7 @@
                     "Query"
                 ],
                 "summary": "Pool queries the pool info.",
-                "operationId": "EvidenceQuery_Pool",
+                "operationId": "CircuitQuery_Pool",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -7748,7 +7748,7 @@
                     "Query"
                 ],
                 "summary": "Validators queries all validators that match the given status.",
-                "operationId": "EvidenceQuery_Validators",
+                "operationId": "CircuitQuery_Validators",
                 "parameters": [
                     {
                         "type": "string",
@@ -7812,7 +7812,7 @@
                     "Query"
                 ],
                 "summary": "Validator queries validator info for given validator address.",
-                "operationId": "EvidenceQuery_Validator",
+                "operationId": "CircuitQuery_Validator",
                 "parameters": [
                     {
                         "type": "string",
@@ -7845,7 +7845,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorDelegations queries delegate info for given validator.",
-                "operationId": "EvidenceQuery_ValidatorDelegations",
+                "operationId": "CircuitQuery_ValidatorDelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -7910,7 +7910,7 @@
                     "Query"
                 ],
                 "summary": "Delegation queries delegate info for given validator delegator pair.",
-                "operationId": "EvidenceQuery_Delegation",
+                "operationId": "CircuitQuery_Delegation",
                 "parameters": [
                     {
                         "type": "string",
@@ -7949,7 +7949,7 @@
                     "Query"
                 ],
                 "summary": "UnbondingDelegation queries unbonding info for given validator delegator\npair.",
-                "operationId": "EvidenceQuery_UnbondingDelegation",
+                "operationId": "CircuitQuery_UnbondingDelegation",
                 "parameters": [
                     {
                         "type": "string",
@@ -7989,7 +7989,7 @@
                     "Query"
                 ],
                 "summary": "ValidatorUnbondingDelegations queries unbonding delegations of a validator.",
-                "operationId": "EvidenceQuery_ValidatorUnbondingDelegations",
+                "operationId": "CircuitQuery_ValidatorUnbondingDelegations",
                 "parameters": [
                     {
                         "type": "string",
@@ -8054,7 +8054,7 @@
                     "Service"
                 ],
                 "summary": "TxDecode decodes the transaction.",
-                "operationId": "EvidenceService_TxDecode",
+                "operationId": "CircuitService_TxDecode",
                 "parameters": [
                     {
                         "description": "TxDecodeRequest is the request type for the Service.TxDecode\nRPC method.",
@@ -8088,7 +8088,7 @@
                     "Service"
                 ],
                 "summary": "TxDecodeAmino decodes an Amino transaction from encoded bytes to JSON.",
-                "operationId": "EvidenceService_TxDecodeAmino",
+                "operationId": "CircuitService_TxDecodeAmino",
                 "parameters": [
                     {
                         "description": "TxDecodeAminoRequest is the request type for the Service.TxDecodeAmino\nRPC method.",
@@ -8122,7 +8122,7 @@
                     "Service"
                 ],
                 "summary": "TxEncode encodes the transaction.",
-                "operationId": "EvidenceService_TxEncode",
+                "operationId": "CircuitService_TxEncode",
                 "parameters": [
                     {
                         "description": "TxEncodeRequest is the request type for the Service.TxEncode\nRPC method.",
@@ -8156,7 +8156,7 @@
                     "Service"
                 ],
                 "summary": "TxEncodeAmino encodes an Amino transaction from JSON to encoded bytes.",
-                "operationId": "EvidenceService_TxEncodeAmino",
+                "operationId": "CircuitService_TxEncodeAmino",
                 "parameters": [
                     {
                         "description": "TxEncodeAminoRequest is the request type for the Service.TxEncodeAmino\nRPC method.",
@@ -8190,7 +8190,7 @@
                     "Service"
                 ],
                 "summary": "Simulate simulates executing a transaction for estimating gas usage.",
-                "operationId": "EvidenceService_Simulate",
+                "operationId": "CircuitService_Simulate",
                 "parameters": [
                     {
                         "description": "SimulateRequest is the request type for the Service.Simulate\nRPC method.",
@@ -8224,7 +8224,7 @@
                     "Service"
                 ],
                 "summary": "GetTxsEvent fetches txs by event.",
-                "operationId": "EvidenceService_GetTxsEvent",
+                "operationId": "CircuitService_GetTxsEvent",
                 "parameters": [
                     {
                         "type": "array",
@@ -8322,7 +8322,7 @@
                     "Service"
                 ],
                 "summary": "BroadcastTx broadcast transaction.",
-                "operationId": "EvidenceService_BroadcastTx",
+                "operationId": "CircuitService_BroadcastTx",
                 "parameters": [
                     {
                         "description": "BroadcastTxRequest is the request type for the Service.BroadcastTxRequest\nRPC method.",
@@ -8356,7 +8356,7 @@
                     "Service"
                 ],
                 "summary": "GetBlockWithTxs fetches a block with decoded txs.",
-                "operationId": "EvidenceService_GetBlockWithTxs",
+                "operationId": "CircuitService_GetBlockWithTxs",
                 "parameters": [
                     {
                         "type": "string",
@@ -8422,7 +8422,7 @@
                     "Service"
                 ],
                 "summary": "GetTx fetches a tx by hash.",
-                "operationId": "EvidenceService_GetTx",
+                "operationId": "CircuitService_GetTx",
                 "parameters": [
                     {
                         "type": "string",
@@ -8454,7 +8454,7 @@
                     "Query"
                 ],
                 "summary": "AppliedPlan queries a previously applied upgrade plan by its name.",
-                "operationId": "EvidenceQuery_AppliedPlan",
+                "operationId": "CircuitQuery_AppliedPlan",
                 "parameters": [
                     {
                         "type": "string",
@@ -8486,7 +8486,7 @@
                     "Query"
                 ],
                 "summary": "Returns the account with authority to conduct upgrades",
-                "operationId": "EvidenceQuery_Authority",
+                "operationId": "CircuitQuery_Authority",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -8509,7 +8509,7 @@
                     "Query"
                 ],
                 "summary": "CurrentPlan queries the current upgrade plan.",
-                "operationId": "EvidenceQuery_CurrentPlan",
+                "operationId": "CircuitQuery_CurrentPlan",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -8532,7 +8532,7 @@
                     "Query"
                 ],
                 "summary": "ModuleVersions queries the list of module versions from state.",
-                "operationId": "EvidenceQuery_ModuleVersions",
+                "operationId": "CircuitQuery_ModuleVersions",
                 "parameters": [
                     {
                         "type": "string",
@@ -8563,7 +8563,7 @@
                     "Query"
                 ],
                 "summary": "UpgradedConsensusState queries the consensus state that will serve\nas a trusted kernel for the next version of this chain. It will only be\nstored at the last height of this chain.\nUpgradedConsensusState RPC not supported with legacy querier\nThis rpc is deprecated now that IBC has its own replacement\n(https://github.com/cosmos/ibc-go/blob/2c880a22e9f9cc75f62b527ca94aa75ce1106001/proto/ibc/core/client/v1/query.proto#L54)",
-                "operationId": "EvidenceQuery_UpgradedConsensusState",
+                "operationId": "CircuitQuery_UpgradedConsensusState",
                 "parameters": [
                     {
                         "type": "string",
@@ -8860,7 +8860,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a rpc handler for MsgUpdateParams.",
-                "operationId": "FeeMsg_UpdateParamsMixin189",
+                "operationId": "FeeMsg_UpdateParamsMixin68",
                 "parameters": [
                     {
                         "name": "body",
@@ -8926,7 +8926,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a rpc handler for MsgUpdateParams.",
-                "operationId": "FeeMsg_UpdateParamsMixin197",
+                "operationId": "FeeMsg_UpdateParamsMixin76",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -10683,7 +10683,7 @@
                     "Query"
                 ],
                 "summary": "Params queries all parameters of the ICA host submodule.",
-                "operationId": "FeeQuery_ParamsMixin188",
+                "operationId": "FeeQuery_ParamsMixin67",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -10901,7 +10901,7 @@
                     "Query"
                 ],
                 "summary": "Params queries all parameters of the ibc-transfer module.",
-                "operationId": "FeeQuery_ParamsMixin195",
+                "operationId": "FeeQuery_ParamsMixin74",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -12835,7 +12835,7 @@
                 "operationId": "GithubCompoktNetworkpoktrollMsg_ClaimMorseAccount",
                 "parameters": [
                     {
-                        "description": "- Execute a claim (one-time minting of tokens on Shannon)\n- Claim the balance of a given Morse account per on-chain MorseClaimableAccounts\n- Mint claimed balance to the given Shannon account\n\nNOTE:\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts\n\nNext free index: 6",
+                        "description": "- Execute a claim (one-time minting of tokens on Shannon)\n- Claim the balance of a given Morse account per on-chain MorseClaimableAccounts\n- Mint claimed balance to the given Shannon account\n\nNOTE:\n- A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -13624,7 +13624,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     },
@@ -13741,7 +13741,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     }
@@ -13852,7 +13852,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     }
@@ -13963,7 +13963,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     },
@@ -14096,7 +14096,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     },
@@ -14229,7 +14229,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     }
@@ -14317,7 +14317,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     }
@@ -14519,7 +14519,7 @@
                     },
                     {
                         "type": "boolean",
-                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "description": "reverse is set to true if results are to be returned in the descending order.",
                         "name": "pagination.reverse",
                         "in": "query"
                     },
@@ -14527,6 +14527,12 @@
                         "type": "string",
                         "description": "unique service identifier to filter by",
                         "name": "service_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "if true, return a dehydrated version of the supplier.\nWhy? This enables smaller response payloads to reduce pagination of the supplier list.\nExample: Removes service_config_history and rev_share details from the response. See the implementation for more details.",
+                        "name": "dehydrated",
                         "in": "query"
                     }
                 ],
@@ -14560,6 +14566,12 @@
                         "name": "operator_address",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "if true, return a dehydrated version of the supplier.\nWhy? This enables smaller response payloads to reduce payload size.\nExample: Removes service_config_history and rev_share details from the response. See the implementation for more details.",
+                        "name": "dehydrated",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -14606,7 +14618,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_ApplySnapshotChunk",
+                "operationId": "CircuitABCI_ApplySnapshotChunk",
                 "parameters": [
                     {
                         "name": "body",
@@ -14638,7 +14650,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_CheckTx",
+                "operationId": "CircuitABCI_CheckTx",
                 "parameters": [
                     {
                         "name": "body",
@@ -14670,7 +14682,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Commit",
+                "operationId": "CircuitABCI_Commit",
                 "parameters": [
                     {
                         "name": "body",
@@ -14702,7 +14714,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Echo",
+                "operationId": "CircuitABCI_Echo",
                 "parameters": [
                     {
                         "name": "body",
@@ -14734,7 +14746,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_ExtendVote",
+                "operationId": "CircuitABCI_ExtendVote",
                 "parameters": [
                     {
                         "name": "body",
@@ -14766,7 +14778,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_FinalizeBlock",
+                "operationId": "CircuitABCI_FinalizeBlock",
                 "parameters": [
                     {
                         "name": "body",
@@ -14798,7 +14810,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Flush",
+                "operationId": "CircuitABCI_Flush",
                 "parameters": [
                     {
                         "name": "body",
@@ -14830,7 +14842,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Info",
+                "operationId": "CircuitABCI_Info",
                 "parameters": [
                     {
                         "name": "body",
@@ -14862,7 +14874,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_InitChain",
+                "operationId": "CircuitABCI_InitChain",
                 "parameters": [
                     {
                         "name": "body",
@@ -14894,7 +14906,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_ListSnapshots",
+                "operationId": "CircuitABCI_ListSnapshots",
                 "parameters": [
                     {
                         "name": "body",
@@ -14926,7 +14938,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_LoadSnapshotChunk",
+                "operationId": "CircuitABCI_LoadSnapshotChunk",
                 "parameters": [
                     {
                         "name": "body",
@@ -14958,7 +14970,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_OfferSnapshot",
+                "operationId": "CircuitABCI_OfferSnapshot",
                 "parameters": [
                     {
                         "name": "body",
@@ -14990,7 +15002,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_PrepareProposal",
+                "operationId": "CircuitABCI_PrepareProposal",
                 "parameters": [
                     {
                         "name": "body",
@@ -15022,7 +15034,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_ProcessProposal",
+                "operationId": "CircuitABCI_ProcessProposal",
                 "parameters": [
                     {
                         "name": "body",
@@ -15054,7 +15066,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_Query",
+                "operationId": "CircuitABCI_Query",
                 "parameters": [
                     {
                         "name": "body",
@@ -15086,7 +15098,7 @@
                 "tags": [
                     "ABCI"
                 ],
-                "operationId": "EvidenceABCI_VerifyVoteExtension",
+                "operationId": "CircuitABCI_VerifyVoteExtension",
                 "parameters": [
                     {
                         "name": "body",
@@ -16285,7 +16297,7 @@
                     "format": "uint64"
                 },
                 "reverse": {
-                    "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                    "description": "reverse is set to true if results are to be returned in the descending order.",
                     "type": "boolean"
                 }
             }
@@ -25378,7 +25390,7 @@
             ]
         },
         "pocket.migration.MsgClaimMorseAccount": {
-            "description": "- Execute a claim (one-time minting of tokens on Shannon)\n- Claim the balance of a given Morse account per on-chain MorseClaimableAccounts\n- Mint claimed balance to the given Shannon account\n\nNOTE:\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts\n\nNext free index: 6",
+            "description": "- Execute a claim (one-time minting of tokens on Shannon)\n- Claim the balance of a given Morse account per on-chain MorseClaimableAccounts\n- Mint claimed balance to the given Shannon account\n\nNOTE:\n- A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts",
             "type": "object",
             "title": "MsgClaimMorseAccount is used to:",
             "properties": {
@@ -25397,7 +25409,7 @@
                     "type": "string"
                 },
                 "shannon_signing_address": {
-                    "description": "The bech32-encoded address of the Shannon account which is signing for this message.\nThis account is liable for any fees incurred by violating the constraints of Morse\naccount/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor\nclaim messages AND has EXACTLY ONE signer.",
+                    "description": "The bech32-encoded address of the Shannon account which is signing for this message.\nThis account is liable for any fees incurred by violating the constraints of Morse\naccount/actor claim message fee waiving.",
                     "type": "string"
                 }
             }
@@ -25654,11 +25666,15 @@
             "type": "object"
         },
         "pocket.migration.Params": {
-            "description": "Params defines the parameters for the module.\n\nNext free index: 3",
+            "description": "Params defines the parameters for the module.\n\nNext free index: 4",
             "type": "object",
             "properties": {
                 "allow_morse_account_import_overwrite": {
                     "description": "allow_morse_account_import_overwrite is a feature flag which is used to enable/disable\nthe re-importing of Morse claimable accounts by the authority.\nSuch a re-import will:\n- Ignore (i.e. leave) ALL claimed destination Shannon accounts/actors\n- Delete ALL existing onchain MorseClaimableAccounts\n- Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts\nThis is useful for testing purposes, but should be disabled in production.",
+                    "type": "boolean"
+                },
+                "morse_account_claiming_enabled": {
+                    "description": "morse_account_claiming_enabled is a feature flag which is used to enable/disable the processing of Morse account/actor claim messages\n(i.e. `MsgClaimMorseAccount`, `MorseClaimApplication`, and `MorseClaimSupplier`).",
                     "type": "boolean"
                 },
                 "waive_morse_claim_gas_fees": {
@@ -25709,7 +25725,7 @@
                     "$ref": "#/definitions/pocket.proof.ClaimProofStatus"
                 },
                 "root_hash": {
-                    "description": "Root hash from smt.SMST#Root().",
+                    "description": "Root hash from smt.SMST#Root().\nTODO_UP_NEXT(@bryanchriswhite, #1497): Dehydrate the claim's root hash from onchain events.",
                     "type": "string",
                     "format": "byte"
                 },
@@ -26168,7 +26184,7 @@
             }
         },
         "pocket.session.Session": {
-            "description": "Session is a fully hydrated session object that contains all the information for the Session\nand its parcipants.",
+            "description": "Session is a fully hydrated session object that contains all the information for the Session\nand its participants.",
             "type": "object",
             "properties": {
                 "application": {
@@ -26186,7 +26202,7 @@
                 },
                 "session_id": {
                     "type": "string",
-                    "title": "A unique pseudoranom ID for this session"
+                    "title": "A unique pseudorandom ID for this session"
                 },
                 "session_number": {
                     "type": "string",
@@ -26216,12 +26232,12 @@
                     "title": "The service id this session is for"
                 },
                 "session_end_block_height": {
-                    "description": "Note that`session_end_block_height` is a derivative of (`start` + `num_blocks_per_session`)\nas goverened by onchain params at the time of the session start.\nIt is stored as an additional field to simplofy business logic in case\nthe number of blocks_per_session changes during the session.\n\nThe height at which this session ended, this is the last block of the session",
+                    "description": "Note that`session_end_block_height` is a derivative of (`start` + `num_blocks_per_session`)\nas governed by onchain params at the time of the session start.\nIt is stored as an additional field to simplify business logic in case\nthe number of blocks_per_session changes during the session.\n\nThe height at which this session ended, this is the last block of the session",
                     "type": "string",
                     "format": "int64"
                 },
                 "session_id": {
-                    "description": "A unique pseudoranom ID for this session",
+                    "description": "A unique pseudorandom ID for this session",
                     "type": "string",
                     "title": "NOTE: session_id can be derived from the above values using onchain but is included in the header for convenience"
                 },
@@ -26700,31 +26716,62 @@
             }
         },
         "pocket.tokenomics.MintAllocationPercentages": {
-            "description": "MintAllocationPercentages represents the distribution of newly minted tokens,\nat the end of claim settlement, as a result of the Global Mint TLM.",
+            "description": "MintAllocationPercentages captures the distribution of newly minted tokens.\nThe sum of all new tokens minted must equal 1.\nGlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.\nTODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.",
             "type": "object",
             "properties": {
                 "application": {
-                    "description": "allocation_application is the percentage of the minted tokens which are sent\nto the application account address during claim settlement.",
+                    "description": "application - % of newley minted tokens sent to the application account address.",
                     "type": "number",
                     "format": "double"
                 },
                 "dao": {
-                    "description": "dao is the percentage of the minted tokens which are sent\nto the DAO reward address during claim settlement.",
+                    "description": "dao - % of newley minted tokens sent to the DAO reward address.",
                     "type": "number",
                     "format": "double"
                 },
                 "proposer": {
-                    "description": "proposer is the percentage of the minted tokens which are sent\nto the block proposer account address during claim settlement.",
+                    "description": "proposer - % of newley minted tokens sent to the block proposer (i.e. validator0 account address.",
                     "type": "number",
                     "format": "double"
                 },
                 "source_owner": {
-                    "description": "source_owner is the percentage of the minted tokens which are sent\nto the service source owner account address during claim settlement.",
+                    "description": "source_owner - % of newley minted tokens sent to the service source owner account address.",
                     "type": "number",
                     "format": "double"
                 },
                 "supplier": {
-                    "description": "supplier is the percentage of the minted tokens which are sent\nto the block supplier account address during claim settlement.",
+                    "description": "supplier - % of newley minted tokens sent to the block supplier account address.",
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "pocket.tokenomics.MintEqualsBurnClaimDistribution": {
+            "description": "MintEqualsBurnClaimDistribution captures the distribution of claimable tokens.\nThe sum of all tokens being burnt from the application's stake must equal 1.\nGlobalMintEqualsBurnTLM: Only used by the GlobalMintEqualsBurnTLM at the end of claim settlement.",
+            "type": "object",
+            "properties": {
+                "application": {
+                    "description": "application - % of claimable tokens sent to the application account address.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "dao": {
+                    "description": "dao - % of claimable tokens sent to the DAO reward address.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "proposer": {
+                    "description": "proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "source_owner": {
+                    "description": "source_owner - % of claimable tokens sent to the service source owner account address.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "supplier": {
+                    "description": "supplier - % of claimable tokens sent to the block supplier account address.",
                     "type": "number",
                     "format": "double"
                 }
@@ -26741,6 +26788,9 @@
                 "as_mint_allocation_percentages": {
                     "$ref": "#/definitions/pocket.tokenomics.MintAllocationPercentages"
                 },
+                "as_mint_equals_burn_claim_distribution": {
+                    "$ref": "#/definitions/pocket.tokenomics.MintEqualsBurnClaimDistribution"
+                },
                 "as_string": {
                     "type": "string"
                 },
@@ -26750,12 +26800,12 @@
                 },
                 "name": {
                     "type": "string",
-                    "title": "The (name, as_type) tuple must match the corresponding name and type as\nspecified in the `Params` message in `proof/params.proto.`"
+                    "title": "The (name, as_type) tuple must match the corresponding name and type as specified in the `Params` message in `proof/params.proto.`"
                 }
             }
         },
         "pocket.tokenomics.MsgUpdateParamResponse": {
-            "description": "MsgUpdateParamResponse defines the response structure for executing a\nMsgUpdateParam message after a single param update.",
+            "description": "MsgUpdateParamResponse defines the response structure for executing a MsgUpdateParam message after a single param update.",
             "type": "object",
             "properties": {
                 "params": {
@@ -26772,13 +26822,13 @@
                     "type": "string"
                 },
                 "params": {
-                    "description": "params defines the x/tokenomics parameters to update.\nNOTE: All parameters must be supplied.",
+                    "description": "params defines the tokenomics parameters to update.",
                     "$ref": "#/definitions/pocket.tokenomics.Params"
                 }
             }
         },
         "pocket.tokenomics.MsgUpdateParamsResponse": {
-            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a MsgUpdateParams message.",
             "type": "object",
             "properties": {
                 "params": {
@@ -26791,17 +26841,21 @@
             "type": "object",
             "properties": {
                 "dao_reward_address": {
-                    "description": "dao_reward_address is the address to which mint_allocation_dao percentage of the\nminted tokens are at the end of claim settlement.\n\nBech32 cosmos address",
+                    "description": "dao_reward_address is where the DAO's portion of claims submitted are distributed.\n\nBech32 cosmos address",
                     "type": "string"
                 },
                 "global_inflation_per_claim": {
-                    "description": "global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.",
+                    "description": "global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount to be minted on settlement.\nGlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.",
                     "type": "number",
                     "format": "double"
                 },
                 "mint_allocation_percentages": {
-                    "description": "mint_allocation_percentages represents the distribution of newly minted tokens,\nat the end of claim settlement, as a result of the Global Mint TLM.",
+                    "description": "mint_allocation_percentages represents the distribution of newly minted tokens.\nGlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.",
                     "$ref": "#/definitions/pocket.tokenomics.MintAllocationPercentages"
+                },
+                "mint_equals_burn_claim_distribution": {
+                    "description": "mint_equals_burn_claim_distribution controls how the settlement amount is distributed\nwhen global inflation is disabled (global_inflation_per_claim = 0).\nMintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.",
+                    "$ref": "#/definitions/pocket.tokenomics.MintEqualsBurnClaimDistribution"
                 }
             }
         },
