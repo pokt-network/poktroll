@@ -22,7 +22,7 @@ message Params {
 
   // mint_allocation_percentages represents the distribution of newly minted tokens.
   // GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
-  MintAllocationPercentages mint_allocation_percentages = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mint_allocation_proposer", (gogoproto.moretags) = "yaml:\"mint_allocation_percentages\""];
+  MintAllocationPercentages mint_allocation_percentages = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mint_allocation_percentages", (gogoproto.moretags) = "yaml:\"mint_allocation_percentages\""];
 
   // global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount to be minted on settlement.
   // GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
