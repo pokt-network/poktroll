@@ -415,8 +415,9 @@ EOF
   validate_env "$env" || return 1
   validate_block_range "$start" "$end" || return 1
 
-  local tmp_file="/tmp/unique_block_events_${start}_${end}_${env}.json"
-  local raw_events_file="/tmp/raw_events_${start}_${end}_${env}.json"
+  local event_prefix_safe=$(echo "$event_prefix" | sed 's/[^a-zA-Z0-9._-]/_/g')
+  local tmp_file="/tmp/unique_block_events_${start}_${end}_${event_prefix_safe}_${env}.json"
+  local raw_events_file="/tmp/raw_events_${start}_${end}_${event_prefix_safe}_${env}.json"
   local ignored_events=$(get_ignored_event_types_json)
 
   echo "Querying unique block events from $start to $end on '$env'..."
@@ -425,13 +426,13 @@ EOF
   echo "--------------------------------------"
 
   # Initialize empty JSON array for raw events
-  local all_events_tmp="/tmp/shannon_block_events_tmp_${start}_${end}_${env}.json"
+  local all_events_tmp="/tmp/shannon_block_events_tmp_${start}_${end}_${event_prefix_safe}_${env}.json"
   echo "[]" >"$all_events_tmp"
 
   # Loop through each block height and collect all events
   for ((height = $start; height <= $end; height++)); do
-    mkdir -p /tmp/blocks
-    local block_tmp="/tmp/blocks/block_$height.json"
+    mkdir -p "/tmp/blocks_${start}_${end}_${env}"
+    local block_tmp="/tmp/blocks_${start}_${end}_${env}/block_$height.json"
     echo "Processing block $height..."
 
     if query_single_block "$height" "$env" "$block_tmp"; then
@@ -598,7 +599,8 @@ EOF
   for ((height = $start; height <= $end; height++)); do
     echo "Processing block $height..."
 
-    local block_file="/tmp/shannon_block_events_${height}_${env}.json"
+    local event_type_safe=$(echo "$event_type" | sed 's/[^a-zA-Z0-9._-]/_/g')
+    local block_file="/tmp/shannon_block_events_${height}_${event_type_safe}_${env}.json"
     if query_single_block "$height" "$env" "$block_file"; then
       jq --argjson height "$height" \
         --arg event_type "$event_type" \
@@ -698,8 +700,8 @@ EOF
 
   echo "Querying MsgCreateClaim transactions from $env between heights ($min_height, $max_height]..."
 
-  local query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
-  local tmp_file="/tmp/shannon_txs_claim_suppliers_${min_height}_${max_height}_${env}_${query_safe}.json"
+  local additional_query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
+  local tmp_file="/tmp/shannon_txs_claim_suppliers_${min_height}_${max_height}_${env}_${additional_query_safe}.json"
   
   query_txs_range "$min_height" "$max_height" "$env" "$tmp_file" "$additional_query"
 
@@ -759,8 +761,8 @@ EOF
   echo "Supplier operator address: $supplier_addr"
   echo "--------------------------------------"
 
-  local query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
-  local tmp_file="/tmp/shannon_txs_supplier_tx_events_${start}_${end}_${env}_${query_safe}.json"
+  local additional_query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
+  local tmp_file="/tmp/shannon_txs_supplier_tx_events_${start}_${end}_${env}_${additional_query_safe}.json"
   
   query_txs_range "$start" "$end" "$env" "$tmp_file" "$additional_query"
 
@@ -885,7 +887,8 @@ EOF
   for ((height = $start; height <= $end; height++)); do
     echo "Processing block $height..."
 
-    local block_file="/tmp/shannon_supplier_block_events_${height}_${env}.json"
+    local supplier_safe=$(echo "$supplier_addr" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-20)
+    local block_file="/tmp/shannon_supplier_block_events_${height}_${supplier_safe}_${env}.json"
     if query_single_block "$height" "$env" "$block_file"; then
       jq --argjson height "$height" \
         --argjson event_types "$event_types_json" \
