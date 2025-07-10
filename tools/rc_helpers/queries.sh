@@ -8,40 +8,38 @@
 # ===============================================
 
 function help() {
-    LATEST_BLOCK=$(pocketd query block --network=main --grpc-insecure=false -o json | tail -n +2 | jq '.header.height')
-    LATEST_BLOCK=$(($LATEST_BLOCK))
-    LATEST_BLOCK_MINUS_100=$(($LATEST_BLOCK - 100))
+  LATEST_BLOCK=$(pocketd query block --network=main --grpc-insecure=false -o json | tail -n +2 | jq '.header.height')
+  LATEST_BLOCK=$(($LATEST_BLOCK))
+  LATEST_BLOCK_MINUS_100=$(($LATEST_BLOCK - 100))
 
-    echo "=========================================="
-    echo "Shannon Blockchain Query Utilities"
-    echo "=========================================="
-    echo "Current latest block on mainnet: $LATEST_BLOCK"
-    echo ""
-    echo "Available event types can be found with:"
-    echo "  find . -name \"*.proto\" -exec grep -h \"^message Event\" {} \\; | sed 's/^message \\(Event[^{]*\\).*/\\1/'"
-    echo ""
-    echo "Available commands:"
-    echo "  shannon_query_unique_tx_msgs_and_events  - Get unique message and event types"
-    echo "  shannon_query_unique_block_events        - Get unique block events"
-    echo "  shannon_query_tx_messages                - Query transactions by message type"
-    echo "  shannon_query_tx_events                  - Query transactions by event type"
-    echo "  shannon_query_block_events               - Query block events"
-    echo "  shannon_query_unique_claim_suppliers     - Get unique claim supplier addresses"
-    echo "  shannon_query_supplier_tx_events         - Get supplier-specific transaction events"
-    echo "  shannon_query_supplier_block_events      - Get supplier-specific block events"
-    echo ""
-    echo "Quick start examples:"
-    echo "  shannon_query_unique_tx_msgs_and_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-    echo "  shannon_query_unique_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-    echo "  shannon_query_tx_messages $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK /pocket.supplier.MsgUnstakeSupplier \"\" main"
-    echo "  shannon_query_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-    echo ""
-    echo "Use --help with any command for detailed information"
-    echo "=========================================="
+  echo "=========================================="
+  echo "Shannon Blockchain Query Utilities"
+  echo "=========================================="
+  echo ""
+  echo "Available commands:"
+  echo "  shannon_query_unique_tx_msgs_and_events  - Get unique message and event types"
+  echo "  shannon_query_unique_block_events        - Get unique block events"
+  echo "  shannon_query_tx_messages                - Query transactions by message type"
+  echo "  shannon_query_tx_events                  - Query transactions by event type"
+  echo "  shannon_query_block_events               - Query block events"
+  echo "  shannon_query_unique_claim_suppliers     - Get unique claim supplier addresses"
+  echo "  shannon_query_supplier_tx_events         - Get supplier-specific transaction events"
+  echo "  shannon_query_supplier_block_events      - Get supplier-specific block events"
+  echo ""
+  echo "Current latest block on mainnet: $LATEST_BLOCK"
+  echo ""
+  echo "Quick start examples:"
+  echo "  shannon_query_unique_tx_msgs_and_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
+  echo "  shannon_query_unique_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
+  echo "  shannon_query_tx_messages $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK /pocket.supplier.MsgUnstakeSupplier \"\" main"
+  echo "  shannon_query_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
+  echo ""
+  echo "Use --help with any command for detailed information"
+  echo "=========================================="
 
-    echo ""
-    echo "Finding all event types in the codebase:"
-    echo "# find . -name \"*.proto\" -exec grep -h \"^message Event\" {} \\; | sed 's/^message \\(Event[^{]*\\).*/\\1/'"
+  echo ""
+  echo "TIP: Available event types can be found with:"
+  echo "  find . -name \"*.proto\" -exec grep -h \"^message Event\" {} \\; | sed 's/^message \\(Event[^{]*\\).*/\\1/'"
 }
 
 # ===============================================
@@ -50,68 +48,68 @@ function help() {
 
 # Validate environment parameter
 validate_env() {
-    local env="$1"
-    if [[ "$env" != "alpha" && "$env" != "beta" && "$env" != "main" ]]; then
-        echo "Error: Invalid environment. Must be one of: alpha, beta, main"
-        return 1
-    fi
-    return 0
+  local env="$1"
+  if [[ "$env" != "alpha" && "$env" != "beta" && "$env" != "main" ]]; then
+    echo "Error: Invalid environment. Must be one of: alpha, beta, main"
+    return 1
+  fi
+  return 0
 }
 
 # Validate block range
 validate_block_range() {
-    local start="$1"
-    local end="$2"
-    if [[ $start -gt $end ]]; then
-        echo "Error: Start height ($start) cannot be greater than end height ($end)"
-        return 1
-    fi
-    return 0
+  local start="$1"
+  local end="$2"
+  if [[ $start -gt $end ]]; then
+    echo "Error: Start height ($start) cannot be greater than end height ($end)"
+    return 1
+  fi
+  return 0
 }
 
 # Query and cache transactions for a given range
 query_txs_range() {
-    local start="$1"
-    local end="$2"
-    local env="$3"
-    local output_file="$4"
-    local additional_query="${5:-}"
+  local start="$1"
+  local end="$2"
+  local env="$3"
+  local output_file="$4"
+  local additional_query="${5:-}"
 
-    if [[ -f "$output_file" ]]; then
-        echo "Using existing cached data from $output_file"
-        return 0
-    fi
+  if [[ -f "$output_file" ]]; then
+    echo "Using existing cached data from $output_file"
+    return 0
+  fi
 
-    local query="tx.height > $start AND tx.height < $end"
-    if [[ -n "$additional_query" ]]; then
-        query="$query AND $additional_query"
-    fi
+  local query="tx.height > $start AND tx.height < $end"
+  if [[ -n "$additional_query" ]]; then
+    query="$query AND $additional_query"
+  fi
 
-    echo "Querying transactions from height $start to $end on '$env' network..."
-    pocketd query txs \
-        --network="$env" --grpc-insecure=false \
-        --query="$query" \
-        --limit "10000000000" --page 1 -o json >"$output_file"
+  echo "Querying transactions from height $start to $end on '$env' network..."
+  pocketd query txs \
+    --network="$env" --grpc-insecure=false \
+    --query="$query" \
+    --limit "10000000000" --page 1 -o json >"$output_file"
 }
 
 # Query single block with error handling
 query_single_block() {
-    local height="$1"
-    local env="$2"
-    local output_file="$3"
+  local height="$1"
+  local env="$2"
+  local output_file="$3"
 
-    if ! pocketd query block-results "$height" \
-        --network="$env" --grpc-insecure=false \
-        -o json >"$output_file" 2>/dev/null; then
-        echo "Warning: Failed to query block $height, skipping..."
-        return 1
-    fi
-    return 0
+  if ! pocketd query block-results "$height" \
+    --network="$env" --grpc-insecure=false \
+    -o json >"$output_file" 2>/dev/null; then
+    echo "Warning: Failed to query block $height, skipping..."
+    return 1
+  fi
+  return 0
 }
 
 # Common JQ filter for supplier-related events
 get_supplier_event_types_json() {
-    cat <<'EOF'
+  cat <<'EOF'
 [
     "pocket.proof.EventClaimCreated",
     "pocket.proof.EventClaimUpdated",
@@ -134,7 +132,7 @@ EOF
 
 # Common JQ filter for ignored event types
 get_ignored_event_types_json() {
-    cat <<'EOF'
+  cat <<'EOF'
 ["coin_spent", "coin_received", "transfer", "message", "tx", "commission", "rewards", "mint"]
 EOF
 }
@@ -144,8 +142,8 @@ EOF
 # ===============================================
 
 function shannon_query_unique_tx_msgs_and_events() {
-    if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-        cat <<'EOF'
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
 shannon_query_unique_tx_msgs_and_events - Query unique message and event types
 
 DESCRIPTION:
@@ -165,37 +163,37 @@ EXAMPLES:
   shannon_query_unique_tx_msgs_and_events 13000 37364 beta
   shannon_query_unique_tx_msgs_and_events 115010 116550 main
 EOF
-        return 0
-    fi
+    return 0
+  fi
 
-    if [[ $# -ne 3 ]]; then
-        echo "Error: Invalid number of arguments. Use --help for more information."
-        return 1
-    fi
+  if [[ $# -ne 3 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
 
-    local start="$1"
-    local end="$2"
-    local env="$3"
+  local start="$1"
+  local end="$2"
+  local env="$3"
 
-    validate_env "$env" || return 1
+  validate_env "$env" || return 1
 
-    local tmp_file="/tmp/shannon_txs_${start}_${end}_${env}.json"
-    query_txs_range "$start" "$end" "$env" "$tmp_file"
+  local tmp_file="/tmp/shannon_txs_${start}_${end}_${env}.json"
+  query_txs_range "$start" "$end" "$env" "$tmp_file"
 
-    echo ""
-    echo "## Unique message types starting with 'pocket':"
-    jq -r '.txs[].tx.body.messages[]."@type"' "$tmp_file" |
-        grep '^/pocket' | sort -u | sed 's/^/- /'
+  echo ""
+  echo "## Unique message types starting with 'pocket':"
+  jq -r '.txs[].tx.body.messages[]."@type"' "$tmp_file" |
+    grep '^/pocket' | sort -u | sed 's/^/- /'
 
-    echo ""
-    echo "## Unique event types starting with 'pocket':"
-    jq -r '.txs[].events[].type' "$tmp_file" |
-        grep '^pocket' | sort -u | sed 's/^/- /'
+  echo ""
+  echo "## Unique event types starting with 'pocket':"
+  jq -r '.txs[].events[].type' "$tmp_file" |
+    grep '^pocket' | sort -u | sed 's/^/- /'
 }
 
 function shannon_query_tx_messages() {
-    if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-        cat <<'EOF'
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
 shannon_query_tx_messages - Query transactions by message type
 
 DESCRIPTION:
@@ -217,37 +215,37 @@ EXAMPLES:
   shannon_query_tx_messages 13000 37364 /pocket.supplier.MsgUnstakeSupplier pokt1abc123... beta
   shannon_query_tx_messages 13000 37364 /pocket.supplier.MsgUnstakeSupplier "" beta
 EOF
-        return 0
-    fi
+    return 0
+  fi
 
-    if [[ $# -ne 5 ]]; then
-        echo "Error: Invalid number of arguments. Use --help for more information."
-        return 1
-    fi
+  if [[ $# -ne 5 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
 
-    local start="$1"
-    local end="$2"
-    local msg_type="$3"
-    local sender="$4"
-    local env="$5"
+  local start="$1"
+  local end="$2"
+  local msg_type="$3"
+  local sender="$4"
+  local env="$5"
 
-    validate_env "$env" || return 1
+  validate_env "$env" || return 1
 
-    local tmp_file="/tmp/shannon_filtered_msgs.json"
-    local additional_query="message.action='${msg_type}'"
+  local tmp_file="/tmp/shannon_filtered_msgs.json"
+  local additional_query="message.action='${msg_type}'"
 
-    if [[ -n "$sender" ]]; then
-        additional_query="${additional_query} AND message.sender='${sender}'"
-    fi
+  if [[ -n "$sender" ]]; then
+    additional_query="${additional_query} AND message.sender='${sender}'"
+  fi
 
-    echo "Querying '$env' for message type '$msg_type' from height $start to $end..."
-    [[ -n "$sender" ]] && echo "Sender filter: $sender"
+  echo "Querying '$env' for message type '$msg_type' from height $start to $end..."
+  [[ -n "$sender" ]] && echo "Sender filter: $sender"
 
-    query_txs_range "$start" "$end" "$env" "$tmp_file" "$additional_query"
+  query_txs_range "$start" "$end" "$env" "$tmp_file" "$additional_query"
 
-    echo ""
-    echo "Results:"
-    jq --arg MSG_TYPE "$msg_type" '
+  echo ""
+  echo "Results:"
+  jq --arg MSG_TYPE "$msg_type" '
         .txs[] |
         {
           height,
@@ -264,8 +262,8 @@ EOF
 }
 
 function shannon_query_tx_events() {
-    if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-        cat <<'EOF'
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
 shannon_query_tx_events - Query transactions by event type
 
 DESCRIPTION:
@@ -286,30 +284,30 @@ EXAMPLES:
   shannon_query_tx_events 13000 37364 pocket.supplier.EventSupplierUnbondingBegin beta
   shannon_query_tx_events 115010 116550 pocket.supplier.EventSupplierUnbondingBegin main
 EOF
-        return 0
-    fi
+    return 0
+  fi
 
-    if [[ $# -ne 4 ]]; then
-        echo "Error: Invalid number of arguments. Use --help for more information."
-        return 1
-    fi
+  if [[ $# -ne 4 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
 
-    local start="$1"
-    local end="$2"
-    local event_type="$3"
-    local env="$4"
+  local start="$1"
+  local end="$2"
+  local event_type="$3"
+  local env="$4"
 
-    validate_env "$env" || return 1
+  validate_env "$env" || return 1
 
-    local tmp_file="/tmp/event_filtered.json"
+  local tmp_file="/tmp/event_filtered.json"
 
-    echo "Querying all transactions from $start to $end on '$env'..."
-    echo "Filtering for event type: $event_type"
-    echo "--------------------------------------"
+  echo "Querying all transactions from $start to $end on '$env'..."
+  echo "Filtering for event type: $event_type"
+  echo "--------------------------------------"
 
-    query_txs_range "$start" "$end" "$env" "$tmp_file"
+  query_txs_range "$start" "$end" "$env" "$tmp_file"
 
-    jq --arg EVENT_TYPE "$event_type" '
+  jq --arg EVENT_TYPE "$event_type" '
         .txs[]
         | {
             height,
@@ -344,8 +342,8 @@ EOF
 # ===============================================
 
 function shannon_query_unique_block_events() {
-    if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-        cat <<'EOF'
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
 shannon_query_unique_block_events - Query unique block events from block results
 
 DESCRIPTION:
@@ -373,56 +371,56 @@ EXAMPLES:
   shannon_query_unique_block_events 115575 115580 main pocket
   shannon_query_unique_block_events 115575 115580 main "" --include-ignored --show-count
 EOF
-        return 0
+    return 0
+  fi
+
+  if [[ $# -lt 3 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
+
+  local start="$1"
+  local end="$2"
+  local env="$3"
+  local event_prefix="${4:-}"
+  local include_ignored=""
+  local show_count=""
+
+  # Check for flags in any position
+  for arg in "$@"; do
+    if [[ "$arg" == "--include-ignored" ]]; then
+      include_ignored="true"
+    elif [[ "$arg" == "--show-count" ]]; then
+      show_count="true"
     fi
+  done
 
-    if [[ $# -lt 3 ]]; then
-        echo "Error: Invalid number of arguments. Use --help for more information."
-        return 1
-    fi
+  validate_env "$env" || return 1
+  validate_block_range "$start" "$end" || return 1
 
-    local start="$1"
-    local end="$2"
-    local env="$3"
-    local event_prefix="${4:-}"
-    local include_ignored=""
-    local show_count=""
+  local tmp_file="/tmp/unique_block_events_${start}_${end}_${env}.json"
+  local raw_events_file="/tmp/raw_events_${start}_${end}_${env}.json"
+  local ignored_events=$(get_ignored_event_types_json)
 
-    # Check for flags in any position
-    for arg in "$@"; do
-        if [[ "$arg" == "--include-ignored" ]]; then
-            include_ignored="true"
-        elif [[ "$arg" == "--show-count" ]]; then
-            show_count="true"
-        fi
-    done
+  echo "Querying unique block events from $start to $end on '$env'..."
+  [[ -n "$event_prefix" ]] && echo "Filtering for events starting with: $event_prefix"
+  [[ -n "$include_ignored" ]] && echo "Including ignored event types" || echo "Ignoring common event types"
+  echo "--------------------------------------"
 
-    validate_env "$env" || return 1
-    validate_block_range "$start" "$end" || return 1
+  # Initialize empty JSON array for raw events
+  echo "[]" >"$raw_events_file"
 
-    local tmp_file="/tmp/unique_block_events_${start}_${end}_${env}.json"
-    local raw_events_file="/tmp/raw_events_${start}_${end}_${env}.json"
-    local ignored_events=$(get_ignored_event_types_json)
+  # Loop through each block height and collect all events
+  for ((height = $start; height <= $end; height++)); do
+    mkdir -p /tmp/blocks
+    local block_tmp="/tmp/blocks/block_$height.json"
+    echo "Processing block $height..."
 
-    echo "Querying unique block events from $start to $end on '$env'..."
-    [[ -n "$event_prefix" ]] && echo "Filtering for events starting with: $event_prefix"
-    [[ -n "$include_ignored" ]] && echo "Including ignored event types" || echo "Ignoring common event types"
-    echo "--------------------------------------"
-
-    # Initialize empty JSON array for raw events
-    echo "[]" >"$raw_events_file"
-
-    # Loop through each block height and collect all events
-    for ((height = $start; height <= $end; height++)); do
-        mkdir -p /tmp/blocks
-        local block_tmp="/tmp/blocks/block_$height.json"
-        echo "Processing block $height..."
-
-        if query_single_block "$height" "$env" "$block_tmp"; then
-            jq --argjson height "$height" \
-                --arg event_prefix "$event_prefix" \
-                --argjson ignored_events "$ignored_events" \
-                --arg include_ignored "$include_ignored" '
+    if query_single_block "$height" "$env" "$block_tmp"; then
+      jq --argjson height "$height" \
+        --arg event_prefix "$event_prefix" \
+        --argjson ignored_events "$ignored_events" \
+        --arg include_ignored "$include_ignored" '
                 def process_events(events; source):
                   events
                   | map(select(
@@ -451,14 +449,14 @@ EOF
                   process_events(.finalize_block_events // []; "finalize_block")
                 ] | flatten | .[]
               ' "$block_tmp" >>"$raw_events_file"
-        fi
-        rm -f "$block_tmp"
-    done
+    fi
+    rm -f "$block_tmp"
+  done
 
-    echo ""
-    echo "Processing unique events..."
+  echo ""
+  echo "Processing unique events..."
 
-    jq --arg show_count "$show_count" '
+  jq --arg show_count "$show_count" '
       group_by(.event_type)
       | map({
           event_type: .[0].event_type,
@@ -478,8 +476,8 @@ EOF
         end
     ' "$raw_events_file" >"$tmp_file"
 
-    if [[ "$show_count" == "true" ]]; then
-        jq -r '
+  if [[ "$show_count" == "true" ]]; then
+    jq -r '
           if type == "string" then
             .
           else
@@ -492,12 +490,12 @@ EOF
             ""
           end
         ' "$tmp_file"
-    else
-        echo "## Unique Event Types Found:"
-        jq -r '.event_type' "$tmp_file" | sort -u | sed 's/^/- /'
-        echo ""
-        echo "## Detailed Event Information:"
-        jq -r '
+  else
+    echo "## Unique Event Types Found:"
+    jq -r '.event_type' "$tmp_file" | sort -u | sed 's/^/- /'
+    echo ""
+    echo "## Detailed Event Information:"
+    jq -r '
           "### Event Type: \(.event_type)",
           "**Sources:** \(.sources | join(\", \"))",
           "**Unique Attribute Keys:** \(.unique_attribute_keys | join(\", \"))",
@@ -505,15 +503,15 @@ EOF
           (.sample_attributes | to_entries | map("  - \(.key): \(.value)") | join("\n")),
           ""
         ' "$tmp_file"
-    fi
+  fi
 
-    echo "Query completed. Raw events saved to: $raw_events_file"
-    rm -f "$raw_events_file" "$tmp_file"
+  echo "Query completed. Raw events saved to: $raw_events_file"
+  rm -f "$raw_events_file" "$tmp_file"
 }
 
 function shannon_query_block_events() {
-    if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-        cat <<'EOF'
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
 shannon_query_block_events - Query block events from block results
 
 DESCRIPTION:
@@ -540,45 +538,45 @@ EXAMPLES:
   shannon_query_block_events 115575 115580 main pocket.supplier.EventSupplierUnbondingBegin
   shannon_query_block_events 115575 115580 main "" --include-ignored
 EOF
-        return 0
-    fi
+    return 0
+  fi
 
-    if [[ $# -lt 3 ]]; then
-        echo "Error: Invalid number of arguments. Use --help for more information."
-        return 1
-    fi
+  if [[ $# -lt 3 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
 
-    local start="$1"
-    local end="$2"
-    local env="$3"
-    local event_type="${4:-}"
-    local include_ignored=""
+  local start="$1"
+  local end="$2"
+  local env="$3"
+  local event_type="${4:-}"
+  local include_ignored=""
 
-    # Check for --include-ignored flag
-    if [[ "$4" == "--include-ignored" || "$5" == "--include-ignored" ]]; then
-        include_ignored="true"
-    fi
+  # Check for --include-ignored flag
+  if [[ "$4" == "--include-ignored" || "$5" == "--include-ignored" ]]; then
+    include_ignored="true"
+  fi
 
-    validate_env "$env" || return 1
-    validate_block_range "$start" "$end" || return 1
+  validate_env "$env" || return 1
+  validate_block_range "$start" "$end" || return 1
 
-    local ignored_events=$(get_ignored_event_types_json)
+  local ignored_events=$(get_ignored_event_types_json)
 
-    echo "Querying block events from $start to $end on '$env'..."
-    [[ -n "$event_type" ]] && echo "Filtering for event type: $event_type"
-    [[ -n "$include_ignored" ]] && echo "Including ignored event types" || echo "Ignoring common event types"
-    echo "--------------------------------------"
+  echo "Querying block events from $start to $end on '$env'..."
+  [[ -n "$event_type" ]] && echo "Filtering for event type: $event_type"
+  [[ -n "$include_ignored" ]] && echo "Including ignored event types" || echo "Ignoring common event types"
+  echo "--------------------------------------"
 
-    # Loop through each block height
-    for ((height = $start; height <= $end; height++)); do
-        echo "Processing block $height..."
+  # Loop through each block height
+  for ((height = $start; height <= $end; height++)); do
+    echo "Processing block $height..."
 
-        if query_single_block "$height" "$env" "block_events"; then
-            local block_file="/tmp/shannon_block_events_${height}_${env}.json"
-            jq --argjson height "$height" \
-                --arg event_type "$event_type" \
-                --argjson ignored_events "$ignored_events" \
-                --arg include_ignored "$include_ignored" '
+    if query_single_block "$height" "$env" "block_events"; then
+      local block_file="/tmp/shannon_block_events_${height}_${env}.json"
+      jq --argjson height "$height" \
+        --arg event_type "$event_type" \
+        --argjson ignored_events "$ignored_events" \
+        --arg include_ignored "$include_ignored" '
                 def redact_large_values(obj):
                   if obj | type == "object" then
                     obj | with_entries(.value |= redact_large_values(.))
@@ -624,10 +622,10 @@ EOF
                 process_events(.finalize_block_events // []; null)
                 | .[]
               ' "$block_file"
-        fi
-    done
+    fi
+  done
 
-    echo "Query completed."
+  echo "Query completed."
 }
 
 # ===============================================
@@ -635,8 +633,8 @@ EOF
 # ===============================================
 
 function shannon_query_unique_claim_suppliers() {
-    if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-        cat <<'EOF'
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
 shannon_query_unique_claim_suppliers - Query unique claim supplier addresses
 
 DESCRIPTION:
@@ -655,35 +653,35 @@ EXAMPLES:
   shannon_query_unique_claim_suppliers 13000 37364 beta
   shannon_query_unique_claim_suppliers 115010 116550 main
 EOF
-        return 0
-    fi
+    return 0
+  fi
 
-    if [[ $# -ne 3 ]]; then
-        echo "Error: Invalid number of arguments. Use --help for more information."
-        return 1
-    fi
+  if [[ $# -ne 3 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
 
-    local min_height="$1"
-    local max_height="$2"
-    local env="$3"
+  local min_height="$1"
+  local max_height="$2"
+  local env="$3"
 
-    validate_env "$env" || return 1
+  validate_env "$env" || return 1
 
-    local additional_query="message.action='/pocket.proof.MsgCreateClaim'"
+  local additional_query="message.action='/pocket.proof.MsgCreateClaim'"
 
-    echo "Querying MsgCreateClaim transactions from $env between heights ($min_height, $max_height]..."
+  echo "Querying MsgCreateClaim transactions from $env between heights ($min_height, $max_height]..."
 
-    query_txs_range "$min_height" "$max_height" "$env" "claim_suppliers" "$additional_query"
+  query_txs_range "$min_height" "$max_height" "$env" "claim_suppliers" "$additional_query"
 
-    jq '[.txs[].tx.body.messages[]
+  jq '[.txs[].tx.body.messages[]
         | select(."@type" == "/pocket.proof.MsgCreateClaim" and .supplier_operator_address != null)
         | .supplier_operator_address]
         | unique' "/tmp/shannon_txs_claim_suppliers_${min_height}_${max_height}_${env}_$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50).json"
 }
 
 function shannon_query_supplier_tx_events() {
-    if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-        cat <<'EOF'
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
 shannon_query_supplier_tx_events - Query supplier-related transaction events
 
 DESCRIPTION:
@@ -709,31 +707,31 @@ FILTERED EVENT TYPES:
   - All pocket.supplier.* events
   - All pocket.tokenomics.* supplier-related events
 EOF
-        return 0
-    fi
+    return 0
+  fi
 
-    if [[ $# -ne 4 ]]; then
-        echo "Error: Invalid number of arguments. Use --help for more information."
-        return 1
-    fi
+  if [[ $# -ne 4 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
 
-    local start="$1"
-    local end="$2"
-    local supplier_addr="$3"
-    local env="$4"
+  local start="$1"
+  local end="$2"
+  local supplier_addr="$3"
+  local env="$4"
 
-    validate_env "$env" || return 1
+  validate_env "$env" || return 1
 
-    local event_types_json=$(get_supplier_event_types_json)
-    local additional_query="message.sender='${supplier_addr}'"
+  local event_types_json=$(get_supplier_event_types_json)
+  local additional_query="message.sender='${supplier_addr}'"
 
-    echo "Querying supplier events from $start to $end on '$env'..."
-    echo "Supplier operator address: $supplier_addr"
-    echo "--------------------------------------"
+  echo "Querying supplier events from $start to $end on '$env'..."
+  echo "Supplier operator address: $supplier_addr"
+  echo "--------------------------------------"
 
-    query_txs_range "$start" "$end" "$env" "supplier_tx_events" "$additional_query"
+  query_txs_range "$start" "$end" "$env" "supplier_tx_events" "$additional_query"
 
-    jq --argjson EVENT_TYPES "$event_types_json" --arg SUPPLIER_ADDR "$supplier_addr" '
+  jq --argjson EVENT_TYPES "$event_types_json" --arg SUPPLIER_ADDR "$supplier_addr" '
       .txs[]
       | {
           height,
@@ -802,8 +800,8 @@ EOF
 }
 
 function shannon_query_supplier_block_events() {
-    if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-        cat <<'EOF'
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
 shannon_query_supplier_block_events - Query supplier-related block events
 
 DESCRIPTION:
@@ -828,37 +826,37 @@ FILTERED EVENT TYPES:
   - All pocket.supplier.* events
   - All pocket.tokenomics.* supplier-related events
 EOF
-        return 0
-    fi
+    return 0
+  fi
 
-    if [[ $# -ne 4 ]]; then
-        echo "Error: Invalid number of arguments. Use --help for more information."
-        return 1
-    fi
+  if [[ $# -ne 4 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
 
-    local start="$1"
-    local end="$2"
-    local supplier_addr="$3"
-    local env="$4"
+  local start="$1"
+  local end="$2"
+  local supplier_addr="$3"
+  local env="$4"
 
-    validate_env "$env" || return 1
-    validate_block_range "$start" "$end" || return 1
+  validate_env "$env" || return 1
+  validate_block_range "$start" "$end" || return 1
 
-    local event_types_json=$(get_supplier_event_types_json)
+  local event_types_json=$(get_supplier_event_types_json)
 
-    echo "Querying supplier block events from $start to $end on '$env'..."
-    echo "Supplier operator address: $supplier_addr"
-    echo "--------------------------------------"
+  echo "Querying supplier block events from $start to $end on '$env'..."
+  echo "Supplier operator address: $supplier_addr"
+  echo "--------------------------------------"
 
-    # Loop through each block height
-    for ((height = $start; height <= $end; height++)); do
-        echo "Processing block $height..."
-        local block_tmp="/tmp/supplier_block_$height.json"
+  # Loop through each block height
+  for ((height = $start; height <= $end; height++)); do
+    echo "Processing block $height..."
+    local block_tmp="/tmp/supplier_block_$height.json"
 
-        if query_single_block "$height" "$env" "$block_tmp"; then
-            jq --argjson height "$height" \
-                --argjson event_types "$event_types_json" \
-                --arg supplier_addr "$supplier_addr" '
+    if query_single_block "$height" "$env" "$block_tmp"; then
+      jq --argjson height "$height" \
+        --argjson event_types "$event_types_json" \
+        --arg supplier_addr "$supplier_addr" '
               def process_supplier_events(events; txhash):
                 events
                 | map(select(.type as $type | $event_types | index($type)))
@@ -922,11 +920,11 @@ EOF
               process_supplier_events(.finalize_block_events // []; null))
               | .[]
             ' "$block_tmp"
-        fi
-        rm -f "$block_tmp"
-    done
+    fi
+    rm -f "$block_tmp"
+  done
 
-    echo "Query completed."
+  echo "Query completed."
 }
 
 # ===============================================
