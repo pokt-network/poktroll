@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -270,5 +271,5 @@ func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string)
 func isWebSocketRequest(r *http.Request) bool {
 	// The request must have the "Rpc-Type" header set to "websocket".
 	// This will be handled in the client, likely a PATH gateway.
-	return r.Header.Get(RPCTypeHeader) == string(sharedtypes.RPCType_WEBSOCKET)
+	return r.Header.Get(RPCTypeHeader) == strconv.Itoa(int(sharedtypes.RPCType_WEBSOCKET))
 }
