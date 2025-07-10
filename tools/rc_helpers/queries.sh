@@ -8,7 +8,7 @@
 # ===============================================
 
 function help() {
-  LATEST_BLOCK=$(pocketd query block --network=main --grpc-insecure=false -o json | tail -n +2 | jq '.header.height')
+  LATEST_BLOCK=$(pocketd query block --network=main --grpc-insecure=false -o json | tail -n +2 | jq -r '.header.height')
   LATEST_BLOCK=$(($LATEST_BLOCK))
   LATEST_BLOCK_MINUS_100=$(($LATEST_BLOCK - 100))
 
