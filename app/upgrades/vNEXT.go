@@ -24,7 +24,7 @@ import (
 // upgrade version number and update comment versions.
 
 const (
-	Upgrade_NEXT_PlanName = "vNEXT"
+	Upgrade_NEXT_PlanName = "v99"
 )
 
 const (
