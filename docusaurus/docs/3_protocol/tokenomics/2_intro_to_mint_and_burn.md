@@ -135,7 +135,7 @@ Assume the following Offchain market driven numbers:
 
 :::note Relay Mining Difficulty
 
-The actual computation related to Relay Mining Difficlty is non-linear but used solely for demonstration purposes here.
+The actual computation related to Relay Mining Difficulty is non-linear but used solely for demonstration purposes here.
 
 :::
 

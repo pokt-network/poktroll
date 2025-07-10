@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -83,6 +84,20 @@ func (s *suite) TheDaoBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBala
 	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, "dao", "more", "balance")
 }
 
+// TheDaoBalanceShouldBeUpoktThan checks if the DAO balance changed by the expected amount in the specified direction
+func (s *suite) TheDaoBalanceShouldBeUpoktThan(expectedChangeStr, direction, prevBalanceKey string) {
+	expectedChange, err := strconv.ParseInt(expectedChangeStr, 10, 64)
+	require.NoError(s, err)
+
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
+	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+
+	currBalance := s.getAccBalance("dao")
+
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedChange, "dao", direction, "balance")
+}
+
 // TheProposerBalanceShouldBeUpoktMoreThan checks if the proposer balance increased by the expected amount
 func (s *suite) TheProposerBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBalanceKey string) {
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
@@ -95,6 +110,20 @@ func (s *suite) TheProposerBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, pre
 
 	// Validate the change in balance
 	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, "proposer", "more", "balance")
+}
+
+// TheProposerBalanceShouldBeUpoktThan checks if the proposer balance changed by the expected amount in the specified direction
+func (s *suite) TheProposerBalanceShouldBeUpoktThan(expectedChangeStr, direction, prevBalanceKey string) {
+	expectedChange, err := strconv.ParseInt(expectedChangeStr, 10, 64)
+	require.NoError(s, err)
+
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
+	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+
+	currBalance := s.getAccBalance("proposer")
+
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedChange, "proposer", direction, "balance")
 }
 
 // TheServiceOwnerBalanceForShouldBeUpoktMoreThan checks if the service owner balance increased by the expected amount
@@ -112,6 +141,21 @@ func (s *suite) TheServiceOwnerBalanceForShouldBeUpoktMoreThan(serviceId, expect
 	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, serviceOwnerName, "more", "balance")
 }
 
+// TheServiceOwnerBalanceForShouldBeUpoktThan checks if the service owner balance changed by the expected amount in the specified direction
+func (s *suite) TheServiceOwnerBalanceForShouldBeUpoktThan(serviceId, expectedChangeStr, direction, prevBalanceKey string) {
+	expectedChange, err := strconv.ParseInt(expectedChangeStr, 10, 64)
+	require.NoError(s, err)
+
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
+	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+
+	serviceOwnerName := fmt.Sprintf("service_owner_%s", serviceId)
+	currBalance := s.getAccBalance(serviceOwnerName)
+
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedChange, serviceOwnerName, direction, "balance")
+}
+
 // TheAccountBalanceOfShouldBeUpoktMoreThan validates that an account balance increased compared to a remembered balance
 func (s *suite) TheAccountBalanceOfShouldBeUpoktMoreThan(accName, expectedIncreaseStr, prevBalanceKey string) {
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
@@ -124,6 +168,20 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktMoreThan(accName, expectedIncrea
 
 	// Validate the change in balance
 	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, accName, "more", "balance")
+}
+
+// TheAccountBalanceOfShouldBeUpoktThan validates that an account balance changed by the expected amount in the specified direction
+func (s *suite) TheAccountBalanceOfShouldBeUpoktThan(accName, expectedChangeStr, direction, prevBalanceKey string) {
+	expectedChange, err := strconv.ParseInt(expectedChangeStr, 10, 64)
+	require.NoError(s, err)
+
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
+	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+
+	currBalance := s.getAccBalance(accName)
+
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedChange, accName, direction, "balance")
 }
 
 // Helper methods
@@ -170,7 +228,7 @@ func (s *suite) getCurrentBlockProposer() string {
 }
 
 // getService queries and returns the service with the given ID
-func (s *suite) getService(serviceId string) *servicetypes.Service {
+func (s *suite) getService(serviceId string) *sharedtypes.Service {
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
 		"query", "service", "show-service", serviceId, "--output=json",
 	)

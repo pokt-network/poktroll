@@ -5,6 +5,7 @@ package e2e
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -34,11 +35,63 @@ func (s *suite) parseParamsTable(table gocuke.DataTable) paramsAnyMap {
 	s.Helper()
 
 	paramsMap := make(paramsAnyMap)
+	
+	// Track complex parameter fields for aggregation
+	complexParams := make(map[string]map[string]float64)
 
 	// NB: skip the header row.
 	for rowIdx := 1; rowIdx < table.NumRows(); rowIdx++ {
 		param := s.parseParam(table, rowIdx)
-		paramsMap[param.name] = param
+		
+		// Check if this is a dotted parameter (e.g., "mint_equals_burn_claim_distribution.dao")
+		if strings.Contains(param.name, ".") {
+			parts := strings.Split(param.name, ".")
+			if len(parts) == 2 {
+				complexParamName := parts[0]
+				fieldName := parts[1]
+				
+				if complexParams[complexParamName] == nil {
+					complexParams[complexParamName] = make(map[string]float64)
+				}
+				
+				// Store the field value
+				complexParams[complexParamName][fieldName] = param.value.(float64)
+			}
+		} else {
+			paramsMap[param.name] = param
+		}
+	}
+	
+	// Convert complex parameters to their proper types
+	for complexParamName, fields := range complexParams {
+		switch complexParamName {
+		case "mint_equals_burn_claim_distribution":
+			distribution := tokenomicstypes.MintEqualsBurnClaimDistribution{
+				Dao:         fields["dao"],
+				Proposer:    fields["proposer"],
+				Supplier:    fields["supplier"],
+				SourceOwner: fields["source_owner"],
+				Application: fields["application"],
+			}
+			paramsMap[tokenomicstypes.ParamMintEqualsBurnClaimDistribution] = paramAny{
+				name:    tokenomicstypes.ParamMintEqualsBurnClaimDistribution,
+				typeStr: "MintEqualsBurnClaimDistribution",
+				value:   distribution,
+			}
+		case "mint_allocation_percentages":
+			allocation := tokenomicstypes.MintAllocationPercentages{
+				Dao:         fields["dao"],
+				Proposer:    fields["proposer"],
+				Supplier:    fields["supplier"],
+				SourceOwner: fields["source_owner"],
+				Application: fields["application"],
+			}
+			paramsMap[tokenomicstypes.ParamMintAllocationPercentages] = paramAny{
+				name:    tokenomicstypes.ParamMintAllocationPercentages,
+				typeStr: "MintAllocationPercentages",
+				value:   allocation,
+			}
+		}
 	}
 
 	return paramsMap
@@ -118,6 +171,14 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsAnyMap) cosmostypes.Ms
 
 	for paramName, paramValue := range params {
 		switch paramName {
+		case tokenomicstypes.ParamDaoRewardAddress:
+			msgUpdateParams.Params.DaoRewardAddress = paramValue.value.(string)
+		case tokenomicstypes.ParamMintAllocationPercentages:
+			msgUpdateParams.Params.MintAllocationPercentages = paramValue.value.(tokenomicstypes.MintAllocationPercentages)
+		case tokenomicstypes.ParamGlobalInflationPerClaim:
+			msgUpdateParams.Params.GlobalInflationPerClaim = paramValue.value.(float64)
+		case tokenomicstypes.ParamMintEqualsBurnClaimDistribution:
+			msgUpdateParams.Params.MintEqualsBurnClaimDistribution = paramValue.value.(tokenomicstypes.MintEqualsBurnClaimDistribution)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
