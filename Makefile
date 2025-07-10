@@ -135,21 +135,6 @@ help: ## Prints all the targets in all the Makefiles
 ### Proto  Helpers ####
 #######################
 
-proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@echo "Updating all instances of cosmossdk.io/api/pocket to github.com/pokt-network/poktroll/api/pocket..."
-	@find ./api/pocket/ -type f | while read -r file; do \
-		$(SED) -i 's,cosmossdk.io/api/pocket,github.com/pokt-network/poktroll/api/pocket,g' "$$file"; \
-	done
-	@for dir in $(wildcard ./api/pocket/*/); do \
-			module=$$(basename $$dir); \
-			echo "Further processing module $$module"; \
-			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/pocket/'$$module'"' ./api/pocket/$$module | while read -r file; do \
-					echo "Modifying file: $$file"; \
-					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/pocket/'$$module'",,' "$$file"; \
-					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
-			done; \
-	done
-
 .PHONY: proto_regen
 proto_regen: ## Regenerate protobuf artifacts
 	ignite generate proto-go --yes
