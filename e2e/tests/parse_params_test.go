@@ -35,25 +35,25 @@ func (s *suite) parseParamsTable(table gocuke.DataTable) paramsAnyMap {
 	s.Helper()
 
 	paramsMap := make(paramsAnyMap)
-	
+
 	// Track complex parameter fields for aggregation
 	complexParams := make(map[string]map[string]float64)
 
 	// NB: skip the header row.
 	for rowIdx := 1; rowIdx < table.NumRows(); rowIdx++ {
 		param := s.parseParam(table, rowIdx)
-		
+
 		// Check if this is a dotted parameter (e.g., "mint_equals_burn_claim_distribution.dao")
 		if strings.Contains(param.name, ".") {
 			parts := strings.Split(param.name, ".")
 			if len(parts) == 2 {
 				complexParamName := parts[0]
 				fieldName := parts[1]
-				
+
 				if complexParams[complexParamName] == nil {
 					complexParams[complexParamName] = make(map[string]float64)
 				}
-				
+
 				// Store the field value
 				complexParams[complexParamName][fieldName] = param.value.(float64)
 			}
@@ -61,9 +61,9 @@ func (s *suite) parseParamsTable(table gocuke.DataTable) paramsAnyMap {
 			paramsMap[param.name] = param
 		}
 	}
-	
 	// Convert complex parameters to their proper types
 	for complexParamName, fields := range complexParams {
+		fmt.Println("OLSHANSKY", fields, complexParamName)
 		switch complexParamName {
 		case "mint_equals_burn_claim_distribution":
 			distribution := tokenomicstypes.MintEqualsBurnClaimDistribution{
