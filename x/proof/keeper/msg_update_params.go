@@ -10,7 +10,10 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
-func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
+func (k msgServer) UpdateParams(
+	ctx context.Context,
+	msg *types.MsgUpdateParams,
+) (*types.MsgUpdateParamsResponse, error) {
 	logger := k.Logger().With("method", "UpdateParams")
 
 	if err := msg.ValidateBasic(); err != nil {
@@ -32,6 +35,8 @@ func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	logger.Info("Done updating params")
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }

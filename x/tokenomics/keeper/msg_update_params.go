@@ -10,8 +10,11 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
-	logger := k.Logger()
+func (k msgServer) UpdateParams(
+	ctx context.Context,
+	msg *types.MsgUpdateParams,
+) (*types.MsgUpdateParamsResponse, error) {
+	logger := k.Logger().With("method", "UpdateParams")
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
