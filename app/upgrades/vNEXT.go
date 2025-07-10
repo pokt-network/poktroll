@@ -165,6 +165,10 @@ var Upgrade_NEXT = Upgrade{
 			keepers.IBCKeeper.ChannelKeeper.SetParams(sdkCtx, ibcChannelParams)
 			keepers.IBCKeeper.ClientKeeper.SetParams(sdkCtx, ibcClientParams)
 
+			// Initialize IBC client sequence to enable IBC client creation
+			// This fixes the "next client sequence is nil" error when creating IBC clients
+			keepers.IBCKeeper.ClientKeeper.SetNextClientSequence(sdkCtx, 0)
+
 			// Set IBC transfer params
 			keepers.TransferKeeper.SetParams(sdkCtx, ibcTransferParams)
 
