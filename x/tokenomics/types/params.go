@@ -52,14 +52,14 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams(
-	mintAllocationPercentages MintAllocationPercentages,
 	daoRewardAddress string,
+	mintAllocationPercentages MintAllocationPercentages,
 	globalInflationPerClaim float64,
 	mintEqualsBurnClaimDistribution MintEqualsBurnClaimDistribution,
 ) Params {
 	return Params{
-		MintAllocationPercentages:       mintAllocationPercentages,
 		DaoRewardAddress:                daoRewardAddress,
+		MintAllocationPercentages:       mintAllocationPercentages,
 		GlobalInflationPerClaim:         globalInflationPerClaim,
 		MintEqualsBurnClaimDistribution: mintEqualsBurnClaimDistribution,
 	}
@@ -68,8 +68,8 @@ func NewParams(
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
 	return NewParams(
-		DefaultMintAllocationPercentages,
 		DefaultDaoRewardAddress,
+		DefaultMintAllocationPercentages,
 		DefaultGlobalInflationPerClaim,
 		DefaultMintEqualsBurnClaimDistribution,
 	)

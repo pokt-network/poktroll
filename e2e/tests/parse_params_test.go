@@ -63,7 +63,6 @@ func (s *suite) parseParamsTable(table gocuke.DataTable) paramsAnyMap {
 	}
 	// Convert complex parameters to their proper types
 	for complexParamName, fields := range complexParams {
-		fmt.Println("OLSHANSKY", fields, complexParamName)
 		switch complexParamName {
 		case "mint_equals_burn_claim_distribution":
 			distribution := tokenomicstypes.MintEqualsBurnClaimDistribution{
