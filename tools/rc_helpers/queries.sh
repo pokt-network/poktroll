@@ -25,6 +25,7 @@ function help() {
   echo "  shannon_query_unique_claim_suppliers     - Get unique claim supplier addresses"
   echo "  shannon_query_supplier_tx_events         - Get supplier-specific transaction events"
   echo "  shannon_query_supplier_block_events      - Get supplier-specific block events"
+  echo "  shannon_query_application_block_events   - Get application-specific block events"
   echo ""
   echo "Current latest block on mainnet: $LATEST_BLOCK"
   echo ""
@@ -37,6 +38,7 @@ function help() {
   echo "  shannon_query_unique_claim_suppliers $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
   echo "  shannon_query_supplier_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1abc123... main"
   echo "  shannon_query_supplier_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1abc123... main"
+  echo "  shannon_query_application_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1gwx... main"
   echo ""
   echo "Use --help with any command for detailed information"
   echo "=========================================="
@@ -140,6 +142,28 @@ get_supplier_event_types_json() {
     "pocket.tokenomics.EventApplicationOverserviced",
     "pocket.tokenomics.EventSupplierSlashed",
     "pocket.tokenomics.EventApplicationReimbursementRequest"
+]
+EOF
+}
+
+# Common JQ filter for application-related events
+get_application_event_types_json() {
+  cat <<'EOF'
+[
+    "pocket.application.EventApplicationStaked",
+    "pocket.application.EventApplicationUnbondingBegin",
+    "pocket.application.EventApplicationUnbondingEnd",
+    "pocket.application.EventApplicationUnbondingCanceled",
+    "pocket.proof.EventClaimCreated",
+    "pocket.proof.EventClaimUpdated",
+    "pocket.proof.EventProofSubmitted",
+    "pocket.proof.EventProofUpdated",
+    "pocket.proof.EventProofValidityChecked",
+    "pocket.tokenomics.EventClaimExpired",
+    "pocket.tokenomics.EventClaimSettled",
+    "pocket.tokenomics.EventApplicationOverserviced",
+    "pocket.tokenomics.EventApplicationReimbursementRequest",
+    "pocket.morse.EventMorseApplicationClaimed"
 ]
 EOF
 }
@@ -954,6 +978,139 @@ EOF
                 process_supplier_events($events; $txhash)
               ) | flatten),
               process_supplier_events(.finalize_block_events // []; null))
+              | .[]
+            ' "$block_file"
+    fi
+  done
+
+  echo "Query completed."
+}
+
+function shannon_query_application_block_events() {
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
+shannon_query_application_block_events - Query application-related block events
+
+DESCRIPTION:
+  Queries block results for a range of block heights, extracting both transaction
+  events and finalize_block_events, filtering for application-related events and
+  matching by application address.
+
+USAGE:
+  shannon_query_application_block_events <start_height> <end_height> <application_address> <env>
+
+ARGUMENTS:
+  start_height         Start block height (inclusive)
+  end_height           End block height (inclusive)
+  application_address  Application address to filter by
+  env                  Network environment - must be one of: alpha, beta, main
+
+EXAMPLES:
+  shannon_query_application_block_events 115575 115580 pokt1gwxwgvlxlzk3ex59cx7lsswyvplf0rfhunxjhy main
+
+FILTERED EVENT TYPES:
+  - All pocket.application.* events
+  - All pocket.proof.* events (where application is involved)
+  - All pocket.tokenomics.* application-related events
+  - All pocket.morse.* application events
+EOF
+    return 0
+  fi
+
+  if [[ $# -ne 4 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
+
+  local start="$1"
+  local end="$2"
+  local application_addr="$3"
+  local env="$4"
+
+  validate_env "$env" || return 1
+  validate_block_range "$start" "$end" || return 1
+
+  local event_types_json=$(get_application_event_types_json)
+
+  echo "Querying application block events from $start to $end on '$env'..."
+  echo "Application address: $application_addr"
+  echo "--------------------------------------"
+
+  # Loop through each block height
+  for ((height = $start; height <= $end; height++)); do
+    echo "Processing block $height..."
+
+    local application_safe=$(echo "$application_addr" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-20)
+    local block_file="/tmp/shannon_application_block_events_${height}_${application_safe}_${env}.json"
+    if query_single_block "$height" "$env" "$block_file"; then
+      jq --argjson height "$height" \
+        --argjson event_types "$event_types_json" \
+        --arg application_addr "$application_addr" '
+              def process_application_events(events; txhash):
+                events
+                | map(select(.type as $type | $event_types | index($type)))
+                | map(
+                    {
+                      height: ($height | tostring),
+                      txhash: txhash,
+                      event_type: .type,
+                      attributes: (
+                        .attributes
+                        | map(select(.key != "msg_index"))
+                        | map({ (.key): .value })
+                        | add
+                        | with_entries(.value |= try fromjson catch .)
+                      )
+                    }
+                    | . as $event
+                    | select(
+                        (.attributes.application_address == $application_addr) or
+                        (.attributes.application_addr == $application_addr) or
+                        (.attributes.claim.session_header.application_address == $application_addr) or
+                        (.attributes.proof.session_header.application_address == $application_addr) or
+                        (.attributes.session_header.application_address == $application_addr) or
+                        (.attributes.application.address == $application_addr)
+                      )
+                    | {
+                        height,
+                        txhash,
+                        event_type,
+                        application_address: (
+                          .attributes.application_address //
+                          .attributes.application_addr //
+                          .attributes.claim.session_header.application_address //
+                          .attributes.proof.session_header.application_address //
+                          .attributes.session_header.application_address //
+                          .attributes.application.address
+                        ),
+                        supplier_operator_address: (
+                          .attributes.claim.supplier_operator_address //
+                          .attributes.proof.supplier_operator_address //
+                          .attributes.supplier_operator_address //
+                          .attributes.supplier_operator_addr
+                        ),
+                        service_id: (
+                          .attributes.claim.session_header.service_id //
+                          .attributes.proof.session_header.service_id //
+                          .attributes.service_id //
+                          .attributes.session_header.service_id
+                        ),
+                        num_relays: .attributes.num_relays,
+                        num_claimed_compute_units: .attributes.num_claimed_compute_units,
+                        num_estimated_compute_units: .attributes.num_estimated_compute_units,
+                        claimed_upokt_amount: .attributes.claimed_upokt.amount,
+                        stake_amount: .attributes.stake.amount,
+                        unbonding_height: .attributes.unbonding_height
+                      }
+                  );
+
+              ((.txs_results // [] | to_entries | map(
+                .value.events as $events |
+                .key as $tx_index |
+                ("tx_" + ($tx_index | tostring)) as $txhash |
+                process_application_events($events; $txhash)
+              ) | flatten),
+              process_application_events(.finalize_block_events // []; null))
               | .[]
             ' "$block_file"
     fi
