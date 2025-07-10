@@ -65,9 +65,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) Process(
 		return err
 	}
 
-	// Check if global inflation is disabled
-	// When global inflation is disabled, distribute the settlement amount
-	// according to mint equals burn claim distribution percentages
+	// Distribute the settlement amount
 	if err := tlmbem.processRewardDistribution(); err != nil {
 		logger.Error(fmt.Sprintf("error processing reward distribution: %v", err))
 		return err

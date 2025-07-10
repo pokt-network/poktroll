@@ -5,6 +5,18 @@
 # incorrect. A good long-term solution for this would be debug endpoints
 # that can be used to clear the state of the chain between tests.
 
+
+# TODO_TEST: Implement the following scenarios
+# - Scenario: Supplier revenue shares are properly distributed
+# - Scenario: TLM Mint=Burn when a valid claim is outside Max Limits
+#   - Ensure over serviced event is submitted
+# - Scenario: TLM GlobalMint properly distributes minted rewards to all actors
+#   - Ensure reimbursement request is submitted
+# - Scenario: Mint equals burn when a claim is created and a valid proof is submitted but not required
+# - Scenario: No emissions or burn when a claim is created and an invalid proof is submitted
+# - Scenario: No emissions or burn when a claim is created and a proof is required but is not submitted
+# - Scenario: No emissions or burn when no claim is created
+
 Feature: Tokenomics Namespace
     Scenario: TLM Mint=Burn when a valid claim is within max limits and a valid proof is submitted and required via threshold
         # Baseline
@@ -21,16 +33,16 @@ Feature: Tokenomics Namespace
         # Set proof_requirement_threshold to 83900 < num_relays (20) * compute_units_per_relay (100) * compute_units_to_tokens_multiplier (42)
         # to make sure a proof is required.
         And the "proof" module parameters are set as follows
-            | name                         | value                                                            | type  |
-            | proof_request_probability    | 0.25                                                             | float |
-            | proof_requirement_threshold  | 83900                                                            | coin  |
-            | proof_missing_penalty        | 320                                                              | coin  |
-            | proof_submission_fee         | 1000000                                                          | coin  |
+            | name                         | value   | type  |
+            | proof_request_probability    | 0.25    | float |
+            | proof_requirement_threshold  | 83900   | coin  |
+            | proof_missing_penalty        | 320     | coin  |
+            | proof_submission_fee         | 1000000 | coin  |
         And all "proof" module params should be updated
 
         # Configure shared parameters
         And the "shared" module parameters are set as follows
-            | compute_units_to_tokens_multiplier | 42                                                         | int64 |
+            | compute_units_to_tokens_multiplier | 42 | int64 |
         And all "shared" module params should be updated
 
         # Start servicing relays
@@ -133,8 +145,8 @@ Feature: Tokenomics Namespace
             | name                         | value   | type  |
             | proof_request_probability    | 1.0     | float |
             | proof_requirement_threshold  | 0       | coin  |
-            | proof_missing_penalty        | 320     | coin  |
-            | proof_submission_fee         | 1000000 | coin  |
+            | proof_missing_penalty        | 32      | coin  |
+            | proof_submission_fee         | 10      | coin  |
         And all "proof" module params should be updated
 
         # Record initial balances
@@ -164,8 +176,8 @@ Feature: Tokenomics Namespace
         # - Source Owner 15% (6300)
         # - Application 0% (0)
 
-        # The supplier should receive 70% of the settlement amount
-        Then the account balance of "supplier1" should be "29400" uPOKT "more" than "supplier1_initial_balance"
+        # The supplier should receive 70% of the settlement amount minus transaction fees
+        Then the account balance of "supplier1" should be "29319" uPOKT "more" than "supplier1_initial_balance"
 
         # The DAO should receive 10% of the settlement amount
         And the DAO balance should be "4200" uPOKT "more" than "dao_initial_balance"
@@ -178,14 +190,3 @@ Feature: Tokenomics Namespace
 
         # The application stake should decrease by the full settlement amount
         And the "application" stake of "app1" should be "42000" uPOKT "less" than before
-
-    # TODO_TEST: Implement the following scenarios
-    # Scenario: Supplier revenue shares are properly distributed
-    # Scenario: TLM Mint=Burn when a valid claim is outside Max Limits
-    #   - Ensure over serviced event is submitted
-    # Scenario: TLM GlobalMint properly distributes minted rewards to all actors
-    #   - Ensure reimbursement request is submitted
-    # Scenario: Mint equals burn when a claim is created and a valid proof is submitted but not required
-    # Scenario: No emissions or burn when a claim is created and an invalid proof is submitted
-    # Scenario: No emissions or burn when a claim is created and a proof is required but is not submitted
-    # Scenario: No emissions or burn when no claim is created

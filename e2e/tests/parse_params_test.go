@@ -165,7 +165,7 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsAnyMap) cosmostypes.Ms
 
 	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    tokenomicstypes.Params{},
+		Params:    tokenomicstypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
@@ -190,7 +190,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 
 	msgUpdateParams := &prooftypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    prooftypes.Params{},
+		Params:    prooftypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
@@ -215,7 +215,7 @@ func (s *suite) newSharedMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 
 	msgUpdateParams := &sharedtypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    sharedtypes.Params{},
+		Params:    sharedtypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
@@ -254,7 +254,7 @@ func (s *suite) newAppMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 
 	msgUpdateParams := &apptypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    apptypes.Params{},
+		Params:    apptypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
@@ -276,7 +276,7 @@ func (s *suite) newServiceMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 
 	msgUpdateParams := &servicetypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    servicetypes.Params{},
+		Params:    servicetypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {
@@ -296,7 +296,7 @@ func (s *suite) newSupplierMsgUpdateParams(params map[string]paramAny) cosmostyp
 
 	msgUpdateParams := &suppliertypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    suppliertypes.Params{},
+		Params:    suppliertypes.DefaultParams(),
 	}
 
 	for paramName, paramValue := range params {

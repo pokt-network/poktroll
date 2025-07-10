@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/stretchr/testify/require"
 
@@ -75,8 +76,8 @@ func (s *suite) TheDaoBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBala
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
 	require.NoError(s, err)
 
-	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
-	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
 	currBalance := s.getAccBalance("dao")
 
@@ -89,8 +90,8 @@ func (s *suite) TheDaoBalanceShouldBeUpoktThan(expectedChangeStr, direction, pre
 	expectedChange, err := strconv.ParseInt(expectedChangeStr, 10, 64)
 	require.NoError(s, err)
 
-	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
-	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
 	currBalance := s.getAccBalance("dao")
 
@@ -103,8 +104,8 @@ func (s *suite) TheProposerBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, pre
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
 	require.NoError(s, err)
 
-	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
-	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
 	currBalance := s.getAccBalance("proposer")
 
@@ -117,8 +118,8 @@ func (s *suite) TheProposerBalanceShouldBeUpoktThan(expectedChangeStr, direction
 	expectedChange, err := strconv.ParseInt(expectedChangeStr, 10, 64)
 	require.NoError(s, err)
 
-	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
-	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
 	currBalance := s.getAccBalance("proposer")
 
@@ -131,8 +132,8 @@ func (s *suite) TheServiceOwnerBalanceForShouldBeUpoktMoreThan(serviceId, expect
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
 	require.NoError(s, err)
 
-	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
-	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
 	serviceOwnerName := fmt.Sprintf("service_owner_%s", serviceId)
 	currBalance := s.getAccBalance(serviceOwnerName)
@@ -146,8 +147,8 @@ func (s *suite) TheServiceOwnerBalanceForShouldBeUpoktThan(serviceId, expectedCh
 	expectedChange, err := strconv.ParseInt(expectedChangeStr, 10, 64)
 	require.NoError(s, err)
 
-	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
-	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
 	serviceOwnerName := fmt.Sprintf("service_owner_%s", serviceId)
 	currBalance := s.getAccBalance(serviceOwnerName)
@@ -161,8 +162,8 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktMoreThan(accName, expectedIncrea
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
 	require.NoError(s, err)
 
-	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
-	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
 	currBalance := s.getAccBalance(accName)
 
@@ -175,8 +176,8 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktThan(accName, expectedChangeStr,
 	expectedChange, err := strconv.ParseInt(expectedChangeStr, 10, 64)
 	require.NoError(s, err)
 
-	prevBalance, ok := s.scenarioState[prevBalanceKey].(int)
-	require.True(s, ok, "previous balance %s not found or not an int", prevBalanceKey)
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
 	currBalance := s.getAccBalance(accName)
 
@@ -193,11 +194,11 @@ func (s *suite) getTokenomicsParams() tokenomicstypes.Params {
 	)
 	require.NoError(s, err)
 
-	var params tokenomicstypes.Params
-	err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &params)
+	var paramsRes tokenomicstypes.QueryParamsResponse
+	err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &paramsRes)
 	require.NoError(s, err)
 
-	return params
+	return paramsRes.Params
 }
 
 // getCurrentBlockProposer gets the address of the current block proposer
@@ -217,7 +218,12 @@ func (s *suite) getCurrentBlockProposer() string {
 		} `json:"block"`
 	}
 
-	err = json.Unmarshal([]byte(res.Stdout), &blockInfo)
+	// Strip any warning messages and get just the JSON part
+	jsonStart := strings.Index(res.Stdout, "{")
+	require.Greater(s, jsonStart, -1, "no JSON found in block query response")
+	jsonData := res.Stdout[jsonStart:]
+
+	err = json.Unmarshal([]byte(jsonData), &blockInfo)
 	require.NoError(s, err)
 
 	// Convert the hex proposer address to bech32 format
