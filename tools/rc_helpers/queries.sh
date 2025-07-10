@@ -36,9 +36,9 @@ function help() {
   echo "  shannon_query_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pocket.proof.EventClaimCreated main"
   echo "  shannon_query_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
   echo "  shannon_query_unique_claim_suppliers $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_supplier_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1abc123... main"
-  echo "  shannon_query_supplier_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1abc123... main"
-  echo "  shannon_query_application_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1gwx... main"
+  echo "  shannon_query_supplier_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
+  echo "  shannon_query_supplier_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
+  echo "  shannon_query_application_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt14tg8v3hns5tjefnmqs9u98jqjp6mw6wmwwmuh2 main"
   echo ""
   echo "Use --help with any command for detailed information"
   echo "=========================================="
@@ -755,8 +755,8 @@ ARGUMENTS:
   env               Network environment - must be one of: alpha, beta, main
 
 EXAMPLES:
-  shannon_query_supplier_tx_events 13000 37364 pokt1abc123... beta
-  shannon_query_supplier_tx_events 115010 116550 pokt1abc123... main
+  shannon_query_supplier_tx_events 13000 37364 pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f beta
+  shannon_query_supplier_tx_events 115010 116550 pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main
 
 FILTERED EVENT TYPES:
   - All pocket.proof.* events
@@ -878,7 +878,7 @@ ARGUMENTS:
   env               Network environment - must be one of: alpha, beta, main
 
 EXAMPLES:
-  shannon_query_supplier_block_events 115575 115580 pokt17jjp8pwjk8h7xyhvhqnt4cqxrfdmx3p37eva83 main
+  shannon_query_supplier_block_events 115575 115580 pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main
 
 FILTERED EVENT TYPES:
   - All pocket.proof.* events
@@ -1006,7 +1006,7 @@ ARGUMENTS:
   env                  Network environment - must be one of: alpha, beta, main
 
 EXAMPLES:
-  shannon_query_application_block_events 115575 115580 pokt1gwxwgvlxlzk3ex59cx7lsswyvplf0rfhunxjhy main
+  shannon_query_application_block_events 115575 115580 pokt14tg8v3hns5tjefnmqs9u98jqjp6mw6wmwwmuh2 main
 
 FILTERED EVENT TYPES:
   - All pocket.application.* events
