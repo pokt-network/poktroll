@@ -26,20 +26,7 @@ message Params {
   // global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.
   double global_inflation_per_claim = 7 [(gogoproto.jsontag) = "global_inflation_per_claim", (gogoproto.moretags) = "yaml:\"global_inflation_per_claim\""];
 
-  // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
-  // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`
-  // TODO_IMPROVE: Look into an opportunity to use an enum to avoid using strings throughout the codebase.
 
-  // TODO_ADD: Some parameters we should consider adding next:
-  //   - Service.computeUnitsToTokensMultiplierMap
-  //   - Application.MaxuPOKTPerRelay
-  //   - Application.MinuPOKTPerRelay
-  //   - Suppler.MaxuPOKTPerRelay
-  //   - Suppler.MinuPOKTPerRelay
-  //   - RevDistr.PercentageToSupploer
-  //   - RevDistr.PercentageToDAO
-  //   - RevDistr.PercentageToPNF
-  //   - RevDistr.PercentageToDelegators
 }
 
 // MintAllocationPercentages represents the distribution of newly minted tokens,
