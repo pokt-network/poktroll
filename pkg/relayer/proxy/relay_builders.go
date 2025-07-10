@@ -14,12 +14,17 @@ func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types
 	// Replace DefaultMaxBodySize with config options
 	requestBody, resetReadBodyPoolBytes, err := SafeRequestReadBody(sync.logger, request, sync.serverConfig.MaxBodySize)
 	if err != nil {
+		if resetReadBodyPoolBytes != nil {
+			// Ensure buffer is returned to pool on error
+			resetReadBodyPoolBytes()
+		}
 		return &types.RelayRequest{}, err
 	}
 	// Handle cleanup after SafeRequestReadBody succeeded:
 	// - We must call the cleanup function to return the buffer to the pool
 	// - If there was an error above, the cleanup would have already been performed internally
 	// - This defer ensures proper resource management in the success case
+	// - This MUST be deferred so we finish (un)marshalling before releasing the buffer
 	defer resetReadBodyPoolBytes()
 
 	sync.logger.Debug().Msg("unmarshaling relay request")

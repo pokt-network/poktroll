@@ -78,9 +78,18 @@ func SafeReadBody(
 	// - The buffer contents (buf.Bytes()) are returned to the caller
 	// - The buffer itself must be returned to the pool only after the caller has finished using the data
 	// - The caller is responsible for calling this cleanup function when the buffer data is no longer needed
+	// - This MUST be deferred to ensure any (un)marshalling is complete before releasing the buffer
+	// - The cleanup function MUST be called only once to avoid double cleanup
+	bufferCleanedUp := false
 	resetReadBodyPoolBytes := func() {
+		// Avoid double cleanup
+		if bufferCleanedUp {
+			return
+		}
 		buf.Reset() // Always reset before use
 		bodyBufPool.Put(buf)
+		// Mark as cleaned up to prevent double cleanup
+		bufferCleanedUp = true
 	}
 
 	bytesRead, err := buf.ReadFrom(limitedReader)
@@ -130,7 +139,7 @@ func SafeResponseReadBody(
 	body, resetReadBodyPoolBytes, err := SafeReadBody(logger, response.Body, maxSize)
 
 	if errors.Is(err, ErrRelayerProxyMaxBodyExceeded) {
-		return nil, nil, ErrRelayerProxyResponseLimitExceeded.Wrap(err.Error())
+		return nil, resetReadBodyPoolBytes, ErrRelayerProxyResponseLimitExceeded.Wrap(err.Error())
 	}
 
 	return body, resetReadBodyPoolBytes, err
@@ -164,15 +173,20 @@ func SerializeHTTPResponse(
 ) (poktHTTPResponse *sdktypes.POKTHTTPResponse, poktHTTPResponseBz []byte, err error) {
 	// Read the response body with size limits
 	responseBodyBz, resetReadBodyPoolBytes, err := SafeResponseReadBody(logger, response, maxBodySize)
-	// Handle error case: if SafeResponseReadBody fails:
+	// Handle error case if SafeResponseReadBody fails:
 	// - The buffer pool cleanup has already been performed internally
 	// - We can return early without calling resetReadBodyPoolBytes
 	// - resetReadBodyPoolBytes would be nil anyway in this case
 	if err != nil {
+		if resetReadBodyPoolBytes != nil {
+			// Ensure buffer is returned to pool on error
+			resetReadBodyPoolBytes()
+		}
 		return nil, nil, err
 	}
 	// Ensure buffer is returned to pool when function exits.
-	// responseBodyBz will no longer be needed when poktHTTPResponseBz is marshaled below.
+	// - responseBodyBz will no longer be needed when poktHTTPResponseBz is marshaled below.
+	// - This MUST be deferred to ensure any (un)marshalling is complete before releasing the buffer
 	defer resetReadBodyPoolBytes()
 
 	// Convert HTTP headers to the POKT header format
