@@ -1,12 +1,16 @@
 package config
 
 import (
+	"github.com/docker/go-units"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // DefaultRequestTimeoutSeconds is the default timeout for requests in seconds.
 // If not specified in the config, it will be used as a fallback.
 const DefaultRequestTimeoutSeconds = 10
+
+// DefaultMaxBodySize defines the default maximum HTTP body size as a string, used as a fallback if unspecified.
+const DefaultMaxBodySize = "20MB"
 
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
 func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
@@ -30,6 +34,19 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	if yamlRelayMinerConfig.DefaultRequestTimeoutSeconds == 0 {
 		yamlRelayMinerConfig.DefaultRequestTimeoutSeconds = DefaultRequestTimeoutSeconds
 	}
+
+	if yamlRelayMinerConfig.DefaultMaxBodySize == "" {
+		yamlRelayMinerConfig.DefaultMaxBodySize = DefaultMaxBodySize
+	}
+
+	size, err := units.RAMInBytes(yamlRelayMinerConfig.DefaultMaxBodySize)
+	if err != nil {
+		return nil, ErrRelayMinerConfigInvalidMaxBodySize.Wrapf(
+			"invalid max body size %q",
+			yamlRelayMinerConfig.DefaultMaxBodySize,
+		)
+	}
+	relayMinerConfig.DefaultMaxBodySize = size
 
 	// Global section
 	relayMinerConfig.DefaultSigningKeyNames = yamlRelayMinerConfig.DefaultSigningKeyNames

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	"github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -51,8 +53,17 @@ func TestMiner_MinedRelays(t *testing.T) {
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, testSvcId, testRelayMiningTargetHash)
 	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
 	relayMeterMock := newMockRelayMeter(t)
+	blockClient := mockclient.NewMockBlockClient(gomock.NewController(t))
+	blockClient.EXPECT().
+		GetChainVersion().
+		DoAndReturn(func() *version.Version {
+			chainVersion, err := version.NewVersion("v0.1.25")
+			require.NoError(t, err)
+			return chainVersion
+		}).
+		AnyTimes()
 
-	deps := depinject.Supply(serviceQueryClientMock, relayMeterMock)
+	deps := depinject.Supply(serviceQueryClientMock, relayMeterMock, blockClient)
 	mnr, err := miner.NewMiner(deps)
 	require.NoError(t, err)
 

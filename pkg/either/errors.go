@@ -16,11 +16,11 @@ func AsyncErr(errCh chan error) AsyncError {
 }
 
 // SyncOrAsyncError decomposes the AsyncError into its components, returning
-// a synchronous error and an error channel. If the AsyncError represents a
+// an error channel and a synchronous error. If the AsyncError represents a
 // synchronous error, the error channel will be nil and vice versa.
-func (soaErr AsyncError) SyncOrAsyncError() (error, chan error) {
+func (soaErr AsyncError) SyncOrAsyncError() (chan error, error) {
 	errCh, err := Either[chan error](soaErr).ValueOrError()
-	return err, errCh
+	return errCh, err
 }
 
 // IsSyncError checks if the AsyncError represents a synchronous error.

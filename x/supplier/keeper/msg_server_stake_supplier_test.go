@@ -44,7 +44,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 
-	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
+	sessionEndHeight := supplierModuleKeepers.GetSessionEndHeight(ctx, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
 			Supplier:         expectedSupplier,
@@ -469,7 +469,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(sdkCtx, currentHeight)
+	sessionEndHeight := supplierModuleKeepers.GetSessionEndHeight(sdkCtx, currentHeight)
 
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(sdkCtx, operatorAddr)
 	require.True(t, isSupplierFound)
@@ -516,7 +516,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 	require.Equal(t, "svcId2", latestServiceUpdate[1].Service.ServiceId)
 
 	// Activation height should be the beginning of the next session.
-	sessionEndHeight = supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(sdkCtx, currentHeight)
+	sessionEndHeight = supplierModuleKeepers.GetSessionEndHeight(sdkCtx, currentHeight)
 	nextSessionStartHeight := sessionEndHeight + 1
 
 	// The supplier should be active only for svcId until the end of the current session.
@@ -588,6 +588,53 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 	supplier, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
 	require.EqualValues(t, expectedSupplier, &supplier)
+}
+
+func TestMsgServer_StakeSupplier_SignerOwnerStakeDestination(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	// Generate different addresses for owner and operator
+	ownerAddr := sample.AccAddress()
+	operatorAddr := sample.AccAddress()
+
+	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
+
+	// Calculate and set the operator's initial balance
+	initialStake := minStake * 2
+	supplierStakingFee := supplierModuleKeepers.Keeper.GetParams(ctx).StakingFee
+	expectedSignerBalance := supplierStakingFee.Amount.Int64() + initialStake
+	supplierModuleKeepers.SupplierBalanceMap[operatorAddr] = expectedSignerBalance
+
+	// Prepare the supplier stake message with high initial stake
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake, "svcId")
+	// Use the operator as the signer the initial stake
+	stakeMsg.Signer = operatorAddr
+
+	// Stake the supplier initially
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Verify initial balances - signer should have paid for the stake
+	require.Equal(t, int64(0), supplierModuleKeepers.SupplierBalanceMap[operatorAddr])
+	require.Equal(t, int64(0), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
+
+	// Now decrease the stake using the operator as signer - funds should go to owner
+	lowerStake := minStake + 1
+	decreaseStakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, lowerStake, "svcId")
+	decreaseStakeMsg.Signer = operatorAddr // Use operator as signer for the decrease
+
+	// Update with lower stake
+	_, err = srv.StakeSupplier(ctx, decreaseStakeMsg)
+	require.NoError(t, err)
+
+	// Verify that the stake difference was returned to the owner, not the operator signer
+	stakeDifference := initialStake - lowerStake
+	// Operator should have paid the staking fee but received no stake back
+	expectedOperatorBalance := -supplierStakingFee.Amount.Int64()
+	require.Equal(t, expectedOperatorBalance, supplierModuleKeepers.SupplierBalanceMap[operatorAddr])
+	// Owner should have received the stake difference (return of funds)
+	require.Equal(t, stakeDifference, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 }
 
 // newSupplierStakeMsg prepares and returns a MsgStakeSupplier that stakes

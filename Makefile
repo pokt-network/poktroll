@@ -412,6 +412,7 @@ grove_staging_eth_block_height: ## Sends a relay through the staging grove gatew
 ### Imports ###
 ###############
 
+include ./makefiles/colors.mk
 include ./makefiles/warnings.mk
 include ./makefiles/todos.mk
 include ./makefiles/checks.mk
@@ -429,5 +430,7 @@ include ./makefiles/relay.mk
 include ./makefiles/ping.mk
 include ./makefiles/migrate.mk
 include ./makefiles/claudesync.mk
+include ./makefiles/telegram.mk
 include ./makefiles/docs.mk
 include ./makefiles/release.mk
+include ./makefiles/tools.mk

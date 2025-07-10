@@ -4,19 +4,14 @@ import (
 	"context"
 	stdmath "math"
 	"math/big"
-	"strings"
 	"sync"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
-	"github.com/pokt-network/poktroll/pkg/either"
-	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -71,7 +66,6 @@ type ProxyRelayMeter struct {
 	serviceQuerier     client.ServiceQueryClient
 	sharedQuerier      client.SharedQueryClient
 	sessionQuerier     client.SessionQueryClient
-	eventsQueryClient  client.EventsQueryClient
 	blockQuerier       client.BlockClient
 
 	logger polylog.Logger
@@ -89,7 +83,6 @@ func NewRelayMeter(deps depinject.Config, enableOverServicing bool) (relayer.Rel
 		&rm.applicationQuerier,
 		&rm.serviceQuerier,
 		&rm.blockQuerier,
-		&rm.eventsQueryClient,
 		&rm.sessionQuerier,
 		&rm.logger,
 	); err != nil {
@@ -101,25 +94,6 @@ func NewRelayMeter(deps depinject.Config, enableOverServicing bool) (relayer.Rel
 
 // Start starts the relay meter by observing application staked events and new sessions.
 func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
-	// Listen to transaction events to filter application staked events.
-	// TODO_TECHDEBT(@red-0ne): refactor this listener to be shared across all query clients
-	// and remove the need to listen to events in the relay meter.
-	eventsObs, err := rmtr.eventsQueryClient.EventsBytes(ctx, "tm.event = 'Tx'")
-	if err != nil {
-		return err
-	}
-
-	// Listen for application staked events and update known application stakes.
-	//
-	// Since an applications might upstake (never downstake) during a session, this
-	// stake increase is guaranteed to be available at settlement.
-	// Stake updates take effect immediately.
-	//
-	// This enables applications to adjust their stake mid-session and increase
-	// their rate limits without needing to wait for the next session to start.
-	appStakedEvents := filterTypedEvents[*apptypes.EventApplicationStaked](ctx, eventsObs, nil)
-	channel.ForEach(ctx, appStakedEvents, rmtr.forEachEventApplicationStakedFn)
-
 	// Listen to new blocks and reset the relay meter application stakes every new session.
 	committedBlocksSequence := rmtr.blockQuerier.CommittedBlocksSequence(ctx)
 	channel.ForEach(ctx, committedBlocksSequence, rmtr.forEachNewBlockFn)
@@ -139,11 +113,17 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	rmtr.relayMeterMu.Lock()
 	defer rmtr.relayMeterMu.Unlock()
 
+	// Create a context-specific logger to avoid concurrent access issues
+	logger := rmtr.logger.With(
+		"method", "IsOverServicing",
+		"session_id", reqMeta.GetSessionHeader().GetSessionId(),
+	)
+
 	// Ensure that the served application has a relay meter and update the consumed
 	// stake amount.
 	appRelayMeter, err := rmtr.ensureRequestSessionRelayMeter(ctx, reqMeta)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -153,7 +133,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -163,7 +143,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 
 	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -174,7 +154,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	// Get the cost of the relay based on the service and shared parameters.
 	relayCostCoin, err := getSingleRelayCostCoin(sharedParams, &service)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to calculate relay cost in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -194,7 +174,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 
 	// Exponential backoff, only log over-servicing when numOverServicedRelays is a power of 2
 	if shouldLogOverServicing(appRelayMeter.numOverServicedRelays) {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"overservicing enabled, application %q over-serviced %s",
 			appRelayMeter.app.GetAddress(),
 			appRelayMeter.numOverServicedRelays,
@@ -212,9 +192,15 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 	rmtr.relayMeterMu.Lock()
 	defer rmtr.relayMeterMu.Unlock()
 
+	// Create a context-specific logger to avoid concurrent access issues
+	logger := rmtr.logger.With(
+		"method", "SetNonApplicableRelayReward",
+		"session_id", reqMeta.GetSessionHeader().GetSessionId(),
+	)
+
 	sessionRelayMeter, ok := rmtr.sessionToRelayMeterMap[reqMeta.GetSessionHeader().GetSessionId()]
 	if !ok {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to find session relay meter for session %s. Application may be rate limited more than intended: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			ErrRelayerProxyUnknownSession.Wrap("session relay meter not found"),
@@ -225,7 +211,7 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -235,7 +221,7 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 
 	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -246,7 +232,7 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 	// Get the cost of the relay based on the service and shared parameters.
 	relayCost, err := getSingleRelayCostCoin(sharedParams, &service)
 	if err != nil {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"[Non critical] Unable to calculate relay cost in session %s. Application may be rate limited more than intended: %v",
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
@@ -256,7 +242,7 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 	// TODO_FOLLOWUP(@red-0ne): Consider fixing the relay meter logic to never have
 	// a less than relay cost consumed amount.
 	if sessionRelayMeter.consumedCoin.IsLT(relayCost) {
-		rmtr.logger.Warn().Msgf(
+		logger.Warn().Msgf(
 			"(SHOULD NEVER HAPPEN) Your session earned less than the cost of a single relay. Not submitting a claim for application (%s), service id: (%s), session id: (%s), with consumed amount: (%s), relay cost: (%s)",
 			sessionRelayMeter.app.GetAddress(),
 			sessionRelayMeter.sessionHeader.GetServiceId(),
@@ -309,54 +295,6 @@ func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client
 	}
 }
 
-// forEachEventApplicationStakedFn is a callback function that is called every time
-// an application staked event is observed. It updates the relay meter known applications.
-func (rmtr *ProxyRelayMeter) forEachEventApplicationStakedFn(ctx context.Context, event *apptypes.EventApplicationStaked) {
-	rmtr.relayMeterMu.Lock()
-	defer rmtr.relayMeterMu.Unlock()
-
-	app := event.GetApplication()
-
-	rmtr.logger.Debug().Msgf(
-		"received application staked event for application %s with stake %s",
-		app.Address,
-		app.GetStake().String(),
-	)
-
-	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
-	if err != nil {
-		rmtr.logger.Error().Msgf(
-			"[Non critical] Unable to get shared params to update application %s stake: %v",
-			err,
-		)
-	}
-
-	sessionParams, err := rmtr.sessionQuerier.GetParams(ctx)
-	if err != nil {
-		rmtr.logger.Error().Msgf(
-			"[Non critical] Unable to get session params to update application %s stake: %v",
-			err,
-		)
-		return
-	}
-
-	// Since lean clients are supported, multiple suppliers might share the same RelayMiner.
-	// Loop over all the suppliers that have metered the application and update their
-	// max amount of stake they can consume.
-	for _, sessionRelayMeter := range rmtr.sessionToRelayMeterMap {
-		if sessionRelayMeter.app.Address != app.Address {
-			continue
-		}
-		sessionRelayMeter.app.Stake = app.GetStake()
-		appStakeShare := getAppStakePortionPayableToSessionSupplier(
-			app.GetStake(),
-			sharedParams,
-			sessionParams.GetNumSuppliersPerSession(),
-		)
-		sessionRelayMeter.maxCoin = appStakeShare
-	}
-}
-
 // ensureRequestSessionRelayMeter ensures that the relay miner has a relay meter
 // ready for monitoring the requests's application's consumption.
 func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) (*sessionRelayMeter, error) {
@@ -368,6 +306,8 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 	// max amount of stake the application can consume.
 	if !ok {
 		var app apptypes.Application
+		// Application stake is guaranteed to be up-to-date as long as the cache is
+		// invalidated at each new block.
 		app, err := rmtr.applicationQuerier.GetApplication(ctx, appAddress)
 		if err != nil {
 			return nil, err
@@ -410,53 +350,6 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 	}
 
 	return relayMeter, nil
-}
-
-// filterTypedEvents filters the provided events bytes for the typed event T.
-// T is then filtered by the provided filter function.
-func filterTypedEvents[T proto.Message](
-	ctx context.Context,
-	eventBzObs client.EventsBytesObservable,
-	filterFn func(T) bool,
-) observable.Observable[T] {
-	eventObs, eventCh := channel.NewObservable[T]()
-	channel.ForEach(ctx, eventBzObs, func(ctx context.Context, maybeTxBz either.Bytes) {
-		if maybeTxBz.IsError() {
-			return
-		}
-		txBz, _ := maybeTxBz.ValueOrError()
-
-		// Try to deserialize the provided bytes into an abci.TxResult.
-		txResult, err := tx.UnmarshalTxResult(txBz)
-		if err != nil {
-			return
-		}
-
-		for _, event := range txResult.Result.Events {
-			eventApplicationStakedType := cosmostypes.MsgTypeURL(*new(T))
-			if strings.Trim(event.GetType(), "/") != strings.Trim(eventApplicationStakedType, "/") {
-				continue
-			}
-
-			typedEvent, err := cosmostypes.ParseTypedEvent(event)
-			if err != nil {
-				return
-			}
-
-			castedEvent, ok := typedEvent.(T)
-			if !ok {
-				return
-			}
-
-			// Apply the filter function to the typed event.
-			if filterFn == nil || filterFn(castedEvent) {
-				eventCh <- castedEvent
-				return
-			}
-		}
-	})
-
-	return eventObs
 }
 
 // getSingleRelayCostCoin returns the cost of a relay based on the shared parameters and the service.
