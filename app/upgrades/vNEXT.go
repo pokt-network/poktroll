@@ -184,12 +184,6 @@ var Upgrade_NEXT = Upgrade{
 			keepers.ICAHostKeeper.SetParams(sdkCtx, ibcIcaHostParams)
 			keepers.ICAControllerKeeper.SetParams(sdkCtx, ibcIcaControllerParams)
 
-			// Bind transfer port to enable IBC token transfers
-			// This fixes the "capability not found" error when creating transfer channels
-			if !keepers.IBCKeeper.PortKeeper.IsBound(sdkCtx, ibctransfertypes.ModuleName) {
-				_ = keepers.IBCKeeper.PortKeeper.BindPort(sdkCtx, ibctransfertypes.ModuleName)
-			}
-
 			return nil
 		}
 
@@ -198,9 +192,11 @@ var Upgrade_NEXT = Upgrade{
 				return vm, err
 			}
 
-			// Set IBC module version to prevent re-initialization via InitGenesis
-			// This ensures IBC modules don't try to initialize again after upgrade
-			vm["ibc"] = 1
+			// Allow IBC modules to initialize properly to set up capability system
+			// Remove any existing IBC-related versions to trigger proper initialization
+			delete(vm, "ibc")
+			delete(vm, "transfer")
+			delete(vm, "interchainaccounts")
 
 			return vm, nil
 		}
