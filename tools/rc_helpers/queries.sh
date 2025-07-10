@@ -28,18 +28,27 @@ function help() {
   echo ""
   echo "Current latest block on mainnet: $LATEST_BLOCK"
   echo ""
-  echo "Quick start examples:"
+  echo "Quick start examples (using last 100 blocks - focus on Claim messages & events):"
   echo "  shannon_query_unique_tx_msgs_and_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
   echo "  shannon_query_unique_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_tx_messages $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK /pocket.supplier.MsgUnstakeSupplier \"\" main"
+  echo "  shannon_query_tx_messages $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK /pocket.proof.MsgCreateClaim \"\" main"
+  echo "  shannon_query_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pocket.proof.EventClaimCreated main"
   echo "  shannon_query_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
+  echo "  shannon_query_unique_claim_suppliers $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
+  echo "  shannon_query_supplier_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1abc123... main"
+  echo "  shannon_query_supplier_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1abc123... main"
   echo ""
   echo "Use --help with any command for detailed information"
   echo "=========================================="
 
   echo ""
-  echo "TIP: Available event types can be found with:"
-  echo "  find . -name \"*.proto\" -exec grep -h \"^message Event\" {} \\; | sed 's/^message \\(Event[^{]*\\).*/\\1/'"
+  echo "TIPS:"
+  echo "  Available event types can be found with:"
+  echo "    find . -name \"*.proto\" -exec grep -h \"^message Event\" {} \\; | sed 's/^message \\(Event[^{]*\\).*/\\1/'"
+  echo ""
+  echo "  Available message types can be found with:"
+  echo "    find . -name \"*.proto\" -exec grep -h \"^message Msg\" {} \\; | sed 's/^message \\(Msg[^{]*\\).*/\\1/' | head -10"
+  echo "    (Note: Add module prefix like /pocket.proof.MsgCreateClaim or /pocket.supplier.MsgStakeSupplier)"
 }
 
 # ===============================================
@@ -74,6 +83,11 @@ query_txs_range() {
   local env="$3"
   local output_file="$4"
   local additional_query="${5:-}"
+
+  # Ensure we use absolute path if a relative path was provided
+  if [[ "${output_file}" != /* ]]; then
+    output_file="/tmp/${output_file}"
+  fi
 
   if [[ -f "$output_file" ]]; then
     echo "Using existing cached data from $output_file"
@@ -231,7 +245,9 @@ EOF
 
   validate_env "$env" || return 1
 
-  local tmp_file="/tmp/shannon_filtered_msgs.json"
+  local msg_type_safe=$(echo "$msg_type" | sed 's/[^a-zA-Z0-9._-]/_/g')
+  local sender_safe=$(echo "$sender" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-20)
+  local tmp_file="/tmp/shannon_tx_msgs_${start}_${end}_${msg_type_safe}_${sender_safe}_${env}.json"
   local additional_query="message.action='${msg_type}'"
 
   if [[ -n "$sender" ]]; then
@@ -299,7 +315,8 @@ EOF
 
   validate_env "$env" || return 1
 
-  local tmp_file="/tmp/event_filtered.json"
+  local event_type_safe=$(echo "$event_type" | sed 's/[^a-zA-Z0-9._-]/_/g')
+  local tmp_file="/tmp/shannon_tx_events_${start}_${end}_${event_type_safe}_${env}.json"
 
   echo "Querying all transactions from $start to $end on '$env'..."
   echo "Filtering for event type: $event_type"
@@ -408,7 +425,8 @@ EOF
   echo "--------------------------------------"
 
   # Initialize empty JSON array for raw events
-  echo "[]" >"$raw_events_file"
+  local all_events_tmp="/tmp/shannon_block_events_tmp_${start}_${end}_${env}.json"
+  echo "[]" >"$all_events_tmp"
 
   # Loop through each block height and collect all events
   for ((height = $start; height <= $end; height++)); do
@@ -447,11 +465,19 @@ EOF
                     process_events($events; "transaction")
                   ) | flatten),
                   process_events(.finalize_block_events // []; "finalize_block")
-                ] | flatten | .[]
-              ' "$block_tmp" >>"$raw_events_file"
+                ] | flatten
+              ' "$block_tmp" >"$block_tmp.events"
+
+      # Merge events into the main array
+      jq -s '.[0] + .[1]' "$all_events_tmp" "$block_tmp.events" >"$all_events_tmp.new"
+      mv "$all_events_tmp.new" "$all_events_tmp"
+      rm -f "$block_tmp.events"
     fi
     rm -f "$block_tmp"
   done
+
+  # Move the final events file
+  mv "$all_events_tmp" "$raw_events_file"
 
   echo ""
   echo "Processing unique events..."
@@ -468,7 +494,7 @@ EOF
       | sort_by(.event_type)
       | if $show_count == "true" then
           ("## Summary of Unique Event Types:\n" +
-           (map("- \(.event_type) (count: \(.count), sources: \(.sources | join(\", \")))") | join("\n")) +
+           (map("- " + .event_type + " (count: " + (.count | tostring) + ", sources: " + (.sources | join(", ")) + ")") | join("\n")) +
            "\n\n## Detailed Event Information:"),
           .[]
         else
@@ -476,19 +502,20 @@ EOF
         end
     ' "$raw_events_file" >"$tmp_file"
 
+  # Display results based on show_count flag
   if [[ "$show_count" == "true" ]]; then
+    echo "## Summary of Unique Event Types:"
+    jq -r '"- " + .event_type + " (count: " + (.count | tostring) + ", sources: " + (.sources | join(", ")) + ")"' "$tmp_file"
+    echo ""
+    echo "## Detailed Event Information:"
     jq -r '
-          if type == "string" then
-            .
-          else
-            "### Event Type: \(.event_type)",
-            "**Count:** \(.count)",
-            "**Sources:** \(.sources | join(\", \"))",
-            "**Unique Attribute Keys:** \(.unique_attribute_keys | join(\", \"))",
-            "**Sample Attributes:**",
-            (.sample_attributes | to_entries | map("  - \(.key): \(.value)") | join("\n")),
-            ""
-          end
+          "### Event Type: " + .event_type,
+          "**Count:** " + (.count | tostring),
+          "**Sources:** " + (.sources | join(", ")),
+          "**Unique Attribute Keys:** " + (.unique_attribute_keys | join(", ")),
+          "**Sample Attributes:**",
+          (.sample_attributes | to_entries | map("  - " + .key + ": " + (.value | tostring)) | join("\n")),
+          ""
         ' "$tmp_file"
   else
     echo "## Unique Event Types Found:"
@@ -496,17 +523,17 @@ EOF
     echo ""
     echo "## Detailed Event Information:"
     jq -r '
-          "### Event Type: \(.event_type)",
-          "**Sources:** \(.sources | join(\", \"))",
-          "**Unique Attribute Keys:** \(.unique_attribute_keys | join(\", \"))",
+          "### Event Type: " + .event_type,
+          "**Sources:** " + (.sources | join(", ")),
+          "**Unique Attribute Keys:** " + (.unique_attribute_keys | join(", ")),
           "**Sample Attributes:**",
-          (.sample_attributes | to_entries | map("  - \(.key): \(.value)") | join("\n")),
+          (.sample_attributes | to_entries | map("  - " + .key + ": " + (.value | tostring)) | join("\n")),
           ""
         ' "$tmp_file"
   fi
 
   echo "Query completed. Raw events saved to: $raw_events_file"
-  rm -f "$raw_events_file" "$tmp_file"
+  rm -f "$tmp_file"
 }
 
 function shannon_query_block_events() {
@@ -571,8 +598,8 @@ EOF
   for ((height = $start; height <= $end; height++)); do
     echo "Processing block $height..."
 
-    if query_single_block "$height" "$env" "block_events"; then
-      local block_file="/tmp/shannon_block_events_${height}_${env}.json"
+    local block_file="/tmp/shannon_block_events_${height}_${env}.json"
+    if query_single_block "$height" "$env" "$block_file"; then
       jq --argjson height "$height" \
         --arg event_type "$event_type" \
         --argjson ignored_events "$ignored_events" \
@@ -671,12 +698,15 @@ EOF
 
   echo "Querying MsgCreateClaim transactions from $env between heights ($min_height, $max_height]..."
 
-  query_txs_range "$min_height" "$max_height" "$env" "claim_suppliers" "$additional_query"
+  local query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
+  local tmp_file="/tmp/shannon_txs_claim_suppliers_${min_height}_${max_height}_${env}_${query_safe}.json"
+  
+  query_txs_range "$min_height" "$max_height" "$env" "$tmp_file" "$additional_query"
 
   jq '[.txs[].tx.body.messages[]
         | select(."@type" == "/pocket.proof.MsgCreateClaim" and .supplier_operator_address != null)
         | .supplier_operator_address]
-        | unique' "/tmp/shannon_txs_claim_suppliers_${min_height}_${max_height}_${env}_$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50).json"
+        | unique' "$tmp_file"
 }
 
 function shannon_query_supplier_tx_events() {
@@ -729,7 +759,10 @@ EOF
   echo "Supplier operator address: $supplier_addr"
   echo "--------------------------------------"
 
-  query_txs_range "$start" "$end" "$env" "supplier_tx_events" "$additional_query"
+  local query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
+  local tmp_file="/tmp/shannon_txs_supplier_tx_events_${start}_${end}_${env}_${query_safe}.json"
+  
+  query_txs_range "$start" "$end" "$env" "$tmp_file" "$additional_query"
 
   jq --argjson EVENT_TYPES "$event_types_json" --arg SUPPLIER_ADDR "$supplier_addr" '
       .txs[]
@@ -796,7 +829,7 @@ EOF
           )
         }
       | .supplier_events[]
-    ' "/tmp/shannon_txs_supplier_tx_events_${start}_${end}_${env}_$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50).json"
+    ' "$tmp_file"
 }
 
 function shannon_query_supplier_block_events() {
@@ -851,9 +884,9 @@ EOF
   # Loop through each block height
   for ((height = $start; height <= $end; height++)); do
     echo "Processing block $height..."
-    local block_tmp="/tmp/supplier_block_$height.json"
 
-    if query_single_block "$height" "$env" "$block_tmp"; then
+    local block_file="/tmp/shannon_supplier_block_events_${height}_${env}.json"
+    if query_single_block "$height" "$env" "$block_file"; then
       jq --argjson height "$height" \
         --argjson event_types "$event_types_json" \
         --arg supplier_addr "$supplier_addr" '
@@ -919,9 +952,8 @@ EOF
               ) | flatten),
               process_supplier_events(.finalize_block_events // []; null))
               | .[]
-            ' "$block_tmp"
+            ' "$block_file"
     fi
-    rm -f "$block_tmp"
   done
 
   echo "Query completed."
