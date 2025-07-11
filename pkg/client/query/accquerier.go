@@ -17,7 +17,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
-const defaultQueryTimeout = time.Second
+// TODO_IMPROVE: Make this configurable (for the RelayMiner) and other users.
+const defaultQueryTimeout = 5 * time.Second
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)
 

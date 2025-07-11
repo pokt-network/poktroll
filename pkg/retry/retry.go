@@ -172,7 +172,7 @@ func Call[T any](
 		// Non-transient gRPC error: stop retrying and return the error
 		status, isGRPCError := status.FromError(err)
 		if isGRPCError && !slices.Contains(transientGRPCErrorCodes, status.Code()) {
-			logger.Error().Msgf("🛑 non-transient error encountered, giving up: %v", err)
+			logger.Error().Msgf("🛑 non-transient grpc error encountered, giving up: %v", err)
 			return result, err
 		}
 
