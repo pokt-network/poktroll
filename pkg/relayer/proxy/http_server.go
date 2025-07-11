@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -14,7 +16,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// rpcTypeHeader is the header key for the RPC type, provided by the client.
+const RPCTypeHeader = "Rpc-Type"
 
 // - relayProbabilisticDebugProb is the probability of a debug log being shown for a relay request.
 // - This has to be very low to avoid spamming the logs for RelayMiners that end up serving millions of relays.
@@ -141,43 +147,87 @@ func (server *relayMinerHTTPServer) Stop(ctx context.Context) error {
 // Ping tries to dial the suppliers backend URLs to test the connection.
 func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 	for _, supplierCfg := range server.serverConfig.SupplierConfigsMap {
-		c := &http.Client{Timeout: 2 * time.Second}
+		// Initialize the backend URLs to test with the default service config.
+		backendUrls := []*url.URL{
+			supplierCfg.ServiceConfig.BackendUrl,
+		}
 
-		backendUrl := *supplierCfg.ServiceConfig.BackendUrl
-		if backendUrl.Scheme == "ws" || backendUrl.Scheme == "wss" {
-			// TODO_IMPROVE: Consider testing websocket connectivity by establishing
-			// a websocket connection instead of using an HTTP connection.
-			server.logger.Warn().Msgf(
-				"backend URL %s scheme is a %s, switching to http to check connectivity",
-				backendUrl.String(),
-				backendUrl.Scheme,
-			)
+		// Add the RPC type specific service configs to the backend URLs to test, if any.
+		for _, rpcTypeBackendURL := range supplierCfg.RPCTypeServiceConfigs {
+			backendUrls = append(backendUrls, rpcTypeBackendURL.BackendUrl)
+		}
 
-			if backendUrl.Scheme == "ws" {
-				backendUrl.Scheme = "http"
-			} else {
-				backendUrl.Scheme = "https"
+		// Test the connectivity of all the backend URLs for the supplier.
+		for _, backendUrl := range backendUrls {
+			if err := server.pingBackendURL(backendUrl, supplierCfg.ServiceId); err != nil {
+				return err
 			}
-		}
-		resp, err := c.Head(backendUrl.String())
-		if err != nil {
-			return fmt.Errorf(
-				"failed to ping backend %q for serviceId %q: %w",
-				backendUrl.String(), supplierCfg.ServiceId, err,
-			)
-		}
-		_ = resp.Body.Close()
-
-		if resp.StatusCode >= http.StatusInternalServerError {
-			return fmt.Errorf(
-				"failed to ping backend %q for serviceId %q: received status code %d",
-				backendUrl.String(), supplierCfg.ServiceId, resp.StatusCode,
-			)
 		}
 
 	}
 
 	return nil
+}
+
+// Default client timeout for pinging the backend URL.
+const httpPingTimeout = 2 * time.Second
+
+// pingBackendURL tests the connectivity of a backend URL for a given service ID.
+func (server *relayMinerHTTPServer) pingBackendURL(backendUrl *url.URL, serviceId string) error {
+	// Initialize the HTTP client for the backend URL.
+	c := &http.Client{Timeout: httpPingTimeout}
+
+	// Normalize the backend URL scheme for pinging.
+	// This is done to ensure that the backend URL is uses HTTP/HTTPS
+	// for the ping request.
+	// For example, if the backend URL is using "ws" or "wss", it will be
+	// normalized to "http" or "https" respectively.
+	//
+	// TODO_IMPROVE: Consider testing websocket connectivity by establishing
+	// a websocket connection instead of using an HTTP connection.
+	pingURL := normalizeBackendURLSchemeForPing(server.logger, backendUrl)
+
+	resp, err := c.Head(pingURL.String())
+	if err != nil {
+		return fmt.Errorf(
+			"❌ Error pinging backend %q for serviceId %q: %w",
+			backendUrl.String(), serviceId, err,
+		)
+	}
+	_ = resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusInternalServerError {
+		return fmt.Errorf(
+			"❌ Error pinging backend %q for serviceId %q: received status code %d",
+			backendUrl.String(), serviceId, resp.StatusCode,
+		)
+	}
+
+	return nil
+}
+
+// normalizeBackendURLSchemeForPing normalizes the backend URL scheme for pinging.
+// Returns a copy of the URL with the scheme normalized for HTTP connectivity checks.
+// eg. "ws" -> "http", "wss" -> "https"
+func normalizeBackendURLSchemeForPing(logger polylog.Logger, backendUrl *url.URL) *url.URL {
+	// Create a copy of the URL to avoid modifying the original
+	pingURL := *backendUrl
+
+	if backendUrl.Scheme == "ws" || backendUrl.Scheme == "wss" {
+		logger.Info().Msgf(
+			"💡 backend URL %s scheme is a %s, switching to http to check connectivity",
+			backendUrl.String(),
+			backendUrl.Scheme,
+		)
+
+		if backendUrl.Scheme == "ws" {
+			pingURL.Scheme = "http"
+		} else {
+			pingURL.Scheme = "https"
+		}
+	}
+
+	return &pingURL
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective
@@ -240,13 +290,7 @@ func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string)
 
 // isWebSocketRequest checks if the request is trying to upgrade to WebSocket.
 func isWebSocketRequest(r *http.Request) bool {
-	// Check if the request is trying to upgrade to WebSocket as per the RFC 6455.
-	// The request must have the "Upgrade" and "Connection" headers set to
-	// "websocket" and "Upgrade" respectively.
-	// refer to: https://datatracker.ietf.org/doc/html/rfc6455#section-4.2.1
-	upgradeHeader := r.Header.Get("Upgrade")
-	connectionHeader := r.Header.Get("Connection")
-
-	return http.CanonicalHeaderKey(upgradeHeader) == "Websocket" &&
-		http.CanonicalHeaderKey(connectionHeader) == "Upgrade"
+	// The request must have the "Rpc-Type" header set to "websocket".
+	// This will be handled in the client, likely a PATH gateway.
+	return r.Header.Get(RPCTypeHeader) == strconv.Itoa(int(sharedtypes.RPCType_WEBSOCKET))
 }

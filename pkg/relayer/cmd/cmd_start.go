@@ -138,7 +138,7 @@ Totals:
 
 	// --- Parse relay miner configuration ---
 	// TODO_IMPROVE: Add logger level/output options to config.
-	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(configContent)
+	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(logger, configContent)
 	if err != nil {
 		fmt.Printf("Could not parse config file from: %s\n", flagRelayMinerConfig)
 		return err

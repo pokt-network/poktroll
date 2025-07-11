@@ -1,9 +1,11 @@
 package types
 
 import (
+	fmt "fmt"
 	"net/url"
 	"regexp"
 	"slices"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -128,4 +130,34 @@ func ValidateComputeUnitsPerRelay(computeUnitsPerRelay uint64) error {
 		return ErrSharedInvalidComputeUnitsPerRelay.Wrapf("compute units per relay must be less than %d", ComputeUnitsPerRelayMax)
 	}
 	return nil
+}
+
+// GetRPCTypeFromConfig converts the string RPC type to the
+// types.RPCType enum and performs validation.
+//
+// eg. "rest" -> types.RPCType_REST
+func GetRPCTypeFromConfig(rpcType string) (RPCType, error) {
+	rpcTypeInt, ok := RPCType_value[strings.ToUpper(rpcType)]
+	if !ok {
+		return 0, fmt.Errorf("invalid rpc type %s", rpcType)
+	}
+	if !RPCTypeIsValid(RPCType(rpcTypeInt)) {
+		return 0, fmt.Errorf("rpc type %s is in the list of valid RPC types", rpcType)
+	}
+	return RPCType(rpcTypeInt), nil
+}
+
+// rpcTypeIsValid checks if the RPC type is valid.
+// It is used to validate the RPC-type service-specific service configs.
+func RPCTypeIsValid(rpcType RPCType) bool {
+	switch rpcType {
+	case RPCType_GRPC,
+		RPCType_WEBSOCKET,
+		RPCType_JSON_RPC,
+		RPCType_REST,
+		RPCType_COMET_BFT:
+		return true
+	default:
+		return false
+	}
 }

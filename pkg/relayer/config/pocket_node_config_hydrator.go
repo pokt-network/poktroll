@@ -1,6 +1,8 @@
 package config
 
-import "net/url"
+import (
+	"net/url"
+)
 
 // HydratePocketNodeUrls populates the pocket node fields of the RelayMinerConfig
 // that are relevant to the "pocket_node" section in the config file.

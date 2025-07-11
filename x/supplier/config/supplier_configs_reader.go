@@ -152,6 +152,8 @@ func parseEndpointRPCType(endpoint YAMLServiceEndpoint) (sharedtypes.RPCType, er
 		return sharedtypes.RPCType_JSON_RPC, nil
 	case "rest":
 		return sharedtypes.RPCType_REST, nil
+	case "websocket":
+		return sharedtypes.RPCType_WEBSOCKET, nil
 	default:
 		return sharedtypes.RPCType_UNKNOWN_RPC, ErrSupplierConfigInvalidRPCType.Wrapf("%s", endpoint.RPCType)
 	}

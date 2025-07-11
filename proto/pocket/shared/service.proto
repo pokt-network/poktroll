@@ -72,6 +72,7 @@ enum RPCType {
   WEBSOCKET = 2; // WebSocket
   JSON_RPC = 3; // JSON-RPC
   REST = 4; // REST
+  COMET_BFT = 5; // CometBFT (REST + JSON-RPC)
 // Add new RPC types here as needed
 }
 
