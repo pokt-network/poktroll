@@ -3,11 +3,13 @@
 package e2e
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -211,11 +213,9 @@ func (s *suite) getCurrentBlockProposer() string {
 
 	// Parse the block info to extract proposer address
 	var blockInfo struct {
-		Block struct {
-			Header struct {
-				ProposerAddress string `json:"proposer_address"`
-			} `json:"header"`
-		} `json:"block"`
+		Header struct {
+			ProposerAddress string `json:"proposer_address"`
+		} `json:"header"`
 	}
 
 	// Strip any warning messages and get just the JSON part
@@ -226,11 +226,21 @@ func (s *suite) getCurrentBlockProposer() string {
 	err = json.Unmarshal([]byte(jsonData), &blockInfo)
 	require.NoError(s, err)
 
-	// Convert the hex proposer address to bech32 format
-	// The proposer address is in hex format, need to convert to bech32
-	// For LocalNet testing, we know validator1 is the only validator, so use its address
-	// In a real implementation, you'd need to convert from hex to bech32
-	return "pokt18kk3aqe2pjz7x7993qp2pjt95ghurra9682tyn" // validator1 address - the actual proposer in LocalNet
+	// Ensure we have a proposer address
+	require.NotEmpty(s, blockInfo.Header.ProposerAddress, "proposer address is empty in block header")
+
+	// Convert the base64 proposer address to the same format the TLM uses
+	// This mimics exactly what the TLM does: cosmostypes.AccAddress(BlockHeader().ProposerAddress).String()
+	proposerAddrBytes, err := base64.StdEncoding.DecodeString(blockInfo.Header.ProposerAddress)
+	require.NoError(s, err, "failed to decode proposer address from base64")
+
+	// Convert to bech32 address using cosmos SDK format (same as TLM)
+	proposerAddr := cosmostypes.AccAddress(proposerAddrBytes).String()
+
+	// Ensure the final address is not empty
+	require.NotEmpty(s, proposerAddr, "converted proposer address is empty")
+
+	return proposerAddr
 }
 
 // getService queries and returns the service with the given ID

@@ -180,13 +180,14 @@ Feature: Tokenomics Namespace
         And the DAO balance should be "4200" uPOKT "more" than "dao_initial_balance"
 
         # The proposer should receive 5% of the settlement amount
-        # And the proposer balance should be "2100" uPOKT "more" than "proposer_initial_balance"
+        And the proposer balance should be "2100" uPOKT "more" than "proposer_initial_balance"
 
         # The service owner should receive 15% of the settlement amount
         And the service owner balance for "anvil" should be "6300" uPOKT "more" than "service_owner_initial_balance"
 
         # The supplier should receive 70% of the settlement amount minus transaction fees
-        Then the account balance of "supplier1" should be "29319" uPOKT "more" than "supplier1_initial_balance"
+        # Expected: 29400 (70% of 42000) - 75 (tx fees) = 29325 uPOKT
+        Then the account balance of "supplier1" should be "29325" uPOKT "more" than "supplier1_initial_balance"
 
         # The application stake should decrease by the full settlement amount
         And the "application" stake of "app1" should be "42000" uPOKT "less" than before
