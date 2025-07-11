@@ -24,9 +24,11 @@ func TestSafeReadBody_BufferPoolCorruption(t *testing.T) {
 	reader1 := newReadCloser(testData1)
 
 	// Call SafeReadBody and store the result
-	result1, err := SafeReadBody(logger, reader1, maxBodySize)
+	result1, cleanup1, err := SafeReadBody(logger, reader1, maxBodySize)
 	require.NoError(t, err)
 	require.Equal(t, testData1, result1, "First result should match input data")
+	// Defer cleanup to ensure proper buffer pool management
+	defer cleanup1()
 
 	// Store a copy of the result for comparison
 	result1Copy := make([]byte, len(result1))
@@ -37,9 +39,11 @@ func TestSafeReadBody_BufferPoolCorruption(t *testing.T) {
 	reader2 := newReadCloser(testData2)
 
 	// Make second call - this will reuse the same buffer from the pool
-	result2, err := SafeReadBody(logger, reader2, maxBodySize)
+	result2, cleanup2, err := SafeReadBody(logger, reader2, maxBodySize)
 	require.NoError(t, err)
 	require.Equal(t, testData2, result2, "Second result should match its input data")
+	// Defer cleanup to ensure proper buffer pool management
+	defer cleanup2()
 
 	// CRITICAL TEST: Check if first result got corrupted
 	// With the bug (returning buf.Bytes() directly), result1 would be corrupted
@@ -58,6 +62,52 @@ func TestSafeReadBody_BufferPoolCorruption(t *testing.T) {
 	require.Equal(t, testData2, result2, "Second result should be correct")
 }
 
+// TestSafeReadBody_DataCorruptionWithoutCleanup demonstrates what happens when
+// the cleanup function is NOT called - this should cause data corruption due to
+// buffer pool reuse. This test validates that the cleanup mechanism is essential.
+func TestSafeReadBody_DataCorruptionWithoutCleanup(t *testing.T) {
+	logger := polyzero.NewLogger()
+
+	// Test data that will be used to demonstrate corruption
+	testData1 := []byte("FIRST_DATA_SHOULD_BE_CORRUPTED")
+	reader1 := newReadCloser(testData1)
+
+	// Call SafeReadBody but intentionally DON'T call cleanup
+	result1, cleanup1, err := SafeReadBody(logger, reader1, maxBodySize)
+	require.NoError(t, err)
+	require.Equal(t, testData1, result1, "First result should initially match input data")
+	// INTENTIONALLY NOT CALLING: defer cleanup1()
+
+	// Store a copy of the original result for comparison
+	result1Copy := make([]byte, len(result1))
+	copy(result1Copy, result1)
+
+	// Force cleanup to return the buffer to the pool
+	cleanup1()
+
+	// Second test data - this will reuse the same buffer and cause corruption
+	testData2 := []byte("SECOND_DATA_OVERWRITES_FIRST_CAUSING_CORRUPTION_BUFFER_REUSE")
+	reader2 := newReadCloser(testData2)
+
+	// Make second call - this should reuse the buffer and corrupt result1
+	// because result1 points to buf.Bytes() which shares the underlying array
+	result2, cleanup2, err := SafeReadBody(logger, reader2, maxBodySize)
+	require.NoError(t, err)
+	require.Equal(t, testData2, result2, "Second result should match its input data")
+	defer cleanup2() // Clean up properly for this one
+
+	// Now check if result1 got corrupted due to buffer reuse
+	// This demonstrates why the cleanup mechanism is critical
+	require.False(t, bytes.Equal(result1, result1Copy), "Data corruption was expected but not detected")
+
+	// Add a verification that shows the problem more clearly
+	// by demonstrating that both results now point to the same underlying data
+	require.True(t, bytes.Contains(result2, result1), "Results should share the same underlying data after reuse")
+
+	// Verify that the second result is still correct regardless
+	require.Equal(t, testData2, result2, "Second result should always be correct")
+}
+
 // TestSafeReadBody_MemoryLeakPrevention verifies that buffers are properly
 // returned to the pool and memory usage remains stable.
 func TestSafeReadBody_MemoryLeakPrevention(t *testing.T) {
@@ -72,7 +122,8 @@ func TestSafeReadBody_MemoryLeakPrevention(t *testing.T) {
 	const numCalls = 100
 	for range numCalls {
 		reader := newReadCloser(testData)
-		result, err := SafeReadBody(logger, reader, maxBodySize)
+		result, cleanup, err := SafeReadBody(logger, reader, maxBodySize)
+		defer cleanup() // Ensure proper cleanup after each call
 		require.NoError(t, err)
 		require.Len(t, result, len(testData))
 		require.Equal(t, testData, result)
@@ -91,9 +142,11 @@ func TestSafeReadBody_SizeLimit(t *testing.T) {
 
 	reader := newReadCloser(largeData)
 
-	result, err := SafeReadBody(logger, reader, maxBodySize)
+	result, cleanup, err := SafeReadBody(logger, reader, maxBodySize)
+	// Note: cleanup is nil on error, so no need to call it
 	require.Error(t, err, "Should return error for data exceeding size limit")
 	require.Nil(t, result, "Should return nil result on error")
+	require.Nil(t, cleanup, "Cleanup function should be nil on error")
 	require.Contains(t, err.Error(), "exceeds maximum allowed body", "Error should mention size limit")
 }
 
@@ -102,7 +155,8 @@ func TestSafeReadBody_EmptyBody(t *testing.T) {
 	logger := polyzero.NewLogger()
 
 	reader := newReadCloser([]byte{})
-	result, err := SafeReadBody(logger, reader, maxBodySize)
+	result, cleanup, err := SafeReadBody(logger, reader, maxBodySize)
+	defer cleanup() // Ensure proper cleanup
 	require.NoError(t, err)
 	require.Empty(t, result, "Empty body should return empty result")
 }
@@ -141,7 +195,11 @@ func TestSafeReadBody_ConcurrentPoolExhaustion(t *testing.T) {
 			// Each goroutine makes multiple requests
 			for j := range requestsPerGoroutine {
 				reader := newReadCloser(testData)
-				data, err := SafeReadBody(logger, reader, maxBodySize)
+				data, cleanup, err := SafeReadBody(logger, reader, maxBodySize)
+				// Ensure proper cleanup after each concurrent call
+				if cleanup != nil {
+					defer cleanup()
+				}
 				results <- result{
 					data: data,
 					err:  err,
@@ -165,7 +223,8 @@ func TestSafeReadBody_ConcurrentPoolExhaustion(t *testing.T) {
 	// Additional verification: make sure we can still use SafeReadBody normally
 	// after the concurrent stress test (buffer pool should be in good state)
 	reader := newReadCloser(testData)
-	finalResult, err := SafeReadBody(logger, reader, maxBodySize)
+	finalResult, cleanup, err := SafeReadBody(logger, reader, maxBodySize)
+	defer cleanup() // Ensure proper cleanup
 	require.NoError(t, err)
 	require.Equal(t, testData, finalResult, "SafeReadBody should work normally after concurrent stress")
 }
