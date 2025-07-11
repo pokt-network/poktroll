@@ -8,10 +8,10 @@ module github.com/pokt-network/poktroll
 // this go module by commenting out the `module` directive above, and uncommenting
 // the `module` and `replace` directives below.
 //
-// 1. Commment above / uncomment below...
+// 1. Comment above / uncomment below...
 // 2. go mod tidy
 // 3. ignite scaffold ...
-// 4. make proto_fix_self_import && make proto_regen
+// 4. make proto_regen
 // 5. Uncomment above / comment below...
 // 6. go mod tidy
 // 7. ignite chain build --skip-proto # and/or (re)start/build localnet
@@ -62,7 +62,7 @@ require (
 	github.com/go-kit/kit v0.13.0
 	github.com/gogo/status v1.1.0
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
