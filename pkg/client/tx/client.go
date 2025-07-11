@@ -331,7 +331,7 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		}
 
 		return response, txErr
-	}, retry.GetStrategy(ctx))
+	}, retry.GetStrategy(ctx), txnClient.logger)
 	if err != nil {
 		return nil, either.SyncErr(err)
 	}
