@@ -6,11 +6,11 @@ import tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 func ValidateTLMConfig(tokenLogicModules []TokenLogicModule) error {
 	var hasGlobalMintTLM, hasGlobalMintReimbursementRequestTLM bool
 	for _, tlm := range tokenLogicModules {
-		if _, ok := tlm.(tlmGlobalMint); ok {
+		if _, ok := tlm.(*tlmGlobalMint); ok {
 			hasGlobalMintTLM = true
 			continue
 		}
-		if _, ok := tlm.(tlmGlobalMintReimbursementRequest); ok {
+		if _, ok := tlm.(*tlmGlobalMintReimbursementRequest); ok {
 			hasGlobalMintReimbursementRequestTLM = true
 			continue
 		}

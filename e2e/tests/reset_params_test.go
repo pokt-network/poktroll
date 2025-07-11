@@ -23,8 +23,8 @@ func (s *suite) resetAllModuleParamsToDefaults() {
 
 	s.Log("resetting all module params to their default values")
 
-	msgUpdateParamsAnys := s.allModulesMsgUpdateParamsToDefaultsAny()
-	resetTxJSONFile := s.newTempTxJSONFile(msgUpdateParamsAnys)
+	msgUpdateParamsAny := s.allModulesMsgUpdateParamsToDefaultsAny()
+	resetTxJSONFile := s.newTempTxJSONFile(msgUpdateParamsAny)
 	s.sendAuthzExecTx(s.granteeName, resetTxJSONFile.Name())
 }
 

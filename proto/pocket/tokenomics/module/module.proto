@@ -14,6 +14,7 @@ message Module {
     go_import: "github.com/pokt-network/poktroll/x/tokenomics"
   };
 
-  // authority defines the custom module authority. If not set, defaults to the governance module.
+  // authority defines the custom module authority.
+  // If not set, defaults to the governance module.
   string authority = 1;
 }

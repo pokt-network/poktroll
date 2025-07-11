@@ -33,7 +33,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 				},
 			},
 
-			expectedErr: ErrTokenomicsAddressInvalid,
+			expectedErr: ErrTokenomicsAuthorityAddressInvalid,
 		},
 		{
 			name: "invalid: param name incorrect (non-existent)",

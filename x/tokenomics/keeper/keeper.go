@@ -19,8 +19,8 @@ type Keeper struct {
 	storeService store.KVStoreService
 	logger       log.Logger
 
-	// the address capable of executing a MsgUpdateParams message. Typically, this
-	// should be the x/gov module account.
+	// The address capable of executing a MsgUpdateParams message
+	// Typically, this should be the x/gov module account.
 	authority string
 
 	// keepers
@@ -33,8 +33,10 @@ type Keeper struct {
 	sessionKeeper     types.SessionKeeper
 	serviceKeeper     types.ServiceKeeper
 
+	// Query clients
 	sharedQuerier client.SharedQueryClient
 
+	// Token logic modules
 	tokenLogicModules []tlm.TokenLogicModule
 }
 

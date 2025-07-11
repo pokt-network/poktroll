@@ -1,6 +1,6 @@
 ---
 title: Intro to Relay Mining Token Mint & Burn
-sidebar_position: 4
+sidebar_position: 3
 ---
 
 A gentle high-level introduction to token minting and burning, intended to understand
@@ -135,7 +135,7 @@ Assume the following Offchain market driven numbers:
 
 :::note Relay Mining Difficulty
 
-The actual computation related to Relay Mining Difficlty is non-linear but used solely for demonstration purposes here.
+The actual computation related to Relay Mining Difficulty is non-linear but used solely for demonstration purposes here.
 
 :::
 

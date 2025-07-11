@@ -1,10 +1,11 @@
 package types
 
 import (
+	// this line is used by starport scaffolding # 1
+
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
-	// this line is used by starport scaffolding # 1
 )
 
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {

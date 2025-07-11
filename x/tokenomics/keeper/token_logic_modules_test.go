@@ -43,7 +43,7 @@ func init() {
 // TODO_IMPROVE: Consider using a TestSuite, similar to `x/tokenomics/keeper/keeper_settle_pending_claims_test.go`
 // for the TLM based tests in this file.
 
-func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
+func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *testing.T) {
 	// Test Parameters
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
@@ -55,11 +55,14 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
 
-	// Prepare the keepers
+	// Prepare the keepers with only relay burn equals mint TLM
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
 		cosmoslog.NewNopLogger(),
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
+		testkeeper.WithTokenLogicModules([]tlm.TokenLogicModule{
+			tlm.NewRelayBurnEqualsMintTLM(),
+		}),
 	)
 	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
@@ -84,10 +87,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
-	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
-	// Once it is a governance param, update it using the keeper above.
+
+	// Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0
+	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
+		Dao:         0,
+		Proposer:    0,
+		Supplier:    1,
+		SourceOwner: 0,
+		Application: 0,
+	}
 	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
 	require.NoError(t, err)
 
@@ -176,7 +186,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.Equal(t, expectedAppEndStakeAmount, actualAppEndStakeAmount)
 
 	// Assert that app module balance is *decreased* by the appropriate amount
-	// NB: The application module account burns the amount of uPOKT that was held in escrow
+	// DEV_NOTE: The application module account burns the amount of uPOKT that was held in escrow
 	// on behalf of the applications which were serviced in a given session.
 	expectedAppModuleEndBalance := appModuleStartBalance.Sub(cosmostypes.NewCoin(pocket.DenomuPOKT, appBurn))
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
@@ -189,14 +199,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.Equal(t, &supplierStake, supplier.GetStake())
 
 	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
-	// NB: Supplier rewards are minted to the supplier module account but then immediately
+	// DEV_NOTE: Supplier rewards are minted to the supplier module account but then immediately
 	// distributed to the supplier accounts which provided service in a given session.
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, appBurn)
+	// The supplier gets a percentage of the total settlement based on MintEqualsBurnClaimDistribution
+	supplierAllocation := appBurn.MulRaw(int64(keepers.Keeper.GetParams(ctx).MintEqualsBurnClaimDistribution.Supplier * 100)).QuoRaw(100)
+	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, supplierAllocation)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, expectedShareAmount, shareHolderBalance.Amount)
@@ -206,7 +218,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 // DEV_NOTE: Most of the setup here is a copy-paste of TLMBurnEqualsMintValid
 // except that the application stake is calculated to explicitly be too low to
 // handle all the relays completed.
-func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
+func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaimableAmount_Valid(t *testing.T) {
 	// Test Parameters
 	// Set the cost denomination of a single compute unit to pPOKT (i.e. 1/compute_unit_cost_granularity)
 	globalComputeUnitCostGranularity := uint64(1000000)
@@ -217,11 +229,14 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []uint64{12, 38, 50}
 
-	// Prepare the keepers
+	// Prepare the keepers with only relay burn equals mint TLM
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
 		cosmoslog.NewNopLogger(),
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
+		testkeeper.WithTokenLogicModules([]tlm.TokenLogicModule{
+			tlm.NewRelayBurnEqualsMintTLM(),
+		}),
 	)
 	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
@@ -256,10 +271,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
 	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
-	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
-	// Once it is a governance param, update it using the keeper above.
+
+	// Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.GlobalInflationPerClaim = 0
+	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
+		Dao:         0,
+		Proposer:    0,
+		Supplier:    1,
+		SourceOwner: 0,
+		Application: 0,
+	}
 	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
 	require.NoError(t, err)
 
@@ -352,7 +374,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	require.Less(t, maxClaimableAmountPerSupplier, numTokensClaimed)
 
 	// Assert that app module balance is *decreased* by the appropriate amount
-	// NB: The application module account burns the amount of uPOKT that was held in escrow
+	// DEV_NOTE: The application module account burns the amount of uPOKT that was held in escrow
 	// on behalf of the applications which were serviced in a given session.
 	expectedAppModuleEndBalance := appModuleStartBalance.Sub(appBurnCoin)
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
@@ -365,14 +387,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	require.Equal(t, &supplierStake, supplier.GetStake())
 
 	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
-	// NB: Supplier rewards are minted to the supplier module account but then immediately
+	// DEV_NOTE: Supplier rewards are minted to the supplier module account but then immediately
 	// distributed to the supplier accounts which provided service in a given session.
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, appBurn)
+	// The supplier gets a percentage of the total settlement based on MintEqualsBurnClaimDistribution
+	supplierAllocation := appBurn.MulRaw(int64(keepers.Keeper.GetParams(ctx).MintEqualsBurnClaimDistribution.Supplier * 100)).QuoRaw(100)
+	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, supplierAllocation)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, expectedShareAmount, shareHolderBalance.Amount)
@@ -544,44 +568,66 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 	numTokensMinted := cosmosmath.NewIntFromBigInt(numTokensMintedInt)
 
-	// Compute the expected amount minted to each module.
-	propMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Proposer)
-	serviceOwnerMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.SourceOwner)
-	appMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Application)
-	supplierMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Supplier)
+	// Compute the expected amount minted to each module from Global Mint TLM.
+	propMintFromGlobalMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Proposer)
+	serviceOwnerMintFromGlobalMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.SourceOwner)
+	appMintFromGlobalMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Application)
+	supplierMintFromGlobalMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Supplier)
 	// The DAO mint gets any remainder resulting from integer division.
-	daoMint := numTokensMinted.Sub(propMint).Sub(serviceOwnerMint).Sub(appMint).Sub(supplierMint)
+	daoMintFromGlobalMint := numTokensMinted.Sub(propMintFromGlobalMint).Sub(serviceOwnerMintFromGlobalMint).Sub(appMintFromGlobalMint).Sub(supplierMintFromGlobalMint)
+
+	// Compute the expected amount from Relay Burn Equals Mint TLM distribution.
+	settlementAmount := numTokensClaimedInt
+	propDistributionFromBurnEqualsMint := settlementAmount.MulRaw(int64(tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer * 100)).QuoRaw(100)
+	serviceOwnerDistributionFromBurnEqualsMint := settlementAmount.MulRaw(int64(tokenomicsParams.MintEqualsBurnClaimDistribution.SourceOwner * 100)).QuoRaw(100)
+	appDistributionFromBurnEqualsMint := settlementAmount.MulRaw(int64(tokenomicsParams.MintEqualsBurnClaimDistribution.Application * 100)).QuoRaw(100)
+	supplierDistributionFromBurnEqualsMint := settlementAmount.MulRaw(int64(tokenomicsParams.MintEqualsBurnClaimDistribution.Supplier * 100)).QuoRaw(100)
+	// The DAO gets the remainder to ensure all settlement tokens are distributed
+	daoDistributionFromBurnEqualsMint := settlementAmount.Sub(propDistributionFromBurnEqualsMint).Sub(serviceOwnerDistributionFromBurnEqualsMint).Sub(appDistributionFromBurnEqualsMint).Sub(supplierDistributionFromBurnEqualsMint)
+
+	// Total expected amounts from both TLMs.
+	propTotalExpected := propMintFromGlobalMint.Add(propDistributionFromBurnEqualsMint)
+	serviceOwnerTotalExpected := serviceOwnerMintFromGlobalMint.Add(serviceOwnerDistributionFromBurnEqualsMint)
+	appTotalExpected := appMintFromGlobalMint.Add(appDistributionFromBurnEqualsMint)
+	daoTotalExpected := daoMintFromGlobalMint.Add(daoDistributionFromBurnEqualsMint).Add(numTokensMinted)
 
 	// Ensure the balance was increased to the appropriate amount.
-	require.Equal(t, propBalanceBefore.Amount.Add(propMint), propBalanceAfter.Amount)
-	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerMint), serviceOwnerBalanceAfter.Amount)
-	require.Equal(t, appBalanceBefore.Amount.Add(appMint), appBalanceAfter.Amount)
-	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMinted), daoBalanceAfter.Amount)
+	require.Equal(t, propBalanceBefore.Amount.Add(propTotalExpected), propBalanceAfter.Amount)
+	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerTotalExpected), serviceOwnerBalanceAfter.Amount)
+	require.Equal(t, appBalanceBefore.Amount.Add(appTotalExpected), appBalanceAfter.Amount)
+	require.Equal(t, daoBalanceBefore.Amount.Add(daoTotalExpected), daoBalanceAfter.Amount)
 
-	supplierMintRat := new(big.Rat).SetInt(supplierMint.BigInt())
+	supplierMintRat := new(big.Rat).SetInt(supplierMintFromGlobalMint.BigInt())
+	supplierDistributionRat := new(big.Rat).SetInt(supplierDistributionFromBurnEqualsMint.BigInt())
 	shareHoldersBalancesAfterSettlementMap := make(map[string]cosmosmath.Int, len(supplierRevShares))
 	supplierMintWithoutRemainder := cosmosmath.NewInt(0)
+	supplierDistributionWithoutRemainder := cosmosmath.NewInt(0)
 	for _, revShare := range supplierRevShares {
 		addr := revShare.Address
 
 		// Compute the expected balance increase for the shareholder
 		mintShareFloat := float64(revShare.RevSharePercentage) / 100.0
-		rewardShare := computeShare(t, numTokensClaimedRat, mintShareFloat)
+		// From Relay Burn Equals Mint TLM distribution
+		distributionShare := computeShare(t, supplierDistributionRat, mintShareFloat)
+		// From Global Mint TLM distribution
 		mintShare := computeShare(t, supplierMintRat, mintShareFloat)
-		balanceIncrease := rewardShare.Add(mintShare)
+		balanceIncrease := distributionShare.Add(mintShare)
 
 		// Compute the expected balance after minting
 		balanceBefore := supplierShareholderBalancesBeforeSettlementMap[addr]
 		shareHoldersBalancesAfterSettlementMap[addr] = balanceBefore.Amount.Add(balanceIncrease)
 
 		supplierMintWithoutRemainder = supplierMintWithoutRemainder.Add(mintShare)
+		supplierDistributionWithoutRemainder = supplierDistributionWithoutRemainder.Add(distributionShare)
 	}
 
 	// The first shareholder gets any remainder resulting from integer division.
 	firstShareHolderAddr := supplierRevShares[0].Address
 	firstShareHolderBalance := shareHoldersBalancesAfterSettlementMap[firstShareHolderAddr]
-	remainder := supplierMint.Sub(supplierMintWithoutRemainder)
-	shareHoldersBalancesAfterSettlementMap[firstShareHolderAddr] = firstShareHolderBalance.Add(remainder)
+	mintRemainder := supplierMintFromGlobalMint.Sub(supplierMintWithoutRemainder)
+	distributionRemainder := supplierDistributionFromBurnEqualsMint.Sub(supplierDistributionWithoutRemainder)
+	totalRemainder := mintRemainder.Add(distributionRemainder)
+	shareHoldersBalancesAfterSettlementMap[firstShareHolderAddr] = firstShareHolderBalance.Add(totalRemainder)
 
 	for _, revShare := range supplierRevShares {
 		addr := revShare.Address
@@ -770,7 +816,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				return claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderNil,
+			expectErr:   tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil,
 		},
 		{
 			desc: "claim with invalid session id",
@@ -780,7 +826,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				return claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
+			expectErr:   tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid,
 		},
 		{
 			desc: "claim with invalid application address",
@@ -790,7 +836,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				return claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
+			expectErr:   tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid,
 		},
 		{
 			desc: "claim with invalid supplier operator address",
@@ -836,15 +882,15 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 }
 
 func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {
-	t.Skip("TODO_MAINNET_MIGRATION(@red-0ne): Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")
+	t.Skip("TODO_TEST: Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")
 }
 
 func TestProcessTokenLogicModules_AppStakeTooLowRoundingToZero(t *testing.T) {
-	t.Skip("TODO_MAINNET_MIGRATION(@red-0ne): Test application stake that is too low which results in stake/num_suppliers rounding down to zero")
+	t.Skip("TODO_TEST: Test application stake that is too low which results in stake/num_suppliers rounding down to zero")
 }
 
 func TestProcessTokenLogicModules_AppStakeDropsBelowMinStakeAfterSession(t *testing.T) {
-	t.Skip("TODO_MAINNET_MIGRATION(@red-0ne): Test that application stake being auto-unbonding after the stake drops below the required minimum when settling session accounting")
+	t.Skip("TODO_TEST: Test that application stake being auto-unbonding after the stake drops below the required minimum when settling session accounting")
 }
 
 // prepareTestClaim uses the given number of relays and compute unit per relay in the
@@ -924,4 +970,219 @@ func getNumTokensClaimed(
 
 	numTokensClaimedRat := new(big.Rat).Mul(numComputeUnits, computeUnitCostUpokt)
 	return numTokensClaimedRat.Num().Int64() / numTokensClaimedRat.Denom().Int64()
+}
+
+func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution(t *testing.T) {
+	// Test configuration constants
+	const (
+		// Initial stakes and helpers
+		testApplicationStakeMultiplier = 2
+		testSupplierInitialStakeUpokt  = 1000000
+
+		// Tokenomics Governance Parameters
+		testComputeUnitCostGranularity  = 1000000
+		testServiceComputeUnitsPerRelay = 1
+		testNumberOfRelaysInClaim       = 1000
+		testGlobalInflationPerClaim     = 0.0 // Disable global inflation for this test
+
+		// MintEqualsBurnClaimDistribution percentages
+		testMintEqualsBurnDaoPercentage         = 0.1
+		testMintEqualsBurnProposerPercentage    = 0.14
+		testMintEqualsBurnSupplierPercentage    = 0.73
+		testMintEqualsBurnSourceOwnerPercentage = 0.03
+		testMintEqualsBurnApplicationPercentage = 0.0
+
+		// Supplier revenue share percentages (must add up to 100)
+		testSupplierRevShareShareholder1Percentage = 12
+		testSupplierRevShareShareholder2Percentage = 38
+		testSupplierRevShareShareholder3Percentage = 50
+	)
+
+	// Prepare initial stake values
+	testApplicationInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(testApplicationStakeMultiplier))
+	testSupplierInitialStake := cosmosmath.NewInt(testSupplierInitialStakeUpokt)
+
+	// Setup test service
+	testService := prepareTestService(testServiceComputeUnitsPerRelay)
+
+	// Initialize blockchain keepers and context
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
+		cosmoslog.NewNopLogger(),
+		testkeeper.WithService(*testService),
+		testkeeper.WithDefaultModuleBalances(),
+	)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	keepers.SetService(ctx, *testService)
+
+	// Validate claim is within relay mining bounds
+	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	testComputeUnitsToTokensMultiplier := uint64(1) * testComputeUnitCostGranularity
+	totalTokensClaimedInSession := getNumTokensClaimed(
+		testNumberOfRelaysInClaim,
+		testServiceComputeUnitsPerRelay,
+		testComputeUnitsToTokensMultiplier,
+		testComputeUnitCostGranularity,
+	)
+	maxClaimableAmountPerSupplier := testApplicationInitialStake.Quo(cosmosmath.NewInt(numSuppliersPerSession))
+	require.GreaterOrEqual(t, maxClaimableAmountPerSupplier.Int64(), totalTokensClaimedInSession)
+
+	// Configure shared parameters for consistent token calculations
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = testComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	require.NoError(t, err)
+
+	// Configure tokenomics parameters with specific reward distribution
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = testGlobalInflationPerClaim
+	tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.MintEqualsBurnClaimDistribution{
+		Dao:         testMintEqualsBurnDaoPercentage,
+		Proposer:    testMintEqualsBurnProposerPercentage,
+		Supplier:    testMintEqualsBurnSupplierPercentage,
+		SourceOwner: testMintEqualsBurnSourceOwnerPercentage,
+		Application: testMintEqualsBurnApplicationPercentage,
+	}
+	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	require.NoError(t, err)
+
+	// Create test application
+	testApplicationStake := cosmostypes.NewCoin(pocket.DenomuPOKT, testApplicationInitialStake)
+	testApplicationAddress := sample.AccAddress()
+	testApplication := apptypes.Application{
+		Address:        testApplicationAddress,
+		Stake:          &testApplicationStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: testService.Id}},
+	}
+	keepers.SetApplication(ctx, testApplication)
+
+	// Create supplier revenue share configuration
+	testSupplierRevSharePercentages := []uint64{
+		testSupplierRevShareShareholder1Percentage,
+		testSupplierRevShareShareholder2Percentage,
+		testSupplierRevShareShareholder3Percentage,
+	}
+	supplierRevenueShareholders := make([]*sharedtypes.ServiceRevenueShare, len(testSupplierRevSharePercentages))
+	for i := range supplierRevenueShareholders {
+		shareholderAddress := sample.AccAddress()
+		supplierRevenueShareholders[i] = &sharedtypes.ServiceRevenueShare{
+			Address:            shareholderAddress,
+			RevSharePercentage: testSupplierRevSharePercentages[i],
+		}
+	}
+	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{{
+		ServiceId: testService.Id,
+		RevShare:  supplierRevenueShareholders,
+	}}
+
+	// Create test supplier
+	testSupplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, testSupplierInitialStake)
+	testSupplierOwnerAddress := supplierRevenueShareholders[0].Address
+	testSupplierOperatorAddress := supplierRevenueShareholders[0].Address
+	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		testSupplierOwnerAddress,
+		supplierServiceConfigs, 1, 0,
+	)
+	testSupplier := sharedtypes.Supplier{
+		OwnerAddress:         testSupplierOwnerAddress,
+		OperatorAddress:      testSupplierOperatorAddress,
+		Stake:                &testSupplierStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: supplierServiceConfigHistory,
+	}
+	keepers.SetAndIndexDehydratedSupplier(ctx, testSupplier)
+
+	// Get addresses for balance verification
+	blockProposerAddress := cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress
+	blockProposerAccountAddress := cosmostypes.AccAddress(blockProposerAddress).String()
+	daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
+	serviceSourceOwnerAddress := testService.OwnerAddress
+
+	// Capture baseline balances for all actors before settlement
+	daoBalanceBeforeSettlement := getBalance(t, ctx, keepers, daoRewardAddress)
+	proposerBalanceBeforeSettlement := getBalance(t, ctx, keepers, blockProposerAccountAddress)
+	sourceOwnerBalanceBeforeSettlement := getBalance(t, ctx, keepers, serviceSourceOwnerAddress)
+	applicationBalanceBeforeSettlement := getBalance(t, ctx, keepers, testApplicationAddress)
+	supplierShareholderBalancesBeforeSettlement := make(map[string]*cosmostypes.Coin)
+	for _, shareholder := range supplierRevenueShareholders {
+		supplierShareholderBalancesBeforeSettlement[shareholder.Address] = getBalance(t, ctx, keepers, shareholder.Address)
+	}
+
+	// Prepare claim and execute settlement
+	testClaim := prepareTestClaim(testNumberOfRelaysInClaim, testService, &testApplication, &testSupplier)
+	settlementResult := tlm.NewClaimSettlementResult(testClaim)
+	settlementContext := tokenomicskeeper.NewSettlementContext(
+		ctx,
+		keepers.Keeper,
+		keepers.Logger(),
+	)
+	err = settlementContext.ClaimCacheWarmUp(ctx, &testClaim)
+	require.NoError(t, err)
+
+	// Process token logic modules
+	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, settlementResult)
+	require.NoError(t, err)
+
+	// Execute settlement results
+	pendingSettlementResults := make(tlm.ClaimSettlementResults, 0)
+	pendingSettlementResults.Append(settlementResult)
+	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingSettlementResults)
+	require.NoError(t, err)
+
+	// Calculate expected reward distributions from total settlement amount
+	totalSettlementAmount := cosmosmath.NewInt(totalTokensClaimedInSession)
+	expectedDaoRewardAmount := cosmosmath.NewInt(int64(float64(totalTokensClaimedInSession) * testMintEqualsBurnDaoPercentage))
+	expectedProposerRewardAmount := cosmosmath.NewInt(int64(float64(totalTokensClaimedInSession) * testMintEqualsBurnProposerPercentage))
+	expectedSupplierRewardAmount := cosmosmath.NewInt(int64(float64(totalTokensClaimedInSession) * testMintEqualsBurnSupplierPercentage))
+	expectedSourceOwnerRewardAmount := cosmosmath.NewInt(int64(float64(totalTokensClaimedInSession) * testMintEqualsBurnSourceOwnerPercentage))
+	expectedApplicationCostAmount := cosmosmath.NewInt(int64(float64(totalTokensClaimedInSession) * testMintEqualsBurnApplicationPercentage))
+
+	// Account for rounding by ensuring all distributions sum to the total
+	calculatedTotal := expectedDaoRewardAmount.Add(expectedProposerRewardAmount).Add(expectedSupplierRewardAmount).Add(expectedSourceOwnerRewardAmount).Add(expectedApplicationCostAmount)
+	roundingDifference := totalSettlementAmount.Sub(calculatedTotal)
+
+	// Give any rounding difference to the DAO (largest recipient)
+	expectedDaoRewardAmount = expectedDaoRewardAmount.Add(roundingDifference)
+
+	// Capture balances after settlement
+	daoBalanceAfterSettlement := getBalance(t, ctx, keepers, daoRewardAddress)
+	proposerBalanceAfterSettlement := getBalance(t, ctx, keepers, blockProposerAccountAddress)
+	sourceOwnerBalanceAfterSettlement := getBalance(t, ctx, keepers, serviceSourceOwnerAddress)
+	applicationBalanceAfterSettlement := getBalance(t, ctx, keepers, testApplicationAddress)
+
+	// Verify DAO received expected reward distribution
+	actualDaoRewardAmount := daoBalanceAfterSettlement.Amount.Sub(daoBalanceBeforeSettlement.Amount)
+	require.Equal(t, expectedDaoRewardAmount, actualDaoRewardAmount,
+		"DAO reward amount mismatch: expected %s, got %s", expectedDaoRewardAmount, actualDaoRewardAmount)
+
+	// Verify proposer received expected reward distribution
+	actualProposerRewardAmount := proposerBalanceAfterSettlement.Amount.Sub(proposerBalanceBeforeSettlement.Amount)
+	require.Equal(t, expectedProposerRewardAmount, actualProposerRewardAmount,
+		"Proposer reward amount mismatch: expected %s, got %s", expectedProposerRewardAmount, actualProposerRewardAmount)
+
+	// Verify source owner received expected reward distribution
+	actualSourceOwnerRewardAmount := sourceOwnerBalanceAfterSettlement.Amount.Sub(sourceOwnerBalanceBeforeSettlement.Amount)
+	require.Equal(t, expectedSourceOwnerRewardAmount, actualSourceOwnerRewardAmount,
+		"Source owner reward amount mismatch: expected %s, got %s", expectedSourceOwnerRewardAmount, actualSourceOwnerRewardAmount)
+
+	// Verify application stake was reduced by expected cost (should be zero for MintEqualsBurn)
+	actualApplicationCostAmount := applicationBalanceBeforeSettlement.Amount.Sub(applicationBalanceAfterSettlement.Amount)
+	require.Equal(t, expectedApplicationCostAmount, actualApplicationCostAmount,
+		"Application cost amount mismatch: expected %s, got %s", expectedApplicationCostAmount, actualApplicationCostAmount)
+
+	// Verify supplier shareholders received expected reward distribution
+	expectedSupplierShareholderRewardAmounts := tlm.GetShareAmountMap(supplierRevenueShareholders, expectedSupplierRewardAmount)
+	for shareholderAddress, expectedShareholderRewardAmount := range expectedSupplierShareholderRewardAmounts {
+		shareholderBalanceAfterSettlement := getBalance(t, ctx, keepers, shareholderAddress)
+		shareholderBalanceBeforeSettlement := supplierShareholderBalancesBeforeSettlement[shareholderAddress]
+
+		actualShareholderRewardAmount := shareholderBalanceAfterSettlement.Amount.Sub(shareholderBalanceBeforeSettlement.Amount)
+		require.Equal(t, expectedShareholderRewardAmount, actualShareholderRewardAmount,
+			"Supplier shareholder %s reward amount mismatch: expected %s, got %s",
+			shareholderAddress, expectedShareholderRewardAmount, actualShareholderRewardAmount)
+	}
+
+	// Verify total reward distribution equals settlement amount
+	totalDistributedAmount := actualDaoRewardAmount.Add(actualProposerRewardAmount).Add(expectedSupplierRewardAmount).Add(actualSourceOwnerRewardAmount).Add(actualApplicationCostAmount)
+	require.Equal(t, totalSettlementAmount, totalDistributedAmount,
+		"Total distributed amount mismatch: expected %s, got %s", totalSettlementAmount, totalDistributedAmount)
 }

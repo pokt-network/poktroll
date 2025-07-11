@@ -144,8 +144,8 @@ func ValidateProofRequirementThreshold(proofRequirementThresholdAny any) error {
 		return ErrProofParamInvalid.Wrapf("invalid proof_requirement_threshold denom: %s", proofRequirementThresholdCoin.Denom)
 	}
 
-	if proofRequirementThresholdCoin.IsZero() || proofRequirementThresholdCoin.IsNegative() {
-		return ErrProofParamInvalid.Wrapf("invalid proof_requirement_threshold amount: %s <= 0", proofRequirementThresholdCoin)
+	if proofRequirementThresholdCoin.IsNegative() {
+		return ErrProofParamInvalid.Wrapf("invalid proof_requirement_threshold amount: %s < 0", proofRequirementThresholdCoin)
 	}
 
 	return nil

@@ -3,6 +3,7 @@ package tokenomics
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	// this line is used by starport scaffolding # 1
 
@@ -69,7 +70,7 @@ func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
 	var genState tokenomicstypes.GenesisState
 	if err := cdc.UnmarshalJSON(bz, &genState); err != nil {
-		return tokenomicstypes.ErrTokenomicsUnmarshalInvalid.Wrapf("invalid genesis state: %v", err)
+		return fmt.Errorf("failed to unmarshal %s genesis state: %w", tokenomicstypes.ModuleName, err)
 	}
 	return genState.Validate()
 }

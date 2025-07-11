@@ -26,7 +26,8 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Module is the config object for the module.
 type Module struct {
-	// authority defines the custom module authority. If not set, defaults to the governance module.
+	// authority defines the custom module authority.
+	// If not set, defaults to the governance module.
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 }
 

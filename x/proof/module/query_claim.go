@@ -10,13 +10,6 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
-// AddPaginationFlagsToCmd adds common pagination flags to cmd
-func ClaimCacheWarmUpFilterFlags(cmd *cobra.Command) {
-	cmd.Flags().Uint64(FlagSessionEndHeight, 0, "claims whose session ends at this height will be returned")
-	cmd.Flags().String(FlagSessionId, "", "claims matching this session id will be returned")
-	cmd.Flags().String(FlagSupplierOperatorAddress, "", "claims submitted by suppliers matching this operator address will be returned")
-}
-
 func CmdListClaims() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-claims",
@@ -61,7 +54,10 @@ $ pocketd q claim list-claims --supplier-operator-address <supplier_operator_add
 		},
 	}
 
-	ClaimCacheWarmUpFilterFlags(cmd)
+	cmd.Flags().Uint64(FlagSessionEndHeight, 0, "claims whose session ends at this height will be returned")
+	cmd.Flags().String(FlagSessionId, "", "claims matching this session id will be returned")
+	cmd.Flags().String(FlagSupplierOperatorAddress, "", "claims submitted by suppliers matching this operator address will be returned")
+
 	flags.AddPaginationFlagsToCmd(cmd, cmd.Use)
 	flags.AddQueryFlagsToCmd(cmd)
 
