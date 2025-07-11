@@ -104,8 +104,10 @@ func (sessq *sessionQuerier) GetSession(
 		BlockHeight:        blockHeight,
 	}
 	res, err := retry.Call(ctx, func() (*sessiontypes.QueryGetSessionResponse, error) {
-		return sessq.sessionQuerier.GetSession(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return sessq.sessionQuerier.GetSession(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, ErrQueryRetrieveSession.Wrapf(
 			"address: %s; serviceId: %s; block height: %d; error: [%v]",
@@ -142,8 +144,10 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 
 	req := &sessiontypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*sessiontypes.QueryParamsResponse, error) {
-		return sessq.sessionQuerier.Params(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return sessq.sessionQuerier.Params(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
