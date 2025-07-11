@@ -179,7 +179,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Get the service config from the supplier config.
 	// This will use either the RPC type specific service config or the default service config.
-	serviceConfig, serviceConfigTypeLog, err := getServiceConfig(supplierConfig, request)
+	serviceConfig, serviceConfigTypeLog, err := getServiceConfig(logger, supplierConfig, request)
 	if err != nil {
 		return relayRequest, err
 	}
@@ -390,12 +390,13 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 }
 
 // serviceConfigTypeDefault indicates that the service config being used is
-// the default service config, as opposed to an RPC-type specific config.
+// the default service config, as opposed to a service-specific config.
 const serviceConfigTypeDefault = "DEFAULT_SERVICE_CONFIG"
 
 // getServiceConfig returns the service config for the service.
 // This will use either the RPC type specific service config or the default service config.
 func getServiceConfig(
+	logger polylog.Logger,
 	supplierConfig *config.RelayMinerSupplierConfig,
 	request *http.Request,
 ) (
@@ -415,7 +416,7 @@ func getServiceConfig(
 		rpcTypeInt, err := strconv.Atoi(rpcTypeHeaderValue)
 		if err != nil {
 			return nil, "", ErrRelayerProxyInternalError.Wrapf(
-				"unable to parse rpc type header value %q",
+				"❌ Unable to parse rpc type header value %q",
 				rpcTypeHeaderValue,
 			)
 		}
@@ -423,9 +424,18 @@ func getServiceConfig(
 		// If the header is successfully parsed, use the RPC type specific service config.
 		rpcType := sharedtypes.RPCType(rpcTypeInt)
 		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
+			logger.Debug().Msgf("🟢 Using '%s' RPC type specific service config for service %q",
+				rpcType.String(), supplierConfig.ServiceId,
+			)
 			return rpcTypeServiceConfig, fmt.Sprintf("%s_SERVICE_CONFIG", rpcType.String()), nil
+		} else {
+			logger.Warn().Msgf("⚠️ SHOULD NOT HAPPEN: No '%s' RPC type specific service config found for service %q",
+				rpcType.String(), supplierConfig.ServiceId,
+			)
 		}
 	}
+
+	logger.Debug().Msgf("🟢 Using default service config for service %q", supplierConfig.ServiceId)
 
 	// If the RPC type is not set, use the default service config.
 	return supplierConfig.ServiceConfig, serviceConfigTypeDefault, nil

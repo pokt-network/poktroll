@@ -173,13 +173,18 @@ type RelayMinerSupplierConfig struct {
 	// type of the relay miner server it is associated with.
 	ServerType RelayMinerServerType
 
-	// [REQUIRED] ServiceConfig is the default config of the service that relays will be
+	// TODO_TECHDEBT(@commoddity): Rename to DefaultServiceConfig.
+	// The `ServiceConfig` field will be renamed to `DefaultServiceConfig` in the future to make
+	// its reponsibility more explicit. It is kept named `ServiceConfig` in the current release
+	// for backwards compatibility.
+	//
+	// ServiceConfig is the default config of the service that relays will be
 	// proxied to. It is required in all cases to provide a service config for the supplier.
 	//
 	// It is used if a request has no matching service config in RPCTypeServiceConfigs.
 	ServiceConfig *RelayMinerSupplierServiceConfig
 
-	// [OPTIONAL] RPCTypeServiceConfigs is a map of RPC types to service configs.
+	// RPCTypeServiceConfigs is a map of RPC types to service configs.
 	// Used to select an alternate service config for a given RPC type.
 	//
 	// For example, if a service exposes two separate endpoints for REST and JSON-RPC,

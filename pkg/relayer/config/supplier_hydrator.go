@@ -85,7 +85,7 @@ func rpcTypeIsValid(rpcType types.RPCType) bool {
 		types.RPCType_WEBSOCKET,
 		types.RPCType_JSON_RPC,
 		types.RPCType_REST,
-		types.RPCType_HYBRID:
+		types.RPCType_COMET_BFT:
 		return true
 	default:
 		return false
