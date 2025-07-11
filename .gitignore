@@ -58,10 +58,6 @@ localnet_config_expanded.yaml
 # `docusaurus/docs/infrastructure/localnet.md`, please do!
 # Ref: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
 localnet_config.yaml-e
-# These are needed to ignore byproducts of `make proto_fix_self_import`
-# Since sed functions different on macOS and Linux, we need to implement
-# some workarounds by always using "sed -i'' -e" instead of just "sed -i -e".
-api/pocket/**/*.go-E
 
 # Release artifacts produced by `ignite chain build --release`
 release
