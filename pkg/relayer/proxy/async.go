@@ -8,7 +8,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	proxyws "github.com/pokt-network/poktroll/pkg/relayer/proxy/websockets"
-	"github.com/pokt-network/poktroll/x/shared/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -35,7 +34,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	// with the 'Rpc-Type' header set to 'websocket'.
 	//
 	// IMPORTANT: This will return an error if the service is not configured for websocket RPC type.
-	websocketServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[types.RPCType_WEBSOCKET]
+	websocketServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[sharedtypes.RPCType_WEBSOCKET]
 	if !ok {
 		return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
 			"service %q not configured for websocket RPC type",
