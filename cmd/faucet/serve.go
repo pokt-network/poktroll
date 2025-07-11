@@ -5,12 +5,11 @@ import (
 	"strings"
 
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
-	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/pokt-network/poktroll/cmd/flags"
+	pocketflags "github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -44,10 +43,10 @@ pocketd faucet serve`,
 	}
 
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
-	cosmosflags.AddTxFlagsToCmd(serveCmd)
+	pocketflags.AddTxFlagsToCmd(serveCmd)
 
-	serveCmd.Flags().StringVar(&faucetConfigPath, flags.FaucetConfigPath, flags.DefaultFaucetConfigPath, flags.FaucetConfigPathUsage)
-	serveCmd.Flags().String(flags.FaucetListenAddress, flags.DefaultFaucetListenAddress, flags.FaucetListenAddressUsage)
+	serveCmd.Flags().StringVar(&faucetConfigPath, pocketflags.FaucetConfigPath, pocketflags.DefaultFaucetConfigPath, pocketflags.FaucetConfigPathUsage)
+	serveCmd.Flags().String(pocketflags.FaucetListenAddress, pocketflags.DefaultFaucetListenAddress, pocketflags.FaucetListenAddressUsage)
 
 	return serveCmd
 }
@@ -87,7 +86,7 @@ func preRunServe(cmd *cobra.Command, _ []string) (err error) {
 	txClientOpts = append(txClientOpts, unorderedOpt)
 
 	// Construct the tx client.
-	txClient, err = flags.GetTxClientFromFlags(cmd.Context(), cmd, txClientOpts...)
+	txClient, err = pocketflags.GetTxClientFromFlags(cmd.Context(), cmd, txClientOpts...)
 	if err != nil {
 		return err
 	}

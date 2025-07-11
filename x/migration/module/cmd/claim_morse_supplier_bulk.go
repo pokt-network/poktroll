@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
-	"github.com/pokt-network/poktroll/cmd/flags"
+	pocketflags "github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/x/migration/types"
 	"github.com/pokt-network/poktroll/x/supplier/config"
@@ -170,7 +170,7 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 	// Flag for input Morse private keys file.
 	claimSuppliersCmd.Flags().StringVar(&flagSupplierStakeTemplateFile, flagSupplierStakeTemplateFileName, "", flagSupplierStakeTemplateFileDesc)
 	// Flag for output Morse to Shannon mapping file.
-	claimSuppliersCmd.Flags().StringVar(&flagOutputFilePath, flags.FlagOutputFile, "", "Path to a file where the migration result will be written.")
+	claimSuppliersCmd.Flags().StringVar(&flagOutputFilePath, pocketflags.FlagOutputFile, "", "Path to a file where the migration result will be written.")
 	// Flag for dry run mode.
 	claimSuppliersCmd.Flags().BoolVar(&flagDryRunClaim, FlagDryRunClaim, false, FlagDryRunClaimDesc)
 	// Flags to export private keys in the output file.
@@ -189,7 +189,7 @@ More info: https://dev.poktroll.com/operate/morse_migration/claiming`,
 	_ = claimSuppliersCmd.MarkFlagRequired(cosmosflags.FlagFrom)
 
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
-	cosmosflags.AddTxFlagsToCmd(claimSuppliersCmd)
+	pocketflags.AddTxFlagsToCmd(claimSuppliersCmd)
 
 	return claimSuppliersCmd
 }
@@ -430,7 +430,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 
 	// Construct a tx client.
 	logger.Logger.Info().Msg("Preparing transaction client")
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := pocketflags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
