@@ -308,3 +308,57 @@ Someone comes and asks:
 - Fix root.Count/Sum confusion post-mainnet
 
 The module structure is solid, but these security and precision issues must be resolved before mainnet deployment.
+
+TODO:
+
+1. Update the desription w/ primary & secondary changes
+2. Validate E2E tests on LocalNet
+3. Review future docs
+4. Submit for review
+5. Update the params
+
+===
+
+Ref issue #1607
+
+--- TODO - after its done ---
+
+- Update onchain params
+- Prepare migration
+- Test E2E
+
+--- Rough Ideas ---
+
+**Goal**:
+
+- Integrate "GlobalMint" style token distribution into `Mint=Burn`
+- Improve visibility into onchain tokenomics
+
+Common User Questions:
+
+- How much money is a supplier making?
+- How many relays is a supplier handling?
+- How much is getting minted in total?
+- How much is getting burnt in total?
+
+Protocol developers Questions:
+
+- Is Relay Mining actually working?
+- How is the Relay Minting parameter changing?
+
+Governance Questions:
+
+- Do we need to adjust onchain relay mining params?
+- Do we need to adjust probabilistic proof params?
+
+TODO:
+
+- Implement the TLM change
+- Unit, integration and E2E tests
+- Relay Mining difficulty changes
+
+Bonus Ideas:
+
+- Revisit all TLM logs
+- Revisit some TLM events
+- Cleanup TODOs along the way
