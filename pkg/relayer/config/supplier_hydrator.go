@@ -67,7 +67,7 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 		if err != nil {
 			logger.Error().Msgf("❌ Error getting RPC type from config: %v", err)
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
-				"❌ Error getting RPC type from config: %w", err,
+				"❌ Error getting RPC type from config: %q", err,
 			)
 		}
 
