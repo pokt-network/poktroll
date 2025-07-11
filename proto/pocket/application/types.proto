@@ -1,5 +1,4 @@
 // TODO_AUTOMATE: Add a CI workflow that automatically detects .proto files with names incompatible with the package name (e.g., files named exactly as the package, like "application.proto").
-// NB: This file CANNOT be named "application.proto" due to how ignite autogenerates code.
 
 syntax = "proto3";
 package pocket.application;
