@@ -159,7 +159,7 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 
 		// Test the connectivity of all the backend URLs for the supplier.
 		for _, backendUrl := range backendUrls {
-			if err := server.testBackendURL(backendUrl, supplierCfg.ServiceId); err != nil {
+			if err := server.pingBackendURL(backendUrl, supplierCfg.ServiceId); err != nil {
 				return err
 			}
 		}
@@ -169,31 +169,28 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 	return nil
 }
 
-// testBackendURL tests the connectivity of a backend URL for a given service ID.
-func (server *relayMinerHTTPServer) testBackendURL(backendUrl *url.URL, serviceId string) error {
+// Default client timeout for pinging the backend URL.
+const httpPingTimeout = 2 * time.Second
+
+// pingBackendURL tests the connectivity of a backend URL for a given service ID.
+func (server *relayMinerHTTPServer) pingBackendURL(backendUrl *url.URL, serviceId string) error {
 	// Initialize the HTTP client for the backend URL.
-	c := &http.Client{Timeout: 2 * time.Second}
+	c := &http.Client{Timeout: httpPingTimeout}
 
-	if backendUrl.Scheme == "ws" || backendUrl.Scheme == "wss" {
-		// TODO_IMPROVE: Consider testing websocket connectivity by establishing
-		// a websocket connection instead of using an HTTP connection.
-		server.logger.Warn().Msgf(
-			"backend URL %s scheme is a %s, switching to http to check connectivity",
-			backendUrl.String(),
-			backendUrl.Scheme,
-		)
+	// Normalize the backend URL scheme for pinging.
+	// This is done to ensure that the backend URL is uses HTTP/HTTPS
+	// for the ping request.
+	// For example, if the backend URL is using "ws" or "wss", it will be
+	// normalized to "http" or "https" respectively.
+	//
+	// TODO_IMPROVE: Consider testing websocket connectivity by establishing
+	// a websocket connection instead of using an HTTP connection.
+	pingURL := normalizeBackendURLSchemeForPing(server.logger, backendUrl)
 
-		if backendUrl.Scheme == "ws" {
-			backendUrl.Scheme = "http"
-		} else {
-			backendUrl.Scheme = "https"
-		}
-	}
-
-	resp, err := c.Head(backendUrl.String())
+	resp, err := c.Head(pingURL.String())
 	if err != nil {
 		return fmt.Errorf(
-			"failed to ping backend %q for serviceId %q: %w",
+			"❌ Error pinging backend %q for serviceId %q: %w",
 			backendUrl.String(), serviceId, err,
 		)
 	}
@@ -201,12 +198,36 @@ func (server *relayMinerHTTPServer) testBackendURL(backendUrl *url.URL, serviceI
 
 	if resp.StatusCode >= http.StatusInternalServerError {
 		return fmt.Errorf(
-			"failed to ping backend %q for serviceId %q: received status code %d",
+			"❌ Error pinging backend %q for serviceId %q: received status code %d",
 			backendUrl.String(), serviceId, resp.StatusCode,
 		)
 	}
 
 	return nil
+}
+
+// normalizeBackendURLSchemeForPing normalizes the backend URL scheme for pinging.
+// Returns a copy of the URL with the scheme normalized for HTTP connectivity checks.
+// eg. "ws" -> "http", "wss" -> "https"
+func normalizeBackendURLSchemeForPing(logger polylog.Logger, backendUrl *url.URL) *url.URL {
+	// Create a copy of the URL to avoid modifying the original
+	pingURL := *backendUrl
+
+	if backendUrl.Scheme == "ws" || backendUrl.Scheme == "wss" {
+		logger.Info().Msgf(
+			"💡 backend URL %s scheme is a %s, switching to http to check connectivity",
+			backendUrl.String(),
+			backendUrl.Scheme,
+		)
+
+		if backendUrl.Scheme == "ws" {
+			pingURL.Scheme = "http"
+		} else {
+			pingURL.Scheme = "https"
+		}
+	}
+
+	return &pingURL
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective

@@ -2,94 +2,87 @@ package config
 
 import (
 	"net/url"
-	"strings"
 
-	"github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // HydrateSupplier populates a single supplier's fields of the RelayMinerConfig
 // that are relevant to each supplier in the "suppliers" section of the config file.
 func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
+	logger polylog.Logger,
 	yamlSupplierConfig YAMLRelayMinerSupplierConfig,
 ) error {
+	logger = logger.With(
+		"supplier_id", yamlSupplierConfig.ServiceId,
+	)
+
+	logger.Debug().Msgf("🔧 Starting to hydrate supplier configuration")
+
 	// Supplier name is required
 	if len(yamlSupplierConfig.ServiceId) == 0 {
+		logger.Error().Msg("❌ Error hydrating supplier: supplier name is required")
 		return ErrRelayMinerConfigInvalidSupplier.Wrap("supplier name is required")
 	}
 	supplierConfig.ServiceId = yamlSupplierConfig.ServiceId
+	logger.Debug().Msgf("✅ Successfully set supplier service ID: %s", supplierConfig.ServiceId)
 
 	// NB: Intentionally not verifying SigningKeyNames here.
 	// We'll copy the keys from the root config in `HydrateSuppliers` if this list is empty.
 	// `HydrateSuppliers` is a part of `pkg/relayer/config/suppliers_config_hydrator.go`.
 	supplierConfig.SigningKeyNames = yamlSupplierConfig.SigningKeyNames
+	if len(supplierConfig.SigningKeyNames) > 0 {
+		logger.Debug().Msgf("✅ Successfully set signing key names: %v", supplierConfig.SigningKeyNames)
+	} else {
+		logger.Debug().Msg("🔑 No signing key names provided, will inherit from root config")
+	}
 
 	// Hydrate the default service config
-	defaultServiceConfig, err := supplierConfig.hydrateServiceConfig(yamlSupplierConfig.ServiceConfig)
+	logger.Debug().Msg("🔧 Hydrating default service configuration")
+	defaultServiceConfig, err := supplierConfig.hydrateServiceConfig(logger, yamlSupplierConfig.ServiceConfig)
 	if err != nil {
+		logger.Error().Msgf("❌ Error hydrating default service config: %v", err)
 		return err
 	}
 	supplierConfig.ServiceConfig = defaultServiceConfig
+	logger.Debug().Msg("✅ Successfully hydrated default service configuration")
 
-	// Hydrate the RPC type-specific service configs (if any)
+	// Hydrate the RPC-type service-specific service configs (if any)
 	supplierConfig.RPCTypeServiceConfigs = make(
-		map[types.RPCType]*RelayMinerSupplierServiceConfig,
+		map[sharedtypes.RPCType]*RelayMinerSupplierServiceConfig,
 		len(yamlSupplierConfig.RPCTypeServiceConfigs),
 	)
 
-	// Loop through the RPC type-specific service configs and hydrate them.
+	if len(yamlSupplierConfig.RPCTypeServiceConfigs) > 0 {
+		logger.Debug().Msgf("🔧 Found %d RPC-type specific service configurations to hydrate", len(yamlSupplierConfig.RPCTypeServiceConfigs))
+	}
+
+	// Loop through the RPC-type service-specific service configs and hydrate them.
 	// For example, if the supplier is configured to handle REST and JSON-RPC,
-	// there will be two RPC type-specific service configs.
+	// there will be two RPC-type service-specific service configs.
 	for rpcType, serviceConfig := range yamlSupplierConfig.RPCTypeServiceConfigs {
-		rpcType, err := getRPCTypeFromConfig(rpcType)
+		logger.Debug().Msgf("🔧 Hydrating RPC-type specific config for: %s", rpcType)
+
+		rpcType, err := sharedtypes.GetRPCTypeFromConfig(rpcType)
 		if err != nil {
-			return err
+			logger.Error().Msgf("❌ Error getting RPC type from config: %v", err)
+			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
+				"❌ Error getting RPC type from config: %w", err,
+			)
 		}
 
-		rpcTypeServiceConfig, err := supplierConfig.hydrateServiceConfig(serviceConfig)
+		rpcTypeServiceConfig, err := supplierConfig.hydrateServiceConfig(logger, serviceConfig)
 		if err != nil {
+			logger.Error().Msgf("❌ Error hydrating RPC-type specific service config for %s: %v", rpcType, err)
 			return err
 		}
 
 		supplierConfig.RPCTypeServiceConfigs[rpcType] = rpcTypeServiceConfig
+		logger.Debug().Msgf("✅ Successfully hydrated RPC-type specific config for: %s", rpcType)
 	}
 
+	logger.Debug().Msgf("🎉 Successfully completed hydration for supplier: %s", supplierConfig.ServiceId)
 	return nil
-}
-
-// getRPCTypeFromConfig converts the string RPC type to the
-// types.RPCType enum and performs validation.
-//
-// eg. "rest" -> types.RPCType_REST
-func getRPCTypeFromConfig(rpcType string) (types.RPCType, error) {
-	rpcTypeInt, ok := types.RPCType_value[strings.ToUpper(rpcType)]
-	if !ok {
-		return 0, ErrRelayMinerConfigInvalidSupplier.Wrapf(
-			"invalid rpc type %s",
-			rpcType,
-		)
-	}
-	if !rpcTypeIsValid(types.RPCType(rpcTypeInt)) {
-		return 0, ErrRelayMinerConfigInvalidSupplier.Wrapf(
-			"invalid rpc type %s",
-			rpcType,
-		)
-	}
-	return types.RPCType(rpcTypeInt), nil
-}
-
-// rpcTypeIsValid checks if the RPC type is valid.
-// It is used to validate the RPC type-specific service configs.
-func rpcTypeIsValid(rpcType types.RPCType) bool {
-	switch rpcType {
-	case types.RPCType_GRPC,
-		types.RPCType_WEBSOCKET,
-		types.RPCType_JSON_RPC,
-		types.RPCType_REST,
-		types.RPCType_COMET_BFT:
-		return true
-	default:
-		return false
-	}
 }
 
 // hydrateServiceConfig hydrates a single service config by parsing the
@@ -97,10 +90,18 @@ func rpcTypeIsValid(rpcType types.RPCType) bool {
 // structure. It returns the populated RelayMinerSupplierServiceConfig and an error
 // if the service config is invalid.
 func (supplierConfig *RelayMinerSupplierConfig) hydrateServiceConfig(
+	logger polylog.Logger,
 	supplierServiceConfigYAML YAMLRelayMinerSupplierServiceConfig,
 ) (*RelayMinerSupplierServiceConfig, error) {
+	logger = logger.With(
+		"backend_url", supplierServiceConfigYAML.BackendUrl,
+	)
+
+	logger.Debug().Msgf("🔧 Hydrating service config with backend URL: %s", supplierServiceConfigYAML.BackendUrl)
+
 	backendUrl, err := url.Parse(supplierServiceConfigYAML.BackendUrl)
 	if err != nil {
+		logger.Error().Msgf("❌ Error parsing backend URL '%s': %v", supplierServiceConfigYAML.BackendUrl, err)
 		return nil, ErrRelayMinerConfigInvalidSupplier.Wrapf(
 			"invalid supplier backend url %s",
 			err.Error(),
@@ -108,11 +109,14 @@ func (supplierConfig *RelayMinerSupplierConfig) hydrateServiceConfig(
 	}
 
 	if backendUrl.Scheme == "" {
+		logger.Error().Msgf("❌ Error: missing scheme in supplier backend URL: %s", supplierServiceConfigYAML.BackendUrl)
 		return nil, ErrRelayMinerConfigInvalidSupplier.Wrapf(
 			"missing scheme in supplier backend url %s",
 			supplierServiceConfigYAML.BackendUrl,
 		)
 	}
+
+	logger.Debug().Msgf("✅ Successfully parsed backend URL with scheme: %s", backendUrl.Scheme)
 
 	// Populate the supplier service fields that are relevant to each supported
 	// supplier type.
@@ -122,17 +126,23 @@ func (supplierConfig *RelayMinerSupplierConfig) hydrateServiceConfig(
 	switch backendUrl.Scheme {
 	case "http", "https", "ws", "wss":
 		supplierConfig.ServerType = RelayMinerServerTypeHTTP
+		logger.Debug().Msgf("🌐 Configuring HTTP/WebSocket server type for scheme: %s", backendUrl.Scheme)
+
 		if err := supplierServiceConfig.
 			parseSupplierBackendUrl(supplierServiceConfigYAML); err != nil {
+			logger.Error().Msgf("❌ Error parsing supplier backend URL: %v", err)
 			return nil, err
 		}
+		logger.Debug().Msg("✅ Successfully parsed supplier backend URL configuration")
 	default:
 		// Fail if the supplier type is not supported
+		logger.Error().Msgf("❌ Error: unsupported supplier backend URL scheme: %s", backendUrl.Scheme)
 		return nil, ErrRelayMinerConfigInvalidSupplier.Wrapf(
 			"invalid supplier type %s",
 			backendUrl.Scheme,
 		)
 	}
 
+	logger.Debug().Msg("🎉 Successfully completed service config hydration")
 	return supplierServiceConfig, nil
 }

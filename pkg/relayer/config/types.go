@@ -3,7 +3,7 @@ package config
 import (
 	"net/url"
 
-	"github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type RelayMinerServerType int
@@ -196,7 +196,7 @@ type RelayMinerSupplierConfig struct {
 	// by the client.
 	//
 	// If the RPC type is not present in the map, the default service config is used.
-	RPCTypeServiceConfigs map[types.RPCType]*RelayMinerSupplierServiceConfig
+	RPCTypeServiceConfigs map[sharedtypes.RPCType]*RelayMinerSupplierServiceConfig
 
 	// SigningKeyNames: a list of key names that can accept relays for that supplier.
 	// If empty, we copy the values from `DefaultSigningKeyNames`.

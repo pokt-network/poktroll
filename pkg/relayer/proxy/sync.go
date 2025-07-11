@@ -36,7 +36,9 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Success is implied by reaching the end of the function where status is set to 2XX.
 	statusCode := http.StatusInternalServerError
 
-	logger := server.logger.With("relay_request_type", "synchronous")
+	logger := server.logger.With(
+		"relay_request_type", "⚡ synchronous",
+	)
 	requestStartTime := time.Now()
 	startBlock := server.blockClient.LastBlock(ctx)
 	startHeight := startBlock.Height()
@@ -53,12 +55,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := server.newRelayRequest(request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("failed creating relay request")
+		logger.Warn().Err(err).Msg("❌ Failed creating relay request")
 		return relayRequest, err
 	}
 
 	if err = relayRequest.ValidateBasic(); err != nil {
-		logger.Warn().Err(err).Msg("failed validating relay request")
+		logger.Warn().Err(err).Msg("❌ Failed validating relay request")
 		return relayRequest, err
 	}
 
@@ -181,6 +183,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// This will use either the RPC type specific service config or the default service config.
 	serviceConfig, serviceConfigTypeLog, err := getServiceConfig(logger, supplierConfig, request)
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed getting service config")
 		return relayRequest, err
 	}
 
@@ -216,12 +219,13 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Verify the relay request signature and session.
 	if err = server.relayAuthenticator.VerifyRelayRequest(ctxWithDeadline, relayRequest, serviceId); err != nil {
+		logger.Error().Err(err).Msg("❌ Failed verifying relay request")
 		return relayRequest, err
 	}
 
 	httpRequest, err := relayer.BuildServiceBackendRequest(relayRequest, serviceConfig)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to build the service backend request")
+		logger.Error().Err(err).Msg("❌ Failed building the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
 	defer CloseBody(logger, httpRequest.Body)
@@ -264,6 +268,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	serviceCallStartTime := time.Now()
 	httpResponse, err := client.Do(httpRequest)
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed sending the relay request to the native service")
 		// Capture the service call request duration metric.
 		relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, statusCode)
 
@@ -299,6 +304,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// This will include the status code, headers, and body.
 	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return relayRequest, err
 	}
 
@@ -311,6 +317,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// was verified to be valid and has to be the same as the relayResponse session header.
 	relayResponse, err := server.newRelayResponse(responseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed building the relay response")
 		// The client should not have knowledge about the RelayMiner's issues with
 		// building the relay response. Reply with an internal error so that the
 		// original error is not exposed to the client.
@@ -324,7 +331,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		// If the originHost cannot be parsed, reply with an internal error so that
 		// the original error is not exposed to the client.
 		clientError := ErrRelayerProxyInternalError.Wrap(err.Error())
-		logger.Warn().Err(err).Msg("failed sending relay response")
+		logger.Warn().Err(err).Msg("❌ Failed sending relay response")
 		return relayRequest, clientError
 	}
 
@@ -391,7 +398,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 // serviceConfigTypeDefault indicates that the service config being used is
 // the default service config, as opposed to a service-specific config.
-const serviceConfigTypeDefault = "DEFAULT_SERVICE_CONFIG"
+const logServiceConfigTypeDefault = "DEFAULT_SERVICE_CONFIG"
 
 // getServiceConfig returns the service config for the service.
 // This will use either the RPC type specific service config or the default service config.
@@ -405,9 +412,10 @@ func getServiceConfig(
 	err error,
 ) {
 	// If the following are true:
-	// 	- The RPC type is set for the service
-	// 	- The RPC type specific service config is available
-	// Then, use the RPC type specific service config.
+	// 	- The RPC-type is set for the service
+	// 	- The RPC-type service-specific config is available
+	// Then, use the RPC-type service-specific config.
+	// Otherwise, use the default service config.
 	rpcTypeHeaderValue := request.Header.Get(RPCTypeHeader)
 
 	if rpcTypeHeaderValue != "" {
@@ -427,7 +435,12 @@ func getServiceConfig(
 			logger.Debug().Msgf("🟢 Using '%s' RPC type specific service config for service %q",
 				rpcType.String(), supplierConfig.ServiceId,
 			)
-			return rpcTypeServiceConfig, fmt.Sprintf("%s_SERVICE_CONFIG", rpcType.String()), nil
+
+			// Add the RPC type to the log service config type.
+			//   - eg. "JSON_RPC_SERVICE_CONFIG"
+			logServiceConfigTypeRPCType := fmt.Sprintf("%s_SERVICE_CONFIG", rpcType.String())
+
+			return rpcTypeServiceConfig, logServiceConfigTypeRPCType, nil
 		} else {
 			logger.Warn().Msgf("⚠️ SHOULD NOT HAPPEN: No '%s' RPC type specific service config found for service %q",
 				rpcType.String(), supplierConfig.ServiceId,
@@ -438,7 +451,7 @@ func getServiceConfig(
 	logger.Debug().Msgf("🟢 Using default service config for service %q", supplierConfig.ServiceId)
 
 	// If the RPC type is not set, use the default service config.
-	return supplierConfig.ServiceConfig, serviceConfigTypeDefault, nil
+	return supplierConfig.ServiceConfig, logServiceConfigTypeDefault, nil
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.

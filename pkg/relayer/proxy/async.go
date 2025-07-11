@@ -22,9 +22,16 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	serviceId := request.Header.Get("Target-Service-Id")
 	appAddress := request.Header.Get("App-Address")
 
+	logger := server.logger.With(
+		"relay_request_type", "🚀 asynchronous",
+		"service_id", serviceId,
+		"application_address", appAddress,
+	)
+
 	// Determine the supplier's service configuration.
 	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceId]
 	if !ok {
+		logger.Error().Msg("❌ Service not configured")
 		return ErrRelayerProxyServiceEndpointNotHandled
 	}
 
@@ -36,17 +43,12 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	// IMPORTANT: This will return an error if the service is not configured for websocket RPC type.
 	websocketServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[sharedtypes.RPCType_WEBSOCKET]
 	if !ok {
+		logger.Error().Msg("❌ Service not configured for websocket RPC type")
 		return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
 			"service %q not configured for websocket RPC type",
 			serviceId,
 		)
 	}
-
-	logger := server.logger.With(
-		"relay_request_type", "asynchronous",
-		"service_id", serviceId,
-		"application_address", appAddress,
-	)
 
 	// Get the current height session to determine the session parameters.
 	block := server.blockClient.LastBlock(ctx)
@@ -59,7 +61,8 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 
 	session, err := server.sessionQueryClient.GetSession(ctx, appAddress, serviceId, block.Height())
 	if err != nil {
-		return ErrRelayerProxyInternalError.Wrapf("error getting session: %v", err)
+		logger.Error().Err(err).Msg("❌ Error getting session from session query client")
+		return ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
 	sessionHeader := session.Header
@@ -76,7 +79,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	}
 	clientConn, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
-		logger.Error().Err(err).Msg("upgrading connection to websocket")
+		logger.Error().Err(err).Msg("❌ Error upgrading connection to websocket")
 		return ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
@@ -93,7 +96,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 		clientConn,
 	)
 	if err != nil {
-		logger.Error().Err(err).Msg("creating websocket bridge")
+		logger.Error().Err(err).Msg("❌ Error creating websocket bridge")
 		return ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
@@ -104,6 +107,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	// and delay reconnecting the upstream client as much as possible.
 	sharedParams, err := server.sharedQueryClient.GetParams(ctx)
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error getting shared params from shared query client")
 		return ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 	sessionEndHeight := sessionHeader.SessionEndBlockHeight
@@ -113,7 +117,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	// Set up the bridge to close after the session ends.
 	go bridge.Run(claimWindowOpenHeight)
 
-	logger.Info().Msg("websocket connection established with client")
+	logger.Info().Msg("🔗 WebSocket connection established with client")
 
 	return nil
 }

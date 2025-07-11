@@ -9,16 +9,17 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/testutil/yaml"
-	"github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func Test_ParseRelayMinerConfig_ReferenceExample(t *testing.T) {
 	configContent, err := os.ReadFile("../../../localnet/pocketd/config/relayminer_config_full_example.yaml")
 	require.NoError(t, err)
 
-	_, err = config.ParseRelayMinerConfigs(configContent)
+	_, err = config.ParseRelayMinerConfigs(polyzero.NewLogger(), configContent)
 	require.NoError(t, err)
 }
 
@@ -439,14 +440,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 										"X-Default": "default-value",
 									},
 								},
-								RPCTypeServiceConfigs: map[types.RPCType]*config.RelayMinerSupplierServiceConfig{
-									types.RPCType_JSON_RPC: {
+								RPCTypeServiceConfigs: map[sharedtypes.RPCType]*config.RelayMinerSupplierServiceConfig{
+									sharedtypes.RPCType_JSON_RPC: {
 										BackendUrl: &url.URL{Scheme: "http", Host: "json_rpc.servicer:8545"},
 										Headers: map[string]string{
 											"X-Type": "json-rpc",
 										},
 									},
-									types.RPCType_REST: {
+									sharedtypes.RPCType_REST: {
 										BackendUrl: &url.URL{Scheme: "http", Host: "rest.servicer:8545"},
 										Headers: map[string]string{
 											"X-Type": "rest",
@@ -762,7 +763,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			normalizedConfig := yaml.NormalizeYAMLIndentation(test.inputConfigYAML)
-			config, err := config.ParseRelayMinerConfigs([]byte(normalizedConfig))
+			config, err := config.ParseRelayMinerConfigs(polyzero.NewLogger(), []byte(normalizedConfig))
 
 			// Invalid configuration
 			if test.expectedErr != nil {
