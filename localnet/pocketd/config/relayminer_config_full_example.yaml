@@ -107,7 +107,7 @@ suppliers:
         backend_url: http://xrplevm-node:1317
         authentication:
           username: xrpluser
-          password: xrplpcmass
+          password: xrplpass
         forward_pocket_headers: true
 
       # CometBFT RPC endpoints (for consensus layer queries)

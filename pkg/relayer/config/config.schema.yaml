@@ -2,7 +2,7 @@
 # See: https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml
 
 # To validate the config file, the following comment must be placed at the top of the Relay Miner YAML config file:
-# yaml-language-server: $schema=<LOCAL PATH TO OR URL OF THE SCHEMA FILE>
+# <REMOVE_THIS_TAG> yaml-language-server: $schema=<LOCAL PATH TO OR URL OF THE SCHEMA FILE>
 
 description: "Relay Miner Configuration YAML: this file is used to configure a Relay Miner for the Pocket network."
 type: object
