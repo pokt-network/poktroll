@@ -18,6 +18,7 @@ import (
 )
 
 func TestShowApplication(t *testing.T) {
+	t.Parallel()
 	net, apps := networkWithApplicationObjects(t, 2)
 
 	ctx := net.Validators[0].ClientCtx
@@ -73,6 +74,7 @@ func TestShowApplication(t *testing.T) {
 }
 
 func TestListApplication(t *testing.T) {
+	t.Parallel()
 	net, apps := networkWithApplicationObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx

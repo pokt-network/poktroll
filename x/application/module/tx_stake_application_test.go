@@ -22,6 +22,7 @@ import (
 )
 
 func TestCLI_StakeApplication(t *testing.T) {
+	t.Parallel()
 	net, _ := networkWithApplicationObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx

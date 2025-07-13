@@ -22,6 +22,7 @@ import (
 )
 
 func TestCLI_AddService(t *testing.T) {
+	t.Parallel()
 	net := network.New(t, network.DefaultConfig())
 	val := net.Validators[0]
 	ctx := val.ClientCtx

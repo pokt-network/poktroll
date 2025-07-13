@@ -23,6 +23,7 @@ import (
 )
 
 func TestCLI_StakeGateway(t *testing.T) {
+	t.Parallel()
 	// Set a timeout for the entire test to prevent hanging
 	if deadline, ok := t.Deadline(); ok {
 		ctx, cancel := context.WithDeadline(context.Background(), deadline)

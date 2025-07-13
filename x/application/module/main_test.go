@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-// TestMain ensures that tests in this package are run serially
-// to avoid race conditions with network resources (leveldb).
+// TestMain configures parallel execution with safety measures.
+// Network resources are protected by cross-process file locking.
 func TestMain(m *testing.M) {
-	// Force serial execution for all tests in this package
-	// This prevents multiple tests from trying to use network resources simultaneously
+	// Enable parallel execution within this package - the network package
+	// has its own cross-process locking to prevent leveldb race conditions
 	os.Exit(m.Run())
 }

@@ -52,6 +52,7 @@ func networkWithProofObjects(t *testing.T, n int) (*network.Network, []types.Pro
 }
 
 func TestShowProof(t *testing.T) {
+	t.Parallel()
 	net, proofs := networkWithProofObjects(t, 2)
 
 	ctx := net.Validators[0].ClientCtx
@@ -111,6 +112,7 @@ func TestShowProof(t *testing.T) {
 }
 
 func TestListProof(t *testing.T) {
+	t.Parallel()
 	net, proofs := networkWithProofObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx

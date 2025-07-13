@@ -20,6 +20,7 @@ import (
 )
 
 func TestCLI_DelegateToGateway(t *testing.T) {
+	t.Parallel()
 	net, _ := networkWithApplicationObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
