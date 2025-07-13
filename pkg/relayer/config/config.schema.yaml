@@ -2,7 +2,7 @@
 # See: https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml
 
 # To validate the config file, the following comment must be placed at the top of the Relay Miner YAML config file:
-# <REMOVE THIS TAG> yaml-language-server: $schema=<LOCAL PATH TO OR URL OF THE SCHEMA FILE>
+# yaml-language-server: $schema=<LOCAL PATH TO OR URL OF THE SCHEMA FILE>
 
 description: "Relay Miner Configuration YAML: this file is used to configure a Relay Miner for the Pocket network."
 type: object
@@ -33,7 +33,7 @@ properties:
   default_max_body_size:
     description: "Default maximum size of request or response body that the RelayMiner will accept."
     type: string
-    pattern: "^[0-9]+(B|KB|MB|GB)$"
+    pattern: "^[0-9]+(B|KB|MB|GB|TB)$"
     default: "1MB"
 
   # SMT store path (required)
@@ -101,7 +101,7 @@ properties:
         max_body_size:
           description: "Maximum size of request or response body for this supplier."
           type: string
-          pattern: "^[0-9]+(B|KB|MB|GB)$"
+          pattern: "^[0-9]+(B|KB|MB|GB|TB)$"
         x_forwarded_host_lookup:
           description: "Whether to lookup the host from X-Forwarded-Host header."
           type: boolean
@@ -141,6 +141,7 @@ properties:
           description: "Map of RPC types to service configurations for handling different RPC types."
           type: object
           additionalProperties: false
+          # TODO_FUTURE: Add validation for custom RPC types beyond the standard four
           patternProperties:
             "^(json_rpc|rest|comet_bft|websocket)$":
               type: object
