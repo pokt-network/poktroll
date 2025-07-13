@@ -48,7 +48,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 		// Mark the supplier as existing
 		existingSuppliers[yamlSupplierConfig.ServiceId] = true
 
-		logger.Info().Msgf("🔧 Hydrating supplier %s with config: %+v", yamlSupplierConfig.ServiceId, supplierConfig)
+		logger.Info().Msgf("Hydrating supplier %s with config: %+v", yamlSupplierConfig.ServiceId, supplierConfig)
 
 		relayMinerConfig.
 			Servers[yamlSupplierConfig.ListenUrl].

@@ -27,9 +27,8 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	supplierConfig.ServiceId = yamlSupplierConfig.ServiceId
 	logger.Debug().Msgf("✅ Successfully set supplier service ID: %s", supplierConfig.ServiceId)
 
-	// NB: Intentionally not verifying SigningKeyNames here.
-	// We'll copy the keys from the root config in `HydrateSuppliers` if this list is empty.
-	// `HydrateSuppliers` is a part of `pkg/relayer/config/suppliers_config_hydrator.go`.
+	// TODO_FUTURE: Consider validating signing key format/constraints here
+	// Currently deferred to HydrateSuppliers() for inheritance from root config
 	supplierConfig.SigningKeyNames = yamlSupplierConfig.SigningKeyNames
 	if len(supplierConfig.SigningKeyNames) > 0 {
 		logger.Debug().Msgf("✅ Successfully set signing key names: %v", supplierConfig.SigningKeyNames)
@@ -57,9 +56,8 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 		logger.Debug().Msgf("🔧 Found %d RPC-type specific service configurations to hydrate", len(yamlSupplierConfig.RPCTypeServiceConfigs))
 	}
 
-	// Loop through the RPC-type service-specific service configs and hydrate them.
-	// For example, if the supplier is configured to handle REST and JSON-RPC,
-	// there will be two RPC-type service-specific service configs.
+	// Hydrate RPC-type specific configurations
+	// Each RPC type (REST, JSON-RPC, etc.) can have its own backend and sett
 	for rpcType, serviceConfig := range yamlSupplierConfig.RPCTypeServiceConfigs {
 		logger.Debug().Msgf("🔧 Hydrating RPC-type specific config for: %s", rpcType)
 
@@ -85,10 +83,8 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	return nil
 }
 
-// hydrateServiceConfig hydrates a single service config by parsing the
-// YAMLRelayMinerSupplierServiceConfig and populating the RelayMinerSupplierServiceConfig
-// structure. It returns the populated RelayMinerSupplierServiceConfig and an error
-// if the service config is invalid.
+// hydrateServiceConfig converts YAML service config to internal structure
+// Validates backend URL, authentication, and headers configuration
 func (supplierConfig *RelayMinerSupplierConfig) hydrateServiceConfig(
 	logger polylog.Logger,
 	supplierServiceConfigYAML YAMLRelayMinerSupplierServiceConfig,

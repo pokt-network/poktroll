@@ -371,18 +371,20 @@ This max payload size applies to the request and response size that the `RelayMi
 
 Supports common unit suffixes like `B`, `KB`, `MB`, `GB`, or `TB`
 
-Defaults to: 20MB
+Defaults to: `20MB`
 
-:::info 
+:::info default service configuration
 
-`service_config` is the default configuration and will be used unless both of the following are true:
+`service_config` is the default configuration and **WILL BE USED UNLESS** both of the following are true:
 
-- the `rpc_type_service_configs` section is present for the supplier
-- the request from the gateway contains a `Rpc-Type` header specifying the request should be handled by a specific RPC-type service-specific config
+1. The `rpc_type_service_configs` section is present for the supplier
+2. The request from an application or gateway contains a `Rpc-Type` header specifying the request should be handled by a specific RPC-type service-specific config
 
-:::warning
+:::
 
-The `service_config` field will be renamed to `default_service_config` in the future to make this reponsibility more explicit. It is kept named `service_config` in the current release for backwards compatibility.
+:::warning TODO: Will be renamed in the future
+
+The `service_config` field will be renamed to `default_service_config` in the future to make this responsibility more explicit. It is kept named `service_config` in the current release for backwards compatibility.
 
 :::
 
@@ -440,21 +442,22 @@ These headers help identify the Supplier, the Service, and the Application withi
 
 _`Optional`_
 
-The `rpc_type_service_configs` section allows you to configure different backend services
-for different RPC types within the same supplier service. This is particularly useful
-for services that expose multiple protocol endpoints or API types.
+The `rpc_type_service_configs` section enables RPC-type-specific backend configurations.
+For example, a service may expose multiple protocol endpoints or API types (e.g., CometBFT, JSON-RPC, REST, etc.)
 
 When a relay request is received, the `RelayMiner` will check the `Rpc-Type` header
 to determine which service configuration to use. If no matching RPC type is found
 in `rpc_type_service_configs`, the default `service_config` will be used.
 
 Supported RPC types include:
+
 - `json_rpc`: For JSON-RPC endpoints (e.g., Ethereum-compatible APIs)
 - `rest`: For REST API endpoints (e.g., Cosmos SDK REST APIs)
 - `comet_bft`: For CometBFT RPC endpoints (consensus layer queries)
 - `websocket`: For WebSocket endpoints (real-time event streaming)
 
 Each RPC type configuration supports all the same options as the main `service_config`:
+
 - `backend_url` (required)
 - `authentication` (optional)
 - `headers` (optional)
@@ -466,10 +469,12 @@ Example configuration:
 suppliers:
   - service_id: xrplevm-testnet
     listen_url: http://0.0.0.0:8545
+
+    # Default configuration (fallback)
     service_config:
-      # Default configuration (fallback)
       backend_url: http://xrplevm-node:8545
       forward_pocket_headers: true
+
     rpc_type_service_configs:
       # JSON-RPC for Ethereum-compatible API
       json_rpc:
@@ -477,6 +482,7 @@ suppliers:
         headers:
           Authorization: "Bearer api-key-123"
         forward_pocket_headers: true
+
       # REST API for Cosmos SDK endpoints
       rest:
         backend_url: http://xrplevm-node:1317
@@ -484,10 +490,12 @@ suppliers:
           username: restuser
           password: restpass
         forward_pocket_headers: true
+
       # CometBFT for consensus queries
       comet_bft:
         backend_url: http://xrplevm-node:26657
         forward_pocket_headers: true
+
       # WebSocket for real-time events
       websocket:
         backend_url: ws://xrplevm-node:8546
