@@ -28,46 +28,45 @@ const (
 )
 
 const (
-	// BlockTimeAdjustmentFactor is a coeffient used to add a safety margin to the estimated block
-	//time for use in calculating IBC parameters which are a function of the estimated block time:
+	// BlockTimeAdjustmentFactor adds a safety margin to estimated block time
+	// for calculating IBC parameters:
 	// - ibc.connection.params.max_expected_time_per_block
 	// - ibc.channel.params.upgrade_timeout.timestamp
 	BlockTimeAdjustmentFactor = 1.5
 
-	// Only set during an IBC upgrade.
+	// IBC channel upgrade timeout revision settings
 	IbcChannelParamUpgradeTimeoutRevisionNumber = uint64(0)
 	IbcChannelParamUpgradeTimeoutRevisionHeight = uint64(0)
 
-	// Enable IBC transfers (send & receive).
+	// IBC transfer settings
 	IbcTransferParamSendEnabled    = true
 	IbcTransferParamReceiveEnabled = true
 
-	// Enable both ICA host and controller support.
-	// See:
-	// - https://ibc.cosmos.network/v8/apps/interchain-accounts/parameters/
-	// - https://ibc.cosmos.network/v8/apps/interchain-accounts/integration/
+	// ICA (Interchain Accounts) settings
+	// Ref: https://ibc.cosmos.network/v8/apps/interchain-accounts/parameters/
 	IbcIcaHostParamHostEnabled             = true
 	IbcIcaControllerParamControllerEnabled = true
 
-	// durationSecondsFormat is the format string used to parse durations in seconds.
+	// Format string for parsing durations in seconds
 	durationSecondsFormat = "%vs"
 )
 
 var (
-	// See: https://ibc.cosmos.network/params/params.md/
+	// Allowed IBC client types
+	// Ref: https://ibc.cosmos.network/params/params.md/
 	IbcClientParamAllowedClients = []string{"07-tendermint"}
 
-	// Allow all messages to be executed via interchain accounts.
+	// Allow all message types for ICA execution
 	IbcIcaHostParamAllowMessages = []string{"*"}
 )
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
-// This upgrade adds:
+// Changes:
 // - Updates to the Morse account recovery allowlist
-// - Set all IBC related parameters to reasonable starting values (required for IBC support)
+// - Sets all IBC parameters to enable IBC support
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
-	// No migrations in this upgrade.
+	// No store migrations in this upgrade
 	StoreUpgrades: storetypes.StoreUpgrades{},
 
 	// Upgrade Handler
@@ -96,22 +95,17 @@ var Upgrade_NEXT = Upgrade{
 			ibcConnectionParams := connectiontypes.Params{
 				MaxExpectedTimePerBlock: uint64(ibcConnectionParamMaxExpectedTimePerBlock.Nanoseconds()),
 			}
+			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
 			fmt.Printf("IBC connection params: %+v\n", ibcConnectionParams)
 
 			// IBC channel params
 			upgradeTimeoutSeconds := estimatedBlockDuration.Seconds() * 4 * BlockTimeAdjustmentFactor
 
-			// ibcChannelParamUpgradeTimeoutTimestamp defines the maximum allowed duration (in nanoseconds)
-			// for completing an IBC channel upgrade handshake. The handshake involves multiple
-			// steps (INIT → TRY → ACK → CONFIRM), each of which occurs in separate blocks on
-			// each chain. As such, this timeout should account for at least 4 relayed IBC messages,
-			// which means it must exceed:
-			//
-			//     timeout ≥ 4 × slower_chain_block_time × adjustment_factor
-			//
-			// For localnets, a value between 60–300 seconds (e.g. 300_000_000_000 ns) is typically
-			// sufficient to accommodate relayer delays. A zero value is considered invalid unless
-			// a non-zero height-based timeout is also set.
+			// Channel upgrade timeout calculation:
+			// - Handshake steps: INIT → TRY → ACK → CONFIRM (4 blocks minimum)
+			// - Formula: timeout ≥ 4 × slower_chain_block_time × adjustment_factor
+			// - Localnet recommendation: 60-300 seconds
+			// - Zero value invalid unless height-based timeout is set
 			ibcChannelParamUpgradeTimeoutTimestamp, err := time.ParseDuration(
 				fmt.Sprintf(durationSecondsFormat, upgradeTimeoutSeconds),
 			)
@@ -119,6 +113,7 @@ var Upgrade_NEXT = Upgrade{
 				return err
 			}
 
+			// Ref: https://ibc.cosmos.network/params/params.md/
 			ibcChannelParams := channeltypes.Params{
 				UpgradeTimeout: channeltypes.Timeout{
 					Height: ibcclienttypes.Height{
@@ -128,21 +123,23 @@ var Upgrade_NEXT = Upgrade{
 					Timestamp: uint64(ibcChannelParamUpgradeTimeoutTimestamp.Nanoseconds()),
 				},
 			}
+			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
 			fmt.Printf("IBC channel params: %+v\n", ibcChannelParams)
 
 			// IBC client params
-			// See: https://ibc.cosmos.network/params/params.md/
 			ibcClientParams := ibcclienttypes.Params{
 				AllowedClients: IbcClientParamAllowedClients,
 			}
+			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
 			fmt.Printf("IBC client params: %+v\n", ibcClientParams)
 
 			// IBC transfer params
-			// See: https://ibc.cosmos.network/v8/apps/transfer/params/
+			// Ref: https://ibc.cosmos.network/v8/apps/transfer/params/
 			ibcTransferParams := ibctransfertypes.Params{
 				SendEnabled:    IbcTransferParamSendEnabled,
 				ReceiveEnabled: IbcTransferParamReceiveEnabled,
 			}
+			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
 			fmt.Printf("IBC transfer params: %+v\n", ibcTransferParams)
 
 			// IBC interchain accounts host params
@@ -150,19 +147,17 @@ var Upgrade_NEXT = Upgrade{
 				HostEnabled:   IbcIcaHostParamHostEnabled,
 				AllowMessages: IbcIcaHostParamAllowMessages,
 			}
+			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
 			fmt.Printf("IBC interchain accounts host params: %+v\n", ibcIcaHostParams)
 
 			// IBC interchain accounts controller params
-			// See: https://ibc.cosmos.network/v8/apps/interchain-accounts/parameters/
 			ibcIcaControllerParams := icacontrollertypes.Params{
 				ControllerEnabled: IbcIcaControllerParamControllerEnabled,
 			}
+			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
 			fmt.Printf("IBC interchain accounts controller params: %+v\n", ibcIcaControllerParams)
 
-			// Set IBC core params
-			// - connection
-			// - channel
-			// - client
+			// Set IBC core params (connection, channel, client)
 			keepers.IBCKeeper.ConnectionKeeper.SetParams(sdkCtx, ibcConnectionParams)
 			keepers.IBCKeeper.ChannelKeeper.SetParams(sdkCtx, ibcChannelParams)
 			keepers.IBCKeeper.ClientKeeper.SetParams(sdkCtx, ibcClientParams)
