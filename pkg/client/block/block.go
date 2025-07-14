@@ -55,7 +55,7 @@ type CometNewBlockHeader struct {
 
 // Height returns the block's height.
 func (blockHeader *CometNewBlockHeader) Height() int64 {
-	return blockHeader.EventDataNewBlockHeader.Header.Height
+	return blockHeader.Header.Height
 }
 
 // Hash returns the binary representation of the block header's hash as a byte slice.
@@ -65,7 +65,7 @@ func (blockHeader *CometNewBlockHeader) Hash() []byte {
 	// previous block's hash, not the hash of the block being fetched.
 	// see: https://docs.cometbft.com/v0.37/spec/core/data_structures#blockid
 	// see: https://docs.cometbft.com/v0.37/spec/core/data_structures#header -> LastBlockID
-	return blockHeader.EventDataNewBlockHeader.Header.Hash()
+	return blockHeader.Header.Hash()
 }
 
 // UnmarshalNewBlockEvent deserializes a CometBFT ResultEvent into a CometNewBlockEvent.

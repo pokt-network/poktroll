@@ -5,18 +5,18 @@
 You can use the following as input for an LLM of your choice to autogenerate a summary (ignoring any additional files needed):
 
 ```bash
-git --no-pager diff main  -- ':!*.pb.go' ':!*.pulsar.go' ':!*.json' ':!*.yaml' ':!*.yml' ':!*.gif' ':!*.lock' | diff2html -s side --format json -i stdin -o stdout | pbcopy
+git --no-pager diff main  -- ':!*.pb.go' ':!*.json' ':!*.yaml' ':!*.yml' ':!*.gif' ':!*.lock' | diff2html -s side --format json -i stdin -o stdout | pbcopy
 ```
 
 ### Primary Changes:
 
 - < Change 1 >
-- < Change 2 > 
+- < Change 2 >
 
 ### Secondary Changes:
 
 - < Change 1 >
-- < Change 2 > 
+- < Change 2 >
 
 ## Issue
 

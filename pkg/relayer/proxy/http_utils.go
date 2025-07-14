@@ -2,11 +2,13 @@ package proxy
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"sync"
 
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"google.golang.org/protobuf/proto"
 
@@ -14,10 +16,6 @@ import (
 )
 
 const (
-	// TODO_IMPROVE: Make this a RelayMiner config parameter
-	// TODO_IMPROVE: Make this configurable on a per-service basis
-	defaultMaxBodySize = 20 * 1024 * 1024 // 20MB max request/response body size
-
 	// Buffer pool allocation size - 8MB should handle most realistic body sizes efficiently
 	bufferPoolSize = 8 * 1024 * 1024 // 8MB
 )
@@ -31,9 +29,9 @@ var bodyBufPool = sync.Pool{
 	},
 }
 
-// CloseRequestBody safely closes an io.ReadCloser with proper error handling and logging.
+// CloseBody safely closes an io.ReadCloser with proper error handling and logging.
 // It gracefully handles nil readers and logs any errors encountered during closure.
-func CloseRequestBody(logger polylog.Logger, body io.ReadCloser) {
+func CloseBody(logger polylog.Logger, body io.ReadCloser) {
 	if body == nil {
 		logger.Warn().Msg("⚠️ SHOULD NEVER HAPPEN ⚠️ Attempting to close nil request body")
 		return
@@ -54,12 +52,18 @@ func CloseRequestBody(logger polylog.Logger, body io.ReadCloser) {
 //   - logger: Logger for error reporting
 //
 // Returns the complete body as a byte slice or an error if reading fails or size limit is exceeded.
-func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]byte, error) {
-	defer CloseRequestBody(logger, body)
+func SafeReadBody(
+	logger polylog.Logger,
+	body io.ReadCloser,
+	maxSize int64,
+) (bodyBytes []byte, cleanupFunc func(), err error) {
+	defer CloseBody(logger, body)
 
 	if maxSize <= 0 {
-		logger.Warn().Msgf("SHOULD NOT HAPPEN: Max body size is less than or equal to 0, using default max body size of %d", defaultMaxBodySize)
-		maxSize = defaultMaxBodySize
+		return nil, nil, config.ErrRelayMinerConfigInvalidMaxBodySize.Wrapf(
+			"invalid max body size %q",
+			maxSize,
+		)
 	}
 
 	// Create a limited reader that will read at most maxSize+1 bytes
@@ -68,22 +72,77 @@ func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]b
 
 	// Get a reusable *bytes.Buffer from the pool
 	buf := bodyBufPool.Get().(*bytes.Buffer)
-	buf.Reset() // Always reset before use
-	defer bodyBufPool.Put(buf)
+
+	// Create a cleanup function that resets and returns the buffer to the pool.
+	// This closure pattern is necessary because:
+	// - The buffer contents (buf.Bytes()) are returned to the caller
+	// - The buffer itself must be returned to the pool only after the caller has finished using the data
+	// - The caller is responsible for calling this cleanup function when the buffer data is no longer needed
+	// - This MUST be deferred to ensure any (un)marshalling is complete before releasing the buffer
+	// - The cleanup function MUST be called only once to avoid double cleanup
+	bufferCleanedUp := false
+	resetReadBodyPoolBytes := func() {
+		// Avoid double cleanup
+		if bufferCleanedUp {
+			return
+		}
+		buf.Reset() // Always reset before use
+		bodyBufPool.Put(buf)
+		// Mark as cleaned up to prevent double cleanup
+		bufferCleanedUp = true
+	}
 
 	bytesRead, err := buf.ReadFrom(limitedReader)
 	if err != nil {
-		return nil, fmt.Errorf("❌ failed to read request body: %w", err)
+		resetReadBodyPoolBytes()
+		return nil, nil, ErrRelayerProxyInternalError.Wrapf(
+			"failed to read request body: %s", err.Error(),
+		)
 	}
 
 	// Check if the body exceeded our size limit
 	if bytesRead > maxSize {
-		err := fmt.Errorf("❌ request body size exceeds maximum allowed body: %d bytes read > %d bytes limit", bytesRead, maxSize)
-		logger.Error().Err(err).Msg("❌ Request/response body too large")
-		return nil, err
+		resetReadBodyPoolBytes()
+		return nil, nil, ErrRelayerProxyMaxBodyExceeded.Wrapf(
+			"body size exceeds maximum allowed body: %d bytes read > %d bytes limit",
+			bytesRead,
+			maxSize,
+		)
 	}
 
-	return buf.Bytes(), nil
+	return buf.Bytes(), resetReadBodyPoolBytes, nil
+}
+
+// SafeRequestReadBody reads the HTTP request body up to a specified size limit, enforcing safety and logging errors.
+// Logs and wraps errors for size violations or reading issues, using the provided logger. Returns body as []byte or error.
+func SafeRequestReadBody(
+	logger polylog.Logger,
+	request *http.Request,
+	maxSize int64,
+) (bodyBytes []byte, cleanupFunc func(), err error) {
+	body, resetReadBodyPoolBytes, err := SafeReadBody(logger, request.Body, maxSize)
+
+	if errors.Is(err, ErrRelayerProxyMaxBodyExceeded) {
+		return nil, nil, ErrRelayerProxyRequestLimitExceeded.Wrap(err.Error())
+	}
+
+	return body, resetReadBodyPoolBytes, err
+}
+
+// SafeResponseReadBody reads the HTTP response body up to a specified size limit, enforcing safety and logging errors.
+// Logs and wraps errors for size violations or reading issues, using the provided logger. Returns body as []byte or error.
+func SafeResponseReadBody(
+	logger polylog.Logger,
+	response *http.Response,
+	maxSize int64,
+) (bodyBytes []byte, cleanupFunc func(), err error) {
+	body, resetReadBodyPoolBytes, err := SafeReadBody(logger, response.Body, maxSize)
+
+	if errors.Is(err, ErrRelayerProxyMaxBodyExceeded) {
+		return nil, resetReadBodyPoolBytes, ErrRelayerProxyResponseLimitExceeded.Wrap(err.Error())
+	}
+
+	return body, resetReadBodyPoolBytes, err
 }
 
 // TODO_TECHDEBT: Move this function back to the Shannon SDK. It was moved:
@@ -110,12 +169,25 @@ func SafeReadBody(logger polylog.Logger, body io.ReadCloser, maxSize int64) ([]b
 func SerializeHTTPResponse(
 	logger polylog.Logger,
 	response *http.Response,
+	maxBodySize int64,
 ) (poktHTTPResponse *sdktypes.POKTHTTPResponse, poktHTTPResponseBz []byte, err error) {
 	// Read the response body with size limits
-	responseBodyBz, err := SafeReadBody(logger, response.Body, defaultMaxBodySize)
+	responseBodyBz, resetReadBodyPoolBytes, err := SafeResponseReadBody(logger, response, maxBodySize)
+	// Handle error case if SafeResponseReadBody fails:
+	// - The buffer pool cleanup has already been performed internally
+	// - We can return early without calling resetReadBodyPoolBytes
+	// - resetReadBodyPoolBytes would be nil anyway in this case
 	if err != nil {
-		return nil, nil, fmt.Errorf("❌ failed to read response body: %w", err)
+		if resetReadBodyPoolBytes != nil {
+			// Ensure buffer is returned to pool on error
+			resetReadBodyPoolBytes()
+		}
+		return nil, nil, err
 	}
+	// Ensure buffer is returned to pool when function exits.
+	// - responseBodyBz will no longer be needed when poktHTTPResponseBz is marshaled below.
+	// - This MUST be deferred to ensure any (un)marshalling is complete before releasing the buffer
+	defer resetReadBodyPoolBytes()
 
 	// Convert HTTP headers to the POKT header format
 	// Note: We use Values() instead of Get() to preserve all header values,

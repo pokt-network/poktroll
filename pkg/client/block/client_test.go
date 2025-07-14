@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	cometabci "github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
 	"github.com/stretchr/testify/require"
@@ -53,6 +54,14 @@ func TestBlockClient(t *testing.T) {
 	cometHTTPClientMock.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(make(chan coretypes.ResultEvent), nil)
+	cometHTTPClientMock.EXPECT().
+		ABCIInfo(gomock.Any()).
+		Return(&coretypes.ResultABCIInfo{
+			Response: cometabci.ResponseInfo{
+				Version: "v0.1.25",
+			},
+		}, nil).
+		AnyTimes()
 
 	deps := depinject.Supply(cometHTTPClientMock, logger)
 
