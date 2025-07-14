@@ -173,9 +173,7 @@ func (k msgServer) SubmitProof(
 		)
 	}
 
-	return &types.MsgSubmitProofResponse{
-		Proof: proof,
-	}, nil
+	return &types.MsgSubmitProofResponse{}, nil
 }
 
 // deductProofSubmissionFee deducts the proof submission fee from the supplier operator's account balance.

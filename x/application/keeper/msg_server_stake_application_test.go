@@ -38,7 +38,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Stake the application
-	stakeAppRes, err := srv.StakeApplication(ctx, stakeMsg)
+	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Assert that the response contains the staked application.
@@ -49,7 +49,6 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		DelegateeGatewayAddresses: make([]string, 0),
 	}
-	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
 
 	// Assert that the EventApplicationStaked event is emitted.
 	sharedParams := sharedtypes.DefaultParams()
@@ -57,7 +56,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&apptypes.EventApplicationStaked{
-			Application:      stakeAppRes.GetApplication(),
+			Application:      expectedApp,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -89,19 +88,10 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Update the staked application
-	stakeAppRes, err = srv.StakeApplication(ctx, updateStakeMsg)
+	_, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.NoError(t, err)
 
-	// Assert that the response contains the staked application.
-	expectedApp = &apptypes.Application{
-		Address:                   updateStakeMsg.GetAddress(),
-		Stake:                     updateStakeMsg.GetStake(),
-		ServiceConfigs:            updateStakeMsg.GetServices(),
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
-		DelegateeGatewayAddresses: make([]string, 0),
-	}
-	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
-
+	// Assert that the staked application is updated.
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, &upStake, foundApp.Stake)

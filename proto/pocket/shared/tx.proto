@@ -56,6 +56,7 @@ message MsgUpdateParam {
 // MsgUpdateParamResponse defines the response structure for executing a
 // MsgUpdateParam message after a single param update.
 message MsgUpdateParamResponse {
-  Params params = 1;
+  // Params params = 1;
+  reserved 1;
 }
 

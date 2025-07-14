@@ -61,7 +61,8 @@ message MsgStakeApplication {
 }
 
 message MsgStakeApplicationResponse {
-  pocket.application.Application application = 1;
+  // pocket.application.Application application = 1;
+  reserved 1;
 }
 
 message MsgUnstakeApplication {
@@ -70,7 +71,8 @@ message MsgUnstakeApplication {
 }
 
 message MsgUnstakeApplicationResponse {
-  pocket.application.Application application = 1;
+  // pocket.application.Application application = 1;
+  reserved 1;
 }
 
 message MsgDelegateToGateway {
@@ -80,7 +82,8 @@ message MsgDelegateToGateway {
 }
 
 message MsgDelegateToGatewayResponse {
-  pocket.application.Application application = 1;
+  // pocket.application.Application application = 1;
+  reserved 1;
 }
 
 message MsgUndelegateFromGateway {
@@ -90,7 +93,8 @@ message MsgUndelegateFromGateway {
 }
 
 message MsgUndelegateFromGatewayResponse {
-  pocket.application.Application application = 1;
+  // pocket.application.Application application = 1;
+  reserved 1;
 }
 
 message MsgTransferApplication {
@@ -100,7 +104,8 @@ message MsgTransferApplication {
 }
 
 message MsgTransferApplicationResponse {
-  pocket.application.Application application = 1;
+  // pocket.application.Application application = 1;
+  reserved 1;
 }
 
 message MsgUpdateParam {
@@ -117,6 +122,7 @@ message MsgUpdateParam {
 }
 
 message MsgUpdateParamResponse {
-  Params params = 1;
+  // Params params = 1;
+  reserved 1;
 }
 

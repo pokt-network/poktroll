@@ -220,16 +220,8 @@ func (k msgServer) ClaimMorseSupplier(
 		// ServiceConfigHistory: (intentionally omitted, no services were staked),
 	}
 
-	// Construct the base response. It will be modified, as necessary, prior to returning.
-	claimMorseSupplierResponse := &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseNodeAddress:     msg.GetMorseNodeAddress(),
-		MorseOutputAddress:   morseNodeClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       claimedUnstakedBalance,
-		ClaimedSupplierStake: claimedSupplierStake,
-		SessionEndHeight:     sessionEndHeight,
-		Supplier:             unbondedSupplier,
-	}
+	// Construct the base response.
+	claimMorseSupplierResponse := &migrationtypes.MsgClaimMorseSupplierResponse{}
 
 	// Construct the base supplier claim event. It will be modified, as necessary, prior to emission.
 	// ALWAYS emit an event which signals that the morse supplier has been claimed.
@@ -310,11 +302,6 @@ func (k msgServer) ClaimMorseSupplier(
 	if err != nil {
 		return nil, err
 	}
-
-	// Update the supplier claim response.
-	claimMorseSupplierResponse.ClaimedBalance = morseNodeClaimableAccount.GetUnstakedBalance()
-	claimMorseSupplierResponse.ClaimedSupplierStake = morseNodeClaimableAccount.GetSupplierStake()
-	claimMorseSupplierResponse.Supplier = supplier
 
 	// Update the supplier claim event.
 	morseSupplierClaimedEvent.ClaimedBalance = morseNodeClaimableAccount.GetUnstakedBalance()

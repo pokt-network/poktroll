@@ -114,9 +114,13 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	}
 
 	// Undelegate the application from the gateway
-	undelegateRes, err := srv.UndelegateFromGateway(ctx, undelegateMsg)
+	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.NoError(t, err)
-	require.Equal(t, undelegateRes.GetApplication(), expectedApp)
+
+	// Query the updated application from the keeper
+	updatedApp, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.Equal(t, expectedApp, &updatedApp)
 
 	events = sdkCtx.EventManager().Events()
 	redelgationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)

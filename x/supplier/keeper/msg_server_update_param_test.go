@@ -30,12 +30,14 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 		Name:      suppliertypes.ParamMinStake,
 		AsType:    &suppliertypes.MsgUpdateParam_AsCoin{AsCoin: &expectedMinStake},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.MinStake, res.Params.MinStake)
-	require.Equal(t, expectedMinStake.Amount, res.Params.MinStake.Amount)
+	// Query the updated params from the keeper
+	updatedParams := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.MinStake, updatedParams.MinStake)
+	require.Equal(t, expectedMinStake.Amount, updatedParams.MinStake.Amount)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(suppliertypes.KeyMinStake))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(suppliertypes.KeyMinStake))
 }

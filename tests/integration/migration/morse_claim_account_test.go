@@ -39,11 +39,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
 	sharedParams := s.GetSharedParams(s.T())
 	currentHeight := s.SdkCtx().BlockHeight()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
-	expectedClaimAccountRes := &migrationtypes.MsgClaimMorseAccountResponse{
-		MorseSrcAddress:  morseSrcAddr,
-		ClaimedBalance:   expectedBalance,
-		SessionEndHeight: expectedSessionEndHeight,
-	}
+	expectedClaimAccountRes := &migrationtypes.MsgClaimMorseAccountResponse{}
 	require.Equal(s.T(), expectedClaimAccountRes, claimAccountRes)
 
 	// Assert that the MorseClaimableAccount was updated on-chain.
