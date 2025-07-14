@@ -77,6 +77,8 @@ var Upgrade_NEXT = Upgrade{
 	) upgradetypes.UpgradeHandler {
 		setIBCParams := func(ctx context.Context) (err error) {
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+			logger := sdkCtx.Logger().With("upgrade_plan_name", Upgrade_NEXT_PlanName)
+			logger.Info("Starting IBC parameter configuration")
 
 			estimatedBlockDuration, isFound := pocket.EstimatedBlockDurationByChainId[sdkCtx.ChainID()]
 			if !isFound {
@@ -95,8 +97,7 @@ var Upgrade_NEXT = Upgrade{
 			ibcConnectionParams := connectiontypes.Params{
 				MaxExpectedTimePerBlock: uint64(ibcConnectionParamMaxExpectedTimePerBlock.Nanoseconds()),
 			}
-			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
-			fmt.Printf("IBC connection params: %+v\n", ibcConnectionParams)
+			logger.Info("Setting IBC connection params", "params", ibcConnectionParams)
 
 			// IBC channel params
 			upgradeTimeoutSeconds := estimatedBlockDuration.Seconds() * 4 * BlockTimeAdjustmentFactor
@@ -123,15 +124,13 @@ var Upgrade_NEXT = Upgrade{
 					Timestamp: uint64(ibcChannelParamUpgradeTimeoutTimestamp.Nanoseconds()),
 				},
 			}
-			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
-			fmt.Printf("IBC channel params: %+v\n", ibcChannelParams)
+			logger.Info("Setting IBC channel params", "params", ibcChannelParams)
 
 			// IBC client params
 			ibcClientParams := ibcclienttypes.Params{
 				AllowedClients: IbcClientParamAllowedClients,
 			}
-			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
-			fmt.Printf("IBC client params: %+v\n", ibcClientParams)
+			logger.Info("Setting IBC client params", "params", ibcClientParams)
 
 			// IBC transfer params
 			// Ref: https://ibc.cosmos.network/v8/apps/transfer/params/
@@ -139,23 +138,20 @@ var Upgrade_NEXT = Upgrade{
 				SendEnabled:    IbcTransferParamSendEnabled,
 				ReceiveEnabled: IbcTransferParamReceiveEnabled,
 			}
-			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
-			fmt.Printf("IBC transfer params: %+v\n", ibcTransferParams)
+			logger.Info("Setting IBC transfer params", "params", ibcTransferParams)
 
 			// IBC interchain accounts host params
 			ibcIcaHostParams := icahosttypes.Params{
 				HostEnabled:   IbcIcaHostParamHostEnabled,
 				AllowMessages: IbcIcaHostParamAllowMessages,
 			}
-			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
-			fmt.Printf("IBC interchain accounts host params: %+v\n", ibcIcaHostParams)
+			logger.Info("Setting IBC interchain accounts host params", "params", ibcIcaHostParams)
 
 			// IBC interchain accounts controller params
 			ibcIcaControllerParams := icacontrollertypes.Params{
 				ControllerEnabled: IbcIcaControllerParamControllerEnabled,
 			}
-			// TODO_IN_THIS_PR: Replace fmt.Printf with proper logging
-			fmt.Printf("IBC interchain accounts controller params: %+v\n", ibcIcaControllerParams)
+			logger.Info("Setting IBC interchain accounts controller params", "params", ibcIcaControllerParams)
 
 			// Set IBC core params (connection, channel, client)
 			keepers.IBCKeeper.ConnectionKeeper.SetParams(sdkCtx, ibcConnectionParams)
@@ -193,15 +189,21 @@ var Upgrade_NEXT = Upgrade{
 
 			// Call InitGenesis to properly initialize the transfer module
 			keepers.TransferKeeper.InitGenesis(sdkCtx, transferGenesis)
+			logger.Info("Successfully completed IBC parameter configuration")
 
 			return nil
 		}
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger().With("upgrade_plan_name", Upgrade_NEXT_PlanName)
+			logger.Info("Starting upgrade handler")
+
 			if err := setIBCParams(ctx); err != nil {
+				logger.Error("Failed to set IBC parameters", "error", err)
 				return vm, err
 			}
 
+			logger.Info("Successfully completed upgrade handler")
 			return vm, nil
 		}
 	},
