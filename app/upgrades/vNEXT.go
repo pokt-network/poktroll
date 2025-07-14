@@ -174,6 +174,31 @@ var Upgrade_NEXT = Upgrade{
 			keepers.ICAHostKeeper.SetParams(sdkCtx, ibcIcaHostParams)
 			keepers.ICAControllerKeeper.SetParams(sdkCtx, ibcIcaControllerParams)
 
+			// Initialize IBC client sequence counter
+			keepers.IBCKeeper.ClientKeeper.SetNextClientSequence(sdkCtx, 0)
+
+			// Initialize IBC connection sequence counter to fix "next connection sequence is nil" error
+			keepers.IBCKeeper.ConnectionKeeper.SetNextConnectionSequence(sdkCtx, 0)
+
+			// Initialize IBC channel sequence counter to fix potential "next channel sequence is nil" error
+			keepers.IBCKeeper.ChannelKeeper.SetNextChannelSequence(sdkCtx, 0)
+
+			// Initialize the transfer module for IBC support
+			// During genesis, the transfer module's InitGenesis sets up port binding
+			// We need to replicate this during upgrade
+			transferGenesis := ibctransfertypes.GenesisState{
+				PortId:      ibctransfertypes.PortID,
+				DenomTraces: []ibctransfertypes.DenomTrace{},
+				Params: ibctransfertypes.Params{
+					SendEnabled:    IbcTransferParamSendEnabled,
+					ReceiveEnabled: IbcTransferParamReceiveEnabled,
+				},
+				TotalEscrowed: cosmostypes.NewCoins(),
+			}
+
+			// Call InitGenesis to properly initialize the transfer module
+			keepers.TransferKeeper.InitGenesis(sdkCtx, transferGenesis)
+
 			return nil
 		}
 
