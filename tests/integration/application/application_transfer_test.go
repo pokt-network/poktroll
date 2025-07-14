@@ -211,8 +211,8 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 		expectedDstBech32 := srcToDstTransferMap[expectedSrcBech32]
 
 		// Query the updated application from the keeper
-		srcApp, err := s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), expectedSrcBech32)
-		require.NoError(s.T(), err)
+		srcApp, queryErr := s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), expectedSrcBech32)
+		require.NoError(s.T(), queryErr)
 
 		// Assert application pending transfer field updated.
 		pendingTransfer := srcApp.GetPendingTransfer()
