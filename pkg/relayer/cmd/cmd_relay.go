@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
@@ -347,27 +348,33 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Endpoint URL parsed: %v", reqUrl)
 
+	// Create http client
+	backendClient := &http.Client{
+		Timeout: 600 * time.Second,
+	}
+
+	ctxWithTimeout, cancelFn := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancelFn()
+
 	// Send multiple requests sequentially as specified by the count flag
 	for i := 1; i <= flagRelayRequestCount; i++ {
-		// Create the HTTP request with the relay request body
-		httpReq := &http.Request{
-			Method: http.MethodPost,
-			URL:    reqUrl,
-			Body:   io.NopCloser(bytes.NewReader(relayReqBz)),
-		}
 
-		// Send the request HTTP request containing the signed relay request
-		httpResp, err := http.DefaultClient.Do(httpReq)
+		// Create the HTTP request with the relay request body
+		httpReq, err := http.NewRequestWithContext(
+			ctxWithTimeout,
+			http.MethodPost, // This is the method to the Relay Miner node
+			reqUrl.String(),
+			io.NopCloser(bytes.NewReader(relayReqBz)),
+		)
 		if err != nil {
-			logger.Error().Err(err).Msg("❌ Error sending relay request")
-			proxy.CloseRequestBody(logger, httpResp.Body)
+			logger.Error().Err(err).Msg("❌ Error creating relay request")
 			continue
 		}
 
-		bodyCloseErr := httpResp.Body.Close()
-		if bodyCloseErr != nil {
-			logger.Error().Err(bodyCloseErr).Msg("❌ Error closing response body")
-			proxy.CloseRequestBody(logger, httpResp.Body)
+		// Send the request HTTP request containing the signed relay request
+		httpResp, err := backendClient.Do(httpReq)
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error sending relay request")
 			continue
 		}
 
@@ -375,7 +382,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		supplierSignerAddress := signedRelayReq.Meta.SupplierOperatorAddress
 		if supplierSignerAddress == "" {
 			logger.Error().Msg("❌ Supplier operator signature is missing")
-			proxy.CloseRequestBody(logger, httpResp.Body)
+			proxy.CloseBody(logger, httpResp.Body)
 			continue
 		}
 		// Ensure the supplier operator address matches the expected address
@@ -383,7 +390,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Warn().Msg("⚠️ Supplier operator address not specified, skipping signature check")
 		} else if supplierSignerAddress != flagRelaySupplier {
 			logger.Error().Msgf("❌ Supplier operator address %s does not match the expected address %s", supplierSignerAddress, flagRelaySupplier)
-			proxy.CloseRequestBody(logger, httpResp.Body)
+			proxy.CloseBody(logger, httpResp.Body)
 			continue
 		}
 
@@ -392,18 +399,22 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		// Handle response according to type
 		if proxy.IsStreamingResponse(httpResp) {
 			streamErr := processStreamRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
-			proxy.CloseRequestBody(logger, httpResp.Body)
+			proxy.CloseBody(logger, httpResp.Body)
 			if streamErr != nil {
 				logger.Error().Err(streamErr).Msg("❌ Stream errored")
 			}
 		} else {
 			// Normal, non-streaming request
 			reqErr := processNormalRequest(ctx, httpResp, supplierSignerAddress, accountClient, logger)
-			proxy.CloseRequestBody(logger, httpResp.Body)
+			proxy.CloseBody(logger, httpResp.Body)
 			if reqErr != nil {
 				logger.Error().Err(reqErr).Msg("❌ Request errored")
 			}
 		}
+
+		// This is intentionally not a defer because the loop could introduce memory leaks,
+		// performance issues and bad connection management for high flagRelayRequestCount values
+		proxy.CloseBody(logger, httpResp.Body)
 	}
 
 	return nil

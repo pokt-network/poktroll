@@ -301,25 +301,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	// Check if the response is a stream
-	isStream := IsStreamingResponse(httpResponse)
-	// Create empty relay response
-	var relayResponse *types.RelayResponse
-	var responseSize float64
-	if isStream {
-		logger.Debug().Msg("Handling streaming request.")
-
-		// Process and assign the relay response
-		relayResponse, responseSize, err = server.HandleHttpStream(httpResponse, writer, meta, logger)
-		if err != nil {
-			return relayRequest, err
-		}
-	} else {
-		logger.Debug().Msg("Handling normal request.")
-
-	// Check if the response is a stream
 	streamThis := IsStreamingResponse(httpResponse)
 	// Create empty relay response
-	var relayResponse *types.RelayResponse
+	relayResponse := &types.RelayResponse{
+		Meta:    types.RelayResponseMetadata{SessionHeader: meta.SessionHeader},
+		Payload: nil,
+	}
 	var responseSize float64
 	if streamThis {
 		logger.Debug().Msg("Handling streaming request.")
