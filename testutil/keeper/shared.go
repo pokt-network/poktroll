@@ -17,8 +17,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/shared/keeper"
-	"github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func SharedKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
@@ -43,7 +44,7 @@ func SharedKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	err := k.SetParams(ctx, types.DefaultParams())
+	err := k.SetParams(ctx, sharedtypes.DefaultParams())
 	require.NoError(t, err)
 
 	return k, ctx
