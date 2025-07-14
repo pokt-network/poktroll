@@ -14,11 +14,13 @@ A high-performance CLI tool for analyzing LevelDB databases, specifically design
   - Pagination with customizable limits
   - Prefix filtering (hex or string)
   - Automatic key truncation for readability
+  - Sort by value size (memory-efficient top-k algorithm)
 
 - **📝 Get**: Retrieve specific key-value pairs
   - Support for hex and string keys
-  - Automatic truncation of large values
+  - Automatic truncation of large values (with --full flag to show complete content)
   - Both hex and string output modes
+  - Helpful truncation messages guide users to --full flag
 
 - **📈 Size Analysis**: Identify space consumption patterns
   - Top 20 largest entries in tabular format
@@ -107,6 +109,12 @@ List and filter keys with intelligent truncation:
 
 # Output in hex format
 ./leveldb-inspector -d /path/to/leveldb keys --hex
+
+# Sort by value size (descending) - requires --limit
+./leveldb-inspector -d /path/to/leveldb keys --sort-by-size --limit 20
+
+# Sort by size with prefix filter
+./leveldb-inspector -d /path/to/leveldb keys --sort-by-size --limit 10 --prefix "block_"
 ```
 
 ### Retrieve Specific Values
@@ -118,6 +126,12 @@ Get individual key-value pairs:
 
 # Hex key lookup
 ./leveldb-inspector -d /path/to/leveldb get "0x626c6f636b5f6576656e7473" --hex
+
+# Display full value without truncation
+./leveldb-inspector -d /path/to/leveldb get "some_key" --full
+
+# Full output in hex format
+./leveldb-inspector -d /path/to/leveldb get "some_key" --hex --full
 ```
 
 ### Analyze Size Distribution

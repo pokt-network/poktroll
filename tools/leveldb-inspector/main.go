@@ -40,6 +40,9 @@ func main() {
 	var hexOutput bool
 	var prefix string
 	var topPrefixes int
+	var sortBySize bool
+	var sortByKeySize bool
+	var fullOutput bool
 
 	rootCmd.PersistentFlags().StringVarP(&dbPath, "db", "d", "", "Path to LevelDB database (required)")
 	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "table", "Output format (table, json, csv)")
@@ -64,12 +67,22 @@ func main() {
 		Short: "List keys in the database",
 		Long:  `List all keys in the database with optional filtering and limiting.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runKeys(dbPath, output, limit, hexOutput, prefix)
+			// Validate that sort flags are not used together
+			if sortBySize && sortByKeySize {
+				return fmt.Errorf("cannot use both --sort-by-size and --sort-by-key-size together")
+			}
+			// Validate that limit is specified when using any sort flag
+			if (sortBySize || sortByKeySize) && limit == 0 {
+				return fmt.Errorf("--limit must be specified when using sorting flags")
+			}
+			return runKeys(dbPath, output, limit, hexOutput, prefix, sortBySize, sortByKeySize)
 		},
 	}
 
-	keysCmd.Flags().IntVarP(&limit, "limit", "l", 100, "Maximum number of keys to display")
+	keysCmd.Flags().IntVarP(&limit, "limit", "l", 0, "Maximum number of keys to display (default 100 if not sorting)")
 	keysCmd.Flags().StringVarP(&prefix, "prefix", "p", "", "Filter keys by prefix")
+	keysCmd.Flags().BoolVarP(&sortBySize, "sort-by-size", "s", false, "Sort keys by value size in descending order (requires --limit)")
+	keysCmd.Flags().BoolVarP(&sortByKeySize, "sort-by-key-size", "k", false, "Sort keys by key size in descending order (requires --limit)")
 
 	// Get command
 	var getCmd = &cobra.Command{
@@ -78,9 +91,11 @@ func main() {
 		Long:  `Retrieve and display the value for a specific key.`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runGet(dbPath, args[0], hexOutput)
+			return runGet(dbPath, args[0], hexOutput, fullOutput)
 		},
 	}
+
+	getCmd.Flags().BoolVarP(&fullOutput, "full", "f", false, "Display full value without truncation")
 
 	// Size command
 	var sizeCmd = &cobra.Command{
@@ -270,8 +285,8 @@ func displayStatsTable(stats *Stats, hexOutput bool, topPrefixes int) error {
 	fmt.Printf("===================\n")
 	fmt.Printf("Total Keys: %d\n", stats.TotalKeys)
 	fmt.Printf("Total Logical Size: %s (uncompressed key+value data)\n", formatBytes(stats.TotalSize))
-	fmt.Printf("Max Key Size: %d bytes\n", stats.MaxKeySize)
-	fmt.Printf("Max Value Size: %d bytes\n", stats.MaxValueSize)
+	fmt.Printf("Max Key Size: %s\n", formatBytes(int64(stats.MaxKeySize)))
+	fmt.Printf("Max Value Size: %s\n", formatBytes(int64(stats.MaxValueSize)))
 	fmt.Printf("\nNote: Actual disk usage may be smaller due to LevelDB compression.\n")
 	fmt.Printf("      Use 'du -hs <db_path>' to see actual disk space used.\n")
 
@@ -577,7 +592,7 @@ func displayStatsCSV(stats *Stats, topPrefixes int) error {
 	return nil
 }
 
-func runKeys(dbPath, output string, limit int, hexOutput bool, prefix string) error {
+func runKeys(dbPath, output string, limit int, hexOutput bool, prefix string, sortBySize bool, sortByKeySize bool) error {
 	db, err := openDB(dbPath)
 	if err != nil {
 		return err
@@ -602,15 +617,110 @@ func runKeys(dbPath, output string, limit int, hexOutput bool, prefix string) er
 	}
 	defer iter.Release()
 
+	// Apply default limit if not specified and not sorting
+	if limit == 0 && !sortBySize && !sortByKeySize {
+		limit = 100
+	}
+
+	if sortBySize || sortByKeySize {
+		// Memory-efficient top-k algorithm
+		type keyEntry struct {
+			key       []byte
+			keySize   int
+			valueSize int
+		}
+
+		// Maintain a slice of top entries
+		topEntries := make([]keyEntry, 0, limit)
+
+		for iter.Next() {
+			key := make([]byte, len(iter.Key()))
+			copy(key, iter.Key())
+			keySize := len(iter.Key())
+			valueSize := len(iter.Value())
+
+			entry := keyEntry{key: key, keySize: keySize, valueSize: valueSize}
+
+			// Determine which size to compare based on sort mode
+			var entrySize int
+			if sortByKeySize {
+				entrySize = keySize
+			} else {
+				entrySize = valueSize
+			}
+
+			if len(topEntries) < limit {
+				// Haven't filled the limit yet, just add
+				topEntries = append(topEntries, entry)
+				// Sort to maintain order
+				sort.Slice(topEntries, func(i, j int) bool {
+					if sortByKeySize {
+						return topEntries[i].keySize < topEntries[j].keySize
+					} else {
+						return topEntries[i].valueSize < topEntries[j].valueSize
+					}
+				})
+			} else {
+				// Check if this entry is larger than the smallest
+				var smallestSize int
+				if sortByKeySize {
+					smallestSize = topEntries[0].keySize
+				} else {
+					smallestSize = topEntries[0].valueSize
+				}
+
+				if entrySize > smallestSize {
+					// Replace the smallest entry
+					topEntries[0] = entry
+					// Re-sort to maintain order
+					sort.Slice(topEntries, func(i, j int) bool {
+						if sortByKeySize {
+							return topEntries[i].keySize < topEntries[j].keySize
+						} else {
+							return topEntries[i].valueSize < topEntries[j].valueSize
+						}
+					})
+				}
+			}
+		}
+
+		// Display in descending order (largest first)
+		for i := len(topEntries) - 1; i >= 0; i-- {
+			entry := topEntries[i]
+			if hexOutput {
+				fmt.Printf("Key: %s, Key Size: %s, Value Size: %s\n",
+					truncateKey(hex.EncodeToString(entry.key), 80),
+					formatBytes(int64(entry.keySize)),
+					formatBytes(int64(entry.valueSize)))
+			} else {
+				fmt.Printf("Key: %s, Key Size: %s, Value Size: %s\n",
+					truncateKey(string(entry.key), 80),
+					formatBytes(int64(entry.keySize)),
+					formatBytes(int64(entry.valueSize)))
+			}
+		}
+
+		if len(topEntries) > 0 {
+			if sortByKeySize {
+				fmt.Printf("... (showing top %d keys by key size)\n", len(topEntries))
+			} else {
+				fmt.Printf("... (showing top %d keys by value size)\n", len(topEntries))
+			}
+		}
+
+		return iter.Error()
+	}
+
+	// Original behavior when not sorting
 	count := 0
 	for iter.Next() && count < limit {
 		key := iter.Key()
 		value := iter.Value()
 
 		if hexOutput {
-			fmt.Printf("Key: %s, Value Size: %d bytes\n", truncateKey(hex.EncodeToString(key), 80), len(value))
+			fmt.Printf("Key: %s, Value Size: %s\n", truncateKey(hex.EncodeToString(key), 80), formatBytes(int64(len(value))))
 		} else {
-			fmt.Printf("Key: %s, Value Size: %d bytes\n", truncateKey(string(key), 80), len(value))
+			fmt.Printf("Key: %s, Value Size: %s\n", truncateKey(string(key), 80), formatBytes(int64(len(value))))
 		}
 		count++
 	}
@@ -622,7 +732,7 @@ func runKeys(dbPath, output string, limit int, hexOutput bool, prefix string) er
 	return iter.Error()
 }
 
-func runGet(dbPath, key string, hexOutput bool) error {
+func runGet(dbPath, key string, hexOutput bool, fullOutput bool) error {
 	db, err := openDB(dbPath)
 	if err != nil {
 		return err
@@ -645,11 +755,31 @@ func runGet(dbPath, key string, hexOutput bool) error {
 	}
 
 	if hexOutput {
-		fmt.Printf("Key: %s\n", truncateKey(hex.EncodeToString(keyBytes), 100))
-		fmt.Printf("Value (%d bytes): %s\n", len(value), truncateKey(hex.EncodeToString(value), 200))
+		keyOutput, keyTruncated := truncateWithMessage(hex.EncodeToString(keyBytes), 100, fullOutput, "key")
+		valueOutput, valueTruncated := truncateWithMessage(hex.EncodeToString(value), 200, fullOutput, "value")
+
+		fmt.Printf("Key: %s\n", keyOutput)
+		if keyTruncated {
+			fmt.Printf("     (key truncated, use --full to see complete key)\n")
+		}
+
+		fmt.Printf("Value (%s): %s\n", formatBytes(int64(len(value))), valueOutput)
+		if valueTruncated {
+			fmt.Printf("      (value truncated, use --full to see complete value)\n")
+		}
 	} else {
-		fmt.Printf("Key: %s\n", truncateKey(string(keyBytes), 100))
-		fmt.Printf("Value (%d bytes): %s\n", len(value), truncateKey(string(value), 200))
+		keyOutput, keyTruncated := truncateWithMessage(string(keyBytes), 100, fullOutput, "key")
+		valueOutput, valueTruncated := truncateWithMessage(string(value), 200, fullOutput, "value")
+
+		fmt.Printf("Key: %s\n", keyOutput)
+		if keyTruncated {
+			fmt.Printf("     (key truncated, use --full to see complete key)\n")
+		}
+
+		fmt.Printf("Value (%s): %s\n", formatBytes(int64(len(value))), valueOutput)
+		if valueTruncated {
+			fmt.Printf("      (value truncated, use --full to see complete value)\n")
+		}
 	}
 
 	return nil
@@ -696,8 +826,8 @@ func runSizeAnalysis(dbPath, output string) error {
 			break
 		}
 		totalSize := keyInfo.keySize + keyInfo.valueSize
-		fmt.Printf("%-4d %-62s %10d %12d %10s\n",
-			i+1, truncateKey(hex.EncodeToString(keyInfo.key), 60), keyInfo.keySize, keyInfo.valueSize, formatBytes(int64(totalSize)))
+		fmt.Printf("%-4d %-62s %10s %12s %10s\n",
+			i+1, truncateKey(hex.EncodeToString(keyInfo.key), 60), formatBytes(int64(keyInfo.keySize)), formatBytes(int64(keyInfo.valueSize)), formatBytes(int64(totalSize)))
 	}
 
 	return iter.Error()
@@ -791,6 +921,16 @@ func truncateKey(key string, maxLen int) string {
 		return key[:maxLen]
 	}
 	return key[:maxLen-3] + "..."
+}
+
+func truncateWithMessage(content string, maxLen int, full bool, contentType string) (string, bool) {
+	if full || len(content) <= maxLen {
+		return content, false
+	}
+	if maxLen <= 3 {
+		return content[:maxLen], true
+	}
+	return content[:maxLen-3] + "...", true
 }
 
 func decodeHexPrefix(hexStr string) string {
