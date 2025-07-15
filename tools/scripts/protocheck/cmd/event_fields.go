@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,6 +10,9 @@ import (
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/logger"
 )
 
 var (
@@ -34,18 +36,33 @@ func init() {
 only contain primitive fields. Non-primitive fields in events negatively impact
 disk utilization in Cosmos SDK applications.
 
+This command walks through the proto directory tree and analyzes all .proto files,
+specifically looking for messages that start with "Event" and flagging any that
+contain non-primitive field types.
+
 Primitive types include:
 - Scalar types: int32, int64, uint32, uint64, sint32, sint64, fixed32, fixed64, 
   sfixed32, sfixed64, float, double, bool, string, bytes
 - Enums
 
 Non-primitive types that will be flagged:
-- Message types
+- Message types (like cosmos.base.v1beta1.Coin)
 - Repeated fields
 - Map fields
 - Oneof fields
-- google.protobuf.Any`,
-		RunE: runEventFieldsCheck,
+- google.protobuf.Any
+
+The output groups violations by field type to help prioritize refactoring efforts.`,
+		Example: `  # Check event fields in the default proto directory
+  protocheck event-fields
+
+  # Check event fields in a specific directory
+  protocheck event-fields --root ./my-proto-dir
+
+  # Run with debug logging
+  protocheck event-fields --log-level debug`,
+		PreRunE: logger.PreRunESetup,
+		RunE:    runEventFieldsCheck,
 	}
 
 	eventFieldsCmd.Flags().BoolP(
@@ -53,11 +70,25 @@ Non-primitive types that will be flagged:
 		false, "Show help for event-fields check",
 	)
 
+	// Add logger flags
+	eventFieldsCmd.Flags().StringVar(
+		&logger.LogLevel,
+		flags.FlagLogLevel,
+		flags.DefaultLogLevel,
+		flags.FlagLogLevelUsage,
+	)
+	eventFieldsCmd.Flags().StringVar(
+		&logger.LogOutput,
+		flags.FlagLogOutput,
+		flags.DefaultLogOutput,
+		flags.FlagLogOutputUsage,
+	)
+
 	rootCmd.AddCommand(eventFieldsCmd)
 }
 
 func runEventFieldsCheck(_ *cobra.Command, _ []string) error {
-	log.Println("Checking Event messages for non-primitive fields...")
+	logger.Logger.Info().Msg("Checking Event messages for non-primitive fields...")
 
 	protoRootDir := flagRootValue
 	err := filepath.Walk(
@@ -65,9 +96,9 @@ func runEventFieldsCheck(_ *cobra.Command, _ []string) error {
 		forEachMatchingFileWalkFn(
 			"*.proto",
 			func(path string) {
-				// log.Printf("Processing file: %s", path)
+				// logger.Logger.Debug().Str("file", path).Msg("Processing file")
 				if err := checkEventFieldsFn(path); err != nil {
-					log.Printf("Error checking %s: %v", path, err)
+					logger.Logger.Error().Err(err).Str("file", path).Msg("Error checking file")
 				}
 			},
 		),
