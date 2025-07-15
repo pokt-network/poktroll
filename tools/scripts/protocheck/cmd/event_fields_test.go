@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,11 +13,6 @@ func checkEventFieldsInFile(filePath string) (bool, []eventFieldViolation, error
 	// Reset global state
 	eventFieldsCheckPassed = true
 	eventFieldsViolations = []eventFieldViolation{}
-
-	// Capture log output for debugging
-	oldLog := log.Writer()
-	log.SetOutput(io.Discard) // Comment out to see debug output
-	defer log.SetOutput(oldLog)
 
 	err := checkEventFieldsFn(filePath)
 	return eventFieldsCheckPassed, eventFieldsViolations, err
