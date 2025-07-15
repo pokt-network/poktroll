@@ -413,7 +413,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	require.Equal(t, s.claimedUpokt.String(), expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	expectedProofValidityCheckedEvent := expectedProofValidityCheckedEvents[0]
-	require.Equal(t, prooftypes.ClaimProofStatus_INVALID, expectedProofValidityCheckedEvent.GetClaim().GetProofValidationStatus())
+	require.Equal(t, claim.SessionHeader.SessionId, expectedProofValidityCheckedEvent.GetSessionId())
+	require.Equal(t, claim.SupplierOperatorAddress, expectedProofValidityCheckedEvent.GetSupplierOperatorAddress())
 
 	// Confirm that a slashing event was emitted
 	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)

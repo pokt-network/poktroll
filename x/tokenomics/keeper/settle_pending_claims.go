@@ -743,7 +743,8 @@ func (k Keeper) settleClaim(
 	}
 
 	claimSettledEvent := tokenomicstypes.EventClaimSettled{
-		Claim:                    &claim,
+		SessionId:                claim.SessionHeader.SessionId,
+		SupplierOperatorAddress:  claim.SupplierOperatorAddress,
 		NumRelays:                numClaimRelays,
 		NumClaimedComputeUnits:   numClaimComputeUnits,
 		NumEstimatedComputeUnits: numEstimatedComputeUnits,

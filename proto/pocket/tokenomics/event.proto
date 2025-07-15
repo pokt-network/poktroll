@@ -4,6 +4,7 @@ package pocket.tokenomics;
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 option (gogoproto.stable_marshaler_all) = true;
 
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "pocket/proof/types.proto";
 
@@ -38,8 +39,12 @@ message EventClaimExpired {
 // EventClaimSettled is an event emitted whenever a claim is settled.
 // The proof_required determines whether the claim requires a proof that has been submitted or not
 message EventClaimSettled {
-    // Next index: 8
-    pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+    // Next index: 10
+
+    // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+    // ClaimSettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
+    reserved 1, 7;
+
     // The reason why the claim was settled, leading to a Supplier being rewarded (i.e. mint).
     pocket.proof.ProofRequirementReason proof_requirement = 2 [(gogoproto.jsontag) = "proof_requirement"];
     // Number of relays claimed to be in the session tree.
@@ -54,14 +59,12 @@ message EventClaimSettled {
     // the number of estimated compute units and the compute units to token multiplier.
     string claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 
-    // Field #7 was removed to reduce block size:
-    // - settlement_result field was removed to prevent event bloat
-    // - See issue: https://github.com/pokt-network/poktroll/issues/1497
-    // - This field contained duplicate information:
-    //   - Claim data already present in this event
-    //   - Mint/burn/transfer operations already emitted by the bank module
-    // - SettlementResult originally tracked these operations on a per-claim basis
-    reserved 7; // ClaimSettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
+    // The session ID which this claim corresponds to.
+    string session_id = 8;
+
+    // Supplier operator address, which when combined with session ID,
+    // is sufficient to query for the corresponding claim.
+    string supplier_operator_address = 9 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // EventApplicationOverserviced is emitted when an application has less stake than
