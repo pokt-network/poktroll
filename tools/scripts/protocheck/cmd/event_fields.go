@@ -81,24 +81,18 @@ func runEventFieldsCheck(_ *cobra.Command, _ []string) error {
 		fmt.Println("\n❌ Event field check FAILED!")
 		fmt.Printf("\nFound %d Event message(s) with non-primitive fields:\n\n", len(eventFieldsViolations))
 
-		// Group violations by message
-		violationsByMessage := make(map[string][]eventFieldViolation)
+		// Group violations by field type
+		violationsByType := make(map[string][]eventFieldViolation)
 		for _, v := range eventFieldsViolations {
-			key := fmt.Sprintf("%s:%s", v.FilePath, v.MessageName)
-			violationsByMessage[key] = append(violationsByMessage[key], v)
+			violationsByType[v.FieldType] = append(violationsByType[v.FieldType], v)
 		}
 
-		for _, violations := range violationsByMessage {
-			if len(violations) == 0 {
-				continue
-			}
-			v := violations[0]
-			fmt.Printf("📁 %s\n", v.FilePath)
-			fmt.Printf("   Message: %s\n", v.MessageName)
-			fmt.Printf("   Non-primitive fields:\n")
+		for fieldType, violations := range violationsByType {
+			fmt.Printf("🔍 Non-primitive type: %s\n", fieldType)
+			fmt.Printf("   Found in %d Event message(s):\n", len(violations))
 			for _, violation := range violations {
-				fmt.Printf("     - %s:%d - field '%s' has type '%s'\n",
-					violation.FilePath, violation.Line, violation.FieldName, violation.FieldType)
+				fmt.Printf("     - %s:%d - %s.%s\n",
+					violation.FilePath, violation.Line, violation.MessageName, violation.FieldName)
 			}
 			fmt.Println()
 		}
