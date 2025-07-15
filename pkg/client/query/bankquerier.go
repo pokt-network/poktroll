@@ -83,8 +83,10 @@ func (bq *bankQuerier) GetBalance(
 	// Query the blockchain for the balance record
 	req := &banktypes.QueryBalanceRequest{Address: address, Denom: pocket.DenomuPOKT}
 	res, err := retry.Call(ctx, func() (*banktypes.QueryBalanceResponse, error) {
-		return bq.bankQuerier.Balance(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return bq.bankQuerier.Balance(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, ErrQueryBalanceNotFound.Wrapf("address: %s [%s]", address, err)
 	}

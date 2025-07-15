@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -42,6 +43,8 @@ func TestCLI_AddService(t *testing.T) {
 			flags.FlagFees,
 			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String(),
 		),
+		fmt.Sprintf("--%s=%t", flags.FlagUnordered, true),
+		fmt.Sprintf("--%s=%s", flags.TimeoutDuration, 5*time.Second),
 	}
 
 	// Initialize the Supplier account by sending it some funds from the

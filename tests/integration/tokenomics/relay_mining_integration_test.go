@@ -116,7 +116,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 			ServiceId:          service.Id,
 			BlockHeight:        sdkCtx.BlockHeight(),
 		}
-		sessionRes, err := keepers.SessionKeeper.GetSession(sdkCtx, &getSessionReq)
+		sessionRes, err := keepers.GetSession(sdkCtx, &getSessionReq)
 		require.NoError(t, err)
 
 		session := sessionRes.Session
@@ -129,7 +129,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		sdkCtx = sdkCtx.WithBlockHeight(claimExpirationHeight)
 
 		// Get the relay mining difficulty that will be used when settling the pending claims.
-		relayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(sdkCtx, service.Id)
+		relayMiningDifficulty, ok := keepers.GetRelayMiningDifficulty(sdkCtx, service.Id)
 		require.True(t, ok)
 
 		// Prepare a claim with the given number of relays.
@@ -144,10 +144,10 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		require.NoError(t, err)
 
 		// Store the claim before settling it.
-		keepers.ProofKeeper.UpsertClaim(sdkCtx, *claim)
+		keepers.UpsertClaim(sdkCtx, *claim)
 
 		// Calling SettlePendingClaims calls ProcessTokenLogicModules behind the scenes
-		settledResult, expiredResult, numDiscardedFaultyClaims, err := keepers.Keeper.SettlePendingClaims(sdkCtx)
+		settledResult, expiredResult, numDiscardedFaultyClaims, err := keepers.SettlePendingClaims(sdkCtx)
 		require.NoError(t, err)
 		require.Equal(t, 1, int(settledResult.GetNumClaims()))
 		require.Equal(t, 0, int(expiredResult.GetNumClaims()))
@@ -158,7 +158,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		require.NoError(t, err)
 
 		// Get the updated relay mining difficulty
-		updatedRelayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(sdkCtx, service.Id)
+		updatedRelayMiningDifficulty, ok := keepers.GetRelayMiningDifficulty(sdkCtx, service.Id)
 		require.True(t, ok)
 
 		targetNumRelays := keepers.ServiceKeeper.GetParams(ctx).TargetNumRelays

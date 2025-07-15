@@ -35,7 +35,6 @@ import (
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
-	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -75,7 +74,7 @@ type ProofKeepersOpt func(context.Context, *ProofModuleKeepers) context.Context
 func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	t.Helper()
 
-	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
+	storeKey := storetypes.NewKVStoreKey(prooftypes.StoreKey)
 	db := dbm.NewMemDB()
 	stateStore := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
 	stateStore.MountStoreWithDB(storeKey, storetypes.StoreTypeIAVL, db)
@@ -132,7 +131,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 
 	// Collect store keys for all keepers which be constructed & interact with the state store.
 	keys := storetypes.NewKVStoreKeys(
-		types.StoreKey,
+		prooftypes.StoreKey,
 		banktypes.StoreKey,
 		sessiontypes.StoreKey,
 		suppliertypes.StoreKey,
@@ -220,7 +219,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 	// Construct a service keeper need by the supplier keeper.
 	serviceKeeper := servicekeeper.NewKeeper(
 		cdc,
-		runtime.NewKVStoreService(keys[types.StoreKey]),
+		runtime.NewKVStoreService(keys[servicetypes.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
 		bankKeeper,
@@ -255,7 +254,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 	// Construct a real proof keeper so that claims & proofs can be created.
 	proofKeeper := keeper.NewKeeper(
 		cdc,
-		runtime.NewKVStoreService(keys[types.StoreKey]),
+		runtime.NewKVStoreService(keys[prooftypes.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
 		bankKeeper,
@@ -265,7 +264,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		sharedKeeper,
 		serviceKeeper,
 	)
-	require.NoError(t, proofKeeper.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, proofKeeper.SetParams(ctx, prooftypes.DefaultParams()))
 
 	keepers := &ProofModuleKeepers{
 		Keeper:            &proofKeeper,
