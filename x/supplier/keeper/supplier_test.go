@@ -8,7 +8,6 @@ import (
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/gogo/status"
@@ -39,7 +38,7 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 		supplier := &suppliers[i]
 		supplier.OwnerAddress = sample.AccAddress()
 		supplier.OperatorAddress = sample.AccAddress()
-		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: math.NewInt(int64(i))}
+		supplier.Stake = &cosmostypes.Coin{Denom: "upokt", Amount: math.NewInt(int64(i))}
 		supplier.Services = []*sharedtypes.SupplierServiceConfig{
 			{
 				ServiceId: fmt.Sprintf("svc%d", i),

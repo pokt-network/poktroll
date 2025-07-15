@@ -168,7 +168,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 
 	// Sign and broadcast the claim Morse account message.
 	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseSupplier)
-	if err, _ = eitherErr.SyncOrAsyncError(); err != nil {
+	if _, err = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 

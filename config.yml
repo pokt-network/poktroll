@@ -196,7 +196,54 @@ genesis:
           coins:
             - amount: "1000000000" # MUST BE equal to one add_service_fee below
               denom: upokt
-    # For ref, see proto/poktroll/application/params.proto
+    # IBC configuration
+    # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/types/v1/genesis.proto#L13
+    ibc:
+      # Client genesis
+      # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/client/v1/genesis.proto#L11
+      client_genesis:
+        params:
+          allowed_clients:
+            - 07-tendermint
+      # Connection genesis
+      # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/connection/v1/connection.proto#L109
+      connection_genesis:
+        params:
+          max_expected_time_per_block: 10000000000 # (nanoseconds) 10 seconds
+      # Channel genesis
+      # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/channel/v1/channel.proto#L184
+      channel_genesis:
+        params:
+          upgrade_timeout:
+            height:
+              revision_number: 0
+              revision_height: 0
+            timestamp: 300000000000 # (nanoseconds) 5 minutes
+    # IBC transfer module configuration
+    # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/transfer/v1/genesis.proto#L12
+    # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/transfer/v1/transfer.proto#L21
+    transfer:
+      port_id: transfer
+      denom_traces: []
+      params:
+        send_enabled: true
+        receive_enabled: true
+    # Interchain accounts configuration
+    # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/interchain_accounts/genesis/v1/genesis.proto#L12
+    interchainaccounts:
+      controller_genesis_state:
+        # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/interchain_accounts/controller/v1/controller.proto#L9
+        params:
+          controller_enabled: true
+      host_genesis_state:
+        port: icahost
+        # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/interchain_accounts/host/v1/host.proto#L9
+        params:
+          host_enabled: true
+          allow_messages:
+            - "*"
+    # Application module configuration
+    # Ref: proto/poktroll/application/params.proto
     application:
       params:
         # 6 was arbitrarily selected taking into consideration two factors:

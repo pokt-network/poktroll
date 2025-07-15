@@ -7,8 +7,8 @@ package cmd
 var (
 	// relayMinerConfigPath is the relay miner config file path from `--config` flag.
 	relayMinerConfigPath string
-	// queryCachingEnabled is the query caching flag value.
-	queryCachingEnabled bool
+	// flagQueryCaching is the query caching flag value.
+	flagQueryCaching bool
 )
 
 const (
@@ -31,4 +31,8 @@ const (
 	FlagConfig        = "config"
 	FlagConfigUsage   = "(Required) The path to the relayminer config file"
 	DefaultFlagConfig = ""
+
+	FlagCount        = "count"
+	FlagCountUsage   = "(Optional) Number of requests to send (default: 1)"
+	DefaultFlagCount = 1
 )

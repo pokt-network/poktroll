@@ -53,7 +53,7 @@ RelayMiner Responsibilities:
 
 	// Custom flags
 	cmdStart.Flags().StringVar(&relayMinerConfigPath, FlagConfig, DefaultFlagConfig, FlagConfigUsage)
-	cmdStart.Flags().BoolVar(&queryCachingEnabled, flags.FlagQueryCaching, flags.DefaultFlagQueryCaching, flags.FlagQueryCachingUsage)
+	cmdStart.Flags().BoolVar(&flagQueryCaching, flags.FlagQueryCaching, flags.DefaultFlagQueryCaching, flags.FlagQueryCachingUsage)
 
 	// Required cosmos-sdk CLI query flags.
 	cmdStart.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, flags.FlagGRPCUsage)
@@ -78,14 +78,15 @@ RelayMiner Responsibilities:
 // - Set up logger and dependencies
 // - Initialize and start the relay miner
 func runRelayer(cmd *cobra.Command, _ []string) error {
+	// --- Context setup and cancellation ---
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
 	// Retrieve the logger from the command context.
 	logger := polylog.Ctx(cmd.Context())
 
-	// Handle interrupt/kill signals asynchronously
-	signals.GoOnExitSignal(cancelCtx)
+	// --- Signal handling ---
+	signals.GoOnExitSignal(logger, cancelCtx)
 
 	// Read relay miner config file
 	configContent, err := os.ReadFile(relayMinerConfigPath)
@@ -94,41 +95,77 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	// Parse relay miner configuration
+	// --- Print full-node configuration guidelines ---
+	// Not using logger here to avoid multiple log entries and json formatting issues.
+	fmt.Printf(`
+❗RPC Full Node Configuration Guide ❗
+====================================
+
+🔧 When running multiple RelayMiners or Suppliers, adjust these settings
+in your Full Node's config.toml file:
+
+📐 Configuration Formulas:
+-------------------------
+🩺 Subscriptions
+  - 'max_subscriptions_per_client' > 'total_suppliers' + 'total_relay_miners'
+  - Each Supplier needs 1 subscription
+  - Each RelayMiner needs 1 subscription
+
+🔌 Connections:
+  - 'max_open_connections' > 2 × 'total_relay_miners'
+  - Each RelayMiner typically needs 2 connections
+
+💡 Example Setup:
+----------------
+• RelayMiner 1: 2 Suppliers
+• RelayMiner 2: 3 Suppliers
+• RelayMiner 3: 1 Supplier
+
+Totals:
+- 'total_suppliers' = 6
+- 'total_relay_miners' = 3
+
+✅ Required config.toml settings:
+'max_subscriptions_per_client' = 10  (must be > 6 + 3 = 9)
+'max_open_connections' = 7           (must be > 2 × 3 = 6)
+`)
+
+	// --- Parse relay miner configuration ---
 	// TODO_IMPROVE: Add logger level/output options to config.
-	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(configContent)
+	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(logger, configContent)
 	if err != nil {
 		fmt.Printf("Could not parse config file from: %s\n", relayMinerConfigPath)
 		return err
 	}
 
+	// --- Log flag values ---
 	if err = logFlagValues(logger, cmd); err != nil {
 		logger.Error().Err(err).Msg("Could not read provided flags")
 		return err
 	}
 
 	// Log query caching status
-	if queryCachingEnabled {
+	if flagQueryCaching {
 		logger.Info().Msg("query caching ENABLED")
 	} else {
 		logger.Info().Msg("query caching DISABLED")
 	}
 
-	// Set up dependencies for relay miner
+	// --- Set up dependencies for relay miner ---
 	deps, err := setupRelayerDependencies(ctx, cmd, relayMinerConfig)
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not setup dependencies")
 		return err
 	}
 
-	// Initialize the relay miner
+	// --- Initialize the relay miner ---
 	relayMiner, err := relayer.NewRelayMiner(ctx, deps)
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not initialize relay miner")
 		return err
 	}
 
-	// Serve metrics endpoint if enabled
+	// --- Serve metrics endpoint if enabled ---
 	if relayMinerConfig.Metrics.Enabled {
 		err = relayMiner.ServeMetrics(relayMinerConfig.Metrics.Addr)
 		if err != nil {
@@ -137,7 +174,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	// Serve pprof endpoint if enabled
+	// --- Serve pprof endpoint if enabled ---
 	if relayMinerConfig.Pprof.Enabled {
 		err = relayMiner.ServePprof(ctx, relayMinerConfig.Pprof.Addr)
 		if err != nil {
@@ -146,7 +183,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	// Serve ping endpoint if enabled
+	// --- Serve ping endpoint if enabled ---
 	if relayMinerConfig.Ping.Enabled {
 		if err = relayMiner.ServePing(ctx, "tcp", relayMinerConfig.Ping.Addr); err != nil {
 			logger.Error().Err(err).Msg("Could not start ping endpoint")
@@ -154,7 +191,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	// Start the relay miner
+	// --- Start the relay miner ---
 	logger.Info().Msg("Starting relay miner...")
 
 	err = relayMiner.Start(ctx)

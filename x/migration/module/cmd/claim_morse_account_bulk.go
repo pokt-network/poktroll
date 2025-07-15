@@ -348,7 +348,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	// Sign and broadcast the claim Morse account message.
 	logger.Logger.Info().Int("messages", len(claimMessages)).Msg("Sign and broadcast transaction")
 	tx, eitherErr := txClient.SignAndBroadcast(ctx, claimMessages...)
-	broadcastErr, broadcastErrCh := eitherErr.SyncOrAsyncError()
+	broadcastErrCh, broadcastErr := eitherErr.SyncOrAsyncError()
 
 	// Handle a successful tx broadcast.
 	if tx != nil {

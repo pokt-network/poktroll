@@ -95,8 +95,10 @@ func (servq *serviceQuerier) GetService(
 		Id: serviceId,
 	}
 	res, err := retry.Call(ctx, func() (*servicetypes.QueryGetServiceResponse, error) {
-		return servq.serviceQuerier.Service(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return servq.serviceQuerier.Service(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return sharedtypes.Service{}, ErrQueryRetrieveService.Wrapf(
 			"serviceId: %s; error: [%v]",
@@ -139,8 +141,10 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 		ServiceId: serviceId,
 	}
 	res, err := retry.Call(ctx, func() (*servicetypes.QueryGetRelayMiningDifficultyResponse, error) {
-		return servq.serviceQuerier.RelayMiningDifficulty(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return servq.serviceQuerier.RelayMiningDifficulty(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return servicetypes.RelayMiningDifficulty{}, err
 	}
@@ -174,8 +178,10 @@ func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Param
 
 	req := servicetypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*servicetypes.QueryParamsResponse, error) {
-		return servq.serviceQuerier.Params(ctx, &req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return servq.serviceQuerier.Params(queryCtx, &req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, err
 	}

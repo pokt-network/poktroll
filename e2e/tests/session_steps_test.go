@@ -351,7 +351,7 @@ func (s *suite) waitForNewBlockEvent(
 
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
-			for _, event := range newBlockEvent.Data.Value.ResultFinalizeBlock.Events {
+			for _, event := range newBlockEvent.Events() {
 				// Checks on the event. For example, for a claim Settlement event,
 				// we can parse the claim and verify the compute units.
 				if isEventMatchFn(&event) {
@@ -376,7 +376,7 @@ func (s *suite) waitForBlockHeight(targetHeight int64) {
 				return
 			}
 
-			if newBlockEvent.Data.Value.Block.Header.Height >= targetHeight {
+			if newBlockEvent.Height() >= targetHeight {
 				done()
 				return
 			}

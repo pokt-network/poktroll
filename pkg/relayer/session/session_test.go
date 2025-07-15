@@ -154,14 +154,14 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	lowCUPRService := sharedtypes.Service{
 		Id:                   "lowCUPRService",
-		ComputeUnitsPerRelay: 10000,
+		ComputeUnitsPerRelay: 1,
 	}
 	testqueryclients.AddToExistingServices(t, lowCUPRService)
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, lowCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	highCUPRService := sharedtypes.Service{
 		Id:                   "highCUPRService",
-		ComputeUnitsPerRelay: 20000,
+		ComputeUnitsPerRelay: 2,
 	}
 	testqueryclients.AddToExistingServices(t, highCUPRService)
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, highCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
@@ -266,10 +266,11 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 }
 
 // waitSimulateIO sleeps for a bit to allow the relayer sessions manager to
-// process asynchronously. This effectively simulates I/O delays which would
-// normally be present.
+// process asynchronously.
+// This effectively simulates I/O delays which would normally be present.
+// Uses a longer delay for session persistence tests.
 func waitSimulateIO() {
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 }
 
 // uPOKTCoin returns a pointer to a uPOKT denomination coin with the given amount.

@@ -6,7 +6,6 @@ import (
 	"cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -163,7 +162,7 @@ func (k msgServer) ClaimMorseSupplier(
 	shouldAutoUnstake := claimableSupplierStake.Amount.LT(minStake.Amount)
 
 	// Determine the staked tokens destination address based on the short circuit conditions above.
-	var stakedTokensDestAddr sdk.AccAddress
+	var stakedTokensDestAddr cosmostypes.AccAddress
 	if morseUnbondingPeriodElapsed || shouldAutoUnstake {
 		stakedTokensDestAddr = shannonOwnerAddr
 	} else {

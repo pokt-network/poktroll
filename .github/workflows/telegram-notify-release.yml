@@ -1,0 +1,139 @@
+name: Telegram Broadcast New Release
+
+### How to use this? ###
+# 1. Finish the release procedure: https://dev.poktroll.com/develop/upgrades/release_procedure?_highlight=release
+# 2. Set the latest release to latest and verify here: https://github.com/pokt-network/poktroll/releases/latest
+# 3. Manually trigger the workflow by either:
+#    - Clicking the "Run workflow" button here: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml
+#    - Or by running the following command in your terminal: $ gh workflow run telegram-notify-release.yml
+
+### How to test / debug this? ###
+# 1. Submit a new PR in a new branch that's modifying this file
+# 2. Trigger the workflow by running the following command in your terminal: $ gh workflow run telegram-notify-release.yml --ref <BRANCH_NAME>
+# 3. Verify the workflow worked by viewing the logs here: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml
+# 4. Check the output in the telegram bot group: https://web.telegram.org/k/#-2895286734
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "If true, only send to testing group"
+        required: false
+        type: boolean
+        default: false
+  # Uncomment the lines below to automatically trigger on release publication
+  # This is commented out to avoid premature notifications
+  # release:
+  #   types: [published]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    # Uncomment the line below when enabling automatic triggers
+    # if: github.event.release.prerelease == false
+    outputs:
+      message: ${{ steps.prepare_message.outputs.message }}
+    steps:
+      - name: Get latest release
+        id: get_release
+        run: |
+          # Get latest release info from GitHub API
+          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+
+          # Extract release details and properly escape for GitHub Actions
+          RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name')
+          RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url')
+
+          echo "Latest release: $RELEASE_NAME"
+          echo "Release URL: $RELEASE_URL"
+
+          # Handle multiline release body properly
+          echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
+          echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+
+          # Use EOF delimiter for multiline content
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_INFO" | jq -r '.body' >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Prepare release message
+        id: prepare_message
+        run: |
+          # Safely construct message using printf to avoid command execution
+          RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
+          RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
+
+          # Read release body and escape it properly to prevent command execution
+          # Use printf to safely handle content with special characters
+          RELEASE_BODY=$(printf '%s' "${{ steps.get_release.outputs.release_body }}")
+
+          # Function to convert markdown to HTML for better Telegram compatibility
+          convert_markdown_to_html() {
+            echo "$1" | \
+            # First escape HTML special characters
+            sed 's/&/\&amp;/g' | \
+            sed 's/</\&lt;/g' | \
+            sed 's/>/\&gt;/g' | \
+            # Convert ## headers to <b>headers</b> BEFORE processing bold text
+            sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
+            # Convert ### headers to <b>headers</b>
+            sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
+            # Convert `code` to <code>code</code> first (before bold/italic)
+            sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
+            # Convert **bold** to <b>bold</b> - use non-greedy match
+            sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
+            # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
+            sed 's/\([^*]\)\*\([^*]\+\)\*\([^*]\)/\1<i>\2<\/i>\3/g' | \
+            # Convert [text](url) links to <a href="url">text</a>
+            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g'
+          }
+
+          # Convert the release body from markdown to HTML
+          # TEMPORARILY DISABLED to isolate the issue
+          # HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          HTML_RELEASE_BODY="$RELEASE_BODY"
+
+          # Debug: Print the HTML to see what's being generated
+          echo "DEBUG: HTML_RELEASE_BODY:"
+          echo "$HTML_RELEASE_BODY"
+          echo "..."
+
+          # Create message with Markdown formatting
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            MESSAGE=$(cat <<EOF
+          🧪 **TEST RELEASE NOTIFICATION** 🧪
+
+          📣 **${RELEASE_NAME} release is live!** 📣
+          [View the full release here](${RELEASE_URL})
+
+          ${HTML_RELEASE_BODY}
+          EOF
+          )
+          else
+            MESSAGE=$(cat <<EOF
+          📣 **${RELEASE_NAME} release is live!** 📣
+          [View the full release here](${RELEASE_URL})
+
+          ${HTML_RELEASE_BODY}
+          EOF
+          )
+          fi
+
+          # Debug: Print the first 200 chars of the message
+          echo "DEBUG: First 200 chars of MESSAGE:"
+          echo "$MESSAGE" | head -c 200
+          echo "..."
+
+          # Use EOF delimiter for multiline content
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  send-release:
+    needs: notify
+    uses: ./.github/workflows/telegram-send-message.yml
+    with:
+      message: ${{ needs.notify.outputs.message }}
+      parse_mode: "Markdown"
+      test_mode: ${{ inputs.test_mode }}

@@ -1,0 +1,223 @@
+# This schema file may be used to validate the config file using the `yaml-language-server` VSCode extension.
+# See: https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml
+
+# To validate the config file, the following comment must be placed at the top of the Relay Miner YAML config file:
+# <REMOVE_THIS_TAG> yaml-language-server: $schema=<LOCAL PATH TO OR URL OF THE SCHEMA FILE>
+
+description: "Relay Miner Configuration YAML: this file is used to configure a Relay Miner for the Pocket network."
+type: object
+additionalProperties: false
+required:
+  - default_signing_key_names
+  - smt_store_path
+  - pocket_node
+  - suppliers
+
+properties:
+  # Default signing key names (required)
+  default_signing_key_names:
+    description: "List of default signing key names that can accept relays for suppliers."
+    type: array
+    items:
+      type: string
+    minItems: 1
+
+  # Default request timeout (optional)
+  default_request_timeout_seconds:
+    description: "Default timeout in seconds for relay requests forwarded to backend services."
+    type: integer
+    minimum: 1
+    default: 30
+
+  # Default max body size (optional)
+  default_max_body_size:
+    description: "Default maximum size of request or response body that the RelayMiner will accept."
+    type: string
+    pattern: "^[0-9]+(B|KB|MB|GB|TB)$"
+    default: "1MB"
+
+  # SMT store path (required)
+  smt_store_path:
+    description: "Path to the Sparse Merkle Tree store directory."
+    type: string
+
+  # Enable over servicing (optional)
+  enable_over_servicing:
+    description: "Flag to enable over servicing beyond the required relay count."
+    type: boolean
+    default: false
+
+  # Pocket node configuration (required)
+  pocket_node:
+    description: "Configuration for connecting to Pocket blockchain nodes."
+    type: object
+    additionalProperties: false
+    required:
+      - query_node_rpc_url
+      - query_node_grpc_url
+      - tx_node_rpc_url
+    properties:
+      query_node_rpc_url:
+        description: "RPC URL for the query node."
+        type: string
+        pattern: "^(http|https)://.*$"
+      query_node_grpc_url:
+        description: "gRPC URL for the query node."
+        type: string
+        pattern: "^(http|https)://.*$"
+      tx_node_rpc_url:
+        description: "RPC URL for the transaction node."
+        type: string
+        pattern: "^(http|https)://.*$"
+
+  # Suppliers configuration (required)
+  suppliers:
+    description: "List of supplier configurations for different services."
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - service_id
+        - listen_url
+        - service_config
+      properties:
+        service_id:
+          description: "Unique identifier for the service."
+          type: string
+        listen_url:
+          description: "URL where the supplier will listen for incoming requests."
+          type: string
+          pattern: "^(http|https|ws|wss)://.*$"
+        signing_key_names:
+          description: "List of signing key names for this supplier. If empty, uses default_signing_key_names."
+          type: array
+          items:
+            type: string
+        request_timeout_seconds:
+          description: "Timeout in seconds for requests to this supplier's backend."
+          type: integer
+          minimum: 1
+        max_body_size:
+          description: "Maximum size of request or response body for this supplier."
+          type: string
+          pattern: "^[0-9]+(B|KB|MB|GB|TB)$"
+        x_forwarded_host_lookup:
+          description: "Whether to lookup the host from X-Forwarded-Host header."
+          type: boolean
+          default: false
+        service_config:
+          description: "Default service configuration for this supplier."
+          type: object
+          additionalProperties: false
+          required:
+            - backend_url
+          properties:
+            backend_url:
+              description: "URL of the backend service that relays will be proxied to."
+              type: string
+              pattern: "^(http|https|ws|wss)://.*$"
+            authentication:
+              description: "Basic authentication configuration for the backend service."
+              type: object
+              additionalProperties: false
+              properties:
+                username:
+                  description: "Username for basic authentication."
+                  type: string
+                password:
+                  description: "Password for basic authentication."
+                  type: string
+            headers:
+              description: "Additional headers to include in requests to the backend service."
+              type: object
+              additionalProperties:
+                type: string
+            forward_pocket_headers:
+              description: "Whether to forward headers prefixed with 'Pocket-' to the backend service."
+              type: boolean
+              default: false
+        rpc_type_service_configs:
+          description: "Map of RPC types to service configurations for handling different RPC types."
+          type: object
+          additionalProperties: false
+          # TODO_FUTURE: Add validation for custom RPC types beyond the standard four
+          patternProperties:
+            "^(json_rpc|rest|comet_bft|websocket)$":
+              type: object
+              additionalProperties: false
+              required:
+                - backend_url
+              properties:
+                backend_url:
+                  description: "URL of the backend service for this RPC type."
+                  type: string
+                  pattern: "^(http|https|ws|wss)://.*$"
+                authentication:
+                  description: "Basic authentication configuration for this RPC type."
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    username:
+                      description: "Username for basic authentication."
+                      type: string
+                    password:
+                      description: "Password for basic authentication."
+                      type: string
+                headers:
+                  description: "Additional headers for this RPC type."
+                  type: object
+                  additionalProperties:
+                    type: string
+                forward_pocket_headers:
+                  description: "Whether to forward Pocket headers for this RPC type."
+                  type: boolean
+                  default: false
+    minItems: 1
+
+  # Metrics configuration (optional)
+  metrics:
+    description: "Configuration for metrics collection and exposure."
+    type: object
+    additionalProperties: false
+    properties:
+      enabled:
+        description: "Whether metrics collection is enabled."
+        type: boolean
+        default: false
+      addr:
+        description: "Address to bind the metrics server to (format: :port or hostname:port)."
+        type: string
+        pattern: "^(:[0-9]+|[^:]+:[0-9]+)$"
+        default: ":9090"
+
+  # Pprof configuration (optional)
+  pprof:
+    description: "Configuration for pprof profiling server."
+    type: object
+    additionalProperties: false
+    properties:
+      enabled:
+        description: "Whether pprof server is enabled."
+        type: boolean
+        default: false
+      addr:
+        description: "Address to bind the pprof server to (format: :port or hostname:port)."
+        type: string
+        pattern: "^(:[0-9]+|[^:]+:[0-9]+)$"
+        default: ":6060"
+
+  # Ping configuration (optional)
+  ping:
+    description: "Configuration for ping/health check server."
+    type: object
+    additionalProperties: false
+    properties:
+      enabled:
+        description: "Whether ping server is enabled."
+        type: boolean
+        default: false
+      addr:
+        description: "Address to bind the ping server to (format: :port or hostname:port)."
+        type: string
+        pattern: "^(:[0-9]+|[^:]+:[0-9]+)$"

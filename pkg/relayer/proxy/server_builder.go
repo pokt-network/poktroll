@@ -12,7 +12,8 @@ import (
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
-	for _, supplierOperatorAddress := range rp.relayAuthenticator.GetSupplierOperatorAddresses() {
+	configuredSuppliers := rp.relayAuthenticator.GetSupplierOperatorAddresses()
+	for _, supplierOperatorAddress := range configuredSuppliers {
 		// TODO_MAINNET: We currently block RelayMiner from starting if at least one address
 		// is not staked or staked incorrectly. As node runners will maintain many different
 		// suppliers on one RelayMiner, and we expect them to stake and restake often - it might
@@ -27,6 +28,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// Log all the RelayMiner's configured services for the supplier.
 		rp.logRelayMinerConfiguredServices(supplierOperatorAddress)
 	}
+
+	// Log the number of suppliers
+	rp.logger.Info().Msgf("[CONFIG] ⚙️ Number of Suppliers configured in this RelayMiner: %d", len(configuredSuppliers))
 
 	var err error
 	if rp.servers, err = rp.initializeProxyServers(); err != nil {
@@ -78,22 +82,21 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 // server configs. This is useful for debugging and understanding which services
 // the RelayMiner is configured to handle.
 func (rp *relayerProxy) logRelayMinerConfiguredServices(supplierOperatorAddress string) {
-
-	availableConfigs := make(map[string]struct{})
+	relayMinerConfiguredServices := make(map[string]struct{})
 	for _, serviceConfig := range rp.serverConfigs {
 		for serviceId := range serviceConfig.SupplierConfigsMap {
-			availableConfigs[serviceId] = struct{}{}
+			relayMinerConfiguredServices[serviceId] = struct{}{}
 		}
 	}
 
-	availableServices := make([]string, 0, len(availableConfigs))
-	for serviceId := range availableConfigs {
-		availableServices = append(availableServices, serviceId)
+	configuredServices := make([]string, 0, len(relayMinerConfiguredServices))
+	for serviceId := range relayMinerConfiguredServices {
+		configuredServices = append(configuredServices, serviceId)
 	}
 	rp.logger.Info().Msgf(
-		"[RelayMiner] configured services for supplier %q: [%s]",
+		"[RelayMiner] ⚙️ List of services RelayMiner is configured to handle on behalf of supplier %q: [%s]",
 		supplierOperatorAddress,
-		strings.Join(availableServices, ", "),
+		strings.Join(configuredServices, ", "),
 	)
 
 }
@@ -111,13 +114,13 @@ func (rp *relayerProxy) logSupplierServices(ctx context.Context, supplierOperato
 		)
 	}
 
-	configuredServices := make([]string, 0)
+	stakedServices := make([]string, 0)
 	for _, serviceConfig := range supplier.Services {
-		configuredServices = append(configuredServices, serviceConfig.ServiceId)
+		stakedServices = append(stakedServices, serviceConfig.ServiceId)
 	}
 	rp.logger.Info().Msgf(
-		"[Supplier] staked services %q: [%s]",
+		"[Supplier] 📥 List of services staked for by Supplier %q: [%s]",
 		supplierOperatorAddress,
-		strings.Join(configuredServices, ", "),
+		strings.Join(stakedServices, ", "),
 	)
 }

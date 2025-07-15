@@ -25,8 +25,10 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Relay contains both the RelayRequest (signed by the Application) and the RelayResponse (signed by the Supplier).
-// The serialized tuple is inserted into the SMST leaves as values in the Claim/Proof lifecycle.
+// Relay message
+//
+// - Contains both the RelayRequest (signed by the Application) and RelayResponse (signed by the Supplier).
+// - The serialized tuple is stored in SMST leaves as values during the Claim/Proof lifecycle.
 type Relay struct {
 	Req *RelayRequest  `protobuf:"bytes,1,opt,name=req,proto3" json:"req,omitempty"`
 	Res *RelayResponse `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`
@@ -75,19 +77,22 @@ func (m *Relay) GetRes() *RelayResponse {
 	return nil
 }
 
-// RelayRequestMetadata contains the metadata for a RelayRequest.
+// RelayRequestMetadata
+//
+// Contains metadata for a RelayRequest.
 type RelayRequestMetadata struct {
+	// Session header associated with the relay.
 	SessionHeader *types.SessionHeader `protobuf:"bytes,1,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
-	// The request signature is a serialized ring signature that may have been
-	// by either the application itself or one of the gateways that the
-	// application has delegated to. The signature is made using the ring of the
-	// application in both cases.
+	// Signature for the request:
+	// - Serialized ring signature, created by either the application itself or a delegated gateway.
+	// - Always uses the application's ring.
 	Signature []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
-	// TODO_MAINNET: make sure we're checking/verifying this address onchain (if needed).
-	// Relevant conversation: https://github.com/pokt-network/poktroll/pull/567#discussion_r1628722168
+	// TODO_MAINNET: Ensure this address is checked/verified onchain if needed.
+	// See: https://github.com/pokt-network/poktroll/pull/567#discussion_r1628722168
 	//
-	// The supplier operator address the relay is sent to. It is being used on the
-	// RelayMiner to route to the correct supplier.
+	// Supplier operator address:
+	// - The Bech32 address of the supplier operator the relay is sent to.
+	// - Used by the RelayMiner to route to the correct supplier.
 	SupplierOperatorAddress string `protobuf:"bytes,3,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 }
 
@@ -141,12 +146,14 @@ func (m *RelayRequestMetadata) GetSupplierOperatorAddress() string {
 	return ""
 }
 
-// RelayRequest holds the request details for a relay.
+// RelayRequest
+//
+// Holds the request details for a relay.
 type RelayRequest struct {
 	Meta RelayRequestMetadata `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
-	// payload is the serialized payload for the request.
-	// The payload is passed directly to the service and as such can be any
-	// format that the service supports: JSON-RPC, REST, gRPC, etc.
+	// Serialized request payload:
+	// - Passed directly to the service.
+	// - Can be any supported format: JSON-RPC, REST, gRPC, etc.
 	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 
@@ -193,13 +200,25 @@ func (m *RelayRequest) GetPayload() []byte {
 	return nil
 }
 
-// RelayResponse contains the response details for a RelayRequest.
+// RelayResponse
+//
+// Contains the response details for a RelayRequest.
 type RelayResponse struct {
 	Meta RelayResponseMetadata `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
-	// payload is the serialized payload for the response.
-	// The payload is passed directly from the service and as such can be any
-	// format the service responds with: JSON-RPC, REST, gRPC, etc.
+	// Serialized response payload:
+	// - Passed directly from the service.
+	// - Can be any supported format: JSON-RPC, REST, gRPC, etc.
+	// - Used when communicating between applications, gatewways, and relayminers
+	// - Omitted when inserting relays into the SMST, and therefore in onchain proofs,
+	//   in order to minimize onchain proof size.
 	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	// SHA256 hash of the response payload.
+	// This field is used for proof verification without requiring the full payload.
+	// The hash ensures response integrity while reducing on-chain storage requirements.
+	PayloadHash []byte `protobuf:"bytes,4,opt,name=payload_hash,json=payloadHash,proto3" json:"payload_hash,omitempty"`
+	// Error returned by the RelayMiner, if applicable.
+	// - If no error occurred, this field is empty.
+	RelayMinerError *RelayMinerError `protobuf:"bytes,3,opt,name=relay_miner_error,json=relayMinerError,proto3" json:"relay_miner_error,omitempty"`
 }
 
 func (m *RelayResponse) Reset()         { *m = RelayResponse{} }
@@ -245,10 +264,28 @@ func (m *RelayResponse) GetPayload() []byte {
 	return nil
 }
 
-// RelayResponseMetadata contains the metadata for a RelayResponse.
+func (m *RelayResponse) GetPayloadHash() []byte {
+	if m != nil {
+		return m.PayloadHash
+	}
+	return nil
+}
+
+func (m *RelayResponse) GetRelayMinerError() *RelayMinerError {
+	if m != nil {
+		return m.RelayMinerError
+	}
+	return nil
+}
+
+// RelayResponseMetadata
+//
+// Contains metadata for a RelayResponse.
 type RelayResponseMetadata struct {
-	SessionHeader             *types.SessionHeader `protobuf:"bytes,1,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
-	SupplierOperatorSignature []byte               `protobuf:"bytes,2,opt,name=supplier_operator_signature,json=supplierOperatorSignature,proto3" json:"supplier_operator_signature,omitempty"`
+	// Session header associated with the relay.
+	SessionHeader *types.SessionHeader `protobuf:"bytes,1,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
+	// Signature of the supplier's operator on the response.
+	SupplierOperatorSignature []byte `protobuf:"bytes,2,opt,name=supplier_operator_signature,json=supplierOperatorSignature,proto3" json:"supplier_operator_signature,omitempty"`
 }
 
 func (m *RelayResponseMetadata) Reset()         { *m = RelayResponseMetadata{} }
@@ -294,46 +331,128 @@ func (m *RelayResponseMetadata) GetSupplierOperatorSignature() []byte {
 	return nil
 }
 
+// RelayMinerError
+//
+// Contains error details returned by the RelayMiner.
+type RelayMinerError struct {
+	// Registered codespace for the error (groups errors by source/module, e.g. `relayer_proxy`).
+	// See: https://github.com/pokt-network/poktroll/blob/main/pkg/relayer/proxy/errors.go#L8
+	Codespace string `protobuf:"bytes,1,opt,name=codespace,proto3" json:"codespace,omitempty"`
+	// Specific registered error code (e.g. `1` for `ErrRelayerProxyInvalidSession`)
+	// See: https://github.com/pokt-network/poktroll/blob/main/pkg/relayer/proxy/errors.go#L9
+	Code uint32 `protobuf:"varint,2,opt,name=code,proto3" json:"code,omitempty"`
+	// Human-readable, concise error description.
+	// Example `invalid session in relayer request` for `ErrRelayerProxyInvalidSession`.
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	// Detailed error message (may include additional context).
+	// Example: ErrRelayerProxyInvalidSession.Wrapf("application %q has %d service configs", ...)
+	Message string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+}
+
+func (m *RelayMinerError) Reset()         { *m = RelayMinerError{} }
+func (m *RelayMinerError) String() string { return proto.CompactTextString(m) }
+func (*RelayMinerError) ProtoMessage()    {}
+func (*RelayMinerError) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3c7fe7b34438003f, []int{5}
+}
+func (m *RelayMinerError) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RelayMinerError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *RelayMinerError) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RelayMinerError.Merge(m, src)
+}
+func (m *RelayMinerError) XXX_Size() int {
+	return m.Size()
+}
+func (m *RelayMinerError) XXX_DiscardUnknown() {
+	xxx_messageInfo_RelayMinerError.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RelayMinerError proto.InternalMessageInfo
+
+func (m *RelayMinerError) GetCodespace() string {
+	if m != nil {
+		return m.Codespace
+	}
+	return ""
+}
+
+func (m *RelayMinerError) GetCode() uint32 {
+	if m != nil {
+		return m.Code
+	}
+	return 0
+}
+
+func (m *RelayMinerError) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *RelayMinerError) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*Relay)(nil), "pocket.service.Relay")
 	proto.RegisterType((*RelayRequestMetadata)(nil), "pocket.service.RelayRequestMetadata")
 	proto.RegisterType((*RelayRequest)(nil), "pocket.service.RelayRequest")
 	proto.RegisterType((*RelayResponse)(nil), "pocket.service.RelayResponse")
 	proto.RegisterType((*RelayResponseMetadata)(nil), "pocket.service.RelayResponseMetadata")
+	proto.RegisterType((*RelayMinerError)(nil), "pocket.service.RelayMinerError")
 }
 
 func init() { proto.RegisterFile("pocket/service/relay.proto", fileDescriptor_3c7fe7b34438003f) }
 
 var fileDescriptor_3c7fe7b34438003f = []byte{
-	// 435 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x53, 0xcd, 0x6e, 0xd3, 0x40,
-	0x10, 0xce, 0xd2, 0x02, 0xea, 0xd2, 0xf6, 0xb0, 0x0a, 0xc2, 0x09, 0xc5, 0x54, 0x16, 0x48, 0xbd,
-	0xd4, 0x46, 0x70, 0x2f, 0x22, 0xe2, 0xc0, 0x05, 0x90, 0x1c, 0x4e, 0x5c, 0xac, 0xad, 0x3d, 0xb2,
-	0x4d, 0x1c, 0xcf, 0x76, 0x77, 0x0d, 0xe4, 0x2d, 0x78, 0x01, 0xde, 0x82, 0x87, 0xe8, 0x31, 0xe2,
-	0xd4, 0x13, 0x42, 0xce, 0x8b, 0x20, 0xaf, 0xd7, 0xd4, 0x29, 0x10, 0x09, 0xa9, 0x27, 0x7b, 0xf6,
-	0xfb, 0xbe, 0xf9, 0xf9, 0x46, 0x43, 0xc7, 0x02, 0xe3, 0x19, 0xe8, 0x40, 0x81, 0xfc, 0x98, 0xc7,
-	0x10, 0x48, 0x28, 0xf8, 0xc2, 0x17, 0x12, 0x35, 0xb2, 0xfd, 0x16, 0xf3, 0x2d, 0x36, 0x1e, 0xc5,
-	0xa8, 0xe6, 0xa8, 0x22, 0x83, 0x06, 0x6d, 0xd0, 0x52, 0xc7, 0xc3, 0x14, 0x53, 0x6c, 0xdf, 0x9b,
-	0x3f, 0xfb, 0x7a, 0x99, 0x5c, 0xa9, 0x1c, 0xcb, 0x40, 0x2f, 0x04, 0x58, 0x85, 0x97, 0xd1, 0x9b,
-	0x61, 0x53, 0x8b, 0xf9, 0x74, 0x4b, 0xc2, 0x99, 0x43, 0x0e, 0xc9, 0xd1, 0x9d, 0xa7, 0x07, 0xfe,
-	0x7a, 0x4d, 0xdf, 0x70, 0x42, 0x38, 0xab, 0x40, 0xe9, 0xb0, 0x21, 0xb2, 0xa0, 0xe1, 0x2b, 0xe7,
-	0x86, 0xe1, 0x3f, 0xf8, 0x07, 0x5f, 0x09, 0x2c, 0x15, 0x34, 0x02, 0xe5, 0x2d, 0x09, 0x1d, 0xf6,
-	0xd3, 0xbc, 0x06, 0xcd, 0x13, 0xae, 0x39, 0x7b, 0x49, 0xf7, 0x6d, 0x67, 0x51, 0x06, 0x3c, 0x01,
-	0x69, 0x9b, 0xe8, 0x25, 0x35, 0xa8, 0x3f, 0x6d, 0xbf, 0xaf, 0x0c, 0x29, 0xdc, 0x53, 0xfd, 0x90,
-	0x1d, 0xd0, 0x1d, 0x95, 0xa7, 0x25, 0xd7, 0x95, 0x04, 0xd3, 0xd5, 0x6e, 0x78, 0xf9, 0xc0, 0xde,
-	0xd1, 0x91, 0xaa, 0x84, 0x28, 0x72, 0x90, 0x11, 0x0a, 0x90, 0x5c, 0xa3, 0x8c, 0x78, 0x92, 0x48,
-	0x50, 0xca, 0xd9, 0x3a, 0x24, 0x47, 0x3b, 0x13, 0xe7, 0xfb, 0xb7, 0xe3, 0xa1, 0x75, 0xf3, 0x45,
-	0x8b, 0x4c, 0xb5, 0xcc, 0xcb, 0x34, 0xbc, 0xd7, 0x49, 0xdf, 0x5a, 0xa5, 0x85, 0xbd, 0x8c, 0xee,
-	0xf6, 0x27, 0x62, 0x27, 0x74, 0x7b, 0x0e, 0x9a, 0xdb, 0xfe, 0x1f, 0x6d, 0x32, 0xb1, 0x9b, 0x7e,
-	0xb2, 0x7d, 0xfe, 0xe3, 0xe1, 0x20, 0x34, 0x3a, 0xe6, 0xd0, 0xdb, 0x82, 0x2f, 0x0a, 0xe4, 0x89,
-	0x9d, 0xa0, 0x0b, 0xbd, 0x0f, 0x74, 0x6f, 0xcd, 0x52, 0xf6, 0x7c, 0xad, 0xd4, 0xe3, 0x8d, 0xfe,
-	0xff, 0x67, 0xad, 0xaf, 0x84, 0xde, 0xfd, 0xab, 0xfe, 0x9a, 0x36, 0x75, 0x42, 0xef, 0xff, 0xb9,
-	0x8b, 0xab, 0xbb, 0x1b, 0x5d, 0xf5, 0x7c, 0xda, 0x11, 0x26, 0x6f, 0xce, 0x6b, 0x97, 0x2c, 0x6b,
-	0x97, 0x5c, 0xd4, 0x2e, 0xf9, 0x59, 0xbb, 0xe4, 0xcb, 0xca, 0x1d, 0x2c, 0x57, 0xee, 0xe0, 0x62,
-	0xe5, 0x0e, 0xde, 0x3f, 0x49, 0x73, 0x9d, 0x55, 0xa7, 0x7e, 0x8c, 0xf3, 0x40, 0xe0, 0x4c, 0x1f,
-	0x97, 0xa0, 0x3f, 0xa1, 0x9c, 0x99, 0x40, 0x62, 0x51, 0x04, 0x9f, 0x7f, 0x5f, 0x99, 0x39, 0x84,
-	0xd3, 0x5b, 0xe6, 0x12, 0x9e, 0xfd, 0x0a, 0x00, 0x00, 0xff, 0xff, 0xc5, 0x8a, 0x75, 0x14, 0x84,
-	0x03, 0x00, 0x00,
+	// 544 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0xcd, 0x6e, 0xd3, 0x40,
+	0x10, 0x8e, 0x69, 0x00, 0x65, 0xd3, 0x1f, 0xb1, 0x2a, 0xc2, 0x09, 0xc5, 0x0d, 0x16, 0x48, 0xbd,
+	0xd4, 0x46, 0xe5, 0x5e, 0x44, 0x04, 0x52, 0x25, 0x54, 0x90, 0x36, 0x9c, 0xb8, 0x58, 0x5b, 0x7b,
+	0x64, 0x5b, 0x49, 0xbc, 0xdb, 0x9d, 0x0d, 0x90, 0x13, 0xaf, 0xc0, 0x0b, 0xf0, 0x16, 0x3c, 0x44,
+	0x8f, 0x11, 0xa7, 0x8a, 0x03, 0x42, 0xc9, 0x8b, 0x20, 0xaf, 0x37, 0xe4, 0x87, 0x52, 0x09, 0x89,
+	0x53, 0x76, 0xe6, 0xfb, 0x66, 0xe6, 0x9b, 0x1f, 0x87, 0xb4, 0xa5, 0x88, 0xfb, 0xa0, 0x43, 0x04,
+	0xf5, 0x3e, 0x8f, 0x21, 0x54, 0x30, 0xe0, 0xe3, 0x40, 0x2a, 0xa1, 0x05, 0xdd, 0xae, 0xb0, 0xc0,
+	0x62, 0xed, 0x56, 0x2c, 0x70, 0x28, 0x30, 0x32, 0x68, 0x58, 0x19, 0x15, 0xb5, 0xbd, 0x9b, 0x8a,
+	0x54, 0x54, 0xfe, 0xf2, 0x65, 0xbd, 0x8b, 0xe4, 0x88, 0xb9, 0x28, 0x42, 0x3d, 0x96, 0x60, 0x23,
+	0xfc, 0x8c, 0xdc, 0x64, 0x65, 0x2d, 0x1a, 0x90, 0x0d, 0x05, 0xe7, 0xae, 0xd3, 0x71, 0x0e, 0x9a,
+	0x47, 0x7b, 0xc1, 0x6a, 0xcd, 0xc0, 0x70, 0x18, 0x9c, 0x8f, 0x00, 0x35, 0x2b, 0x89, 0x34, 0x2c,
+	0xf9, 0xe8, 0xde, 0x30, 0xfc, 0x07, 0x7f, 0xe1, 0xa3, 0x14, 0x05, 0x42, 0x19, 0x80, 0xfe, 0xc4,
+	0x21, 0xbb, 0xcb, 0x69, 0x4e, 0x41, 0xf3, 0x84, 0x6b, 0x4e, 0x5f, 0x90, 0x6d, 0xab, 0x2c, 0xca,
+	0x80, 0x27, 0xa0, 0xac, 0x88, 0xa5, 0xa4, 0x06, 0x0d, 0x7a, 0xd5, 0xef, 0x89, 0x21, 0xb1, 0x2d,
+	0x5c, 0x36, 0xe9, 0x1e, 0x69, 0x60, 0x9e, 0x16, 0x5c, 0x8f, 0x14, 0x18, 0x55, 0x9b, 0x6c, 0xe1,
+	0xa0, 0x6f, 0x49, 0x0b, 0x47, 0x52, 0x0e, 0x72, 0x50, 0x91, 0x90, 0xa0, 0xb8, 0x16, 0x2a, 0xe2,
+	0x49, 0xa2, 0x00, 0xd1, 0xdd, 0xe8, 0x38, 0x07, 0x8d, 0xae, 0xfb, 0xed, 0xeb, 0xe1, 0xae, 0x9d,
+	0xe6, 0xf3, 0x0a, 0xe9, 0x69, 0x95, 0x17, 0x29, 0xbb, 0x37, 0x0f, 0x7d, 0x63, 0x23, 0x2d, 0xec,
+	0x67, 0x64, 0x73, 0xb9, 0x23, 0x7a, 0x4c, 0xea, 0x43, 0xd0, 0xdc, 0xea, 0x7f, 0x74, 0xdd, 0x10,
+	0xe7, 0xdd, 0x77, 0xeb, 0x17, 0x3f, 0xf6, 0x6b, 0xcc, 0xc4, 0x51, 0x97, 0xdc, 0x96, 0x7c, 0x3c,
+	0x10, 0x3c, 0xb1, 0x1d, 0xcc, 0x4d, 0xff, 0xbb, 0x43, 0xb6, 0x56, 0x66, 0x4a, 0x9f, 0xad, 0xd4,
+	0x7a, 0x7c, 0xed, 0x02, 0xfe, 0xad, 0x18, 0x7d, 0x48, 0x36, 0xed, 0x33, 0xca, 0x38, 0x66, 0x6e,
+	0xdd, 0xc0, 0x4d, 0xeb, 0x3b, 0xe1, 0x98, 0xd1, 0x57, 0xe4, 0x8e, 0x39, 0xd1, 0x68, 0x98, 0x17,
+	0xa0, 0x22, 0x50, 0x4a, 0x28, 0x33, 0xc7, 0xe6, 0xd1, 0xfe, 0x95, 0x52, 0x4e, 0x4b, 0xde, 0xcb,
+	0x92, 0xc6, 0x76, 0xd4, 0xaa, 0xc3, 0xff, 0xe2, 0x90, 0xbb, 0x57, 0xea, 0xfd, 0x4f, 0xa7, 0x71,
+	0x4c, 0xee, 0xff, 0xb9, 0xfc, 0xf5, 0x63, 0x69, 0xad, 0x2f, 0xb9, 0x37, 0x27, 0xf8, 0x9f, 0xc8,
+	0xce, 0x5a, 0x0f, 0xe5, 0xb5, 0xc5, 0x22, 0x01, 0x94, 0x3c, 0x06, 0xa3, 0xa9, 0xc1, 0x16, 0x0e,
+	0x4a, 0x49, 0xbd, 0x34, 0x4c, 0xe6, 0x2d, 0x66, 0xde, 0xb4, 0x43, 0x9a, 0x09, 0x60, 0xac, 0x72,
+	0xa9, 0x73, 0x51, 0x54, 0x37, 0xc7, 0x96, 0x5d, 0xe5, 0x42, 0x86, 0x80, 0xc8, 0x53, 0x30, 0x13,
+	0x6f, 0xb0, 0xb9, 0xd9, 0x7d, 0x7d, 0x31, 0xf5, 0x9c, 0xc9, 0xd4, 0x73, 0x2e, 0xa7, 0x9e, 0xf3,
+	0x73, 0xea, 0x39, 0x9f, 0x67, 0x5e, 0x6d, 0x32, 0xf3, 0x6a, 0x97, 0x33, 0xaf, 0xf6, 0xee, 0x49,
+	0x9a, 0xeb, 0x6c, 0x74, 0x16, 0xc4, 0x62, 0x18, 0x4a, 0xd1, 0xd7, 0x87, 0x05, 0xe8, 0x0f, 0x42,
+	0xf5, 0x8d, 0xa1, 0xc4, 0x60, 0x10, 0x7e, 0xfc, 0xfd, 0xbf, 0x62, 0x3e, 0xfd, 0xb3, 0x5b, 0xe6,
+	0xdb, 0x7f, 0xfa, 0x2b, 0x00, 0x00, 0xff, 0xff, 0xe0, 0x88, 0xfd, 0xef, 0x76, 0x04, 0x00, 0x00,
 }
 
 func (m *Relay) Marshal() (dAtA []byte, err error) {
@@ -492,6 +611,25 @@ func (m *RelayResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.PayloadHash) > 0 {
+		i -= len(m.PayloadHash)
+		copy(dAtA[i:], m.PayloadHash)
+		i = encodeVarintRelay(dAtA, i, uint64(len(m.PayloadHash)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.RelayMinerError != nil {
+		{
+			size, err := m.RelayMinerError.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintRelay(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.Payload) > 0 {
 		i -= len(m.Payload)
 		copy(dAtA[i:], m.Payload)
@@ -548,6 +686,55 @@ func (m *RelayResponseMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarintRelay(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RelayMinerError) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RelayMinerError) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RelayMinerError) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Message) > 0 {
+		i -= len(m.Message)
+		copy(dAtA[i:], m.Message)
+		i = encodeVarintRelay(dAtA, i, uint64(len(m.Message)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Description) > 0 {
+		i -= len(m.Description)
+		copy(dAtA[i:], m.Description)
+		i = encodeVarintRelay(dAtA, i, uint64(len(m.Description)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Code != 0 {
+		i = encodeVarintRelay(dAtA, i, uint64(m.Code))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Codespace) > 0 {
+		i -= len(m.Codespace)
+		copy(dAtA[i:], m.Codespace)
+		i = encodeVarintRelay(dAtA, i, uint64(len(m.Codespace)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -630,6 +817,14 @@ func (m *RelayResponse) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovRelay(uint64(l))
 	}
+	if m.RelayMinerError != nil {
+		l = m.RelayMinerError.Size()
+		n += 1 + l + sovRelay(uint64(l))
+	}
+	l = len(m.PayloadHash)
+	if l > 0 {
+		n += 1 + l + sovRelay(uint64(l))
+	}
 	return n
 }
 
@@ -644,6 +839,30 @@ func (m *RelayResponseMetadata) Size() (n int) {
 		n += 1 + l + sovRelay(uint64(l))
 	}
 	l = len(m.SupplierOperatorSignature)
+	if l > 0 {
+		n += 1 + l + sovRelay(uint64(l))
+	}
+	return n
+}
+
+func (m *RelayMinerError) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Codespace)
+	if l > 0 {
+		n += 1 + l + sovRelay(uint64(l))
+	}
+	if m.Code != 0 {
+		n += 1 + sovRelay(uint64(m.Code))
+	}
+	l = len(m.Description)
+	if l > 0 {
+		n += 1 + l + sovRelay(uint64(l))
+	}
+	l = len(m.Message)
 	if l > 0 {
 		n += 1 + l + sovRelay(uint64(l))
 	}
@@ -1143,6 +1362,76 @@ func (m *RelayResponse) Unmarshal(dAtA []byte) error {
 				m.Payload = []byte{}
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RelayMinerError", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelay
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRelay
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelay
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.RelayMinerError == nil {
+				m.RelayMinerError = &RelayMinerError{}
+			}
+			if err := m.RelayMinerError.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PayloadHash", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelay
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRelay
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelay
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PayloadHash = append(m.PayloadHash[:0], dAtA[iNdEx:postIndex]...)
+			if m.PayloadHash == nil {
+				m.PayloadHash = []byte{}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipRelay(dAtA[iNdEx:])
@@ -1262,6 +1551,171 @@ func (m *RelayResponseMetadata) Unmarshal(dAtA []byte) error {
 			if m.SupplierOperatorSignature == nil {
 				m.SupplierOperatorSignature = []byte{}
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRelay(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRelay
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RelayMinerError) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRelay
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RelayMinerError: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RelayMinerError: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Codespace", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelay
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelay
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelay
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Codespace = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Code", wireType)
+			}
+			m.Code = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelay
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Code |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelay
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelay
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelay
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Description = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelay
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelay
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelay
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Message = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

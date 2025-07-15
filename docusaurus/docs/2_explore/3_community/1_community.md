@@ -10,6 +10,7 @@ A collection of community-maintained tools and resources for Pocket Network. All
 - [pocketd: Easy Full Node Deployment (with Snapshot)](#pocketd-easy-full-node-deployment-with-snapshot)
 - [shannon-keyring-loader: Bulk Key Import Tool](#shannon-keyring-loader-bulk-key-import-tool)
 - [Helm Chart for RelayMiner \& FullNode](#helm-chart-for-relayminer--fullnode)
+- [Pocket Knife](#pocket-knife)
 
 ---
 
@@ -61,3 +62,16 @@ Streamlines deployment on Kubernetes clusters
 - HPA resource definition for relayminer (autoscaling)
 
 [GitHub Repo](https://github.com/eddyzags/pocket-network-helm-chart)
+
+## [Pocket Knife](https://github.com/buildwithgrove/pocket-knife/)
+
+A python syntactic sugar wrapper for `pocketd` — streamlined for bulk operations.
+
+**Features**:
+
+- Quickly find and export all node operator addresses owned by a wallet, with smart filtering, deduplication, and file output.
+- Analyze total holdings across liquid balances, app stakes, and node stakes from a single structured JSON input.
+- Batch unstake hundreds of operators with automatic gas estimation, transaction tracking, and error reporting.
+- and many more features!
+
+[GitHub Repo](https://github.com/buildwithgrove/pocket-knife)
