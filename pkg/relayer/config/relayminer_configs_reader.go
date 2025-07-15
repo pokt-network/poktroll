@@ -3,6 +3,8 @@ package config
 import (
 	"github.com/docker/go-units"
 	yaml "gopkg.in/yaml.v2"
+
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // DefaultRequestTimeoutSeconds is the default timeout for requests in seconds.
@@ -13,7 +15,7 @@ const DefaultRequestTimeoutSeconds = 10
 const DefaultMaxBodySize = "20MB"
 
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
-func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
+func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*RelayMinerConfig, error) {
 	var (
 		yamlRelayMinerConfig YAMLRelayMinerConfig
 		relayMinerConfig     = &RelayMinerConfig{}
@@ -96,7 +98,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Hydrate the suppliers
-	if err := relayMinerConfig.HydrateSuppliers(yamlRelayMinerConfig.Suppliers); err != nil {
+	if err := relayMinerConfig.HydrateSuppliers(logger, yamlRelayMinerConfig.Suppliers); err != nil {
 		return nil, err
 	}
 
