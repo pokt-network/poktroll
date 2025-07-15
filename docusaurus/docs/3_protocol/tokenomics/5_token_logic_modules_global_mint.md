@@ -1,9 +1,19 @@
 ---
 title: Global Mint TLM
-sidebar_position: 6
+sidebar_position: 5
 ---
 
-_tl;dr Distribute newly minted coins on a per claim basis to all involved stakeholders._
+_tl;dr Distribute newly minted (net new) coins on a per claim basis to all involved stakeholders._
+
+- [Token Distribution (Global Inflation)](#token-distribution-global-inflation)
+  - [Example Distribution](#example-distribution)
+- [TLM: Global Mint Reimbursement Request (GMRR)](#tlm-global-mint-reimbursement-request-gmrr)
+  - [Self Dealing Attack](#self-dealing-attack)
+  - [Reimbursement Request Philosophy](#reimbursement-request-philosophy)
+  - [Reimbursement Request Design](#reimbursement-request-design)
+- [FAQ](#faq)
+
+## Token Distribution (Global Inflation)
 
 The `Global Mint` TLM is, _theoretically_, going to reach `zero` when the network
 reaches maturity in the far future.
@@ -12,63 +22,80 @@ On a per claim basis, the network mints new tokens based on the amount of work
 claimed. The newly minted tokens are distributed to the DAO, Service Owner, Application,
 Supplier and its Revenue Shareholders based on the values of various governance params.
 
+### Example Distribution
+
+For example, assuming the following tokenomic module params:
+
+```json
+{
+  "params": {
+    "mint_allocation_percentages": {
+      "dao": 0.1,
+      "proposer": 0.1,
+      "supplier": 0.7,
+      "source_owner": 0.1,
+      "application": 0
+    },
+    "dao_reward_address": "pokt10...",
+    "global_inflation_per_claim": 0.2
+  }
+}
+```
+
+The newley minuted tokens would be distributed as follows:
+
 ```mermaid
----
-title: "Token Logic Module: Global Mint"
----
-flowchart TD
-    SA(["Settlement Amount (SA)"])
-    PCI(["Per Claim Global Inflation (PCGI) <br> (Governance Parameter)"])
+graph TD
+    %% Set default styling for all nodes
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px,color:black;
 
-    DA(["DAO Mint Allocation"])
-    PA(["Proposer Mint Allocation"])
-    SMA(["Supplier Mint Allocation"])
-    SOM(["Source Owner Mint Allocation"])
-    AA(["Application Mint Allocation"])
+    uPOKT["**🧾 Session.Cost**<br/>(uPOKT)"]:::keyClass
 
-    SA --> TO
-    PCI --> TO
+    subgraph GlobalInflation["🌍 Global Inflation Calculation"]
+        direction TB
+        GIP["**chain.GlobalInflationPerClaim**<br/>(0.2)"]:::default
+        InflationAmount["**💰 session.Inflation**<br/>(uPOKT × 0.2)"]:::default
 
-    subgraph TO[Tokenomics Operations]
-        TM[[Tokenomics Module]]
-        TK[(Tokenomics Keeper)]
-        IA("IA = SA * PCGI <br> (IA: Inflation Amount)")
-        TM -..- TK
-        TM -- "💲 MINT IA" --> IA
-
+        GIP --> InflationAmount
+        uPOKT --> InflationAmount
     end
 
-    AA --> ID
-    DA --> ID
-    TO --Distribute Inflation (IA)--> ID
-    PA --> ID
-    SOM --> ID
-    SMA --> ID
+    subgraph TokenMinting["⚡ Token Minting & Distribution"]
+        direction TB
 
-    subgraph ID[Inflation Distribution]
-        DI("Distribute Inflation Amount (IA)")
-        APPA["Application Address"]
-        SPPA["Supplier Address & <br> Revenue Shareholders"]
-        DAOA["DAO Address"]
-        SOA["Service Owner Address"]
-        PRA["Proposer Address"]
+        TotalMint["**🏭 session.MintBurnInflate**<br/>(Session Cost + Inflation)"]:::default
 
-        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| APPA
-        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| DAOA
-        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| PRA
-        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| SOA
-        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| SPPA
+        AppWallet[("📱 Application Wallet<br/>(User Controlled)")]:::configClass
+        SupplierWallet[("🏗️ Supplier Wallet<br/>(Operator Controlled)")]:::supplierClass
+        DAOAddress[("🏛️ DAO Treasury<br/>pokt10...")]:::daoClass
+        ProposerWallet[("👨‍⚖️ Block Proposer<br/>(Validator Wallet)")]:::proposerClass
+        SourceOwnerWallet[("🛎 Service Owner Wallet<br/>(Service Controlled)")]:::sourceClass
     end
 
-    classDef module fill:#f9f,color: #333,stroke:#333,stroke-width:2px;
-    classDef address fill:#bbf,color: #333,stroke:#333,stroke-width:2px;
-    classDef question fill:#e3db6d,color: #333,stroke:#333,stroke-width:2px;
-    classDef govparam fill:#eba69a,color: #333,stroke:#333,stroke-width:2px;
-    classDef event fill:#e8b761,color: #333,stroke:#333,stroke-width:2px;
+    InflationAmount --> TotalMint
 
-    class TM module;
-    class PCI,DA,PA,SMA,SOM,AA govparam;
-    class APPA,SPPA,DAOA,SOA,PRA address;
+    TotalMint -->|"🔥 Session.Cost"| AppWallet
+    TotalMint -->|"💰 Session.Cost + <br/> 💰 0.7 * Session.Inflation"| SupplierWallet
+    TotalMint -->|"💰 0.1 * Session.Inflation"| DAOAddress
+    TotalMint -->|"💰 0.1 * Session.Inflation"| ProposerWallet
+    TotalMint -->|"💰 0.1 * Session.Inflation"| SourceOwnerWallet
+
+    %% Define custom classes with specified colors
+    classDef userClass fill:#f0f0f0,stroke:#333,stroke-width:2px,color:black;
+    classDef gatewayClass fill:#e8f5e8,stroke:#4caf50,stroke-width:2px,color:black;
+    classDef pocketdClass fill:#fff3e0,stroke:#ff8f00,stroke-width:2px,color:black;
+    classDef blockchainClass fill:#e3f2fd,stroke:#2196f3,stroke-width:2px,color:black;
+    classDef supplierClass fill:#fff3e0,stroke:#ff9800,stroke-width:2px,color:black;
+    classDef keyClass fill:#ffebee,stroke:#d32f2f,stroke-width:1px,color:black;
+    classDef configClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px,color:black;
+    classDef dbClass fill:#e0f2f1,stroke:#00695c,stroke-width:1px,color:black;
+    classDef daoClass fill:#e8eaf6,stroke:#3f51b5,stroke-width:1px,color:black;
+    classDef proposerClass fill:#f1f8e9,stroke:#689f38,stroke-width:1px,color:black;
+    classDef sourceClass fill:#fce4ec,stroke:#c2185b,stroke-width:1px,color:black;
+
+    %% Apply classes to subgraphs
+    class GlobalInflation pocketdClass
+    class TokenMinting blockchainClass
 ```
 
 ## TLM: Global Mint Reimbursement Request (GMRR)
@@ -231,9 +258,9 @@ sequenceDiagram
     end
 ```
 
-### FAQ
+## FAQ
 
-#### Are Applications responsible for endorsing/covering the whole global mint amount? <!-- omit in toc -->
+### Are Applications responsible for endorsing/covering the whole global mint amount? <!-- omit in toc -->
 
 _tl;dr Yes, for the first version._
 
@@ -244,7 +271,7 @@ This will require staked Applications (sovereign or those managed by Gateways) t
 "top up" their balances to cover not only the onchain costs/burn, but also the inflation
 until it is reimbursed by the DAO/PNF.
 
-#### Will there be onchain enforcement of how Applications get reimbursed? <!-- omit in toc -->
+### Will there be onchain enforcement of how Applications get reimbursed? <!-- omit in toc -->
 
 _tl;dr Unfortunately, no._
 
@@ -267,7 +294,7 @@ between Gateways and PNF in Morse today in order to:
 - Get access to the limited supply of Gateway keys
 - Gateways paying the onchain burn manually
 
-#### How does this solution scale for Sovereign Applications? <!-- omit in toc -->
+### How does this solution scale for Sovereign Applications? <!-- omit in toc -->
 
 Sovereign Applications are no different than Gateway Applications in this respect.
 They are smaller and a much less common use case, but will have to follow the same
@@ -275,7 +302,7 @@ reimbursement process described above.
 
 _Read more about about their differences and similarities [here](../primitives/gateways.md)._
 
-#### What kind of resources are needed to scale and automate reimbursement? <!-- omit in toc -->
+### What kind of resources are needed to scale and automate reimbursement? <!-- omit in toc -->
 
 This will be a combination of onchain and offchain resources (EventReader, TxSubmission, Accounting, etc...). In particular:
 

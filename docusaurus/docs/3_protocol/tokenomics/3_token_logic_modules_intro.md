@@ -1,7 +1,9 @@
 ---
 title: Token Logic Modules Introduction
-sidebar_position: 4
+sidebar_position: 3
 ---
+
+Introduction to what Token Logic Modules are and how they are involved in optimistic rate limiting.
 
 - [Introduction](#introduction)
 - [Background: Max Claimable Amount](#background-max-claimable-amount)
