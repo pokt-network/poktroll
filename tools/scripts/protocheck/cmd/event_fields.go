@@ -115,13 +115,13 @@ func checkEventFieldsFn(protoFilePath string) error {
 	if goPath == "" {
 		goPath = os.Getenv("HOME") + "/go"
 	}
-	
+
 	// Get the current working directory to resolve relative paths
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current working directory: %w", err)
 	}
-	
+
 	parser := protoparse.Parser{
 		ImportPaths: []string{
 			flagRootValue,
@@ -165,7 +165,7 @@ func checkEventMessage(filePath string, msgDesc *desc.MessageDescriptor) {
 	if !strings.HasPrefix(msgDesc.GetName(), "Event") {
 		return
 	}
-	
+
 	// log.Printf("Checking Event message: %s in %s", msgDesc.GetName(), filePath)
 
 	// Check all fields in the message
@@ -185,7 +185,7 @@ func checkEventMessage(filePath string, msgDesc *desc.MessageDescriptor) {
 			if err != nil {
 				absPath = filePath // fallback to original path if abs fails
 			}
-			
+
 			violation := eventFieldViolation{
 				FilePath:    absPath,
 				Line:        line,

@@ -195,7 +195,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			require.Equal(t, uint64(test.expectedNumClaimedComputeUnits), claimCreatedEvents[0].GetNumClaimedComputeUnits())
 			require.Equal(t, uint64(expectedNumRelays), claimCreatedEvents[0].GetNumRelays())
 			require.Equal(t, numEstimatedComputUnits, claimCreatedEvents[0].GetNumClaimedComputeUnits())
-			require.Equal(t, &claimedUPOKT, claimCreatedEvents[0].GetClaimedUpokt())
+			require.Equal(t, claimedUPOKT.String(), claimCreatedEvents[0].GetClaimedUpokt())
 		})
 	}
 }

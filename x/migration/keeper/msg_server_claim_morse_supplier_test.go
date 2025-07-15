@@ -197,8 +197,8 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
 		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
 		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-		ClaimedBalance:       expectedClaimedUnstakedTokens,
-		ClaimedSupplierStake: supplierStake,
+		ClaimedBalance:       expectedClaimedUnstakedTokens.String(),
+		ClaimedSupplierStake: supplierStake.String(),
 		SessionEndHeight:     expectedSessionEndHeight,
 		Supplier:             &expectedSupplier,
 	}

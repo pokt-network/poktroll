@@ -545,7 +545,7 @@ func (k Keeper) slashSupplierStake(
 	// Emit an event that a supplier has been slashed.
 	events = append(events, &tokenomicstypes.EventSupplierSlashed{
 		Claim:               &claim,
-		ProofMissingPenalty: &slashingCoin,
+		ProofMissingPenalty: slashingCoin.String(),
 	})
 
 	if err := ctx.EventManager().EmitTypedEvents(events...); err != nil {
@@ -714,7 +714,7 @@ func (k Keeper) settleClaim(
 				NumRelays:                numClaimRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
-				ClaimedUpokt:             &claimeduPOKT,
+				ClaimedUpokt:             claimeduPOKT.String(),
 			}
 			if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 				return nil, err
@@ -747,7 +747,7 @@ func (k Keeper) settleClaim(
 		NumRelays:                numClaimRelays,
 		NumClaimedComputeUnits:   numClaimComputeUnits,
 		NumEstimatedComputeUnits: numEstimatedComputeUnits,
-		ClaimedUpokt:             &claimeduPOKT,
+		ClaimedUpokt:             claimeduPOKT.String(),
 		ProofRequirement:         proofRequirement,
 	}
 

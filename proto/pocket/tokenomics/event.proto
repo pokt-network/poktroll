@@ -4,7 +4,6 @@ package pocket.tokenomics;
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 option (gogoproto.stable_marshaler_all) = true;
 
-import "cosmos/base/v1beta1/coin.proto";
 import "gogoproto/gogo.proto";
 import "pocket/proof/types.proto";
 
@@ -33,7 +32,7 @@ message EventClaimExpired {
     uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
     // The uPOKT coin claimed to be rewarded for the work done as a function of
     // the number of estimated compute units and the compute units to token multiplier.
-    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+    string claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // EventClaimSettled is an event emitted whenever a claim is settled.
@@ -53,7 +52,7 @@ message EventClaimSettled {
     uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
     // The uPOKT coin claimed to be rewarded for the work done as a function of
     // the number of estimated compute units and the compute units to token multiplier.
-    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+    string claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 
     // Field #7 was removed to reduce block size:
     // - settlement_result field was removed to prevent event bloat
@@ -74,12 +73,12 @@ message EventApplicationOverserviced {
     // Expected burn is the amount the supplier is claiming for work done
     // to service the application during the session.
     // This is usually the amount in the Claim submitted.
-    cosmos.base.v1beta1.Coin expected_burn  = 3;
+    string expected_burn = 3;
     // Effective burn is the amount that is actually being paid to the supplier
     // for the work done. It is less than the expected burn (claim amount) and
     // is a function of the relay mining algorithm.
     // E.g. The application's stake divided by the number of suppliers in a session.
-    cosmos.base.v1beta1.Coin effective_burn  = 4;
+    string effective_burn = 4;
 }
 
 // EventSupplierSlashed is emitted when a supplier is slashed for not providing,
@@ -88,7 +87,7 @@ message EventSupplierSlashed {
     pocket.proof.Claim claim = 1;
     // Amount slashed from the supplier's stake due to the expired claims.
     // This is a function of the number of expired claims and proof missing penalty.
-    cosmos.base.v1beta1.Coin proof_missing_penalty = 2;
+    string proof_missing_penalty = 2;
 }
 
 // EventClaimDiscarded is emitted when a claim is discarded due to unexpected
@@ -107,5 +106,5 @@ message EventApplicationReimbursementRequest {
     string supplier_owner_addr = 3;
     string service_id = 4;
     string session_id = 5;
-    cosmos.base.v1beta1.Coin amount = 6;
+    string amount = 6;
 }

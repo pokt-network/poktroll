@@ -15,12 +15,12 @@ func checkEventFieldsInFile(filePath string) (bool, []eventFieldViolation, error
 	// Reset global state
 	eventFieldsCheckPassed = true
 	eventFieldsViolations = []eventFieldViolation{}
-	
+
 	// Capture log output for debugging
 	oldLog := log.Writer()
 	log.SetOutput(io.Discard) // Comment out to see debug output
 	defer log.SetOutput(oldLog)
-	
+
 	err := checkEventFieldsFn(filePath)
 	return eventFieldsCheckPassed, eventFieldsViolations, err
 }
@@ -202,18 +202,18 @@ message ComplexMessage {
 			for filename := range tt.protoFiles {
 				protoFiles = append(protoFiles, filepath.Join(testDir, filename))
 			}
-			
+
 			totalViolations := 0
 			allPassed := true
 			var allViolations []eventFieldViolation
-			
+
 			for _, protoFile := range protoFiles {
 				passed, violations, err := checkEventFieldsInFile(protoFile)
 				if err != nil {
 					t.Logf("Error checking %s: %v", protoFile, err)
 					continue // Skip files that can't be parsed
 				}
-				
+
 				if !passed {
 					allPassed = false
 				}
@@ -229,7 +229,7 @@ message ComplexMessage {
 				if totalViolations != tt.expectCount {
 					t.Errorf("Expected %d violations, got %d", tt.expectCount, totalViolations)
 				}
-				
+
 				// Check that expected messages are present
 				output := fmt.Sprintf("%+v", allViolations)
 				for _, expectedMsg := range tt.expectMsg {

@@ -388,8 +388,14 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	require.Equal(t, app.GetAddress(), appOverservicedEvent.ApplicationAddr)
 	require.Equal(t, supplier.GetOperatorAddress(), appOverservicedEvent.SupplierOperatorAddr)
-	require.Equal(t, numTokensClaimed, appOverservicedEvent.ExpectedBurn.Amount.Int64())
-	require.Equal(t, appBurn, appOverservicedEvent.EffectiveBurn.Amount)
+	// Parse the string representations of the coins to compare amounts
+	expectedBurnCoin, err := cosmostypes.ParseCoinNormalized(appOverservicedEvent.ExpectedBurn)
+	require.NoError(t, err)
+	require.Equal(t, numTokensClaimed, expectedBurnCoin.Amount.Int64())
+
+	effectiveBurnCoin, err := cosmostypes.ParseCoinNormalized(appOverservicedEvent.EffectiveBurn)
+	require.NoError(t, err)
+	require.Equal(t, appBurn, effectiveBurnCoin.Amount)
 	require.Less(t, appBurn.Int64(), numTokensClaimed)
 }
 
