@@ -69,7 +69,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect
 	github.com/hashicorp/go-metrics v0.5.4
 	github.com/pokt-network/ring-go v0.1.0
-	github.com/pokt-network/smt v0.13.0
+	github.com/pokt-network/smt v0.14.1
 	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188
 	github.com/prometheus/client_golang v1.22.0
 	github.com/regen-network/gocuke v1.1.0
