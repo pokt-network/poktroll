@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoparse"
+	"github.com/jhump/protoreflect/desc"            //nolint:staticcheck // deprecated but still functional
+	"github.com/jhump/protoreflect/desc/protoparse" //nolint:staticcheck // deprecated but still functional
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/descriptorpb"
 
