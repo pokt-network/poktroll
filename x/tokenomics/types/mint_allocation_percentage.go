@@ -6,6 +6,7 @@ const basisPointsTotal = 10000 // 100% = 10000 basis points
 
 // Sum returns the sum of all mint allocation percentages.
 // It uses basis points internally for exact arithmetic validation.
+// TODO_IMPROVE(@red-0ne): Use string % representations and big.Rat in the future.
 func (m *MintAllocationPercentages) Sum() float64 {
 	// Convert each percentage to basis points for exact integer arithmetic
 	daoBP := int64(math.Round(m.Dao * float64(basisPointsTotal)))

@@ -4,6 +4,7 @@ import "math"
 
 // Sum returns the sum of all mint equals burn claim distribution percentages.
 // It uses basis points internally for exact arithmetic validation.
+// TODO_IMPROVE(@red-0ne): Use string % representations and big.Rat in the future.
 func (m *MintEqualsBurnClaimDistribution) Sum() float64 {
 	// Convert each percentage to basis points for exact integer arithmetic
 	daoBP := int64(math.Round(m.Dao * float64(basisPointsTotal)))
