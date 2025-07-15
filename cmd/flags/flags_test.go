@@ -45,7 +45,7 @@ func TestGetFlagValueBool(t *testing.T) {
 	}
 
 	// Register relevant flags for testing, defaulting to empty values.
-	testCmd.Flags().String(cosmosflags.FlagGRPCInsecure, "", "network flag")
+	testCmd.Flags().String(cosmosflags.FlagGRPCInsecure, "", "grpc insecure flag")
 
 	boolValues := []string{
 		BooleanTrueValue,
@@ -53,7 +53,7 @@ func TestGetFlagValueBool(t *testing.T) {
 	}
 
 	for _, boolValue := range boolValues {
-		// Set the network flag to the correct value.
+		// Set the flag to the current boolean value.
 		err := testCmd.Flag(cosmosflags.FlagGRPCInsecure).Value.Set(boolValue)
 		require.NoError(t, err)
 
@@ -61,5 +61,18 @@ func TestGetFlagValueBool(t *testing.T) {
 		networkFlagValue, err := GetFlagValueString(testCmd, cosmosflags.FlagGRPCInsecure)
 		require.NoError(t, err)
 		require.Equal(t, boolValue, networkFlagValue)
+
+		// Test GetFlagBool function as well.
+		boolFlagValue, err := GetFlagBool(testCmd, cosmosflags.FlagGRPCInsecure)
+		require.NoError(t, err)
+		require.Equal(t, boolValue == BooleanTrueValue, boolFlagValue)
 	}
+
+	// Test invalid boolean value
+	err := testCmd.Flag(cosmosflags.FlagGRPCInsecure).Value.Set("invalid")
+	require.NoError(t, err)
+
+	_, err = GetFlagBool(testCmd, cosmosflags.FlagGRPCInsecure)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "expected 'true' or 'false'")
 }

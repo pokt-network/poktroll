@@ -68,10 +68,10 @@ const (
 	FlagQueryCachingUsage   = "(Optional) Enable or disable onchain query caching"
 	DefaultFlagQueryCaching = true
 
-	// This is the default for the conventional cosmos-sdk --node flag value.
-	// - It is hard-coded into cosmos-sdk CLI code
-	// - Since this flag is registered by cosmos-sdk we CANNOT change the default value.
-	// - This costant MUST match what cosmos-sdk registers and is ONLY used for comparison (i.e. not in any flag registration logic).
+	// DefaultNodeRPCURL is the cosmos-sdk default --node flag value.
+	// - Hard-coded in cosmos-sdk CLI
+	// - Cannot be changed since registered by cosmos-sdk
+	// - Used only for comparison, not flag registration
 	// See: https://github.com/cosmos/cosmos-sdk/blob/v0.53.2/client/flags/flags.go#L108
 	DefaultNodeRPCURL = "tcp://localhost:26657"
 )
@@ -87,8 +87,8 @@ func GetFlagValueString(cmd *cobra.Command, flagName string) (string, error) {
 	return flag.Value.String(), nil
 }
 
-// GetFlagBool returns the value of the flag with the given name.
-// If the flag is not registered, an error is returned.
+// GetFlagBool returns the boolean value of the flag with the given name.
+// Returns error if flag is not registered or has invalid boolean value.
 func GetFlagBool(cmd *cobra.Command, flagName string) (bool, error) {
 	flagValueString, err := GetFlagValueString(cmd, flagName)
 	if err != nil {

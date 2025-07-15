@@ -48,21 +48,9 @@ func GetTxClientFromFlags(
 	// Construct dependencies for the tx client
 	deps, err := SupplyConfig(ctx, cmd, []SupplierFn{
 		NewSupplyLoggerFromCtx(ctx),
-
 		NewSupplyBlockClientFn(queryNodeRPCUrl),
 		NewSupplyCometClientFn(queryNodeRPCUrl),
 	})
-	if err != nil {
-		return nil, err
-	}
-	deps = depinject.Configs(deps, depinject.Supply(
-		types.Context(clientCtx),
-		clientFactory,
-	))
-	deps = depinject.Configs(deps, depinject.Supply(
-		types.Context(clientCtx),
-		clientFactory,
-	))
 	if err != nil {
 		return nil, err
 	}

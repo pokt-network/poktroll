@@ -75,13 +75,12 @@ func ParseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
 	}
 }
 
-// setNetworkRelatedFlags sets the following flags according to the given arguments
-// ONLY if they have not already been set AND are registered on the given command:
-// * --chain-id
-// * --node
-// * --grpc-addr
-// * --grpc-insecure
-// * --faucet-base-url
+// setNetworkRelatedFlags sets network-specific flags if not already set and registered:
+// * --chain-id: Blockchain network identifier
+// * --node: RPC endpoint URL
+// * --grpc-addr: gRPC endpoint address
+// * --grpc-insecure: Whether to use insecure gRPC connection
+// * --faucet-base-url: Faucet service base URL
 
 func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr, grpcInsecure, faucetBaseUrl string) error {
 	// --chain-id flag

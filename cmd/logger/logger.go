@@ -20,7 +20,7 @@ var (
 	LogLevel string
 
 	// LogOutput is a global variable that is intended to hold the value of the
-	// "--log-output" flag when a command which has called PreRunESetup() is executed.
+	// "--log_output" flag when a command which has called PreRunESetup() is executed.
 	LogOutput string
 
 	// Logger is a global variable that holds the logger which is configured according
