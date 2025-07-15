@@ -109,7 +109,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processApplicationBurn() error {
 func (tlmbem *tlmRelayBurnEqualsMint) processTokenomicsMint() error {
 	// Mint the total settlement amount to the tokenomics module for distribution
 	tlmbem.tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
-		OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT,
+		OpReason:          tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_TOKENOMICS_CLAIM_DISTRIBUTION_MINT,
 		DestinationModule: tokenomicstypes.ModuleName,
 		Coin:              tlmbem.tlmCtx.SettlementCoin,
 	})

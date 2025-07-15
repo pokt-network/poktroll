@@ -43,7 +43,7 @@ message ModToModTransfer {
 
 // SettlementOpReason is a distinct, tlm-specific causal reason for a given operation.
 enum SettlementOpReason {
-  // Next free index: 19
+  // Next free index: 20
 
   // *** All TLMs ***
 
@@ -60,6 +60,7 @@ enum SettlementOpReason {
   // MintEqualsBurnTlm: Value transfer (credit/debit aka mint/burn)
   TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT = 1;
   TLM_RELAY_BURN_EQUALS_MINT_APPLICATION_STAKE_BURN = 2;
+  TLM_RELAY_BURN_EQUALS_MINT_TOKENOMICS_CLAIM_DISTRIBUTION_MINT = 19;
 
   // MintEqualsBurnTlm: Reward distribution
   TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION = 4;

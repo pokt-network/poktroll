@@ -20,6 +20,7 @@ var (
 	ParamGlobalInflationPerClaim   = "global_inflation_per_claim"
 	DefaultGlobalInflationPerClaim = float64(0.1)
 
+	// TODO_CONSIDERATION: Consider renaming this to GlobalInflationPerClaimDistribution
 	// GlobalInflation Supporting TLM Params
 	KeyMintAllocationPercentages     = []byte("MintAllocationPercentages")
 	ParamMintAllocationPercentages   = "mint_allocation_percentages"
@@ -202,7 +203,7 @@ func ValidateMintAllocationSum(mintAllocationPercentage MintAllocationPercentage
 	const epsilon = 1e-10 // Small epsilon value for floating-point comparison
 	sum := mintAllocationPercentage.Sum()
 	if math.Abs(sum-1) > epsilon {
-		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f which is greater than the acceptable epsilon of %f", sum, epsilon)
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f instead. This is greater than the acceptable epsilon of %f", sum, epsilon)
 	}
 
 	return nil
