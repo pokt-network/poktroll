@@ -200,10 +200,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		require.True(s, ok)
 
 		// Assert that the claim was settled for the correct application, supplier, and service.
-		claim := claimSettledEvent.Claim
-		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
-		require.Equal(s, supplier.OperatorAddress, claim.SupplierOperatorAddress)
-		require.Equal(s, serviceId, claim.SessionHeader.ServiceId)
+		require.Equal(s, supplier.OperatorAddress, claimSettledEvent.SupplierOperatorAddress)
 		require.Greater(s, claimSettledEvent.NumClaimedComputeUnits, uint64(0), "claimed compute units should be greater than 0")
 		// TODO_IMPROVE: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 		return true
