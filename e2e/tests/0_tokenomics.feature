@@ -1,4 +1,4 @@
-# TODO_TECHDEBT: This file is called `0_settlement.feature` instead of
+# TODO_TECHDEBT: This file is called `0_tokenomics.feature` instead of
 # `settlement.feature` to force it to run before other tests and ensure
 # the correctness of the numbers asserted on. For example, if another test
 # crates a Claim but doesn't wait for it to be settled, the numbers will be

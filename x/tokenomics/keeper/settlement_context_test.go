@@ -139,7 +139,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 
 	// Validate that one claim still remains.
 	claims := s.keepers.GetAllClaims(ctx)
-	// DEV_NOTE: Using `require.Equal()` over `require.Len()` so errors are seeing to read.
+	// DEV_NOTE: Using `require.Equal()` over `require.Len()` so errors are easier to read.
 	require.Equal(t, 1, len(claims))
 
 	// Calculate a block height which is within the proof window.
