@@ -275,7 +275,7 @@ func New(
 	// The ante handler waives fees for txs which contain ONLY morse claim
 	// messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and
 	// MsgClaimMorseSupplier), and is signed by a single secp256k1 signer.
-	app.App.BaseApp.SetAnteHandler(newMorseClaimGasFeesWaiverAnteHandlerFn(app))
+	app.SetAnteHandler(newMorseClaimGasFeesWaiverAnteHandlerFn(app))
 
 	// Register legacy modules
 	app.registerIBCModules()
@@ -304,37 +304,30 @@ func New(
 
 	app.sm.RegisterStoreDecoders()
 
-	// A custom InitChainer can be set if extra pre-init-genesis logic is required.
-	// By default, when using app wiring enabled module, this is not required.
-	// For instance, the upgrade module will set automatically the module version map in its init genesis thanks to app wiring.
-	// However, when registering a module manually (i.e. that does not support app wiring), the module version map
-	// must be set manually as follow. The upgrade module will de-duplicate the module version map.
+	// Custom InitChainer to ensure ICA host port binding.
 	//
-	// app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
-	// 	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
-	// 	return app.App.InitChainer(ctx, req)
-	// })
-
-	// Applying a custom InitChainer in order to ensure that the interchain accounts host port is bound.
+	// Why this is necessary:
+	// - The default InitChainer does NOT bind the "icahost" port
+	// - Binding this port is required to allow other chains (controllers) to open ICA channels with pocket (host)
+	// - Without this, controller chains will get "port not found" errors during handshake
+	// - Even if ICA host is disabled via `host_enabled = false`, binding the port is harmless
+	// - Port binding is a runtime state operation and MUST happen after capability initialization
 	app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
-		// Initialize the genesis state; this is REQUIRED and would have otherwise been done by the default initChainer.
+		// Parse genesis state (this replaces the default InitChainer logic)
 		var genesisState map[string]json.RawMessage
 		if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal genesis state: %w", err)
 		}
+
+		// Initialize all modules from genesis
 		res, err := app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
 		if err != nil {
 			return nil, fmt.Errorf("failed to init genesis: %w", err)
 		}
 
-		// bindIcaHostPort binds the "icahost" port to the ICA host submodule if it is not
-		// already bound. This is required to allow remote chains to initiate interchain
-		// account channel handshakes. Port binding ensures the `icahost` module has the
-		// necessary capability to manage incoming connections. Omitting this step (or
-		// rebinding a port) can lead to handshake failures as controllers will see
-		// "port not found" errors if the port lacks a binding.
-		// NOTE: ICA host support may still be disabled by setting the ICA submodule params `host_enabled` to false.
+		// Bind the ICA host port (if not already bound)
 		if !app.Keepers.IBCKeeper.PortKeeper.IsBound(ctx, icahosttypes.SubModuleName) {
+			// This allows remote controller chains to create ICA channels
 			_ = app.Keepers.IBCKeeper.PortKeeper.BindPort(ctx, icahosttypes.SubModuleName)
 		}
 

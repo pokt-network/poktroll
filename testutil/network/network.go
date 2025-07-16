@@ -3,7 +3,13 @@ package network
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sync"
+	"syscall"
 	"testing"
+	"time"
 
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -31,22 +37,76 @@ type (
 	Config  = network.Config
 )
 
-var addrCodec = addresscodec.NewBech32Codec(app.AccountAddressPrefix)
+var (
+	addrCodec = addresscodec.NewBech32Codec(app.AccountAddressPrefix)
+	// Global mutex to ensure only one network test runs at a time within a single process
+	networkMutex sync.Mutex
+)
 
 func init() {
 	cmd.InitSDKConfig()
 }
 
+// acquireGlobalTestLock creates a file-based lock to coordinate tests across processes
+func acquireGlobalTestLock(t *testing.T) *os.File {
+	tempDir := os.TempDir()
+	lockPath := filepath.Join(tempDir, "poktroll_network_test.lock")
+
+	// Try to create/open the lock file
+	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0666)
+	require.NoError(t, err, "Failed to create global test lock file")
+
+	// Acquire exclusive lock (will block until available)
+	for {
+		err = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+		if err == nil {
+			// Successfully acquired lock
+			break
+		}
+		if err == syscall.EWOULDBLOCK {
+			// Lock held by another process, wait and retry
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		// Some other error
+		lockFile.Close()
+		require.NoError(t, err, "Failed to acquire global test lock")
+	}
+
+	return lockFile
+}
+
+// releaseGlobalTestLock releases the file-based lock
+func releaseGlobalTestLock(lockFile *os.File) {
+	if lockFile != nil {
+		_ = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+		lockFile.Close()
+	}
+}
+
 // New creates instance with fully configured cosmos network.
 // Accepts optional config, that will be used in place of the DefaultConfig() if provided.
+// Uses both in-process mutex and cross-process file lock to prevent all race conditions.
 func New(t *testing.T, configs ...Config) *Network {
 	t.Helper()
+
+	// First acquire in-process mutex
+	networkMutex.Lock()
+	// NOTE: We intentionally do NOT defer the unlock here.
+	// The mutex will be released in the cleanup function to ensure
+	// serialization of network creation AND cleanup across all modules.
+
+	// Then acquire cross-process file lock
+	lockFile := acquireGlobalTestLock(t)
+
+	// Lock will be released in the custom cleanup function below
+
 	if len(configs) > 1 {
 		panic("at most one config should be provided")
 	}
 	var cfg network.Config
 	if len(configs) == 0 {
-		cfg = DefaultConfig()
+		cfg = DefaultConfigWithPorts()
 	} else {
 		cfg = configs[0]
 	}
@@ -54,13 +114,57 @@ func New(t *testing.T, configs ...Config) *Network {
 	require.NoError(t, err, "TODO_FLAKY: This config setup is periodically flaky")
 	_, err = net.WaitForHeight(1)
 	require.NoError(t, err)
-	t.Cleanup(net.Cleanup)
+
+	// Custom cleanup with enhanced CometBFT shutdown handling
+	t.Cleanup(func() {
+		// Record initial goroutine count
+		initialGoroutines := runtime.NumGoroutine()
+
+		// Step 1: Give consensus reactors time to finish current operations
+		// This helps prevent the panic where consensus reactor tries to access closed leveldb
+		time.Sleep(1 * time.Second)
+
+		// Step 2: Call standard cleanup
+		net.Cleanup()
+
+		// Step 3: Wait for goroutines to finish with extended timeout
+		maxWait := 10 * time.Second
+		start := time.Now()
+		for time.Since(start) < maxWait {
+			currentGoroutines := runtime.NumGoroutine()
+			// If goroutine count has stabilized (reduced to 1/3 or less), we can proceed
+			if currentGoroutines <= initialGoroutines/3 || currentGoroutines < 50 {
+				break
+			}
+			time.Sleep(200 * time.Millisecond)
+		}
+
+		// Step 4: Final safety delay to ensure leveldb is fully closed
+		time.Sleep(2 * time.Second)
+
+		// Step 5: Release the global lock
+		releaseGlobalTestLock(lockFile)
+
+		// Step 6: Release the in-process mutex
+		// This ensures complete serialization of network operations
+		networkMutex.Unlock()
+	})
+
 	return net
 }
 
 // DefaultConfig will initialize config for the network with custom application,
 // genesis and single validator. All other parameters are inherited from cosmos-sdk/testutil/network.DefaultConfig
 func DefaultConfig() network.Config {
+	cfg, err := network.DefaultConfigWithAppConfig(app.AppConfig())
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
+// DefaultConfigWithPorts allocates ports safely within the lock and returns the config
+func DefaultConfigWithPorts() network.Config {
 	cfg, err := network.DefaultConfigWithAppConfig(app.AppConfig())
 	if err != nil {
 		panic(err)
@@ -262,6 +366,8 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%t", flags.FlagUnordered, true),
+		fmt.Sprintf("--%s=%s", flags.TimeoutDuration, 5*time.Second),
 	}
 	amount := sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, addrCodec, args...)

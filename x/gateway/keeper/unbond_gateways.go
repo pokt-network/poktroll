@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -79,7 +78,7 @@ func (k Keeper) UnbondGateway(ctx context.Context, gateway *gatewaytypes.Gateway
 
 	// Send the coins from the gateway pool back to the gateway.
 	err = k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, gatewaytypes.ModuleName, gatewayAddr, []sdk.Coin{*gateway.Stake},
+		ctx, gatewaytypes.ModuleName, gatewayAddr, []cosmostypes.Coin{*gateway.Stake},
 	)
 	if err != nil {
 		logger.Error(fmt.Sprintf(

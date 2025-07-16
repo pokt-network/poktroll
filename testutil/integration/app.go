@@ -16,7 +16,6 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/tx/signing"
 	abci "github.com/cometbft/cometbft/abci/types"
-	cmtabcitypes "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -27,8 +26,6 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/runtime"
-	"github.com/cosmos/cosmos-sdk/types"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/tx"
@@ -173,7 +170,7 @@ func NewIntegrationApp(
 	sdkCtx = sdkCtx.
 		WithBlockHeader(cometHeader).
 		WithIsCheckTx(true).
-		WithEventManager(cosmostypes.NewEventManager())
+		WithEventManager(sdk.NewEventManager())
 
 	// Add a block proposer address to the context
 	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
@@ -182,7 +179,7 @@ func NewIntegrationApp(
 	bApp.MountKVStores(keys)
 
 	bApp.SetInitChainer(
-		func(ctx sdk.Context, _ *cmtabcitypes.RequestInitChain) (*cmtabcitypes.ResponseInitChain, error) {
+		func(ctx sdk.Context, _ *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 			for _, mod := range modules {
 				// Set each module's genesis state to the default. This MAY be
 				// overridden via the InitChainerModuleFns option.
@@ -196,7 +193,7 @@ func NewIntegrationApp(
 				}
 			}
 
-			return &cmtabcitypes.ResponseInitChain{}, nil
+			return &abci.ResponseInitChain{}, nil
 		})
 
 	bApp.SetBeginBlocker(func(ctx sdk.Context) (sdk.BeginBlock, error) {
@@ -212,7 +209,7 @@ func NewIntegrationApp(
 	err := bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
 
-	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: chainId})
+	_, err = bApp.InitChain(&abci.RequestInitChain{ChainId: chainId})
 	require.NoError(t, err, "failed to initialize chain")
 
 	bApp.SetTxEncoder(txCfg.TxEncoder())
@@ -247,7 +244,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	}
 
 	// Prepare & register the codec for all the interfaces
-	sdkCfg := cosmostypes.GetConfig()
+	sdkCfg := sdk.GetConfig()
 	addrCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32AccountAddrPrefix())
 	valCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32ValidatorAddrPrefix())
 	signingOpts := signing.Options{
@@ -274,7 +271,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	prooftypes.RegisterInterfaces(registry)
 	servicetypes.RegisterInterfaces(registry)
 	authtypes.RegisterInterfaces(registry)
-	cosmostypes.RegisterInterfaces(registry)
+	sdk.RegisterInterfaces(registry)
 	cryptocodec.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
 	migrationtypes.RegisterInterfaces(registry)
@@ -739,13 +736,13 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	}
 
 	// Finalize the block with the transaction.
-	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
+	finalizeBlockReq := &abci.RequestFinalizeBlock{
 		Height: app.LastBlockHeight() + 1,
 		Time:   app.GetSdkCtx().BlockTime(),
 		// Randomize the proposer address for each block.
 		ProposerAddress: sample.ConsAddress().Bytes(),
-		DecidedLastCommit: cmtabcitypes.CommitInfo{
-			Votes: []cmtabcitypes.VoteInfo{{}},
+		DecidedLastCommit: abci.CommitInfo{
+			Votes: []abci.VoteInfo{{}},
 		},
 		Txs: [][]byte{txBz},
 	}
@@ -772,7 +769,7 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 		txMsgDataBz := txResult.GetData()
 		require.NotNil(t, txMsgDataBz)
 
-		txMsgData := new(cosmostypes.TxMsgData)
+		txMsgData := new(sdk.TxMsgData)
 		err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
 		require.NoError(t, err)
 
@@ -807,14 +804,14 @@ func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 	// Emit begin/end blocker events.
 	for _, event := range res.Events {
 		testutilevents.QuoteEventMode(&event)
-		abciEvent := cosmostypes.Event(event)
+		abciEvent := sdk.Event(event)
 		app.sdkCtx.EventManager().EmitEvent(abciEvent)
 	}
 
 	// Emit txResult events.
 	for _, txResult := range res.TxResults {
 		for _, event := range txResult.Events {
-			abciEvent := cosmostypes.Event(event)
+			abciEvent := sdk.Event(event)
 			app.sdkCtx.EventManager().EmitEvent(abciEvent)
 		}
 	}
@@ -909,7 +906,7 @@ func (app *App) setupDefaultActorsState(
 	)
 
 	// Prepare the onchain supplier
-	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	supplierStake := sdk.NewCoin("upokt", math.NewInt(1000000))
 	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{
 		{
 			RevShare: []*sharedtypes.ServiceRevenueShare{
@@ -942,7 +939,7 @@ func (app *App) setupDefaultActorsState(
 	)
 
 	// Prepare the onchain application
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := sdk.NewCoin("upokt", math.NewInt(1000000))
 	defaultApplication := apptypes.Application{
 		Address: applicationAddr.String(),
 		Stake:   &appStake,
@@ -958,7 +955,7 @@ func (app *App) setupDefaultActorsState(
 	// TODO_IMPROVE: The setup above does not to proper "staking" of the suppliers and applications.
 	// This can result in the module accounts balance going negative. Giving them a baseline balance
 	// to start with to avoid this issue. There is opportunity to improve this in the future.
-	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+	moduleBaseMint := sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
 	err := bankKeeper.MintCoins(app.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
 	err = bankKeeper.MintCoins(app.sdkCtx, apptypes.ModuleName, moduleBaseMint)
@@ -992,7 +989,7 @@ func fundAccount(
 	amountUpokt int64,
 ) {
 
-	fundingCoins := types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(amountUpokt)))
+	fundingCoins := sdk.NewCoins(sdk.NewCoin(pocket.DenomuPOKT, math.NewInt(amountUpokt)))
 
 	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
 	require.NoError(t, err)

@@ -9,13 +9,12 @@ import (
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/x/gateway/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestGetParams(t *testing.T) {
 	k, ctx := testkeeper.GatewayKeeper(t)
-	params := types.DefaultParams()
+	params := gatewaytypes.DefaultParams()
 
 	require.NoError(t, k.SetParams(ctx, params))
 	require.EqualValues(t, params, k.GetParams(ctx))

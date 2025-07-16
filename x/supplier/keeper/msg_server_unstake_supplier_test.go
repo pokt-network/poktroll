@@ -361,11 +361,13 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	for _, serviceConfig := range expectedSupplier.ServiceConfigHistory {
 		serviceConfig.OperatorAddress = supplierOperatorAddr
 	}
-	stakeRes, err := srv.StakeSupplier(ctx, stakeMsg)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	// Assert that the MsgStakeSupplierResponse contains the newly staked supplier.
-	require.Equal(t, expectedSupplier, stakeRes.GetSupplier())
+	// Query the newly staked supplier from the keeper
+	stakedSupplier, found := supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
+	require.True(t, found)
+	require.Equal(t, expectedSupplier, &stakedSupplier)
 
 	// Assert that the EventSupplierStaked event is emitted.
 	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
@@ -390,13 +392,15 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
-	unstakeRes, err := srv.UnstakeSupplier(ctx, unstakeMsg)
+	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
-	responseSupplier := unstakeRes.GetSupplier()
+	// Query the unstaking supplier from the keeper
+	responseSupplier, found := supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
+	require.True(t, found)
 	expectedSupplier.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 
-	// Assert that the MsgUnstakeSupplierResponse contains the unstaking supplier.
+	// Assert that the unstaking supplier has the correct operator address
 	require.Equal(t, expectedSupplier.OperatorAddress, responseSupplier.OperatorAddress)
 
 	// The supplier returned by the UnbondSupplier process is dehydrated
@@ -405,7 +409,7 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, expectedSupplier)
 	expectedEvent, err = cosmostypes.TypedEventToEvent(&suppliertypes.EventSupplierUnbondingBegin{
-		Supplier:           responseSupplier,
+		Supplier:           &responseSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,

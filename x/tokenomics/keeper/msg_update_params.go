@@ -38,7 +38,5 @@ func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 
 	logger.Info("Done updating params")
 
-	return &types.MsgUpdateParamsResponse{
-		Params: &msg.Params,
-	}, nil
+	return &types.MsgUpdateParamsResponse{}, nil
 }

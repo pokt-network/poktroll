@@ -22,7 +22,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/testutil/testtree"
-	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -41,7 +40,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 	// Ensure the minimum relay difficulty bits is set to zero so that test cases
 	// don't need to mine for valid relays.
-	err := keepers.Keeper.SetParams(ctx, testProofParams)
+	err := keepers.SetParams(ctx, testProofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -433,11 +432,16 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			desc: "relay request signature must be valid",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Set the relay request signature to an invalid byte slice.
-				invalidRequestSignatureRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierOperatorAddr)
+				invalidRequestSignatureRelay := testrelayer.NewSignedRandRelay(
+					ctx, t,
+					supplierOperatorUid,
+					supplierOperatorAddr,
+					validSessionHeader,
+					validSessionHeader,
+					keyRing,
+					ringClient,
+				)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
-
-				// Ensure a valid relay response signature.
-				testrelayer.SignRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierOperatorUid, supplierOperatorAddr, keyRing)
 
 				invalidRequestSignatureRelayBz, marshalErr := invalidRequestSignatureRelay.Marshal()
 				require.NoError(t, marshalErr)
@@ -494,11 +498,16 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			desc: "relay response signature must be valid",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Set the relay response signature to an invalid byte slice.
-				relay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierOperatorAddr)
+				relay := testrelayer.NewSignedRandRelay(
+					ctx, t,
+					supplierOperatorUid,
+					supplierOperatorAddr,
+					validSessionHeader,
+					validSessionHeader,
+					keyRing,
+					ringClient,
+				)
 				relay.Res.Meta.SupplierOperatorSignature = invalidSignatureBz
-
-				// Ensure a valid relay request signature
-				testrelayer.SignRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
 
 				relayBz, marshalErr := relay.Marshal()
 				require.NoError(t, marshalErr)
@@ -627,7 +636,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				return proof
 
 			},
-			expectedErr: types.ErrProofInvalidRelayDifficulty, // Asserting on the default error but validation of values is done above
+			expectedErr: prooftypes.ErrProofInvalidRelayDifficulty, // Asserting on the default error but validation of values is done above
 		},
 		{
 			desc: "claim must exist for proof message",
