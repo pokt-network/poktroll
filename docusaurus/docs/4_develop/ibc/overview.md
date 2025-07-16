@@ -100,8 +100,28 @@ _See [IBC Middleware & Apps -> Packet Forward Middleware (PFM)](#4-ibc-middlewar
 
 ## 4. IBC Middleware & Apps
 
+### 4.1 Packet Forward Middleware (PFM)
+
+[**Packet forward middleware**](https://github.com/cosmos/ibc-apps/tree/modules/rate-limiting/v8.1.0/middleware/packet-forward-middleware) is an optional [**IBC middleware**](https://github.com/cosmos/ibc-apps/tree/modules/rate-limiting/v8.1.0/middleware) (PFM / ICS-30) that enhances vanilla ICS-20 by offering:
+
+- **Atomic multi-hop transfers in one transaction**: users issue a single `msgtransfer` with a memo containing a json `forward` route. pfm handles a → b → c … hops in one go — no multiple signatures required.
+- **Single final acknowledgment**: origin chain receives only one ack after **all** hops succeed or fail. intermediate responses and retries are handled internally.
+- **Automatic denom path unwinding**: ensures fungibility by normalizing paths upon token return—addresses fragmented denominations.
+- **Retries, timeouts & fee options**: intermediate chains can auto-retry hops, trigger refunds, or deduct forwarding fees.
+
+**🔄 Comparison: Vanilla ICS‑20 vs. PFM**
+
+| Feature                   | Vanilla ICS‑20            | With PFM                                               |
+|---------------------------|---------------------------|--------------------------------------------------------|
+| Multi-hop transfers       | Manual, hop-by-hop        | Auto, single-transaction flow                         |
+| Acknowledgements          | Per-hop                   | One final ack at origin                                |
+| Denom fragmentation       | Yes (voucher path issues) | No—automated unwinding preserves fungibility           |
+| Fee & developer support   | None                      | Optional fee and developer-configurable routing options |
+
+PFM significantly improves ux by abstracting ibc’s routing complexity and minimizing fragmented balances.  
+Highly recommended for apps needing **cross-chain composition** or **simplified token routing**.
+
 ```
-TODO(@bbryanchriswhite):
-  - Packet forward middleware (PFM)
-  - Callack middleware
+TODO(@bbryanchriswhite, #1568): document/link to how to use pfm.
 ```
+
