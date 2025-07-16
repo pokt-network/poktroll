@@ -56,7 +56,7 @@ func TestMsgUpdateParams(t *testing.T) {
 					// when MintAllocationDao is greater than 0.
 					DaoRewardAddress: "",
 
-					// MintAllocationXXX params MUST sum to 1.
+					// MintAllocationXXX params MUST sum to 1. This part of the config WILL NOT make the test fail.
 					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
 						Dao:         0.1,
 						Proposer:    0.0,
@@ -83,7 +83,7 @@ func TestMsgUpdateParams(t *testing.T) {
 					// when MintAllocationDao is greater than 0.
 					DaoRewardAddress: sample.AccAddress(),
 
-					// MintAllocationXXX params MUST sum to 1.
+					// MintAllocationXXX params MUST sum to 1. This part of the config WILL NOT make the test fail.
 					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
 						Dao:         0.1,
 						Proposer:    0.1,
@@ -110,7 +110,7 @@ func TestMsgUpdateParams(t *testing.T) {
 					// when MintAllocationDao is greater than 0.
 					DaoRewardAddress: sample.AccAddress(),
 
-					// MintAllocationXXX params MUST sum to 1.
+					// MintAllocationXXX params MUST sum to 1. This part of the config WILL make the test fail.
 					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
 						Dao:         0.1,
 						Proposer:    0.0,
@@ -118,7 +118,7 @@ func TestMsgUpdateParams(t *testing.T) {
 						SourceOwner: 0.1,
 						Application: 0.6,
 					},
-					// MintEqualsBurnClaimDistribution MUST sum to 1.
+					// MintEqualsBurnClaimDistribution MUST sum to 1. This part of the config WILL NOT make the test fail.
 					MintEqualsBurnClaimDistribution: tokenomicstypes.MintEqualsBurnClaimDistribution{
 						Dao:         0.1,
 						Proposer:    0.1,
@@ -145,7 +145,7 @@ func TestMsgUpdateParams(t *testing.T) {
 					// when MintAllocationDao is greater than 0.
 					DaoRewardAddress: sample.AccAddress(),
 
-					// MintAllocationXXX params MUST sum to 1.
+					// MintAllocationXXX params MUST sum to 1. This part of the config WILL NOT make the test fail.
 					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
 						Dao:         0.1,
 						Proposer:    0.1,
@@ -153,7 +153,7 @@ func TestMsgUpdateParams(t *testing.T) {
 						SourceOwner: 0.1,
 						Application: 0.6,
 					},
-					//
+					// MintEqualsBurnClaimDistribution MUST sum to 1. This part of the config WILL make the test fail.
 					MintEqualsBurnClaimDistribution: tokenomicstypes.MintEqualsBurnClaimDistribution{
 						Dao:         0.1,
 						Proposer:    0.0,
