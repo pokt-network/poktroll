@@ -2,9 +2,11 @@
   "name": "pocket-network-ts-client",
   "version": "1.0.0",
   "description": "Typescript client for Pocket Network",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo "Error: no test specified" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "quickstart": "node quickstart.js"
   },
   "keywords": [
     "pocket-network",
@@ -14,6 +16,12 @@
   "license": "MIT",
   "dependencies": {
     "@cosmjs/proto-signing": "^0.32.3",
-    "@cosmjs/stargate": "^0.32.3"
+    "@cosmjs/stargate": "^0.32.3",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }

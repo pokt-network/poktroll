@@ -6,8 +6,11 @@
       "outDir": "./lib",
       "declaration": true,
       "allowSyntheticDefaultImports": true,
-      "esModuleInterop": false,
+      "esModuleInterop": true,
       "strict": false,
       "skipLibCheck": true
+    },
+    "ts-node": {
+      "esm": true
     }
   }
