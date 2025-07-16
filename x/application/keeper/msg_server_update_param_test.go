@@ -30,14 +30,16 @@ func TestMsgUpdateParam_UpdateMaxDelegatedGatewaysOnly(t *testing.T) {
 		Name:      apptypes.ParamMaxDelegatedGateways,
 		AsType:    &apptypes.MsgUpdateParam_AsUint64{AsUint64: expectedMaxDelegatedGateways},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.MaxDelegatedGateways, res.Params.MaxDelegatedGateways)
-	require.Equal(t, expectedMaxDelegatedGateways, res.Params.MaxDelegatedGateways)
+	// Query the updated params from the keeper
+	updatedParams := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.MaxDelegatedGateways, updatedParams.MaxDelegatedGateways)
+	require.Equal(t, expectedMaxDelegatedGateways, updatedParams.MaxDelegatedGateways)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(apptypes.KeyMaxDelegatedGateways))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(apptypes.KeyMaxDelegatedGateways))
 }
 
 func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
@@ -57,12 +59,14 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 		Name:      apptypes.ParamMinStake,
 		AsType:    &apptypes.MsgUpdateParam_AsCoin{AsCoin: &expectedMinStake},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.MinStake, res.Params.MinStake)
-	require.Equal(t, expectedMinStake.Amount, res.Params.MinStake.Amount)
+	// Query the updated params from the keeper
+	updatedParams := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.MinStake, updatedParams.MinStake)
+	require.Equal(t, expectedMinStake.Amount, updatedParams.MinStake.Amount)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(apptypes.KeyMinStake))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(apptypes.KeyMinStake))
 }

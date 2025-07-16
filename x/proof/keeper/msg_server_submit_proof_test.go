@@ -893,7 +893,7 @@ func createClaimAndStoreBlockHash(
 		service,
 		merkleRootBz,
 	)
-	claimRes, err := msgServer.CreateClaim(ctx, claimMsg)
+	_, err = msgServer.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
@@ -919,7 +919,10 @@ func createClaimAndStoreBlockHash(
 	// Store the current context's block hash for future height, which is currently an EndBlocker operation.
 	keepers.StoreBlockHash(earliestSupplierClaimCommitCtx)
 
-	return claimRes.GetClaim()
+	// Query the created claim from the keeper
+	claim, found := keepers.GetClaim(ctx, sessionHeader.GetSessionId(), supplierOperatorAddr)
+	require.True(t, found, "claim should exist after creation")
+	return &claim
 }
 
 // fundSupplierOperatorAccount sends enough coins to the supplier operator account

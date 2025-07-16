@@ -146,12 +146,16 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 
 	// Initiate the application unstaking
 	unstakeMsg := &apptypes.MsgUnstakeApplication{Address: appAddr}
-	unstakeRes, err := srv.UnstakeApplication(ctx, unstakeMsg)
+	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
+
+	// Query the updated application from the keeper
+	updatedApp, isAppFound := applicationModuleKeepers.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
 
 	foundApp.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 	foundApp.DelegateeGatewayAddresses = make([]string, 0)
-	require.Equal(t, &foundApp, unstakeRes.GetApplication())
+	require.Equal(t, &foundApp, &updatedApp)
 
 	// Assert that the EventApplicationUnbondingBegin event is emitted.
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
@@ -176,11 +180,15 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 
 	// Stake the application again
 	stakeMsg = createAppStakeMsg(appAddr, initialStake+1)
-	stakeRes, err := srv.StakeApplication(ctx, stakeMsg)
+	_, err = srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 
+	// Query the application after restaking
+	restakedApp, isAppFound := applicationModuleKeepers.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+
 	// Assert that the EventApplicationUnbondingCanceled event is emitted.
-	expectedApp := stakeRes.GetApplication()
+	expectedApp := &restakedApp
 	expectedApp.DelegateeGatewayAddresses = make([]string, 0)
 	expectedAppUnbondingCanceledEvent := &apptypes.EventApplicationUnbondingCanceled{
 		Application:      expectedApp,

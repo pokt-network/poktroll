@@ -61,7 +61,8 @@ message MsgUpdateParam {
 // MsgUpdateParamResponse defines the response structure for executing a
 // MsgUpdateParam message after a single param update.
 message MsgUpdateParamResponse {
-  Params params = 1;
+  // Params params = 1;
+  reserved 1;
 }
 
 // MsgAddService defines a message for adding a new message to the network.
@@ -74,6 +75,7 @@ message MsgAddService {
 }
 
 message MsgAddServiceResponse {
-  pocket.shared.Service service = 1;
+  // pocket.shared.Service service = 1;
+  reserved 1;
 }
 

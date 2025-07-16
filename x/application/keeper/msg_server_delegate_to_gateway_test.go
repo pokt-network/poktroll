@@ -62,9 +62,8 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	expectedApp.DelegateeGatewayAddresses = append(expectedApp.DelegateeGatewayAddresses, gatewayAddr1)
 
 	// Delegate the application to the gateway
-	delegateRes, err := srv.DelegateToGateway(ctx, delegateMsg)
+	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
-	require.Equal(t, delegateRes.GetApplication(), expectedApp)
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
