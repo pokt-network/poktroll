@@ -29,7 +29,7 @@ func (k msgServer) UpdateParam(
 	if k.GetAuthority() != msg.Authority {
 		return nil, status.Error(
 			codes.PermissionDenied,
-			tokenomicstypes.ErrTokenomicsInvalidSigner.Wrapf(
+			tokenomicstypes.ErrTokenomicsInvalidAuthoritySigner.Wrapf(
 				"invalid authority; expected %s, got %s",
 				k.GetAuthority(), msg.Authority,
 			).Error(),
@@ -39,15 +39,28 @@ func (k msgServer) UpdateParam(
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
+
+	// MintAllocationPercentages
 	case tokenomicstypes.ParamMintAllocationPercentages:
 		logger = logger.With("param_value", msg.GetAsMintAllocationPercentages())
 		params.MintAllocationPercentages = *msg.GetAsMintAllocationPercentages()
+
+	// DaoRewardAddress
 	case tokenomicstypes.ParamDaoRewardAddress:
 		logger = logger.With("param_value", msg.GetAsString())
 		params.DaoRewardAddress = msg.GetAsString()
+
+	// GlobalInflationPerClaim
 	case tokenomicstypes.ParamGlobalInflationPerClaim:
 		logger = logger.With("param_value", msg.GetAsFloat())
 		params.GlobalInflationPerClaim = msg.GetAsFloat()
+
+	// MintEqualsBurnClaimDistribution
+	case tokenomicstypes.ParamMintEqualsBurnClaimDistribution:
+		logger = logger.With("param_value", msg.GetAsMintEqualsBurnClaimDistribution())
+		params.MintEqualsBurnClaimDistribution = *msg.GetAsMintEqualsBurnClaimDistribution()
+
+	// Default
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,

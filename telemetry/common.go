@@ -15,15 +15,15 @@ func MetricNameKeys(metrics ...string) []string {
 	return result
 }
 
-// isTelemetyEnabled returns whether is telemetry turned on in the config file `app.toml` - cosmos-sdk's telemetry section.
-func isTelemetyEnabled() bool {
+// isTelemetryEnabled returns whether is telemetry turned on in the config file `app.toml` - cosmos-sdk's telemetry section.
+func isTelemetryEnabled() bool {
 	return cosmostelemetry.IsTelemetryEnabled()
 }
 
 // appendMediumCardinalityLabels only creates the label if cardinality if set to "medium" or higher.
 // A good example for a "medium" cardinality use-case is `service_id`:
 //   - This is a network wide parameter
-//   - It is dependenon the permissionless nature of the network and can grow unbounded
+//   - It is dependent on the permissionless nature of the network and can grow unbounded
 //   - We're keeping an option to turn off such labels to avoid metric bloat
 //
 // Configuration option is exposed in app.toml under the `pocket.telemetry` section.

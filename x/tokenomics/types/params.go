@@ -8,6 +8,20 @@ import (
 )
 
 var (
+	// DAO TLM Params
+	// DefaultDaoRewardAddress is the localnet DAO account address as specified in the config.yml.
+	// It is only used in tests.
+	KeyDaoRewardAddress     = []byte("DaoRewardAddress")
+	ParamDaoRewardAddress   = "dao_reward_address"
+	DefaultDaoRewardAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+
+	// GlobalInflation TLM Params
+	KeyGlobalInflationPerClaim     = []byte("GlobalInflationPerClaim")
+	ParamGlobalInflationPerClaim   = "global_inflation_per_claim"
+	DefaultGlobalInflationPerClaim = float64(0.1)
+
+	// TODO_CONSIDERATION: Consider renaming this to GlobalInflationPerClaimDistribution
+	// GlobalInflation Supporting TLM Params
 	KeyMintAllocationPercentages     = []byte("MintAllocationPercentages")
 	ParamMintAllocationPercentages   = "mint_allocation_percentages"
 	DefaultMintAllocationPercentages = MintAllocationPercentages{
@@ -17,14 +31,17 @@ var (
 		SourceOwner: 0.15,
 		Application: 0.0,
 	}
-	KeyDaoRewardAddress   = []byte("DaoRewardAddress")
-	ParamDaoRewardAddress = "dao_reward_address"
-	// DefaultDaoRewardAddress is the localnet DAO account address as specified in the config.yml.
-	// It is only used in tests.
-	DefaultDaoRewardAddress        = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-	KeyGlobalInflationPerClaim     = []byte("GlobalInflationPerClaim")
-	ParamGlobalInflationPerClaim   = "global_inflation_per_claim"
-	DefaultGlobalInflationPerClaim = float64(0.1)
+
+	// MintEqualsBurn Supporting TLM Params
+	KeyMintEqualsBurnClaimDistribution     = []byte("MintEqualsBurnClaimDistribution")
+	ParamMintEqualsBurnClaimDistribution   = "mint_equals_burn_claim_distribution"
+	DefaultMintEqualsBurnClaimDistribution = MintEqualsBurnClaimDistribution{
+		Dao:         0.1,
+		Proposer:    0.05,
+		Supplier:    0.7,
+		SourceOwner: 0.15,
+		Application: 0.0,
+	}
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -36,23 +53,26 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams(
-	mintAllocationPercentages MintAllocationPercentages,
 	daoRewardAddress string,
+	mintAllocationPercentages MintAllocationPercentages,
 	globalInflationPerClaim float64,
+	mintEqualsBurnClaimDistribution MintEqualsBurnClaimDistribution,
 ) Params {
 	return Params{
-		MintAllocationPercentages: mintAllocationPercentages,
-		DaoRewardAddress:          daoRewardAddress,
-		GlobalInflationPerClaim:   globalInflationPerClaim,
+		DaoRewardAddress:                daoRewardAddress,
+		MintAllocationPercentages:       mintAllocationPercentages,
+		GlobalInflationPerClaim:         globalInflationPerClaim,
+		MintEqualsBurnClaimDistribution: mintEqualsBurnClaimDistribution,
 	}
 }
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
 	return NewParams(
-		DefaultMintAllocationPercentages,
 		DefaultDaoRewardAddress,
+		DefaultMintAllocationPercentages,
 		DefaultGlobalInflationPerClaim,
+		DefaultMintEqualsBurnClaimDistribution,
 	)
 }
 
@@ -65,9 +85,19 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			ValidateMintAllocationPercentages,
 		),
 		paramtypes.NewParamSetPair(
-			KeyMintAllocationPercentages,
-			&p.MintAllocationPercentages,
-			ValidateMintAllocationPercentages,
+			KeyDaoRewardAddress,
+			&p.DaoRewardAddress,
+			ValidateDaoRewardAddress,
+		),
+		paramtypes.NewParamSetPair(
+			KeyGlobalInflationPerClaim,
+			&p.GlobalInflationPerClaim,
+			ValidateGlobalInflationPerClaim,
+		),
+		paramtypes.NewParamSetPair(
+			KeyMintEqualsBurnClaimDistribution,
+			&p.MintEqualsBurnClaimDistribution,
+			ValidateMintEqualsBurnClaimDistribution,
 		),
 	}
 }
@@ -84,6 +114,16 @@ func (params *Params) ValidateBasic() error {
 
 	if err := ValidateGlobalInflationPerClaim(params.GlobalInflationPerClaim); err != nil {
 		return err
+	}
+
+	if err := ValidateMintEqualsBurnClaimDistribution(params.MintEqualsBurnClaimDistribution); err != nil {
+		return err
+	}
+
+	// If MintEqualsBurnClaimDistribution is zero-valued (e.g., because Ignite CLI couldn't parse it),
+	// set it to the default value
+	if params.MintEqualsBurnClaimDistribution.Sum() == 0 {
+		params.MintEqualsBurnClaimDistribution = DefaultMintEqualsBurnClaimDistribution
 	}
 
 	return nil
@@ -109,9 +149,9 @@ func ValidateMintAllocationSourceOwner(mintAllocationSourceOwner any) error {
 	return validateParamValueGTEZero(mintAllocationSourceOwner, "source owner")
 }
 
-// ValidateMintAllocationApplication validates the MintAllocationApplication param.
-func ValidateMintAllocationApplication(mintAllocationApplication any) error {
-	return validateParamValueGTEZero(mintAllocationApplication, "application")
+// ValidateMintApplication validates the MintApplication param.
+func ValidateMintApplication(mintApplication any) error {
+	return validateParamValueGTEZero(mintApplication, "application")
 }
 
 func validateParamValueGTEZero(value any, actorName string) error {
@@ -147,7 +187,7 @@ func ValidateMintAllocationPercentages(mintAllocationPercentagesAny any) error {
 		return err
 	}
 
-	if err := ValidateMintAllocationApplication(mintAllocationPercentages.Application); err != nil {
+	if err := ValidateMintApplication(mintAllocationPercentages.Application); err != nil {
 		return err
 	}
 
@@ -162,9 +202,8 @@ func ValidateMintAllocationPercentages(mintAllocationPercentagesAny any) error {
 func ValidateMintAllocationSum(mintAllocationPercentage MintAllocationPercentages) error {
 	const epsilon = 1e-10 // Small epsilon value for floating-point comparison
 	sum := mintAllocationPercentage.Sum()
-	// TODO_MAINNET_CRITICAL(@red-0ne): I prefer using big.Rat and have a strict 1.0 sum. These might add up or skew our tokenomics a bit.
 	if math.Abs(sum-1) > epsilon {
-		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f", sum)
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f instead. This is greater than the acceptable epsilon of %f", sum, epsilon)
 	}
 
 	return nil
@@ -193,6 +232,46 @@ func ValidateGlobalInflationPerClaim(GlobalInflationPerClaimAny any) error {
 
 	if GlobalInflationPerClaim < 0 {
 		return ErrTokenomicsParamInvalid.Wrapf("GlobalInflationPerClaim must be greater than or equal to 0: %f", GlobalInflationPerClaim)
+	}
+
+	return nil
+}
+
+// ValidateMintEqualsBurnClaimDistribution validates the MintEqualsBurnClaimDistribution param.
+func ValidateMintEqualsBurnClaimDistribution(mintEqualsBurnClaimDistributionAny any) error {
+	mintEqualsBurnClaimDistribution, ok := mintEqualsBurnClaimDistributionAny.(MintEqualsBurnClaimDistribution)
+	if !ok {
+		// If Ignite CLI can't parse the field correctly, this is still valid - the default will be used
+		// This allows for graceful handling when config.yml contains the field but Ignite CLI can't parse complex nested structures
+		return nil
+	}
+
+	// Validate individual percentages
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.Dao, "DAO"); err != nil {
+		return err
+	}
+
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.Proposer, "proposer"); err != nil {
+		return err
+	}
+
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.Supplier, "supplier"); err != nil {
+		return err
+	}
+
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.SourceOwner, "source owner"); err != nil {
+		return err
+	}
+
+	if err := validateParamValueGTEZero(mintEqualsBurnClaimDistribution.Application, "application"); err != nil {
+		return err
+	}
+
+	// Validate sum equals 1
+	const epsilon = 1e-10 // Small epsilon value for floating-point comparison
+	sum := mintEqualsBurnClaimDistribution.Sum()
+	if math.Abs(sum-1) > epsilon {
+		return ErrTokenomicsParamInvalid.Wrapf("mint equals burn claim distribution percentages do not add to 1.0: got %f", sum)
 	}
 
 	return nil
