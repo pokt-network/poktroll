@@ -78,8 +78,5 @@ func (k msgServer) UpdateParam(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	updatedParams := k.GetParams(ctx)
-	return &tokenomicstypes.MsgUpdateParamResponse{
-		Params: &updatedParams,
-	}, nil
+	return &tokenomicstypes.MsgUpdateParamResponse{}, nil
 }

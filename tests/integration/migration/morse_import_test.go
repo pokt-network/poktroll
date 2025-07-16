@@ -104,19 +104,13 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 	msgImportRes, err := s.ImportMorseClaimableAccounts(s.T())
 	require.NoError(s.T(), err)
 
-	morseAccountState := s.GetAccountState(s.T())
-	morseAccountStateHash, err := morseAccountState.GetHash()
-	s.NoError(err)
-
-	expectedMsgImportRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{
-		StateHash:   morseAccountStateHash,
-		NumAccounts: uint64(s.numMorseClaimableAccounts),
-	}
+	expectedMsgImportRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{}
 	s.Equal(expectedMsgImportRes, msgImportRes)
 
 	foundMorseClaimableAccounts := s.QueryAllMorseClaimableAccounts(s.T())
 	s.Equal(s.numMorseClaimableAccounts, len(foundMorseClaimableAccounts))
 
+	morseAccountState := s.GetAccountState(s.T())
 	for _, expectedMorseClaimableAccount := range morseAccountState.Accounts {
 		isFound := false
 		for _, foundMorseClaimableAccount := range foundMorseClaimableAccounts {

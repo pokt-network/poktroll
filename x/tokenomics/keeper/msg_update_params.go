@@ -41,7 +41,5 @@ func (k msgServer) UpdateParams(
 
 	logger.Info("Done updating params")
 
-	return &types.MsgUpdateParamsResponse{
-		Params: &msg.Params,
-	}, nil
+	return &types.MsgUpdateParamsResponse{}, nil
 }

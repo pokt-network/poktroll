@@ -192,12 +192,14 @@ func TestMsgUpdateParams(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			updateRes, err := srv.UpdateParams(ctx, test.req)
+			_, err := srv.UpdateParams(ctx, test.req)
 			if test.shouldError {
 				require.Error(t, err)
 				require.ErrorContains(t, err, test.expectedErrMsg)
 			} else {
-				require.Equal(t, &test.req.Params, updateRes.GetParams())
+				// Query the updated params from the keeper
+				updatedParams := tokenomicsKeeper.GetParams(ctx)
+				require.Equal(t, &test.req.Params, &updatedParams)
 				require.Nil(t, err)
 			}
 		})

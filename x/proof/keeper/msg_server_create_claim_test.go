@@ -152,9 +152,8 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				service,
 				test.merkleRoot,
 			)
-			createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
+			_, err = srv.CreateClaim(ctx, claimMsg)
 			require.NoError(t, err)
-			require.NotNil(t, createClaimRes)
 
 			// Query for all claims.
 			claimRes, err := keepers.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
@@ -580,9 +579,8 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			createClaimRes, err := srv.CreateClaim(ctx, test.claimMsgFn(t))
+			_, err := srv.CreateClaim(ctx, test.claimMsgFn(t))
 			require.ErrorContains(t, err, test.expectedErr.Error())
-			require.Nil(t, createClaimRes)
 
 			// Assert that no events were emitted.
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -681,7 +679,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 
 	// Ensure that submitting the claim fails because the number of compute units
 	// claimed does not match the expected amount as a function of (relay, service_CUPR)
-	createClaimRes, err := srv.CreateClaim(ctx, testClaimMsg)
+	_, err = srv.CreateClaim(ctx, testClaimMsg)
 	require.ErrorContains(t,
 		err,
 		status.Error(
@@ -695,8 +693,6 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 			).Error(),
 		).Error(),
 	)
-
-	require.Nil(t, createClaimRes)
 
 	// Assert that no events were emitted.
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)

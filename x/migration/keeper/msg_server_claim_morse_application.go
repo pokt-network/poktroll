@@ -89,15 +89,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		// ServiceConfigs:       (intentionally omitted, no service was staked),
 	}
 
-	// Construct the base response.
-	// It will be modified, as necessary, prior to returning.
-	claimMorseAppResponse := &migrationtypes.MsgClaimMorseApplicationResponse{
-		MorseSrcAddress:         morseClaimableAccount.GetMorseSrcAddress(),
-		ClaimedBalance:          claimedUnstakedBalance,
-		ClaimedApplicationStake: claimedAppStake,
-		SessionEndHeight:        sessionEndHeight,
-		Application:             unbondedApp,
-	}
+	// Construct the response.
+	claimMorseAppResponse := &migrationtypes.MsgClaimMorseApplicationResponse{}
 
 	// Construct the base application claim event.
 	// It will be modified, as necessary, prior to emission.
@@ -177,11 +170,6 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		// DEV_NOTE: If the error is non-nil, StakeApplication SHOULD ALWAYS return a gRPC status error.
 		return nil, err
 	}
-
-	// Update the application claim response.
-	claimMorseAppResponse.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
-	claimMorseAppResponse.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake()
-	claimMorseAppResponse.Application = app
 
 	// Update the application claim event.
 	morseAppClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()

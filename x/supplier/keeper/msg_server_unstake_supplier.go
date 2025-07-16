@@ -119,7 +119,5 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	isSuccessful = true
-	return &suppliertypes.MsgUnstakeSupplierResponse{
-		Supplier: &supplier,
-	}, nil
+	return &suppliertypes.MsgUnstakeSupplierResponse{}, nil
 }
