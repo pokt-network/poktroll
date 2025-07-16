@@ -85,9 +85,5 @@ func (k msgServer) ImportMorseClaimableAccounts(
 
 	// Return response
 	// - Includes: MorseAccountStateHash and number of imported accounts
-	return &migrationtypes.MsgImportMorseClaimableAccountsResponse{
-		// DEV_NOTE: The MorseAccountStateHash is validated in msg#ValidateBasic().
-		StateHash:   msg.MorseAccountStateHash,
-		NumAccounts: uint64(len(msg.MorseAccountState.Accounts)),
-	}, nil
+	return &migrationtypes.MsgImportMorseClaimableAccountsResponse{}, nil
 }

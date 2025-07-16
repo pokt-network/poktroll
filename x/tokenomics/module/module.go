@@ -7,21 +7,14 @@ import (
 	// this line is used by starport scaffolding # 1
 
 	"cosmossdk.io/core/appmodule"
-	"cosmossdk.io/core/store"
-	"cosmossdk.io/depinject"
-	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	tokenomicsmodule "github.com/pokt-network/poktroll/api/pocket/tokenomics/module"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -165,76 +158,3 @@ func (am AppModule) IsOnePerModuleType() {}
 
 // IsAppModule implements the appmodule.AppModule interface.
 func (am AppModule) IsAppModule() {}
-
-// ----------------------------------------------------------------------------
-// App Wiring Setup
-// ----------------------------------------------------------------------------
-
-func init() {
-	appmodule.Register(&tokenomicsmodule.Module{}, appmodule.Provide(ProvideModule))
-}
-
-type ModuleInputs struct {
-	depinject.In
-
-	StoreService store.KVStoreService
-	Cdc          codec.Codec
-	Config       *tokenomicsmodule.Module
-	Logger       log.Logger
-
-	AccountKeeper     tokenomicstypes.AccountKeeper
-	BankKeeper        tokenomicstypes.BankKeeper
-	ApplicationKeeper tokenomicstypes.ApplicationKeeper
-	SupplierKeeper    tokenomicstypes.SupplierKeeper
-	ProofKeeper       tokenomicstypes.ProofKeeper
-	SharedKeeper      tokenomicstypes.SharedKeeper
-	SessionKeeper     tokenomicstypes.SessionKeeper
-	ServiceKeeper     tokenomicstypes.ServiceKeeper
-}
-
-type ModuleOutputs struct {
-	depinject.Out
-
-	TokenomicsKeeper keeper.Keeper
-	Module           appmodule.AppModule
-}
-
-func ProvideModule(in ModuleInputs) ModuleOutputs {
-	// default to governance authority if not provided
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
-	if in.Config.Authority != "" {
-		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
-	}
-
-	// DEV_NOTE: The token logic modules are provided as arguments to the keeper mainly
-	// to satisfy testing requirements (see: x/tokenomics/token_logic_modules_test.go).
-
-	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
-
-	k := keeper.NewKeeper(
-		in.Cdc,
-		in.StoreService,
-		in.Logger,
-		authority.String(),
-
-		in.BankKeeper,
-		in.AccountKeeper,
-		in.ApplicationKeeper,
-		in.SupplierKeeper,
-		in.ProofKeeper,
-		in.SharedKeeper,
-		in.SessionKeeper,
-		in.ServiceKeeper,
-
-		tokenLogicModules,
-	)
-	m := NewAppModule(
-		in.Cdc,
-		k,
-		in.AccountKeeper,
-		in.BankKeeper,
-		in.SupplierKeeper,
-	)
-
-	return ModuleOutputs{TokenomicsKeeper: k, Module: m}
-}

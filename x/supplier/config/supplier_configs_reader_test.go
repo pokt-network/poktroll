@@ -15,7 +15,6 @@ import (
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/yaml"
-	"github.com/pokt-network/poktroll/x/shared/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/config"
 )
@@ -53,22 +52,22 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: []*sharedtypes.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   sharedtypes.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -95,16 +94,16 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
+								RpcType: sharedtypes.RPCType_JSON_RPC,
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -132,17 +131,17 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{},
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: []*sharedtypes.ConfigOption{},
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -175,32 +174,32 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: []*sharedtypes.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   sharedtypes.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},
 							},
 							{
 								Url:     "http://pokt.network:8082",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: []*sharedtypes.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   sharedtypes.ConfigOptions_TIMEOUT,
 										Value: "11",
 									},
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -235,22 +234,22 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc1",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: []*sharedtypes.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   sharedtypes.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -259,19 +258,19 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 					},
 					{
 						ServiceId: "svc2",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: []*sharedtypes.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   sharedtypes.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -310,16 +309,16 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
+								RpcType: sharedtypes.RPCType_JSON_RPC,
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            firstShareHolderAddress,
 								RevSharePercentage: 51,
@@ -332,13 +331,13 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 					},
 					{
 						ServiceId: "svc2",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8082",
-								RpcType: types.RPCType_JSON_RPC,
+								RpcType: sharedtypes.RPCType_JSON_RPC,
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 60,
@@ -373,16 +372,16 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
+								RpcType: sharedtypes.RPCType_JSON_RPC,
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            firstShareHolderAddress,
 								RevSharePercentage: 51,
@@ -415,22 +414,22 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: ownerAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: []*sharedtypes.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   sharedtypes.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -459,22 +458,22 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: ownerAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: []*sharedtypes.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   sharedtypes.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -501,16 +500,16 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
-						Endpoints: []*types.SupplierEndpoint{
+						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
+								RpcType: sharedtypes.RPCType_JSON_RPC,
 							},
 						},
-						RevShare: []*types.ServiceRevenueShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,

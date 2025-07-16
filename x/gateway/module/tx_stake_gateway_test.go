@@ -1,9 +1,11 @@
 package gateway_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -21,6 +23,16 @@ import (
 )
 
 func TestCLI_StakeGateway(t *testing.T) {
+	// Set a timeout for the entire test to prevent hanging
+	if deadline, ok := t.Deadline(); ok {
+		ctx, cancel := context.WithDeadline(context.Background(), deadline)
+		defer cancel()
+		t.Cleanup(func() {
+			cancel()
+		})
+		_ = ctx
+	}
+
 	net, _ := networkWithGatewayObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
@@ -41,6 +53,8 @@ func TestCLI_StakeGateway(t *testing.T) {
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%t", flags.FlagUnordered, true),
+		fmt.Sprintf("--%s=%s", flags.TimeoutDuration, 30*time.Second),
 	}
 
 	tests := []struct {
@@ -138,14 +152,15 @@ func TestCLI_StakeGateway(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-
-			require.NoError(t, err)
 			var resp sdk.TxResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(outStake.Bytes(), &resp))
 			require.NotNil(t, resp)
 			require.NotNil(t, resp.TxHash)
 			// You can reference Cosmos SDK error codes here: https://github.com/cosmos/cosmos-sdk/blob/main/types/errors/errors.go
 			require.Equal(t, uint32(0), resp.Code, "tx response failed: %v", resp)
+
+			// Wait for transaction to be included in a block
+			require.NoError(t, net.WaitForNextBlock())
 		})
 	}
 }

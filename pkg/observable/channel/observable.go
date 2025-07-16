@@ -75,35 +75,35 @@ func (obs *channelObservable[V]) Subscribe(ctx context.Context) observable.Obser
 	// caller can cancel context or close the publish channel to unsubscribe active observers
 	ctx, cancel := context.WithCancel(ctx)
 	removeAndCancel := func(toRemove observable.Observer[V]) {
-		obs.observerManager.remove(toRemove)
+		obs.remove(toRemove)
 		cancel()
 	}
 
 	// Create a new observer and add it to the list of observers to be notified
 	// when publishCh receives a new value.
 	observer := NewObserver[V](ctx, removeAndCancel)
-	obs.observerManager.add(observer)
+	obs.add(observer)
 
 	// asynchronously wait for the context to be done and then unsubscribe
 	// this observer.
-	go obs.observerManager.goUnsubscribeOnDone(ctx, observer)
+	go obs.goUnsubscribeOnDone(ctx, observer)
 
 	return observer
 }
 
 // UnsubscribeAll unsubscribes and removes all observers from the observable.
 func (obs *channelObservable[V]) UnsubscribeAll() {
-	obs.observerManager.removeAll()
+	obs.removeAll()
 }
 
 // goPublish to the publishCh and notify observers when values are received.
 // This function is blocking and should be run in a goroutine.
 func (obs *channelObservable[V]) goPublish() {
 	for notification := range obs.publishCh {
-		obs.observerManager.notifyAll(notification)
+		obs.notifyAll(notification)
 	}
 
 	// Here we know that the publisher channel has been closed.
 	// Unsubscribe all observers as they can no longer receive notifications.
-	obs.observerManager.removeAll()
+	obs.removeAll()
 }

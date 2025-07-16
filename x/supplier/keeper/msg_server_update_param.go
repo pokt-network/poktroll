@@ -60,9 +60,5 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	updatedParams := k.GetParams(ctx)
-
-	return &suppliertypes.MsgUpdateParamResponse{
-		Params: &updatedParams,
-	}, nil
+	return &suppliertypes.MsgUpdateParamResponse{}, nil
 }

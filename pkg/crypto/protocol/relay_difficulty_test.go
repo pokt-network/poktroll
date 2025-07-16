@@ -499,7 +499,7 @@ func defaultDifficulty() []byte {
 
 func generateRandomBytes(t *testing.T, n int) []byte {
 	bytes := make([]byte, n)
-	_, err := rand.Read(bytes)
+	_, err := rand.Read(bytes) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 	require.NoError(t, err)
 	return bytes
 }

@@ -1,0 +1,104 @@
+name: Telegram Send Message All Groups
+
+on:
+  workflow_call:
+    inputs:
+      message:
+        description: "Message to send to all Telegram groups"
+        required: true
+        type: string
+      parse_mode:
+        description: "Parse mode for Telegram message (HTML or Markdown)"
+        required: false
+        type: string
+        default: "HTML"
+      test_mode:
+        description: "If true, only send to testing group"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  send-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send message to Telegram groups
+        run: |
+          # Pocket Network Bot Testing Group
+          CHAT_1="-1002895286734"
+          # BitGet <> Pocket Network (POKT)
+          CHAT_2="-4954094158"
+          # ByBit <> POKT
+          CHAT_3="-1002730340404"
+          # CoinEx <> POKT
+          CHAT_4="-1001946726820"
+          # Mr. Yang <> Grove / POKT
+          CHAT_5="-1002038833795"
+          # MEXC <> POKT
+          CHAT_6="-1002815210935"
+          # OKX <> Pocket Network
+          CHAT_7="-1001901668586"
+          # OrangeX <> Grove (POKT)
+          CHAT_8="-1002030782436"
+          # POKT & Gate.io
+          CHAT_9="-1001717732565"
+          # POKT Network | AscendEX
+          CHAT_10="-4565872373"
+          # Uphold <> Grove (POKT)
+          CHAT_11="-1002227693360"
+          # Pokt <> Kraken {EF introduction}
+          CHAT_12="-1002405763552"
+          # Bitrue & Pocket Network
+          CHAT_13="-618542738"
+          # HTX <> POKT
+          CHAT_14="-1002898513049"
+          # POKT <> Upbit
+          CHAT_15="-1002653157934"
+          # KuCoin <> POKT
+          CHAT_16="-775612675"
+          # Korbit <> POKT
+          CHAT_17="-1002811115444"
+
+          # Get the message and parse mode from the workflow inputs
+          MESSAGE="${{ inputs.message }}"
+          PARSE_MODE="${{ inputs.parse_mode }}"
+
+          # Function to send message to a chat
+          send_message() {
+            local chat_id="$1"
+            local chat_name="$2"
+            echo "Sending to $chat_id ($chat_name)"
+            curl -s -X POST https://api.telegram.org/bot7267336172:AAEYaEeY0i7DfbL7SsRjPf09N67mvLo8WC4/sendMessage \
+              -d chat_id="$chat_id" \
+              -d parse_mode="$PARSE_MODE" \
+              --data-urlencode text="$MESSAGE"
+            echo
+          }
+
+          # Check if test mode is enabled
+          TEST_MODE="${{ inputs.test_mode }}"
+          
+          if [ "$TEST_MODE" = "true" ]; then
+            # Only send to testing group
+            echo "TEST MODE: Sending only to testing group"
+            send_message "$CHAT_1" "Pocket Network Bot Testing Group"
+          else
+            # Send to all chats
+            send_message "$CHAT_1" "Pocket Network Bot Testing Group"
+            send_message "$CHAT_2" "BitGet <> Pocket Network (POKT)"
+            send_message "$CHAT_3" "ByBit <> POKT"
+            send_message "$CHAT_4" "CoinEx <> POKT"
+            send_message "$CHAT_5" "Mr. Yang <> Grove / POKT"
+            send_message "$CHAT_6" "MEXC <> POKT"
+            send_message "$CHAT_7" "OKX <> Pocket Network"
+            send_message "$CHAT_8" "OrangeX <> Grove (POKT)"
+            send_message "$CHAT_9" "POKT & Gate.io"
+            send_message "$CHAT_10" "POKT Network | AscendEX"
+            send_message "$CHAT_11" "Uphold <> Grove (POKT)"
+            send_message "$CHAT_12" "Pokt <> Kraken {EF introduction}"
+            send_message "$CHAT_13" "Bitrue & Pocket Network"
+            send_message "$CHAT_14" "HTX <> POKT"
+            send_message "$CHAT_15" "POKT <> Upbit"
+            send_message "$CHAT_16" "KuCoin <> POKT"
+            send_message "$CHAT_17" "Korbit <> POKT"
+          fi
