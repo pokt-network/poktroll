@@ -152,9 +152,7 @@ func (k msgServer) CreateClaim(
 		)
 	}
 
-	return &types.MsgCreateClaimResponse{
-		Claim: &claim,
-	}, nil
+	return &types.MsgCreateClaimResponse{}, nil
 }
 
 // finalizeCreateClaimTelemetry defers telemetry calls to be executed after business logic,

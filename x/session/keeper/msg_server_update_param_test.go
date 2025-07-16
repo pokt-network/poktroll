@@ -28,10 +28,13 @@ func TestMsgUpdateParam_UpdateNumSuppliersPerSessionOnly(t *testing.T) {
 		Name:      sessiontypes.ParamNumSuppliersPerSession,
 		AsType:    &sessiontypes.MsgUpdateParam_AsUint64{AsUint64: expectedNumSuppliersPerSession},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
-	require.Equal(t, expectedNumSuppliersPerSession, res.Params.NumSuppliersPerSession)
+
+	// Query the updated params from the keeper
+	updatedParams := k.GetParams(ctx)
+	require.Equal(t, expectedNumSuppliersPerSession, updatedParams.NumSuppliersPerSession)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(sessiontypes.KeyNumSuppliersPerSession))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(sessiontypes.KeyNumSuppliersPerSession))
 }

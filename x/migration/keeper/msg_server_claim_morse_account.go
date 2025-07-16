@@ -128,9 +128,5 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		)
 	}
 
-	return &migrationtypes.MsgClaimMorseAccountResponse{
-		MorseSrcAddress:  msg.GetMorseSignerAddress(),
-		ClaimedBalance:   unstakedBalance,
-		SessionEndHeight: sessionEndHeight,
-	}, nil
+	return &migrationtypes.MsgClaimMorseAccountResponse{}, nil
 }

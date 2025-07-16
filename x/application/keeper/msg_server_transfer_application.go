@@ -83,7 +83,5 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 
 	isSuccessful = true
 
-	return &types.MsgTransferApplicationResponse{
-		Application: &srcApp,
-	}, nil
+	return &types.MsgTransferApplicationResponse{}, nil
 }
