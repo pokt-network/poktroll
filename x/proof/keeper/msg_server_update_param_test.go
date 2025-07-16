@@ -31,14 +31,16 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 		Name:      prooftypes.ParamProofRequestProbability,
 		AsType:    &prooftypes.MsgUpdateParam_AsFloat{AsFloat: expectedProofRequestProbability},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
-	require.Equal(t, expectedProofRequestProbability, res.Params.ProofRequestProbability)
+	// Query the updated params from the keeper
+	updatedParams := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.ProofRequestProbability, updatedParams.ProofRequestProbability)
+	require.Equal(t, expectedProofRequestProbability, updatedParams.ProofRequestProbability)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofRequestProbability))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(prooftypes.KeyProofRequestProbability))
 }
 
 func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
@@ -58,14 +60,16 @@ func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
 		Name:      prooftypes.ParamProofRequirementThreshold,
 		AsType:    &prooftypes.MsgUpdateParam_AsCoin{AsCoin: &expectedProofRequirementThreshold},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
-	require.Equal(t, &expectedProofRequirementThreshold, res.Params.ProofRequirementThreshold)
+	// Query the updated params from the keeper
+	updatedParams := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.ProofRequirementThreshold, updatedParams.ProofRequirementThreshold)
+	require.Equal(t, &expectedProofRequirementThreshold, updatedParams.ProofRequirementThreshold)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofRequirementThreshold))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(prooftypes.KeyProofRequirementThreshold))
 }
 
 func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
@@ -85,14 +89,16 @@ func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
 		Name:      prooftypes.ParamProofMissingPenalty,
 		AsType:    &prooftypes.MsgUpdateParam_AsCoin{AsCoin: &expectedProofMissingPenalty},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.ProofMissingPenalty, res.Params.ProofMissingPenalty)
-	require.Equal(t, &expectedProofMissingPenalty, res.Params.ProofMissingPenalty)
+	// Query the updated params from the keeper
+	updatedParams := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.ProofMissingPenalty, updatedParams.ProofMissingPenalty)
+	require.Equal(t, &expectedProofMissingPenalty, updatedParams.ProofMissingPenalty)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofMissingPenalty))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(prooftypes.KeyProofMissingPenalty))
 }
 
 func TestMsgUpdateParam_UpdateProofSubmissionFeeOnly(t *testing.T) {
@@ -112,12 +118,14 @@ func TestMsgUpdateParam_UpdateProofSubmissionFeeOnly(t *testing.T) {
 		Name:      prooftypes.ParamProofSubmissionFee,
 		AsType:    &prooftypes.MsgUpdateParam_AsCoin{AsCoin: &expectedProofSubmissionFee},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.ProofSubmissionFee, res.Params.ProofSubmissionFee)
-	require.Equal(t, &expectedProofSubmissionFee, res.Params.ProofSubmissionFee)
+	// Query the updated params from the keeper
+	updatedParams := k.GetParams(ctx)
+	require.NotEqual(t, defaultParams.ProofSubmissionFee, updatedParams.ProofSubmissionFee)
+	require.Equal(t, &expectedProofSubmissionFee, updatedParams.ProofSubmissionFee)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofSubmissionFee))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &updatedParams, string(prooftypes.KeyProofSubmissionFee))
 }

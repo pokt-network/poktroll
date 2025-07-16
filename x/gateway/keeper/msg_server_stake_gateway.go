@@ -128,9 +128,7 @@ func (k msgServer) StakeGateway(
 	}
 
 	isSuccessful = true
-	return &types.MsgStakeGatewayResponse{
-		Gateway: &gateway,
-	}, nil
+	return &types.MsgStakeGatewayResponse{}, nil
 }
 
 func (k msgServer) createGateway(
