@@ -85,8 +85,10 @@ func (aq *appQuerier) GetApplication(
 
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := retry.Call(ctx, func() (*apptypes.QueryGetApplicationResponse, error) {
-		return aq.applicationQuerier.Application(ctx, &req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return aq.applicationQuerier.Application(queryCtx, &req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return apptypes.Application{}, err
 	}
@@ -103,8 +105,10 @@ func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Applic
 	// having been filled, such that subsequent calls to this function will
 	// return the cached value.
 	res, err := retry.Call(ctx, func() (*apptypes.QueryAllApplicationsResponse, error) {
-		return aq.applicationQuerier.AllApplications(ctx, &req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return aq.applicationQuerier.AllApplications(queryCtx, &req)
+	}, retry.GetStrategy(ctx), aq.logger)
 	if err != nil {
 		return []apptypes.Application{}, err
 	}
@@ -135,8 +139,10 @@ func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 
 	req := apptypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*apptypes.QueryParamsResponse, error) {
-		return aq.applicationQuerier.Params(ctx, &req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return aq.applicationQuerier.Params(queryCtx, &req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, err
 	}

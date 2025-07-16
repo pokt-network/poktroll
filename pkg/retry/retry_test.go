@@ -19,6 +19,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
@@ -466,6 +467,7 @@ func TestCallWithExponentialBackoff(t *testing.T) {
 
 			// Very short delays for testing
 			retry.WithExponentialBackoffFn(maxRetryCount, initialDelayMs, maxDelayMs),
+			polylog.Ctx(ctx),
 		)
 
 		require.NoError(t, err)
@@ -486,6 +488,7 @@ func TestCallWithExponentialBackoff(t *testing.T) {
 				return "", expectedErr
 			},
 			retry.WithExponentialBackoffFn(maxRetries, 1, 10), // Very short delays for testing
+			polylog.Ctx(ctx),
 		)
 
 		require.Error(t, err)
