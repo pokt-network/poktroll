@@ -19,6 +19,11 @@ enum ClaimExpirationReason {
 // an onchain proof doesn't have one. The claim cannot be settled, leading to that work
 // never being rewarded.
 message EventClaimExpired {
+    // Next index: 8
+
+    // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+    reserved 6;
+
     pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     // The reason why the claim expired, leading to a Supplier being penalized (i.e. burn).
     ClaimExpirationReason expiration_reason = 2 [(gogoproto.jsontag) = "expiration_reason"];
@@ -32,13 +37,18 @@ message EventClaimExpired {
     uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
     // The uPOKT coin claimed to be rewarded for the work done as a function of
     // the number of estimated compute units and the compute units to token multiplier.
-    string claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+    string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // EventClaimSettled is an event emitted whenever a claim is settled.
 // The proof_required determines whether the claim requires a proof that has been submitted or not
 message EventClaimSettled {
-    // Next index: 8
+    // Next index: 9
+
+    // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+    // ClaimSettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
+    reserved 6, 7;
+
     pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     // The reason why the claim was settled, leading to a Supplier being rewarded (i.e. mint).
     pocket.proof.ProofRequirementReason proof_requirement = 2 [(gogoproto.jsontag) = "proof_requirement"];
@@ -52,42 +62,44 @@ message EventClaimSettled {
     uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
     // The uPOKT coin claimed to be rewarded for the work done as a function of
     // the number of estimated compute units and the compute units to token multiplier.
-    string claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
-
-    // Field #7 was removed to reduce block size:
-    // - settlement_result field was removed to prevent event bloat
-    // - See issue: https://github.com/pokt-network/poktroll/issues/1497
-    // - This field contained duplicate information:
-    //   - Claim data already present in this event
-    //   - Mint/burn/transfer operations already emitted by the bank module
-    // - SettlementResult originally tracked these operations on a per-claim basis
-    reserved 7; // ClaimSettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
+    string claimed_upokt = 8 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // EventApplicationOverserviced is emitted when an application has less stake than
 // what a supplier is claiming (i.e. amount available for burning is insufficient).
 // This means the following will ALWAYS be strictly true: effective_burn < expected_burn.
 message EventApplicationOverserviced {
+    // Next index: 7
+
+    // cosmos.base.v1beta1.Coin expected_burn = 3;
+    // cosmos.base.v1beta1.Coin effective_burn = 4;
+    reserved 3, 4;
+
     string application_addr = 1;
     string supplier_operator_addr = 2;
     // Expected burn is the amount the supplier is claiming for work done
     // to service the application during the session.
     // This is usually the amount in the Claim submitted.
-    string expected_burn = 3;
+    string expected_burn = 5;
     // Effective burn is the amount that is actually being paid to the supplier
     // for the work done. It is less than the expected burn (claim amount) and
     // is a function of the relay mining algorithm.
     // E.g. The application's stake divided by the number of suppliers in a session.
-    string effective_burn = 4;
+    string effective_burn = 6;
 }
 
 // EventSupplierSlashed is emitted when a supplier is slashed for not providing,
 // or provided invalid required proofs for claims.
 message EventSupplierSlashed {
+    // Next index: 4
+
+    // cosmos.base.v1beta1.Coin proof_missing_penalty = 2;
+    reserved 2;
+
     pocket.proof.Claim claim = 1;
     // Amount slashed from the supplier's stake due to the expired claims.
     // This is a function of the number of expired claims and proof missing penalty.
-    string proof_missing_penalty = 2;
+    string proof_missing_penalty = 3;
 }
 
 // EventClaimDiscarded is emitted when a claim is discarded due to unexpected
@@ -101,10 +113,15 @@ message EventClaimDiscarded {
 // EventApplicationReimbursementRequest is emitted when an application requests
 // a reimbursement.
 message EventApplicationReimbursementRequest {
+    // Next index: 8
+
+    // cosmos.base.v1beta1.Coin amount = 6;
+    reserved 6;
+
     string application_addr = 1;
     string supplier_operator_addr = 2;
     string supplier_owner_addr = 3;
     string service_id = 4;
     string session_id = 5;
-    string amount = 6;
+    string amount = 7;
 }
