@@ -43,6 +43,7 @@ func main() {
 	var sortBySize bool
 	var sortByKeySize bool
 	var fullOutput bool
+	var rawOutput bool
 
 	rootCmd.PersistentFlags().StringVarP(&dbPath, "db", "d", "", "Path to LevelDB database (required)")
 	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "table", "Output format (table, json, csv)")
@@ -91,11 +92,12 @@ func main() {
 		Long:  `Retrieve and display the value for a specific key.`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runGet(dbPath, args[0], hexOutput, fullOutput)
+			return runGet(dbPath, args[0], hexOutput, fullOutput, rawOutput)
 		},
 	}
 
 	getCmd.Flags().BoolVarP(&fullOutput, "full", "f", false, "Display full value without truncation")
+	getCmd.Flags().BoolVarP(&rawOutput, "raw", "r", false, "Display only the value without key and size information")
 
 	// Size command
 	var sizeCmd = &cobra.Command{
@@ -732,7 +734,7 @@ func runKeys(dbPath, output string, limit int, hexOutput bool, prefix string, so
 	return iter.Error()
 }
 
-func runGet(dbPath, key string, hexOutput bool, fullOutput bool) error {
+func runGet(dbPath, key string, hexOutput bool, fullOutput bool, rawOutput bool) error {
 	db, err := openDB(dbPath)
 	if err != nil {
 		return err
@@ -754,6 +756,17 @@ func runGet(dbPath, key string, hexOutput bool, fullOutput bool) error {
 		return fmt.Errorf("failed to get value: %w", err)
 	}
 
+	// Raw output: just print the value (--raw implies --full)
+	if rawOutput {
+		if hexOutput {
+			fmt.Print(hex.EncodeToString(value))
+		} else {
+			fmt.Print(string(value))
+		}
+		return nil
+	}
+
+	// Regular output with key and size information
 	if hexOutput {
 		keyOutput, keyTruncated := truncateWithMessage(hex.EncodeToString(keyBytes), 100, fullOutput, "key")
 		valueOutput, valueTruncated := truncateWithMessage(hex.EncodeToString(value), 200, fullOutput, "value")
