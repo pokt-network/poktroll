@@ -3,6 +3,8 @@ package app
 import (
 	// this line is used by starport scaffolding # ibc/app/import
 
+	"time"
+
 	"cosmossdk.io/core/appmodule"
 	storetypes "cosmossdk.io/store/types"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -10,6 +12,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward"
+	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/keeper"
+	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/types"
 	"github.com/cosmos/ibc-go/modules/capability"
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
@@ -49,6 +54,7 @@ func (app *App) registerIBCModules() {
 		storetypes.NewKVStoreKey(icacontrollertypes.StoreKey),
 		storetypes.NewMemoryStoreKey(capabilitytypes.MemStoreKey),
 		storetypes.NewTransientStoreKey(paramstypes.TStoreKey),
+		storetypes.NewKVStoreKey(packetforwardtypes.StoreKey),
 	); err != nil {
 		panic(err)
 	}
@@ -140,8 +146,28 @@ func (app *App) registerIBCModules() {
 	)
 	app.Keepers.GovKeeper.SetLegacyRouter(govRouter)
 
-	// Create IBC modules with ibcfee middleware
-	transferIBCModule := ibcfee.NewIBCMiddleware(ibctransfer.NewIBCModule(app.Keepers.TransferKeeper), app.Keepers.IBCFeeKeeper)
+	// Create IBC packet forward keeper
+	app.Keepers.PacketForwardKeeper = *packetforwardkeeper.NewKeeper(
+		app.AppCodec(),
+		app.GetKey(packetforwardtypes.StoreKey),
+		app.Keepers.TransferKeeper,
+		app.Keepers.IBCKeeper.ChannelKeeper,
+		app.Keepers.BankKeeper,
+		app.Keepers.IBCFeeKeeper,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
+	// Create IBC modules with ibcfee middleware, wrapped in packet forward middleware
+	rawTransferModule := ibctransfer.NewIBCModule(app.Keepers.TransferKeeper)
+	transferWithPFM := packetforward.NewIBCMiddleware(
+		rawTransferModule,
+		&app.Keepers.PacketForwardKeeper,
+		// TODO_IN_THIS_COMMIT: extract to constants and/or comment if gov params would be appropriate...
+		3,
+		60*time.Second,
+	)
+
+	transferIBCModule := ibcfee.NewIBCMiddleware(transferWithPFM, app.Keepers.IBCFeeKeeper)
 
 	// integration point for custom authentication modules
 	var noAuthzModule porttypes.IBCModule
@@ -176,6 +202,7 @@ func (app *App) registerIBCModules() {
 		capability.NewAppModule(app.appCodec, *app.Keepers.CapabilityKeeper, false),
 		ibctm.AppModule{},
 		solomachine.AppModule{},
+		packetforward.NewAppModule(&app.Keepers.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
 	); err != nil {
 		panic(err)
 	}
