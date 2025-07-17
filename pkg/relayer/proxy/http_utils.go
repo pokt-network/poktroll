@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"google.golang.org/protobuf/proto"
 
@@ -217,4 +219,11 @@ func SerializeHTTPResponse(
 	}
 
 	return poktHTTPResponse, poktHTTPResponseBz, nil
+}
+
+// isWebSocketRequest checks if the request is trying to upgrade to WebSocket.
+func isWebSocketRequest(r *http.Request) bool {
+	// The request must have the "Rpc-Type" header set to "websocket".
+	// This will be handled in the client, likely a PATH gateway.
+	return r.Header.Get(RPCTypeHeader) == strconv.Itoa(int(sharedtypes.RPCType_WEBSOCKET))
 }
