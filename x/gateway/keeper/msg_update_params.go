@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -12,30 +11,35 @@ import (
 )
 
 func (k msgServer) UpdateParams(
-	goCtx context.Context,
-	req *types.MsgUpdateParams,
+	ctx context.Context,
+	msg *types.MsgUpdateParams,
 ) (*types.MsgUpdateParamsResponse, error) {
 	logger := k.Logger().With("method", "UpdateParams")
 
-	if err := req.ValidateBasic(); err != nil {
+	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if k.GetAuthority() != req.Authority {
+
+	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
+
+	if k.GetAuthority() != msg.Authority {
 		return nil, status.Error(
 			codes.PermissionDenied,
 			types.ErrGatewayInvalidSigner.Wrapf(
-				"invalid authority; expected %s, got %s", k.GetAuthority(), req.Authority,
+				"invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority,
 			).Error(),
 		)
 	}
 
-	ctx := sdk.UnwrapSDKContext(goCtx)
-	// NOTE(#322): Omitted parameters will be set to their zero value.
-	if err := k.SetParams(ctx, req.Params); err != nil {
+	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
+
+	if err := k.SetParams(ctx, msg.Params); err != nil {
 		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	logger.Info("Done updating params")
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }

@@ -20,6 +20,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -157,7 +158,7 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 			RootHash:                proof.SmstRootWithSumAndCount(1000, 1000),
 		}
 
-		keepers.ProofKeeper.UpsertClaim(s.ctx, claim)
+		keepers.UpsertClaim(s.ctx, claim)
 	}
 }
 
@@ -168,12 +169,13 @@ func (s *tokenLogicModuleTestSuite) settleClaims(t *testing.T) (settledResults, 
 	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParams(), 1)
 	s.setBlockHeight(settlementHeight)
 
-	settledPendingResults, expiredPendingResults, err := s.keepers.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
+	settledPendingResults, expiredPendingResults, numDiscardedFaultyClaims, err := s.keepers.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
 	require.NoError(t, err)
 
 	require.NotZero(t, len(settledPendingResults))
 	// TODO_IMPROVE: enhance the test scenario to include expiring claims to increase coverage.
 	require.Zero(t, len(expiredPendingResults))
+	require.Zero(t, numDiscardedFaultyClaims)
 
 	return settledPendingResults, expiredPendingResults
 }
@@ -186,7 +188,10 @@ func (s *tokenLogicModuleTestSuite) setBlockHeight(height int64) {
 // assertNoPendingClaims asserts that no pending claims exist.
 func (s *tokenLogicModuleTestSuite) assertNoPendingClaims(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
-	pendingClaimsIterator := s.keepers.Keeper.GetExpiringClaimsIterator(sdkCtx)
+	logger := s.keepers.Logger().With("method", "assertNoPendingClaims")
+	settlementContext := tokenomicskeeper.NewSettlementContext(sdkCtx, s.keepers.Keeper, logger)
+	blockHeight := sdkCtx.BlockHeight()
+	pendingClaimsIterator := s.keepers.GetExpiringClaimsIterator(sdkCtx, settlementContext, blockHeight)
 	defer pendingClaimsIterator.Close()
 
 	numExpiringClaims := 0

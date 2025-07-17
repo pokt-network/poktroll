@@ -58,9 +58,7 @@ func (k msgServer) AddService(
 		k.SetService(ctx, foundService)
 
 		isSuccessful = true
-		return &types.MsgAddServiceResponse{
-			Service: &foundService,
-		}, nil
+		return &types.MsgAddServiceResponse{}, nil
 	}
 
 	// Retrieve the address of the actor adding the service; the owner of the service.
@@ -116,7 +114,5 @@ func (k msgServer) AddService(
 	k.SetService(ctx, msg.Service)
 
 	isSuccessful = true
-	return &types.MsgAddServiceResponse{
-		Service: &msg.Service,
-	}, nil
+	return &types.MsgAddServiceResponse{}, nil
 }

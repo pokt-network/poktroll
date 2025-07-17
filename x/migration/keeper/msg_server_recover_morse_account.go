@@ -9,12 +9,11 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/encoding"
 	"github.com/pokt-network/poktroll/x/migration/recovery"
-	"github.com/pokt-network/poktroll/x/migration/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecoverMorseAccount) (*types.MsgRecoverMorseAccountResponse, error) {
+func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *migrationtypes.MsgRecoverMorseAccount) (*migrationtypes.MsgRecoverMorseAccountResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Validate Morse account recovery message.
@@ -115,10 +114,5 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 		)
 	}
 
-	return &types.MsgRecoverMorseAccountResponse{
-		SessionEndHeight:   sessionEndHeight,
-		RecoveredBalance:   recoveredBalance,
-		ShannonDestAddress: msg.GetShannonDestAddress(),
-		MorseSrcAddress:    normalizedMorseSrcAddress,
-	}, nil
+	return &migrationtypes.MsgRecoverMorseAccountResponse{}, nil
 }

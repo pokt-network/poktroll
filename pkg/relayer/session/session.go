@@ -165,6 +165,12 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Identify which sessions have expired based on their end heights
 	block := rs.blockClient.LastBlock(ctx)
 
+	rs.logger.Info().Msgf(
+		"📊 Chain head at height %d (block hash: %X) during session manager startup",
+		block.Height(),
+		block.Hash(),
+	)
+
 	// Restore previously active sessions from persistent storage by rehydrating
 	// the session tree map.
 	// This is crucial for:
@@ -504,7 +510,16 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	// Plus one is necessary for the "oldest" boundary to include targetHeight.
 	//
 	// If minNumReplayBlocks is negative, no replay is necessary and the replay buffer will be ignored.
-	minNumReplayBlocks := rs.blockClient.LastBlock(ctx).Height() - targetHeight + 1
+	currentBlock := rs.blockClient.LastBlock(ctx)
+	currentHeight := currentBlock.Height()
+	minNumReplayBlocks := currentHeight - targetHeight + 1
+
+	rs.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"📊 Chain head at height %d (block hash: %X) while waiting for target block %d",
+		currentHeight,
+		currentBlock.Hash(),
+		targetHeight,
+	)
 
 	// If the replay buffer size is less than minNumReplayBlocks, the target
 	// block targetHeight will never be observed. This can happen if a relayminer is cold-started
@@ -654,7 +669,9 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 	numSessionTreesDeleted := 0
 	for _, sessionTree := range sessionTrees {
 		sessionId := sessionTree.GetSessionHeader().GetSessionId()
-		logger.Info().Str("session_id", sessionId).Msg("🗑️ Deleting session tree - cleaning up outdated or unclaimable session")
+		// Create a new logger instance for each iteration to avoid concurrent access issues
+		sessionLogger := logger.With("session_id", sessionId)
+		sessionLogger.Info().Msg("🗑️ Deleting session tree - cleaning up outdated or unclaimable session")
 
 		// Remove the session tree from the relayerSessions.
 		rs.deleteSessionTree(sessionTree)

@@ -11,8 +11,8 @@ accounts:
   - name: pnf
     mnemonic: "crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade"
     coins:
-      - 69000000000000000000042upokt
-      - 69000000000000000000042mact
+      - 6900000000042upokt
+      - 6900000000042mact
   - name: validator1
     mnemonic: "creek path rule retire evolve vehicle bargain champion roof whisper prize endorse unknown anchor fashion energy club sauce elder parent cotton old affair visa"
     coins:
@@ -64,11 +64,11 @@ accounts:
   - name: source_owner_anvil
     mnemonic: "burden effort glue note honey erupt fiscal vote gold addict toy flag spare wrap chest table bomb sort arena phone sadness sustain urge wink"
     coins:
-      - 6900000000000upokt
+      - 6900000000042upokt
   - name: source_owner_ollama
     mnemonic: "initial scorpion soccer decrease sorry convince donor canoe bid pill monster today cycle slot judge bulb dismiss reject hurt mesh glare fork sustain wash"
     coins:
-      - 6900000000000upokt
+      - 6900000000042upokt
   - name: unauthorized
     mnemonic: "abuse tumble whip pioneer immense pipe method note upon glory switch rail metal camp gasp top require rain party total struggle glance between fossil"
     coins:
@@ -196,7 +196,54 @@ genesis:
           coins:
             - amount: "1000000000" # MUST BE equal to one add_service_fee below
               denom: upokt
-    # For ref, see proto/poktroll/application/params.proto
+    # IBC configuration
+    # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/types/v1/genesis.proto#L13
+    ibc:
+      # Client genesis
+      # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/client/v1/genesis.proto#L11
+      client_genesis:
+        params:
+          allowed_clients:
+            - 07-tendermint
+      # Connection genesis
+      # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/connection/v1/connection.proto#L109
+      connection_genesis:
+        params:
+          max_expected_time_per_block: 10000000000 # (nanoseconds) 10 seconds
+      # Channel genesis
+      # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/channel/v1/channel.proto#L184
+      channel_genesis:
+        params:
+          upgrade_timeout:
+            height:
+              revision_number: 0
+              revision_height: 0
+            timestamp: 300000000000 # (nanoseconds) 5 minutes
+    # IBC transfer module configuration
+    # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/transfer/v1/genesis.proto#L12
+    # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/transfer/v1/transfer.proto#L21
+    transfer:
+      port_id: transfer
+      denom_traces: []
+      params:
+        send_enabled: true
+        receive_enabled: true
+    # Interchain accounts configuration
+    # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/interchain_accounts/genesis/v1/genesis.proto#L12
+    interchainaccounts:
+      controller_genesis_state:
+        # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/interchain_accounts/controller/v1/controller.proto#L9
+        params:
+          controller_enabled: true
+      host_genesis_state:
+        port: icahost
+        # Ref: https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/interchain_accounts/host/v1/host.proto#L9
+        params:
+          host_enabled: true
+          allow_messages:
+            - "*"
+    # Application module configuration
+    # Ref: proto/poktroll/application/params.proto
     application:
       params:
         # 6 was arbitrarily selected taking into consideration two factors:
@@ -330,17 +377,25 @@ genesis:
     # For ref, see proto/poktroll/tokenomics/params.proto
     tokenomics:
       params:
+        # The dao reward address SHOULD match that of the "pnf" below (i.e. `make pocketd_addr ACC_NAME=pnf`).
+        # This is the address that will receive the dao/foundation rewards during claim settlement (global mint TLM).
+        # TODO_MAINNET_MIGRATION(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
+        dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+        global_inflation_per_claim: 0.1
+        # GlobalMint TLM
         mint_allocation_percentages:
           dao: 0.1 # DAO earns 10% of the global inflation during all claim settlements across all services.
           proposer: 0.05 # Block proposers earn 5% of the global inflation during all claim settlements across all services.
           supplier: 0.7 # Suppliers earn 70% of the global inflation during all claim settlements associated with the service they provide.
           source_owner: 0.15 # Service owners earn 15% of the global inflation during all claim settlements associated with their service.
           application: 0.0 # Application earns nothing from global inflation during all claim settlements.
-        # The dao reward address SHOULD match that of the "pnf" below (i.e. `make pocketd_addr ACC_NAME=pnf`).
-        # This is the address that will receive the dao/foundation rewards during claim settlement (global mint TLM).
-        # TODO_MAINNET_MIGRATION(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
-        dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-        global_inflation_per_claim: 0.1
+        # MintEqualsBurn TLM
+        mint_equals_burn_claim_distribution:
+          dao: 0.1
+          proposer: 0.05
+          supplier: 0.7
+          source_owner: 0.15
+          application: 0.0
     # For ref, see proto/poktroll/migration/params.proto
     migration:
       params:
