@@ -33,6 +33,7 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
   - [`ping`](#ping)
+  - [`forward`](#forward)
 - [Pocket node connectivity](#pocket-node-connectivity)
   - [`query_node_rpc_url`](#query_node_rpc_url)
   - [`query_node_grpc_url`](#query_node_grpc_url)
@@ -254,6 +255,54 @@ Example configuration:
 ping:
   enabled: true
   addr: localhost:8081
+```
+
+### `forward`
+
+_`Optional`_
+
+Configures a `forward` server to send requests to a particular supplier (i.e. operator)
+for a given service name.
+This endpoint:
+- Is expecting an address formatted as `host:port`
+- Is intended for operational use only (e.g., a relayminer operator may need to send 
+  requests to an suppliers to verify the correctness of their responses going 
+  through the relayminer proxy)
+- Bypasses the onchain miner, meter and session mechanisms to prevent misuse by unauthorized users:
+    - Requires authentication
+    - An authentication token can be defined using a 32 bytes hexadecimal `token`
+
+Example configuration:
+
+```yaml
+forward:
+  enabled: true
+  addr: localhost:8082
+  auth_token: 8e8cff9152db92e960b00b4159b23f82084192f9d6c589337caab9705b3e0693
+```
+
+Example query to forward a request using the `relayminer1` to `ollama` service in Localnet environment:
+
+```shell
+?> cat data.json
+{
+    "method": "POST",
+    "path": "/api/generate",
+    "data": "{\"model\": \"qwen:0.5b\", \"prompt\": \"hello world.\", \"stream\": false}"
+}
+?> curl -X POST -H "token: 8e8cff9152db92e960b00b4159b23f82084192f9d6c589337caab9705b3e0693" localhost:10001/services/ollama/forward --data-binary "@data.json"
+```
+
+Example query to forward a websocket connection using the  `relayminer1` to `anvilws` service in Localnet environment:
+
+```shell
+?>  websocat -H="token: 8e8cff9152db92e960b00b4159b23f82084192f9d6c589337caab9705b3e0693" ws://localhost:10001/services/anvilws/forward
+```
+
+Helpers to generate token in Makefile:
+
+```shell
+?> make relayminer_forward_token_gen
 ```
 
 ## Pocket node connectivity
