@@ -235,9 +235,10 @@ func (k Keeper) StakeSupplier(
 
 	if wasSupplierUnbonding {
 		events = append(events, &suppliertypes.EventSupplierUnbondingCanceled{
-			Supplier:         &supplier,
 			SessionEndHeight: sessionEndHeight,
 			Height:           sdkCtx.BlockHeight(),
+			OperatorAddress:  supplier.OperatorAddress,
+			OwnerAddress:     supplier.OwnerAddress,
 		})
 	}
 

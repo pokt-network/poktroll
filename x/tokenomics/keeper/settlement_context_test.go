@@ -853,10 +853,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// The slashed supplier Services property already has the relevant active service configs at the time of the claimed session end height.
 	slashedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
-		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
-		SessionEndHeight:   upcomingSessionEndHeight,
+		SessionEndHeight:   int64(upcomingSessionEndHeight),
 		UnbondingEndHeight: upcomingSessionEndHeight,
+		OperatorAddress:    slashedSupplier.OperatorAddress,
+		OwnerAddress:       slashedSupplier.OwnerAddress,
 	}
 	// A single unbonding begin event corresponding to the slashed supplier should be
 	// emitted for all expired claims.
@@ -873,10 +874,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	// Validate the EventSupplierUnbondingEnd event.
 	expectedUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
-		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   upcomingSessionEndHeight,
 		UnbondingEndHeight: upcomingSessionEndHeight,
+		OperatorAddress:    slashedSupplier.OperatorAddress,
+		OwnerAddress:       slashedSupplier.OwnerAddress,
 	}
 	// A single unbonding end event corresponding to the slashed supplier should be
 	// emitted for all expired claims.

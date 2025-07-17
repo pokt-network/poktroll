@@ -107,10 +107,11 @@ func (k msgServer) UnstakeSupplier(
 	// Emit an event signaling that the supplier has begun the unbonding process
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
 	event := &suppliertypes.EventSupplierUnbondingBegin{
-		Supplier:           &supplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 		SessionEndHeight:   int64(supplier.GetUnstakeSessionEndHeight()),
 		UnbondingEndHeight: unbondingEndHeight,
+		OperatorAddress:    supplier.OperatorAddress,
+		OwnerAddress:       supplier.OwnerAddress,
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		err = suppliertypes.ErrSupplierEmitEvent.Wrapf("(%+v): %s", event, err)
