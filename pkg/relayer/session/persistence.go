@@ -180,9 +180,6 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 // - The full persisted session tree on-disk key/value store
 // - The session tree metadata entry from the in-memory store
 func (rs *relayerSessionsManager) deletePersistedSessionTree(sessionSMT *prooftypes.SessionSMT) error {
-	rs.sessionsTreesMu.Lock()
-	defer rs.sessionsTreesMu.Unlock()
-
 	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
 	sessionId := sessionSMT.SessionHeader.SessionId
 	sessionEndHeight := sessionSMT.SessionHeader.SessionEndBlockHeight
@@ -206,8 +203,12 @@ func (rs *relayerSessionsManager) deletePersistedSessionTree(sessionSMT *proofty
 		return err
 	}
 
-	// Delete the persisted session tree metadata
 	sessionStoreKey := getSessionStoreKey(supplierOperatorAddress, sessionId)
+
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
+	// Delete the persisted session tree metadata
 	if err := rs.sessionSMTStore.Delete(sessionStoreKey); err != nil {
 		logger.Error().Err(err).Msg("failed to delete outdated session metadata")
 		return err

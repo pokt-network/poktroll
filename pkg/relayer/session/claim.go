@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"sync"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
@@ -390,61 +391,73 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		return int(sumB - sumA)
 	})
 
+	payableProofsSubPool := rs.mainWorkerPool.NewSubpool(workerPoolSize)
+
 	claimableSessionTrees := []relayer.SessionTree{}
-	for _, sessionTree := range sessionTrees {
-		// Supplier CAN afford to claim the session.
-		// Add it to the claimableSessionTrees slice.
-		supplierCanAffordClaimAndProofFees := supplierOperatorBalanceCoin.IsGTE(claimAndProofSubmissionCost)
+	claimableSessionTreesMu := sync.Mutex{}
+	for _, st := range sessionTrees {
+		sessionTree := st
 
-		claimLogger := logger.With(
-			"session_id", sessionTree.GetSessionHeader().GetSessionId(),
-		)
+		payableProofsSubPool.Go(func() {
+			// Supplier CAN afford to claim the session.
+			// Add it to the claimableSessionTrees slice.
+			supplierCanAffordClaimAndProofFees := supplierOperatorBalanceCoin.IsGTE(claimAndProofSubmissionCost)
 
-		claimReward, err := rs.getClaimRewardCoin(ctx, sessionTree)
-		if err != nil {
-			claimLogger.Error().Err(err).Msg("⚠️ Failed to calculate claim reward for session")
-			return nil, err
-		}
-
-		isClaimProfitable := claimReward.IsGT(ClaimAndProofGasCost)
-
-		if supplierCanAffordClaimAndProofFees && isClaimProfitable {
-			claimableSessionTrees = append(claimableSessionTrees, sessionTree)
-			newSupplierOperatorBalanceCoin := supplierOperatorBalanceCoin.Sub(claimAndProofSubmissionCost)
-			supplierOperatorBalanceCoin = &newSupplierOperatorBalanceCoin
-
-			estimatedClaimProfit := claimReward.Sub(ClaimAndProofGasCost)
-			claimLogger.Info().Msgf(
-				"💲 Processing profitable claim — estimated submission cost 💸: %s, reward 🎁: %s, estimated profit 💰: %s",
-				claimAndProofSubmissionCost, claimReward, estimatedClaimProfit,
+			claimLogger := logger.With(
+				"session_id", sessionTree.GetSessionHeader().GetSessionId(),
 			)
 
-			continue
-		}
+			claimReward, err := rs.getClaimRewardCoin(ctx, sessionTree)
+			if err != nil {
+				claimLogger.Error().Err(err).Msg("⚠️ Failed to calculate claim reward for session")
+				return
+			}
 
-		// Supplier CANNOT afford to claim the session.
-		// Delete the session tree from the relayer sessions and the KVStore since
-		// it won't be claimed due to insufficient funds.
-		rs.deleteSessionTree(sessionTree)
+			isClaimProfitable := claimReward.IsGT(ClaimAndProofGasCost)
 
-		if !isClaimProfitable {
-			// Calculate how unprofitable the claim is
-			unprofitableAmount := ClaimAndProofGasCost.Sub(claimReward)
-			// Log a warning with details about how unprofitable the claim is in plain English
-			claimLogger.Warn().Msgf(
-				"⚠️ Aborting claim — cost exceeds reward by %s (reward: %s). 🧹 Cleaning up session state.",
-				unprofitableAmount, claimReward,
-			)
-		}
+			if supplierCanAffordClaimAndProofFees && isClaimProfitable {
+				claimableSessionTreesMu.Lock()
+				claimableSessionTrees = append(claimableSessionTrees, sessionTree)
+				claimableSessionTreesMu.Unlock()
+				newSupplierOperatorBalanceCoin := supplierOperatorBalanceCoin.Sub(claimAndProofSubmissionCost)
+				supplierOperatorBalanceCoin = &newSupplierOperatorBalanceCoin
 
-		if !supplierCanAffordClaimAndProofFees {
-			// Log a warning of any session that the supplier operator cannot afford to claim.
-			claimLogger.Warn().Msgf(
-				"⚠️ Aborting claim — supplier operator has insufficient funds to submit claim & proof (cost: %s, balance: %s). 🧹 Cleaning up session tree.",
-				claimAndProofSubmissionCost, supplierOperatorBalanceCoin,
-			)
-		}
+				estimatedClaimProfit := claimReward.Sub(ClaimAndProofGasCost)
+				claimLogger.Info().Msgf(
+					"💲 Processing profitable claim — estimated submission cost 💸: %s, reward 🎁: %s, estimated profit 💰: %s",
+					claimAndProofSubmissionCost, claimReward, estimatedClaimProfit,
+				)
+
+				return
+			}
+
+			// Supplier CANNOT afford to claim the session.
+			// Delete the session tree from the relayer sessions and the KVStore since
+			// it won't be claimed due to insufficient funds.
+			rs.deleteSessionTree(sessionTree)
+
+			if !isClaimProfitable {
+				// Calculate how unprofitable the claim is
+				unprofitableAmount := ClaimAndProofGasCost.Sub(claimReward)
+				// Log a warning with details about how unprofitable the claim is in plain English
+				claimLogger.Warn().Msgf(
+					"⚠️ Aborting claim — cost exceeds reward by %s (reward: %s). 🧹 Cleaning up session state.",
+					unprofitableAmount, claimReward,
+				)
+			}
+
+			if !supplierCanAffordClaimAndProofFees {
+				// Log a warning of any session that the supplier operator cannot afford to claim.
+				claimLogger.Warn().Msgf(
+					"⚠️ Aborting claim — supplier operator has insufficient funds to submit claim & proof (cost: %s, balance: %s). 🧹 Cleaning up session tree.",
+					claimAndProofSubmissionCost, supplierOperatorBalanceCoin,
+				)
+			}
+		})
 	}
+
+	// Wait for all goroutines to finish before proceeding.
+	payableProofsSubPool.StopAndWait()
 
 	if len(claimableSessionTrees) < len(sessionTrees) {
 		logger.Warn().Msgf(
