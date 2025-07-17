@@ -327,7 +327,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_THRESHOLD), expectedEvent.GetProofRequirementInt())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
@@ -490,7 +490,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 
 	// Validate the settlement event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_PROBABILISTIC, expectedEvent.GetProofRequirement())
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_PROBABILISTIC), expectedEvent.GetProofRequirementInt())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
@@ -552,7 +552,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// Validate the settlement event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_NOT_REQUIRED.String(), expectedEvent.GetProofRequirement().String())
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_NOT_REQUIRED), expectedEvent.GetProofRequirementInt())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
@@ -945,7 +945,7 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 
 	// Validate the events
 	for _, expectedEvent := range expectedEvents {
-		require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
+		require.Equal(t, int32(prooftypes.ProofRequirementReason_THRESHOLD), expectedEvent.GetProofRequirementInt())
 		require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 		require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 		require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())

@@ -734,7 +734,7 @@ func (k Keeper) settleClaim(
 		NumClaimedComputeUnits:   numClaimComputeUnits,
 		NumEstimatedComputeUnits: numEstimatedComputeUnits,
 		ClaimedUpokt:             claimeduPOKT.String(),
-		ProofRequirement:         proofRequirement,
+		ProofRequirementInt:      int32(proofRequirement),
 		ServiceId:                claim.SessionHeader.ServiceId,
 		ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
 		SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,

@@ -85,7 +85,15 @@ message EventClaimSettled {
     reserved 1, 6, 7;
 
     // Whether a proof was required for the claim to be settled.
-    pocket.proof.ProofRequirementReason proof_requirement = 2 [(gogoproto.jsontag) = "proof_requirement"];
+    // DEV_NOTE: This field uses the integer representation of the ProofRequirementReason
+    // enum to minimize onchain disk utilization. This is necessary because event
+    // data is not always protobuf-encoded in the various places and formats that it
+    // appears in onchain leveldb databases.
+    // Enum values:
+    //   NOT_REQUIRED = 0;
+    //   PROBABILISTIC = 1;
+    //   THRESHOLD = 2;
+    int32 proof_requirement_int = 2;
 
     // Number of relays claimed to be in the session tree.
     uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
