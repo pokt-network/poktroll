@@ -62,6 +62,7 @@ message QueryAllSuppliersRequest {
 
   oneof filter {
     string service_id = 2; // unique service identifier to filter by
+    string owner_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // owner address to filter by
   }
 
   // if true, return a dehydrated version of the supplier.
