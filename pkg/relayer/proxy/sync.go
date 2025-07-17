@@ -1,11 +1,16 @@
 package proxy
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"path"
 	"slices"
 	"strconv"
 	"strings"
@@ -472,6 +477,77 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 	writer.Header().Set("Content-Length", relayResponseBzLenStr)
 	_, err = writer.Write(relayResponseBz)
 	return err
+}
+
+// forwardHTTP forward a HTTP request:
+// - It reads the entire payload from the client.
+// - It validates the input payload.
+// - It sends the request to the supplier backend URL.
+// - It streams back the response to the client.
+func (server *relayMinerHTTPServer) forwardHTTP(ctx context.Context, supplierConfig *config.RelayMinerSupplierConfig, w http.ResponseWriter, req *http.Request) error {
+	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		return err
+	}
+
+	var payload forwardPayload
+	if err = json.Unmarshal(b, &payload); err != nil {
+		return err
+	}
+
+	if err = payload.Validate(); err != nil {
+		return err
+	}
+
+	url := *supplierConfig.ServiceConfig.BackendUrl
+	url.Path = path.Join(url.Path, payload.Path)
+
+	forwardReq := &http.Request{
+		Method: payload.Method,
+		Body:   io.NopCloser(bytes.NewBufferString(payload.Data)),
+		URL:    &url,
+		Header: payload.toHeaders(),
+	}
+
+	c := http.Client{
+		Transport: http.DefaultTransport,
+	}
+
+	// forward request to the supplier.
+	resp, err := c.Do(forwardReq)
+	if err != nil {
+		server.logger.Error().Fields(map[string]any{
+			"service_id": supplierConfig.ServiceId,
+			"method":     payload.Method,
+			"path":       payload.Path,
+			"headers":    payload.Headers,
+		}).Err(err).Msg("failed to send forward http request")
+
+		if nErr, ok := err.(net.Error); ok && nErr.Timeout() {
+			http.Error(w, fmt.Sprintf("relayminer: forward http request timeout exceeded: %s", err.Error()), http.StatusGatewayTimeout)
+		} else {
+			http.Error(w, fmt.Sprintf("relayminer: error forward http request: %s", err.Error()), http.StatusInternalServerError)
+		}
+		return err
+	}
+
+	w.WriteHeader(resp.StatusCode)
+
+	// streaming supplier's output to the client.
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		server.logger.Error().Fields(map[string]any{
+			"service_id": supplierConfig.ServiceId,
+			"method":     payload.Method,
+			"path":       payload.Path,
+			"headers":    payload.Headers,
+		}).Err(err).Msg("failed to write forward http response")
+
+		http.Error(w, fmt.Sprintf("relayminer: error on forward http response: %s", err.Error()), http.StatusInternalServerError)
+
+		return err
+	}
+
+	return nil
 }
 
 // isTimeoutError checks if the error is a timeout error.

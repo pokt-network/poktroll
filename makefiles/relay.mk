@@ -65,4 +65,5 @@ relayminer_forward_http_rest: ## Forward request to the rest service.
 .PHONY: relayminer_forward_request_websocket_anvilws
 relayminer_forward_request_websocket_anvilws: ## Forward websocket request to the anvilws service.
 	@websocat ws://localhost:10001/services/anvilws/forward \
-		-H "token: 8cc09793290cd64d8a9bc80eaae4fbeef5f7cf797b0c70e078d2a5b81d74f12c"
+		-H "token: 8cc09793290cd64d8a9bc80eaae4fbeef5f7cf797b0c70e078d2a5b81d74f12c" \
+		-H "Rpc-Type: 2" # RPCType_WEBSOCKET

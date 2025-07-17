@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"net/http"
-	"strconv"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -14,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // rpcTypeHeader is the header key for the RPC type, provided by the client.
@@ -137,9 +135,25 @@ func (server *relayMinerHTTPServer) Start(ctx context.Context) error {
 	return server.server.Serve(listener)
 }
 
+// Forward sends request to the appropriate service.
+// - It checks if the service id is managed by the relayminer.
 // Stop terminates the service server and returns an error if it fails.
 func (server *relayMinerHTTPServer) Stop(ctx context.Context) error {
 	return server.server.Shutdown(ctx)
+}
+
+// - It checks wether it needs to forward a websocket connection or send a http request.
+func (server *relayMinerHTTPServer) Forward(ctx context.Context, serviceID string, w http.ResponseWriter, req *http.Request) error {
+	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceID]
+	if !ok {
+		return ErrRelayerProxyServiceIDNotFound.Wrapf("service ID: %s", serviceID)
+	}
+
+	if isWebSocketRequest(req) {
+		return server.forwardAsyncConnection(ctx, supplierConfig, w, req)
+	} else {
+		return server.forwardHTTP(ctx, supplierConfig, w, req)
+	}
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective
@@ -155,13 +169,6 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 		"user_agent", request.Header.Get("User-Agent"),
 		"remote_addr", request.RemoteAddr,
 	)
-
-	// isWebSocketRequest checks if the request is trying to upgrade to WebSocket.
-	isWebSocketRequest := func(r *http.Request) bool {
-		// The request must have the "Rpc-Type" header set to "websocket".
-		// This will be handled in the client, likely a PATH gateway.
-		return r.Header.Get(RPCTypeHeader) == strconv.Itoa(int(sharedtypes.RPCType_WEBSOCKET))
-	}
 
 	// Determine whether the request is upgrading to websocket.
 	if isWebSocketRequest(request) {
