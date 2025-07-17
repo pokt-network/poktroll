@@ -263,7 +263,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Validate the slashing event
 	expectedSlashingEvent := expectedSlashingEvents[0]
 
-	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetClaim().GetSupplierOperatorAddress())
+	// The event no longer contains the full claim, so we validate the individual fields
+	require.Equal(t, s.claims[0].SessionHeader.ServiceId, expectedSlashingEvent.GetServiceId())
+	require.Equal(t, s.claims[0].SessionHeader.ApplicationAddress, expectedSlashingEvent.GetApplicationAddress())
+	require.Equal(t, s.claims[0].SessionHeader.SessionEndBlockHeight, expectedSlashingEvent.GetSessionEndBlockHeight())
 	require.Equal(t, belowStakeAmountProofMissingPenalty.String(), expectedSlashingEvent.GetProofMissingPenalty())
 }
 
@@ -422,7 +425,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Validate the slashing event
 	expectedSlashingEvent := expectedSlashingEvents[0]
-	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetClaim().GetSupplierOperatorAddress())
+	// The event no longer contains the full claim, so we validate the individual fields
+	require.Equal(t, s.claims[0].SessionHeader.ServiceId, expectedSlashingEvent.GetServiceId())
+	require.Equal(t, s.claims[0].SessionHeader.ApplicationAddress, expectedSlashingEvent.GetApplicationAddress())
+	require.Equal(t, s.claims[0].SessionHeader.SessionEndBlockHeight, expectedSlashingEvent.GetSessionEndBlockHeight())
 	require.Equal(t, belowStakeAmountProofMissingPenalty.String(), expectedSlashingEvent.GetProofMissingPenalty())
 }
 
@@ -811,10 +817,13 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 			proofMissingPenalty = *s.keepers.ProofKeeper.GetParams(sdkCtx).ProofMissingPenalty
 		}
 
-		sessionId := slashingEvent.GetClaim().GetSessionHeader().GetSessionId()
+		// The event no longer contains the full claim, so we construct the expected event with individual fields
 		expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
-			Claim:               expiredClaimsMap[sessionId],
-			ProofMissingPenalty: proofMissingPenalty.String(),
+			ProofMissingPenalty:   proofMissingPenalty.String(),
+			ServiceId:             slashingEvent.GetServiceId(),
+			ApplicationAddress:    slashingEvent.GetApplicationAddress(),
+			SessionEndBlockHeight: slashingEvent.GetSessionEndBlockHeight(),
+			ClaimProofStatusInt:   slashingEvent.GetClaimProofStatusInt(),
 		}
 		require.EqualValues(t, expectedSlashingEvent, slashingEvents[i])
 	}
