@@ -3386,38 +3386,57 @@ definitions:
         $ref: '#/definitions/pocket.supplier.Params'
   pocket.tokenomics.MintAllocationPercentages:
     description: |-
-      MintAllocationPercentages represents the distribution of newly minted tokens,
-      at the end of claim settlement, as a result of the Global Mint TLM.
+      MintAllocationPercentages captures the distribution of newly minted tokens.
+      The sum of all new tokens minted must equal 1.
+      GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
+      TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
     type: object
     properties:
       application:
-        description: |-
-          allocation_application is the percentage of the minted tokens which are sent
-          to the application account address during claim settlement.
+        description: application - % of newley minted tokens sent to the application account address.
         type: number
         format: double
       dao:
-        description: |-
-          dao is the percentage of the minted tokens which are sent
-          to the DAO reward address during claim settlement.
+        description: dao - % of newley minted tokens sent to the DAO reward address.
         type: number
         format: double
       proposer:
-        description: |-
-          proposer is the percentage of the minted tokens which are sent
-          to the block proposer account address during claim settlement.
+        description: proposer - % of newley minted tokens sent to the block proposer (i.e. validator0 account address.
         type: number
         format: double
       source_owner:
-        description: |-
-          source_owner is the percentage of the minted tokens which are sent
-          to the service source owner account address during claim settlement.
+        description: source_owner - % of newley minted tokens sent to the service source owner account address.
         type: number
         format: double
       supplier:
-        description: |-
-          supplier is the percentage of the minted tokens which are sent
-          to the block supplier account address during claim settlement.
+        description: supplier - % of newley minted tokens sent to the block supplier account address.
+        type: number
+        format: double
+  pocket.tokenomics.MintEqualsBurnClaimDistribution:
+    description: |-
+      MintEqualsBurnClaimDistribution captures the distribution of claimable tokens.
+      The sum of all tokens being burnt from the application's stake must equal 1.
+      GlobalMintEqualsBurnTLM: Only used by the GlobalMintEqualsBurnTLM at the end of claim settlement.
+    type: object
+    properties:
+      application:
+        description: application - % of claimable tokens sent to the application account address.
+        type: number
+        format: double
+      dao:
+        description: dao - % of claimable tokens sent to the DAO reward address.
+        type: number
+        format: double
+      proposer:
+        description: proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.
+        type: number
+        format: double
+      source_owner:
+        description: source_owner - % of claimable tokens sent to the service source owner account address.
+        type: number
+        format: double
+      supplier:
+        description: supplier - % of claimable tokens sent to the block supplier account address.
         type: number
         format: double
   pocket.tokenomics.MsgUpdateParam:
@@ -3429,6 +3448,8 @@ definitions:
         format: double
       as_mint_allocation_percentages:
         $ref: '#/definitions/pocket.tokenomics.MintAllocationPercentages'
+      as_mint_equals_burn_claim_distribution:
+        $ref: '#/definitions/pocket.tokenomics.MintEqualsBurnClaimDistribution'
       as_string:
         type: string
       authority:
@@ -3436,13 +3457,9 @@ definitions:
         type: string
       name:
         type: string
-        title: |-
-          The (name, as_type) tuple must match the corresponding name and type as
-          specified in the `Params` message in `proof/params.proto.`
+        title: The (name, as_type) tuple must match the corresponding name and type as specified in the `Params` message in `proof/params.proto.`
   pocket.tokenomics.MsgUpdateParamResponse:
-    description: |-
-      MsgUpdateParamResponse defines the response structure for executing a
-      MsgUpdateParam message after a single param update.
+    description: MsgUpdateParamResponse defines the response structure for executing a MsgUpdateParam message after a single param update.
     type: object
     properties:
       params:
@@ -3455,14 +3472,10 @@ definitions:
         description: authority is the address that controls the module (defaults to x/gov unless overwritten).
         type: string
       params:
-        description: |-
-          params defines the x/tokenomics parameters to update.
-          NOTE: All parameters must be supplied.
+        description: params defines the tokenomics parameters to update.
         $ref: '#/definitions/pocket.tokenomics.Params'
   pocket.tokenomics.MsgUpdateParamsResponse:
-    description: |-
-      MsgUpdateParamsResponse defines the response structure for executing a
-      MsgUpdateParams message.
+    description: MsgUpdateParamsResponse defines the response structure for executing a MsgUpdateParams message.
     type: object
     properties:
       params:
@@ -3473,20 +3486,27 @@ definitions:
     properties:
       dao_reward_address:
         description: |-
-          dao_reward_address is the address to which mint_allocation_dao percentage of the
-          minted tokens are at the end of claim settlement.
+          dao_reward_address is where the DAO's portion of claims submitted are distributed.
 
           Bech32 cosmos address
         type: string
       global_inflation_per_claim:
-        description: global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.
+        description: |-
+          global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount to be minted on settlement.
+          GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
         type: number
         format: double
       mint_allocation_percentages:
         description: |-
-          mint_allocation_percentages represents the distribution of newly minted tokens,
-          at the end of claim settlement, as a result of the Global Mint TLM.
+          mint_allocation_percentages represents the distribution of newly minted tokens.
+          GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
         $ref: '#/definitions/pocket.tokenomics.MintAllocationPercentages'
+      mint_equals_burn_claim_distribution:
+        description: |-
+          mint_equals_burn_claim_distribution controls how the settlement amount is distributed
+          when global inflation is disabled (global_inflation_per_claim = 0).
+          MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.
+        $ref: '#/definitions/pocket.tokenomics.MintEqualsBurnClaimDistribution'
   pocket.tokenomics.QueryParamsResponse:
     description: QueryParamsResponse is response type for the Query/Params RPC method.
     type: object

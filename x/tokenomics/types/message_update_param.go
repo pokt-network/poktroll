@@ -14,6 +14,8 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 	switch asType := asTypeAny.(type) {
 	case MintAllocationPercentages:
 		asTypeIface = &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: &asType}
+	case MintEqualsBurnClaimDistribution:
+		asTypeIface = &MsgUpdateParam_AsMintEqualsBurnClaimDistribution{AsMintEqualsBurnClaimDistribution: &asType}
 	case string:
 		asTypeIface = &MsgUpdateParam_AsString{AsString: asType}
 	case float64:
@@ -35,7 +37,7 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Validate the address
 	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
-		return ErrTokenomicsAddressInvalid.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
+		return ErrTokenomicsAuthorityAddressInvalid.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
 	}
 
 	// Parameter value cannot be nil.
@@ -50,6 +52,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateMintAllocationPercentages(*msg.GetAsMintAllocationPercentages())
+	case ParamMintEqualsBurnClaimDistribution:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsMintEqualsBurnClaimDistribution](msg); err != nil {
+			return err
+		}
+		return ValidateMintEqualsBurnClaimDistribution(*msg.GetAsMintEqualsBurnClaimDistribution())
 	case ParamDaoRewardAddress:
 		if err := genericParamTypeIs[*MsgUpdateParam_AsString](msg); err != nil {
 			return err
