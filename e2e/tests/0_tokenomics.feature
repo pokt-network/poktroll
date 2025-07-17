@@ -86,6 +86,23 @@ Feature: Tokenomics Namespace
             | proof_submission_fee         | 1000000                                                          | coin  |
         And all "proof" module params should be updated
 
+        # Configure tokenomics parameters for distributed settlement
+        And the "tokenomics" module parameters are set as follows
+            | name                                             | value | type  |
+            | dao_reward_address                               | pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw | string |
+            | mint_allocation_percentages.dao                  | 0.1   | float |
+            | mint_allocation_percentages.proposer             | 0.05  | float |
+            | mint_allocation_percentages.supplier             | 0.7   | float |
+            | mint_allocation_percentages.source_owner         | 0.15  | float |
+            | mint_allocation_percentages.application          | 0.0   | float |
+            | global_inflation_per_claim                       | 0     | float |
+            | mint_equals_burn_claim_distribution.dao          | 0.0   | float |
+            | mint_equals_burn_claim_distribution.proposer     | 0.0   | float |
+            | mint_equals_burn_claim_distribution.supplier     | 1.0   | float |
+            | mint_equals_burn_claim_distribution.source_owner | 0.0   | float |
+            | mint_equals_burn_claim_distribution.application  | 0.0   | float |
+        And all "tokenomics" module params should be updated
+
         # Configure shared parameters
         And the "shared" module parameters are set as follows
             | compute_units_to_tokens_multiplier | 42                                                         | int64 |
