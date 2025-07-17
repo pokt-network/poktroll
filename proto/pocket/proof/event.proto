@@ -9,55 +9,137 @@ import "gogoproto/gogo.proto";
 import "pocket/proof/types.proto";
 
 message EventClaimCreated {
-  // Next index: 8
-  reserved 6; // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+  // Next index: 12
 
-  pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+  reserved 1, 6;
+
   uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
   string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
+
+  // The Service ID to which the claim corresponds.
+  string service_id = 8;
+
+  // The address of the application which participated in the claimed session.
+  string application_address = 9 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The end block height of the session to which the claim corresponds.
+  int64 session_end_block_height = 10;
+
+  // The validation status of the claim.
+  // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+  // enum to minimize onchain disk utilization. This is necessary because event
+  // data is not always protobuf-encoded in the various places and formats that it
+  // appears in onchain leveldb databases.
+  // Enum values:
+  //   PENDING_VALIDATION = 0;
+  //   VALIDATED = 1;
+  //   INVALID = 2;
+  int32 claim_proof_status_int = 11;
 }
 
 // TODO_TEST: Add coverage for claim updates.
 message EventClaimUpdated {
-  // Next index: 8
+  // Next index: 12
 
+  // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
-  reserved 6;
+  reserved 1, 6;
 
-  pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
   string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
+
+  // The Service ID to which the claim corresponds.
+  string service_id = 8;
+
+  // The address of the application which participated in the claimed session.
+  string application_address = 9 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The end block height of the session to which the claim corresponds.
+  int64 session_end_block_height = 10;
+
+  // The validation status of the claim.
+  // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+  // enum to minimize onchain disk utilization. This is necessary because event
+  // data is not always protobuf-encoded in the various places and formats that it
+  // appears in onchain leveldb databases.
+  // Enum values:
+  //   PENDING_VALIDATION = 0;
+  //   VALIDATED = 1;
+  //   INVALID = 2;
+  int32 claim_proof_status_int = 11;
 }
 
 message EventProofSubmitted {
-  // Next index: 8
+  // Next index: 12
 
+  // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
-  reserved 6;
+  reserved 1, 6;
 
-  pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
   string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
+
+  // The Service ID to which the claim corresponds.
+  string service_id = 8;
+
+  // The address of the application which participated in the claimed session.
+  string application_address = 9 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The end block height of the session to which the claim corresponds.
+  int64 session_end_block_height = 10;
+
+  // The validation status of the claim.
+  // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+  // enum to minimize onchain disk utilization. This is necessary because event
+  // data is not always protobuf-encoded in the various places and formats that it
+  // appears in onchain leveldb databases.
+  // Enum values:
+  //   PENDING_VALIDATION = 0;
+  //   VALIDATED = 1;
+  //   INVALID = 2;
+  int32 claim_proof_status_int = 11;
 }
 
 // TODO_TEST: Add coverage for proof updates.
 message EventProofUpdated {
-  // Next index: 8
+  // Next index: 12
 
+  // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
-  reserved 6;
+  reserved 1, 6;
 
-  pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
   string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
+
+  // The Service ID to which the claim corresponds.
+  string service_id = 8;
+
+  // The address of the application which participated in the claimed session.
+  string application_address = 9 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The end block height of the session to which the claim corresponds.
+  int64 session_end_block_height = 10;
+
+  // The validation status of the claim.
+  // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+  // enum to minimize onchain disk utilization. This is necessary because event
+  // data is not always protobuf-encoded in the various places and formats that it
+  // appears in onchain leveldb databases.
+  // Enum values:
+  //   PENDING_VALIDATION = 0;
+  //   VALIDATED = 1;
+  //   INVALID = 2;
+  int32 claim_proof_status_int = 11;
 }
 
 // Event emitted after a proof has been checked for validity in the proof module's
@@ -77,10 +159,23 @@ message EventProofValidityChecked {
   // marked as invalid (e.g. "invalid closest merkle proof", "invalid relay request signature")
   string failure_reason = 4 [(gogoproto.jsontag) = "failure_reason"];
 
-  // The session ID which this claim corresponds to.
-  string session_id = 6;
+  // The Service ID to which the claim corresponds.
+  string service_id = 8;
 
-  // Supplier operator address, which when combined with session ID,
-  // is sufficient to query for the corresponding claim.
-  string supplier_operator_address = 7 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // The address of the application which participated in the claimed session.
+  string application_address = 9 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The end block height of the session to which the claim corresponds.
+  int64 session_end_block_height = 10;
+
+  // The validation status of the claim.
+  // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+  // enum to minimize onchain disk utilization. This is necessary because event
+  // data is not always protobuf-encoded in the various places and formats that it
+  // appears in onchain leveldb databases.
+  // Enum values:
+  //   PENDING_VALIDATION = 0;
+  //   VALIDATED = 1;
+  //   INVALID = 2;
+  int32 claim_proof_status_int = 11;
 }

@@ -199,8 +199,11 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		claimSettledEvent, ok := typedEvent.(*tokenomicstypes.EventClaimSettled)
 		require.True(s, ok)
 
-		// Assert that the claim was settled for the correct application, supplier, and service.
-		require.Equal(s, supplier.OperatorAddress, claimSettledEvent.SupplierOperatorAddress)
+		// Assert that the claim was settled for the correct application and service.
+		// TODO_FOLLOWUP: The supplier operator address is no longer available in the EventClaimSettled
+		// as part of the disk utilization optimization. Consider adding it back or finding another way
+		// to verify the supplier in the e2e test.
+		require.Equal(s, serviceId, claimSettledEvent.ServiceId)
 		require.Greater(s, claimSettledEvent.NumClaimedComputeUnits, uint64(0), "claimed compute units should be greater than 0")
 		// TODO_IMPROVE: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 		return true

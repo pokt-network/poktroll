@@ -56,7 +56,7 @@ message EventClaimExpired {
 // EventClaimSettled is emitted during settlement whenever a claim is successfully settled.
 // It may or may not require a proof depending on various on-chain parameters and other factors.
 message EventClaimSettled {
-    // Next index: 11
+    // Next index: 13
 
     // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -81,13 +81,25 @@ message EventClaimSettled {
     // the number of estimated compute units and the compute units to token multiplier.
     string claimed_upokt = 8 [(gogoproto.jsontag) = "claimed_upokt"];
 
-    // TODO_IN_THIS_COMMIT: revert
-    // The session ID which this claim corresponds to.
-    string session_id = 9;
+    // The Service ID to which the claim corresponds.
+    string service_id = 9;
 
-    // Supplier operator address, which when combined with session ID,
-    // is sufficient to query for the corresponding claim.
-    string supplier_operator_address = 10 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // The address of the application which participated in the claimed session.
+    string application_address = 10 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The end block height of the session to which the claim corresponds.
+    int64 session_end_block_height = 11;
+
+    // The validation status of the claim.
+    // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+    // enum to minimize onchain disk utilization. This is necessary because event
+    // data is not always protobuf-encoded in the various places and formats that it
+    // appears in onchain leveldb databases.
+    // Enum values:
+    //   PENDING_VALIDATION = 0;
+    //   VALIDATED = 1;
+    //   INVALID = 2;
+    int32 claim_proof_status_int = 12;
 }
 
 // EventApplicationOverserviced is emitted when an Application's stake cannot cover the Supplier's claim.

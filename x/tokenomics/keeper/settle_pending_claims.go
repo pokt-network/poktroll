@@ -722,13 +722,15 @@ func (k Keeper) settleClaim(
 	}
 
 	claimSettledEvent := tokenomicstypes.EventClaimSettled{
-		SessionId:                claim.SessionHeader.SessionId,
-		SupplierOperatorAddress:  claim.SupplierOperatorAddress,
 		NumRelays:                numClaimRelays,
 		NumClaimedComputeUnits:   numClaimComputeUnits,
 		NumEstimatedComputeUnits: numEstimatedComputeUnits,
 		ClaimedUpokt:             claimeduPOKT.String(),
 		ProofRequirement:         proofRequirement,
+		ServiceId:                claim.SessionHeader.ServiceId,
+		ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+		SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+		ClaimProofStatusInt:      int32(claim.ProofValidationStatus),
 	}
 
 	if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {

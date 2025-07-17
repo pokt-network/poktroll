@@ -25,11 +25,26 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type EventClaimCreated struct {
-	Claim                    *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
 	NumRelays                uint64 `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
 	NumClaimedComputeUnits   uint64 `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
 	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
 	ClaimedUpokt             string `protobuf:"bytes,7,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
+	// The Service ID to which the claim corresponds.
+	ServiceId string `protobuf:"bytes,8,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The address of the application which participated in the claimed session.
+	ApplicationAddress string `protobuf:"bytes,9,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
+	// The end block height of the session to which the claim corresponds.
+	SessionEndBlockHeight int64 `protobuf:"varint,10,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The validation status of the claim.
+	// DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//   PENDING_VALIDATION = 0;
+	//   VALIDATED = 1;
+	//   INVALID = 2;
+	ClaimProofStatusInt int32 `protobuf:"varint,11,opt,name=claim_proof_status_int,json=claimProofStatusInt,proto3" json:"claim_proof_status_int,omitempty"`
 }
 
 func (m *EventClaimCreated) Reset()         { *m = EventClaimCreated{} }
@@ -61,13 +76,6 @@ func (m *EventClaimCreated) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventClaimCreated proto.InternalMessageInfo
 
-func (m *EventClaimCreated) GetClaim() *Claim {
-	if m != nil {
-		return m.Claim
-	}
-	return nil
-}
-
 func (m *EventClaimCreated) GetNumRelays() uint64 {
 	if m != nil {
 		return m.NumRelays
@@ -96,13 +104,57 @@ func (m *EventClaimCreated) GetClaimedUpokt() string {
 	return ""
 }
 
+func (m *EventClaimCreated) GetServiceId() string {
+	if m != nil {
+		return m.ServiceId
+	}
+	return ""
+}
+
+func (m *EventClaimCreated) GetApplicationAddress() string {
+	if m != nil {
+		return m.ApplicationAddress
+	}
+	return ""
+}
+
+func (m *EventClaimCreated) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventClaimCreated) GetClaimProofStatusInt() int32 {
+	if m != nil {
+		return m.ClaimProofStatusInt
+	}
+	return 0
+}
+
 // TODO_TEST: Add coverage for claim updates.
 type EventClaimUpdated struct {
-	Claim                    *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
 	NumRelays                uint64 `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
 	NumClaimedComputeUnits   uint64 `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
 	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
 	ClaimedUpokt             string `protobuf:"bytes,7,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
+	// The Service ID to which the claim corresponds.
+	ServiceId string `protobuf:"bytes,8,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The address of the application which participated in the claimed session.
+	ApplicationAddress string `protobuf:"bytes,9,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
+	// The end block height of the session to which the claim corresponds.
+	SessionEndBlockHeight int64 `protobuf:"varint,10,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The validation status of the claim.
+	// DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//
+	//	PENDING_VALIDATION = 0;
+	//	VALIDATED = 1;
+	//	INVALID = 2;
+	ClaimProofStatusInt int32 `protobuf:"varint,11,opt,name=claim_proof_status_int,json=claimProofStatusInt,proto3" json:"claim_proof_status_int,omitempty"`
 }
 
 func (m *EventClaimUpdated) Reset()         { *m = EventClaimUpdated{} }
@@ -134,13 +186,6 @@ func (m *EventClaimUpdated) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventClaimUpdated proto.InternalMessageInfo
 
-func (m *EventClaimUpdated) GetClaim() *Claim {
-	if m != nil {
-		return m.Claim
-	}
-	return nil
-}
-
 func (m *EventClaimUpdated) GetNumRelays() uint64 {
 	if m != nil {
 		return m.NumRelays
@@ -169,12 +214,56 @@ func (m *EventClaimUpdated) GetClaimedUpokt() string {
 	return ""
 }
 
+func (m *EventClaimUpdated) GetServiceId() string {
+	if m != nil {
+		return m.ServiceId
+	}
+	return ""
+}
+
+func (m *EventClaimUpdated) GetApplicationAddress() string {
+	if m != nil {
+		return m.ApplicationAddress
+	}
+	return ""
+}
+
+func (m *EventClaimUpdated) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventClaimUpdated) GetClaimProofStatusInt() int32 {
+	if m != nil {
+		return m.ClaimProofStatusInt
+	}
+	return 0
+}
+
 type EventProofSubmitted struct {
-	Claim                    *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
 	NumRelays                uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
 	NumClaimedComputeUnits   uint64 `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
 	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
 	ClaimedUpokt             string `protobuf:"bytes,7,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
+	// The Service ID to which the claim corresponds.
+	ServiceId string `protobuf:"bytes,8,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The address of the application which participated in the claimed session.
+	ApplicationAddress string `protobuf:"bytes,9,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
+	// The end block height of the session to which the claim corresponds.
+	SessionEndBlockHeight int64 `protobuf:"varint,10,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The validation status of the claim.
+	// DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//
+	//	PENDING_VALIDATION = 0;
+	//	VALIDATED = 1;
+	//	INVALID = 2;
+	ClaimProofStatusInt int32 `protobuf:"varint,11,opt,name=claim_proof_status_int,json=claimProofStatusInt,proto3" json:"claim_proof_status_int,omitempty"`
 }
 
 func (m *EventProofSubmitted) Reset()         { *m = EventProofSubmitted{} }
@@ -206,13 +295,6 @@ func (m *EventProofSubmitted) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventProofSubmitted proto.InternalMessageInfo
 
-func (m *EventProofSubmitted) GetClaim() *Claim {
-	if m != nil {
-		return m.Claim
-	}
-	return nil
-}
-
 func (m *EventProofSubmitted) GetNumRelays() uint64 {
 	if m != nil {
 		return m.NumRelays
@@ -241,13 +323,57 @@ func (m *EventProofSubmitted) GetClaimedUpokt() string {
 	return ""
 }
 
+func (m *EventProofSubmitted) GetServiceId() string {
+	if m != nil {
+		return m.ServiceId
+	}
+	return ""
+}
+
+func (m *EventProofSubmitted) GetApplicationAddress() string {
+	if m != nil {
+		return m.ApplicationAddress
+	}
+	return ""
+}
+
+func (m *EventProofSubmitted) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventProofSubmitted) GetClaimProofStatusInt() int32 {
+	if m != nil {
+		return m.ClaimProofStatusInt
+	}
+	return 0
+}
+
 // TODO_TEST: Add coverage for proof updates.
 type EventProofUpdated struct {
-	Claim                    *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
 	NumRelays                uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
 	NumClaimedComputeUnits   uint64 `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
 	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
 	ClaimedUpokt             string `protobuf:"bytes,7,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
+	// The Service ID to which the claim corresponds.
+	ServiceId string `protobuf:"bytes,8,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The address of the application which participated in the claimed session.
+	ApplicationAddress string `protobuf:"bytes,9,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
+	// The end block height of the session to which the claim corresponds.
+	SessionEndBlockHeight int64 `protobuf:"varint,10,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The validation status of the claim.
+	// DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//
+	//	PENDING_VALIDATION = 0;
+	//	VALIDATED = 1;
+	//	INVALID = 2;
+	ClaimProofStatusInt int32 `protobuf:"varint,11,opt,name=claim_proof_status_int,json=claimProofStatusInt,proto3" json:"claim_proof_status_int,omitempty"`
 }
 
 func (m *EventProofUpdated) Reset()         { *m = EventProofUpdated{} }
@@ -279,13 +405,6 @@ func (m *EventProofUpdated) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventProofUpdated proto.InternalMessageInfo
 
-func (m *EventProofUpdated) GetClaim() *Claim {
-	if m != nil {
-		return m.Claim
-	}
-	return nil
-}
-
 func (m *EventProofUpdated) GetNumRelays() uint64 {
 	if m != nil {
 		return m.NumRelays
@@ -314,6 +433,34 @@ func (m *EventProofUpdated) GetClaimedUpokt() string {
 	return ""
 }
 
+func (m *EventProofUpdated) GetServiceId() string {
+	if m != nil {
+		return m.ServiceId
+	}
+	return ""
+}
+
+func (m *EventProofUpdated) GetApplicationAddress() string {
+	if m != nil {
+		return m.ApplicationAddress
+	}
+	return ""
+}
+
+func (m *EventProofUpdated) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventProofUpdated) GetClaimProofStatusInt() int32 {
+	if m != nil {
+		return m.ClaimProofStatusInt
+	}
+	return 0
+}
+
 // Event emitted after a proof has been checked for validity in the proof module's
 // EndBlocker.
 type EventProofValidityChecked struct {
@@ -321,11 +468,23 @@ type EventProofValidityChecked struct {
 	// reason is the string representation of the error that led to the proof being
 	// marked as invalid (e.g. "invalid closest merkle proof", "invalid relay request signature")
 	FailureReason string `protobuf:"bytes,4,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason"`
-	// The session ID which this claim corresponds to.
-	SessionId string `protobuf:"bytes,6,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	// Supplier operator address, which when combined with session ID,
-	// is sufficient to query for the corresponding claim.
-	SupplierOperatorAddress string `protobuf:"bytes,7,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
+	// The Service ID to which the claim corresponds.
+	ServiceId string `protobuf:"bytes,8,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The address of the application which participated in the claimed session.
+	ApplicationAddress string `protobuf:"bytes,9,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
+	// The end block height of the session to which the claim corresponds.
+	SessionEndBlockHeight int64 `protobuf:"varint,10,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The validation status of the claim.
+	// DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//
+	//	PENDING_VALIDATION = 0;
+	//	VALIDATED = 1;
+	//	INVALID = 2;
+	ClaimProofStatusInt int32 `protobuf:"varint,11,opt,name=claim_proof_status_int,json=claimProofStatusInt,proto3" json:"claim_proof_status_int,omitempty"`
 }
 
 func (m *EventProofValidityChecked) Reset()         { *m = EventProofValidityChecked{} }
@@ -371,18 +530,32 @@ func (m *EventProofValidityChecked) GetFailureReason() string {
 	return ""
 }
 
-func (m *EventProofValidityChecked) GetSessionId() string {
+func (m *EventProofValidityChecked) GetServiceId() string {
 	if m != nil {
-		return m.SessionId
+		return m.ServiceId
 	}
 	return ""
 }
 
-func (m *EventProofValidityChecked) GetSupplierOperatorAddress() string {
+func (m *EventProofValidityChecked) GetApplicationAddress() string {
 	if m != nil {
-		return m.SupplierOperatorAddress
+		return m.ApplicationAddress
 	}
 	return ""
+}
+
+func (m *EventProofValidityChecked) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventProofValidityChecked) GetClaimProofStatusInt() int32 {
+	if m != nil {
+		return m.ClaimProofStatusInt
+	}
+	return 0
 }
 
 func init() {
@@ -396,43 +569,45 @@ func init() {
 func init() { proto.RegisterFile("pocket/proof/event.proto", fileDescriptor_c2b0d5529f1c9df4) }
 
 var fileDescriptor_c2b0d5529f1c9df4 = []byte{
-	// 570 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x95, 0xcf, 0x6e, 0xd3, 0x4c,
-	0x14, 0xc5, 0xeb, 0xd4, 0x49, 0x93, 0x69, 0x5a, 0xa5, 0x6e, 0xf5, 0x7d, 0x4e, 0x51, 0xed, 0x88,
-	0x55, 0x36, 0x71, 0x24, 0x8a, 0x90, 0x58, 0x92, 0xa8, 0x12, 0x44, 0x48, 0xa0, 0x29, 0x41, 0x88,
-	0x05, 0x96, 0x63, 0x4f, 0x93, 0x51, 0x6c, 0x8f, 0x35, 0x7f, 0x80, 0xbc, 0x05, 0xe2, 0x59, 0x78,
-	0x08, 0x96, 0x15, 0xab, 0xae, 0x2c, 0x94, 0xec, 0xbc, 0x42, 0x3c, 0x01, 0x9a, 0xb1, 0x23, 0x92,
-	0x48, 0x85, 0x4d, 0xd9, 0x65, 0x95, 0x39, 0xf7, 0xdc, 0x73, 0x27, 0xf3, 0xd3, 0xc8, 0x03, 0xcc,
-	0x84, 0xf8, 0x53, 0xc4, 0xbb, 0x09, 0x25, 0xe4, 0xaa, 0x8b, 0xde, 0xa3, 0x98, 0x3b, 0x09, 0x25,
-	0x9c, 0x18, 0xf5, 0xdc, 0x71, 0x94, 0x73, 0xda, 0xf4, 0x09, 0x8b, 0x08, 0x73, 0x95, 0xd7, 0xcd,
-	0x45, 0xde, 0x78, 0x7a, 0x32, 0x26, 0x63, 0x92, 0xd7, 0xe5, 0xaa, 0xa8, 0xae, 0x0f, 0xe6, 0xb3,
-	0x04, 0x15, 0xfd, 0xf7, 0x7f, 0x94, 0xc0, 0xd1, 0x85, 0xdc, 0xa8, 0x1f, 0x7a, 0x38, 0xea, 0x53,
-	0xe4, 0x71, 0x14, 0x18, 0x0f, 0x41, 0xd9, 0x97, 0xda, 0xd4, 0x5a, 0x5a, 0x7b, 0xff, 0xc1, 0xb1,
-	0xb3, 0xba, 0xbd, 0xa3, 0x5a, 0x7b, 0xb5, 0x2c, 0xb5, 0xf3, 0x2e, 0x98, 0xff, 0x18, 0x1d, 0x00,
-	0x62, 0x11, 0xb9, 0x14, 0x85, 0xde, 0x8c, 0x99, 0xa5, 0x96, 0xd6, 0xd6, 0x7b, 0x87, 0x59, 0x6a,
-	0xaf, 0x54, 0x61, 0x2d, 0x16, 0x11, 0x54, 0x4b, 0xe3, 0x0d, 0x68, 0x4a, 0x43, 0x65, 0x51, 0xe0,
-	0xfa, 0x24, 0x4a, 0x04, 0x47, 0xae, 0x88, 0x31, 0x67, 0xa6, 0xae, 0xd2, 0x67, 0x59, 0x6a, 0xdf,
-	0xde, 0x04, 0xff, 0x8b, 0x45, 0xd4, 0xcf, 0x9d, 0x7e, 0x6e, 0x0c, 0x65, 0xdd, 0x78, 0x07, 0xee,
-	0xc9, 0x10, 0x62, 0x1c, 0x47, 0xf2, 0x3c, 0x1b, 0xb3, 0xcb, 0x6a, 0xb6, 0x9d, 0xa5, 0xf6, 0x9f,
-	0xda, 0xa0, 0x19, 0x8b, 0xe8, 0x62, 0xe9, 0xad, 0xcd, 0x7f, 0x04, 0x0e, 0x96, 0x7f, 0x48, 0x24,
-	0x64, 0xca, 0xcd, 0xbd, 0x96, 0xd6, 0xae, 0xf5, 0x8e, 0xb2, 0xd4, 0x5e, 0x37, 0x60, 0xbd, 0x90,
-	0x43, 0xa9, 0x06, 0x7a, 0xb5, 0xd2, 0xd8, 0xdb, 0x40, 0x3e, 0x4c, 0x82, 0x2d, 0xf2, 0x7f, 0x8d,
-	0xfc, 0x67, 0x09, 0x1c, 0x2b, 0xe4, 0x2f, 0x25, 0xcd, 0x4b, 0x31, 0x8a, 0x30, 0xbf, 0x2b, 0xe8,
-	0xbb, 0x5b, 0xe8, 0x7f, 0xb9, 0xe7, 0x0a, 0xfa, 0x5d, 0xde, 0xf3, 0x2d, 0xf2, 0x5b, 0x90, 0x7f,
-	0x2e, 0x81, 0xe6, 0x6f, 0xe4, 0xaf, 0xbd, 0x10, 0x07, 0x98, 0xcf, 0xfa, 0x13, 0xe4, 0x4f, 0x51,
-	0x60, 0x9c, 0x83, 0xfa, 0x28, 0x24, 0xfe, 0xd4, 0x9d, 0x20, 0x3c, 0x9e, 0xf0, 0xe2, 0x73, 0xd1,
-	0xc8, 0x52, 0x7b, 0xad, 0x0e, 0xf7, 0x95, 0x7a, 0xaa, 0x84, 0xf1, 0x18, 0x1c, 0x5e, 0x79, 0x38,
-	0x14, 0x14, 0xb9, 0x14, 0x79, 0x8c, 0xc4, 0x8a, 0x5f, 0xad, 0x67, 0x64, 0xa9, 0xbd, 0xe1, 0xc0,
-	0x83, 0x42, 0x43, 0x25, 0x8d, 0x33, 0x00, 0x18, 0x62, 0x0c, 0x93, 0xd8, 0xc5, 0x81, 0x59, 0x91,
-	0x31, 0x58, 0x2b, 0x2a, 0xcf, 0x02, 0xe3, 0x15, 0x68, 0x32, 0x91, 0x24, 0x21, 0x46, 0xd4, 0x25,
-	0x09, 0xa2, 0x1e, 0x27, 0xd4, 0xf5, 0x82, 0x80, 0x22, 0xc6, 0x8a, 0x63, 0x9b, 0xdf, 0xbe, 0x74,
-	0x4e, 0x8a, 0xf7, 0xed, 0x49, 0xee, 0x5c, 0x72, 0x8a, 0xe3, 0x31, 0xfc, 0x7f, 0x19, 0x7d, 0x51,
-	0x24, 0x0b, 0x7b, 0xa0, 0x57, 0xb5, 0x46, 0x69, 0xa0, 0x57, 0x77, 0x1b, 0xfa, 0x40, 0xaf, 0x96,
-	0x1b, 0x95, 0xde, 0xf3, 0xaf, 0x73, 0x4b, 0xbb, 0x9e, 0x5b, 0xda, 0xcd, 0xdc, 0xd2, 0xbe, 0xcf,
-	0x2d, 0xed, 0xd3, 0xc2, 0xda, 0xb9, 0x5e, 0x58, 0x3b, 0x37, 0x0b, 0x6b, 0xe7, 0xad, 0x33, 0xc6,
-	0x7c, 0x22, 0x46, 0x8e, 0x4f, 0xa2, 0xae, 0x24, 0xd9, 0x89, 0x11, 0xff, 0x40, 0xe8, 0x54, 0x09,
-	0x4a, 0xc2, 0xb0, 0xfb, 0x71, 0xf5, 0xd9, 0x1c, 0x55, 0xd4, 0xbb, 0x79, 0xfe, 0x2b, 0x00, 0x00,
-	0xff, 0xff, 0x14, 0x40, 0x58, 0x98, 0xac, 0x07, 0x00, 0x00,
+	// 597 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x96, 0x4f, 0x6f, 0xda, 0x3e,
+	0x18, 0xc7, 0x9b, 0x36, 0x50, 0x70, 0x69, 0x45, 0x43, 0x7f, 0x55, 0xe8, 0x4f, 0x4d, 0xd0, 0x4e,
+	0x5c, 0x80, 0x03, 0xd2, 0xa6, 0x1d, 0x07, 0x42, 0x1a, 0x68, 0x87, 0xc9, 0x15, 0xd3, 0xb4, 0xc3,
+	0xac, 0x90, 0xb8, 0x60, 0x91, 0xd8, 0x51, 0xec, 0x74, 0xe3, 0x5d, 0xec, 0x38, 0xed, 0x75, 0xec,
+	0x45, 0xec, 0x58, 0xed, 0xd4, 0x53, 0x34, 0xc1, 0x2d, 0xf7, 0xdd, 0x27, 0x3b, 0xa9, 0x06, 0xec,
+	0xcf, 0x0b, 0x58, 0xb9, 0xf9, 0x79, 0x3e, 0xcf, 0xf3, 0xcd, 0xa3, 0xf8, 0x2b, 0xdb, 0xc0, 0x0c,
+	0x99, 0x3b, 0xc7, 0xa2, 0x13, 0x46, 0x8c, 0x5d, 0x77, 0xf0, 0x0d, 0xa6, 0xa2, 0x1d, 0x46, 0x4c,
+	0x30, 0xa3, 0x92, 0x91, 0xb6, 0x22, 0x17, 0x75, 0x97, 0xf1, 0x80, 0x71, 0xa4, 0x58, 0x27, 0x0b,
+	0xb2, 0xc2, 0x8b, 0xb3, 0x29, 0x9b, 0xb2, 0x2c, 0x2f, 0x57, 0x79, 0x76, 0x53, 0x58, 0x2c, 0x42,
+	0x9c, 0xd7, 0x3f, 0xfa, 0xa8, 0x83, 0xd3, 0x81, 0xfc, 0x50, 0xdf, 0x77, 0x48, 0xd0, 0x8f, 0xb0,
+	0x23, 0xb0, 0x67, 0xb4, 0x00, 0xa0, 0x71, 0x80, 0x22, 0xec, 0x3b, 0x0b, 0x6e, 0xee, 0x37, 0xb4,
+	0xa6, 0xde, 0x3b, 0x49, 0x13, 0x7b, 0x2d, 0x0b, 0xcb, 0x34, 0x0e, 0xa0, 0x5a, 0x1a, 0xaf, 0x41,
+	0x5d, 0x02, 0x57, 0x4a, 0x60, 0x0f, 0xb9, 0x2c, 0x08, 0x63, 0x81, 0x51, 0x4c, 0x89, 0xe0, 0xa6,
+	0xae, 0xba, 0x2f, 0xd3, 0xc4, 0xfe, 0x73, 0x11, 0x3c, 0xa7, 0x71, 0xd0, 0xcf, 0x48, 0x3f, 0x03,
+	0x63, 0x99, 0x37, 0xde, 0x82, 0xff, 0x65, 0x13, 0xe6, 0x82, 0x04, 0x72, 0xb2, 0x2d, 0xed, 0x82,
+	0xd2, 0xb6, 0xd3, 0xc4, 0xfe, 0x5b, 0x19, 0x34, 0x69, 0x1c, 0x0c, 0xee, 0xd9, 0x86, 0xfe, 0x63,
+	0x70, 0x7c, 0x3f, 0x50, 0x1c, 0xb2, 0xb9, 0x30, 0x0f, 0x1b, 0x5a, 0xb3, 0xdc, 0x3b, 0x4d, 0x13,
+	0x7b, 0x13, 0xc0, 0x4a, 0x1e, 0x8e, 0x65, 0x64, 0x5c, 0x02, 0xc0, 0x71, 0x74, 0x43, 0x5c, 0x8c,
+	0x88, 0x67, 0x96, 0x64, 0x13, 0x2c, 0xe7, 0x99, 0xa1, 0x67, 0x0c, 0x41, 0xcd, 0x09, 0x43, 0x9f,
+	0xb8, 0x8e, 0x20, 0x8c, 0x22, 0xc7, 0xf3, 0x22, 0xcc, 0xb9, 0x59, 0x56, 0xe2, 0xe6, 0xd7, 0xcf,
+	0xad, 0xb3, 0x7c, 0xd3, 0x9e, 0x65, 0xe4, 0x4a, 0x44, 0x84, 0x4e, 0xa1, 0xb1, 0xd6, 0x94, 0x13,
+	0xe3, 0x09, 0x30, 0x39, 0xe6, 0x5c, 0xca, 0x60, 0xea, 0xa1, 0x89, 0xcf, 0xdc, 0x39, 0x9a, 0x61,
+	0x32, 0x9d, 0x09, 0x13, 0x34, 0xb4, 0xe6, 0x01, 0xfc, 0x2f, 0xe7, 0x03, 0xea, 0xf5, 0x24, 0x7d,
+	0xae, 0xa0, 0xd1, 0x05, 0xe7, 0x6a, 0x64, 0xa4, 0x36, 0x1d, 0x71, 0xe1, 0x88, 0x98, 0x23, 0x42,
+	0x85, 0x79, 0xd4, 0xd0, 0x9a, 0x05, 0x58, 0x53, 0xf4, 0xa5, 0x84, 0x57, 0x8a, 0x0d, 0xa9, 0x18,
+	0xe9, 0x25, 0xad, 0xba, 0x3f, 0xd2, 0x4b, 0xc5, 0xea, 0xe1, 0x96, 0x35, 0xc6, 0xa1, 0xb7, 0xb3,
+	0xc6, 0xce, 0x1a, 0x99, 0x35, 0x3e, 0xe9, 0xa0, 0xa6, 0xac, 0x91, 0xd5, 0xc4, 0x93, 0x80, 0x88,
+	0x5f, 0xcd, 0x71, 0xb0, 0x33, 0xc7, 0x83, 0x3e, 0x37, 0x54, 0xcd, 0xef, 0xcf, 0x8d, 0x9d, 0x35,
+	0x1e, 0xa4, 0x35, 0xbe, 0xef, 0x83, 0xfa, 0x4f, 0x6b, 0xbc, 0x72, 0x7c, 0xe2, 0x11, 0xb1, 0xe8,
+	0xcf, 0xb0, 0x3b, 0xc7, 0x9e, 0xd1, 0x05, 0x95, 0x8d, 0x59, 0xb2, 0xcb, 0xa5, 0x9a, 0x26, 0xf6,
+	0x46, 0x1e, 0x1e, 0x4d, 0xd6, 0x66, 0x7a, 0x0a, 0x4e, 0xae, 0x1d, 0xe2, 0xc7, 0x11, 0x46, 0x11,
+	0x76, 0x38, 0xa3, 0xca, 0x1d, 0xe5, 0x9e, 0x91, 0x26, 0xf6, 0x16, 0x81, 0xc7, 0x79, 0x0c, 0x55,
+	0xf8, 0xcf, 0xff, 0xf1, 0x83, 0xaa, 0x3e, 0xd2, 0x4b, 0x85, 0x6a, 0xb1, 0xf7, 0xe2, 0xcb, 0xd2,
+	0xd2, 0x6e, 0x97, 0x96, 0x76, 0xb7, 0xb4, 0xb4, 0x6f, 0x4b, 0x4b, 0xfb, 0xb0, 0xb2, 0xf6, 0x6e,
+	0x57, 0xd6, 0xde, 0xdd, 0xca, 0xda, 0x7b, 0xd3, 0x9e, 0x12, 0x31, 0x8b, 0x27, 0x6d, 0x97, 0x05,
+	0x1d, 0x69, 0xc5, 0x16, 0xc5, 0xe2, 0x1d, 0x8b, 0xe6, 0x2a, 0x88, 0x98, 0xef, 0x77, 0xde, 0xaf,
+	0xbf, 0x1c, 0x27, 0x45, 0xf5, 0x74, 0xec, 0xfe, 0x08, 0x00, 0x00, 0xff, 0xff, 0x4d, 0x21, 0x31,
+	0x7d, 0xaf, 0x0a, 0x00, 0x00,
 }
 
 func (m *EventClaimCreated) Marshal() (dAtA []byte, err error) {
@@ -455,6 +630,30 @@ func (m *EventClaimCreated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.ClaimProofStatusInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClaimProofStatusInt))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x50
+	}
+	if len(m.ApplicationAddress) > 0 {
+		i -= len(m.ApplicationAddress)
+		copy(dAtA[i:], m.ApplicationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ApplicationAddress)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x42
+	}
 	if len(m.ClaimedUpokt) > 0 {
 		i -= len(m.ClaimedUpokt)
 		copy(dAtA[i:], m.ClaimedUpokt)
@@ -476,18 +675,6 @@ func (m *EventClaimCreated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
 		i--
 		dAtA[i] = 0x10
-	}
-	if m.Claim != nil {
-		{
-			size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -512,6 +699,30 @@ func (m *EventClaimUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.ClaimProofStatusInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClaimProofStatusInt))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x50
+	}
+	if len(m.ApplicationAddress) > 0 {
+		i -= len(m.ApplicationAddress)
+		copy(dAtA[i:], m.ApplicationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ApplicationAddress)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x42
+	}
 	if len(m.ClaimedUpokt) > 0 {
 		i -= len(m.ClaimedUpokt)
 		copy(dAtA[i:], m.ClaimedUpokt)
@@ -533,18 +744,6 @@ func (m *EventClaimUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
 		i--
 		dAtA[i] = 0x10
-	}
-	if m.Claim != nil {
-		{
-			size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -569,6 +768,30 @@ func (m *EventProofSubmitted) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.ClaimProofStatusInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClaimProofStatusInt))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x50
+	}
+	if len(m.ApplicationAddress) > 0 {
+		i -= len(m.ApplicationAddress)
+		copy(dAtA[i:], m.ApplicationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ApplicationAddress)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x42
+	}
 	if len(m.ClaimedUpokt) > 0 {
 		i -= len(m.ClaimedUpokt)
 		copy(dAtA[i:], m.ClaimedUpokt)
@@ -590,18 +813,6 @@ func (m *EventProofSubmitted) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
 		i--
 		dAtA[i] = 0x18
-	}
-	if m.Claim != nil {
-		{
-			size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -626,6 +837,30 @@ func (m *EventProofUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.ClaimProofStatusInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClaimProofStatusInt))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x50
+	}
+	if len(m.ApplicationAddress) > 0 {
+		i -= len(m.ApplicationAddress)
+		copy(dAtA[i:], m.ApplicationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ApplicationAddress)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x42
+	}
 	if len(m.ClaimedUpokt) > 0 {
 		i -= len(m.ClaimedUpokt)
 		copy(dAtA[i:], m.ClaimedUpokt)
@@ -647,18 +882,6 @@ func (m *EventProofUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
 		i--
 		dAtA[i] = 0x18
-	}
-	if m.Claim != nil {
-		{
-			size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -683,19 +906,29 @@ func (m *EventProofValidityChecked) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	_ = i
 	var l int
 	_ = l
-	if len(m.SupplierOperatorAddress) > 0 {
-		i -= len(m.SupplierOperatorAddress)
-		copy(dAtA[i:], m.SupplierOperatorAddress)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.SupplierOperatorAddress)))
+	if m.ClaimProofStatusInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClaimProofStatusInt))
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x58
 	}
-	if len(m.SessionId) > 0 {
-		i -= len(m.SessionId)
-		copy(dAtA[i:], m.SessionId)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.SessionId)))
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
 		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x50
+	}
+	if len(m.ApplicationAddress) > 0 {
+		i -= len(m.ApplicationAddress)
+		copy(dAtA[i:], m.ApplicationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ApplicationAddress)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x42
 	}
 	if len(m.FailureReason) > 0 {
 		i -= len(m.FailureReason)
@@ -729,10 +962,6 @@ func (m *EventClaimCreated) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Claim != nil {
-		l = m.Claim.Size()
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
@@ -745,6 +974,20 @@ func (m *EventClaimCreated) Size() (n int) {
 	l = len(m.ClaimedUpokt)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ServiceId)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ApplicationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.ClaimProofStatusInt != 0 {
+		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
 	}
 	return n
 }
@@ -755,10 +998,6 @@ func (m *EventClaimUpdated) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Claim != nil {
-		l = m.Claim.Size()
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
@@ -771,6 +1010,20 @@ func (m *EventClaimUpdated) Size() (n int) {
 	l = len(m.ClaimedUpokt)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ServiceId)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ApplicationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.ClaimProofStatusInt != 0 {
+		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
 	}
 	return n
 }
@@ -781,10 +1034,6 @@ func (m *EventProofSubmitted) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Claim != nil {
-		l = m.Claim.Size()
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
@@ -797,6 +1046,20 @@ func (m *EventProofSubmitted) Size() (n int) {
 	l = len(m.ClaimedUpokt)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ServiceId)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ApplicationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.ClaimProofStatusInt != 0 {
+		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
 	}
 	return n
 }
@@ -807,10 +1070,6 @@ func (m *EventProofUpdated) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Claim != nil {
-		l = m.Claim.Size()
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
@@ -823,6 +1082,20 @@ func (m *EventProofUpdated) Size() (n int) {
 	l = len(m.ClaimedUpokt)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ServiceId)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ApplicationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.ClaimProofStatusInt != 0 {
+		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
 	}
 	return n
 }
@@ -840,13 +1113,19 @@ func (m *EventProofValidityChecked) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
-	l = len(m.SessionId)
+	l = len(m.ServiceId)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
-	l = len(m.SupplierOperatorAddress)
+	l = len(m.ApplicationAddress)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.ClaimProofStatusInt != 0 {
+		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
 	}
 	return n
 }
@@ -886,42 +1165,6 @@ func (m *EventClaimCreated) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventClaimCreated: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Claim == nil {
-				m.Claim = &Claim{}
-			}
-			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NumRelays", wireType)
@@ -1011,6 +1254,108 @@ func (m *EventClaimCreated) Unmarshal(dAtA []byte) error {
 			}
 			m.ClaimedUpokt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApplicationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimProofStatusInt", wireType)
+			}
+			m.ClaimProofStatusInt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimProofStatusInt |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1061,42 +1406,6 @@ func (m *EventClaimUpdated) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventClaimUpdated: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Claim == nil {
-				m.Claim = &Claim{}
-			}
-			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NumRelays", wireType)
@@ -1186,6 +1495,108 @@ func (m *EventClaimUpdated) Unmarshal(dAtA []byte) error {
 			}
 			m.ClaimedUpokt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApplicationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimProofStatusInt", wireType)
+			}
+			m.ClaimProofStatusInt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimProofStatusInt |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1236,42 +1647,6 @@ func (m *EventProofSubmitted) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventProofSubmitted: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Claim == nil {
-				m.Claim = &Claim{}
-			}
-			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NumRelays", wireType)
@@ -1361,6 +1736,108 @@ func (m *EventProofSubmitted) Unmarshal(dAtA []byte) error {
 			}
 			m.ClaimedUpokt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApplicationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimProofStatusInt", wireType)
+			}
+			m.ClaimProofStatusInt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimProofStatusInt |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1411,42 +1888,6 @@ func (m *EventProofUpdated) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventProofUpdated: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Claim == nil {
-				m.Claim = &Claim{}
-			}
-			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NumRelays", wireType)
@@ -1536,6 +1977,108 @@ func (m *EventProofUpdated) Unmarshal(dAtA []byte) error {
 			}
 			m.ClaimedUpokt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApplicationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimProofStatusInt", wireType)
+			}
+			m.ClaimProofStatusInt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimProofStatusInt |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1637,9 +2180,9 @@ func (m *EventProofValidityChecked) Unmarshal(dAtA []byte) error {
 			}
 			m.FailureReason = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 6:
+		case 8:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SessionId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1667,11 +2210,11 @@ func (m *EventProofValidityChecked) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.SessionId = string(dAtA[iNdEx:postIndex])
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 7:
+		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SupplierOperatorAddress", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddress", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1699,8 +2242,46 @@ func (m *EventProofValidityChecked) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.SupplierOperatorAddress = string(dAtA[iNdEx:postIndex])
+			m.ApplicationAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimProofStatusInt", wireType)
+			}
+			m.ClaimProofStatusInt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimProofStatusInt |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])

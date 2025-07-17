@@ -38,6 +38,9 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 	activatedServiceConfigsIterator := k.GetActivatedServiceConfigUpdatesIterator(ctx, currentHeight)
 	defer activatedServiceConfigsIterator.Close()
 
+	// TODO_IMPROVE: With some tweaks to the activatedServiceConfigsIterator, we may be able to
+	// emit a single EventSupplierServiceConfigActivated with a repeated service_ids field.
+	// This would minimize the onchain disk utilization of the event.
 	for ; activatedServiceConfigsIterator.Valid(); activatedServiceConfigsIterator.Next() {
 		supplierConfigUpdate, err := activatedServiceConfigsIterator.Value()
 		if err != nil {
