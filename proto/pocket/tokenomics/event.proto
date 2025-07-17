@@ -26,7 +26,7 @@ enum ClaimExpirationReason {
 // This is likely the result of a claim requiring an onchain proof not being submitted.
 // The claim cannot be settled, leading to that work never being rewarded.
 message EventClaimExpired {
-    // Next index: 12
+    // Next index: 13
 
     // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -69,12 +69,15 @@ message EventClaimExpired {
     //   VALIDATED = 1;
     //   INVALID = 2;
     int32 claim_proof_status_int = 11;
+
+    // The operator address of the supplier whose claim expired.
+    string supplier_operator_address = 12 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // EventClaimSettled is emitted during settlement whenever a claim is successfully settled.
 // It may or may not require a proof depending on various on-chain parameters and other factors.
 message EventClaimSettled {
-    // Next index: 13
+    // Next index: 14
 
     // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
@@ -118,6 +121,9 @@ message EventClaimSettled {
     //   VALIDATED = 1;
     //   INVALID = 2;
     int32 claim_proof_status_int = 12;
+
+    // The operator address of the supplier who submitted the claim.
+    string supplier_operator_address = 13 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // EventApplicationOverserviced is emitted when an Application's stake cannot cover the Supplier's claim.
@@ -148,7 +154,7 @@ message EventApplicationOverserviced {
 // EventSupplierSlashed is emitted when a supplier is slashed.
 // This can happen for in cases such as missing or invalid proofs for submitted claims.
 message EventSupplierSlashed {
-    // Next index: 8
+    // Next index: 9
 
     // pocket.proof.Claim claim = 1;
     // cosmos.base.v1beta1.Coin proof_missing_penalty = 2;
@@ -177,12 +183,15 @@ message EventSupplierSlashed {
     //   VALIDATED = 1;
     //   INVALID = 2;
     int32 claim_proof_status_int = 7;
+
+    // The operator address of the supplier that was slashed.
+    string supplier_operator_address = 8 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // EventClaimDiscarded is emitted when a claim is discarded due to unexpected situations.
 // It is used to prevent chain halts in favor of some missing claims.
 message EventClaimDiscarded {
-    // Next index: 7
+    // Next index: 8
 
     // pocket.proof.Claim claim = 1;
     reserved 1;
@@ -209,6 +218,9 @@ message EventClaimDiscarded {
     //   VALIDATED = 1;
     //   INVALID = 2;
     int32 claim_proof_status_int = 6;
+
+    // The operator address of the supplier whose claim was discarded.
+    string supplier_operator_address = 7 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // EventApplicationReimbursementRequest is emitted when an application requests a reimbursement from the DAO.
