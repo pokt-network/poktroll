@@ -17,7 +17,6 @@ import (
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
-	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -153,12 +152,11 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				service,
 				test.merkleRoot,
 			)
-			createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
+			_, err = srv.CreateClaim(ctx, claimMsg)
 			require.NoError(t, err)
-			require.NotNil(t, createClaimRes)
 
 			// Query for all claims.
-			claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
+			claimRes, err := keepers.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
 			require.NoError(t, err)
 
 			claims := claimRes.GetClaims()
@@ -274,7 +272,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 			claimMsgHeight: earliestClaimCommitHeight - 1,
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofClaimOutsideOfWindow.Wrapf(
+				prooftypes.ErrProofClaimOutsideOfWindow.Wrapf(
 					"current block height (%d) is less than the session's earliest claim commit height (%d)",
 					earliestClaimCommitHeight-1,
 					sharedtypes.GetEarliestSupplierClaimCommitHeight(
@@ -291,7 +289,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 			claimMsgHeight: claimWindowCloseHeight + 1,
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofClaimOutsideOfWindow.Wrapf(
+				prooftypes.ErrProofClaimOutsideOfWindow.Wrapf(
 					"current block height (%d) is greater than session claim window close height (%d)",
 					claimWindowCloseHeight+1,
 					claimWindowCloseHeight,
@@ -318,7 +316,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 			_, err = srv.CreateClaim(ctx, claimMsg)
 			require.ErrorContains(t, err, test.expectedErr.Error())
 
-			claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
+			claimRes, err := keepers.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
 			require.NoError(t, err)
 
 			claims := claimRes.GetClaims()
@@ -405,7 +403,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	})
 
 	// Query for the session which contains the expected app and supplier pair.
-	sessionRes, err := keepers.SessionKeeper.GetSession(
+	sessionRes, err := keepers.GetSession(
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
@@ -424,12 +422,12 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	tests := []struct {
 		desc        string
-		claimMsgFn  func(t *testing.T) *types.MsgCreateClaim
+		claimMsgFn  func(t *testing.T) *prooftypes.MsgCreateClaim
 		expectedErr error
 	}{
 		{
 			desc: "onchain session ID must match claim msg session ID",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *prooftypes.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					// Use a session ID that doesn't match.
@@ -442,7 +440,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidSessionId.Wrapf(
+				prooftypes.ErrProofInvalidSessionId.Wrapf(
 					"session ID does not match onchain session ID; expected %q, got %q",
 					sessionRes.GetSession().GetSessionId(),
 					"invalid_session_id",
@@ -451,7 +449,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg supplier operator address must be in the session",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *prooftypes.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -464,7 +462,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofNotFound.Wrapf(
+				prooftypes.ErrProofNotFound.Wrapf(
 					"supplier operator address %q not found in session ID %q",
 					wrongSupplierOperatorAddr,
 					sessionRes.GetSession().GetSessionId(),
@@ -473,7 +471,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg supplier operator address must exist onchain",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *prooftypes.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -486,7 +484,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofNotFound.Wrapf(
+				prooftypes.ErrProofNotFound.Wrapf(
 					"supplier operator address %q not found in session ID %q",
 					randSupplierOperatorAddr,
 					sessionRes.GetSession().GetSessionId(),
@@ -495,7 +493,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg application address must be in the session",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *prooftypes.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -517,7 +515,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg application address must exist onchain",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *prooftypes.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -539,7 +537,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg merkle root must have non-zero relays",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *prooftypes.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -551,7 +549,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidClaimRootHash.Wrapf(
+				prooftypes.ErrProofInvalidClaimRootHash.Wrapf(
 					"has zero count in Merkle root (hex) %x",
 					invalidRootHashWithZeroCount,
 				).Error(),
@@ -559,7 +557,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg merkle root must have non-zero compute units",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *prooftypes.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -571,7 +569,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidClaimRootHash.Wrapf(
+				prooftypes.ErrProofInvalidClaimRootHash.Wrapf(
 					"has zero sum in Merkle root (hex) %x",
 					invalidRootHashWithZeroSum,
 				).Error(),
@@ -581,9 +579,8 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			createClaimRes, err := srv.CreateClaim(ctx, test.claimMsgFn(t))
+			_, err := srv.CreateClaim(ctx, test.claimMsgFn(t))
 			require.ErrorContains(t, err, test.expectedErr.Error())
-			require.Nil(t, createClaimRes)
 
 			// Assert that no events were emitted.
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -640,7 +637,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	})
 
 	// Query for the session which contains the expected app and supplier pair.
-	sessionRes, err := keepers.SessionKeeper.GetSession(
+	sessionRes, err := keepers.GetSession(
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
@@ -674,7 +671,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	)
 
 	// use the test claim message to create a claim object to get the number of relays and compute units in the claim.
-	testClaim := types.Claim{RootHash: testClaimMsg.GetRootHash()}
+	testClaim := prooftypes.Claim{RootHash: testClaimMsg.GetRootHash()}
 	testClaimNumComputeUnits, err := testClaim.GetNumClaimedComputeUnits()
 	require.NoError(t, err)
 	testClaimNumRelays, err := testClaim.GetNumRelays()
@@ -682,12 +679,12 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 
 	// Ensure that submitting the claim fails because the number of compute units
 	// claimed does not match the expected amount as a function of (relay, service_CUPR)
-	createClaimRes, err := srv.CreateClaim(ctx, testClaimMsg)
+	_, err = srv.CreateClaim(ctx, testClaimMsg)
 	require.ErrorContains(t,
 		err,
 		status.Error(
 			codes.InvalidArgument,
-			types.ErrProofComputeUnitsMismatch.Wrapf(
+			prooftypes.ErrProofComputeUnitsMismatch.Wrapf(
 				"claim compute units: %d is not equal to number of relays %d * compute units per relay %d for service %s",
 				testClaimNumComputeUnits,
 				testClaimNumRelays,
@@ -696,8 +693,6 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 			).Error(),
 		).Error(),
 	)
-
-	require.Nil(t, createClaimRes)
 
 	// Assert that no events were emitted.
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
@@ -714,10 +709,10 @@ func newTestClaimMsg(
 	appAddr string,
 	service *sharedtypes.Service,
 	merkleRoot smt.MerkleSumRoot,
-) *types.MsgCreateClaim {
+) *prooftypes.MsgCreateClaim {
 	t.Helper()
 
-	return types.NewMsgCreateClaim(
+	return prooftypes.NewMsgCreateClaim(
 		supplierOperatorAddr,
 		&sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,

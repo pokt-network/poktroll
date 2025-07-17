@@ -86,8 +86,10 @@ func (pq *proofQuerier) GetParams(
 
 	req := &prooftypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*prooftypes.QueryParamsResponse, error) {
-		return pq.proofQuerier.Params(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return pq.proofQuerier.Params(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, err
 	}

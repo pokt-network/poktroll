@@ -6,6 +6,8 @@ option (gogoproto.stable_marshaler_all) = true;
 import "cosmos/app/v1alpha1/module.proto";
 import "gogoproto/gogo.proto";
 
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+
 // Module is the config object for the module.
 message Module {
   option (cosmos.app.v1alpha1.module) = {

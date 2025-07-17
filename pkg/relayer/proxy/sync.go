@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -34,7 +36,9 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Success is implied by reaching the end of the function where status is set to 2XX.
 	statusCode := http.StatusInternalServerError
 
-	logger := server.logger.With("relay_request_type", "synchronous")
+	logger := server.logger.With(
+		"relay_request_type", "⚡ synchronous",
+	)
 	requestStartTime := time.Now()
 	startBlock := server.blockClient.LastBlock(ctx)
 	startHeight := startBlock.Height()
@@ -51,12 +55,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := server.newRelayRequest(request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("failed creating relay request")
+		logger.Warn().Err(err).Msg("❌ Failed creating relay request")
 		return relayRequest, err
 	}
 
 	if err = relayRequest.ValidateBasic(); err != nil {
-		logger.Warn().Err(err).Msg("failed validating relay request")
+		logger.Warn().Err(err).Msg("❌ Failed validating relay request")
 		return relayRequest, err
 	}
 
@@ -166,16 +170,21 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// This flag enables the cleanup function to revert rewards if the relay fails.
 	isRelayRewardAccumulated = true
 
-	var serviceConfig *config.RelayMinerSupplierServiceConfig
+	// Get the supplier config for the service.
+	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceId]
+	if !ok {
+		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+			"service %q not configured",
+			serviceId,
+		)
+	}
 
-	// Get the Service and serviceUrl corresponding to the originHost.
-	// TODO_IMPROVE(red-0ne): Build a map at server initialization with originHost
-	// as the key for O(1) service lookup instead of iterating over suppliers.
-	for _, supplierServiceConfig := range server.serverConfig.SupplierConfigsMap {
-		if relayServiceId == supplierServiceConfig.ServiceId {
-			serviceConfig = supplierServiceConfig.ServiceConfig
-			break
-		}
+	// Get the service config from the supplier config.
+	// This will use either the RPC type specific service config or the default service config.
+	serviceConfig, serviceConfigTypeLog, err := getServiceConfig(logger, supplierConfig, request)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed getting service config")
+		return relayRequest, err
 	}
 
 	if serviceConfig == nil {
@@ -185,12 +194,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		)
 	}
 
+	// Hydrate the logger with relevant values.
 	logger = logger.With(
-		"service_id", relayServiceId,
+		"service_id", serviceId,
 		"server_addr", server.server.Addr,
-		"application_address", relayMeta.SessionHeader.ApplicationAddress,
-		"session_start_height", relayMeta.SessionHeader.SessionStartBlockHeight,
+		"application_address", meta.SessionHeader.ApplicationAddress,
+		"session_start_height", meta.SessionHeader.SessionStartBlockHeight,
 		"destination_url", serviceConfig.BackendUrl.String(),
+		"service_config_type", serviceConfigTypeLog,
 		"backend_url", serviceConfig.BackendUrl.String(),
 	)
 
@@ -209,15 +220,16 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Verify the relay request signature and session.
 	if err = server.relayAuthenticator.VerifyRelayRequest(ctxWithDeadline, relayRequest); err != nil {
+		logger.Error().Err(err).Msg("❌ Failed verifying relay request")
 		return relayRequest, err
 	}
 
 	httpRequest, err := relayer.BuildServiceBackendRequest(relayRequest, serviceConfig)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to build the service backend request")
+		logger.Error().Err(err).Msg("❌ Failed building the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer CloseRequestBody(logger, httpRequest.Body)
+	defer CloseBody(logger, httpRequest.Body)
 
 	// Configure HTTP client based on backend URL scheme.
 	var client http.Client
@@ -257,6 +269,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	serviceCallStartTime := time.Now()
 	httpResponse, err := client.Do(httpRequest)
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed sending the relay request to the native service")
 		// Capture the service call request duration metric.
 		relayer.CaptureServiceDuration(relayServiceId, serviceCallStartTime, statusCode)
 
@@ -275,7 +288,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	defer CloseRequestBody(logger, httpResponse.Body)
+	defer CloseBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(relayServiceId, serviceCallStartTime, httpResponse.StatusCode)
 
@@ -290,8 +303,9 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
-	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse)
+	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return relayRequest, err
 	}
 
@@ -304,6 +318,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// was verified to be valid and has to be the same as the relayResponse session header.
 	relayResponse, err := server.newRelayResponse(responseBz, relayMeta.SessionHeader, relayMeta.SupplierOperatorAddress)
 	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed building the relay response")
 		// The client should not have knowledge about the RelayMiner's issues with
 		// building the relay response. Reply with an internal error so that the
 		// original error is not exposed to the client.
@@ -317,7 +332,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		// If the originHost cannot be parsed, reply with an internal error so that
 		// the original error is not exposed to the client.
 		clientError := ErrRelayerProxyInternalError.Wrap(err.Error())
-		logger.Warn().Err(err).Msg("failed sending relay response")
+		logger.Warn().Err(err).Msg("❌ Failed sending relay response")
 		return relayRequest, clientError
 	}
 
@@ -379,6 +394,64 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// set to 200 because everything is good about the processed relay.
 	statusCode = http.StatusOK
 	return relayRequest, nil
+}
+
+// serviceConfigTypeDefault indicates that the service config being used is
+// the default service config, as opposed to a service-specific config.
+const logServiceConfigTypeDefault = "DEFAULT_SERVICE_CONFIG"
+
+// getServiceConfig returns the service config for the service.
+// This will use either the RPC type specific service config or the default service config.
+func getServiceConfig(
+	logger polylog.Logger,
+	supplierConfig *config.RelayMinerSupplierConfig,
+	request *http.Request,
+) (
+	serviceConfig *config.RelayMinerSupplierServiceConfig,
+	serviceConfigTypeLog string,
+	err error,
+) {
+	// If the following are true:
+	// 	- The RPC-type is set for the service
+	// 	- The RPC-type service-specific config is available
+	// Then, use the RPC-type service-specific config.
+	// Otherwise, use the default service config.
+	rpcTypeHeaderValue := request.Header.Get(RPCTypeHeader)
+
+	if rpcTypeHeaderValue != "" {
+		// Attempt to convert string header value to int32.
+		// For example, "1" -> RPCType_GRPC, "2" -> RPCType_WEBSOCKET, etc.
+		rpcTypeInt, err := strconv.Atoi(rpcTypeHeaderValue)
+		if err != nil {
+			return nil, "", ErrRelayerProxyInternalError.Wrapf(
+				"❌ Unable to parse rpc type header value %q",
+				rpcTypeHeaderValue,
+			)
+		}
+
+		// If the header is successfully parsed, use the RPC type specific service config.
+		rpcType := sharedtypes.RPCType(rpcTypeInt)
+		if rpcTypeServiceConfig, ok := supplierConfig.RPCTypeServiceConfigs[rpcType]; ok {
+			logger.Debug().Msgf("🟢 Using '%s' RPC type specific service config for service %q",
+				rpcType.String(), supplierConfig.ServiceId,
+			)
+
+			// Add the RPC type to the log service config type.
+			//   - eg. "JSON_RPC_SERVICE_CONFIG"
+			logServiceConfigTypeRPCType := fmt.Sprintf("%s_SERVICE_CONFIG", rpcType.String())
+
+			return rpcTypeServiceConfig, logServiceConfigTypeRPCType, nil
+		} else {
+			logger.Warn().Msgf("⚠️ SHOULD NOT HAPPEN: No '%s' RPC type specific service config found for service %q",
+				rpcType.String(), supplierConfig.ServiceId,
+			)
+		}
+	}
+
+	logger.Debug().Msgf("🟢 Using default service config for service %q", supplierConfig.ServiceId)
+
+	// If the RPC type is not set, use the default service config.
+	return supplierConfig.ServiceConfig, logServiceConfigTypeDefault, nil
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.

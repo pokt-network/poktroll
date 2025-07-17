@@ -1290,8 +1290,8 @@ github.com/pokt-network/ring-go v0.1.0 h1:hF7mDR4VVCIqqDAsrloP8azM9y1mprc99YgnTj
 github.com/pokt-network/ring-go v0.1.0/go.mod h1:8NHPH7H3EwrPX3XHfpyRI6bz4gApkE3+fd0XZRbMWP0=
 github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770 h1:ztJnRBnkdNCSkRi6yT7ATQ1mw/i28JQKzhLoUXXHkzw=
 github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770/go.mod h1:qy22/ATxOZ20moRaPx6DJupFdWCwoV0pSR89qNTtX6w=
-github.com/pokt-network/smt v0.13.0 h1:C2F8FlJh34aU+DVeRU/Bt8BOkFXn4QjWMK+nbT9PUj4=
-github.com/pokt-network/smt v0.13.0/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
+github.com/pokt-network/smt v0.14.1 h1:q8pZCo01RY+kzGurRcHArSGGEV3UhBywUZnbVn9nDM8=
+github.com/pokt-network/smt v0.14.1/go.mod h1:TehzlxITd3EqLzo428VY0QID7Ajdn7QJP4ZzdPiYbZE=
 github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188 h1:QK1WmFKQ/OzNVob/br55Brh+EFbWhcdq41WGC8UMihM=
 github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188/go.mod h1:CZlY7W+7LU5hMFoTb9PmyL4wu/i41t3+gVMvDePxAmo=
 github.com/polyfloyd/go-errorlint v1.7.1 h1:RyLVXIbosq1gBdk/pChWA8zWYLsq9UEw7a1L5TVMCnA=

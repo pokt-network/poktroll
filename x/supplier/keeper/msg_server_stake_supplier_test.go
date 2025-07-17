@@ -44,7 +44,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 
-	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
+	sessionEndHeight := supplierModuleKeepers.GetSessionEndHeight(ctx, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
 			Supplier:         expectedSupplier,
@@ -469,7 +469,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(sdkCtx, currentHeight)
+	sessionEndHeight := supplierModuleKeepers.GetSessionEndHeight(sdkCtx, currentHeight)
 
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(sdkCtx, operatorAddr)
 	require.True(t, isSupplierFound)
@@ -516,7 +516,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 	require.Equal(t, "svcId2", latestServiceUpdate[1].Service.ServiceId)
 
 	// Activation height should be the beginning of the next session.
-	sessionEndHeight = supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(sdkCtx, currentHeight)
+	sessionEndHeight = supplierModuleKeepers.GetSessionEndHeight(sdkCtx, currentHeight)
 	nextSessionStartHeight := sessionEndHeight + 1
 
 	// The supplier should be active only for svcId until the end of the current session.

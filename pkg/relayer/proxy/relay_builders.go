@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -11,17 +12,31 @@ import (
 // newRelayRequest builds a RelayRequest from an http.Request.
 func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	// Replace DefaultMaxBodySize with config options
-	requestBody, err := SafeReadBody(sync.logger, request.Body, defaultMaxBodySize)
+	requestBody, resetReadBodyPoolBytes, err := SafeRequestReadBody(sync.logger, request, sync.serverConfig.MaxBodySize)
 	if err != nil {
-		return &types.RelayRequest{}, ErrRelayerProxyInternalError.Wrap(err.Error())
+		if resetReadBodyPoolBytes != nil {
+			// Ensure buffer is returned to pool on error
+			resetReadBodyPoolBytes()
+		}
+		return &types.RelayRequest{}, err
 	}
+	// Handle cleanup after SafeRequestReadBody succeeded:
+	// - We must call the cleanup function to return the buffer to the pool
+	// - If there was an error above, the cleanup would have already been performed internally
+	// - This defer ensures proper resource management in the success case
+	// - This MUST be deferred so we finish (un)marshalling before releasing the buffer
+	defer resetReadBodyPoolBytes()
 
 	sync.logger.Debug().Msg("unmarshaling relay request")
 
 	var relayReq types.RelayRequest
 	if err := relayReq.Unmarshal(requestBody); err != nil {
-		sync.logger.Debug().Msg("unmarshaling relay request failed")
-		return &types.RelayRequest{}, err
+		bodyBzBase64 := base64.StdEncoding.EncodeToString(requestBody)
+		// TODO_TECHDEBT(@red-0ne): Remove this debug log once the issue is resolved.
+		sync.logger.With("body_bytes", bodyBzBase64).Debug().Msgf("unmarshaling relay request failed")
+		return &types.RelayRequest{}, ErrRelayerProxyUnmarshalingRelayRequest.Wrapf(
+			"failed to unmarshal relay request with body %q: %s", bodyBzBase64, err.Error(),
+		)
 	}
 
 	return &relayReq, nil

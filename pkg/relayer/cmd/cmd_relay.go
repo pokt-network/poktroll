@@ -32,7 +32,8 @@ import (
 // --dry-run avoid sending the relay
 // --dont-validate to avoid requiring a valid signature
 // --bypass-session to avoid requiring a valid session and going straight to the supplier
-
+//
+// TODO_IMPROVE: Add support for REST and WebSocket relays in pocketd relayminer relay
 var (
 	// Custom flags for 'pocketd relayminer relay' subcommand
 	flagRelayApp                       string // Application address
@@ -508,7 +509,7 @@ func querySupplier(
 			return sdk.Endpoint(endpoint), nil
 		}
 	}
-	return nil, errors.New("No endpoint found")
+	return nil, errors.New("no endpoint found")
 }
 
 // Struct to comply with interface requiring Header, Supplier, and Endpoint fields
