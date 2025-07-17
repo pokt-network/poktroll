@@ -131,7 +131,9 @@ var allUpgrades = []upgrades.Upgrade{
 
 	// v0.1.26 - upgrade to:
 	// - Implement backward compatible relay response signature verification to enable smooth protocol upgrades
-	upgrades.Upgrade_0_1_26,
+	// upgrades.Upgrade_0_1_26,
+
+	upgrades.Upgrade_NEXT,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
