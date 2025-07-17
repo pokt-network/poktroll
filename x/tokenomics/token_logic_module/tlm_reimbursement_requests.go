@@ -60,11 +60,9 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	}
 
 	newAppStake, err := application.Stake.SafeSub(newMintCoin)
-	// This should THEORETICALLY NEVER fall below zero.
-	// `ensureClaimAmountLimits` should have already checked and adjusted the settlement
-	// amount so that the application stake covers the global inflation.
-	// TODO_POST_MAINNET: Consider removing this since it should never happen just to simplify the code
+	// This should THEORETICALLY NEVER happen because `ensureClaimAmountLimits` should have handled it.
 	if err != nil {
+		logger.Error(fmt.Sprintf("SHOULD NEVER HAPPEN: application stake should never fall below zero. Trying to subtract %s from %s causing error: %v", newMintCoin, application.Stake, err))
 		return err
 	}
 	application.Stake = &newAppStake

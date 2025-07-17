@@ -24,12 +24,16 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// TODO_CONSIDERATION: Consider prefixing these enums with CLAIM_EXPIRATION_REASON_
 type ClaimExpirationReason int32
 
 const (
+	// Default value, means may be valid
 	ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED ClaimExpirationReason = 0
-	ClaimExpirationReason_PROOF_MISSING                 ClaimExpirationReason = 1
-	ClaimExpirationReason_PROOF_INVALID                 ClaimExpirationReason = 2
+	// A proof was required but not submitted
+	ClaimExpirationReason_PROOF_MISSING ClaimExpirationReason = 1
+	// A proof was submitted but was invalid
+	ClaimExpirationReason_PROOF_INVALID ClaimExpirationReason = 2
 )
 
 var ClaimExpirationReason_name = map[int32]string{
@@ -52,23 +56,24 @@ func (ClaimExpirationReason) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_146818b9f891ddf6, []int{0}
 }
 
-// EventClaimExpired is an event emitted during settlement whenever a claim requiring
-// an onchain proof doesn't have one. The claim cannot be settled, leading to that work
-// never being rewarded.
+// EventClaimExpired is emitted during settlement when a claim expires.
+// This is likely the result of a claim requiring an onchain proof not being submitted.
+// The claim cannot be settled, leading to that work never being rewarded.
 type EventClaimExpired struct {
+	// The claim that expired
 	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
 	// The reason why the claim expired, leading to a Supplier being penalized (i.e. burn).
 	ExpirationReason ClaimExpirationReason `protobuf:"varint,2,opt,name=expiration_reason,json=expirationReason,proto3,enum=pocket.tokenomics.ClaimExpirationReason" json:"expiration_reason"`
-	//Number of relays claimed to be in the session tree.
+	// Number of relays claimed to be in the session tree.
 	NumRelays uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
-	// Number of compute units claimed as a function of the number of relays
-	// and the compute units per relay for the particular service.
+	// Number of compute units claimed in the session tree.
+	// It is a function of the number of relays in the session tree and onchain parameters.
 	NumClaimedComputeUnits uint64 `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
-	// Number of estimated compute units claimed as a function of the number of claimed
-	// compute units and the relay difficulty multiplier for the particular service.
+	// Number of total estimated compute units of work done.
+	// It is a function of the number of claimed compute units and the relay difficulty multiplier.
 	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
-	// The uPOKT coin claimed to be rewarded for the work done as a function of
-	// the number of estimated compute units and the compute units to token multiplier.
+	// The amount of uPOKT claimed for the work done.
+	// It is a function of the number of estimated compute units and the compute units to token multiplier.
 	ClaimedUpokt string `protobuf:"bytes,7,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
 }
 
@@ -143,19 +148,20 @@ func (m *EventClaimExpired) GetClaimedUpokt() string {
 	return ""
 }
 
-// EventClaimSettled is an event emitted whenever a claim is settled.
-// The proof_required determines whether the claim requires a proof that has been submitted or not
+// EventClaimSettled is emitted during settlement whenever a claim is successfully settled.
+// It may or may not require a proof depending on various on-chain parameters and other factors.
 type EventClaimSettled struct {
+	// The claim that was settled.
 	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
-	// The reason why the claim was settled, leading to a Supplier being rewarded (i.e. mint).
+	// Whether a proof was required for the claim to be settled.
 	ProofRequirement types.ProofRequirementReason `protobuf:"varint,2,opt,name=proof_requirement,json=proofRequirement,proto3,enum=pocket.proof.ProofRequirementReason" json:"proof_requirement"`
 	// Number of relays claimed to be in the session tree.
 	NumRelays uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
-	// Number of compute units claimed as a function of the number of relays
-	// and the compute units per relay for the particular service.
+	// Number of compute units claimed in the session tree.
+	// It is a function of the number of relays in the session tree and onchain parameters.
 	NumClaimedComputeUnits uint64 `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
-	// Number of estimated compute units claimed as a function of the number of claimed
-	// compute units and the relay difficulty multiplier for the particular service.
+	// Number of estimated compute units claimed in the session tree.
+	// It is a function of the number of claimed compute units and the relay difficulty multiplier for the particular service.
 	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
 	// The uPOKT coin claimed to be rewarded for the work done as a function of
 	// the number of estimated compute units and the compute units to token multiplier.
@@ -233,20 +239,19 @@ func (m *EventClaimSettled) GetClaimedUpokt() string {
 	return ""
 }
 
-// EventApplicationOverserviced is emitted when an application has less stake than
-// what a supplier is claiming (i.e. amount available for burning is insufficient).
-// This means the following will ALWAYS be strictly true: effective_burn < expected_burn.
+// EventApplicationOverserviced is emitted when an Application's stake cannot cover the Supplier's claim.
+// This means the following will ALWAYS be strictly true:  effective_burn < expected_burn
+// - Number of tokens burnt from app stake < Number of tokens burnt from supplier stake
 type EventApplicationOverserviced struct {
-	ApplicationAddr      string `protobuf:"bytes,1,opt,name=application_addr,json=applicationAddr,proto3" json:"application_addr,omitempty"`
+	// The application address consuming onchain services
+	ApplicationAddr string `protobuf:"bytes,1,opt,name=application_addr,json=applicationAddr,proto3" json:"application_addr,omitempty"`
+	// The supplier operator address providing onchain services
 	SupplierOperatorAddr string `protobuf:"bytes,2,opt,name=supplier_operator_addr,json=supplierOperatorAddr,proto3" json:"supplier_operator_addr,omitempty"`
-	// Expected burn is the amount the supplier is claiming for work done
-	// to service the application during the session.
-	// This is usually the amount in the Claim submitted.
+	// Expected number of tokens to be burnt from the application's stake.
+	// A function of the actual amount of work claimed to be done.
 	ExpectedBurn string `protobuf:"bytes,5,opt,name=expected_burn,json=expectedBurn,proto3" json:"expected_burn,omitempty"`
-	// Effective burn is the amount that is actually being paid to the supplier
-	// for the work done. It is less than the expected burn (claim amount) and
-	// is a function of the relay mining algorithm.
-	// E.g. The application's stake divided by the number of suppliers in a session.
+	// Actual number of tokens burnt from the application's stake.
+	// A function of the amount that could be covered (less than) relative to the amount of work claimed to be done.
 	EffectiveBurn string `protobuf:"bytes,6,opt,name=effective_burn,json=effectiveBurn,proto3" json:"effective_burn,omitempty"`
 }
 
@@ -307,12 +312,13 @@ func (m *EventApplicationOverserviced) GetEffectiveBurn() string {
 	return ""
 }
 
-// EventSupplierSlashed is emitted when a supplier is slashed for not providing,
-// or provided invalid required proofs for claims.
+// EventSupplierSlashed is emitted when a supplier is slashed.enum
+// This can happen for in cases such as missing or invalid proofs for submitted claims.
 type EventSupplierSlashed struct {
+	// The claim the supplier is being slashed for.
 	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
-	// Amount slashed from the supplier's stake due to the expired claims.
-	// This is a function of the number of expired claims and proof missing penalty.
+	// Amount slashed from the supplier's stake.
+	// A function of the claim size, supplier stake, and various onchain parameters.
 	ProofMissingPenalty string `protobuf:"bytes,3,opt,name=proof_missing_penalty,json=proofMissingPenalty,proto3" json:"proof_missing_penalty,omitempty"`
 }
 
@@ -359,9 +365,10 @@ func (m *EventSupplierSlashed) GetProofMissingPenalty() string {
 	return ""
 }
 
-// EventClaimDiscarded is emitted when a claim is discarded due to unexpected
-// errors during settlement to prevent chain halt.
+// EventClaimDiscarded is emitted when a claim is discarded due to unexpected situations.
+// It is used to prevent chain halts in favor of some missing claims.
 type EventClaimDiscarded struct {
+	// The claim that was discarded.
 	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
 	// The error that caused the claim to be discarded.
 	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
@@ -410,15 +417,22 @@ func (m *EventClaimDiscarded) GetError() string {
 	return ""
 }
 
-// EventApplicationReimbursementRequest is emitted when an application requests
-// a reimbursement.
+// EventApplicationReimbursementRequest is emitted when an application requests a reimbursement from the DAO.
+// It is intended to prevent self dealing attacks when global inflation is enabled.
+// TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
 type EventApplicationReimbursementRequest struct {
-	ApplicationAddr      string `protobuf:"bytes,1,opt,name=application_addr,json=applicationAddr,proto3" json:"application_addr,omitempty"`
+	// The application address consuming onchain services requesting reimbursement.
+	ApplicationAddr string `protobuf:"bytes,1,opt,name=application_addr,json=applicationAddr,proto3" json:"application_addr,omitempty"`
+	// The supplier operator address providing onchain services
 	SupplierOperatorAddr string `protobuf:"bytes,2,opt,name=supplier_operator_addr,json=supplierOperatorAddr,proto3" json:"supplier_operator_addr,omitempty"`
-	SupplierOwnerAddr    string `protobuf:"bytes,3,opt,name=supplier_owner_addr,json=supplierOwnerAddr,proto3" json:"supplier_owner_addr,omitempty"`
-	ServiceId            string `protobuf:"bytes,4,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
-	SessionId            string `protobuf:"bytes,5,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	Amount               string `protobuf:"bytes,7,opt,name=amount,proto3" json:"amount,omitempty"`
+	// The supplier owner address providing onchain services
+	SupplierOwnerAddr string `protobuf:"bytes,3,opt,name=supplier_owner_addr,json=supplierOwnerAddr,proto3" json:"supplier_owner_addr,omitempty"`
+	// The service ID associated with the session where a claim was submitted.
+	ServiceId string `protobuf:"bytes,4,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The session ID associated with the session where a claim was submitted.
+	SessionId string `protobuf:"bytes,5,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	// The amount of uPOKT to be reimbursed to the application.
+	Amount string `protobuf:"bytes,7,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
 func (m *EventApplicationReimbursementRequest) Reset()         { *m = EventApplicationReimbursementRequest{} }
