@@ -50,3 +50,19 @@ test_relay_util_100: check_path_up check_relay_util  ## Test anvil PATH behind G
 		-d '{"jsonrpc":"2.0","method":"eth_blockNumber","id":1}' \
 		-x 100 \
 		-b
+
+.PHONY: relayminer_forward_token_gen
+relayminer_forward_token_gen: ## Generate 32 bytes hexadecimal token for relayminer forward configuration.
+	@openssl rand -hex 32 | tr -d "\n"
+
+.PHONY: relayminer_forward_request_http_rest
+relayminer_forward_http_rest: ## Forward request to the rest service.
+	@curl localhost:10001/services/rest/forward \
+		-X POST \
+		-H "token: 8cc09793290cd64d8a9bc80eaae4fbeef5f7cf797b0c70e078d2a5b81d74f12c" \
+		-d '{"method": "GET", "path": "/quote"}'
+
+.PHONY: relayminer_forward_request_websocket_anvilws
+relayminer_forward_request_websocket_anvilws: ## Forward websocket request to the anvilws service.
+	@websocat ws://localhost:10001/services/anvilws/forward \
+		-H "token: 8cc09793290cd64d8a9bc80eaae4fbeef5f7cf797b0c70e078d2a5b81d74f12c"
