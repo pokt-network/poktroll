@@ -20,4 +20,5 @@ var (
 	ErrRelayerProxyResponseLimitExceeded     = sdkerrors.Register(codespace, 12, "response limit exceed")
 	ErrRelayerProxyRequestLimitExceeded      = sdkerrors.Register(codespace, 13, "request limit exceed")
 	ErrRelayerProxyUnmarshalingRelayRequest  = sdkerrors.Register(codespace, 14, "failed to unmarshal relay request")
+	ErrRelayerProxyServiceIDNotFound         = sdkerrors.Register(codespace, 15, "service id not found")
 )
