@@ -171,11 +171,11 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	isRelayRewardAccumulated = true
 
 	// Get the supplier config for the service.
-	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceId]
+	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[relayServiceId]
 	if !ok {
 		return relayRequest, ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
 			"service %q not configured",
-			serviceId,
+			relayServiceId,
 		)
 	}
 
@@ -196,10 +196,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Hydrate the logger with relevant values.
 	logger = logger.With(
-		"service_id", serviceId,
+		"service_id", relayServiceId,
 		"server_addr", server.server.Addr,
-		"application_address", meta.SessionHeader.ApplicationAddress,
-		"session_start_height", meta.SessionHeader.SessionStartBlockHeight,
+		"application_address", relayMeta.SessionHeader.ApplicationAddress,
+		"session_start_height", relayMeta.SessionHeader.SessionStartBlockHeight,
 		"destination_url", serviceConfig.BackendUrl.String(),
 		"service_config_type", serviceConfigTypeLog,
 		"backend_url", serviceConfig.BackendUrl.String(),
