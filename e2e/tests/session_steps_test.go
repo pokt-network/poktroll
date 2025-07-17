@@ -180,10 +180,10 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierOperatorName, serviceId, appName string) {
-	app, ok := accNameToAppMap[appName]
+	_, ok := accNameToAppMap[appName]
 	require.True(s, ok, "application %s not found", appName)
 
-	supplier, ok := operatorAccNameToSupplierMap[supplierOperatorName]
+	_, ok = operatorAccNameToSupplierMap[supplierOperatorName]
 	require.True(s, ok, "supplier %s not found", supplierOperatorName)
 
 	isValidClaimSettledEvent := func(event *abci.Event) bool {
