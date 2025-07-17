@@ -20,6 +20,7 @@ import (
 )
 
 func TestClaim_Show(t *testing.T) {
+	t.Parallel()
 	numSessions := 1
 	numSuppliers := 3
 	numApps := 3
@@ -121,6 +122,7 @@ func TestClaim_Show(t *testing.T) {
 // create claims. I'm adapting the tests in #448, in order to keep moving and not
 // waste too much time on fixing the test for now but will revisit.
 func TestClaim_List(t *testing.T) {
+	t.Parallel()
 	numSuppliers := 4
 	numApps := 1
 	numBlocksPerSession := 4

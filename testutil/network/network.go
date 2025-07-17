@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -39,45 +38,62 @@ type (
 
 var (
 	addrCodec = addresscodec.NewBech32Codec(app.AccountAddressPrefix)
-	// Global mutex to ensure only one network test runs at a time within a single process
-	networkMutex sync.Mutex
+	// Pool of network slots to allow limited concurrency (up to 4 parallel networks)
+	// This replaces the single global mutex with a semaphore-like approach
+	networkSemaphore = make(chan struct{}, 4)
 )
 
 func init() {
 	cmd.InitSDKConfig()
 }
 
-// acquireGlobalTestLock creates a file-based lock to coordinate tests across processes
-func acquireGlobalTestLock(t *testing.T) *os.File {
+// acquirePooledTestLock creates a file-based lock from a pool to allow limited concurrency
+func acquirePooledTestLock(t *testing.T) (*os.File, int) {
 	tempDir := os.TempDir()
-	lockPath := filepath.Join(tempDir, "poktroll_network_test.lock")
 
-	// Try to create/open the lock file
-	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0666)
-	require.NoError(t, err, "Failed to create global test lock file")
+	// Try to acquire one of 4 available lock slots
+	for slot := 0; slot < 4; slot++ {
+		lockPath := filepath.Join(tempDir, fmt.Sprintf("poktroll_network_test_%d.lock", slot))
 
-	// Acquire exclusive lock (will block until available)
-	for {
+		// Try to create/open the lock file for this slot
+		lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0666)
+		if err != nil {
+			continue // Try next slot
+		}
+
+		// Try to acquire exclusive lock (non-blocking)
 		err = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 		if err == nil {
-			// Successfully acquired lock
-			break
+			// Successfully acquired lock for this slot
+			return lockFile, slot
 		}
-		if err == syscall.EWOULDBLOCK {
-			// Lock held by another process, wait and retry
-			time.Sleep(100 * time.Millisecond)
-			continue
-		}
-		// Some other error
+
+		// Close and try next slot if this one is busy
 		lockFile.Close()
-		require.NoError(t, err, "Failed to acquire global test lock")
 	}
 
-	return lockFile
+	// All slots busy, wait for any slot to become available
+	for {
+		for slot := 0; slot < 4; slot++ {
+			lockPath := filepath.Join(tempDir, fmt.Sprintf("poktroll_network_test_%d.lock", slot))
+			lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0666)
+			if err != nil {
+				continue
+			}
+
+			err = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+			if err == nil {
+				return lockFile, slot
+			}
+			lockFile.Close()
+		}
+		// Brief wait before retrying all slots
+		time.Sleep(50 * time.Millisecond)
+	}
 }
 
-// releaseGlobalTestLock releases the file-based lock
-func releaseGlobalTestLock(lockFile *os.File) {
+// releasePooledTestLock releases the file-based lock for the given slot
+func releasePooledTestLock(lockFile *os.File) {
 	if lockFile != nil {
 		_ = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
 		lockFile.Close()
@@ -86,20 +102,18 @@ func releaseGlobalTestLock(lockFile *os.File) {
 
 // New creates instance with fully configured cosmos network.
 // Accepts optional config, that will be used in place of the DefaultConfig() if provided.
-// Uses both in-process mutex and cross-process file lock to prevent all race conditions.
+// Uses pooled file locks to allow limited parallelism (up to 4 concurrent networks).
 func New(t *testing.T, configs ...Config) *Network {
 	t.Helper()
 
-	// First acquire in-process mutex
-	networkMutex.Lock()
-	// NOTE: We intentionally do NOT defer the unlock here.
-	// The mutex will be released in the cleanup function to ensure
-	// serialization of network creation AND cleanup across all modules.
+	// Acquire a slot from the network semaphore (allows up to 4 concurrent networks)
+	networkSemaphore <- struct{}{}
 
-	// Then acquire cross-process file lock
-	lockFile := acquireGlobalTestLock(t)
+	// Acquire cross-process file lock from pool
+	lockFile, slot := acquirePooledTestLock(t)
+	t.Logf("acquired test network lock slot %d", slot)
 
-	// Lock will be released in the custom cleanup function below
+	// Lock slot will be released in the custom cleanup function below
 
 	if len(configs) > 1 {
 		panic("at most one config should be provided")
@@ -115,20 +129,20 @@ func New(t *testing.T, configs ...Config) *Network {
 	_, err = net.WaitForHeight(1)
 	require.NoError(t, err)
 
-	// Custom cleanup with enhanced CometBFT shutdown handling
+	// Optimized cleanup with reduced delays for faster test execution
 	t.Cleanup(func() {
 		// Record initial goroutine count
 		initialGoroutines := runtime.NumGoroutine()
 
-		// Step 1: Give consensus reactors time to finish current operations
+		// Step 1: Brief pause for consensus reactors (reduced from 1s to 100ms)
 		// This helps prevent the panic where consensus reactor tries to access closed leveldb
-		time.Sleep(1 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 
 		// Step 2: Call standard cleanup
 		net.Cleanup()
 
-		// Step 3: Wait for goroutines to finish with extended timeout
-		maxWait := 10 * time.Second
+		// Step 3: Wait for goroutines to finish with reduced timeout (reduced from 10s to 3s)
+		maxWait := 3 * time.Second
 		start := time.Now()
 		for time.Since(start) < maxWait {
 			currentGoroutines := runtime.NumGoroutine()
@@ -136,18 +150,19 @@ func New(t *testing.T, configs ...Config) *Network {
 			if currentGoroutines <= initialGoroutines/3 || currentGoroutines < 50 {
 				break
 			}
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond) // Reduced from 200ms to 50ms
 		}
 
-		// Step 4: Final safety delay to ensure leveldb is fully closed
-		time.Sleep(2 * time.Second)
+		// Step 4: Minimal safety delay (reduced from 2s to 200ms)
+		time.Sleep(200 * time.Millisecond)
 
-		// Step 5: Release the global lock
-		releaseGlobalTestLock(lockFile)
+		// Step 5: Release the pooled lock
+		releasePooledTestLock(lockFile)
+		t.Logf("released test network lock slot %d", slot)
 
-		// Step 6: Release the in-process mutex
-		// This ensures complete serialization of network operations
-		networkMutex.Unlock()
+		// Step 6: Release the network semaphore slot
+		// This allows another test to acquire a network slot
+		<-networkSemaphore
 	})
 
 	return net

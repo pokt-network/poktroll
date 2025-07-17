@@ -77,6 +77,14 @@ test_verbose: check_go_version ## Run all go tests verbosely
 test_all: warn_flaky_tests check_go_version test_gen_fixtures ## Run all go tests showing detailed output only on failures
 	go test -count=1 -buildmode=pie -tags test ./...
 
+.PHONY: test_unit
+test_unit: warn_flaky_tests check_go_version test_gen_fixtures ## Run all unit tests with optimized parallelism
+	go test -count=1 -buildmode=pie -parallel=8 -tags test ./...
+
+.PHONY: test_unit_verbose
+test_unit_verbose: warn_flaky_tests check_go_version test_gen_fixtures ## Run all unit tests with verbose output and parallelism
+	go test -count=1 -buildmode=pie -parallel=8 -v -tags test ./...
+
 .PHONY: test_all_with_integration
 test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
