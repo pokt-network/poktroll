@@ -20,6 +20,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -187,7 +188,10 @@ func (s *tokenLogicModuleTestSuite) setBlockHeight(height int64) {
 // assertNoPendingClaims asserts that no pending claims exist.
 func (s *tokenLogicModuleTestSuite) assertNoPendingClaims(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
-	pendingClaimsIterator := s.keepers.GetExpiringClaimsIterator(sdkCtx)
+	logger := s.keepers.Logger().With("method", "assertNoPendingClaims")
+	settlementContext := tokenomicskeeper.NewSettlementContext(sdkCtx, s.keepers.Keeper, logger)
+	blockHeight := sdkCtx.BlockHeight()
+	pendingClaimsIterator := s.keepers.GetExpiringClaimsIterator(sdkCtx, settlementContext, blockHeight)
 	defer pendingClaimsIterator.Close()
 
 	numExpiringClaims := 0

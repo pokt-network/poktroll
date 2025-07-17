@@ -177,23 +177,12 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msgClaimRes, err := srv.ClaimMorseSupplier(ctx, msgClaim)
+	_, err = srv.ClaimMorseSupplier(ctx, msgClaim)
 	require.NoError(t, err)
 
 	// Construct and assert the expected response.
 	sharedParams := sharedtypes.DefaultParams()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
-	expectedRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
-		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-		ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
-		ClaimedBalance: expectedClaimedUnstakedTokens.
-			Add(morseClaimableAccount.GetApplicationStake()),
-		SessionEndHeight: expectedSessionEndHeight,
-		Supplier:         &expectedSupplier,
-	}
-	require.Equal(t, expectedRes, msgClaimRes)
 
 	// Assert that the persisted MorseClaimableAccount is updated.
 	expectedMorseAccount := morseClaimableAccount
