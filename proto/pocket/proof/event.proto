@@ -9,37 +9,55 @@ import "gogoproto/gogo.proto";
 import "pocket/proof/types.proto";
 
 message EventClaimCreated {
+  // Next index: 8
+  reserved 6; // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+
   pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-  string claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+  string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // TODO_TEST: Add coverage for claim updates.
 message EventClaimUpdated {
+  // Next index: 8
+
+  // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+  reserved 6;
+
   pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-  string claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+  string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 message EventProofSubmitted {
+  // Next index: 8
+
+  // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+  reserved 6;
+
   pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-  string claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+  string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // TODO_TEST: Add coverage for proof updates.
 message EventProofUpdated {
+  // Next index: 8
+
+  // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+  reserved 6;
+
   pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
   uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-  string claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+  string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // Event emitted after a proof has been checked for validity in the proof module's

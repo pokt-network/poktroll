@@ -95,12 +95,12 @@ func (m *EventImportMorseClaimableAccounts) GetNumAccounts() uint64 {
 type EventMorseAccountClaimed struct {
 	// Shannon session end height in which the claim was committed
 	SessionEndHeight int64 `protobuf:"varint,1,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
-	// Unstaked balance claimed from Morse
-	ClaimedBalance string `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
 	// bech32-encoded Shannon address to mint claimed balance
 	ShannonDestAddress string `protobuf:"bytes,3,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`
 	// Hex-encoded Morse account address whose balance was claimed
 	MorseSrcAddress string `protobuf:"bytes,4,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address"`
+	// Unstaked balance claimed from Morse
+	ClaimedBalance string `protobuf:"bytes,5,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
 }
 
 func (m *EventMorseAccountClaimed) Reset()         { *m = EventMorseAccountClaimed{} }
@@ -139,13 +139,6 @@ func (m *EventMorseAccountClaimed) GetSessionEndHeight() int64 {
 	return 0
 }
 
-func (m *EventMorseAccountClaimed) GetClaimedBalance() string {
-	if m != nil {
-		return m.ClaimedBalance
-	}
-	return ""
-}
-
 func (m *EventMorseAccountClaimed) GetShannonDestAddress() string {
 	if m != nil {
 		return m.ShannonDestAddress
@@ -160,21 +153,28 @@ func (m *EventMorseAccountClaimed) GetMorseSrcAddress() string {
 	return ""
 }
 
+func (m *EventMorseAccountClaimed) GetClaimedBalance() string {
+	if m != nil {
+		return m.ClaimedBalance
+	}
+	return ""
+}
+
 // EventMorseApplicationClaimed
 // - Emitted when a MorseAccount is claimed on-chain as a staked application
 type EventMorseApplicationClaimed struct {
 	// Shannon session end height in which the claim was committed
 	SessionEndHeight int64 `protobuf:"varint,1,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
-	// Unstaked balance claimed from Morse
-	ClaimedBalance string `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
 	// Hex-encoded Morse account address whose balance was claimed
 	MorseSrcAddress string `protobuf:"bytes,3,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address"`
-	// Application stake claimed as a result of the claim
-	// - Equivalent to Morse application staked amount
-	ClaimedApplicationStake string `protobuf:"bytes,4,opt,name=claimed_application_stake,json=claimedApplicationStake,proto3" json:"claimed_application_stake"`
 	// Application staked as a result of the claim
 	// - Mirrors Morse application stake
 	Application *types.Application `protobuf:"bytes,5,opt,name=application,proto3" json:"application"`
+	// Unstaked balance claimed from Morse
+	ClaimedBalance string `protobuf:"bytes,6,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
+	// Application stake claimed as a result of the claim
+	// - Equivalent to Morse application staked amount
+	ClaimedApplicationStake string `protobuf:"bytes,7,opt,name=claimed_application_stake,json=claimedApplicationStake,proto3" json:"claimed_application_stake"`
 }
 
 func (m *EventMorseApplicationClaimed) Reset()         { *m = EventMorseApplicationClaimed{} }
@@ -213,23 +213,9 @@ func (m *EventMorseApplicationClaimed) GetSessionEndHeight() int64 {
 	return 0
 }
 
-func (m *EventMorseApplicationClaimed) GetClaimedBalance() string {
-	if m != nil {
-		return m.ClaimedBalance
-	}
-	return ""
-}
-
 func (m *EventMorseApplicationClaimed) GetMorseSrcAddress() string {
 	if m != nil {
 		return m.MorseSrcAddress
-	}
-	return ""
-}
-
-func (m *EventMorseApplicationClaimed) GetClaimedApplicationStake() string {
-	if m != nil {
-		return m.ClaimedApplicationStake
 	}
 	return ""
 }
@@ -241,13 +227,27 @@ func (m *EventMorseApplicationClaimed) GetApplication() *types.Application {
 	return nil
 }
 
+func (m *EventMorseApplicationClaimed) GetClaimedBalance() string {
+	if m != nil {
+		return m.ClaimedBalance
+	}
+	return ""
+}
+
+func (m *EventMorseApplicationClaimed) GetClaimedApplicationStake() string {
+	if m != nil {
+		return m.ClaimedApplicationStake
+	}
+	return ""
+}
+
 // EventMorseSupplierClaimed
 // - Emitted when a MorseAccount is claimed on-chain as a staked Supplier
 type EventMorseSupplierClaimed struct {
 	// Shannon session end height in which the claim was committed
 	SessionEndHeight int64 `protobuf:"varint,1,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 	// Unstaked balance claimed from Morse
-	ClaimedBalance string `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
+	ClaimedBalance string `protobuf:"bytes,9,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
 	// The hex-encoded address of the Morse non-custodial (i.e. operator) account.
 	// - Unstaked balance was migrated 1:1
 	// - Stake was migrated 1:1 from morse_node_address to shannon_operator_address
@@ -270,7 +270,7 @@ type EventMorseSupplierClaimed struct {
 	ClaimSignerType MorseSupplierClaimSignerType `protobuf:"varint,7,opt,name=claim_signer_type,json=claimSignerType,proto3,enum=pocket.migration.MorseSupplierClaimSignerType" json:"claim_signer_type"`
 	// Supplier stake claimed as a result of the claim
 	// - Equivalent to Morse supplier staked amount
-	ClaimedSupplierStake string `protobuf:"bytes,4,opt,name=claimed_supplier_stake,json=claimedSupplierStake,proto3" json:"claimed_supplier_stake"`
+	ClaimedSupplierStake string `protobuf:"bytes,10,opt,name=claimed_supplier_stake,json=claimedSupplierStake,proto3" json:"claimed_supplier_stake"`
 	// Supplier staked as a result of the claim
 	// - Mirrors Morse supplier stake
 	Supplier *types1.Supplier `protobuf:"bytes,5,opt,name=supplier,proto3" json:"supplier"`
@@ -362,7 +362,7 @@ type EventMorseAccountRecovered struct {
 	// The total balance which was recovered:
 	// - Includes both unstaked and staked balances (consolidated)
 	// - Auto-liquidates both unstaked and staked balances at once
-	RecoveredBalance string `protobuf:"bytes,2,opt,name=recovered_balance,json=recoveredBalance,proto3" json:"recovered_balance"`
+	RecoveredBalance string `protobuf:"bytes,5,opt,name=recovered_balance,json=recoveredBalance,proto3" json:"recovered_balance"`
 	// The bech32-encoded address of the Shannon account to which the recovered balance was minted.
 	ShannonDestAddress string `protobuf:"bytes,3,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`
 	// The hex-encoded address of the Morse account whose balance and stakes have been recovered.
@@ -441,56 +441,58 @@ func init() {
 func init() { proto.RegisterFile("pocket/migration/event.proto", fileDescriptor_58efe7e8c8e55703) }
 
 var fileDescriptor_58efe7e8c8e55703 = []byte{
-	// 782 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x56, 0x3f, 0x6f, 0xf3, 0x44,
-	0x1c, 0xae, 0x9b, 0xf0, 0xd2, 0xf7, 0x5a, 0xbd, 0x49, 0x4d, 0xde, 0xb7, 0x6e, 0x08, 0x76, 0x88,
-	0x18, 0xb2, 0xd4, 0x41, 0xed, 0xca, 0x12, 0xd3, 0x4a, 0xa5, 0x52, 0xa1, 0xba, 0xc0, 0x00, 0x8b,
-	0x75, 0xb1, 0x4f, 0xb1, 0x95, 0xf8, 0xce, 0xdc, 0x5d, 0x0a, 0xfd, 0x16, 0x0c, 0x7c, 0x14, 0x76,
-	0x26, 0x24, 0x16, 0xa4, 0x8a, 0xa9, 0x93, 0x85, 0xd2, 0xcd, 0x23, 0x9f, 0x00, 0xf9, 0xee, 0x9c,
-	0xb8, 0x49, 0x3a, 0x20, 0x31, 0x94, 0x2d, 0xf7, 0x3c, 0xcf, 0xfd, 0xfe, 0xdf, 0xcf, 0x01, 0x9d,
-	0x94, 0x06, 0x53, 0x2c, 0x06, 0x49, 0x3c, 0x61, 0x48, 0xc4, 0x94, 0x0c, 0xf0, 0x2d, 0x26, 0xc2,
-	0x4d, 0x19, 0x15, 0xd4, 0x6c, 0x2a, 0xd6, 0x5d, 0xb2, 0xed, 0xe3, 0x80, 0xf2, 0x84, 0x72, 0x5f,
-	0xf2, 0x03, 0x75, 0x50, 0xe2, 0x76, 0x6b, 0x42, 0x27, 0x54, 0xe1, 0xc5, 0x2f, 0x8d, 0x7e, 0xa8,
-	0x1d, 0xf0, 0x08, 0x31, 0x1c, 0x0e, 0x38, 0x66, 0xb7, 0x71, 0x80, 0x35, 0xf9, 0xc9, 0x86, 0xf7,
-	0x84, 0x32, 0x8e, 0x7d, 0x4a, 0x82, 0x08, 0xc5, 0x44, 0xab, 0x6c, 0xad, 0x42, 0x69, 0x3a, 0x8b,
-	0x03, 0xa5, 0x13, 0x77, 0x29, 0x2e, 0x1d, 0x77, 0xd6, 0x5c, 0xcc, 0x0b, 0x1d, 0x66, 0x8a, 0xed,
-	0xfd, 0x6d, 0x80, 0x8f, 0x2f, 0x8a, 0x9c, 0xbe, 0x48, 0x52, 0xca, 0xc4, 0x75, 0xe1, 0xe0, 0xf3,
-	0x19, 0x8a, 0x13, 0x34, 0x9e, 0xe1, 0x61, 0x10, 0xd0, 0x39, 0x11, 0xdc, 0x1c, 0x82, 0xc3, 0x80,
-	0x61, 0x24, 0x70, 0xe8, 0x23, 0xe1, 0x47, 0x38, 0x9e, 0x44, 0xc2, 0x32, 0xba, 0x46, 0xbf, 0xe6,
-	0xbd, 0xcd, 0x33, 0x67, 0x93, 0x84, 0x0d, 0x0d, 0x0d, 0xc5, 0xa5, 0x04, 0xcc, 0x6f, 0x80, 0xa5,
-	0xa2, 0x47, 0xca, 0xa8, 0xcf, 0x05, 0x12, 0xd8, 0x8f, 0x10, 0x8f, 0xac, 0xdd, 0xae, 0xd1, 0x3f,
-	0xf0, 0x3a, 0x79, 0xe6, 0x3c, 0xab, 0x81, 0x6f, 0x25, 0xa3, 0x23, 0x1a, 0x15, 0xf8, 0x25, 0xe2,
-	0x91, 0x79, 0x06, 0x0e, 0xc8, 0x3c, 0x29, 0x2f, 0x70, 0xab, 0xd6, 0x35, 0xfa, 0x75, 0xaf, 0x99,
-	0x67, 0xce, 0x13, 0x1c, 0xee, 0x93, 0x79, 0x52, 0xa6, 0xd3, 0xfb, 0x6d, 0x17, 0x58, 0x32, 0xe9,
-	0xeb, 0x8a, 0x4d, 0x99, 0x35, 0x0e, 0xcd, 0x73, 0x60, 0x72, 0xcc, 0x79, 0x4c, 0x89, 0x8f, 0x49,
-	0xf8, 0x34, 0xd9, 0x77, 0x79, 0xe6, 0x6c, 0x61, 0x61, 0x53, 0x63, 0x17, 0x24, 0xd4, 0xe9, 0x7e,
-	0x06, 0x1a, 0x81, 0x32, 0xe8, 0x8f, 0xd1, 0x0c, 0x91, 0x00, 0xcb, 0x2c, 0x5f, 0x7b, 0x1f, 0xe4,
-	0x99, 0xb3, 0x4e, 0xc1, 0x37, 0x1a, 0xf0, 0xd4, 0xd9, 0x1c, 0x83, 0x16, 0x8f, 0x10, 0x21, 0x94,
-	0xf8, 0x21, 0xe6, 0xc2, 0x47, 0x61, 0xc8, 0x30, 0x57, 0xd9, 0xbd, 0xf6, 0x3e, 0xcd, 0x33, 0x67,
-	0x2b, 0xff, 0xe7, 0x2f, 0x27, 0x2d, 0x3d, 0x74, 0x43, 0x85, 0x8c, 0x04, 0x8b, 0xc9, 0x04, 0x9a,
-	0x5a, 0x7d, 0x8e, 0xb9, 0xd0, 0x4c, 0xd1, 0x53, 0x55, 0x6c, 0xce, 0x82, 0xa5, 0x83, 0xba, 0x74,
-	0x20, 0x7b, 0xba, 0x41, 0xc2, 0x86, 0x84, 0x46, 0x2c, 0xd0, 0x26, 0x7a, 0x3f, 0xd7, 0x40, 0xa7,
-	0x52, 0xc7, 0xd5, 0x00, 0xbe, 0xa4, 0x5a, 0x6e, 0xcd, 0xb3, 0xf6, 0x6f, 0xf2, 0x34, 0xbf, 0x05,
-	0xc7, 0xa5, 0x97, 0xca, 0x2b, 0x2b, 0xa6, 0x73, 0x8a, 0x75, 0xc9, 0x3e, 0xca, 0x33, 0xe7, 0x79,
-	0x11, 0x3c, 0xd2, 0x54, 0xa5, 0x46, 0xa3, 0x82, 0x30, 0x21, 0xd8, 0xaf, 0xa8, 0xad, 0xf7, 0xba,
-	0x46, 0x7f, 0xff, 0xd4, 0x71, 0xf5, 0x66, 0xa9, 0x50, 0x6e, 0xe5, 0xaa, 0xd7, 0xc8, 0x33, 0xa7,
-	0x7a, 0x0f, 0x56, 0x0f, 0xbd, 0x5f, 0xeb, 0xe0, 0x78, 0xd5, 0x96, 0x91, 0x7e, 0xf0, 0x2f, 0xa9,
-	0x27, 0xe7, 0xc0, 0x54, 0x65, 0x27, 0x34, 0xc4, 0xcb, 0xa6, 0xec, 0x49, 0x03, 0x32, 0x86, 0x4d,
-	0x16, 0x36, 0x25, 0xf6, 0x25, 0x0d, 0x71, 0xd9, 0x96, 0x2b, 0xd0, 0xd2, 0x0b, 0x71, 0x2e, 0xd2,
-	0xf9, 0xea, 0x95, 0xbc, 0x92, 0x76, 0xac, 0xe2, 0x95, 0x6c, 0xe3, 0xa1, 0xb2, 0xfe, 0x95, 0x04,
-	0x4b, 0x5b, 0xdf, 0x83, 0x43, 0x19, 0xa3, 0xcf, 0xe3, 0x09, 0xc1, 0xcc, 0x2f, 0x36, 0xa8, 0xf5,
-	0x7e, 0xd7, 0xe8, 0xbf, 0x39, 0x75, 0xdd, 0xf5, 0x3d, 0xef, 0x6e, 0x16, 0x76, 0x24, 0xaf, 0x7d,
-	0x7d, 0x97, 0x62, 0xbd, 0x11, 0xd7, 0x8d, 0x41, 0x55, 0x94, 0x95, 0xce, 0xbc, 0x01, 0xef, 0xca,
-	0x3a, 0x95, 0x4b, 0xf9, 0xc9, 0x48, 0xb5, 0xf3, 0xcc, 0x79, 0x46, 0x01, 0x5b, 0x1a, 0x2f, 0x63,
-	0x50, 0xc3, 0x34, 0x04, 0x7b, 0xa5, 0x4e, 0x4f, 0xd2, 0x51, 0x19, 0xbb, 0xda, 0xfe, 0x6e, 0xa9,
-	0xf7, 0x0e, 0xf2, 0xcc, 0x59, 0x8a, 0xe1, 0xf2, 0xd7, 0x55, 0x7d, 0xaf, 0xd6, 0xac, 0xf7, 0xfe,
-	0xd8, 0x05, 0xed, 0x8d, 0x05, 0x09, 0x71, 0x40, 0x6f, 0x31, 0xfb, 0xcf, 0x46, 0xc8, 0x03, 0x87,
-	0xac, 0x34, 0xb9, 0x36, 0x44, 0xb2, 0x84, 0x1b, 0x24, 0x6c, 0x2e, 0xa1, 0xff, 0xd7, 0xa2, 0xf4,
-	0x6e, 0x7e, 0x5f, 0xd8, 0xc6, 0xfd, 0xc2, 0x36, 0x1e, 0x16, 0xb6, 0xf1, 0xd7, 0xc2, 0x36, 0x7e,
-	0x7a, 0xb4, 0x77, 0xee, 0x1f, 0xed, 0x9d, 0x87, 0x47, 0x7b, 0xe7, 0xbb, 0xd3, 0x49, 0x2c, 0xa2,
-	0xf9, 0xd8, 0x0d, 0x68, 0x32, 0x48, 0xe9, 0x54, 0x9c, 0x10, 0x2c, 0x7e, 0xa0, 0x6c, 0x2a, 0x0f,
-	0x8c, 0xce, 0x66, 0x83, 0x1f, 0x2b, 0xff, 0x01, 0xe4, 0xb7, 0x7d, 0xfc, 0x4a, 0x7e, 0xbe, 0xcf,
-	0xfe, 0x09, 0x00, 0x00, 0xff, 0xff, 0xc2, 0x55, 0x32, 0x0a, 0xa2, 0x08, 0x00, 0x00,
+	// 811 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x56, 0xcf, 0x6e, 0xe3, 0x44,
+	0x1c, 0xae, 0x93, 0xec, 0x92, 0x9d, 0x56, 0x1b, 0xd7, 0x64, 0x77, 0xdd, 0x10, 0xec, 0x12, 0x71,
+	0xe8, 0x65, 0x1d, 0xd4, 0xbd, 0x72, 0x89, 0xe9, 0x4a, 0x4b, 0xa5, 0x85, 0xd5, 0x04, 0x0e, 0x70,
+	0xb1, 0x26, 0xf6, 0x28, 0xb6, 0x12, 0xcf, 0x98, 0x99, 0x49, 0xa1, 0x6f, 0xc1, 0x23, 0xf0, 0x10,
+	0x3c, 0x04, 0x52, 0x2f, 0x15, 0x5c, 0x7a, 0xb2, 0x50, 0x7a, 0xf3, 0x91, 0x27, 0x40, 0x9e, 0x19,
+	0x27, 0x6e, 0x92, 0x4a, 0x45, 0xea, 0x85, 0x5b, 0xe6, 0xfb, 0x3e, 0xff, 0xfe, 0xcf, 0x6f, 0x02,
+	0xfa, 0x19, 0x0d, 0x67, 0x58, 0x0c, 0xd3, 0x64, 0xca, 0x90, 0x48, 0x28, 0x19, 0xe2, 0x0b, 0x4c,
+	0x84, 0x97, 0x31, 0x2a, 0xa8, 0x65, 0x2a, 0xd6, 0x5b, 0xb1, 0xbd, 0xa3, 0x90, 0xf2, 0x94, 0xf2,
+	0x40, 0xf2, 0x43, 0x75, 0x50, 0xe2, 0x5e, 0x77, 0x4a, 0xa7, 0x54, 0xe1, 0xe5, 0x2f, 0x8d, 0x7e,
+	0xa2, 0x1d, 0xf0, 0x18, 0x31, 0x1c, 0x0d, 0x39, 0x66, 0x17, 0x49, 0x88, 0x35, 0xf9, 0xf9, 0x96,
+	0xf7, 0x94, 0x32, 0x8e, 0x03, 0x4a, 0xc2, 0x18, 0x25, 0x44, 0xab, 0x1c, 0xad, 0x42, 0x59, 0x36,
+	0x4f, 0x42, 0xa5, 0x13, 0x97, 0x19, 0xae, 0x1c, 0xf7, 0x37, 0x5c, 0x2c, 0x4a, 0x1d, 0x66, 0x8a,
+	0x1d, 0xfc, 0x63, 0x80, 0xcf, 0xde, 0x96, 0x39, 0x7d, 0x9d, 0x66, 0x94, 0x89, 0xf7, 0xa5, 0x83,
+	0xaf, 0xe6, 0x28, 0x49, 0xd1, 0x64, 0x8e, 0x47, 0x61, 0x48, 0x17, 0x44, 0x70, 0x6b, 0x04, 0x0e,
+	0x43, 0x86, 0x91, 0xc0, 0x51, 0x80, 0x44, 0x10, 0xe3, 0x64, 0x1a, 0x0b, 0xdb, 0x38, 0x36, 0x4e,
+	0x9a, 0xfe, 0x8b, 0x22, 0x77, 0xb7, 0x49, 0xd8, 0xd1, 0xd0, 0x48, 0xbc, 0x93, 0x80, 0xf5, 0x3d,
+	0xb0, 0x55, 0xf4, 0x48, 0x19, 0x0d, 0xb8, 0x40, 0x02, 0x07, 0x31, 0xe2, 0xb1, 0xdd, 0x38, 0x36,
+	0x4e, 0x0e, 0xfc, 0x7e, 0x91, 0xbb, 0xf7, 0x6a, 0xe0, 0x0b, 0xc9, 0xe8, 0x88, 0xc6, 0x25, 0xfe,
+	0x0e, 0xf1, 0xd8, 0x7a, 0x03, 0x0e, 0xc8, 0x22, 0xad, 0x3e, 0xe0, 0x76, 0xf3, 0xd8, 0x38, 0x69,
+	0xf9, 0x66, 0x91, 0xbb, 0x77, 0x70, 0xb8, 0x4f, 0x16, 0x69, 0x95, 0xce, 0xe0, 0xaa, 0x01, 0x6c,
+	0x99, 0xf4, 0xfb, 0x9a, 0x4d, 0x99, 0x35, 0x8e, 0xac, 0x33, 0x60, 0x71, 0xcc, 0x79, 0x42, 0x49,
+	0x80, 0x49, 0x74, 0x37, 0xd9, 0x97, 0x45, 0xee, 0xee, 0x60, 0xa1, 0xa9, 0xb1, 0xb7, 0x24, 0xd2,
+	0xe9, 0x4e, 0x40, 0x97, 0xc7, 0x88, 0x10, 0x4a, 0x82, 0x08, 0x73, 0x11, 0xa0, 0x28, 0x62, 0x98,
+	0xab, 0xf8, 0x9e, 0xf9, 0x5f, 0x14, 0xb9, 0xbb, 0x93, 0xff, 0xf3, 0xf7, 0xd7, 0x5d, 0x3d, 0x36,
+	0x23, 0x85, 0x8c, 0x05, 0x4b, 0xc8, 0x14, 0x5a, 0x5a, 0x7d, 0x86, 0xb9, 0xd0, 0x4c, 0xd9, 0x15,
+	0x55, 0x2e, 0xce, 0xc2, 0x95, 0x83, 0x96, 0x74, 0x20, 0xbb, 0xb2, 0x45, 0xc2, 0x8e, 0x84, 0xc6,
+	0x2c, 0xac, 0x4c, 0x7c, 0x09, 0x3a, 0xa1, 0xca, 0x3b, 0x98, 0xa0, 0x39, 0x22, 0x21, 0xb6, 0x9f,
+	0x48, 0x03, 0x1f, 0x17, 0xb9, 0xbb, 0x49, 0xc1, 0xe7, 0x1a, 0xf0, 0xd5, 0xf9, 0xbc, 0xd5, 0x6e,
+	0x98, 0xcd, 0xc1, 0x6f, 0x4d, 0xd0, 0xaf, 0x55, 0x73, 0x3d, 0x86, 0x8f, 0x5b, 0xd1, 0x9d, 0xd9,
+	0x36, 0xff, 0x53, 0xb6, 0x10, 0xec, 0xd7, 0x6e, 0x89, 0xcc, 0x74, 0xff, 0xd4, 0xf5, 0xf4, 0x35,
+	0xae, 0x51, 0x5e, 0x2d, 0x0b, 0xbf, 0x53, 0xe4, 0x6e, 0xfd, 0x3b, 0x58, 0x3f, 0xec, 0xaa, 0xe0,
+	0xd3, 0x07, 0x57, 0xd0, 0xfa, 0x01, 0x1c, 0x55, 0x92, 0x9a, 0xd1, 0x72, 0xee, 0x67, 0xd8, 0xfe,
+	0x48, 0xda, 0xf9, 0xb4, 0xc8, 0xdd, 0xfb, 0x45, 0xf0, 0x95, 0xa6, 0x6a, 0x11, 0x8f, 0x4b, 0x42,
+	0x35, 0xe7, 0xbc, 0xd5, 0x6e, 0x99, 0x4f, 0x06, 0x57, 0x2d, 0x70, 0xb4, 0x6e, 0xd1, 0x58, 0xaf,
+	0x80, 0xc7, 0xed, 0xcf, 0x8e, 0x42, 0x3c, 0x7b, 0x78, 0x21, 0xce, 0x80, 0xa5, 0x1a, 0x48, 0x68,
+	0x84, 0x57, 0xed, 0x6d, 0x4b, 0x03, 0x32, 0x86, 0x6d, 0x16, 0x9a, 0x12, 0xfb, 0x86, 0x46, 0xb8,
+	0x6a, 0xf0, 0x39, 0xe8, 0xea, 0x15, 0xb9, 0x10, 0xd9, 0x62, 0x7d, 0xeb, 0x54, 0x47, 0xec, 0xf2,
+	0xd6, 0xed, 0xe2, 0xa1, 0xb2, 0xfe, 0xad, 0x04, 0x2b, 0x5b, 0x3f, 0x81, 0x43, 0x19, 0x63, 0xc0,
+	0x93, 0x29, 0xc1, 0x2c, 0x28, 0x77, 0xaa, 0x6c, 0xc9, 0xf3, 0x53, 0xcf, 0xdb, 0xdc, 0xfc, 0xde,
+	0x76, 0x61, 0xc7, 0xf2, 0xb3, 0xef, 0x2e, 0x33, 0xac, 0x77, 0xe4, 0xa6, 0x31, 0xa8, 0x8a, 0xb2,
+	0xd6, 0x59, 0x1f, 0xc0, 0xcb, 0xaa, 0x4e, 0xd5, 0x9a, 0xd6, 0xa3, 0x00, 0x64, 0x02, 0xbd, 0x22,
+	0x77, 0xef, 0x51, 0xc0, 0xae, 0xc6, 0xab, 0x18, 0xe4, 0x10, 0x58, 0x23, 0xd0, 0xae, 0x74, 0x7a,
+	0xdc, 0x5f, 0x55, 0xb1, 0xab, 0xf7, 0xc0, 0xab, 0xf4, 0xfe, 0x41, 0x91, 0xbb, 0x2b, 0x31, 0x5c,
+	0xfd, 0x5a, 0xcd, 0x51, 0xd3, 0x6c, 0xe9, 0x69, 0xfa, 0xab, 0x01, 0x7a, 0x5b, 0xeb, 0x13, 0xe2,
+	0x90, 0x5e, 0x60, 0xf6, 0x68, 0xe3, 0xe4, 0x83, 0x43, 0x56, 0x99, 0xdc, 0xd8, 0x4d, 0xb2, 0x9c,
+	0x5b, 0x24, 0x34, 0x57, 0x50, 0x35, 0x54, 0xff, 0x8f, 0x25, 0xac, 0x2a, 0xec, 0x7f, 0xf8, 0x63,
+	0xe9, 0x18, 0xd7, 0x4b, 0xc7, 0xb8, 0x59, 0x3a, 0xc6, 0xdf, 0x4b, 0xc7, 0xf8, 0xf5, 0xd6, 0xd9,
+	0xbb, 0xbe, 0x75, 0xf6, 0x6e, 0x6e, 0x9d, 0xbd, 0x1f, 0x4f, 0xa7, 0x89, 0x88, 0x17, 0x13, 0x2f,
+	0xa4, 0xe9, 0x30, 0xa3, 0x33, 0xf1, 0x9a, 0x60, 0xf1, 0x33, 0x65, 0x33, 0x79, 0x60, 0x74, 0x3e,
+	0x1f, 0xfe, 0x52, 0xfb, 0x9f, 0x20, 0xdf, 0xff, 0xc9, 0x53, 0xf9, 0xc4, 0xbf, 0xf9, 0x37, 0x00,
+	0x00, 0xff, 0xff, 0x1b, 0xfa, 0x5d, 0x16, 0xc6, 0x08, 0x00, 0x00,
 }
 
 func (m *EventImportMorseClaimableAccounts) Marshal() (dAtA []byte, err error) {
@@ -553,6 +555,13 @@ func (m *EventMorseAccountClaimed) MarshalToSizedBuffer(dAtA []byte) (int, error
 	_ = i
 	var l int
 	_ = l
+	if len(m.ClaimedBalance) > 0 {
+		i -= len(m.ClaimedBalance)
+		copy(dAtA[i:], m.ClaimedBalance)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedBalance)))
+		i--
+		dAtA[i] = 0x2a
+	}
 	if len(m.MorseSrcAddress) > 0 {
 		i -= len(m.MorseSrcAddress)
 		copy(dAtA[i:], m.MorseSrcAddress)
@@ -566,13 +575,6 @@ func (m *EventMorseAccountClaimed) MarshalToSizedBuffer(dAtA []byte) (int, error
 		i = encodeVarintEvent(dAtA, i, uint64(len(m.ShannonDestAddress)))
 		i--
 		dAtA[i] = 0x1a
-	}
-	if len(m.ClaimedBalance) > 0 {
-		i -= len(m.ClaimedBalance)
-		copy(dAtA[i:], m.ClaimedBalance)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedBalance)))
-		i--
-		dAtA[i] = 0x12
 	}
 	if m.SessionEndHeight != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
@@ -602,6 +604,20 @@ func (m *EventMorseApplicationClaimed) MarshalToSizedBuffer(dAtA []byte) (int, e
 	_ = i
 	var l int
 	_ = l
+	if len(m.ClaimedApplicationStake) > 0 {
+		i -= len(m.ClaimedApplicationStake)
+		copy(dAtA[i:], m.ClaimedApplicationStake)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedApplicationStake)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.ClaimedBalance) > 0 {
+		i -= len(m.ClaimedBalance)
+		copy(dAtA[i:], m.ClaimedBalance)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedBalance)))
+		i--
+		dAtA[i] = 0x32
+	}
 	if m.Application != nil {
 		{
 			size, err := m.Application.MarshalToSizedBuffer(dAtA[:i])
@@ -614,26 +630,12 @@ func (m *EventMorseApplicationClaimed) MarshalToSizedBuffer(dAtA []byte) (int, e
 		i--
 		dAtA[i] = 0x2a
 	}
-	if len(m.ClaimedApplicationStake) > 0 {
-		i -= len(m.ClaimedApplicationStake)
-		copy(dAtA[i:], m.ClaimedApplicationStake)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedApplicationStake)))
-		i--
-		dAtA[i] = 0x22
-	}
 	if len(m.MorseSrcAddress) > 0 {
 		i -= len(m.MorseSrcAddress)
 		copy(dAtA[i:], m.MorseSrcAddress)
 		i = encodeVarintEvent(dAtA, i, uint64(len(m.MorseSrcAddress)))
 		i--
 		dAtA[i] = 0x1a
-	}
-	if len(m.ClaimedBalance) > 0 {
-		i -= len(m.ClaimedBalance)
-		copy(dAtA[i:], m.ClaimedBalance)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedBalance)))
-		i--
-		dAtA[i] = 0x12
 	}
 	if m.SessionEndHeight != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
@@ -663,6 +665,20 @@ func (m *EventMorseSupplierClaimed) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	_ = i
 	var l int
 	_ = l
+	if len(m.ClaimedSupplierStake) > 0 {
+		i -= len(m.ClaimedSupplierStake)
+		copy(dAtA[i:], m.ClaimedSupplierStake)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedSupplierStake)))
+		i--
+		dAtA[i] = 0x52
+	}
+	if len(m.ClaimedBalance) > 0 {
+		i -= len(m.ClaimedBalance)
+		copy(dAtA[i:], m.ClaimedBalance)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedBalance)))
+		i--
+		dAtA[i] = 0x4a
+	}
 	if len(m.MorseNodeAddress) > 0 {
 		i -= len(m.MorseNodeAddress)
 		copy(dAtA[i:], m.MorseNodeAddress)
@@ -694,20 +710,6 @@ func (m *EventMorseSupplierClaimed) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x2a
 	}
-	if len(m.ClaimedSupplierStake) > 0 {
-		i -= len(m.ClaimedSupplierStake)
-		copy(dAtA[i:], m.ClaimedSupplierStake)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedSupplierStake)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.ClaimedBalance) > 0 {
-		i -= len(m.ClaimedBalance)
-		copy(dAtA[i:], m.ClaimedBalance)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClaimedBalance)))
-		i--
-		dAtA[i] = 0x12
-	}
 	if m.SessionEndHeight != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
 		i--
@@ -736,6 +738,13 @@ func (m *EventMorseAccountRecovered) MarshalToSizedBuffer(dAtA []byte) (int, err
 	_ = i
 	var l int
 	_ = l
+	if len(m.RecoveredBalance) > 0 {
+		i -= len(m.RecoveredBalance)
+		copy(dAtA[i:], m.RecoveredBalance)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.RecoveredBalance)))
+		i--
+		dAtA[i] = 0x2a
+	}
 	if len(m.MorseSrcAddress) > 0 {
 		i -= len(m.MorseSrcAddress)
 		copy(dAtA[i:], m.MorseSrcAddress)
@@ -749,13 +758,6 @@ func (m *EventMorseAccountRecovered) MarshalToSizedBuffer(dAtA []byte) (int, err
 		i = encodeVarintEvent(dAtA, i, uint64(len(m.ShannonDestAddress)))
 		i--
 		dAtA[i] = 0x1a
-	}
-	if len(m.RecoveredBalance) > 0 {
-		i -= len(m.RecoveredBalance)
-		copy(dAtA[i:], m.RecoveredBalance)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.RecoveredBalance)))
-		i--
-		dAtA[i] = 0x12
 	}
 	if m.SessionEndHeight != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
@@ -804,15 +806,15 @@ func (m *EventMorseAccountClaimed) Size() (n int) {
 	if m.SessionEndHeight != 0 {
 		n += 1 + sovEvent(uint64(m.SessionEndHeight))
 	}
-	l = len(m.ClaimedBalance)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	l = len(m.ShannonDestAddress)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
 	l = len(m.MorseSrcAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ClaimedBalance)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
@@ -828,20 +830,20 @@ func (m *EventMorseApplicationClaimed) Size() (n int) {
 	if m.SessionEndHeight != 0 {
 		n += 1 + sovEvent(uint64(m.SessionEndHeight))
 	}
-	l = len(m.ClaimedBalance)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	l = len(m.MorseSrcAddress)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	l = len(m.ClaimedApplicationStake)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
 	if m.Application != nil {
 		l = m.Application.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ClaimedBalance)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ClaimedApplicationStake)
+	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
@@ -855,14 +857,6 @@ func (m *EventMorseSupplierClaimed) Size() (n int) {
 	_ = l
 	if m.SessionEndHeight != 0 {
 		n += 1 + sovEvent(uint64(m.SessionEndHeight))
-	}
-	l = len(m.ClaimedBalance)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	l = len(m.ClaimedSupplierStake)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
 	}
 	if m.Supplier != nil {
 		l = m.Supplier.Size()
@@ -879,6 +873,14 @@ func (m *EventMorseSupplierClaimed) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
+	l = len(m.ClaimedBalance)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ClaimedSupplierStake)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
 	return n
 }
 
@@ -891,15 +893,15 @@ func (m *EventMorseAccountRecovered) Size() (n int) {
 	if m.SessionEndHeight != 0 {
 		n += 1 + sovEvent(uint64(m.SessionEndHeight))
 	}
-	l = len(m.RecoveredBalance)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	l = len(m.ShannonDestAddress)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
 	l = len(m.MorseSrcAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.RecoveredBalance)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
@@ -1082,38 +1084,6 @@ func (m *EventMorseAccountClaimed) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedBalance", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClaimedBalance = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ShannonDestAddress", wireType)
@@ -1177,6 +1147,38 @@ func (m *EventMorseAccountClaimed) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedBalance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClaimedBalance = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1247,38 +1249,6 @@ func (m *EventMorseApplicationClaimed) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedBalance", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClaimedBalance = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MorseSrcAddress", wireType)
@@ -1310,38 +1280,6 @@ func (m *EventMorseApplicationClaimed) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedApplicationStake", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClaimedApplicationStake = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
@@ -1378,6 +1316,70 @@ func (m *EventMorseApplicationClaimed) Unmarshal(dAtA []byte) error {
 			if err := m.Application.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedBalance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClaimedBalance = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedApplicationStake", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClaimedApplicationStake = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1448,70 +1450,6 @@ func (m *EventMorseSupplierClaimed) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedBalance", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClaimedBalance = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedSupplierStake", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClaimedSupplierStake = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Supplier", wireType)
@@ -1631,6 +1569,70 @@ func (m *EventMorseSupplierClaimed) Unmarshal(dAtA []byte) error {
 			}
 			m.MorseNodeAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedBalance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClaimedBalance = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedSupplierStake", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClaimedSupplierStake = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1700,38 +1702,6 @@ func (m *EventMorseAccountRecovered) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RecoveredBalance", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RecoveredBalance = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ShannonDestAddress", wireType)
@@ -1795,6 +1765,38 @@ func (m *EventMorseAccountRecovered) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RecoveredBalance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RecoveredBalance = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
