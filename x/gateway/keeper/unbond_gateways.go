@@ -48,9 +48,10 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 
 		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndEvent := &gatewaytypes.EventGatewayUnbondingEnd{
-			Gateway:            &gateway,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
+			GatewayAddress:     gateway.Address,
+			Stake:              gateway.Stake.String(),
 		}
 		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); err != nil {
 			err = gatewaytypes.ErrGatewayEmitEvent.Wrapf("(%+v): %s", unbondingEndEvent, err)

@@ -71,9 +71,10 @@ func (k msgServer) UnstakeGateway(
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	unbondingEndHeight := types.GetGatewayUnbondingHeight(&sharedParams, &gateway)
 	unbondingBeginEvent := &types.EventGatewayUnbondingBegin{
-		Gateway:            &gateway,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
+		GatewayAddress:     gateway.Address,
+		Stake:              gateway.Stake.String(),
 	}
 	err = ctx.EventManager().EmitTypedEvent(unbondingBeginEvent)
 	if err != nil {
