@@ -30,12 +30,14 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 		Name:      gatewaytypes.ParamMinStake,
 		AsType:    &gatewaytypes.MsgUpdateParam_AsCoin{AsCoin: &expectedMinStake},
 	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.MinStake, res.Params.MinStake)
-	require.Equal(t, expectedMinStake.Amount, res.Params.MinStake.Amount)
+	params := k.GetParams(ctx)
+
+	require.NotEqual(t, defaultParams.MinStake, params.MinStake)
+	require.Equal(t, expectedMinStake.Amount, params.MinStake.Amount)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(gatewaytypes.KeyMinStake))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &params, string(gatewaytypes.KeyMinStake))
 }

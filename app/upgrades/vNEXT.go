@@ -18,6 +18,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app/keepers"
 	"github.com/pokt-network/poktroll/app/pocket"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // TODO_NEXT_UPGRADE: Rename NEXT with the appropriate next
@@ -61,7 +62,10 @@ var (
 )
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
-// Changes:
+// This upgrade adds/changes:
+// - Updates to the Morse account recovery allowlist
+// - Distributed Settlement TLM: enable_distribute_settlement parameter
+// - Reward distribution for the mint=burn TLM
 // - Updates to the Morse account recovery allowlist
 // - Sets all IBC parameters to enable IBC support
 var Upgrade_NEXT = Upgrade{
@@ -195,8 +199,16 @@ var Upgrade_NEXT = Upgrade{
 		}
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+
 			logger := cosmostypes.UnwrapSDKContext(ctx).Logger().With("upgrade_plan_name", Upgrade_NEXT_PlanName)
 			logger.Info("Starting upgrade handler")
+
+			// Initialize the new mint_equals_burn_claim_distribution parameter with default value
+			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
+			tokenomicsParams.MintEqualsBurnClaimDistribution = tokenomicstypes.DefaultMintEqualsBurnClaimDistribution
+			if err := keepers.TokenomicsKeeper.SetParams(ctx, tokenomicsParams); err != nil {
+				return nil, err
+			}
 
 			if err := setIBCParams(ctx); err != nil {
 				logger.Error("Failed to set IBC parameters", "error", err)
@@ -204,6 +216,7 @@ var Upgrade_NEXT = Upgrade{
 			}
 
 			logger.Info("Successfully completed upgrade handler")
+
 			return vm, nil
 		}
 	},

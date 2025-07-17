@@ -28,14 +28,18 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the parameters for the tokenomics module.
 type Params struct {
-	// mint_allocation_percentages represents the distribution of newly minted tokens,
-	// at the end of claim settlement, as a result of the Global Mint TLM.
-	MintAllocationPercentages MintAllocationPercentages `protobuf:"bytes,1,opt,name=mint_allocation_percentages,json=mintAllocationPercentages,proto3" json:"mint_allocation_proposer" yaml:"mint_allocation_percentages"`
-	// dao_reward_address is the address to which mint_allocation_dao percentage of the
-	// minted tokens are at the end of claim settlement.
+	// dao_reward_address is where the DAO's portion of claims submitted are distributed.
 	DaoRewardAddress string `protobuf:"bytes,6,opt,name=dao_reward_address,json=daoRewardAddress,proto3" json:"dao_reward_address" yaml:"dao_reward_address"`
-	// global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.
+	// mint_allocation_percentages represents the distribution of newly minted tokens.
+	// GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
+	MintAllocationPercentages MintAllocationPercentages `protobuf:"bytes,1,opt,name=mint_allocation_percentages,json=mintAllocationPercentages,proto3" json:"mint_allocation_percentages" yaml:"mint_allocation_percentages"`
+	// global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount to be minted on settlement.
+	// GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
 	GlobalInflationPerClaim float64 `protobuf:"fixed64,7,opt,name=global_inflation_per_claim,json=globalInflationPerClaim,proto3" json:"global_inflation_per_claim" yaml:"global_inflation_per_claim"`
+	// mint_equals_burn_claim_distribution controls how the settlement amount is distributed
+	// when global inflation is disabled (global_inflation_per_claim = 0).
+	// MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement.
+	MintEqualsBurnClaimDistribution MintEqualsBurnClaimDistribution `protobuf:"bytes,8,opt,name=mint_equals_burn_claim_distribution,json=mintEqualsBurnClaimDistribution,proto3" json:"mint_equals_burn_claim_distribution" yaml:"mint_equals_burn_claim_distribution"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -67,18 +71,18 @@ func (m *Params) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Params proto.InternalMessageInfo
 
-func (m *Params) GetMintAllocationPercentages() MintAllocationPercentages {
-	if m != nil {
-		return m.MintAllocationPercentages
-	}
-	return MintAllocationPercentages{}
-}
-
 func (m *Params) GetDaoRewardAddress() string {
 	if m != nil {
 		return m.DaoRewardAddress
 	}
 	return ""
+}
+
+func (m *Params) GetMintAllocationPercentages() MintAllocationPercentages {
+	if m != nil {
+		return m.MintAllocationPercentages
+	}
+	return MintAllocationPercentages{}
 }
 
 func (m *Params) GetGlobalInflationPerClaim() float64 {
@@ -88,23 +92,27 @@ func (m *Params) GetGlobalInflationPerClaim() float64 {
 	return 0
 }
 
-// MintAllocationPercentages represents the distribution of newly minted tokens,
-// at the end of claim settlement, as a result of the Global Mint TLM.
+func (m *Params) GetMintEqualsBurnClaimDistribution() MintEqualsBurnClaimDistribution {
+	if m != nil {
+		return m.MintEqualsBurnClaimDistribution
+	}
+	return MintEqualsBurnClaimDistribution{}
+}
+
+// MintAllocationPercentages captures the distribution of newly minted tokens.
+// The sum of all new tokens minted must equal 1.
+// GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.
+// TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
 type MintAllocationPercentages struct {
-	// dao is the percentage of the minted tokens which are sent
-	// to the DAO reward address during claim settlement.
+	// dao - % of newley minted tokens sent to the DAO reward address.
 	Dao float64 `protobuf:"fixed64,1,opt,name=dao,proto3" json:"dao" yaml:"dao"`
-	// proposer is the percentage of the minted tokens which are sent
-	// to the block proposer account address during claim settlement.
+	// proposer - % of newley minted tokens sent to the block proposer (i.e. validator0 account address.
 	Proposer float64 `protobuf:"fixed64,2,opt,name=proposer,proto3" json:"proposer" yaml:"proposer"`
-	// supplier is the percentage of the minted tokens which are sent
-	// to the block supplier account address during claim settlement.
+	// supplier - % of newley minted tokens sent to the block supplier account address.
 	Supplier float64 `protobuf:"fixed64,3,opt,name=supplier,proto3" json:"supplier" yaml:"supplier"`
-	// source_owner is the percentage of the minted tokens which are sent
-	// to the service source owner account address during claim settlement.
+	// source_owner - % of newley minted tokens sent to the service source owner account address.
 	SourceOwner float64 `protobuf:"fixed64,4,opt,name=source_owner,json=sourceOwner,proto3" json:"source_owner" yaml:"source_owner"`
-	// allocation_application is the percentage of the minted tokens which are sent
-	// to the application account address during claim settlement.
+	// application - % of newley minted tokens sent to the application account address.
 	Application float64 `protobuf:"fixed64,5,opt,name=application,proto3" json:"application" yaml:"application"`
 }
 
@@ -172,50 +180,136 @@ func (m *MintAllocationPercentages) GetApplication() float64 {
 	return 0
 }
 
+// MintEqualsBurnClaimDistribution captures the distribution of claimable tokens.
+// The sum of all tokens being burnt from the application's stake must equal 1.
+// GlobalMintEqualsBurnTLM: Only used by the GlobalMintEqualsBurnTLM at the end of claim settlement.
+type MintEqualsBurnClaimDistribution struct {
+	// dao - % of claimable tokens sent to the DAO reward address.
+	Dao float64 `protobuf:"fixed64,1,opt,name=dao,proto3" json:"dao" yaml:"dao"`
+	// proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.
+	Proposer float64 `protobuf:"fixed64,2,opt,name=proposer,proto3" json:"proposer" yaml:"proposer"`
+	// supplier - % of claimable tokens sent to the block supplier account address.
+	Supplier float64 `protobuf:"fixed64,3,opt,name=supplier,proto3" json:"supplier" yaml:"supplier"`
+	// source_owner - % of claimable tokens sent to the service source owner account address.
+	SourceOwner float64 `protobuf:"fixed64,4,opt,name=source_owner,json=sourceOwner,proto3" json:"source_owner" yaml:"source_owner"`
+	// application - % of claimable tokens sent to the application account address.
+	Application float64 `protobuf:"fixed64,5,opt,name=application,proto3" json:"application" yaml:"application"`
+}
+
+func (m *MintEqualsBurnClaimDistribution) Reset()         { *m = MintEqualsBurnClaimDistribution{} }
+func (m *MintEqualsBurnClaimDistribution) String() string { return proto.CompactTextString(m) }
+func (*MintEqualsBurnClaimDistribution) ProtoMessage()    {}
+func (*MintEqualsBurnClaimDistribution) Descriptor() ([]byte, []int) {
+	return fileDescriptor_577bb6b98de8f6d1, []int{2}
+}
+func (m *MintEqualsBurnClaimDistribution) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MintEqualsBurnClaimDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *MintEqualsBurnClaimDistribution) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintEqualsBurnClaimDistribution.Merge(m, src)
+}
+func (m *MintEqualsBurnClaimDistribution) XXX_Size() int {
+	return m.Size()
+}
+func (m *MintEqualsBurnClaimDistribution) XXX_DiscardUnknown() {
+	xxx_messageInfo_MintEqualsBurnClaimDistribution.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MintEqualsBurnClaimDistribution proto.InternalMessageInfo
+
+func (m *MintEqualsBurnClaimDistribution) GetDao() float64 {
+	if m != nil {
+		return m.Dao
+	}
+	return 0
+}
+
+func (m *MintEqualsBurnClaimDistribution) GetProposer() float64 {
+	if m != nil {
+		return m.Proposer
+	}
+	return 0
+}
+
+func (m *MintEqualsBurnClaimDistribution) GetSupplier() float64 {
+	if m != nil {
+		return m.Supplier
+	}
+	return 0
+}
+
+func (m *MintEqualsBurnClaimDistribution) GetSourceOwner() float64 {
+	if m != nil {
+		return m.SourceOwner
+	}
+	return 0
+}
+
+func (m *MintEqualsBurnClaimDistribution) GetApplication() float64 {
+	if m != nil {
+		return m.Application
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*Params)(nil), "pocket.tokenomics.Params")
 	proto.RegisterType((*MintAllocationPercentages)(nil), "pocket.tokenomics.MintAllocationPercentages")
+	proto.RegisterType((*MintEqualsBurnClaimDistribution)(nil), "pocket.tokenomics.MintEqualsBurnClaimDistribution")
 }
 
 func init() { proto.RegisterFile("pocket/tokenomics/params.proto", fileDescriptor_577bb6b98de8f6d1) }
 
 var fileDescriptor_577bb6b98de8f6d1 = []byte{
-	// 557 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x53, 0xbf, 0x6f, 0xd3, 0x40,
-	0x14, 0xce, 0xb5, 0x50, 0x8a, 0x83, 0x04, 0x35, 0x45, 0x38, 0x41, 0xf2, 0x85, 0x43, 0xa8, 0x11,
-	0xa2, 0x89, 0x44, 0xb7, 0x32, 0x35, 0x95, 0x40, 0x80, 0x10, 0x91, 0x11, 0x0b, 0x8b, 0x75, 0xb1,
-	0x0f, 0x63, 0xc5, 0xf6, 0xb3, 0xce, 0x17, 0x85, 0x6c, 0xcc, 0x4c, 0xfc, 0x09, 0x8c, 0x8c, 0x0c,
-	0xfd, 0x23, 0x3a, 0x56, 0xb0, 0x74, 0x3a, 0x21, 0x67, 0x00, 0x79, 0xf4, 0x5f, 0x80, 0xec, 0xcb,
-	0x0f, 0x57, 0x21, 0x5d, 0xac, 0x7b, 0xdf, 0xf7, 0xbe, 0xef, 0x9d, 0xde, 0x77, 0xd6, 0xcc, 0x18,
-	0x9c, 0x21, 0x13, 0x5d, 0x01, 0x43, 0x16, 0x41, 0xe8, 0x3b, 0x49, 0x37, 0xa6, 0x9c, 0x86, 0x49,
-	0x27, 0xe6, 0x20, 0x40, 0xdf, 0x51, 0x7c, 0x67, 0xc9, 0x37, 0x77, 0x68, 0xe8, 0x47, 0xd0, 0x2d,
-	0xbf, 0xaa, 0xab, 0xb9, 0xeb, 0x81, 0x07, 0xe5, 0xb1, 0x5b, 0x9c, 0x66, 0x68, 0xc3, 0x81, 0x24,
-	0x84, 0xc4, 0x56, 0x84, 0x2a, 0x14, 0x45, 0xd2, 0x4d, 0x6d, 0xab, 0x5f, 0xce, 0xd1, 0x4f, 0x90,
-	0x76, 0x2f, 0xf4, 0x23, 0x61, 0xd3, 0x20, 0x00, 0x87, 0x0a, 0x1f, 0x22, 0x3b, 0x66, 0xdc, 0x61,
-	0x91, 0xa0, 0x1e, 0x4b, 0x0c, 0xd4, 0x42, 0xed, 0xfa, 0x93, 0xc7, 0x9d, 0x95, 0x8b, 0x74, 0x5e,
-	0xfb, 0x91, 0x38, 0x5a, 0x88, 0xfa, 0x4b, 0x4d, 0xef, 0xd9, 0xa9, 0xc4, 0xb5, 0x4c, 0x62, 0x63,
-	0xc5, 0x98, 0x43, 0x0c, 0x09, 0xe3, 0xb9, 0xc4, 0x64, 0x42, 0xc3, 0xe0, 0x90, 0x5c, 0x32, 0x9a,
-	0x58, 0x8d, 0x70, 0xdd, 0x08, 0x7d, 0xa2, 0xe9, 0x2e, 0x05, 0x9b, 0xb3, 0x31, 0xe5, 0xae, 0x4d,
-	0x5d, 0x97, 0xb3, 0x24, 0x31, 0xb6, 0x5a, 0xa8, 0x7d, 0xbd, 0xf7, 0x2a, 0x93, 0xf8, 0x3f, 0x6c,
-	0x2e, 0x71, 0x43, 0x0d, 0x5d, 0xe5, 0xc8, 0xcf, 0x93, 0xfd, 0xdd, 0xd9, 0x8a, 0x8e, 0x14, 0xf4,
-	0x56, 0x70, 0x3f, 0xf2, 0xac, 0x5b, 0x2e, 0x05, 0xab, 0xec, 0x9d, 0xe1, 0xfa, 0x67, 0xa4, 0x35,
-	0xbd, 0x00, 0x06, 0x34, 0xb0, 0xfd, 0xe8, 0x43, 0xb0, 0xb8, 0xb7, 0xed, 0x04, 0xd4, 0x0f, 0x8d,
-	0x6b, 0x2d, 0xd4, 0x46, 0xbd, 0xe3, 0x4c, 0xe2, 0x4b, 0xba, 0x72, 0x89, 0xef, 0xab, 0xbb, 0xac,
-	0xef, 0x21, 0xd6, 0x5d, 0x45, 0xbe, 0x98, 0x73, 0x7d, 0xc6, 0x8f, 0x0b, 0xe6, 0xf0, 0xc1, 0xdf,
-	0x6f, 0x18, 0x7d, 0xf9, 0xf3, 0xe3, 0x51, 0x73, 0xf6, 0x7e, 0x3e, 0x55, 0x5f, 0x90, 0x4a, 0x96,
-	0xfc, 0xda, 0xd0, 0x1a, 0x6b, 0x33, 0xd2, 0xf7, 0xb4, 0x4d, 0x97, 0x42, 0x19, 0x2f, 0xea, 0xdd,
-	0xc9, 0x24, 0x2e, 0xca, 0x5c, 0x62, 0x6d, 0xb1, 0x22, 0x62, 0x15, 0x90, 0xfe, 0x54, 0xdb, 0x9e,
-	0xc7, 0x66, 0x6c, 0x94, 0xdd, 0x38, 0x93, 0x78, 0xbb, 0x12, 0xe5, 0x4d, 0x25, 0x99, 0x23, 0xc4,
-	0x5a, 0x90, 0x85, 0x38, 0x19, 0xc5, 0x71, 0xe0, 0x33, 0x6e, 0x6c, 0x2e, 0xc5, 0x73, 0x6c, 0x29,
-	0x9e, 0x23, 0xc4, 0x5a, 0x90, 0xfa, 0x4b, 0xed, 0x46, 0x02, 0x23, 0xee, 0x30, 0x1b, 0xc6, 0x11,
-	0xe3, 0xc6, 0x95, 0xd2, 0x60, 0x2f, 0x93, 0xf8, 0x02, 0x9e, 0x4b, 0x7c, 0x7b, 0x66, 0x52, 0x41,
-	0x89, 0x55, 0x57, 0xe5, 0x9b, 0xa2, 0xd2, 0x9f, 0x6b, 0x75, 0x5a, 0xd8, 0xaa, 0x45, 0x18, 0x57,
-	0x4b, 0xab, 0x87, 0x99, 0xc4, 0x55, 0x38, 0x97, 0x58, 0x57, 0x4e, 0x15, 0x90, 0x58, 0xd5, 0x96,
-	0xde, 0xbb, 0xef, 0xa9, 0x89, 0x4e, 0x53, 0x13, 0x9d, 0xa5, 0x26, 0x3a, 0x4f, 0x4d, 0xf4, 0x3b,
-	0x35, 0xd1, 0xd7, 0xa9, 0x59, 0x3b, 0x9b, 0x9a, 0xb5, 0xf3, 0xa9, 0x59, 0x7b, 0x7f, 0xe0, 0xf9,
-	0xe2, 0xe3, 0x68, 0xd0, 0x71, 0x20, 0xec, 0xc6, 0x30, 0x14, 0xfb, 0x11, 0x13, 0x63, 0xe0, 0xc3,
-	0xb2, 0xe0, 0x10, 0x04, 0x17, 0xd3, 0x12, 0x93, 0x98, 0x25, 0x83, 0xad, 0xf2, 0xc7, 0x3c, 0xf8,
-	0x17, 0x00, 0x00, 0xff, 0xff, 0xdd, 0x54, 0x41, 0xe5, 0x11, 0x04, 0x00, 0x00,
+	// 637 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x54, 0x4d, 0x6b, 0xd4, 0x4e,
+	0x18, 0xdf, 0x69, 0xff, 0xed, 0xbf, 0xa6, 0x82, 0x36, 0x56, 0xcc, 0xae, 0x90, 0xa9, 0x53, 0xa4,
+	0xa5, 0xd8, 0x5d, 0x68, 0x6f, 0xf5, 0xd4, 0x54, 0x91, 0x2a, 0x62, 0x89, 0x78, 0xd0, 0x4b, 0x98,
+	0x4d, 0xc6, 0x35, 0x6c, 0x92, 0x89, 0x33, 0x13, 0x6a, 0x6f, 0x9e, 0x3d, 0xf9, 0x11, 0x3c, 0x7a,
+	0xf4, 0x20, 0xf8, 0x01, 0xbc, 0xf4, 0x58, 0xf4, 0x52, 0x11, 0x06, 0xd9, 0x1e, 0x94, 0x1c, 0xf3,
+	0x09, 0x24, 0x33, 0xfb, 0x92, 0x52, 0x77, 0x15, 0xcf, 0x5e, 0xc2, 0x3c, 0xbf, 0x97, 0xe7, 0x19,
+	0x7e, 0x3c, 0x13, 0xc3, 0x4e, 0xa9, 0xdf, 0x25, 0xa2, 0x25, 0x68, 0x97, 0x24, 0x34, 0x0e, 0x7d,
+	0xde, 0x4a, 0x31, 0xc3, 0x31, 0x6f, 0xa6, 0x8c, 0x0a, 0x6a, 0x2e, 0x68, 0xbe, 0x39, 0xe2, 0x1b,
+	0x0b, 0x38, 0x0e, 0x13, 0xda, 0x52, 0x5f, 0xad, 0x6a, 0x2c, 0x76, 0x68, 0x87, 0xaa, 0x63, 0xab,
+	0x3c, 0xf5, 0xd1, 0xba, 0x4f, 0x79, 0x4c, 0xb9, 0xa7, 0x09, 0x5d, 0x68, 0x0a, 0x7d, 0x9c, 0x31,
+	0x66, 0xf7, 0xd4, 0x1c, 0xf3, 0xc0, 0x30, 0x03, 0x4c, 0x3d, 0x46, 0xf6, 0x31, 0x0b, 0x3c, 0x1c,
+	0x04, 0x8c, 0x70, 0x6e, 0xcd, 0x2e, 0x81, 0xd5, 0x73, 0xce, 0xbd, 0x5c, 0xc2, 0x5f, 0xb0, 0x85,
+	0x84, 0xf5, 0x03, 0x1c, 0x47, 0x5b, 0xe8, 0x2c, 0x87, 0x3e, 0xbd, 0x5f, 0x5f, 0xec, 0xcf, 0xda,
+	0xd6, 0xd0, 0x43, 0xc1, 0xc2, 0xa4, 0xe3, 0x5e, 0x0c, 0x30, 0x75, 0x95, 0xb6, 0x8f, 0x9b, 0x1f,
+	0x80, 0x71, 0x35, 0x0e, 0x13, 0xe1, 0xe1, 0x28, 0xa2, 0x3e, 0x16, 0x21, 0x4d, 0xbc, 0x94, 0x30,
+	0x9f, 0x24, 0x02, 0x77, 0x08, 0xb7, 0xc0, 0x12, 0x58, 0x9d, 0xdf, 0xb8, 0xd1, 0x3c, 0x93, 0x41,
+	0xf3, 0x7e, 0x98, 0x88, 0xed, 0xa1, 0x69, 0x6f, 0xe4, 0x71, 0x76, 0x0f, 0x25, 0xac, 0xe5, 0x12,
+	0x4e, 0x6a, 0x5c, 0x48, 0x88, 0xf4, 0xfd, 0x27, 0x88, 0x90, 0x5b, 0x8f, 0xc7, 0x4d, 0x31, 0x5f,
+	0x02, 0xa3, 0xd1, 0x89, 0x68, 0x1b, 0x47, 0x5e, 0x98, 0x3c, 0x8d, 0x86, 0x66, 0xcf, 0x8f, 0x70,
+	0x18, 0x5b, 0xff, 0x2f, 0x81, 0x55, 0xe0, 0xec, 0xe4, 0x12, 0x4e, 0x50, 0x15, 0x12, 0x5e, 0xd3,
+	0xb7, 0x18, 0xaf, 0x41, 0xee, 0x15, 0x4d, 0xee, 0x0e, 0xb8, 0x3d, 0xc2, 0x76, 0x4a, 0xc6, 0xfc,
+	0x0a, 0x8c, 0x65, 0x75, 0x7d, 0xf2, 0x3c, 0xc3, 0x11, 0xf7, 0xda, 0x19, 0x4b, 0xb4, 0xc9, 0x0b,
+	0x42, 0x2e, 0x58, 0xd8, 0xce, 0x4a, 0xbd, 0x35, 0xa7, 0x42, 0xdc, 0x18, 0x13, 0xe2, 0x6d, 0x65,
+	0x76, 0x32, 0x96, 0xa8, 0xae, 0xb7, 0x2a, 0x4e, 0xe7, 0x71, 0x3f, 0xca, 0x3f, 0x19, 0x53, 0x48,
+	0xb8, 0x56, 0x89, 0x74, 0xb2, 0x18, 0xb9, 0x30, 0x9e, 0x3c, 0x7b, 0x6b, 0xf9, 0xc7, 0x1b, 0x08,
+	0x5e, 0x7d, 0x7f, 0xb7, 0xd6, 0xe8, 0x3f, 0x90, 0x17, 0xd5, 0x27, 0xa2, 0x57, 0x17, 0x7d, 0x9e,
+	0x32, 0xea, 0x63, 0x37, 0xc1, 0x5c, 0x31, 0xa6, 0x03, 0x4c, 0xd5, 0x12, 0x01, 0xe7, 0x72, 0x2e,
+	0x61, 0x59, 0x16, 0x12, 0x1a, 0xc3, 0xd5, 0x45, 0x6e, 0x09, 0x99, 0x37, 0x8d, 0xb9, 0x94, 0xd1,
+	0x94, 0x72, 0xc2, 0xac, 0x29, 0xa5, 0x86, 0xb9, 0x84, 0x43, 0xac, 0x90, 0xf0, 0x82, 0xb6, 0x0c,
+	0x10, 0xe4, 0x0e, 0xc9, 0xd2, 0xcc, 0xb3, 0x34, 0x8d, 0x42, 0xc2, 0xac, 0xe9, 0x91, 0x79, 0x80,
+	0x8d, 0xcc, 0x03, 0x04, 0xb9, 0x43, 0xd2, 0xbc, 0x6b, 0x9c, 0xe7, 0x34, 0x63, 0x3e, 0xf1, 0xe8,
+	0x7e, 0x42, 0x98, 0xf5, 0x9f, 0x6a, 0xb0, 0x92, 0x4b, 0x78, 0x0a, 0x2f, 0x24, 0xbc, 0xd4, 0x6f,
+	0x52, 0x41, 0x91, 0x3b, 0xaf, 0xcb, 0x07, 0x65, 0x65, 0xde, 0x31, 0xe6, 0x71, 0xd9, 0x56, 0x07,
+	0x61, 0xcd, 0xa8, 0x56, 0xd7, 0x73, 0x09, 0xab, 0x70, 0x21, 0xa1, 0xa9, 0x3b, 0x55, 0x40, 0xe4,
+	0x56, 0x25, 0xe8, 0xcb, 0x94, 0x01, 0x7f, 0xb3, 0x1a, 0xff, 0xb2, 0xfd, 0xbb, 0x6c, 0x9d, 0x47,
+	0x6f, 0x7b, 0x36, 0x38, 0xec, 0xd9, 0xe0, 0xa8, 0x67, 0x83, 0xe3, 0x9e, 0x0d, 0xbe, 0xf5, 0x6c,
+	0xf0, 0xfa, 0xc4, 0xae, 0x1d, 0x9d, 0xd8, 0xb5, 0xe3, 0x13, 0xbb, 0xf6, 0x64, 0xb3, 0x13, 0x8a,
+	0x67, 0x59, 0xbb, 0xe9, 0xd3, 0xb8, 0x95, 0xd2, 0xae, 0x58, 0x4f, 0x88, 0xd8, 0xa7, 0xac, 0xab,
+	0x0a, 0x46, 0xa3, 0xe8, 0xf4, 0x4b, 0x10, 0x07, 0x29, 0xe1, 0xed, 0x59, 0xf5, 0x57, 0xdf, 0xfc,
+	0x19, 0x00, 0x00, 0xff, 0xff, 0x62, 0xa1, 0x0f, 0x78, 0x4e, 0x06, 0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -237,13 +331,16 @@ func (this *Params) Equal(that interface{}) bool {
 	} else if this == nil {
 		return false
 	}
-	if !this.MintAllocationPercentages.Equal(&that1.MintAllocationPercentages) {
-		return false
-	}
 	if this.DaoRewardAddress != that1.DaoRewardAddress {
 		return false
 	}
+	if !this.MintAllocationPercentages.Equal(&that1.MintAllocationPercentages) {
+		return false
+	}
 	if this.GlobalInflationPerClaim != that1.GlobalInflationPerClaim {
+		return false
+	}
+	if !this.MintEqualsBurnClaimDistribution.Equal(&that1.MintEqualsBurnClaimDistribution) {
 		return false
 	}
 	return true
@@ -256,6 +353,42 @@ func (this *MintAllocationPercentages) Equal(that interface{}) bool {
 	that1, ok := that.(*MintAllocationPercentages)
 	if !ok {
 		that2, ok := that.(MintAllocationPercentages)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Dao != that1.Dao {
+		return false
+	}
+	if this.Proposer != that1.Proposer {
+		return false
+	}
+	if this.Supplier != that1.Supplier {
+		return false
+	}
+	if this.SourceOwner != that1.SourceOwner {
+		return false
+	}
+	if this.Application != that1.Application {
+		return false
+	}
+	return true
+}
+func (this *MintEqualsBurnClaimDistribution) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*MintEqualsBurnClaimDistribution)
+	if !ok {
+		that2, ok := that.(MintEqualsBurnClaimDistribution)
 		if ok {
 			that1 = &that2
 		} else {
@@ -304,6 +437,16 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	{
+		size, err := m.MintEqualsBurnClaimDistribution.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x42
 	if m.GlobalInflationPerClaim != 0 {
 		i -= 8
 		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.GlobalInflationPerClaim))))
@@ -383,6 +526,59 @@ func (m *MintAllocationPercentages) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
+func (m *MintEqualsBurnClaimDistribution) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MintEqualsBurnClaimDistribution) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MintEqualsBurnClaimDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Application != 0 {
+		i -= 8
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.Application))))
+		i--
+		dAtA[i] = 0x29
+	}
+	if m.SourceOwner != 0 {
+		i -= 8
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.SourceOwner))))
+		i--
+		dAtA[i] = 0x21
+	}
+	if m.Supplier != 0 {
+		i -= 8
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.Supplier))))
+		i--
+		dAtA[i] = 0x19
+	}
+	if m.Proposer != 0 {
+		i -= 8
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.Proposer))))
+		i--
+		dAtA[i] = 0x11
+	}
+	if m.Dao != 0 {
+		i -= 8
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.Dao))))
+		i--
+		dAtA[i] = 0x9
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintParams(dAtA []byte, offset int, v uint64) int {
 	offset -= sovParams(v)
 	base := offset
@@ -409,10 +605,36 @@ func (m *Params) Size() (n int) {
 	if m.GlobalInflationPerClaim != 0 {
 		n += 9
 	}
+	l = m.MintEqualsBurnClaimDistribution.Size()
+	n += 1 + l + sovParams(uint64(l))
 	return n
 }
 
 func (m *MintAllocationPercentages) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Dao != 0 {
+		n += 9
+	}
+	if m.Proposer != 0 {
+		n += 9
+	}
+	if m.Supplier != 0 {
+		n += 9
+	}
+	if m.SourceOwner != 0 {
+		n += 9
+	}
+	if m.Application != 0 {
+		n += 9
+	}
+	return n
+}
+
+func (m *MintEqualsBurnClaimDistribution) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -547,6 +769,39 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
 			iNdEx += 8
 			m.GlobalInflationPerClaim = float64(math.Float64frombits(v))
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MintEqualsBurnClaimDistribution", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MintEqualsBurnClaimDistribution.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipParams(dAtA[iNdEx:])
@@ -595,6 +850,111 @@ func (m *MintAllocationPercentages) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MintAllocationPercentages: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Dao", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.Dao = float64(math.Float64frombits(v))
+		case 2:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Proposer", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.Proposer = float64(math.Float64frombits(v))
+		case 3:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Supplier", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.Supplier = float64(math.Float64frombits(v))
+		case 4:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceOwner", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.SourceOwner = float64(math.Float64frombits(v))
+		case 5:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.Application = float64(math.Float64frombits(v))
+		default:
+			iNdEx = preIndex
+			skippy, err := skipParams(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthParams
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MintEqualsBurnClaimDistribution) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowParams
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MintEqualsBurnClaimDistribution: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MintEqualsBurnClaimDistribution: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
