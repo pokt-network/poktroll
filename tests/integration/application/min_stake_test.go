@@ -291,7 +291,8 @@ func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expecte
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	sessionEndHeight := s.keepers.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-		Application:        expectedApp,
+		ApplicationAddress: expectedApp.Address,
+		Stake:              expectedApp.Stake.String(),
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
@@ -312,7 +313,8 @@ func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedA
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-		Application:        expectedApp,
+		ApplicationAddress: expectedApp.Address,
+		Stake:              expectedApp.Stake.String(),
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   unbondingSessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,

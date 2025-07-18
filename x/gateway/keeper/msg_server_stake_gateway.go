@@ -110,15 +110,17 @@ func (k msgServer) StakeGateway(
 	// If gateway unbonding was canceled, emit the corresponding event.
 	if wasGatewayUnbonding {
 		events = append(events, &types.EventGatewayUnbondingCanceled{
-			Gateway:          &gateway,
 			SessionEndHeight: sessionEndHeight,
+			GatewayAddress:   gateway.Address,
+			Stake:            gateway.Stake.String(),
 		})
 	}
 
 	// ALWAYS emit a gateway staked event.
 	events = append(events, &types.EventGatewayStaked{
-		Gateway:          &gateway,
 		SessionEndHeight: sessionEndHeight,
+		GatewayAddress:   gateway.Address,
+		Stake:            gateway.Stake.String(),
 	})
 
 	if err = ctx.EventManager().EmitTypedEvents(events...); err != nil {

@@ -85,7 +85,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			transferErrorEvent := &apptypes.EventTransferError{
 				SourceAddress:      srcApp.GetAddress(),
 				DestinationAddress: dstBech32,
-				SourceApplication:  &srcApp,
+				Stake:              srcApp.Stake.String(),
 				SessionEndHeight:   sessionEndHeight,
 				Error:              err.Error(),
 			}
@@ -165,11 +165,11 @@ func (k Keeper) transferApplication(
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
 	transferEndEvent := &apptypes.EventTransferEnd{
-		SourceAddress:          srcApp.GetAddress(),
-		DestinationAddress:     dstApp.GetAddress(),
-		DestinationApplication: &dstApp,
-		SessionEndHeight:       sessionEndHeight,
-		TransferEndHeight:      transferEndHeight,
+		SourceAddress:      srcApp.GetAddress(),
+		DestinationAddress: dstApp.GetAddress(),
+		Stake:              dstApp.Stake.String(),
+		SessionEndHeight:   sessionEndHeight,
+		TransferEndHeight:  transferEndHeight,
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(transferEndEvent); err != nil {
 		err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", transferEndEvent, err)

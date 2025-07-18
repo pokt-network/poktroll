@@ -439,14 +439,9 @@ func (s *appTransferTestSuite) shouldObserveTransferBeginEvent(
 	require.True(s.T(), hasDstAddr)
 	require.Equal(s.T(), expectedDstAppBech32, evtDstAddr)
 
-	evtSrcApp := new(apptypes.Application)
-	evtSrcAppStr, hasSrcApp := events.GetAttributeValue(targetTransferBeginEvent, "source_application")
-	require.True(s.T(), hasSrcApp)
-
-	evtSrcAppBz := []byte(evtSrcAppStr)
-	err := s.GetApp().GetCodec().UnmarshalJSON(evtSrcAppBz, evtSrcApp)
-	require.NoError(s.T(), err)
-	require.EqualValues(s.T(), expectedSrcApp.GetPendingTransfer(), evtSrcApp.GetPendingTransfer())
+	evtStake, hasStake := events.GetAttributeValue(targetTransferBeginEvent, "stake")
+	require.True(s.T(), hasStake)
+	require.Equal(s.T(), expectedSrcApp.GetStake().String(), evtStake)
 }
 
 // shouldObserveTransferEndEvent asserts that the transfer end event from
@@ -481,12 +476,7 @@ func (s *appTransferTestSuite) shouldObserveTransferEndEvent(
 	require.True(s.T(), hasDstAddrAttr)
 	require.Equal(s.T(), expectedDstApp.GetAddress(), evtDstAddr)
 
-	evtDstApp := new(apptypes.Application)
-	evtDstAppStr, hasDstAppAttr := events.GetAttributeValue(targetTransferEndEvent, "destination_application")
-	require.True(s.T(), hasDstAppAttr)
-
-	evtDstAppBz := []byte(evtDstAppStr)
-	err := s.GetApp().GetCodec().UnmarshalJSON(evtDstAppBz, evtDstApp)
-	require.NoError(s.T(), err)
-	require.EqualValues(s.T(), expectedDstApp.GetPendingTransfer(), evtDstApp.GetPendingTransfer())
+	evtStake, hasStake := events.GetAttributeValue(targetTransferEndEvent, "stake")
+	require.True(s.T(), hasStake)
+	require.Equal(s.T(), expectedDstApp.GetStake().String(), evtStake)
 }

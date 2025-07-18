@@ -352,11 +352,12 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
 			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
-			Application:             expectedApp,
+			ApplicationAddress:      expectedApp.Address,
 		}
 
 		expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-			Application:        expectedApp,
+			ApplicationAddress: expectedApp.Address,
+			Stake:              expectedApp.Stake.String(),
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   expectedSessionEndHeight,
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
@@ -444,10 +445,11 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
 			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
-			Application:             expectedApp,
+			ApplicationAddress:      expectedApp.Address,
 		}
 		expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-			Application:        expectedApp,
+			ApplicationAddress: expectedApp.Address,
+			Stake:              expectedApp.Stake.String(),
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   expectedSessionEndHeight,
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),

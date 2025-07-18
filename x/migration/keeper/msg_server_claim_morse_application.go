@@ -99,14 +99,15 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		ClaimedBalance:          claimedUnstakedBalance.String(),
 		ClaimedApplicationStake: claimedAppStake.String(),
 		SessionEndHeight:        sessionEndHeight,
-		Application:             unbondedApp,
+		ApplicationAddress:      unbondedApp.Address,
 	}
 
 	// Construct the application unbonding end event.
 	// It will be conditionally emitted if the application unbonding period
 	// began on Morse, and ended while waiting to be claimed.
 	morseAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-		Application:        unbondedApp,
+		ApplicationAddress: unbondedApp.Address,
+		Stake:              unbondedApp.Stake.String(),
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: previousSessionEndHeight,
@@ -174,7 +175,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// Update the application claim event.
 	morseAppClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance().String()
 	morseAppClaimedEvent.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake().String()
-	morseAppClaimedEvent.Application = app
+	morseAppClaimedEvent.ApplicationAddress = app.Address
 
 	// Emit the application claim event first.
 	// An unbonding begin event MAY follow.
@@ -205,7 +206,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		// period began on Morse and will end on Shannon ad unbonding_end_height
 		// (i.e. estimatedUnstakeSessionEndHeight).
 		morseAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-			Application:        app,
+			ApplicationAddress: app.Address,
+			Stake:              app.Stake.String(),
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: estimatedUnstakeSessionEndHeight,
