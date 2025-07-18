@@ -206,6 +206,17 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		require.Equal(s, serviceId, claimSettledEvent.ServiceId)
 		require.Greater(s, claimSettledEvent.NumClaimedComputeUnits, uint64(0), "claimed compute units should be greater than 0")
 		// TODO_IMPROVE: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+
+		// Validate that the reward distribution is populated
+		rewardDistribution := claimSettledEvent.GetRewardDistribution()
+		require.NotNil(s, rewardDistribution, "reward distribution should not be nil")
+		require.NotEmpty(s, rewardDistribution, "reward distribution should not be empty")
+
+		// Log the reward distribution for debugging
+		for address, amountStr := range rewardDistribution {
+			s.Logf("Reward distribution - address: %s, amount: %s", address, amountStr)
+		}
+
 		return true
 	}
 
