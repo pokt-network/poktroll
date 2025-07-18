@@ -819,11 +819,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 		// The event no longer contains the full claim, so we construct the expected event with individual fields
 		expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
-			ProofMissingPenalty:   proofMissingPenalty.String(),
-			ServiceId:             slashingEvent.GetServiceId(),
-			ApplicationAddress:    slashingEvent.GetApplicationAddress(),
-			SessionEndBlockHeight: slashingEvent.GetSessionEndBlockHeight(),
-			ClaimProofStatusInt:   slashingEvent.GetClaimProofStatusInt(),
+			ProofMissingPenalty:     proofMissingPenalty.String(),
+			ServiceId:               slashingEvent.GetServiceId(),
+			ApplicationAddress:      slashingEvent.GetApplicationAddress(),
+			SessionEndBlockHeight:   slashingEvent.GetSessionEndBlockHeight(),
+			ClaimProofStatusInt:     slashingEvent.GetClaimProofStatusInt(),
+			SupplierOperatorAddress: slashingEvent.GetSupplierOperatorAddress(),
 		}
 		require.EqualValues(t, expectedSlashingEvent, slashingEvents[i])
 	}
