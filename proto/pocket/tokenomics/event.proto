@@ -132,6 +132,9 @@ message EventClaimSettled {
 
     // The operator address of the supplier who submitted the claim.
     string supplier_operator_address = 13 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // A map of addresses to token amounts corresponding to the distribution of the reward tokens.
+    map<string, string> reward_distribution = 14 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mint_distribution"];
 }
 
 // EventApplicationOverserviced is emitted when an Application's stake cannot cover the Supplier's claim.
