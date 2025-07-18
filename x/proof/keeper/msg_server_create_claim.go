@@ -127,7 +127,7 @@ func (k msgServer) CreateClaim(
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
 			},
 		)
 	case false:
@@ -137,7 +137,7 @@ func (k msgServer) CreateClaim(
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
 			},
 		)
 	}

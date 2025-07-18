@@ -147,7 +147,7 @@ func (k msgServer) SubmitProof(
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
 			},
 		)
 	case false:
@@ -157,7 +157,7 @@ func (k msgServer) SubmitProof(
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
 			},
 		)
 	}

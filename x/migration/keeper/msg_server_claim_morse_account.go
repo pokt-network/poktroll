@@ -115,7 +115,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		SessionEndHeight:   sessionEndHeight,
 		ShannonDestAddress: msg.ShannonDestAddress,
 		MorseSrcAddress:    msg.GetMorseSignerAddress(),
-		ClaimedBalance:     unstakedBalance,
+		ClaimedBalance:     unstakedBalance.String(),
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
 		return nil, status.Error(

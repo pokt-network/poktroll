@@ -254,7 +254,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedClaimExpiredEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedClaimExpiredEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	// Confirm that a slashing event was emitted
 	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
@@ -264,7 +264,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	expectedSlashingEvent := expectedSlashingEvents[0]
 
 	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetClaim().GetSupplierOperatorAddress())
-	require.Equal(t, &belowStakeAmountProofMissingPenalty, expectedSlashingEvent.GetProofMissingPenalty())
+	require.Equal(t, belowStakeAmountProofMissingPenalty.String(), expectedSlashingEvent.GetProofMissingPenalty())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
@@ -328,7 +328,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
@@ -407,7 +407,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedClaimExpiredEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedClaimExpiredEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	expectedProofValidityCheckedEvent := expectedProofValidityCheckedEvents[0]
 	require.Equal(t, prooftypes.ClaimProofStatus_INVALID, expectedProofValidityCheckedEvent.GetClaim().GetProofValidationStatus())
@@ -419,7 +419,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Validate the slashing event
 	expectedSlashingEvent := expectedSlashingEvents[0]
 	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetClaim().GetSupplierOperatorAddress())
-	require.Equal(t, &belowStakeAmountProofMissingPenalty, expectedSlashingEvent.GetProofMissingPenalty())
+	require.Equal(t, belowStakeAmountProofMissingPenalty.String(), expectedSlashingEvent.GetProofMissingPenalty())
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
@@ -452,7 +452,8 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	s.keepers.UpsertProof(ctx, proof)
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	s.keepers.ValidateSubmittedProofs(sdkCtx)
+	_, _, err = s.keepers.ValidateSubmittedProofs(sdkCtx)
+	require.NoError(t, err)
 
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
@@ -483,7 +484,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
@@ -545,7 +546,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimDiscarded_WhenHasZeroSum() {
@@ -809,7 +810,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 		sessionId := slashingEvent.GetClaim().GetSessionHeader().GetSessionId()
 		expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
 			Claim:               expiredClaimsMap[sessionId],
-			ProofMissingPenalty: &proofMissingPenalty,
+			ProofMissingPenalty: proofMissingPenalty.String(),
 		}
 		require.EqualValues(t, expectedSlashingEvent, slashingEvents[i])
 	}
@@ -935,7 +936,7 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 		require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 		require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 		require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
-		require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+		require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
 	}
 }
 

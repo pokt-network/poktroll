@@ -322,8 +322,8 @@ func (k Keeper) ensureClaimAmountLimits(
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
 		ApplicationAddr:      application.GetAddress(),
 		SupplierOperatorAddr: supplier.GetOperatorAddress(),
-		ExpectedBurn:         &totalClaimedCoin,
-		EffectiveBurn:        &maxClaimableCoin,
+		ExpectedBurn:         totalClaimedCoin.String(),
+		EffectiveBurn:        maxClaimableCoin.String(),
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {

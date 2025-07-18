@@ -99,7 +99,7 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *migrationtypes.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	event := migrationtypes.EventMorseAccountRecovered{
 		SessionEndHeight:   sessionEndHeight,
-		RecoveredBalance:   recoveredBalance,
+		RecoveredBalance:   recoveredBalance.String(),
 		ShannonDestAddress: msg.GetShannonDestAddress(),
 		MorseSrcAddress:    normalizedMorseSrcAddress,
 	}
