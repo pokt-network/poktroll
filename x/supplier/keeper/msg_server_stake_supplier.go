@@ -243,7 +243,7 @@ func (k Keeper) StakeSupplier(
 
 	// Emit an event which signals that the supplier staked.
 	events = append(events, &suppliertypes.EventSupplierStaked{
-		Supplier:         &supplier,
+		OperatorAddress:  supplier.OperatorAddress,
 		SessionEndHeight: sessionEndHeight,
 	})
 	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {

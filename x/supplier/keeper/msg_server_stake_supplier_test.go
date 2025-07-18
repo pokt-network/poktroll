@@ -47,7 +47,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	sessionEndHeight := supplierModuleKeepers.GetSessionEndHeight(ctx, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
-			Supplier:         expectedSupplier,
+			OperatorAddress:  expectedSupplier.OperatorAddress,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)

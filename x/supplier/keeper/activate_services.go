@@ -34,10 +34,13 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 
 	activatedConfigsSuppliers := make(map[string]struct{})
 
-	// Iterate through all suppliers to check for pending service activations.
+	// Iterate through all service config updates to check for pending service activations.
 	activatedServiceConfigsIterator := k.GetActivatedServiceConfigUpdatesIterator(ctx, currentHeight)
 	defer activatedServiceConfigsIterator.Close()
 
+	// TODO_IMPROVE: With some tweaks to the activatedServiceConfigsIterator, we may be able to
+	// emit a single EventSupplierServiceConfigActivated with a repeated service_ids field.
+	// This would minimize the onchain disk utilization of the event.
 	for ; activatedServiceConfigsIterator.Valid(); activatedServiceConfigsIterator.Next() {
 		supplierConfigUpdate, err := activatedServiceConfigsIterator.Value()
 		if err != nil {
@@ -46,20 +49,13 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 		}
 
 		activatedConfigsSuppliers[supplierConfigUpdate.OperatorAddress] = struct{}{}
-	}
 
-	for supplierOperatorAddr := range activatedConfigsSuppliers {
-		supplier, found := k.GetSupplier(ctx, supplierOperatorAddr)
-		if !found {
-			logger.Error(fmt.Sprintf("could not find supplier %s", supplierOperatorAddr))
-			continue
-		}
-
+		// Emit event for each activated service configuration
 		event := &suppliertypes.EventSupplierServiceConfigActivated{
-			Supplier:         &supplier,
+			OperatorAddress:  supplierConfigUpdate.OperatorAddress,
+			ServiceId:        supplierConfigUpdate.Service.ServiceId,
 			ActivationHeight: currentHeight,
 		}
-		// Emit service activation events.
 		if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 			logger.Error(fmt.Sprintf("could not emit event %v", event))
 			return 0, err

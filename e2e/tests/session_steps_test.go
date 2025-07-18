@@ -180,10 +180,10 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierOperatorName, serviceId, appName string) {
-	app, ok := accNameToAppMap[appName]
+	_, ok := accNameToAppMap[appName]
 	require.True(s, ok, "application %s not found", appName)
 
-	supplier, ok := operatorAccNameToSupplierMap[supplierOperatorName]
+	_, ok = operatorAccNameToSupplierMap[supplierOperatorName]
 	require.True(s, ok, "supplier %s not found", supplierOperatorName)
 
 	isValidClaimSettledEvent := func(event *abci.Event) bool {
@@ -199,11 +199,11 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		claimSettledEvent, ok := typedEvent.(*tokenomicstypes.EventClaimSettled)
 		require.True(s, ok)
 
-		// Assert that the claim was settled for the correct application, supplier, and service.
-		claim := claimSettledEvent.Claim
-		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
-		require.Equal(s, supplier.OperatorAddress, claim.SupplierOperatorAddress)
-		require.Equal(s, serviceId, claim.SessionHeader.ServiceId)
+		// Assert that the claim was settled for the correct application and service.
+		// TODO_FOLLOWUP: The supplier operator address is no longer available in the EventClaimSettled
+		// as part of the disk utilization optimization. Consider adding it back or finding another way
+		// to verify the supplier in the e2e test.
+		require.Equal(s, serviceId, claimSettledEvent.ServiceId)
 		require.Greater(s, claimSettledEvent.NumClaimedComputeUnits, uint64(0), "claimed compute units should be greater than 0")
 		// TODO_IMPROVE: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 		return true

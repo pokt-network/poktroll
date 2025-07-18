@@ -5,9 +5,10 @@ package types
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
-	types "github.com/pokt-network/poktroll/x/proof/types"
+	_ "github.com/pokt-network/poktroll/x/proof/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -60,8 +61,6 @@ func (ClaimExpirationReason) EnumDescriptor() ([]byte, []int) {
 // This is likely the result of a claim requiring an onchain proof not being submitted.
 // The claim cannot be settled, leading to that work never being rewarded.
 type EventClaimExpired struct {
-	// The claim that expired
-	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
 	// The reason why the claim expired, leading to a Supplier being penalized (i.e. burn).
 	ExpirationReason ClaimExpirationReason `protobuf:"varint,2,opt,name=expiration_reason,json=expirationReason,proto3,enum=pocket.tokenomics.ClaimExpirationReason" json:"expiration_reason"`
 	// Number of relays claimed to be in the session tree.
@@ -75,6 +74,24 @@ type EventClaimExpired struct {
 	// The amount of uPOKT claimed for the work done.
 	// It is a function of the number of estimated compute units and the compute units to token multiplier.
 	ClaimedUpokt string `protobuf:"bytes,7,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
+	// The Service ID to which the claim corresponds.
+	ServiceId string `protobuf:"bytes,8,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The address of the application which participated in the claimed session.
+	ApplicationAddress string `protobuf:"bytes,9,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
+	// The end block height of the session to which the claim corresponds.
+	SessionEndBlockHeight int64 `protobuf:"varint,10,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The validation status of the claim.
+	// DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//   PENDING_VALIDATION = 0;
+	//   VALIDATED = 1;
+	//   INVALID = 2;
+	ClaimProofStatusInt int32 `protobuf:"varint,11,opt,name=claim_proof_status_int,json=claimProofStatusInt,proto3" json:"claim_proof_status_int,omitempty"`
+	// The operator address of the supplier whose claim expired.
+	SupplierOperatorAddress string `protobuf:"bytes,12,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 }
 
 func (m *EventClaimExpired) Reset()         { *m = EventClaimExpired{} }
@@ -105,13 +122,6 @@ func (m *EventClaimExpired) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_EventClaimExpired proto.InternalMessageInfo
-
-func (m *EventClaimExpired) GetClaim() *types.Claim {
-	if m != nil {
-		return m.Claim
-	}
-	return nil
-}
 
 func (m *EventClaimExpired) GetExpirationReason() ClaimExpirationReason {
 	if m != nil {
@@ -148,13 +158,54 @@ func (m *EventClaimExpired) GetClaimedUpokt() string {
 	return ""
 }
 
+func (m *EventClaimExpired) GetServiceId() string {
+	if m != nil {
+		return m.ServiceId
+	}
+	return ""
+}
+
+func (m *EventClaimExpired) GetApplicationAddress() string {
+	if m != nil {
+		return m.ApplicationAddress
+	}
+	return ""
+}
+
+func (m *EventClaimExpired) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventClaimExpired) GetClaimProofStatusInt() int32 {
+	if m != nil {
+		return m.ClaimProofStatusInt
+	}
+	return 0
+}
+
+func (m *EventClaimExpired) GetSupplierOperatorAddress() string {
+	if m != nil {
+		return m.SupplierOperatorAddress
+	}
+	return ""
+}
+
 // EventClaimSettled is emitted during settlement whenever a claim is successfully settled.
 // It may or may not require a proof depending on various on-chain parameters and other factors.
 type EventClaimSettled struct {
-	// The claim that was settled.
-	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
 	// Whether a proof was required for the claim to be settled.
-	ProofRequirement types.ProofRequirementReason `protobuf:"varint,2,opt,name=proof_requirement,json=proofRequirement,proto3,enum=pocket.proof.ProofRequirementReason" json:"proof_requirement"`
+	// DEV_NOTE: This field uses the integer representation of the ProofRequirementReason
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//   NOT_REQUIRED = 0;
+	//   PROBABILISTIC = 1;
+	//   THRESHOLD = 2;
+	ProofRequirementInt int32 `protobuf:"varint,2,opt,name=proof_requirement_int,json=proofRequirementInt,proto3" json:"proof_requirement_int,omitempty"`
 	// Number of relays claimed to be in the session tree.
 	NumRelays uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
 	// Number of compute units claimed in the session tree.
@@ -166,6 +217,24 @@ type EventClaimSettled struct {
 	// The uPOKT coin claimed to be rewarded for the work done as a function of
 	// the number of estimated compute units and the compute units to token multiplier.
 	ClaimedUpokt string `protobuf:"bytes,8,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
+	// The Service ID to which the claim corresponds.
+	ServiceId string `protobuf:"bytes,9,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The address of the application which participated in the claimed session.
+	ApplicationAddress string `protobuf:"bytes,10,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
+	// The end block height of the session to which the claim corresponds.
+	SessionEndBlockHeight int64 `protobuf:"varint,11,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The validation status of the claim.
+	// DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//   PENDING_VALIDATION = 0;
+	//   VALIDATED = 1;
+	//   INVALID = 2;
+	ClaimProofStatusInt int32 `protobuf:"varint,12,opt,name=claim_proof_status_int,json=claimProofStatusInt,proto3" json:"claim_proof_status_int,omitempty"`
+	// The operator address of the supplier who submitted the claim.
+	SupplierOperatorAddress string `protobuf:"bytes,13,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 }
 
 func (m *EventClaimSettled) Reset()         { *m = EventClaimSettled{} }
@@ -197,18 +266,11 @@ func (m *EventClaimSettled) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventClaimSettled proto.InternalMessageInfo
 
-func (m *EventClaimSettled) GetClaim() *types.Claim {
+func (m *EventClaimSettled) GetProofRequirementInt() int32 {
 	if m != nil {
-		return m.Claim
+		return m.ProofRequirementInt
 	}
-	return nil
-}
-
-func (m *EventClaimSettled) GetProofRequirement() types.ProofRequirementReason {
-	if m != nil {
-		return m.ProofRequirement
-	}
-	return types.ProofRequirementReason_NOT_REQUIRED
+	return 0
 }
 
 func (m *EventClaimSettled) GetNumRelays() uint64 {
@@ -235,6 +297,41 @@ func (m *EventClaimSettled) GetNumEstimatedComputeUnits() uint64 {
 func (m *EventClaimSettled) GetClaimedUpokt() string {
 	if m != nil {
 		return m.ClaimedUpokt
+	}
+	return ""
+}
+
+func (m *EventClaimSettled) GetServiceId() string {
+	if m != nil {
+		return m.ServiceId
+	}
+	return ""
+}
+
+func (m *EventClaimSettled) GetApplicationAddress() string {
+	if m != nil {
+		return m.ApplicationAddress
+	}
+	return ""
+}
+
+func (m *EventClaimSettled) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventClaimSettled) GetClaimProofStatusInt() int32 {
+	if m != nil {
+		return m.ClaimProofStatusInt
+	}
+	return 0
+}
+
+func (m *EventClaimSettled) GetSupplierOperatorAddress() string {
+	if m != nil {
+		return m.SupplierOperatorAddress
 	}
 	return ""
 }
@@ -312,14 +409,31 @@ func (m *EventApplicationOverserviced) GetEffectiveBurn() string {
 	return ""
 }
 
-// EventSupplierSlashed is emitted when a supplier is slashed.enum
+// EventSupplierSlashed is emitted when a supplier is slashed.
 // This can happen for in cases such as missing or invalid proofs for submitted claims.
 type EventSupplierSlashed struct {
-	// The claim the supplier is being slashed for.
-	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
 	// Amount slashed from the supplier's stake.
 	// A function of the claim size, supplier stake, and various onchain parameters.
 	ProofMissingPenalty string `protobuf:"bytes,3,opt,name=proof_missing_penalty,json=proofMissingPenalty,proto3" json:"proof_missing_penalty,omitempty"`
+	// The Service ID to which the claim corresponds.
+	ServiceId string `protobuf:"bytes,4,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The address of the application which participated in the claimed session.
+	ApplicationAddress string `protobuf:"bytes,5,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
+	// The end block height of the session to which the claim corresponds.
+	SessionEndBlockHeight int64 `protobuf:"varint,6,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The validation status of the claim.
+	// DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//
+	//	PENDING_VALIDATION = 0;
+	//	VALIDATED = 1;
+	//	INVALID = 2;
+	ClaimProofStatusInt int32 `protobuf:"varint,7,opt,name=claim_proof_status_int,json=claimProofStatusInt,proto3" json:"claim_proof_status_int,omitempty"`
+	// The operator address of the supplier that was slashed.
+	SupplierOperatorAddress string `protobuf:"bytes,8,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 }
 
 func (m *EventSupplierSlashed) Reset()         { *m = EventSupplierSlashed{} }
@@ -351,13 +465,6 @@ func (m *EventSupplierSlashed) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventSupplierSlashed proto.InternalMessageInfo
 
-func (m *EventSupplierSlashed) GetClaim() *types.Claim {
-	if m != nil {
-		return m.Claim
-	}
-	return nil
-}
-
 func (m *EventSupplierSlashed) GetProofMissingPenalty() string {
 	if m != nil {
 		return m.ProofMissingPenalty
@@ -365,13 +472,65 @@ func (m *EventSupplierSlashed) GetProofMissingPenalty() string {
 	return ""
 }
 
+func (m *EventSupplierSlashed) GetServiceId() string {
+	if m != nil {
+		return m.ServiceId
+	}
+	return ""
+}
+
+func (m *EventSupplierSlashed) GetApplicationAddress() string {
+	if m != nil {
+		return m.ApplicationAddress
+	}
+	return ""
+}
+
+func (m *EventSupplierSlashed) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventSupplierSlashed) GetClaimProofStatusInt() int32 {
+	if m != nil {
+		return m.ClaimProofStatusInt
+	}
+	return 0
+}
+
+func (m *EventSupplierSlashed) GetSupplierOperatorAddress() string {
+	if m != nil {
+		return m.SupplierOperatorAddress
+	}
+	return ""
+}
+
 // EventClaimDiscarded is emitted when a claim is discarded due to unexpected situations.
 // It is used to prevent chain halts in favor of some missing claims.
 type EventClaimDiscarded struct {
-	// The claim that was discarded.
-	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
 	// The error that caused the claim to be discarded.
 	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	// The Service ID to which the claim corresponds.
+	ServiceId string `protobuf:"bytes,3,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The address of the application which participated in the claimed session.
+	ApplicationAddress string `protobuf:"bytes,4,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
+	// The end block height of the session to which the claim corresponds.
+	SessionEndBlockHeight int64 `protobuf:"varint,5,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"`
+	// The validation status of the claim.
+	// DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+	// enum to minimize onchain disk utilization. This is necessary because event
+	// data is not always protobuf-encoded in the various places and formats that it
+	// appears in onchain leveldb databases.
+	// Enum values:
+	//
+	//	PENDING_VALIDATION = 0;
+	//	VALIDATED = 1;
+	//	INVALID = 2;
+	ClaimProofStatusInt int32 `protobuf:"varint,6,opt,name=claim_proof_status_int,json=claimProofStatusInt,proto3" json:"claim_proof_status_int,omitempty"`
+	// The operator address of the supplier whose claim was discarded.
+	SupplierOperatorAddress string `protobuf:"bytes,7,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 }
 
 func (m *EventClaimDiscarded) Reset()         { *m = EventClaimDiscarded{} }
@@ -403,16 +562,44 @@ func (m *EventClaimDiscarded) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventClaimDiscarded proto.InternalMessageInfo
 
-func (m *EventClaimDiscarded) GetClaim() *types.Claim {
-	if m != nil {
-		return m.Claim
-	}
-	return nil
-}
-
 func (m *EventClaimDiscarded) GetError() string {
 	if m != nil {
 		return m.Error
+	}
+	return ""
+}
+
+func (m *EventClaimDiscarded) GetServiceId() string {
+	if m != nil {
+		return m.ServiceId
+	}
+	return ""
+}
+
+func (m *EventClaimDiscarded) GetApplicationAddress() string {
+	if m != nil {
+		return m.ApplicationAddress
+	}
+	return ""
+}
+
+func (m *EventClaimDiscarded) GetSessionEndBlockHeight() int64 {
+	if m != nil {
+		return m.SessionEndBlockHeight
+	}
+	return 0
+}
+
+func (m *EventClaimDiscarded) GetClaimProofStatusInt() int32 {
+	if m != nil {
+		return m.ClaimProofStatusInt
+	}
+	return 0
+}
+
+func (m *EventClaimDiscarded) GetSupplierOperatorAddress() string {
+	if m != nil {
+		return m.SupplierOperatorAddress
 	}
 	return ""
 }
@@ -519,59 +706,68 @@ func init() {
 func init() { proto.RegisterFile("pocket/tokenomics/event.proto", fileDescriptor_146818b9f891ddf6) }
 
 var fileDescriptor_146818b9f891ddf6 = []byte{
-	// 822 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x55, 0xcd, 0x6e, 0xdb, 0x46,
-	0x10, 0x36, 0x65, 0xda, 0x16, 0xb7, 0xb1, 0x4b, 0xd1, 0x3f, 0x50, 0xd3, 0x5a, 0x72, 0xd5, 0x14,
-	0x50, 0x0b, 0x84, 0x02, 0x9c, 0xa0, 0x77, 0xc9, 0x56, 0x0a, 0x0a, 0x8d, 0xa4, 0xae, 0xea, 0x20,
-	0xe8, 0xa1, 0x2c, 0x4d, 0x8e, 0xed, 0x85, 0xc8, 0x5d, 0x66, 0x77, 0xa9, 0xd8, 0xe8, 0x4b, 0x14,
-	0xe8, 0x4b, 0xf5, 0x98, 0x5b, 0x73, 0x12, 0x02, 0xf9, 0xa6, 0xa7, 0x28, 0xb8, 0xa4, 0x22, 0xc9,
-	0x4a, 0x5b, 0xb8, 0x40, 0x4f, 0xbd, 0x48, 0x3b, 0xf3, 0x7d, 0x33, 0xb3, 0xbb, 0xdf, 0x0c, 0x17,
-	0x1d, 0xc6, 0xcc, 0x1f, 0x82, 0x6c, 0x48, 0x36, 0x04, 0xca, 0x22, 0xe2, 0x8b, 0x06, 0x8c, 0x80,
-	0x4a, 0x3b, 0xe6, 0x4c, 0x32, 0xab, 0x94, 0xc1, 0xf6, 0x1c, 0x7e, 0xb8, 0x77, 0xc9, 0x2e, 0x99,
-	0x42, 0x1b, 0xe9, 0x2a, 0x23, 0x3e, 0x2c, 0xe7, 0x79, 0x62, 0xce, 0xd8, 0x45, 0x43, 0xde, 0xc4,
-	0x20, 0x72, 0xe4, 0x03, 0x15, 0x16, 0xe0, 0xda, 0x78, 0x1d, 0x95, 0xda, 0x69, 0xc5, 0x93, 0xd0,
-	0x23, 0x51, 0xfb, 0x3a, 0x26, 0x1c, 0x02, 0xeb, 0x29, 0xda, 0xf0, 0x53, 0xbb, 0xac, 0x1d, 0x69,
-	0xf5, 0x8f, 0x8e, 0x77, 0xed, 0x7c, 0x1f, 0x2a, 0xbd, 0xad, 0xa8, 0x2d, 0x63, 0x3a, 0xae, 0x66,
-	0x2c, 0x9c, 0xfd, 0x59, 0x21, 0x2a, 0x41, 0x9a, 0xc0, 0x93, 0x84, 0x51, 0x97, 0x83, 0x27, 0x18,
-	0x2d, 0x17, 0x8e, 0xb4, 0xfa, 0xce, 0x71, 0xdd, 0x5e, 0x39, 0x89, 0x3d, 0xaf, 0xa8, 0x02, 0xb0,
-	0xe2, 0xb7, 0xf6, 0xa7, 0xe3, 0xea, 0x6a, 0x1a, 0x6c, 0xc2, 0x1d, 0xa2, 0xf5, 0x18, 0x21, 0x9a,
-	0x44, 0x2e, 0x87, 0xd0, 0xbb, 0x11, 0xe5, 0xf5, 0x23, 0xad, 0xae, 0xb7, 0x76, 0xa6, 0xe3, 0xea,
-	0x82, 0x17, 0x1b, 0x34, 0x89, 0xb0, 0x5a, 0x5a, 0x2f, 0xd1, 0x27, 0x29, 0xa0, 0x76, 0x0a, 0x81,
-	0xeb, 0xb3, 0x28, 0x4e, 0x24, 0xb8, 0x09, 0x25, 0x52, 0x94, 0x75, 0x15, 0x7d, 0x38, 0x1d, 0x57,
-	0xff, 0x9a, 0x84, 0x0f, 0x68, 0x12, 0x9d, 0x64, 0xc8, 0x49, 0x06, 0x9c, 0xa5, 0x7e, 0xeb, 0x27,
-	0xf4, 0x69, 0x1a, 0x04, 0x42, 0x92, 0xc8, 0x93, 0x2b, 0xb9, 0x37, 0x54, 0xee, 0xea, 0x74, 0x5c,
-	0xfd, 0x3b, 0x1a, 0x2e, 0xd3, 0x24, 0x6a, 0xcf, 0xb0, 0xa5, 0xfc, 0xdf, 0xa0, 0xed, 0xd9, 0x86,
-	0x92, 0x98, 0x0d, 0x65, 0x79, 0xeb, 0x48, 0xab, 0x1b, 0xad, 0xd2, 0x74, 0x5c, 0x5d, 0x06, 0xf0,
-	0x83, 0xdc, 0x3c, 0x4b, 0xad, 0x8e, 0x5e, 0xdc, 0x34, 0xb7, 0x6a, 0xef, 0x96, 0x04, 0x1e, 0x80,
-	0x94, 0xe1, 0xbf, 0x16, 0xf8, 0x0a, 0x95, 0x14, 0xc1, 0xe5, 0xf0, 0x2a, 0x21, 0x1c, 0x22, 0xa0,
-	0x32, 0x17, 0xf8, 0xd1, 0x72, 0x86, 0x7e, 0xfa, 0x8b, 0xe7, 0xac, 0x45, 0x71, 0x57, 0x52, 0x60,
-	0x33, 0xbe, 0x43, 0xff, 0x1f, 0x8b, 0x5b, 0xbc, 0x87, 0xb8, 0x1d, 0xbd, 0xb8, 0x65, 0x16, 0x6b,
-	0x7f, 0x68, 0xe8, 0x33, 0x25, 0x71, 0x33, 0x8e, 0x43, 0xe2, 0xab, 0x21, 0xe9, 0x8d, 0x80, 0x0b,
-	0xe0, 0x23, 0xe2, 0x43, 0x60, 0x7d, 0x85, 0x4c, 0x6f, 0x0e, 0xb9, 0x5e, 0x10, 0x70, 0x25, 0xbc,
-	0x81, 0x3f, 0x5e, 0xf0, 0x37, 0x83, 0x80, 0x5b, 0x4f, 0xd1, 0x81, 0x48, 0x52, 0x1f, 0x70, 0x97,
-	0xc5, 0xc0, 0x3d, 0xc9, 0x78, 0x16, 0x50, 0x50, 0x01, 0x7b, 0x33, 0xb4, 0x97, 0x83, 0x2a, 0xea,
-	0x0b, 0xb4, 0x0d, 0xd7, 0x31, 0xf8, 0xe9, 0xc9, 0xcf, 0x13, 0x4e, 0xd5, 0xbd, 0x18, 0xf8, 0xc1,
-	0xcc, 0xd9, 0x4a, 0x38, 0xb5, 0xbe, 0x44, 0x3b, 0x70, 0x71, 0x01, 0xbe, 0x24, 0x23, 0xc8, 0x58,
-	0x9b, 0x8a, 0xb5, 0xfd, 0xde, 0x9b, 0xd2, 0x3a, 0x7a, 0x71, 0xdd, 0xd4, 0x3b, 0x7a, 0x51, 0x37,
-	0x37, 0x6a, 0xbf, 0xa0, 0x3d, 0x75, 0xb0, 0x41, 0x5e, 0x74, 0x10, 0x7a, 0xe2, 0x4a, 0x1d, 0xe8,
-	0x1f, 0xdb, 0x77, 0xd6, 0xb3, 0xc7, 0x68, 0x3f, 0x6b, 0xb8, 0x88, 0x08, 0x41, 0xe8, 0xa5, 0x1b,
-	0x03, 0xf5, 0x42, 0x79, 0xa3, 0x9a, 0xca, 0xc0, 0xbb, 0x0a, 0x7c, 0x9e, 0x61, 0xfd, 0x0c, 0xea,
-	0xe8, 0xc5, 0x82, 0xb9, 0x5e, 0x7b, 0x81, 0x76, 0xe7, 0x83, 0x73, 0x4a, 0x84, 0xef, 0xf1, 0xe0,
-	0x7e, 0xb5, 0xf7, 0xd0, 0x06, 0x70, 0xce, 0x66, 0x77, 0x97, 0x19, 0xb5, 0xdf, 0x0a, 0xe8, 0xd1,
-	0x5d, 0xb9, 0x30, 0x90, 0xe8, 0x3c, 0xe1, 0x22, 0x1f, 0x96, 0x57, 0x09, 0x08, 0xf9, 0xdf, 0xcb,
-	0x66, 0xa3, 0xdd, 0x79, 0xd4, 0x6b, 0x0a, 0x79, 0x48, 0x76, 0x33, 0xa5, 0xf7, 0x21, 0x29, 0xa2,
-	0xf8, 0x87, 0x08, 0xe5, 0x3d, 0xe5, 0x92, 0x40, 0xcd, 0x95, 0x81, 0x8d, 0xdc, 0xe3, 0x04, 0x19,
-	0x2c, 0x44, 0xba, 0x57, 0x12, 0xe4, 0x2d, 0x60, 0xe4, 0x1e, 0x27, 0xb0, 0x0e, 0xd0, 0xa6, 0x17,
-	0xb1, 0x84, 0xe6, 0x1f, 0x30, 0x9c, 0x5b, 0x59, 0x2b, 0x7f, 0xfd, 0x33, 0xda, 0xff, 0xe0, 0x83,
-	0x60, 0x7d, 0x8e, 0x0e, 0xdb, 0x2f, 0xfb, 0x0e, 0x6e, 0xfe, 0xe0, 0xf4, 0xba, 0x2e, 0x6e, 0x37,
-	0x07, 0xbd, 0xae, 0x7b, 0xd6, 0x1d, 0xf4, 0xdb, 0x27, 0xce, 0x33, 0xa7, 0x7d, 0x6a, 0xae, 0x59,
-	0x25, 0xb4, 0xdd, 0xc7, 0xbd, 0xde, 0x33, 0xf7, 0xb9, 0x33, 0x18, 0x38, 0xdd, 0x6f, 0x4d, 0x6d,
-	0xee, 0x72, 0xba, 0x2f, 0x9a, 0xdf, 0x39, 0xa7, 0x66, 0xa1, 0xf5, 0xfd, 0xef, 0x93, 0x8a, 0xf6,
-	0x66, 0x52, 0xd1, 0xde, 0x4e, 0x2a, 0xda, 0xbb, 0x49, 0x45, 0xfb, 0xf5, 0xb6, 0xb2, 0xf6, 0xe6,
-	0xb6, 0xb2, 0xf6, 0xf6, 0xb6, 0xb2, 0xf6, 0xe3, 0x93, 0x4b, 0x22, 0xaf, 0x92, 0x73, 0xdb, 0x67,
-	0x51, 0x23, 0x9d, 0xb0, 0xc7, 0x14, 0xe4, 0x6b, 0xc6, 0x87, 0xca, 0xe0, 0x2c, 0x0c, 0x1b, 0xd7,
-	0x2b, 0x6f, 0xe8, 0xf9, 0xa6, 0x7a, 0x44, 0x9f, 0xfc, 0x19, 0x00, 0x00, 0xff, 0xff, 0xd6, 0x02,
-	0x7f, 0x46, 0xc7, 0x07, 0x00, 0x00,
+	// 971 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x56, 0x4f, 0x6f, 0xe3, 0x44,
+	0x14, 0xaf, 0x13, 0x27, 0x8d, 0x67, 0xdb, 0xc5, 0x99, 0xfe, 0xc1, 0x5d, 0x68, 0x52, 0x02, 0x48,
+	0x01, 0xa9, 0x89, 0xb4, 0x45, 0x70, 0x4e, 0xda, 0x2c, 0x38, 0x62, 0x93, 0xe0, 0x6c, 0xd1, 0x8a,
+	0x03, 0xc6, 0xb1, 0xa7, 0xe9, 0x28, 0xf6, 0x8c, 0x99, 0x19, 0x77, 0xdb, 0x3b, 0x1f, 0x00, 0x89,
+	0x2f, 0xc1, 0x07, 0xe0, 0x43, 0x70, 0x5c, 0x71, 0x61, 0x0f, 0x28, 0xa0, 0xf6, 0x96, 0x4f, 0x81,
+	0x3c, 0x76, 0x9a, 0x36, 0x2d, 0x6c, 0x95, 0x2d, 0x27, 0x6e, 0xf3, 0xde, 0xef, 0xbd, 0x37, 0x3f,
+	0x3f, 0xff, 0xde, 0xcc, 0x80, 0xed, 0x90, 0xba, 0x23, 0x24, 0xea, 0x82, 0x8e, 0x10, 0xa1, 0x01,
+	0x76, 0x79, 0x1d, 0x9d, 0x20, 0x22, 0x6a, 0x21, 0xa3, 0x82, 0xc2, 0x62, 0x02, 0xd7, 0x66, 0xf0,
+	0xa3, 0x2d, 0x97, 0xf2, 0x80, 0x72, 0x5b, 0x06, 0xd4, 0x13, 0x23, 0x89, 0x7e, 0xb4, 0x3e, 0xa4,
+	0x43, 0x9a, 0xf8, 0xe3, 0x55, 0xea, 0x35, 0xd2, 0x2d, 0x42, 0x46, 0xe9, 0x51, 0x5d, 0x9c, 0x85,
+	0x68, 0x1a, 0x7f, 0xcb, 0xe6, 0x57, 0xe0, 0xca, 0x1f, 0x39, 0x50, 0x6c, 0xc5, 0x64, 0xf6, 0x7d,
+	0x07, 0x07, 0xad, 0xd3, 0x10, 0x33, 0xe4, 0x41, 0x1f, 0x14, 0x51, 0xbc, 0x74, 0x04, 0xa6, 0xc4,
+	0x66, 0xc8, 0xe1, 0x94, 0x18, 0x99, 0x1d, 0xa5, 0xfa, 0xf0, 0x71, 0xb5, 0x76, 0x83, 0x6e, 0x6d,
+	0x96, 0x2b, 0x13, 0x2c, 0x19, 0xdf, 0xdc, 0x98, 0x8c, 0xcb, 0x37, 0xcb, 0x58, 0x3a, 0x9a, 0x0b,
+	0x84, 0xbb, 0x00, 0x90, 0x28, 0xb0, 0x19, 0xf2, 0x9d, 0x33, 0x6e, 0x64, 0x77, 0x94, 0xaa, 0xda,
+	0x7c, 0x38, 0x19, 0x97, 0xaf, 0x78, 0x2d, 0x8d, 0x44, 0x81, 0x25, 0x97, 0xf0, 0x39, 0xd8, 0x8a,
+	0x01, 0x37, 0xde, 0x14, 0x79, 0xb6, 0x4b, 0x83, 0x30, 0x12, 0xc8, 0x8e, 0x08, 0x16, 0xdc, 0x50,
+	0x65, 0xf6, 0xf6, 0x64, 0x5c, 0xfe, 0xe7, 0x20, 0x6b, 0x93, 0x44, 0xc1, 0x7e, 0x82, 0xec, 0x27,
+	0xc0, 0x61, 0xec, 0x87, 0xdf, 0x82, 0x77, 0xe2, 0x24, 0xc4, 0x05, 0x0e, 0x1c, 0x71, 0xa3, 0x76,
+	0x4e, 0xd6, 0x2e, 0x4f, 0xc6, 0xe5, 0x7f, 0x0b, 0xb3, 0x0c, 0x12, 0x05, 0xad, 0x29, 0x76, 0xad,
+	0xfe, 0xa7, 0x60, 0x75, 0x4a, 0x28, 0x0a, 0xe9, 0x48, 0x18, 0xcb, 0x3b, 0x4a, 0x55, 0x6b, 0x16,
+	0x27, 0xe3, 0xf2, 0x75, 0xc0, 0x5a, 0x49, 0xcd, 0xc3, 0xd8, 0x82, 0xdb, 0x00, 0x70, 0xc4, 0x4e,
+	0xb0, 0x8b, 0x6c, 0xec, 0x19, 0x85, 0x38, 0xc9, 0xd2, 0x52, 0x8f, 0xe9, 0x41, 0x13, 0xac, 0x39,
+	0x61, 0xe8, 0x63, 0x37, 0xe9, 0xb3, 0xe3, 0x79, 0x0c, 0x71, 0x6e, 0x68, 0xb2, 0xb8, 0xf1, 0xdb,
+	0x2f, 0xbb, 0xeb, 0xa9, 0x82, 0x1a, 0x09, 0xd2, 0x17, 0x0c, 0x93, 0xa1, 0x05, 0xaf, 0x24, 0xa5,
+	0x08, 0xfc, 0x0c, 0x18, 0x1c, 0x71, 0x1e, 0x97, 0x41, 0xc4, 0xb3, 0x07, 0x3e, 0x75, 0x47, 0xf6,
+	0x31, 0xc2, 0xc3, 0x63, 0x61, 0x80, 0x1d, 0xa5, 0x9a, 0xb5, 0x36, 0x52, 0xbc, 0x45, 0xbc, 0x66,
+	0x8c, 0x7e, 0x21, 0x41, 0xb8, 0x07, 0x36, 0x25, 0x65, 0x5b, 0x2a, 0xd0, 0xe6, 0xc2, 0x11, 0x11,
+	0xb7, 0x31, 0x11, 0xc6, 0x83, 0x1d, 0xa5, 0x9a, 0xb3, 0xd6, 0x24, 0xda, 0x8b, 0xc1, 0xbe, 0xc4,
+	0x4c, 0x22, 0xe0, 0x33, 0xb0, 0xc5, 0xa3, 0x98, 0x04, 0x62, 0x36, 0x0d, 0x11, 0x73, 0x04, 0x65,
+	0x97, 0xf4, 0x57, 0x5e, 0x43, 0xff, 0xed, 0x69, 0x6a, 0x37, 0xcd, 0x4c, 0xe1, 0xb6, 0x5a, 0x50,
+	0xf4, 0x4c, 0x5b, 0x2d, 0xe4, 0xf5, 0xe5, 0xca, 0xcf, 0xd7, 0xe4, 0xdd, 0x47, 0x42, 0xf8, 0xc8,
+	0x83, 0x8f, 0xc1, 0x46, 0x42, 0x93, 0xa1, 0xef, 0x23, 0xcc, 0x50, 0x80, 0x88, 0x90, 0x5c, 0x33,
+	0x09, 0x57, 0x09, 0x5a, 0x33, 0x2c, 0xe6, 0xfa, 0xff, 0x15, 0x69, 0x61, 0x11, 0x91, 0x6a, 0x77,
+	0x14, 0x29, 0xb8, 0x67, 0x91, 0x3e, 0x58, 0x4c, 0xa4, 0x2b, 0x0b, 0x8a, 0x74, 0xf5, 0x1e, 0x44,
+	0xda, 0x56, 0x0b, 0xcb, 0x7a, 0xa1, 0xf2, 0xbb, 0x02, 0xde, 0x95, 0x52, 0x6d, 0xcc, 0xbe, 0xb8,
+	0x7b, 0x82, 0x58, 0xda, 0x42, 0x0f, 0x7e, 0x04, 0xf4, 0xf9, 0x0e, 0x1a, 0x8a, 0x6c, 0xf3, 0x5b,
+	0x73, 0x4d, 0x82, 0x9f, 0x80, 0xcd, 0xdb, 0x39, 0x4b, 0x85, 0x6b, 0xd6, 0xfa, 0x6d, 0xb4, 0xe0,
+	0xfb, 0x60, 0x15, 0x9d, 0x86, 0xc8, 0x8d, 0xd5, 0x32, 0x88, 0x18, 0x91, 0x5a, 0xd2, 0xac, 0x95,
+	0xa9, 0xb3, 0x19, 0x31, 0x02, 0x3f, 0x04, 0x0f, 0xd1, 0xd1, 0x11, 0x72, 0x05, 0x3e, 0x41, 0x49,
+	0x54, 0x5e, 0x46, 0xad, 0x5e, 0x7a, 0xe3, 0xb0, 0xb6, 0x5a, 0xc8, 0xea, 0x6a, 0x5b, 0x2d, 0xa8,
+	0x7a, 0xae, 0xf2, 0x43, 0x16, 0xac, 0xcb, 0x2f, 0xeb, 0xa7, 0xbb, 0xf6, 0x7d, 0x87, 0x1f, 0x5f,
+	0x9d, 0xc3, 0x00, 0x73, 0x8e, 0xc9, 0xd0, 0x0e, 0x11, 0x71, 0x7c, 0x71, 0x26, 0xc7, 0x4b, 0x4b,
+	0xe7, 0xf0, 0x69, 0x82, 0xf5, 0x12, 0x68, 0x4e, 0x66, 0xea, 0x1d, 0x65, 0x96, 0xbb, 0x67, 0x99,
+	0xe5, 0x17, 0x93, 0xd9, 0xf2, 0x82, 0x32, 0x2b, 0xbc, 0xa9, 0xcc, 0x32, 0x7a, 0xb6, 0xf2, 0x67,
+	0x06, 0xac, 0xcd, 0xce, 0xc2, 0x03, 0xcc, 0x5d, 0x87, 0x79, 0xc8, 0x83, 0xeb, 0x20, 0x87, 0x18,
+	0xa3, 0x53, 0x6d, 0x24, 0xc6, 0x5c, 0x9f, 0xb3, 0x77, 0xec, 0xb3, 0x7a, 0xcf, 0x7d, 0xce, 0x2d,
+	0xd6, 0xe7, 0xfc, 0x82, 0x7d, 0x5e, 0x7e, 0xa3, 0x3e, 0x57, 0x7e, 0xca, 0x80, 0x0f, 0xe6, 0x47,
+	0xd8, 0x42, 0x38, 0x18, 0x44, 0x8c, 0xcb, 0x8b, 0x24, 0xbe, 0x53, 0x10, 0x17, 0xff, 0xfd, 0x28,
+	0xd7, 0xc0, 0xda, 0x2c, 0xeb, 0x05, 0x41, 0x69, 0x4a, 0xf2, 0x1b, 0x8b, 0x97, 0x29, 0x31, 0x22,
+	0xe3, 0x5f, 0x33, 0x55, 0x12, 0x4e, 0x7e, 0x11, 0xf6, 0xd2, 0x63, 0x41, 0x4b, 0x3d, 0xa6, 0x07,
+	0x37, 0x41, 0xde, 0x09, 0x68, 0x94, 0x0a, 0x5c, 0xb3, 0x52, 0x2b, 0x39, 0xde, 0x3e, 0xfe, 0x0e,
+	0x6c, 0xdc, 0xfa, 0x40, 0x84, 0xef, 0x81, 0xed, 0xd6, 0xf3, 0x9e, 0x69, 0x35, 0x9e, 0x99, 0xdd,
+	0x8e, 0x6d, 0xb5, 0x1a, 0xfd, 0x6e, 0xc7, 0x3e, 0xec, 0xf4, 0x7b, 0xad, 0x7d, 0xf3, 0x89, 0xd9,
+	0x3a, 0xd0, 0x97, 0x60, 0x11, 0xac, 0xf6, 0xac, 0x6e, 0xf7, 0x89, 0xfd, 0xd4, 0xec, 0xf7, 0xcd,
+	0xce, 0xe7, 0xba, 0x32, 0x73, 0x99, 0x9d, 0xaf, 0x1b, 0x5f, 0x9a, 0x07, 0x7a, 0xa6, 0xf9, 0xd5,
+	0xaf, 0xe7, 0x25, 0xe5, 0xe5, 0x79, 0x49, 0x79, 0x75, 0x5e, 0x52, 0xfe, 0x3a, 0x2f, 0x29, 0x3f,
+	0x5e, 0x94, 0x96, 0x5e, 0x5e, 0x94, 0x96, 0x5e, 0x5d, 0x94, 0x96, 0xbe, 0xd9, 0x1b, 0x62, 0x71,
+	0x1c, 0x0d, 0x6a, 0x2e, 0x0d, 0xea, 0xf1, 0x4d, 0xb5, 0x4b, 0x90, 0x78, 0x41, 0xd9, 0x48, 0x1a,
+	0x8c, 0xfa, 0x7e, 0xfd, 0xf4, 0xc6, 0xeb, 0x78, 0x90, 0x97, 0xcf, 0xe3, 0xbd, 0xbf, 0x03, 0x00,
+	0x00, 0xff, 0xff, 0x48, 0x6d, 0xdc, 0x38, 0xbc, 0x0b, 0x00, 0x00,
 }
 
 func (m *EventClaimExpired) Marshal() (dAtA []byte, err error) {
@@ -594,6 +790,37 @@ func (m *EventClaimExpired) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.SupplierOperatorAddress) > 0 {
+		i -= len(m.SupplierOperatorAddress)
+		copy(dAtA[i:], m.SupplierOperatorAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SupplierOperatorAddress)))
+		i--
+		dAtA[i] = 0x62
+	}
+	if m.ClaimProofStatusInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClaimProofStatusInt))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x50
+	}
+	if len(m.ApplicationAddress) > 0 {
+		i -= len(m.ApplicationAddress)
+		copy(dAtA[i:], m.ApplicationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ApplicationAddress)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x42
+	}
 	if len(m.ClaimedUpokt) > 0 {
 		i -= len(m.ClaimedUpokt)
 		copy(dAtA[i:], m.ClaimedUpokt)
@@ -621,18 +848,6 @@ func (m *EventClaimExpired) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.Claim != nil {
-		{
-			size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
 	return len(dAtA) - i, nil
 }
 
@@ -656,6 +871,37 @@ func (m *EventClaimSettled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.SupplierOperatorAddress) > 0 {
+		i -= len(m.SupplierOperatorAddress)
+		copy(dAtA[i:], m.SupplierOperatorAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SupplierOperatorAddress)))
+		i--
+		dAtA[i] = 0x6a
+	}
+	if m.ClaimProofStatusInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClaimProofStatusInt))
+		i--
+		dAtA[i] = 0x60
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x58
+	}
+	if len(m.ApplicationAddress) > 0 {
+		i -= len(m.ApplicationAddress)
+		copy(dAtA[i:], m.ApplicationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ApplicationAddress)))
+		i--
+		dAtA[i] = 0x52
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x4a
+	}
 	if len(m.ClaimedUpokt) > 0 {
 		i -= len(m.ClaimedUpokt)
 		copy(dAtA[i:], m.ClaimedUpokt)
@@ -678,22 +924,10 @@ func (m *EventClaimSettled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x18
 	}
-	if m.ProofRequirement != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.ProofRequirement))
+	if m.ProofRequirementInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ProofRequirementInt))
 		i--
 		dAtA[i] = 0x10
-	}
-	if m.Claim != nil {
-		{
-			size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -769,24 +1003,43 @@ func (m *EventSupplierSlashed) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.SupplierOperatorAddress) > 0 {
+		i -= len(m.SupplierOperatorAddress)
+		copy(dAtA[i:], m.SupplierOperatorAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SupplierOperatorAddress)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.ClaimProofStatusInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClaimProofStatusInt))
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x30
+	}
+	if len(m.ApplicationAddress) > 0 {
+		i -= len(m.ApplicationAddress)
+		copy(dAtA[i:], m.ApplicationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ApplicationAddress)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x22
+	}
 	if len(m.ProofMissingPenalty) > 0 {
 		i -= len(m.ProofMissingPenalty)
 		copy(dAtA[i:], m.ProofMissingPenalty)
 		i = encodeVarintEvent(dAtA, i, uint64(len(m.ProofMissingPenalty)))
 		i--
 		dAtA[i] = 0x1a
-	}
-	if m.Claim != nil {
-		{
-			size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -811,24 +1064,43 @@ func (m *EventClaimDiscarded) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.SupplierOperatorAddress) > 0 {
+		i -= len(m.SupplierOperatorAddress)
+		copy(dAtA[i:], m.SupplierOperatorAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SupplierOperatorAddress)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.ClaimProofStatusInt != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ClaimProofStatusInt))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.SessionEndBlockHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndBlockHeight))
+		i--
+		dAtA[i] = 0x28
+	}
+	if len(m.ApplicationAddress) > 0 {
+		i -= len(m.ApplicationAddress)
+		copy(dAtA[i:], m.ApplicationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ApplicationAddress)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.ServiceId) > 0 {
+		i -= len(m.ServiceId)
+		copy(dAtA[i:], m.ServiceId)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.Error) > 0 {
 		i -= len(m.Error)
 		copy(dAtA[i:], m.Error)
 		i = encodeVarintEvent(dAtA, i, uint64(len(m.Error)))
 		i--
 		dAtA[i] = 0x12
-	}
-	if m.Claim != nil {
-		{
-			size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -915,10 +1187,6 @@ func (m *EventClaimExpired) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Claim != nil {
-		l = m.Claim.Size()
-		n += 1 + l + sovEvent(uint64(l))
-	}
 	if m.ExpirationReason != 0 {
 		n += 1 + sovEvent(uint64(m.ExpirationReason))
 	}
@@ -935,6 +1203,24 @@ func (m *EventClaimExpired) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
+	l = len(m.ServiceId)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ApplicationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.ClaimProofStatusInt != 0 {
+		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
+	}
+	l = len(m.SupplierOperatorAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
 	return n
 }
 
@@ -944,12 +1230,8 @@ func (m *EventClaimSettled) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Claim != nil {
-		l = m.Claim.Size()
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	if m.ProofRequirement != 0 {
-		n += 1 + sovEvent(uint64(m.ProofRequirement))
+	if m.ProofRequirementInt != 0 {
+		n += 1 + sovEvent(uint64(m.ProofRequirementInt))
 	}
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
@@ -961,6 +1243,24 @@ func (m *EventClaimSettled) Size() (n int) {
 		n += 1 + sovEvent(uint64(m.NumEstimatedComputeUnits))
 	}
 	l = len(m.ClaimedUpokt)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ServiceId)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ApplicationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.ClaimProofStatusInt != 0 {
+		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
+	}
+	l = len(m.SupplierOperatorAddress)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
@@ -998,11 +1298,25 @@ func (m *EventSupplierSlashed) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Claim != nil {
-		l = m.Claim.Size()
+	l = len(m.ProofMissingPenalty)
+	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
-	l = len(m.ProofMissingPenalty)
+	l = len(m.ServiceId)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ApplicationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.ClaimProofStatusInt != 0 {
+		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
+	}
+	l = len(m.SupplierOperatorAddress)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
@@ -1015,11 +1329,25 @@ func (m *EventClaimDiscarded) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Claim != nil {
-		l = m.Claim.Size()
+	l = len(m.Error)
+	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
-	l = len(m.Error)
+	l = len(m.ServiceId)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.ApplicationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndBlockHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndBlockHeight))
+	}
+	if m.ClaimProofStatusInt != 0 {
+		n += 1 + sovEvent(uint64(m.ClaimProofStatusInt))
+	}
+	l = len(m.SupplierOperatorAddress)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
@@ -1094,42 +1422,6 @@ func (m *EventClaimExpired) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventClaimExpired: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Claim == nil {
-				m.Claim = &types.Claim{}
-			}
-			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ExpirationReason", wireType)
@@ -1238,6 +1530,140 @@ func (m *EventClaimExpired) Unmarshal(dAtA []byte) error {
 			}
 			m.ClaimedUpokt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApplicationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimProofStatusInt", wireType)
+			}
+			m.ClaimProofStatusInt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimProofStatusInt |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SupplierOperatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SupplierOperatorAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1288,47 +1714,11 @@ func (m *EventClaimSettled) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventClaimSettled: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Claim == nil {
-				m.Claim = &types.Claim{}
-			}
-			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProofRequirement", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ProofRequirementInt", wireType)
 			}
-			m.ProofRequirement = 0
+			m.ProofRequirementInt = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -1338,7 +1728,7 @@ func (m *EventClaimSettled) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ProofRequirement |= types.ProofRequirementReason(b&0x7F) << shift
+				m.ProofRequirementInt |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1431,6 +1821,140 @@ func (m *EventClaimSettled) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ClaimedUpokt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApplicationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimProofStatusInt", wireType)
+			}
+			m.ClaimProofStatusInt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimProofStatusInt |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SupplierOperatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SupplierOperatorAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1660,42 +2184,6 @@ func (m *EventSupplierSlashed) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventSupplierSlashed: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Claim == nil {
-				m.Claim = &types.Claim{}
-			}
-			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ProofMissingPenalty", wireType)
@@ -1727,6 +2215,140 @@ func (m *EventSupplierSlashed) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ProofMissingPenalty = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApplicationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimProofStatusInt", wireType)
+			}
+			m.ClaimProofStatusInt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimProofStatusInt |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SupplierOperatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SupplierOperatorAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1778,42 +2400,6 @@ func (m *EventClaimDiscarded) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: EventClaimDiscarded: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Claim == nil {
-				m.Claim = &types.Claim{}
-			}
-			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
@@ -1845,6 +2431,140 @@ func (m *EventClaimDiscarded) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Error = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ServiceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApplicationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
+			}
+			m.SessionEndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndBlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimProofStatusInt", wireType)
+			}
+			m.ClaimProofStatusInt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimProofStatusInt |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SupplierOperatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SupplierOperatorAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
