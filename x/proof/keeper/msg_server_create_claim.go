@@ -131,6 +131,7 @@ func (k msgServer) CreateClaim(
 				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
 				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
 				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  claim.SupplierOperatorAddress,
 			},
 		)
 	case false:
@@ -144,6 +145,7 @@ func (k msgServer) CreateClaim(
 				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
 				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
 				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  claim.SupplierOperatorAddress,
 			},
 		)
 	}
