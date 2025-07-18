@@ -45,6 +45,17 @@ Feature: Tokenomics Namespace
             | compute_units_to_tokens_multiplier | 42 | int64 |
         And all "shared" module params should be updated
 
+        # Configure tokenomics parameters to explicitly set inflation and distribution
+        And the "tokenomics" module parameters are set as follows
+            | name                                             | value | type  |
+            | global_inflation_per_claim                       | 0.1   | float |
+            | mint_equals_burn_claim_distribution.dao          | 0.1   | float |
+            | mint_equals_burn_claim_distribution.proposer     | 0.05  | float |
+            | mint_equals_burn_claim_distribution.supplier     | 0.7   | float |
+            | mint_equals_burn_claim_distribution.source_owner | 0.15  | float |
+            | mint_equals_burn_claim_distribution.application  | 0.0   | float |
+        And all "tokenomics" module params should be updated
+
         # Start servicing relays
         When the supplier "supplier1" has serviced a session with "20" relays for service "anvil" for application "app1"
 
@@ -54,13 +65,13 @@ Feature: Tokenomics Namespace
         And the user should wait for the ClaimSettled event with "THRESHOLD" proof requirement to be broadcast
 
         # Validate the results
-        # Please note that supplier mint is > app burn because of inflation
-        # TODO_TECHDEBT: Update this test such the inflation is set and enforce that Mint=Burn
-        # Then add a separate test that only validates that inflation is enforced correctly
-        # The supplier balance should be more 84000 * (1 + (global_inflation * supplier_allocation) = 84000 * 1.07 = 89880
-        Then the account balance of "supplier1" should be "89880" uPOKT "more" than before
+        # With the new mint_equals_burn_claim_distribution, the supplier receives:
+        # - 70% of settlement amount: 84000 * 0.7 = 58800 uPOKT
+        # - 70% of global inflation: 84000 * 0.1 * 0.7 = 5880 uPOKT
+        # - Total: 58800 + 5880 = 64680 uPOKT
+        Then the account balance of "supplier1" should be "64680" uPOKT "more" than before
 
-        # The application stake should be less 84000 * (1 + (global_inflation) = 84000 * 1.1 = 92400
+        # The application stake should be less 84000 * (1 + global_inflation) = 84000 * 1.1 = 92400
         And the "application" stake of "app1" should be "92400" uPOKT "less" than before
 
     Scenario: TLM Mint=Burn when a valid claim is create but not required
@@ -117,12 +128,14 @@ Feature: Tokenomics Namespace
         And the user should wait for the ClaimSettled event with "NOT_REQUIRED" proof requirement to be broadcast
 
         # Validate the results
-        # Please note that supplier mint is > app burn because of inflation
-        # TODO_TECHDEBT: Update this test such the inflation is set and enforce that Mint=Burn
-        # The supplier balance should be more 42000 * (1 + (global_inflation * supplier_allocation) = 42000 * 1.07 = 44940
-        Then the account balance of "supplier1" should be "44940" uPOKT "more" than before
-        # The application stake should be less 42000 * (1 + global_inflation) = 42000 * 1.1 = 46200
-        And the "application" stake of "app1" should be "46200" uPOKT "less" than before
+        # This test sets global_inflation_per_claim: 0 and mint_equals_burn_claim_distribution.supplier: 1.0
+        # So supplier gets 100% of settlement amount with no inflation:
+        # - Settlement amount: 42000 uPOKT
+        # - Global inflation: 0 (disabled)
+        # - Total: 42000 uPOKT
+        Then the account balance of "supplier1" should be "42000" uPOKT "more" than before
+        # The application stake should be less exactly the settlement amount (no inflation)
+        And the "application" stake of "app1" should be "42000" uPOKT "less" than before
 
     Scenario: MintEqualsBurn claim distribution when global inflation is zero
         # Baseline
@@ -202,9 +215,9 @@ Feature: Tokenomics Namespace
         # The service owner should receive 15% of the settlement amount
         And the service owner balance for "anvil" should be "6300" uPOKT "more" than "service_owner_initial_balance"
 
-        # The supplier should receive 70% of the settlement amount minus transaction fees
-        # Expected: 29400 (70% of 42000) - 75 (tx fees) = 29325 uPOKT
-        Then the account balance of "supplier1" should be "29325" uPOKT "more" than "supplier1_initial_balance"
+        # The supplier should receive 70% of the settlement amount minus proof submission fee
+        # Expected: 29400 (70% of 42000) - 10 (proof submission fee) = 29390 uPOKT
+        Then the account balance of "supplier1" should be "29390" uPOKT "more" than "supplier1_initial_balance"
 
         # The application stake should decrease by the full settlement amount
         And the "application" stake of "app1" should be "42000" uPOKT "less" than before
