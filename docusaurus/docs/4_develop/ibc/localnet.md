@@ -1,13 +1,34 @@
-# Localnet IBC Environment
+# LocalNet IBC Development
 
-## Quickstart
+## Overview
 
-1. Ensure that you can run localnet according to the [Developer Guide -> Walkthrough](../developer_guide/walkthrough.md)
-2. Run localnet and wait for pocket and counterparty validators to be producing blocks
-3. Check `localnet_config.yaml` to ensure that the expected counterparty validators are enabled
-4. If an IBC pair setup tilt service (`🏗️ Pokt-><counterparty>`) has errored until persistent backoff, click the manual trigger arrow on the IBC pair setup tilt service
-5. Wait for IBC setup for each enabled pair to complete
-6. Once setup has completed successfully, click the manual trigger arrow on the `🔁 Hermes Relayer` tilt service to restart the corresponding relayer
+The Poktroll LocalNet provides a complete IBC testing environment with multiple blockchain networks running locally. This allows developers to test cross-chain functionality without relying on external testnets.
+
+## Quick Start
+
+### Prerequisites
+- Ensure you can run LocalNet according to the [Developer Guide -> Walkthrough](../developer_guide/walkthrough.md)
+- Docker and Kubernetes tools installed
+- Basic understanding of IBC concepts
+
+### Setup Steps
+
+1. **Start LocalNet**
+   ```bash
+   make localnet_up
+   ```
+
+2. **Verify Networks are Running**
+   - Wait for Pocket and counterparty validators to produce blocks
+   - Check `localnet_config.yaml` for enabled counterparty networks
+
+3. **Initialize IBC Connections**
+   - Look for IBC pair setup services (`🏗️ Pokt-><counterparty>`) in Tilt UI
+   - If any service shows persistent backoff errors, manually trigger it
+
+4. **Start Relayers**
+   - Once IBC setup completes successfully, restart the `🔁 Hermes Relayer` service
+   - Monitor relayer logs for successful packet transmission
 
 <table>
 <tbody>
@@ -26,18 +47,23 @@
 </tbody>
 </table>
 
-## IBC Setup
+## Understanding IBC Setup
 
-For each pair of networks/chains, the IBC protocol requires an `Client`, `Connection`, and `Channel` be created between those networks.
-The tilt localnet environment exposes this setup as a oneshot service, with the format with `🏗️ Pokt-><counterparty>`.
+### IBC Components
+For each blockchain pair, IBC requires three components:
+- **Client**: Light client tracking the remote chain's state  
+- **Connection**: Authenticated connection between two chains
+- **Channel**: Application-specific communication pathway
 
-These setup services **do** automatically start after their respective tilt resource dependencies; however, each network validator integration has its own quirks which may require additional delay.
-They will also **automatically retry** with exponential backoff, but may be manually triggered by clicking the arrow in the corresponding service.
+### Automated Setup Process
+LocalNet provides automated IBC setup via Tilt services:
+- Format: `🏗️ Pokt-><counterparty>` (e.g., `🏗️ Pokt->Axelar`)
+- Services auto-start after dependencies are ready
+- Automatic retry with exponential backoff on failures
+- Manual triggering available via Tilt UI
 
-:::warning
-
-Multiple **simultaneous** IBC pair setups are likely interfere with each others expectations about the pocket account sequence number; however, hermes CLI will automatically retry with an updated sequence number - it just may take a bit longer.
-
+:::warning Concurrent Setup
+Avoid running multiple IBC pair setups simultaneously as they may interfere with account sequence numbers. While Hermes will auto-retry with correct sequences, this may affect setup time.
 :::
 
 The following uses the `pocket-axelar` pair as an example.
@@ -124,59 +150,67 @@ SUCCESS Channel {
 </details>
 
 
-## Onchain IBC State
+## Monitoring IBC State
 
-TODO_IN_THIS_COMMIT: link to overview -> IBC core...
+Use these commands to inspect IBC state across your LocalNet networks:
 
 ### Clients
-
-```shell
-# List localnet clients for a given network
+View light clients tracking remote chain states:
+```bash
+# List clients for any network
 make ibc_list_<network>_clients
 
-# E.g.
+# Examples
 make ibc_list_axelar_clients
+make ibc_list_osmosis_clients
 ```
 
-### Connections
-
-```shell
-# List localnet connections for a given network
+### Connections  
+Check authenticated connections between chains:
+```bash
+# List connections for any network
 make ibc_list_<network>_connections
 
-# E.g.
+# Examples
 make ibc_list_axelar_connections
+make ibc_list_pocket_connections
 ```
 
 ### Channels
-
-```shell
-# List localnet channels for a given network
+Monitor communication channels for specific applications:
+```bash
+# List channels for any network
 make ibc_list_<network>_channels
 
-# E.g.
+# Examples  
 make ibc_list_axelar_channels
+make ibc_list_osmosis_channels
 ```
 
 ### Interchain Accounts
+Coming Soon: ICA testing documentation
 
+## Testing IBC Functionality
+
+### Token Transfers
+
+Test bi-directional token transfers between Poktroll and counterparty chains:
+
+#### Available Transfer Routes
+```bash
+# Pocket to counterparty chains
+make ibc_test_transfer_pocket_to_axelar
+make ibc_test_transfer_pocket_to_osmosis  
+make ibc_test_transfer_pocket_to_agoric
+
+# Counterparty chains to Pocket
+make ibc_test_transfer_axelar_to_pocket
+make ibc_test_transfer_osmosis_to_pocket
+make ibc_test_transfer_agoric_to_pocket
 ```
-// TODO(@bryanchriswhite)
-```
 
-## Testing Localnet IBC
-
-### Transfers
-
-```shell
-# Transfer Example:
-#   1000upokt from pocket to axelar
-#
-# NOTE: make targets exist for supported counterparty networks in both directions.
-# E.g.:
-# - make ibc_test_transfer_axelar_to_pocket
-# - make ibc_test_transfer_pocket_to_agoric
-# - ...
+#### Example: Transfer 1000upokt from Pocket to Axelar
+```bash
 $ make ibc_test_transfer_pocket_to_axelar
 code: 0
 codespace: ""
@@ -240,18 +274,52 @@ pagination:
 ```
 
 
-## Troubleshooting / Known Issues
+## Troubleshooting
 
+### Common Issues
+
+#### 1. Transaction Succeeds but Relayer Doesn't Relay
+**Symptoms**: Source chain transaction shows success, but tokens don't appear on destination
+
+**Solutions**:
+- Check relayer logs in Tilt UI for error messages
+- Restart the Hermes relayer service manually
+- Verify RPC endpoints are accessible and returning packet data
+
+#### 2. Account Sequence Mismatch Errors  
+**Symptoms**: Relayer shows sequence mismatch errors in logs
+
+**Causes**: 
+- Concurrent transactions using the same account
+- Account reuse between different services
+
+**Solutions**:
+- Use different accounts for testing vs relayer operations
+- Wait for sequence number refresh (Hermes auto-retries)
+- Reset LocalNet if issues persist
+
+#### 3. IBC Setup Service Stuck
+**Symptoms**: `🏗️ Pokt-><counterparty>` service shows persistent backoff
+
+**Solutions**:
+- Manually trigger the setup service in Tilt UI
+- Check counterparty chain is producing blocks
+- Verify network configurations in `localnet_config.yaml`
+
+#### 4. Missing Packet Data Warnings
+**Symptoms**: Hermes warns about unavailable packet data
+
+**Solutions**:
+- Verify RPC endpoints have required packet data
+- Check [Hermes troubleshooting guide](https://hermes.informal.systems/advanced/troubleshooting/cross-comp-config.html#uncleared-pending-packets)
+- Ensure proper RPC configuration for data availability
+
+### Reset and Recovery
+If issues persist, reset your LocalNet environment:
+```bash
+make localnet_down
+make localnet_up
 ```
-TODO_IN_THIS_COMMIT: make presentable:
-- sometimes tx succeeds on origin but the relayer never relays.
-- notable occasional hermes relayer daemon log entry:
-  2025-07-02T08:42:54.450821Z  WARN ThreadId(229) worker.batch{chain=pocket}:supervisor.handle_batch{chain=pocket}:supervisor.process_batch{chain=pocket}:worker.clear.cmd{src_chain=pocket src_port=transfer src_channel=channel-3 dst_chain=axelar}:schedule_packet_clearing{height=Some(Height { revision: 0, height: 4820 })}:relay_pending_packets{height=Some(Height { revision: 0, height: 4819 })}:schedule_recv_packet_and_timeout_msgs{query_height=0-4819}: no packet data was pulled at height <=0-4819 for sequences 1..=1, this might be due to the data not being available on the configured endpoint. Please verify that the RPC endpoint has the required packet data, for more details see https://hermes.informal.systems/advanced/troubleshooting/cross-comp-config.html#uncleared-pending-packets
-- sequence mismatch error:
-    - need to use a different pocket account than app1 and double-check for and elminiate reuse of hermes relayer accounts
-    - log example:
-        2025-07-02T09:05:17.696065Z ERROR ThreadId(30) worker.batch{chain=axelar}:supervisor.handle_batch{chain=axelar}:supervisor.process_batch{chain=axelar}:worker.packet.cmd{src_chain=axelar src_port=transfer src_channel=channel-0 dst_chain=pocket}:relay{odata=7f01e6e0 ->Destination @0-1563; len=1}:send_messages_and_wait_check_tx{chain=pocket tracking_id=7f01e6e0}:send_tx_with_account_sequence_retry{chain=pocket account.sequence=59}:estimate_gas: failed to simulate tx. propagating error to caller: gRPC call `send_tx_simulate` failed with status: status: Unknown, message: "account sequence mismatch, expected 61, got 59: incorrect account sequence [cosmos/cosmos-sdk@v0.53.0/x/auth/ante/sigverify.go:364] with gas used: '33244'", details: [], metadata: MetadataMap { headers: {"content-type": "application/grpc", "x-cosmos-block-height": "5461"} }
-        2025-07-02T09:05:17.696113Z  WARN ThreadId(30) worker.batch{chain=axelar}:supervisor.handle_batch{chain=axelar}:supervisor.process_batch{chain=axelar}:worker.packet.cmd{src_chain=axelar src_port=transfer src_channel=channel-0 dst_chain=pocket}:relay{odata=7f01e6e0 ->Destination @0-1563; len=1}:send_messages_and_wait_check_tx{chain=pocket tracking_id=7f01e6e0}:send_tx_with_account_sequence_retry{chain=pocket account.sequence=59}: failed to estimate gas because of a mismatched account sequence number, refreshing account sequence number and retrying once error=gRPC call `send_tx_simulate` failed with status: status: Unknown, message: "account sequence mismatch, expected 61, got 59: incorrect account sequence [cosmos/cosmos-sdk@v0.53.0/x/auth/ante/sigverify.go:364] with gas used: '33244'", details: [], metadata: MetadataMap { headers: {"content-type": "application/grpc", "x-cosmos-block-height": "5461"} }
-        2025-07-02T09:05:17.711375Z  INFO ThreadId(30) worker.batch{chain=axelar}:supervisor.handle_batch{chain=axelar}:supervisor.process_batch{chain=axelar}:worker.packet.cmd{src_chain=axelar src_port=transfer src_channel=channel-0 dst_chain=pocket}:relay{odata=7f01e6e0 ->Destination @0-1563; len=1}:send_messages_and_wait_check_tx{chain=pocket tracking_id=7f01e6e0}:send_tx_with_account_sequence_retry{chain=pocket account.sequence=59}: refreshed account sequence number old=59 new=61
-```
+
+This will clean up any stuck IBC state and restart all services.
 

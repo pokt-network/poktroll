@@ -1,8 +1,8 @@
 {
-  "label": "IBC",
+  "label": "IBC Integration",
   "position": 9,
   "link": {
-    "type": "generated-index",
-    "description": "Pocket IBC interoperability documentation."
+    "type": "doc",
+    "id": "develop/ibc/overview"
   }
 }
