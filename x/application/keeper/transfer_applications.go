@@ -167,7 +167,6 @@ func (k Keeper) transferApplication(
 	transferEndEvent := &apptypes.EventTransferEnd{
 		SourceAddress:      srcApp.GetAddress(),
 		DestinationAddress: dstApp.GetAddress(),
-		Stake:              dstApp.Stake.String(),
 		SessionEndHeight:   sessionEndHeight,
 		TransferEndHeight:  transferEndHeight,
 	}

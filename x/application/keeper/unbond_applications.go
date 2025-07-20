@@ -72,7 +72,6 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 			ApplicationAddress: application.Address,
-			Stake:              application.Stake.String(),
 			Reason:             unbondingReason,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,

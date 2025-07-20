@@ -84,7 +84,6 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	expectedTransferBeginEvent := &apptypes.EventTransferBegin{
 		SourceAddress:      srcBech32,
 		DestinationAddress: dstBech32,
-		Stake:              expectedApp.Stake.String(),
 		SessionEndHeight:   transferBeginSessionEndHeight,
 		TransferEndHeight:  transferEndHeight,
 	}
@@ -131,7 +130,6 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	expectedTransferEndEvent := &apptypes.EventTransferEnd{
 		SourceAddress:      srcBech32,
 		DestinationAddress: dstBech32,
-		Stake:              dstApp.Stake.String(),
 		SessionEndHeight:   transferEndSessionEndHeight,
 		TransferEndHeight:  transferEndHeight,
 	}

@@ -357,7 +357,6 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 
 		expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			ApplicationAddress: expectedApp.Address,
-			Stake:              expectedApp.Stake.String(),
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   expectedSessionEndHeight,
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
@@ -449,7 +448,6 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		}
 		expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 			ApplicationAddress: expectedApp.Address,
-			Stake:              expectedApp.Stake.String(),
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   expectedSessionEndHeight,
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),

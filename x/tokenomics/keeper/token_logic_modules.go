@@ -213,7 +213,6 @@ func (k Keeper) ProcessTokenLogicModules(
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			ApplicationAddress: application.Address,
-			Stake:              application.Stake.String(),
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,

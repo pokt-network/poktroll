@@ -139,7 +139,6 @@ func (k Keeper) StakeApplication(
 		sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdk.UnwrapSDKContext(ctx).BlockHeight())
 		events = append(events, &types.EventApplicationUnbondingCanceled{
 			ApplicationAddress: foundApp.Address,
-			Stake:              foundApp.Stake.String(),
 			SessionEndHeight:   sessionEndHeight,
 		})
 	}

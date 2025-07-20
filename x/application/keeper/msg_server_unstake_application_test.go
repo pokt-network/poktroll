@@ -68,7 +68,6 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	expectedEvent, err := sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingBegin{
 			ApplicationAddress: foundApp.Address,
-			Stake:              foundApp.Stake.String(),
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -100,7 +99,6 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	expectedEvent, err = sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingEnd{
 			ApplicationAddress: foundApp.Address,
-			Stake:              foundApp.Stake.String(),
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 			SessionEndHeight:   unbondingSessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -163,7 +161,6 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		ApplicationAddress: foundApp.Address,
-		Stake:              foundApp.Stake.String(),
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
@@ -195,7 +192,6 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	expectedApp.DelegateeGatewayAddresses = make([]string, 0)
 	expectedAppUnbondingCanceledEvent := &apptypes.EventApplicationUnbondingCanceled{
 		ApplicationAddress: expectedApp.Address,
-		Stake:              expectedApp.Stake.String(),
 		SessionEndHeight:   sessionEndHeight,
 	}
 	events = sdk.UnwrapSDKContext(ctx).EventManager().Events()
