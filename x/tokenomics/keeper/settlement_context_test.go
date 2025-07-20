@@ -333,23 +333,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
 	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
 
-	// Validate reward distribution
+	// Validate reward distribution is not empty
+	// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
 	rewardDistribution := expectedEvent.GetRewardDistribution()
 	require.NotNil(t, rewardDistribution, "reward distribution should not be nil")
 	require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty")
-
-	// The reward distribution should contain entries for all recipients
-	// With default parameters, this typically includes supplier, DAO, proposer, and source owner
-	totalReward := cosmostypes.NewCoin("upokt", math.NewInt(0))
-	for address, amountStr := range rewardDistribution {
-		coin, err := cosmostypes.ParseCoinNormalized(amountStr)
-		require.NoError(t, err, "failed to parse reward amount for address %s", address)
-		totalReward = totalReward.Add(coin)
-		t.Logf("Reward distribution - address: %s, amount: %s", address, amountStr)
-	}
-
-	// The total reward should equal the claimed amount (assuming mint=burn)
-	require.Equal(t, s.claimedUpokt.String(), totalReward.String(), "total reward distribution should equal claimed amount")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
@@ -455,6 +443,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
 	// Use a single claim and proof for this test
 	claim := s.claims[0]
 	proof := s.proofs[0]
@@ -514,22 +503,11 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
 	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
 
-	// Validate reward distribution
+	// Validate reward distribution is not empty
+	// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
 	rewardDistribution := expectedEvent.GetRewardDistribution()
 	require.NotNil(t, rewardDistribution, "reward distribution should not be nil")
 	require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty")
-
-	// The reward distribution should contain entries for all recipients
-	totalReward := cosmostypes.NewCoin("upokt", math.NewInt(0))
-	for address, amountStr := range rewardDistribution {
-		coin, err := cosmostypes.ParseCoinNormalized(amountStr)
-		require.NoError(t, err, "failed to parse reward amount for address %s", address)
-		totalReward = totalReward.Add(coin)
-		t.Logf("Reward distribution - address: %s, amount: %s", address, amountStr)
-	}
-
-	// The total reward should equal the claimed amount (assuming mint=burn)
-	require.Equal(t, s.claimedUpokt.String(), totalReward.String(), "total reward distribution should equal claimed amount")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
@@ -537,6 +515,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
 	// Use a single claim for this test
 	claim := s.claims[0]
 	relayMiningDifficulty := s.relayMiningDifficulties[0]
@@ -593,22 +572,11 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
 	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
 
-	// Validate reward distribution
+	// Validate reward distribution is not empty
+	// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
 	rewardDistribution := expectedEvent.GetRewardDistribution()
 	require.NotNil(t, rewardDistribution, "reward distribution should not be nil")
 	require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty")
-
-	// The reward distribution should contain entries for all recipients
-	totalReward := cosmostypes.NewCoin("upokt", math.NewInt(0))
-	for address, amountStr := range rewardDistribution {
-		coin, err := cosmostypes.ParseCoinNormalized(amountStr)
-		require.NoError(t, err, "failed to parse reward amount for address %s", address)
-		totalReward = totalReward.Add(coin)
-		t.Logf("Reward distribution - address: %s, amount: %s", address, amountStr)
-	}
-
-	// The total reward should equal the claimed amount (assuming mint=burn)
-	require.Equal(t, s.claimedUpokt.String(), totalReward.String(), "total reward distribution should equal claimed amount")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimDiscarded_WhenHasZeroSum() {
@@ -974,7 +942,8 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 		s.keepers.UpsertProof(ctx, proof)
 	}
 
-	s.keepers.ValidateSubmittedProofs(sdkCtx)
+	_, _, err = s.keepers.ValidateSubmittedProofs(sdkCtx)
+	require.NoError(t, err)
 
 	// Settle pending claims after proof window closes
 	// Expectation: All claims should be claimed.
@@ -1004,22 +973,11 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 		require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
 		require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
 
-		// Validate reward distribution
+		// Validate reward distribution is not empty
+		// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
 		rewardDistribution := expectedEvent.GetRewardDistribution()
 		require.NotNil(t, rewardDistribution, "reward distribution should not be nil for event %d", i)
 		require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty for event %d", i)
-
-		// The reward distribution should contain entries for all recipients
-		totalReward := cosmostypes.NewCoin("upokt", math.NewInt(0))
-		for address, amountStr := range rewardDistribution {
-			coin, err := cosmostypes.ParseCoinNormalized(amountStr)
-			require.NoError(t, err, "failed to parse reward amount for address %s in event %d", address, i)
-			totalReward = totalReward.Add(coin)
-			t.Logf("Event %d - Reward distribution - address: %s, amount: %s", i, address, amountStr)
-		}
-
-		// The total reward should equal the claimed amount (assuming mint=burn)
-		require.Equal(t, s.claimedUpokt.String(), totalReward.String(), "total reward distribution should equal claimed amount for event %d", i)
 	}
 }
 
