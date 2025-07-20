@@ -179,19 +179,24 @@ Feature: Tokenomics Namespace
             | proof_submission_fee         | 10      | coin  |
         And all "proof" module params should be updated
 
-        # Record initial balances
+        # Start servicing relays
+        When the supplier "supplier1" has serviced a session with "10" relays for service "anvil" for application "app1"
+
+        # Wait for the Claim & Proof TXs to be committed
+        And the user should wait for the "proof" module "CreateClaim" Message to be submitted
+        And the user should wait for the "proof" module "SubmitProof" Message to be submitted
+
+        # Record balances AFTER proof submission
+        # DEV_NOTE: Since the relayminer pays TX fees in localnet, "initial balances"
+        # MUST be recorded AFTER the last relayminer TX. I.e. balance diff MUST NEVER
+        # include TX fees.
         And the user remembers the balance of "app1" as "app11_initial_balance"
         And the user remembers the balance of "supplier1" as "supplier1_initial_balance"
         And the user remembers the balance of the DAO as "dao_initial_balance"
         And the user remembers the balance of the proposer as "proposer_initial_balance"
         And the user remembers the balance of the service owner for "anvil" as "service_owner_initial_balance"
 
-        # Start servicing relays
-        When the supplier "supplier1" has serviced a session with "10" relays for service "anvil" for application "app1"
-
-        # Wait for the Claim & Proof lifecycle
-        And the user should wait for the "proof" module "CreateClaim" Message to be submitted
-        And the user should wait for the "proof" module "SubmitProof" Message to be submitted
+        # Wait for the claim to be settled
         And the user should wait for the ClaimSettled event with "THRESHOLD" proof requirement to be broadcast
 
         # Validate the distributed settlement
@@ -215,9 +220,9 @@ Feature: Tokenomics Namespace
         # The service owner should receive 15% of the settlement amount
         And the service owner balance for "anvil" should be "6300" uPOKT "more" than "service_owner_initial_balance"
 
-        # The supplier should receive 70% of the settlement amount minus proof submission fee
-        # Expected: 29400 (70% of 42000) - 10 (proof submission fee) = 29390 uPOKT
-        Then the account balance of "supplier1" should be "29390" uPOKT "more" than "supplier1_initial_balance"
+        # The supplier should receive 70% of the settlement amount
+        # Expected: 29400 (70% of 42000)
+        Then the account balance of "supplier1" should be "29400" uPOKT "more" than "supplier1_initial_balance"
 
         # The application stake should decrease by the full settlement amount
         And the "application" stake of "app1" should be "42000" uPOKT "less" than before
