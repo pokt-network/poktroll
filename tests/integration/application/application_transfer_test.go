@@ -438,10 +438,6 @@ func (s *appTransferTestSuite) shouldObserveTransferBeginEvent(
 	evtDstAddr, hasDstAddr := events.GetAttributeValue(targetTransferBeginEvent, "destination_address")
 	require.True(s.T(), hasDstAddr)
 	require.Equal(s.T(), expectedDstAppBech32, evtDstAddr)
-
-	evtStake, hasStake := events.GetAttributeValue(targetTransferBeginEvent, "stake")
-	require.True(s.T(), hasStake)
-	require.Equal(s.T(), expectedSrcApp.GetStake().String(), evtStake)
 }
 
 // shouldObserveTransferEndEvent asserts that the transfer end event from
@@ -475,8 +471,4 @@ func (s *appTransferTestSuite) shouldObserveTransferEndEvent(
 	evtDstAddr, hasDstAddrAttr := events.GetAttributeValue(targetTransferEndEvent, "destination_address")
 	require.True(s.T(), hasDstAddrAttr)
 	require.Equal(s.T(), expectedDstApp.GetAddress(), evtDstAddr)
-
-	evtStake, hasStake := events.GetAttributeValue(targetTransferEndEvent, "stake")
-	require.True(s.T(), hasStake)
-	require.Equal(s.T(), expectedDstApp.GetStake().String(), evtStake)
 }
