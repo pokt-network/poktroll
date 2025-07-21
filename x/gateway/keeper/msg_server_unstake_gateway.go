@@ -74,7 +74,6 @@ func (k msgServer) UnstakeGateway(
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
 		GatewayAddress:     gateway.Address,
-		Stake:              gateway.Stake.String(),
 	}
 	err = ctx.EventManager().EmitTypedEvent(unbondingBeginEvent)
 	if err != nil {

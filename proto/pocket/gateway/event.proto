@@ -36,8 +36,6 @@ message EventGatewayUnbondingBegin {
   int64 unbonding_end_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
   // The address of the gateway that began unbonding.
   string gateway_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  // The amount of stake.
-  string stake = 6 [(gogoproto.jsontag) = "stake"];
 }
 
 // EventGatewayUnbondingEnd is emitted when a gateway has completed unbonding.
@@ -52,8 +50,6 @@ message EventGatewayUnbondingEnd {
   int64 unbonding_end_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
   // The address of the gateway that completed unbonding.
   string gateway_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  // The amount of stake.
-  string stake = 6 [(gogoproto.jsontag) = "stake"];
 }
 
 // EventGatewayUnbondingCanceled is emitted when a gateway which was unbonding
@@ -67,6 +63,4 @@ message EventGatewayUnbondingCanceled {
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
   // The address of the gateway that canceled unbonding.
   string gateway_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  // The amount of stake.
-  string stake = 6 [(gogoproto.jsontag) = "stake"];
 }

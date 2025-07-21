@@ -100,8 +100,6 @@ message EventTransferError {
   // The end height of the session in which the transfer failed.
   int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
   string error = 5;
-  // The amount of stake that failed to transfer.
-  string stake = 6 [(gogoproto.jsontag) = "stake"];
 }
 
 // EventApplicationUnbondingBegin is emitted when an application begins unbonding.

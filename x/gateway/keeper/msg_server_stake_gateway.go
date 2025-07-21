@@ -112,7 +112,6 @@ func (k msgServer) StakeGateway(
 		events = append(events, &types.EventGatewayUnbondingCanceled{
 			SessionEndHeight: sessionEndHeight,
 			GatewayAddress:   gateway.Address,
-			Stake:            gateway.Stake.String(),
 		})
 	}
 

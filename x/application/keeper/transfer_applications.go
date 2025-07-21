@@ -85,7 +85,6 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			transferErrorEvent := &apptypes.EventTransferError{
 				SourceAddress:      srcApp.GetAddress(),
 				DestinationAddress: dstBech32,
-				Stake:              srcApp.Stake.String(),
 				SessionEndHeight:   sessionEndHeight,
 				Error:              err.Error(),
 			}
