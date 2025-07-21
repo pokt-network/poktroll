@@ -199,7 +199,6 @@ func (s *baseIntegrationSuiteTestSuite) emitPocketGatewayUnbondingBeginEvents(ex
 	for i := 0; i < expectedNumEvents; i++ {
 		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnbondingBegin{
 			GatewayAddress: sample.AccAddress(),
-			Stake:          gatewaytypes.DefaultMinStake.String(),
 		})
 		require.NoError(s.T(), err)
 	}
