@@ -252,7 +252,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
 			require.Equal(t, uint64(numClaimComputeUnits), proofSubmittedEvent.GetNumClaimedComputeUnits())
 			require.Equal(t, numEstimatedComputUnits, proofSubmittedEvent.GetNumEstimatedComputeUnits())
-			require.Equal(t, &claimedUPOKT, proofSubmittedEvent.GetClaimedUpokt())
+			require.Equal(t, claimedUPOKT.String(), proofSubmittedEvent.GetClaimedUpokt())
 		})
 	}
 }

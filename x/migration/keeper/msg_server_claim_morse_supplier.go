@@ -229,8 +229,8 @@ func (k msgServer) ClaimMorseSupplier(
 		MorseNodeAddress:     msg.GetMorseNodeAddress(),
 		MorseOutputAddress:   morseNodeClaimableAccount.GetMorseOutputAddress(),
 		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       claimedUnstakedBalance,
-		ClaimedSupplierStake: claimedSupplierStake,
+		ClaimedBalance:       claimedUnstakedBalance.String(),
+		ClaimedSupplierStake: claimedSupplierStake.String(),
 		SessionEndHeight:     sessionEndHeight,
 		Supplier:             unbondedSupplier,
 	}
@@ -304,8 +304,8 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 
 	// Update the supplier claim event.
-	morseSupplierClaimedEvent.ClaimedBalance = morseNodeClaimableAccount.GetUnstakedBalance()
-	morseSupplierClaimedEvent.ClaimedSupplierStake = morseNodeClaimableAccount.GetSupplierStake()
+	morseSupplierClaimedEvent.ClaimedBalance = morseNodeClaimableAccount.GetUnstakedBalance().String()
+	morseSupplierClaimedEvent.ClaimedSupplierStake = morseNodeClaimableAccount.GetSupplierStake().String()
 	morseSupplierClaimedEvent.Supplier = supplier
 
 	// Emit the supplier claim event first, an unbonding begin event MAY follow.
