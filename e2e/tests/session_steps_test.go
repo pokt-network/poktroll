@@ -98,11 +98,19 @@ func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventT
 }
 
 func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBeBroadcast(proofRequirement string) {
+	proofRequirementIntMap := map[string]int64{
+		"NOT_REQUIRED":  0,
+		"PROBABILISTIC": 1,
+		"THRESHOLD":     2,
+	}
+	proofRequirementInt, ok := proofRequirementIntMap[proofRequirement]
+	require.Truef(s, ok, "invalid proof requirement %s", proofRequirement)
+
 	s.waitForNewBlockEvent(
 		combineEventMatchFns(
 			newEventTypeMatchFn("tokenomics", "ClaimSettled"),
 			newEventModeMatchFn("EndBlock"),
-			newEventAttributeMatchFn("proof_requirement", fmt.Sprintf("%q", proofRequirement)),
+			newEventAttributeMatchFn("proof_requirement_int", fmt.Sprintf("%d", proofRequirementInt)),
 		),
 	)
 
