@@ -77,7 +77,7 @@ message EventClaimExpired {
 // EventClaimSettled is emitted during settlement whenever a claim is successfully settled.
 // It may or may not require a proof depending on various on-chain parameters and other factors.
 message EventClaimSettled {
-    // Next index: 14
+    // Next index: 15
 
     // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
