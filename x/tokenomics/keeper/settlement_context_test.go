@@ -263,7 +263,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Validate the slashing event
 	expectedSlashingEvent := expectedSlashingEvents[0]
 
-	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetClaim().GetSupplierOperatorAddress())
+	// The event no longer contains the full claim, so we validate the individual fields
+	require.Equal(t, s.claims[0].SessionHeader.ServiceId, expectedSlashingEvent.GetServiceId())
+	require.Equal(t, s.claims[0].SessionHeader.ApplicationAddress, expectedSlashingEvent.GetApplicationAddress())
+	require.Equal(t, s.claims[0].SessionHeader.SessionEndBlockHeight, expectedSlashingEvent.GetSessionEndBlockHeight())
 	require.Equal(t, belowStakeAmountProofMissingPenalty.String(), expectedSlashingEvent.GetProofMissingPenalty())
 }
 
@@ -324,7 +327,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_THRESHOLD), expectedEvent.GetProofRequirementInt())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
@@ -410,7 +413,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	require.Equal(t, s.claimedUpokt.String(), expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	expectedProofValidityCheckedEvent := expectedProofValidityCheckedEvents[0]
-	require.Equal(t, prooftypes.ClaimProofStatus_INVALID, expectedProofValidityCheckedEvent.GetClaim().GetProofValidationStatus())
+	require.Equal(t, claim.SessionHeader.ServiceId, expectedProofValidityCheckedEvent.GetServiceId())
+	require.Equal(t, claim.SessionHeader.ApplicationAddress, expectedProofValidityCheckedEvent.GetApplicationAddress())
+	require.Equal(t, claim.SessionHeader.SessionEndBlockHeight, expectedProofValidityCheckedEvent.GetSessionEndBlockHeight())
+	// After ValidateSubmittedProofs, the claim should have INVALID status (2)
+	require.Equal(t, int32(prooftypes.ClaimProofStatus_INVALID), expectedProofValidityCheckedEvent.GetClaimProofStatusInt())
 
 	// Confirm that a slashing event was emitted
 	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
@@ -418,7 +425,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Validate the slashing event
 	expectedSlashingEvent := expectedSlashingEvents[0]
-	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetClaim().GetSupplierOperatorAddress())
+	// The event no longer contains the full claim, so we validate the individual fields
+	require.Equal(t, s.claims[0].SessionHeader.ServiceId, expectedSlashingEvent.GetServiceId())
+	require.Equal(t, s.claims[0].SessionHeader.ApplicationAddress, expectedSlashingEvent.GetApplicationAddress())
+	require.Equal(t, s.claims[0].SessionHeader.SessionEndBlockHeight, expectedSlashingEvent.GetSessionEndBlockHeight())
 	require.Equal(t, belowStakeAmountProofMissingPenalty.String(), expectedSlashingEvent.GetProofMissingPenalty())
 }
 
@@ -480,7 +490,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 
 	// Validate the settlement event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_PROBABILISTIC, expectedEvent.GetProofRequirement())
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_PROBABILISTIC), expectedEvent.GetProofRequirementInt())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
@@ -542,7 +552,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// Validate the settlement event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_NOT_REQUIRED.String(), expectedEvent.GetProofRequirement().String())
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_NOT_REQUIRED), expectedEvent.GetProofRequirementInt())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
@@ -807,10 +817,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 			proofMissingPenalty = *s.keepers.ProofKeeper.GetParams(sdkCtx).ProofMissingPenalty
 		}
 
-		sessionId := slashingEvent.GetClaim().GetSessionHeader().GetSessionId()
+		// The event no longer contains the full claim, so we construct the expected event with individual fields
 		expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
-			Claim:               expiredClaimsMap[sessionId],
-			ProofMissingPenalty: proofMissingPenalty.String(),
+			ProofMissingPenalty:     proofMissingPenalty.String(),
+			ServiceId:               slashingEvent.GetServiceId(),
+			ApplicationAddress:      slashingEvent.GetApplicationAddress(),
+			SessionEndBlockHeight:   slashingEvent.GetSessionEndBlockHeight(),
+			ClaimProofStatusInt:     slashingEvent.GetClaimProofStatusInt(),
+			SupplierOperatorAddress: slashingEvent.GetSupplierOperatorAddress(),
 		}
 		require.EqualValues(t, expectedSlashingEvent, slashingEvents[i])
 	}
@@ -932,7 +946,7 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 
 	// Validate the events
 	for _, expectedEvent := range expectedEvents {
-		require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
+		require.Equal(t, int32(prooftypes.ProofRequirementReason_THRESHOLD), expectedEvent.GetProofRequirementInt())
 		require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 		require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 		require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
