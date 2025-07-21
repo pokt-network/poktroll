@@ -98,13 +98,17 @@ func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventT
 }
 
 func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBeBroadcast(proofRequirement string) {
-	proofRequirementIntMap := map[string]int64{
-		"NOT_REQUIRED":  0,
-		"PROBABILISTIC": 1,
-		"THRESHOLD":     2,
+	var proofRequirementInt int64
+	switch proofRequirement {
+	case prooftypes.ProofRequirementReason_NOT_REQUIRED.String():
+		proofRequirementInt = int64(prooftypes.ProofRequirementReason_NOT_REQUIRED)
+	case prooftypes.ProofRequirementReason_PROBABILISTIC.String():
+		proofRequirementInt = int64(prooftypes.ProofRequirementReason_PROBABILISTIC)
+	case prooftypes.ProofRequirementReason_THRESHOLD.String():
+		proofRequirementInt = int64(prooftypes.ProofRequirementReason_THRESHOLD)
+	default:
+		s.Fatalf("invalid proof requirement %s", proofRequirement)
 	}
-	proofRequirementInt, ok := proofRequirementIntMap[proofRequirement]
-	require.Truef(s, ok, "invalid proof requirement %s", proofRequirement)
 
 	s.waitForNewBlockEvent(
 		combineEventMatchFns(
