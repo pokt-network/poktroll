@@ -98,11 +98,23 @@ func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventT
 }
 
 func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBeBroadcast(proofRequirement string) {
+	var proofRequirementInt int64
+	switch proofRequirement {
+	case prooftypes.ProofRequirementReason_NOT_REQUIRED.String():
+		proofRequirementInt = int64(prooftypes.ProofRequirementReason_NOT_REQUIRED)
+	case prooftypes.ProofRequirementReason_PROBABILISTIC.String():
+		proofRequirementInt = int64(prooftypes.ProofRequirementReason_PROBABILISTIC)
+	case prooftypes.ProofRequirementReason_THRESHOLD.String():
+		proofRequirementInt = int64(prooftypes.ProofRequirementReason_THRESHOLD)
+	default:
+		s.Fatalf("invalid proof requirement %s", proofRequirement)
+	}
+
 	s.waitForNewBlockEvent(
 		combineEventMatchFns(
 			newEventTypeMatchFn("tokenomics", "ClaimSettled"),
 			newEventModeMatchFn("EndBlock"),
-			newEventAttributeMatchFn("proof_requirement", fmt.Sprintf("%q", proofRequirement)),
+			newEventAttributeMatchFn("proof_requirement_int", fmt.Sprintf("%d", proofRequirementInt)),
 		),
 	)
 
