@@ -78,7 +78,7 @@ func (r *ClaimSettlementResult) GetRewardDistribution() map[string]string {
 			continue
 		}
 
-		rewardDistributionCoin[transfer.RecipientAddress] = rewardCoin.Add(rewardCoin)
+		rewardDistributionCoin[transfer.RecipientAddress] = rewardCoin.Add(transfer.GetCoin())
 	}
 
 	// Convert coin map to a string map.
