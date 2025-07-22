@@ -70,8 +70,8 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedEvent := &apptypes.EventRedelegation{
-		Application:      expectedApp,
-		SessionEndHeight: sessionEndHeight,
+		ApplicationAddress: expectedApp.Address,
+		SessionEndHeight:   sessionEndHeight,
 	}
 
 	events := sdkCtx.EventManager().Events()
@@ -155,8 +155,8 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
 	expectedEvent := &apptypes.EventRedelegation{
-		Application:      expectedApp,
-		SessionEndHeight: sessionEndHeight,
+		ApplicationAddress: expectedApp.Address,
+		SessionEndHeight:   sessionEndHeight,
 	}
 
 	events := sdkCtx.EventManager().Events()
@@ -291,8 +291,8 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		}
 		expectedEvent := &apptypes.EventRedelegation{
-			Application:      expectedApp,
-			SessionEndHeight: sessionEndHeight,
+			ApplicationAddress: expectedApp.Address,
+			SessionEndHeight:   sessionEndHeight,
 		}
 		require.EqualValues(t, expectedEvent, event)
 	}

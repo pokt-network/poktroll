@@ -198,9 +198,7 @@ func (s *baseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents 
 func (s *baseIntegrationSuiteTestSuite) emitPocketGatewayUnbondingBeginEvents(expectedNumEvents int) {
 	for i := 0; i < expectedNumEvents; i++ {
 		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnbondingBegin{
-			Gateway: &gatewaytypes.Gateway{
-				Address: sample.AccAddress(),
-			},
+			GatewayAddress: sample.AccAddress(),
 		})
 		require.NoError(s.T(), err)
 	}

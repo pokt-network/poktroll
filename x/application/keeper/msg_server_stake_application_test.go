@@ -56,8 +56,9 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&apptypes.EventApplicationStaked{
-			Application:      expectedApp,
-			SessionEndHeight: sessionEndHeight,
+			ApplicationAddress: expectedApp.Address,
+			Stake:              expectedApp.Stake.String(),
+			SessionEndHeight:   sessionEndHeight,
 		},
 	)
 	require.NoError(t, err)
@@ -100,8 +101,9 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Assert that the EventApplicationStaked event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&apptypes.EventApplicationStaked{
-			Application:      &foundApp,
-			SessionEndHeight: sessionEndHeight,
+			ApplicationAddress: foundApp.Address,
+			Stake:              foundApp.Stake.String(),
+			SessionEndHeight:   sessionEndHeight,
 		},
 	)
 	require.NoError(t, err)
