@@ -21,7 +21,7 @@ const (
 	DefaultLogLevel   = "info"
 
 	FlagLogOutput      = "log-output"
-	FlagLogOutputUsage = "The logging output (file path); defaults to stdout"
+	FlagLogOutputUsage = "The logging output (<path>|'discard'|'stderr'); defaults to stdout ('-')"
 	DefaultLogOutput   = "-"
 
 	FlagPassphrase      = "passphrase"

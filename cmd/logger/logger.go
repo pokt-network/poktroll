@@ -5,8 +5,10 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/diode"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
@@ -28,7 +30,13 @@ var (
 	Logger polylog.Logger
 )
 
-const unknownLevel = "???"
+const (
+	unknownLevel = "???"
+
+	outputDiscard = "discard"
+	outputStdout  = "stdout"
+	outputStderr  = "stderr"
+)
 
 // PreRunESetup sets up the global cmd logger (Logger) for use in any subcommand.
 // This function is intended to be passed as (or called by) a `PreRunE` function
@@ -41,16 +49,23 @@ func PreRunESetup(cmd *cobra.Command, _ []string) error {
 		err       error
 	)
 
-	logLevel := polyzero.ParseLevel(LogLevel)
-	if LogOutput == flags.DefaultLogOutput {
+	switch LogOutput {
+	case flags.DefaultLogOutput, outputStdout:
 		logWriter = os.Stdout
-	} else {
+	case outputStderr:
+		logWriter = os.Stderr
+	case outputDiscard:
+		logWriter = io.Discard
+	default:
 		logWriter, err = os.Open(LogOutput)
 		if err != nil {
 			return err
 		}
 	}
 
+	// Wrap the writer in a thread-safe, lock-free, non-blocking io.Writer.
+	logWriter = diode.NewWriter(logWriter, 1000, 10*time.Millisecond, func(int) {})
+	logLevel := polyzero.ParseLevel(LogLevel)
 	Logger = polyzero.NewLogger(
 		polyzero.WithLevel(logLevel),
 		polyzero.WithSetupFn(NewSetupConsoleWriter(logWriter)),
