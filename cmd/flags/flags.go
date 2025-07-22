@@ -1,5 +1,7 @@
 package flags
 
+import "time"
+
 const (
 	// OmittedDefaultFlagValue is used whenever a flag is required but no reasonable default value can be provided.
 	// In most cases, this forces the user to specify the flag value to avoid unintended behavior.
@@ -48,4 +50,20 @@ const (
 	AlphaNetworkName = "alpha"
 	BetaNetworkName  = "beta"
 	MainNetworkName  = "main"
+
+	FlagPacketForwardMiddlewareMaxRetries      = "pfm-max-retries"
+	FlagPacketForwardMiddlewareMaxRetriesUsage = "Maximum number of retries for packet forward middleware operations"
+	DefaultPacketForwardMiddlewareMaxRetries   = 3
+
+	FlagPacketForwardMiddlewareRetryTimeoutDuration      = "pfm-retry-timeout"
+	FlagPacketForwardMiddlewareRetryTimeoutDurationUsage = "Timeout duration for packet forward middleware retry attempts (e.g. 30s, 5m, 1h)"
+	DefaultPacketForwardMiddlewareRetryTimeoutDuration   = time.Minute
+)
+
+// DEV_NOTE: Defining runtime variables for PFM flag values because their usage
+// scope (app/ibc.go) does not contain a reference to the cobra command, which
+// would otherwise be necessary
+var (
+	PacketForwardMiddlewareMaxRetries           uint8
+	PacketForwardMiddlewareRetryTimeoutDuration time.Duration
 )

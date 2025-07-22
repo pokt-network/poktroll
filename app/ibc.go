@@ -3,8 +3,6 @@ package app
 import (
 	// this line is used by starport scaffolding # ibc/app/import
 
-	"time"
-
 	"cosmossdk.io/core/appmodule"
 	storetypes "cosmossdk.io/store/types"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -40,6 +38,8 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 	solomachine "github.com/cosmos/ibc-go/v8/modules/light-clients/06-solomachine"
 	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+
+	flags2 "github.com/pokt-network/poktroll/cmd/flags"
 )
 
 // registerIBCModules register IBC keepers and non dependency inject modules.
@@ -162,9 +162,10 @@ func (app *App) registerIBCModules() {
 	transferWithPFM := packetforward.NewIBCMiddleware(
 		rawTransferModule,
 		&app.Keepers.PacketForwardKeeper,
-		// TODO_IN_THIS_COMMIT: extract to constants and/or comment if gov params would be appropriate...
-		3,
-		60*time.Second,
+		// TODO_IMPROVE: Ideally these values would be loaded from custom validator configs;
+		// E.g., see: https://github.com/pokt-network/poktroll/issues/1454#issuecomment-2975939482.
+		flags2.PacketForwardMiddlewareMaxRetries,
+		flags2.PacketForwardMiddlewareRetryTimeoutDuration,
 	)
 
 	transferIBCModule := ibcfee.NewIBCMiddleware(transferWithPFM, app.Keepers.IBCFeeKeeper)
