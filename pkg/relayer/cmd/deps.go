@@ -51,7 +51,6 @@ func setupRelayerDependencies(
 	}
 
 	// Override config file's `QueryNodeGRPCUrl` with `--grpc-addr` flag if specified.
-	// TODO(#223): Remove this check once viper is used as SoT for overridable config values.
 	if nodeGRPCURL != flags.OmittedDefaultFlagValue {
 		if err = cmd.Flags().Set(cosmosflags.FlagGRPC, nodeGRPCURL); err != nil {
 			return nil, err
@@ -65,7 +64,6 @@ func setupRelayerDependencies(
 	}
 
 	// Override config file's `QueryNodeUrl` and `txNodeRPCUrl` with `--node` flag if specified.
-	// TODO(#223): Remove this check once viper is used as SoT for overridable config values.
 	if nodeRPCURL != flags.DefaultNodeRPCURL {
 		if err = cmd.Flags().Set(cosmosflags.FlagNode, nodeRPCURL); err != nil {
 			return nil, err
