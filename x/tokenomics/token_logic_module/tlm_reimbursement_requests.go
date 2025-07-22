@@ -108,7 +108,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 		SupplierOwnerAddr:    supplier.OwnerAddress,
 		ServiceId:            service.Id,
 		SessionId:            sessionHeader.SessionId,
-		Amount:               &newMintCoin,
+		Amount:               newMintCoin.String(),
 	}
 
 	eventManger := cosmostypes.UnwrapSDKContext(ctx).EventManager()

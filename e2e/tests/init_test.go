@@ -274,7 +274,7 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 
 func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
 	bal := s.getAccBalance(accName)
-	require.Greaterf(s, bal, int(amount), "account %s does not have enough upokt", accName)
+	require.Greaterf(s, bal, amount, "account %s does not have enough upokt", accName)
 	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
 }
 
