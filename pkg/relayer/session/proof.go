@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -248,56 +249,81 @@ func (rs *relayerSessionsManager) proveClaims(
 	logger := rs.logger.With("method", "proveClaims")
 	logger.Info().Msgf("🔍 Analyzing %d session trees to determine proof requirements", len(sessionTrees))
 
+	proofRequirementSubPool := rs.mainWorkerPool.NewSubpool(workerPoolSize)
+	failedProofsMu := &sync.Mutex{}
+	successProofsMu := &sync.Mutex{}
+
 	// sessionTreesWithProofRequired will accumulate all the sessionTrees that
 	// will require a proof to be submitted.
 	sessionTreesWithProofRequired := make([]relayer.SessionTree, 0)
-	for _, sessionTree := range sessionTrees {
-		isProofRequired, err := rs.isProofRequired(ctx, sessionTree, proofPathSeedBlock)
+	for _, st := range sessionTrees {
+		sessionTree := st
+		proofRequirementSubPool.Go(func() {
+			isProofRequired, err := rs.isProofRequired(ctx, sessionTree, proofPathSeedBlock)
 
-		// If an error is encountered while determining if a proof is required,
-		// do not create the claim since the proof requirement is unknown.
-		// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
-		if err != nil {
-			failedProofs = append(failedProofs, sessionTree)
-			logger.Error().Err(err).Msg("⚠️ Failed to determine if proof is required for session. ❗Check network connectivity")
-			continue
-		}
+			// If an error is encountered while determining if a proof is required,
+			// do not create the claim since the proof requirement is unknown.
+			// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
+			if err != nil {
+				failedProofsMu.Lock()
+				failedProofs = append(failedProofs, sessionTree)
+				failedProofsMu.Unlock()
+				logger.Error().Err(err).Msg("⚠️ Failed to determine if proof is required for session. ❗Check network connectivity")
+				return
+			}
 
-		// If a proof is required, add the session to the list of sessions that require a proof.
-		if isProofRequired {
-			sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
-		} else {
-			rs.deleteSessionTree(sessionTree)
-		}
+			// If a proof is required, add the session to the list of sessions that require a proof.
+			if isProofRequired {
+				successProofsMu.Lock()
+				sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
+				successProofsMu.Unlock()
+			} else {
+				rs.deleteSessionTree(sessionTree)
+			}
+		})
 	}
+
+	// Wait for all goroutines to finish before proceeding.
+	proofRequirementSubPool.StopAndWait()
 
 	logger.Info().Msgf(
 		"📊 Proof analysis complete: %d sessions require proofs, %d sessions skipped (no proof needed)",
 		len(sessionTreesWithProofRequired), len(sessionTrees)-len(sessionTreesWithProofRequired),
 	)
 
+	proveClaimsSubPool := rs.mainWorkerPool.NewSubpool(workerPoolSize)
+
 	// Separate the sessionTrees into those that failed to generate a proof
 	// and those that succeeded, before returning each of them.
-	for _, sessionTree := range sessionTreesWithProofRequired {
-		// Generate the proof path for the sessionTree using the previously committed
-		// sessionPathBlock hash.
-		path := protocol.GetPathForProof(
-			proofPathSeedBlock.Hash(),
-			sessionTree.GetSessionHeader().GetSessionId(),
-		)
+	for _, st := range sessionTreesWithProofRequired {
+		sessionTree := st
+		proveClaimsSubPool.Go(func() {
+			// Generate the proof path for the sessionTree using the previously committed
+			// sessionPathBlock hash.
+			path := protocol.GetPathForProof(
+				proofPathSeedBlock.Hash(),
+				sessionTree.GetSessionHeader().GetSessionId(),
+			)
 
-		// If the proof cannot be generated, add the sessionTree to the failedProofs.
-		if _, err := sessionTree.ProveClosest(path); err != nil {
-			logger.Error().Err(err).Msg("⚠️ Failed to generate cryptographic proof for session. ❗Check session tree integrity and storage health.")
+			// If the proof cannot be generated, add the sessionTree to the failedProofs.
+			if _, err := sessionTree.ProveClosest(path); err != nil {
+				logger.Error().Err(err).Msg("⚠️ Failed to generate cryptographic proof for session. ❗Check session tree integrity and storage health.")
 
-			failedProofs = append(failedProofs, sessionTree)
-			continue
-		}
+				failedProofsMu.Lock()
+				failedProofs = append(failedProofs, sessionTree)
+				failedProofsMu.Unlock()
+				return
+			}
 
-		// If the proof was generated successfully, add the sessionTree to the
-		// successProofs slice that will be sent to the proof submission step.
-		successProofs = append(successProofs, sessionTree)
+			// If the proof was generated successfully, add the sessionTree to the
+			// successProofs slice that will be sent to the proof submission step.
+			successProofsMu.Lock()
+			successProofs = append(successProofs, sessionTree)
+			successProofsMu.Unlock()
+		})
 	}
+	// Wait for all goroutines to finish before proceeding.
+	proveClaimsSubPool.StopAndWait()
 
 	if len(successProofs) > 0 {
 		logger.Info().Msgf(
