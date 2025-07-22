@@ -1,5 +1,10 @@
 package flags
 
+import (
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/spf13/cobra"
+)
+
 const (
 	// OmittedDefaultFlagValue is used whenever a flag is required but no reasonable default value can be provided.
 	// In most cases, this forces the user to specify the flag value to avoid unintended behavior.
@@ -49,3 +54,29 @@ const (
 	BetaNetworkName  = "beta"
 	MainNetworkName  = "main"
 )
+
+// flagHelpUpdates maps flag names to their updated help text using upokt denomination
+var flagHelpUpdates = map[string]string{
+	flags.FlagFees:      "Fees to pay along with transaction; eg: 10upokt",
+	flags.FlagGasPrices: "Gas prices in decimal format to determine the transaction fee (e.g. 0.1upokt)",
+	flags.FlagGas:       "gas limit to set per-transaction; set to \"auto\" to calculate sufficient gas automatically. Note: \"auto\" option doesn't always report accurate results. Set a valid coin value to adjust the result. Can be used instead of \"fees\". (default 200upokt)",
+}
+
+// updateFlagHelpText updates the help text for flags that reference "uatom" to use "upokt"
+func updateFlagHelpText(cmd *cobra.Command) {
+	for flagName, helpText := range flagHelpUpdates {
+		if flag := cmd.Flags().Lookup(flagName); flag != nil {
+			flag.Usage = helpText
+		}
+	}
+}
+
+// AddTxFlagsToCmd adds the standard transaction flags to the given command
+// and updates the help text to use "upokt" instead of "uatom" denomination.
+func AddTxFlagsToCmd(cmd *cobra.Command) {
+	// Add the standard cosmos-sdk transaction flags
+	flags.AddTxFlagsToCmd(cmd)
+
+	// Update the help text for flags that reference "uatom" to use "upokt"
+	updateFlagHelpText(cmd)
+}
