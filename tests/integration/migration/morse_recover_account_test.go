@@ -173,12 +173,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 			claimedAccount := accountState.Accounts[claimedAccountIdx]
 			claimedAccountBalance := claimedAccount.TotalTokens()
 
-			expectedRecoveryRes := &migrationtypes.MsgRecoverMorseAccountResponse{
-				ShannonDestAddress: shannonDestAddr,
-				MorseSrcAddress:    test.morseSrcAddress,
-				RecoveredBalance:   claimedAccountBalance,
-				SessionEndHeight:   sessionEndHeight,
-			}
+			expectedRecoveryRes := &migrationtypes.MsgRecoverMorseAccountResponse{}
 			require.Equal(t, msgRecoveryRes, expectedRecoveryRes)
 
 			allEvents := s.GetApp().GetSdkCtx().EventManager().Events()
@@ -187,7 +182,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 
 			expectedEventMorseAccountRecovered := &migrationtypes.EventMorseAccountRecovered{
 				SessionEndHeight:   sessionEndHeight,
-				RecoveredBalance:   claimedAccountBalance,
+				RecoveredBalance:   claimedAccountBalance.String(),
 				ShannonDestAddress: shannonDestAddr,
 				MorseSrcAddress:    test.morseSrcAddress,
 			}

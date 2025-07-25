@@ -59,17 +59,17 @@ func (k Keeper) ProcessTokenLogicModules(
 	sessionHeader := pendingResult.Claim.GetSessionHeader()
 	if sessionHeader == nil {
 		logger.Error("received a nil session header")
-		return tokenomicstypes.ErrTokenomicsSessionHeaderNil
+		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
 	}
 	if err := sessionHeader.ValidateBasic(); err != nil {
 		logger.Error("received an invalid session header", "error", err)
-		return tokenomicstypes.ErrTokenomicsSessionHeaderInvalid
+		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderInvalid
 	}
 
 	// Retrieve and validate the root of the claim to determine the amount of work done
 	root := (smt.MerkleSumRoot)(pendingResult.Claim.GetRootHash())
 	if !root.HasDigestSize(protocol.TrieHasherSize) {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"root hash has invalid digest size (%d), expected (%d)",
 			root.DigestSize(), protocol.TrieHasherSize,
 		)
@@ -78,21 +78,21 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieve the sum (i.e. number of compute units) to determine the amount of work done
 	numClaimComputeUnits, err := pendingResult.Claim.GetNumClaimedComputeUnits()
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
 	}
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
 	// https://www.notion.so/buildwithgrove/RelayMiningDifficulty-and-low-volume-7aab3edf6f324786933af369c2fa5f01?pvs=4
 	if numClaimComputeUnits == 0 {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("root hash has zero relays")
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrap("root hash has zero relays")
 	}
 
 	numRelays, err := pendingResult.Claim.GetNumRelays()
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numRelays: %s", err)
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf("failed to retrieve numRelays: %s", err)
 	}
 
 	/*
-		TODO_POST_MAINNET(@olshansk): Fix the roo.Count and root.Sum confusion.
+		TODO_TECHDEBT(@olshansk): Fix the root.Count and root.Sum confusion.
 
 		Because of how things have evolved, we are now using root.Count (numRelays)
 		instead of root.Sum (numComputeUnits) to determine the amount of work done.
@@ -135,7 +135,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
 	expectedClaimComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	if numClaimComputeUnits != expectedClaimComputeUnits {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
+		return tokenomicstypes.ErrTokenomicsClaimRootHashInvalid.Wrapf(
 			"mismatch: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d)",
 			numClaimComputeUnits,
 			numRelays,
@@ -162,9 +162,9 @@ func (k Keeper) ProcessTokenLogicModules(
 		"application", application.Address,
 	)
 
-	// Ensure the claim amount is within the limits set by Relay Mining.
+	// Ensure the claim amount is within the limits set by RelayMining.
 	// If not, update the settlement amount and emit relevant events.
-	// TODO_MAINNET_MIGRATION(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
+	// TODO_IMPROVE: Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
 	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
@@ -226,7 +226,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		}
 	}
 
-	// TODO_MAINNET_MIGRATION(@bryanchriswhite): If the application stake has dropped to (near?) zero:
+	// TODO_IMPROVE: If the application stake has dropped to (near?) zero:
 	// - Unstake it
 	// - Emit an event
 	// - Ensure this doesn't happen
@@ -237,13 +237,14 @@ func (k Keeper) ProcessTokenLogicModules(
 	return nil
 }
 
-// ensureClaimAmountLimits checks if the application was overserviced and handles
-// the case if it was.
-// Per Algorithm #1 in the Relay Mining paper, the maximum amount that a single supplier
-// can claim in a session is AppStake/NumSuppliersPerSession.
+// ensureClaimAmountLimits checks and handles overserviced applications.
+//
+// Per Algorithm #1 in the Relay Mining paper, the maximum amount that a single
+// supplier can claim in a session is AppStake/NumSuppliersPerSession.
+// Ref: https://arxiv.org/pdf/2305.10672
+//
 // If this is not the case, then the supplier essentially did "free work" and the
 // actual claim amount is less than what was claimed.
-// Ref: https://arxiv.org/pdf/2305.10672
 func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,
@@ -321,8 +322,8 @@ func (k Keeper) ensureClaimAmountLimits(
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
 		ApplicationAddr:      application.GetAddress(),
 		SupplierOperatorAddr: supplier.GetOperatorAddress(),
-		ExpectedBurn:         &totalClaimedCoin,
-		EffectiveBurn:        &maxClaimableCoin,
+		ExpectedBurn:         totalClaimedCoin.String(),
+		EffectiveBurn:        maxClaimableCoin.String(),
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {

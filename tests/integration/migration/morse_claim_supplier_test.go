@@ -78,16 +78,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 				UnstakeSessionEndHeight: 0,
 				ServiceConfigHistory:    serviceConfigHistory,
 			}
-			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
-			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-				// MorseOutputAddress: (intentionally omitted),
-				MorseNodeAddress:     morseSrcAddr,
-				ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-				ClaimedBalance:       expectedClaimedBalance,
-				ClaimedSupplierStake: expectedStake,
-				SessionEndHeight:     expectedSessionEndHeight,
-				Supplier:             &expectedSupplier,
-			}
+			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{}
 			s.Equal(expectedClaimSupplierRes, claimSupplierRes)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -219,13 +210,11 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			// DEV_NOTE: If the ClaimedSupplierStake is zero, due to an optimization in big.Int,
 			// strict equality checking will fail. To work around this, we can initialize the bit.Int
 			// with a non-zero value and then set it to zero via arithmetic.
-			if claimSupplierRes.ClaimedSupplierStake.IsZero() {
-				claimSupplierRes.ClaimedSupplierStake.Amount = math.NewInt(1).SubRaw(1)
-			}
+			// ClaimedSupplierStake field removed from response
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
 			expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[morseAccountIdx]
-			expectedClaimedStake := expectedMorseClaimableAccount.GetSupplierStake()
+			// ClaimedStake field removed from response
 			expectedFinalSupplierStake := expectedMorseClaimableAccount.GetSupplierStake().Add(initialSupplierStake)
 
 			// Deduct the staking from the claimed tokens (unstaked + staked balance)
@@ -245,16 +234,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				//                       dehydrated from the MsgStakeSupplierResponse.
 			}
 
-			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
-			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-				// MorseOutputAddress: (intentionally omitted),
-				MorseNodeAddress:     morseNodeAddr,
-				ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-				ClaimedBalance:       expectedMorseClaimableAccount.GetUnstakedBalance(),
-				ClaimedSupplierStake: expectedClaimedStake,
-				SessionEndHeight:     expectedSessionEndHeight,
-				Supplier:             &expectedSupplier,
-			}
+			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{}
 			s.Equal(expectedClaimSupplierRes, claimSupplierRes)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -502,10 +482,10 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseSupplierClaimEvent := &migrationtypes.EventMorseSupplierClaimed{
 			SessionEndHeight:     expectedSessionEndHeight,
-			ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance(),
+			ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance().String(),
 			MorseNodeAddress:     unbondingSupplierFixture.GetActor().Address.String(),
 			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-			ClaimedSupplierStake: expectedSupplierStake,
+			ClaimedSupplierStake: expectedSupplierStake.String(),
 			Supplier:             expectedSupplier,
 			// MorseOutputAddress: (intentionally omitted, custodial case),
 		}
@@ -531,15 +511,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		expectedSupplier.ServiceConfigHistory[0].Service.Endpoints[0].Configs = nil
 
 		// Check the Morse claim response.
-		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-			MorseNodeAddress:     morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedSupplierStake: morseClaimableAccount.GetSupplierStake(),
-			SessionEndHeight:     expectedSessionEndHeight,
-			Supplier:             expectedSupplier,
-			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-			// MorseOutputAddress: (intentionally omitted, custodial case),
-		}
+		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{}
 		s.Equal(expectedMorseClaimRes, morseClaimRes)
 
 		// Assert that the morseClaimableAccount is updated on-chain.
@@ -633,10 +605,10 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseSupplierClaimEvent := &migrationtypes.EventMorseSupplierClaimed{
 			SessionEndHeight:     expectedSessionEndHeight,
-			ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance(),
+			ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance().String(),
 			MorseNodeAddress:     morseClaimMsg.GetMorseSignerAddress(),
 			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-			ClaimedSupplierStake: expectedSupplierStake,
+			ClaimedSupplierStake: expectedSupplierStake.String(),
 			Supplier:             expectedSupplier,
 			// MorseOutputAddress: (intentionally omitted, custodial case),
 		}
@@ -662,15 +634,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		expectedSupplier.Services = nil
 
 		// Check the Morse claim response.
-		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-			MorseNodeAddress:     morseClaimMsg.GetMorseSignerAddress(),
-			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-			ClaimedBalance:       morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedSupplierStake: expectedSupplierStake,
-			SessionEndHeight:     expectedSessionEndHeight,
-			Supplier:             expectedSupplier,
-			// MorseOutputAddress: (intentionally omitted, custodial case),
-		}
+		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{}
 		s.Equal(expectedMorseClaimRes, morseClaimRes)
 
 		// Assert that the morseClaimableAccount is updated on-chain.
@@ -867,10 +831,10 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 		// Assert that the expected events were emitted.
 		expectedMorseSupplierClaimEvent := &migrationtypes.EventMorseSupplierClaimed{
 			SessionEndHeight:     expectedSessionEndHeight,
-			ClaimedBalance:       morseOperatorClaimableAccount.GetUnstakedBalance(),
+			ClaimedBalance:       morseOperatorClaimableAccount.GetUnstakedBalance().String(),
 			MorseNodeAddress:     nonCustodialSupplierFixture.GetActor().Address.String(),
 			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-			ClaimedSupplierStake: expectedSupplierStake,
+			ClaimedSupplierStake: expectedSupplierStake.String(),
 			Supplier:             expectedSupplier,
 			MorseOutputAddress:   morseOwnerAddress,
 		}
@@ -885,15 +849,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseOperatorClaimedNonCustodialSupp
 		expectedSupplier.ServiceConfigHistory[0].Service.Endpoints[0].Configs = nil
 
 		// Check the Morse claim response.
-		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{
-			MorseNodeAddress:     morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:       morseOperatorClaimableAccount.GetUnstakedBalance(),
-			ClaimedSupplierStake: morseOperatorClaimableAccount.GetSupplierStake(),
-			Supplier:             expectedSupplier,
-			ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-			SessionEndHeight:     expectedSessionEndHeight,
-			MorseOutputAddress:   morseOwnerAddress,
-		}
+		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseSupplierResponse{}
 		s.Equal(expectedMorseClaimRes, morseClaimRes)
 
 		// Assert that the morseOperatorClaimableAccount is updated on-chain.

@@ -64,11 +64,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		expectedClaimedBalance := morseAccount.GetUnstakedBalance().
 			Add(morseAccount.GetSupplierStake()).
 			Add(morseAccount.GetApplicationStake())
-		expectedRes := &migrationtypes.MsgClaimMorseAccountResponse{
-			MorseSrcAddress:  msgClaim.GetMorseSignerAddress(),
-			ClaimedBalance:   expectedClaimedBalance,
-			SessionEndHeight: expectedSessionEndHeight,
-		}
+		expectedRes := &migrationtypes.MsgClaimMorseAccountResponse{}
 		require.Equal(t, expectedRes, msgClaimRes)
 
 		// Assert that the persisted MorseClaimableAccount is updated.
@@ -83,7 +79,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		expectedEvent := &migrationtypes.EventMorseAccountClaimed{
 			ShannonDestAddress: msgClaim.ShannonDestAddress,
 			MorseSrcAddress:    msgClaim.GetMorseSignerAddress(),
-			ClaimedBalance:     expectedClaimedBalance,
+			ClaimedBalance:     expectedClaimedBalance.String(),
 			SessionEndHeight:   expectedSessionEndHeight,
 		}
 		claimEvents := events.FilterEvents[*migrationtypes.EventMorseAccountClaimed](t, ctx.EventManager().Events())

@@ -138,21 +138,12 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msgClaimRes, err := srv.ClaimMorseApplication(ctx, msgClaim)
+	_, err = srv.ClaimMorseApplication(ctx, msgClaim)
 	require.NoError(t, err)
 
 	// Construct and assert the expected response.
 	sharedParams := sharedtypes.DefaultParams()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
-	expectedRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-		MorseSrcAddress:         msgClaim.GetMorseSignerAddress(),
-		ClaimedApplicationStake: morseClaimableAccount.GetApplicationStake(),
-		ClaimedBalance: expectedClaimedUnstakedTokens.
-			Add(morseClaimableAccount.GetSupplierStake()),
-		SessionEndHeight: expectedSessionEndHeight,
-		Application:      &expectedApp,
-	}
-	require.Equal(t, expectedRes, msgClaimRes)
 
 	// Assert that the persisted MorseClaimableAccount is updated.
 	expectedMorseAccount := morseClaimableAccount
@@ -165,8 +156,8 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseApplicationClaimed{
 		MorseSrcAddress:         msgClaim.GetMorseSignerAddress(),
-		ClaimedBalance:          expectedClaimedUnstakedTokens,
-		ClaimedApplicationStake: applicationStake,
+		ClaimedBalance:          expectedClaimedUnstakedTokens.String(),
+		ClaimedApplicationStake: applicationStake.String(),
 		SessionEndHeight:        expectedSessionEndHeight,
 		Application:             &expectedApp,
 	}

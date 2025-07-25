@@ -64,14 +64,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				Stake:          &expectedStake,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 			}
-			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
-			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-				MorseSrcAddress:         morseSrcAddr,
-				ClaimedBalance:          expectedBalance,
-				ClaimedApplicationStake: expectedStake,
-				SessionEndHeight:        expectedSessionEndHeight,
-				Application:             &expectedApp,
-			}
+			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{}
 			s.Equal(expectedClaimApplicationRes, claimAppRes)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -150,14 +143,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				Stake:          &expectedFinalStake,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 			}
-			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
-			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-				MorseSrcAddress:         morseSrcAddr,
-				ClaimedBalance:          expectedBalance,
-				ClaimedApplicationStake: expectedClaimedStake,
-				SessionEndHeight:        expectedSessionEndHeight,
-				Application:             &expectedApp,
-			}
+			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{}
 			s.Equal(expectedClaimApplicationRes, claimAppRes)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -363,8 +349,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
 			Application:             expectedApp,
 		}
@@ -389,13 +375,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		expectedApp.PendingUndelegations = nil
 
 		// Check the Morse claim response.
-		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: morseClaimableAccount.GetApplicationStake(),
-			SessionEndHeight:        expectedSessionEndHeight,
-			Application:             expectedApp,
-		}
+		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{}
 		s.Equal(expectedMorseClaimRes, morseClaimRes)
 
 		// Assert that the morseClaimableAccount is updated on-chain.
@@ -461,8 +441,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
 			Application:             expectedApp,
 		}
@@ -484,13 +464,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		expectedApp.PendingUndelegations = nil
 		expectedApp.ServiceConfigs = nil
 
-		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
-			SessionEndHeight:        expectedSessionEndHeight,
-			Application:             expectedApp,
-		}
+		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{}
 		s.Equal(expectedMorseClaimRes, morseClaimRes)
 
 		// Assert that the morseClaimableAccount is updated on-chain.
