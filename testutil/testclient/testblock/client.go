@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -106,6 +107,11 @@ func NewAnyTimeLastBlockBlockClient(
 	// returns the mock block.
 	blockClientMock := mockclient.NewMockBlockClient(ctrl)
 	blockClientMock.EXPECT().LastBlock(gomock.Any()).Return(blockMock).AnyTimes()
+
+	chainVersion, err := version.NewVersion(`v0.1.27`)
+	require.NoError(t, err)
+
+	blockClientMock.EXPECT().GetChainVersion().Return(chainVersion).AnyTimes()
 
 	return blockClientMock
 }

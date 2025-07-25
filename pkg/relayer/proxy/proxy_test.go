@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/docker/go-units"
 	"github.com/foxcpp/go-mockdns"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -1243,23 +1244,25 @@ func TestRelayerProxy_TimeoutHandling(t *testing.T) {
 	}{
 		{
 			name:                "fast_backend_succeeds",
-			backendDelay:        1 * time.Second,
-			configuredTimeout:   3,
+			backendDelay:        2 * time.Second,
+			configuredTimeout:   4,
 			expectedSuccess:     true,
-			expectedMinDuration: 1 * time.Second,
-			expectedMaxDuration: 2999 * time.Millisecond,
+			expectedMinDuration: 2 * time.Second,
+			expectedMaxDuration: 3999 * time.Millisecond,
 			serviceNameSuffix:   "fast",
 		},
 		{
 			name:                "slow_backend_times_out",
-			backendDelay:        3 * time.Second,
-			configuredTimeout:   2,
+			backendDelay:        5 * time.Second,
+			configuredTimeout:   4,
 			expectedSuccess:     false,
-			expectedMinDuration: 2 * time.Second,
-			expectedMaxDuration: 2999 * time.Millisecond,
+			expectedMinDuration: 4 * time.Second,
+			expectedMaxDuration: 4999 * time.Millisecond,
 			serviceNameSuffix:   "slow",
 		},
 	}
+
+	config.DefaultRequestTimeoutSeconds = 2
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1275,12 +1278,16 @@ func TestRelayerProxy_TimeoutHandling(t *testing.T) {
 			// Modify existing default service configuration timeout.
 			// Avoids creating new services that conflict with testproxy framework.
 			modifiedServicesConfigMap := make(map[string]*config.RelayMinerServerConfig)
+			maxBodySize, err := units.RAMInBytes(config.DefaultMaxBodySize)
+			require.NoError(t, err, "Failed to parse default max body size")
+
 			for k, v := range servicesConfigMap {
 				// Deep copy the config
 				newConfig := &config.RelayMinerServerConfig{
 					ServerType:         v.ServerType,
 					ListenAddress:      v.ListenAddress,
 					SupplierConfigsMap: make(map[string]*config.RelayMinerSupplierConfig),
+					MaxBodySize:        maxBodySize,
 				}
 
 				for serviceId, supplierConfig := range v.SupplierConfigsMap {
