@@ -99,8 +99,8 @@ func NewHTTPServer(
 		// attacks and to ensure that the server does not hang indefinitely on a request.
 		// These defaults are kept as baseline security measures, but per-request timeouts
 		// will override these values based on the configured timeout for each service ID.
-		ReadTimeout:  config.DefaultRequestTimeoutSeconds * time.Second,
-		WriteTimeout: config.DefaultRequestTimeoutSeconds * time.Second,
+		ReadTimeout:  time.Duration(config.DefaultRequestTimeoutSeconds) * time.Second,
+		WriteTimeout: time.Duration(config.DefaultRequestTimeoutSeconds) * time.Second,
 	}
 
 	return &relayMinerHTTPServer{
@@ -197,7 +197,7 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 //     timeout specified for that service ID.
 //   - If no specific timeout is found, it returns the default timeout.
 func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string) time.Duration {
-	timeout := config.DefaultRequestTimeoutSeconds * time.Second
+	timeout := time.Duration(config.DefaultRequestTimeoutSeconds) * time.Second
 
 	// Look up service-specific timeout in server config
 	if supplierConfig, exists := server.serverConfig.SupplierConfigsMap[serviceId]; exists {
