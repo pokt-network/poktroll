@@ -64,13 +64,13 @@ jobs:
           RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
           RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
 
-          # Read release body and escape it properly to prevent command execution
-          # Use printf to safely handle content with special characters
-          RELEASE_BODY=$(printf '%s' "${{ steps.get_release.outputs.release_body }}")
+          # Read release body safely without evaluating backticks
+          RELEASE_BODY="${{ steps.get_release.outputs.release_body }}"
 
           # Function to convert markdown to HTML for better Telegram compatibility
           convert_markdown_to_html() {
-            echo "$1" | \
+            # Use printf to safely pass the content without shell expansion
+            printf '%s' "$1" | \
             # First escape HTML special characters
             sed 's/&/\&amp;/g' | \
             sed 's/</\&lt;/g' | \
@@ -79,7 +79,7 @@ jobs:
             sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
             # Convert ### headers to <b>headers</b>
             sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert `code` to <code>code</code> first (before bold/italic)
+            # Convert `code` to <code>code</code> - escape backticks properly
             sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
             # Convert **bold** to <b>bold</b> - use non-greedy match
             sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
@@ -90,9 +90,7 @@ jobs:
           }
 
           # Convert the release body from markdown to HTML
-          # TEMPORARILY DISABLED to isolate the issue
-          # HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
-          HTML_RELEASE_BODY="$RELEASE_BODY"
+          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
 
           # Debug: Print the HTML to see what's being generated
           echo "DEBUG: HTML_RELEASE_BODY:"
