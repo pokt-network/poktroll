@@ -158,14 +158,14 @@ if [ ! -f "$UPGRADE_TX_JSON" ]; then
 fi
 
 # Print header
-print_header "========================================="
-print_header "  POKTROLL NETWORK UPGRADE SCRIPT"
-print_header "========================================="
+print_header "=================================="
+print_header " POCKET NETWORK UPGRADE SCRIPT "
+print_header "=================================="
 echo ""
 
 print_step "Configuration Summary:"
-echo -e "  ${CYAN}Environment:${NC} $ENVIRONMENT"
-echo -e "  ${CYAN}Version:${NC} $VERSION"
+echo -e "  ${CYAN}Environment:${NC} ${RED}$ENVIRONMENT${NC}"
+echo -e "  ${CYAN}Version:${NC} ${RED}$VERSION${NC}"
 echo -e "  ${CYAN}RPC Endpoint:${NC} $RPC_ENDPOINT"
 echo -e "  ${CYAN}From Account:${NC} $FROM_ACCOUNT"
 echo -e "  ${CYAN}Chain ID:${NC} $CHAIN_ID"
@@ -197,8 +197,8 @@ if [ -z "$CURRENT_HEIGHT" ] || [ "$CURRENT_HEIGHT" = "null" ]; then
 fi
 
 UPGRADE_HEIGHT=$((CURRENT_HEIGHT + HEIGHT_OFFSET))
-print_success "Current height: $CURRENT_HEIGHT"
-print_success "Upgrade height: $UPGRADE_HEIGHT (current + $HEIGHT_OFFSET)"
+print_success "Current height: ${RED}$CURRENT_HEIGHT${NC}"
+print_success "Upgrade height: ${RED}$UPGRADE_HEIGHT${NC} (current + $HEIGHT_OFFSET)"
 
 # Update the JSON file
 print_command "Updating upgrade height in $UPGRADE_TX_JSON..."
@@ -233,14 +233,14 @@ if [ "$GRAFANA_DASHBOARD" != "NA" ]; then
     echo ""
 fi
 echo -e "${NC}1. Watch the upgrade plan:${NC}"
-echo -e "${CYAN}$ watch -n 5 \"pocketd query upgrade plan --network=${ENVIRONMENT}\"${NC}"
+echo -e "   ${CYAN}$ watch -n 5 \"pocketd query upgrade plan --network=${ENVIRONMENT}\"${NC}"
 echo ""
 echo -e "${NC}2. Watch node version:${NC}"
-echo -e "${CYAN}$ watch -n 5 \"curl -s ${RPC_ENDPOINT}/abci_info | jq '.result.response.version'\"${NC}"
+echo -e "   ${CYAN}$ watch -n 5 \"curl -s ${RPC_ENDPOINT}/abci_info | jq '.result.response.version'\"${NC}"
 echo ""
 echo -e "${NC}3. Watch the transaction (replace TX_HASH with actual hash from step 3):${NC}"
-echo -e "${CYAN}$ export TX_HASH=\"<REPLACE_WITH_ACTUAL_TX_HASH>\"${NC}"
-echo -e "${CYAN}$ watch -n 5 \"pocketd query tx --type=hash $\{TX_HASH\} --network=${ENVIRONMENT}\"${NC}"
+echo -e "   ${CYAN}$ export TX_HASH=\"<REPLACE_WITH_ACTUAL_TX_HASH>\"${NC}"
+echo -e "   ${CYAN}$ watch -n 5 \"pocketd query tx --type=hash $\{TX_HASH\} --network=${ENVIRONMENT}\"${NC}"
 echo ""
 
 # Step 5: Post-upgrade checklist
@@ -248,14 +248,18 @@ print_step "Step 5: Post-upgrade checklist"
 echo ""
 print_header "✅ POST-UPGRADE CHECKLIST:"
 echo ""
-echo -e "1. Record the upgrade height and tx_hash in the GitHub Release: ${CYAN}https://github.com/pokt-network/poktroll/releases${NC}"
+echo -e "1. Generate release notes using:"
+echo -e "   ${CYAN}$ ./tools/scripts/upgrades/prepare_upgrade_release_notes.sh $VERSION${NC}"
 echo ""
-echo -e "2. Make sure to commit all updated files to main: ${CYAN}${UPGRADE_TX_JSON}${NC}"
+echo -e "2. Record the upgrade height and tx_hash in the GitHub Release: ${CYAN}https://github.com/pokt-network/poktroll/releases${NC}"
 echo ""
-echo -e "3. Only proceed to the next environment after current upgrade succeeds (Alpha → Beta → MainNet)"
+echo -e "3. Make sure to commit all updated files to main: ${CYAN}${UPGRADE_TX_JSON}${NC}"
 echo ""
-echo "4. Generate release notes using:"
-echo -e "${CYAN}$ ./tools/scripts/upgrades/prepare_upgrade_release_notes.sh $VERSION${NC}"
+echo -e "4. Make sure to update the documentation: ${CYAN}docusaurus/docs/4_develop/upgrades/4_upgrade_list.md${NC}"
+echo ""
+echo -e "5. Make sure to create a snapshot of the network: ${CYAN}https://www.notion.so/buildwithgrove/Shannon-Snapshot-Playbook-1aea36edfff680bbb5a7e71c9846f63c?source=copy_link${NC}"
+echo ""
+echo -e "6. Only proceed to the next environment after current upgrade succeeds (Alpha → Beta → MainNet)"
 echo ""
 
 # Final warnings
