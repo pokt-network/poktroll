@@ -73,31 +73,32 @@ jobs:
           convert_markdown_to_html() {
             # Use printf to safely pass the content without shell expansion
             printf '%s' "$1" | \
-            # First escape HTML special characters
+            # Convert markdown tables to simple text first (before escaping)
+            # Remove table separator lines
+            sed '/^|[-[:space:]|]*$/d' | \
+            # Convert table rows to simple text
+            sed 's/^|[[:space:]]*//g' | \
+            sed 's/[[:space:]]*|[[:space:]]*/ | /g' | \
+            sed 's/[[:space:]]*|$//g' | \
+            # Now escape HTML special characters
             sed 's/&/\&amp;/g' | \
             sed 's/</\&lt;/g' | \
             sed 's/>/\&gt;/g' | \
-            # Convert markdown tables to simple text (Telegram doesn't support HTML tables)
-            # Remove table separator lines
-            sed '/^|[-[:space:]|]*$/d' | \
-            # Convert table rows to simple format
-            sed 's/^|[[:space:]]*/<b>/g' | \
-            sed 's/[[:space:]]*|[[:space:]]*/<\/b>: /g' | \
-            sed 's/[[:space:]]*|$/<br>/g' | \
+            # Convert markdown formatting to HTML
+            # Convert **bold** to <b>bold</b> first (before italic)
+            sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
+            # Convert *italic* to <i>italic</i>
+            sed 's/\([^*]\)\*\([^*]\+\)\*\([^*]\)/\1<i>\2<\/i>\3/g' | \
+            # Convert `code` to <code>code</code>
+            sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
+            # Convert [text](url) links to <a href="url">text</a>
+            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
             # Convert ## headers to <b>headers</b>
             sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
             # Convert ### headers to <b>headers</b>
             sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert `code` to <code>code</code>
-            sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
-            # Convert **bold** to <b>bold</b>
-            sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
-            # Convert *italic* to <i>italic</i> (avoid conflicts with **bold**)
-            sed 's/\([^*]\)\*\([^*]\+\)\*\([^*]\)/\1<i>\2<\/i>\3/g' | \
-            # Convert [text](url) links to <a href="url">text</a>
-            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
-            # Add line breaks for better formatting
-            sed 's/$/\n/g'
+            # Add line breaks between paragraphs
+            sed '/^$/s//<br>/g'
           }
 
           # Convert the release body from markdown to HTML
