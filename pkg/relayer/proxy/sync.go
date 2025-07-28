@@ -291,21 +291,24 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 
+	// Serialize the service response to be sent back to the client.
+	// This will include the status code, headers, and body.
+	wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
+		return relayRequest, err
+	}
+
 	// Pass through all backend responses including errors.
 	// Allows clients to see real HTTP status codes from backend service.
 	// Log non-2XX status codes for monitoring but don't block response.
 	if httpResponse.StatusCode >= http.StatusMultipleChoices {
 		logger.Error().
 			Int("status_code", httpResponse.StatusCode).
+			Str("request_url", httpRequest.URL.String()).
+			Str("request_payload_first_bytes", string(relayRequest.Payload[:100])).
+			Str("response_payload_first_bytes", string(wrappedHTTPResponse.BodyBz[:100])).
 			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
-	}
-
-	// Serialize the service response to be sent back to the client.
-	// This will include the status code, headers, and body.
-	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
-		return relayRequest, err
 	}
 
 	logger.Debug().
@@ -382,8 +385,9 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	//
 	// Protocol details:
 	// - Relay rewards optimistically accumulated before forwarding to relay miner
-	// - Over-serviced relays must never enter reward pipeline
-	if !isOverServicing {
+	// - Over-serviced relays MUST NOT enter reward pipeline
+	// - 5xx errors MUST NOT enter reward pipeline
+	if !isOverServicing && httpResponse.StatusCode < http.StatusInternalServerError {
 		// Forward reward-eligible relays for SMT updates (excludes over-serviced relays).
 		server.servedRewardableRelaysProducer <- relay
 
