@@ -33,6 +33,9 @@ func TestCLI_StakeGateway(t *testing.T) {
 		_ = ctx
 	}
 
+	if testing.Short() {
+		t.Skip("skipping test in short mode due to network setup overhead")
+	}
 	net, _ := networkWithGatewayObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx

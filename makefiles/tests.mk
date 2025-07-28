@@ -75,7 +75,11 @@ test_verbose: check_go_version ## Run all go tests verbosely
 # See ref for more details: https://github.com/golang/go/issues/54482#issuecomment-1251124908
 .PHONY: test_all
 test_all: warn_flaky_tests check_go_version test_gen_fixtures ## Run all go tests showing detailed output only on failures
-	go test -count=1 -buildmode=pie -tags test ./...
+	go test -count=1 -buildmode=pie -tags test -timeout 30m ./...
+
+.PHONY: test_all_short
+test_all_short: warn_flaky_tests check_go_version test_gen_fixtures ## Run all go tests in short mode (skips slow network tests)
+	go test -short -count=1 -buildmode=pie -tags test -timeout 10m ./...
 
 .PHONY: test_all_with_integration
 test_all_with_integration: check_go_version ## Run all go tests, including those with the integration

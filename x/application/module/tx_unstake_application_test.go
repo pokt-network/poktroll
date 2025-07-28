@@ -20,6 +20,9 @@ import (
 )
 
 func TestCLI_UnstakeApplication(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode due to network setup overhead")
+	}
 	net, _ := networkWithApplicationObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
