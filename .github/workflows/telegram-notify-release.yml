@@ -68,7 +68,7 @@ jobs:
           # Use cat with heredoc to safely read the content
           RELEASE_BODY=$(cat <<'RELEASE_BODY_EOF'
             ${{ steps.get_release.outputs.release_body }}
-            RELEASE_BODY_EOF
+          RELEASE_BODY_EOF
           )
 
           # Function to convert markdown to HTML for better Telegram compatibility
