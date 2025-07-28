@@ -13,9 +13,14 @@ telegram_broadcast: ## Broadcast a custom message to all Telegram groups. Usage:
 	@echo "\nBroadcast initiated. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-broadcast.yml$(RESET)"
 
 .PHONY: telegram_release_notify
-telegram_release_notify: ## Notify all Telegram groups of the latest release
-	@echo "Notifying Telegram groups of the latest release...\n"
-	@gh workflow run telegram-notify-release.yml
+telegram_release_notify: ## Notify all Telegram groups of the latest release. Usage: make telegram_release_notify [RELEASE_TAG=v0.1.26]
+	@if [ -n "$(RELEASE_TAG)" ]; then \
+		echo "Notifying Telegram groups of release $(RELEASE_TAG)...\n"; \
+		gh workflow run telegram-notify-release.yml -f release_tag="$(RELEASE_TAG)"; \
+	else \
+		echo "Notifying Telegram groups of the latest release...\n"; \
+		gh workflow run telegram-notify-release.yml; \
+	fi
 	@echo "\nRelease notification initiated. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml$(RESET)"
 
 .PHONY: telegram_test_message
@@ -29,13 +34,23 @@ telegram_test_message: ## Test broadcast message to testing group only. Usage: m
 	@echo "\nTest message sent. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-broadcast.yml$(RESET)"
 
 .PHONY: telegram_test_release
-telegram_test_release: ## Test release notification to testing group only
-	@echo "Sending release notification to Telegram testing group...\n"
-	@gh workflow run telegram-notify-release.yml -f test_mode=true
+telegram_test_release: ## Test release notification to testing group only. Usage: make telegram_test_release [RELEASE_TAG=v0.1.26]
+	@if [ -n "$(RELEASE_TAG)" ]; then \
+		echo "Sending release $(RELEASE_TAG) notification to Telegram testing group...\n"; \
+		gh workflow run telegram-notify-release.yml -f test_mode=true -f release_tag="$(RELEASE_TAG)"; \
+	else \
+		echo "Sending latest release notification to Telegram testing group...\n"; \
+		gh workflow run telegram-notify-release.yml -f test_mode=true; \
+	fi
 	@echo "\nRelease notification sent. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml$(RESET)"
 
 .PHONY: telegram_test_release_from_branch
-telegram_test_release_from_branch: ## Test release notification to testing group only from the current branch
-	@echo "Sending release notification to Telegram testing group from branch $(shell git rev-parse --abbrev-ref HEAD)...\n"
-	@gh workflow run telegram-notify-release.yml -f test_mode=true --ref="$(shell git rev-parse --abbrev-ref HEAD)"
+telegram_test_release_from_branch: ## Test release notification to testing group only from the current branch. Usage: make telegram_test_release_from_branch [RELEASE_TAG=v0.1.26]
+	@if [ -n "$(RELEASE_TAG)" ]; then \
+		echo "Sending release $(RELEASE_TAG) notification to Telegram testing group from branch $(shell git rev-parse --abbrev-ref HEAD)...\n"; \
+		gh workflow run telegram-notify-release.yml -f test_mode=true -f release_tag="$(RELEASE_TAG)" --ref="$(shell git rev-parse --abbrev-ref HEAD)"; \
+	else \
+		echo "Sending latest release notification to Telegram testing group from branch $(shell git rev-parse --abbrev-ref HEAD)...\n"; \
+		gh workflow run telegram-notify-release.yml -f test_mode=true --ref="$(shell git rev-parse --abbrev-ref HEAD)"; \
+	fi
 	@echo "\nRelease notification sent. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml$(RESET)"

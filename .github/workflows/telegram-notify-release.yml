@@ -5,7 +5,9 @@ name: Telegram Broadcast New Release
 # 2. Set the latest release to latest and verify here: https://github.com/pokt-network/poktroll/releases/latest
 # 3. Manually trigger the workflow by either:
 #    - Clicking the "Run workflow" button here: https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml
-#    - Or by running the following command in your terminal: $ gh workflow run telegram-notify-release.yml
+#    - Or by running one of these commands in your terminal:
+#      $ gh workflow run telegram-notify-release.yml                    # Use latest release
+#      $ gh workflow run telegram-notify-release.yml -f release_tag=v0.1.26  # Use specific release
 
 ### How to test / debug this? ###
 # 1. Submit a new PR in a new branch that's modifying this file
@@ -21,6 +23,10 @@ on:
         required: false
         type: boolean
         default: false
+      release_tag:
+        description: "Specific release tag to broadcast (e.g., v0.1.26). If empty, uses latest release"
+        required: false
+        type: string
   # Uncomment the lines below to automatically trigger on release publication
   # This is commented out to avoid premature notifications
   # release:
@@ -34,18 +40,33 @@ jobs:
     outputs:
       message: ${{ steps.prepare_message.outputs.message }}
     steps:
-      - name: Get latest release
+      - name: Get release
         id: get_release
         run: |
-          # Get latest release info from GitHub API
-          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+          # Determine which release to fetch
+          RELEASE_TAG="${{ inputs.release_tag }}"
+
+          if [ -n "$RELEASE_TAG" ]; then
+            echo "Fetching specific release: $RELEASE_TAG"
+            RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/tags/$RELEASE_TAG")
+          else
+            echo "Fetching latest release"
+            RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+          fi
+
+          # Check if the API call was successful
+          if echo "$RELEASE_INFO" | jq -e '.message' > /dev/null 2>&1; then
+            echo "Error: $(echo "$RELEASE_INFO" | jq -r '.message')"
+            exit 1
+          fi
 
           # Extract release details and properly escape for GitHub Actions
           RELEASE_NAME=$(echo "$RELEASE_INFO" | jq -r '.name')
           RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.html_url')
 
-          echo "Latest release: $RELEASE_NAME"
+          echo "Release: $RELEASE_NAME"
           echo "Release URL: $RELEASE_URL"
 
           # Handle multiline release body properly
@@ -103,7 +124,7 @@ jobs:
 
           # Convert the release body from markdown to HTML and truncate at Legend
           FULL_HTML_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
-          
+
           # Truncate the message at the Legend section to avoid "message too long" error
           HTML_RELEASE_BODY=$(echo "$FULL_HTML_BODY" | sed '/^<b>Legend<\/b>:/,$d')
 
