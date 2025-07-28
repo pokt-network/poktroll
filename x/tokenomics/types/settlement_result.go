@@ -67,7 +67,7 @@ func (r *ClaimSettlementResult) AppendModToAcctTransfer(transfer ModToAcctTransf
 //
 // This is primarily used for event emission and observability purposes.
 func (r *ClaimSettlementResult) GetRewardDistribution() map[string]string {
-	// Start with a coin map to support arithmatic.
+	// Start with a coin map to support arithmetic.
 	rewardDistributionCoin := make(map[string]cosmostypes.Coin)
 
 	for _, transfer := range r.ModToAcctTransfers {
