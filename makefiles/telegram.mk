@@ -37,5 +37,5 @@ telegram_test_release: ## Test release notification to testing group only
 .PHONY: telegram_test_release_from_branch
 telegram_test_release_from_branch: ## Test release notification to testing group only from the current branch
 	@echo "Sending release notification to Telegram testing group from branch $(shell git rev-parse --abbrev-ref HEAD)...\n"
-	@gh workflow run telegram-notify-release.yml -f test_mode=true -f branch="$(shell git rev-parse --abbrev-ref HEAD)"
+	@gh workflow run telegram-notify-release.yml -f test_mode=true --ref="$(shell git rev-parse --abbrev-ref HEAD)"
 	@echo "\nRelease notification sent. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml$(RESET)"

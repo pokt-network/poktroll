@@ -64,8 +64,12 @@ jobs:
           RELEASE_NAME="${{ steps.get_release.outputs.release_name }}"
           RELEASE_URL="${{ steps.get_release.outputs.release_url }}"
 
-          # Read release body safely without evaluating backticks
-          RELEASE_BODY="${{ steps.get_release.outputs.release_body }}"
+          # Read release body and escape backticks to prevent command substitution
+          # Use cat with heredoc to safely read the content
+          RELEASE_BODY=$(cat <<'RELEASE_BODY_EOF'
+            ${{ steps.get_release.outputs.release_body }}
+            RELEASE_BODY_EOF
+          )
 
           # Function to convert markdown to HTML for better Telegram compatibility
           convert_markdown_to_html() {
@@ -90,7 +94,9 @@ jobs:
           }
 
           # Convert the release body from markdown to HTML
-          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          # TEMPORARILY DISABLED to isolate the issue
+          # HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          HTML_RELEASE_BODY="$RELEASE_BODY"
 
           # Debug: Print the HTML to see what's being generated
           echo "DEBUG: HTML_RELEASE_BODY:"
