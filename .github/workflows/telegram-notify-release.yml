@@ -101,8 +101,11 @@ jobs:
             sed '/^$/s//<br>/g'
           }
 
-          # Convert the release body from markdown to HTML
-          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          # Convert the release body from markdown to HTML and truncate at Legend
+          FULL_HTML_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
+          
+          # Truncate the message at the Legend section to avoid "message too long" error
+          HTML_RELEASE_BODY=$(echo "$FULL_HTML_BODY" | sed '/^<b>Legend<\/b>:/,$d')
 
           # Debug: Print the HTML to see what's being generated
           echo "DEBUG: HTML_RELEASE_BODY:"
