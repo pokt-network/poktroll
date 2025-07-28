@@ -5,7 +5,7 @@
         "@type": "/pocket.tokenomics.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
-          "dao_reward_address": "pokt1dd5rkaf8m9tm466mr2rytphv46jqx638a5m5er",
+          "dao_reward_address": "pokt1dr5jtqaaz4wk8wevl33e7vkxsjlphljnjhyq2l",
           "mint_allocation_percentages": {
             "dao": 0.1,
             "proposer": 0.2,
