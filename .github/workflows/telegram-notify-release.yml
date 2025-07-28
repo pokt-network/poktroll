@@ -77,45 +77,52 @@ jobs:
             sed 's/&/\&amp;/g' | \
             sed 's/</\&lt;/g' | \
             sed 's/>/\&gt;/g' | \
-            # Convert ## headers to <b>headers</b> BEFORE processing bold text
+            # Convert markdown tables to simple text (Telegram doesn't support HTML tables)
+            # Remove table separator lines
+            sed '/^|[-[:space:]|]*$/d' | \
+            # Convert table rows to simple format
+            sed 's/^|[[:space:]]*/<b>/g' | \
+            sed 's/[[:space:]]*|[[:space:]]*/<\/b>: /g' | \
+            sed 's/[[:space:]]*|$/<br>/g' | \
+            # Convert ## headers to <b>headers</b>
             sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
             # Convert ### headers to <b>headers</b>
             sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
-            # Convert `code` to <code>code</code> - escape backticks properly
+            # Convert `code` to <code>code</code>
             sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
-            # Convert **bold** to <b>bold</b> - use non-greedy match
+            # Convert **bold** to <b>bold</b>
             sed 's/\*\*\([^*]\+\)\*\*/<b>\1<\/b>/g' | \
-            # Convert *italic* to <i>italic</i> (but avoid conflicts with **bold**)
+            # Convert *italic* to <i>italic</i> (avoid conflicts with **bold**)
             sed 's/\([^*]\)\*\([^*]\+\)\*\([^*]\)/\1<i>\2<\/i>\3/g' | \
             # Convert [text](url) links to <a href="url">text</a>
-            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g'
+            sed 's/\[\([^]]*\)\](\([^)]*\))/<a href="\2">\1<\/a>/g' | \
+            # Add line breaks for better formatting
+            sed 's/$/\n/g'
           }
 
           # Convert the release body from markdown to HTML
-          # TEMPORARILY DISABLED to isolate the issue
-          # HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
-          HTML_RELEASE_BODY="$RELEASE_BODY"
+          HTML_RELEASE_BODY=$(convert_markdown_to_html "$RELEASE_BODY")
 
           # Debug: Print the HTML to see what's being generated
           echo "DEBUG: HTML_RELEASE_BODY:"
           echo "$HTML_RELEASE_BODY"
           echo "..."
 
-          # Create message with Markdown formatting
+          # Create message with HTML formatting
           if [ "${{ inputs.test_mode }}" = "true" ]; then
             MESSAGE=$(cat <<EOF
-          🧪 **TEST RELEASE NOTIFICATION** 🧪
+          🧪 <b>TEST RELEASE NOTIFICATION</b> 🧪
 
-          📣 **${RELEASE_NAME} release is live!** 📣
-          [View the full release here](${RELEASE_URL})
+          📣 <b>${RELEASE_NAME} release is live!</b> 📣
+          <a href="${RELEASE_URL}">View the full release here</a>
 
           ${HTML_RELEASE_BODY}
           EOF
           )
           else
             MESSAGE=$(cat <<EOF
-          📣 **${RELEASE_NAME} release is live!** 📣
-          [View the full release here](${RELEASE_URL})
+          📣 <b>${RELEASE_NAME} release is live!</b> 📣
+          <a href="${RELEASE_URL}">View the full release here</a>
 
           ${HTML_RELEASE_BODY}
           EOF
@@ -137,5 +144,5 @@ jobs:
     uses: ./.github/workflows/telegram-send-message.yml
     with:
       message: ${{ needs.notify.outputs.message }}
-      parse_mode: "Markdown"
+      parse_mode: "HTML"
       test_mode: ${{ inputs.test_mode }}
