@@ -532,8 +532,12 @@ func (k Keeper) slashSupplierStake(
 	// Emit an event that a supplier has been slashed.
 	claim := claimSettlementResult.GetClaim()
 	events = append(events, &tokenomicstypes.EventSupplierSlashed{
-		Claim:               &claim,
-		ProofMissingPenalty: slashingCoin.String(),
+		ProofMissingPenalty:     slashingCoin.String(),
+		ServiceId:               claim.SessionHeader.ServiceId,
+		ApplicationAddress:      claim.SessionHeader.ApplicationAddress,
+		SessionEndBlockHeight:   claim.SessionHeader.SessionEndBlockHeight,
+		ClaimProofStatusInt:     int32(claim.ProofValidationStatus),
+		SupplierOperatorAddress: claim.SupplierOperatorAddress,
 	})
 
 	// Emit all events.
@@ -690,12 +694,16 @@ func (k Keeper) settleClaim(
 		// Emit an event that a claim has expired and being removed without being settled.
 		if claim.ProofValidationStatus != prooftypes.ClaimProofStatus_VALIDATED {
 			claimExpiredEvent := tokenomicstypes.EventClaimExpired{
-				Claim:                    &claim,
 				ExpirationReason:         expirationReason,
 				NumRelays:                numClaimRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
 				ClaimedUpokt:             claimeduPOKT.String(),
+				ServiceId:                claim.SessionHeader.ServiceId,
+				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+				ClaimProofStatusInt:      int32(claim.ProofValidationStatus),
+				SupplierOperatorAddress:  claim.SupplierOperatorAddress,
 			}
 			if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 				return nil, err
@@ -721,16 +729,15 @@ func (k Keeper) settleClaim(
 		return nil, err
 	}
 
-	claimSettledEvent := tokenomicstypes.EventClaimSettled{
-		Claim:                    &claim,
-		NumRelays:                numClaimRelays,
-		NumClaimedComputeUnits:   numClaimComputeUnits,
-		NumEstimatedComputeUnits: numEstimatedComputeUnits,
-		ClaimedUpokt:             claimeduPOKT.String(),
-		ProofRequirement:         proofRequirement,
-	}
-
-	if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
+	claimSettledEvent := tokenomicstypes.NewEventClaimSettled(
+		numClaimRelays,
+		numClaimComputeUnits,
+		numEstimatedComputeUnits,
+		proofRequirement,
+		&claimeduPOKT,
+		claimSettlementContext.settlementResult,
+	)
+	if err = ctx.EventManager().EmitTypedEvent(claimSettledEvent); err != nil {
 		return nil, err
 	}
 
@@ -751,10 +758,13 @@ func (k Keeper) discardFaultyClaim(
 	discardReason string,
 ) {
 	// Emit an event that a claim settlement failed and the claim is being discarded.
-	dehydratedClaim := claim.GetDehydratedClaim()
 	claimDiscardedEvent := tokenomicstypes.EventClaimDiscarded{
-		Claim: &dehydratedClaim,
-		Error: discardReason,
+		Error:                   discardReason,
+		ServiceId:               claim.SessionHeader.ServiceId,
+		ApplicationAddress:      claim.SessionHeader.ApplicationAddress,
+		SessionEndBlockHeight:   claim.SessionHeader.SessionEndBlockHeight,
+		ClaimProofStatusInt:     int32(claim.ProofValidationStatus),
+		SupplierOperatorAddress: claim.SupplierOperatorAddress,
 	}
 	if evtErr := sdkCtx.EventManager().EmitTypedEvent(&claimDiscardedEvent); evtErr != nil {
 		logger.Error(fmt.Sprintf(

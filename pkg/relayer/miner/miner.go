@@ -15,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
@@ -25,6 +26,8 @@ var _ relayer.Miner = (*miner)(nil)
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 type miner struct {
+	logger polylog.Logger
+
 	// serviceQueryClient is used to query for the relay difficulty target hash of a service.
 	// relay_difficulty is the target hash which a relay hash must be less than to be volume/reward applicable.
 	serviceQueryClient client.ServiceQueryClient
@@ -51,6 +54,7 @@ func NewMiner(
 		&mnr.serviceQueryClient,
 		&mnr.relayMeter,
 		&mnr.blockClient,
+		&mnr.logger,
 	); err != nil {
 		return nil, err
 	}
@@ -119,6 +123,16 @@ func (mnr *miner) mapMineDehydratedRelay(
 	// The relay IS NOT volume / reward applicable
 	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
 		return either.Success[*relayer.MinedRelay](nil), true
+	}
+
+	if err := relay.Req.ValidateBasic(); err != nil {
+		mnr.logger.Error().Err(err).Msg("⛓️‍💥 invalid relay request during mining")
+		return either.Error[*relayer.MinedRelay](fmt.Errorf("invalid relay request during mining: %w", err)), true
+	}
+
+	if err := relay.Res.ValidateBasic(); err != nil {
+		mnr.logger.Error().Err(err).Msg("⛓️‍💥 invalid relay response during mining")
+		return either.Error[*relayer.MinedRelay](fmt.Errorf("invalid relay response during mining: %w", err)), true
 	}
 
 	// The relay IS volume / reward applicable
