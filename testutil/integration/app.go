@@ -492,6 +492,12 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		bankKeeper,
 	)
 
+	// Prepare mock staking and distribution keepers for integration tests
+	// Since we don't need full staking/distribution functionality in integration tests,
+	// we can use nil implementations or mocks that implement the interface
+	var mockStakingKeeper tokenomicstypes.StakingKeeper = nil
+	var mockDistributionKeeper tokenomicstypes.DistributionKeeper = nil
+
 	// Prepare the tokenomics keeper and module
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -507,6 +513,8 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
+		mockStakingKeeper,
+		mockDistributionKeeper,
 		cfg.TokenLogicModules,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(

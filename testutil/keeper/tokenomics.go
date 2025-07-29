@@ -23,8 +23,12 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -69,6 +73,8 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SharedKeeper
 	tokenomicstypes.SessionKeeper
 	tokenomicstypes.ServiceKeeper
+	tokenomicstypes.StakingKeeper
+	tokenomicstypes.DistributionKeeper
 	tokenomicstypes.MigrationKeeper
 
 	Codec *codec.ProtoCodec
@@ -301,6 +307,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 
+	// Create mock staking and distribution keepers
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -314,6 +324,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSharedKeeper,
 		mockSessionKeeper,
 		mockServiceKeeper,
+		mockStakingKeeper,
+		mockDistributionKeeper,
 		tokenLogicModules,
 	)
 
@@ -355,6 +367,8 @@ func NewTokenomicsModuleKeepers(
 		sharedtypes.StoreKey,
 		servicetypes.StoreKey,
 		migrationtypes.StoreKey,
+		stakingtypes.StoreKey,
+		distrtypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
@@ -391,10 +405,13 @@ func NewTokenomicsModuleKeepers(
 		// These module accounts are necessary in order to settle balances
 		// during claim expiration.
 		map[string][]string{
-			minttypes.ModuleName:       {authtypes.Minter},
-			suppliertypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
-			apptypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
-			tokenomicstypes.ModuleName: {authtypes.Minter, authtypes.Burner},
+			minttypes.ModuleName:           {authtypes.Minter},
+			suppliertypes.ModuleName:       {authtypes.Minter, authtypes.Burner},
+			apptypes.ModuleName:            {authtypes.Minter, authtypes.Burner},
+			tokenomicstypes.ModuleName:     {authtypes.Minter, authtypes.Burner},
+			distrtypes.ModuleName:          nil,
+			stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
+			stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		},
 		addrCodec,
 		app.AccountAddressPrefix,
@@ -530,6 +547,30 @@ func NewTokenomicsModuleKeepers(
 		require.NoError(t, err)
 	}
 
+	// Construct a real staking keeper for validator/delegator operations
+	stakingKeeper := stakingkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[stakingtypes.StoreKey]),
+		accountKeeper,
+		bankKeeper,
+		authority.String(),
+		addrCodec,
+		addresscodec.NewBech32Codec(cosmostypes.Bech32PrefixValAddr),
+	)
+	require.NoError(t, stakingKeeper.SetParams(sdkCtx, stakingtypes.DefaultParams()))
+
+	// Construct a real distribution keeper for reward distribution
+	distKeeper := distrkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[distrtypes.StoreKey]),
+		accountKeeper,
+		bankKeeper,
+		stakingKeeper,
+		distrtypes.ModuleName,
+		authority.String(),
+	)
+	// Note: Distribution keeper doesn't have SetParams method in newer versions
+
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -544,6 +585,8 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
+		stakingKeeper,
+		distKeeper,
 		cfg.tokenLogicModules,
 	)
 
@@ -574,16 +617,18 @@ func NewTokenomicsModuleKeepers(
 	}
 
 	keepers := TokenomicsModuleKeepers{
-		Keeper:            &tokenomicsKeeper,
-		AccountKeeper:     &accountKeeper,
-		BankKeeper:        &bankKeeper,
-		ApplicationKeeper: &appKeeper,
-		SupplierKeeper:    &supplierKeeper,
-		ProofKeeper:       &proofKeeper,
-		SharedKeeper:      &sharedKeeper,
-		SessionKeeper:     &sessionKeeper,
-		ServiceKeeper:     &serviceKeeper,
-		MigrationKeeper:   &migrationKeeper,
+		Keeper:             &tokenomicsKeeper,
+		AccountKeeper:      &accountKeeper,
+		BankKeeper:         &bankKeeper,
+		ApplicationKeeper:  &appKeeper,
+		SupplierKeeper:     &supplierKeeper,
+		ProofKeeper:        &proofKeeper,
+		SharedKeeper:       &sharedKeeper,
+		SessionKeeper:      &sessionKeeper,
+		ServiceKeeper:      &serviceKeeper,
+		StakingKeeper:      stakingKeeper,
+		DistributionKeeper: distKeeper,
+		MigrationKeeper:    &migrationKeeper,
 
 		Codec: cdc,
 	}

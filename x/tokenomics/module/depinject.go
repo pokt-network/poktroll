@@ -32,14 +32,16 @@ type ModuleInputs struct {
 	Config       *types.Module
 	Logger       log.Logger
 
-	AccountKeeper     types.AccountKeeper
-	BankKeeper        types.BankKeeper
-	ApplicationKeeper types.ApplicationKeeper
-	SupplierKeeper    types.SupplierKeeper
-	ProofKeeper       types.ProofKeeper
-	SharedKeeper      types.SharedKeeper
-	SessionKeeper     types.SessionKeeper
-	ServiceKeeper     types.ServiceKeeper
+	AccountKeeper      types.AccountKeeper
+	BankKeeper         types.BankKeeper
+	ApplicationKeeper  types.ApplicationKeeper
+	SupplierKeeper     types.SupplierKeeper
+	ProofKeeper        types.ProofKeeper
+	SharedKeeper       types.SharedKeeper
+	SessionKeeper      types.SessionKeeper
+	ServiceKeeper      types.ServiceKeeper
+	StakingKeeper      types.StakingKeeper
+	DistributionKeeper types.DistributionKeeper
 }
 
 type ModuleOutputs struct {
@@ -75,6 +77,8 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.SharedKeeper,
 		in.SessionKeeper,
 		in.ServiceKeeper,
+		in.StakingKeeper,
+		in.DistributionKeeper,
 
 		tokenLogicModules,
 	)

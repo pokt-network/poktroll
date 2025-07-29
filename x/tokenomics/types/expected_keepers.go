@@ -1,12 +1,15 @@
-//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,SupplierKeeper,ServiceKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,SupplierKeeper,ServiceKeeper,StakingKeeper,DistributionKeeper
 
 package types
 
 import (
 	"context"
 
+	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
@@ -123,4 +126,26 @@ type MigrationKeeper interface {
 	// Getters
 	GetMorseClaimableAccount(ctx context.Context, morseHexAddress string) (morseAccount migrationtypes.MorseClaimableAccount, isFound bool)
 	GetAllMorseClaimableAccounts(ctx context.Context) (morseAccounts []migrationtypes.MorseClaimableAccount)
+}
+
+// StakingKeeper defines the expected interface for the Staking module.
+type StakingKeeper interface {
+	// GetValidatorByConsAddr gets a validator by consensus address
+	GetValidatorByConsAddr(ctx context.Context, consAddr cosmostypes.ConsAddress) (stakingtypes.Validator, error)
+	// Validator gets a validator by operator address
+	Validator(ctx context.Context, addr cosmostypes.ValAddress) (stakingtypes.ValidatorI, error)
+	// GetDelegatorDelegations gets all delegations for a delegator
+	GetDelegatorDelegations(ctx context.Context, delegator cosmostypes.AccAddress, maxRetrieve uint16) ([]stakingtypes.Delegation, error)
+	// GetValidatorDelegations gets all delegations to a validator
+	GetValidatorDelegations(ctx context.Context, valAddr cosmostypes.ValAddress) ([]stakingtypes.Delegation, error)
+}
+
+// DistributionKeeper defines the expected interface for the Distribution module.
+type DistributionKeeper interface {
+	// AllocateTokensToValidator allocates tokens to a validator for distribution to delegators
+	AllocateTokensToValidator(ctx context.Context, val stakingtypes.ValidatorI, tokens cosmostypes.DecCoins) error
+	// GetCommunityTax gets the community tax rate
+	GetCommunityTax(ctx context.Context) (percent math.LegacyDec, err error)
+	// GetValidatorOutstandingRewards gets the outstanding rewards for a validator
+	GetValidatorOutstandingRewards(ctx context.Context, val cosmostypes.ValAddress) (rewards distributiontypes.ValidatorOutstandingRewards, err error)
 }
