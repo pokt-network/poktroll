@@ -355,74 +355,73 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 	sessionsToClaimsPublishCh chan<- []relayer.SessionTree,
 ) channel.ForEachFn[client.Block] {
 	return func(ctx context.Context, block client.Block) {
-		rs.sessionsTreesMu.Lock()
-		defer rs.sessionsTreesMu.Unlock()
-
 		// onTimeSessions are the sessions that are still within their grace period.
 		// They are on time and will wait for their create claim window to open.
 		// They will be emitted last, after all the late sessions have been emitted.
 		var onTimeSessions []relayer.SessionTree
 
+		// Query shared params before acquiring the mutex to avoid blocking session tree operations
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("❌️ Failed to query shared module parameters. ❗Check node connectivity and sync status. ❗Cannot process session claims without network parameters.")
 			return
 		}
 
+		// Only hold the mutex while copying the data, not during processing
+		rs.sessionsTreesMu.Lock()
 		// Get the sessions trees for the supplier matching the sessionsSupplier.
 		supplierSessionTress := rs.sessionsTrees[sessionsSupplier]
 
-		// Check if there are sessions that need to enter the claim/proof phase as their
-		// end block height was the one before the last committed block or earlier.
-		// Iterate over the supplier sessionsTrees map to get the ones that end at a
-		// block height lower than the current block height.
+		// Collect sessions that need to be processed while holding the mutex
+		// Map from sessionEndHeight to list of sessions to process
+		sessionsByEndHeight := make(map[int64][]relayer.SessionTree)
 		for sessionEndHeight, sessionsTreesEndingAtBlockHeight := range supplierSessionTress {
-			// Late sessions are the ones that have their session grace period elapsed
-			// and should already have been claimed.
-			// Group them by their end block height and emit each group separately
-			// before emitting the on-time sessions.
-			var lateSessions []relayer.SessionTree
-
 			claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
-
-			// Checking for sessions to claim with <= operator,
-			// which means that it would include sessions that were supposed to be
-			// claimed in previous block heights too.
-			// These late sessions might have their create claim window closed and are
-			// no longer eligible to be claimed, but that's not always the case.
-			// Once claim window closing is implemented, they will be filtered out
-			// downstream at the waitForEarliestCreateClaimsHeight step.
+			// Only collect sessions that are ready to be claimed
 			if claimWindowOpenHeight <= block.Height() {
-				// Iterate over the sessionsTrees that have grace period ending at this
-				// block height and add them to the list of sessionTrees to be published.
+				// Create a copy of sessions to process later
+				var sessionsCopy []relayer.SessionTree
 				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
-					// Mark the session as claimed and add it to the list of sessionTrees to be published.
-					// If the session has already been claimed, it will be skipped.
-					// Appending the sessionTree to the list of sessionTrees is protected
-					// against concurrent access by the sessionsTreesMu such that the first
-					// call that marks the session as claimed will be the only one to add the
-					// sessionTree to the list.
+					// Mark the session as claimed while holding the mutex
 					if err := sessionTree.StartClaiming(); err != nil {
 						continue
 					}
-
-					// Separate the sessions that are on-time from the ones that are late.
-					// If the session is past its claim window open height, it is considered
-					// late, otherwise it is on time and will be emitted last.
-					if claimWindowOpenHeight < block.Height() {
-						lateSessions = append(lateSessions, sessionTree)
-					} else {
-						onTimeSessions = append(onTimeSessions, sessionTree)
-					}
+					sessionsCopy = append(sessionsCopy, sessionTree)
 				}
-
-				// If there are any late sessions to be claimed, emit them first.
-				// The wait for claim submission window pipeline step will return immediately
-				// without blocking them.
-				if len(lateSessions) > 0 {
-					sessionsToClaimsPublishCh <- lateSessions
+				if len(sessionsCopy) > 0 {
+					sessionsByEndHeight[sessionEndHeight] = sessionsCopy
 				}
 			}
+		}
+		rs.sessionsTreesMu.Unlock()
+		// Mutex is now released - session tree operations can proceed
+
+		// Process the collected sessions without holding the mutex
+		// This allows new relays to be added to session trees while claims are being processed
+		var lateSessions [][]relayer.SessionTree
+		for sessionEndHeight, sessions := range sessionsByEndHeight {
+			claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
+			var lateSessionsBatch []relayer.SessionTree
+			for _, sessionTree := range sessions {
+				// Separate the sessions that are on-time from the ones that are late.
+				// If the session is past its claim window open height, it is considered
+				// late, otherwise it is on time and will be emitted last.
+				if claimWindowOpenHeight < block.Height() {
+					lateSessionsBatch = append(lateSessionsBatch, sessionTree)
+				} else {
+					onTimeSessions = append(onTimeSessions, sessionTree)
+				}
+			}
+
+			// Collect late sessions by batch to emit them first
+			if len(lateSessionsBatch) > 0 {
+				lateSessions = append(lateSessions, lateSessionsBatch)
+			}
+		}
+
+		// Emit late sessions first (they need immediate processing)
+		for _, lateBatch := range lateSessions {
+			sessionsToClaimsPublishCh <- lateBatch
 		}
 
 		// Emit the on-time sessions last, after all the late sessions have been emitted.
