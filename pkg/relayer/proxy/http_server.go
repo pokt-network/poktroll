@@ -56,7 +56,7 @@ type relayMinerHTTPServer struct {
 	// the relay requests and signs the relay responses.
 	relayAuthenticator relayer.RelayAuthenticator
 
-	// servedRewardableRelaysProducer is a channel that emits the relays thatL
+	// servedRewardableRelaysProducer is a channel that emits the relays that:
 	// 	1. Have been successfully served
 	// 	2. Are reward-applicable (i.e. should be inserted into the SMT)
 	// Some examples of relays that shouldn't be emitted to this channel:
