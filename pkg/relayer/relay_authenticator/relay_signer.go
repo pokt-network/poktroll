@@ -44,11 +44,17 @@ func (ra *relayAuthenticator) SignRelayResponse(relayResponse *types.RelayRespon
 	if err != nil {
 		return ErrRelayAuthenticatorInvalidRelayResponse.Wrapf("error getting signable bytes: %v", err)
 	}
+	if len(signableBz) == 0 {
+		return ErrRelayAuthenticatorInvalidRelayResponse.Wrap("signable bytes are empty")
+	}
 
 	// sign the relay response
 	responseSig, err := signer.Sign(signableBz)
 	if err != nil {
 		return ErrRelayAuthenticatorInvalidRelayResponse.Wrapf("error signing relay response: %v", err)
+	}
+	if len(responseSig) == 0 {
+		return ErrRelayAuthenticatorInvalidRelayResponse.Wrap("signature is empty")
 	}
 
 	// set the relay response's signature
