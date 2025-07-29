@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"testing"
 
@@ -16,6 +17,7 @@ import (
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/testutil/integration"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -85,7 +87,7 @@ type TokenomicsModuleKeepers struct {
 // functions which are passed during integration construction.
 type tokenomicsModuleKeepersConfig struct {
 	tokenLogicModules []tlm.TokenLogicModule
-	initKeepersFns    []func(context.Context, *TokenomicsModuleKeepers) context.Context
+	initKeepersFns    []func(context.Context, *TokenomicsModuleKeepers, *stakingkeeper.Keeper) context.Context
 	// moduleParams is a map of module names to their respective module parameters.
 	// This is used to set the initial module parameters in the keeper.
 	moduleParams map[string]cosmostypes.Msg
@@ -310,6 +312,25 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Create mock staking and distribution keepers
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
+
+	// Set up mock expectations for staking keeper
+	// Create a sample validator for testing
+	sampleValidator := stakingtypes.Validator{
+		OperatorAddress: sample.AccAddress(),
+		Status:          stakingtypes.Bonded,
+	}
+
+	// Mock GetValidatorByConsAddr to return the sample validator
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
+		Return(sampleValidator, nil).
+		AnyTimes()
+
+	// Mock AllocateTokensToValidator to succeed
+	mockDistributionKeeper.EXPECT().
+		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
 
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -548,6 +569,8 @@ func NewTokenomicsModuleKeepers(
 	}
 
 	// Construct a real staking keeper for validator/delegator operations
+	// Use the project's validator address prefix (pokt + valoper = poktvaloper)
+	valAddrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix + "valoper")
 	stakingKeeper := stakingkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[stakingtypes.StoreKey]),
@@ -555,9 +578,11 @@ func NewTokenomicsModuleKeepers(
 		bankKeeper,
 		authority.String(),
 		addrCodec,
-		addresscodec.NewBech32Codec(cosmostypes.Bech32PrefixValAddr),
+		valAddrCodec,
 	)
 	require.NoError(t, stakingKeeper.SetParams(sdkCtx, stakingtypes.DefaultParams()))
+
+	// We will pass the concrete stakingKeeper to the option functions
 
 	// Construct a real distribution keeper for reward distribution
 	distKeeper := distrkeeper.NewKeeper(
@@ -636,7 +661,7 @@ func NewTokenomicsModuleKeepers(
 	// Apply any options to update the keepers or context prior to returning them.
 	ctx = sdkCtx
 	for _, fn := range cfg.initKeepersFns {
-		ctx = fn(ctx, &keepers)
+		ctx = fn(ctx, &keepers, stakingKeeper)
 	}
 
 	return keepers, ctx
@@ -644,7 +669,7 @@ func NewTokenomicsModuleKeepers(
 
 // WithService is an option to set the service in the tokenomics module keepers.
 func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOptFn {
-	setService := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setService := func(ctx context.Context, keepers *TokenomicsModuleKeepers, _ *stakingkeeper.Keeper) context.Context {
 		keepers.SetService(ctx, service)
 		return ctx
 	}
@@ -655,7 +680,7 @@ func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOptFn {
 
 // WithApplication is an option to set the application in the tokenomics module keepers.
 func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOptFn {
-	setApp := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setApp := func(ctx context.Context, keepers *TokenomicsModuleKeepers, _ *stakingkeeper.Keeper) context.Context {
 		keepers.SetApplication(ctx, applicaion)
 		return ctx
 	}
@@ -666,7 +691,7 @@ func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt
 
 // WithSupplier is an option to set the supplier in the tokenomics module keepers.
 func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOptFn {
-	setSupplier := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setSupplier := func(ctx context.Context, keepers *TokenomicsModuleKeepers, _ *stakingkeeper.Keeper) context.Context {
 		keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 		return ctx
 	}
@@ -678,17 +703,28 @@ func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOptFn {
 // WithProposerAddr is an option to set the proposer address in the context used
 // by the tokenomics module keepers.
 func WithProposerAddr(addr string) TokenomicsModuleKeepersOptFn {
-	setProposerAddr := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setProposerAddrAndValidator := func(ctx context.Context, keepers *TokenomicsModuleKeepers, stakingKeeper *stakingkeeper.Keeper) context.Context {
 		consAddr, err := cosmostypes.ConsAddressFromBech32(addr)
 		if err != nil {
 			panic(err)
 		}
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 		sdkCtx = sdkCtx.WithProposer(consAddr)
+
+		// Create a validator and update the context with the corresponding consensus address
+		// This ensures the validator and proposer address are properly matched
+		actualConsAddr, err := createValidatorForProposer(sdkCtx, stakingKeeper)
+		if err != nil {
+			panic(fmt.Sprintf("failed to create validator for proposer: %v", err))
+		}
+
+		// Update the context to use the consensus address that matches our validator
+		sdkCtx = sdkCtx.WithProposer(actualConsAddr)
+
 		return sdkCtx
 	}
 	return func(cfg *tokenomicsModuleKeepersConfig) {
-		cfg.initKeepersFns = append(cfg.initKeepersFns, setProposerAddr)
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setProposerAddrAndValidator)
 	}
 }
 
@@ -708,12 +744,65 @@ func WithModuleParams(moduleParams map[string]cosmostypes.Msg) TokenomicsModuleK
 	}
 }
 
+// createValidatorForProposer creates a validator for integration tests and returns the consensus address
+// that matches the validator's public key. This ensures proper validator reward distribution.
+func createValidatorForProposer(ctx context.Context, stakingKeeper *stakingkeeper.Keeper) (cosmostypes.ConsAddress, error) {
+	// Create a consensus private/public key pair for testing
+	consPrivKey := ed25519.GenPrivKey()
+	consPubKey := consPrivKey.PubKey()
+
+	// Get the consensus address from the public key
+	consAddr := cosmostypes.ConsAddress(consPubKey.Address())
+
+	// Use standard account address format for validator operator address
+	// This matches the pattern used in the mock setup where sample.AccAddress() is used
+	operatorAddress := sample.AccAddress()
+
+	// Convert consensus public key to Any for storage in validator
+	consPubKeyAny, err := codectypes.NewAnyWithValue(consPubKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert consensus pubkey: %v", err)
+	}
+
+	validator := stakingtypes.Validator{
+		OperatorAddress: operatorAddress,
+		ConsensusPubkey: consPubKeyAny,
+		Jailed:          false,
+		Status:          stakingtypes.Bonded,
+		Tokens:          cosmosmath.NewInt(1000000), // 1M tokens staked
+		DelegatorShares: cosmosmath.LegacyNewDec(1000000),
+		Commission: stakingtypes.Commission{
+			CommissionRates: stakingtypes.CommissionRates{
+				Rate:          cosmosmath.LegacyNewDecWithPrec(5, 2),  // 5% commission
+				MaxRate:       cosmosmath.LegacyNewDecWithPrec(20, 2), // 20% max
+				MaxChangeRate: cosmosmath.LegacyNewDecWithPrec(1, 2),  // 1% max change
+			},
+			UpdateTime: cosmostypes.UnwrapSDKContext(ctx).BlockTime(),
+		},
+	}
+
+	// Use the concrete staking keeper to set the validator
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+
+	// Set the validator in state
+	if err := stakingKeeper.SetValidator(sdkCtx, validator); err != nil {
+		return nil, fmt.Errorf("failed to set validator: %v", err)
+	}
+
+	// SetValidatorByConsAddr creates the mapping from consensus address to validator
+	if err := stakingKeeper.SetValidatorByConsAddr(sdkCtx, validator); err != nil {
+		return nil, fmt.Errorf("failed to set validator by consensus address: %v", err)
+	}
+
+	return consAddr, nil
+}
+
 // WithProofRequirement is an option to enable or disable the proof requirement
 // in the tokenomics module keepers by setting the proof request probability to
 // 1 or 0, respectively whie setting the proof requirement threshold to 0 or
 // MaxInt64, respectively.
 func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOptFn {
-	setProofRequirement := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setProofRequirement := func(ctx context.Context, keepers *TokenomicsModuleKeepers, _ *stakingkeeper.Keeper) context.Context {
 		proofParams := keepers.ProofKeeper.GetParams(ctx)
 		if proofRequired {
 			// Require a proof 100% of the time probabilistically speaking.
@@ -750,7 +839,7 @@ func WithDefaultModuleBalances() func(cfg *tokenomicsModuleKeepersConfig) {
 
 // WithModuleAccountBalances mints the given amount of uPOKT to the respective modules.
 func WithModuleAccountBalances(moduleAccountBalances map[string]int64) func(cfg *tokenomicsModuleKeepersConfig) {
-	setModuleAccountBalances := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setModuleAccountBalances := func(ctx context.Context, keepers *TokenomicsModuleKeepers, _ *stakingkeeper.Keeper) context.Context {
 		for moduleName, balanceCoin := range moduleAccountBalances {
 			err := keepers.MintCoins(ctx, moduleName, cosmostypes.NewCoins(cosmostypes.NewInt64Coin(pocket.DenomuPOKT, balanceCoin)))
 			if err != nil {
