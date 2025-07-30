@@ -11,14 +11,16 @@ import (
 const (
 	relayMinerProcess = "relayminer"
 
-	requestsTotal          = "requests_total"
-	requestsErrorsTotal    = "requests_errors_total"
-	requestsSuccessTotal   = "requests_success_total"
-	requestSizeBytes       = "request_size_bytes"
-	responseSizeBytes      = "response_size_bytes"
-	smtSizeBytes           = "smt_size_bytes"
-	relayDurationSeconds   = "relay_duration_seconds"
-	serviceDurationSeconds = "service_duration_seconds"
+	requestsTotal                      = "requests_total"
+	requestsErrorsTotal                = "requests_errors_total"
+	requestsSuccessTotal               = "requests_success_total"
+	requestSizeBytes                   = "request_size_bytes"
+	responseSizeBytes                  = "response_size_bytes"
+	relayDurationSeconds               = "relay_duration_seconds"
+	serviceDurationSeconds             = "service_duration_seconds"
+	requestPreparationDurationSeconds  = "relay_request_preparation_duration_seconds"
+	responsePreparationDurationSeconds = "relay_response_preparation_duration_seconds"
+	pocketGRPCCallDurationSeconds      = "pocket_grpc_call_duration_seconds"
 )
 
 var (
@@ -100,6 +102,52 @@ var (
 		Buckets:   defaultBuckets,
 	}, []string{"service_id", "status_code"})
 
+	// RelayRequestPreparationDurationSeconds observes the duration of preparing
+	// a relay request from an HTTP request.
+	//
+	// This histogram, labeled by 'service_id', measures the time taken to prepare
+	// a relay request, which includes unmarshaling the request body and preparing
+	// the RelayRequest structure.
+	// Usage:
+	// - Analyze the time taken to prepare relay requests.
+	// - Identify potential bottlenecks in request preparation.
+	RelayRequestPreparationDurationSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		Subsystem: relayMinerProcess,
+		Name:      requestPreparationDurationSeconds,
+		Help:      "Histogram of relay request preparation durations in seconds.",
+		Buckets:   defaultBuckets,
+	}, []string{"service_id"})
+
+	// RelayResponsePreparationDurationSeconds observes the duration of preparing
+	// a relay response from the the service's HTTP response.
+	//
+	// This histogram, labeled by 'service_id', measures the time taken to prepare
+	// a relay response, which includes marshalling the response body and preparing
+	// the RelayResponse structure.
+	// Usage:
+	// - Analyze the time taken to prepare relay responses.
+	// - Identify potential bottlenecks in response preparation.
+	RelayResponsePreparationDurationSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		Subsystem: relayMinerProcess,
+		Name:      responsePreparationDurationSeconds,
+		Help:      "Histogram of relay response preparation durations in seconds.",
+		Buckets:   defaultBuckets,
+	}, []string{"service_id"})
+
+	// PocketGRPCCallDurationSeconds is a histogram metric for measuring the duration of gRPC calls.
+	//
+	// It is labeled by 'component' (e.g., miner, proxy) and 'method', capturing the time taken for each call.
+	// This metric is essential for performance monitoring and analysis of gRPC interactions.
+	// Usage:
+	// - Monitor gRPC call performance.
+	// - Identify slow or problematic calls.
+	PocketGRPCCallDurationSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		Subsystem: relayMinerProcess,
+		Name:      pocketGRPCCallDurationSeconds,
+		Help:      "Histogram of gRPC call durations for performance analysis.",
+		Buckets:   defaultBuckets,
+	}, []string{"component", "method"})
+
 	// RelayResponseSizeBytes is a histogram metric for observing response size distribution.
 	// It counts responses in bytes, with buckets:
 	// - 100 bytes to 50,000 bytes, capturing a range from small to large responses.
@@ -149,5 +197,38 @@ func CaptureServiceDuration(serviceId string, startTime time.Time, statusCode in
 	ServiceDurationSeconds.
 		With("service_id", serviceId).
 		With("status_code", fmt.Sprintf("%d", statusCode)).
+		Observe(duration)
+}
+
+// CaptureRequestPreparationDuration records the duration of the request reading and preparation
+// before sending it to the backend service/data node.
+// It is labeled by service ID and captures the time taken to process the request.
+func CaptureRequestPreparationDuration(serviceId string, startTime time.Time) {
+	duration := time.Since(startTime).Seconds()
+
+	RelayRequestPreparationDurationSeconds.
+		With("service_id", serviceId).
+		Observe(duration)
+}
+
+// CaptureResponsePreparationDuration records the duration of preparing the response
+// after receiving it from the backend service/data node.
+// It is labeled by service ID and captures the time taken to process the response.
+func CaptureResponsePreparationDuration(serviceId string, startTime time.Time) {
+	duration := time.Since(startTime).Seconds()
+
+	RelayResponsePreparationDurationSeconds.
+		With("service_id", serviceId).
+		Observe(duration)
+}
+
+// CapturePocketGRPCCallDuration records the duration of a gRPC call.
+// It is labeled by component (e.g., miner, proxy) and method, capturing the time taken for the call.
+func CapturePocketGRPCCallDuration(component, method string, startTime time.Time) {
+	duration := time.Since(startTime).Seconds()
+
+	PocketGRPCCallDurationSeconds.
+		With("component", component).
+		With("method", method).
 		Observe(duration)
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -75,6 +76,9 @@ func (mnr *miner) MinedRelays(
 	ctx context.Context,
 	servedRelaysObs relayer.RelaysObservable,
 ) relayer.MinedRelaysObservable {
+	// Ensure the context is set with the miner component kind.
+	// This is used to capture the component kind in gRPC call duration metrics collection.
+	ctx = context.WithValue(ctx, query.ComponentCtxKey, query.ComponentCtxMiner)
 	// NB: must cast back to generic observable type to use with Map.
 	// relayer.RelaysObservable cannot be an alias due to gomock's lack of
 	// support for generic types.

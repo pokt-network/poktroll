@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -35,9 +36,13 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Default to a failure (5XX).
 	// Success is implied by reaching the end of the function where status is set to 2XX.
 	statusCode := http.StatusInternalServerError
+	// Ensure the context is set with the proxy component kind.
+	// This is used to capture the component kind in gRPC call duration metrics collection.
+	ctx = context.WithValue(ctx, query.ComponentCtxKey, query.ComponentCtxProxy)
 
 	logger := server.logger.With(
 		"relay_request_type", "⚡ synchronous",
+		"rpc_type", request.Header.Get(RPCTypeHeader),
 	)
 	requestStartTime := time.Now()
 	startBlock := server.blockClient.LastBlock(ctx)
@@ -254,8 +259,11 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// DEV_NOTE: Even after deadline, client cancellation or request timeout,
 	//  the request handler's goroutine will continue processing unless explicitly
 	//  checking for context cancellation.
+	logger = logger.With("request_preparation_duration", time.Since(requestStartTime).String())
+	relayer.CaptureRequestPreparationDuration(serviceId, requestStartTime)
+	serviceCallStartTime := time.Now()
 	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
-		logger.With("current_time", time.Now()).Warn().Msg(ctxErr.Error())
+		logger.Warn().Msg(ctxErr.Error())
 
 		return relayRequest, ErrRelayerProxyTimeout.Wrapf(
 			"request to service %s timed out after %s",
@@ -265,8 +273,13 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	// Send the relay request to the native service.
-	serviceCallStartTime := time.Now()
 	httpResponse, err := client.Do(httpRequest)
+
+	backendServiceProcessingEnd := time.Now()
+	logger = logger.With(
+		"backend_request_duration", time.Since(serviceCallStartTime).String(),
+	)
+
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed sending the relay request to the native service")
 		// Capture the service call request duration metric.
@@ -326,12 +339,20 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	relay := &types.Relay{Req: relayRequest, Res: relayResponse}
 
+	// Capture the time after response time for the relay.
+	responsePreparationEnd := time.Now()
+	logger = logger.With("response_preparation_duration", time.Since(backendServiceProcessingEnd))
+	relayer.CaptureResponsePreparationDuration(serviceId, backendServiceProcessingEnd)
+
 	// Send the relay response to the client.
-	if err = server.sendRelayResponse(relay.Res, writer); err != nil {
+	err = server.sendRelayResponse(relay.Res, writer)
+	logger = logger.With("send_response_duration", time.Since(responsePreparationEnd))
+	if err != nil {
 		// If the originHost cannot be parsed, reply with an internal error so that
 		// the original error is not exposed to the client.
 		clientError := ErrRelayerProxyInternalError.Wrap(err.Error())
-		logger.Warn().Err(err).Msg("❌ Failed sending relay response")
+		// Log current time to highlight writer i/o timeout errors.
+		logger.Warn().Err(err).Time("current_time", time.Now()).Msg("❌ Failed sending relay response")
 		return relayRequest, clientError
 	}
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	blocktypes "github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -160,6 +161,9 @@ func NewRelayerSessions(
 //
 // It IS NOT BLOCKING as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) error {
+	// Ensure the context is set with the session manager component kind.
+	// This is used to capture the component kind in gRPC call duration metrics collection.
+	ctx = context.WithValue(ctx, query.ComponentCtxKey, query.ComponentCtxSessionsManager)
 	// Retrieve the latest block, which provides a reference height to:
 	//   - Determine which sessions are still active
 	//   - Identify which sessions have expired based on their end heights
