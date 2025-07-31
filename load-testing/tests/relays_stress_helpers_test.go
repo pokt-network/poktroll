@@ -1165,7 +1165,7 @@ func (s *relaysSuite) ensureStakedActors(
 		for _, event := range blockEvents {
 			switch e := event.(type) {
 			case *suppliertypes.EventSupplierStaked:
-				stakedActors[e.Supplier.GetOperatorAddress()] = struct{}{}
+				stakedActors[e.GetOperatorAddress()] = struct{}{}
 			case *gatewaytypes.EventGatewayStaked:
 				stakedActors[e.Gateway.GetAddress()] = struct{}{}
 			case *apptypes.EventApplicationStaked:

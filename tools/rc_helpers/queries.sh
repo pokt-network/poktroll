@@ -8,9 +8,14 @@
 # ===============================================
 
 function help() {
-  LATEST_BLOCK=$(pocketd query block --network=main --grpc-insecure=false -o json | tail -n +2 | jq -r '.header.height')
-  LATEST_BLOCK=$(($LATEST_BLOCK))
-  LATEST_BLOCK_MINUS_100=$(($LATEST_BLOCK - 100))
+  LATEST_BLOCK_MAIN=$(pocketd query block --network=main --grpc-insecure=false -o json | tail -n +2 | jq -r '.header.height')
+  LATEST_BLOCK_BETA=$(pocketd query block --network=beta --grpc-insecure=false -o json | tail -n +2 | jq -r '.header.height')
+
+  LATEST_BLOCK_MAIN=$(($LATEST_BLOCK_MAIN))
+  LATEST_BLOCK_BETA=$(($LATEST_BLOCK_BETA))
+
+  LATEST_BLOCK_MAIN_MINUS_100=$(($LATEST_BLOCK_MAIN - 100))
+  LATEST_BLOCK_BETA_MINUS_100=$(($LATEST_BLOCK_BETA - 100))
 
   echo "=========================================="
   echo "Shannon Blockchain Query Utilities"
@@ -27,18 +32,19 @@ function help() {
   echo "  shannon_query_supplier_block_events      - Get supplier-specific block events"
   echo "  shannon_query_application_block_events   - Get application-specific block events"
   echo ""
-  echo "Current latest block on mainnet: $LATEST_BLOCK"
+  echo "Current latest block on mainnet: $LATEST_BLOCK_MAIN"
+  echo "Current latest block on beta testnet: $LATEST_BLOCK_BETA"
   echo ""
   echo "Quick start examples (using last 100 blocks - focus on Claim messages & events):"
-  echo "  shannon_query_unique_tx_msgs_and_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_unique_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_tx_messages $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK /pocket.proof.MsgCreateClaim \"\" main"
-  echo "  shannon_query_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pocket.proof.EventClaimCreated main"
-  echo "  shannon_query_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_unique_claim_suppliers $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_supplier_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
-  echo "  shannon_query_supplier_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
-  echo "  shannon_query_application_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt14tg8v3hns5tjefnmqs9u98jqjp6mw6wmwwmuh2 main"
+  echo "  shannon_query_unique_tx_msgs_and_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo "  shannon_query_unique_block_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo "  shannon_query_tx_messages $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN /pocket.proof.MsgCreateClaim \"\" main"
+  echo "  shannon_query_tx_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pocket.proof.EventClaimCreated main"
+  echo "  shannon_query_block_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo "  shannon_query_unique_claim_suppliers $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo "  shannon_query_supplier_tx_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
+  echo "  shannon_query_supplier_block_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
+  echo "  shannon_query_application_block_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pokt14tg8v3hns5tjefnmqs9u98jqjp6mw6wmwwmuh2 main"
   echo ""
   echo "Use --help with any command for detailed information"
   echo "=========================================="
@@ -726,7 +732,7 @@ EOF
 
   local additional_query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
   local tmp_file="/tmp/shannon_txs_claim_suppliers_${min_height}_${max_height}_${env}_${additional_query_safe}.json"
-  
+
   query_txs_range "$min_height" "$max_height" "$env" "$tmp_file" "$additional_query"
 
   jq '[.txs[].tx.body.messages[]
@@ -787,7 +793,7 @@ EOF
 
   local additional_query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
   local tmp_file="/tmp/shannon_txs_supplier_tx_events_${start}_${end}_${env}_${additional_query_safe}.json"
-  
+
   query_txs_range "$start" "$end" "$env" "$tmp_file" "$additional_query"
 
   jq --argjson EVENT_TYPES "$event_types_json" --arg SUPPLIER_ADDR "$supplier_addr" '

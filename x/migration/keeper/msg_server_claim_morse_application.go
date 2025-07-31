@@ -96,8 +96,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// It will be modified, as necessary, prior to emission.
 	morseAppClaimedEvent := &migrationtypes.EventMorseApplicationClaimed{
 		MorseSrcAddress:         msg.GetMorseSignerAddress(),
-		ClaimedBalance:          claimedUnstakedBalance,
-		ClaimedApplicationStake: claimedAppStake,
+		ClaimedBalance:          claimedUnstakedBalance.String(),
+		ClaimedApplicationStake: claimedAppStake.String(),
 		SessionEndHeight:        sessionEndHeight,
 		Application:             unbondedApp,
 	}
@@ -172,8 +172,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	}
 
 	// Update the application claim event.
-	morseAppClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
-	morseAppClaimedEvent.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake()
+	morseAppClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance().String()
+	morseAppClaimedEvent.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake().String()
 	morseAppClaimedEvent.Application = app
 
 	// Emit the application claim event first.

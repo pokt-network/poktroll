@@ -182,7 +182,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 
 			expectedEventMorseAccountRecovered := &migrationtypes.EventMorseAccountRecovered{
 				SessionEndHeight:   sessionEndHeight,
-				RecoveredBalance:   claimedAccountBalance,
+				RecoveredBalance:   claimedAccountBalance.String(),
 				ShannonDestAddress: shannonDestAddr,
 				MorseSrcAddress:    test.morseSrcAddress,
 			}

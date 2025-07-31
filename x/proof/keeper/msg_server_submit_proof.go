@@ -143,21 +143,29 @@ func (k msgServer) SubmitProof(
 	case true:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
-				Claim:                    claim,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
+				ServiceId:                claim.SessionHeader.ServiceId,
+				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  supplierOperatorAddress,
 			},
 		)
 	case false:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
-				Claim:                    claim,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
+				ServiceId:                claim.SessionHeader.ServiceId,
+				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  supplierOperatorAddress,
 			},
 		)
 	}

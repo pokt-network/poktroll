@@ -248,11 +248,14 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 			require.NoError(t, err)
 
-			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
+			require.Equal(t, claim.SessionHeader.ServiceId, proofSubmittedEvent.GetServiceId())
+			require.Equal(t, claim.SessionHeader.ApplicationAddress, proofSubmittedEvent.GetApplicationAddress())
+			require.Equal(t, claim.SessionHeader.SessionEndBlockHeight, proofSubmittedEvent.GetSessionEndBlockHeight())
+			require.Equal(t, int32(prooftypes.ClaimProofStatus_PENDING_VALIDATION), proofSubmittedEvent.GetClaimProofStatusInt())
 			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
 			require.Equal(t, uint64(numClaimComputeUnits), proofSubmittedEvent.GetNumClaimedComputeUnits())
 			require.Equal(t, numEstimatedComputUnits, proofSubmittedEvent.GetNumEstimatedComputeUnits())
-			require.Equal(t, &claimedUPOKT, proofSubmittedEvent.GetClaimedUpokt())
+			require.Equal(t, claimedUPOKT.String(), proofSubmittedEvent.GetClaimedUpokt())
 		})
 	}
 }

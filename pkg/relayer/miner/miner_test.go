@@ -19,6 +19,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
@@ -44,6 +45,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 	var (
 		minedRelayCounter                     = 0
 		ctx                                   = context.Background()
+		logger                                = polylog.Ctx(ctx)
 		actualMinedRelaysMu                   sync.Mutex
 		actualMinedRelays                     []*relayer.MinedRelay
 		mockRelaysObs, relaysFixturePublishCh = channel.NewObservable[*servicetypes.Relay]()
@@ -63,7 +65,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 		}).
 		AnyTimes()
 
-	deps := depinject.Supply(serviceQueryClientMock, relayMeterMock, blockClient)
+	deps := depinject.Supply(serviceQueryClientMock, relayMeterMock, blockClient, logger)
 	mnr, err := miner.NewMiner(deps)
 	require.NoError(t, err)
 

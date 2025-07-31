@@ -150,3 +150,7 @@ check_proto_unstable_marshalers: ## Check that all protobuf files have the 'stab
 fix_proto_unstable_marshalers: ## Ensure the 'stable_marshaler_all' option is present on all protobuf files.
 	go run ./tools/scripts/protocheck/cmd unstable --fix
 	${MAKE} proto_regen
+
+.PHONY: check_proto_event_fields
+check_proto_event_fields: ## Check that all Event messages only contain primitive fields for optimal disk utilization.
+	go run ./tools/scripts/protocheck/cmd event-fields

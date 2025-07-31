@@ -12,6 +12,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/pocket"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -43,6 +44,9 @@ func (s *suite) TheUserRemembersTheBalanceOfTheDaoAs(stateKey string) {
 func (s *suite) TheUserRemembersTheBalanceOfTheProposerAs(stateKey string) {
 	// Get the current block proposer address
 	proposerAddr := s.getCurrentBlockProposer()
+
+	// DEV_NOTE: fund the proposer with a MACT so that the s.getAccBalance check doesn't fail the test.
+	s.fundAddress(proposerAddr, cosmostypes.NewInt64Coin(pocket.DenomMACT, 1))
 
 	// Store the proposer address in accNameToAddrMap if not already there
 	if _, exists := accNameToAddrMap["proposer"]; !exists {

@@ -178,9 +178,13 @@ func (k Keeper) validateProof(
 
 	// Create and emit an event for the proof validation result.
 	eventProofValidityChecked := types.EventProofValidityChecked{
-		Claim:         &claim,
-		BlockHeight:   uint64(sdkCtx.BlockHeight()),
-		FailureReason: invalidProofReason,
+		BlockHeight:             uint64(sdkCtx.BlockHeight()),
+		FailureReason:           invalidProofReason,
+		ServiceId:               claim.SessionHeader.ServiceId,
+		ApplicationAddress:      claim.SessionHeader.ApplicationAddress,
+		SessionEndBlockHeight:   claim.SessionHeader.SessionEndBlockHeight,
+		ClaimProofStatusInt:     int32(proofStatus),
+		SupplierOperatorAddress: supplierOperatorAddr,
 	}
 
 	if err := sdkCtx.EventManager().EmitTypedEvent(&eventProofValidityChecked); err != nil {

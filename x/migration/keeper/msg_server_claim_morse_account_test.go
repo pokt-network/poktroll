@@ -79,7 +79,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		expectedEvent := &migrationtypes.EventMorseAccountClaimed{
 			ShannonDestAddress: msgClaim.ShannonDestAddress,
 			MorseSrcAddress:    msgClaim.GetMorseSignerAddress(),
-			ClaimedBalance:     expectedClaimedBalance,
+			ClaimedBalance:     expectedClaimedBalance.String(),
 			SessionEndHeight:   expectedSessionEndHeight,
 		}
 		claimEvents := events.FilterEvents[*migrationtypes.EventMorseAccountClaimed](t, ctx.EventManager().Events())

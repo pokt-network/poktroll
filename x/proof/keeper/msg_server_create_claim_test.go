@@ -191,11 +191,14 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 			require.NoError(t, err)
 
-			require.EqualValues(t, &claim, claimCreatedEvents[0].GetClaim())
+			require.Equal(t, claim.SessionHeader.ServiceId, claimCreatedEvents[0].GetServiceId())
+			require.Equal(t, claim.SessionHeader.ApplicationAddress, claimCreatedEvents[0].GetApplicationAddress())
+			require.Equal(t, claim.SessionHeader.SessionEndBlockHeight, claimCreatedEvents[0].GetSessionEndBlockHeight())
+			require.Equal(t, int32(prooftypes.ClaimProofStatus_PENDING_VALIDATION), claimCreatedEvents[0].GetClaimProofStatusInt())
 			require.Equal(t, uint64(test.expectedNumClaimedComputeUnits), claimCreatedEvents[0].GetNumClaimedComputeUnits())
 			require.Equal(t, uint64(expectedNumRelays), claimCreatedEvents[0].GetNumRelays())
 			require.Equal(t, numEstimatedComputUnits, claimCreatedEvents[0].GetNumClaimedComputeUnits())
-			require.Equal(t, &claimedUPOKT, claimCreatedEvents[0].GetClaimedUpokt())
+			require.Equal(t, claimedUPOKT.String(), claimCreatedEvents[0].GetClaimedUpokt())
 		})
 	}
 }
