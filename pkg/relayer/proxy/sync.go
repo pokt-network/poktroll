@@ -312,6 +312,15 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		Str("relay_request_session_header", meta.SessionHeader.String()).
 		Msg("building relay response protobuf from service response")
 
+	// Check context before building relay response to avoid signing when request is already cancelled
+	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
+		logger.Warn().Err(ctxErr).Msg("⚠️ Context cancelled before building relay response")
+		return relayRequest, ErrRelayerProxyTimeout.Wrapf(
+			"request context cancelled during response building: %v",
+			ctxErr,
+		)
+	}
+
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
@@ -385,10 +394,16 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// - Over-serviced relays must never enter reward pipeline
 	if !isOverServicing {
 		// Forward reward-eligible relays for SMT updates (excludes over-serviced relays).
-		server.servedRewardableRelaysProducer <- relay
-
-		// Mark relay as successful and rewardable, so deferred logic doesn't revert it.
-		shouldRewardRelay = true
+		// Use non-blocking send to prevent relay response delays if the channel is full.
+		select {
+		case server.servedRewardableRelaysProducer <- relay:
+			// Successfully forwarded relay for mining
+			shouldRewardRelay = true
+		default:
+			// Channel is full - log warning but don't block the response
+			logger.Warn().Msg("⚠️ Relay mining channel full - dropping relay from mining pipeline")
+			// Don't mark as rewardable since it wasn't forwarded to miner
+		}
 	}
 
 	// set to 200 because everything is good about the processed relay.
@@ -459,6 +474,11 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 	relayResponse *types.RelayResponse,
 	writer http.ResponseWriter,
 ) error {
+	// Double-check that the signature is present before marshaling for client
+	if len(relayResponse.Meta.GetSupplierOperatorSignature()) == 0 {
+		return ErrRelayerProxyInternalError.Wrap("relay response missing supplier operator signature before marshaling")
+	}
+
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
 		return err

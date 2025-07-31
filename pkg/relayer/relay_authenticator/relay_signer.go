@@ -35,7 +35,7 @@ func (ra *relayAuthenticator) SignRelayResponse(relayResponse *types.RelayRespon
 	// create a simple signer for the request
 	operatorKeyName, ok := ra.operatorAddressToSigningKeyNameMap[supplierOperatorAddr]
 	if !ok {
-		return ErrRelayAuthenticatorUndefinedSigningKeyNames.Wrapf("unable to resolve the signing key name for %s", supplierOperatorAddr)
+		return ErrRelayAuthenticatorUndefinedSigningKeyNames.Wrapf("unable to resolve the signing key name for supplier %s (available: %v)", supplierOperatorAddr, ra.getAvailableSupplierAddresses())
 	}
 	signer := signer.NewSimpleSigner(ra.keyring, operatorKeyName)
 
@@ -59,5 +59,20 @@ func (ra *relayAuthenticator) SignRelayResponse(relayResponse *types.RelayRespon
 
 	// set the relay response's signature
 	relayResponse.Meta.SupplierOperatorSignature = responseSig
+
+	// Verify signature was set correctly
+	if len(relayResponse.Meta.SupplierOperatorSignature) == 0 {
+		return ErrRelayAuthenticatorInvalidRelayResponse.Wrap("signature was not properly set after signing")
+	}
+
 	return nil
+}
+
+// getAvailableSupplierAddresses returns a slice of available supplier addresses for logging purposes
+func (ra *relayAuthenticator) getAvailableSupplierAddresses() []string {
+	addresses := make([]string, 0, len(ra.operatorAddressToSigningKeyNameMap))
+	for addr := range ra.operatorAddressToSigningKeyNameMap {
+		addresses = append(addresses, addr)
+	}
+	return addresses
 }
