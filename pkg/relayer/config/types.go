@@ -1,6 +1,7 @@
 package config
 
 import (
+	"net/http"
 	"net/url"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -32,6 +33,7 @@ type YAMLRelayMinerConfig struct {
 	Suppliers                    []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
 	Ping                         YAMLRelayMinerPingConfig       `yaml:"ping"`
 	EnableOverServicing          bool                           `yaml:"enable_over_servicing"`
+	Forward                      YAMLRelayMinerForwardConfig    `yaml:"forward"`
 
 	// TODO_IMPROVE: Add a EnableErrorPropagation flag to control whether errors (i.e. non-2XX HTTP status codes)
 	// are propagated back to the client or masked as internal errors.
@@ -50,6 +52,19 @@ type YAMLRelayMinerPingConfig struct {
 	Enabled bool `yaml:"enabled"`
 	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP
 	Addr string `yaml:"addr"`
+}
+
+// YAMLRelayMinerForwardConfig represents the configuration to expose a forward
+// request server.
+type YAMLRelayMinerForwardConfig struct {
+	Enabled bool `yaml:"enabled"`
+
+	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP.
+	Addr string `yaml:"addr"`
+
+	// AuthToken is a 32 bytes hexadecimal string to authenticate request to the forward server. (mandatory flag when enabling forwarding capabilities).
+	// You can use 'make relayminer_forward_token_gen' command to print a well-formatted token.
+	AuthToken string `yaml:"auth_token"`
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
@@ -116,6 +131,7 @@ type RelayMinerConfig struct {
 	SmtStorePath                 string
 	Ping                         *RelayMinerPingConfig
 	EnableOverServicing          bool
+	Forward                      *RelayMinerForwardConfig
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
@@ -126,6 +142,17 @@ type RelayMinerPingConfig struct {
 	Enabled bool
 	// Addr is the address to bind to (format: hostname:port) where 'hostname' can be a DNS name or an IP
 	Addr string
+}
+
+// RelayMinerForwardConfig is the structure resulting from parsing the
+// forward server configuration.
+type RelayMinerForwardConfig struct {
+	Enabled bool
+	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP.
+	Addr string
+	// AuthToken is a 32 bytes hexadecimal string to authenticate request to the forward server. (mandatory flag when enabling forwarding capabilities)
+	// You can use 'make relayminer_forward_token_gen' command to print a well-formatted token.
+	AuthToken string
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
@@ -225,6 +252,17 @@ type RelayMinerSupplierServiceConfig struct {
 	// ForwardPocketHeaders toggles if headers prefixed with 'Pocket-' should be forwarded to
 	// the backend service servicing the relay requests.
 	ForwardPocketHeaders bool
+}
+
+// GetHeadersHTTP returns the supplier's service config http header.
+func (c RelayMinerSupplierServiceConfig) GetHeadersHTTP() http.Header {
+	header := make(http.Header)
+
+	for k, v := range c.Headers {
+		header.Add(k, v)
+	}
+
+	return header
 }
 
 // RelayMinerSupplierServiceAuthentication is the structure resulting from parsing
