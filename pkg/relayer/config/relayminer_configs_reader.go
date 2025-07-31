@@ -9,7 +9,7 @@ import (
 
 // DefaultRequestTimeoutSeconds is the default timeout for requests in seconds.
 // If not specified in the config, it will be used as a fallback.
-const DefaultRequestTimeoutSeconds = 10
+const DefaultRequestTimeoutSeconds = 600
 
 // DefaultMaxBodySize defines the default maximum HTTP body size as a string, used as a fallback if unspecified.
 const DefaultMaxBodySize = "20MB"
