@@ -325,11 +325,11 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// FIX: Context Cancellation Race Condition Prevention
 	// PROBLEM: Context deadline being exceeded after backend response but before signature generation
 	// IMPACT: Leads to "missing supplier operator signature" errors when requests timeout during signing
-	// SOLUTION: Check context before building relay response to avoid signing when request is already cancelled
+	// SOLUTION: Check context before building relay response to avoid signing when request is already canceled
 	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
-		logger.Warn().Err(ctxErr).Msg("⚠️ Context cancelled before building relay response - preventing signature race condition")
+		logger.Warn().Err(ctxErr).Msg("⚠️ Context canceled before building relay response - preventing signature race condition")
 		return relayRequest, ErrRelayerProxyTimeout.Wrapf(
-			"request context cancelled during response building: %v",
+			"request context canceled during response building: %v",
 			ctxErr,
 		)
 	}
