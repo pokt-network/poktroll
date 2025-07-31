@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/docker/go-units"
 	yaml "gopkg.in/yaml.v2"
 
@@ -10,7 +12,9 @@ import (
 // DefaultRequestTimeoutSeconds is the default timeout for requests in seconds.
 // If not specified in the config, it will be used as a fallback.
 // Using var to expose it for testing purposes.
-var DefaultRequestTimeoutSeconds uint64 = 10
+const DefaultRequestTimeoutSeconds uint64 = 10
+
+var DefaultRequestTimeoutDuration time.Duration = time.Duration(DefaultRequestTimeoutSeconds) * time.Second
 
 // DefaultMaxBodySize defines the default maximum HTTP body size as a string, used as a fallback if unspecified.
 const DefaultMaxBodySize = "20MB"

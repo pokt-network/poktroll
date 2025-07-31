@@ -99,8 +99,8 @@ func NewHTTPServer(
 		// attacks and to ensure that the server does not hang indefinitely on a request.
 		// These defaults are kept as baseline security measures, but per-request timeouts
 		// will override these values based on the configured timeout for each service ID.
-		ReadTimeout:  time.Duration(config.DefaultRequestTimeoutSeconds) * time.Second,
-		WriteTimeout: time.Duration(config.DefaultRequestTimeoutSeconds) * time.Second,
+		ReadTimeout:  config.DefaultRequestTimeoutDuration,
+		WriteTimeout: config.DefaultRequestTimeoutDuration,
 	}
 
 	return &relayMinerHTTPServer{

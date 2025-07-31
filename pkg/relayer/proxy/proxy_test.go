@@ -1262,7 +1262,7 @@ func TestRelayerProxy_TimeoutHandling(t *testing.T) {
 		},
 	}
 
-	config.DefaultRequestTimeoutSeconds = 2
+	config.DefaultRequestTimeoutDuration = 2 * time.Second
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
