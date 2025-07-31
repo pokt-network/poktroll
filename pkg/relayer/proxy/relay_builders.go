@@ -66,11 +66,18 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 		}
 	}
 
+	// FIX: Enhanced Error Context in Signature Process
+	// PROBLEM: Generic signature errors made it hard to identify specific failure points
+	// SOLUTION: Include supplier address in error context for better debugging
+	//
 	// Sign the relay response and add the signature to the relay response metadata
 	if err := sync.relayAuthenticator.SignRelayResponse(relayResponse, supplierOperatorAddr); err != nil {
 		return nil, ErrRelayerProxyInternalError.Wrapf("failed to sign relay response for supplier %s: %v", supplierOperatorAddr, err)
 	}
 
+	// FIX: Enhanced Validation Error Context
+	// PROBLEM: Validation failures after signing provided insufficient debugging context
+	// SOLUTION: Include supplier context in validation error messages
 	if err := relayResponse.ValidateBasic(); err != nil {
 		return nil, ErrRelayerProxyInternalError.Wrapf("relay response validation failed after signing (supplier: %s): %v", supplierOperatorAddr, err)
 	}
