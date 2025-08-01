@@ -71,5 +71,9 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 		return nil, err
 	}
 
+	if err := relayResponse.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
 	return relayResponse, nil
 }

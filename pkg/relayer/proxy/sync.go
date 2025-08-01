@@ -106,6 +106,16 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	ctxWithDeadline, cancel := context.WithDeadline(ctx, requestDeadline)
 	defer cancel()
 
+	// This is important to ensure that the server's timeout defaults are overridden
+	// by the request-specific timeout.
+	rc := http.NewResponseController(writer)
+	// Set a write deadline for the HTTP response writer to prevent hanging connections.
+	// The deadline includes an additional safety buffer to ensure the response can be written.
+	if err = rc.SetWriteDeadline(requestDeadline.Add(writeDeadlineSafetyDuration)); err != nil {
+		logger.Warn().Err(err).Msg("failed setting write deadline for response controller")
+		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
+	}
+
 	// TODO_TECHDEBT: Consider re-enabling ResponseController write deadlines
 	// after investigating potential compatibility issues with the current setup.
 	// The commented code below was intended to ensure timely response delivery:
@@ -442,7 +452,7 @@ func getServiceConfig(
 
 			return rpcTypeServiceConfig, logServiceConfigTypeRPCType, nil
 		} else {
-			logger.Warn().Msgf("⚠️ SHOULD NOT HAPPEN: No '%s' RPC type specific service config found for service %q",
+			logger.Warn().Msgf("⚠️ No '%s' RPC type specific service config found for service %q, falling back to default service config",
 				rpcType.String(), supplierConfig.ServiceId,
 			)
 		}
