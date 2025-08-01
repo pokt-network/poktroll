@@ -490,7 +490,7 @@ func (rs *relayerSessionsManager) processClaimsAsync(
 
 	// Check if context is still valid before proceeding
 	if ctx.Err() != nil {
-		logger.Warn().Err(ctx.Err()).Msg("Context cancelled during async claim processing")
+		logger.Warn().Err(ctx.Err()).Msg("Context canceled during async claim processing")
 		return
 	}
 
@@ -505,7 +505,7 @@ func (rs *relayerSessionsManager) processClaimsAsync(
 	case claimReadySessionsPublishCh <- sessionTreesToClaim:
 		logger.Debug().Msg("Successfully published sessions ready for claiming")
 	case <-ctx.Done():
-		logger.Warn().Msg("Context cancelled while publishing claim-ready sessions")
+		logger.Warn().Msg("Context canceled while publishing claim-ready sessions")
 	}
 }
 

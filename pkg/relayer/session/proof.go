@@ -436,7 +436,7 @@ func (rs *relayerSessionsManager) processProofsAsync(
 
 	// Check if context is still valid before proceeding
 	if ctx.Err() != nil {
-		logger.Warn().Err(ctx.Err()).Msg("Context cancelled during async proof processing")
+		logger.Warn().Err(ctx.Err()).Msg("Context canceled during async proof processing")
 		return
 	}
 
@@ -451,6 +451,6 @@ func (rs *relayerSessionsManager) processProofsAsync(
 	case proofReadySessionsPublishCh <- sessionTreesWithProofs:
 		logger.Debug().Msg("Successfully published sessions ready for proof submission")
 	case <-ctx.Done():
-		logger.Warn().Msg("Context cancelled while publishing proof-ready sessions")
+		logger.Warn().Msg("Context canceled while publishing proof-ready sessions")
 	}
 }
