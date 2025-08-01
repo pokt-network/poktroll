@@ -52,8 +52,9 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&gatewaytypes.EventGatewayStaked{
-			Gateway:          &upstakedGateway,
 			SessionEndHeight: sessionEndHeight,
+			GatewayAddress:   upstakedGateway.Address,
+			Stake:            upstakedGateway.Stake.String(),
 		},
 	)
 	require.NoError(t, err)
@@ -83,8 +84,9 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Assert that the EventGatewayStaked event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&gatewaytypes.EventGatewayStaked{
-			Gateway:          &upstakedGateway,
 			SessionEndHeight: sessionEndHeight,
+			GatewayAddress:   upstakedGateway.Address,
+			Stake:            upstakedGateway.Stake.String(),
 		},
 	)
 	require.NoError(t, err)

@@ -99,10 +99,11 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:           &foundSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 			SessionEndHeight:   int64(foundSupplier.GetUnstakeSessionEndHeight()),
 			UnbondingEndHeight: unbondingEndHeight,
+			OperatorAddress:    foundSupplier.OperatorAddress,
+			OwnerAddress:       foundSupplier.OwnerAddress,
 		},
 	)
 	require.NoError(t, err)
@@ -137,10 +138,11 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	sessionEndHeight = sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierUnbondingEnd{
-			Supplier:           &foundSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
+			OperatorAddress:    foundSupplier.OperatorAddress,
+			OwnerAddress:       foundSupplier.OwnerAddress,
 		},
 	)
 	require.NoError(t, err)
@@ -213,10 +215,11 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:           &foundSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
-			SessionEndHeight:   sessionEndHeight,
+			SessionEndHeight:   int64(foundSupplier.GetUnstakeSessionEndHeight()),
 			UnbondingEndHeight: unbondingEndHeight,
+			OperatorAddress:    foundSupplier.OperatorAddress,
+			OwnerAddress:       foundSupplier.OwnerAddress,
 		},
 	)
 	require.NoError(t, err)
@@ -258,9 +261,10 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierUnbondingCanceled{
-			Supplier:         expectedSupplier,
 			SessionEndHeight: sessionEndHeight,
 			Height:           cosmostypes.UnwrapSDKContext(ctx).BlockHeight(),
+			OperatorAddress:  expectedSupplier.OperatorAddress,
+			OwnerAddress:     expectedSupplier.OwnerAddress,
 		},
 	)
 	require.NoError(t, err)
@@ -409,10 +413,11 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, expectedSupplier)
 	expectedEvent, err = cosmostypes.TypedEventToEvent(&suppliertypes.EventSupplierUnbondingBegin{
-		Supplier:           &responseSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
-		SessionEndHeight:   sessionEndHeight,
+		SessionEndHeight:   int64(responseSupplier.GetUnstakeSessionEndHeight()),
 		UnbondingEndHeight: unbondingEndHeight,
+		OperatorAddress:    responseSupplier.OperatorAddress,
+		OwnerAddress:       responseSupplier.OwnerAddress,
 	})
 	require.NoError(t, err)
 
@@ -446,10 +451,11 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Assert that the EventSupplierUnbondingEnd event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(&suppliertypes.EventSupplierUnbondingEnd{
-		Supplier:           &foundSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
+		OperatorAddress:    foundSupplier.OperatorAddress,
+		OwnerAddress:       foundSupplier.OwnerAddress,
 	})
 	require.NoError(t, err)
 

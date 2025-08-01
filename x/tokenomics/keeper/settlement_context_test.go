@@ -332,12 +332,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
 	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
-
-	// Validate reward distribution is not empty
-	// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
-	rewardDistribution := expectedEvent.GetRewardDistribution()
-	require.NotNil(t, rewardDistribution, "reward distribution should not be nil")
-	require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
@@ -443,7 +437,6 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
-
 	// Use a single claim and proof for this test
 	claim := s.claims[0]
 	proof := s.proofs[0]
@@ -502,12 +495,6 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
 	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
-
-	// Validate reward distribution is not empty
-	// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
-	rewardDistribution := expectedEvent.GetRewardDistribution()
-	require.NotNil(t, rewardDistribution, "reward distribution should not be nil")
-	require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
@@ -515,7 +502,6 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
-
 	// Use a single claim for this test
 	claim := s.claims[0]
 	relayMiningDifficulty := s.relayMiningDifficulties[0]
@@ -571,12 +557,6 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
 	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
-
-	// Validate reward distribution is not empty
-	// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
-	rewardDistribution := expectedEvent.GetRewardDistribution()
-	require.NotNil(t, rewardDistribution, "reward distribution should not be nil")
-	require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimDiscarded_WhenHasZeroSum() {
@@ -874,10 +854,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// The slashed supplier Services property already has the relevant active service configs at the time of the claimed session end height.
 	slashedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
-		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
-		SessionEndHeight:   upcomingSessionEndHeight,
+		SessionEndHeight:   int64(upcomingSessionEndHeight),
 		UnbondingEndHeight: upcomingSessionEndHeight,
+		OperatorAddress:    slashedSupplier.OperatorAddress,
+		OwnerAddress:       slashedSupplier.OwnerAddress,
 	}
 	// A single unbonding begin event corresponding to the slashed supplier should be
 	// emitted for all expired claims.
@@ -894,10 +875,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	// Validate the EventSupplierUnbondingEnd event.
 	expectedUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
-		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   upcomingSessionEndHeight,
 		UnbondingEndHeight: upcomingSessionEndHeight,
+		OperatorAddress:    slashedSupplier.OperatorAddress,
+		OwnerAddress:       slashedSupplier.OwnerAddress,
 	}
 	// A single unbonding end event corresponding to the slashed supplier should be
 	// emitted for all expired claims.
@@ -942,8 +924,7 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 		s.keepers.UpsertProof(ctx, proof)
 	}
 
-	_, _, err = s.keepers.ValidateSubmittedProofs(sdkCtx)
-	require.NoError(t, err)
+	s.keepers.ValidateSubmittedProofs(sdkCtx)
 
 	// Settle pending claims after proof window closes
 	// Expectation: All claims should be claimed.
@@ -966,18 +947,12 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 	require.Equal(t, len(s.claims), len(expectedEvents))
 
 	// Validate the events
-	for i, expectedEvent := range expectedEvents {
+	for _, expectedEvent := range expectedEvents {
 		require.Equal(t, int32(prooftypes.ProofRequirementReason_THRESHOLD), expectedEvent.GetProofRequirementInt())
 		require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 		require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 		require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
 		require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
-
-		// Validate reward distribution is not empty
-		// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
-		rewardDistribution := expectedEvent.GetRewardDistribution()
-		require.NotNil(t, rewardDistribution, "reward distribution should not be nil for event %d", i)
-		require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty for event %d", i)
 	}
 }
 

@@ -76,8 +76,8 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 
 	// Emit the application redelegation event
 	event := &apptypes.EventRedelegation{
-		Application:      &foundApp,
-		SessionEndHeight: sessionEndHeight,
+		ApplicationAddress: foundApp.Address,
+		SessionEndHeight:   sessionEndHeight,
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		err = fmt.Errorf("failed to emit application redelegation event: %w", err)
