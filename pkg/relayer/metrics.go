@@ -20,7 +20,7 @@ const (
 	serviceDurationSeconds             = "service_duration_seconds"
 	requestPreparationDurationSeconds  = "relay_request_preparation_duration_seconds"
 	responsePreparationDurationSeconds = "relay_response_preparation_duration_seconds"
-	pocketGRPCCallDurationSeconds      = "pocket_grpc_call_duration_seconds"
+	fullNodeGRPCCallDurationSeconds    = "full_node_grpc_call_duration_seconds"
 )
 
 var (
@@ -102,6 +102,7 @@ var (
 		Buckets:   defaultBuckets,
 	}, []string{"service_id", "status_code"})
 
+	// TODO_TECHDEBT: Remove those metrics once the session rollover issue is resolved.
 	// RelayRequestPreparationDurationSeconds observes the duration of preparing
 	// a relay request from an HTTP request.
 	//
@@ -118,6 +119,7 @@ var (
 		Buckets:   defaultBuckets,
 	}, []string{"service_id"})
 
+	// TODO_TECHDEBT: Remove those metrics once the session rollover issue is resolved.
 	// RelayResponsePreparationDurationSeconds observes the duration of preparing
 	// a relay response from the the service's HTTP response.
 	//
@@ -134,16 +136,16 @@ var (
 		Buckets:   defaultBuckets,
 	}, []string{"service_id"})
 
-	// PocketGRPCCallDurationSeconds is a histogram metric for measuring the duration of gRPC calls.
+	// FullNodeGRPCCallDurationSeconds is a histogram metric for measuring the duration of gRPC calls.
 	//
 	// It is labeled by 'component' (e.g., miner, proxy) and 'method', capturing the time taken for each call.
 	// This metric is essential for performance monitoring and analysis of gRPC interactions.
 	// Usage:
 	// - Monitor gRPC call performance.
 	// - Identify slow or problematic calls.
-	PocketGRPCCallDurationSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+	FullNodeGRPCCallDurationSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 		Subsystem: relayMinerProcess,
-		Name:      pocketGRPCCallDurationSeconds,
+		Name:      fullNodeGRPCCallDurationSeconds,
 		Help:      "Histogram of gRPC call durations for performance analysis.",
 		Buckets:   defaultBuckets,
 	}, []string{"component", "method"})
@@ -222,12 +224,12 @@ func CaptureResponsePreparationDuration(serviceId string, startTime time.Time) {
 		Observe(duration)
 }
 
-// CapturePocketGRPCCallDuration records the duration of a gRPC call.
+// CaptureGRPCCallDuration records the duration of a gRPC call.
 // It is labeled by component (e.g., miner, proxy) and method, capturing the time taken for the call.
-func CapturePocketGRPCCallDuration(component, method string, startTime time.Time) {
+func CaptureGRPCCallDuration(component, method string, startTime time.Time) {
 	duration := time.Since(startTime).Seconds()
 
-	PocketGRPCCallDurationSeconds.
+	FullNodeGRPCCallDurationSeconds.
 		With("component", component).
 		With("method", method).
 		Observe(duration)

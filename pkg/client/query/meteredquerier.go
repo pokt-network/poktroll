@@ -9,37 +9,41 @@ import (
 	googlegrpc "google.golang.org/grpc"
 )
 
+// ComponentCtxRelayMiner is a type used to identify the component making the gRPC call.
+type ComponentCtxRelayMiner string
+
+// ComponentCtxRelayMinerKey is the context key used to identify the component calling the gRPC method
+// using the context.WithValue method.
+const ComponentCtxRelayMinerKey ComponentCtxRelayMiner = "component"
+
 const (
-	// ComponentCtxKey is the context key used to identify the component calling the gRPC method
-	// using the context.WithValue method.
-	ComponentCtxKey = "component"
-	// ComponentCtxProxy is the identifier for the proxy component in the relayer.
-	ComponentCtxProxy = iota
-	// ComponentCtxMiner is the identifier for the miner component in the relayer.
-	ComponentCtxMiner
-	// ComponentCtxSessionsManager is the identifier for the sessions manager component in the relayer.
-	ComponentCtxSessionsManager
+	// ComponentCtxRelayMinerProxy is the identifier for the proxy component in the relayer.
+	ComponentCtxRelayMinerProxy = iota
+	// ComponentCtxRelayMinerMiner is the identifier for the miner component in the relayer.
+	ComponentCtxRelayMinerMiner
+	// ComponentCtxRelayMinerSessionsManager is the identifier for the sessions manager component in the relayer.
+	ComponentCtxRelayMinerSessionsManager
 )
 
 // componentKindNames maps component context keys to their string representations.
 // This is used to provide human-readable names for the components in metrics and logging.
 var componentKindNames = map[int]string{
-	ComponentCtxProxy:           "proxy",
-	ComponentCtxMiner:           "miner",
-	ComponentCtxSessionsManager: "sessions_manager",
+	ComponentCtxRelayMinerProxy:           "proxy",
+	ComponentCtxRelayMinerMiner:           "miner",
+	ComponentCtxRelayMinerSessionsManager: "sessions_manager",
 }
 
-// meteredClientConn is a wrapper around grpc.ClientConn that captures the duration of gRPC calls.
+// grpcClientWithDebugMetrics is a wrapper around grpc.ClientConn that captures the duration of gRPC calls.
 // It implements the grpc.ClientConn interface and is used to monitor the performance of gRPC calls
 // by recording the time taken for each call.
-type meteredClientConn struct {
+type grpcClientWithDebugMetrics struct {
 	grpc.ClientConn
 }
 
-// NewMeteredClientConn creates a new meteredClientConn that wraps the provided grpc.ClientConn.
+// NewGRPCClientWithDebugMetrics creates a new grpcClientWithDebugMetrics that wraps the provided grpc.ClientConn.
 // It is used to instrument gRPC calls for performance monitoring.
-func NewMeteredClientConn(clientConn grpc.ClientConn) grpc.ClientConn {
-	return &meteredClientConn{
+func NewGRPCClientWithDebugMetrics(clientConn grpc.ClientConn) grpc.ClientConn {
+	return &grpcClientWithDebugMetrics{
 		ClientConn: clientConn,
 	}
 }
@@ -48,10 +52,10 @@ func NewMeteredClientConn(clientConn grpc.ClientConn) grpc.ClientConn {
 //   - It uses the gRPC method name as the method being invoked.
 //   - It uses the context to retrieve the component kind (e.g., ComponentCtxProxy...)
 //     which is used to differentiate between different types of callers.
-func (m *meteredClientConn) Invoke(ctx context.Context, method string, args, reply any, opts ...googlegrpc.CallOption) error {
+func (m *grpcClientWithDebugMetrics) Invoke(ctx context.Context, method string, args, reply any, opts ...googlegrpc.CallOption) error {
 	now := time.Now()
-	component := ctx.Value(ComponentCtxKey)
-	defer relayer.CapturePocketGRPCCallDuration(componentKindNames[component.(int)], method, now)
+	component := ctx.Value(ComponentCtxRelayMinerKey)
+	defer relayer.CaptureGRPCCallDuration(componentKindNames[component.(int)], method, now)
 
 	return m.ClientConn.Invoke(ctx, method, args, reply, opts...)
 }

@@ -163,7 +163,7 @@ func NewRelayerSessions(
 func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	// Ensure the context is set with the session manager component kind.
 	// This is used to capture the component kind in gRPC call duration metrics collection.
-	ctx = context.WithValue(ctx, query.ComponentCtxKey, query.ComponentCtxSessionsManager)
+	ctx = context.WithValue(ctx, query.ComponentCtxRelayMinerKey, query.ComponentCtxRelayMinerSessionsManager)
 	// Retrieve the latest block, which provides a reference height to:
 	//   - Determine which sessions are still active
 	//   - Identify which sessions have expired based on their end heights

@@ -38,7 +38,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	statusCode := http.StatusInternalServerError
 	// Ensure the context is set with the proxy component kind.
 	// This is used to capture the component kind in gRPC call duration metrics collection.
-	ctx = context.WithValue(ctx, query.ComponentCtxKey, query.ComponentCtxProxy)
+	ctx = context.WithValue(ctx, query.ComponentCtxRelayMinerKey, query.ComponentCtxRelayMinerProxy)
 
 	logger := server.logger.With(
 		"relay_request_type", "⚡ synchronous",
@@ -253,15 +253,15 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Ensures backend requests don't exceed allocated time budget.
 	client.Timeout = requestTimeout
 
+	logger = logger.With("request_preparation_duration", time.Since(requestStartTime).String())
+	relayer.CaptureRequestPreparationDuration(serviceId, requestStartTime)
+
 	// Check if context deadline already exceeded before making the backend call.
 	// Prevents unnecessary work when request has already timed out.
 	//
 	// DEV_NOTE: Even after deadline, client cancellation or request timeout,
 	//  the request handler's goroutine will continue processing unless explicitly
 	//  checking for context cancellation.
-	logger = logger.With("request_preparation_duration", time.Since(requestStartTime).String())
-	relayer.CaptureRequestPreparationDuration(serviceId, requestStartTime)
-	serviceCallStartTime := time.Now()
 	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
 		logger.Warn().Msg(ctxErr.Error())
 
@@ -273,9 +273,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	// Send the relay request to the native service.
+	serviceCallStartTime := time.Now()
 	httpResponse, err := client.Do(httpRequest)
 
 	backendServiceProcessingEnd := time.Now()
+	// Add response preparation duration to the logger such that any log before errors will have
+	// as much request duration information as possible.
 	logger = logger.With(
 		"backend_request_duration", time.Since(serviceCallStartTime).String(),
 	)
@@ -341,6 +344,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Capture the time after response time for the relay.
 	responsePreparationEnd := time.Now()
+	// Add response preparation duration to the logger such that any log before errors will have
+	// as much request duration information as possible.
 	logger = logger.With("response_preparation_duration", time.Since(backendServiceProcessingEnd))
 	relayer.CaptureResponsePreparationDuration(serviceId, backendServiceProcessingEnd)
 

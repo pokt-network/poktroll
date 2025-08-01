@@ -186,7 +186,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 
 		deps = depinject.Configs(deps, depinject.Supply(
 			query.Context(queryClientCtx),
-			query.NewMeteredClientConn(queryClientCtx),
+			query.NewGRPCClientWithDebugMetrics(queryClientCtx),
 			queryClientCtx.Keyring,
 		))
 
