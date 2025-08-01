@@ -5,14 +5,34 @@
 package cmd
 
 var (
-	// flagRelayMinerConfig is the relay miner config file path from `--config` flag.
-	flagRelayMinerConfig string
-	// flagNodeRPCURL is the Cosmos node RPC URL flag value.
-	flagNodeRPCURL string
-	// flagNodeGRPCURL is the Cosmos node GRPC URL flag value.
-	flagNodeGRPCURL string
-	// flagLogLevel is the log level variable (used by cosmos and polylog).
-	flagLogLevel string
+	// relayMinerConfigPath is the relay miner config file path from `--config` flag.
+	relayMinerConfigPath string
 	// flagQueryCaching is the query caching flag value.
 	flagQueryCaching bool
+)
+
+const (
+	FlagApp        = "app"
+	FlagAppUsage   = "(Required) Staked application address"
+	DefaultFlagApp = ""
+
+	FlagPayload        = "payload"
+	FlagPayloadUsage   = "(Required) JSON-RPC payload"
+	DefaultFlagPayload = ""
+
+	FlagSupplier        = "supplier"
+	FlagSupplierUsage   = "(Optional) Staked Supplier address"
+	DefaultFlagSupplier = ""
+
+	FlagSupplierPublicEndpointOverride        = "supplier-public-endpoint-override"
+	FlagSupplierPublicEndpointOverrideUsage   = "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)"
+	DefaultFlagSupplierPublicEndpointOverride = ""
+
+	FlagConfig        = "config"
+	FlagConfigUsage   = "(Required) The path to the relayminer config file"
+	DefaultFlagConfig = ""
+
+	FlagCount        = "count"
+	FlagCountUsage   = "(Optional) Number of requests to send (default: 1)"
+	DefaultFlagCount = 1
 )
