@@ -35,11 +35,11 @@ import (
 var ClaimAndProofGasCost = sdktypes.NewInt64Coin(pocket.DenomuPOKT, 2)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
-// 1. Calculates the earliest block height at which it is safe to CreateClaims
-// 2. Waits for said block and creates the claims onchain
+// 1. Starts async processing to wait for the appropriate block height
+// 2. Processes claims asynchronously without blocking the pipeline
 // 3. Maps errors to a new observable and logs them
 // 4. Returns an observable of the successfully claimed sessions
-// It DOES NOT BLOCK as map operations run in their own goroutines.
+// It DOES NOT BLOCK as async processing happens in separate goroutines.
 func (rs *relayerSessionsManager) createClaims(
 	ctx context.Context,
 	supplierClient client.SupplierClient,
@@ -48,18 +48,31 @@ func (rs *relayerSessionsManager) createClaims(
 	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
 		channel.NewObservable[[]relayer.SessionTree]()
 
-	// Map sessionsToClaimObs to a new observable of the same type which is notified
-	// when the session is eligible to be claimed.
-	sessionsWithOpenClaimWindowObs := channel.Map(
+	// FIX: Async Claims Pipeline - DECOUPLED PROCESSING
+	// PROBLEM: The original pipeline blocked on waitForBlock operations
+	// SOLUTION: Create separate observables for async claim processing
+	//
+	// Create a new observable for sessions ready to be claimed
+	// This will be populated asynchronously by processClaimsAsync
+	claimReadySessionsObs, claimReadySessionsPublishCh :=
+		channel.NewObservable[[]relayer.SessionTree]()
+
+	// Start async processing for each batch of sessions
+	// This immediately returns and processes in the background
+	channel.ForEach(
 		ctx, sessionsToClaimObs,
-		rs.mapWaitForEarliestCreateClaimsHeight(failedCreateClaimSessionsPublishCh),
+		rs.mapStartAsyncClaimProcessing(
+			supplierClient,
+			claimReadySessionsPublishCh,
+			failedCreateClaimSessionsPublishCh,
+		),
 	)
 
-	// Map sessionsWithOpenClaimWindowObs to a new observable of an either type,
+	// Map claimReadySessionsObs to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
 	// claims have been created or an error has been encountered, respectively.
 	eitherClaimedSessionsObs := channel.Map(
-		ctx, sessionsWithOpenClaimWindowObs,
+		ctx, claimReadySessionsObs,
 		rs.newMapClaimSessionsFn(supplierClient, failedCreateClaimSessionsPublishCh),
 	)
 
@@ -78,26 +91,18 @@ func (rs *relayerSessionsManager) createClaims(
 	return filter.EitherSuccess(ctx, eitherClaimedSessionsObs)
 }
 
-// mapWaitForEarliestCreateClaimsHeight returns a new MapFn that adds a delay
-// between being notified and notifying.
-// It calculates and waits for the earliest block height, allowed by the protocol,
-// at which claims can be created for the given session number, then emits the
-// session **at that moment**.
-func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimsHeight(
+// mapStartAsyncClaimProcessing returns a ForEachFn that starts async claim processing
+// for each batch of sessions. It immediately returns to avoid blocking the pipeline.
+func (rs *relayerSessionsManager) mapStartAsyncClaimProcessing(
+	supplierClient client.SupplierClient,
+	claimReadySessionsPublishCh chan<- []relayer.SessionTree,
 	failedCreateClaimsSessionsPublishCh chan<- []relayer.SessionTree,
-) channel.MapFn[[]relayer.SessionTree, []relayer.SessionTree] {
-	return func(
-		ctx context.Context,
-		sessionTrees []relayer.SessionTree,
-	) (_ []relayer.SessionTree, skip bool) {
-		sessionTreesToClaim := rs.waitForEarliestCreateClaimsHeight(
-			ctx, sessionTrees, failedCreateClaimsSessionsPublishCh,
-		)
-		if sessionTreesToClaim == nil {
-			return nil, true
-		}
-
-		return sessionTreesToClaim, false
+) channel.ForEachFn[[]relayer.SessionTree] {
+	return func(ctx context.Context, sessionTrees []relayer.SessionTree) {
+		// FIX: Non-blocking Async Start
+		// Start async processing in a separate goroutine to immediately return
+		// This prevents the observable pipeline from blocking
+		go rs.processClaimsAsync(ctx, sessionTrees, claimReadySessionsPublishCh, failedCreateClaimsSessionsPublishCh)
 	}
 }
 
@@ -454,6 +459,54 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	}
 
 	return claimableSessionTrees, nil
+}
+
+// processClaimsAsync handles the asynchronous processing of claims to prevent blocking
+// the observable pipeline. It waits for the appropriate block height and then publishes
+// ready sessions for claim submission without blocking request handling.
+func (rs *relayerSessionsManager) processClaimsAsync(
+	ctx context.Context,
+	sessionTrees []relayer.SessionTree,
+	claimReadySessionsPublishCh chan<- []relayer.SessionTree,
+	failedCreateClaimsSessionsCh chan<- []relayer.SessionTree,
+) {
+	// FIX: Async Claims Processing Implementation
+	// This function runs in a separate goroutine to prevent blocking the main pipeline
+	// while waiting for specific block heights required for claim creation.
+	// This ensures new relay requests can continue to be processed while claims
+	// are being prepared in the background.
+
+	logger := rs.logger.With("method", "processClaimsAsync")
+
+	// Perform the blocking wait operation in this goroutine
+	sessionTreesToClaim := rs.waitForEarliestCreateClaimsHeight(
+		ctx, sessionTrees, failedCreateClaimsSessionsCh,
+	)
+
+	if sessionTreesToClaim == nil {
+		logger.Debug().Msg("No sessions to claim after waiting for block height")
+		return
+	}
+
+	// Check if context is still valid before proceeding
+	if ctx.Err() != nil {
+		logger.Warn().Err(ctx.Err()).Msg("Context canceled during async claim processing")
+		return
+	}
+
+	logger.Info().Msgf(
+		"✅ Async claim processing completed for %d sessions - publishing for claim submission",
+		len(sessionTreesToClaim),
+	)
+
+	// Publish the sessions that are ready to be claimed
+	// This notifies the claims pipeline to proceed with actual claim submission
+	select {
+	case claimReadySessionsPublishCh <- sessionTreesToClaim:
+		logger.Debug().Msg("Successfully published sessions ready for claiming")
+	case <-ctx.Done():
+		logger.Warn().Msg("Context canceled while publishing claim-ready sessions")
+	}
 }
 
 // getClaimRewardCoin calculates the number of uPOKT the supplier claimed for the particular session.
