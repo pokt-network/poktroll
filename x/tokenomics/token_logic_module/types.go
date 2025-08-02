@@ -89,6 +89,8 @@ type TLMContext struct {
 	Application           *apptypes.Application
 	Supplier              *sharedtypes.Supplier
 	RelayMiningDifficulty *servicetypes.RelayMiningDifficulty
+	StakingKeeper         tokenomicstypes.StakingKeeper
+	DistributionKeeper    tokenomicstypes.DistributionKeeper
 }
 
 // NewDefaultTokenLogicModules
