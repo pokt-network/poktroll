@@ -7,18 +7,18 @@
         "params": {
           "dao_reward_address": "pokt1dr5jtqaaz4wk8wevl33e7vkxsjlphljnjhyq2l",
           "mint_allocation_percentages": {
-            "dao": 0.1,
-            "proposer": 0.2,
-            "supplier": 0.6,
-            "source_owner": 0.1,
+            "dao": 0.05,
+            "proposer": 0.14,
+            "supplier": 0.78,
+            "source_owner": 0.03,
             "application": 0
           },
           "global_inflation_per_claim": 0.000001,
           "mint_equals_burn_claim_distribution": {
-            "dao": 0.1,
-            "proposer": 0.05,
-            "supplier": 0.7,
-            "source_owner": 0.15,
+            "dao": 0.05,
+            "proposer": 0.14,
+            "supplier": 0.78,
+            "source_owner": 0.03,
             "application": 0
           }
         }
