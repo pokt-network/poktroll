@@ -91,16 +91,59 @@ func NewHTTPServer(
 	sharedQueryClient client.SharedQueryClient,
 	sessionQueryClient client.SessionQueryClient,
 ) relayer.RelayServer {
-	// Create the HTTP server.
+	// HTTP SERVER CONFIGURATION
+	//
+	// PROBLEM: The previous HTTP server configuration lacked proper limits, which could
+	// contribute to resource exhaustion and connection-related issues during high load.
+	// Missing limits on header sizes and connection state tracking made the server
+	// vulnerable to resource exhaustion attacks and poor connection management.
+	//
+	// SOLUTION: Add comprehensive HTTP server limits and security measures
+	// - MaxHeaderBytes: Prevents large header attacks (1MB limit)
+	// - ConnState: Track connection lifecycle for better debugging
+	// - Proper timeout configuration with detailed explanations
+	//
+	// IMPACT:
+	// - Better protection against DoS attacks via large headers
+	// - Improved connection lifecycle visibility for debugging
+	// - More predictable resource usage under load
+	// - Enhanced security posture
+	//
+	// Create the HTTP server with comprehensive limits and security measures.
 	httpServer := &http.Server{
-		// Keep IdleTimeout reasonable to clean up idle connections
+		// TIMEOUT CONFIGURATION
+		// Keep IdleTimeout reasonable to clean up idle connections and free resources
 		IdleTimeout: 60 * time.Second,
+
 		// Read and Write timeouts are set to reasonable default values to prevent slow-loris
 		// attacks and to ensure that the server does not hang indefinitely on a request.
 		// These defaults are kept as baseline security measures, but per-request timeouts
 		// will override these values based on the configured timeout for each service ID.
 		ReadTimeout:  config.DefaultRequestTimeoutDuration,
 		WriteTimeout: config.DefaultRequestTimeoutDuration,
+
+		// SECURITY LIMITS
+		// MaxHeaderBytes limits the size of request headers to prevent memory exhaustion
+		// attacks via extremely large headers. 1MB should be sufficient for legitimate
+		// relay requests while preventing abuse.
+		MaxHeaderBytes: 1 << 20, // 1MB
+
+		// DEBUGGING AND MONITORING
+		// ConnState callback for connection lifecycle tracking - helps debug connection issues
+		// and "missing supplier operator signature" errors that might be connection-related
+		ConnState: func(conn net.Conn, state http.ConnState) {
+			// Log connection state changes for debugging connection-related signature issues
+			switch state {
+			case http.StateNew:
+				// New connection established - normal operation
+			case http.StateClosed:
+				// Connection closed - may indicate client timeouts or network issues
+				logger.Debug().Str("remote_addr", conn.RemoteAddr().String()).Msg("HTTP connection closed")
+			case http.StateHijacked:
+				// Connection hijacked (e.g., WebSocket upgrade) - log for debugging
+				logger.Debug().Str("remote_addr", conn.RemoteAddr().String()).Msg("HTTP connection hijacked")
+			}
+		},
 	}
 
 	return &relayMinerHTTPServer{

@@ -32,10 +32,15 @@ func (ra *relayAuthenticator) SignRelayResponse(relayResponse *types.RelayRespon
 		return ErrRelayAuthenticatorInvalidRelayResponse.Wrapf("invalid session header: %v", err)
 	}
 
+	// FIX: Enhanced Error Context for Debugging
+	// PROBLEM: Generic error messages made debugging "missing supplier operator signature" issues difficult
+	// IMPACT: Hard to distinguish between configuration issues vs. timing/race conditions
+	// SOLUTION: Include available supplier addresses in error message for better debugging
+	//
 	// create a simple signer for the request
 	operatorKeyName, ok := ra.operatorAddressToSigningKeyNameMap[supplierOperatorAddr]
 	if !ok {
-		return ErrRelayAuthenticatorUndefinedSigningKeyNames.Wrapf("unable to resolve the signing key name for %s", supplierOperatorAddr)
+		return ErrRelayAuthenticatorUndefinedSigningKeyNames.Wrapf("unable to resolve the signing key name for supplier %s (available: %v)", supplierOperatorAddr, ra.getAvailableSupplierAddresses())
 	}
 	signer := signer.NewSimpleSigner(ra.keyring, operatorKeyName)
 
@@ -59,5 +64,24 @@ func (ra *relayAuthenticator) SignRelayResponse(relayResponse *types.RelayRespon
 
 	// set the relay response's signature
 	relayResponse.Meta.SupplierOperatorSignature = responseSig
+
+	// FIX: Post-Signing Verification
+	// PROBLEM: No verification that signature assignment actually worked
+	// IMPACT: Silent failures could lead to unsigned responses reaching validation
+	// SOLUTION: Verify signature was set correctly after assignment
+	if len(relayResponse.Meta.SupplierOperatorSignature) == 0 {
+		return ErrRelayAuthenticatorInvalidRelayResponse.Wrap("signature was not properly set after signing - possible memory/race condition")
+	}
+
 	return nil
+}
+
+// getAvailableSupplierAddresses returns a slice of available supplier addresses for enhanced error logging.
+// This helps debug "missing supplier operator signature" errors by showing which suppliers are configured.
+func (ra *relayAuthenticator) getAvailableSupplierAddresses() []string {
+	addresses := make([]string, 0, len(ra.operatorAddressToSigningKeyNameMap))
+	for addr := range ra.operatorAddressToSigningKeyNameMap {
+		addresses = append(addresses, addr)
+	}
+	return addresses
 }

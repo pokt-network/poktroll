@@ -322,6 +322,18 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		Str("relay_request_session_header", meta.SessionHeader.String()).
 		Msg("building relay response protobuf from service response")
 
+	// FIX: Context Cancellation Race Condition Prevention
+	// PROBLEM: Context deadline being exceeded after backend response but before signature generation
+	// IMPACT: Leads to "missing supplier operator signature" errors when requests timeout during signing
+	// SOLUTION: Check context before building relay response to avoid signing when request is already canceled
+	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
+		logger.Warn().Err(ctxErr).Msg("⚠️ Context canceled before building relay response - preventing signature race condition")
+		return relayRequest, ErrRelayerProxyTimeout.Wrapf(
+			"request context canceled during response building: %v",
+			ctxErr,
+		)
+	}
+
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
@@ -394,11 +406,23 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// - Relay rewards optimistically accumulated before forwarding to relay miner
 	// - Over-serviced relays must never enter reward pipeline
 	if !isOverServicing {
+		// FIX: Channel Blocking Issue - MOST CRITICAL FIX
+		// PROBLEM: The blocking channel send could cause request timeouts during high load
+		//          when the relay mining pipeline is slow or channel is full
+		// IMPACT: Leads to "missing supplier operator signature" errors under load
+		// SOLUTION: Use non-blocking select to prevent relay response delays
+		//
 		// Forward reward-eligible relays for SMT updates (excludes over-serviced relays).
-		server.servedRewardableRelaysProducer <- relay
-
-		// Mark relay as successful and rewardable, so deferred logic doesn't revert it.
-		shouldRewardRelay = true
+		select {
+		case server.servedRewardableRelaysProducer <- relay:
+			// Successfully forwarded relay for mining
+			shouldRewardRelay = true
+		default:
+			// Channel is full - log warning but don't block the response
+			// This prevents signature validation timeouts that cause "missing supplier operator signature" errors
+			logger.Warn().Msg("⚠️ Relay mining channel full - dropping relay from mining pipeline (prevents signature timeout)")
+			// Don't mark as rewardable since it wasn't forwarded to miner
+		}
 	}
 
 	// set to 200 because everything is good about the processed relay.
@@ -469,6 +493,14 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 	relayResponse *types.RelayResponse,
 	writer http.ResponseWriter,
 ) error {
+	// FIX: Missing Signature Validation
+	// PROBLEM: No final verification that signature was actually set before marshaling
+	// IMPACT: Could send unsigned responses to clients, causing validation failures
+	// SOLUTION: Double-check that the signature is present before marshaling for client
+	if len(relayResponse.Meta.GetSupplierOperatorSignature()) == 0 {
+		return ErrRelayerProxyInternalError.Wrap("relay response missing supplier operator signature before marshaling - signature was lost during processing")
+	}
+
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
 		return err

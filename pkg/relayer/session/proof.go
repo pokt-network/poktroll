@@ -18,10 +18,10 @@ import (
 
 // submitProofs maps over the given claimedSessions observable.
 // For each session batch, it:
-// 1. Calculates the earliest block height at which to submit proofs
-// 2. Waits for said height and submits the proofs onchain
+// 1. Starts async processing to wait for the appropriate block height
+// 2. Processes proofs asynchronously without blocking the pipeline
 // 3. Maps errors to a new observable and logs them
-// It DOES NOT BLOCK as map operations run in their own goroutines.
+// It DOES NOT BLOCK as async processing happens in separate goroutines.
 func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
 	supplierClient client.SupplierClient,
@@ -30,18 +30,31 @@ func (rs *relayerSessionsManager) submitProofs(
 	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
 		channel.NewObservable[[]relayer.SessionTree]()
 
-	// Map claimedSessionsObs to a new observable of the same type which is notified
-	// when the sessions in the batch are eligible to be proven.
-	sessionsWithOpenProofWindowObs := channel.Map(
+	// FIX: Async Proofs Pipeline - DECOUPLED PROCESSING
+	// PROBLEM: The original pipeline blocked on waitForBlock operations
+	// SOLUTION: Create separate observables for async proof processing
+	//
+	// Create a new observable for sessions ready to be proven
+	// This will be populated asynchronously by processProofsAsync
+	proofReadySessionsObs, proofReadySessionsPublishCh :=
+		channel.NewObservable[[]relayer.SessionTree]()
+
+	// Start async processing for each batch of claimed sessions
+	// This immediately returns and processes in the background
+	channel.ForEach(
 		ctx, claimedSessionsObs,
-		rs.mapWaitForEarliestSubmitProofsHeight(failedSubmitProofsSessionsPublishCh),
+		rs.mapStartAsyncProofProcessing(
+			supplierClient,
+			proofReadySessionsPublishCh,
+			failedSubmitProofsSessionsPublishCh,
+		),
 	)
 
-	// Map sessionsWithOpenProofWindow to a new observable of an either type,
+	// Map proofReadySessionsObs to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
 	// proof has been submitted or an error has been encountered, respectively.
 	eitherProvenSessionsObs := channel.Map(
-		ctx, sessionsWithOpenProofWindowObs,
+		ctx, proofReadySessionsObs,
 		rs.newMapProveSessionsFn(supplierClient, failedSubmitProofsSessionsPublishCh),
 	)
 
@@ -51,20 +64,18 @@ func (rs *relayerSessionsManager) submitProofs(
 	channel.ForEach(ctx, failedSubmitProofsSessionsObs, rs.deleteSessionTrees)
 }
 
-// mapWaitForEarliestSubmitProofsHeight is intended to be used as a MapFn. It
-// calculates and waits for the earliest block height, allowed by the protocol,
-// at which proofs can be submitted for the given session number, then emits the session
-// **at that moment**.
-func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
-	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
-) channel.MapFn[[]relayer.SessionTree, []relayer.SessionTree] {
-	return func(
-		ctx context.Context,
-		sessionTrees []relayer.SessionTree,
-	) (_ []relayer.SessionTree, skip bool) {
-		return rs.waitForEarliestSubmitProofsHeightAndGenerateProofs(
-			ctx, sessionTrees, failSubmitProofsSessionsCh,
-		), false
+// mapStartAsyncProofProcessing returns a ForEachFn that starts async proof processing
+// for each batch of sessions. It immediately returns to avoid blocking the pipeline.
+func (rs *relayerSessionsManager) mapStartAsyncProofProcessing(
+	supplierClient client.SupplierClient,
+	proofReadySessionsPublishCh chan<- []relayer.SessionTree,
+	failedSubmitProofsSessionsPublishCh chan<- []relayer.SessionTree,
+) channel.ForEachFn[[]relayer.SessionTree] {
+	return func(ctx context.Context, sessionTrees []relayer.SessionTree) {
+		// FIX: Non-blocking Async Start
+		// Start async processing in a separate goroutine to immediately return
+		// This prevents the observable pipeline from blocking
+		go rs.processProofsAsync(ctx, sessionTrees, proofReadySessionsPublishCh, failedSubmitProofsSessionsPublishCh)
 	}
 }
 
@@ -394,4 +405,52 @@ func (rs *relayerSessionsManager) isProofRequired(
 
 	logger.Info().Msg("✅ Proof not required for this claim - proceeding without proof submission")
 	return false, nil
+}
+
+// processProofsAsync handles the asynchronous processing of proofs to prevent blocking
+// the observable pipeline. It waits for the appropriate block heights and then publishes
+// ready sessions for proof submission without blocking request handling.
+func (rs *relayerSessionsManager) processProofsAsync(
+	ctx context.Context,
+	sessionTrees []relayer.SessionTree,
+	proofReadySessionsPublishCh chan<- []relayer.SessionTree,
+	failedSubmitProofsSessionsPublishCh chan<- []relayer.SessionTree,
+) {
+	// FIX: Async Proofs Processing Implementation
+	// This function runs in a separate goroutine to prevent blocking the main pipeline
+	// while waiting for specific block heights required for proof submission.
+	// This ensures new relay requests can continue to be processed while proofs
+	// are being prepared in the background.
+
+	logger := rs.logger.With("method", "processProofsAsync")
+
+	// Perform the blocking wait operations in this goroutine
+	sessionTreesWithProofs := rs.waitForEarliestSubmitProofsHeightAndGenerateProofs(
+		ctx, sessionTrees, failedSubmitProofsSessionsPublishCh,
+	)
+
+	if sessionTreesWithProofs == nil {
+		logger.Debug().Msg("No sessions with proofs after waiting for block height")
+		return
+	}
+
+	// Check if context is still valid before proceeding
+	if ctx.Err() != nil {
+		logger.Warn().Err(ctx.Err()).Msg("Context canceled during async proof processing")
+		return
+	}
+
+	logger.Info().Msgf(
+		"✅ Async proof processing completed for %d sessions - publishing for proof submission",
+		len(sessionTreesWithProofs),
+	)
+
+	// Publish the sessions that are ready to submit proofs
+	// This notifies the proofs pipeline to proceed with actual proof submission
+	select {
+	case proofReadySessionsPublishCh <- sessionTreesWithProofs:
+		logger.Debug().Msg("Successfully published sessions ready for proof submission")
+	case <-ctx.Done():
+		logger.Warn().Msg("Context canceled while publishing proof-ready sessions")
+	}
 }
