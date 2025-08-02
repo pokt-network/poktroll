@@ -14,9 +14,7 @@ var validUrlSchemes = []string{"http", "https", "ws", "wss"}
 
 const (
 	// ComputeUnitsPerRelayMax is the maximum allowed compute_units_per_relay value when adding or updating a service.
-	// TODO_MAINNET: The reason we have a maximum is to account for potential integer overflows.
-	// Should we revisit all uint64 and convert them to BigInts?
-	ComputeUnitsPerRelayMax uint64 = 1 << 16 // 65536 (2^16)
+	ComputeUnitsPerRelayMax uint64 = 2 << 20 // 1048576 (2^20)
 
 	// TODO_IMPROVE: Consider making these configurable via governance parameters.
 	// The current values were selected arbitrarily simply to avoid excessive onchain bloat.
