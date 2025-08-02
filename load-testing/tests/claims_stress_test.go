@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -145,10 +146,7 @@ func (ct *ClaimsStressTester) Run() error {
 		return fmt.Errorf("failed to stake applications: %w", err)
 	}
 
-	// Wait for applications to become active in next session
-	//if err := ct.waitForNextSession(); err != nil {
-	//	return fmt.Errorf("failed waiting for next session: %w", err)
-	//}
+	// TODO: Consider waiting for applications to become active in next session if needed
 
 	// Start sending requests distributed across session
 	if err := ct.sendRequestsDistributed(); err != nil {
@@ -548,8 +546,9 @@ func (ct *ClaimsStressTester) sendRequestsForSession(numBlocksPerSession int64) 
 			time.Sleep(delay)
 
 			// Send single request for this app in this session
-			ct.sendRelayRequest(application, int(ct.requestsSent))
-			ct.requestsSent++
+			// Use atomic increment to avoid race condition
+			requestID := atomic.AddInt64(&ct.requestsSent, 1) - 1
+			ct.sendRelayRequest(application, int(requestID))
 		}(i, app)
 	}
 

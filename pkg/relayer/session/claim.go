@@ -48,10 +48,6 @@ func (rs *relayerSessionsManager) createClaims(
 	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
 		channel.NewObservable[[]relayer.SessionTree]()
 
-	// FIX: Async Claims Pipeline - DECOUPLED PROCESSING
-	// PROBLEM: The original pipeline blocked on waitForBlock operations
-	// SOLUTION: Create separate observables for async claim processing
-	//
 	// Create a new observable for sessions ready to be claimed
 	// This will be populated asynchronously by processClaimsAsync
 	claimReadySessionsObs, claimReadySessionsPublishCh :=
@@ -99,7 +95,6 @@ func (rs *relayerSessionsManager) mapStartAsyncClaimProcessing(
 	failedCreateClaimsSessionsPublishCh chan<- []relayer.SessionTree,
 ) channel.ForEachFn[[]relayer.SessionTree] {
 	return func(ctx context.Context, sessionTrees []relayer.SessionTree) {
-		// FIX: Non-blocking Async Start
 		// Start async processing in a separate goroutine to immediately return
 		// This prevents the observable pipeline from blocking
 		go rs.processClaimsAsync(ctx, sessionTrees, claimReadySessionsPublishCh, failedCreateClaimsSessionsPublishCh)
@@ -470,12 +465,8 @@ func (rs *relayerSessionsManager) processClaimsAsync(
 	claimReadySessionsPublishCh chan<- []relayer.SessionTree,
 	failedCreateClaimsSessionsCh chan<- []relayer.SessionTree,
 ) {
-	// FIX: Async Claims Processing Implementation
 	// This function runs in a separate goroutine to prevent blocking the main pipeline
 	// while waiting for specific block heights required for claim creation.
-	// This ensures new relay requests can continue to be processed while claims
-	// are being prepared in the background.
-
 	logger := rs.logger.With("method", "processClaimsAsync")
 
 	// Perform the blocking wait operation in this goroutine

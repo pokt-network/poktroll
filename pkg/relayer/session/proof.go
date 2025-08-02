@@ -30,12 +30,8 @@ func (rs *relayerSessionsManager) submitProofs(
 	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
 		channel.NewObservable[[]relayer.SessionTree]()
 
-	// FIX: Async Proofs Pipeline - DECOUPLED PROCESSING
-	// PROBLEM: The original pipeline blocked on waitForBlock operations
-	// SOLUTION: Create separate observables for async proof processing
-	//
-	// Create a new observable for sessions ready to be proven
-	// This will be populated asynchronously by processProofsAsync
+	// Create a new observable for sessions ready to be proven.
+	// This will be populated asynchronously by processProofsAsync.
 	proofReadySessionsObs, proofReadySessionsPublishCh :=
 		channel.NewObservable[[]relayer.SessionTree]()
 
@@ -72,9 +68,8 @@ func (rs *relayerSessionsManager) mapStartAsyncProofProcessing(
 	failedSubmitProofsSessionsPublishCh chan<- []relayer.SessionTree,
 ) channel.ForEachFn[[]relayer.SessionTree] {
 	return func(ctx context.Context, sessionTrees []relayer.SessionTree) {
-		// FIX: Non-blocking Async Start
-		// Start async processing in a separate goroutine to immediately return
-		// This prevents the observable pipeline from blocking
+		// Start async processing in a separate goroutine to immediately return.
+		// This prevents the observable pipeline from blocking.
 		go rs.processProofsAsync(ctx, sessionTrees, proofReadySessionsPublishCh, failedSubmitProofsSessionsPublishCh)
 	}
 }
@@ -407,21 +402,18 @@ func (rs *relayerSessionsManager) isProofRequired(
 	return false, nil
 }
 
-// processProofsAsync handles the asynchronous processing of proofs to prevent blocking
-// the observable pipeline. It waits for the appropriate block heights and then publishes
-// ready sessions for proof submission without blocking request handling.
+// processProofsAsync handles the asynchronous processing of proofs to prevent blocking the observable pipeline.
+// It waits for the appropriate block heights and then publishes ready sessions for proof submission without blocking request handling.
 func (rs *relayerSessionsManager) processProofsAsync(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
 	proofReadySessionsPublishCh chan<- []relayer.SessionTree,
 	failedSubmitProofsSessionsPublishCh chan<- []relayer.SessionTree,
 ) {
-	// FIX: Async Proofs Processing Implementation
 	// This function runs in a separate goroutine to prevent blocking the main pipeline
 	// while waiting for specific block heights required for proof submission.
 	// This ensures new relay requests can continue to be processed while proofs
 	// are being prepared in the background.
-
 	logger := rs.logger.With("method", "processProofsAsync")
 
 	// Perform the blocking wait operations in this goroutine
@@ -440,13 +432,12 @@ func (rs *relayerSessionsManager) processProofsAsync(
 		return
 	}
 
-	logger.Info().Msgf(
-		"✅ Async proof processing completed for %d sessions - publishing for proof submission",
-		len(sessionTreesWithProofs),
-	)
-
 	// Publish the sessions that are ready to submit proofs
 	// This notifies the proofs pipeline to proceed with actual proof submission
+	logger.Info().Msgf(
+		"✅ Async proof processing completed for %d sessions - about to publish for proof submission",
+		len(sessionTreesWithProofs),
+	)
 	select {
 	case proofReadySessionsPublishCh <- sessionTreesWithProofs:
 		logger.Debug().Msg("Successfully published sessions ready for proof submission")
