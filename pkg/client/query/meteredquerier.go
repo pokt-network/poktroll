@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/cosmos/gogoproto/grpc"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	googlegrpc "google.golang.org/grpc"
+
+	"github.com/pokt-network/poktroll/pkg/relayer"
 )
 
 // ComponentCtxRelayMiner is a type used to identify the component making the gRPC call.
@@ -17,17 +18,19 @@ type ComponentCtxRelayMiner string
 const ComponentCtxRelayMinerKey ComponentCtxRelayMiner = "component"
 
 const (
+	ComponentCtxRelayMinerUnknown = iota
 	// ComponentCtxRelayMinerProxy is the identifier for the proxy component in the relayer.
-	ComponentCtxRelayMinerProxy = iota
+	ComponentCtxRelayMinerProxy
 	// ComponentCtxRelayMinerMiner is the identifier for the miner component in the relayer.
 	ComponentCtxRelayMinerMiner
 	// ComponentCtxRelayMinerSessionsManager is the identifier for the sessions manager component in the relayer.
 	ComponentCtxRelayMinerSessionsManager
 )
 
-// componentKindNames maps component context keys to their string representations.
+// componentCtxRelayMinerNameMapping maps component context keys to their string representations.
 // This is used to provide human-readable names for the components in metrics and logging.
-var componentKindNames = map[int]string{
+var componentCtxRelayMinerNameMapping = map[int]string{
+	ComponentCtxRelayMinerUnknown:         "unknown",
 	ComponentCtxRelayMinerProxy:           "proxy",
 	ComponentCtxRelayMinerMiner:           "miner",
 	ComponentCtxRelayMinerSessionsManager: "sessions_manager",
@@ -55,7 +58,18 @@ func NewGRPCClientWithDebugMetrics(clientConn grpc.ClientConn) grpc.ClientConn {
 func (m *grpcClientWithDebugMetrics) Invoke(ctx context.Context, method string, args, reply any, opts ...googlegrpc.CallOption) error {
 	now := time.Now()
 	component := ctx.Value(ComponentCtxRelayMinerKey)
-	defer relayer.CaptureGRPCCallDuration(componentKindNames[component.(int)], method, now)
+
+	// Handle nil component gracefully to avoid panic
+	componentName := componentCtxRelayMinerNameMapping[ComponentCtxRelayMinerUnknown]
+	if component != nil {
+		if componentInt, ok := component.(int); ok {
+			if name, exists := componentCtxRelayMinerNameMapping[componentInt]; exists {
+				componentName = name
+			}
+		}
+	}
+
+	defer relayer.CaptureGRPCCallDuration(componentName, method, now)
 
 	return m.ClientConn.Invoke(ctx, method, args, reply, opts...)
 }
