@@ -18,6 +18,7 @@ import (
 )
 
 func TestCLI_GetSession(t *testing.T) {
+	t.Parallel()
 	if os.Getenv("INCLUDE_FLAKY_TESTS") != "true" {
 		t.Skip("Skipping known flaky test: 'TestRelayerProxy'")
 	} else {
