@@ -33,7 +33,7 @@ func getBlockProposerOperatorAddress(
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Convert the operator address to an account address.
 	// The operator address is a ValAddress, but for sending tokens we need an AccAddress
 	// They share the same bytes, just different Bech32 prefixes

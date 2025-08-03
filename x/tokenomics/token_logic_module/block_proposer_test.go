@@ -15,10 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 )
 
-// func init() {
-// 	cmd.InitSDKConfig()
-// }
-
 func Test_getBlockProposerOperatorAddress(t *testing.T) {
 	// Prepare a validator consensus address
 	consAddr := sample.ConsAddress()
@@ -81,6 +77,32 @@ func Test_getBlockProposerOperatorAddress(t *testing.T) {
 			},
 			expectedError:         true,
 			expectedErrorContains: "invalid address",
+		},
+		{
+			name: "error - validator has invalid operator address",
+			setupContext: func() context.Context {
+				ctx := cosmostypes.Context{}.WithBlockHeader(cmtproto.Header{
+					ProposerAddress: consAddr,
+				})
+				return ctx
+			},
+			setupStakingKeeper: func(ctrl *gomock.Controller) (*mocks.MockStakingKeeper, string) {
+				mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
+				// Return validator with invalid operator address
+				validator := stakingtypes.Validator{
+					OperatorAddress: "invalid-address",
+				}
+
+				mockStakingKeeper.EXPECT().
+					GetValidatorByConsAddr(gomock.Any(), consAddr).
+					Return(validator, nil).
+					Times(1)
+
+				return mockStakingKeeper, ""
+			},
+			expectedError:         true,
+			expectedErrorContains: "decoding bech32 failed",
 		},
 	}
 

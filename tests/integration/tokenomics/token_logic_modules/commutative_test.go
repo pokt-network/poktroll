@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"cosmossdk.io/log"
-	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -24,7 +23,7 @@ import (
 )
 
 // zerouPOKT is a coin with the uPOKT denom and zero amount, intended for use in test assertions.
-var zerouPOKT = types.NewInt64Coin(pocket.DenomuPOKT, 0)
+var zerouPOKT = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 
 // TestTLMProcessorTestSuite asserts that the network state that results from running
 // each permutation of the default TLM processors is identical (demonstrating
@@ -90,7 +89,7 @@ func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...testkeepe
 		testkeeper.WithService(*s.service),
 		testkeeper.WithApplication(*s.app),
 		testkeeper.WithSupplier(*s.supplier),
-		testkeeper.WithModuleParams(map[string]types.Msg{
+		testkeeper.WithModuleParams(map[string]cosmostypes.Msg{
 			// TODO_MAINNET(@bryanchriswhite): Set tokenomics mint allocation params to maximize coverage, once available.
 
 			// Set the proof params such that proofs are NEVER required.
@@ -109,7 +108,7 @@ func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...testkeepe
 	)
 
 	// Increment the block height to 1; valid session height and set the proposer address.
-	s.ctx = types.UnwrapSDKContext(s.ctx).
+	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).
 		WithBlockHeight(1).
 		WithProposer(cosmostypes.ConsAddress(s.proposerConsAddr))
 }
@@ -149,7 +148,7 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 }
 
 // getBalance returns the current balance of the given bech32 address.
-func (s *tokenLogicModuleTestSuite) getBalance(t *testing.T, bech32 string) *types.Coin {
+func (s *tokenLogicModuleTestSuite) getBalance(t *testing.T, bech32 string) *cosmostypes.Coin {
 	t.Helper()
 
 	res, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
