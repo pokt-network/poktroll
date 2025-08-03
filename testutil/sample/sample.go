@@ -11,10 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/encoding"
 )
 
-// func(text string) ([]byte, error) { return sdk.AccAddressFromBech32(text) },
-// func(text string) ([]byte, error) { return sdk.ValAddressFromBech32(text) },
-// func(text string) ([]byte, error) { return sdk.ConsAddressFromBech32(text) },
-
 // AccAddressAndKeyPair returns a sample account address its public key and private key
 func AccAddressAndKeyPair() (string, cryptotypes.PubKey, cryptotypes.PrivKey) {
 	sk := secp256k1.GenPrivKey()
