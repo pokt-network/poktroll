@@ -14,7 +14,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/pocket"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -48,7 +47,7 @@ func (s *suite) TheUserRemembersTheBalanceOfTheProposerAs(stateKey string) {
 	proposerAddr := s.getCurrentBlockProposer()
 
 	// DEV_NOTE: fund the proposer with a MACT so that the s.getAccBalance check doesn't fail the test.
-	s.fundAddress(proposerAddr, cosmostypes.NewInt64Coin(pocket.DenomMACT, 1))
+	// s.fundAddress(proposerAddr, cosmostypes.NewInt64Coin(pocket.DenomMACT, 1))
 
 	// Store the proposer address in accNameToAddrMap if not already there
 	if _, exists := accNameToAddrMap["proposer"]; !exists {
@@ -58,6 +57,7 @@ func (s *suite) TheUserRemembersTheBalanceOfTheProposerAs(stateKey string) {
 
 	balance := s.getAccBalance("proposer")
 	s.scenarioState[stateKey] = balance
+	require.GreaterOrEqual(s, balance, int64(0))
 }
 
 // TheUserRemembersTheBalanceOfTheServiceOwnerForAs stores the current balance of a service owner in the scenario state
@@ -223,7 +223,6 @@ func (s *suite) getCurrentBlockProposer() string {
 			ProposerAddress string `json:"proposer_address"`
 		} `json:"header"`
 	}
-
 	jsonBytes := s.stdOutToJSONBytes(blockRes.Stdout)
 	err = json.Unmarshal(jsonBytes, &blockInfo)
 	require.NoError(s, err)
@@ -245,7 +244,6 @@ func (s *suite) getCurrentBlockProposer() string {
 			} `json:"consensus_pubkey"`
 		} `json:"validators"`
 	}
-
 	jsonBytes = s.stdOutToJSONBytes(validatorsRes.Stdout)
 	err = json.Unmarshal(jsonBytes, &validatorsInfo)
 	require.NoError(s, err)
@@ -253,30 +251,26 @@ func (s *suite) getCurrentBlockProposer() string {
 	// Step 3: Decode proposer address
 	proposerAddrBytes, err := base64.StdEncoding.DecodeString(blockInfo.Header.ProposerAddress)
 	require.NoError(s, err)
-	fmt.Println("OLSH", proposerAddrBytes)
 
 	// Step 4: Find matching validator
 	for _, validator := range validatorsInfo.Validators {
-		fmt.Println("OLSH", validator.OperatorAddress)
 		// Decode validator's consensus pubkey
 		pubkeyBytes, err := base64.StdEncoding.DecodeString(validator.ConsensusPubkey.Value)
 		if err != nil {
 			continue
 		}
-
 		// Compute address from pubkey (SHA256 then take first 20 bytes)
 		hash := sha256.Sum256(pubkeyBytes)
 		validatorConsAddr := hash[:20]
 
 		// Compare with proposer address
 		if bytes.Equal(validatorConsAddr, proposerAddrBytes) {
-			// Found it! Convert operator address to account address
 			valAddr, err := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
 			require.NoError(s, err)
 
 			// Convert validator address to account address (same bytes, different prefix)
 			accAddr := cosmostypes.AccAddress(valAddr)
-			return accAddr.String() // This will return pokt18kk3aqe2pjz7x7993qp2pjt95ghurra9682tyn
+			return accAddr.String()
 		}
 	}
 
