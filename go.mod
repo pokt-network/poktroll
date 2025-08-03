@@ -36,6 +36,9 @@ replace nhooyr.io/websocket => github.com/coder/websocket v1.8.6
 // replace broken goleveldb
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 
+// Use agoric-labs fork of cometbft
+replace github.com/cometbft/cometbft => github.com/agoric-labs/cometbft v0.38.17-alpha.agoric.1
+
 require (
 	cosmossdk.io/api v0.9.2
 	cosmossdk.io/client/v2 v2.0.0-beta.8
