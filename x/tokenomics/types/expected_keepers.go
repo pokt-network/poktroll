@@ -124,3 +124,7 @@ type MigrationKeeper interface {
 	GetMorseClaimableAccount(ctx context.Context, morseHexAddress string) (morseAccount migrationtypes.MorseClaimableAccount, isFound bool)
 	GetAllMorseClaimableAccounts(ctx context.Context) (morseAccounts []migrationtypes.MorseClaimableAccount)
 }
+
+type StakingKeeper interface {
+	ValidatorByConsAddr(ctx context.Context, consAddr sdk.ConsAddress) (stakingtypes.ValidatorI, error)
+}

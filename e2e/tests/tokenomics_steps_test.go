@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -207,45 +209,163 @@ func (s *suite) getTokenomicsParams() tokenomicstypes.Params {
 	return paramsRes.Params
 }
 
-// getCurrentBlockProposer gets the address of the current block proposer
+// getCurrentBlockProposer gets the operator address of the current block proposer
 func (s *suite) getCurrentBlockProposer() string {
-	// Query the latest block to get the proposer address
-	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
+	// Step 1: Query the latest block to get the proposer address
+	blockRes, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
 		"query", "block", "--output=json",
 	)
 	require.NoError(s, err)
 
-	// Parse the block info to extract proposer address
+	// Parse the block info
 	var blockInfo struct {
 		Header struct {
 			ProposerAddress string `json:"proposer_address"`
 		} `json:"header"`
 	}
 
-	// Strip any warning messages and get just the JSON part
-	jsonStart := strings.Index(res.Stdout, "{")
-	require.Greater(s, jsonStart, -1, "no JSON found in block query response")
-	jsonData := res.Stdout[jsonStart:]
+	jsonStart := strings.Index(blockRes.Stdout, "{")
+	require.Greater(s, jsonStart, -1)
+	jsonData := blockRes.Stdout[jsonStart:]
 
 	err = json.Unmarshal([]byte(jsonData), &blockInfo)
 	require.NoError(s, err)
+	require.NotEmpty(s, blockInfo.Header.ProposerAddress)
 
-	// Ensure we have a proposer address
-	require.NotEmpty(s, blockInfo.Header.ProposerAddress, "proposer address is empty in block header")
+	// Step 2: Query all validators
+	validatorsRes, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
+		"query", "staking", "validators", "--output=json",
+	)
+	require.NoError(s, err)
 
-	// Convert the base64 proposer address to the same format the TLM uses
-	// This mimics exactly what the TLM does: cosmostypes.AccAddress(BlockHeader().ProposerAddress).String()
+	// Parse validators
+	var validatorsInfo struct {
+		Validators []struct {
+			OperatorAddress string `json:"operator_address"`
+			ConsensusPubkey struct {
+				Type  string `json:"type"`
+				Value string `json:"value"`
+			} `json:"consensus_pubkey"`
+		} `json:"validators"`
+	}
+
+	jsonStart = strings.Index(validatorsRes.Stdout, "{")
+	require.Greater(s, jsonStart, -1)
+	jsonData = validatorsRes.Stdout[jsonStart:]
+
+	err = json.Unmarshal([]byte(jsonData), &validatorsInfo)
+	require.NoError(s, err)
+
+	// Step 3: Decode proposer address
 	proposerAddrBytes, err := base64.StdEncoding.DecodeString(blockInfo.Header.ProposerAddress)
-	require.NoError(s, err, "failed to decode proposer address from base64")
+	require.NoError(s, err)
 
-	// Convert to bech32 address using cosmos SDK format (same as TLM)
-	proposerAddr := cosmostypes.AccAddress(proposerAddrBytes).String()
+	// Step 4: Find matching validator
+	for _, validator := range validatorsInfo.Validators {
+		// Decode validator's consensus pubkey
+		pubkeyBytes, err := base64.StdEncoding.DecodeString(validator.ConsensusPubkey.Value)
+		if err != nil {
+			continue
+		}
 
-	// Ensure the final address is not empty
-	require.NotEmpty(s, proposerAddr, "converted proposer address is empty")
+		// Compute address from pubkey (SHA256 then take first 20 bytes)
+		hash := sha256.Sum256(pubkeyBytes)
+		validatorConsAddr := hash[:20]
 
-	return proposerAddr
+		// Compare with proposer address
+		if bytes.Equal(validatorConsAddr, proposerAddrBytes) {
+			// Found it! Convert operator address to account address
+			valAddr, err := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
+			require.NoError(s, err)
+
+			// Convert validator address to account address (same bytes, different prefix)
+			accAddr := cosmostypes.AccAddress(valAddr)
+			return accAddr.String() // This will return pokt18kk3aqe2pjz7x7993qp2pjt95ghurra9682tyn
+		}
+	}
+
+	require.Fail(s, "could not find validator for proposer address")
+	return ""
 }
+
+// getCurrentBlockProposer gets the address of the current block proposer
+// func (s *suite) getCurrentBlockProposer() string {
+// 	// Query the latest block to get the proposer address
+// 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
+// 		"query", "block", "--output=json",
+// 	)
+// 	require.NoError(s, err)
+
+// 	// Parse the block info to extract proposer address
+// 	var blockInfo struct {
+// 		Header struct {
+// 			ProposerAddress string `json:"proposer_address"`
+// 		} `json:"header"`
+// 	}
+
+// 	// Strip any warning messages and get just the JSON part
+// 	jsonStart := strings.Index(res.Stdout, "{")
+// 	require.Greater(s, jsonStart, -1, "no JSON found in block query response")
+// 	jsonData := res.Stdout[jsonStart:]
+
+// 	err = json.Unmarshal([]byte(jsonData), &blockInfo)
+// 	require.NoError(s, err)
+
+// 	// Ensure we have a proposer address
+// 	require.NotEmpty(s, blockInfo.Header.ProposerAddress, "proposer address is empty in block header")
+
+// 	// Convert the base64 proposer address to the same format the TLM uses
+// 	// This mimics exactly what the TLM does: cosmostypes.AccAddress(BlockHeader().ProposerAddress).String()
+// 	// proposerAddrBytes, err := base64.StdEncoding.DecodeString(blockInfo.Header.ProposerAddress)
+// 	// require.NoError(s, err, "failed to decode proposer address from base64")
+// 	// decoded, err := base64.StdEncoding.DecodeString("u1tciYR+vmYt6u/mFh/4RJpcm+8=")
+// 	// fmt.Printf("OLSH Decoded bytes: %x\n", decoded)
+
+// 	// consAddr := cosmostypes.ConsAddress(blockInfo.Header.ProposerAddress)
+// 	// bech32ValCons, _ := cosmostypes.Bech32ifyAddressBytes("poktvalcons", consAddr)
+// 	// fmt.Println("OLSH: blockInfo.Header.ProposerAddress", blockInfo.Header.ProposerAddress)
+// 	// fmt.Println("OLSH: bech32ValCons", bech32ValCons)
+// 	// proposerAddr, err := cosmostypes.Bech32ifyAddressBytes("poktvalcons", blockInfo.Header.ProposerAddress)
+// 	// // proposerAddr, err := sdk.AccAddressFromBech32(blockInfo.Header.ProposerAddress)
+// 	// require.NoError(s, err, "failed to encode proposer address to bech32")
+
+// 	// Convert to bech32 address using cosmos SDK format (same as TLM)
+// 	// proposerAddr := cosmostypes.AccAddress(proposerAddrBytes).String()
+
+// 	// Ensure the final address is not empty
+// 	// require.NotEmpty(s, proposerAddr, "converted proposer address is empty")
+
+// 	// fmt.Println("OLSH: proposerAddr", proposerAddr)
+// 	// return proposerAddr
+
+// 	// The base64-encoded proposer address from the block
+// 	proposerAddressB64 := blockInfo.Header.ProposerAddress
+
+// 	// Decode from base64 to bytes
+// 	addrBytes, err := base64.StdEncoding.DecodeString(proposerAddressB64)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	// Convert to SDK AccAddress type
+// 	accAddr := cosmostypes.AccAddress(addrBytes)
+
+// 	// Get the Bech32 string (uses the prefix configured for your chain)
+// 	bech32Addr := accAddr.String()
+
+// 	fmt.Printf("Base64: %s\n", proposerAddressB64)
+// 	fmt.Printf("Hex: %X\n", addrBytes)
+// 	fmt.Printf("Bech32 Account: %s\n", bech32Addr)
+
+// 	// If you need validator or consensus addresses:
+// 	valAddr := cosmostypes.ValAddress(addrBytes)
+// 	consAddr := cosmostypes.ConsAddress(addrBytes)
+
+// 	fmt.Printf("Bech32 Validator: %s\n", valAddr.String())
+// 	fmt.Printf("Bech32 Consensus: %s\n", consAddr.String())
+
+// 	return bech32Addr
+// }
 
 // getService queries and returns the service with the given ID
 func (s *suite) getService(serviceId string) *sharedtypes.Service {
