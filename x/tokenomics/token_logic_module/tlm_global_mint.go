@@ -227,6 +227,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 			tlmgm.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
 			return err
 		}
+		tlmgm.logger.Info(fmt.Sprintf("TLM Global Mint: resolved proposer address to %s", proposerAddr))
 
 		tlmgm.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,

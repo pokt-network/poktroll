@@ -126,6 +126,7 @@ type MigrationKeeper interface {
 	GetAllMorseClaimableAccounts(ctx context.Context) (morseAccounts []migrationtypes.MorseClaimableAccount)
 }
 
+// StakingKeeper defines the expected interface for the Staking module.
 type StakingKeeper interface {
-	ValidatorByConsAddr(ctx context.Context, consAddr sdk.ConsAddress) (stakingtypes.ValidatorI, error)
+	GetValidatorByConsAddr(ctx context.Context, consAddr sdk.ConsAddress) (stakingtypes.Validator, error)
 }

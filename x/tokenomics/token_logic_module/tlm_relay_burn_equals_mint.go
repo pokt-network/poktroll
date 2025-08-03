@@ -211,6 +211,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 			tlmbem.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
 			return err
 		}
+		tlmbem.logger.Info(fmt.Sprintf("TLM Relay Burn Equals Mint: resolved proposer address to %s", proposerAddr))
 
 		tlmbem.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,

@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
@@ -40,7 +41,7 @@ type ModuleInputs struct {
 	SharedKeeper      types.SharedKeeper
 	SessionKeeper     types.SessionKeeper
 	ServiceKeeper     types.ServiceKeeper
-	StakingKeeper     types.StakingKeeper
+	StakingKeeper     *stakingkeeper.Keeper
 }
 
 type ModuleOutputs struct {
