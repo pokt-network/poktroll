@@ -17,6 +17,10 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
+func init() {
+	cmd.InitSDKConfig()
+}
+
 // Test constants
 const (
 	// Total number of applications used in most tests
@@ -76,10 +80,6 @@ func withAppDelegateeGatewayAddr(delegateeGatewayAddr string, appsWithDelegation
 			app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, delegateeGatewayAddr)
 		}
 	}
-}
-
-func init() {
-	cmd.InitSDKConfig()
 }
 
 // The module address is derived off of its semantic name.

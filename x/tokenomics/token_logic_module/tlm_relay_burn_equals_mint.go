@@ -206,7 +206,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 
 		// Get the block proposer's operator address (not consensus address)
-		proposerAddr, err := GetBlockProposerOperatorAddress(tlmbem.ctx, tlmbem.tlmCtx.StakingKeeper)
+		proposerAddr, err := getBlockProposerOperatorAddress(tlmbem.ctx, tlmbem.tlmCtx.StakingKeeper)
 		if err != nil {
 			tlmbem.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
 			return err

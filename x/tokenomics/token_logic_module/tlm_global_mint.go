@@ -222,7 +222,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 
 		// Get the block proposer's operator address (not consensus address)
-		proposerAddr, err := GetBlockProposerOperatorAddress(tlmgm.ctx, tlmgm.tlmCtx.StakingKeeper)
+		proposerAddr, err := getBlockProposerOperatorAddress(tlmgm.ctx, tlmgm.tlmCtx.StakingKeeper)
 		if err != nil {
 			tlmgm.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
 			return err

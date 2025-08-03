@@ -5,7 +5,7 @@ package types
 import (
 	"context"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -21,23 +21,23 @@ import (
 // AccountKeeper defines the expected interface for the Account module.
 type AccountKeeper interface {
 	// Getters
-	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
-	NewAccountWithAddress(context.Context, sdk.AccAddress) sdk.AccountI
+	GetAccount(ctx context.Context, addr cosmostypes.AccAddress) cosmostypes.AccountI
+	NewAccountWithAddress(context.Context, cosmostypes.AccAddress) cosmostypes.AccountI
 	NextAccountNumber(context.Context) uint64
 
 	// Setters
-	SetAccount(context.Context, sdk.AccountI)
+	SetAccount(context.Context, cosmostypes.AccountI)
 }
 
 // BankKeeper defines the expected interface for the Bank module.
 type BankKeeper interface {
 	// Setters
-	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
-	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
+	MintCoins(ctx context.Context, moduleName string, amt cosmostypes.Coins) error
+	BurnCoins(ctx context.Context, moduleName string, amt cosmostypes.Coins) error
 
 	// Getters
-	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
-	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr cosmostypes.AccAddress, amt cosmostypes.Coins) error
+	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt cosmostypes.Coins) error
 	Balance(context.Context, *banktypes.QueryBalanceRequest) (*banktypes.QueryBalanceResponse, error)
 }
 
@@ -70,7 +70,7 @@ type ProofKeeper interface {
 	SetParams(ctx context.Context, params prooftypes.Params) error
 
 	// Only used for testing & simulation
-	ValidateSubmittedProofs(ctx sdk.Context) (numValidProofs, numInvalidProofs uint64, err error)
+	ValidateSubmittedProofs(ctx cosmostypes.Context) (numValidProofs, numInvalidProofs uint64, err error)
 }
 
 type SharedKeeper interface {
@@ -128,5 +128,5 @@ type MigrationKeeper interface {
 
 // StakingKeeper defines the expected interface for the Staking module.
 type StakingKeeper interface {
-	GetValidatorByConsAddr(ctx context.Context, consAddr sdk.ConsAddress) (stakingtypes.Validator, error)
+	GetValidatorByConsAddr(ctx context.Context, consAddr cosmostypes.ConsAddress) (stakingtypes.Validator, error)
 }

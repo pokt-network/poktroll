@@ -8,13 +8,13 @@ import (
 
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -111,7 +111,7 @@ func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...testkeepe
 	// Increment the block height to 1; valid session height and set the proposer address.
 	s.ctx = types.UnwrapSDKContext(s.ctx).
 		WithBlockHeight(1).
-		WithProposer(s.proposerConsAddr)
+		WithProposer(cosmostypes.ConsAddress(s.proposerConsAddr))
 }
 
 // setExpectedSettlementState sets the expected settlement state on the suite based
@@ -135,8 +135,6 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 	app, isAppFound := s.keepers.GetApplication(s.ctx, s.app.GetAddress())
 	require.True(t, isAppFound)
 
-	proposerBech32 := sample.AccAddressFromConsBech32(s.proposerConsAddr.String())
-
 	return &settlementState{
 		appModuleBalance:        s.getBalance(t, authtypes.NewModuleAddress(apptypes.ModuleName).String()),
 		supplierModuleBalance:   s.getBalance(t, authtypes.NewModuleAddress(suppliertypes.ModuleName).String()),
@@ -144,9 +142,9 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 
 		appStake:             app.GetStake(),
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
-		proposerBalance:      s.getBalance(t, proposerBech32),
+		proposerBalance:      s.getBalance(t, s.proposerConsAddr),
 		daoBalance:           s.getBalance(t, s.daoRewardAddr),
-		sourceOwnerBalance:   s.getBalance(t, s.sourceOwnerBech32),
+		sourceOwnerBalance:   s.getBalance(t, s.sourceOwnerAddr),
 	}
 }
 

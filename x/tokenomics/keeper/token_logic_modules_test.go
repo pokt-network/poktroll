@@ -509,11 +509,10 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Prepare addresses
 	appAddress := app.Address
-	proposerAddress := sample.AccAddressFromConsBech32(proposerConsAddr)
 
 	// Determine balances before inflation
 	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddress.String())
-	propBalanceBefore := getBalance(t, ctx, keepers, proposerAddress)
+	propBalanceBefore := getBalance(t, ctx, keepers, proposerConsAddr)
 	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
 	supplierShareholderBalancesBeforeSettlementMap := make(map[string]*cosmostypes.Coin, len(supplierRevShares))
@@ -546,7 +545,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Determine balances after inflation
 	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddress.String())
-	propBalanceAfter := getBalance(t, ctx, keepers, proposerAddress)
+	propBalanceAfter := getBalance(t, ctx, keepers, proposerConsAddr)
 	serviceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceAfter := getBalance(t, ctx, keepers, appAddress)
 	supplierShareholderBalancesAfter := make(map[string]*cosmostypes.Coin, len(supplierRevShares))

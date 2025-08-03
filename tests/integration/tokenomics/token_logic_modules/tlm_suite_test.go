@@ -35,9 +35,9 @@ type tokenLogicModuleTestSuite struct {
 	app      *apptypes.Application
 	supplier *sharedtypes.Supplier
 
-	proposerConsAddr cosmostypes.ConsAddress
-	sourceOwnerBech32,
-	daoRewardAddr string
+	proposerConsAddr string
+	sourceOwnerAddr  string
+	daoRewardAddr    string
 
 	expectedSettledResults,
 	expectedExpiredResults tlm.ClaimSettlementResults
@@ -69,13 +69,13 @@ func TestTLMProcessorTestSuite(t *testing.T) {
 // set a service, application, and supplier on the suite.
 func (s *tokenLogicModuleTestSuite) SetupTest() {
 	s.daoRewardAddr = sample.AccAddress()
-	s.sourceOwnerBech32 = sample.AccAddress()
-	s.proposerConsAddr = sample.ConsAddress()
+	s.sourceOwnerAddr = sample.AccAddress()
+	s.proposerConsAddr = sample.ConsAddressBech32()
 
 	s.service = &sharedtypes.Service{
 		Id:                   "svc1",
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         s.sourceOwnerBech32,
+		OwnerAddress:         s.sourceOwnerAddr,
 	}
 
 	appStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, math.MaxInt64)

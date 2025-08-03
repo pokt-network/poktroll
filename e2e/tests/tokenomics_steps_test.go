@@ -224,11 +224,8 @@ func (s *suite) getCurrentBlockProposer() string {
 		} `json:"header"`
 	}
 
-	jsonStart := strings.Index(blockRes.Stdout, "{")
-	require.Greater(s, jsonStart, -1)
-	jsonData := blockRes.Stdout[jsonStart:]
-
-	err = json.Unmarshal([]byte(jsonData), &blockInfo)
+	jsonBytes := s.stdOutToJSONBytes(blockRes.Stdout)
+	err = json.Unmarshal(jsonBytes, &blockInfo)
 	require.NoError(s, err)
 	require.NotEmpty(s, blockInfo.Header.ProposerAddress)
 
@@ -249,19 +246,18 @@ func (s *suite) getCurrentBlockProposer() string {
 		} `json:"validators"`
 	}
 
-	jsonStart = strings.Index(validatorsRes.Stdout, "{")
-	require.Greater(s, jsonStart, -1)
-	jsonData = validatorsRes.Stdout[jsonStart:]
-
-	err = json.Unmarshal([]byte(jsonData), &validatorsInfo)
+	jsonBytes = s.stdOutToJSONBytes(validatorsRes.Stdout)
+	err = json.Unmarshal(jsonBytes, &validatorsInfo)
 	require.NoError(s, err)
 
 	// Step 3: Decode proposer address
 	proposerAddrBytes, err := base64.StdEncoding.DecodeString(blockInfo.Header.ProposerAddress)
 	require.NoError(s, err)
+	fmt.Println("OLSH", proposerAddrBytes)
 
 	// Step 4: Find matching validator
 	for _, validator := range validatorsInfo.Validators {
+		fmt.Println("OLSH", validator.OperatorAddress)
 		// Decode validator's consensus pubkey
 		pubkeyBytes, err := base64.StdEncoding.DecodeString(validator.ConsensusPubkey.Value)
 		if err != nil {
@@ -286,6 +282,13 @@ func (s *suite) getCurrentBlockProposer() string {
 
 	require.Fail(s, "could not find validator for proposer address")
 	return ""
+}
+
+func (s *suite) stdOutToJSONBytes(stdOut string) []byte {
+	jsonStart := strings.Index(stdOut, "{")
+	require.Greater(s, jsonStart, -1)
+	jsonData := stdOut[jsonStart:]
+	return []byte(jsonData)
 }
 
 // getService queries and returns the service with the given ID
