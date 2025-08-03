@@ -220,7 +220,14 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 	// Distribute to block proposer
 	if !proposerAmount.IsZero() {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-		proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(tlmgm.ctx).BlockHeader().ProposerAddress).String()
+
+		// Get the block proposer's operator address (not consensus address)
+		proposerAddr, err := GetBlockProposerOperatorAddress(tlmgm.ctx, tlmgm.tlmCtx.StakingKeeper)
+		if err != nil {
+			tlmgm.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
+			return err
+		}
+
 		tlmgm.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
 			SenderModule:     tokenomicstypes.ModuleName,

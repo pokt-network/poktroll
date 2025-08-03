@@ -276,6 +276,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Mock the service keeper
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 
 	mockServiceKeeper.EXPECT().
 		GetService(gomock.Any(), gomock.Eq(service.Id)).
@@ -314,6 +315,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSharedKeeper,
 		mockSessionKeeper,
 		mockServiceKeeper,
+		mockStakingKeeper,
 		tokenLogicModules,
 	)
 
@@ -530,6 +532,10 @@ func NewTokenomicsModuleKeepers(
 		require.NoError(t, err)
 	}
 
+	// Create a mock staking keeper for tokenomics tests
+	ctrl := gomock.NewController(t)
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -544,6 +550,7 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
+		mockStakingKeeper,
 		cfg.tokenLogicModules,
 	)
 

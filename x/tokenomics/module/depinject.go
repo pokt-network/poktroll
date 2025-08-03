@@ -40,6 +40,7 @@ type ModuleInputs struct {
 	SharedKeeper      types.SharedKeeper
 	SessionKeeper     types.SessionKeeper
 	ServiceKeeper     types.ServiceKeeper
+	StakingKeeper     types.StakingKeeper
 }
 
 type ModuleOutputs struct {
@@ -75,6 +76,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.SharedKeeper,
 		in.SessionKeeper,
 		in.ServiceKeeper,
+		in.StakingKeeper,
 
 		tokenLogicModules,
 	)

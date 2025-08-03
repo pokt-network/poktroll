@@ -43,6 +43,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/app/pocket"
@@ -53,6 +54,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -493,6 +495,10 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	)
 
 	// Prepare the tokenomics keeper and module
+	// Create a mock staking keeper for tokenomics (integration tests don't have full staking module)
+	ctrl := gomock.NewController(t)
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[tokenomicstypes.StoreKey]),
@@ -507,6 +513,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
+		mockStakingKeeper,
 		cfg.TokenLogicModules,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(

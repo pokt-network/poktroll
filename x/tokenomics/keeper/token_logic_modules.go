@@ -190,6 +190,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		Application:           application,
 		Supplier:              supplier,
 		RelayMiningDifficulty: &relayMiningDifficulty,
+		StakingKeeper:         k.stakingKeeper,
 	}
 
 	// Execute all the token logic modules processors
