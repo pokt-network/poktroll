@@ -76,12 +76,19 @@ type TestSuite struct {
 func (s *TestSuite) SetupTest() {
 	t := s.T()
 
+	// Set up a known proposer and validator for testing
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+
 	moduleBalancesOpt := keepertest.WithModuleAccountBalances(map[string]int64{
 		apptypes.ModuleName:      1000000000,
 		suppliertypes.ModuleName: supplierStakeAmt,
 	})
-	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil, moduleBalancesOpt)
+	proposerOpt := keepertest.WithBlockProposer(proposerConsAddr, proposerValOperatorAddr)
+	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil, moduleBalancesOpt, proposerOpt)
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
+	// Update s.ctx with the modified context
+	s.ctx = sdkCtx
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(s.keepers.Codec)
