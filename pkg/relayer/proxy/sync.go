@@ -317,21 +317,24 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 
+	// Serialize the service response to be sent back to the client.
+	// This will include the status code, headers, and body.
+	wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
+		return relayRequest, err
+	}
+
 	// Pass through all backend responses including errors.
 	// Allows clients to see real HTTP status codes from backend service.
 	// Log non-2XX status codes for monitoring but don't block response.
 	if httpResponse.StatusCode >= http.StatusMultipleChoices {
 		logger.Error().
 			Int("status_code", httpResponse.StatusCode).
+			Str("request_url", httpRequest.URL.String()).
+			Str("request_payload_first_bytes", polylog.Preview(string(relayRequest.Payload))).
+			Str("response_payload_first_bytes", polylog.Preview(string(wrappedHTTPResponse.BodyBz))).
 			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
-	}
-
-	// Serialize the service response to be sent back to the client.
-	// This will include the status code, headers, and body.
-	_, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
-		return relayRequest, err
 	}
 
 	logger.Debug().
@@ -407,19 +410,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		isOverServicing = true
 	}
 
-	// Only emit relays and mark as rewardable when not over-servicing:
-	// - Over-serviced relays exceed application's allocated stake
-	// - Provided as free goodwill by supplier
-	// - Not eligible for on-chain compensation
-	//
-	// Emitting over-serviced relays would:
-	// - Break optimistic relay reward accumulation pattern
-	// - Mix "goodwill service" with "protocol-compensated service"
-	//
-	// Protocol details:
-	// - Relay rewards optimistically accumulated before forwarding to relay miner
-	// - Over-serviced relays must never enter reward pipeline
-	if !isOverServicing {
+	// Only emit relays and mark as rewardable when no over-servicing or server error:
+	if isRewardApplicable(isOverServicing, httpResponse.StatusCode) {
 		// Forward reward-eligible relays for SMT updates (excludes over-serviced relays).
 		server.servedRewardableRelaysProducer <- relay
 
@@ -430,6 +422,28 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// set to 200 because everything is good about the processed relay.
 	statusCode = http.StatusOK
 	return relayRequest, nil
+}
+
+// isRewardApplicable checks if the current relay is reward applicable given
+// its over-servicing status and the HTTP status code of the response.
+//
+// - Over-serviced relays exceed application's allocated stake
+// - Provided as free goodwill by supplier
+// - Not eligible for on-chain compensation
+//
+// Emitting over-serviced relays would:
+// - Break optimistic relay reward accumulation pattern
+// - Mix "goodwill service" with "protocol-compensated service"
+//
+// Protocol details:
+// - Relay rewards optimistically accumulated before forwarding to relay miner
+// - Over-serviced relays MUST NOT enter reward pipeline
+// - 5xx errors MUST NOT enter reward pipeline
+func isRewardApplicable(isOverServicing bool, statusCode int) bool {
+	// Reward is applicable when:
+	// - Not over-servicing (application has enough stake)
+	// - Status code is 2xx (successful relay)
+	return !isOverServicing && statusCode < http.StatusInternalServerError
 }
 
 // serviceConfigTypeDefault indicates that the service config being used is
