@@ -217,7 +217,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	supplierClientMock.EXPECT().
 		CreateClaims(
-			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(ctx),
 			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
@@ -231,7 +231,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	supplierClientMock.EXPECT().
 		SubmitProofs(
-			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(ctx),
 			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
