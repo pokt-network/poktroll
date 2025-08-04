@@ -166,14 +166,16 @@ func genRandomizedMinedRelayFixtures(
 			relay := servicetypes.Relay{
 				Req: &servicetypes.RelayRequest{
 					Meta: servicetypes.RelayRequestMetadata{
-						SessionHeader: sessionHeader,
-						Signature:     randBz,
+						SessionHeader:           sessionHeader,
+						Signature:               randBz,
+						SupplierOperatorAddress: sample.AccAddress(),
 					},
 					Payload: nil,
 				},
 				Res: &servicetypes.RelayResponse{
 					Meta: servicetypes.RelayResponseMetadata{
-						SessionHeader: sessionHeader,
+						SessionHeader:             sessionHeader,
+						SupplierOperatorSignature: randBz,
 					},
 					Payload:     nil,
 					PayloadHash: relayResponsePayloadHash[:],

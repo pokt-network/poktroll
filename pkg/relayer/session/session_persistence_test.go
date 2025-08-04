@@ -540,7 +540,7 @@ func (s *SessionPersistenceTestSuite) setupMockProofQueryClient(ctrl *gomock.Con
 		AnyTimes()
 	proofQueryClientMock.EXPECT().
 		GetClaim(
-			gomock.Eq(s.ctx),
+			gomock.AssignableToTypeOf(s.ctx),
 			gomock.Eq(s.supplierOperatorAddress),
 			gomock.Eq(s.activeSessionHeader.SessionId),
 		).

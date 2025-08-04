@@ -41,7 +41,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
-			Supplier:         expectedSupplier,
+			OperatorAddress:  expectedSupplier.OperatorAddress,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -176,7 +176,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
-			Supplier:         expectedSupplier,
+			OperatorAddress:  expectedSupplier.OperatorAddress,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -268,7 +268,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
-			Supplier:         expectedSupplier,
+			OperatorAddress:  expectedSupplier.OperatorAddress,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -374,7 +374,7 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
-			Supplier:         expectedSupplier,
+			OperatorAddress:  expectedSupplier.OperatorAddress,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)

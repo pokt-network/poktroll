@@ -349,8 +349,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
 			Application:             expectedApp,
 		}
@@ -441,8 +441,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
 			Application:             expectedApp,
 		}
