@@ -278,6 +278,14 @@ func (s *suite) getCurrentBlockProposer() string {
 	return ""
 }
 
+// stdOutToJSONBytes returns the JSON bytes from the given stdOut string.
+//
+// It is necessary if the CLI outputs some text before the actual content.
+// For example, `pocketd query --type=height` outputs the following if a specific
+// block height is unspecified:
+//
+//	"Falling back to latest block height:"
+//	{"header":{"version ...}
 func (s *suite) stdOutToJSONBytes(stdOut string) []byte {
 	jsonStart := strings.Index(stdOut, "{")
 	require.Greater(s, jsonStart, -1)

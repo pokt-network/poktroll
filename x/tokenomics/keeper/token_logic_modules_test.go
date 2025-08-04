@@ -441,6 +441,11 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	)
 	numTokensClaimedInt := cosmosmath.NewIntFromUint64(uint64(numTokensClaimed))
 	proposerConsAddr := sample.ConsAddressBech32()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+	// Convert validator operator address to account address for balance checks
+	valAddrBz, err := cosmostypes.ValAddressFromBech32(proposerValOperatorAddr)
+	require.NoError(t, err)
+	proposerAccAddr := cosmostypes.AccAddress(valAddrBz).String()
 	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
@@ -448,7 +453,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Prepare the keepers
 	opts := []testkeeper.TokenomicsModuleKeepersOptFn{
 		testkeeper.WithService(*service),
-		testkeeper.WithProposerAddr(proposerConsAddr),
+		testkeeper.WithBlockProposer(proposerConsAddr, proposerValOperatorAddr),
 		testkeeper.WithTokenLogicModules(tokenLogicModules),
 		testkeeper.WithDefaultModuleBalances(),
 	}
@@ -464,7 +469,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
-	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	err = keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -512,7 +517,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Determine balances before inflation
 	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddress.String())
-	propBalanceBefore := getBalance(t, ctx, keepers, proposerConsAddr)
+	propBalanceBefore := getBalance(t, ctx, keepers, proposerAccAddr)
 	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
 	supplierShareholderBalancesBeforeSettlementMap := make(map[string]*cosmostypes.Coin, len(supplierRevShares))
@@ -545,7 +550,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Determine balances after inflation
 	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddress.String())
-	propBalanceAfter := getBalance(t, ctx, keepers, proposerConsAddr)
+	propBalanceAfter := getBalance(t, ctx, keepers, proposerAccAddr)
 	serviceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceAfter := getBalance(t, ctx, keepers, appAddress)
 	supplierShareholderBalancesAfter := make(map[string]*cosmostypes.Coin, len(supplierRevShares))
@@ -1010,10 +1015,15 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	// Setup test service
 	testService := prepareTestService(testServiceComputeUnitsPerRelay)
 
+	// Create proposer addresses for testing
+	testProposerConsAddr := sample.ConsAddressBech32()
+	testProposerValOperAddr := sample.ValOperatorAddress()
+	
 	// Initialize blockchain keepers and context
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
 		cosmoslog.NewNopLogger(),
 		testkeeper.WithService(*testService),
+		testkeeper.WithBlockProposer(testProposerConsAddr, testProposerValOperAddr),
 		testkeeper.WithDefaultModuleBalances(),
 	)
 	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
@@ -1097,8 +1107,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	keepers.SetAndIndexDehydratedSupplier(ctx, testSupplier)
 
 	// Get addresses for balance verification
-	blockProposerAddress := cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress
-	blockProposerAccountAddress := cosmostypes.AccAddress(blockProposerAddress).String()
+	// Convert the validator operator address to an account address for balance checks
+	testProposerValAddrBz, err := cosmostypes.ValAddressFromBech32(testProposerValOperAddr)
+	require.NoError(t, err)
+	blockProposerAccountAddress := cosmostypes.AccAddress(testProposerValAddrBz).String()
 	daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
 	serviceSourceOwnerAddress := testService.OwnerAddress
 
