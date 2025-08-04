@@ -68,8 +68,8 @@ func TestTLMProcessorTestSuite(t *testing.T) {
 // SetupTest generates and sets all rewardee addresses on the suite, and
 // set a service, application, and supplier on the suite.
 func (s *tokenLogicModuleTestSuite) SetupTest() {
-	s.daoRewardAddr = sample.AccAddress()
-	s.sourceOwnerAddr = sample.AccAddress()
+	s.daoRewardAddr = sample.AccAddressBech32()
+	s.sourceOwnerAddr = sample.AccAddressBech32()
 	s.proposerConsAddr = sample.ConsAddressBech32()
 
 	s.service = &sharedtypes.Service{
@@ -80,14 +80,14 @@ func (s *tokenLogicModuleTestSuite) SetupTest() {
 
 	appStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, math.MaxInt64)
 	s.app = &apptypes.Application{
-		Address: sample.AccAddress(),
+		Address: sample.AccAddressBech32(),
 		Stake:   &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{ServiceId: s.service.GetId()},
 		},
 	}
 
-	supplierBech32 := sample.AccAddress()
+	supplierBech32 := sample.AccAddressBech32()
 	services := []*sharedtypes.SupplierServiceConfig{
 		{
 			ServiceId: s.service.GetId(),

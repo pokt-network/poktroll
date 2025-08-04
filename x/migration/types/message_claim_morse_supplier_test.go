@@ -23,7 +23,7 @@ var (
 
 	testRevShare = []*sharedtypes.ServiceRevenueShare{
 		{
-			Address:            sample.AccAddress(),
+			Address:            sample.AccAddressBech32(),
 			RevSharePercentage: uint64(100),
 		},
 	}
@@ -44,11 +44,11 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 	t.Run("invalid Shannon owner address", func(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
 			"invalid_address",
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServiceConfigs,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -58,12 +58,12 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 
 	t.Run("invalid Shannon operator address", func(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 			"invalid_address",
 			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServiceConfigs,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -73,12 +73,12 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 
 	t.Run("invalid Morse signature", func(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
+			sample.AccAddressBech32(),
 			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServiceConfigs,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -100,12 +100,12 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		// Morse private key. This populates the signature with a valid signature,
 		// but corresponding to the wrong key and address.
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
+			sample.AccAddressBech32(),
 			wrongMorsePrivKey.PubKey().Address().String(),
 			wrongMorsePrivKey,
 			testSupplierServiceConfigs,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -123,14 +123,14 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 
 	t.Run("invalid service ID", func(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
+			sample.AccAddressBech32(),
 			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			[]*sharedtypes.SupplierServiceConfig{
 				{ServiceId: strings.Repeat("a", 43)}, // Invalid service ID because its too long
 			},
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -142,12 +142,12 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 
 	t.Run("valid Morse claim account message", func(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
+			sample.AccAddressBech32(),
 			morsePrivKey.PubKey().Address().String(),
 			morsePrivKey,
 			testSupplierServiceConfigs,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 

@@ -25,19 +25,17 @@ func AccAddressAndPubKey() (string, cryptotypes.PubKey) {
 	return address, pubKey
 }
 
-// AccAddress returns a sample account address
-func AccAddress() string {
+// AccAddressBech32 returns a sample account address
+func AccAddressBech32() string {
 	addr, _ := AccAddressAndPubKey()
 	return addr
 }
 
-// ValOperatorAddress returns a sample validator operator address
-func ValOperatorAddress() string {
-	// Generate a new keypair for the validator operator
+// ValOperatorAddressBech32 returns a sample validator bech32 operator address.
+func ValOperatorAddressBech32() string {
 	sk := secp256k1.GenPrivKey()
 	pk := sk.PubKey()
 	addr := pk.Address()
-	// Convert to validator operator address with proper prefix
 	return cosmostypes.ValAddress(addr).String()
 }
 

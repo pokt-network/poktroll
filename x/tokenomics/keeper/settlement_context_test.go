@@ -778,7 +778,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	expiredClaimsMap := make(map[string]*prooftypes.Claim, numExpiredClaims)
 	for range numExpiredClaims {
 		appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-		appAddr := sample.AccAddress()
+		appAddr := sample.AccAddressBech32()
 		app := apptypes.Application{
 			Address:        appAddr,
 			Stake:          &appStake,
@@ -1059,7 +1059,7 @@ func (s *TestSuite) createTestActors(
 		service := sharedtypes.Service{
 			Id:                   serviceId,
 			ComputeUnitsPerRelay: computeUnitsPerRelay,
-			OwnerAddress:         sample.AccAddress(),
+			OwnerAddress:         sample.AccAddressBech32(),
 		}
 		s.keepers.SetService(s.ctx, service)
 

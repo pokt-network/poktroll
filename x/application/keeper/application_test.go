@@ -179,7 +179,7 @@ func TestApplication_GetAllTransferringApplicationsIterator(t *testing.T) {
 	apps := createNApplications(keeper, ctx, totalApplicationCount)
 	for i := transferringApplicationStartIndex; i < transferringApplicationEndIndex; i++ {
 		apps[i].PendingTransfer = &apptypes.PendingApplicationTransfer{
-			DestinationAddress: sample.AccAddress(),
+			DestinationAddress: sample.AccAddressBech32(),
 			SessionEndHeight:   sessionEndHeight,
 		}
 		keeper.SetApplication(ctx, apps[i])
@@ -212,12 +212,12 @@ func TestApplication_GetDelegationsIterator(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
 
 	// Create a gateway address that some applications will delegate to
-	targetGatewayAddr := sample.AccAddress()
+	targetGatewayAddr := sample.AccAddressBech32()
 
 	// Create 10 applications, with 4 delegating to our test gateway
 	commonDelegateeGatewayAddrs := make([]string, commonDelegateeCount)
 	for i := 0; i < commonDelegateeCount; i++ {
-		commonDelegateeGatewayAddrs[i] = sample.AccAddress()
+		commonDelegateeGatewayAddrs[i] = sample.AccAddressBech32()
 	}
 	apps := createNApplications(keeper, ctx, totalApplicationCount)
 
@@ -264,9 +264,9 @@ func TestApplication_GetUndelegationsIterator(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
 
 	// Create gateway addresses for undelegations
-	gateway1 := sample.AccAddress()
-	gateway2 := sample.AccAddress()
-	gateway3 := sample.AccAddress()
+	gateway1 := sample.AccAddressBech32()
+	gateway2 := sample.AccAddressBech32()
+	gateway3 := sample.AccAddressBech32()
 
 	// Create 5 applications with various undelegations
 	apps := createNApplications(keeper, ctx, undelegationAppsCount)

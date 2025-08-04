@@ -104,7 +104,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
-		Address:        sample.AccAddress(),
+		Address:        sample.AccAddressBech32(),
 		Stake:          &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
@@ -113,7 +113,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	// Prepare the supplier revenue shares
 	supplierRevShares := make([]*sharedtypes.ServiceRevenueShare, len(supplierRevShareRatios))
 	for i := range supplierRevShares {
-		shareHolderAddress := sample.AccAddress()
+		shareHolderAddress := sample.AccAddressBech32()
 		supplierRevShares[i] = &sharedtypes.ServiceRevenueShare{
 			Address:            shareHolderAddress,
 			RevSharePercentage: supplierRevShareRatios[i],
@@ -288,7 +288,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
-		Address:        sample.AccAddress(),
+		Address:        sample.AccAddressBech32(),
 		Stake:          &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
@@ -297,7 +297,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	// Prepare the supplier revenue shares
 	supplierRevShares := make([]*sharedtypes.ServiceRevenueShare, len(supplierRevShareRatios))
 	for i := range supplierRevShares {
-		shareHolderAddress := sample.AccAddress()
+		shareHolderAddress := sample.AccAddressBech32()
 		supplierRevShares[i] = &sharedtypes.ServiceRevenueShare{
 			Address:            shareHolderAddress,
 			RevSharePercentage: supplierRevShareRatios[i],
@@ -441,7 +441,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	)
 	numTokensClaimedInt := cosmosmath.NewIntFromUint64(uint64(numTokensClaimed))
 	proposerConsAddr := sample.ConsAddressBech32()
-	proposerValOperatorAddr := sample.ValOperatorAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddressBech32()
 	// Convert validator operator address to account address for balance checks
 	valAddrBz, err := cosmostypes.ValAddressFromBech32(proposerValOperatorAddr)
 	require.NoError(t, err)
@@ -475,7 +475,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
-		Address:        sample.AccAddress(),
+		Address:        sample.AccAddressBech32(),
 		Stake:          &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
@@ -484,7 +484,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Prepare the supplier revenue shares
 	supplierRevShares := make([]*sharedtypes.ServiceRevenueShare, len(supplierRevShareRatios))
 	for i := range supplierRevShares {
-		shareHolderAddress := sample.AccAddress()
+		shareHolderAddress := sample.AccAddressBech32()
 		supplierRevShares[i] = &sharedtypes.ServiceRevenueShare{
 			Address:            shareHolderAddress,
 			RevSharePercentage: supplierRevShareRatios[i],
@@ -663,7 +663,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	claim := prooftypes.Claim{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress:      sample.AccAddress(), // Random address
+			ApplicationAddress:      sample.AccAddressBech32(), // Random address
 			ServiceId:               service.Id,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
@@ -931,7 +931,7 @@ func prepareTestService(serviceComputeUnitsPerRelay uint64) *sharedtypes.Service
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: serviceComputeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 }
 
@@ -1017,8 +1017,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 	// Create proposer addresses for testing
 	testProposerConsAddr := sample.ConsAddressBech32()
-	testProposerValOperAddr := sample.ValOperatorAddress()
-	
+	testProposerValOperAddr := sample.ValOperatorAddressBech32()
+
 	// Initialize blockchain keepers and context
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
 		cosmoslog.NewNopLogger(),
@@ -1062,7 +1062,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 	// Create test application
 	testApplicationStake := cosmostypes.NewCoin(pocket.DenomuPOKT, testApplicationInitialStake)
-	testApplicationAddress := sample.AccAddress()
+	testApplicationAddress := sample.AccAddressBech32()
 	testApplication := apptypes.Application{
 		Address:        testApplicationAddress,
 		Stake:          &testApplicationStake,
@@ -1078,7 +1078,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	}
 	supplierRevenueShareholders := make([]*sharedtypes.ServiceRevenueShare, len(testSupplierRevSharePercentages))
 	for i := range supplierRevenueShareholders {
-		shareholderAddress := sample.AccAddress()
+		shareholderAddress := sample.AccAddressBech32()
 		supplierRevenueShareholders[i] = &sharedtypes.ServiceRevenueShare{
 			Address:            shareholderAddress,
 			RevSharePercentage: testSupplierRevSharePercentages[i],

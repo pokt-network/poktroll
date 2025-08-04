@@ -23,7 +23,7 @@ func TestProofQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
 	proofs := createNProofs(keeper, ctx, 2)
 
-	var randSupplierOperatorAddr = sample.AccAddress()
+	var randSupplierOperatorAddr = sample.AccAddressBech32()
 	tests := []struct {
 		desc        string
 		request     *types.QueryGetProofRequest

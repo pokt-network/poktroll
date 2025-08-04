@@ -118,7 +118,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Initialize the in-memory database.
@@ -136,12 +136,12 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Prepare the test application.
 	application := apptypes.Application{
-		Address:        sample.AccAddress(),
+		Address:        sample.AccAddressBech32(),
 		Stake:          &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
-	supplierOwnerAddr := sample.AccAddress()
+	supplierOwnerAddr := sample.AccAddressBech32()
 
 	// The list of services that the supplier is staking for.
 	services := []*sharedtypes.SupplierServiceConfig{
@@ -329,7 +329,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
 
 	// Configure the staking keeper mock to return a validator for the proposer
-	proposerValAddr := sample.ValOperatorAddress()
+	proposerValAddr := sample.ValOperatorAddressBech32()
 	validator := stakingtypes.Validator{
 		OperatorAddress: proposerValAddr,
 	}
@@ -573,7 +573,7 @@ func NewTokenomicsModuleKeepers(
 			AnyTimes()
 	} else {
 		// Configure the staking keeper mock to return a validator for the proposer
-		proposerValAddr := sample.ValOperatorAddress()
+		proposerValAddr := sample.ValOperatorAddressBech32()
 		validator := stakingtypes.Validator{
 			OperatorAddress: proposerValAddr,
 		}

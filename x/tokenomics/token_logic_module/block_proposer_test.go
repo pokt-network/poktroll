@@ -20,7 +20,7 @@ func Test_getBlockProposerOperatorAddress(t *testing.T) {
 	consAddr := sample.ConsAddress()
 
 	// Prepare a validator operator address
-	testValOperatorAddrString := sample.ValOperatorAddress()
+	testValOperatorAddrString := sample.ValOperatorAddressBech32()
 	testValOperatorAddrBz, err := cosmostypes.ValAddressFromBech32(testValOperatorAddrString)
 	require.NoError(t, err)
 
