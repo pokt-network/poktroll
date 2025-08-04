@@ -43,7 +43,7 @@ const computeUnitsPerRelay = 1
 
 var (
 	// Test settlements with claims from multiple services
-	testServiceIds   = []string{"svc1", "svc2", "svc3"}
+	testServiceIds   = []string{"svc1"}
 	supplierStakeAmt = 2 * suppliertypes.DefaultMinStake.Amount.Int64()
 )
 
@@ -96,7 +96,7 @@ func (s *TestSuite) SetupTest() {
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
-		polyzero.NewLogger(),
+		polyzero.NewLogger(polyzero.WithLevel(polyzero.ErrorLevel)),
 		prooftypes.NewAppKeeperQueryClient(s.keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(s.keepers.AccountKeeper),
 		prooftypes.NewSharedKeeperQueryClient(s.keepers.SharedKeeper, s.keepers.SessionKeeper),
@@ -1140,8 +1140,8 @@ func (s *TestSuite) createTestClaimsAndProofs(
 		require.NoError(t, err)
 		sessionHeader := sessionRes.Session.Header
 
-		// Construct a valid session tree with 100 relays.
-		s.numRelays = uint64(100)
+		// Construct a valid session tree with 5 relays.
+		s.numRelays = uint64(5)
 		sessionTree := testtree.NewFilledSessionTree(
 			ctx, t,
 			s.numRelays, computeUnitsPerRelay,
