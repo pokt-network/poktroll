@@ -440,12 +440,9 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		globalComputeUnitCostGranularity,
 	)
 	numTokensClaimedInt := cosmosmath.NewIntFromUint64(uint64(numTokensClaimed))
-	proposerConsAddr := sample.ConsAddressBech32()
-	proposerValOperatorAddr := sample.ValOperatorAddressBech32()
-	// Convert validator operator address to account address for balance checks
-	valAddrBz, err := cosmostypes.ValAddressFromBech32(proposerValOperatorAddr)
-	require.NoError(t, err)
-	proposerAccAddr := cosmostypes.AccAddress(valAddrBz).String()
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+	proposerAccAddr := cosmostypes.AccAddress(proposerValOperatorAddr).String()
 	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
@@ -469,7 +466,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
-	err = keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -939,10 +936,10 @@ func getBalance(
 	t *testing.T,
 	ctx context.Context,
 	bankKeeper tokenomicstypes.BankKeeper,
-	accountAddr string,
+	addr string,
 ) *cosmostypes.Coin {
 	appBalanceRes, err := bankKeeper.Balance(ctx, &banktypes.QueryBalanceRequest{
-		Address: accountAddr,
+		Address: addr,
 		Denom:   "upokt",
 	})
 	require.NoError(t, err)
@@ -1016,8 +1013,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	testService := prepareTestService(testServiceComputeUnitsPerRelay)
 
 	// Create proposer addresses for testing
-	testProposerConsAddr := sample.ConsAddressBech32()
-	testProposerValOperAddr := sample.ValOperatorAddressBech32()
+	testProposerConsAddr := sample.ConsAddress()
+	testProposerValOperAddr := sample.ValOperatorAddress()
 
 	// Initialize blockchain keepers and context
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
@@ -1108,9 +1105,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 	// Get addresses for balance verification
 	// Convert the validator operator address to an account address for balance checks
-	testProposerValAddrBz, err := cosmostypes.ValAddressFromBech32(testProposerValOperAddr)
-	require.NoError(t, err)
-	blockProposerAccountAddress := cosmostypes.AccAddress(testProposerValAddrBz).String()
+	blockProposerAccountAddress := cosmostypes.AccAddress(testProposerValOperAddr).String()
 	daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
 	serviceSourceOwnerAddress := testService.OwnerAddress
 

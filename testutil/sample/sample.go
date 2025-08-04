@@ -31,12 +31,16 @@ func AccAddressBech32() string {
 	return addr
 }
 
-// ValOperatorAddressBech32 returns a sample validator bech32 operator address.
-func ValOperatorAddressBech32() string {
+func ValOperatorAddress() cosmostypes.ValAddress {
 	sk := secp256k1.GenPrivKey()
 	pk := sk.PubKey()
 	addr := pk.Address()
-	return cosmostypes.ValAddress(addr).String()
+	return cosmostypes.ValAddress(addr)
+}
+
+// ValOperatorAddressBech32 returns a sample validator bech32 operator address.
+func ValOperatorAddressBech32() string {
+	return ValOperatorAddress().String()
 }
 
 // ConsAddress returns a sample consensus node address

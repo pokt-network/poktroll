@@ -149,7 +149,7 @@ func NewIntegrationApp(
 
 	// Prepare the faucet init-chainer module option function. It ensures that the
 	// bank module genesis state includes the faucet account with a large balance.
-	faucetBech32 := sample.AccAddressBech32()
+	faucetBech32 := sample.AccAddress()
 	faucetInitChainerFn := newFaucetInitChainerFn(faucetBech32, faucetAmountUpokt)
 	initChainerModuleOptFn := WithInitChainerModuleFn(faucetInitChainerFn)
 
@@ -897,7 +897,7 @@ func (app *App) setupDefaultActorsState(
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddressBech32(),
+		OwnerAddress:         sample.AccAddress(),
 	}
 	serviceKeeper.SetService(app.sdkCtx, defaultService)
 	app.DefaultService = &defaultService
@@ -918,7 +918,7 @@ func (app *App) setupDefaultActorsState(
 		{
 			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
-					Address:            sample.AccAddressBech32(),
+					Address:            sample.AccAddress(),
 					RevSharePercentage: uint64(100),
 				},
 			},
