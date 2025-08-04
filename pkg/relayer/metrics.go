@@ -124,7 +124,7 @@ var (
 	// a relay response from the the service's HTTP response.
 	//
 	// This histogram, labeled by 'service_id', measures the time taken to prepare
-	// a relay response, which includes marshalling the response body and preparing
+	// a relay response, which includes marshaling the response body and preparing
 	// the RelayResponse structure.
 	// Usage:
 	// - Analyze the time taken to prepare relay responses.
