@@ -41,6 +41,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -498,6 +499,26 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	// Create a mock staking keeper for tokenomics (integration tests don't have full staking module)
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
+	// Set up mock expectations for the staking keeper
+	// Use a sample consensus and validator address for the mock
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+	validator := stakingtypes.Validator{
+		OperatorAddress: proposerValOperatorAddr.String(),
+	}
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
+		Return(validator, nil).
+		AnyTimes()
+	// Default expectation for any other consensus address
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
+		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
+	// Set the proposer address in the context to match the mock expectation
+	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
 
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
