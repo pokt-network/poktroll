@@ -497,14 +497,10 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 
 	// Prepare mock staking and distribution keepers for integration tests
 	// Since we don't need full staking/distribution functionality in integration tests,
-	// we can use nil implementations or mocks that implement the interface
-	var mockStakingKeeper tokenomicstypes.StakingKeeper = nil
-	var mockDistributionKeeper tokenomicstypes.DistributionKeeper = nil
-
-	// Prepare the tokenomics keeper and module
-	// Create a mock staking keeper for tokenomics (integration tests don't have full staking module)
+	// we can use mocks that implement the interface
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
 
 	// Set up mock expectations for the staking keeper
 	// Use a sample consensus and validator address for the mock
@@ -521,6 +517,12 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
 		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
+	// Set up mock expectations for distribution keeper
+	mockDistributionKeeper.EXPECT().
+		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
 		AnyTimes()
 
 	// Set the proposer address in the context to match the mock expectation

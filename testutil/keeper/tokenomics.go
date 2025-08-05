@@ -25,7 +25,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -329,24 +328,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 
-	// Create mock staking and distribution keepers
-	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+	// Create mock distribution keeper
 	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
-
-	// Set up mock expectations for staking keeper
-	// Create a sample validator for testing
-	sampleValidator := stakingtypes.Validator{
-		OperatorAddress: sample.AccAddress(),
-		Status:          stakingtypes.Bonded,
-	}
-
-	// Mock GetValidatorByConsAddr to return the sample validator
-	mockStakingKeeper.EXPECT().
-		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
-		Return(sampleValidator, nil).
-		AnyTimes()
-
-	// Mock AllocateTokensToValidator to succeed
 	mockDistributionKeeper.EXPECT().
 		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
@@ -419,13 +402,10 @@ func NewTokenomicsModuleKeepers(
 
 	// Add a block proposer address to the context
 	var proposerConsAddr cosmostypes.ConsAddress
-	var proposerValOperatorAddr cosmostypes.ValAddress
 	if cfg.proposerConsAddr != nil && cfg.proposerValOperatorAddr != nil {
 		proposerConsAddr = cfg.proposerConsAddr
-		proposerValOperatorAddr = cfg.proposerValOperatorAddr
 	} else {
 		proposerConsAddr = sample.ConsAddress()
-		proposerValOperatorAddr = sample.ValOperatorAddress()
 	}
 
 	// Prepare the context
@@ -611,17 +591,36 @@ func NewTokenomicsModuleKeepers(
 
 	// We will pass the concrete stakingKeeper to the option functions
 
-	// Construct a real distribution keeper for reward distribution
-	distKeeper := distrkeeper.NewKeeper(
-		cdc,
-		runtime.NewKVStoreService(keys[distrtypes.StoreKey]),
-		accountKeeper,
-		bankKeeper,
-		stakingKeeper,
-		distrtypes.ModuleName,
-		authority.String(),
-	)
-	// Note: Distribution keeper doesn't have SetParams method in newer versions
+	// Note: We create mock distribution keeper below for the interface
+
+	// Create mock staking and distribution keepers for the TokenomicsModuleKeepers interface
+	ctrl := gomock.NewController(t)
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
+
+	// Set up mock expectations for staking keeper
+	// If a specific proposer is configured, set up the mock to return the correct validator
+	if cfg.proposerConsAddr != nil && cfg.proposerValOperatorAddr != nil {
+		validator := stakingtypes.Validator{
+			OperatorAddress: cfg.proposerValOperatorAddr.String(),
+		}
+		mockStakingKeeper.EXPECT().
+			GetValidatorByConsAddr(gomock.Any(), cfg.proposerConsAddr).
+			Return(validator, nil).
+			AnyTimes()
+	}
+
+	// Default expectation for any other consensus address
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
+		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
+	// Mock AllocateTokensToValidator to succeed
+	mockDistributionKeeper.EXPECT().
+		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
 
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
@@ -637,8 +636,8 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
-		stakingKeeper,
-		distKeeper,
+		mockStakingKeeper,
+		mockDistributionKeeper,
 		cfg.tokenLogicModules,
 	)
 
@@ -678,8 +677,8 @@ func NewTokenomicsModuleKeepers(
 		SharedKeeper:       &sharedKeeper,
 		SessionKeeper:      &sessionKeeper,
 		ServiceKeeper:      &serviceKeeper,
-		StakingKeeper:      &stakingKeeper,
-		DistributionKeeper: &distKeeper,
+		StakingKeeper:      mockStakingKeeper,
+		DistributionKeeper: mockDistributionKeeper,
 		MigrationKeeper:    &migrationKeeper,
 
 		Codec: cdc,
@@ -688,7 +687,7 @@ func NewTokenomicsModuleKeepers(
 	// Apply any options to update the keepers or context prior to returning them.
 	ctx = sdkCtx
 	for _, fn := range cfg.initKeepersFns {
-		ctx = fn(ctx, &keepers, &stakingKeeper)
+		ctx = fn(ctx, &keepers, stakingKeeper)
 	}
 
 	return keepers, ctx
@@ -803,8 +802,8 @@ func createValidatorForProposer(ctx context.Context, stakingKeeper *stakingkeepe
 	consAddr := cosmostypes.ConsAddress(consPubKey.Address())
 
 	// Use standard account address format for validator operator address
-	// This matches the pattern used in the mock setup where sample.AccAddress() is used
-	operatorAddress := sample.AccAddress()
+	// This matches the pattern used in the mock setup where sample.AccAddressBech32() is used
+	operatorAddress := sample.AccAddressBech32()
 
 	// Convert consensus public key to Any for storage in validator
 	consPubKeyAny, err := codectypes.NewAnyWithValue(consPubKey)
