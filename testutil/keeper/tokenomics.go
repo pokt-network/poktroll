@@ -385,10 +385,6 @@ func NewTokenomicsModuleKeepers(
 		logger = log.NewTestLogger(t)
 	}
 
-	// Prepare the context
-	ctx = cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, logger)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-
 	// Add a block proposer address to the context
 	var proposerConsAddr cosmostypes.ConsAddress
 	var proposerValOperatorAddr cosmostypes.ValAddress
@@ -399,6 +395,13 @@ func NewTokenomicsModuleKeepers(
 		proposerConsAddr = sample.ConsAddress()
 		proposerValOperatorAddr = sample.ValOperatorAddress()
 	}
+
+	// Prepare the context
+	ctx = cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, logger)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	// Set the proposer address in the context so that TLMs can resolve validators
+	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
+	ctx = sdkCtx
 
 	// Prepare the account keeper.
 	registry := codectypes.NewInterfaceRegistry()
