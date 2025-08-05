@@ -540,8 +540,6 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption) SupplierFn 
 			return nil, err
 		}
 
-		deps = depinject.Configs(deps, depinject.Supply(kvCache))
-
 		// Apply the query cache options
 		for _, opt := range opts {
 			if err := opt(ctx, deps, kvCache); err != nil {
@@ -549,7 +547,7 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption) SupplierFn 
 			}
 		}
 
-		return deps, nil
+		return depinject.Configs(deps, depinject.Supply(kvCache)), nil
 	}
 }
 
@@ -582,7 +580,8 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 
 		deps = depinject.Configs(deps, depinject.Supply(paramsCache))
 
-		// Apply the query cache options
+		// Apply the query cache options after the cache has been injected to avoid
+		// circular dependency issues.
 		for _, opt := range opts {
 			if err := opt(ctx, deps, paramsCache); err != nil {
 				return nil, err

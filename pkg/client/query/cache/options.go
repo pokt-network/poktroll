@@ -77,8 +77,8 @@ func WithNewNthSessionCacheClearingFn(sessionCountForCacheClear uint) func(conte
 				isAtSessionStart := currentHeight == currentSessionStartHeight
 				isCacheClearableSession := currentSessionNumber%int64(sessionCountForCacheClear) == 0
 				if isAtSessionStart && isCacheClearableSession {
-					logger.Info().Msgf(
-						"🧹 Clearing cache at session number %d (start: %d)\n",
+					logger.Debug().Msgf(
+						"🧹 Clearing cache at session number %d (start height: %d)",
 						currentSessionNumber, currentSessionStartHeight,
 					)
 					cache.Clear()
