@@ -71,7 +71,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			numDiscardedFaultyClaims++
 			err = tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
 				"[UNEXPECTED ERROR] Critical error during claim settlement during session %q for operator %s and service %s. Claim will be discarded to prevent chain halt: %s",
-				claim.SessionHeader.SessionId, claim.SupplierOperatorAddress, claim.SessionHeader.ServiceId, err,
+				claim.SessionHeader.SessionId, claim.SupplierOperatorAddress, claim.SessionHeader.ServiceId, settlementErr,
 			)
 			logger.Error(err.Error())
 			k.discardFaultyClaim(ctx, logger, claim, err.Error())

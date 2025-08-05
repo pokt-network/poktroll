@@ -77,6 +77,10 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		testkeeper.WithService(service),
 		testkeeper.WithApplication(application),
 		testkeeper.WithSupplier(supplier),
+		testkeeper.WithBlockProposer(
+			sample.ConsAddress(),
+			sample.ValOperatorAddress(),
+		),
 		testkeeper.WithProofRequirement(false),
 		testkeeper.WithDefaultModuleBalances(),
 	)

@@ -35,9 +35,10 @@ type tokenLogicModuleTestSuite struct {
 	app      *apptypes.Application
 	supplier *sharedtypes.Supplier
 
-	proposerConsAddr string
-	sourceOwnerAddr  string
-	daoRewardAddr    string
+	proposerConsAddr        string
+	proposerValOperatorAddr string
+	sourceOwnerAddr         string
+	daoRewardAddr           string
 
 	expectedSettledResults,
 	expectedExpiredResults tlm.ClaimSettlementResults
@@ -71,6 +72,7 @@ func (s *tokenLogicModuleTestSuite) SetupTest() {
 	s.daoRewardAddr = sample.AccAddressBech32()
 	s.sourceOwnerAddr = sample.AccAddressBech32()
 	s.proposerConsAddr = sample.ConsAddressBech32()
+	s.proposerValOperatorAddr = sample.ValOperatorAddressBech32()
 
 	s.service = &sharedtypes.Service{
 		Id:                   "svc1",

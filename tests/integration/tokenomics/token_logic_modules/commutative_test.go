@@ -89,6 +89,10 @@ func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...testkeepe
 		testkeeper.WithService(*s.service),
 		testkeeper.WithApplication(*s.app),
 		testkeeper.WithSupplier(*s.supplier),
+		testkeeper.WithBlockProposer(
+			cosmostypes.ConsAddress(s.proposerConsAddr),
+			cosmostypes.ValAddress(s.proposerValOperatorAddr),
+		),
 		testkeeper.WithModuleParams(map[string]cosmostypes.Msg{
 			// TODO_MAINNET(@bryanchriswhite): Set tokenomics mint allocation params to maximize coverage, once available.
 
@@ -107,10 +111,8 @@ func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...testkeepe
 		append(defaultOpts, opts...)...,
 	)
 
-	// Increment the block height to 1; valid session height and set the proposer address.
-	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).
-		WithBlockHeight(1).
-		WithProposer(cosmostypes.ConsAddress(s.proposerConsAddr))
+	// Increment the block height to 1; valid session height.
+	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
 }
 
 // setExpectedSettlementState sets the expected settlement state on the suite based
@@ -141,7 +143,7 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 
 		appStake:             app.GetStake(),
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
-		proposerBalance:      s.getBalance(t, s.proposerConsAddr),
+		proposerBalance:      s.getBalance(t, cosmostypes.AccAddress(cosmostypes.ValAddress(s.proposerValOperatorAddr)).String()),
 		daoBalance:           s.getBalance(t, s.daoRewardAddr),
 		sourceOwnerBalance:   s.getBalance(t, s.sourceOwnerAddr),
 	}
