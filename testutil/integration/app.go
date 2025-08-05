@@ -127,6 +127,9 @@ type App struct {
 	DefaultApplicationKeyringUid     string
 	DefaultSupplier                  *sharedtypes.Supplier
 	DefaultSupplierKeyringKeyringUid string
+
+	// Mock proposer consensus address for consistent block proposer
+	proposerConsAddr sdk.ConsAddress
 }
 
 // NewIntegrationApp creates a new instance of the App with the provided details
@@ -176,7 +179,8 @@ func NewIntegrationApp(
 		WithEventManager(sdk.NewEventManager())
 
 	// Add a block proposer address to the context
-	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
+	proposerConsAddr := sample.ConsAddress()
+	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
 
 	// Create the base application
 	bApp.MountKVStores(keys)
@@ -218,15 +222,16 @@ func NewIntegrationApp(
 	bApp.SetTxEncoder(txCfg.TxEncoder())
 
 	return &App{
-		BaseApp:       bApp,
-		logger:        logger,
-		authority:     authority,
-		sdkCtx:        &sdkCtx,
-		cdc:           cdc,
-		txCfg:         txCfg,
-		moduleManager: *moduleManager,
-		queryHelper:   queryHelper,
-		faucetBech32:  faucetBech32,
+		BaseApp:          bApp,
+		logger:           logger,
+		authority:        authority,
+		sdkCtx:           &sdkCtx,
+		cdc:              cdc,
+		txCfg:            txCfg,
+		moduleManager:    *moduleManager,
+		queryHelper:      queryHelper,
+		faucetBech32:     faucetBech32,
+		proposerConsAddr: proposerConsAddr,
 	}
 }
 
@@ -619,6 +624,10 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		opts...,
 	)
 
+	// Override the proposer address to match the mock expectation
+	integrationApp.proposerConsAddr = proposerConsAddr
+	*integrationApp.sdkCtx = integrationApp.sdkCtx.WithProposer(proposerConsAddr)
+
 	// Register the message & query servers.
 	configurator := module.NewConfigurator(cdc, msgRouter, queryHelper)
 	for _, mod := range integrationApp.GetModuleManager().Modules {
@@ -853,8 +862,8 @@ func (app *App) NextBlock(t *testing.T) {
 	finalizedBlockResponse, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: app.sdkCtx.BlockHeight(),
 		Time:   app.sdkCtx.BlockTime(),
-		// Randomize the proposer address for each block.
-		ProposerAddress: sample.ConsAddress().Bytes(),
+		// Use the consistent proposer address for each block.
+		ProposerAddress: app.proposerConsAddr.Bytes(),
 	})
 	require.NoError(t, err)
 
