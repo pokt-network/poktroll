@@ -91,6 +91,10 @@ type tokenomicsModuleKeepersConfig struct {
 	// moduleParams is a map of module names to their respective module parameters.
 	// This is used to set the initial module parameters in the keeper.
 	moduleParams map[string]cosmostypes.Msg
+
+	// proposerConsAddr and proposerValOperatorAddr are used to configure the block proposer
+	proposerConsAddr        cosmostypes.ConsAddress
+	proposerValOperatorAddr cosmostypes.ValAddress
 }
 
 // TokenomicsModuleKeepersOptFn is a function which receives and potentially modifies
@@ -122,7 +126,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Initialize the in-memory database.
@@ -140,12 +144,14 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Prepare the test application.
 	application := apptypes.Application{
-		Address:        sample.AccAddress(),
+		Address:        sample.AccAddressBech32(),
 		Stake:          &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
-	supplierOwnerAddr := sample.AccAddress()
+	supplierOwnerAddr := sample.AccAddressBech32()
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddressBech32()
 
 	// The list of services that the supplier is staking for.
 	services := []*sharedtypes.SupplierServiceConfig{
@@ -168,6 +174,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	}
 
 	sdkCtx := cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
 
 	ctrl := gomock.NewController(t)
 
@@ -282,9 +289,22 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(sessiontypes.DefaultParams()).
 		AnyTimes()
 
+	// Mock the staking keeper
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+	validator := stakingtypes.Validator{
+		OperatorAddress: proposerValOperatorAddr,
+	}
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
+		Return(validator, nil).
+		AnyTimes()
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
+		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
 	// Mock the service keeper
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
-
 	mockServiceKeeper.EXPECT().
 		GetService(gomock.Any(), gomock.Eq(service.Id)).
 		Return(*service, true).
@@ -350,9 +370,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		tokenLogicModules,
 	)
 
-	// Add a block proposer address to the context
-	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
-
 	// Initialize params
 	require.NoError(t, k.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
 
@@ -400,14 +417,24 @@ func NewTokenomicsModuleKeepers(
 		logger = log.NewTestLogger(t)
 	}
 
+	// Add a block proposer address to the context
+	var proposerConsAddr cosmostypes.ConsAddress
+	var proposerValOperatorAddr cosmostypes.ValAddress
+	if cfg.proposerConsAddr != nil && cfg.proposerValOperatorAddr != nil {
+		proposerConsAddr = cfg.proposerConsAddr
+		proposerValOperatorAddr = cfg.proposerValOperatorAddr
+	} else {
+		proposerConsAddr = sample.ConsAddress()
+		proposerValOperatorAddr = sample.ValOperatorAddress()
+	}
+
 	// Prepare the context
 	ctx = cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, logger)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	// Set the proposer address in the context so that TLMs can resolve validators
+	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
+	ctx = sdkCtx
 
-	// Add a block proposer address to the context
-	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
-
-	// ctx.SetAccount
 	// Prepare the account keeper.
 	registry := codectypes.NewInterfaceRegistry()
 	authtypes.RegisterInterfaces(registry)
@@ -651,8 +678,8 @@ func NewTokenomicsModuleKeepers(
 		SharedKeeper:       &sharedKeeper,
 		SessionKeeper:      &sessionKeeper,
 		ServiceKeeper:      &serviceKeeper,
-		StakingKeeper:      stakingKeeper,
-		DistributionKeeper: distKeeper,
+		StakingKeeper:      &stakingKeeper,
+		DistributionKeeper: &distKeeper,
 		MigrationKeeper:    &migrationKeeper,
 
 		Codec: cdc,
@@ -661,7 +688,7 @@ func NewTokenomicsModuleKeepers(
 	// Apply any options to update the keepers or context prior to returning them.
 	ctx = sdkCtx
 	for _, fn := range cfg.initKeepersFns {
-		ctx = fn(ctx, &keepers, stakingKeeper)
+		ctx = fn(ctx, &keepers, &stakingKeeper)
 	}
 
 	return keepers, ctx
@@ -725,6 +752,27 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOptFn {
 	}
 	return func(cfg *tokenomicsModuleKeepersConfig) {
 		cfg.initKeepersFns = append(cfg.initKeepersFns, setProposerAddrAndValidator)
+	}
+}
+
+// WithBlockProposer is an option to set the proposer address in the context used
+// by the tokenomics module keepers and configures the staking keeper mock to return
+// the correct validator for the consensus address.
+func WithBlockProposer(
+	consAddr cosmostypes.ConsAddress,
+	valOperatorAddr cosmostypes.ValAddress,
+) TokenomicsModuleKeepersOptFn {
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.proposerConsAddr = consAddr
+		cfg.proposerValOperatorAddr = valOperatorAddr
+
+		// Set the proposer address in the context
+		setProposerAddr := func(ctx context.Context, keepers *TokenomicsModuleKeepers, stakingKeeper *stakingkeeper.Keeper) context.Context {
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+			sdkCtx = sdkCtx.WithProposer(consAddr)
+			return sdkCtx
+		}
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setProposerAddr)
 	}
 }
 

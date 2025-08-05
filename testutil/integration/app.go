@@ -41,8 +41,10 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/app/pocket"
@@ -53,6 +55,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -147,7 +150,7 @@ func NewIntegrationApp(
 
 	// Prepare the faucet init-chainer module option function. It ensures that the
 	// bank module genesis state includes the faucet account with a large balance.
-	faucetBech32 := sample.AccAddress()
+	faucetBech32 := sample.AccAddressBech32()
 	faucetInitChainerFn := newFaucetInitChainerFn(faucetBech32, faucetAmountUpokt)
 	initChainerModuleOptFn := WithInitChainerModuleFn(faucetInitChainerFn)
 
@@ -499,6 +502,30 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	var mockDistributionKeeper tokenomicstypes.DistributionKeeper = nil
 
 	// Prepare the tokenomics keeper and module
+	// Create a mock staking keeper for tokenomics (integration tests don't have full staking module)
+	ctrl := gomock.NewController(t)
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
+	// Set up mock expectations for the staking keeper
+	// Use a sample consensus and validator address for the mock
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+	validator := stakingtypes.Validator{
+		OperatorAddress: proposerValOperatorAddr.String(),
+	}
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
+		Return(validator, nil).
+		AnyTimes()
+	// Default expectation for any other consensus address
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
+		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
+	// Set the proposer address in the context to match the mock expectation
+	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
+
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[tokenomicstypes.StoreKey]),
@@ -898,7 +925,7 @@ func (app *App) setupDefaultActorsState(
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 	serviceKeeper.SetService(app.sdkCtx, defaultService)
 	app.DefaultService = &defaultService
@@ -919,7 +946,7 @@ func (app *App) setupDefaultActorsState(
 		{
 			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
-					Address:            sample.AccAddress(),
+					Address:            sample.AccAddressBech32(),
 					RevSharePercentage: uint64(100),
 				},
 			},

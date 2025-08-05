@@ -17,7 +17,7 @@ import (
 var (
 	_ = proofsimulation.FindAccount
 	_ = rand.Rand{}
-	_ = sample.AccAddress
+	_ = sample.AccAddressBech32
 	_ = sdk.AccAddress{}
 	_ = simulation.MsgEntryKind
 )

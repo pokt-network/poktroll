@@ -14,9 +14,9 @@ import (
 
 	"cosmossdk.io/depinject"
 	cometbftos "github.com/cometbft/cometbft/libs/os"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"

@@ -35,11 +35,11 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Prepare the test application.
-	appAddress := sample.AccAddress()
+	appAddress := sample.AccAddressBech32()
 	appStake := apptypes.DefaultMinStake.Add(apptypes.DefaultMinStake)
 	application := apptypes.Application{
 		Address: appAddress,
@@ -50,7 +50,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	}
 
 	// Prepare the test supplier.
-	supplierAddress := sample.AccAddress()
+	supplierAddress := sample.AccAddressBech32()
 	// TODO(#850): Update supplier stake to be min stake
 	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{
 		{
@@ -77,6 +77,10 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		testkeeper.WithService(service),
 		testkeeper.WithApplication(application),
 		testkeeper.WithSupplier(supplier),
+		testkeeper.WithBlockProposer(
+			sample.ConsAddress(),
+			sample.ValOperatorAddress(),
+		),
 		testkeeper.WithProofRequirement(false),
 		testkeeper.WithDefaultModuleBalances(),
 	)

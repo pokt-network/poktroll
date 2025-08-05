@@ -217,7 +217,7 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i+1)))
 		application := apptypes.Application{
-			Address: sample.AccAddress(),
+			Address: sample.AccAddressBech32(),
 			Stake:   &stake,
 			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 				{
@@ -255,10 +255,10 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 				},
 			},
 		}
-		operatorAddr := sample.AccAddress()
+		operatorAddr := sample.AccAddressBech32()
 		serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(operatorAddr, services, 1, 0)
 		supplier := sharedtypes.Supplier{
-			OwnerAddress:         sample.AccAddress(),
+			OwnerAddress:         sample.AccAddressBech32(),
 			OperatorAddress:      operatorAddr,
 			Stake:                &stake,
 			Services:             services,
@@ -290,7 +290,7 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 	for _, addr := range addresses {
 		serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(addr, services, 1, 0)
 		supplier := sharedtypes.Supplier{
-			OwnerAddress:         sample.AccAddress(),
+			OwnerAddress:         sample.AccAddressBech32(),
 			OperatorAddress:      addr,
 			Stake:                &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
 			Services:             services,
@@ -315,7 +315,7 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.Genesis
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
 		gateway := gatewaytypes.Gateway{
-			Address: sample.AccAddress(),
+			Address: sample.AccAddressBech32(),
 			Stake:   &stake,
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
