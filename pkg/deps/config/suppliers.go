@@ -13,7 +13,6 @@ import (
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -518,7 +517,7 @@ func newSupplyTxClientsFn(
 
 // NewSupplyKeyValueCacheFn returns a function which constructs a KeyValueCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyValueCache[T]]) SupplierFn {
+func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -541,6 +540,8 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 			return nil, err
 		}
 
+		deps = depinject.Configs(deps, depinject.Supply(kvCache))
+
 		// Apply the query cache options
 		for _, opt := range opts {
 			if err := opt(ctx, deps, kvCache); err != nil {
@@ -548,13 +549,13 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 			}
 		}
 
-		return depinject.Configs(deps, depinject.Supply(kvCache)), nil
+		return deps, nil
 	}
 }
 
 // NewSupplyParamsCacheFn returns a function which constructs a ParamsCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsCache[T]]) SupplierFn {
+func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -579,6 +580,8 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 			return nil, err
 		}
 
+		deps = depinject.Configs(deps, depinject.Supply(paramsCache))
+
 		// Apply the query cache options
 		for _, opt := range opts {
 			if err := opt(ctx, deps, paramsCache); err != nil {
@@ -586,7 +589,7 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 			}
 		}
 
-		return depinject.Configs(deps, depinject.Supply(paramsCache)), nil
+		return deps, nil
 	}
 }
 
