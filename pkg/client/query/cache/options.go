@@ -58,7 +58,7 @@ func WithSessionCountCacheClearFn() func(context.Context, depinject.Config, Cach
 			func(ctx context.Context, block client.Block) {
 				sharedParams, found := sharedClient.Get()
 				if !found {
-					logger.Warn().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
+					logger.Debug().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
 					return
 				}
 

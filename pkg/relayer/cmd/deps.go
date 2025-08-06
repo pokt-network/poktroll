@@ -77,31 +77,31 @@ func setupRelayerDependencies(
 		// This is a temporary solution until we implement event-based cache clearing.
 		//
 		// Tokenomics/gateway params not used in RelayMiner, so no cache needed.
-		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithDefaultNewNthSessionCacheClearingFn()),   // leaf
-		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithDefaultNewNthSessionCacheClearingFn()),      // leaf
-		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithDefaultNewNthSessionCacheClearingFn()),  // leaf
-		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithDefaultNewNthSessionCacheClearingFn()),    // leaf
-		config.NewSupplyParamsCacheFn[servicetypes.Params](cache.WithDefaultNewNthSessionCacheClearingFn()),  // leaf
-		config.NewSupplyParamsCacheFn[suppliertypes.Params](cache.WithDefaultNewNthSessionCacheClearingFn()), // leaf
+		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithSessionCountCacheClearFn()),   // leaf
+		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithSessionCountCacheClearFn()),      // leaf
+		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithSessionCountCacheClearFn()),  // leaf
+		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithSessionCountCacheClearFn()),    // leaf
+		config.NewSupplyParamsCacheFn[servicetypes.Params](cache.WithSessionCountCacheClearFn()),  // leaf
+		config.NewSupplyParamsCacheFn[suppliertypes.Params](cache.WithSessionCountCacheClearFn()), // leaf
 
 		// Setup key-value caches for pocket types (clear on new sessions).
-		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithDefaultNewNthSessionCacheClearingFn()),                // leaf
-		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithDefaultNewNthSessionCacheClearingFn()), // leaf
-		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithDefaultNewNthSessionCacheClearingFn()),               // leaf
-		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithDefaultNewNthSessionCacheClearingFn()),                    // leaf
-		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithDefaultNewNthSessionCacheClearingFn()),                   // leaf
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithSessionCountCacheClearFn()),                // leaf
+		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithSessionCountCacheClearFn()), // leaf
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithSessionCountCacheClearFn()),               // leaf
+		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithSessionCountCacheClearFn()),                    // leaf
+		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithSessionCountCacheClearFn()),                   // leaf
 		// Session querier returns *sessiontypes.Session, so cache must return pointers.
-		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithDefaultNewNthSessionCacheClearingFn()), // leaf
+		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithSessionCountCacheClearFn()), // leaf
 		// Clear on new blocks to refresh application state after each block.
 		// It is needed to ensure that Applications can upstake to continue being served.
-		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithDefaultNewNthSessionCacheClearingFn()), // leaf
+		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithSessionCountCacheClearFn()), // leaf
 
 		// Setup key-value for cosmos types
 		// AccountI cache is used for caching accounts (clear on new sessions).
-		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithDefaultNewNthSessionCacheClearingFn()), // leaf
+		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithSessionCountCacheClearFn()), // leaf
 		// Balance cache is used for caching supplier operator account balances.
 		// (clear on new blocks to refresh balances after each block).
-		config.NewSupplyKeyValueCacheFn[query.Balance](cache.WithDefaultNewNthSessionCacheClearingFn()), // leaf
+		config.NewSupplyKeyValueCacheFn[query.Balance](cache.WithSessionCountCacheClearFn()), // leaf
 
 		config.NewSupplySharedQueryClientFn(),
 		config.NewSupplyServiceQueryClientFn(),
