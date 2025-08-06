@@ -8,6 +8,7 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/encoding"
@@ -217,25 +218,35 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
 	}
 
-	// Distribute to block proposer
+	// TODO: Consider adding metrics for validator reward distribution
+	// TODO: Add validation for validator existence before allocation
+	// Distribute to block proposer and delegators
 	if !proposerAmount.IsZero() {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
+		consAddr := cosmostypes.UnwrapSDKContext(tlmgm.ctx).BlockHeader().ProposerAddress
 
-		// Get the block proposer's operator address (not consensus address)
-		proposerAddr, err := getBlockProposerOperatorAddress(tlmgm.ctx, tlmgm.tlmCtx.StakingKeeper)
+		// Get validator from consensus address
+		validator, err := tlmgm.tlmCtx.StakingKeeper.GetValidatorByConsAddr(tlmgm.ctx, consAddr)
 		if err != nil {
-			tlmgm.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
-			return err
+			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error getting validator by consensus address: %v", err)
 		}
-		tlmgm.logger.Info(fmt.Sprintf("TLM Global Mint: resolved proposer address to %s", proposerAddr))
 
-		tlmgm.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
-			SenderModule:     tokenomicstypes.ModuleName,
-			RecipientAddress: proposerAddr,
-			Coin:             proposerCoin,
+		// Transfer from tokenomics module to distribution module
+		tlmgm.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
+			OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
+			SenderModule:    tokenomicstypes.ModuleName,
+			RecipientModule: distributiontypes.ModuleName,
+			Coin:            proposerCoin,
 		})
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
+
+		// Allocate tokens to validator for distribution to delegators
+		// Convert to DecCoins for distribution module
+		proposerDecCoin := cosmostypes.NewDecCoinsFromCoins(proposerCoin)
+		if err := tlmgm.tlmCtx.DistributionKeeper.AllocateTokensToValidator(tlmgm.ctx, &validator, proposerDecCoin); err != nil {
+			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error allocating tokens to validator: %v", err)
+		}
+
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to validator %s and delegators", proposerCoin, validator.GetOperator()))
 	}
 
 	// Distribute to DAO

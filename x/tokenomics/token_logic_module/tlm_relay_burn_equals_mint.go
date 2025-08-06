@@ -6,6 +6,7 @@ import (
 
 	cosmoslog "cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/encoding"
@@ -201,25 +202,33 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to supplier shareholders", supplierCoin))
 	}
 
-	// Distribute to block proposer
+	// Distribute to block proposer and delegators
 	if !proposerAmount.IsZero() {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
+		consAddr := cosmostypes.UnwrapSDKContext(tlmbem.ctx).BlockHeader().ProposerAddress
 
-		// Get the block proposer's operator address (not consensus address)
-		proposerAddr, err := getBlockProposerOperatorAddress(tlmbem.ctx, tlmbem.tlmCtx.StakingKeeper)
+		// Get validator from consensus address
+		validator, err := tlmbem.tlmCtx.StakingKeeper.GetValidatorByConsAddr(tlmbem.ctx, consAddr)
 		if err != nil {
-			tlmbem.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
-			return err
+			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error getting validator by consensus address: %v", err)
 		}
-		tlmbem.logger.Info(fmt.Sprintf("TLM Relay Burn Equals Mint: resolved proposer address to %s", proposerAddr))
 
-		tlmbem.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
-			SenderModule:     tokenomicstypes.ModuleName,
-			RecipientAddress: proposerAddr,
-			Coin:             proposerCoin,
+		// Transfer from tokenomics module to distribution module
+		tlmbem.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
+			OpReason:        tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
+			SenderModule:    tokenomicstypes.ModuleName,
+			RecipientModule: distributiontypes.ModuleName,
+			Coin:            proposerCoin,
 		})
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
+
+		// Allocate tokens to validator for distribution to delegators
+		// Convert to DecCoins for distribution module
+		proposerDecCoin := cosmostypes.NewDecCoinsFromCoins(proposerCoin)
+		if err := tlmbem.tlmCtx.DistributionKeeper.AllocateTokensToValidator(tlmbem.ctx, &validator, proposerDecCoin); err != nil {
+			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error allocating tokens to validator: %v", err)
+		}
+
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to validator %s and delegators", proposerCoin, validator.GetOperator()))
 	}
 
 	// Distribute to service source owner
