@@ -11,7 +11,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-const DefaultSessionCountForCacheClear = 1
+const DefaultSessionCountForCacheClearing = 1
 
 // Cache is an interface that defines the common methods for a cache object.
 type Cache interface {
@@ -41,9 +41,9 @@ func WithNewBlockCacheClearing[C Cache](ctx context.Context, deps depinject.Conf
 	return nil
 }
 
-// WithNewNthSessionCacheClearingFn is a cache option that clears the cache at the start
+// WithSessionCountCacheClearFn is a cache option that clears the cache at the start
 // of every nth session, where n is defined by sessionCountForCacheClear.
-func WithNewNthSessionCacheClearingFn(sessionCountForCacheClear uint) func(context.Context, depinject.Config, Cache) error {
+func WithSessionCountCacheClearFn() func(context.Context, depinject.Config, Cache) error {
 	return func(ctx context.Context, deps depinject.Config, cache Cache) error {
 		var blockClient client.BlockClient
 		var sharedClient client.ParamsCache[sharedtypes.Params]
@@ -52,21 +52,13 @@ func WithNewNthSessionCacheClearingFn(sessionCountForCacheClear uint) func(conte
 			return err
 		}
 
-		// isInitialClearing is used to avoid logging the first cache clear attempt
-		// when the cache is first initialized.
-		// This is to prevent log spam during the initial setup.
-		isInitialClearing := true
-
 		channel.ForEach(
 			ctx,
 			blockClient.CommittedBlocksSequence(ctx),
 			func(ctx context.Context, block client.Block) {
 				sharedParams, found := sharedClient.Get()
 				if !found {
-					if !isInitialClearing {
-						logger.Warn().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
-						isInitialClearing = false
-					}
+					logger.Warn().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
 					return
 				}
 
@@ -75,7 +67,7 @@ func WithNewNthSessionCacheClearingFn(sessionCountForCacheClear uint) func(conte
 				currentSessionNumber := sharedtypes.GetSessionNumber(&sharedParams, currentHeight)
 
 				isAtSessionStart := currentHeight == currentSessionStartHeight
-				isCacheClearableSession := currentSessionNumber%int64(sessionCountForCacheClear) == 0
+				isCacheClearableSession := currentSessionNumber%int64(sharedtypes.DefaultApplicationUnbondingPeriodSessions) == 0
 				if isAtSessionStart && isCacheClearableSession {
 					logger.Debug().Msgf(
 						"🧹 Clearing cache at session number %d (start height: %d)",
@@ -88,8 +80,4 @@ func WithNewNthSessionCacheClearingFn(sessionCountForCacheClear uint) func(conte
 
 		return nil
 	}
-}
-
-func WithDefaultNewNthSessionCacheClearingFn() func(context.Context, depinject.Config, Cache) error {
-	return WithNewNthSessionCacheClearingFn(DefaultSessionCountForCacheClear)
 }
