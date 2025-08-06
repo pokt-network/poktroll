@@ -17,10 +17,10 @@ func TestGenesis(t *testing.T) {
 
 		GatewayList: []types.Gateway{
 			{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 			},
 			{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state

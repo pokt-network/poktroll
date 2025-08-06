@@ -31,7 +31,7 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid: empty params",
 			msg: tokenomicstypes.MsgUpdateParams{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Params:    tokenomicstypes.Params{},
 			},
 			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid,
@@ -39,14 +39,14 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid: address and default params",
 			msg: tokenomicstypes.MsgUpdateParams{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Params:    tokenomicstypes.DefaultParams(),
 			},
 		},
 		{
 			desc: "invalid: mint allocation params don't sum to 1",
 			msg: tokenomicstypes.MsgUpdateParams{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Params: tokenomicstypes.Params{
 					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
 						Dao:         0.1,
@@ -62,7 +62,7 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid: mint equals burn claim distribution params don't sum to 1",
 			msg: tokenomicstypes.MsgUpdateParams{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Params: tokenomicstypes.Params{
 					MintEqualsBurnClaimDistribution: tokenomicstypes.MintEqualsBurnClaimDistribution{
 						Dao:         0.1,

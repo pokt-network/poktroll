@@ -68,11 +68,11 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 
 	// Sign the relay response and add the signature to the relay response metadata
 	if err := sync.relayAuthenticator.SignRelayResponse(relayResponse, supplierOperatorAddr); err != nil {
-		return nil, err
+		return nil, ErrRelayerProxyInternalError.Wrapf("failed to sign relay response for supplier %s: %v", supplierOperatorAddr, err)
 	}
 
 	if err := relayResponse.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, ErrRelayerProxyInternalError.Wrapf("relay response validation failed after signing (supplier: %s): %v", supplierOperatorAddr, err)
 	}
 
 	return relayResponse, nil

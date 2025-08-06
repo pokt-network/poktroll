@@ -24,7 +24,7 @@ func TestMsgDelegateToGateway_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid app address - no gateway address",
 			msg: MsgDelegateToGateway{
-				AppAddress: sample.AccAddress(),
+				AppAddress: sample.AccAddressBech32(),
 				// GatewayAddress explicitly omitted,
 			},
 			expectedErr: ErrAppInvalidGatewayAddress,
@@ -32,7 +32,7 @@ func TestMsgDelegateToGateway_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid app address - invalid gateway address",
 			msg: MsgDelegateToGateway{
-				AppAddress:     sample.AccAddress(),
+				AppAddress:     sample.AccAddressBech32(),
 				GatewayAddress: "invalid_address",
 			},
 			expectedErr: ErrAppInvalidGatewayAddress,
@@ -40,8 +40,8 @@ func TestMsgDelegateToGateway_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid address",
 			msg: MsgDelegateToGateway{
-				AppAddress:     sample.AccAddress(),
-				GatewayAddress: sample.AccAddress(),
+				AppAddress:     sample.AccAddressBech32(),
+				GatewayAddress: sample.AccAddressBech32(),
 			},
 		},
 	}

@@ -20,10 +20,10 @@ import (
 )
 
 func Test_ParseSupplierConfigs_Services(t *testing.T) {
-	operatorAddress := sample.AccAddress()
-	ownerAddress := sample.AccAddress()
-	firstShareHolderAddress := sample.AccAddress()
-	secondShareHolderAddress := sample.AccAddress()
+	operatorAddress := sample.AccAddressBech32()
+	ownerAddress := sample.AccAddressBech32()
+	firstShareHolderAddress := sample.AccAddressBech32()
+	secondShareHolderAddress := sample.AccAddressBech32()
 
 	tests := []struct {
 		desc        string

@@ -241,7 +241,7 @@ var (
 		},
 		ValidParams: tokenomicstypes.Params{
 			MintAllocationPercentages:       tokenomicstypes.DefaultMintAllocationPercentages,
-			DaoRewardAddress:                sample.AccAddress(),
+			DaoRewardAddress:                sample.AccAddressBech32(),
 			GlobalInflationPerClaim:         0.666,
 			MintEqualsBurnClaimDistribution: tokenomicstypes.DefaultMintEqualsBurnClaimDistribution,
 		},

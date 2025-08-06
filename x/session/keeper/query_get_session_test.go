@@ -86,7 +86,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 		{
 			desc: "application address does not reflected a staked application",
 
-			appAddr:     sample.AccAddress(), // a random (valid) app address that's not staked
+			appAddr:     sample.AccAddressBech32(), // a random (valid) app address that's not staked
 			serviceId:   keepertest.TestServiceId1,
 			blockHeight: 1,
 
