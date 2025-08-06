@@ -578,10 +578,10 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 			return nil, err
 		}
 
+		// Supply the cache to deps before applying options to avoid circular dependencies.
 		deps = depinject.Configs(deps, depinject.Supply(paramsCache))
 
-		// Apply the query cache options after the cache has been injected to avoid
-		// circular dependency issues.
+		// Apply the query cache options after supplying the cache.
 		for _, opt := range opts {
 			if err := opt(ctx, deps, paramsCache); err != nil {
 				return nil, err

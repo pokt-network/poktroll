@@ -275,12 +275,17 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		)
 	}
 
-	// Set HTTP client timeout to match configured service request timeout.
-	// Ensures backend requests don't exceed allocated time budget.
-	//
-	// Since the request preparation time is already accounted for,
-	// we subtract it from the total request timeout to avoid exceeding the limit.
-	client.Timeout = requestTimeout - time.Since(requestStartTime)
+	// Set HTTP client timeout to match remaining request budget.
+	// Subtract preparation time from total timeout to avoid exceeding limit.
+	remainingTimeout := requestTimeout - time.Since(requestStartTime)
+	if remainingTimeout <= 0 {
+		logger.Warn().
+			Dur("request_timeout", requestTimeout).
+			Dur("preparation_time", time.Since(requestStartTime)).
+			Msg("Request preparation exceeded timeout. Providing additional time.")
+		remainingTimeout = 2 * time.Second
+	}
+	client.Timeout = remainingTimeout
 
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()

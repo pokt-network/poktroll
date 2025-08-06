@@ -11,8 +11,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-const DefaultSessionCountForCacheClearing = 1
-
 // Cache is an interface that defines the common methods for a cache object.
 type Cache interface {
 	Clear()
@@ -41,9 +39,9 @@ func WithNewBlockCacheClearing[C Cache](ctx context.Context, deps depinject.Conf
 	return nil
 }
 
-// WithSessionCountCacheClearFn is a cache option that clears the cache at the start
-// of every nth session, where n is defined by sessionCountForCacheClear.
-func WithSessionCountCacheClearFn() func(context.Context, depinject.Config, Cache) error {
+// WithSessionCountCacheClearFn returns a cache option that clears the cache at the start
+// of every nth session, where n is determined by DefaultApplicationUnbondingPeriodSessions.
+func WithSessionCountCacheClearFn(numSessionsToClearCache uint) func(context.Context, depinject.Config, Cache) error {
 	return func(ctx context.Context, deps depinject.Config, cache Cache) error {
 		var blockClient client.BlockClient
 		var sharedClient client.ParamsCache[sharedtypes.Params]
@@ -67,7 +65,7 @@ func WithSessionCountCacheClearFn() func(context.Context, depinject.Config, Cach
 				currentSessionNumber := sharedtypes.GetSessionNumber(&sharedParams, currentHeight)
 
 				isAtSessionStart := currentHeight == currentSessionStartHeight
-				isCacheClearableSession := currentSessionNumber%int64(sharedtypes.DefaultApplicationUnbondingPeriodSessions) == 0
+				isCacheClearableSession := currentSessionNumber%int64(numSessionsToClearCache) == 0
 				if isAtSessionStart && isCacheClearableSession {
 					logger.Debug().Msgf(
 						"🧹 Clearing cache at session number %d (start height: %d)",
