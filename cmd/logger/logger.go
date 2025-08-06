@@ -5,8 +5,10 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/diode"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
@@ -16,11 +18,11 @@ import (
 
 var (
 	// LogLevel is a global variable that is intended to hold the value of the
-	// "--log-level" flag when a command which has called PreRunESetup() is executed.
+	// "--log_level" flag when a command which has called PreRunESetup() is executed.
 	LogLevel string
 
 	// LogOutput is a global variable that is intended to hold the value of the
-	// "--log-output" flag when a command which has called PreRunESetup() is executed.
+	// "--log_output" flag when a command which has called PreRunESetup() is executed.
 	LogOutput string
 
 	// Logger is a global variable that holds the logger which is configured according
@@ -28,33 +30,50 @@ var (
 	Logger polylog.Logger
 )
 
-const unknownLevel = "???"
+const (
+	unknownLevel = "???"
+
+	outputDiscard = "discard"
+	outputStdout  = "stdout"
+	outputStderr  = "stderr"
+)
 
 // PreRunESetup sets up the global cmd logger (Logger) for use in any subcommand.
 // This function is intended to be passed as (or called by) a `PreRunE` function
 // of a Cobra command.
 //
 // TODO_CONSIDERATION: Apply this pattern to all CLI commands.
-func PreRunESetup(_ *cobra.Command, _ []string) error {
+func PreRunESetup(cmd *cobra.Command, _ []string) error {
 	var (
 		logWriter io.Writer
 		err       error
 	)
 
-	logLevel := polyzero.ParseLevel(LogLevel)
-	if LogOutput == flags.DefaultLogOutput {
+	switch LogOutput {
+	case flags.DefaultLogOutput, outputStdout:
 		logWriter = os.Stdout
-	} else {
+	case outputStderr:
+		logWriter = os.Stderr
+	case outputDiscard:
+		logWriter = io.Discard
+	default:
 		logWriter, err = os.Open(LogOutput)
 		if err != nil {
 			return err
 		}
 	}
 
+	// Wrap the writer in a thread-safe, lock-free, non-blocking io.Writer.
+	logWriter = diode.NewWriter(logWriter, 1000, 10*time.Millisecond, func(int) {})
+	logLevel := polyzero.ParseLevel(LogLevel)
 	Logger = polyzero.NewLogger(
 		polyzero.WithLevel(logLevel),
 		polyzero.WithSetupFn(NewSetupConsoleWriter(logWriter)),
 	)
+
+	// Set the logger on the context and update the command's context.
+	loggerCtx := Logger.WithContext(cmd.Context())
+	cmd.SetContext(loggerCtx)
 
 	return nil
 }

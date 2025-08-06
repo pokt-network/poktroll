@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	bank "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -78,7 +79,10 @@ func TestMain(m *testing.M) {
 func TestNewFaucet(t *testing.T) {
 	// Ensure the CLI logger is set up.
 	logger.LogOutput = flags.DefaultLogOutput
-	err := logger.PreRunESetup(nil, nil)
+	cmd, err := (&cobra.Command{}).ExecuteC()
+	require.NoError(t, err)
+
+	err = logger.PreRunESetup(cmd, []string{})
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(t.Context())
