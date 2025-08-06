@@ -307,7 +307,7 @@ type ProofQueryClient interface {
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
 
-	// GetClaim queries the chain for the full claim associatd with the (supplier, sessionId).
+	// GetClaim queries the chain for the full claim associated with the (supplier, sessionId).
 	GetClaim(ctx context.Context, supplierOperatorAddress string, sessionId string) (Claim, error)
 }
 
@@ -316,6 +316,7 @@ type ProofQueryClient interface {
 type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
+	// GetServiceRelayDifficulty queries the chain for the relay difficulty of the service provided
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (*servicetypes.Params, error)
