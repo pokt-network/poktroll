@@ -341,6 +341,15 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		Str("relay_request_session_header", meta.SessionHeader.String()).
 		Msg("building relay response protobuf from service response")
 
+	// Check context cancellation before building relay response to prevent signature race conditions
+	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
+		logger.Warn().Err(ctxErr).Msg("⚠️ Context canceled before building relay response - preventing signature race condition")
+		return relayRequest, ErrRelayerProxyTimeout.Wrapf(
+			"request context canceled during response building: %v",
+			ctxErr,
+		)
+	}
+
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
@@ -413,10 +422,20 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Only emit relays and mark as rewardable when no over-servicing or server error:
 	if isRewardApplicable(isOverServicing, httpResponse.StatusCode) {
 		// Forward reward-eligible relays for SMT updates (excludes over-serviced relays).
-		server.servedRewardableRelaysProducer <- relay
-
-		// Mark relay as successful and rewardable, so deferred logic doesn't revert it.
-		shouldRewardRelay = true
+		// We use a non-blocking select to prevent relay response delays.
+		//
+		// DEV_NOTE: This change was added under the presumption that a slow or full channel was resulting
+		// in "missing supplier operator signature" errors.
+		select {
+		case server.servedRewardableRelaysProducer <- relay:
+			// Successfully forwarded relay for mining
+			shouldRewardRelay = true
+		default:
+			// Channel is full - log warning but don't block the response
+			// This prevents signature validation timeouts that cause "missing supplier operator signature" errors
+			logger.Warn().Msg("⚠️ Relay mining channel full - dropping relay from mining pipeline (prevents signature timeout)")
+			// Don't mark as rewardable since it wasn't forwarded to miner
+		}
 	}
 
 	// set to 200 because everything is good about the processed relay.
@@ -509,6 +528,12 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 	relayResponse *types.RelayResponse,
 	writer http.ResponseWriter,
 ) error {
+	// Double-check that the signature is present before marshaling for client.
+	// DEV_NOTE: This is a secondary sanity check to avoid missing supplier signature errors.
+	if len(relayResponse.Meta.GetSupplierOperatorSignature()) == 0 {
+		return ErrRelayerProxyInternalError.Wrap("relay response missing supplier operator signature before marshaling - signature was lost during processing")
+	}
+
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
 		return err

@@ -402,10 +402,13 @@ func NewTokenomicsModuleKeepers(
 
 	// Add a block proposer address to the context
 	var proposerConsAddr cosmostypes.ConsAddress
+	var proposerValOperatorAddr cosmostypes.ValAddress
 	if cfg.proposerConsAddr != nil && cfg.proposerValOperatorAddr != nil {
 		proposerConsAddr = cfg.proposerConsAddr
+		proposerValOperatorAddr = cfg.proposerValOperatorAddr
 	} else {
 		proposerConsAddr = sample.ConsAddress()
+		proposerValOperatorAddr = sample.ValOperatorAddress()
 	}
 
 	// Prepare the context
@@ -591,8 +594,6 @@ func NewTokenomicsModuleKeepers(
 
 	// We will pass the concrete stakingKeeper to the option functions
 
-	// Note: We create mock distribution keeper below for the interface
-
 	// Create mock staking and distribution keepers for the TokenomicsModuleKeepers interface
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
@@ -600,15 +601,13 @@ func NewTokenomicsModuleKeepers(
 
 	// Set up mock expectations for staking keeper
 	// If a specific proposer is configured, set up the mock to return the correct validator
-	if cfg.proposerConsAddr != nil && cfg.proposerValOperatorAddr != nil {
-		validator := stakingtypes.Validator{
-			OperatorAddress: cfg.proposerValOperatorAddr.String(),
-		}
-		mockStakingKeeper.EXPECT().
-			GetValidatorByConsAddr(gomock.Any(), cfg.proposerConsAddr).
-			Return(validator, nil).
-			AnyTimes()
+	validator := stakingtypes.Validator{
+		OperatorAddress: proposerValOperatorAddr.String(),
 	}
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
+		Return(validator, nil).
+		AnyTimes()
 
 	// Default expectation for any other consensus address
 	mockStakingKeeper.EXPECT().
