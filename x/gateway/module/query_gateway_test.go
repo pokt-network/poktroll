@@ -21,6 +21,7 @@ import (
 var _ = strconv.IntSize
 
 func TestShowGateway(t *testing.T) {
+	t.Parallel()
 	net, gateways := networkWithGatewayObjects(t, 2)
 
 	ctx := net.Validators[0].ClientCtx
@@ -76,6 +77,7 @@ func TestShowGateway(t *testing.T) {
 }
 
 func TestListGateway(t *testing.T) {
+	t.Parallel()
 	net, gateways := networkWithGatewayObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx
