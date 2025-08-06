@@ -218,6 +218,8 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
 	}
 
+	// TODO: Consider adding metrics for validator reward distribution
+	// TODO: Add validation for validator existence before allocation
 	// Distribute to block proposer and delegators
 	if !proposerAmount.IsZero() {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)

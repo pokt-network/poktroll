@@ -501,8 +501,6 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	)
 
 	// Prepare mock staking and distribution keepers for integration tests
-	// Since we don't need full staking/distribution functionality in integration tests,
-	// we can use mocks that implement the interface
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)

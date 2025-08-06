@@ -461,8 +461,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Set the dao_reward_address param on the tokenomics keeper.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.DaoRewardAddress = daoAddress.String()
-	// Set proposer percentages to 0 for integration tests to avoid validator setup complexity
-	// Unit tests with mocks will test non-zero proposer distribution
+	// TODO: Enable proposer rewards in integration tests with proper validator setup
 	tokenomicsParams.MintAllocationPercentages.Proposer = 0
 	tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer = 0
 	keepers.Keeper.SetParams(ctx, tokenomicsParams)
@@ -998,7 +997,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 		// MintEqualsBurnClaimDistribution percentages
 		testMintEqualsBurnDaoPercentage         = 0.24 // Increased to absorb proposer percentage
-		testMintEqualsBurnProposerPercentage    = 0.0  // Set to 0 to avoid validator lookup issues
+		testMintEqualsBurnProposerPercentage    = 0.0  // TODO: Re-enable to test distribution logic
 		testMintEqualsBurnSupplierPercentage    = 0.73
 		testMintEqualsBurnSourceOwnerPercentage = 0.03
 		testMintEqualsBurnApplicationPercentage = 0.0

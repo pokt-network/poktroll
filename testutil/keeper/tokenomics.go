@@ -594,7 +594,7 @@ func NewTokenomicsModuleKeepers(
 
 	// We will pass the concrete stakingKeeper to the option functions
 
-	// Create mock staking and distribution keepers for the TokenomicsModuleKeepers interface
+	// Create mock staking and distribution keepers for tokenomics interfaces
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
@@ -725,8 +725,7 @@ func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOptFn {
 	}
 }
 
-// WithProposerAddr is an option to set the proposer address in the context used
-// by the tokenomics module keepers.
+// WithProposerAddr sets the proposer address and creates a matching validator
 func WithProposerAddr(addr string) TokenomicsModuleKeepersOptFn {
 	setProposerAddrAndValidator := func(ctx context.Context, keepers *TokenomicsModuleKeepers, stakingKeeper *stakingkeeper.Keeper) context.Context {
 		consAddr, err := cosmostypes.ConsAddressFromBech32(addr)
@@ -790,8 +789,8 @@ func WithModuleParams(moduleParams map[string]cosmostypes.Msg) TokenomicsModuleK
 	}
 }
 
-// createValidatorForProposer creates a validator for integration tests and returns the consensus address
-// that matches the validator's public key. This ensures proper validator reward distribution.
+// TODO: Consider extracting validator creation to a reusable test utility
+// createValidatorForProposer creates a test validator with proper consensus key mapping
 func createValidatorForProposer(ctx context.Context, stakingKeeper *stakingkeeper.Keeper) (cosmostypes.ConsAddress, error) {
 	// Create a consensus private/public key pair for testing
 	consPrivKey := ed25519.GenPrivKey()
@@ -801,7 +800,6 @@ func createValidatorForProposer(ctx context.Context, stakingKeeper *stakingkeepe
 	consAddr := cosmostypes.ConsAddress(consPubKey.Address())
 
 	// Use standard account address format for validator operator address
-	// This matches the pattern used in the mock setup where sample.AccAddressBech32() is used
 	operatorAddress := sample.AccAddressBech32()
 
 	// Convert consensus public key to Any for storage in validator
