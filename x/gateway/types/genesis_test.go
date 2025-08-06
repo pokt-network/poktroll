@@ -12,10 +12,10 @@ import (
 )
 
 func TestGenesisState_Validate(t *testing.T) {
-	addr1 := sample.AccAddress()
+	addr1 := sample.AccAddressBech32()
 	stake1 := sdk.NewCoin("upokt", math.NewInt(100))
 
-	addr2 := sample.AccAddress()
+	addr2 := sample.AccAddressBech32()
 	stake2 := sdk.NewCoin("upokt", math.NewInt(100))
 
 	tests := []struct {

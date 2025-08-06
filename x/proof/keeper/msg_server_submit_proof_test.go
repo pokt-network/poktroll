@@ -127,7 +127,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			service := &sharedtypes.Service{
 				Id:                   testServiceId,
 				ComputeUnitsPerRelay: computeUnitsPerRelay,
-				OwnerAddress:         sample.AccAddress(),
+				OwnerAddress:         sample.AccAddressBech32(),
 			}
 
 			// Add a supplier and application pair that are expected to be in the session.
@@ -302,7 +302,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	fundSupplierOperatorAccount(t, ctx, keepers, supplierOperatorAddr)
@@ -491,12 +491,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 	wrongService := &sharedtypes.Service{
 		Id:                   "wrong_svc",
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Add a supplier and application pair that are expected to be in the session.
@@ -750,7 +750,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Add a supplier and application pair that are expected to be in the session.

@@ -32,7 +32,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid - empty session id",
 			sessionHeader: types.SessionHeader{
-				ApplicationAddress:      sample.AccAddress(),
+				ApplicationAddress:      sample.AccAddressBech32(),
 				SessionId:               "",
 				ServiceId:               testServiceId,
 				SessionStartBlockHeight: 100,
@@ -43,7 +43,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid - empty service id",
 			sessionHeader: types.SessionHeader{
-				ApplicationAddress:      sample.AccAddress(),
+				ApplicationAddress:      sample.AccAddressBech32(),
 				SessionId:               "valid_session_id",
 				ServiceId:               "",
 				SessionStartBlockHeight: 100,
@@ -54,7 +54,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid - start block height is 0",
 			sessionHeader: types.SessionHeader{
-				ApplicationAddress:      sample.AccAddress(),
+				ApplicationAddress:      sample.AccAddressBech32(),
 				SessionId:               "valid_session_id",
 				ServiceId:               testServiceId,
 				SessionStartBlockHeight: 0,
@@ -65,7 +65,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid - start block height greater than end block height",
 			sessionHeader: types.SessionHeader{
-				ApplicationAddress:      sample.AccAddress(),
+				ApplicationAddress:      sample.AccAddressBech32(),
 				SessionId:               "valid_session_id",
 				ServiceId:               testServiceId,
 				SessionStartBlockHeight: 100,
@@ -76,7 +76,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid",
 			sessionHeader: types.SessionHeader{
-				ApplicationAddress:      sample.AccAddress(),
+				ApplicationAddress:      sample.AccAddressBech32(),
 				SessionId:               "valid_session_id",
 				ServiceId:               testServiceId,
 				SessionStartBlockHeight: 100,

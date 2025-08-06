@@ -87,7 +87,7 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	s.sharedParams = sharedtypes.DefaultParams()
 	s.proofParams = prooftypes.DefaultParams()
 	s.proofParams.ProofRequirementThreshold = uPOKTCoin(1)
-	s.supplierOperatorAddress = sample.AccAddress()
+	s.supplierOperatorAddress = sample.AccAddressBech32()
 	s.emptyBlockHash = make([]byte, 32)
 
 	// Reset counters and state for each test

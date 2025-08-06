@@ -50,9 +50,6 @@ var allModuleMsgUpdateParamTypes = []string{
 	"/pocket.service.MsgUpdateParams",
 }
 
-func init() {
-}
-
 // AllModuleParamsAreSetToTheirDefaultValues asserts that all module params are set to their default values.
 func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 	argsAndFlags := []string{

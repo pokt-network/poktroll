@@ -26,8 +26,8 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an owner and operator address for the supplier
-	ownerAddr := sample.AccAddress()
-	operatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
 
 	// Verify that the supplier does not exist yet
 	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
@@ -152,8 +152,8 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an owner and operator address for the supplier
-	ownerAddr := sample.AccAddress()
-	operatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
 
 	// Prepare the supplier stake message
 	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId")
@@ -206,8 +206,8 @@ func TestMsgServer_StakeSupplier_FailLoweringStakeBelowMinStake(t *testing.T) {
 	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
 
 	// Generate an owner and operator address for the supplier
-	ownerAddr := sample.AccAddress()
-	operatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
 
 	// Prepare the supplier stake message
 	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, "svcId")
@@ -240,8 +240,8 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
 
 	// Generate an owner and operator address for the supplier
-	ownerAddr := sample.AccAddress()
-	operatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
 
 	// Prepare the supplier stake message
 	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, "svcId")
@@ -275,8 +275,8 @@ func TestMsgServer_StakeSupplier_SuccessIncreasingStake(t *testing.T) {
 	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
 
 	// Generate an owner and operator address for the supplier
-	ownerAddr := sample.AccAddress()
-	operatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
 
 	// Prepare the supplier stake message
 	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, "svcId")
@@ -308,8 +308,8 @@ func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an owner and operator address for the supplier
-	ownerAddr := sample.AccAddress()
-	operatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
 
 	// Prepare the supplier stake message with a non-existing service ID
 	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "newService")
@@ -335,8 +335,8 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*k.Keeper)
 
 	// Generate an owner and operator address for the supplier
-	ownerAddr := sample.AccAddress()
-	operatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
 
 	// Stake using the operator address as the signer and verify that it succeeds.
 	stakeMsg, expectedSupplier := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId")
@@ -395,7 +395,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	// Try updating the supplier's operator address using the old operator as a signer
 	// will create a new supplier.
 	stakeMsgUpdateOperator, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 3000000, "svcId")
-	newOperatorAddress := sample.AccAddress()
+	newOperatorAddress := sample.AccAddressBech32()
 	stakeMsgUpdateOperator.OperatorAddress = newOperatorAddress
 	setStakeMsgSigner(stakeMsgUpdateOperator, operatorAddr)
 	_, err = srv.StakeSupplier(ctx, stakeMsgUpdateOperator)
@@ -412,7 +412,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 
 	// Trying to update the supplier's operator address using the owner as a signer
 	// will create a new supplier.
-	newOperatorAddress = sample.AccAddress()
+	newOperatorAddress = sample.AccAddressBech32()
 	stakeMsgUpdateOperator.OperatorAddress = newOperatorAddress
 	stakeMsgUpdateOperator.Stake.Amount = math.NewInt(4000000)
 	setStakeMsgSigner(stakeMsgUpdateOperator, ownerAddr)
@@ -430,7 +430,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 
 	// Try updating the supplier's owner address using the operator as a signer
 	// and verify that it fails.
-	newOwnerAddress := sample.AccAddress()
+	newOwnerAddress := sample.AccAddressBech32()
 	stakeMsgUpdateOwner, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 5000000, "svcId")
 	stakeMsgUpdateOwner.OwnerAddress = newOwnerAddress
 	setStakeMsgSigner(stakeMsgUpdateOwner, operatorAddr)
@@ -457,8 +457,8 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an owner and operator address for the supplier
-	ownerAddr := sample.AccAddress()
-	operatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
 
 	// Prepare the supplier
 	stakeMsg, expectedSupplier := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId")
@@ -532,7 +532,7 @@ func TestMsgServer_StakeSupplier_FailBelowMinStake(t *testing.T) {
 	k, ctx := keepertest.SupplierKeeper(t)
 	srv := keeper.NewMsgServerImpl(*k.Keeper)
 
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	supplierStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 	minStake := supplierStake.AddAmount(math.NewInt(1))
 	expectedErr := suppliertypes.ErrSupplierInvalidStake.Wrapf("supplier with owner %q must stake at least %s", addr, minStake)
@@ -557,7 +557,7 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 	k, ctx := keepertest.SupplierKeeper(t)
 	srv := keeper.NewMsgServerImpl(*k.Keeper)
 
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	supplierParams := k.Keeper.GetParams(ctx)
 	minStake := supplierParams.GetMinStake()
 	belowMinStake := minStake.AddAmount(math.NewInt(-1))
@@ -595,8 +595,8 @@ func TestMsgServer_StakeSupplier_SignerOwnerStakeDestination(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate different addresses for owner and operator
-	ownerAddr := sample.AccAddress()
-	operatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
 
 	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
 
