@@ -27,6 +27,7 @@ function help() {
   echo "  shannon_query_tx_messages                - Query transactions by message type"
   echo "  shannon_query_tx_events                  - Query transactions by event type"
   echo "  shannon_query_block_events               - Query block events"
+  echo "  query_blocks                             - Query and save individual blocks to files"
   echo "  shannon_query_unique_claim_suppliers     - Get unique claim supplier addresses"
   echo "  shannon_query_supplier_tx_events         - Get supplier-specific transaction events"
   echo "  shannon_query_supplier_block_events      - Get supplier-specific block events"
@@ -41,6 +42,7 @@ function help() {
   echo "  shannon_query_tx_messages $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN /pocket.proof.MsgCreateClaim \"\" main"
   echo "  shannon_query_tx_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pocket.proof.EventClaimCreated main"
   echo "  shannon_query_block_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo "  query_blocks $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
   echo "  shannon_query_unique_claim_suppliers $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
   echo "  shannon_query_supplier_tx_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
   echo "  shannon_query_supplier_block_events $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
@@ -685,6 +687,98 @@ EOF
   done
 
   echo "Query completed."
+}
+
+function query_blocks() {
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
+query_blocks - Query and save individual blocks to files
+
+DESCRIPTION:
+  Iterates through a range of block heights, queries each block,
+  saves it to /tmp/block_NUMBER.json, and outputs the file size
+  alongside the filename for each saved block.
+
+USAGE:
+  query_blocks <start_height> <end_height> <env>
+
+ARGUMENTS:
+  start_height    Start block height (inclusive)
+  end_height      End block height (inclusive)
+  env             Network environment - must be one of: alpha, beta, main
+
+EXAMPLES:
+  query_blocks 115575 115580 main
+  query_blocks 13000 13005 beta
+EOF
+    return 0
+  fi
+
+  if [[ $# -ne 3 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
+
+  local start="$1"
+  local end="$2"
+  local env="$3"
+
+  validate_env "$env" || return 1
+  validate_block_range "$start" "$end" || return 1
+
+  echo "Querying blocks from $start to $end on '$env' network..."
+  echo "Saving blocks to /tmp/block_{NUMBER}.json format"
+  echo "--------------------------------------"
+
+  # Loop through each block height
+  for ((height = $start; height <= $end; height++)); do
+    local block_file="/tmp/block_${height}.json"
+
+    echo -n "Processing block $height... "
+
+    if pocketd query block-results "$height" \
+      --network="$env" --grpc-insecure=false \
+      -o json >"$block_file" 2>/dev/null; then
+
+      # Get file size in bytes
+      local file_size=$(stat -f%z "$block_file" 2>/dev/null || stat -c%s "$block_file" 2>/dev/null || echo "unknown")
+
+      # Format file size for readability and add color coding
+      if [[ "$file_size" != "unknown" ]]; then
+        # Color codes
+        local RED='\033[0;31m'
+        local YELLOW='\033[0;33m'
+        local NC='\033[0m' # No Color
+        
+        if [[ $file_size -gt 1048576 ]]; then
+          local size_display="$(echo "scale=2; $file_size / 1048576" | bc)MB"
+        elif [[ $file_size -gt 1024 ]]; then
+          local size_display="$(echo "scale=2; $file_size / 1024" | bc)KB"
+        else
+          local size_display="${file_size}B"
+        fi
+        
+        # Apply color based on size thresholds
+        if [[ $file_size -gt 5242880 ]]; then  # > 5MB
+          local colored_size="${RED}${size_display}${NC}"
+        elif [[ $file_size -gt 1048576 ]]; then  # > 1MB
+          local colored_size="${YELLOW}${size_display}${NC}"
+        else  # < 100KB (plain)
+          local colored_size="$size_display"
+        fi
+      else
+        local colored_size="unknown size"
+      fi
+
+      echo -e "saved to $block_file ($colored_size)"
+    else
+      echo "failed to query block $height, skipping..."
+      rm -f "$block_file" 2>/dev/null
+    fi
+  done
+
+  echo "--------------------------------------"
+  echo "Block query completed. Files saved in /tmp/ directory."
 }
 
 # ===============================================

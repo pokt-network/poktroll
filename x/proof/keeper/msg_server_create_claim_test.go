@@ -41,7 +41,7 @@ var (
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	var claimWindowOpenBlockHash []byte
-	supplierOperatorAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddressBech32()
 
 	tests := []struct {
 		desc              string
@@ -102,9 +102,9 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			service := &sharedtypes.Service{
 				Id:                   testServiceId,
 				ComputeUnitsPerRelay: test.serviceComputeUnitsPerRelay,
-				OwnerAddress:         sample.AccAddress(),
+				OwnerAddress:         sample.AccAddressBech32(),
 			}
-			appAddr := sample.AccAddress()
+			appAddr := sample.AccAddressBech32()
 
 			supplierServices := []*sharedtypes.SupplierServiceConfig{
 				{ServiceId: service.Id},
@@ -219,10 +219,10 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
-	supplierOperatorAddr := sample.AccAddress()
-	appAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddressBech32()
+	appAddr := sample.AccAddressBech32()
 
 	supplierServices := []*sharedtypes.SupplierServiceConfig{
 		{ServiceId: service.Id},
@@ -348,21 +348,21 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 	// supplierOperatorAddr is staked for "svc1" such that it is expected to be in the session.
-	supplierOperatorAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddressBech32()
 	// wrongSupplierOperatorAddr is staked for "nosvc1" such that it is *not* expected to be in the session.
-	wrongSupplierOperatorAddr := sample.AccAddress()
+	wrongSupplierOperatorAddr := sample.AccAddressBech32()
 	// randSupplierOperatorAddr is *not* staked for any service.
-	randSupplierOperatorAddr := sample.AccAddress()
+	randSupplierOperatorAddr := sample.AccAddressBech32()
 
 	// appAddr is staked for "svc1" such that it is expected to be in the session.
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 	// wrongAppAddr is staked for "nosvc1" such that it is *not* expected to be in the session.
-	wrongAppAddr := sample.AccAddress()
+	wrongAppAddr := sample.AccAddressBech32()
 	// randAppAddr is *not* staked for any service.
-	randAppAddr := sample.AccAddress()
+	randAppAddr := sample.AccAddressBech32()
 
 	supplierKeeper := keepers.SupplierKeeper
 	appKeeper := keepers.ApplicationKeeper
@@ -609,7 +609,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: nonDefaultComputeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 	// Add the service that is expected to be onchain.
 	keepers.SetService(ctx, *service)
@@ -617,7 +617,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	// Add a supplier that is expected to be in the session.
 	// supplierAddr is staked for "svc1" such that it is expected to be in the session.
 	supplierKeeper := keepers.SupplierKeeper
-	supplierAddr := sample.AccAddress()
+	supplierAddr := sample.AccAddressBech32()
 	supplierServices := []*sharedtypes.SupplierServiceConfig{
 		{ServiceId: service.Id},
 	}
@@ -631,7 +631,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	// Add an application that is expected to be in the session.
 	// appAddr is staked for "svc1" such that it is expected to be in the session.
 	appKeeper := keepers.ApplicationKeeper
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{

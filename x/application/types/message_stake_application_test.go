@@ -35,7 +35,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid address - nil stake",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				// Stake explicitly omitted
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: "svc1"},
@@ -45,7 +45,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "valid address - valid stake",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: "svc1"},
@@ -54,7 +54,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "valid address - zero stake",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: "svc1"},
@@ -64,7 +64,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "valid address - negative stake",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: "svc1"},
@@ -74,7 +74,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "valid address - invalid stake denom",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: "svc1"},
@@ -84,7 +84,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "valid address - invalid stake missing denom",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: "svc1"},
@@ -97,7 +97,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - multiple services",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: "svc1"},
@@ -109,7 +109,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - not present",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				// Services explicitly omitted
 			},
@@ -118,7 +118,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - empty",
 			msg: MsgStakeApplication{
-				Address:  sample.AccAddress(),
+				Address:  sample.AccAddressBech32(),
 				Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{},
 			},
@@ -127,7 +127,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - invalid service ID that's too long",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: strings.Repeat("a", 43)}, // 42 is the max hardcoded in shared/types/service.go
@@ -138,7 +138,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - invalid service ID that contains invalid characters",
 			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: "12 45 !"},

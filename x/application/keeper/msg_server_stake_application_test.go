@@ -21,7 +21,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 
 	// Verify that the app does not exist yet
 	_, isAppFound := k.GetApplication(ctx, appAddr)
@@ -117,7 +117,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 
 	// Prepare the application stake message
 	initialStake := &apptypes.DefaultMinStake
@@ -179,7 +179,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 
 	// Prepare the application
 	initialStake := &apptypes.DefaultMinStake
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   initialStake,
@@ -218,7 +218,7 @@ func TestMsgServer_StakeApplication_FailBelowMinStake(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	appStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 	minStake := appStake.AddAmount(math.NewInt(1))
 	expectedErr := apptypes.ErrAppInvalidStake.Wrapf("application %q must stake at least %s", addr, minStake)

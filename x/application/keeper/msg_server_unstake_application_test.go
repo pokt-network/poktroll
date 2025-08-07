@@ -21,7 +21,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight())
 
 	// Generate an address for the application
-	unstakingAppAddr := sample.AccAddress()
+	unstakingAppAddr := sample.AccAddressBech32()
 
 	// Verify that the app does not exist yet
 	_, isAppFound := applicationModuleKeepers.GetApplication(ctx, unstakingAppAddr)
@@ -45,7 +45,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	// Create and stake another application that will not be unstaked to assert that
 	// only the unstaking application is removed from the applications list when the
 	// unbonding period is over.
-	nonUnstakingAppAddr := sample.AccAddress()
+	nonUnstakingAppAddr := sample.AccAddressBech32()
 	stakeMsg = createAppStakeMsg(nonUnstakingAppAddr, initialStake)
 	_, err = srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
@@ -131,7 +131,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight())
 
 	// Generate an address for the application
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 
 	// Stake the application
 	initialStake := apptypes.DefaultMinStake.Amount.Int64()
@@ -224,7 +224,7 @@ func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
 
 	// Generate an address for the application
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 
 	// Verify that the app does not exist yet
 	_, isAppFound := applicationModuleKeepers.GetApplication(ctx, appAddr)
@@ -245,7 +245,7 @@ func TestMsgServer_UnstakeApplication_FailIfCurrentlyUnstaking(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
 
 	// Generate an address for the application
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 
 	// Stake the application
 	initialStake := apptypes.DefaultMinStake.Amount.Int64()

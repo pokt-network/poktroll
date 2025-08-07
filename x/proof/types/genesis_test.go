@@ -11,7 +11,7 @@ import (
 )
 
 func TestGenesisState_Validate(t *testing.T) {
-	randSupplierOperatorAddr := sample.AccAddress()
+	randSupplierOperatorAddr := sample.AccAddressBech32()
 	mockSessionId := "mock_session_id"
 
 	tests := []struct {
@@ -30,10 +30,10 @@ func TestGenesisState_Validate(t *testing.T) {
 				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
-						SupplierOperatorAddress: sample.AccAddress(),
+						SupplierOperatorAddress: sample.AccAddressBech32(),
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
-							ApplicationAddress: sample.AccAddress(),
+							ApplicationAddress: sample.AccAddressBech32(),
 						},
 						RootHash: []byte{1, 2, 3},
 					},
@@ -62,7 +62,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						SupplierOperatorAddress: randSupplierOperatorAddr,
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
-							ApplicationAddress: sample.AccAddress(),
+							ApplicationAddress: sample.AccAddressBech32(),
 						},
 						RootHash: []byte{1, 2, 3},
 					},
@@ -70,7 +70,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						SupplierOperatorAddress: randSupplierOperatorAddr,
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
-							ApplicationAddress: sample.AccAddress(),
+							ApplicationAddress: sample.AccAddressBech32(),
 						},
 						RootHash: []byte{1, 2, 3},
 					},
@@ -84,10 +84,10 @@ func TestGenesisState_Validate(t *testing.T) {
 				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
-						SupplierOperatorAddress: sample.AccAddress(),
+						SupplierOperatorAddress: sample.AccAddressBech32(),
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
-							ApplicationAddress: sample.AccAddress(),
+							ApplicationAddress: sample.AccAddressBech32(),
 						},
 						RootHash: []byte{},
 					},
@@ -101,10 +101,10 @@ func TestGenesisState_Validate(t *testing.T) {
 				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
-						SupplierOperatorAddress: sample.AccAddress(),
+						SupplierOperatorAddress: sample.AccAddressBech32(),
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
-							ApplicationAddress: sample.AccAddress(),
+							ApplicationAddress: sample.AccAddressBech32(),
 						},
 						RootHash: nil,
 					},

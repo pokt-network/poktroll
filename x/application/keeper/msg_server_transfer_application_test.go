@@ -20,8 +20,8 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	sharedParams := sharedtypes.DefaultParams()
 
 	// Generate an address for the source and destination applications.
-	srcBech32 := sample.AccAddress()
-	dstBech32 := sample.AccAddress()
+	srcBech32 := sample.AccAddressBech32()
+	dstBech32 := sample.AccAddressBech32()
 
 	// Verify that the app does not exist yet.
 	_, isSrcFound := k.GetApplication(ctx, srcBech32)

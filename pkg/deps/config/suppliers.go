@@ -11,7 +11,6 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
@@ -187,7 +186,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 
 		deps = depinject.Configs(deps, depinject.Supply(
 			query.Context(queryClientCtx),
-			grpc.ClientConn(queryClientCtx),
+			query.NewGRPCClientWithDebugMetrics(queryClientCtx),
 			queryClientCtx.Keyring,
 		))
 

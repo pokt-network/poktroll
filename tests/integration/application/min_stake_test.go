@@ -67,8 +67,8 @@ func (s *applicationMinStakeTestSuite) SetupTest() {
 	require.NoError(s.T(), err)
 
 	s.serviceId = "svc1"
-	s.appBech32 = sample.AccAddress()
-	s.supplierBech32 = sample.AccAddress()
+	s.appBech32 = sample.AccAddressBech32()
+	s.supplierBech32 = sample.AccAddressBech32()
 	s.numRelays = 10
 	s.numComputeUnitsPerRelay = 1
 
@@ -145,7 +145,7 @@ func (s *applicationMinStakeTestSuite) addService() {
 	s.keepers.SetService(s.ctx, sharedtypes.Service{
 		Id:                   s.serviceId,
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(), // random address.
+		OwnerAddress:         sample.AccAddressBech32(), // random address.
 	})
 }
 

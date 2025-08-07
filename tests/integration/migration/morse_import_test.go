@@ -76,7 +76,7 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 			},
 			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
-					Address:            sample.AccAddress(),
+					Address:            sample.AccAddressBech32(),
 					RevSharePercentage: 100,
 				},
 			},
@@ -129,7 +129,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 
 	// random authority address
-	invalidAuthority := sample.AccAddress()
+	invalidAuthority := sample.AccAddressBech32()
 	msgImport, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
 		invalidAuthority,
 		*s.GetAccountState(s.T()),
@@ -148,7 +148,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 
 	msgImport, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
-		sample.AccAddress(), // random authority address
+		sample.AccAddressBech32(), // random authority address
 		*s.GetAccountState(s.T()),
 	)
 	s.NoError(err)
