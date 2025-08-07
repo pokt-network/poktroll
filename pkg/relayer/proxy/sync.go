@@ -521,7 +521,7 @@ func getServiceConfig(
 
 			return rpcTypeServiceConfig, logServiceConfigTypeRPCType, nil
 		} else {
-			logger.Warn().Msgf("⚠️ No '%s' RPC type specific service config found for service %q, falling back to default service config",
+			logger.Info().Msgf("ℹ️️ No '%s' RPC type specific service config found for service %q, falling back to default service config",
 				rpcType.String(), supplierConfig.ServiceId,
 			)
 		}
