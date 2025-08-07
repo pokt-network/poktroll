@@ -519,10 +519,11 @@ func (k Keeper) slashSupplierStake(
 		// - Supplier will still appear in current sessions but won't receive rewards in next settlement
 		// - If this settlement coincides with session end, supplier won't service further relays
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:           supplierToSlash,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   unstakeSessionEndHeight,
 			UnbondingEndHeight: unstakeSessionEndHeight,
+			OperatorAddress:    supplierToSlash.OperatorAddress,
+			OwnerAddress:       supplierToSlash.OwnerAddress,
 		})
 	}
 
@@ -729,15 +730,20 @@ func (k Keeper) settleClaim(
 		return nil, err
 	}
 
-	claimSettledEvent := tokenomicstypes.NewEventClaimSettled(
-		numClaimRelays,
-		numClaimComputeUnits,
-		numEstimatedComputeUnits,
-		proofRequirement,
-		&claimeduPOKT,
-		claimSettlementContext.settlementResult,
-	)
-	if err = ctx.EventManager().EmitTypedEvent(claimSettledEvent); err != nil {
+	claimSettledEvent := tokenomicstypes.EventClaimSettled{
+		NumRelays:                numClaimRelays,
+		NumClaimedComputeUnits:   numClaimComputeUnits,
+		NumEstimatedComputeUnits: numEstimatedComputeUnits,
+		ClaimedUpokt:             claimeduPOKT.String(),
+		ProofRequirementInt:      int32(proofRequirement),
+		ServiceId:                claim.SessionHeader.ServiceId,
+		ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+		SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+		ClaimProofStatusInt:      int32(claim.ProofValidationStatus),
+		SupplierOperatorAddress:  claim.SupplierOperatorAddress,
+	}
+
+	if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
 		return nil, err
 	}
 
