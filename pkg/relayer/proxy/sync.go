@@ -24,6 +24,8 @@ const (
 	// to ensure the HTTP response can be fully written before the connection is closed.
 	// This prevents incomplete responses due to network write timing issues.
 	writeDeadlineSafetyDuration = 1 * time.Second
+	// Fallback timeout for request preparation exceeding service timeout limits.
+	fallbackTimeout = 1 * time.Second
 )
 
 // serveSyncRequest serves a synchronous relay request by forwarding the request
@@ -283,7 +285,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			Dur("request_timeout", requestTimeout).
 			Dur("preparation_time", time.Since(requestStartTime)).
 			Msg("Request preparation exceeded timeout. Providing additional time.")
-		remainingTimeout = 2 * time.Second
+		remainingTimeout = fallbackTimeout
 	}
 	client.Timeout = remainingTimeout
 
