@@ -513,3 +513,5 @@ tool (
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc
 	google.golang.org/protobuf/cmd/protoc-gen-go
 )
+
+replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.18-0.20250807224318-70d09a916833
