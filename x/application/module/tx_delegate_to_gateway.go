@@ -4,10 +4,11 @@ import (
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
+
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	pocketflags "github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
@@ -43,7 +44,7 @@ $ pocketd tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend t
 		},
 	}
 
-	flags.AddTxFlagsToCmd(cmd)
+	pocketflags.AddTxFlagsToCmd(cmd)
 
 	return cmd
 }

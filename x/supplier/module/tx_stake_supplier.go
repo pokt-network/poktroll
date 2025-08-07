@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	pocketflags "github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/x/supplier/config"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -74,7 +75,7 @@ $ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backen
 	}
 
 	cmd.Flags().StringVar(&flagStakeConfig, "config", "", "Path to the stake config file")
-	flags.AddTxFlagsToCmd(cmd)
+	pocketflags.AddTxFlagsToCmd(cmd)
 
 	return cmd
 }

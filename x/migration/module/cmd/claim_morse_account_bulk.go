@@ -10,12 +10,11 @@ import (
 
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
-	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/cmd/flags"
+	pocketflags "github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
@@ -125,14 +124,14 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 	// Prepare the input file path flag.
 	claimAcctBulkCmd.Flags().StringVar(
 		&flagInputFilePath,
-		flags.FlagInputFile,
+		pocketflags.FlagInputFile,
 		"",
 		"Path to the JSON file containing Morse private keys (hex-encoded) for all accounts to be migrated in bulk.")
 
 	// Prepare the output file path flag.
 	claimAcctBulkCmd.Flags().StringVar(
 		&flagOutputFilePath,
-		flags.FlagOutputFile,
+		pocketflags.FlagOutputFile,
 		"",
 		"Path to a JSON file where the mapping of Morse accounts to their newly generated Shannon accounts (addresses and private keys in hex) will be written.")
 
@@ -157,7 +156,7 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 	claimAcctBulkCmd.Flags().BoolVar(&flagDryRunClaim, FlagDryRunClaim, false, FlagDryRunClaimDesc)
 
 	// Adds standard Cosmos SDK CLI tx flags.
-	cosmosflags.AddTxFlagsToCmd(claimAcctBulkCmd)
+	pocketflags.AddTxFlagsToCmd(claimAcctBulkCmd)
 
 	return claimAcctBulkCmd
 }
@@ -236,7 +235,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := pocketflags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
