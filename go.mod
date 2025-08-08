@@ -514,4 +514,4 @@ tool (
 	google.golang.org/protobuf/cmd/protoc-gen-go
 )
 
-replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.18-0.20250807224318-70d09a916833
+replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811
