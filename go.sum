@@ -1283,8 +1283,8 @@ github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10/go.mod h1
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/pokt-network/cometbft v0.38.18-0.20250807224318-70d09a916833 h1:IzgpotHDzPZiF4qPilhOKdTjUNGpP89Cx/Zt6umCHyQ=
-github.com/pokt-network/cometbft v0.38.18-0.20250807224318-70d09a916833/go.mod h1:5l0SkgeLRXi6bBfQuevXjKqML1jjfJJlvI1Ulp02/o4=
+github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811 h1:WpmIfpDCXSJVCZ1zm7S6nJI3HjNjkhxCFeV9PuSR/ks=
+github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811/go.mod h1:5l0SkgeLRXi6bBfQuevXjKqML1jjfJJlvI1Ulp02/o4=
 github.com/pokt-network/ring-go v0.1.0 h1:hF7mDR4VVCIqqDAsrloP8azM9y1mprc99YgnTjKSSwk=
 github.com/pokt-network/ring-go v0.1.0/go.mod h1:8NHPH7H3EwrPX3XHfpyRI6bz4gApkE3+fd0XZRbMWP0=
 github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770 h1:ztJnRBnkdNCSkRi6yT7ATQ1mw/i28JQKzhLoUXXHkzw=
