@@ -24,6 +24,8 @@ const (
 	// to ensure the HTTP response can be fully written before the connection is closed.
 	// This prevents incomplete responses due to network write timing issues.
 	writeDeadlineSafetyDuration = 1 * time.Second
+	// Fallback timeout for request preparation exceeding service timeout limits.
+	fallbackTimeout = 1 * time.Second
 )
 
 // serveSyncRequest serves a synchronous relay request by forwarding the request
@@ -211,10 +213,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Hydrate the logger with relevant values.
 	logger = logger.With(
-		"service_id", serviceId,
 		"server_addr", server.server.Addr,
-		"application_address", meta.SessionHeader.ApplicationAddress,
-		"session_start_height", meta.SessionHeader.SessionStartBlockHeight,
 		"destination_url", serviceConfig.BackendUrl.String(),
 		"service_config_type", serviceConfigTypeLog,
 	)
@@ -259,10 +258,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		client = *http.DefaultClient
 	}
 
-	// Set HTTP client timeout to match configured service request timeout.
-	// Ensures backend requests don't exceed allocated time budget.
-	client.Timeout = requestTimeout
-
 	logger = logger.With("request_preparation_duration", time.Since(requestStartTime).String())
 	relayer.CaptureRequestPreparationDuration(serviceId, requestStartTime)
 
@@ -273,7 +268,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	//  the request handler's goroutine will continue processing unless explicitly
 	//  checking for context cancellation.
 	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
-		logger.Warn().Msg(ctxErr.Error())
+		logger.With("current_time", time.Now()).Warn().Msg(ctxErr.Error())
 
 		return relayRequest, ErrRelayerProxyTimeout.Wrapf(
 			"request to service %s timed out after %s",
@@ -281,6 +276,18 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			requestTimeout.String(),
 		)
 	}
+
+	// Set HTTP client timeout to match remaining request budget.
+	// Subtract preparation time from total timeout to avoid exceeding limit.
+	remainingTimeout := requestTimeout - time.Since(requestStartTime)
+	if remainingTimeout <= 0 {
+		logger.Warn().
+			Dur("request_timeout", requestTimeout).
+			Dur("preparation_time", time.Since(requestStartTime)).
+			Msg("Request preparation exceeded timeout. Providing additional time.")
+		remainingTimeout = fallbackTimeout
+	}
+	client.Timeout = remainingTimeout
 
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
@@ -368,12 +375,15 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	responsePreparationEnd := time.Now()
 	// Add response preparation duration to the logger such that any log before errors will have
 	// as much request duration information as possible.
-	logger = logger.With("response_preparation_duration", time.Since(backendServiceProcessingEnd))
+	logger = logger.With(
+		"response_preparation_duration",
+		time.Since(backendServiceProcessingEnd).String(),
+	)
 	relayer.CaptureResponsePreparationDuration(serviceId, backendServiceProcessingEnd)
 
 	// Send the relay response to the client.
 	err = server.sendRelayResponse(relay.Res, writer)
-	logger = logger.With("send_response_duration", time.Since(responsePreparationEnd))
+	logger = logger.With("send_response_duration", time.Since(responsePreparationEnd).String())
 	if err != nil {
 		// If the originHost cannot be parsed, reply with an internal error so that
 		// the original error is not exposed to the client.
@@ -511,7 +521,7 @@ func getServiceConfig(
 
 			return rpcTypeServiceConfig, logServiceConfigTypeRPCType, nil
 		} else {
-			logger.Warn().Msgf("⚠️ No '%s' RPC type specific service config found for service %q, falling back to default service config",
+			logger.Info().Msgf("ℹ️️ No '%s' RPC type specific service config found for service %q, falling back to default service config",
 				rpcType.String(), supplierConfig.ServiceId,
 			)
 		}
