@@ -207,6 +207,8 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
             "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
+            # Default queryCaching to false if not set in localnet_config
+            "--set=queryCaching=" + str(localnet_config["relayminers"].get("queryCaching", False)),
             "--set=image.repository=pocketd",
     ]
 
