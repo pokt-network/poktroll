@@ -12,19 +12,28 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/app/pocket"
-	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	"github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+func init() {
+	cmd.InitSDKConfig()
+}
+
 func TestTLMValidatorRewardDistribution(t *testing.T) {
-	keeper, ctx, _, _, _ := tokenomicskeeper.TokenomicsKeeperWithActorAddrs(t)
+	// Use NewTokenomicsModuleKeepers to get access to all keepers
+	keepers, ctx := keeper.NewTokenomicsModuleKeepers(t, nil)
 
 	ctrl := gomock.NewController(t)
-	mockStakingKeeper := keeper.GetStakingKeeper().(*mocks.MockStakingKeeper)
-	mockDistributionKeeper := keeper.GetDistributionKeeper().(*mocks.MockDistributionKeeper)
+	defer ctrl.Finish()
+	
+	// The test keepers include the mocked staking and distribution keepers
+	mockStakingKeeper := keepers.StakingKeeper.(*mocks.MockStakingKeeper)
+	mockDistributionKeeper := keepers.DistributionKeeper.(*mocks.MockDistributionKeeper)
 
 	// Set up validator for distribution test
 	consAddr := sample.ConsAddress()
@@ -54,10 +63,10 @@ func TestTLMValidatorRewardDistribution(t *testing.T) {
 
 	// Create TLM context with proposer reward
 	proposerReward := cosmostypes.NewCoin(pocket.DenomuPOKT, cosmosmath.NewInt(100000))
-	tlmCtx := &token_logic_module.TLMContext{
+	tlmCtx := token_logic_module.TLMContext{
 		StakingKeeper:      mockStakingKeeper,
 		DistributionKeeper: mockDistributionKeeper,
-		Result: &tokenomicstypes.TokenomicsTLMResult{
+		Result: &tokenomicstypes.ClaimSettlementResult{
 			ModToModTransfers: []tokenomicstypes.ModToModTransfer{},
 		},
 	}
@@ -65,12 +74,12 @@ func TestTLMValidatorRewardDistribution(t *testing.T) {
 	// Create a minimal TLM to test distribution
 	tlm := &testValidatorRewardTLM{
 		ctx:    sdkCtx,
-		tlmCtx: tlmCtx,
+		tlmCtx: &tlmCtx,
 		reward: proposerReward,
 	}
 
 	// Execute distribution logic
-	err := tlm.Process([]client.Block{})
+	err := tlm.Process()
 	require.NoError(t, err)
 
 	// Verify module-to-module transfer was recorded
@@ -88,7 +97,7 @@ type testValidatorRewardTLM struct {
 	reward cosmostypes.Coin
 }
 
-func (t *testValidatorRewardTLM) Process([]client.Block) error {
+func (t *testValidatorRewardTLM) Process() error {
 	consAddr := cosmostypes.UnwrapSDKContext(t.ctx).BlockHeader().ProposerAddress
 
 	// Get validator from consensus address
@@ -98,7 +107,7 @@ func (t *testValidatorRewardTLM) Process([]client.Block) error {
 	}
 
 	// Transfer from tokenomics module to distribution module
-	t.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
+	t.tlmCtx.Result.ModToModTransfers = append(t.tlmCtx.Result.ModToModTransfers, tokenomicstypes.ModToModTransfer{
 		OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
 		SenderModule:    tokenomicstypes.ModuleName,
 		RecipientModule: distributiontypes.ModuleName,

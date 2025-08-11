@@ -40,6 +40,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -335,6 +336,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		prooftypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		migrationtypes.ModuleName:  {authtypes.Minter},
 		servicetypes.ModuleName:    {authtypes.Minter},
+		distrtypes.ModuleName:      nil, // distribution module doesn't need special permissions
 	}
 
 	// Prepare the account keeper and module

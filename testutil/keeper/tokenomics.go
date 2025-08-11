@@ -460,6 +460,22 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, bankKeeper.SetParams(sdkCtx, banktypes.DefaultParams()))
 
+	// Initialize module accounts that are used in module-to-module transfers
+	// This is necessary for the distribution module to receive funds
+	// Only create if they don't already exist
+	distrModuleAddr := authtypes.NewModuleAddress(distrtypes.ModuleName)
+	if acc := accountKeeper.GetAccount(sdkCtx, distrModuleAddr); acc == nil {
+		distrModuleAcc := authtypes.NewEmptyModuleAccount(distrtypes.ModuleName)
+		accountKeeper.SetModuleAccount(sdkCtx, distrModuleAcc)
+	}
+	
+	// Initialize tokenomics module account if it doesn't exist
+	tokenomicsModuleAddr := authtypes.NewModuleAddress(tokenomicstypes.ModuleName)
+	if acc := accountKeeper.GetAccount(sdkCtx, tokenomicsModuleAddr); acc == nil {
+		tokenomicsModuleAcc := authtypes.NewEmptyModuleAccount(tokenomicstypes.ModuleName)
+		accountKeeper.SetModuleAccount(sdkCtx, tokenomicsModuleAcc)
+	}
+
 	// Construct a real shared keeper.
 	sharedKeeper := sharedkeeper.NewKeeper(
 		cdc,
