@@ -492,7 +492,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseValidator_Unbonding() {
 		}
 		expectedSupplierUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
-			SessionEndHeight:   int64(expectedSessionEndHeight),
+			SessionEndHeight:   expectedSessionEndHeight,
 			UnbondingEndHeight: int64(expectedUnstakeSessionEndHeight),
 			OperatorAddress:    expectedSupplier.OperatorAddress,
 			OwnerAddress:       expectedSupplier.OwnerAddress,

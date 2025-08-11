@@ -859,7 +859,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	slashedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
-		SessionEndHeight:   int64(upcomingSessionEndHeight),
+		SessionEndHeight:   upcomingSessionEndHeight,
 		UnbondingEndHeight: upcomingSessionEndHeight,
 		OperatorAddress:    slashedSupplier.OperatorAddress,
 		OwnerAddress:       slashedSupplier.OwnerAddress,
