@@ -170,7 +170,9 @@ func (m *EventRedelegation) GetApplicationAddress() string {
 // EventTransferBegin is emitted whenever an application begins a transfer. It
 // includes the source application state immediately after the transfer began.
 type EventTransferBegin struct {
-	SourceAddress      string `protobuf:"bytes,1,opt,name=source_address,json=sourceAddress,proto3" json:"source_address,omitempty"`
+	// The address of the application from which the transfer is being made.
+	SourceAddress string `protobuf:"bytes,1,opt,name=source_address,json=sourceAddress,proto3" json:"source_address,omitempty"`
+	// The address of the new application to which the transfer is being made.
 	DestinationAddress string `protobuf:"bytes,2,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
 	// The end height of the session in which the transfer began.
 	SessionEndHeight int64 `protobuf:"varint,4,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
@@ -381,11 +383,10 @@ func (m *EventTransferError) GetError() string {
 // unbonding. The unbonding period is determined by the shared param,
 // application_unbonding_period_sessions.
 type EventApplicationUnbondingBegin struct {
-	Reason ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=pocket.application.ApplicationUnbondingReason" json:"reason"`
-	// The end height of the session in which the unbonding began.
-	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
-	// The height at which application unbonding will end.
-	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_height"`
+	// The reason for the unbonding (elective, below min stake, or migration).
+	Reason             ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=pocket.application.ApplicationUnbondingReason" json:"reason"`
+	SessionEndHeight   int64                      `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	UnbondingEndHeight int64                      `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_height"`
 	// The address of the application that began unbonding.
 	ApplicationAddress string `protobuf:"bytes,5,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
 }
@@ -451,6 +452,7 @@ func (m *EventApplicationUnbondingBegin) GetApplicationAddress() string {
 // unbonding. The unbonding period is determined by the shared param,
 // application_unbonding_period_sessions.
 type EventApplicationUnbondingEnd struct {
+	// The reason for the unbonding (elective, below min stake, or migration).
 	Reason ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=pocket.application.ApplicationUnbondingReason" json:"reason"`
 	// The end height of the session in which the unbonding ended.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`

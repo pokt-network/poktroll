@@ -268,7 +268,6 @@ func (m *EventSupplierUnbondingEnd) GetOwnerAddress() string {
 // successfully (re-)stakes before the unbonding period has elapsed. An EventSupplierStaked
 // event will also be emitted immediately after this event.
 type EventSupplierUnbondingCanceled struct {
-	// The session end height of the session in which the supplier unbonding was canceled.
 	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 	// The exact height at which the supplier unbonding was canceled.
 	Height int64 `protobuf:"varint,3,opt,name=height,proto3" json:"height"`
