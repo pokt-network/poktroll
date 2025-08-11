@@ -50,6 +50,7 @@ type settlementState struct {
 	appModuleBalance        *cosmostypes.Coin
 	supplierModuleBalance   *cosmostypes.Coin
 	tokenomicsModuleBalance *cosmostypes.Coin
+	distributionModuleBalance *cosmostypes.Coin
 
 	appStake             *cosmostypes.Coin
 	supplierOwnerBalance *cosmostypes.Coin

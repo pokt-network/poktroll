@@ -10,6 +10,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/pocket"
@@ -57,6 +58,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 		)
 
 		s.T().Run(testDesc, func(t *testing.T) {
+			// Setup fresh keepers and context for each permutation test
 			s.setupKeepers(t, testkeeper.WithTokenLogicModules(tlmPermutation))
 
 			// Assert that no pre-existing claims are present.
@@ -140,6 +142,7 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 		appModuleBalance:        s.getBalance(t, authtypes.NewModuleAddress(apptypes.ModuleName).String()),
 		supplierModuleBalance:   s.getBalance(t, authtypes.NewModuleAddress(suppliertypes.ModuleName).String()),
 		tokenomicsModuleBalance: s.getBalance(t, authtypes.NewModuleAddress(tokenomicstypes.ModuleName).String()),
+		distributionModuleBalance: s.getBalance(t, authtypes.NewModuleAddress(distrtypes.ModuleName).String()),
 
 		appStake:             app.GetStake(),
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
@@ -200,7 +203,8 @@ func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 		coinIsZeroMsg := "coin has zero amount"
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance, coinIsZeroMsg)
-		require.NotEqual(t, &zerouPOKT, actualSettlementState.proposerBalance, coinIsZeroMsg)
+		// Proposer rewards are now sent to the distribution module, not directly to the proposer
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.distributionModuleBalance, coinIsZeroMsg+" (distribution module)")
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.daoBalance, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance, coinIsZeroMsg)
 
