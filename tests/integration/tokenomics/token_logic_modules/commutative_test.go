@@ -139,9 +139,9 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 	require.True(t, isAppFound)
 
 	return &settlementState{
-		appModuleBalance:        s.getBalance(t, authtypes.NewModuleAddress(apptypes.ModuleName).String()),
-		supplierModuleBalance:   s.getBalance(t, authtypes.NewModuleAddress(suppliertypes.ModuleName).String()),
-		tokenomicsModuleBalance: s.getBalance(t, authtypes.NewModuleAddress(tokenomicstypes.ModuleName).String()),
+		appModuleBalance:          s.getBalance(t, authtypes.NewModuleAddress(apptypes.ModuleName).String()),
+		supplierModuleBalance:     s.getBalance(t, authtypes.NewModuleAddress(suppliertypes.ModuleName).String()),
+		tokenomicsModuleBalance:   s.getBalance(t, authtypes.NewModuleAddress(tokenomicstypes.ModuleName).String()),
 		distributionModuleBalance: s.getBalance(t, authtypes.NewModuleAddress(distrtypes.ModuleName).String()),
 
 		appStake:             app.GetStake(),

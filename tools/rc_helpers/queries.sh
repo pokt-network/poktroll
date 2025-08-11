@@ -696,7 +696,7 @@ query_blocks - Query and save individual blocks to files
 
 DESCRIPTION:
   Iterates through a range of block heights, queries each block,
-  saves it to /tmp/block_NUMBER.json, and outputs the file size
+  saves it to /tmp/block_NUMBER_ENV.json, and outputs the file size
   alongside the filename for each saved block.
 
 USAGE:
@@ -727,12 +727,12 @@ EOF
   validate_block_range "$start" "$end" || return 1
 
   echo "Querying blocks from $start to $end on '$env' network..."
-  echo "Saving blocks to /tmp/block_{NUMBER}.json format"
+  echo "Saving blocks to /tmp/block_{NUMBER}_${env}.json format"
   echo "--------------------------------------"
 
   # Loop through each block height
   for ((height = $start; height <= $end; height++)); do
-    local block_file="/tmp/block_${height}.json"
+    local block_file="/tmp/block_${height}_${env}.json"
 
     echo -n "Processing block $height... "
 

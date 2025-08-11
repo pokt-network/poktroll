@@ -449,7 +449,6 @@ func NewTokenomicsModuleKeepers(
 		authority.String(),
 	)
 
-
 	// Construct a real bank keeper so that the balances can be updated & verified
 	bankKeeper := bankkeeper.NewBaseKeeper(
 		cdc,

@@ -44,15 +44,27 @@ func (tlmbem *tlmRelayBurnEqualsMint) Process(
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
-	tlmbem.ctx = ctx
-	tlmbem.logger = logger
-	tlmbem.tlmCtx = &tlmCtx
+	blockHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	service := tlmCtx.Service
+	sessionHeader := tlmCtx.SessionHeader
+	application := tlmCtx.Application
+	supplier := tlmCtx.Supplier
+	actualSettlementCoin := tlmCtx.SettlementCoin
 
 	logger = logger.With(
 		"tlm", "TLMRelayBurnEqualsMint",
 		"method", "Process",
-		"session_id", tlmCtx.Result.GetSessionId(),
+		"height", blockHeight,
+		"session_id", sessionHeader.GetSessionId(),
+		"service_id", service.Id,
+		"application", application.Address,
+		"supplier_operator", supplier.OperatorAddress,
+		"actual_settlement_coin", actualSettlementCoin,
 	)
+
+	tlmbem.ctx = ctx
+	tlmbem.logger = logger
+	tlmbem.tlmCtx = &tlmCtx
 
 	// Burn the corresponding tokens from the application's stake.
 	if err := tlmbem.processApplicationBurn(); err != nil {
@@ -240,7 +252,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 			RecipientAddress: tlmbem.tlmCtx.Service.OwnerAddress,
 			Coin:             sourceOwnerCoin,
 		})
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmbem.tlmCtx.Service.OwnerAddress))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to service source owner %s", sourceOwnerCoin, tlmbem.tlmCtx.Service.OwnerAddress))
 	}
 
 	// Distribute to DAO
@@ -253,7 +265,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 			RecipientAddress: daoRewardAddress,
 			Coin:             daoCoin,
 		})
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to DAO %s", daoCoin, daoRewardAddress))
 	}
 
 	// Distribute to application
@@ -265,7 +277,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 			RecipientAddress: tlmbem.tlmCtx.Application.Address,
 			Coin:             applicationCoin,
 		})
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to application %s", applicationCoin, tlmbem.tlmCtx.Application.Address))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to application %s", applicationCoin, tlmbem.tlmCtx.Application.Address))
 	}
 
 	// === VALIDATION ===

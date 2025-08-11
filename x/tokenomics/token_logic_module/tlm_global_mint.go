@@ -47,15 +47,27 @@ func (tlmgm *tlmGlobalMint) Process(
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
-	tlmgm.ctx = ctx
-	tlmgm.logger = logger
-	tlmgm.tlmCtx = &tlmCtx
+	blockHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	service := tlmCtx.Service
+	sessionHeader := tlmCtx.SessionHeader
+	application := tlmCtx.Application
+	supplier := tlmCtx.Supplier
+	actualSettlementCoin := tlmCtx.SettlementCoin
 
 	logger = logger.With(
 		"tlm", "TLMGlobalMint",
 		"method", "Process",
-		"session_id", tlmCtx.Result.GetSessionId(),
+		"height", blockHeight,
+		"session_id", sessionHeader.GetSessionId(),
+		"service_id", service.Id,
+		"application", application.Address,
+		"supplier_operator", supplier.OperatorAddress,
+		"actual_settlement_coin", actualSettlementCoin,
 	)
+
+	tlmgm.ctx = ctx
+	tlmgm.logger = logger
+	tlmgm.tlmCtx = &tlmCtx
 
 	// Mint new tokens based on global inflation
 	newMintCoin, err := tlmgm.processInflationMint()
@@ -203,7 +215,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 			RecipientAddress: tlmgm.tlmCtx.Application.GetAddress(),
 			Coin:             appCoin,
 		})
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to application %s", appCoin, tlmgm.tlmCtx.Application.GetAddress()))
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to application %s", appCoin, tlmgm.tlmCtx.Application.GetAddress()))
 	}
 
 	// Distribute to service source owner
@@ -215,7 +227,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 			RecipientAddress: tlmgm.tlmCtx.Service.OwnerAddress,
 			Coin:             sourceOwnerCoin,
 		})
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to service source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
 	}
 
 	// TODO: Consider adding metrics for validator reward distribution
@@ -261,7 +273,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 			RecipientAddress: daoRewardAddress,
 			Coin:             daoCoin,
 		})
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to DAO %s", daoCoin, daoRewardAddress))
 	}
 
 	// === VALIDATION ===
