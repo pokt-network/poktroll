@@ -1,6 +1,6 @@
 Feature: Validator Delegation Rewards
 
-  Scenario: Validator rewards are distributed to delegators after claim settlement
+  Scenario: Validator rewards are distributed to all validators by staking weight and then to delegators after claim settlement
     # Baseline setup
     Given the user has the pocketd binary installed
 
@@ -21,6 +21,7 @@ Feature: Validator Delegation Rewards
 
     # Configure tokenomics parameters to explicitly set inflation and distribution
     # Focus on validator rewards for delegation testing
+    # Note: proposer parameter now distributes rewards to ALL validators based on staking weight
     And the "tokenomics" module parameters are set as follows
       | name                                             | value | type  |
       | global_inflation_per_claim                       | 0.1   | float |
@@ -75,8 +76,8 @@ Feature: Validator Delegation Rewards
 
     # Validate that validator rewards were sent to distribution module
     # Settlement amount: 20 * 100 * 42 = 84000 uPOKT
-    # Global inflation: 84000 * 0.1 = 8400 uPOKT
-    # Proposer share: (84000 + 8400) * 0.1 = 9240 uPOKT
+    # Global inflation: 84000 * 0.1 = 8400 uPOKT  
+    # Validator share: (84000 + 8400) * 0.1 = 9240 uPOKT (distributed to all validators by staking weight)
     Then the distribution module balance should be "9240" uPOKT "more" than "distribution_initial_balance"
 
     # Validate that delegator rewards have accumulated
@@ -98,7 +99,7 @@ Feature: Validator Delegation Rewards
     Then the account balance of "delegator1" should be "more" than "delegator1_initial_balance"
     And the account balance of "delegator2" should be "more" than "delegator2_initial_balance"
 
-  Scenario: Validator rewards distribution respects commission rates
+  Scenario: Validator rewards distribution to all validators respects commission rates
     # Baseline setup
     Given the user has the pocketd binary installed
 
@@ -114,6 +115,7 @@ Feature: Validator Delegation Rewards
     And the account "delegator1" has a balance greater than "1000000" uPOKT
 
     # Configure tokenomics for validator rewards
+    # Note: proposer parameter distributes to ALL validators proportionally by staking weight
     And the "tokenomics" module parameters are set as follows
       | name                                             | value | type  |
       | global_inflation_per_claim                       | 0.0   | float |
@@ -164,3 +166,15 @@ Feature: Validator Delegation Rewards
     # The delegator should receive rewards minus the validator's commission
     Then the account balance of "delegator1" should be "more" than "delegator1_initial_balance"
     And the delegation rewards for "delegator1" from "validator1" should be "0" uPOKT
+
+  Scenario: Multiple validators receive rewards proportional to their staking weight
+    # Note: This scenario would ideally test with multiple validators, but in a single-node
+    # LocalNet environment, we typically only have one validator. The functionality is
+    # validated in unit tests where multiple validators with different stakes can be mocked.
+    # This scenario documents the expected behavior for reference.
+    Given the user has the pocketd binary installed
+    # In a multi-validator network:
+    # - Validator A with 70% of total stake would receive 70% of validator rewards
+    # - Validator B with 20% of total stake would receive 20% of validator rewards  
+    # - Validator C with 10% of total stake would receive 10% of validator rewards
+    # Each validator then distributes their portion to their delegators via the distribution module

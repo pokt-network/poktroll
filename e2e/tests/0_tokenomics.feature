@@ -46,6 +46,7 @@ Feature: Tokenomics Namespace
         And all "shared" module params should be updated
 
         # Configure tokenomics parameters to explicitly set inflation and distribution
+        # Note: proposer parameter now distributes rewards to ALL validators based on staking weight
         And the "tokenomics" module parameters are set as follows
             | name                                             | value | type  |
             | global_inflation_per_claim                       | 0.1   | float |
