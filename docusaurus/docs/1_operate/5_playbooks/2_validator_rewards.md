@@ -1,58 +1,53 @@
 ---
-title: Validator Rewards
+title: Validator Reward Playbook
 sidebar_position: 2
 ---
 
-# Pocket Network Validator Rewards Guide
+This playbook provides step-by-step instructions for tracking and inspecting validator rewards on Pocket Network
 
-This guide provides step-by-step instructions for validators to track and retrieve rewards on Pocket Network, including block transaction fees and relay settlement fees.
+## Table of Contents <!-- omit in toc -->
 
-## 1. Identifying the Validator Sets
+- [Inspecting and Retrieving Block TX Fees](#inspecting-and-retrieving-block-tx-fees)
+  - [Check Outstanding Unclaimed Validator Rewards](#check-outstanding-unclaimed-validator-rewards)
+  - [Check Validator Commission](#check-validator-commission)
+  - [Withdraw Validator Commission](#withdraw-validator-commission)
+  - [Check Delegator Rewards](#check-delegator-rewards)
+  - [Withdraw All Rewards (Commission + Delegation)](#withdraw-all-rewards-commission--delegation)
+  - [Monitor Balance Changes Over Time](#monitor-balance-changes-over-time)
+- [Inspecting and Retrieving Relay Settlement Fees](#inspecting-and-retrieving-relay-settlement-fees)
+  - [Check Distribution Parameters](#check-distribution-parameters)
+  - [Query Community Pool](#query-community-pool)
+  - [Get Comprehensive Distribution Info](#get-comprehensive-distribution-info)
+  - [Withdraw All Delegation Rewards](#withdraw-all-delegation-rewards)
+- [Quick Reference Playbook](#quick-reference-playbook)
+  - [Daily Validator Rewards Check](#daily-validator-rewards-check)
+  - [Complete Rewards Withdrawal](#complete-rewards-withdrawal)
+  - [Dry Run Before Withdrawal](#dry-run-before-withdrawal)
+- [Identifying the Validator Sets](#identifying-the-validator-sets)
+  - [Check Comet Validator Set](#check-comet-validator-set)
+  - [List Bonded Validator Operator Addresses](#list-bonded-validator-operator-addresses)
+  - [Convert Validator Operator Address to Account Address](#convert-validator-operator-address-to-account-address)
+  - [Check Current Block Proposer](#check-current-block-proposer)
 
-### Check Comet Validator Set
+:::warning TODO(@olshansk)
 
-View all active validators with their voting power and proposer priority:
+Remove `--grpc-insecure=false` once `pocketd` is updated
 
-```bash
-pocketd query comet-validator-set --network=beta -o json | jq
-```
+:::
 
-### List Bonded Validators
+## Inspecting and Retrieving Block TX Fees
 
-Get all bonded (active) validators that are not jailed:
+:::critical Read the official Cosmos documentation for more information
 
-```bash
-pocketd query staking validators --output json --network=beta | \
-  jq -r '.validators[] | select(.jailed != true and .status=="BOND_STATUS_BONDED") | .operator_address'
-```
+Block tx fees is directly adopted from the Cosmos SDK [x/distribution](https://docs.cosmos.network/main/build/modules/distribution) module.
 
-### Convert Validator Operator Address to Account Address
+Make sure to read those docs for the source of truth.
 
-Convert a validator operator address to its corresponding account address:
+The notes below are regurgitation helpers.
 
-```bash
-pocket addr poktvaloper1...
-```
+:::
 
-### Check Current Block Proposer
-
-Identify the proposer for recent blocks:
-
-```bash
-# Get latest block height
-latest=$(pocketd status --network=beta -o json | jq -r '.sync_info.latest_block_height')
-
-# Check proposers for last 10 blocks
-for ((h=latest; h>latest-10; h--)); do
-  proposer=$(pocketd query block --type=height $h --network=beta -o json | \
-    jq -r '.header.proposer_address')
-  echo "Block $h: $proposer"
-done
-```
-
-## 2. Inspecting and Retrieving Block TX Fees
-
-### Check Outstanding Validator Rewards
+### Check Outstanding Unclaimed Validator Rewards
 
 View all un-withdrawn rewards for your validator:
 
@@ -135,14 +130,14 @@ for ((h=223510; h<=225710; h+=100)); do
 done
 ```
 
-## 3. Inspecting and Retrieving Relay Settlement Fees
+## Inspecting and Retrieving Relay Settlement Fees
 
 ### Check Distribution Parameters
 
 Verify the current distribution parameters for relay rewards:
 
 ```bash
-pocketd query tokenomics params --network=beta -o json | jq
+pocketd query tokenomics params --network=main --grpc-insecure=false -o json | jq
 ```
 
 Key parameters to check:
@@ -227,20 +222,59 @@ pocketd tx distribution withdraw-rewards \
   --dry-run
 ```
 
-## Important Notes
+## Identifying the Validator Sets
 
-- **Outstanding rewards** show available rewards that haven't been withdrawn
-- **Commission** is the validator's percentage cut from delegator rewards
-- **Gas fees** are required for withdrawals - ensure sufficient balance
-- **Use --dry-run** to simulate transactions before executing
-- **Zero outstanding rewards** may indicate fee waiver is active or rewards already withdrawn
-- Consider setting a **withdrawal address** if you want rewards sent to a different account
+### Check Comet Validator Set
 
-## Troubleshooting
+View all active validators with their voting power and proposer priority:
 
-If you see zero rewards:
+```bash
+pocketd query comet-validator-set --network=main -o json | jq
+```
 
-1. Verify your validator is active and not jailed
-2. Check if there's a fee waiver period active
-3. Confirm you haven't already withdrawn recently
-4. Ensure your validator is actually proposing blocks
+Note that the above are the consensus `ed25519` public keys of the validators,
+not the `secp256k1` public keys of the validator operators.
+
+### List Bonded Validator Operator Addresses
+
+Get all bonded (active) validators that are not jailed:
+
+```bash
+pocketd query staking validators --output json --network=main --grpc-insecure=false | \
+  jq -r '.validators[] | select(.jailed != true and .status=="BOND_STATUS_BONDED") | .operator_address
+```
+
+### Convert Validator Operator Address to Account Address
+
+Convert a validator operator address to its corresponding account address:
+
+```bash
+pocketd debug addr poktvaloper1...
+```
+
+For example:
+
+```bash
+$ pocketd debug addr poktvaloper1zppmwrdgvywrc66nn2u40ad90na9983fu9yh55
+Address: [16 67 183 13 168 97 28 60 107 83 154 185 87 245 165 124 250 82 158 41]
+Address (hex): 1043B70DA8611C3C6B539AB957F5A57CFA529E29
+Bech32 Acc: pokt1zppmwrdgvywrc66nn2u40ad90na9983f7kh4lv
+Bech32 Val: poktvaloper1zppmwrdgvywrc66nn2u40ad90na9983fu9yh55
+Bech32 Con: poktvalcons1zppmwrdgvywrc66nn2u40ad90na9983fgkhtc4
+```
+
+### Check Current Block Proposer
+
+Identify the proposer for recent blocks:
+
+```bash
+# Get latest block height
+latest=$(pocketd status --network=main -o json | jq -r '.sync_info.latest_block_height')
+
+# Check proposers for last 10 blocks
+for ((h=latest; h>latest-10; h--)); do
+  proposer=$(pocketd query block --type=height $h --network=main -o json | \
+    jq -r '.header.proposer_address')
+  echo "Block $h: $proposer"
+done
+```
