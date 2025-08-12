@@ -78,7 +78,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid signer is neither the operator nor the owner - empty service configs",
 			msg: MsgStakeSupplier{
-				Signer:          sample.AccAddress(),
+				Signer:          sample.AccAddressBech32(),
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -88,7 +88,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid signer is neither the operator nor the owner - omitted service configs",
 			msg: MsgStakeSupplier{
-				Signer:          sample.AccAddress(),
+				Signer:          sample.AccAddressBech32(),
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -526,7 +526,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
