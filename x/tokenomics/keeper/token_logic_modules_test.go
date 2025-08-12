@@ -12,6 +12,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
@@ -890,6 +891,134 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 		})
 	}
 }
+
+func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators(t *testing.T) {
+	// Test that proposer rewards are distributed to all validators based on staking weight
+	// Enable proposer rewards for this test
+	
+	// Test Parameters
+	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
+	supplierInitialStake := cosmosmath.NewInt(1000000)
+	globalComputeUnitCostGranularity := uint64(1000000)
+	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
+	
+	service := prepareTestService(1)
+	numRelays := uint64(1000)
+	numTokensClaimed := cosmosmath.NewInt(int64(numRelays * service.ComputeUnitsPerRelay))
+	daoAddress := sample.AccAddressBech32()
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+
+	// Prepare the keepers
+	opts := []testkeeper.TokenomicsModuleKeepersOptFn{
+		testkeeper.WithService(*service),
+		testkeeper.WithBlockProposer(proposerConsAddr, proposerValOperatorAddr),
+		testkeeper.WithTokenLogicModules(tlm.NewDefaultTokenLogicModules()),
+		testkeeper.WithDefaultModuleBalances(),
+	}
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
+	keepers.SetService(ctx, *service)
+
+	// Set the dao_reward_address param on the tokenomics keeper.
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.DaoRewardAddress = daoAddress
+	// ENABLE proposer rewards for this test
+	tokenomicsParams.MintAllocationPercentages.Proposer = 0.1  // 10% goes to validators
+	tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer = 0.0 // Only test mint allocation
+	keepers.Keeper.SetParams(ctx, tokenomicsParams)
+
+	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	require.NoError(t, err)
+
+	// Add a new application with non-zero app stake end balance to assert against.
+	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
+	app := apptypes.Application{
+		Address:        sample.AccAddressBech32(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
+	}
+	keepers.SetApplication(ctx, app)
+
+	// Add a supplier
+	supplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierInitialStake)
+	supplierAddr := sample.AccAddressBech32()
+	supplierServices := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: service.Id,
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{Address: supplierAddr, RevSharePercentage: 100},
+			},
+		},
+	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		supplierAddr, supplierServices, 1, 0,
+	)
+	supplier := sharedtypes.Supplier{
+		OwnerAddress:         supplierAddr,
+		OperatorAddress:      supplierAddr,
+		Stake:               &supplierStake,
+		Services:            supplierServices,
+		ServiceConfigHistory: serviceConfigHistory,
+	}
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
+
+	// Prepare the claim for which the supplier did work for the application
+	claim := prepareTestClaim(numRelays, service, &app, &supplier)
+	pendingResult := tlm.NewClaimSettlementResult(claim)
+
+	settlementContext := tokenomicskeeper.NewSettlementContext(
+		ctx,
+		keepers.Keeper,
+		keepers.Logger(),
+	)
+
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+	require.NoError(t, err)
+
+	// Process the token logic modules
+	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	require.NoError(t, err)
+
+	// Persist the actors state
+	settlementContext.FlushAllActorsToStore(ctx)
+
+	// Execute the pending results
+	pendingResults := make(tlm.ClaimSettlementResults, 0)
+	pendingResults.Append(pendingResult)
+
+	// Verify that ModToModTransfer operations include distribution to validators
+	modToModTransfers := pendingResult.GetModToModTransfers()
+	distributionTransferFound := false
+	var distributionAmount cosmosmath.Int
+	
+	for _, transfer := range modToModTransfers {
+		if transfer.RecipientModule == distributiontypes.ModuleName &&
+			transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION {
+			distributionTransferFound = true
+			distributionAmount = transfer.Coin.Amount
+			break
+		}
+	}
+	
+	require.True(t, distributionTransferFound, "Should find transfer to distribution module for validator rewards")
+	require.True(t, distributionAmount.IsPositive(), "Distribution amount should be positive")
+
+	// Verify the amount matches expected proposer allocation
+	globalInflationPerClaimRat, err := encoding.Float64ToRat(tokenomicsParams.GlobalInflationPerClaim)
+	require.NoError(t, err)
+	
+	numTokensClaimedRat := new(big.Rat).SetInt(numTokensClaimed.BigInt())
+	numTokensMintedRat := new(big.Rat).Mul(numTokensClaimedRat, globalInflationPerClaimRat)
+	propMintFromGlobalMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Proposer)
+	
+	require.Equal(t, propMintFromGlobalMint, distributionAmount, 
+		"Distribution amount should match expected proposer mint allocation")
+}
+
 
 func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {
 	t.Skip("TODO_TEST: Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")
