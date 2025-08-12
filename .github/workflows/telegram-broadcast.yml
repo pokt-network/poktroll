@@ -20,13 +20,13 @@ jobs:
       - name: Debug raw message
         run: |
           echo "=== Debug: Raw message input ==="
-          printf '%s\n' "${{ github.event.inputs.message }}"
+          printf '%s\n' "${{ inputs.message }}"
           echo "================================"
 
   broadcast:
     needs: debug
     uses: ./.github/workflows/telegram-send-message.yml
     with:
-      message: ${{ github.event.inputs.message }}
+      message: ${{ inputs.message }}
       parse_mode: "MarkdownV2"
-      test_mode: "${{ github.event.inputs.test_mode }}"
+      test_mode: ${{ inputs.test_mode }}
