@@ -99,9 +99,11 @@ func (rel *relayMiner) ServeMetrics(addr string) error {
 
 	// If no error, start the server in a new goroutine
 	go func() {
-		rel.logger.Info().Str("endpoint", addr).Msg("serving metrics")
+		// Create a context-specific logger to avoid concurrent access issues
+		logger := rel.logger.With("service", "metrics", "endpoint", addr)
+		logger.Info().Msg("serving metrics")
 		if err := http.Serve(ln, promhttp.Handler()); err != nil {
-			rel.logger.Error().Err(err).Msg("metrics server failed")
+			logger.Error().Err(err).Msg("metrics server failed")
 			return
 		}
 	}()
@@ -124,15 +126,19 @@ func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 	}
 	// If no error, start the server in a new goroutine
 	go func() {
-		rel.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
+		// Create a context-specific logger to avoid concurrent access issues
+		logger := rel.logger.With("service", "pprof", "endpoint", addr)
+		logger.Info().Msg("starting a pprof endpoint")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			rel.logger.Error().Str("endpoint", addr).Msg("unable to start a pprof endpoint")
+			logger.Error().Msg("unable to start a pprof endpoint")
 		}
 	}()
 
 	go func() {
 		<-ctx.Done()
-		rel.logger.Info().Str("endpoint", addr).Msg("stopping a pprof endpoint")
+		// Create a context-specific logger to avoid concurrent access issues
+		logger := rel.logger.With("service", "pprof", "endpoint", addr)
+		logger.Info().Msg("stopping a pprof endpoint")
 		_ = server.Shutdown(ctx)
 	}()
 
@@ -153,14 +159,18 @@ func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) erro
 	// - Handles ping requests by broadcasting health checks to all backing services
 	// - Tests connectivity to all configured data nodes
 	go func() {
+		// Create a context-specific logger to avoid concurrent access issues
+		logger := rel.logger.With("service", "ping", "endpoint", addr)
 		if err := http.Serve(ln, rel.newPingHandlerFn(ctx)); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			rel.logger.Error().Err(err).Msg("ping server unexpectedly closed")
+			logger.Error().Err(err).Msg("ping server unexpectedly closed")
 		}
 	}()
 
 	go func() {
 		<-ctx.Done() // A message a receive when we stop the relayminer.
-		rel.logger.Info().Str("endpoint", addr).Msg("stopping ping server")
+		// Create a context-specific logger to avoid concurrent access issues
+		logger := rel.logger.With("service", "ping", "endpoint", addr)
+		logger.Info().Msg("stopping ping server")
 		_ = ln.Close()
 	}()
 
@@ -169,7 +179,12 @@ func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) erro
 
 func (rel *relayMiner) newPingHandlerFn(ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		rel.logger.Debug().Msg("pinging relay servers...")
+		// Create a request-specific logger to avoid concurrent access issues
+		logger := rel.logger.With(
+			"handler", "ping",
+			"remote_addr", req.RemoteAddr,
+		)
+		logger.Debug().Msg("pinging relay servers...")
 
 		if err := rel.relayerProxy.PingAll(ctx); err != nil {
 			var urlError *url.Error

@@ -20,6 +20,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -34,9 +35,10 @@ type tokenLogicModuleTestSuite struct {
 	app      *apptypes.Application
 	supplier *sharedtypes.Supplier
 
-	proposerConsAddr cosmostypes.ConsAddress
-	sourceOwnerBech32,
-	daoRewardAddr string
+	proposerConsAddr        string
+	proposerValOperatorAddr string
+	sourceOwnerAddr         string
+	daoRewardAddr           string
 
 	expectedSettledResults,
 	expectedExpiredResults tlm.ClaimSettlementResults
@@ -67,26 +69,27 @@ func TestTLMProcessorTestSuite(t *testing.T) {
 // SetupTest generates and sets all rewardee addresses on the suite, and
 // set a service, application, and supplier on the suite.
 func (s *tokenLogicModuleTestSuite) SetupTest() {
-	s.daoRewardAddr = sample.AccAddress()
-	s.sourceOwnerBech32 = sample.AccAddress()
-	s.proposerConsAddr = sample.ConsAddress()
+	s.daoRewardAddr = sample.AccAddressBech32()
+	s.sourceOwnerAddr = sample.AccAddressBech32()
+	s.proposerConsAddr = sample.ConsAddressBech32()
+	s.proposerValOperatorAddr = sample.ValOperatorAddressBech32()
 
 	s.service = &sharedtypes.Service{
 		Id:                   "svc1",
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         s.sourceOwnerBech32,
+		OwnerAddress:         s.sourceOwnerAddr,
 	}
 
 	appStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, math.MaxInt64)
 	s.app = &apptypes.Application{
-		Address: sample.AccAddress(),
+		Address: sample.AccAddressBech32(),
 		Stake:   &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{ServiceId: s.service.GetId()},
 		},
 	}
 
-	supplierBech32 := sample.AccAddress()
+	supplierBech32 := sample.AccAddressBech32()
 	services := []*sharedtypes.SupplierServiceConfig{
 		{
 			ServiceId: s.service.GetId(),
@@ -157,7 +160,7 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 			RootHash:                proof.SmstRootWithSumAndCount(1000, 1000),
 		}
 
-		keepers.ProofKeeper.UpsertClaim(s.ctx, claim)
+		keepers.UpsertClaim(s.ctx, claim)
 	}
 }
 
@@ -187,7 +190,10 @@ func (s *tokenLogicModuleTestSuite) setBlockHeight(height int64) {
 // assertNoPendingClaims asserts that no pending claims exist.
 func (s *tokenLogicModuleTestSuite) assertNoPendingClaims(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
-	pendingClaimsIterator := s.keepers.Keeper.GetExpiringClaimsIterator(sdkCtx)
+	logger := s.keepers.Logger().With("method", "assertNoPendingClaims")
+	settlementContext := tokenomicskeeper.NewSettlementContext(sdkCtx, s.keepers.Keeper, logger)
+	blockHeight := sdkCtx.BlockHeight()
+	pendingClaimsIterator := s.keepers.GetExpiringClaimsIterator(sdkCtx, settlementContext, blockHeight)
 	defer pendingClaimsIterator.Close()
 
 	numExpiringClaims := 0

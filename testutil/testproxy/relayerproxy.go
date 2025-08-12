@@ -79,11 +79,30 @@ const blockHeight = 1
 // blockHashBz is the []byte representation of the block hash used in the tests.
 var blockHashBz []byte
 
+// testDelays stores artificial delays for specific service IDs for timeout testing
+var testDelays = make(map[string]time.Duration)
+
 func init() {
 	var err error
 	if blockHashBz, err = hex.DecodeString("1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"); err != nil {
 		panic(fmt.Errorf("error while trying to decode block hash: %w", err))
 	}
+}
+
+// SetTestDelay sets an artificial delay for a specific service ID (for timeout testing)
+func SetTestDelay(serviceId string, delay time.Duration) {
+	testDelays[serviceId] = delay
+}
+
+// ClearTestDelays clears all artificial delays
+func ClearTestDelays() {
+	testDelays = make(map[string]time.Duration)
+}
+
+// getTestDelay returns the delay for a service ID, if any
+func getTestDelay(serviceId string) (time.Duration, bool) {
+	delay, exists := testDelays[serviceId]
+	return delay, exists
 }
 
 // NewRelayerProxyTestBehavior creates a TestBehavior with the provided set of
@@ -213,6 +232,10 @@ $ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
 
 				server := &http.Server{
 					Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						// Apply configured test delay for service ID if present.
+						if delay, hasDelay := getTestDelay(serviceId); hasDelay {
+							time.Sleep(delay)
+						}
 						sendJSONRPCResponse(test.t, w)
 					}),
 				}
@@ -227,7 +250,11 @@ $ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
 				go func() {
 					<-test.ctx.Done()
 					err := server.Shutdown(test.ctx)
-					require.NoError(test.t, err)
+					if err != nil {
+						require.ErrorIs(test.t, err, context.Canceled)
+					} else {
+						require.NoError(test.t, err)
+					}
 				}()
 
 				test.proxyServersMap[serviceId] = server

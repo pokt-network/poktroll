@@ -4,109 +4,18 @@ load("ext://configmap", "configmap_create")
 load("ext://secret", "secret_create_generic")
 load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
+load("./tiltfiles/config.Tiltfile", "read_configs")
+load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
-
-
-# merge_dicts updates the base dictionary with the updates dictionary.
-def merge_dicts(base, updates):
-    for k, v in updates.items():
-        if k in base and type(base[k]) == "dict" and type(v) == "dict":
-            # Assume nested dict and merge
-            for vk, vv in v.items():
-                base[k][vk] = vv
-        else:
-            # Replace or set the value
-            base[k] = v
 
 # TODO_IMPROVE: Non urgent requirement, but we need to find a way to ensure that the Tiltfile works (e.g. through config checks)
 # so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
 # environment is not broken for future engineers.
 
-# Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
-localnet_config_path = "localnet_config.yaml"
-localnet_config_defaults = {
-    "hot-reloading": True,
-    "validator": {
-        "cleanupBeforeEachStart": True,
-        "logs": {
-            "level": "info",
-            "format": "json",
-        },
-        "delve": {"enabled": False},
-    },
-    "observability": {
-        "enabled": True,
-        "grafana": {"defaultDashboardsEnabled": False},
-    },
-    "relayminers": {
-        "count": 1,
-        "delve": {"enabled": False},
-        "logs": {
-            "level": "debug",
-        },
-    },
-    "ollama": {
-        "enabled": False,
-        "model": "qwen:0.5b",
-    },
-    "rest": {
-        "enabled": True,
-    },
-    "path_gateways": {
-        "count": 1,
-    },
-
-    #############
-    # NOTE: git submodule usage was explicitly avoided for the repositories below
-    # to reduce environment complexity.
-    #############
-
-    # By default, we use the `helm_repo` function below to point to the remote repository
-    # but can update it to the locally cloned repo for testing & development
-    "helm_chart_local_repo": {
-        "enabled": False,
-        "path": os.path.join("..", "helm-charts")
-    },
-
-    # By default, we use the `helm_repo` function below to point to the remote repository
-    # but can update it to the locally cloned repo for testing & development
-    "grove_helm_chart_local_repo": {
-        "enabled": False,
-        "path": os.path.join("..", "grove-helm-charts")
-    },
-
-    # By default, we use a pre-built PATH image, but can update it to use a local
-    # repo instead.
-    "path_local_repo": {
-        "enabled": False,
-        "path": os.path.join("..", "path")
-    },
-
-    "indexer": {
-        "repo_path": os.path.join("..", "pocketdex"),
-        "enabled": False,
-        "clone_if_not_present": False,
-    },
-
-    "faucet": {
-        "enabled": True,
-    }
-}
-
-# Initial empty config
-localnet_config = {}
-# Load the existing config file, if it exists, or use an empty dict as fallback
-localnet_config_file = read_yaml(localnet_config_path, default={})
-# Merge defaults into the localnet_config first
-merge_dicts(localnet_config, localnet_config_defaults)
-# Then merge file contents over defaults
-merge_dicts(localnet_config, localnet_config_file)
-# Check if there are differences or if the file doesn't exist
-if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_config_path)):
-    print("Updating " + localnet_config_path + " with defaults")
-    local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
+# Read configs
+localnet_config = read_configs()
 
 # Configure helm chart reference.
 # If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
@@ -298,6 +207,8 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
             "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
+            # Default queryCaching to false if not set in localnet_config
+            "--set=queryCaching=" + str(localnet_config["relayminers"].get("queryCaching", False)),
             "--set=image.repository=pocketd",
     ]
 
@@ -313,11 +224,13 @@ for x in range(localnet_config["relayminers"]["count"]):
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvil")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.json_rpc.backend_url=http://anvil:8547/")
     supplier_number = supplier_number + 1
 
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvilws")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
-    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=ws://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.websocket.backend_url=ws://anvil:8547/")
     supplier_number = supplier_number + 1
 
     if localnet_config["rest"]["enabled"]:
@@ -508,9 +421,6 @@ if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
-
-### Pocketdex Shannon Indexer
-load("./tiltfiles/pocketdex.tilt", "check_and_load_pocketdex")
 
 # Check if sibling pocketdex repo exists.
 # If it does, load the pocketdex.tilt file from the sibling repo.

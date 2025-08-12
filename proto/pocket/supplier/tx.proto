@@ -52,7 +52,8 @@ message MsgStakeSupplier {
 }
 
 message MsgStakeSupplierResponse {
-  pocket.shared.Supplier supplier = 1;
+  // pocket.shared.Supplier supplier = 1;
+  reserved 1;
 }
 
 message MsgUnstakeSupplier {
@@ -62,7 +63,8 @@ message MsgUnstakeSupplier {
 }
 
 message MsgUnstakeSupplierResponse {
-  pocket.shared.Supplier supplier = 1;
+  // pocket.shared.Supplier supplier = 1;
+  reserved 1;
 }
 
 // MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
@@ -79,6 +81,7 @@ message MsgUpdateParam {
 }
 
 message MsgUpdateParamResponse {
-  Params params = 1;
+  // Params params = 1;
+  reserved 1;
 }
 

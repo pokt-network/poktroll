@@ -29,6 +29,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/hashicorp/go-version"
 	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/either"
@@ -186,11 +187,16 @@ type BlockClient interface {
 	// CommittedBlocksSequence returns a BlockObservable that emits the
 	// latest blocks that have been committed to the chain.
 	CommittedBlocksSequence(context.Context) BlockReplayObservable
+
 	// LastBlock returns the latest block that has been committed onchain.
 	LastBlock(context.Context) Block
+
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.
 	Close()
+
+	// GetChainVersion returns the current chain version.
+	GetChainVersion() *version.Version
 }
 
 // TxClientOption defines a function type that modifies the TxClient.
@@ -301,7 +307,7 @@ type ProofQueryClient interface {
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
 
-	// GetClaim queries the chain for the full claim associatd with the (supplier, sessionId).
+	// GetClaim queries the chain for the full claim associated with the (supplier, sessionId).
 	GetClaim(ctx context.Context, supplierOperatorAddress string, sessionId string) (Claim, error)
 }
 
@@ -310,6 +316,7 @@ type ProofQueryClient interface {
 type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
+	// GetServiceRelayDifficulty queries the chain for the relay difficulty of the service provided
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (*servicetypes.Params, error)

@@ -3,15 +3,14 @@ package tokenomics
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module
-// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
+// TODO_TECHDEBT: Move to autocli.go
 func (am AppModule) GetQueryCmd() *cobra.Command {
 	// Group tokenomics queries under a subcommand
 	cmd := &cobra.Command{

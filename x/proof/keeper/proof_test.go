@@ -30,9 +30,9 @@ func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Pro
 
 	for i := range proofs {
 		proofs[i] = types.Proof{
-			SupplierOperatorAddress: sample.AccAddress(),
+			SupplierOperatorAddress: sample.AccAddressBech32(),
 			SessionHeader: &sessiontypes.SessionHeader{
-				ApplicationAddress:      sample.AccAddress(),
+				ApplicationAddress:      sample.AccAddressBech32(),
 				ServiceId:               testServiceId,
 				SessionId:               fmt.Sprintf("session-%d", i),
 				SessionStartBlockHeight: 1,

@@ -210,7 +210,7 @@ func (srv *Server) SendDenom(
 	)
 
 	txResponse, eitherErr := srv.config.txClient.SignAndBroadcast(ctx, sendMsg)
-	err, errCh := eitherErr.SyncOrAsyncError()
+	errCh, err := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return nil, err
 	}

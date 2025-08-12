@@ -29,15 +29,15 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
-					Address:            sample.AccAddress(),
+					Address:            sample.AccAddressBech32(),
 					RevSharePercentage: 100,
 				},
 			},
 		},
 	}
 
-	ownerAddress := sample.AccAddress()
-	operatorAddress := sample.AccAddress()
+	ownerAddress := sample.AccAddressBech32()
+	operatorAddress := sample.AccAddressBech32()
 
 	tests := []struct {
 		desc        string
@@ -98,7 +98,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid signer is neither the operator nor the owner - with service configs",
 			msg: MsgStakeSupplier{
-				Signer:          sample.AccAddress(),
+				Signer:          sample.AccAddressBech32(),
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -258,7 +258,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -274,7 +274,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -341,7 +341,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -369,7 +369,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -397,7 +397,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -425,7 +425,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},
@@ -453,7 +453,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
-								Address:            sample.AccAddress(),
+								Address:            sample.AccAddressBech32(),
 								RevSharePercentage: 100,
 							},
 						},

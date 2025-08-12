@@ -17,7 +17,6 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pokt-network/smt"
@@ -108,7 +107,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
 	// We're using StakeApplication but it could have been any other message type.
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -117,7 +116,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Sign and broadcast the message.
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, errCh := eitherErr.SyncOrAsyncError()
+	errCh, err := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
 	// Construct the expected RPC response from the expected transaction bytes.
@@ -257,7 +256,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	}
 
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, _ = eitherErr.SyncOrAsyncError()
+	_, err = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrInvalidMsg)
 
 	time.Sleep(10 * time.Millisecond)
@@ -323,7 +322,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -332,7 +331,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 
 	// Sign and broadcast the message.
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, _ = eitherErr.SyncOrAsyncError()
+	_, err = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrCheckTx)
 	require.ErrorContains(t, err, expectedErrMsg)
 }
@@ -396,7 +395,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -405,7 +404,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 
 	// Sign and broadcast the message in a transaction.
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, errCh := eitherErr.SyncOrAsyncError()
+	errCh, err := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
 	for i := int64(0); i < timeoutHeight; i++ {
@@ -499,7 +498,7 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
 	// We're using StakeApplication but it could have been any other message type.
-	appStake := types.NewCoin(pocket.DenomuPOKT, math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingAddr.String(), // Providing address to avoid panic from #GetSigners().
 		Stake:    &appStake,

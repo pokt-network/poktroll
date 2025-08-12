@@ -121,7 +121,31 @@ var allUpgrades = []upgrades.Upgrade{
 	// - Session parameter updates (numSuppliersPerSession increased to 50)
 	// - CLI improvements (count flag for relay command)
 	// - Telegram bot exchange list updates
-	upgrades.Upgrade_0_1_24,
+	// upgrades.Upgrade_0_1_24,
+
+	// v0.1.25 - upgrade to:
+	// - Reduced SMST / onchain proof size by persisting payload-dehydrated relay responses
+	// - Reduced event related state bloat by removing unnecessary settlement results from events
+	// - Updated Morse account recovery allowlist
+	// upgrades.Upgrade_0_1_25,
+
+	// v0.1.26 - upgrade to:
+	// - Implement backward compatible relay response signature verification to enable smooth protocol upgrades
+	// upgrades.Upgrade_0_1_26,
+
+	// v0.1.27 - upgrade to:
+	// - Updates to the Morse account recovery allowlist
+	// - Distributed Settlement TLM: enable_distribute_settlement parameter
+	// - Reward distribution for the mint=burn TLM
+	// - Updates to the Morse account recovery allowlist
+	// - Sets all IBC parameters to enable IBC support
+	// upgrades.Upgrade_0_1_27,
+
+	// v0.1.28 - upgrade to:
+	// - Shared module param update: increased `ComputeUnitsPerRelayMax`.
+	// - Tokenomics updates: validator proper decoding fix; updated DAO address in mint_equals_burn_claim_distribution;
+	// - Recovery: updated Morse account recovery allowlist (multiple iterations, incl. 8 Aug 2025 update).
+	upgrades.Upgrade_0_1_28,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

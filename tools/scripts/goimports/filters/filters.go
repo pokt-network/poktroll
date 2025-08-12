@@ -46,10 +46,6 @@ func PathMatchesTestGo(path string) (bool, error) {
 	return strings.HasSuffix(path, "_test.go"), nil
 }
 
-func PathMatchesPulsarGo(path string) (bool, error) {
-	return strings.HasSuffix(path, ".pulsar.go"), nil
-}
-
 // ContentMatchesEmptyImportScaffold matches files that can't be goimport'd due
 // to ignite incompatibility.
 func ContentMatchesEmptyImportScaffold(path string) (bool, error) {

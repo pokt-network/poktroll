@@ -5,15 +5,22 @@
         "@type": "/pocket.tokenomics.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
+          "dao_reward_address": "pokt1dr5jtqaaz4wk8wevl33e7vkxsjlphljnjhyq2l",
           "mint_allocation_percentages": {
             "dao": 0.1,
-            "proposer": 0.2,
-            "supplier": 0.6,
+            "proposer": 0,
+            "supplier": 0.8,
             "source_owner": 0.1,
             "application": 0
           },
-          "dao_reward_address": "pokt1dd5rkaf8m9tm466mr2rytphv46jqx638a5m5er",
-          "global_inflation_per_claim": 0.000001
+          "global_inflation_per_claim": 0.000001,
+          "mint_equals_burn_claim_distribution": {
+            "dao": 0.1,
+            "proposer": 0,
+            "supplier": 0.8,
+            "source_owner": 0.1,
+            "application": 0
+          }
         }
       }
     ]

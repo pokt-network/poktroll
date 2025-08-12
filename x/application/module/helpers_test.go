@@ -19,10 +19,22 @@ var _ = strconv.IntSize
 func networkWithApplicationObjects(t *testing.T, n int) (*network.Network, []types.Application) {
 	t.Helper()
 
+	// Configure the testing network
 	cfg := network.DefaultConfig()
 	appGenesisState := network.DefaultApplicationModuleGenesisState(t, n)
 	buf, err := cfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 	cfg.GenesisState[types.ModuleName] = buf
-	return network.New(t, cfg), appGenesisState.ApplicationList
+
+	// Start the network
+	net := network.New(t, cfg)
+
+	// Wait for the network to be fully initialized to avoid race conditions
+	// with consensus reactor goroutines
+	require.NoError(t, net.WaitForNextBlock())
+
+	// Additional wait to ensure all consensus components are fully initialized
+	require.NoError(t, net.WaitForNextBlock())
+
+	return net, appGenesisState.ApplicationList
 }

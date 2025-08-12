@@ -3,6 +3,7 @@ package supplier_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -50,6 +51,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%t", flags.FlagUnordered, true),
+		fmt.Sprintf("--%s=%s", flags.TimeoutDuration, 5*time.Second),
 	}
 
 	defaultConfig := fmt.Sprintf(`
@@ -338,7 +341,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				owner_address: %s
 				operator_address: %s
 				stake_amount: 1000upokt
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: invalid services (empty string)",
@@ -349,7 +352,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				operator_address: %s
 				stake_amount: 1000upokt
 				services:
-			`, ownerAccount.Address.String(), sample.AccAddress()),
+			`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: invalid URL",
@@ -364,7 +367,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: bad_url
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: missing URLs",
@@ -377,7 +380,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				  - service_id: svc2
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: missing service IDs",
@@ -394,7 +397,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				  - endpoints:
 				    - publicly_exposed_url: localhost:8082
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: missing rpc type",
@@ -408,7 +411,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				  - service_id: svc1
 				    endpoints:
 				    - publicly_exposed_url: localhost:8082
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 	}
 

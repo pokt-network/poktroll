@@ -94,7 +94,5 @@ func (k msgServer) UnstakeApplication(
 	}
 
 	isSuccessful = true
-	return &apptypes.MsgUnstakeApplicationResponse{
-		Application: &foundApp,
-	}, nil
+	return &apptypes.MsgUnstakeApplicationResponse{}, nil
 }
