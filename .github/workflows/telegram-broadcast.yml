@@ -29,4 +29,4 @@ jobs:
     with:
       message: ${{ github.event.inputs.message }}
       parse_mode: "MarkdownV2"
-      test_mode: ${{ github.event.inputs.test_mode }}
+      test_mode: "${{ github.event.inputs.test_mode }}"
