@@ -31,7 +31,7 @@ telegram_test_message: ## Test broadcast message from file. Usage: make telegram
 	fi
 	@echo "Sending test message to Telegram testing group...\n"
 	@MSG="$$(cat $(MSG_FILE) | sed -E 's/([][()~`>#+\-=|{}.!_])/\\\1/g')"; \
-	gh workflow run telegram-broadcast.yml -f message="$$MSG" -f test_mode=true --ref="$(shell git rev-parse --abbrev-ref HEAD)";
+	gh workflow run telegram-broadcast.yml -f message="$$MSG" -f test_mode=false --ref="$(shell git rev-parse --abbrev-ref HEAD)";
 	@echo "\nTest message sent. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-broadcast.yml$(RESET)"
 
 # .PHONY: telegram_test_message
