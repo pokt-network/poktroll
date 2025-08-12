@@ -15,8 +15,17 @@ on:
 
 jobs:
   broadcast:
-    uses: ./.github/workflows/telegram-send-message.yml
-    with:
-      message: ${{ inputs.message }}
-      parse_mode: "MarkdownV2"
-      test_mode: ${{ inputs.test_mode }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug raw message
+        run: |
+          echo "=== Debug: Raw message input ==="
+          printf '%s\n' "${{ github.event.inputs.message }}"
+          echo "================================"
+
+      - name: Send Telegram message
+        uses: ./.github/workflows/telegram-send-message.yml
+        with:
+          message: ${{ github.event.inputs.message }}
+          parse_mode: "MarkdownV2"
+          test_mode: ${{ github.event.inputs.test_mode }}

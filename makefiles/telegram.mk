@@ -24,14 +24,25 @@ telegram_release_notify: ## Notify all Telegram groups of the latest release. Us
 	@echo "\nRelease notification initiated. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-notify-release.yml$(RESET)"
 
 .PHONY: telegram_test_message
-telegram_test_message: ## Test broadcast message to testing group only. Usage: make telegram_test_message MSG="Your test message"
-	@if [ -z "$(MSG)" ]; then \
-		echo "Error: MSG parameter is required. Usage: make telegram_test_message MSG=\"Your test message\""; \
+telegram_test_message: ## Test broadcast message from file. Usage: make telegram_test_message MSG_FILE=message.txt
+	@if [ -z "$(MSG_FILE)" ]; then \
+		echo "Error: MSG_FILE parameter is required. Usage: make telegram_test_message MSG_FILE=message.txt"; \
 		exit 1; \
 	fi
 	@echo "Sending test message to Telegram testing group...\n"
-	@gh workflow run telegram-broadcast.yml -f message="$(MSG)" -f test_mode=true
+	@MSG="$$(cat $(MSG_FILE) | sed -E 's/([][()~`>#+\-=|{}.!_])/\\\1/g')"; \
+	gh workflow run telegram-broadcast.yml -f message="$$MSG" -f test_mode=true
 	@echo "\nTest message sent. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-broadcast.yml$(RESET)"
+
+# .PHONY: telegram_test_message
+# telegram_test_message: ## Test broadcast message to testing group only. Usage: make telegram_test_message MSG="Your test message"
+# 	@if [ -z "$(MSG)" ]; then \
+# 		echo "Error: MSG parameter is required. Usage: make telegram_test_message MSG=\"Your test message\""; \
+# 		exit 1; \
+# 	fi
+# 	@echo "Sending test message to Telegram testing group...\n"
+# 	@gh workflow run telegram-broadcast.yml -f message="$(MSG)" -f test_mode=true
+# 	@echo "\nTest message sent. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-broadcast.yml$(RESET)"
 
 .PHONY: telegram_test_release
 telegram_test_release: ## Test release notification to testing group only. Usage: make telegram_test_release [RELEASE_TAG=v0.1.26]

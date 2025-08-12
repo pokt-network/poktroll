@@ -1,0 +1,15 @@
+📢 Upgrade Notice 📢
+
+v0.1.28 is scheduled to go live tomorrow on 09/12/2025 at 9 AM PST at block height 287932.
+
+📌 Looking ahead
+- We'll be reducing upgrade frequency as the network matures.
+- Longer buffer times will be provided before announcements & releases.
+
+💬 Feedback for us
+1. Do you prefer a heads-up before releases, or only post-upgrade notifications?
+2. How much buffer time do you need between notification and upgrade?
+3. Would you like more details on how we're improving network utility?
+4. Anything else we can do to improve this process?
+
+🔗 https://github.com/pokt-network/poktroll/releases/tag/v0.1.28
