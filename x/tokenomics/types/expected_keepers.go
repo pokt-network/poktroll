@@ -139,6 +139,8 @@ type StakingKeeper interface {
 	GetDelegatorDelegations(ctx context.Context, delegator cosmostypes.AccAddress, maxRetrieve uint16) ([]stakingtypes.Delegation, error)
 	// GetValidatorDelegations gets all delegations to a validator
 	GetValidatorDelegations(ctx context.Context, valAddr cosmostypes.ValAddress) ([]stakingtypes.Delegation, error)
+	// GetBondedValidatorsByPower gets all bonded validators sorted by voting power
+	GetBondedValidatorsByPower(ctx context.Context) ([]stakingtypes.Validator, error)
 }
 
 // DistributionKeeper defines the expected interface for the Distribution module.

@@ -264,6 +264,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockBankKeeper.EXPECT().
 		SendCoinsFromModuleToModule(gomock.Any(), apptypes.ModuleName, tokenomicstypes.ModuleName, gomock.Any()).
 		AnyTimes()
+	mockBankKeeper.EXPECT().
+		SendCoinsFromModuleToModule(gomock.Any(), tokenomicstypes.ModuleName, distrtypes.ModuleName, gomock.Any()).
+		AnyTimes()
 
 	// Mock the account keeper
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
@@ -296,6 +299,19 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
 		Return(validator, nil).
+		AnyTimes()
+
+	// Mock GetBondedValidatorsByPower to return a single validator with all bonded tokens
+	validators := []stakingtypes.Validator{
+		{
+			OperatorAddress: proposerValOperatorAddr,
+			Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
+			Status:          stakingtypes.Bonded,
+		},
+	}
+	mockStakingKeeper.EXPECT().
+		GetBondedValidatorsByPower(gomock.Any()).
+		Return(validators, nil).
 		AnyTimes()
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
@@ -613,6 +629,19 @@ func NewTokenomicsModuleKeepers(
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
 		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
+	// Mock GetBondedValidatorsByPower to return a single validator with all bonded tokens
+	validators := []stakingtypes.Validator{
+		{
+			OperatorAddress: proposerValOperatorAddr.String(),
+			Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
+			Status:          stakingtypes.Bonded,
+		},
+	}
+	mockStakingKeeper.EXPECT().
+		GetBondedValidatorsByPower(gomock.Any()).
+		Return(validators, nil).
 		AnyTimes()
 
 	// Mock AllocateTokensToValidator to succeed

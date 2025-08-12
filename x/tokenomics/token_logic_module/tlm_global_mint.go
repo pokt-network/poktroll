@@ -230,17 +230,30 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to service source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
 	}
 
-	// TODO: Consider adding metrics for validator reward distribution
-	// TODO: Add validation for validator existence before allocation
-	// Distribute to block proposer and delegators
+	// Distribute proposer rewards to all validators based on staking weight
 	if !proposerAmount.IsZero() {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-		consAddr := cosmostypes.UnwrapSDKContext(tlmgm.ctx).BlockHeader().ProposerAddress
 
-		// Get validator from consensus address
-		validator, err := tlmgm.tlmCtx.StakingKeeper.GetValidatorByConsAddr(tlmgm.ctx, consAddr)
+		// Get all bonded validators sorted by voting power
+		validators, err := tlmgm.tlmCtx.StakingKeeper.GetBondedValidatorsByPower(tlmgm.ctx)
 		if err != nil {
-			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error getting validator by consensus address: %v", err)
+			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error getting bonded validators: %v", err)
+		}
+
+		if len(validators) == 0 {
+			tlmgm.logger.Warn("no bonded validators found for proposer reward distribution")
+			return nil
+		}
+
+		// Calculate total bonded tokens across all validators
+		totalBondedTokens := math.ZeroInt()
+		for _, validator := range validators {
+			totalBondedTokens = totalBondedTokens.Add(validator.GetBondedTokens())
+		}
+
+		if totalBondedTokens.IsZero() {
+			tlmgm.logger.Warn("total bonded tokens is zero, skipping proposer reward distribution")
+			return nil
 		}
 
 		// Transfer from tokenomics module to distribution module
@@ -251,14 +264,40 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 			Coin:            proposerCoin,
 		})
 
-		// Allocate tokens to validator for distribution to delegators
-		// Convert to DecCoins for distribution module
-		proposerDecCoin := cosmostypes.NewDecCoinsFromCoins(proposerCoin)
-		if err := tlmgm.tlmCtx.DistributionKeeper.AllocateTokensToValidator(tlmgm.ctx, &validator, proposerDecCoin); err != nil {
-			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error allocating tokens to validator: %v", err)
+		// Distribute to each validator proportionally based on their staking weight
+		remainingAmount := proposerAmount
+		for i, validator := range validators {
+			// Calculate validator's share based on staking weight
+			validatorBondedTokens := validator.GetBondedTokens()
+			var validatorShare math.Int
+
+			// For the last validator, allocate any remaining tokens to avoid rounding issues
+			if i == len(validators)-1 {
+				validatorShare = remainingAmount
+			} else {
+				// Calculate proportional share: (validator_tokens / total_tokens) * proposer_amount
+				validatorShare = proposerAmount.Mul(validatorBondedTokens).Quo(totalBondedTokens)
+				remainingAmount = remainingAmount.Sub(validatorShare)
+			}
+
+			if validatorShare.IsZero() {
+				continue
+			}
+
+			// Convert to DecCoins for distribution module
+			validatorCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, validatorShare)
+			validatorDecCoin := cosmostypes.NewDecCoinsFromCoins(validatorCoin)
+
+			// Allocate tokens to validator for distribution to delegators
+			if err := tlmgm.tlmCtx.DistributionKeeper.AllocateTokensToValidator(tlmgm.ctx, &validators[i], validatorDecCoin); err != nil {
+				return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error allocating tokens to validator %s: %v", validator.GetOperator(), err)
+			}
+
+			tlmgm.logger.Debug(fmt.Sprintf("allocated (%v) to validator %s (weight: %s/%s)",
+				validatorCoin, validator.GetOperator(), validatorBondedTokens, totalBondedTokens))
 		}
 
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to validator %s and delegators", proposerCoin, validator.GetOperator()))
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distributed (%v) to %d validators based on staking weight", proposerCoin, len(validators)))
 	}
 
 	// Distribute to DAO
