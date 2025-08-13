@@ -53,7 +53,7 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 	// Validate the stake, if present.
 	if msg.Stake != nil {
 		if err := msg.ValidateStake(); err != nil {
-			return ErrSupplierInvalidStake.Wrapf(err.Error())
+			return ErrSupplierInvalidStake.Wrap(err.Error())
 		}
 	}
 

@@ -170,7 +170,7 @@ func TestMsgServer_StakeSupplier_FailWithInvalidStake(t *testing.T) {
 		_, err := srv.StakeSupplier(ctx, stakeMsg)
 		require.EqualError(t, err, status.Error(
 			codes.InvalidArgument,
-			suppliertypes.ErrSupplierInvalidStake.Wrap("nil supplier stake").Error(),
+			suppliertypes.ErrSupplierInvalidStake.Wrap("when staking a new supplier, the stake amount MUST be non-nil").Error(),
 		).Error())
 	})
 
@@ -184,7 +184,7 @@ func TestMsgServer_StakeSupplier_FailWithInvalidStake(t *testing.T) {
 		_, err := srv.StakeSupplier(ctx, stakeMsg)
 		require.EqualError(t, err, status.Error(
 			codes.InvalidArgument,
-			suppliertypes.ErrSupplierInvalidStake.Wrapf("invalid stake amount for supplier: %s <= 0", zeroStake).Error(),
+			suppliertypes.ErrSupplierInvalidStake.Wrapf("invalid coin amount: %s <= 0", zeroStake).Error(),
 		).Error())
 	})
 }
@@ -727,7 +727,7 @@ func TestMsgServer_StakeSupplier_ServicesOnly(t *testing.T) {
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.EqualError(t, err, status.Error(
 		codes.InvalidArgument,
-		suppliertypes.ErrSupplierInvalidStake.Wrap("nil supplier stake").Error(),
+		suppliertypes.ErrSupplierInvalidStake.Wrap("when staking a new supplier, the stake amount MUST be non-nil").Error(),
 	).Error())
 
 	// Reset the stake msg with a non-zero stake amount and signed by the owner.
