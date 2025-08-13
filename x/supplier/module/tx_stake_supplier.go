@@ -41,7 +41,6 @@ func CmdStakeSupplier() *cobra.Command {
 		Long: `Stake a supplier or update supplier configuration using the specified configuration file.
 This command supports flexible staking operations:
 
-• Initial staking: Requires TODO_IN_THIS_PR.
 • Stake-only updates: Update stake amount without changing service configurations (--stake-only)
 • Service configuration updates: Update services without changing stake (--services-only)
 
@@ -58,9 +57,7 @@ https://dev.poktroll.com/operate/configs/supplier_staking_config`,
   $ pocketd tx supplier stake-supplier --config stake_config.yaml --from $(OWNER_ADDRESS)
 
   # Update only the stake amount by Owner: Services section must be empty
-  $ pocketd tx supplier stake-supplier --config stake_config.yaml --stake-only --from $(OWNER_ADDRESS)
-
-  TODO_IN_THIS_PR: Add more examples`,
+  $ pocketd tx supplier stake-supplier --config stake_config.yaml --stake-only --from $(OWNER_ADDRESS)`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
