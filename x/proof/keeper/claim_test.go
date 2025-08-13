@@ -23,7 +23,7 @@ func createNClaims(keeper keeper.Keeper, ctx context.Context, n int) []types.Cla
 	claims := make([]types.Claim, n)
 
 	for i := range claims {
-		claims[i].SupplierOperatorAddress = sample.AccAddress()
+		claims[i].SupplierOperatorAddress = sample.AccAddressBech32()
 		claims[i].SessionHeader = &sessiontypes.SessionHeader{
 			SessionId:             fmt.Sprintf("session-%d", i),
 			SessionEndBlockHeight: int64(i),
@@ -46,7 +46,7 @@ func createNClaimsWithSessionEndHeight(
 	claims := make([]types.Claim, n)
 
 	for i := range claims {
-		claims[i].SupplierOperatorAddress = sample.AccAddress()
+		claims[i].SupplierOperatorAddress = sample.AccAddressBech32()
 		claims[i].SessionHeader = &sessiontypes.SessionHeader{
 			SessionId:             fmt.Sprintf("session-%d", i),
 			SessionEndBlockHeight: sessionEndHeight,

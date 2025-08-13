@@ -104,7 +104,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
-		Address:        sample.AccAddress(),
+		Address:        sample.AccAddressBech32(),
 		Stake:          &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
@@ -113,7 +113,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	// Prepare the supplier revenue shares
 	supplierRevShares := make([]*sharedtypes.ServiceRevenueShare, len(supplierRevShareRatios))
 	for i := range supplierRevShares {
-		shareHolderAddress := sample.AccAddress()
+		shareHolderAddress := sample.AccAddressBech32()
 		supplierRevShares[i] = &sharedtypes.ServiceRevenueShare{
 			Address:            shareHolderAddress,
 			RevSharePercentage: supplierRevShareRatios[i],
@@ -288,7 +288,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
-		Address:        sample.AccAddress(),
+		Address:        sample.AccAddressBech32(),
 		Stake:          &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
@@ -297,7 +297,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	// Prepare the supplier revenue shares
 	supplierRevShares := make([]*sharedtypes.ServiceRevenueShare, len(supplierRevShareRatios))
 	for i := range supplierRevShares {
-		shareHolderAddress := sample.AccAddress()
+		shareHolderAddress := sample.AccAddressBech32()
 		supplierRevShares[i] = &sharedtypes.ServiceRevenueShare{
 			Address:            shareHolderAddress,
 			RevSharePercentage: supplierRevShareRatios[i],
@@ -440,7 +440,9 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		globalComputeUnitCostGranularity,
 	)
 	numTokensClaimedInt := cosmosmath.NewIntFromUint64(uint64(numTokensClaimed))
-	proposerConsAddr := sample.ConsAddressBech32()
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+	proposerAccAddr := cosmostypes.AccAddress(proposerValOperatorAddr).String()
 	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
@@ -448,7 +450,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Prepare the keepers
 	opts := []testkeeper.TokenomicsModuleKeepersOptFn{
 		testkeeper.WithService(*service),
-		testkeeper.WithProposerAddr(proposerConsAddr),
+		testkeeper.WithBlockProposer(proposerConsAddr, proposerValOperatorAddr),
 		testkeeper.WithTokenLogicModules(tokenLogicModules),
 		testkeeper.WithDefaultModuleBalances(),
 	}
@@ -470,7 +472,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
-		Address:        sample.AccAddress(),
+		Address:        sample.AccAddressBech32(),
 		Stake:          &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
@@ -479,7 +481,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Prepare the supplier revenue shares
 	supplierRevShares := make([]*sharedtypes.ServiceRevenueShare, len(supplierRevShareRatios))
 	for i := range supplierRevShares {
-		shareHolderAddress := sample.AccAddress()
+		shareHolderAddress := sample.AccAddressBech32()
 		supplierRevShares[i] = &sharedtypes.ServiceRevenueShare{
 			Address:            shareHolderAddress,
 			RevSharePercentage: supplierRevShareRatios[i],
@@ -509,11 +511,10 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Prepare addresses
 	appAddress := app.Address
-	proposerAddress := sample.AccAddressFromConsBech32(proposerConsAddr)
 
 	// Determine balances before inflation
 	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddress.String())
-	propBalanceBefore := getBalance(t, ctx, keepers, proposerAddress)
+	propBalanceBefore := getBalance(t, ctx, keepers, proposerAccAddr)
 	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
 	supplierShareholderBalancesBeforeSettlementMap := make(map[string]*cosmostypes.Coin, len(supplierRevShares))
@@ -546,7 +547,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Determine balances after inflation
 	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddress.String())
-	propBalanceAfter := getBalance(t, ctx, keepers, proposerAddress)
+	propBalanceAfter := getBalance(t, ctx, keepers, proposerAccAddr)
 	serviceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceAfter := getBalance(t, ctx, keepers, appAddress)
 	supplierShareholderBalancesAfter := make(map[string]*cosmostypes.Coin, len(supplierRevShares))
@@ -659,7 +660,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	claim := prooftypes.Claim{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress:      sample.AccAddress(), // Random address
+			ApplicationAddress:      sample.AccAddressBech32(), // Random address
 			ServiceId:               service.Id,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
@@ -927,7 +928,7 @@ func prepareTestService(serviceComputeUnitsPerRelay uint64) *sharedtypes.Service
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: serviceComputeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 }
 
@@ -935,10 +936,10 @@ func getBalance(
 	t *testing.T,
 	ctx context.Context,
 	bankKeeper tokenomicstypes.BankKeeper,
-	accountAddr string,
+	addr string,
 ) *cosmostypes.Coin {
 	appBalanceRes, err := bankKeeper.Balance(ctx, &banktypes.QueryBalanceRequest{
-		Address: accountAddr,
+		Address: addr,
 		Denom:   "upokt",
 	})
 	require.NoError(t, err)
@@ -1011,10 +1012,15 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	// Setup test service
 	testService := prepareTestService(testServiceComputeUnitsPerRelay)
 
+	// Create proposer addresses for testing
+	testProposerConsAddr := sample.ConsAddress()
+	testProposerValOperAddr := sample.ValOperatorAddress()
+
 	// Initialize blockchain keepers and context
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
 		cosmoslog.NewNopLogger(),
 		testkeeper.WithService(*testService),
+		testkeeper.WithBlockProposer(testProposerConsAddr, testProposerValOperAddr),
 		testkeeper.WithDefaultModuleBalances(),
 	)
 	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
@@ -1053,7 +1059,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 
 	// Create test application
 	testApplicationStake := cosmostypes.NewCoin(pocket.DenomuPOKT, testApplicationInitialStake)
-	testApplicationAddress := sample.AccAddress()
+	testApplicationAddress := sample.AccAddressBech32()
 	testApplication := apptypes.Application{
 		Address:        testApplicationAddress,
 		Stake:          &testApplicationStake,
@@ -1069,7 +1075,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	}
 	supplierRevenueShareholders := make([]*sharedtypes.ServiceRevenueShare, len(testSupplierRevSharePercentages))
 	for i := range supplierRevenueShareholders {
-		shareholderAddress := sample.AccAddress()
+		shareholderAddress := sample.AccAddressBech32()
 		supplierRevenueShareholders[i] = &sharedtypes.ServiceRevenueShare{
 			Address:            shareholderAddress,
 			RevSharePercentage: testSupplierRevSharePercentages[i],
@@ -1098,8 +1104,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 	keepers.SetAndIndexDehydratedSupplier(ctx, testSupplier)
 
 	// Get addresses for balance verification
-	blockProposerAddress := cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress
-	blockProposerAccountAddress := cosmostypes.AccAddress(blockProposerAddress).String()
+	// Convert the validator operator address to an account address for balance checks
+	blockProposerAccountAddress := cosmostypes.AccAddress(testProposerValOperAddr).String()
 	daoRewardAddress := tokenomicsParams.GetDaoRewardAddress()
 	serviceSourceOwnerAddress := testService.OwnerAddress
 

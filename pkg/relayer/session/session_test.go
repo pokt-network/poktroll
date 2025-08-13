@@ -69,7 +69,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 			SessionId:               "sessionId",
 		},
 	}
-	supplierOperatorAddress := sample.AccAddress()
+	supplierOperatorAddress := sample.AccAddressBech32()
 	// Set the supplier operator balance to be able to submit the expected number of proofs.
 	feePerProof := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
 	gasCost := session.ClaimAndProofGasCost.Amount.Int64()
@@ -204,7 +204,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	ctrl := gomock.NewController(t)
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
-	supplierOperatorAddress := sample.AccAddress()
+	supplierOperatorAddress := sample.AccAddressBech32()
 
 	proofSubmissionFee := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
 	claimAndProofGasCost := session.ClaimAndProofGasCost.Amount.Int64()
