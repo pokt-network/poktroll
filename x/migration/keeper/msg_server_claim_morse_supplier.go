@@ -293,7 +293,7 @@ func (k msgServer) ClaimMorseSupplier(
 		shannonSigningAddress.String(),
 		shannonOwnerAddr.String(),
 		shannonOperatorAddr.String(),
-		postClaimSupplierStake,
+		&postClaimSupplierStake,
 		msg.Services,
 	)
 

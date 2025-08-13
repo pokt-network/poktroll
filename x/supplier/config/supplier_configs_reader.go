@@ -43,7 +43,7 @@ type YAMLServiceEndpoint struct {
 type SupplierStakeConfig struct {
 	OwnerAddress    string
 	OperatorAddress string
-	StakeAmount     sdk.Coin
+	StakeAmount     *sdk.Coin
 	Services        []*sharedtypes.SupplierServiceConfig
 }
 
@@ -84,7 +84,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 	return &SupplierStakeConfig{
 		OwnerAddress:    stakeConfig.OwnerAddress,
 		OperatorAddress: stakeConfig.OperatorAddress,
-		StakeAmount:     *stakeAmount,
+		StakeAmount:     stakeAmount,
 		Services:        supplierServiceConfigs,
 	}, nil
 }
@@ -195,15 +195,17 @@ func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeAddresses(logger pol
 	return nil
 }
 
-// ParseAndValidateStakeAmount validates that the configured stake amount is non-zero
-// and has the upokt denomination.
+// ParseAndValidateStakeAmount validates that the configured stake amount has a
+// non-zero amount and has the upokt denomination, if present.
 //
 // Returns:
-// • The parsed stake amount
+// • The parsed stake amount, if stake amount is present and non-zero
+// • nil, nil if stake amount is not present
+// • nil, Error if stake amount is zero or has an invalid denom
 func (yamlStakeConfig *YAMLStakeConfig) ParseAndValidateStakeAmount() (*sdk.Coin, error) {
 	// Validate the stake amount
 	if len(yamlStakeConfig.StakeAmount) == 0 {
-		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be empty")
+		return nil, nil
 	}
 
 	// Retrieve the stake amount from the config
@@ -257,7 +259,7 @@ func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeDefaultRevShare() (m
 }
 
 // ValidateAndParseServiceConfigs performs the following:
-//   - Validate that at least one service is configured
+//   - Validate that all services present are configured
 //   - Validate the configured service IDs
 //   - Parse the configured endpoints
 //   - Validates at least one endpoint is configured for each service
@@ -268,7 +270,7 @@ func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeDefaultRevShare() (m
 func (stakeConfig *YAMLStakeConfig) ValidateAndParseServiceConfigs(defaultRevSharePercent map[string]uint64) ([]*sharedtypes.SupplierServiceConfig, error) {
 	// Validate at least one service is specified
 	if len(stakeConfig.Services) == 0 {
-		return nil, ErrSupplierConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
+		return nil, nil
 	}
 
 	// Prepare the supplierServiceConfigs
