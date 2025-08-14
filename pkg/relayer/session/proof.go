@@ -255,7 +255,8 @@ func (rs *relayerSessionsManager) proveClaims(
 	logger := rs.logger.With("method", "proveClaims")
 	logger.Info().Msgf("🔍 Analyzing %d session trees to determine proof requirements", len(sessionTrees))
 
-	proofRequirementSubPool := rs.mainWorkerPool.NewSubpool(workerPoolSize)
+	proofRequirementSubPool := rs.mainWorkerPool.NewSubpool(proofRequirementSubPoolSize)
+
 	failedProofsMu := &sync.Mutex{}
 	successProofsMu := &sync.Mutex{}
 
@@ -297,7 +298,7 @@ func (rs *relayerSessionsManager) proveClaims(
 		len(sessionTreesWithProofRequired), len(sessionTrees)-len(sessionTreesWithProofRequired),
 	)
 
-	proveClaimsSubPool := rs.mainWorkerPool.NewSubpool(workerPoolSize)
+	proveClaimsSubPool := rs.mainWorkerPool.NewSubpool(proveClaimsSubPoolSize)
 
 	// Separate the sessionTrees into those that failed to generate a proof
 	// and those that succeeded, before returning each of them.

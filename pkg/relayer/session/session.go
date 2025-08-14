@@ -27,7 +27,15 @@ import (
 // TODO_TECHDEBT(@red-0ne): Make workerPoolSize configurable via config file.
 // workerPoolSize is the number of workers in the worker pool that processes
 // the sessions in parallel.
-const workerPoolSize = 8
+const mainWorkerPoolSize = 4
+
+const payableProofSubPoolSize = 1
+
+// proofRequirementSubPoolSize & proofRequirementSubPoolSize are serial queues
+const proofRequirementSubPoolSize = 1
+const proveClaimsSubPoolSize = 1
+
+const deleteSessionTreesSubPoolSize = 1
 
 // Ensure the relayerSessionsManager implements the RelayerSessions interface.
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
@@ -126,11 +134,14 @@ func NewRelayerSessions(
 	deps depinject.Config,
 	opts ...relayer.RelayerSessionsManagerOption,
 ) (_ relayer.RelayerSessionsManager, err error) {
+	mainWorkerPool := pond.NewPool(mainWorkerPoolSize)
 	rs := &relayerSessionsManager{
 		sessionsTrees:   make(SessionsTreesMap),
 		sessionsTreesMu: &sync.Mutex{},
-		mainWorkerPool:  pond.NewPool(workerPoolSize),
+		mainWorkerPool:  mainWorkerPool,
 	}
+
+	RegisterPoolMetrics(mainWorkerPool)
 
 	if err = depinject.Inject(
 		deps,
@@ -679,7 +690,7 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 
 	logger = logger.With("supplier_operator_address", sessionTrees[0].GetSupplierOperatorAddress())
 
-	deleteSessionTreesSubPool := rs.mainWorkerPool.NewSubpool(workerPoolSize)
+	deleteSessionTreesSubPool := rs.mainWorkerPool.NewSubpool(deleteSessionTreesSubPoolSize)
 
 	// Iterate over the session trees and delete them from the relayerSessions.
 	numSessionTreesDeleted := 0

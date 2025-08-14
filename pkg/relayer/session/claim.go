@@ -391,8 +391,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		return int(sumB - sumA)
 	})
 
-	payableProofsSubPool := rs.mainWorkerPool.NewSubpool(workerPoolSize)
-
+	payableProofsSubPool := rs.mainWorkerPool.NewSubpool(payableProofSubPoolSize)
 	claimableSessionTrees := []relayer.SessionTree{}
 	claimableSessionTreesMu := sync.Mutex{}
 	for _, st := range sessionTrees {
