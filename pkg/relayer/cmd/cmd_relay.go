@@ -224,7 +224,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		ctx,
 		app.Address,
 		serviceId,
-		blockHeight,
+		// Use block height 0 to get the latest session
+		0,
 	)
 	if err != nil {
 		logger.Error().Err(err).Msgf("❌ Error fetching session for app %s and service ID %s", app.Address, serviceId)
