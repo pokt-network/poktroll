@@ -40,7 +40,6 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 // Ref: https://github.com/pokt-network/cometbft/issues/3
 replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811
 
-
 require (
 	cosmossdk.io/api v0.9.2
 	cosmossdk.io/client/v2 v2.0.0-beta.8
@@ -113,6 +112,7 @@ require (
 )
 
 require (
+	github.com/alitto/pond/v2 v2.5.0
 	github.com/docker/go-units v0.5.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/hashicorp/go-version v1.7.0

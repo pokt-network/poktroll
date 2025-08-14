@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"cosmossdk.io/depinject"
+	"github.com/alitto/pond/v2"
 	"github.com/pokt-network/smt/kvstore/pebble"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -22,6 +23,19 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// TODO_TECHDEBT(@red-0ne): Make workerPoolSize configurable via config file.
+// workerPoolSize is the number of workers in the worker pool that processes
+// the sessions in parallel.
+const mainWorkerPoolSize = 4
+
+const payableProofSubPoolSize = 1
+
+// proofRequirementSubPoolSize & proofRequirementSubPoolSize are serial queues
+const proofRequirementSubPoolSize = 1
+const proveClaimsSubPoolSize = 1
+
+const deleteSessionTreesSubPoolSize = 1
 
 // Ensure the relayerSessionsManager implements the RelayerSessions interface.
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
@@ -96,6 +110,9 @@ type relayerSessionsManager struct {
 	// - These should NOT trigger deletion.
 	// - This ensures session trees are persisted for recovery after restart.
 	stopping atomic.Bool
+
+	// mainWorkerPool is a pool of workers used to process sessions concurrently.
+	mainWorkerPool pond.Pool
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -117,10 +134,14 @@ func NewRelayerSessions(
 	deps depinject.Config,
 	opts ...relayer.RelayerSessionsManagerOption,
 ) (_ relayer.RelayerSessionsManager, err error) {
+	mainWorkerPool := pond.NewPool(mainWorkerPoolSize)
 	rs := &relayerSessionsManager{
 		sessionsTrees:   make(SessionsTreesMap),
 		sessionsTreesMu: &sync.Mutex{},
+		mainWorkerPool:  mainWorkerPool,
 	}
+
+	RegisterPoolMetrics(mainWorkerPool)
 
 	if err = depinject.Inject(
 		deps,
@@ -669,6 +690,8 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 
 	logger = logger.With("supplier_operator_address", sessionTrees[0].GetSupplierOperatorAddress())
 
+	deleteSessionTreesSubPool := rs.mainWorkerPool.NewSubpool(deleteSessionTreesSubPoolSize)
+
 	// Iterate over the session trees and delete them from the relayerSessions.
 	numSessionTreesDeleted := 0
 	for _, sessionTree := range sessionTrees {
@@ -678,10 +701,16 @@ func (rs *relayerSessionsManager) deleteSessionTrees(
 		sessionLogger.Info().Msg("🗑️ Deleting session tree - cleaning up outdated or unclaimable session")
 
 		// Remove the session tree from the relayerSessions.
-		rs.deleteSessionTree(sessionTree)
+		st := sessionTree // Create a local variable to avoid closure capture issues
+		deleteSessionTreesSubPool.Go(func() {
+			rs.deleteSessionTree(st)
+		})
 
 		numSessionTreesDeleted++
 	}
+
+	// Wait for all goroutines to finish before proceeding.
+	deleteSessionTreesSubPool.StopAndWait()
 
 	logger.Debug().Msgf(
 		"🧹 Successfully deleted %d session trees from memory and storage",
