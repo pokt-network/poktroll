@@ -75,7 +75,7 @@ var (
 	testedServiceId string
 	// blockDurationSec is the duration of a block in seconds.
 	// NB: This value SHOULD be equal to `timeout_propose` in `config.yml`.
-	blockDurationSec = int64(2)
+	blockDurationSec = int64(30)
 	// relayPayloadFmt is the JSON-RPC request relayPayloadFmt to send a relay request.
 	relayPayloadFmt = `{"jsonrpc":"2.0","method":"%s","params":[],"id":%d}`
 	// relayRequestMethod is the method of the JSON-RPC request to be relayed.
