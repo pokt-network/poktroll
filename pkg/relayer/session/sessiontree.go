@@ -8,13 +8,14 @@ import (
 	"sync"
 
 	"github.com/pokt-network/smt"
-	"github.com/pokt-network/smt/kvstore/pebble"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/smt/kvstore"
+	"github.com/pokt-network/smt/kvstore/simplemap"
 )
 
 var _ relayer.SessionTree = (*sessionTree)(nil)
@@ -53,7 +54,7 @@ type sessionTree struct {
 	compactProofBz []byte
 
 	// treeStore is the KVStore used to store the SMST.
-	treeStore pebble.PebbleKVStore
+	treeStore kvstore.MapStore
 
 	// storePath is the path to the KVStore used to store the SMST.
 	// It is created from the storePrefix and the session.sessionId.
@@ -79,32 +80,34 @@ func NewSessionTree(
 	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
 	// use one key store. KV databases are often optimized for writing into one database. They keys can
 	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
-	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionHeader.SessionId)
+	// storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
-	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
-		return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
-	}
+	// if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
+	// 	return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
+	// }
 
-	treeStore, err := pebble.NewKVStore(storePath)
-	if err != nil {
-		return nil, err
-	}
+	// treeStore, err := pebble.NewKVStore(storePath)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	treeStore := simplemap.NewSimpleMap()
 
 	// Create the SMST from the KVStore and a nil value hasher so the proof would
 	// contain a non-hashed Relay that could be used to validate the proof onchain.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 	logger = logger.With(
-		"store_path", storePath,
+		// "store_path", storePath,
 		"session_id", sessionHeader.SessionId,
 		"supplier_operator_address", supplierOperatorAddress,
 	)
 
 	sessionTree := &sessionTree{
-		logger:                  logger,
-		sessionHeader:           sessionHeader,
-		storePath:               storePath,
+		logger:        logger,
+		sessionHeader: sessionHeader,
+		// storePath:               storePath,
 		treeStore:               treeStore,
 		sessionSMT:              trie,
 		sessionMu:               &sync.Mutex{},
@@ -170,16 +173,16 @@ func importSessionTree(
 	// from the persisted storage to allow for additional relay updates.
 
 	// Open the existing KVStore that contains the session's merkle tree data
-	treeStore, err := pebble.NewKVStore(storePath)
-	if err != nil {
-		return nil, err
-	}
+	// treeStore, err := pebble.NewKVStore(storePath)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// Reconstruct the SMST from the persisted KVStore data using the previously saved root as the starting point
-	trie := smt.ImportSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smtRoot, protocol.SMTValueHasher())
+	trie := smt.ImportSparseMerkleSumTrie(sessionTree.treeStore, protocol.NewTrieHasher(), smtRoot, protocol.SMTValueHasher())
 
 	sessionTree.sessionSMT = trie
-	sessionTree.treeStore = treeStore
+	// sessionTree.treeStore = treeStore
 	sessionTree.claimedRoot = nil  // explicitly set for posterity
 	sessionTree.isClaiming = false // explicitly set for posterity
 
@@ -243,10 +246,10 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 	}
 
 	// Restore the KVStore from disk since it has been closed after the claim has been generated.
-	st.treeStore, err = pebble.NewKVStore(st.storePath)
-	if err != nil {
-		return nil, err
-	}
+	// st.treeStore, err = pebble.NewKVStore(st.storePath)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
 
@@ -311,7 +314,7 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 		return nil, err
 	}
 
-	st.treeStore = nil
+	// st.treeStore = nil
 
 	return st.claimedRoot, nil
 }
@@ -353,9 +356,9 @@ func (st *sessionTree) Delete() error {
 	// When the database is closed, it is deleted it from disk right away.
 
 	if st.treeStore != nil {
-		if err := st.treeStore.Stop(); err != nil {
-			return err
-		}
+		//if err := st.treeStore.Stop(); err != nil {
+		//	return err
+		//}
 	} else {
 		st.logger.With(
 			"claim_root", fmt.Sprintf("%x", st.GetClaimRoot()),
@@ -392,9 +395,9 @@ func (st *sessionTree) GetSupplierOperatorAddress() string {
 // - DOES NOT calculate the root hash of the SMST.
 // - DOES commit the latest (current state) of the SMT to on-state storage.
 func (st *sessionTree) Stop() error {
-	if st.treeStore == nil {
-		return nil
-	}
+	//if st.treeStore == nil {
+	//	return nil
+	//}
 
 	// Commit any pending changes to the KVStore before stopping it.
 	if err := st.sessionSMT.Commit(); err != nil {
@@ -402,5 +405,6 @@ func (st *sessionTree) Stop() error {
 	}
 
 	// Store the underlying key-value store in the session tree
-	return st.treeStore.Stop()
+	// return st.treeStore.Stop()
+	return nil
 }
