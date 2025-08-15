@@ -14,7 +14,11 @@ import (
 
 var _ TokenLogicModule = (*tlmGlobalMintReimbursementRequest)(nil)
 
-type tlmGlobalMintReimbursementRequest struct{}
+type tlmGlobalMintReimbursementRequest struct {
+	ctx    context.Context
+	logger cosmoslog.Logger
+	tlmCtx *TLMContext
+}
 
 // NewGlobalMintReimbursementRequestTLM returns a new GlobalMintReimbursementRequest TLM.
 func NewGlobalMintReimbursementRequestTLM() TokenLogicModule {
@@ -31,6 +35,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
+	blockHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
 	result := tlmCtx.Result
 	service := tlmCtx.Service
 	sessionHeader := tlmCtx.SessionHeader
@@ -38,7 +43,20 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	supplier := tlmCtx.Supplier
 	actualSettlementCoin := tlmCtx.SettlementCoin
 
-	logger = logger.With("method", "TokenLogicModuleGlobalMintReimbursementRequest")
+	logger = logger.With(
+		"tlm", "TokenLogicModuleGlobalMintReimbursementRequest",
+		"method", "Process",
+		"height", blockHeight,
+		"session_id", sessionHeader.GetSessionId(),
+		"service_id", service.Id,
+		"application", application.Address,
+		"supplier_operator", supplier.OperatorAddress,
+		"actual_settlement_coin", actualSettlementCoin,
+	)
+
+	tlm.ctx = ctx
+	tlm.logger = logger
+	tlm.tlmCtx = &tlmCtx
 
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
@@ -100,7 +118,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	))
 
 	// Prepare and emit the event for the application that'll required reimbursement.
-	// Recall that it is being overcharged to compoensate for global inflation while
+	// Recall that it is being overcharged to compensate for global inflation while
 	// preventing self-dealing attacks.
 	reimbursementRequestEvent := &tokenomicstypes.EventApplicationReimbursementRequest{
 		ApplicationAddr:      application.Address,

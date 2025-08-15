@@ -24,15 +24,16 @@ type Keeper struct {
 	authority string
 
 	// keepers
-	bankKeeper        types.BankKeeper
-	accountKeeper     types.AccountKeeper
-	applicationKeeper types.ApplicationKeeper
-	supplierKeeper    types.SupplierKeeper
-	proofKeeper       types.ProofKeeper
-	sharedKeeper      types.SharedKeeper
-	sessionKeeper     types.SessionKeeper
-	serviceKeeper     types.ServiceKeeper
-	stakingKeeper     types.StakingKeeper
+	bankKeeper         types.BankKeeper
+	accountKeeper      types.AccountKeeper
+	applicationKeeper  types.ApplicationKeeper
+	supplierKeeper     types.SupplierKeeper
+	proofKeeper        types.ProofKeeper
+	sharedKeeper       types.SharedKeeper
+	sessionKeeper      types.SessionKeeper
+	serviceKeeper      types.ServiceKeeper
+	stakingKeeper      types.StakingKeeper
+	distributionKeeper types.DistributionKeeper
 
 	// Query clients
 	sharedQuerier client.SharedQueryClient
@@ -56,6 +57,7 @@ func NewKeeper(
 	sessionKeeper types.SessionKeeper,
 	serviceKeeper types.ServiceKeeper,
 	stakingKeeper types.StakingKeeper,
+	distributionKeeper types.DistributionKeeper,
 
 	tokenLogicModules []tlm.TokenLogicModule,
 ) Keeper {
@@ -74,15 +76,16 @@ func NewKeeper(
 		authority:    authority,
 		logger:       logger,
 
-		bankKeeper:        bankKeeper,
-		accountKeeper:     accountKeeper,
-		applicationKeeper: applicationKeeper,
-		supplierKeeper:    supplierKeeper,
-		proofKeeper:       proofKeeper,
-		sharedKeeper:      sharedKeeper,
-		sessionKeeper:     sessionKeeper,
-		serviceKeeper:     serviceKeeper,
-		stakingKeeper:     stakingKeeper,
+		bankKeeper:         bankKeeper,
+		accountKeeper:      accountKeeper,
+		applicationKeeper:  applicationKeeper,
+		supplierKeeper:     supplierKeeper,
+		proofKeeper:        proofKeeper,
+		sharedKeeper:       sharedKeeper,
+		sessionKeeper:      sessionKeeper,
+		serviceKeeper:      serviceKeeper,
+		stakingKeeper:      stakingKeeper,
+		distributionKeeper: distributionKeeper,
 
 		sharedQuerier: sharedQuerier,
 
