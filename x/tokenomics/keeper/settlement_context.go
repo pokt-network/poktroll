@@ -18,22 +18,23 @@ import (
 
 // claimSettlementContext tracks the state and metadata for a claim during settlement.
 //
-// - Holds the result of settlement operations (mint, burn, transfer) for this claim.
-// - Indicates if the claim was settled or expired without settlement.
-// - Records the total relays and compute units associated with the claim.
+// It includes but is not limited to:
+// - Holding the result of settlement operations for a single claim: mint, burn, and transfer.
+// - Indicating if the claim was settled or expired without settlement.
+// - Recording the total relays and compute units associated with the claim.
 type claimSettlementContext struct {
 	// settlementResult holds the tokenomics module operations (mint, burn, transfer)
 	// to be executed when settling this claim.
 	settlementResult *tokenomicstypes.ClaimSettlementResult
 
-	// if true, the claim was successfully settled;
-	// if false, the claim expired without settlement.
+	// If true, the claim was successfully settled;
+	// Iff false, the claim expired without settlement.
 	isSettled bool
 
-	// numClaimRelays is the total number of relays in the claim's session tree.
+	// numClaimRelays is the total number of claimed relays by the supplier.
 	numClaimRelays uint64
 
-	// numClaimComputeUnits is the total compute units claimed by the supplier.
+	// numClaimComputeUnits is the total number of claimed compute units by the supplier.
 	numClaimComputeUnits uint64
 }
 
@@ -92,13 +93,14 @@ func NewSettlementContext(
 
 		serviceMap:               make(map[string]*sharedtypes.Service),
 		relayMiningDifficultyMap: make(map[string]servicetypes.RelayMiningDifficulty),
-		sharedParams:             tokenomicsKeeper.sharedKeeper.GetParams(ctx),
-		tokenomicsParams:         tokenomicsKeeper.GetParams(ctx),
+
+		sharedParams:     tokenomicsKeeper.sharedKeeper.GetParams(ctx),
+		tokenomicsParams: tokenomicsKeeper.GetParams(ctx),
 	}
 }
 
 // FlushAllActorsToStore batch save all accumulated applications and suppliers to the store.
-// It is intended to be called after all claims have been processed.
+// It is intended to be called AFTER all claims have been processed.
 
 // This optimization:
 //   - Reduces redundant writes to state storage by updating each record only once.
@@ -124,7 +126,7 @@ func (sctx *settlementContext) FlushAllActorsToStore(ctx context.Context) {
 // ClaimCacheWarmUp warms up the settlement context's cache by based on the claim's properties.
 func (sctx *settlementContext) ClaimCacheWarmUp(ctx context.Context, claim *prooftypes.Claim) error {
 	if claim.SessionHeader == nil {
-		return tokenomicstypes.ErrTokenomicsSessionHeaderNil
+		return tokenomicstypes.ErrTokenomicsClaimSessionHeaderNil
 	}
 
 	// Cache service and difficulty
@@ -253,7 +255,8 @@ func (sctx *settlementContext) cacheSupplier(
 		// to the claim's service ID.
 		sctx.cacheSupplierServiceConfig(ctx, cachedSupplier, serviceId)
 
-		return nil // Supplier already cached
+		// Supplier is already cached
+		return nil
 	}
 
 	// Retrieve the onchain staked dehydrated supplier record:
@@ -310,7 +313,8 @@ func (sctx *settlementContext) cacheSupplierServiceConfig(
 // This prevents repeated KV store lookups for the same application across multiple claims.
 func (sctx *settlementContext) cacheApplication(ctx context.Context, appAddress string) error {
 	if _, ok := sctx.applicationMap[appAddress]; ok {
-		return nil // Application already cached
+		// Application is already cached
+		return nil
 	}
 
 	// Retrieve the onchain staked application record
@@ -340,12 +344,14 @@ func (sctx *settlementContext) cacheApplication(ctx context.Context, appAddress 
 // This prevents repeated KV store lookups across multiple claims targeting the same service.
 func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, serviceId string) error {
 	if _, ok := sctx.serviceMap[serviceId]; ok {
-		return nil // Service already cached
+		// Service is already cached
+		return nil
 	}
 
 	// Retrieve the service record
 	service, isServiceFound := sctx.keeper.serviceKeeper.GetService(ctx, serviceId)
 	if !isServiceFound {
+		sctx.logger.Warn(fmt.Sprintf("service with ID %q not found", serviceId))
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", serviceId)
 	}
 	sctx.serviceMap[serviceId] = &service

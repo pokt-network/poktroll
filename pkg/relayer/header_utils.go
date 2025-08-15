@@ -14,11 +14,9 @@ func ForwardPocketHeaders(header *http.Header, meta types.RelayRequestMetadata) 
 	// Supplier identification
 	header.Set("Pocket-Supplier", meta.SupplierOperatorAddress)
 
-	// Service identification
-	header.Set("Pocket-Service", meta.SessionHeader.ServiceId)
-
-	// Application identification (if available)
+	// Application and service identification (if available)
 	if meta.SessionHeader != nil {
+		header.Set("Pocket-Service", meta.SessionHeader.ServiceId)
 		header.Set("Pocket-Session-Id", meta.SessionHeader.SessionId)
 		header.Set("Pocket-Application", meta.SessionHeader.ApplicationAddress)
 		header.Set("Pocket-Session-Start-Height", fmt.Sprintf("%d", meta.SessionHeader.SessionStartBlockHeight))

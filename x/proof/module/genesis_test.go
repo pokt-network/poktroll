@@ -21,10 +21,10 @@ func TestGenesis(t *testing.T) {
 
 		ClaimList: []types.Claim{
 			{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					SessionId:          mockSessionId,
-					ApplicationAddress: sample.AccAddress(),
+					ApplicationAddress: sample.AccAddressBech32(),
 				},
 				RootHash: []byte{1, 2, 3},
 			},

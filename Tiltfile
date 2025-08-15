@@ -208,6 +208,8 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
             "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
+            # Default queryCaching to false if not set in localnet_config
+            "--set=queryCaching=" + str(localnet_config["relayminers"].get("queryCaching", False)),
             "--set=image.repository=pocketd",
     ]
 
@@ -223,11 +225,13 @@ for x in range(localnet_config["relayminers"]["count"]):
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvil")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.json_rpc.backend_url=http://anvil:8547/")
     supplier_number = supplier_number + 1
 
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvilws")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
-    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=ws://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.websocket.backend_url=ws://anvil:8547/")
     supplier_number = supplier_number + 1
 
     if localnet_config["rest"]["enabled"]:
