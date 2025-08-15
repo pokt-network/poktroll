@@ -48,7 +48,7 @@ func TestMsgUpdateParam_UpdateMintAllocationPercentagesOnly(t *testing.T) {
 }
 
 func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
-	expectedDaoRewardAddress := sample.AccAddress()
+	expectedDaoRewardAddress := sample.AccAddressBech32()
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)

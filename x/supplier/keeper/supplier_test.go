@@ -36,8 +36,8 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 	suppliers := make([]sharedtypes.Supplier, n)
 	for i := range suppliers {
 		supplier := &suppliers[i]
-		supplier.OwnerAddress = sample.AccAddress()
-		supplier.OperatorAddress = sample.AccAddress()
+		supplier.OwnerAddress = sample.AccAddressBech32()
+		supplier.OperatorAddress = sample.AccAddressBech32()
 		supplier.Stake = &cosmostypes.Coin{Denom: "upokt", Amount: math.NewInt(int64(i))}
 		supplier.Services = []*sharedtypes.SupplierServiceConfig{
 			{

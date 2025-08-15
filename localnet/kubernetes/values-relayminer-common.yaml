@@ -1,5 +1,6 @@
 chainId: "pocket"
 grpcInsecure: true
+queryCaching: false
 config:
   smt_store_path: /root/.pocket/smt
   metrics:

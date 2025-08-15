@@ -83,7 +83,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 	wrongService := &sharedtypes.Service{Id: "wrong_svc"}
 
