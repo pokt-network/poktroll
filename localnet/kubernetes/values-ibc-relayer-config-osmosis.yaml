@@ -1,0 +1,53 @@
+chain_d_key:
+  name: osmosis
+  mnemonic: "beach prize number regular tiger aware ring shiver path dizzy please bacon steel car crash youth rural history furnace possible property chicken entire system"
+
+chain_d_config: |
+  [[chains]]
+  type = "CosmosSdk"
+  id = "osmosis"
+  rpc_addr = "http://osmosis-validator.default.svc.cluster.local:26657/"
+  grpc_addr = "http://osmosis-validator.default.svc.cluster.local:9090/"
+  rpc_timeout = "10s"
+  trusted_node = false
+  account_prefix = "osmo"
+  key_name = "osmosis"
+  key_store_type = "Test"
+  store_prefix = "ibc"
+  default_gas = 100000
+  max_gas = 400000
+  gas_multiplier = 1.1
+  max_msg_num = 30
+  max_tx_size = 180000
+  max_grpc_decoding_size = 33554432
+  query_packets_chunk_size = 50
+  clock_drift = "5s"
+  max_block_time = "30s"
+  client_refresh_rate = "1/3"
+  ccv_consumer_chain = false
+  memo_prefix = ""
+  sequential_batch_tx = false
+  allow_ccq = true
+
+  [chains.event_source]
+  mode = "pull"
+  interval = "500ms"
+  max_retries = 4
+
+  [chains.trust_threshold]
+  numerator = 2
+  denominator = 3
+
+  [chains.gas_price]
+  price = 0.003
+  denom = "uosmo"
+
+  [chains.dynamic_gas_price]
+  enabled = false
+  multiplier = 1.1
+  max = 0.6
+
+  [chains.address_type]
+  derivation = "cosmos"
+
+  [chains.excluded_sequences]

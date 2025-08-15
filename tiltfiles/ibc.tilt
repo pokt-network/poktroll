@@ -23,7 +23,14 @@ def ibc_disabled_resource(reason):
 # - Otherwise, creates a disabled resource with instructions
 def check_and_load_ibc(chart_prefix, ibc_config):
     if ibc_config.get("enabled", False):
-        load_ibc_resources(chart_prefix, ibc_config["validator_configs"])
+        validator_configs = ibc_config["validator_configs"]
+        connections = ibc_config.get("connections", [])
+
+        # Generate default pocket-to-chain connections for backward compatibility
+        if not connections:
+            connections = generate_default_connections(validator_configs)
+
+        load_ibc_resources(chart_prefix, validator_configs, connections)
     else:
         ibc_disabled_resource(
             "Localnet IBC resources disabled. Set `ibc.enabled` to `true` in `localnet_config.yaml` to enable them.")
@@ -32,8 +39,8 @@ def check_and_load_ibc(chart_prefix, ibc_config):
 # Load IBC Resources
 # - Loads IBC validator resources if enabled
 # - Builds ibc-relayer docker image if any validator configs are enabled
-# - Iterates through all enabled validator configs and loads relayer resources for each
-def load_ibc_resources(chart_prefix, validator_configs):
+# - Iterates through all enabled connections and loads relayer resources for each
+def load_ibc_resources(chart_prefix, validator_configs, connections):
     has_validator_configs = len(validator_configs.keys()) != 0
     has_enabled_validator_configs = False
     if has_validator_configs:
@@ -42,9 +49,15 @@ def load_ibc_resources(chart_prefix, validator_configs):
                 has_enabled_validator_configs = True
                 break
 
-    if not validator_configs or not has_validator_configs or not has_enabled_validator_configs:
+    has_enabled_connections = False
+    for conn in connections:
+        if conn.get("enabled", True):
+            has_enabled_connections = True
+            break
+
+    if not validator_configs or not has_validator_configs or not has_enabled_validator_configs or not has_enabled_connections:
         ibc_disabled_resource(
-            "Localnet IBC resources disabled. Set `ibc.validator_configs.<network_name>.enabled` to `true` in `localnet_config.yaml` to enable them.")
+            "Localnet IBC resources disabled. Set `ibc.validator_configs.<network_name>.enabled` to `true` and ensure connections are enabled in `localnet_config.yaml`.")
         return
 
     docker_build(
@@ -52,35 +65,63 @@ def load_ibc_resources(chart_prefix, validator_configs):
         context=os.path.join(".", "localnet", "ibc-relayer"),  # needs any folder, doesn't matter
         dockerfile=ibc_relayer_dockerfile_path)
 
-    load_ibc_relayer_server_resources(chart_prefix, validator_configs)
+    load_ibc_relayer_server_resources(chart_prefix, validator_configs, connections)
 
+    # Load validators for all enabled validator configs
     for network_name, validator_config in validator_configs.items():
         if not validator_config.get("enabled", False):
             continue
-
-        load_ibc_relayer_setup_resources(chart_prefix, network_name, validator_config)
         load_ibc_validator(chart_prefix, validator_config)
+
+    # Load relayer setup resources for all enabled connections
+    for connection in connections:
+        if not connection.get("enabled", True):
+            continue
+        load_ibc_relayer_setup_resources_for_connection(chart_prefix, connection, validator_configs)
 
 
 # Load IBC relayer server resources sets up the hermes relayer for
-# pairs of pocket with each enabled IBC validator.
-def load_ibc_relayer_server_resources(chart_prefix, ibc_validator_configs):
+# all enabled IBC connections (pocket-to-chain and direct chain-to-chain pairs).
+def load_ibc_relayer_server_resources(chart_prefix, ibc_validator_configs, ibc_connections):
     resource_deps = [
         pocket_validator_resource_name,
     ]
 
     chain_config_values_flags = []
-    for network_name, ibc_validator_config in ibc_validator_configs.items():
-        chain_id = ibc_validator_config["chain_id"]
-        tilt_ui_name = "Pokt->" + network_name.title()
-        ibc_setup_resource_name = "🏗️ " + tilt_ui_name
-        chain_config_values_flags.append(
-            "--values=" +
-            os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_id + ".yaml"))
+    processed_chains = ["pocket"]  # Track processed chains to avoid duplicates
 
-        validator_resource_name = ibc_validator_config.get("tilt_ui_name", chain_id.title() + " Validator")
-        resource_deps.append(validator_resource_name)
-        resource_deps.append(ibc_setup_resource_name)
+    # Process all enabled connections to determine required chain configs
+    for connection in ibc_connections:
+        if not connection.get("enabled", True):
+            continue
+
+        chain_a = connection["chain_a"]
+        chain_b = connection["chain_b"]
+
+        # Add chain config flags for each unique chain
+        for chain_name in [chain_a, chain_b]:
+            # Get actual chain ID from validator config (handles cases like agoric -> agoriclocal)
+            if chain_name == "pocket":
+                chain_id = "pocket"
+            else:
+                validator_config = ibc_validator_configs.get(chain_name)
+                chain_id = validator_config["chain_id"] if validator_config else chain_name
+
+            if chain_id not in processed_chains:
+                chain_config_values_flags.append(
+                    "--values=" +
+                    os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_id + ".yaml"))
+                processed_chains.append(chain_id)
+
+        # Add setup resource dependencies
+        setup_resource_name = get_ibc_setup_resource_name(connection, ibc_validator_configs)
+        resource_deps.append(setup_resource_name)
+
+    # Add validator dependencies for all enabled validators
+    for network_name, ibc_validator_config in ibc_validator_configs.items():
+        if ibc_validator_config.get("enabled", False):
+            validator_resource_name = ibc_validator_config.get("tilt_ui_name", ibc_validator_config["chain_id"].title() + " Validator")
+            resource_deps.append(validator_resource_name)
 
     # Deploy helm chart
     helm_resource(
@@ -106,42 +147,61 @@ def load_ibc_relayer_server_resources(chart_prefix, ibc_validator_configs):
     )
 
 
-# Load IBC Relayer Setup Resource
-# - Sets up the CLI/setup resource for a given pair
-# - Adds appropriate resource dependencies based on which chain is "pocket"
-def load_ibc_relayer_setup_resources(chart_prefix, network_name, validator_config):
-    chain_id = validator_config["chain_id"]
-    tilt_ui_name = "Pokt->" + network_name.title()
-    validator_resource_name = validator_config.get("tilt_ui_name", chain_id.title() + " Validator")
-    resource_deps = [
-        pocket_validator_resource_name,
-        validator_resource_name,
-    ]
+# Load IBC Relayer Setup Resource for Connection
+# - Sets up the CLI/setup resource for a given connection pair
+# - Adds appropriate resource dependencies for both chains
+def load_ibc_relayer_setup_resources_for_connection(chart_prefix, connection, validator_configs):
+    chain_a = connection["chain_a"]
+    chain_b = connection["chain_b"]
+
+    # Generate resource name and dependencies
+    setup_resource_name = get_ibc_setup_resource_name(connection, validator_configs)
+    resource_deps = []
+
+    # Add chain A dependency
+    if chain_a == "pocket":
+        resource_deps.append(pocket_validator_resource_name)
+    else:
+        chain_a_config = validator_configs.get(chain_a)
+        if chain_a_config:
+            resource_deps.append(chain_a_config.get("tilt_ui_name", chain_a.title() + " Validator"))
+
+    # Add chain B dependency
+    if chain_b == "pocket":
+        resource_deps.append(pocket_validator_resource_name)
+    else:
+        chain_b_config = validator_configs.get(chain_b)
+        if chain_b_config:
+            resource_deps.append(chain_b_config.get("tilt_ui_name", chain_b.title() + " Validator"))
+
+    # Generate unique resource identifier
+    resource_id = "ibc-relayer-setup-" + chain_a + "-" + chain_b
+
+    # Get actual chain IDs for config files (handles cases like agoric -> agoriclocal)
+    chain_a_id = chain_a if chain_a == "pocket" else validator_configs.get(chain_a, {}).get("chain_id", chain_a)
+    chain_b_id = chain_b if chain_b == "pocket" else validator_configs.get(chain_b, {}).get("chain_id", chain_b)
 
     # Deploy helm chart
     helm_resource(
-        "ibc-relayer-setup-" + network_name,
+        resource_id,
         chart_prefix + "ibc-relayer",
         flags=[
             "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
             "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-cli.yaml"),
-            "--values=" + os.path.join("localnet", "kubernetes",
-                                       "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
-            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_id + ".yaml"),
-            "--set=chain_a_id=" + pocket_chain_id,
-            "--set=chain_b_id=" + chain_id
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_a_id + ".yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_b_id + ".yaml"),
+            "--set=chain_a_id=" + chain_a_id,
+            "--set=chain_b_id=" + chain_b_id
         ],
         resource_deps=resource_deps,
         image_deps=["ibc-relayer"],
         image_keys=[("image.repository", "image.tag")],
     )
 
-    # Update k8s resource with new name, lebels,
-    # port-forwards, and the manual trigger mode.
+    # Update k8s resource with new name, labels, and manual trigger mode
     k8s_resource(
-        # workload=release_name,
-        "ibc-relayer-setup-" + network_name,
-        new_name="🏗️ " + tilt_ui_name,
+        resource_id,
+        new_name=setup_resource_name,
         labels=["IBC_Pairs_Setup"],
         trigger_mode=TRIGGER_MODE_MANUAL,
         resource_deps=resource_deps,
@@ -195,3 +255,34 @@ def load_ibc_validator(chart_prefix, validator_config):
         labels=["IBC"],
         port_forwards=port_forwards,
     )
+
+
+# Generate default pocket-to-chain connections for backward compatibility
+def generate_default_connections(validator_configs):
+    connections = []
+    for network_name, validator_config in validator_configs.items():
+        if validator_config.get("enabled", False):
+            connections.append({
+                "chain_a": "pocket",
+                "chain_b": network_name,
+                "enabled": True
+            })
+    return connections
+
+
+# Get IBC setup resource name for a connection
+def get_ibc_setup_resource_name(connection, validator_configs):
+    chain_a = connection["chain_a"]
+    chain_b = connection["chain_b"]
+
+    # Use custom name if provided
+    if "setup_resource_name" in connection:
+        return connection["setup_resource_name"]
+
+    # Generate default name based on chain pair
+    if chain_a == "pocket":
+        return "🏗️ Pokt->" + chain_b.title()
+    elif chain_b == "pocket":
+        return "🏗️ " + chain_a.title() + "->Pokt"
+    else:
+        return "🏗️ " + chain_a.title() + "<->" + chain_b.title()
