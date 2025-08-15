@@ -145,7 +145,9 @@ var allUpgrades = []upgrades.Upgrade{
 	// - Shared module param update: increased `ComputeUnitsPerRelayMax`.
 	// - Tokenomics updates: validator proper decoding fix; updated DAO address in mint_equals_burn_claim_distribution;
 	// - Recovery: updated Morse account recovery allowlist (multiple iterations, incl. 8 Aug 2025 update).
-	upgrades.Upgrade_0_1_28,
+	// upgrades.Upgrade_0_1_28,
+
+	upgrades.Upgrade_NEXT,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

@@ -6,6 +6,7 @@ load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
 load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
+load("./tiltfiles/ibc.tilt", "default_ibc_validator_configs")
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
@@ -453,3 +454,8 @@ if localnet_config["faucet"]["enabled"]:
             "8080:8080",
         ],
     )
+
+
+### IBC relayer(s) & alt-chain node(s)
+load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+check_and_load_ibc(chart_prefix, localnet_config["ibc"])
