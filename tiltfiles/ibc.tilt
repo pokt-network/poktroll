@@ -89,7 +89,8 @@ def load_ibc_relayer_server_resources(chart_prefix, ibc_validator_configs):
         flags=[
                   "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
                   "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-daemon.yaml"),
-                  "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
+                  "--values=" + os.path.join("localnet", "kubernetes",
+                                             "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
               ] + chain_config_values_flags,
         resource_deps=resource_deps,
         image_deps=["ibc-relayer"],

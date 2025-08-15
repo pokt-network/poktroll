@@ -6,7 +6,6 @@ load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
 load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
-load("./tiltfiles/ibc.tilt", "default_ibc_validator_configs")
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
