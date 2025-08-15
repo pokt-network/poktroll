@@ -10,7 +10,7 @@ import (
 )
 
 func TestMsgAddService_ValidateBasic(t *testing.T) {
-	serviceOwnerAddress := sample.AccAddress()
+	serviceOwnerAddress := sample.AccAddressBech32()
 	tests := []struct {
 		desc        string
 		msg         MsgAddService
@@ -71,7 +71,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 					Id:                   "svc1",
 					Name:                 "service name",
 					ComputeUnitsPerRelay: 1,
-					OwnerAddress:         sample.AccAddress(), // Random address that does not equal serviceOwnerAddress
+					OwnerAddress:         sample.AccAddressBech32(), // Random address that does not equal serviceOwnerAddress
 				},
 			},
 			expectedErr: ErrServiceInvalidOwnerAddress,

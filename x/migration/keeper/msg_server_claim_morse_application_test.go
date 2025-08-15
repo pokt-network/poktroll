@@ -32,7 +32,7 @@ var (
 )
 
 func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
-	shannonDestAddr := sample.AccAddress()
+	shannonDestAddr := sample.AccAddressBech32()
 	shannonDestAccAddr, err := sdk.AccAddressFromBech32(shannonDestAddr)
 	require.NoError(t, err)
 
@@ -134,7 +134,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		shannonDestAddr,
 		morsePrivKey,
 		&testAppServiceConfig,
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 	)
 	require.NoError(t, err)
 
@@ -156,8 +156,8 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseApplicationClaimed{
 		MorseSrcAddress:         msgClaim.GetMorseSignerAddress(),
-		ClaimedBalance:          expectedClaimedUnstakedTokens,
-		ClaimedApplicationStake: applicationStake,
+		ClaimedBalance:          expectedClaimedUnstakedTokens.String(),
+		ClaimedApplicationStake: applicationStake.String(),
 		SessionEndHeight:        expectedSessionEndHeight,
 		Application:             &expectedApp,
 	}
@@ -201,10 +201,10 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 
 	// Claim the MorseClaimableAccount with a random Shannon address.
 	msgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 		morsePrivKey,
 		expectedAppServiceConfig,
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 	)
 	require.NoError(t, err)
 
@@ -216,7 +216,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 			msgClaim.GetShannonDestAddress(),
 			morsePrivKey,
 			&testAppServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -238,7 +238,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 			msgClaim.GetShannonDestAddress(),
 			nonExistentMorsePrivKey,
 			&testAppServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -276,7 +276,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 	t.Run("account already claimed (non-empty shannon_dest_address)", func(t *testing.T) {
 		// Set the Shannon destination address BUT NOT the claimed at height.
 		morseClaimableAccount.ClaimedAtHeight = 0
-		morseClaimableAccount.ShannonDestAddress = sample.AccAddress()
+		morseClaimableAccount.ShannonDestAddress = sample.AccAddressBech32()
 		k.SetMorseClaimableAccount(ctx, *morseClaimableAccount)
 
 		expectedErr := status.Error(

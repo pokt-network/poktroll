@@ -36,6 +36,11 @@ replace nhooyr.io/websocket => github.com/coder/websocket v1.8.6
 // replace broken goleveldb
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 
+// TODO_HACK(@olshansk): Replace CometBFT with Pocket's fork to avoid blocking RPC queries on heavy EndBlockers.
+// Ref: https://github.com/pokt-network/cometbft/issues/3
+replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811
+
+
 require (
 	cosmossdk.io/api v0.9.2
 	cosmossdk.io/client/v2 v2.0.0-beta.8
@@ -61,7 +66,6 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/go-kit/kit v0.13.0
 	github.com/gogo/status v1.1.0
-	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
@@ -112,7 +116,6 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/hashicorp/go-version v1.7.0
-	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d
 )
 
 require (
@@ -435,6 +438,7 @@ require (
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/tdakkota/asciicheck v0.4.1 // indirect
 	github.com/tendermint/go-amino v0.16.0 // indirect
 	github.com/tetafro/godot v1.5.0 // indirect

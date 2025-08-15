@@ -28,7 +28,7 @@ func TestMsgUnstakeGateway_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid address",
 			msg: MsgUnstakeGateway{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 			},
 		},
 	}

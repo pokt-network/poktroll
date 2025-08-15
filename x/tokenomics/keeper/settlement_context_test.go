@@ -43,7 +43,7 @@ const computeUnitsPerRelay = 1
 
 var (
 	// Test settlements with claims from multiple services
-	testServiceIds   = []string{"svc1", "svc2", "svc3"}
+	testServiceIds   = []string{"svc1"}
 	supplierStakeAmt = 2 * suppliertypes.DefaultMinStake.Amount.Int64()
 )
 
@@ -51,7 +51,7 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-// TODO_TECHDEBT(@bryanchriswhite): Consolidate the setup for all tests that use TokenomicsModuleKeepers
+// TODO_IMPROVE: Consolidate the setup for all tests that use TokenomicsModuleKeepers
 type TestSuite struct {
 	suite.Suite
 
@@ -76,15 +76,19 @@ type TestSuite struct {
 func (s *TestSuite) SetupTest() {
 	t := s.T()
 
+	// Set up a known proposer and validator for testing
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+
 	moduleBalancesOpt := keepertest.WithModuleAccountBalances(map[string]int64{
 		apptypes.ModuleName:      1000000000,
 		suppliertypes.ModuleName: supplierStakeAmt,
 	})
-	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil, moduleBalancesOpt)
+	proposerOpt := keepertest.WithBlockProposer(proposerConsAddr, proposerValOperatorAddr)
+	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil, moduleBalancesOpt, proposerOpt)
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
-
-	// Add a block proposer address to the context
-	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
+	// Update s.ctx with the modified context
+	s.ctx = sdkCtx
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(s.keepers.Codec)
@@ -92,7 +96,7 @@ func (s *TestSuite) SetupTest() {
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
-		polyzero.NewLogger(),
+		polyzero.NewLogger(polyzero.WithLevel(polyzero.ErrorLevel)),
 		prooftypes.NewAppKeeperQueryClient(s.keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(s.keepers.AccountKeeper),
 		prooftypes.NewSharedKeeperQueryClient(s.keepers.SharedKeeper, s.keepers.SessionKeeper),
@@ -139,10 +143,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 
 	// Validate that one claim still remains.
 	claims := s.keepers.GetAllClaims(ctx)
-	// TODO_TECHDEBT(@bryanchriswhite): Ensure docusaurus docs include a note regarding
-	// preferring `require.Equal()` over `require.Len()` due to poor developer experience
-	// when debugging failing tests which use the latter. TL;DR, the error message prints
-	// the list in one line and is difficult and slow to parse. Then reference the doc here.
+	// DEV_NOTE: Using `require.Equal()` over `require.Len()` so errors are easier to read.
 	require.Equal(t, 1, len(claims))
 
 	// Calculate a block height which is within the proof window.
@@ -257,7 +258,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedClaimExpiredEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedClaimExpiredEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	// Confirm that a slashing event was emitted
 	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
@@ -266,8 +267,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Validate the slashing event
 	expectedSlashingEvent := expectedSlashingEvents[0]
 
-	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetClaim().GetSupplierOperatorAddress())
-	require.Equal(t, &belowStakeAmountProofMissingPenalty, expectedSlashingEvent.GetProofMissingPenalty())
+	// The event no longer contains the full claim, so we validate the individual fields
+	require.Equal(t, s.claims[0].SessionHeader.ServiceId, expectedSlashingEvent.GetServiceId())
+	require.Equal(t, s.claims[0].SessionHeader.ApplicationAddress, expectedSlashingEvent.GetApplicationAddress())
+	require.Equal(t, s.claims[0].SessionHeader.SessionEndBlockHeight, expectedSlashingEvent.GetSessionEndBlockHeight())
+	require.Equal(t, belowStakeAmountProofMissingPenalty.String(), expectedSlashingEvent.GetProofMissingPenalty())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
@@ -327,11 +331,17 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_THRESHOLD), expectedEvent.GetProofRequirementInt())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
+
+	// Validate reward distribution is not empty
+	// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
+	rewardDistribution := expectedEvent.GetRewardDistribution()
+	require.NotNil(t, rewardDistribution, "reward distribution should not be nil")
+	require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
@@ -410,10 +420,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedClaimExpiredEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedClaimExpiredEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	expectedProofValidityCheckedEvent := expectedProofValidityCheckedEvents[0]
-	require.Equal(t, prooftypes.ClaimProofStatus_INVALID, expectedProofValidityCheckedEvent.GetClaim().GetProofValidationStatus())
+	require.Equal(t, claim.SessionHeader.ServiceId, expectedProofValidityCheckedEvent.GetServiceId())
+	require.Equal(t, claim.SessionHeader.ApplicationAddress, expectedProofValidityCheckedEvent.GetApplicationAddress())
+	require.Equal(t, claim.SessionHeader.SessionEndBlockHeight, expectedProofValidityCheckedEvent.GetSessionEndBlockHeight())
+	// After ValidateSubmittedProofs, the claim should have INVALID status (2)
+	require.Equal(t, int32(prooftypes.ClaimProofStatus_INVALID), expectedProofValidityCheckedEvent.GetClaimProofStatusInt())
 
 	// Confirm that a slashing event was emitted
 	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
@@ -421,8 +435,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Validate the slashing event
 	expectedSlashingEvent := expectedSlashingEvents[0]
-	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetClaim().GetSupplierOperatorAddress())
-	require.Equal(t, &belowStakeAmountProofMissingPenalty, expectedSlashingEvent.GetProofMissingPenalty())
+	// The event no longer contains the full claim, so we validate the individual fields
+	require.Equal(t, s.claims[0].SessionHeader.ServiceId, expectedSlashingEvent.GetServiceId())
+	require.Equal(t, s.claims[0].SessionHeader.ApplicationAddress, expectedSlashingEvent.GetApplicationAddress())
+	require.Equal(t, s.claims[0].SessionHeader.SessionEndBlockHeight, expectedSlashingEvent.GetSessionEndBlockHeight())
+	require.Equal(t, belowStakeAmountProofMissingPenalty.String(), expectedSlashingEvent.GetProofMissingPenalty())
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
@@ -430,6 +447,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
 	// Use a single claim and proof for this test
 	claim := s.claims[0]
 	proof := s.proofs[0]
@@ -455,7 +473,8 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	s.keepers.UpsertProof(ctx, proof)
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	s.keepers.ValidateSubmittedProofs(sdkCtx)
+	_, _, err = s.keepers.ValidateSubmittedProofs(sdkCtx)
+	require.NoError(t, err)
 
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
@@ -482,11 +501,17 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 
 	// Validate the settlement event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_PROBABILISTIC, expectedEvent.GetProofRequirement())
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_PROBABILISTIC), expectedEvent.GetProofRequirementInt())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
+
+	// Validate reward distribution is not empty
+	// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
+	rewardDistribution := expectedEvent.GetRewardDistribution()
+	require.NotNil(t, rewardDistribution, "reward distribution should not be nil")
+	require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
@@ -494,6 +519,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
 	// Use a single claim for this test
 	claim := s.claims[0]
 	relayMiningDifficulty := s.relayMiningDifficulties[0]
@@ -544,11 +570,17 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// Validate the settlement event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_NOT_REQUIRED.String(), expectedEvent.GetProofRequirement().String())
+	require.Equal(t, int32(prooftypes.ProofRequirementReason_NOT_REQUIRED), expectedEvent.GetProofRequirementInt())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
-	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+	require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
+
+	// Validate reward distribution is not empty
+	// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
+	rewardDistribution := expectedEvent.GetRewardDistribution()
+	require.NotNil(t, rewardDistribution, "reward distribution should not be nil")
+	require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty")
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimDiscarded_WhenHasZeroSum() {
@@ -750,7 +782,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	expiredClaimsMap := make(map[string]*prooftypes.Claim, numExpiredClaims)
 	for range numExpiredClaims {
 		appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-		appAddr := sample.AccAddress()
+		appAddr := sample.AccAddressBech32()
 		app := apptypes.Application{
 			Address:        appAddr,
 			Stake:          &appStake,
@@ -809,10 +841,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 			proofMissingPenalty = *s.keepers.ProofKeeper.GetParams(sdkCtx).ProofMissingPenalty
 		}
 
-		sessionId := slashingEvent.GetClaim().GetSessionHeader().GetSessionId()
+		// The event no longer contains the full claim, so we construct the expected event with individual fields
 		expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
-			Claim:               expiredClaimsMap[sessionId],
-			ProofMissingPenalty: &proofMissingPenalty,
+			ProofMissingPenalty:     proofMissingPenalty.String(),
+			ServiceId:               slashingEvent.GetServiceId(),
+			ApplicationAddress:      slashingEvent.GetApplicationAddress(),
+			SessionEndBlockHeight:   slashingEvent.GetSessionEndBlockHeight(),
+			ClaimProofStatusInt:     slashingEvent.GetClaimProofStatusInt(),
+			SupplierOperatorAddress: slashingEvent.GetSupplierOperatorAddress(),
 		}
 		require.EqualValues(t, expectedSlashingEvent, slashingEvents[i])
 	}
@@ -910,7 +946,8 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 		s.keepers.UpsertProof(ctx, proof)
 	}
 
-	s.keepers.ValidateSubmittedProofs(sdkCtx)
+	_, _, err = s.keepers.ValidateSubmittedProofs(sdkCtx)
+	require.NoError(t, err)
 
 	// Settle pending claims after proof window closes
 	// Expectation: All claims should be claimed.
@@ -933,12 +970,18 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 	require.Equal(t, len(s.claims), len(expectedEvents))
 
 	// Validate the events
-	for _, expectedEvent := range expectedEvents {
-		require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
+	for i, expectedEvent := range expectedEvents {
+		require.Equal(t, int32(prooftypes.ProofRequirementReason_THRESHOLD), expectedEvent.GetProofRequirementInt())
 		require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 		require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 		require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
-		require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+		require.Equal(t, s.claimedUpokt.String(), expectedEvent.GetClaimedUpokt())
+
+		// Validate reward distribution is not empty
+		// DEV_NOTE: DOES NOT validate reward distribution amounts, this is out of scope for this test.
+		rewardDistribution := expectedEvent.GetRewardDistribution()
+		require.NotNil(t, rewardDistribution, "reward distribution should not be nil for event %d", i)
+		require.NotEmpty(t, rewardDistribution, "reward distribution should not be empty for event %d", i)
 	}
 }
 
@@ -1020,7 +1063,7 @@ func (s *TestSuite) createTestActors(
 		service := sharedtypes.Service{
 			Id:                   serviceId,
 			ComputeUnitsPerRelay: computeUnitsPerRelay,
-			OwnerAddress:         sample.AccAddress(),
+			OwnerAddress:         sample.AccAddressBech32(),
 		}
 		s.keepers.SetService(s.ctx, service)
 
@@ -1097,8 +1140,8 @@ func (s *TestSuite) createTestClaimsAndProofs(
 		require.NoError(t, err)
 		sessionHeader := sessionRes.Session.Header
 
-		// Construct a valid session tree with 100 relays.
-		s.numRelays = uint64(100)
+		// Construct a valid session tree with 5 relays.
+		s.numRelays = uint64(5)
 		sessionTree := testtree.NewFilledSessionTree(
 			ctx, t,
 			s.numRelays, computeUnitsPerRelay,

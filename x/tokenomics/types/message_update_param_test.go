@@ -33,15 +33,15 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 				},
 			},
 
-			expectedErr: ErrTokenomicsAddressInvalid,
+			expectedErr: ErrTokenomicsAuthorityAddressInvalid,
 		},
 		{
 			name: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      "nonexistent",
 				AsType: &MsgUpdateParam_AsString{
-					AsString: sample.AccAddress(),
+					AsString: sample.AccAddressBech32(),
 				},
 			},
 			expectedErr: ErrTokenomicsParamNameInvalid,
@@ -49,7 +49,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		{
 			name: "invalid: invalid mint allocation percentages",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      "mint_allocation_percentages",
 				AsType: &MsgUpdateParam_AsMintAllocationPercentages{
 					AsMintAllocationPercentages: &MintAllocationPercentages{
@@ -66,7 +66,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		{
 			name: "invalid: global inflation per claim less than 0",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamGlobalInflationPerClaim,
 				AsType: &MsgUpdateParam_AsFloat{
 					AsFloat: -0.1,
@@ -77,7 +77,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		{
 			name: "valid: correct address, param name, and type",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamMintAllocationPercentages,
 				AsType: &MsgUpdateParam_AsMintAllocationPercentages{
 					AsMintAllocationPercentages: &validMintAllocationPercentages,

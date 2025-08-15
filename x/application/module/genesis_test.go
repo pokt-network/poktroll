@@ -21,7 +21,7 @@ func TestGenesis(t *testing.T) {
 
 		ApplicationList: []types.Application{
 			{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 					{
@@ -30,7 +30,7 @@ func TestGenesis(t *testing.T) {
 				},
 			},
 			{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 					{ServiceId: "svc2"},

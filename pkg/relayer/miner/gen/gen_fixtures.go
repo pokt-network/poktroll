@@ -155,7 +155,7 @@ func genRandomizedMinedRelayFixtures(
 			relayResponsePayloadHash := protocol.GetRelayHashFromBytes(randBz)
 
 			sessionHeader := &sessiontypes.SessionHeader{
-				ApplicationAddress:      sample.AccAddress(),
+				ApplicationAddress:      sample.AccAddressBech32(),
 				ServiceId:               flagSvcID,
 				SessionId:               "session_id",
 				SessionStartBlockHeight: 1,
@@ -166,14 +166,16 @@ func genRandomizedMinedRelayFixtures(
 			relay := servicetypes.Relay{
 				Req: &servicetypes.RelayRequest{
 					Meta: servicetypes.RelayRequestMetadata{
-						SessionHeader: sessionHeader,
-						Signature:     randBz,
+						SessionHeader:           sessionHeader,
+						Signature:               randBz,
+						SupplierOperatorAddress: sample.AccAddressBech32(),
 					},
 					Payload: nil,
 				},
 				Res: &servicetypes.RelayResponse{
 					Meta: servicetypes.RelayResponseMetadata{
-						SessionHeader: sessionHeader,
+						SessionHeader:             sessionHeader,
+						SupplierOperatorSignature: randBz,
 					},
 					Payload:     nil,
 					PayloadHash: relayResponsePayloadHash[:],

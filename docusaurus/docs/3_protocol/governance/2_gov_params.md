@@ -55,7 +55,8 @@ Please follow the instructions in [this guide](../../4_develop/developer_guide/a
 | `shared` | `supplier_unbonding_period_sessions` | `uint64` | supplier_unbonding_period_sessions is the number of sessions that a supplier must wait after unstaking before their staked assets are moved to their account balance. Onchain business logic requires, and ensures, that the corresponding block count of the unbonding period will exceed the end of any active claim & proof lifecycles. |
 | `supplier` | `min_stake` | `cosmos.base.v1beta1.Coin` | min_stake is the minimum amount of uPOKT that a supplier must stake to be included in network sessions and remain staked. |
 | `supplier` | `staking_fee` | `cosmos.base.v1beta1.Coin` | staking_fee is the fee charged by the protocol for staking a supplier. |
-| `tokenomics` | `dao_reward_address` | `string` | dao_reward_address is the address to which mint_allocation_dao percentage of the minted tokens are at the end of claim settlement. |
-| `tokenomics` | `global_inflation_per_claim` | `double` | global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement. |
-| `tokenomics` | `mint_allocation_percentages` | `MintAllocationPercentages` | mint_allocation_percentages represents the distribution of newly minted tokens, at the end of claim settlement, as a result of the Global Mint TLM. |
+| `tokenomics` | `dao_reward_address` | `string` | Next free index: 9 dao_reward_address is where the DAO's portion of claims submitted are distributed. |
+| `tokenomics` | `global_inflation_per_claim` | `double` | global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount to be minted on settlement. GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement. |
+| `tokenomics` | `mint_allocation_percentages` | `MintAllocationPercentages` | mint_allocation_percentages represents the distribution of newly minted tokens. GlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement. |
+| `tokenomics` | `mint_equals_burn_claim_distribution` | `MintEqualsBurnClaimDistribution` | mint_equals_burn_claim_distribution controls how the settlement amount is distributed when global inflation is disabled (global_inflation_per_claim = 0). MintEqualsBurnTLM: Only used by the MintEqualsBurnTLM at the end of claim settlement. |
 
