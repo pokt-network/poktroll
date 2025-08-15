@@ -91,16 +91,23 @@ func NewHTTPServer(
 	sharedQueryClient client.SharedQueryClient,
 	sessionQueryClient client.SessionQueryClient,
 ) relayer.RelayServer {
-	// Create the HTTP server.
+	// Create the HTTP server with comprehensive limits for security and stability.
 	httpServer := &http.Server{
-		// Keep IdleTimeout reasonable to clean up idle connections
-		IdleTimeout: 60 * time.Second,
-		// Read and Write timeouts are set to reasonable default values to prevent slow-loris
-		// attacks and to ensure that the server does not hang indefinitely on a request.
-		// These defaults are kept as baseline security measures, but per-request timeouts
-		// will override these values based on the configured timeout for each service ID.
-		ReadTimeout:  config.DefaultRequestTimeoutSeconds * time.Second,
-		WriteTimeout: config.DefaultRequestTimeoutSeconds * time.Second,
+		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  config.DefaultRequestTimeoutDuration,
+		WriteTimeout: config.DefaultRequestTimeoutDuration,
+		// MaxHeaderBytes limits header size to prevent memory exhaustion (1MB limit)
+		MaxHeaderBytes: 1 << 20, // 1MB
+
+		// ConnState tracks connection lifecycle for debugging "missing supplier operator signature" errors
+		ConnState: func(conn net.Conn, state http.ConnState) {
+			switch state {
+			case http.StateClosed:
+				logger.Debug().Str("remote_addr", conn.RemoteAddr().String()).Msg("HTTP connection closed")
+			case http.StateHijacked:
+				logger.Debug().Str("remote_addr", conn.RemoteAddr().String()).Msg("HTTP connection hijacked")
+			}
+		},
 	}
 
 	return &relayMinerHTTPServer{
@@ -197,7 +204,7 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 //     timeout specified for that service ID.
 //   - If no specific timeout is found, it returns the default timeout.
 func (server *relayMinerHTTPServer) requestTimeoutForServiceId(serviceId string) time.Duration {
-	timeout := config.DefaultRequestTimeoutSeconds * time.Second
+	timeout := time.Duration(config.DefaultRequestTimeoutSeconds) * time.Second
 
 	// Look up service-specific timeout in server config
 	if supplierConfig, exists := server.serverConfig.SupplierConfigsMap[serviceId]; exists {

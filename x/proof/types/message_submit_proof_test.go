@@ -25,7 +25,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 		{
 			desc: "application bech32 address is invalid",
 			msg: MsgSubmitProof{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      "not_a_bech32_address",
 					ServiceId:               testServiceId,
@@ -49,7 +49,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 			msg: MsgSubmitProof{
 				SupplierOperatorAddress: "not_a_bech32_address",
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               testServiceId,
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
@@ -68,9 +68,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 		{
 			desc: "session service ID is empty",
 			msg: MsgSubmitProof{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "",
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
@@ -85,9 +85,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid message metadata",
 			msg: MsgSubmitProof{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               testServiceId,
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,

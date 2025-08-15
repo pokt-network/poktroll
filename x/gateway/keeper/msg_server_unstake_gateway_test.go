@@ -23,7 +23,7 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	// Generate an address for the gateway
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	// Verify that the gateway does not exist yet
 	_, isGatewayFound := k.GetGateway(sdkCtx, addr)
@@ -87,7 +87,7 @@ func TestMsgServer_UnstakeGateway_FailIfAlreadyUnbonding(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the gateway
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	// Verify that the gateway does not exist yet
 	_, isGatewayFound := k.GetGateway(ctx, addr)
@@ -134,7 +134,7 @@ func TestMsgServer_UnstakeGateway_FailIfNotStaked(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the gateway
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	// Verify that the gateway does not exist yet
 	_, isGatewayFound := k.GetGateway(ctx, addr)
@@ -158,7 +158,7 @@ func TestMsgServer_UnstakeGateway_RestakeBeforeUnbondingSuccess(t *testing.T) {
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	// Generate an address for the gateway
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	// Verify that the gateway does not exist yet
 	_, isGatewayFound := k.GetGateway(sdkCtx, addr)

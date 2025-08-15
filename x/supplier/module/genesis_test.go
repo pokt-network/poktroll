@@ -20,8 +20,8 @@ func TestGenesis(t *testing.T) {
 		Params: types.DefaultParams(),
 		SupplierList: []sharedtypes.Supplier{
 			{
-				OwnerAddress:    sample.AccAddress(),
-				OperatorAddress: sample.AccAddress(),
+				OwnerAddress:    sample.AccAddressBech32(),
+				OperatorAddress: sample.AccAddressBech32(),
 				Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
@@ -37,8 +37,8 @@ func TestGenesis(t *testing.T) {
 				},
 			},
 			{
-				OwnerAddress:    sample.AccAddress(),
-				OperatorAddress: sample.AccAddress(),
+				OwnerAddress:    sample.AccAddressBech32(),
+				OperatorAddress: sample.AccAddressBech32(),
 				Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{

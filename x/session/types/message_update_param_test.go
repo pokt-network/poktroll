@@ -26,7 +26,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      "non_existent",
 				AsType:    &MsgUpdateParam_AsUint64{AsUint64: DefaultNumSuppliersPerSession},
 			},
@@ -34,7 +34,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "valid: correct address, param name, and type",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamNumSuppliersPerSession,
 				AsType:    &MsgUpdateParam_AsUint64{AsUint64: DefaultNumSuppliersPerSession},
 			},
