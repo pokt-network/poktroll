@@ -20,6 +20,7 @@ import (
 )
 
 func TestCLI_UnstakeSupplier(t *testing.T) {
+	t.Parallel()
 	net, _ := networkWithSupplierObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx

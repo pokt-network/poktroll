@@ -20,6 +20,7 @@ import (
 )
 
 func TestCLI_UnstakeGateway(t *testing.T) {
+	t.Parallel()
 	net, _ := networkWithGatewayObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
