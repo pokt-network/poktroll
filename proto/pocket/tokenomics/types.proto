@@ -9,7 +9,7 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "pocket/proof/types.proto";
 
-// SettlementResult holds mint, burn, and transfer operations that result from a single claim settlement.
+// ClaimSettlementResult holds the result of a single claim settlement: mint, burn, and transfer operations.
 message ClaimSettlementResult {
   pocket.proof.Claim claim = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claim"];
   repeated MintBurnOp mints = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mints"];
@@ -18,14 +18,14 @@ message ClaimSettlementResult {
   repeated ModToAcctTransfer mod_to_acct_transfers = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mod_to_acct_transfers"];
 }
 
-// MintBurnOperation holds the parameters of a mint or burn operation.
+// MintBurnOp holds the parameters of a single mint or burn operation.
 message MintBurnOp {
   SettlementOpReason op_reason = 1 [(gogoproto.jsontag) = "op_reason"];
   string DestinationModule = 2 [(gogoproto.jsontag) = "destination_module"];
   cosmos.base.v1beta1.Coin coin = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coin"];
 }
 
-// ModToAcctTransfer holds the parameters of a module to account transfer operation.
+// ModToAcctTransfer holds the parameters of a single module to account transfer operation.
 message ModToAcctTransfer {
   SettlementOpReason op_reason = 1 [(gogoproto.jsontag) = "op_reason"];
   string SenderModule = 2 [(gogoproto.jsontag) = "sender_module"];
@@ -33,7 +33,7 @@ message ModToAcctTransfer {
   cosmos.base.v1beta1.Coin coin = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coin"];
 }
 
-// ModToModTransfer holds the parameters of a module to module transfer operation.
+// ModToModTransfer holds the parameters of a single module to module transfer operation.
 message ModToModTransfer {
   SettlementOpReason op_reason = 1 [(gogoproto.jsontag) = "op_reason"];
   string SenderModule = 2 [(gogoproto.jsontag) = "sender_module"];
@@ -43,33 +43,49 @@ message ModToModTransfer {
 
 // SettlementOpReason is a distinct, tlm-specific causal reason for a given operation.
 enum SettlementOpReason {
-  // UNSPECIFIED is the default value for SettlementOpReason, it is used as a field
-  // type for objects which need to distinguish whether a SettlementOpReason has been specified it or not.
+  // Next free index: 20
+
+  // *** All TLMs ***
+
+  // UNSPECIFIED is the default value for SettlementOpReason
+  // It is used as a field type for objects which need to distinguish whether a SettlementOpReason has been specified it or not.
   UNSPECIFIED = 0;
 
-  // Value transfer (credit/debit)
+  // All TLMs: Penalization: Slash, burn, etc...
+  UNSPECIFIED_TLM_SUPPLIER_SLASH_MODULE_TRANSFER = 11;
+  UNSPECIFIED_TLM_SUPPLIER_SLASH_STAKE_BURN = 12;
+
+  // *** MintEqualsBurnTlm ***
+
+  // MintEqualsBurnTlm: Value transfer (credit/debit aka mint/burn)
   TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT = 1;
   TLM_RELAY_BURN_EQUALS_MINT_APPLICATION_STAKE_BURN = 2;
+  TLM_RELAY_BURN_EQUALS_MINT_TOKENOMICS_CLAIM_DISTRIBUTION_MINT = 19;
 
-  // Inflation
+  // MintEqualsBurnTlm: Reward distribution
+  TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION = 4;
+  TLM_RELAY_BURN_EQUALS_MINT_DAO_REWARD_DISTRIBUTION = 15;
+  TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION = 16;
+  TLM_RELAY_BURN_EQUALS_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION = 17;
+  TLM_RELAY_BURN_EQUALS_MINT_APPLICATION_REWARD_DISTRIBUTION = 18;
+
+  // *** GlobalMintTLM ***
+
+  // GlobalMintTLM: Inflation
   TLM_GLOBAL_MINT_INFLATION = 3;
 
-  // Reward distribution
-  TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION = 4;
+  // GlobalMintTLM: Reward distribution
   TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION = 5;
   TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION = 6;
   TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION = 7;
   TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION = 8;
   TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION = 9;
 
-  // Self-servicing mitigation
+  // GlobalMintTLM: Self-servicing mitigation
   TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_DAO_TRANSFER = 10;
 
-  // Penalization
-  UNSPECIFIED_TLM_SUPPLIER_SLASH_MODULE_TRANSFER = 11;
-  UNSPECIFIED_TLM_SUPPLIER_SLASH_STAKE_BURN = 12;
-
-  // Module accounting
+  // GlobalMintTLM: Module accounting
   TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_MODULE_TRANSFER = 13;
   TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER = 14;
+
 }

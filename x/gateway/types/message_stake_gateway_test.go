@@ -27,42 +27,42 @@ func TestMsgStakeGateway_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "valid address - nil stake",
 			msg: MsgStakeGateway{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				// Stake explicitly nil
 			},
 			expectedErr: ErrGatewayInvalidStake,
 		}, {
 			desc: "valid address - zero stake",
 			msg: MsgStakeGateway{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
 			},
 			expectedErr: ErrGatewayInvalidStake,
 		}, {
 			desc: "valid address - negative stake",
 			msg: MsgStakeGateway{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
 			},
 			expectedErr: ErrGatewayInvalidStake,
 		}, {
 			desc: "valid address - invalid stake denom",
 			msg: MsgStakeGateway{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
 			},
 			expectedErr: ErrGatewayInvalidStake,
 		}, {
 			desc: "valid address - invalid stake missing denom",
 			msg: MsgStakeGateway{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
 			},
 			expectedErr: ErrGatewayInvalidStake,
 		}, {
 			desc: "valid address - valid stake",
 			msg: MsgStakeGateway{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 				Stake:   &coins,
 			},
 		},

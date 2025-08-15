@@ -14,17 +14,17 @@ import (
 )
 
 func TestGenesisState_Validate(t *testing.T) {
-	addr1 := sample.AccAddress()
+	addr1 := sample.AccAddressBech32()
 	stake1 := sdk.NewCoin("upokt", math.NewInt(100))
 	svc1AppConfig := &sharedtypes.ApplicationServiceConfig{ServiceId: "svc1"}
 
-	addr2 := sample.AccAddress()
+	addr2 := sample.AccAddressBech32()
 	stake2 := sdk.NewCoin("upokt", math.NewInt(100))
 	svc2AppConfig := &sharedtypes.ApplicationServiceConfig{ServiceId: "svc2"}
 
 	emptyDelegatees := make([]string, 0)
-	gatewayAddr1 := sample.AccAddress()
-	gatewayAddr2 := sample.AccAddress()
+	gatewayAddr1 := sample.AccAddressBech32()
+	gatewayAddr2 := sample.AccAddressBech32()
 
 	tests := []struct {
 		desc     string

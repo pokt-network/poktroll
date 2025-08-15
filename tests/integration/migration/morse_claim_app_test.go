@@ -33,7 +33,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 	for morseAccountIdx, morseClaimableAccount := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
-			shannonDestAddr := sample.AccAddress()
+			shannonDestAddr := sample.AccAddressBech32()
 			bankClient := s.GetBankQueryClient(s.T())
 
 			// Assert that the shannonDestAddr account initially has a zero balance.
@@ -46,7 +46,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.appServiceConfig,
-				sample.AccAddress(),
+				sample.AccAddressBech32(),
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -103,7 +103,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
 			// Stake an initial application.
-			shannonDestAddr := sample.AccAddress()
+			shannonDestAddr := sample.AccAddressBech32()
 			shannonDestAccAddr := cosmostypes.MustAccAddressFromBech32(shannonDestAddr)
 
 			initialAppStake := &s.minStake
@@ -128,7 +128,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.appServiceConfig,
-				sample.AccAddress(),
+				sample.AccAddressBech32(),
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -178,7 +178,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_BelowMinStake() {
 	s.GenerateMorseAccountState(s.T(), 1, testmigration.AllApplicationMorseAccountActorType)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	shannonDestAddr := sample.AccAddress()
+	shannonDestAddr := sample.AccAddressBech32()
 	bankClient := s.GetBankQueryClient(s.T())
 
 	// Assert that the shannonDestAddr account initially has a zero balance.
@@ -198,7 +198,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_BelowMinStake() {
 		shannonDestAddr,
 		morsePrivateKey,
 		s.appServiceConfig,
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 	)
 	s.NoError(err)
 
@@ -305,13 +305,13 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 	unbondedAppFixture := fixtures.GetApplicationFixtures(testmigration.MorseUnbondedApplication)[0]
 
 	s.Run("application unbonding began", func() {
-		shannonDestAddr := sample.AccAddress()
+		shannonDestAddr := sample.AccAddressBech32()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 			shannonDestAddr,
 			unbondingAppFixture.GetPrivateKey(),
 			s.appServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		s.NoError(err)
 
@@ -349,8 +349,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
 			Application:             expectedApp,
 		}
@@ -405,13 +405,13 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 	})
 
 	s.Run("application unbonding ended", func() {
-		shannonDestAddr := sample.AccAddress()
+		shannonDestAddr := sample.AccAddressBech32()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 			shannonDestAddr,
 			unbondedAppFixture.GetPrivateKey(),
 			s.appServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		s.NoError(err)
 
@@ -441,8 +441,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
 			Application:             expectedApp,
 		}
