@@ -73,17 +73,22 @@ func NewSessionTree(
 	storesDirectory string,
 	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
+	// If storePath is "", then a memory-backed store will be created (in-memory SMT, not persisted to disk).
+	storePath := ""
+
 	// Join the storePrefix and the session.sessionId and supplier's operator address to
 	// create a unique storePath.
 
 	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
 	// use one key store. KV databases are often optimized for writing into one database. They keys can
 	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
-	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionHeader.SessionId)
+	if storesDirectory != MemoryStore {
+		storePath = filepath.Join(storesDirectory, supplierOperatorAddress, sessionHeader.SessionId)
 
-	// Make sure storePath does not exist when creating a new SessionTree
-	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
-		return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
+		// Make sure storePath does not exist when creating a new SessionTree
+		if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
+			return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
+		}
 	}
 
 	treeStore, err := pebble.NewKVStore(storePath)
@@ -242,10 +247,14 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return st.compactProof, nil
 	}
 
-	// Restore the KVStore from disk since it has been closed after the claim has been generated.
-	st.treeStore, err = pebble.NewKVStore(st.storePath)
-	if err != nil {
-		return nil, err
+	// When using an in-memory store, there is no save/restore procedure needed,
+	// as the SMT data only exists in memory and is lost on restart.
+	if st.persistedSMT() {
+		// Restore the KVStore from disk since it has been closed after the claim has been generated.
+		st.treeStore, err = pebble.NewKVStore(st.storePath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
@@ -307,11 +316,14 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 
 	st.claimedRoot = st.sessionSMT.Root()
 
-	if err := st.Stop(); err != nil {
-		return nil, err
-	}
+	// When using an in-memory store, we cannot stop and later restore the SMT as the data will be lost.
+	if st.persistedSMT() {
+		if err := st.Stop(); err != nil {
+			return nil, err
+		}
 
-	st.treeStore = nil
+		st.treeStore = nil
+	}
 
 	return st.claimedRoot, nil
 }
@@ -362,8 +374,13 @@ func (st *sessionTree) Delete() error {
 		).Info().Msg("KVStore is already stopped")
 	}
 
-	// Delete the KVStore from disk
-	return os.RemoveAll(st.storePath)
+	// If the SMT is persisted (not in-memory), we need to remove the KVStore from disk.
+	if st.persistedSMT() {
+		// Delete the KVStore from disk
+		return os.RemoveAll(st.storePath)
+	}
+
+	return st.treeStore.ClearAll()
 }
 
 // StartClaiming marks the session tree as being picked up for claiming,
@@ -403,4 +420,9 @@ func (st *sessionTree) Stop() error {
 
 	// Store the underlying key-value store in the session tree
 	return st.treeStore.Stop()
+}
+
+// TODO_AI: Add godoc
+func (st *sessionTree) persistedSMT() bool {
+	return st.storePath != ""
 }

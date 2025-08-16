@@ -26,6 +26,10 @@ import (
 // Ensure the relayerSessionsManager implements the RelayerSessions interface.
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
+// If smt_store_path is set to MemoryStore ("memory://"), then the SMT will be stored only
+// in memory, not persisted to disk, and all session data will vanish on process restart.
+const MemoryStore = "memory://"
+
 // SessionTreesMap is an alias type for a map of
 // supplierOperatorAddress ->  sessionEndHeight -> sessionId -> SessionTree.
 //
@@ -63,6 +67,9 @@ type relayerSessionsManager struct {
 	supplierClients *supplier.SupplierClientMap
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
+	// If storesDirectory is set to MemoryStore ("memory://"), then all session trees and their data
+	// are kept in memory only and will be lost on restart. Otherwise, session data is persisted to disk
+	// and can be restored after a process restart.
 	storesDirectory string
 
 	// sessionSMTStore is a key-value store used to persist the metadata of
@@ -181,8 +188,13 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Preserving the relayer's state across restarts
 	//   - Ensuring no active sessions are lost when the process is interrupted
 	//   - Maintaining accumulated work when interruptions occur
-	if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
-		return err
+	//
+	// NOTE: If using in-memory SMT (MemoryStore), there is currently no restoration mechanism;
+	// all session data will be lost on restart. Remove this block once in-memory SMT restoration is implemented.
+	if rs.storesDirectory != MemoryStore {
+		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
+			return err
+		}
 	}
 
 	// DEV_NOTE: must cast back to generic observable type to use with Map.
@@ -235,6 +247,11 @@ func (rs *relayerSessionsManager) Stop() {
 	// While process termination would eventually clean these up, explicit cleanup is preferred.
 	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
+
+	// If the SMT is in-memory (MemoryStore), there is no need to persist its metadata or session state on shutdown.
+	if rs.storesDirectory == MemoryStore {
+		return
+	}
 
 	// Lock the mutex before accessing and modifying the sessionsTrees map to ensure
 	// thread safety during shutdown.
