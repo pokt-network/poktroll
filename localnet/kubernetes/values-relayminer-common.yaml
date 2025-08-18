@@ -2,6 +2,8 @@ chainId: "pocket"
 grpcInsecure: true
 queryCaching: false
 config:
+  # TODO(#1734): Ensure that LocalNet and E2E tests are configured to have 1RM
+  # using an in-memory store and one using an on-disk persisted store.
   # smt_store_path: /root/.pocket/smt
   smt_store_path: ":memory:"
   metrics:
