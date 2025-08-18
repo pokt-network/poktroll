@@ -1,9 +1,9 @@
 guard:
-  enabled: false
+  enabled: true
   envoyGateway:
-    enabled: false
+    enabled: true
   gateway-helm:
-    enabled: false
+    enabled: true
     # TODO_TECHDEBT(@okdas): Use stable release of Envoy Ratelimit Service (RLS).
     # Remove this override once the latest stable version of RLS contains this commit: https://github.com/envoyproxy/ratelimit/pull/941
     # For now, we're using a pre-release build tag of RLS.
@@ -16,4 +16,6 @@ guard:
     # This is a workaround to avoid the "registered extension has no hooks specified" error.
     # Discord discussion: https://discord.com/channels/824324475256438814/997192534168182905/1405986859120722050
     config:
-      envoyGateway: {}
+      envoyGateway:
+        extensionApis: null
+        extensionManager: null
