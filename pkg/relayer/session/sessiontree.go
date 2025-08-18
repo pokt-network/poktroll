@@ -94,7 +94,6 @@ func NewSessionTree(
 		logger.Info().Msgf("Using %s as the store path for session tree", storePath)
 	} else {
 		// DEV_NOTE: Using "" as the storePath in pebble is the equivalent of passing in the  'vfs.NewMem()' option
-		storesDirectoryPath = ""
 		// TODO_TEST: Add unit tests for in-memory SMT functionality (MemoryStore).
 		logger.Info().Msg("⚠️ Using in memory store for session tree. Data will not be persisted on restart. ⚠️")
 	}
