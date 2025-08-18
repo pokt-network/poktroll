@@ -313,6 +313,9 @@ for x in range(localnet_config["path_gateways"]["count"]):
         # "--set=guard.enabled=true",
         # "--set=guard.envoyGateway.enabled=true",
 
+        # TODO_TECHDEBT(@okdas): Remove the need for an override that uses a pre-released version of RLS.
+        # See 'guard-overrides.yaml' for more details.
+        #
         # Use values file for overriding temporary GUARD values as a workaround for:
         # - Envoy Ratelimit Service (RLS) requiring pre-release build tag
         # - "registered extension has no hooks specified" error
