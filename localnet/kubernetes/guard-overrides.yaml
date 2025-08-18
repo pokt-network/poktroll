@@ -1,0 +1,16 @@
+guard:
+  gateway-helm:
+  # DEV_NOTE: this section uses pre-release build tag of the Envoy Ratelimit Service (RLS) 
+  # Remove this override once the latest version is updated with the 
+    global:
+      images:
+        ratelimit:
+          image: "envoyproxy/ratelimit:38f01982"
+          pullPolicy: Always
+    # DEV_NOTE: This section is to force using null values for extensionApis and extensionManager
+    # This is a workaround to avoid the "registered extension has no hooks specified" error.
+    # Discord discussion: https://discord.com/channels/824324475256438814/997192534168182905/1405986859120722050
+    config:
+      envoyGateway:
+        extensionApis: null
+        extensionManager: null

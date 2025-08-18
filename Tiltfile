@@ -309,6 +309,12 @@ for x in range(localnet_config["path_gateways"]["count"]):
         # TODO_IMPROVE(@okdas): Turn on guard when we are ready for it - e2e tests currently are not setup to use it.
         # "--set=guard.enabled=true",
         # "--set=guard.envoyGateway.enabled=true",
+
+        # Use values file for overriding temporary GUARD values as a workaround for:
+        # - Envoy Ratelimit Service (RLS) requiring pre-release build tag
+        # - "registered extension has no hooks specified" error
+        # Discord discussion: https://discord.com/channels/824324475256438814/997192534168182905/1405986859120722050
+        "--values=./localnet/kubernetes/guard-overrides.yaml",
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
