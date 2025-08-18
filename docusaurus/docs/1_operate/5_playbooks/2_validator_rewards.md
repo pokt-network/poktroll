@@ -11,6 +11,14 @@ Remove `--grpc-insecure=false` once `pocketd` is updated
 
 :::
 
+:::note TODO(@olshansk) Streamline this whole page
+
+To understand which validator should receive the rewards at a certain block, you
+need to cross-reference the `Consensus_Pubkey_ed25519` from section (A2) with the `ConsPubKey_Encoded_ed25519` from section (A1)
+and check the `ConsAddress` corresponding to a certain block in section (A3).
+
+:::
+
 ## Table of Contents <!-- omit in toc -->
 
 - [A. Identifying the Validator Sets](#a-identifying-the-validator-sets)
@@ -18,17 +26,14 @@ Remove `--grpc-insecure=false` once `pocketd` is updated
   - [2. List CosmosSDK Bonded Validator Operator Addresses (`secp256k1`)](#2-list-cosmossdk-bonded-validator-operator-addresses-secp256k1)
   - [3. Check Current Block Proposer (encoded `ed25519`)](#3-check-current-block-proposer-encoded-ed25519)
 - [B. Monitoring Validator Balance Over Time](#b-monitoring-validator-balance-over-time)
-  - [Monitor Balance Changes Over Time](#monitor-balance-changes-over-time)
-- [C. Retrieving Validator Commission](#c-retrieving-validator-commission)
-  - [Check Validator Commission](#check-validator-commission)
-  - [Using your validator key](#using-your-validator-key)
-  - [Check Outstanding Unclaimed Validator Rewards](#check-outstanding-unclaimed-validator-rewards)
-  - [Withdraw Validator Commission](#withdraw-validator-commission)
+  - [1. Get the Validator Account Address](#1-get-the-validator-account-address)
+  - [2. Monitor Balance Changes Over Time](#2-monitor-balance-changes-over-time)
+- [C. Viewing \& Retrieving Validator Commission Tx Fees](#c-viewing--retrieving-validator-commission-tx-fees)
+  - [Check Community Pool Commission Accumulated](#check-community-pool-commission-accumulated)
+  - [View Validator Commission Accumulated](#view-validator-commission-accumulated)
   - [Check Delegator Rewards](#check-delegator-rewards)
-  - [Withdraw All Rewards (Commission + Delegation)](#withdraw-all-rewards-commission--delegation)
-  - [Query Community Pool](#query-community-pool)
-  - [Get Comprehensive Distribution Info](#get-comprehensive-distribution-info)
-  - [Withdraw All Delegation Rewards](#withdraw-all-delegation-rewards)
+  - [Withdraw Validator Commission Rewards](#withdraw-validator-commission-rewards)
+- [D. Tokenomics Relay Distribution Parameters](#d-tokenomics-relay-distribution-parameters)
 
 :::info Read the official Cosmos documentation for more information
 
@@ -39,14 +44,6 @@ Make sure to read those docs as the primary source of truth.
 :::
 
 ## A. Identifying the Validator Sets
-
-:::note TODO(@olshansk) Streamline this section
-
-To understand which validator should receive the rewards at a certain block, you
-need to cross-reference the `Consensus_Pubkey_ed25519` from section (2) with the `ConsPubKey_Encoded_ed25519` from section (1)
-and check the `ConsAddress` corresponding to a certain block in section (3).
-
-:::
 
 ### 1. View CometBFT Consensus Validator Set (`ed25519`)
 
@@ -127,11 +124,31 @@ Block 304448: poktvalcons1g4mm5lus677m6efvjmvjetw5h3xplu8gy50t3y
 
 ## B. Monitoring Validator Balance Over Time
 
-### Monitor Balance Changes Over Time
+### 1. Get the Validator Account Address
+
+Retrieve the validator operator address (`poktvaloper1...`) from the section above and run:
+
+```bash
+pocketd debug addr poktvaloper18808wvw0h4t450t06uvauny8lvscsxjfx0wu80
+```
+
+Which will output:
+
+```bash
+Address: [57 222 119 49 207 189 87 90 61 111 215 25 222 76 135 251 33 136 26 73]
+Address (hex): 39DE7731CFBD575A3D6FD719DE4C87FB21881A49
+Bech32 Acc: pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh
+Bech32 Val: poktvaloper18808wvw0h4t450t06uvauny8lvscsxjfx0wu80
+Bech32 Con: poktvalcons18808wvw0h4t450t06uvauny8lvscsxjfjuaqtw
+```
+
+Use the account address (e.g. `pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh`) in the next step.
+
+### 2. Monitor Balance Changes Over Time
 
 Track your validator's balance changes across block heights:
 
-````bash
+```bash
 # Replace with your validator account address
 ACCOUNT_ADDR="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
 
@@ -145,25 +162,11 @@ for ((h=latest_height-1; h>latest_height-1000; h-=100)); do
     https://shannon-grove-api.mainnet.poktroll.com/cosmos/bank/v1beta1/balances/$ACCOUNT_ADDR \
     | jq -r '.balances[]? | select(.denom=="upokt") | .amount // "0"'
 done
+```
 
-## Inspecting and Retrieving Relay Settlement Fees
+## C. Viewing & Retrieving Validator Commission Tx Fees
 
-### Check Distribution Parameters
-
-Verify the current distribution parameters for relay rewards:
-
-```bash
-pocketd query tokenomics params --network=main --grpc-insecure=false -o json | jq
-````
-
-Key parameters to check:
-
-- `mint_allocation_percentages.proposer`: Proposer's share of new mints
-- `mint_equals_burn_claim_distribution.proposer`: Proposer's share when mint equals burn
-
-## C. Retrieving Validator Commission
-
-### Check Validator Commission
+### Check Community Pool Commission Accumulated
 
 View accumulated tx commissions that haven't been withdrawn across all validators:
 
@@ -171,37 +174,19 @@ View accumulated tx commissions that haven't been withdrawn across all validator
 pocketd query distribution community-pool --network=main --grpc-insecure=false -o json | jq
 ```
 
-### Using your validator key
+### View Validator Commission Accumulated
 
 ```bash
-pocketd query distribution commission \
- $(pocketd keys show validator --bech val -a)
-```
+export VALIDATOR_ADDRESS="poktvaloper18808wvw0h4t450t06uvauny8lvscsxjfx0wu80"
 
-### Check Outstanding Unclaimed Validator Rewards
+# View all un-withdrawn rewards for a particular validator:
+pocketd query distribution validator-outstanding-rewards $VALIDATOR_ADDRESS --network=main --grpc-insecure=false -o json | jq
 
-View all un-withdrawn rewards for your validator:
+# View accumulated tx commissions that haven't been withdrawn across all validators:
+pocketd query distribution commission $VALIDATOR_ADDRESS --network=main --grpc-insecure=false -o json | jq
 
-```bash
-# Using specific validator address
-pocketd query distribution validator-outstanding-rewards poktvaloper1abc123...
-
-# Using your validator key
-pocketd query distribution validator-outstanding-rewards \
-  $(pocketd keys show validator --bech val -a)
-```
-
-### Withdraw Validator Commission
-
-Withdraw only your validator commission:
-
-```bash
-pocketd tx distribution withdraw-validator-commission \
-  --from <validator-operator-key> \
-  --chain-id pocket \
-  --gas auto \
-  --gas-adjustment 1.5 \
-  --fees 1000000upokt
+# View all distribution-related information for your validator:
+pocketd query distribution validator-distribution-info $VALIDATOR_ADDRESS --network=main --grpc-insecure=false -o json | jq
 ```
 
 ### Check Delegator Rewards
@@ -216,7 +201,18 @@ pocketd query distribution rewards <delegator-address>
 pocketd query distribution rewards <delegator-address> <validator-operator-address>
 ```
 
-### Withdraw All Rewards (Commission + Delegation)
+### Withdraw Validator Commission Rewards
+
+Withdraw only your validator commission:
+
+```bash
+pocketd tx distribution withdraw-validator-commission \
+  --from <validator-operator-key> \
+  --chain-id pocket \
+  --gas auto \
+  --gas-adjustment 1.5 \
+  --fees 1000000upokt
+```
 
 Withdraw both commission and self-delegation rewards in one transaction:
 
@@ -231,24 +227,6 @@ pocketd tx distribution withdraw-rewards \
   --fees 1000000upokt
 ```
 
-### Query Community Pool
-
-Check the total fees accumulated in the community pool:
-
-```bash
-pocketd query distribution community-pool
-```
-
-### Get Comprehensive Distribution Info
-
-View all distribution-related information for your validator:
-
-```bash
-pocketd query distribution validator-distribution-info poktvaloper1abc123...
-```
-
-### Withdraw All Delegation Rewards
-
 Withdraw rewards from all your delegations at once:
 
 ```bash
@@ -259,3 +237,16 @@ pocketd tx distribution withdraw-all-rewards \
   --gas-adjustment 1.5 \
   --fees 1000000upokt
 ```
+
+## D. Tokenomics Relay Distribution Parameters
+
+Verify the current distribution parameters for relay rewards:
+
+```bash
+pocketd query tokenomics params --network=main --grpc-insecure=false -o json | jq
+```
+
+Key parameters to check:
+
+- `mint_allocation_percentages.proposer`: Proposer's share of new mints
+- `mint_equals_burn_claim_distribution.proposer`: Proposer's share when mint equals burn
