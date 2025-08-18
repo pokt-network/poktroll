@@ -2,7 +2,8 @@ chainId: "pocket"
 grpcInsecure: true
 queryCaching: false
 config:
-  smt_store_path: /root/.pocket/smt
+  # smt_store_path: /root/.pocket/smt
+  smt_store_path: ":memory:"
   metrics:
     enabled: true
     addr: :9090

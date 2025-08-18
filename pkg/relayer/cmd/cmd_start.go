@@ -145,13 +145,14 @@ Totals:
 		return err
 	}
 
-	if relayMinerConfig.SmtStorePath == session.MemoryStore {
+	if relayMinerConfig.SmtStorePath == session.InMemoryStoreFilename {
 		fmt.Printf(`
-🚨 WARNING: SMT configured for in-memory storage (memory://) 🚨
+🚨 WARNING: SMT configured for in-memory storage 🚨
 ----------------------------------------------------------------
 • All session data will be LOST on RelayMiner restart
 • No session state persisted to disk
 • Unsubmitted Claims and Proofs will be lost
+• TODO(#1734): Add support for backing up in-memory session trees
 ----------------------------------------------------------------
 `)
 	}

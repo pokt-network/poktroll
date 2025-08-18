@@ -182,6 +182,16 @@ The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
 
+`:memory:` can be used to store the `SMT` only in memory, not persisted to disk.
+
+:::warning Session state loss
+
+TODO(#1734): Ensure session state is persisted even when using in-memory mode
+
+:::
+
+:::note
+
 ### `enable_over_servicing`
 
 _`Optional`_ (default: `false`)
