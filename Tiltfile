@@ -308,18 +308,8 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=guard.global.serviceName=path" + str(actor_number) + "-http", # Override the default service name
         "--set=guard.services[0].serviceId=anvil", # Ensure HTTPRoute resources are created for Anvil
         "--set=observability.enabled=false",
-
-        # TODO_IMPROVE(@okdas): Turn on guard when we are ready for it - e2e tests currently are not setup to use it.
-        # "--set=guard.enabled=true",
-        # "--set=guard.envoyGateway.enabled=true",
-
         # TODO_TECHDEBT(@okdas): Remove the need for an override that uses a pre-released version of RLS.
-        # See 'guard-overrides.yaml' for more details.
-        #
-        # Use values file for overriding temporary GUARD values as a workaround for:
-        # - Envoy Ratelimit Service (RLS) requiring pre-release build tag
-        # - "registered extension has no hooks specified" error
-        # Discord discussion: https://discord.com/channels/824324475256438814/997192534168182905/1405986859120722050
+        # See 'guard-overrides.yaml' for more details and TODOs.
         "--values=./localnet/kubernetes/guard-overrides.yaml",
     ]
 
