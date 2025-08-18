@@ -13,25 +13,22 @@ Remove `--grpc-insecure=false` once `pocketd` is updated
 
 ## Table of Contents <!-- omit in toc -->
 
-- [Identifying the Validator Sets](#identifying-the-validator-sets)
+- [A. Identifying the Validator Sets](#a-identifying-the-validator-sets)
   - [1. View CometBFT Consensus Validator Set (`ed25519`)](#1-view-cometbft-consensus-validator-set-ed25519)
   - [2. List CosmosSDK Bonded Validator Operator Addresses (`secp256k1`)](#2-list-cosmossdk-bonded-validator-operator-addresses-secp256k1)
   - [3. Check Current Block Proposer (encoded `ed25519`)](#3-check-current-block-proposer-encoded-ed25519)
-- [Inspecting and Retrieving Block TX Fees](#inspecting-and-retrieving-block-tx-fees)
+- [B. Monitoring Validator Balance Over Time](#b-monitoring-validator-balance-over-time)
+  - [Monitor Balance Changes Over Time](#monitor-balance-changes-over-time)
+- [C. Retrieving Validator Commission](#c-retrieving-validator-commission)
   - [Check Validator Commission](#check-validator-commission)
   - [Using your validator key](#using-your-validator-key)
   - [Check Outstanding Unclaimed Validator Rewards](#check-outstanding-unclaimed-validator-rewards)
   - [Withdraw Validator Commission](#withdraw-validator-commission)
   - [Check Delegator Rewards](#check-delegator-rewards)
   - [Withdraw All Rewards (Commission + Delegation)](#withdraw-all-rewards-commission--delegation)
-  - [Monitor Balance Changes Over Time](#monitor-balance-changes-over-time)
   - [Query Community Pool](#query-community-pool)
   - [Get Comprehensive Distribution Info](#get-comprehensive-distribution-info)
   - [Withdraw All Delegation Rewards](#withdraw-all-delegation-rewards)
-- [Quick Reference Playbook](#quick-reference-playbook)
-  - [Daily Validator Rewards Check](#daily-validator-rewards-check)
-  - [Complete Rewards Withdrawal](#complete-rewards-withdrawal)
-  - [Dry Run Before Withdrawal](#dry-run-before-withdrawal)
 
 :::info Read the official Cosmos documentation for more information
 
@@ -41,7 +38,7 @@ Make sure to read those docs as the primary source of truth.
 
 :::
 
-## Identifying the Validator Sets
+## A. Identifying the Validator Sets
 
 :::note TODO(@olshansk) Streamline this section
 
@@ -128,7 +125,43 @@ Block 304449: poktvalcons15jv09gszged6n4p5yx6cylx574lvdt35fvuyxa
 Block 304448: poktvalcons1g4mm5lus677m6efvjmvjetw5h3xplu8gy50t3y
 ```
 
-## Inspecting and Retrieving Block TX Fees
+## B. Monitoring Validator Balance Over Time
+
+### Monitor Balance Changes Over Time
+
+Track your validator's balance changes across block heights:
+
+````bash
+# Replace with your validator account address
+ACCOUNT_ADDR="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
+
+# Get latest block height from mainnet RPC
+latest_height=$(curl -s https://shannon-grove-rpc.mainnet.poktroll.com/status | jq -r '.result.sync_info.latest_block_height')
+
+# Check balance every 100 blocks for the last 1000 blocks
+for ((h=latest_height-1; h>latest_height-1000; h-=100)); do
+  echo -n "Height $h: "
+  curl -s -H "x-cosmos-block-height: $h" \
+    https://shannon-grove-api.mainnet.poktroll.com/cosmos/bank/v1beta1/balances/$ACCOUNT_ADDR \
+    | jq -r '.balances[]? | select(.denom=="upokt") | .amount // "0"'
+done
+
+## Inspecting and Retrieving Relay Settlement Fees
+
+### Check Distribution Parameters
+
+Verify the current distribution parameters for relay rewards:
+
+```bash
+pocketd query tokenomics params --network=main --grpc-insecure=false -o json | jq
+````
+
+Key parameters to check:
+
+- `mint_allocation_percentages.proposer`: Proposer's share of new mints
+- `mint_equals_burn_claim_distribution.proposer`: Proposer's share when mint equals burn
+
+## C. Retrieving Validator Commission
 
 ### Check Validator Commission
 
@@ -198,40 +231,6 @@ pocketd tx distribution withdraw-rewards \
   --fees 1000000upokt
 ```
 
-### Monitor Balance Changes Over Time
-
-Track your validator's balance changes across block heights:
-
-````bash
-# Replace with your validator account address
-ACCOUNT_ADDR="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
-
-# Get latest block height from mainnet RPC
-latest_height=$(curl -s https://shannon-grove-rpc.mainnet.poktroll.com/status | jq -r '.result.sync_info.latest_block_height')
-
-# Check balance every 100 blocks for the last 1000 blocks
-for ((h=latest_height-1; h>latest_height-1000; h-=100)); do
-  echo -n "Height $h: "
-  curl -s -H "x-cosmos-block-height: $h" \
-    https://shannon-grove-api.mainnet.poktroll.com/cosmos/bank/v1beta1/balances/$ACCOUNT_ADDR \
-    | jq -r '.balances[]? | select(.denom=="upokt") | .amount // "0"'
-done
-
-## Inspecting and Retrieving Relay Settlement Fees
-
-### Check Distribution Parameters
-
-Verify the current distribution parameters for relay rewards:
-
-```bash
-pocketd query tokenomics params --network=main --grpc-insecure=false -o json | jq
-````
-
-Key parameters to check:
-
-- `mint_allocation_percentages.proposer`: Proposer's share of new mints
-- `mint_equals_burn_claim_distribution.proposer`: Proposer's share when mint equals burn
-
 ### Query Community Pool
 
 Check the total fees accumulated in the community pool:
@@ -259,52 +258,4 @@ pocketd tx distribution withdraw-all-rewards \
   --gas auto \
   --gas-adjustment 1.5 \
   --fees 1000000upokt
-```
-
-## Quick Reference Playbook
-
-### Daily Validator Rewards Check
-
-```bash
-# 1. Check outstanding rewards
-pocketd query distribution validator-outstanding-rewards \
-  $(pocketd keys show validator --bech val -a)
-
-# 2. Check commission
-pocketd query distribution commission \
-  $(pocketd keys show validator --bech val -a)
-
-# 3. Check delegation rewards
-pocketd query distribution rewards \
-  $(pocketd keys show validator -a)
-```
-
-### Complete Rewards Withdrawal
-
-```bash
-# Withdraw everything (commission + delegation rewards)
-pocketd tx distribution withdraw-rewards \
-  $(pocketd keys show validator --bech val -a) \
-  --commission \
-  --from validator \
-  --chain-id pocket \
-  --gas auto \
-  --gas-adjustment 1.5 \
-  --fees 1000000upokt
-```
-
-### Dry Run Before Withdrawal
-
-Always test your transaction before executing:
-
-```bash
-pocketd tx distribution withdraw-rewards \
-  $(pocketd keys show validator --bech val -a) \
-  --commission \
-  --from validator \
-  --chain-id pocket \
-  --gas auto \
-  --gas-adjustment 1.5 \
-  --fees 1000000upokt \
-  --dry-run
 ```
