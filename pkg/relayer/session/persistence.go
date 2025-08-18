@@ -155,7 +155,7 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 
 		// Scenarios 2: The claim window is still open.
 		// The session has still a chance to reach settlement by creating the claim and submitting the proof.
-		sessionTree, treeErr := importSessionTree(sessionSMT, claim, rs.storesDirectory, sessionLogger)
+		sessionTree, treeErr := importSessionTree(sessionSMT, claim, rs.storesDirectoryPath, sessionLogger)
 		if treeErr != nil {
 			sessionLogger.Error().Err(treeErr).Msg("failed to import session tree")
 			continue
@@ -195,7 +195,7 @@ func (rs *relayerSessionsManager) deletePersistedSessionTree(sessionSMT *proofty
 	)
 
 	// Delete the corresponding kv store for the session tree.
-	storePath := filepath.Join(rs.storesDirectory, supplierOperatorAddress, sessionId)
+	storePath := filepath.Join(rs.storesDirectoryPath, supplierOperatorAddress, sessionId)
 	if err := os.RemoveAll(storePath); err != nil {
 		if os.IsNotExist(err) {
 			logger.Warn().Msg("session tree store does not exist, nothing to delete")

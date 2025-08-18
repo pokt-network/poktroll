@@ -70,20 +70,17 @@ type sessionTree struct {
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress string,
-	storesDirectory string,
+	storesDirectoryPath string,
 	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
-	// If storePath is "", then a memory-backed store will be created (in-memory SMT, not persisted to disk).
+	// Initialize storePath. If empty, a memory-backed store will be created.
 	storePath := ""
 
-	// Join the storePrefix and the session.sessionId and supplier's operator address to
-	// create a unique storePath.
-
-	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
-	// use one key store. KV databases are often optimized for writing into one database. They keys can
-	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
-	if storesDirectory != MemoryStore {
-		storePath = filepath.Join(storesDirectory, supplierOperatorAddress, sessionHeader.SessionId)
+	// TODO_IMPROVE(#621): Use a single KV store instead of one per session for better RAM/IO efficiency.
+	// KV databases are optimized for single database writes with prefixed keys.
+	// TODO_TEST: Add unit tests for in-memory SMT functionality (MemoryStore).
+	if storesDirectoryPath != MemoryStore {
+		storePath = filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionHeader.SessionId)
 
 		// Make sure storePath does not exist when creating a new SessionTree
 		if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
@@ -128,7 +125,7 @@ func NewSessionTree(
 func importSessionTree(
 	sessionSMT *prooftypes.SessionSMT,
 	claim *prooftypes.Claim,
-	storesDirectory string,
+	storesDirectoryPath string,
 	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
 	sessionId := sessionSMT.SessionHeader.SessionId
@@ -136,7 +133,7 @@ func importSessionTree(
 	applicationAddress := sessionSMT.SessionHeader.ApplicationAddress
 	serviceId := sessionSMT.SessionHeader.ServiceId
 	smtRoot := sessionSMT.SmtRoot
-	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionId)
+	storePath := filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionId)
 
 	// Verify the storage path exists - if not, the session data is missing or corrupted
 	if _, err := os.Stat(storePath); err != nil {
@@ -247,8 +244,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return st.compactProof, nil
 	}
 
-	// When using an in-memory store, there is no save/restore procedure needed,
-	// as the SMT data only exists in memory and is lost on restart.
+	// Skip save/restore for in-memory stores as data exists only in memory.
 	if st.persistedSMT() {
 		// Restore the KVStore from disk since it has been closed after the claim has been generated.
 		st.treeStore, err = pebble.NewKVStore(st.storePath)
@@ -316,7 +312,7 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 
 	st.claimedRoot = st.sessionSMT.Root()
 
-	// When using an in-memory store, we cannot stop and later restore the SMT as the data will be lost.
+	// Skip stopping in-memory stores as data cannot be restored later.
 	if st.persistedSMT() {
 		if err := st.Stop(); err != nil {
 			return nil, err
@@ -374,7 +370,7 @@ func (st *sessionTree) Delete() error {
 		).Info().Msg("KVStore is already stopped")
 	}
 
-	// If the SMT is persisted (not in-memory), we need to remove the KVStore from disk.
+	// Remove persisted stores from disk; clear memory for in-memory stores.
 	if st.persistedSMT() {
 		// Delete the KVStore from disk
 		return os.RemoveAll(st.storePath)
@@ -422,7 +418,8 @@ func (st *sessionTree) Stop() error {
 	return st.treeStore.Stop()
 }
 
-// TODO_AI: Add godoc
+// persistedSMT returns true if the session tree is persisted to disk (has a storePath),
+// false if it's in-memory only.
 func (st *sessionTree) persistedSMT() bool {
 	return st.storePath != ""
 }

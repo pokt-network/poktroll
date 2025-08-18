@@ -26,8 +26,8 @@ import (
 // Ensure the relayerSessionsManager implements the RelayerSessions interface.
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
-// If smt_store_path is set to MemoryStore ("memory://"), then the SMT will be stored only
-// in memory, not persisted to disk, and all session data will vanish on process restart.
+// MemoryStore is the special value for smt_store_path that indicates the SMT should be stored
+// only in memory, not persisted to disk. All session data will be lost on process restart.
 const MemoryStore = "memory://"
 
 // SessionTreesMap is an alias type for a map of
@@ -66,11 +66,10 @@ type relayerSessionsManager struct {
 	// supplierClients is used to create claims and submit proofs for sessions.
 	supplierClients *supplier.SupplierClientMap
 
-	// storesDirectory points to a path on disk where KVStore data files are created.
-	// If storesDirectory is set to MemoryStore ("memory://"), then all session trees and their data
-	// are kept in memory only and will be lost on restart. Otherwise, session data is persisted to disk
-	// and can be restored after a process restart.
-	storesDirectory string
+	// storesDirectoryPath points to a path on disk where KVStore data files are created.
+	// If set to MemoryStore ("memory://"), session trees are kept in memory only and lost on restart.
+	// Otherwise, session data is persisted to disk and can be restored after a process restart.
+	storesDirectoryPath string
 
 	// sessionSMTStore is a key-value store used to persist the metadata of
 	// sessions created in order to recover the active ones in case of a restart.
@@ -118,7 +117,7 @@ type relayerSessionsManager struct {
 //   - polylog.Logger
 //
 // Available options:
-//   - WithStoresDirectory
+//   - WithStoresDirectoryPath
 //   - WithSigningKeyNames
 func NewRelayerSessions(
 	deps depinject.Config,
@@ -152,7 +151,7 @@ func NewRelayerSessions(
 	}
 
 	// Initialize the session metadata store.
-	sessionSMTDir := path.Join(rs.storesDirectory, "sessions_metadata")
+	sessionSMTDir := path.Join(rs.storesDirectoryPath, "sessions_metadata")
 	if rs.sessionSMTStore, err = pebble.NewKVStore(sessionSMTDir); err != nil {
 		return nil, err
 	}
@@ -188,10 +187,8 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Preserving the relayer's state across restarts
 	//   - Ensuring no active sessions are lost when the process is interrupted
 	//   - Maintaining accumulated work when interruptions occur
-	//
-	// NOTE: If using in-memory SMT (MemoryStore), there is currently no restoration mechanism;
-	// all session data will be lost on restart. Remove this block once in-memory SMT restoration is implemented.
-	if rs.storesDirectory != MemoryStore {
+	// Skip restoration when using in-memory SMT (MemoryStore) as there's no persistence.
+	if rs.storesDirectoryPath != MemoryStore {
 		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
 			return err
 		}
@@ -248,8 +245,8 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
 
-	// If the SMT is in-memory (MemoryStore), there is no need to persist its metadata or session state on shutdown.
-	if rs.storesDirectory == MemoryStore {
+	// Skip persistence when using in-memory SMT (MemoryStore) as data is not saved to disk.
+	if rs.storesDirectoryPath == MemoryStore {
 		return
 	}
 
@@ -337,7 +334,7 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 	// sessionTreeWithSessionId map for the given supplier operator address.
 	if !ok {
 		var err error
-		sessionTree, err = NewSessionTree(sessionHeader, supplierOperatorAddress, rs.storesDirectory, rs.logger)
+		sessionTree, err = NewSessionTree(sessionHeader, supplierOperatorAddress, rs.storesDirectoryPath, rs.logger)
 		if err != nil {
 			return nil, err
 		}
@@ -504,8 +501,8 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 // validateConfig validates the relayerSessionsManager's configuration.
 // TODO_TEST: Add unit tests to validate these configurations.
 func (rs *relayerSessionsManager) validateConfig() error {
-	if rs.storesDirectory == "" {
-		return ErrSessionTreeUndefinedStoresDirectory
+	if rs.storesDirectoryPath == "" {
+		return ErrSessionTreeUndefinedStoresDirectoryPath
 	}
 
 	return nil

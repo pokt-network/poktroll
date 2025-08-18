@@ -147,12 +147,12 @@ Totals:
 
 	if relayMinerConfig.SmtStorePath == session.MemoryStore {
 		fmt.Printf(`
-🚨🚨🚨🚨 WARNING: The SMT is configured to use in-memory storage (memory://)! 🚨🚨🚨
--------------------------------------------------------------------------------------
-All session data will be LOST if the RelayMiner process is restarted.
-No session state will be persisted to disk.
-Any non-submitted Claim or Proof will be lost.
--------------------------------------------------------------------------------------
+🚨 WARNING: SMT configured for in-memory storage (memory://) 🚨
+----------------------------------------------------------------
+• All session data will be LOST on RelayMiner restart
+• No session state persisted to disk
+• Unsubmitted Claims and Proofs will be lost
+----------------------------------------------------------------
 `)
 	}
 
