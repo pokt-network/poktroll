@@ -1,9 +1,8 @@
 guard:
   gateway-helm:
-  # DEV_NOTE: this section uses pre-release build tag of the Envoy Ratelimit Service (RLS) 
-  # Remove this override once the latest version is updated with the necessary changes
-  # for supporting MONTHLY rate limit merged by @okdas:
-  # Ref: https://github.com/envoyproxy/ratelimit/pull/941
+    # TODO_TECHDEBT(@okdas): Use stable release of Envoy Ratelimit Service (RLS).
+    # Remove this override once the latest stable version of RLS contains this commit: https://github.com/envoyproxy/ratelimit/pull/941
+    # For now, we're using a pre-release build tag of RLS.
     global:
       images:
         ratelimit:
