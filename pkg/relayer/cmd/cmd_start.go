@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
 // startCmd returns the Cobra subcommand for running the relay miner.
@@ -142,6 +143,18 @@ Totals:
 	if err != nil {
 		fmt.Printf("Could not parse config file from: %s\n", flagRelayMinerConfig)
 		return err
+	}
+
+	if relayMinerConfig.SmtStorePath == session.InMemoryStoreFilename {
+		fmt.Printf(`
+🚨 WARNING: SMT configured for in-memory storage 🚨
+----------------------------------------------------------------
+• All session data will be LOST on RelayMiner restart
+• No session state persisted to disk
+• Unsubmitted Claims and Proofs will be lost
+• TODO(#1734): Add support for backing up in-memory session trees
+----------------------------------------------------------------
+`)
 	}
 
 	// --- Log flag values ---
