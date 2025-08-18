@@ -5,11 +5,17 @@ sidebar_position: 2
 
 This playbook provides step-by-step instructions for tracking and inspecting validator rewards on Pocket Network
 
+:::warning TODO(@olshansk)
+
+Remove `--grpc-insecure=false` once `pocketd` is updated
+
+:::
+
 ## Table of Contents <!-- omit in toc -->
 
 - [Inspecting and Retrieving Block TX Fees](#inspecting-and-retrieving-block-tx-fees)
-  - [Check Outstanding Unclaimed Validator Rewards](#check-outstanding-unclaimed-validator-rewards)
-  - [Check Validator Commission](#check-validator-commission)
+  [Check Validator Commission](#check-outstanding-unclaimed-validator-rewards)
+  [Check Outstanding Unclaimed Validator Rewards](#check-validator-commission)
   - [Withdraw Validator Commission](#withdraw-validator-commission)
   - [Check Delegator Rewards](#check-delegator-rewards)
   - [Withdraw All Rewards (Commission + Delegation)](#withdraw-all-rewards-commission--delegation)
@@ -24,28 +30,35 @@ This playbook provides step-by-step instructions for tracking and inspecting val
   - [Complete Rewards Withdrawal](#complete-rewards-withdrawal)
   - [Dry Run Before Withdrawal](#dry-run-before-withdrawal)
 - [Identifying the Validator Sets](#identifying-the-validator-sets)
-  - [Check Comet Validator Set](#check-comet-validator-set)
+  [Check Comet Validator Set](#view-comet-validator-set)
   - [List Bonded Validator Operator Addresses](#list-bonded-validator-operator-addresses)
   - [Convert Validator Operator Address to Account Address](#convert-validator-operator-address-to-account-address)
   - [Check Current Block Proposer](#check-current-block-proposer)
 
-:::warning TODO(@olshansk)
-
-Remove `--grpc-insecure=false` once `pocketd` is updated
-
-:::
-
 ## Inspecting and Retrieving Block TX Fees
 
-:::critical Read the official Cosmos documentation for more information
+:::info Read the official Cosmos documentation for more information
 
-Block tx fees is directly adopted from the Cosmos SDK [x/distribution](https://docs.cosmos.network/main/build/modules/distribution) module.
+Validator tx fees functionality is directly adopted from the Cosmos SDK [x/distribution](https://docs.cosmos.network/main/build/modules/distribution).
 
-Make sure to read those docs for the source of truth.
-
-The notes below are regurgitation helpers.
+Make sure to read those docs as the primary source of truth.
 
 :::
+
+### Check Validator Commission
+
+View accumulated commission that hasn't been withdrawn:
+
+```bash
+pocketd query distribution community-pool --network=main --grpc-insecure=false -o json | jq
+```
+
+# Using your validator key
+
+```bash
+pocketd query distribution commission \
+ $(pocketd keys show validator --bech val -a)
+```
 
 ### Check Outstanding Unclaimed Validator Rewards
 
@@ -57,19 +70,6 @@ pocketd query distribution validator-outstanding-rewards poktvaloper1abc123...
 
 # Using your validator key
 pocketd query distribution validator-outstanding-rewards \
-  $(pocketd keys show validator --bech val -a)
-```
-
-### Check Validator Commission
-
-View accumulated commission that hasn't been withdrawn:
-
-```bash
-# Using specific validator address
-pocketd query distribution commission poktvaloper1abc123...
-
-# Using your validator key
-pocketd query distribution commission \
   $(pocketd keys show validator --bech val -a)
 ```
 
@@ -224,7 +224,7 @@ pocketd tx distribution withdraw-rewards \
 
 ## Identifying the Validator Sets
 
-### Check Comet Validator Set
+### View Comet Validator Set
 
 View all active validators with their voting power and proposer priority:
 
@@ -232,8 +232,8 @@ View all active validators with their voting power and proposer priority:
 pocketd query comet-validator-set --network=main -o json | jq
 ```
 
-Note that the above are the consensus `ed25519` public keys of the validators,
-not the `secp256k1` public keys of the validator operators.
+_NOTE: The above are the consensus (`ed25519`) public keys of the validators,
+not the account (`secp256k1`) public keys of the validator operators._
 
 ### List Bonded Validator Operator Addresses
 
