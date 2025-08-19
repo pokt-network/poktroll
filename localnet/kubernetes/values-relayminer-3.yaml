@@ -4,4 +4,10 @@ config:
   signing_key_name: supplier3
 
   default_signing_key_names: [supplier3]
+
+  # Override common config to use disk-based SMT storage for mixed environment testing
+  smt_store_path: "/root/.pocket/smt"
+  # Disable backup for disk-based storage (not needed)
+  smt_backup:
+    enabled: false
   suppliers: [] # suppliers list is dynamically defined in pocket/Tiltfile.

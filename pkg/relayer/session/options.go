@@ -2,6 +2,7 @@ package session
 
 import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 )
 
 // WithStoresDirectoryPath sets the path on disk where KVStore data files used to store
@@ -9,6 +10,21 @@ import (
 func WithStoresDirectoryPath(storesDirectoryPath string) relayer.RelayerSessionsManagerOption {
 	return func(relSessionMgr relayer.RelayerSessionsManager) {
 		relSessionMgr.(*relayerSessionsManager).storesDirectoryPath = storesDirectoryPath
+	}
+}
+
+// WithSmtBackupConfig sets the SMT backup configuration for the RelayerSessionsManager.
+func WithSmtBackupConfig(
+	backupConfig *relayerconfig.RelayMinerSmtBackupConfig,
+) relayer.RelayerSessionsManagerOption {
+	return func(relSessionMgr relayer.RelayerSessionsManager) {
+		relayerSessionsManager := relSessionMgr.(*relayerSessionsManager)
+		if backupConfig != nil {
+			relayerSessionsManager.backupManager = NewBackupManager(
+				relayerSessionsManager.logger,
+				backupConfig,
+			)
+		}
 	}
 }
 

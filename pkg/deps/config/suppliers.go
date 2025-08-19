@@ -23,6 +23,7 @@ import (
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
@@ -779,16 +780,22 @@ func NewSupplyRelayerProxyFn(
 //
 // Returns:
 //   - config.SupplierFn: Supplier function for dependency injection
-func NewSupplyRelayerSessionsManagerFn(smtStorePath string) SupplierFn {
+func NewSupplyRelayerSessionsManagerFn(smtStorePath string, smtBackupConfig *relayerconfig.RelayMinerSmtBackupConfig) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		relayerSessionsManager, err := session.NewRelayerSessions(
-			deps,
+		options := []relayer.RelayerSessionsManagerOption{
 			session.WithStoresDirectoryPath(smtStorePath),
-		)
+		}
+
+		// Add backup configuration if provided and using in-memory storage
+		if smtBackupConfig != nil && smtStorePath == session.InMemoryStoreFilename {
+			options = append(options, session.WithSmtBackupConfig(smtBackupConfig))
+		}
+
+		relayerSessionsManager, err := session.NewRelayerSessions(deps, options...)
 		if err != nil {
 			return nil, err
 		}
