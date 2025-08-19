@@ -129,10 +129,10 @@ func NewSessionTree(
 //
 // Returns a fully reconstructed SessionTree or an error if reconstruction fails
 func importSessionTree(
+	logger polylog.Logger,
 	sessionSMT *prooftypes.SessionSMT,
 	claim *prooftypes.Claim,
 	storesDirectoryPath string,
-	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
 	sessionId := sessionSMT.SessionHeader.SessionId
 	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
