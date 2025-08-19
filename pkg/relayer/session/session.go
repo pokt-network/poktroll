@@ -529,9 +529,15 @@ func (rs *relayerSessionsManager) validateConfig() error {
 		return ErrSessionTreeUndefinedStoresDirectoryPath
 	}
 
-	// Return an error if the stores directory path is not a valid directory.
-	if _, err := os.Stat(rs.storesDirectoryPath); err != nil {
-		return ErrSessionTreeInvalidStoresDirectoryPath
+	// Ensure the stores directory exists (mkdir -p behavior) and is a directory.
+	if info, err := os.Stat(rs.storesDirectoryPath); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(rs.storesDirectoryPath, 0o755); err != nil {
+				return ErrSessionTreeInvalidStoresDirectoryPath.Wrapf("failed to create stores directory: %w", err)
+			}
+		} else if !info.IsDir() {
+			return ErrSessionTreeInvalidStoresDirectoryPath.Wrapf("stores directory path is not a directory: %s", rs.storesDirectoryPath)
+		}
 	}
 
 	return nil
