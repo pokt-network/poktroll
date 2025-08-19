@@ -193,8 +193,6 @@ TODO(#1734): Ensure session state is persisted even when using in-memory mode
 
 :::
 
-:::note
-
 ### `enable_over_servicing`
 
 _`Optional`_ (default: `false`)
