@@ -200,7 +200,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Preserving the relayer's state across restarts
 	//   - Ensuring no active sessions are lost when the process is interrupted
 	//   - Maintaining accumulated work when interruptions occur
-	if !rs.persistedSMT() {
+	if rs.persistedSMT() {
 		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
 			return err
 		}
@@ -261,7 +261,7 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.relayObs.UnsubscribeAll()
 
 	// Skip persistence when using in-memory SMT (MemoryStore) as data is not saved to disk.
-	if rs.persistedSMT() {
+	if !rs.persistedSMT() {
 		// TODO(#1734): Design a solution for restoration even when using in-memory SMT.
 		rs.logger.Info().Msg("Skipping persistence of session data as in-memory SMT is being used.")
 		return
