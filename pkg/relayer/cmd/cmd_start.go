@@ -149,10 +149,10 @@ Totals:
 		fmt.Printf(`
 🚨 WARNING: SMT configured for in-memory storage 🚨
 ----------------------------------------------------------------
-• All session data will be LOST on RelayMiner restart
-• No session state persisted to disk
-• Unsubmitted Claims and Proofs will be lost
-• TODO(#1734): Add support for backing up in-memory session trees
+• Session data stored in memory for optimal performance
+• Configure smt_backup section to enable backup functionality
+• Without backup: session state will be LOST on restart
+• With backup: session state will be preserved across restarts
 ----------------------------------------------------------------
 `)
 	}

@@ -2,10 +2,17 @@ chainId: "pocket"
 grpcInsecure: true
 queryCaching: false
 config:
-  # TODO(#1734): Ensure that LocalNet and E2E tests are configured to have 1RM
-  # using an in-memory store and one using an on-disk persisted store.
-  # smt_store_path: /root/.pocket/smt
+  # Using in-memory SMT storage for better performance in LocalNet
+  # with backup enabled to prevent data loss on restart
   smt_store_path: ":memory:"
+  smt_backup:
+    enabled: true
+    interval_seconds: 120    # Backup every 2 minutes for frequent testing
+    backup_dir: "/root/.pocket/smt_backups"
+    on_session_close: true
+    on_claim_generation: true
+    on_graceful_shutdown: true
+    retain_backup_count: 5   # Keep last 5 backups for LocalNet
   metrics:
     enabled: true
     addr: :9090

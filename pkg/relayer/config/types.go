@@ -29,6 +29,7 @@ type YAMLRelayMinerConfig struct {
 	PocketNode                   YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
 	Pprof                        YAMLRelayMinerPprofConfig      `yaml:"pprof"`
 	SmtStorePath                 string                         `yaml:"smt_store_path"`
+	SmtBackup                    YAMLRelayMinerSmtBackupConfig  `yaml:"smt_backup,omitempty"`
 	Suppliers                    []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
 	Ping                         YAMLRelayMinerPingConfig       `yaml:"ping"`
 	EnableOverServicing          bool                           `yaml:"enable_over_servicing"`
@@ -43,6 +44,17 @@ type YAMLRelayMinerConfig struct {
 	//
 	// See this discussion for more details: https://github.com/pokt-network/poktroll/pull/1608/files#r2175684381
 	// EnableErrorPropagation bool `yaml:"enable_error_propagation"`
+}
+
+// YAMLRelayMinerSmtBackupConfig represents the configuration for SMT backup when using in-memory storage.
+type YAMLRelayMinerSmtBackupConfig struct {
+	Enabled              bool   `yaml:"enabled"`
+	IntervalSeconds      uint64 `yaml:"interval_seconds"`
+	BackupDir            string `yaml:"backup_dir"`
+	OnSessionClose       bool   `yaml:"on_session_close"`
+	OnClaimGeneration    bool   `yaml:"on_claim_generation"`
+	OnGracefulShutdown   bool   `yaml:"on_graceful_shutdown"`
+	RetainBackupCount    int    `yaml:"retain_backup_count"`
 }
 
 // YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
@@ -114,8 +126,20 @@ type RelayMinerConfig struct {
 	Pprof                        *RelayMinerPprofConfig
 	Servers                      map[string]*RelayMinerServerConfig
 	SmtStorePath                 string
+	SmtBackup                    *RelayMinerSmtBackupConfig
 	Ping                         *RelayMinerPingConfig
 	EnableOverServicing          bool
+}
+
+// RelayMinerSmtBackupConfig is the structure resulting from parsing the SMT backup configuration.
+type RelayMinerSmtBackupConfig struct {
+	Enabled              bool
+	IntervalSeconds      uint64
+	BackupDir            string
+	OnSessionClose       bool
+	OnClaimGeneration    bool
+	OnGracefulShutdown   bool
+	RetainBackupCount    int
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
