@@ -12,7 +12,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
 
-	pocketdcmd "github.com/pokt-network/poktroll/cmd"
 	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
@@ -84,11 +83,6 @@ RelayMiner Responsibilities:
 // - Set up logger and dependencies
 // - Initialize and start the relay miner
 func runRelayer(cmd *cobra.Command, _ []string) error {
-	// Parse the --network flag if provided and set related flags
-	if err := pocketdcmd.ParseAndSetNetworkRelatedFlags(cmd); err != nil {
-		return err
-	}
-
 	// --- Context setup and cancellation ---
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
