@@ -186,12 +186,83 @@ in a BadgerDB KV store data files.
 
 :::warning In-memory session state loss
 
-In-memory enables relay miners to be a lot more performant, but it also means that
-the session state will be lost when the relay miner is restarted.
+In-memory storage provides optimal performance by avoiding disk I/O, but session state 
+will be lost when the relay miner restarts unless backup is configured.
 
-TODO(#1734): Ensure session state is persisted even when using in-memory mode
+Configure the `smt_backup` section to enable automatic backup and restoration of 
+in-memory session trees. See the SMT Backup Configuration section below.
 
 :::
+
+### `smt_backup`
+
+_`Optional`_ Configuration for backing up in-memory SMT (Sparse Merkle Tree) session data.
+
+:::info Only for In-Memory Storage
+
+This configuration is only relevant when `smt_store_path` is set to `:memory:`. 
+For disk-based storage, session data is already persisted and backup is not needed.
+
+:::
+
+#### `smt_backup.enabled`
+
+_`Optional`_ (default: `false`)
+
+Whether to enable automatic backup of in-memory session trees.
+
+#### `smt_backup.interval_seconds`
+
+_`Optional`_ (default: `300`)
+
+Interval in seconds for periodic backups of active session trees. Set to `0` to disable periodic backups and rely only on event-triggered backups.
+
+#### `smt_backup.backup_dir`
+
+_`Optional`_ (default: `"./smt_backups"`)
+
+Directory path where backup files will be stored. Can be relative or absolute path.
+
+#### `smt_backup.on_session_close`
+
+_`Optional`_ (default: `false`)
+
+Whether to trigger backup when a session is closed (before deletion).
+
+#### `smt_backup.on_claim_generation`
+
+_`Optional`_ (default: `false`)
+
+Whether to trigger backup after claim generation (when session tree is flushed).
+
+#### `smt_backup.on_graceful_shutdown`
+
+_`Optional`_ (default: `false`)
+
+Whether to trigger backup during graceful RelayMiner shutdown.
+
+#### `smt_backup.retain_backup_count`
+
+_`Optional`_ (default: `10`)
+
+Number of backup files to retain. Older backups are automatically deleted when this limit is exceeded.
+
+- `> 0`: Keep the specified number of most recent backup files
+- `0` or negative: Keep all backup files indefinitely (unlimited retention)
+
+#### Example Configuration
+
+```yaml
+smt_store_path: ":memory:"
+smt_backup:
+  enabled: true
+  interval_seconds: 300              # Backup every 5 minutes
+  backup_dir: "/data/smt_backups"
+  on_session_close: true
+  on_claim_generation: true
+  on_graceful_shutdown: true
+  retain_backup_count: 20
+```
 
 ### `enable_over_servicing`
 

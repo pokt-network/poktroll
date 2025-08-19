@@ -92,6 +92,30 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 		Addr:    yamlRelayMinerConfig.Ping.Addr,
 	}
 
+	// SMT backup configuration (optional - defaults to disabled)
+	relayMinerConfig.SmtBackup = &RelayMinerSmtBackupConfig{
+		Enabled:              yamlRelayMinerConfig.SmtBackup.Enabled,
+		IntervalSeconds:      yamlRelayMinerConfig.SmtBackup.IntervalSeconds,
+		BackupDir:            yamlRelayMinerConfig.SmtBackup.BackupDir,
+		OnSessionClose:       yamlRelayMinerConfig.SmtBackup.OnSessionClose,
+		OnClaimGeneration:    yamlRelayMinerConfig.SmtBackup.OnClaimGeneration,
+		OnGracefulShutdown:   yamlRelayMinerConfig.SmtBackup.OnGracefulShutdown,
+		RetainBackupCount:    yamlRelayMinerConfig.SmtBackup.RetainBackupCount,
+	}
+
+	// Set sensible defaults for backup configuration
+	if relayMinerConfig.SmtBackup.Enabled {
+		if relayMinerConfig.SmtBackup.IntervalSeconds == 0 {
+			relayMinerConfig.SmtBackup.IntervalSeconds = 300 // 5 minutes default
+		}
+		if relayMinerConfig.SmtBackup.BackupDir == "" {
+			relayMinerConfig.SmtBackup.BackupDir = "./smt_backups"
+		}
+		if relayMinerConfig.SmtBackup.RetainBackupCount == 0 {
+			relayMinerConfig.SmtBackup.RetainBackupCount = 10 // Keep last 10 backups
+		}
+	}
+
 	// Hydrate the pocket node urls
 	if err := relayMinerConfig.HydratePocketNodeUrls(&yamlRelayMinerConfig.PocketNode); err != nil {
 		return nil, err

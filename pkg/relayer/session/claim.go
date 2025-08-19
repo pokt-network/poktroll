@@ -320,6 +320,17 @@ func (rs *relayerSessionsManager) createClaimRoots(
 			continue
 		}
 
+		// Trigger backup for in-memory sessions after claim generation (flush)
+		if rs.backupManager != nil && rs.storesDirectoryPath == InMemoryStoreFilename {
+			if err := rs.backupManager.BackupOnEvent(sessionTree, BackupEventClaimGeneration); err != nil {
+				rs.logger.Warn().
+					Err(err).
+					Str("session_id", sessionTree.GetSessionHeader().SessionId).
+					Msg("Failed to backup session tree after claim generation")
+				// Don't fail claim creation due to backup failure
+			}
+		}
+
 		flushedClaims = append(flushedClaims, sessionTree)
 	}
 

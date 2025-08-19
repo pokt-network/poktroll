@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"sync"
@@ -21,6 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -72,7 +74,7 @@ type relayerSessionsManager struct {
 	// storesDirectoryPath points to a path on disk where KVStore data files are created.
 	// If set to :memory:, session trees are kept in memory only.
 	// Otherwise, session data is persisted to disk and can be restored after a process restart.
-	// TODO(#1734): Ensure in-memory mode avoids data loss on process restart.
+	// For in-memory mode, use the backup manager to prevent data loss on process restart.
 	storesDirectoryPath string
 
 	// sessionSMTStore is a key-value store used to persist the metadata of
@@ -94,6 +96,9 @@ type relayerSessionsManager struct {
 
 	// bankQueryClient is used to query for the bank module parameters.
 	bankQueryClient client.BankQueryClient
+
+	// backupManager handles backup and restoration of session trees for in-memory storage
+	backupManager *BackupManager
 
 	// stopping indicates whether the relayerSessionsManager is in the process of graceful shutdown.
 	//
@@ -205,8 +210,20 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 			return err
 		}
 	} else {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT.
-		rs.logger.Info().Msg("Skipping session data restoration as in-memory SMT is being used.")
+		// For in-memory mode, try to restore from backups if backup manager is available
+		if rs.backupManager != nil {
+			if err := rs.restoreSessionTreesFromBackup(ctx, block.Height()); err != nil {
+				rs.logger.Error().Err(err).Msg("Failed to restore sessions from backup")
+				// Don't fail startup - continue without restored sessions
+			}
+		} else {
+			rs.logger.Info().Msg("In-memory mode: no backup manager configured, starting with empty session state.")
+		}
+	}
+
+	// Start backup manager if configured and using in-memory storage
+	if rs.backupManager != nil && rs.storesDirectoryPath == InMemoryStoreFilename {
+		rs.backupManager.Start(ctx, rs)
 	}
 
 	// DEV_NOTE: must cast back to generic observable type to use with Map.
@@ -260,10 +277,17 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
 
-	// Skip persistence when using in-memory SMT (MemoryStore) as data is not saved to disk.
+	// Handle graceful shutdown backup for in-memory mode
 	if !rs.persistedSMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT.
-		rs.logger.Info().Msg("Skipping persistence of session data as in-memory SMT is being used.")
+		if rs.backupManager != nil {
+			rs.logger.Info().Msg("Triggering graceful shutdown backup for in-memory session trees")
+			if err := rs.performGracefulShutdownBackup(); err != nil {
+				rs.logger.Error().Err(err).Msg("Failed to perform graceful shutdown backup")
+			}
+			rs.backupManager.Stop()
+		} else {
+			rs.logger.Info().Msg("In-memory mode: no backup manager configured - session data will be lost on shutdown")
+		}
 		return
 	}
 	rs.logger.Info().Msg("About to start persisting all session data to disk.")
@@ -543,6 +567,108 @@ func (rs *relayerSessionsManager) validateConfig() error {
 	return nil
 }
 
+// restoreSessionTreesFromBackup restores session trees from backup files when using in-memory storage
+func (rs *relayerSessionsManager) restoreSessionTreesFromBackup(ctx context.Context, currentHeight int64) error {
+	if rs.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+
+	rs.logger.Info().Msg("Attempting to restore session trees from backup")
+
+	backupSessions, err := rs.backupManager.RestoreSessionTrees()
+	if err != nil {
+		return fmt.Errorf("failed to restore session trees from backup: %w", err)
+	}
+
+	restoredCount := 0
+	for _, backupData := range backupSessions {
+		// Check if the session is still relevant (not expired)
+		if rs.isSessionExpired(backupData.SessionHeader, currentHeight) {
+			rs.logger.Debug().
+				Str("session_id", backupData.SessionHeader.SessionId).
+				Msg("Skipping restoration of expired session")
+			continue
+		}
+
+		// Recreate the session tree from backup data
+		sessionTree, err := CreateSessionTreeFromBackup(
+			rs.logger,
+			backupData,
+			rs.storesDirectoryPath,
+		)
+		if err != nil {
+			rs.logger.Error().
+				Err(err).
+				Str("session_id", backupData.SessionHeader.SessionId).
+				Msg("Failed to restore session tree from backup")
+			continue
+		}
+
+		// Add to session trees map
+		rs.sessionsTreesMu.Lock()
+		if rs.sessionsTrees[backupData.SupplierOperatorAddress] == nil {
+			rs.sessionsTrees[backupData.SupplierOperatorAddress] = make(map[int64]map[string]relayer.SessionTree)
+		}
+		sessionEndHeight := backupData.SessionHeader.SessionEndBlockHeight
+		if rs.sessionsTrees[backupData.SupplierOperatorAddress][sessionEndHeight] == nil {
+			rs.sessionsTrees[backupData.SupplierOperatorAddress][sessionEndHeight] = make(map[string]relayer.SessionTree)
+		}
+		rs.sessionsTrees[backupData.SupplierOperatorAddress][sessionEndHeight][backupData.SessionHeader.SessionId] = sessionTree
+		rs.sessionsTreesMu.Unlock()
+
+		restoredCount++
+		rs.logger.Info().
+			Str("session_id", backupData.SessionHeader.SessionId).
+			Str("supplier", backupData.SupplierOperatorAddress).
+			Msg("Successfully restored session tree from backup")
+	}
+
+	rs.logger.Info().
+		Int("restored_count", restoredCount).
+		Int("total_backups", len(backupSessions)).
+		Msg("Session tree restoration from backup completed")
+
+	return nil
+}
+
+// performGracefulShutdownBackup backs up all active session trees during graceful shutdown
+func (rs *relayerSessionsManager) performGracefulShutdownBackup() error {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
+	backupCount := 0
+	for supplierAddr, heightMap := range rs.sessionsTrees {
+		for height, sessionMap := range heightMap {
+			for sessionId, sessionTree := range sessionMap {
+				if err := rs.backupManager.BackupOnEvent(sessionTree, BackupEventGracefulShutdown); err != nil {
+					rs.logger.Error().
+						Err(err).
+						Str("supplier", supplierAddr).
+						Int64("height", height).
+						Str("session_id", sessionId).
+						Msg("Failed to backup session tree during graceful shutdown")
+					continue
+				}
+				backupCount++
+			}
+		}
+	}
+
+	rs.logger.Info().
+		Int("backup_count", backupCount).
+		Msg("Graceful shutdown backup completed")
+
+	return nil
+}
+
+// isSessionExpired checks if a session is expired based on current block height
+func (rs *relayerSessionsManager) isSessionExpired(sessionHeader *sessiontypes.SessionHeader, currentHeight int64) bool {
+	// TODO: Implement proper session expiration logic based on proof window close height
+	// For now, consider sessions expired if they ended more than 1000 blocks ago
+	sessionEndHeight := sessionHeader.SessionEndBlockHeight
+	return currentHeight > sessionEndHeight+1000
+}
+
 // waitForBlock blocks until the block at the given height (or greater) is
 // observed as having been committed.
 func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight int64) client.Block {
@@ -750,6 +876,16 @@ func (rs *relayerSessionsManager) deleteSessionTree(sessionTree relayer.SessionT
 		"service_id", sessionHeader.GetServiceId(),
 		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress(),
 	)
+
+	// Trigger backup for in-memory sessions before deletion (session close)
+	if rs.backupManager != nil && rs.storesDirectoryPath == InMemoryStoreFilename {
+		if err := rs.backupManager.BackupOnEvent(sessionTree, BackupEventSessionClose); err != nil {
+			logger.Warn().
+				Err(err).
+				Msg("Failed to backup session tree before deletion")
+			// Don't fail deletion due to backup failure
+		}
+	}
 
 	// IMPORTANT: Create sessionSMT BEFORE deleting the tree
 	// This ensures we retrieve the SMT root while the KVStore is still open.
