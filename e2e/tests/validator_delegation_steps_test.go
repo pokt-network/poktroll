@@ -47,7 +47,7 @@ type cliDecCoin struct {
 
 // cliDelegationRewardsResponse represents the response from 'query distribution rewards-by-validator' CLI command
 type cliDelegationRewardsResponse struct {
-	Rewards []cliDecCoin `json:"rewards"`
+	Rewards interface{} `json:"rewards"` // Can be string (empty) or []cliDecCoin (with rewards)
 }
 
 // TheUserGetsTheCurrentBlockProposerValidatorAddressAs gets the current block proposer's validator address
@@ -194,15 +194,25 @@ func (s *suite) TheUserRemembersTheDelegationRewardsForFromAs(delegatorName, val
 		return
 	}
 
-	// Extract uPOKT rewards amount  
+	// Extract uPOKT rewards amount - handle both string (empty) and array (with rewards) cases
 	var rewardAmount int64 = 0
-	for _, reward := range rewardsResponse.Rewards {
-		if reward.Denom == pocket.DenomuPOKT {
-			// Parse the string amount to int64 (truncate decimal part)
-			if amount, err := strconv.ParseFloat(reward.Amount, 64); err == nil {
-				rewardAmount = int64(amount)
+	switch rewards := rewardsResponse.Rewards.(type) {
+	case string:
+		// Empty rewards returned as string, amount is 0
+		rewardAmount = 0
+	case []interface{}:
+		// Parse rewards array
+		for _, rewardInterface := range rewards {
+			if rewardMap, ok := rewardInterface.(map[string]interface{}); ok {
+				if denom, ok := rewardMap["denom"].(string); ok && denom == pocket.DenomuPOKT {
+					if amountStr, ok := rewardMap["amount"].(string); ok {
+						if amount, err := strconv.ParseFloat(amountStr, 64); err == nil {
+							rewardAmount = int64(amount)
+						}
+					}
+					break
+				}
 			}
-			break
 		}
 	}
 
@@ -261,15 +271,25 @@ func (s *suite) TheDelegationRewardsForFromShouldBeGreaterThan(delegatorName, va
 	err = json.Unmarshal([]byte(rewardsRes.Stdout), &rewardsResponse)
 	require.NoError(s, err)
 
-	// Extract current uPOKT rewards amount
+	// Extract current uPOKT rewards amount - handle both string (empty) and array (with rewards) cases
 	var currentRewardAmount int64 = 0
-	for _, reward := range rewardsResponse.Rewards {
-		if reward.Denom == pocket.DenomuPOKT {
-			// Parse the string amount to int64 (truncate decimal part)
-			if amount, err := strconv.ParseFloat(reward.Amount, 64); err == nil {
-				currentRewardAmount = int64(amount)
+	switch rewards := rewardsResponse.Rewards.(type) {
+	case string:
+		// Empty rewards returned as string, amount is 0
+		currentRewardAmount = 0
+	case []interface{}:
+		// Parse rewards array
+		for _, rewardInterface := range rewards {
+			if rewardMap, ok := rewardInterface.(map[string]interface{}); ok {
+				if denom, ok := rewardMap["denom"].(string); ok && denom == pocket.DenomuPOKT {
+					if amountStr, ok := rewardMap["amount"].(string); ok {
+						if amount, err := strconv.ParseFloat(amountStr, 64); err == nil {
+							currentRewardAmount = int64(amount)
+						}
+					}
+					break
+				}
 			}
-			break
 		}
 	}
 
@@ -306,15 +326,25 @@ func (s *suite) TheDelegationRewardsForFromShouldBeUpokt(delegatorName, validato
 	err = json.Unmarshal([]byte(rewardsRes.Stdout), &rewardsResponse)
 	require.NoError(s, err)
 
-	// Extract uPOKT rewards amount
+	// Extract uPOKT rewards amount - handle both string (empty) and array (with rewards) cases
 	var rewardAmount int64 = 0
-	for _, reward := range rewardsResponse.Rewards {
-		if reward.Denom == pocket.DenomuPOKT {
-			// Parse the string amount to int64 (truncate decimal part)
-			if amount, err := strconv.ParseFloat(reward.Amount, 64); err == nil {
-				rewardAmount = int64(amount)
+	switch rewards := rewardsResponse.Rewards.(type) {
+	case string:
+		// Empty rewards returned as string, amount is 0
+		rewardAmount = 0
+	case []interface{}:
+		// Parse rewards array
+		for _, rewardInterface := range rewards {
+			if rewardMap, ok := rewardInterface.(map[string]interface{}); ok {
+				if denom, ok := rewardMap["denom"].(string); ok && denom == pocket.DenomuPOKT {
+					if amountStr, ok := rewardMap["amount"].(string); ok {
+						if amount, err := strconv.ParseFloat(amountStr, 64); err == nil {
+							rewardAmount = int64(amount)
+						}
+					}
+					break
+				}
 			}
-			break
 		}
 	}
 
