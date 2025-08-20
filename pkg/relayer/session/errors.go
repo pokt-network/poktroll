@@ -2,6 +2,7 @@ package session
 
 import sdkerrors "cosmossdk.io/errors"
 
+// Next available error code: 12
 var (
 	codespace                                  = "relayer_session"
 	ErrSessionTreeClosed                       = sdkerrors.Register(codespace, 1, "session tree already closed")
@@ -14,4 +15,5 @@ var (
 	ErrSessionUpdatingTree                     = sdkerrors.Register(codespace, 8, "error updating session SMST")
 	ErrSessionRelayMetaHasNoServiceID          = sdkerrors.Register(codespace, 9, "service ID not specified in relay metadata")
 	ErrSessionRelayMetaHasInvalidServiceID     = sdkerrors.Register(codespace, 10, "service specified in relay metadata not found")
+	ErrSessionTreeInvalidStoresDirectoryPath   = sdkerrors.Register(codespace, 11, "session tree invalid stores directory path")
 )

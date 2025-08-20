@@ -155,7 +155,7 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 
 		// Scenarios 2: The claim window is still open.
 		// The session has still a chance to reach settlement by creating the claim and submitting the proof.
-		sessionTree, treeErr := importSessionTree(sessionSMT, claim, rs.storesDirectoryPath, sessionLogger)
+		sessionTree, treeErr := importSessionTree(sessionLogger, sessionSMT, claim, rs.storesDirectoryPath)
 		if treeErr != nil {
 			sessionLogger.Error().Err(treeErr).Msg("failed to import session tree")
 			continue
@@ -193,6 +193,12 @@ func (rs *relayerSessionsManager) deletePersistedSessionTree(sessionSMT *proofty
 		"session_id", sessionId,
 		"session_end_height", sessionEndHeight,
 	)
+
+	// If the session tree is not persisted to disk, there is nothing to delete.
+	if !rs.persistedSMT() {
+		logger.Debug().Msg("Skipping session tree deletion. RelayMiner is configured for in-memory mode.")
+		return nil
+	}
 
 	// Delete the corresponding kv store for the session tree.
 	storePath := filepath.Join(rs.storesDirectoryPath, supplierOperatorAddress, sessionId)
@@ -336,4 +342,10 @@ func (rs *relayerSessionsManager) proveClaimedSessions(ctx context.Context) {
 func getSessionStoreKey(supplierOperatorAddress string, sessionId string) []byte {
 	sessionStoreKeyStr := fmt.Sprintf("%s/%s", supplierOperatorAddress, sessionId)
 	return []byte(sessionStoreKeyStr)
+}
+
+// persistedSMT returns true if the session tree is persisted to disk (has a storePath),
+// false if it's in-memory only.
+func (rs *relayerSessionsManager) persistedSMT() bool {
+	return rs.storesDirectoryPath != "" && rs.storesDirectoryPath != InMemoryStoreFilename
 }
