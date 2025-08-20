@@ -524,6 +524,12 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
 		AnyTimes()
 
+	// Set up mock expectations for GetBondedValidatorsByPower (needed for global mint TLM)
+	mockStakingKeeper.EXPECT().
+		GetBondedValidatorsByPower(gomock.Any()).
+		Return([]stakingtypes.Validator{validator}, nil).
+		AnyTimes()
+
 	// Set up mock expectations for distribution keeper
 	mockDistributionKeeper.EXPECT().
 		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
