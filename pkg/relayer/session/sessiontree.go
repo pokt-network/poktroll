@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/pokt-network/smt"
@@ -261,11 +262,24 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 
 	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
 
+	// Debug logging to help diagnose proof generation issues
+	st.logger.Debug().
+		Str("claimed_root", fmt.Sprintf("%x", st.claimedRoot)).
+		Str("session_id", st.sessionHeader.SessionId).
+		Bool("persisted_smt", st.persistedSMT()).
+		Msg("Generating proof using imported SMT")
+
 	// Generate the proof and cache it along with the path for which it was generated.
 	// There is no ProveClosest variant that generates a compact proof directly.
 	// Generate a regular SparseMerkleClosestProof then compact it.
 	proof, err := sessionSMT.ProveClosest(path)
 	if err != nil {
+		st.logger.Error().
+			Err(err).
+			Str("claimed_root", fmt.Sprintf("%x", st.claimedRoot)).
+			Str("session_id", st.sessionHeader.SessionId).
+			Bool("persisted_smt", st.persistedSMT()).
+			Msg("ProveClosest failed - this indicates KVStore data doesn't match claimed root")
 		return nil, err
 	}
 
@@ -316,6 +330,26 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 		return st.claimedRoot, nil
 	}
 
+	// For in-memory stores, we need to commit the SMT data to the KVStore
+	// before getting the root hash, so that later proof generation can access the data
+	if !st.persistedSMT() {
+		st.logger.Debug().
+			Str("session_id", st.sessionHeader.SessionId).
+			Msg("About to commit in-memory session tree SMT data to KVStore")
+		
+		// Commit any pending changes to the KVStore for in-memory stores
+		if err := st.sessionSMT.Commit(); err != nil {
+			st.logger.Error().
+				Err(err).
+				Str("session_id", st.sessionHeader.SessionId).
+				Msg("Failed to commit in-memory session tree SMT data")
+			return nil, err
+		}
+		st.logger.Debug().
+			Str("session_id", st.sessionHeader.SessionId).
+			Msg("Successfully committed in-memory session tree SMT data to KVStore before flushing")
+	}
+
 	st.claimedRoot = st.sessionSMT.Root()
 
 	// Skip stopping in-memory stores as data cannot be restored later.
@@ -325,7 +359,7 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 		}
 		st.treeStore = nil
 	} else {
-		st.logger.Debug().Msg("Not stopping in-memory session tree KVStore because there is nothing to flush.")
+		st.logger.Debug().Msg("Not stopping in-memory session tree KVStore because data must remain accessible for proof generation.")
 	}
 
 	return st.claimedRoot, nil
@@ -385,7 +419,37 @@ func (st *sessionTree) Delete() error {
 	}
 
 	st.logger.Info().Msg("Clearing in-memory session tree KVStore.")
-	return st.treeStore.ClearAll()
+	
+	// Check if treeStore is nil (already cleaned up) to prevent panic
+	if st.treeStore == nil {
+		st.logger.Debug().Msg("In-memory session tree KVStore is already cleared (nil)")
+		return nil
+	}
+	
+	// Attempt to clear the store, but handle panics from closed database gracefully
+	defer func() {
+		if r := recover(); r != nil {
+			// Check if it's the expected "pebble: closed" panic
+			if panicStr := fmt.Sprintf("%v", r); strings.Contains(panicStr, "pebble: closed") {
+				st.logger.Debug().Msg("In-memory session tree KVStore was already closed during cleanup (recovered from panic)")
+			} else {
+				// Re-panic if it's an unexpected panic
+				panic(r)
+			}
+		}
+	}()
+	
+	if err := st.treeStore.ClearAll(); err != nil {
+		// If the database is already closed, this is expected during cleanup
+		if strings.Contains(err.Error(), "pebble: closed") {
+			st.logger.Debug().Msg("In-memory session tree KVStore was already closed during cleanup")
+			return nil
+		}
+		// Return other errors
+		return err
+	}
+	
+	return nil
 }
 
 // StartClaiming marks the session tree as being picked up for claiming,

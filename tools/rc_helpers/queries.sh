@@ -1259,12 +1259,12 @@ USAGE:
   shannon_query_validator_reward_share <validator_address> <env>
 
 ARGUMENTS:
-  validator_address  Validator operator address (cosmosvaloper...)
+  validator_address  Validator operator address (poktvaloper...)
   env               Network environment - must be one of: alpha, beta, main
 
 EXAMPLES:
-  shannon_query_validator_reward_share cosmosvaloper1abc123... main
-  shannon_query_validator_reward_share cosmosvaloper1def456... beta
+  shannon_query_validator_reward_share poktvaloper1abc123... main
+  shannon_query_validator_reward_share poktvaloper1def456... beta
 EOF
     return 0
   fi
@@ -1323,13 +1323,13 @@ USAGE:
   shannon_monitor_validator_rewards <validator_address> <env> [interval_seconds]
 
 ARGUMENTS:
-  validator_address  Validator operator address (cosmosvaloper...)
+  validator_address  Validator operator address (poktvaloper...)
   env               Network environment - must be one of: alpha, beta, main
   interval_seconds  (Optional) Update interval in seconds (default: 60)
 
 EXAMPLES:
-  shannon_monitor_validator_rewards cosmosvaloper1abc123... main
-  shannon_monitor_validator_rewards cosmosvaloper1abc123... main 30
+  shannon_monitor_validator_rewards poktvaloper1abc123... main
+  shannon_monitor_validator_rewards poktvaloper1abc123... main 30
 
 NOTE:
   Press Ctrl+C to stop monitoring

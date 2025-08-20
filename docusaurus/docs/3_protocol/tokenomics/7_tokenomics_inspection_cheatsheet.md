@@ -88,7 +88,7 @@ pocketd query bank balance cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl upokt -
 pocketd query distribution validator-outstanding-rewards <validator-address> --network <network>
 
 # View delegator rewards from specific validator
-pocketd query distribution rewards <delegator-address> <validator-address> --network <network>
+pocketd query distribution rewards-by-validator <delegator-address> <validator-address> --network <network>
 
 # View all delegator rewards
 pocketd query distribution rewards <delegator-address> --network <network>
@@ -142,7 +142,7 @@ Calculate expected validator reward share:
 shannon_query_validator_reward_share <validator-address> <network>
 
 # Example:
-shannon_query_validator_reward_share cosmosvaloper1abc123... main
+shannon_query_validator_reward_share poktvaloper1abc123... main
 ```
 
 Monitor validator rewards over time:
@@ -152,7 +152,7 @@ Monitor validator rewards over time:
 shannon_monitor_validator_rewards <validator-address> <network> [interval-seconds]
 
 # Example (check every 60 seconds):
-shannon_monitor_validator_rewards cosmosvaloper1abc123... main 60
+shannon_monitor_validator_rewards poktvaloper1abc123... main 60
 ```
 
 Check recent validator reward settlements:

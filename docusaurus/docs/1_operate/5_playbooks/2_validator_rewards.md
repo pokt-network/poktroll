@@ -1,230 +1,364 @@
 ---
-title: Validator Reward Playbook
+title: Validator Rewards Playbook
 sidebar_position: 2
 ---
 
-This playbook provides step-by-step instructions for tracking and inspecting validator rewards on Pocket Network.
+# Validator Rewards Playbook
 
-_**NOTE**: It is the first (terse) version of the instructions and will be simplified into a more user-friendly script in the future._
+This playbook provides comprehensive guidance for monitoring, inspecting, and understanding validator rewards in the Pocket Network Shannon protocol.
 
-:::warning TODO(@olshansk)
+:::tip What You'll Learn
 
-Remove `--grpc-insecure=false` once `pocketd` is updated
-
-:::
-
-## Table of Contents <!-- omit in toc -->
-
-- [A. Identifying the Validator Sets](#a-identifying-the-validator-sets)
-  - [1. View CometBFT Consensus Validator Set (`ed25519`)](#1-view-cometbft-consensus-validator-set-ed25519)
-  - [2. List CosmosSDK Bonded Validator Operator Addresses (`secp256k1`)](#2-list-cosmossdk-bonded-validator-operator-addresses-secp256k1)
-  - [3. Check Current Block Proposer (encoded `ed25519`)](#3-check-current-block-proposer-encoded-ed25519)
-- [B. Monitoring Validator Balance Over Time](#b-monitoring-validator-balance-over-time)
-  - [1. Get the Validator Account Address](#1-get-the-validator-account-address)
-  - [2. Monitor Balance Changes Over Time](#2-monitor-balance-changes-over-time)
-- [C. Validator Rewards](#c-validator-rewards)
-  - [Check Community Pool Commission Accumulated](#check-community-pool-commission-accumulated)
-  - [View Validator Commission Accumulated](#view-validator-commission-accumulated)
-  - [Withdraw Validator Commission Rewards](#withdraw-validator-commission-rewards)
-- [D. \[WIP\] Delegator Rewards](#d-wip-delegator-rewards)
-  - [Check Delegator Rewards](#check-delegator-rewards)
-  - [Withdraw Delegator Rewards](#withdraw-delegator-rewards)
-- [E. \[WIP\] Tokenomics Relay Distribution Parameters](#e-wip-tokenomics-relay-distribution-parameters)
-
-:::info Read the official Cosmos documentation for more information
-
-Validator tx fees functionality is directly adopted from the Cosmos SDK [x/distribution](https://docs.cosmos.network/main/build/modules/distribution).
-
-Make sure to read those docs as the primary source of truth.
+- How validator rewards are distributed during session settlement
+- How to retrieve and inspect validator rewards and delegation rewards  
+- How to monitor reward distribution using telemetry and queries
+- How to validate that rewards are being distributed correctly
+- Troubleshooting common validator reward issues
 
 :::
 
-## A. Identifying the Validator Sets
+## Overview
 
-:::note TODO(@olshansk) Streamline this whole page
+In Pocket Network's Shannon protocol, validators receive rewards as part of the session settlement process through the **Token Logic Modules (TLMs)**. Specifically, the **Global Mint TLM** distributes a configurable percentage of settlement rewards to validators based on their staking weight.
 
-To understand which validator should receive the rewards at a certain block, you
-need to cross-reference the `Consensus_Pubkey_ed25519` from section (A2) with the `ConsPubKey_Encoded_ed25519` from section (A1)
-and check the `ConsAddress` corresponding to a certain block in section (A3).
+### Key Concepts
 
-:::
+- **Validator Rewards**: Distributed proportionally to all bonded validators based on staking weight
+- **Delegator Rewards**: Distributed to delegators through Cosmos SDK's distribution module  
+- **Commission**: Validators earn commission on rewards before distributing to delegators
+- **Settlement-Based**: Rewards are generated during relay session settlement, not block validation
 
-### 1. View CometBFT Consensus Validator Set (`ed25519`)
+## Validator Reward Distribution Mechanics
 
-View all active validators with their voting power and proposer priority:
+### How Rewards Flow
 
-```bash
-pocketd query comet-validator-set --network=main -o json \
-  | jq -r '["ConsAddress","ConsPubKey_Encoded_ed25519","VotingPower","ProposerPriority"],
-           (.validators[] | [.address, .pub_key.key, .voting_power, .proposer_priority])
-           | @tsv' \
-  | column -t
+1. **Session Settlement**: When a supplier's claim is settled, the Global Mint TLM calculates inflation
+2. **Validator Allocation**: A percentage (configurable via `proposer` parameter) goes to validators  
+3. **Stake-Weight Distribution**: Rewards are distributed to ALL validators based on their bonded stake
+4. **Delegator Distribution**: The Cosmos SDK distribution module handles delegator rewards and commission
+
+### Reward Calculation Formula
+
+```
+Total Session Settlement = Relays × CUPR × Multiplier  
+Global Inflation = Settlement × GlobalInflationPerClaim
+Validator Rewards = (Settlement + Inflation) × ProposerAllocation
+Individual Validator Reward = Validator Rewards × (ValidatorStake / TotalBondedStake)
 ```
 
-Outputting a table like so:
+### Example Calculation
+
+For a session with 20 relays, 100 CUPR, and 42 multiplier:
+- Settlement: `20 × 100 × 42 = 84,000 uPOKT`
+- Global Inflation (10%): `84,000 × 0.1 = 8,400 uPOKT`
+- Validator Rewards (10%): `(84,000 + 8,400) × 0.1 = 9,240 uPOKT`
+
+If there are 3 validators with stakes of 700K, 200K, and 100K tokens:
+- Validator 1: `9,240 × (700,000 / 1,000,000) = 6,468 uPOKT`
+- Validator 2: `9,240 × (200,000 / 1,000,000) = 1,848 uPOKT`
+- Validator 3: `9,240 × (100,000 / 1,000,000) = 924 uPOKT`
+
+## Querying Validator Rewards
+
+### Check Tokenomics Parameters
+
+View current reward distribution parameters:
 
 ```bash
-ConsAddress                                         ConsPubKey_Encoded_ed25519                    VotingPower  ProposerPriority
-poktvalcons15jv09gszged6n4p5yx6cylx574lvdt35fvuyxa  Td0lmPVFbNCXNRvds2HUbOvAW4H9WHf0lvTsLu2bdig=  3998646      4065371
-poktvalcons1uyrynx4fylgnnfkzjkfjuknypzczc64drjtysy  MJ/4c5pwP3e8tdbyJEv3TFIlPzVTrJw9sOpkdW/gBY0=  2020000      -2082881
-...
+pocketd query tokenomics params --network <network>
 ```
 
-### 2. List CosmosSDK Bonded Validator Operator Addresses (`secp256k1`)
+Key parameters to monitor:
+- `global_inflation_per_claim`: Controls total inflation per settlement
+- `mint_allocation_percentages.proposer`: Percentage going to validators
+- `dao_reward_address`: Where remaining rewards go
 
-Get all bonded (active) validators that are not jailed:
+### Check Distribution Module State
+
+View the distribution module balance (where validator rewards are sent):
 
 ```bash
-pocketd query staking validators --output json --network=main --grpc-insecure=false \
-  | jq -r '["Operator_Address_secp256k1","Consensus_Pubkey_ed25519"],
-           (.validators[] | select(.jailed != true and .status=="BOND_STATUS_BONDED") | [.operator_address, .consensus_pubkey.value])
-           | @tsv' | column -t
+pocketd query bank balance cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl upokt --network <network>
 ```
 
-Outputting a table like so:
+### Check Validator Outstanding Rewards  
+
+View accumulated rewards for a specific validator:
 
 ```bash
-Operator_Address_secp256k1                          Consensus_Pubkey_ed25519
-poktvaloper1zppmwrdgvywrc66nn2u40ad90na9983fu9yh55  MJ/4c5pwP3e8tdbyJEv3TFIlPzVTrJw9sOpkdW/gBY0=
-poktvaloper1zdyjlf9ytwahsaawwym0uzq7z8eu9me8upl2sa  jadC4IdoEiRB+nzjp29qiq2mJqj3ZjQ+AELJ6AVgnAM=
-...
+pocketd query distribution validator-outstanding-rewards <validator-address> --network <network>
 ```
-
-### 3. Check Current Block Proposer (encoded `ed25519`)
-
-Identify the proposer for recent blocks:
-
-```bash
-latest_height=$(pocketd status --network=main -o json | jq -r '.sync_info.latest_block_height')
-num_blocks=50
-for ((h=latest_height; h>latest_height-num_blocks; h--)); do
-  proposer_b64=$(pocketd query block --type=height $h --network=main -o json | jq -r '.header.proposer_address')
-  proposer_valcons=$(pocketd debug addr $(echo "$proposer_b64" | base64 --decode | xxd -p -c256 | tr -d '\n') \
-                       | grep "Bech32 Con:" | awk '{print $3}')
-  echo "Block $h: $proposer_valcons"
-done
-```
-
-Outputting a list like so:
-
-```bash
-...
-Block 304455: poktvalcons15jv09gszged6n4p5yx6cylx574lvdt35fvuyxa
-Block 304454: poktvalcons1weegm9a5nwe7xjqlfw4wp6wh0le4mljhm0gzey
-...
-```
-
-## B. Monitoring Validator Balance Over Time
-
-### 1. Get the Validator Account Address
-
-Retrieve the validator operator address (`poktvaloper1...`) from the section above and run:
-
-```bash
-pocketd debug addr poktvaloper18808wvw0h4t450t06uvauny8lvscsxjfx0wu80
-```
-
-Which will output:
-
-```bash
-Address: ...
-Address (hex): ...
-Bech32 Acc: pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh
-Bech32 Val: poktvaloper18808wvw0h4t450t06uvauny8lvscsxjfx0wu80
-Bech32 Con: poktvalcons18808wvw0h4t450t06uvauny8lvscsxjfjuaqtw
-```
-
-Use the account address (e.g. `pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh`) in the next step.
-
-### 2. Monitor Balance Changes Over Time
-
-Track your validator's balance changes across block heights:
-
-```bash
-# Replace with your validator account address
-ACCOUNT_ADDR="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
-
-# Get latest block height from mainnet RPC
-latest_height=$(curl -s https://shannon-grove-rpc.mainnet.poktroll.com/status | jq -r '.result.sync_info.latest_block_height')
-
-# Check balance every 100 blocks for the last 1000 blocks
-for ((h=latest_height-1000; h<latest_height; h+=100)); do
-  echo -n "Height $h: "
-  curl -s -H "x-cosmos-block-height: $h" \
-    https://shannon-grove-api.mainnet.poktroll.com/cosmos/bank/v1beta1/balances/$ACCOUNT_ADDR \
-    | jq -r '.balances[]? | select(.denom=="upokt") | .amount // "0"'
-done
-```
-
-## C. Validator Rewards
-
-### Check Community Pool Commission Accumulated
-
-View accumulated tx commissions that haven't been withdrawn across all validators:
-
-```bash
-pocketd query distribution community-pool --network=main --grpc-insecure=false -o json | jq
-```
-
-### View Validator Commission Accumulated
-
-```bash
-export VALIDATOR_ADDRESS="poktvaloper18808wvw0h4t450t06uvauny8lvscsxjfx0wu80"
-
-# View all un-withdrawn rewards for a particular validator:
-echo -e "\n === View all un-withdrawn rewards for a particular validator ==="
-pocketd query distribution validator-outstanding-rewards $VALIDATOR_ADDRESS --network=main --grpc-insecure=false -o json | jq
-
-# View accumulated tx commissions that haven't been withdrawn across all validators:
-echo -e "\n === View accumulated tx commissions that haven't been withdrawn across all validators ==="
-pocketd query distribution commission $VALIDATOR_ADDRESS --network=main --grpc-insecure=false -o json | jq
-
-# View all distribution-related information for your validator:
-echo -e "\n === View all distribution-related information for your validator ==="
-pocketd query distribution validator-distribution-info $VALIDATOR_ADDRESS --network=main --grpc-insecure=false -o json | jq
-```
-
-### Withdraw Validator Commission Rewards
-
-Withdraw rewards from for your validator and its delegations:
-
-```bash
-pocketd tx distribution withdraw-all-rewards \
-  --from=pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh \
-  --network=main --grpc-insecure=false --gas=auto --fees=10upokt
-```
-
-## D. [WIP] Delegator Rewards
 
 ### Check Delegator Rewards
 
-View rewards from delegations (including self-delegation):
+View pending rewards for a delegator from a specific validator:
 
 ```bash
-pocketd query distribution rewards <delegator-address> --network=main --grpc-insecure=false -o json | jq
+pocketd query distribution rewards-by-validator <delegator-address> <validator-address> --network <network>
 ```
 
-### Withdraw Delegator Rewards
+View all delegator rewards:
 
 ```bash
-pocketd tx distribution withdraw-all-rewards --from=<delegator-address> \
-  --network=main --grpc-insecure=false --gas=auto --fees=10upokt
+pocketd query distribution rewards <delegator-address> --network <network>
 ```
 
-## E. [WIP] Tokenomics Relay Distribution Parameters
+### Check Validator Commission
 
-<details>
-<summary>WIP for viewing tokenomics relay distribution parameters</summary>
-
-Verify the current distribution parameters for relay rewards:
+View validator commission settings and accumulated commission:
 
 ```bash
-pocketd query tokenomics params --network=main --grpc-insecure=false -o json | jq
+pocketd query distribution commission <validator-address> --network <network>
 ```
 
-Key parameters to check:
+## Monitoring Validator Rewards
 
-- `mint_allocation_percentages.proposer`: Proposer's share of new mints
-- `mint_equals_burn_claim_distribution.proposer`: Proposer's share when mint equals burn
+### Real-Time Monitoring
 
-</details>
+#### 1. Watch Settlement Events
+
+Monitor for claim settlement events that trigger validator rewards:
+
+```bash
+pocketd query tx --hash <tx-hash> --network <network>
+```
+
+Look for events:
+- `pocket.tokenomics.EventClaimSettled`
+- `cosmos.distribution.v1beta1.EventAllocateTokens`
+
+#### 2. Monitor Distribution Module Balance
+
+Track the distribution module balance over time:
+
+```bash
+while true; do
+  echo "$(date): $(pocketd query bank balance cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl upokt --network <network> --output json | jq -r '.balance.amount')"
+  sleep 30
+done
+```
+
+#### 3. Monitor Validator Rewards Accumulation
+
+Track validator outstanding rewards:
+
+```bash
+#!/bin/bash
+VALIDATOR_ADDR="<your-validator-address>"
+NETWORK="<your-network>"
+
+while true; do
+  REWARDS=$(pocketd query distribution validator-outstanding-rewards $VALIDATOR_ADDR --network $NETWORK --output json | jq -r '.rewards[0].amount // "0"')
+  echo "$(date): Validator rewards: $REWARDS uPOKT"
+  sleep 60
+done
+```
+
+### Telemetry Metrics
+
+If telemetry is enabled, monitor these metrics:
+
+- `tokenomics.tlm_global_mint.validator_reward_distribution`: Individual validator reward amounts
+- `tokenomics.tlm_global_mint.total_validator_rewards`: Total validator rewards per settlement
+
+## Validating Reward Distribution
+
+### Expected Behavior Checklist
+
+✅ **Rewards are distributed to ALL validators** (not just block proposer)  
+✅ **Distribution is proportional to staking weight**  
+✅ **No rewards are lost to rounding errors** (last validator gets remainder)  
+✅ **Validators with zero stake receive zero rewards**  
+✅ **Delegators receive rewards minus validator commission**  
+✅ **Distribution module balance increases after settlements**  
+
+### Validation Scripts
+
+#### Verify Proportional Distribution
+
+```bash
+#!/bin/bash
+NETWORK="<your-network>"
+
+# Get all validators and their stakes
+VALIDATORS=$(pocketd query staking validators --network $NETWORK --output json | jq -r '.validators[] | "\(.operator_address) \(.tokens)"')
+
+echo "Validator Stakes:"
+TOTAL_STAKE=0
+while read -r validator_addr stake; do
+    echo "$validator_addr: $stake tokens"
+    TOTAL_STAKE=$((TOTAL_STAKE + stake))
+done <<< "$VALIDATORS"
+
+echo "Total Stake: $TOTAL_STAKE"
+
+# Calculate expected distribution for recent rewards
+echo "Expected reward distribution (proportional to stake):"
+while read -r validator_addr stake; do
+    PERCENTAGE=$(echo "scale=4; $stake * 100 / $TOTAL_STAKE" | bc)
+    echo "$validator_addr: $PERCENTAGE% of rewards"
+done <<< "$VALIDATORS"
+```
+
+#### Check Delegation Rewards
+
+```bash
+#!/bin/bash
+DELEGATOR_ADDR="<delegator-address>"
+VALIDATOR_ADDR="<validator-address>" 
+NETWORK="<your-network>"
+
+# Check current rewards
+CURRENT_REWARDS=$(pocketd query distribution rewards-by-validator $DELEGATOR_ADDR $VALIDATOR_ADDR --network $NETWORK --output json | jq -r '.rewards[0].amount // "0"')
+
+echo "Current pending rewards: $CURRENT_REWARDS uPOKT"
+
+# Withdraw rewards
+echo "Withdrawing rewards..."
+pocketd tx distribution withdraw-rewards $VALIDATOR_ADDR --from $DELEGATOR_ADDR --network $NETWORK --gas auto --gas-adjustment 1.5 --fees 1000upokt -y
+
+# Wait for confirmation
+sleep 10
+
+# Check updated rewards (should be 0 or very small)
+UPDATED_REWARDS=$(pocketd query distribution rewards-by-validator $DELEGATOR_ADDR $VALIDATOR_ADDR --network $NETWORK --output json | jq -r '.rewards[0].amount // "0"')
+echo "Rewards after withdrawal: $UPDATED_REWARDS uPOKT"
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. No Validator Rewards Being Distributed
+
+**Symptoms**: Distribution module balance not increasing, validator outstanding rewards stay at zero
+
+**Possible Causes**:
+- `mint_allocation_percentages.proposer` is set to 0
+- No claim settlements occurring (no relay traffic)
+- All validators have zero bonded stake
+
+**Diagnostics**:
+```bash
+# Check tokenomics parameters
+pocketd query tokenomics params --network <network>
+
+# Check for recent settlements
+pocketd query tx --events 'pocket.tokenomics.EventClaimSettled.num_relays>0' --network <network>
+
+# Check validator stakes  
+pocketd query staking validators --network <network>
+```
+
+#### 2. Uneven Reward Distribution
+
+**Symptoms**: Validators receiving rewards that don't match their staking weight
+
+**Possible Causes**:
+- Recent validator stake changes
+- Validator bonding/unbonding events
+- Calculation errors (should not happen with proper implementation)
+
+**Diagnostics**:
+```bash
+# Check validator bonding status
+pocketd query staking validator <validator-addr> --network <network>
+
+# Check recent staking transactions
+pocketd query tx --events 'message.module=staking' --network <network>
+```
+
+#### 3. Delegators Not Receiving Rewards
+
+**Symptoms**: Delegator reward balance not increasing despite validator receiving rewards
+
+**Possible Causes**:
+- High validator commission (100%)
+- Recent delegation changes
+- Rewards haven't accumulated enough to show
+
+**Diagnostics**:
+```bash
+# Check validator commission rate
+pocketd query staking validator <validator-addr> --network <network>
+
+# Check delegation details
+pocketd query staking delegation <delegator-addr> <validator-addr> --network <network>
+```
+
+### Debug Commands
+
+#### View Recent Tokenomics Events
+
+```bash
+pocketd query tx --events 'message.module=tokenomics' --limit 20 --network <network>
+```
+
+#### Inspect Specific Settlement Transaction
+
+```bash
+pocketd query tx <settlement-tx-hash> --network <network> --output json | jq '.events[] | select(.type | contains("EventClaimSettled"))'
+```
+
+#### Check Module Account Balances
+
+```bash
+# Distribution module
+pocketd query bank balance cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl upokt --network <network>
+
+# Tokenomics module  
+pocketd query bank balance cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8w8zk8h upokt --network <network>
+```
+
+## Best Practices for Validators
+
+### For Validator Operators
+
+1. **Monitor Commission Settings**: Balance earning commission with attracting delegators
+2. **Track Outstanding Rewards**: Regularly check accumulated rewards
+3. **Watch Settlement Activity**: Monitor relay traffic and claim settlements in your network
+4. **Set Up Alerting**: Monitor unusual reward distribution patterns
+
+### For Delegators  
+
+1. **Compare Commission Rates**: Choose validators with reasonable commission rates
+2. **Monitor Reward Accumulation**: Track your rewards over time
+3. **Regular Withdrawals**: Withdraw rewards periodically (they don't auto-compound)
+4. **Diversify Delegations**: Consider spreading stake across multiple validators
+
+### Sample Monitoring Script
+
+```bash
+#!/bin/bash
+
+# Configuration
+VALIDATOR_ADDR="<your-validator-address>"
+DELEGATOR_ADDR="<your-delegator-address>"  
+NETWORK="<your-network>"
+ALERT_THRESHOLD=1000000  # Alert if rewards exceed 1M uPOKT
+
+while true; do
+    # Check validator outstanding rewards
+    VAL_REWARDS=$(pocketd query distribution validator-outstanding-rewards $VALIDATOR_ADDR --network $NETWORK --output json | jq -r '.rewards[0].amount // "0"')
+    
+    # Check delegator rewards
+    DEL_REWARDS=$(pocketd query distribution rewards-by-validator $DELEGATOR_ADDR $VALIDATOR_ADDR --network $NETWORK --output json | jq -r '.rewards[0].amount // "0"')
+    
+    # Check distribution module balance
+    DIST_BALANCE=$(pocketd query bank balance cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl upokt --network $NETWORK --output json | jq -r '.balance.amount')
+    
+    echo "$(date):"
+    echo "  Validator Outstanding: $VAL_REWARDS uPOKT"
+    echo "  Delegator Rewards: $DEL_REWARDS uPOKT"  
+    echo "  Distribution Module: $DIST_BALANCE uPOKT"
+    
+    # Alert if rewards are high
+    if [ "$DEL_REWARDS" -gt "$ALERT_THRESHOLD" ]; then
+        echo "🚨 ALERT: Delegator rewards exceed threshold! Consider withdrawing."
+    fi
+    
+    sleep 300  # Check every 5 minutes
+done
+```
+
+This playbook provides the foundation for monitoring and understanding validator rewards in Pocket Network. For additional support, consult the network documentation or community channels.
