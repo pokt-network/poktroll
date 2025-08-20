@@ -22,17 +22,7 @@ source ./tools/rc_helpers/queries.sh
 Available commands:
   shannon_query_unique_tx_msgs_and_events  - Get unique message and event types
   shannon_query_unique_block_events        - Get unique block events
-  shannon_query_tx_messages                - Query transactions by message type
-  shannon_query_tx_events                  - Query transactions by event type
-  shannon_query_block_events               - Query block events
-  query_blocks                             - Query and save individual blocks to files
-  shannon_query_unique_claim_suppliers     - Get unique claim supplier addresses
-  shannon_query_supplier_tx_events         - Get supplier-specific transaction events
-  shannon_query_supplier_block_events      - Get supplier-specific block events
-  shannon_query_application_block_events   - Get application-specific block events
-  shannon_query_validator_reward_share     - Calculate validator's reward share based on stake
-  shannon_monitor_validator_rewards        - Monitor validator outstanding rewards over time
-  shannon_check_recent_settlements         - Check recent tokenomics claim settlements
+  ...
 ```
 
 ## `pocketd` CLI queries

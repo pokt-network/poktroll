@@ -7,6 +7,9 @@ load("ext://execute_in_pod", "execute_in_pod")
 load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
 
+# Avoid the header
+analytics_settings(enable=False)
+
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
 
@@ -305,10 +308,9 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=guard.global.serviceName=path" + str(actor_number) + "-http", # Override the default service name
         "--set=guard.services[0].serviceId=anvil", # Ensure HTTPRoute resources are created for Anvil
         "--set=observability.enabled=false",
-
-        # TODO_IMPROVE(@okdas): Turn on guard when we are ready for it - e2e tests currently are not setup to use it.
-        # "--set=guard.enabled=true",
-        # "--set=guard.envoyGateway.enabled=true",
+        # TODO_TECHDEBT(@okdas): Remove the need for an override that uses a pre-released version of RLS.
+        # See 'guard-overrides.yaml' for more details and TODOs.
+        "--values=./localnet/kubernetes/guard-overrides.yaml",
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
