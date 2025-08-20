@@ -32,6 +32,9 @@ function help() {
   echo "  shannon_query_supplier_tx_events         - Get supplier-specific transaction events"
   echo "  shannon_query_supplier_block_events      - Get supplier-specific block events"
   echo "  shannon_query_application_block_events   - Get application-specific block events"
+  echo "  shannon_query_validator_reward_share     - Calculate validator's reward share based on stake"
+  echo "  shannon_monitor_validator_rewards        - Monitor validator outstanding rewards over time"
+  echo "  shannon_check_recent_settlements         - Check recent tokenomics claim settlements"
   echo ""
   echo "Current latest block on mainnet: $LATEST_BLOCK_MAIN"
   echo "Current latest block on beta testnet: $LATEST_BLOCK_BETA"
@@ -1217,6 +1220,190 @@ EOF
   done
 
   echo "Query completed."
+}
+
+# ===============================================
+# VALIDATOR REWARD FUNCTIONS
+# ===============================================
+
+function shannon_query_validator_reward_share() {
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
+shannon_query_validator_reward_share - Calculate validator's reward share based on stake
+
+DESCRIPTION:
+  Calculates the expected validator reward share by comparing the validator's
+  bonded tokens against the total bonded tokens across all validators.
+  This percentage determines the validator's proportional share of validator rewards.
+
+USAGE:
+  shannon_query_validator_reward_share <validator_address> <env>
+
+ARGUMENTS:
+  validator_address  Validator operator address (cosmosvaloper...)
+  env               Network environment - must be one of: alpha, beta, main
+
+EXAMPLES:
+  shannon_query_validator_reward_share cosmosvaloper1abc123... main
+  shannon_query_validator_reward_share cosmosvaloper1def456... beta
+EOF
+    return 0
+  fi
+
+  if [[ $# -ne 2 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
+
+  local validator_addr="$1"
+  local env="$2"
+
+  validate_env "$env" || return 1
+
+  echo "Calculating validator reward share for $validator_addr on $env network..."
+
+  # Get validator bonded tokens
+  local val_tokens=$(pocketd query staking validator "$validator_addr" --network "$env" -o json | jq -r '.tokens')
+
+  if [[ "$val_tokens" == "null" || "$val_tokens" == "0" ]]; then
+    echo "Error: Could not retrieve validator tokens or validator has 0 tokens"
+    return 1
+  fi
+
+  # Get total bonded tokens across all validators  
+  local total_tokens=$(pocketd query staking validators --network "$env" -o json | jq -r '.validators | map(.tokens | tonumber) | add')
+
+  if [[ "$total_tokens" == "null" || "$total_tokens" == "0" ]]; then
+    echo "Error: Could not retrieve total bonded tokens"
+    return 1
+  fi
+
+  # Calculate percentage
+  local percentage=$(echo "scale=6; $val_tokens * 100 / $total_tokens" | bc)
+
+  echo ""
+  echo "Results:"
+  echo "  Validator tokens: $val_tokens"
+  echo "  Total bonded tokens: $total_tokens"  
+  echo "  Validator $validator_addr holds $percentage% of total bonded tokens"
+  echo ""
+  echo "This validator will receive approximately $percentage% of total validator rewards"
+}
+
+function shannon_monitor_validator_rewards() {
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
+shannon_monitor_validator_rewards - Monitor validator outstanding rewards over time
+
+DESCRIPTION:
+  Continuously monitors a validator's outstanding rewards with periodic updates.
+  Shows the current uPOKT amount of outstanding rewards that have not yet been
+  withdrawn by the validator or their delegators.
+
+USAGE:
+  shannon_monitor_validator_rewards <validator_address> <env> [interval_seconds]
+
+ARGUMENTS:
+  validator_address  Validator operator address (cosmosvaloper...)
+  env               Network environment - must be one of: alpha, beta, main
+  interval_seconds  (Optional) Update interval in seconds (default: 60)
+
+EXAMPLES:
+  shannon_monitor_validator_rewards cosmosvaloper1abc123... main
+  shannon_monitor_validator_rewards cosmosvaloper1abc123... main 30
+  
+NOTE:
+  Press Ctrl+C to stop monitoring
+EOF
+    return 0
+  fi
+
+  if [[ $# -lt 2 || $# -gt 3 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
+
+  local validator_addr="$1"
+  local env="$2"
+  local interval="${3:-60}"
+
+  validate_env "$env" || return 1
+
+  echo "Monitoring validator rewards for $validator_addr on $env network (${interval}s intervals)"
+  echo "Press Ctrl+C to stop"
+  echo ""
+
+  while true; do
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    # Get outstanding rewards, handle case where validator has no rewards yet
+    local rewards=$(pocketd query distribution validator-outstanding-rewards "$validator_addr" --network "$env" -o json 2>/dev/null | jq -r '.rewards[0].amount // "0"')
+    
+    if [[ "$rewards" == "null" ]]; then
+      rewards="0"
+    fi
+    
+    echo "$timestamp: $rewards uPOKT outstanding rewards"
+    sleep "$interval"
+  done
+}
+
+function shannon_check_recent_settlements() {
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
+shannon_check_recent_settlements - Check recent tokenomics claim settlements
+
+DESCRIPTION:
+  Queries recent tokenomics transactions to find claim settlement events that
+  trigger validator reward distribution. Each claim settlement may result in
+  validator rewards if conditions are met (inflation > 0, proposer allocation > 0,
+  bonded validators exist).
+
+USAGE:
+  shannon_check_recent_settlements <env> [limit]
+
+ARGUMENTS:
+  env    Network environment - must be one of: alpha, beta, main  
+  limit  (Optional) Maximum number of transactions to check (default: 10)
+
+EXAMPLES:
+  shannon_check_recent_settlements main
+  shannon_check_recent_settlements main 20
+  shannon_check_recent_settlements beta 5
+EOF
+    return 0
+  fi
+
+  if [[ $# -lt 1 || $# -gt 2 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
+
+  local env="$1"
+  local limit="${2:-10}"
+
+  validate_env "$env" || return 1
+
+  echo "Checking recent tokenomics claim settlements on $env network (limit: $limit)"
+  echo ""
+
+  # Get recent tokenomics settlement transactions
+  local settlements=$(pocketd query txs --events 'message.module=tokenomics' --limit "$limit" --network "$env" -o json | \
+    jq -r '.txs[] | select(.logs[].events[].type == "pocket.tokenomics.EventClaimSettled") | 
+      "\(.timestamp) - Settlement: \(.logs[].events[] | select(.type == "pocket.tokenomics.EventClaimSettled") | 
+      .attributes[] | select(.key == "num_relays") | .value) relays"')
+
+  if [[ -n "$settlements" ]]; then
+    echo "$settlements"
+  else
+    echo "No recent claim settlements found"
+  fi
+
+  echo ""
+  echo "Note: Each claim settlement may trigger validator reward distribution if:"
+  echo "  - Global inflation > 0"  
+  echo "  - Proposer allocation percentage > 0"
+  echo "  - Bonded validators exist with stake > 0"
 }
 
 # ===============================================

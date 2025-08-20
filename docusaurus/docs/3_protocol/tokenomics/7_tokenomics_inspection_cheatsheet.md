@@ -25,10 +25,14 @@ Available commands:
   shannon_query_tx_messages                - Query transactions by message type
   shannon_query_tx_events                  - Query transactions by event type
   shannon_query_block_events               - Query block events
+  query_blocks                             - Query and save individual blocks to files
   shannon_query_unique_claim_suppliers     - Get unique claim supplier addresses
   shannon_query_supplier_tx_events         - Get supplier-specific transaction events
   shannon_query_supplier_block_events      - Get supplier-specific block events
   shannon_query_application_block_events   - Get application-specific block events
+  shannon_query_validator_reward_share     - Calculate validator's reward share based on stake
+  shannon_monitor_validator_rewards        - Monitor validator outstanding rewards over time
+  shannon_check_recent_settlements         - Check recent tokenomics claim settlements
 ```
 
 ## `pocketd` CLI queries
@@ -135,46 +139,40 @@ pocketd query txs --events 'message.module=tokenomics' --network <network>
 
 ### Helper Scripts for Validator Reward Analysis
 
+First, source the query helper functions:
+
+```bash
+source ./tools/rc_helpers/queries.sh
+```
+
 Calculate expected validator reward share:
 
 ```bash
-#!/bin/bash
-VALIDATOR_ADDR="<validator-address>"
-NETWORK="<network>"
+# Calculate validator's share of total bonded tokens (determines reward distribution)
+shannon_query_validator_reward_share <validator-address> <network>
 
-# Get validator bonded tokens
-VAL_TOKENS=$(pocketd query staking validator $VALIDATOR_ADDR --network $NETWORK -o json | jq -r '.tokens')
-
-# Get total bonded tokens across all validators  
-TOTAL_TOKENS=$(pocketd query staking validators --network $NETWORK -o json | jq -r '.validators | map(.tokens | tonumber) | add')
-
-# Calculate percentage
-PERCENTAGE=$(echo "scale=6; $VAL_TOKENS * 100 / $TOTAL_TOKENS" | bc)
-echo "Validator $VALIDATOR_ADDR holds $PERCENTAGE% of total bonded tokens"
+# Example:
+shannon_query_validator_reward_share cosmosvaloper1abc123... main
 ```
 
 Monitor validator rewards over time:
 
 ```bash
-#!/bin/bash
-VALIDATOR_ADDR="<validator-address>"
-NETWORK="<network>"
+# Monitor validator outstanding rewards with periodic updates  
+shannon_monitor_validator_rewards <validator-address> <network> [interval-seconds]
 
-while true; do
-  REWARDS=$(pocketd query distribution validator-outstanding-rewards $VALIDATOR_ADDR --network $NETWORK -o json | jq -r '.rewards[0].amount // "0"')
-  echo "$(date): $REWARDS uPOKT outstanding rewards"
-  sleep 60
-done
+# Example (check every 60 seconds):
+shannon_monitor_validator_rewards cosmosvaloper1abc123... main 60
 ```
 
 Check recent validator reward settlements:
 
 ```bash
-# Get recent tokenomics settlement transactions
-pocketd query txs --events 'message.module=tokenomics' --limit 10 --network <network> -o json | \
-  jq -r '.txs[] | select(.logs[].events[].type == "pocket.tokenomics.EventClaimSettled") | 
-    "\(.timestamp) - Settlement: \(.logs[].events[] | select(.type == "pocket.tokenomics.EventClaimSettled") | 
-    .attributes[] | select(.key == "num_relays") | .value) relays"'
+# Check recent tokenomics claim settlements that trigger validator rewards
+shannon_check_recent_settlements <network> [limit]
+
+# Example:
+shannon_check_recent_settlements main 10
 ```
 
 ## Viewing Account Balance over time
