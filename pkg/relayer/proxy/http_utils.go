@@ -8,9 +8,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )

@@ -336,7 +336,7 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 		st.logger.Debug().
 			Str("session_id", st.sessionHeader.SessionId).
 			Msg("About to commit in-memory session tree SMT data to KVStore")
-		
+
 		// Commit any pending changes to the KVStore for in-memory stores
 		if err := st.sessionSMT.Commit(); err != nil {
 			st.logger.Error().
@@ -419,13 +419,13 @@ func (st *sessionTree) Delete() error {
 	}
 
 	st.logger.Info().Msg("Clearing in-memory session tree KVStore.")
-	
+
 	// Check if treeStore is nil (already cleaned up) to prevent panic
 	if st.treeStore == nil {
 		st.logger.Debug().Msg("In-memory session tree KVStore is already cleared (nil)")
 		return nil
 	}
-	
+
 	// Attempt to clear the store, but handle panics from closed database gracefully
 	defer func() {
 		if r := recover(); r != nil {
@@ -438,7 +438,7 @@ func (st *sessionTree) Delete() error {
 			}
 		}
 	}()
-	
+
 	if err := st.treeStore.ClearAll(); err != nil {
 		// If the database is already closed, this is expected during cleanup
 		if strings.Contains(err.Error(), "pebble: closed") {
@@ -448,7 +448,7 @@ func (st *sessionTree) Delete() error {
 		// Return other errors
 		return err
 	}
-	
+
 	return nil
 }
 
