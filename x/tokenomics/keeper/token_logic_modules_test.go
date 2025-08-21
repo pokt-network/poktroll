@@ -895,13 +895,13 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators(t *testing.T) {
 	// Test that proposer rewards are distributed to all validators based on staking weight
 	// Enable proposer rewards for this test
-	
+
 	// Test Parameters
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	globalComputeUnitCostGranularity := uint64(1000000)
 	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
-	
+
 	service := prepareTestService(1)
 	numRelays := uint64(1000)
 	numTokensClaimed := cosmosmath.NewInt(int64(numRelays * service.ComputeUnitsPerRelay))
@@ -924,7 +924,7 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.DaoRewardAddress = daoAddress
 	// ENABLE proposer rewards for this test
-	tokenomicsParams.MintAllocationPercentages.Proposer = 0.1  // 10% goes to validators
+	tokenomicsParams.MintAllocationPercentages.Proposer = 0.1       // 10% goes to validators
 	tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer = 0.0 // Only test mint allocation
 	keepers.Keeper.SetParams(ctx, tokenomicsParams)
 
@@ -960,8 +960,8 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:         supplierAddr,
 		OperatorAddress:      supplierAddr,
-		Stake:               &supplierStake,
-		Services:            supplierServices,
+		Stake:                &supplierStake,
+		Services:             supplierServices,
 		ServiceConfigHistory: serviceConfigHistory,
 	}
 	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
@@ -994,7 +994,7 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 	modToModTransfers := pendingResult.GetModToModTransfers()
 	distributionTransferFound := false
 	var distributionAmount cosmosmath.Int
-	
+
 	for _, transfer := range modToModTransfers {
 		if transfer.RecipientModule == distributiontypes.ModuleName &&
 			transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION {
@@ -1003,22 +1003,21 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 			break
 		}
 	}
-	
+
 	require.True(t, distributionTransferFound, "Should find transfer to distribution module for validator rewards")
 	require.True(t, distributionAmount.IsPositive(), "Distribution amount should be positive")
 
 	// Verify the amount matches expected proposer allocation
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(tokenomicsParams.GlobalInflationPerClaim)
 	require.NoError(t, err)
-	
+
 	numTokensClaimedRat := new(big.Rat).SetInt(numTokensClaimed.BigInt())
 	numTokensMintedRat := new(big.Rat).Mul(numTokensClaimedRat, globalInflationPerClaimRat)
 	propMintFromGlobalMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Proposer)
-	
-	require.Equal(t, propMintFromGlobalMint, distributionAmount, 
+
+	require.Equal(t, propMintFromGlobalMint, distributionAmount,
 		"Distribution amount should match expected proposer mint allocation")
 }
-
 
 func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {
 	t.Skip("TODO_TEST: Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")

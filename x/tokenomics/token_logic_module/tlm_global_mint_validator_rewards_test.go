@@ -420,6 +420,6 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_PrecisionTest(t *testing.T) {
 	err := tlm.Process(sdkCtx, cosmoslog.NewNopLogger(), tlmCtx)
 	require.NoError(t, err)
 
-	// Test passes if no error occurred - the precision test just validates that 
+	// Test passes if no error occurred - the precision test just validates that
 	// the distribution logic doesn't panic or fail with small reward amounts
 }

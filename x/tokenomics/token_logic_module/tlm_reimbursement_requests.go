@@ -14,11 +14,7 @@ import (
 
 var _ TokenLogicModule = (*tlmGlobalMintReimbursementRequest)(nil)
 
-type tlmGlobalMintReimbursementRequest struct {
-	ctx    context.Context
-	logger cosmoslog.Logger
-	tlmCtx *TLMContext
-}
+type tlmGlobalMintReimbursementRequest struct{}
 
 // NewGlobalMintReimbursementRequestTLM returns a new GlobalMintReimbursementRequest TLM.
 func NewGlobalMintReimbursementRequestTLM() TokenLogicModule {
@@ -53,10 +49,6 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 		"supplier_operator", supplier.OperatorAddress,
 		"actual_settlement_coin", actualSettlementCoin,
 	)
-
-	tlm.ctx = ctx
-	tlm.logger = logger
-	tlm.tlmCtx = &tlmCtx
 
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)

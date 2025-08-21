@@ -243,8 +243,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 
 		if len(validators) == 0 {
 			tlmgm.logger.Warn("no bonded validators found for proposer reward distribution - rewards will go to DAO")
-			// Add the proposer amount to DAO allocation since no validators to distribute to
-			proposerAmount = math.ZeroInt()
+			// Rewards will be included in DAO allocation since no validators to distribute to
 			return nil
 		}
 
@@ -261,8 +260,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 
 		if totalBondedTokens.IsZero() {
 			tlmgm.logger.Warn("total bonded tokens is zero across all validators, skipping proposer reward distribution - rewards will go to DAO")
-			// Add the proposer amount to DAO allocation since no stake to distribute based on
-			proposerAmount = math.ZeroInt()
+			// Rewards will be included in DAO allocation since no stake to distribute based on
 			return nil
 		}
 
