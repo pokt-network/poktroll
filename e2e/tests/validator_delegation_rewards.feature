@@ -97,9 +97,6 @@ Feature: Validator Delegation Rewards
     And the user should wait for the "proof" module "SubmitProof" Message to be submitted
     And the user should wait for the ClaimSettled event with "THRESHOLD" proof requirement to be broadcast
 
-    # Wait additional blocks for validator rewards to be processed and distributed
-    And the user waits for "5" blocks
-
     # Validate that delegators received their proportional rewards directly
     # Note: With ModToAcctTransfer, rewards are sent directly to delegator accounts
     # during claim settlement - no withdrawal needed
@@ -193,7 +190,6 @@ Feature: Validator Delegation Rewards
     And the user should wait for the "proof" module "CreateClaim" Message to be submitted
     And the user should wait for the "proof" module "SubmitProof" Message to be submitted
     And the user should wait for the ClaimSettled event with "THRESHOLD" proof requirement to be broadcast
-    And the user waits for "5" blocks
 
     # Expected rewards calculation:
     # - Settlement: 10 relays × 100 CUPR × 42 multiplier = 42,000 uPOKT
@@ -206,9 +202,6 @@ Feature: Validator Delegation Rewards
     # - Expected rewards are proportional: rewards × (delegator_stake / total_validator_stake)
     # - With 0% commission, delegator gets full share of their proportion
     # - Rewards are sent directly via ModToAcctTransfer during settlement
-
-    # Wait for rewards to be distributed
-    And the user waits for "5" blocks
     
     # The delegator should receive rewards proportional to their delegation share
     # Note: With ModToAcctTransfer, rewards are sent directly to delegator accounts
