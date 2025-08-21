@@ -89,8 +89,7 @@ type TLMContext struct {
 	Application           *apptypes.Application
 	Supplier              *sharedtypes.Supplier
 	RelayMiningDifficulty *servicetypes.RelayMiningDifficulty
-	StakingKeeper         tokenomicstypes.StakingKeeper // Used to resolve block proposer validator address
-	DistributionKeeper    tokenomicstypes.DistributionKeeper
+	StakingKeeper         tokenomicstypes.StakingKeeper // Used for validator and delegation queries
 }
 
 // NewDefaultTokenLogicModules

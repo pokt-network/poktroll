@@ -307,12 +307,32 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 			OperatorAddress: proposerValOperatorAddr,
 			Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
 			Status:          stakingtypes.Bonded,
+			Commission:      stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, // 5% commission
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)), // Shares equal stake for simplicity
 		},
 	}
 	mockStakingKeeper.EXPECT().
 		GetBondedValidatorsByPower(gomock.Any()).
 		Return(validators, nil).
 		AnyTimes()
+	
+	// Mock GetValidatorDelegations for the new ModToAcctTransfer approach
+	// Create a flexible mock that works for any validator address
+	mockStakingKeeper.EXPECT().
+		GetValidatorDelegations(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, validatorAddr cosmostypes.ValAddress) ([]stakingtypes.Delegation, error) {
+			// Create a delegation for this validator
+			delegations := []stakingtypes.Delegation{
+				{
+					DelegatorAddress: "pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm", // Fixed address for deterministic tests
+					ValidatorAddress: validatorAddr.String(),
+					Shares:           cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)), // All shares to one delegator for simplicity
+				},
+			}
+			return delegations, nil
+		}).
+		AnyTimes()
+
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
 		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
@@ -637,6 +657,8 @@ func NewTokenomicsModuleKeepers(
 			OperatorAddress: proposerValOperatorAddr.String(),
 			Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
 			Status:          stakingtypes.Bonded,
+			Commission:      stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, // 5% commission
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)), // Shares equal stake for simplicity
 		},
 	}
 	mockStakingKeeper.EXPECT().
@@ -644,7 +666,24 @@ func NewTokenomicsModuleKeepers(
 		Return(validators, nil).
 		AnyTimes()
 
-	// Mock AllocateTokensToValidator to succeed
+	// Mock GetValidatorDelegations for the new ModToAcctTransfer approach
+	// Create a flexible mock that works for any validator address
+	mockStakingKeeper.EXPECT().
+		GetValidatorDelegations(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, validatorAddr cosmostypes.ValAddress) ([]stakingtypes.Delegation, error) {
+			// Create a delegation for this validator
+			delegations := []stakingtypes.Delegation{
+				{
+					DelegatorAddress: "pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm", // Fixed address for deterministic tests
+					ValidatorAddress: validatorAddr.String(),
+					Shares:           cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)), // All shares to one delegator for simplicity
+				},
+			}
+			return delegations, nil
+		}).
+		AnyTimes()
+
+	// Mock AllocateTokensToValidator to succeed (legacy support - no longer used with ModToAcctTransfer)
 	mockDistributionKeeper.EXPECT().
 		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).

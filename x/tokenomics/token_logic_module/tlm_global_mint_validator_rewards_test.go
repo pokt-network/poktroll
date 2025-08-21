@@ -105,9 +105,8 @@ func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
-			mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
 
-			// Create test validators
+			// Create test validators with commission rates
 			validators := make([]stakingtypes.Validator, len(tt.validatorStakes))
 			totalStake := cosmosmath.ZeroInt()
 
@@ -115,31 +114,52 @@ func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 				validators[i] = stakingtypes.Validator{
 					OperatorAddress: sample.ValOperatorAddressBech32(),
 					Tokens:          cosmosmath.NewInt(stake),
+					Status:          stakingtypes.Bonded, // Make sure validator is bonded
+					Commission: stakingtypes.Commission{
+						CommissionRates: stakingtypes.CommissionRates{
+							Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5% commission
+						},
+					},
+					DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(stake)), // Shares equal stake for simplicity
 				}
 				totalStake = totalStake.Add(cosmosmath.NewInt(stake))
 			}
 
-			// Mock staking keeper behavior - always set up the expectation if proposer rewards are enabled
+			// Mock staking keeper behavior - set up expectations if proposer rewards are enabled
 			if tt.globalInflationPercent > 0 && tt.proposerAllocationPercent > 0 {
 				mockStakingKeeper.EXPECT().
 					GetBondedValidatorsByPower(gomock.Any()).
 					Return(validators, nil).
 					Times(1)
 
-				// For cases where rewards should be distributed, allow any calls
-				mockDistributionKeeper.EXPECT().
-					AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(nil).
-					AnyTimes()
+				// For each validator with stake, expect delegation queries
+				for _, validator := range validators {
+					if validator.Tokens.IsPositive() {
+						valAddr, _ := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
+						
+						// Mock delegations for each validator (for simplicity, create self-delegation)
+						delegations := []stakingtypes.Delegation{
+							{
+								DelegatorAddress: sample.AccAddressBech32(),
+								ValidatorAddress: validator.OperatorAddress, 
+								Shares:           validator.DelegatorShares,
+							},
+						}
+						
+						mockStakingKeeper.EXPECT().
+							GetValidatorDelegations(gomock.Any(), valAddr).
+							Return(delegations, nil).
+							AnyTimes()
+					}
+				}
 			}
 
-			// Create TLM context
+			// Create TLM context (no longer needs DistributionKeeper)
 			tlmCtx := createTestTLMContext(
 				tt.settlementAmount,
 				tt.globalInflationPercent,
 				tt.proposerAllocationPercent,
 				mockStakingKeeper,
-				mockDistributionKeeper,
 			)
 
 			// Create and execute TLM
@@ -156,6 +176,27 @@ func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
+				
+				// Validate that ModToAcctTransfer operations were created for validator rewards
+				if tt.validateDistribution && tt.globalInflationPercent > 0 && tt.proposerAllocationPercent > 0 {
+					result := tlmCtx.Result
+					
+					// Check that there are ModToAcctTransfer operations for validator rewards
+					hasValidatorRewards := false
+					hasDelegatorRewards := false
+					
+					for _, transfer := range result.ModToAcctTransfers {
+						if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION {
+							hasValidatorRewards = true
+						}
+						if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION {
+							hasDelegatorRewards = true
+						}
+					}
+					
+					require.True(t, hasValidatorRewards, "Expected validator commission rewards to be distributed")
+					require.True(t, hasDelegatorRewards, "Expected delegator rewards to be distributed")
+				}
 			}
 		})
 	}
@@ -164,13 +205,13 @@ func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 func TestTLMGlobalMint_ValidatorRewardDistribution_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name          string
-		setupMocks    func(*mocks.MockStakingKeeper, *mocks.MockDistributionKeeper)
+		setupMocks    func(*mocks.MockStakingKeeper)
 		expectedError bool
 		errorContains string
 	}{
 		{
 			name: "staking_keeper_returns_error",
-			setupMocks: func(stakingKeeper *mocks.MockStakingKeeper, distributionKeeper *mocks.MockDistributionKeeper) {
+			setupMocks: func(stakingKeeper *mocks.MockStakingKeeper) {
 				stakingKeeper.EXPECT().
 					GetBondedValidatorsByPower(gomock.Any()).
 					Return(nil, sdkerrors.ErrInvalidAddress).
@@ -180,12 +221,19 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_EdgeCases(t *testing.T) {
 			errorContains: "error getting bonded validators",
 		},
 		{
-			name: "distribution_keeper_returns_error",
-			setupMocks: func(stakingKeeper *mocks.MockStakingKeeper, distributionKeeper *mocks.MockDistributionKeeper) {
+			name: "validator_delegation_query_returns_error",
+			setupMocks: func(stakingKeeper *mocks.MockStakingKeeper) {
 				validators := []stakingtypes.Validator{
 					{
 						OperatorAddress: sample.ValOperatorAddressBech32(),
 						Tokens:          cosmosmath.NewInt(1000000),
+						Status:          stakingtypes.Bonded,
+						Commission: stakingtypes.Commission{
+							CommissionRates: stakingtypes.CommissionRates{
+								Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5% commission
+							},
+						},
+						DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)),
 					},
 				}
 				stakingKeeper.EXPECT().
@@ -193,16 +241,18 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_EdgeCases(t *testing.T) {
 					Return(validators, nil).
 					Times(1)
 
-				distributionKeeper.EXPECT().
-					AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(sdkerrors.ErrInvalidAddress).
-					AnyTimes() // May or may not be called depending on calculated amounts
+				valAddr, _ := cosmostypes.ValAddressFromBech32(validators[0].OperatorAddress)
+				stakingKeeper.EXPECT().
+					GetValidatorDelegations(gomock.Any(), valAddr).
+					Return(nil, sdkerrors.ErrInvalidAddress).
+					Times(1)
 			},
-			expectedError: false, // Test passes if no panic occurs - distribution may not trigger
+			expectedError: true,
+			errorContains: "error distributing rewards to validator",
 		},
 		{
 			name: "no_bonded_validators",
-			setupMocks: func(stakingKeeper *mocks.MockStakingKeeper, distributionKeeper *mocks.MockDistributionKeeper) {
+			setupMocks: func(stakingKeeper *mocks.MockStakingKeeper) {
 				stakingKeeper.EXPECT().
 					GetBondedValidatorsByPower(gomock.Any()).
 					Return([]stakingtypes.Validator{}, nil).
@@ -212,7 +262,7 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_EdgeCases(t *testing.T) {
 		},
 		{
 			name: "all_validators_have_zero_stake",
-			setupMocks: func(stakingKeeper *mocks.MockStakingKeeper, distributionKeeper *mocks.MockDistributionKeeper) {
+			setupMocks: func(stakingKeeper *mocks.MockStakingKeeper) {
 				validators := []stakingtypes.Validator{
 					{
 						OperatorAddress: sample.ValOperatorAddressBech32(),
@@ -238,10 +288,9 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_EdgeCases(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
-			mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
 
 			// Setup mocks according to test case
-			tt.setupMocks(mockStakingKeeper, mockDistributionKeeper)
+			tt.setupMocks(mockStakingKeeper)
 
 			// Create TLM context with non-zero values to trigger validator distribution
 			tlmCtx := createTestTLMContext(
@@ -249,7 +298,6 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_EdgeCases(t *testing.T) {
 				0.1,   // 10% global inflation
 				0.1,   // 10% proposer allocation
 				mockStakingKeeper,
-				mockDistributionKeeper,
 			)
 
 			// Create and execute TLM
@@ -280,7 +328,6 @@ func createTestTLMContext(
 	globalInflationPercent float64,
 	proposerAllocationPercent float64,
 	stakingKeeper tokenomicstypes.StakingKeeper,
-	distributionKeeper tokenomicstypes.DistributionKeeper,
 ) TLMContext {
 	// Create test objects
 	service := &sharedtypes.Service{
@@ -359,7 +406,6 @@ func createTestTLMContext(
 		Supplier:              supplier,
 		RelayMiningDifficulty: relayMiningDifficulty,
 		StakingKeeper:         stakingKeeper,
-		DistributionKeeper:    distributionKeeper,
 	}
 }
 
@@ -369,22 +415,16 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_PrecisionTest(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
-	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
 
 	// Create 7 validators with stakes that don't divide evenly
 	validators := []stakingtypes.Validator{
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(333)},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(333)},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(334)}, // Slightly different
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(100)},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(200)},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(150)},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(50)},
-	}
-
-	totalStake := cosmosmath.ZeroInt()
-	for _, v := range validators {
-		totalStake = totalStake.Add(v.GetBondedTokens())
+		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(333), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(333))},
+		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(333), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(333))},
+		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(334), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(334))}, // Slightly different
+		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(100), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(100))},
+		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(200), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(200))},
+		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(150), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(150))},
+		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(50), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(50))},
 	}
 
 	mockStakingKeeper.EXPECT().
@@ -392,18 +432,26 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_PrecisionTest(t *testing.T) {
 		Return(validators, nil).
 		Times(1)
 
+	// Mock delegation queries for each validator
+	for _, validator := range validators {
+		valAddr, _ := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
+		delegations := []stakingtypes.Delegation{
+			{
+				DelegatorAddress: sample.AccAddressBech32(),
+				ValidatorAddress: validator.OperatorAddress, 
+				Shares:           validator.DelegatorShares,
+			},
+		}
+		mockStakingKeeper.EXPECT().
+			GetValidatorDelegations(gomock.Any(), valAddr).
+			Return(delegations, nil).
+			AnyTimes()
+	}
+
 	// Use larger settlement amount that will result in meaningful validator rewards
 	settlementAmount := int64(10000) // Increased from 100
 	globalInflation := 0.1
 	proposerAllocation := 0.1
-
-	// Parameters for test execution
-
-	// Set up mock to track calls and allow any distribution
-	mockDistributionKeeper.EXPECT().
-		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
 
 	// Create and execute TLM
 	tlmCtx := createTestTLMContext(
@@ -411,7 +459,6 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_PrecisionTest(t *testing.T) {
 		globalInflation,
 		proposerAllocation,
 		mockStakingKeeper,
-		mockDistributionKeeper,
 	)
 
 	tlm := NewGlobalMintTLM()

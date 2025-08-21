@@ -12,7 +12,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
@@ -990,22 +989,22 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
 
-	// Verify that ModToModTransfer operations include distribution to validators
-	modToModTransfers := pendingResult.GetModToModTransfers()
-	distributionTransferFound := false
-	var distributionAmount cosmosmath.Int
+	// Verify that ModToAcctTransfer operations include validator rewards using ModToAcctTransfer
+	modToAcctTransfers := pendingResult.GetModToAcctTransfers()
+	validatorRewardsFound := false
+	totalValidatorRewardAmount := cosmosmath.ZeroInt()
 
-	for _, transfer := range modToModTransfers {
-		if transfer.RecipientModule == distributiontypes.ModuleName &&
-			transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION {
-			distributionTransferFound = true
-			distributionAmount = transfer.Coin.Amount
-			break
+	// Check for validator commission and delegator reward transfers
+	for _, transfer := range modToAcctTransfers {
+		if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION ||
+			transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION {
+			validatorRewardsFound = true
+			totalValidatorRewardAmount = totalValidatorRewardAmount.Add(transfer.Coin.Amount)
 		}
 	}
 
-	require.True(t, distributionTransferFound, "Should find transfer to distribution module for validator rewards")
-	require.True(t, distributionAmount.IsPositive(), "Distribution amount should be positive")
+	require.True(t, validatorRewardsFound, "Should find ModToAcctTransfer operations for validator/delegator rewards")
+	require.True(t, totalValidatorRewardAmount.IsPositive(), "Total validator reward amount should be positive")
 
 	// Verify the amount matches expected proposer allocation
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(tokenomicsParams.GlobalInflationPerClaim)
@@ -1015,8 +1014,8 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 	numTokensMintedRat := new(big.Rat).Mul(numTokensClaimedRat, globalInflationPerClaimRat)
 	propMintFromGlobalMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Proposer)
 
-	require.Equal(t, propMintFromGlobalMint, distributionAmount,
-		"Distribution amount should match expected proposer mint allocation")
+	require.Equal(t, propMintFromGlobalMint, totalValidatorRewardAmount,
+		"Total validator reward amount should match expected proposer mint allocation")
 }
 
 func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {

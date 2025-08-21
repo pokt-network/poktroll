@@ -203,8 +203,8 @@ func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 		coinIsZeroMsg := "coin has zero amount"
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance, coinIsZeroMsg)
-		// Proposer rewards are now sent to the distribution module, not directly to the proposer
-		require.NotEqual(t, &zerouPOKT, actualSettlementState.distributionModuleBalance, coinIsZeroMsg+" (distribution module)")
+		// Proposer rewards are now sent directly to validators and delegators via ModToAcctTransfer, not to the distribution module
+		require.Equal(t, &zerouPOKT, actualSettlementState.distributionModuleBalance, "distribution module should have zero balance with ModToAcctTransfer")
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.daoBalance, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance, coinIsZeroMsg)
 

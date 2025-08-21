@@ -530,6 +530,24 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		Return([]stakingtypes.Validator{validator}, nil).
 		AnyTimes()
 
+	// Set up mock expectations for GetValidatorDelegations (needed for ModToAcctTransfer validator rewards)
+	mockStakingKeeper.EXPECT().
+		GetValidatorDelegations(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, validatorAddr sdk.ValAddress) ([]stakingtypes.Delegation, error) {
+			// Create a deterministic delegation for this validator using a fixed delegator address
+			// This ensures test determinism and commutativity
+			fixedDelegatorAddr := "pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm" // Fixed address for deterministic tests
+			delegations := []stakingtypes.Delegation{
+				{
+					DelegatorAddress: fixedDelegatorAddr,
+					ValidatorAddress: validatorAddr.String(),
+					Shares:           math.LegacyNewDecFromInt(math.NewInt(1000000)), // All shares to one delegator for simplicity
+				},
+			}
+			return delegations, nil
+		}).
+		AnyTimes()
+
 	// Set up mock expectations for distribution keeper
 	mockDistributionKeeper.EXPECT().
 		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).

@@ -8,7 +8,6 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/pkg/encoding"
@@ -267,15 +266,8 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 		tlmgm.logger.Info(fmt.Sprintf("distributing (%v) to %d validators with stake (total: %s tokens bonded)",
 			proposerCoin, validatorsWithStake, totalBondedTokens))
 
-		// Transfer from tokenomics module to distribution module
-		tlmgm.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
-			OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
-			SenderModule:    tokenomicstypes.ModuleName,
-			RecipientModule: distributiontypes.ModuleName,
-			Coin:            proposerCoin,
-		})
-
 		// Distribute to each validator proportionally based on their staking weight
+		// Using direct ModToAcctTransfer operations instead of distribution keeper
 		remainingAmount := proposerAmount
 		distributedValidators := 0
 
@@ -303,26 +295,29 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 				continue
 			}
 
-			// Convert to DecCoins for distribution module
-			validatorCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, validatorShare)
-			validatorDecCoin := cosmostypes.NewDecCoinsFromCoins(validatorCoin)
-
-			// Allocate tokens to validator for distribution to delegators
-			if err := tlmgm.tlmCtx.DistributionKeeper.AllocateTokensToValidator(tlmgm.ctx, &validators[i], validatorDecCoin); err != nil {
-				tlmgm.logger.Error(fmt.Sprintf("failed to allocate tokens to validator %s: %v", validator.GetOperator(), err))
-				return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error allocating tokens to validator %s: %v", validator.GetOperator(), err)
+			// Distribute rewards directly to validator and delegators using ModToAcctTransfer
+			if err := distributeValidatorRewardsToStakeholders(
+				tlmgm.ctx,
+				tlmgm.logger,
+				tlmgm.tlmCtx.Result,
+				tlmgm.tlmCtx.StakingKeeper,
+				&validators[i],
+				validatorShare,
+			); err != nil {
+				tlmgm.logger.Error(fmt.Sprintf("failed to distribute rewards to validator %s stakeholders: %v", validator.GetOperator(), err))
+				return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error distributing rewards to validator %s stakeholders: %v", validator.GetOperator(), err)
 			}
 
 			distributedValidators++
 
 			// Emit telemetry for validator reward distribution
 			telemetry.MintedTokensFromModule(
-				distributiontypes.ModuleName,
+				tokenomicstypes.ModuleName,
 				float32(validatorShare.Int64()),
 			)
 
-			tlmgm.logger.Debug(fmt.Sprintf("allocated (%v) to validator %s (stake: %s/%s, weight: %.4f%%)",
-				validatorCoin,
+			tlmgm.logger.Debug(fmt.Sprintf("distributed (%v) to validator %s and delegators (stake: %s/%s, weight: %.4f%%)",
+				cosmostypes.NewCoin(pocket.DenomuPOKT, validatorShare),
 				validator.GetOperator(),
 				validatorBondedTokens,
 				totalBondedTokens,
@@ -334,7 +329,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrap("no validators received rewards despite having stake")
 		}
 
-		tlmgm.logger.Info(fmt.Sprintf("successfully distributed (%v) to %d validators based on staking weight", proposerCoin, distributedValidators))
+		tlmgm.logger.Info(fmt.Sprintf("successfully distributed (%v) to %d validators and their delegators using ModToAcctTransfer", proposerCoin, distributedValidators))
 
 		// Emit telemetry for total validator reward distribution
 		telemetry.MintedTokensFromModule(
