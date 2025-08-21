@@ -122,6 +122,8 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 		"--from", delegatorAddr,
 		keyRingFlag,
 		chainIdFlag,
+		"--gas=auto",
+		"--gas-prices=0upokt",
 		"--yes",
 	}
 
@@ -151,6 +153,8 @@ func (s *suite) TheAccountWithdrawsDelegationRewardsFrom(delegatorName, validato
 		"--from", delegatorAddr,
 		keyRingFlag,
 		chainIdFlag,
+		"--gas=auto",
+		"--gas-prices=0upokt",
 		"--yes",
 	}
 
@@ -369,8 +373,14 @@ func (s *suite) TheUserRemembersTheCommissionRateForValidatorAs(validatorName, s
 	require.NoError(s, err)
 
 	commissionRate := validator.Commission.CommissionRates.Rate
-	s.scenarioState[stateKey] = commissionRate
 	
+	// Handle empty commission rate (default to 0%)
+	if commissionRate == "" {
+		commissionRate = "0.000000000000000000"
+		s.Logf("Empty commission rate detected, defaulting to 0%% for validator %s", validatorName)
+	}
+	
+	s.scenarioState[stateKey] = commissionRate
 	s.Logf("Stored commission rate for validator %s: %s", validatorName, commissionRate)
 }
 
