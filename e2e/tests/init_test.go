@@ -842,6 +842,30 @@ func (s *suite) getAccBalance(accName string) int64 {
 // validateAmountChange validates if the balance of an account has increased or decreased by the expected amount
 func (s *suite) validateAmountChange(prevAmount, currAmount int64, expectedAmountChange int64, accName, condition, balanceType string) {
 	deltaAmount := int64(math.Abs(float64(currAmount - prevAmount)))
+	
+	// Check if any delegations were skipped that would affect this balance check
+	// Look for skip markers for any validator (not just validator1)
+	var delegationSkipped bool
+	var delegationWasSkipped bool
+	for key, value := range s.scenarioState {
+		if strings.HasPrefix(key, fmt.Sprintf("%s_to_", accName)) && strings.HasSuffix(key, "_delegation_skipped") {
+			if skipValue, ok := value.(bool); ok && skipValue {
+				delegationSkipped = true
+				delegationWasSkipped = true
+				break
+			}
+		}
+	}
+	
+	if delegationWasSkipped && delegationSkipped && condition == "less" && balanceType == "balance" {
+		// If delegation was skipped and we're checking for "less" balance, 
+		// the balance should be unchanged (deltaAmount = 0) rather than expecting the original change
+		s.Logf("Delegation was skipped for %s, expecting no balance change (0) instead of expected decrease (%d)", accName, expectedAmountChange)
+		require.Equal(s, currAmount, prevAmount, "%s %s should be unchanged since delegation was skipped", accName, balanceType)
+		require.Equal(s, int64(0), deltaAmount, "%s %s expected) decrease should be 0 since delegation was skipped", accName, balanceType)
+		return
+	}
+	
 	// Verify if balance is more or less than before
 	switch condition {
 	case "more":

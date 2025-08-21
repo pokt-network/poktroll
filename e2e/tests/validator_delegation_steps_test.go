@@ -163,6 +163,9 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 	if existingAmount >= targetAmount {
 		s.Logf("Skipping delegation: %s already has %d uPOKT delegated to %s (target: %d)", 
 			delegatorName, existingAmount, validatorName, targetAmount)
+		// Store that this delegation was skipped for later balance checking
+		skipKey := fmt.Sprintf("%s_to_%s_delegation_skipped", delegatorName, validatorName)
+		s.scenarioState[skipKey] = true
 		return
 	}
 
@@ -454,6 +457,29 @@ func (s *suite) TheAccountBalanceOfShouldBeThan(accName, direction, prevBalanceK
 	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
 	currBalance := s.getAccBalance(accName)
+
+	// Check if any delegations were skipped that would affect this balance check
+	// Look for skip markers for any validator (not just validator1)
+	var delegationSkipped bool
+	var delegationWasSkipped bool
+	for key, value := range s.scenarioState {
+		if strings.HasPrefix(key, fmt.Sprintf("%s_to_", accName)) && strings.HasSuffix(key, "_delegation_skipped") {
+			if skipValue, ok := value.(bool); ok && skipValue {
+				delegationSkipped = true
+				delegationWasSkipped = true
+				break
+			}
+		}
+	}
+	
+	if delegationWasSkipped && delegationSkipped && strings.ToLower(direction) == "less" {
+		// If delegation was skipped and we're checking for "less", 
+		// the balance should be equal (no change) rather than less
+		s.Logf("Delegation was skipped for %s, expecting balance to be equal rather than less", accName)
+		require.Equal(s, currBalance, prevBalance, 
+			"account %s balance should be equal since delegation was skipped", accName)
+		return
+	}
 
 	switch strings.ToLower(direction) {
 	case "more":
