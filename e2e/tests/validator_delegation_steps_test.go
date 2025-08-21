@@ -97,6 +97,54 @@ func (s *suite) TheUserGetsTheCurrentBlockProposerValidatorAddressAs(validatorNa
 	s.Logf("Stored validator %s with operator address: %s", validatorName, validatorOperatorAddr)
 }
 
+// queryExistingDelegation queries the current delegation amount from a delegator to a validator
+func (s *suite) queryExistingDelegation(delegatorAddr, validatorAddr string) int64 {
+	// Query existing delegation
+	args := []string{
+		"query", "staking", "delegation",
+		delegatorAddr,
+		validatorAddr,
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	if err != nil {
+		// No existing delegation
+		s.Logf("No existing delegation found from %s to %s", delegatorAddr, validatorAddr)
+		return 0
+	}
+
+	// Parse delegation response
+	type delegationResponse struct {
+		DelegationResponse struct {
+			Delegation struct {
+				Shares string `json:"shares"`
+			} `json:"delegation"`
+			Balance struct {
+				Amount string `json:"amount"`
+			} `json:"balance"`
+		} `json:"delegation_response"`
+	}
+
+	var delResp delegationResponse
+	if err := json.Unmarshal([]byte(res.Stdout), &delResp); err != nil {
+		// Failed to parse, assume no delegation
+		s.Logf("Failed to parse delegation response: %v", err)
+		return 0
+	}
+
+	// Parse the balance amount
+	if delResp.DelegationResponse.Balance.Amount != "" {
+		amount, err := strconv.ParseInt(delResp.DelegationResponse.Balance.Amount, 10, 64)
+		if err == nil {
+			s.Logf("Found existing delegation of %d uPOKT", amount)
+			return amount
+		}
+	}
+
+	return 0
+}
+
 // TheAccountDelegatesUpoktToValidator performs a delegation transaction
 func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, validatorName string) {
 	delegatorAddr, exists := accNameToAddrMap[delegatorName]
@@ -105,14 +153,29 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 	validatorAddr, exists := accNameToAddrMap[validatorName]
 	require.True(s, exists, "validator %s not found", validatorName)
 
-	amount, err := strconv.ParseInt(amountStr, 10, 64)
+	targetAmount, err := strconv.ParseInt(amountStr, 10, 64)
 	require.NoError(s, err)
 
-	// Construct delegation command
-	amountCoin := fmt.Sprintf("%d%s", amount, pocket.DenomuPOKT)
+	// Check existing delegation
+	existingAmount := s.queryExistingDelegation(delegatorAddr, validatorAddr)
 	
-	s.Logf("Delegating %s from %s (%s) to validator %s (%s)", 
-		amountCoin, delegatorName, delegatorAddr, validatorName, validatorAddr)
+	// Option 1: Skip if already delegated the target amount or more
+	if existingAmount >= targetAmount {
+		s.Logf("Skipping delegation: %s already has %d uPOKT delegated to %s (target: %d)", 
+			delegatorName, existingAmount, validatorName, targetAmount)
+		return
+	}
+
+	// Option 2: Adjust delegation amount to reach target
+	// Only delegate the difference needed to reach the target amount
+	amountToDelegate := targetAmount - existingAmount
+	
+	// Construct delegation command
+	amountCoin := fmt.Sprintf("%d%s", amountToDelegate, pocket.DenomuPOKT)
+	
+	s.Logf("Delegating %s from %s (%s) to validator %s (%s) [existing: %d, target: %d]", 
+		amountCoin, delegatorName, delegatorAddr, validatorName, validatorAddr,
+		existingAmount, targetAmount)
 
 	// Execute delegation transaction with proper retry handling
 	args := []string{
@@ -132,7 +195,8 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 	s.pocketd.result = res
 
 	require.Contains(s, res.Stdout, "code: 0", "delegation transaction failed")
-	s.Logf("Delegation transaction successful")
+	s.Logf("Delegation transaction successful: added %d uPOKT (new total: %d)", 
+		amountToDelegate, targetAmount)
 }
 
 // TheAccountWithdrawsDelegationRewardsFrom withdraws delegation rewards from a validator
