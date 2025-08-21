@@ -100,10 +100,9 @@ Feature: Validator Delegation Rewards
     # Wait additional blocks for validator rewards to be processed and distributed
     And the user waits for "5" blocks
 
-    # Test reward withdrawal functionality
-    # Note: Due to Cosmos SDK distribution module behavior, individual delegator reward 
-    # queries may return 0 even when rewards exist. We test the actual functionality
-    # by attempting withdrawal and validating balance increases.
+    # Validate that delegators received their proportional rewards directly
+    # Note: With ModToAcctTransfer, rewards are sent directly to delegator accounts
+    # during claim settlement - no withdrawal needed
     # 
     # Expected rewards calculation:
     # - Settlement: 20 relays × 100 CUPR × 42 multiplier = 84,000 uPOKT
@@ -113,17 +112,8 @@ Feature: Validator Delegation Rewards
     # - Total validator rewards: 8,400 + 840 = 9,240 uPOKT
     #
     # Reality check: Validator has significant self-delegation
-    # - Based on scenario 2 results: delegators get ~5.6% of validator rewards
-    # - app2 (5M delegation): 9,240 × 0.056 = 517 uPOKT
-    # - app3 (3M delegation): 517 × (3M/5M) = 310 uPOKT
-    # - These amounts reflect proportional share of validator's total delegations
-    
-    # Test reward withdrawal
-    When the account "app2" withdraws delegation rewards from "validator1"
-    And the account "app3" withdraws delegation rewards from "validator1"
-    
-    # Wait for withdrawal transactions to be processed
-    And the user waits for "2" blocks
+    # - Delegators get proportional share based on their stake vs total validator delegations
+    # - These rewards are sent directly via ModToAcctTransfer during settlement
     
     # Validate that delegators received their proportional rewards
     # Note: Rewards are proportional to delegation amount vs validator's total stake
@@ -215,18 +205,16 @@ Feature: Validator Delegation Rewards
     # - app2's 5M delegation is only a fraction of total validator delegations
     # - Expected rewards are proportional: rewards × (delegator_stake / total_validator_stake)
     # - With 0% commission, delegator gets full share of their proportion
-    # - Actual reward ~235 uPOKT suggests app2 has ~5.6% of total delegations
+    # - Rewards are sent directly via ModToAcctTransfer during settlement
 
-    # Withdraw and validate rewards are distributed correctly
-    When the account "app2" withdraws delegation rewards from "validator1"
-    And the user waits for "2" blocks
+    # Wait for rewards to be distributed
+    And the user waits for "5" blocks
     
     # The delegator should receive rewards proportional to their delegation share
-    # Note: Validator has significant self-delegation, so delegator gets small proportion
-    # Observed behavior: rewards vary between runs due to accumulated state (~235-306 uPOKT range)
+    # Note: With ModToAcctTransfer, rewards are sent directly to delegator accounts
+    # Validator has significant self-delegation, so delegator gets small proportion
     # Focus on validating that rewards are received rather than exact amounts
     Then the account balance of "app2" should be "more" than "app2_initial_balance"
-    And the delegation rewards for "app2" from "validator1" should be "0" uPOKT
 
   Scenario: Multiple validators receive rewards proportional to their staking weight
     # Note: This scenario would ideally test with multiple validators, but in a single-node

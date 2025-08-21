@@ -203,6 +203,8 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 }
 
 // TheAccountWithdrawsDelegationRewardsFrom withdraws delegation rewards from a validator
+// DEPRECATED: With ModToAcctTransfer, relay-based rewards are sent directly to delegator accounts
+// during claim settlement. This function now only withdraws Cosmos SDK block production rewards.
 func (s *suite) TheAccountWithdrawsDelegationRewardsFrom(delegatorName, validatorName string) {
 	delegatorAddr, exists := accNameToAddrMap[delegatorName]
 	require.True(s, exists, "delegator %s not found", delegatorName)
@@ -234,6 +236,8 @@ func (s *suite) TheAccountWithdrawsDelegationRewardsFrom(delegatorName, validato
 }
 
 // TheUserRemembersTheDelegationRewardsForFromAs stores current delegation rewards in scenario state
+// DEPRECATED: With ModToAcctTransfer, relay-based rewards are sent directly to delegator accounts.
+// This function now only tracks Cosmos SDK block production rewards, not relay-based rewards.
 func (s *suite) TheUserRemembersTheDelegationRewardsForFromAs(delegatorName, validatorName, stateKey string) {
 	delegatorAddr, exists := accNameToAddrMap[delegatorName]
 	require.True(s, exists, "delegator %s not found", delegatorName)
@@ -317,6 +321,8 @@ func (s *suite) TheDistributionModuleBalanceShouldBeUpoktThan(expectedChangeStr,
 }
 
 // TheDelegationRewardsForFromShouldBeGreaterThan validates that rewards have increased
+// DEPRECATED: With ModToAcctTransfer, relay-based rewards are sent directly to delegator accounts.
+// This function now only checks Cosmos SDK block production rewards, not relay-based rewards.
 func (s *suite) TheDelegationRewardsForFromShouldBeGreaterThan(delegatorName, validatorName, prevRewardsKey string) {
 	prevRewards, ok := s.scenarioState[prevRewardsKey].(int64)
 	require.True(s, ok, "previous rewards %s not found or not an int64", prevRewardsKey)
@@ -372,6 +378,8 @@ func (s *suite) TheDelegationRewardsForFromShouldBeGreaterThan(delegatorName, va
 }
 
 // TheDelegationRewardsForFromShouldBeUpokt validates exact reward amounts
+// DEPRECATED: With ModToAcctTransfer, relay-based rewards are sent directly to delegator accounts.
+// This function now only checks Cosmos SDK block production rewards, not relay-based rewards.
 func (s *suite) TheDelegationRewardsForFromShouldBeUpokt(delegatorName, validatorName, expectedAmountStr string) {
 	expectedAmount, err := strconv.ParseInt(expectedAmountStr, 10, 64)
 	require.NoError(s, err)
