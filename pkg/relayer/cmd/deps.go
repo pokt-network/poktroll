@@ -50,6 +50,9 @@ func setupRelayerDependencies(
 			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
 		}
 		queryNodeGRPCUrl = parsedFlagNodeGRPCUrl
+	} else {
+		// TODO_TECHDEBT(#1444): Delete this once #1444 is fixed and merged.
+		_ = cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCUrl.String())
 	}
 
 	// Override config file's `QueryNodeUrl` and `txNodeRPCUrl` with `--node` flag if specified.
@@ -61,6 +64,9 @@ func setupRelayerDependencies(
 		}
 		queryNodeRPCUrl = parsedFlagNodeRPCUrl
 		txNodeRPCUrl = parsedFlagNodeRPCUrl
+	} else {
+		// TODO_TECHDEBT(#1444): Delete this once #1444 is fixed and merged.
+		_ = cmd.Flags().Set(cosmosflags.FlagNode, queryNodeRPCUrl.String())
 	}
 
 	signingKeyNames := uniqueSigningKeyNames(relayMinerConfig)

@@ -6,7 +6,7 @@ shannon_config:
     grpc_config:
       host_port: validator-pocket-validator:9090
       insecure: true
-    lazy_mode: true
+    lazy_mode: false
   gateway_config:
     gateway_mode: delegated
     gateway_address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 # gateway1
