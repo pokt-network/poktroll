@@ -10,7 +10,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/pocket"
@@ -139,10 +138,9 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 	require.True(t, isAppFound)
 
 	return &settlementState{
-		appModuleBalance:          s.getBalance(t, authtypes.NewModuleAddress(apptypes.ModuleName).String()),
-		supplierModuleBalance:     s.getBalance(t, authtypes.NewModuleAddress(suppliertypes.ModuleName).String()),
-		tokenomicsModuleBalance:   s.getBalance(t, authtypes.NewModuleAddress(tokenomicstypes.ModuleName).String()),
-		distributionModuleBalance: s.getBalance(t, authtypes.NewModuleAddress(distrtypes.ModuleName).String()),
+		appModuleBalance:        s.getBalance(t, authtypes.NewModuleAddress(apptypes.ModuleName).String()),
+		supplierModuleBalance:   s.getBalance(t, authtypes.NewModuleAddress(suppliertypes.ModuleName).String()),
+		tokenomicsModuleBalance: s.getBalance(t, authtypes.NewModuleAddress(tokenomicstypes.ModuleName).String()),
 
 		appStake:             app.GetStake(),
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
@@ -203,8 +201,8 @@ func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 		coinIsZeroMsg := "coin has zero amount"
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance, coinIsZeroMsg)
-		// Proposer rewards are now sent directly to validators and delegators via ModToAcctTransfer, not to the distribution module
-		require.Equal(t, &zerouPOKT, actualSettlementState.distributionModuleBalance, "distribution module should have zero balance with ModToAcctTransfer")
+		// Proposer rewards are now sent directly to validators via ModToAcctTransfer
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.proposerBalance, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.daoBalance, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance, coinIsZeroMsg)
 

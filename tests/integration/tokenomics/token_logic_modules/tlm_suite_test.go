@@ -47,10 +47,9 @@ type tokenLogicModuleTestSuite struct {
 
 // settlementState holds the expected post-settlement app stake and rewardee balances.
 type settlementState struct {
-	appModuleBalance          *cosmostypes.Coin
-	supplierModuleBalance     *cosmostypes.Coin
-	tokenomicsModuleBalance   *cosmostypes.Coin
-	distributionModuleBalance *cosmostypes.Coin
+	appModuleBalance        *cosmostypes.Coin
+	supplierModuleBalance   *cosmostypes.Coin
+	tokenomicsModuleBalance *cosmostypes.Coin
 
 	appStake             *cosmostypes.Coin
 	supplierOwnerBalance *cosmostypes.Coin
