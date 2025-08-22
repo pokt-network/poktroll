@@ -9,8 +9,8 @@ import (
 )
 
 func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
-	signerAddress := sample.AccAddress()
-	operatorAddress := sample.AccAddress()
+	signerAddress := sample.AccAddressBech32()
+	operatorAddress := sample.AccAddressBech32()
 	tests := []struct {
 		desc        string
 		msg         MsgUnstakeSupplier

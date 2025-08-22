@@ -11,8 +11,8 @@ accounts:
   - name: pnf
     mnemonic: "crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade"
     coins:
-      - 6900000000042upokt
-      - 6900000000042mact
+      - 690000000000042upokt
+      - 6900000000000042mact
   - name: validator1
     mnemonic: "creek path rule retire evolve vehicle bargain champion roof whisper prize endorse unknown anchor fashion energy club sauce elder parent cotton old affair visa"
     coins:

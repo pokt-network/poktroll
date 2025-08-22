@@ -12,3 +12,7 @@ decode_relay: ## Debug base64-encoded RelayRequest data that fails to unmarshal.
 		exit 1; \
 	fi
 	go run ./tools/scripts/decode_relay/main.go $(BASE64_DATA)
+
+.PHONY: query_helpers
+query_helpers: ## Load query helpers into your shell
+	@(source ./tools/rc_helpers/queries.sh)

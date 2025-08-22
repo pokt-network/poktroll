@@ -24,7 +24,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
 
 	// Generate an operator addresses for a supplier that will be unstaked later in the test.
-	unstakingSupplierOperatorAddr := sample.AccAddress()
+	unstakingSupplierOperatorAddr := sample.AccAddressBech32()
 
 	// Verify that the supplier does not exist yet
 	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
@@ -41,7 +41,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
-			Supplier:         expectedSupplier,
+			OperatorAddress:  expectedSupplier.OperatorAddress,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -65,7 +65,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 
 	// Create and stake another supplier that will not be unstaked to assert that only the
 	// unstaking supplier is removed from the suppliers list when the unbonding period is over.
-	nonUnstakingSupplierOperatorAddr := sample.AccAddress()
+	nonUnstakingSupplierOperatorAddr := sample.AccAddressBech32()
 	stakeMsg, _ = newSupplierStakeMsg(nonUnstakingSupplierOperatorAddr, nonUnstakingSupplierOperatorAddr, initialStake, serviceID)
 	_, err = srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
@@ -164,7 +164,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
 
 	// Generate an address for the supplier
-	supplierOperatorAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddressBech32()
 
 	// Stake the supplier
 	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
@@ -176,7 +176,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
-			Supplier:         expectedSupplier,
+			OperatorAddress:  expectedSupplier.OperatorAddress,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -268,7 +268,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
-			Supplier:         expectedSupplier,
+			OperatorAddress:  expectedSupplier.OperatorAddress,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -298,7 +298,7 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an address for the supplier
-	supplierOperatorAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddressBech32()
 
 	// Verify that the supplier does not exist yet
 	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
@@ -322,7 +322,7 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an address for the supplier
-	supplierOperatorAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddressBech32()
 
 	// Stake the supplier
 	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
@@ -350,8 +350,8 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an address for the supplier
-	ownerAddr := sample.AccAddress()
-	supplierOperatorAddr := sample.AccAddress()
+	ownerAddr := sample.AccAddressBech32()
+	supplierOperatorAddr := sample.AccAddressBech32()
 
 	// Stake the supplier
 	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
@@ -374,7 +374,7 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierStaked{
-			Supplier:         expectedSupplier,
+			OperatorAddress:  expectedSupplier.OperatorAddress,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)

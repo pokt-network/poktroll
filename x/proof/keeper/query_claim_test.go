@@ -22,7 +22,7 @@ func TestClaimQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
 	claims := createNClaims(keeper, ctx, 2)
 
-	var wrongSupplierOperatorAddr = sample.AccAddress()
+	var wrongSupplierOperatorAddr = sample.AccAddressBech32()
 	tests := []struct {
 		desc string
 

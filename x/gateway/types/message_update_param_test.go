@@ -26,7 +26,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			name: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      "WRONG_relay_difficulty_target_hash",
 				AsType:    &MsgUpdateParam_AsCoin{AsCoin: nil},
 			},
@@ -35,7 +35,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			name: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamMinStake,
 				AsType:    &MsgUpdateParam_AsCoin{AsCoin: &DefaultMinStake},
 			},

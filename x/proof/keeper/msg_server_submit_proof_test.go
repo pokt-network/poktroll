@@ -127,7 +127,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			service := &sharedtypes.Service{
 				Id:                   testServiceId,
 				ComputeUnitsPerRelay: computeUnitsPerRelay,
-				OwnerAddress:         sample.AccAddress(),
+				OwnerAddress:         sample.AccAddressBech32(),
 			}
 
 			// Add a supplier and application pair that are expected to be in the session.
@@ -248,11 +248,14 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 			require.NoError(t, err)
 
-			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
+			require.Equal(t, claim.SessionHeader.ServiceId, proofSubmittedEvent.GetServiceId())
+			require.Equal(t, claim.SessionHeader.ApplicationAddress, proofSubmittedEvent.GetApplicationAddress())
+			require.Equal(t, claim.SessionHeader.SessionEndBlockHeight, proofSubmittedEvent.GetSessionEndBlockHeight())
+			require.Equal(t, int32(prooftypes.ClaimProofStatus_PENDING_VALIDATION), proofSubmittedEvent.GetClaimProofStatusInt())
 			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
 			require.Equal(t, uint64(numClaimComputeUnits), proofSubmittedEvent.GetNumClaimedComputeUnits())
 			require.Equal(t, numEstimatedComputUnits, proofSubmittedEvent.GetNumEstimatedComputeUnits())
-			require.Equal(t, &claimedUPOKT, proofSubmittedEvent.GetClaimedUpokt())
+			require.Equal(t, claimedUPOKT.String(), proofSubmittedEvent.GetClaimedUpokt())
 		})
 	}
 }
@@ -299,7 +302,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	fundSupplierOperatorAccount(t, ctx, keepers, supplierOperatorAddr)
@@ -488,12 +491,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 	wrongService := &sharedtypes.Service{
 		Id:                   "wrong_svc",
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Add a supplier and application pair that are expected to be in the session.
@@ -747,7 +750,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Add a supplier and application pair that are expected to be in the session.

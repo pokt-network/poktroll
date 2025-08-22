@@ -19,9 +19,15 @@ enum SupplierUnbondingReason {
 
 // EventSupplierStaked is emitted when a supplier stake message is committed onchain.
 message EventSupplierStaked {
-  pocket.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  // Next index: 4
+
+  // pocket.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  reserved 1;
+
   // The session end height of the last session in which the supplier was staked.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
+
+  string operator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // EventSupplierUnbondingBegin is emitted when an application unstake message
@@ -61,10 +67,16 @@ message EventSupplierUnbondingCanceled {
 // EventSupplierServiceConfigActivated is emitted when a supplier service configuration
 // becomes effective at a specific block height.
 message EventSupplierServiceConfigActivated {
-  // supplier contains the complete updated supplier information including the
-  // active service configurations in supplier.Services.
-  pocket.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  // Next index: 5
+
+  // pocket.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  reserved 1;
+
   // activation_height indicates the block height at which the new service
   // configurations became active.
   int64 activation_height = 2 [(gogoproto.jsontag) = "activation_height"];
+
+  string operator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  string service_id = 4; // The Service ID for which the supplier is configured
 }

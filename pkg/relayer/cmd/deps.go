@@ -23,6 +23,8 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+const defaultSessionCountForCacheClearing = 1
+
 // setupRelayerDependencies builds and returns the dependency tree for the relay miner.
 //
 // - Builds from leaves up, incrementally supplying each component to depinject.Config
@@ -41,17 +43,18 @@ func setupRelayerDependencies(
 	txNodeRPCUrl := relayMinerConfig.PocketNode.TxNodeRPCUrl
 
 	// Override config file's `QueryNodeGRPCUrl` with `--grpc-addr` flag if specified.
-	// TODO(#223): Remove this check once viper is used as SoT for overridable config values.
 	if flagNodeGRPCURL != flags.OmittedDefaultFlagValue {
 		parsedFlagNodeGRPCUrl, err := url.Parse(flagNodeGRPCURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
 		}
 		queryNodeGRPCUrl = parsedFlagNodeGRPCUrl
+	} else {
+		// TODO_TECHDEBT(#1444): Delete this once #1444 is fixed and merged.
+		_ = cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCUrl.String())
 	}
 
 	// Override config file's `QueryNodeUrl` and `txNodeRPCUrl` with `--node` flag if specified.
-	// TODO(#223): Remove this check once viper is used as SoT for overridable config values.
 	if flagNodeRPCURL != flags.OmittedDefaultFlagValue {
 		parsedFlagNodeRPCUrl, err := url.Parse(flagNodeRPCURL)
 		if err != nil {
@@ -59,6 +62,9 @@ func setupRelayerDependencies(
 		}
 		queryNodeRPCUrl = parsedFlagNodeRPCUrl
 		txNodeRPCUrl = parsedFlagNodeRPCUrl
+	} else {
+		// TODO_TECHDEBT(#1444): Delete this once #1444 is fixed and merged.
+		_ = cmd.Flags().Set(cosmosflags.FlagNode, queryNodeRPCUrl.String())
 	}
 
 	signingKeyNames := uniqueSigningKeyNames(relayMinerConfig)
@@ -72,28 +78,34 @@ func setupRelayerDependencies(
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl),            // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
 
-		// Setup params caches (clear on new blocks).
+		// Setup params caches (clear on new sessions).
+		// TODO_TECHDEBT(@red-0ne): Params cache should only be cleared when params change.
+		// This is a temporary solution until we implement event-based cache clearing.
 		// Tokenomics/gateway params not used in RelayMiner, so no cache needed.
-		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithNewBlockCacheClearing),   // leaf
-		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithNewBlockCacheClearing),      // leaf
-		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing),  // leaf
-		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithNewBlockCacheClearing),    // leaf
-		config.NewSupplyParamsCacheFn[servicetypes.Params](cache.WithNewBlockCacheClearing),  // leaf
-		config.NewSupplyParamsCacheFn[suppliertypes.Params](cache.WithNewBlockCacheClearing), // leaf
+		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),   // leaf
+		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),      // leaf
+		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),  // leaf
+		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),    // leaf
+		config.NewSupplyParamsCacheFn[servicetypes.Params](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),  // leaf
+		config.NewSupplyParamsCacheFn[suppliertypes.Params](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 
-		// Setup key-value caches for pocket types (clear on new blocks).
-		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithNewBlockCacheClearing),                // leaf
-		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithNewBlockCacheClearing), // leaf
-		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithNewBlockCacheClearing),               // leaf
-		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithNewBlockCacheClearing),               // leaf
-		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithNewBlockCacheClearing),                    // leaf
-		config.NewSupplyKeyValueCacheFn[query.Balance](cache.WithNewBlockCacheClearing),                      // leaf
-		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithNewBlockCacheClearing),                   // leaf
+		// Setup key-value caches for pocket types (clear on new sessions).
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),                // leaf
+		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),               // leaf
+		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),                    // leaf
+		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),                   // leaf
 		// Session querier returns *sessiontypes.Session, so cache must return pointers.
-		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithNewBlockCacheClearing), // leaf
+		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
+		// Clear on new blocks to refresh application state after each block.
+		// It is needed to ensure that Applications can upstake to continue being served.
+		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 
-		// Setup key-value for cosmos types (clear on new blocks).
-		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithNewBlockCacheClearing), // leaf
+		// Setup key-value for cosmos types
+		// AccountI cache is used for caching accounts (clear on new sessions).
+		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
+		// Balance cache is used for caching supplier operator account balances (clear on new sessions).
+		config.NewSupplyKeyValueCacheFn[query.Balance](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 
 		config.NewSupplySharedQueryClientFn(),
 		config.NewSupplyServiceQueryClientFn(),

@@ -10,7 +10,7 @@ import (
 )
 
 func TestMsgImportMorseClaimableAccounts_ValidateBasic(t *testing.T) {
-	validMsg, err := NewMsgImportMorseClaimableAccounts(sample.AccAddress(), MorseAccountState{})
+	validMsg, err := NewMsgImportMorseClaimableAccounts(sample.AccAddressBech32(), MorseAccountState{})
 	require.NoError(t, err)
 
 	invalidMsg := *validMsg

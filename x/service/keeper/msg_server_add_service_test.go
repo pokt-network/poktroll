@@ -20,8 +20,8 @@ func TestMsgServer_AddService(t *testing.T) {
 	k, ctx := keepertest.ServiceKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	oldServiceOwnerAddr := sample.AccAddress()
-	newServiceOwnerAddr := sample.AccAddress()
+	oldServiceOwnerAddr := sample.AccAddressBech32()
+	newServiceOwnerAddr := sample.AccAddressBech32()
 
 	// Pre-existing service
 	oldService := sharedtypes.Service{
