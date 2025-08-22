@@ -28,15 +28,9 @@ type cliValidatorsResponse struct {
 }
 
 
-// cliDecCoin represents a DecCoin as returned by CLI JSON output (with string amounts)
-type cliDecCoin struct {
-	Denom  string `json:"denom"`
-	Amount string `json:"amount"` // CLI returns amounts as strings, not Dec types
-}
-
 // cliDelegationRewardsResponse represents the response from 'query distribution rewards-by-validator' CLI command
 type cliDelegationRewardsResponse struct {
-	Rewards interface{} `json:"rewards"` // Can be string (empty) or []cliDecCoin (with rewards)
+	Rewards interface{} `json:"rewards"` // Can be string (empty) or array of reward objects
 }
 
 // cliDelegationResponse represents the response from 'query staking delegation' CLI command
