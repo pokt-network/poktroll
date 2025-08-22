@@ -4,7 +4,7 @@ sidebar_position: 5
 ---
 
 This page is meant to serve as a quick reference to supplement the [full RelayMiner config reference](./4_relayminer_config.md)
-and the [full Supplier config](./3_supplier_config.md) to add WebSocket support to your RelayMiner and Supplier.
+and the [full Supplier config](./3_supplier_staking_config.md) to add WebSocket support to your RelayMiner and Supplier.
 
 :::tip Supplier & RelayMiner cheatsheet
 
