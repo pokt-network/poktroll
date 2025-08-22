@@ -203,8 +203,6 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 }
 
 // TheAccountWithdrawsDelegationRewardsFrom withdraws delegation rewards from a validator
-// DEPRECATED: With ModToAcctTransfer, relay-based rewards are sent directly to delegator accounts
-// during claim settlement. This function now only withdraws Cosmos SDK block production rewards.
 func (s *suite) TheAccountWithdrawsDelegationRewardsFrom(delegatorName, validatorName string) {
 	delegatorAddr, exists := accNameToAddrMap[delegatorName]
 	require.True(s, exists, "delegator %s not found", delegatorName)
@@ -236,8 +234,6 @@ func (s *suite) TheAccountWithdrawsDelegationRewardsFrom(delegatorName, validato
 }
 
 // TheUserRemembersTheDelegationRewardsForFromAs stores current delegation rewards in scenario state
-// DEPRECATED: With ModToAcctTransfer, relay-based rewards are sent directly to delegator accounts.
-// This function now only tracks Cosmos SDK block production rewards, not relay-based rewards.
 func (s *suite) TheUserRemembersTheDelegationRewardsForFromAs(delegatorName, validatorName, stateKey string) {
 	delegatorAddr, exists := accNameToAddrMap[delegatorName]
 	require.True(s, exists, "delegator %s not found", delegatorName)
@@ -296,8 +292,6 @@ func (s *suite) TheUserRemembersTheDelegationRewardsForFromAs(delegatorName, val
 }
 
 // TheUserRemembersTheDistributionModuleBalanceAs stores the distribution module balance
-// NOTE: This function is deprecated - distribution module acts as pass-through for validator rewards
-// Rewards go directly to validator outstanding rewards, not distribution module balance
 func (s *suite) TheUserRemembersTheDistributionModuleBalanceAs(stateKey string) {
 	// For compatibility, store zero as distribution module doesn't hold rewards
 	s.scenarioState[stateKey] = int64(0)
@@ -305,7 +299,6 @@ func (s *suite) TheUserRemembersTheDistributionModuleBalanceAs(stateKey string) 
 }
 
 // TheDistributionModuleBalanceShouldBeUpoktMoreThan validates distribution module balance change
-// NOTE: This function is deprecated - distribution module acts as pass-through for validator rewards
 func (s *suite) TheDistributionModuleBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBalanceKey string) {
 	// Skip this validation - distribution module doesn't hold validator rewards
 	// Rewards are immediately allocated to validators via AllocateTokensToValidator
@@ -313,7 +306,6 @@ func (s *suite) TheDistributionModuleBalanceShouldBeUpoktMoreThan(expectedIncrea
 }
 
 // TheDistributionModuleBalanceShouldBeUpoktThan validates distribution module balance change in any direction
-// NOTE: This function is deprecated - distribution module acts as pass-through for validator rewards
 func (s *suite) TheDistributionModuleBalanceShouldBeUpoktThan(expectedChangeStr, direction, prevBalanceKey string) {
 	// Skip this validation - distribution module doesn't hold validator rewards
 	// Rewards are immediately allocated to validators via AllocateTokensToValidator
@@ -321,8 +313,6 @@ func (s *suite) TheDistributionModuleBalanceShouldBeUpoktThan(expectedChangeStr,
 }
 
 // TheDelegationRewardsForFromShouldBeGreaterThan validates that rewards have increased
-// DEPRECATED: With ModToAcctTransfer, relay-based rewards are sent directly to delegator accounts.
-// This function now only checks Cosmos SDK block production rewards, not relay-based rewards.
 func (s *suite) TheDelegationRewardsForFromShouldBeGreaterThan(delegatorName, validatorName, prevRewardsKey string) {
 	prevRewards, ok := s.scenarioState[prevRewardsKey].(int64)
 	require.True(s, ok, "previous rewards %s not found or not an int64", prevRewardsKey)
@@ -378,8 +368,6 @@ func (s *suite) TheDelegationRewardsForFromShouldBeGreaterThan(delegatorName, va
 }
 
 // TheDelegationRewardsForFromShouldBeUpokt validates exact reward amounts
-// DEPRECATED: With ModToAcctTransfer, relay-based rewards are sent directly to delegator accounts.
-// This function now only checks Cosmos SDK block production rewards, not relay-based rewards.
 func (s *suite) TheDelegationRewardsForFromShouldBeUpokt(delegatorName, validatorName, expectedAmountStr string) {
 	expectedAmount, err := strconv.ParseInt(expectedAmountStr, 10, 64)
 	require.NoError(s, err)
