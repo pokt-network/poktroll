@@ -16,7 +16,6 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/tx/signing"
 	abci "github.com/cometbft/cometbft/abci/types"
-	cmtabcitypes "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -27,8 +26,6 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/runtime"
-	"github.com/cosmos/cosmos-sdk/types"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/tx"
@@ -44,8 +41,10 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/app/pocket"
@@ -56,6 +55,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -127,6 +127,9 @@ type App struct {
 	DefaultApplicationKeyringUid     string
 	DefaultSupplier                  *sharedtypes.Supplier
 	DefaultSupplierKeyringKeyringUid string
+
+	// Mock proposer consensus address for consistent block proposer
+	proposerConsAddr sdk.ConsAddress
 }
 
 // NewIntegrationApp creates a new instance of the App with the provided details
@@ -150,7 +153,7 @@ func NewIntegrationApp(
 
 	// Prepare the faucet init-chainer module option function. It ensures that the
 	// bank module genesis state includes the faucet account with a large balance.
-	faucetBech32 := sample.AccAddress()
+	faucetBech32 := sample.AccAddressBech32()
 	faucetInitChainerFn := newFaucetInitChainerFn(faucetBech32, faucetAmountUpokt)
 	initChainerModuleOptFn := WithInitChainerModuleFn(faucetInitChainerFn)
 
@@ -173,16 +176,17 @@ func NewIntegrationApp(
 	sdkCtx = sdkCtx.
 		WithBlockHeader(cometHeader).
 		WithIsCheckTx(true).
-		WithEventManager(cosmostypes.NewEventManager())
+		WithEventManager(sdk.NewEventManager())
 
 	// Add a block proposer address to the context
-	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
+	proposerConsAddr := sample.ConsAddress()
+	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
 
 	// Create the base application
 	bApp.MountKVStores(keys)
 
 	bApp.SetInitChainer(
-		func(ctx sdk.Context, _ *cmtabcitypes.RequestInitChain) (*cmtabcitypes.ResponseInitChain, error) {
+		func(ctx sdk.Context, _ *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 			for _, mod := range modules {
 				// Set each module's genesis state to the default. This MAY be
 				// overridden via the InitChainerModuleFns option.
@@ -196,7 +200,7 @@ func NewIntegrationApp(
 				}
 			}
 
-			return &cmtabcitypes.ResponseInitChain{}, nil
+			return &abci.ResponseInitChain{}, nil
 		})
 
 	bApp.SetBeginBlocker(func(ctx sdk.Context) (sdk.BeginBlock, error) {
@@ -212,21 +216,22 @@ func NewIntegrationApp(
 	err := bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
 
-	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: chainId})
+	_, err = bApp.InitChain(&abci.RequestInitChain{ChainId: chainId})
 	require.NoError(t, err, "failed to initialize chain")
 
 	bApp.SetTxEncoder(txCfg.TxEncoder())
 
 	return &App{
-		BaseApp:       bApp,
-		logger:        logger,
-		authority:     authority,
-		sdkCtx:        &sdkCtx,
-		cdc:           cdc,
-		txCfg:         txCfg,
-		moduleManager: *moduleManager,
-		queryHelper:   queryHelper,
-		faucetBech32:  faucetBech32,
+		BaseApp:          bApp,
+		logger:           logger,
+		authority:        authority,
+		sdkCtx:           &sdkCtx,
+		cdc:              cdc,
+		txCfg:            txCfg,
+		moduleManager:    *moduleManager,
+		queryHelper:      queryHelper,
+		faucetBech32:     faucetBech32,
+		proposerConsAddr: proposerConsAddr,
 	}
 }
 
@@ -247,7 +252,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	}
 
 	// Prepare & register the codec for all the interfaces
-	sdkCfg := cosmostypes.GetConfig()
+	sdkCfg := sdk.GetConfig()
 	addrCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32AccountAddrPrefix())
 	valCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32ValidatorAddrPrefix())
 	signingOpts := signing.Options{
@@ -274,7 +279,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	prooftypes.RegisterInterfaces(registry)
 	servicetypes.RegisterInterfaces(registry)
 	authtypes.RegisterInterfaces(registry)
-	cosmostypes.RegisterInterfaces(registry)
+	sdk.RegisterInterfaces(registry)
 	cryptocodec.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
 	migrationtypes.RegisterInterfaces(registry)
@@ -496,6 +501,30 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	)
 
 	// Prepare the tokenomics keeper and module
+	// Create a mock staking keeper for tokenomics (integration tests don't have full staking module)
+	ctrl := gomock.NewController(t)
+	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
+
+	// Set up mock expectations for the staking keeper
+	// Use a sample consensus and validator address for the mock
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+	validator := stakingtypes.Validator{
+		OperatorAddress: proposerValOperatorAddr.String(),
+	}
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
+		Return(validator, nil).
+		AnyTimes()
+	// Default expectation for any other consensus address
+	mockStakingKeeper.EXPECT().
+		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
+		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
+	// Set the proposer address in the context to match the mock expectation
+	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
+
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[tokenomicstypes.StoreKey]),
@@ -510,6 +539,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
+		mockStakingKeeper,
 		cfg.TokenLogicModules,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
@@ -593,6 +623,10 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		queryHelper,
 		opts...,
 	)
+
+	// Override the proposer address to match the mock expectation
+	integrationApp.proposerConsAddr = proposerConsAddr
+	*integrationApp.sdkCtx = integrationApp.sdkCtx.WithProposer(proposerConsAddr)
 
 	// Register the message & query servers.
 	configurator := module.NewConfigurator(cdc, msgRouter, queryHelper)
@@ -739,13 +773,13 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	}
 
 	// Finalize the block with the transaction.
-	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
+	finalizeBlockReq := &abci.RequestFinalizeBlock{
 		Height: app.LastBlockHeight() + 1,
 		Time:   app.GetSdkCtx().BlockTime(),
 		// Randomize the proposer address for each block.
 		ProposerAddress: sample.ConsAddress().Bytes(),
-		DecidedLastCommit: cmtabcitypes.CommitInfo{
-			Votes: []cmtabcitypes.VoteInfo{{}},
+		DecidedLastCommit: abci.CommitInfo{
+			Votes: []abci.VoteInfo{{}},
 		},
 		Txs: [][]byte{txBz},
 	}
@@ -772,7 +806,7 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 		txMsgDataBz := txResult.GetData()
 		require.NotNil(t, txMsgDataBz)
 
-		txMsgData := new(cosmostypes.TxMsgData)
+		txMsgData := new(sdk.TxMsgData)
 		err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
 		require.NoError(t, err)
 
@@ -807,14 +841,14 @@ func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 	// Emit begin/end blocker events.
 	for _, event := range res.Events {
 		testutilevents.QuoteEventMode(&event)
-		abciEvent := cosmostypes.Event(event)
+		abciEvent := sdk.Event(event)
 		app.sdkCtx.EventManager().EmitEvent(abciEvent)
 	}
 
 	// Emit txResult events.
 	for _, txResult := range res.TxResults {
 		for _, event := range txResult.Events {
-			abciEvent := cosmostypes.Event(event)
+			abciEvent := sdk.Event(event)
 			app.sdkCtx.EventManager().EmitEvent(abciEvent)
 		}
 	}
@@ -828,8 +862,8 @@ func (app *App) NextBlock(t *testing.T) {
 	finalizedBlockResponse, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: app.sdkCtx.BlockHeight(),
 		Time:   app.sdkCtx.BlockTime(),
-		// Randomize the proposer address for each block.
-		ProposerAddress: sample.ConsAddress().Bytes(),
+		// Use the consistent proposer address for each block.
+		ProposerAddress: app.proposerConsAddr.Bytes(),
 	})
 	require.NoError(t, err)
 
@@ -893,7 +927,7 @@ func (app *App) setupDefaultActorsState(
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 	serviceKeeper.SetService(app.sdkCtx, defaultService)
 	app.DefaultService = &defaultService
@@ -909,12 +943,12 @@ func (app *App) setupDefaultActorsState(
 	)
 
 	// Prepare the onchain supplier
-	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	supplierStake := sdk.NewCoin("upokt", math.NewInt(1000000))
 	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{
 		{
 			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
-					Address:            sample.AccAddress(),
+					Address:            sample.AccAddressBech32(),
 					RevSharePercentage: uint64(100),
 				},
 			},
@@ -942,7 +976,7 @@ func (app *App) setupDefaultActorsState(
 	)
 
 	// Prepare the onchain application
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := sdk.NewCoin("upokt", math.NewInt(1000000))
 	defaultApplication := apptypes.Application{
 		Address: applicationAddr.String(),
 		Stake:   &appStake,
@@ -958,7 +992,7 @@ func (app *App) setupDefaultActorsState(
 	// TODO_IMPROVE: The setup above does not to proper "staking" of the suppliers and applications.
 	// This can result in the module accounts balance going negative. Giving them a baseline balance
 	// to start with to avoid this issue. There is opportunity to improve this in the future.
-	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+	moduleBaseMint := sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
 	err := bankKeeper.MintCoins(app.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
 	err = bankKeeper.MintCoins(app.sdkCtx, apptypes.ModuleName, moduleBaseMint)
@@ -992,7 +1026,7 @@ func fundAccount(
 	amountUpokt int64,
 ) {
 
-	fundingCoins := types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(amountUpokt)))
+	fundingCoins := sdk.NewCoins(sdk.NewCoin(pocket.DenomuPOKT, math.NewInt(amountUpokt)))
 
 	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
 	require.NoError(t, err)

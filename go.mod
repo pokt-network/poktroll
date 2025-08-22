@@ -8,10 +8,10 @@ module github.com/pokt-network/poktroll
 // this go module by commenting out the `module` directive above, and uncommenting
 // the `module` and `replace` directives below.
 //
-// 1. Commment above / uncomment below...
+// 1. Comment above / uncomment below...
 // 2. go mod tidy
 // 3. ignite scaffold ...
-// 4. make proto_fix_self_import && make proto_regen
+// 4. make proto_regen
 // 5. Uncomment above / comment below...
 // 6. go mod tidy
 // 7. ignite chain build --skip-proto # and/or (re)start/build localnet
@@ -35,6 +35,10 @@ replace nhooyr.io/websocket => github.com/coder/websocket v1.8.6
 
 // replace broken goleveldb
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+
+// TODO_HACK(@olshansk): Replace CometBFT with Pocket's fork to avoid blocking RPC queries on heavy EndBlockers.
+// Ref: https://github.com/pokt-network/cometbft/issues/3
+replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811
 
 require (
 	cosmossdk.io/api v0.9.2
@@ -61,15 +65,14 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/go-kit/kit v0.13.0
 	github.com/gogo/status v1.1.0
-	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect
 	github.com/hashicorp/go-metrics v0.5.4
 	github.com/pokt-network/ring-go v0.1.0
-	github.com/pokt-network/smt v0.13.0
+	github.com/pokt-network/smt v0.14.1
 	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188
 	github.com/prometheus/client_golang v1.22.0
 	github.com/regen-network/gocuke v1.1.0
@@ -103,12 +106,16 @@ require (
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20250603210336-969a825fddd5
+	github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770
 	go.uber.org/mock v0.5.2
 	golang.org/x/term v0.32.0
 )
 
-require github.com/go-chi/chi/v5 v5.2.1
+require (
+	github.com/docker/go-units v0.5.0
+	github.com/go-chi/chi/v5 v5.2.1
+	github.com/hashicorp/go-version v1.7.0
+)
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
@@ -232,7 +239,6 @@ require (
 	github.com/docker/docker v28.1.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
-	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/dvsekhvalnov/jose2go v1.6.0 // indirect
 	github.com/emicklei/dot v1.6.2 // indirect
@@ -308,7 +314,6 @@ require (
 	github.com/hashicorp/go-immutable-radix/v2 v2.1.0 // indirect
 	github.com/hashicorp/go-plugin v1.6.3 // indirect
 	github.com/hashicorp/go-safetemp v1.0.0 // indirect
-	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/yamux v0.1.2 // indirect

@@ -7,9 +7,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -98,7 +96,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// Set proof keeper params to disable relay mining and always require a proof.
 			proofParams := keepers.Keeper.GetParams(ctx)
 			proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-			err := keepers.Keeper.SetParams(ctx, proofParams)
+			err := keepers.SetParams(ctx, proofParams)
 			require.NoError(t, err)
 
 			// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -129,7 +127,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			service := &sharedtypes.Service{
 				Id:                   testServiceId,
 				ComputeUnitsPerRelay: computeUnitsPerRelay,
-				OwnerAddress:         sample.AccAddress(),
+				OwnerAddress:         sample.AccAddressBech32(),
 			}
 
 			// Add a supplier and application pair that are expected to be in the session.
@@ -250,11 +248,14 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 			require.NoError(t, err)
 
-			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
+			require.Equal(t, claim.SessionHeader.ServiceId, proofSubmittedEvent.GetServiceId())
+			require.Equal(t, claim.SessionHeader.ApplicationAddress, proofSubmittedEvent.GetApplicationAddress())
+			require.Equal(t, claim.SessionHeader.SessionEndBlockHeight, proofSubmittedEvent.GetSessionEndBlockHeight())
+			require.Equal(t, int32(prooftypes.ClaimProofStatus_PENDING_VALIDATION), proofSubmittedEvent.GetClaimProofStatusInt())
 			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
 			require.Equal(t, uint64(numClaimComputeUnits), proofSubmittedEvent.GetNumClaimedComputeUnits())
 			require.Equal(t, numEstimatedComputUnits, proofSubmittedEvent.GetNumEstimatedComputeUnits())
-			require.Equal(t, &claimedUPOKT, proofSubmittedEvent.GetClaimedUpokt())
+			require.Equal(t, claimedUPOKT.String(), proofSubmittedEvent.GetClaimedUpokt())
 		})
 	}
 }
@@ -273,7 +274,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Set proof keeper params to disable relaymining and always require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-	err := keepers.Keeper.SetParams(ctx, proofParams)
+	err := keepers.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -301,7 +302,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	fundSupplierOperatorAccount(t, ctx, keepers, supplierOperatorAddr)
@@ -447,7 +448,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Ensure the minimum relay difficulty bits is set to zero so that test cases
 	// don't need to mine for valid relays.
-	err := keepers.Keeper.SetParams(ctx, testProofParams)
+	err := keepers.SetParams(ctx, testProofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -490,12 +491,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 	wrongService := &sharedtypes.Service{
 		Id:                   "wrong_svc",
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Add a supplier and application pair that are expected to be in the session.
@@ -718,7 +719,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	// Set proof keeper params to disable relay mining but never require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = 0
-	err := keepers.Keeper.SetParams(ctx, proofParams)
+	err := keepers.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -749,7 +750,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	service := &sharedtypes.Service{
 		Id:                   testServiceId,
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
+		OwnerAddress:         sample.AccAddressBech32(),
 	}
 
 	// Add a supplier and application pair that are expected to be in the session.
@@ -895,7 +896,7 @@ func createClaimAndStoreBlockHash(
 		service,
 		merkleRootBz,
 	)
-	claimRes, err := msgServer.CreateClaim(ctx, claimMsg)
+	_, err = msgServer.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
@@ -921,20 +922,23 @@ func createClaimAndStoreBlockHash(
 	// Store the current context's block hash for future height, which is currently an EndBlocker operation.
 	keepers.StoreBlockHash(earliestSupplierClaimCommitCtx)
 
-	return claimRes.GetClaim()
+	// Query the created claim from the keeper
+	claim, found := keepers.GetClaim(ctx, sessionHeader.GetSessionId(), supplierOperatorAddr)
+	require.True(t, found, "claim should exist after creation")
+	return &claim
 }
 
 // fundSupplierOperatorAccount sends enough coins to the supplier operator account
 // to cover the cost of the proof submission.
 func fundSupplierOperatorAccount(t *testing.T, ctx context.Context, keepers *keepertest.ProofModuleKeepers, supplierOperatorAddr string) {
-	supplierOperatorAccAddr, err := sdk.AccAddressFromBech32(supplierOperatorAddr)
+	supplierOperatorAccAddr, err := cosmostypes.AccAddressFromBech32(supplierOperatorAddr)
 	require.NoError(t, err)
 
 	err = keepers.SendCoinsFromModuleToAccount(
 		ctx,
 		suppliertypes.ModuleName,
 		supplierOperatorAccAddr,
-		types.NewCoins(types.NewCoin(pocket.DenomuPOKT, math.NewInt(100000000))),
+		cosmostypes.NewCoins(cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(100000000))),
 	)
 	require.NoError(t, err)
 

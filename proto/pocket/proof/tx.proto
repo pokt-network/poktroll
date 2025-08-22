@@ -68,7 +68,8 @@ message MsgUpdateParam {
 // MsgUpdateParamResponse defines the response structure for executing a
 // MsgUpdateParam message after a single param update.
 message MsgUpdateParamResponse {
-  Params params = 1;
+  // Params params = 1;
+  reserved 1;
 }
 
 message MsgCreateClaim {
@@ -81,7 +82,8 @@ message MsgCreateClaim {
 }
 
 message MsgCreateClaimResponse {
-  pocket.proof.Claim claim = 1;
+  // pocket.proof.Claim claim = 1;
+  reserved 1;
 }
 
 message MsgSubmitProof {
@@ -94,5 +96,6 @@ message MsgSubmitProof {
 }
 
 message MsgSubmitProofResponse {
-  pocket.proof.Proof proof = 1;
+  // pocket.proof.Proof proof = 1;
+  reserved 1;
 }

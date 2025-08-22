@@ -6,7 +6,6 @@ import (
 	"cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -163,7 +162,7 @@ func (k msgServer) ClaimMorseSupplier(
 	shouldAutoUnstake := claimableSupplierStake.Amount.LT(minStake.Amount)
 
 	// Determine the staked tokens destination address based on the short circuit conditions above.
-	var stakedTokensDestAddr sdk.AccAddress
+	var stakedTokensDestAddr cosmostypes.AccAddress
 	if morseUnbondingPeriodElapsed || shouldAutoUnstake {
 		stakedTokensDestAddr = shannonOwnerAddr
 	} else {
@@ -221,16 +220,8 @@ func (k msgServer) ClaimMorseSupplier(
 		// ServiceConfigHistory: (intentionally omitted, no services were staked),
 	}
 
-	// Construct the base response. It will be modified, as necessary, prior to returning.
-	claimMorseSupplierResponse := &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseNodeAddress:     msg.GetMorseNodeAddress(),
-		MorseOutputAddress:   morseNodeClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       claimedUnstakedBalance,
-		ClaimedSupplierStake: claimedSupplierStake,
-		SessionEndHeight:     sessionEndHeight,
-		Supplier:             unbondedSupplier,
-	}
+	// Construct the base response.
+	claimMorseSupplierResponse := &migrationtypes.MsgClaimMorseSupplierResponse{}
 
 	// Construct the base supplier claim event. It will be modified, as necessary, prior to emission.
 	// ALWAYS emit an event which signals that the morse supplier has been claimed.
@@ -238,8 +229,8 @@ func (k msgServer) ClaimMorseSupplier(
 		MorseNodeAddress:     msg.GetMorseNodeAddress(),
 		MorseOutputAddress:   morseNodeClaimableAccount.GetMorseOutputAddress(),
 		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       claimedUnstakedBalance,
-		ClaimedSupplierStake: claimedSupplierStake,
+		ClaimedBalance:       claimedUnstakedBalance.String(),
+		ClaimedSupplierStake: claimedSupplierStake.String(),
 		SessionEndHeight:     sessionEndHeight,
 		Supplier:             unbondedSupplier,
 	}
@@ -312,14 +303,9 @@ func (k msgServer) ClaimMorseSupplier(
 		return nil, err
 	}
 
-	// Update the supplier claim response.
-	claimMorseSupplierResponse.ClaimedBalance = morseNodeClaimableAccount.GetUnstakedBalance()
-	claimMorseSupplierResponse.ClaimedSupplierStake = morseNodeClaimableAccount.GetSupplierStake()
-	claimMorseSupplierResponse.Supplier = supplier
-
 	// Update the supplier claim event.
-	morseSupplierClaimedEvent.ClaimedBalance = morseNodeClaimableAccount.GetUnstakedBalance()
-	morseSupplierClaimedEvent.ClaimedSupplierStake = morseNodeClaimableAccount.GetSupplierStake()
+	morseSupplierClaimedEvent.ClaimedBalance = morseNodeClaimableAccount.GetUnstakedBalance().String()
+	morseSupplierClaimedEvent.ClaimedSupplierStake = morseNodeClaimableAccount.GetSupplierStake().String()
 	morseSupplierClaimedEvent.Supplier = supplier
 
 	// Emit the supplier claim event first, an unbonding begin event MAY follow.

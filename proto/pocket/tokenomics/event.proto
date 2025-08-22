@@ -4,100 +4,260 @@ package pocket.tokenomics;
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 option (gogoproto.stable_marshaler_all) = true;
 
-import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "pocket/proof/types.proto";
 
 import "pocket/tokenomics/types.proto";
 
+// TODO_CONSIDERATION: Consider prefixing these enums with CLAIM_EXPIRATION_REASON_
 enum ClaimExpirationReason {
-  EXPIRATION_REASON_UNSPECIFIED = 0; // Default value, means may be valid
-  PROOF_MISSING = 1;
-  PROOF_INVALID = 2;
+    // Default value, means may be valid
+    EXPIRATION_REASON_UNSPECIFIED = 0;
+
+    // A proof was required but not submitted
+    PROOF_MISSING = 1;
+
+    // A proof was submitted but was invalid
+    PROOF_INVALID = 2;
 }
 
-// EventClaimExpired is an event emitted during settlement whenever a claim requiring
-// an onchain proof doesn't have one. The claim cannot be settled, leading to that work
-// never being rewarded.
+// EventClaimExpired is emitted during settlement when a claim expires.
+// This is likely the result of a claim requiring an onchain proof not being submitted.
+// The claim cannot be settled, leading to that work never being rewarded.
 message EventClaimExpired {
-    pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+    // Next index: 13
+
+    // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+    // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+    reserved 1, 6;
+
     // The reason why the claim expired, leading to a Supplier being penalized (i.e. burn).
     ClaimExpirationReason expiration_reason = 2 [(gogoproto.jsontag) = "expiration_reason"];
-    //Number of relays claimed to be in the session tree.
-    uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
-    // Number of compute units claimed as a function of the number of relays
-    // and the compute units per relay for the particular service.
-    uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
-    // Number of estimated compute units claimed as a function of the number of claimed
-    // compute units and the relay difficulty multiplier for the particular service.
-    uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-    // The uPOKT coin claimed to be rewarded for the work done as a function of
-    // the number of estimated compute units and the compute units to token multiplier.
-    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
-}
 
-// EventClaimSettled is an event emitted whenever a claim is settled.
-// The proof_required determines whether the claim requires a proof that has been submitted or not
-message EventClaimSettled {
-    pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
-    // The reason why the claim was settled, leading to a Supplier being rewarded (i.e. mint).
-    pocket.proof.ProofRequirementReason proof_requirement = 2 [(gogoproto.jsontag) = "proof_requirement"];
     // Number of relays claimed to be in the session tree.
     uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
-    // Number of compute units claimed as a function of the number of relays
-    // and the compute units per relay for the particular service.
+
+    // Number of compute units claimed in the session tree.
+    // It is a function of the number of relays in the session tree and onchain parameters.
     uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
-    // Number of estimated compute units claimed as a function of the number of claimed
-    // compute units and the relay difficulty multiplier for the particular service.
+
+    // Number of total estimated compute units of work done.
+    // It is a function of the number of claimed compute units and the relay difficulty multiplier.
     uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+
+    // The amount of uPOKT claimed for the work done.
+    // It is a function of the number of estimated compute units and the compute units to token multiplier.
+    string claimed_upokt = 7 [(gogoproto.jsontag) = "claimed_upokt"];
+
+    // The Service ID to which the claim corresponds.
+    string service_id = 8;
+
+    // The address of the application which participated in the claimed session.
+    string application_address = 9 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The end block height of the session to which the claim corresponds.
+    int64 session_end_block_height = 10;
+
+    // The validation status of the claim.
+    // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+    // enum to minimize onchain disk utilization. This is necessary because event
+    // data is not always protobuf-encoded in the various places and formats that it
+    // appears in onchain leveldb databases.
+    // Enum values:
+    //   PENDING_VALIDATION = 0;
+    //   VALIDATED = 1;
+    //   INVALID = 2;
+    int32 claim_proof_status_int = 11;
+
+    // The operator address of the supplier whose claim expired.
+    string supplier_operator_address = 12 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// EventClaimSettled is emitted during settlement whenever a claim is successfully settled.
+// It may or may not require a proof depending on various on-chain parameters and other factors.
+message EventClaimSettled {
+    // Next index: 15
+
+    // pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+    // cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+    // ClaimSettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
+    reserved 1, 6, 7;
+
+    // Whether a proof was required for the claim to be settled.
+    // DEV_NOTE: This field uses the integer representation of the ProofRequirementReason
+    // enum to minimize onchain disk utilization. This is necessary because event
+    // data is not always protobuf-encoded in the various places and formats that it
+    // appears in onchain leveldb databases.
+    // Enum values:
+    //   NOT_REQUIRED = 0;
+    //   PROBABILISTIC = 1;
+    //   THRESHOLD = 2;
+    int32 proof_requirement_int = 2;
+
+    // Number of relays claimed to be in the session tree.
+    uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
+
+    // Number of compute units claimed in the session tree.
+    // It is a function of the number of relays in the session tree and onchain parameters.
+    uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
+
+    // Number of estimated compute units claimed in the session tree.
+    // It is a function of the number of claimed compute units and the relay difficulty multiplier for the particular service.
+    uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+
     // The uPOKT coin claimed to be rewarded for the work done as a function of
     // the number of estimated compute units and the compute units to token multiplier.
-    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
-    // SettlementResult holds mint, burn, and transfer operations on a per-claim basis.
-    ClaimSettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
+    string claimed_upokt = 8 [(gogoproto.jsontag) = "claimed_upokt"];
+
+    // The Service ID to which the claim corresponds.
+    string service_id = 9;
+
+    // The address of the application which participated in the claimed session.
+    string application_address = 10 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The end block height of the session to which the claim corresponds.
+    int64 session_end_block_height = 11;
+
+    // The validation status of the claim.
+    // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+    // enum to minimize onchain disk utilization. This is necessary because event
+    // data is not always protobuf-encoded in the various places and formats that it
+    // appears in onchain leveldb databases.
+    // Enum values:
+    //   PENDING_VALIDATION = 0;
+    //   VALIDATED = 1;
+    //   INVALID = 2;
+    int32 claim_proof_status_int = 12;
+
+    // The operator address of the supplier who submitted the claim.
+    string supplier_operator_address = 13 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // A map of addresses to token amounts corresponding to the distribution of the reward tokens.
+    map<string, string> reward_distribution = 14 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mint_distribution"];
 }
 
-// EventApplicationOverserviced is emitted when an application has less stake than
-// what a supplier is claiming (i.e. amount available for burning is insufficient).
-// This means the following will ALWAYS be strictly true: effective_burn < expected_burn.
+// EventApplicationOverserviced is emitted when an Application's stake cannot cover the Supplier's claim.
+// This means the following will ALWAYS be strictly true:  effective_burn < expected_burn
+// - Number of tokens burnt from app stake < Number of tokens burnt from supplier stake
 message EventApplicationOverserviced {
+    // Next index: 7
+
+    // cosmos.base.v1beta1.Coin expected_burn = 3;
+    // cosmos.base.v1beta1.Coin effective_burn = 4;
+    reserved 3, 4;
+
+    // The application address consuming onchain services
     string application_addr = 1;
+
+    // The supplier operator address providing onchain services
     string supplier_operator_addr = 2;
-    // Expected burn is the amount the supplier is claiming for work done
-    // to service the application during the session.
-    // This is usually the amount in the Claim submitted.
-    cosmos.base.v1beta1.Coin expected_burn  = 3;
-    // Effective burn is the amount that is actually being paid to the supplier
-    // for the work done. It is less than the expected burn (claim amount) and
-    // is a function of the relay mining algorithm.
-    // E.g. The application's stake divided by the number of suppliers in a session.
-    cosmos.base.v1beta1.Coin effective_burn  = 4;
+
+    // Expected number of tokens to be burnt from the application's stake.
+    // A function of the actual amount of work claimed to be done.
+    string expected_burn  = 5;
+
+    // Actual number of tokens burnt from the application's stake.
+    // A function of the amount that could be covered (less than) relative to the amount of work claimed to be done.
+    string effective_burn  = 6;
 }
 
-// EventSupplierSlashed is emitted when a supplier is slashed for not providing,
-// or provided invalid required proofs for claims.
+// EventSupplierSlashed is emitted when a supplier is slashed.
+// This can happen for in cases such as missing or invalid proofs for submitted claims.
 message EventSupplierSlashed {
-    pocket.proof.Claim claim = 1;
-    // Amount slashed from the supplier's stake due to the expired claims.
-    // This is a function of the number of expired claims and proof missing penalty.
-    cosmos.base.v1beta1.Coin proof_missing_penalty = 2;
+    // Next index: 9
+
+    // pocket.proof.Claim claim = 1;
+    // cosmos.base.v1beta1.Coin proof_missing_penalty = 2;
+    reserved 1, 2;
+
+    // Amount slashed from the supplier's stake.
+    // A function of the claim size, supplier stake, and various onchain parameters.
+    string proof_missing_penalty = 3;
+
+    // The Service ID to which the claim corresponds.
+    string service_id = 4;
+
+    // The address of the application which participated in the claimed session.
+    string application_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The end block height of the session to which the claim corresponds.
+    int64 session_end_block_height = 6;
+
+    // The validation status of the claim.
+    // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+    // enum to minimize onchain disk utilization. This is necessary because event
+    // data is not always protobuf-encoded in the various places and formats that it
+    // appears in onchain leveldb databases.
+    // Enum values:
+    //   PENDING_VALIDATION = 0;
+    //   VALIDATED = 1;
+    //   INVALID = 2;
+    int32 claim_proof_status_int = 7;
+
+    // The operator address of the supplier that was slashed.
+    string supplier_operator_address = 8 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
-// EventClaimDiscarded is emitted when a claim is discarded due to unexpected
-// errors during settlement to prevent chain halt.
+// EventClaimDiscarded is emitted when a claim is discarded due to unexpected situations.
+// It is used to prevent chain halts in favor of some missing claims.
 message EventClaimDiscarded {
-    pocket.proof.Claim claim = 1;
+    // Next index: 8
+
+    // pocket.proof.Claim claim = 1;
+    reserved 1;
+
     // The error that caused the claim to be discarded.
     string error = 2;
+
+    // The Service ID to which the claim corresponds.
+    string service_id = 3;
+
+    // The address of the application which participated in the claimed session.
+    string application_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // The end block height of the session to which the claim corresponds.
+    int64 session_end_block_height = 5;
+
+    // The validation status of the claim.
+    // DEV_NOTE: This field uses the integer representation of the ClaimProofStatus
+    // enum to minimize onchain disk utilization. This is necessary because event
+    // data is not always protobuf-encoded in the various places and formats that it
+    // appears in onchain leveldb databases.
+    // Enum values:
+    //   PENDING_VALIDATION = 0;
+    //   VALIDATED = 1;
+    //   INVALID = 2;
+    int32 claim_proof_status_int = 6;
+
+    // The operator address of the supplier whose claim was discarded.
+    string supplier_operator_address = 7 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
-// EventApplicationReimbursementRequest is emitted when an application requests
-// a reimbursement.
+// EventApplicationReimbursementRequest is emitted when an application requests a reimbursement from the DAO.
+// It is intended to prevent self dealing attacks when global inflation is enabled.
+// TODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.
 message EventApplicationReimbursementRequest {
+    // Next index: 8
+
+    // cosmos.base.v1beta1.Coin amount = 6;
+    reserved 6;
+
+    // The application address consuming onchain services requesting reimbursement.
     string application_addr = 1;
+
+    // The supplier operator address providing onchain services
     string supplier_operator_addr = 2;
+
+    // The supplier owner address providing onchain services
     string supplier_owner_addr = 3;
+
+    // The service ID associated with the session where a claim was submitted.
     string service_id = 4;
+
+    // The session ID associated with the session where a claim was submitted.
     string session_id = 5;
-    cosmos.base.v1beta1.Coin amount = 6;
+
+    // The amount of uPOKT to be reimbursed to the application.
+    string amount = 7;
 }

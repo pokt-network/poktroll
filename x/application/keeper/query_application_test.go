@@ -133,7 +133,7 @@ func TestApplicationQueryPaginated(t *testing.T) {
 
 func TestAllApplicationsQuery_WithDelegateeGatewayAddressConstraint(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	gatewayAddr1 := sample.AccAddress()
+	gatewayAddr1 := sample.AccAddressBech32()
 	appsWithDelegationAddr := []string{"1", "2"}
 	apps := createNApplications(keeper, ctx, 5, withAppDelegateeGatewayAddr(gatewayAddr1, appsWithDelegationAddr))
 

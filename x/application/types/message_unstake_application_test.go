@@ -17,7 +17,7 @@ func TestMsgUnstakeApplication_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid",
 			msg: MsgUnstakeApplication{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 			},
 		},
 		{

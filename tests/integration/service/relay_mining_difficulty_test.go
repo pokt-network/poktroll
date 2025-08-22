@@ -14,8 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
-	"github.com/pokt-network/poktroll/testutil/integration"
-	testutil "github.com/pokt-network/poktroll/testutil/integration"
+	integration "github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -100,7 +99,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Wait until the proof window is closed
 	currentBlockHeight = sdkCtx.BlockHeight()
 	numBlocksUntilProofWindowCloseHeight := proofWindowCloseHeight - currentBlockHeight
-	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
+	require.Greater(t, numBlocksUntilProofWindowCloseHeight, int64(0), "unexpected non-positive number of blocks until the proof window close height")
 
 	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here but it was required to pass the test.
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight)+1)
@@ -138,7 +137,7 @@ func UpdateRelayMiningDifficulty_UpdateServiceIsDecreasing(t *testing.T) {
 }
 
 // getSharedParams returns the shared parameters for the current block height.
-func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Params {
+func getSharedParams(t *testing.T, integrationApp *integration.App) sharedtypes.Params {
 	t.Helper()
 
 	sdkCtx := integrationApp.GetSdkCtx()
@@ -153,7 +152,7 @@ func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Par
 }
 
 // getProofParams returns the proof parameters for the current block height.
-func getProofParams(t *testing.T, integrationApp *testutil.App) prooftypes.Params {
+func getProofParams(t *testing.T, integrationApp *integration.App) prooftypes.Params {
 	t.Helper()
 
 	sdkCtx := integrationApp.GetSdkCtx()
@@ -168,7 +167,7 @@ func getProofParams(t *testing.T, integrationApp *testutil.App) prooftypes.Param
 }
 
 // getSession returns the current session for the default application and service.
-func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Session {
+func getSession(t *testing.T, integrationApp *integration.App) *sessiontypes.Session {
 	t.Helper()
 
 	sdkCtx := integrationApp.GetSdkCtx()
@@ -189,7 +188,7 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 // prepareSMST prepares an SMST with the given number of mined relays.
 func prepareSMST(
 	t *testing.T, ctx context.Context,
-	integrationApp *testutil.App,
+	integrationApp *integration.App,
 	session *sessiontypes.Session,
 	numRelays uint64,
 ) *smt.SMST {

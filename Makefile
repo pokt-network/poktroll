@@ -80,7 +80,7 @@ endif
 # TODO_TECHDEBT(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `golangci-lint` and other go tools
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
@@ -135,40 +135,9 @@ help: ## Prints all the targets in all the Makefiles
 ### Proto  Helpers ####
 #######################
 
-proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@echo "Updating all instances of cosmossdk.io/api/pocket to github.com/pokt-network/poktroll/api/pocket..."
-	@find ./api/pocket/ -type f | while read -r file; do \
-		$(SED) -i 's,cosmossdk.io/api/pocket,github.com/pokt-network/poktroll/api/pocket,g' "$$file"; \
-	done
-	@for dir in $(wildcard ./api/pocket/*/); do \
-			module=$$(basename $$dir); \
-			echo "Further processing module $$module"; \
-			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/pocket/'$$module'"' ./api/pocket/$$module | while read -r file; do \
-					echo "Modifying file: $$file"; \
-					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/pocket/'$$module'",,' "$$file"; \
-					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
-			done; \
-	done
-
-
-.PHONY: proto_clean
-proto_clean: ## Delete existing .pb.go, .pb.gw.go (avoid cleaning *.pulsar.go files here)
-	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
-
-## TODO_TECHDEBT(@bryanchriswhite): Investigate if / how this can be integrated with `proto_regen`
-.PHONY: proto_clean_pulsar
-proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
-	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
-	$(MAKE) proto_regen
-	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
-
-.PHONY: proto_ignite_gen
-proto_ignite_gen: ## Generate protobuf artifacts using ignite
-	ignite generate proto-go --yes
-
 .PHONY: proto_regen
-proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
+proto_regen: ## Regenerate protobuf artifacts
+	ignite generate proto-go --yes
 
 #######################
 ### Docker  Helpers ###
@@ -430,5 +399,7 @@ include ./makefiles/relay.mk
 include ./makefiles/ping.mk
 include ./makefiles/migrate.mk
 include ./makefiles/claudesync.mk
+include ./makefiles/telegram.mk
 include ./makefiles/docs.mk
 include ./makefiles/release.mk
+include ./makefiles/tools.mk

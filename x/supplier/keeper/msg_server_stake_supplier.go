@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/telemetry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -39,15 +38,13 @@ func (k msgServer) StakeSupplier(
 
 	logger := k.Logger().With("method", "StakeSupplier")
 	// Create or update a supplier using the configuration in the msg provided.
-	supplier, err := k.Keeper.StakeSupplier(ctx, logger, msg)
+	_, err := k.Keeper.StakeSupplier(ctx, logger, msg)
 	if err != nil {
 		return nil, err
 	}
 
 	isSuccessful = true
-	return &suppliertypes.MsgStakeSupplierResponse{
-		Supplier: supplier,
-	}, nil
+	return &suppliertypes.MsgStakeSupplierResponse{}, nil
 }
 
 // createSupplier creates a new supplier entity from the given message.
@@ -246,7 +243,7 @@ func (k Keeper) StakeSupplier(
 
 	// Emit an event which signals that the supplier staked.
 	events = append(events, &suppliertypes.EventSupplierStaked{
-		Supplier:         &supplier,
+		OperatorAddress:  supplier.OperatorAddress,
 		SessionEndHeight: sessionEndHeight,
 	})
 	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
@@ -350,7 +347,7 @@ func (k Keeper) reconcileSupplierStakeDiff(
 		coinsToUnescrow := sdk.NewCoins(currentStake.Sub(newStake))
 
 		// Send the coins from the staked supplier pool to the supplier owner account
-		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, ownerAccAddr, coinsToUnescrow)
+		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, suppliertypes.ModuleName, ownerAccAddr, coinsToUnescrow)
 	}
 
 	// The supplier is not changing its stake. This can happen if the supplier

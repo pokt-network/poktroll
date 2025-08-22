@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/docker/go-units"
 	"github.com/foxcpp/go-mockdns"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -575,7 +576,7 @@ func TestRelayProxyPingAllSuite(t *testing.T) {
 func (t *RelayProxyPingAllSuite) SetupSuite() {
 	pingAppPrivateKey := secp256k1.GenPrivKey()
 	defaultRelayMinerServerAddress := "127.0.0.1:8245"
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	supplierEndpointsMap := map[string][]*sharedtypes.SupplierEndpoint{
 		defaultService: {
 			{
 				Url:     "http://supplier1pingall:8645",
@@ -607,7 +608,7 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 	t.relayerProxyBehavior = []func(*testproxy.TestBehavior){
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierOperatorKeyName, 1),
 		testproxy.WithServicesConfigMap(t.servicesConfigMap),
-		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpointsMap),
 		testproxy.WithDefaultApplication(pingAppPrivateKey),
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 		testproxy.WithRelayMeter(),
@@ -660,7 +661,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	pingAppPrivateKey := secp256k1.GenPrivKey()
 
 	// adding supplier endpoint.
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	supplierEndpointsMap := map[string][]*sharedtypes.SupplierEndpoint{
 		firstServiceName: []*sharedtypes.SupplierEndpoint{
 			{
 				Url:     "http://firstservice:8646",
@@ -714,7 +715,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 
 	relayerProxyBehavior := []func(*testproxy.TestBehavior){
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(newSupplierOperatorKeyName, 1),
-		testproxy.WithDefaultSupplier(newSupplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(newSupplierOperatorKeyName, supplierEndpointsMap),
 		testproxy.WithServicesConfigMap(cm),
 		testproxy.WithDefaultApplication(pingAppPrivateKey),
 		testproxy.WithDefaultSessionSupplier(newSupplierOperatorKeyName, defaultService, appPrivateKey),
@@ -755,7 +756,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	failingRelayMinerAddr := "127.0.0.1:8247"
 	failingServiceName := "failingservice"
 
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	serviceEndpointMap := map[string][]*sharedtypes.SupplierEndpoint{
 		failingServiceName: {
 			{
 				Url:     "http://failingservice:8647",
@@ -785,7 +786,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, serviceEndpointMap),
 		testproxy.WithServicesConfigMap(cm),
 	}...)
 
@@ -826,7 +827,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	failingRelayMinerAddr := "127.0.0.1:8248"
 	failingServiceName := "faillingservice"
 
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	supplierEndpointsMap := map[string][]*sharedtypes.SupplierEndpoint{
 		failingServiceName: {
 			{
 				Url:     "http://failingservice:8648",
@@ -856,7 +857,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpointsMap),
 		testproxy.WithServicesConfigMap(cm),
 	}...)
 
@@ -921,7 +922,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	relayminerIPV6ServiceAddr := "localhost:8250"
 	IPV6ServiceName := "ipv6service"
 
-	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+	supplierEndpointMap := map[string][]*sharedtypes.SupplierEndpoint{
 		domainNameServiceName: {
 			{
 				Url:     "http://exampleservice.org:8649",
@@ -974,7 +975,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpointMap),
 		testproxy.WithServicesConfigMap(cm),
 	}...)
 
@@ -1226,5 +1227,142 @@ func sendRequestWithCustomSessionHeight(
 		req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
 		return testproxy.MarshalAndSend(test, servicesConfigMap, defaultRelayMinerServer, defaultService, req)
+	}
+}
+
+// TestRelayerProxy_TimeoutHandling tests that the HTTP client timeout configuration
+// properly handles both fast and slow backend responses in the full RelayMiner context.
+func TestRelayerProxy_TimeoutHandling(t *testing.T) {
+	tests := []struct {
+		name                string
+		backendDelay        time.Duration
+		configuredTimeout   uint64
+		expectedSuccess     bool
+		expectedMinDuration time.Duration
+		expectedMaxDuration time.Duration
+		serviceNameSuffix   string
+	}{
+		{
+			name:                "fast_backend_succeeds",
+			backendDelay:        2 * time.Second,
+			configuredTimeout:   4,
+			expectedSuccess:     true,
+			expectedMinDuration: 2 * time.Second,
+			expectedMaxDuration: 3999 * time.Millisecond,
+			serviceNameSuffix:   "fast",
+		},
+		{
+			name:                "slow_backend_times_out",
+			backendDelay:        5 * time.Second,
+			configuredTimeout:   4,
+			expectedSuccess:     false,
+			expectedMinDuration: 4 * time.Second,
+			expectedMaxDuration: 4999 * time.Millisecond,
+			serviceNameSuffix:   "slow",
+		},
+	}
+
+	config.DefaultRequestTimeoutDuration = 2 * time.Second
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup test delays and ensure cleanup.
+			testproxy.ClearTestDelays()
+			testproxy.SetTestDelay(defaultService, tt.backendDelay)
+			defer testproxy.ClearTestDelays()
+
+			// Run tests sequentially to avoid port conflicts.
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+
+			// Modify existing default service configuration timeout.
+			// Avoids creating new services that conflict with testproxy framework.
+			modifiedServicesConfigMap := make(map[string]*config.RelayMinerServerConfig)
+			maxBodySize, err := units.RAMInBytes(config.DefaultMaxBodySize)
+			require.NoError(t, err, "Failed to parse default max body size")
+
+			for k, v := range servicesConfigMap {
+				// Deep copy the config
+				newConfig := &config.RelayMinerServerConfig{
+					ServerType:         v.ServerType,
+					ListenAddress:      v.ListenAddress,
+					SupplierConfigsMap: make(map[string]*config.RelayMinerSupplierConfig),
+					MaxBodySize:        maxBodySize,
+				}
+
+				for serviceId, supplierConfig := range v.SupplierConfigsMap {
+					newSupplierConfig := *supplierConfig // Copy
+					newSupplierConfig.RequestTimeoutSeconds = tt.configuredTimeout
+					newConfig.SupplierConfigsMap[serviceId] = &newSupplierConfig
+				}
+				modifiedServicesConfigMap[k] = newConfig
+			}
+
+			// Use default supplier endpoints with modified timeout configuration.
+			timeoutSupplierEndpoints := supplierEndpoints
+
+			// Setup RelayerProxy instrumented behavior with modified configuration.
+			timeoutRelayerProxyBehavior := []func(*testproxy.TestBehavior){
+				testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierOperatorKeyName, blockHeight),
+				testproxy.WithServicesConfigMap(modifiedServicesConfigMap),
+				testproxy.WithDefaultSupplier(supplierOperatorKeyName, timeoutSupplierEndpoints),
+				testproxy.WithDefaultApplication(appPrivateKey),
+				testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
+			}
+
+			signingKeyNames := []string{supplierOperatorKeyName}
+			t.Logf("Creating test behavior for %s with timeout %d seconds", tt.name, tt.configuredTimeout)
+
+			test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, timeoutRelayerProxyBehavior...)
+			t.Logf("Test behavior created successfully for %s", tt.name)
+
+			// Create the RelayerProxy
+			rp, err := proxy.NewRelayerProxy(
+				test.Deps,
+				proxy.WithServicesConfigMap(modifiedServicesConfigMap),
+			)
+			require.NoError(t, err)
+
+			// Start RelayerProxy.
+			go rp.Start(ctx)
+			time.Sleep(200 * time.Millisecond) // Allow startup time.
+
+			// Create request to default service with modified timeout.
+			req := testproxy.GenerateRelayRequest(
+				test,
+				appPrivateKey,
+				defaultService,
+				blockHeight,
+				supplierOperatorKeyName,
+				testproxy.PrepareJSONRPCRequest(t),
+			)
+			req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
+
+			// Measure request completion time.
+			startTime := time.Now()
+			errCode, errMsg := testproxy.MarshalAndSend(test, modifiedServicesConfigMap, defaultRelayMinerServer, defaultService, req)
+			elapsed := time.Since(startTime)
+
+			// Verify expected outcome.
+			if tt.expectedSuccess {
+				require.Equal(t, int32(0), errCode, "Request should succeed when backend is faster than timeout")
+				require.Equal(t, "", errMsg, "No error message expected for successful request")
+			} else {
+				// Verify request fails with JSON-RPC internal error code
+				// when backend response time exceeds configured timeout.
+				require.Equal(t, testproxy.JSONRPCInternalErrorCode, int(errCode), "Request should fail when backend is slower than timeout, got errCode=%d", errCode)
+
+				// TODO_TEST: Consider validating specific timeout error message content
+				// to ensure proper error propagation and user-facing messaging.
+			}
+
+			// Verify timing bounds.
+			require.Less(t, elapsed, tt.expectedMaxDuration, "Request should complete within expected time bounds")
+			require.Greater(t, elapsed, tt.expectedMinDuration, "Request should take at least the expected minimum time")
+
+			// Stop RelayerProxy.
+			err = rp.Stop(ctx)
+			require.NoError(t, err)
+		})
 	}
 }
