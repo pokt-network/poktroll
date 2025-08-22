@@ -718,17 +718,17 @@ func NewTokenomicsModuleKeepers(
 	}
 
 	keepers := TokenomicsModuleKeepers{
-		Keeper:             &tokenomicsKeeper,
-		AccountKeeper:      &accountKeeper,
-		BankKeeper:         &bankKeeper,
-		ApplicationKeeper:  &appKeeper,
-		SupplierKeeper:     &supplierKeeper,
-		ProofKeeper:        &proofKeeper,
-		SharedKeeper:       &sharedKeeper,
-		SessionKeeper:      &sessionKeeper,
-		ServiceKeeper:      &serviceKeeper,
-		StakingKeeper:   mockStakingKeeper,
-		MigrationKeeper: &migrationKeeper,
+		Keeper:            &tokenomicsKeeper,
+		AccountKeeper:     &accountKeeper,
+		BankKeeper:        &bankKeeper,
+		ApplicationKeeper: &appKeeper,
+		SupplierKeeper:    &supplierKeeper,
+		ProofKeeper:       &proofKeeper,
+		SharedKeeper:      &sharedKeeper,
+		SessionKeeper:     &sessionKeeper,
+		ServiceKeeper:     &serviceKeeper,
+		StakingKeeper:     mockStakingKeeper,
+		MigrationKeeper:   &migrationKeeper,
 
 		Codec: cdc,
 	}
