@@ -66,22 +66,35 @@ var (
 	// maxConcurrentRequestLimit is the maximum number of concurrent requests that can be made.
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
+
 	// supplierStakeAmount is the amount of tokens to stake by suppliers.
 	supplierStakeAmount sdk.Coin
+
 	// gatewayStakeAmount is the amount of tokens to stake by gateways.
 	gatewayStakeAmount sdk.Coin
+
 	// testedServiceId is the service ID for that all applications and suppliers will
 	// be using in this test.
 	testedServiceId string
+
 	// blockDurationSec is the duration of a block in seconds.
 	// NB: This value SHOULD be equal to `timeout_propose` in `config.yml`.
 	blockDurationSec = int64(2)
-	// relayPayloadFmt is the JSON-RPC request relayPayloadFmt to send a relay request.
-	relayPayloadFmt = `{"jsonrpc":"2.0","method":"%s","params":[],"id":%d}`
+
+	// // relayPayloadFmt is the JSON-RPC request relayPayloadFmt to send a relay request.
+	// relayPayloadFmt = `{"jsonrpc":"2.0","method":"%s","params":[],"id":%d}`
+
+	// // relayRequestMethod is the method of the JSON-RPC request to be relayed.
+	// // Since the goal of the relay stress test is to stress request load, not network
+	// // bandwidth, a simple getHeight request is used.
+	// relayRequestMethod = "eth_blockNumber"
+
+	// relayPayloadFmt is the JSON-RPC request template to send a relay request.
+	relayPayloadFmt = `{"jsonrpc":"2.0","method":"%s","params":["latest", true],"id":%d}`
+
 	// relayRequestMethod is the method of the JSON-RPC request to be relayed.
-	// Since the goal of the relay stress test is to stress request load, not network
-	// bandwidth, a simple getHeight request is used.
-	relayRequestMethod = "eth_blockNumber"
+	// We're requesting the latest block with full transaction objects to stress CPU/JSON handling.
+	relayRequestMethod = "eth_getBlockByNumber"
 )
 
 // relaysSuite is a test suite for the relays stress test.

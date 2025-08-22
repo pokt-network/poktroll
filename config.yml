@@ -406,11 +406,11 @@ genesis:
     shared:
       params:
         num_blocks_per_session: 10 # At 1 minute blocks, this will lead to a new session every 10 minutes. Arbitrarily selected.
-        grace_period_end_offset_blocks: 1 # Small value to smooth out session rollovers.
-        claim_window_open_offset_blocks: 1 # Small (for speed) non-zero (for security) value to balance speed and security.
-        claim_window_close_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than claim_window_open_offset_blocks.
-        proof_window_open_offset_blocks: 0 # Set to zero to allow for immediate proof submission after the claim window closes.
-        proof_window_close_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than proof_window_open_offset_blocks.
+        grace_period_end_offset_blocks: 3 # Small value to smooth out session rollovers.
+        claim_window_open_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security.
+        claim_window_close_offset_blocks: 1 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than claim_window_open_offset_blocks.
+        proof_window_open_offset_blocks: 1 # Set to zero to allow for immediate proof submission after the claim window closes.
+        proof_window_close_offset_blocks: 3 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than proof_window_open_offset_blocks.
         supplier_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
