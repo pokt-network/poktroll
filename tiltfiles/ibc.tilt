@@ -2,9 +2,19 @@ load("ext://helm_resource", "helm_resource", "helm_repo")
 
 pocket_chain_id = "pocket"
 pocket_validator_resource_name = "validator"
+ibc_label = "IBC"
+ibc_pairs_setup_label = "IBC_Pairs_Setup"
+ibc_relayer_image_name = "ibc-relayer"
+hermes_relayer_name = "🔁 Hermes Relayer"
+ibc_disabled_resource_name = "⚠️ IBC Disabled"
 
 default_context_path = os.path.join("localnet", "kubernetes")
 ibc_relayer_dockerfile_path = os.path.join("localnet", "dockerfiles", "ibc-relayer.dockerfile")
+values_dir = os.path.join("localnet", "kubernetes")
+values_ibc_relayer_common = os.path.join(values_dir, "values-ibc-relayer-common.yaml")
+values_ibc_relayer_daemon = os.path.join(values_dir, "values-ibc-relayer-daemon.yaml")  
+values_ibc_relayer_cli = os.path.join(values_dir, "values-ibc-relayer-cli.yaml")
+
 ibc_relayer_config = {
     "dockerfile_path": ibc_relayer_dockerfile_path,
 }
@@ -13,9 +23,9 @@ ibc_relayer_config = {
 # - Creates a Tilt resource that prints a message indicating IBC is disabled
 # - Shows how to enable it
 def ibc_disabled_resource(reason):
-    local_resource("⚠️ IBC Disabled",
+    local_resource(ibc_disabled_resource_name,
                    "echo '{}'".format(reason),
-                   labels=["IBC"])
+                   labels=[ibc_label])
 
 
 # Check and Load IBC
@@ -48,7 +58,7 @@ def load_ibc_resources(chart_prefix, validator_configs):
         return
 
     docker_build(
-        "ibc-relayer",
+        ibc_relayer_image_name,
         context=os.path.join(".", "localnet", "ibc-relayer"),  # needs any folder, doesn't matter
         dockerfile=ibc_relayer_dockerfile_path)
 
@@ -76,7 +86,7 @@ def load_ibc_relayer_server_resources(chart_prefix, ibc_validator_configs):
         ibc_setup_resource_name = "🏗️ " + tilt_ui_name
         chain_config_values_flags.append(
             "--values=" +
-            os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_id + ".yaml"))
+            os.path.join(values_dir, "values-ibc-relayer-config-" + chain_id + ".yaml"))
 
         validator_resource_name = ibc_validator_config.get("tilt_ui_name", chain_id.title() + " Validator")
         resource_deps.append(validator_resource_name)
@@ -84,23 +94,23 @@ def load_ibc_relayer_server_resources(chart_prefix, ibc_validator_configs):
 
     # Deploy helm chart
     helm_resource(
-        "ibc-relayer",
-        chart_prefix + "ibc-relayer",
+        ibc_relayer_image_name,
+        chart_prefix + ibc_relayer_image_name,
         flags=[
-                  "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
-                  "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-daemon.yaml"),
-                  "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
+                  "--values=" + values_ibc_relayer_common,
+                  "--values=" + values_ibc_relayer_daemon,
+                  "--values=" + os.path.join(values_dir, "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
               ] + chain_config_values_flags,
         resource_deps=resource_deps,
-        image_deps=["ibc-relayer"],
+        image_deps=[ibc_relayer_image_name],
         image_keys=[("image.repository", "image.tag")],
     )
 
-    # Update k8s resource with new name, lebels, and port-forwards
+    # Update k8s resource with new name, labels, and port-forwards
     k8s_resource(
-        "ibc-relayer",
-        new_name="🔁 Hermes Relayer",
-        labels=["IBC"],
+        ibc_relayer_image_name,
+        new_name=hermes_relayer_name,
+        labels=[ibc_label],
         resource_deps=resource_deps,
     )
 
@@ -120,28 +130,28 @@ def load_ibc_relayer_setup_resources(chart_prefix, network_name, validator_confi
     # Deploy helm chart
     helm_resource(
         "ibc-relayer-setup-" + network_name,
-        chart_prefix + "ibc-relayer",
+        chart_prefix + ibc_relayer_image_name,
         flags=[
-            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
-            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-cli.yaml"),
-            "--values=" + os.path.join("localnet", "kubernetes",
+            "--values=" + values_ibc_relayer_common,
+            "--values=" + values_ibc_relayer_cli,
+            "--values=" + os.path.join(values_dir,
                                        "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
-            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_id + ".yaml"),
+            "--values=" + os.path.join(values_dir, "values-ibc-relayer-config-" + chain_id + ".yaml"),
             "--set=chain_a_id=" + pocket_chain_id,
             "--set=chain_b_id=" + chain_id
         ],
         resource_deps=resource_deps,
-        image_deps=["ibc-relayer"],
+        image_deps=[ibc_relayer_image_name],
         image_keys=[("image.repository", "image.tag")],
     )
 
-    # Update k8s resource with new name, lebels,
+    # Update k8s resource with new name, labels,
     # port-forwards, and the manual trigger mode.
     k8s_resource(
         # workload=release_name,
         "ibc-relayer-setup-" + network_name,
         new_name="🏗️ " + tilt_ui_name,
-        labels=["IBC_Pairs_Setup"],
+        labels=[ibc_pairs_setup_label],
         trigger_mode=TRIGGER_MODE_MANUAL,
         resource_deps=resource_deps,
     )
@@ -187,10 +197,10 @@ def load_ibc_validator(chart_prefix, validator_config):
         **image_deps_and_keys,
     )
 
-    # Update k8s resource with new name, lebels, and port-forwards
+    # Update k8s resource with new name, labels, and port-forwards
     k8s_resource(
         chart_name,
         new_name=tilt_ui_name,
-        labels=["IBC"],
+        labels=[ibc_label],
         port_forwards=port_forwards,
     )
