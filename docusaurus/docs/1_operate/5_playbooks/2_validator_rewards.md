@@ -24,9 +24,9 @@ In Pocket Network's Shannon protocol, validators receive rewards as part of the 
 ### Key Concepts
 
 - **Validator Rewards**: Distributed proportionally to all bonded validators based on staking weight
-- **Direct Distribution**: Rewards are sent directly to validator and delegator accounts via ModToAcctTransfer operations
+- **Direct Distribution**: Rewards are sent directly to validator and delegator accounts immediately
 - **Commission**: Validators earn commission on rewards before distributing to delegators
-- **Delegator Rewards**: Distributed directly to individual delegator accounts (not through Cosmos SDK distribution module)
+- **Delegator Rewards**: Distributed directly to individual delegator accounts automatically
 - **Settlement-Based**: Rewards are generated during relay session settlement, not block validation
 
 ## Validator Reward Distribution Mechanics
@@ -39,7 +39,7 @@ In Pocket Network's Shannon protocol, validators receive rewards as part of the 
 4. **Direct Distribution**: 
    - **Validator Commission**: Calculated based on validator's commission rate and sent directly to validator account
    - **Delegator Rewards**: Remaining rewards distributed directly to individual delegator accounts based on their delegation shares
-5. **ModToAcctTransfer Operations**: All distributions use direct account transfers (bypassing Cosmos SDK distribution module)
+5. **Immediate Settlement**: All distributions happen automatically during session settlement
 
 ### Reward Calculation Formula
 
@@ -124,8 +124,7 @@ pocketd query tx --hash <tx-hash> --network <network>
 ```
 
 Look for events:
-- `pocket.tokenomics.EventClaimSettled` - Main settlement event
-- `cosmos.bank.v1beta1.EventTransfer` - Individual reward transfers to accounts
+- `pocket.tokenomics.EventClaimSettled` - Main settlement event that triggers validator rewards
 
 #### 2. Monitor Validator Account Balance
 
@@ -175,7 +174,7 @@ If telemetry is enabled, monitor these metrics:
 ✅ **No rewards are lost to rounding errors** (remainder given to validator as additional commission)  
 ✅ **Validators with zero stake receive zero rewards**  
 ✅ **Delegators receive rewards minus validator commission**  
-✅ **Direct account transfers occur** (validator and delegator account balances increase)  
+✅ **Account balances increase immediately** after settlements
 ✅ **Commission is calculated correctly** based on validator commission rates  
 
 ### Validation Scripts
@@ -259,8 +258,8 @@ pocketd query tx --events 'pocket.tokenomics.EventClaimSettled.num_relays>0' --n
 # Check validator stakes  
 pocketd query staking validators --network <network>
 
-# Look for ModToAcctTransfer operations in recent settlements
-pocketd query tx --events 'message.module=bank' --network <network>
+# Look for account balance changes from recent settlements
+pocketd query tx --events 'message.module=tokenomics' --network <network>
 ```
 
 #### 2. Uneven Reward Distribution

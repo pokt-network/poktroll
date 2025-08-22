@@ -100,14 +100,14 @@ graph TD
 
 ### Validator Reward Distribution
 
-The `proposer` allocation in the Global Mint TLM distributes rewards to **all** validators proportionally based on their bonded stake weight, not just the block proposer. This reward distribution uses **direct account transfers (ModToAcctTransfer)** rather than the Cosmos SDK distribution module.
+The `proposer` allocation in the Global Mint TLM distributes rewards to **all** validators proportionally based on their bonded stake weight, not just the block proposer. Rewards are sent directly to validator and delegator accounts automatically during settlement.
 
 #### How Validator Rewards Work
 
 1. **Stake-Weight Distribution**: Total proposer allocation is split among all bonded validators based on their stake relative to total bonded stake
 2. **Commission Calculation**: Each validator's commission is calculated based on their commission rate
 3. **Delegator Distribution**: Remaining rewards (after commission) are distributed to delegators proportional to their delegation shares
-4. **Direct Transfers**: Both validator commission and delegator rewards are sent directly to respective accounts
+4. **Automatic Distribution**: Both validator commission and delegator rewards are distributed automatically to accounts
 
 #### Reward Flow Example
 
@@ -120,7 +120,7 @@ Validator Commission: 300 × 0.1 = 30 uPOKT → Validator Account
 Delegator Pool: 300 - 30 = 270 uPOKT → Split among delegators
 ```
 
-This system ensures immediate reward distribution and maintains full control over reward logic within the tokenomics module.
+This system ensures immediate reward distribution during session settlement.
 
 ## TLM: Global Mint Reimbursement Request (GMRR)
 
