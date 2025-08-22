@@ -303,6 +303,8 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 				tlmgm.tlmCtx.StakingKeeper,
 				&validators[i],
 				validatorShare,
+				tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
+				tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION,
 			); err != nil {
 				tlmgm.logger.Error(fmt.Sprintf("failed to distribute rewards to validator %s stakeholders: %v", validator.GetOperator(), err))
 				return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error distributing rewards to validator %s stakeholders: %v", validator.GetOperator(), err)

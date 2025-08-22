@@ -996,7 +996,7 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 
 	// Check for validator commission and delegator reward transfers
 	for _, transfer := range modToAcctTransfers {
-		if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION ||
+		if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION ||
 			transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION {
 			validatorRewardsFound = true
 			totalValidatorRewardAmount = totalValidatorRewardAmount.Add(transfer.Coin.Amount)

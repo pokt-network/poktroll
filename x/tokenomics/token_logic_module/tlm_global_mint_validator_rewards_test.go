@@ -186,7 +186,7 @@ func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 					hasDelegatorRewards := false
 
 					for _, transfer := range result.ModToAcctTransfers {
-						if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION {
+						if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION {
 							hasValidatorRewards = true
 						}
 						if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION {

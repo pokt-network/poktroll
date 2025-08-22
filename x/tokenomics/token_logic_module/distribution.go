@@ -127,6 +127,8 @@ func distributeValidatorRewardsToStakeholders(
 	stakingKeeper tokenomicstypes.StakingKeeper,
 	validator stakingtypes.ValidatorI,
 	validatorRewardAmount math.Int,
+	validatorCommissionOpReason tokenomicstypes.SettlementOpReason,
+	delegatorRewardOpReason tokenomicstypes.SettlementOpReason,
 ) error {
 	logger = logger.With(
 		"method", "distributeValidatorRewardsToStakeholders",
@@ -156,7 +158,7 @@ func distributeValidatorRewardsToStakeholders(
 
 		validatorCommissionCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, commissionAmount)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION,
+			OpReason:         validatorCommissionOpReason,
 			SenderModule:     tokenomicstypes.ModuleName,
 			RecipientAddress: validatorAccAddr,
 			Coin:             validatorCommissionCoin,
@@ -166,7 +168,7 @@ func distributeValidatorRewardsToStakeholders(
 
 	// 4. Distribute to delegators if there's a delegator pool
 	if !delegatorPoolAmount.IsZero() {
-		if err := distributeToDelegators(ctx, logger, result, stakingKeeper, validator, delegatorPoolAmount); err != nil {
+		if err := distributeToDelegators(ctx, logger, result, stakingKeeper, validator, delegatorPoolAmount, validatorCommissionOpReason, delegatorRewardOpReason); err != nil {
 			return fmt.Errorf("error distributing to delegators for validator %s: %w", validator.GetOperator(), err)
 		}
 	}
@@ -197,6 +199,8 @@ func distributeToDelegators(
 	stakingKeeper tokenomicstypes.StakingKeeper,
 	validator stakingtypes.ValidatorI,
 	delegatorPoolAmount math.Int,
+	validatorCommissionOpReason tokenomicstypes.SettlementOpReason,
+	delegatorRewardOpReason tokenomicstypes.SettlementOpReason,
 ) error {
 	logger = logger.With(
 		"method", "distributeToDelegators",
@@ -228,7 +232,7 @@ func distributeToDelegators(
 		// If no delegators, give the delegator pool amount back to the validator as commission
 		additionalCommissionCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, delegatorPoolAmount)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION,
+			OpReason:         validatorCommissionOpReason,
 			SenderModule:     tokenomicstypes.ModuleName,
 			RecipientAddress: validatorAccAddr,
 			Coin:             additionalCommissionCoin,
@@ -251,7 +255,7 @@ func distributeToDelegators(
 		// If delegator shares are invalid, give the delegator pool amount back to the validator as commission
 		additionalCommissionCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, delegatorPoolAmount)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION,
+			OpReason:         validatorCommissionOpReason,
 			SenderModule:     tokenomicstypes.ModuleName,
 			RecipientAddress: validatorAccAddr,
 			Coin:             additionalCommissionCoin,
@@ -275,7 +279,7 @@ func distributeToDelegators(
 		// Queue the transfer to delegator
 		delegatorCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, delegatorShare)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION,
+			OpReason:         delegatorRewardOpReason,
 			SenderModule:     tokenomicstypes.ModuleName,
 			RecipientAddress: delegation.DelegatorAddress,
 			Coin:             delegatorCoin,
@@ -297,7 +301,7 @@ func distributeToDelegators(
 
 		remainderCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, remainder)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION,
+			OpReason:         validatorCommissionOpReason,
 			SenderModule:     tokenomicstypes.ModuleName,
 			RecipientAddress: validatorAccAddr,
 			Coin:             remainderCoin,

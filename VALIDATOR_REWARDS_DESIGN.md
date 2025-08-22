@@ -98,10 +98,11 @@ func distributeValidatorRewardsToStakeholders(
 
 Add to `proto/pocket/tokenomics/settlement_op_reason.proto`:
 ```proto
-// Validator commission from global mint distribution
-TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION = 21;
+// Validator commission uses existing PROPOSER_REWARD_DISTRIBUTION for backwards compatibility
 // Delegator rewards from global mint distribution  
-TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION = 22;
+TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION = 20;
+// Delegator rewards from relay burn equals mint distribution
+TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION = 21;
 ```
 
 ### Benefits
@@ -129,8 +130,9 @@ TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION = 22;
    - `calculateDelegatorShares()` - Proportional delegator reward calculation
 
 2. **✅ New Settlement Operation Reasons** - Added to protobuf:
-   - `TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION = 20`
-   - `TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION = 21`
+   - Validator commission reuses existing `TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION` and `TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION` for backwards compatibility
+   - `TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION = 20`
+   - `TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION = 21`
 
 3. **✅ TLM Updates** - Modified both TLMs:
    - `tlm_global_mint.go` - Replaced distribution keeper with ModToAcctTransfer

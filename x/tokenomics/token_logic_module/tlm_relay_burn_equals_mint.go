@@ -232,6 +232,8 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 			tlmbem.tlmCtx.StakingKeeper,
 			&validator,
 			proposerAmount,
+			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
+			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION,
 		); err != nil {
 			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error distributing rewards to block proposer validator %s stakeholders: %v", validator.GetOperator(), err)
 		}
