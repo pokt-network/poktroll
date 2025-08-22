@@ -2,12 +2,14 @@ Feature: Validator Delegation Rewards
   # This feature validates that validator rewards from relay settlements are correctly:
   # 1. Distributed to ALL validators proportionally by staking weight (not just block proposer)
   # 2. Shared with delegators after accounting for validator commission
-  # 3. Properly deducted from delegator balances when delegating
+  #
+  # This test accounts for balance decrements from delegation (escrowed tokens)
+  # when validating reward distribution effects on delegator account balances
   #
   # Key implementation details:
   # - Rewards come from both RelayBurnEqualsMint TLM and GlobalMint TLM
   # - The "proposer" allocation parameter distributes to all validators by stake
-  # - Delegators receive rewards minus validator commission through Cosmos SDK distribution module
+  # - Delegators receive rewards minus validator commission using consistent tokenomics distribution
   # - LocalNet has minimum-gas-prices = "0upokt" so no gas fees affect balances
 
   Scenario: Validator rewards are distributed to all validators by staking weight and then to delegators after claim settlement
@@ -71,7 +73,7 @@ Feature: Validator Delegation Rewards
     And the user remembers the balance of "app2" as "app2_pre_delegation_balance"
     And the user remembers the balance of "app3" as "app3_pre_delegation_balance"
     
-    # Delegate tokens to the validator (reduced amounts for test efficiency)
+    # Delegate tokens to the validator
     When the account "app2" delegates "5000000" uPOKT to validator "validator1"
     And the account "app3" delegates "3000000" uPOKT to validator "validator1"
     
@@ -79,11 +81,10 @@ Feature: Validator Delegation Rewards
     And the user waits for "2" blocks
     
     # Verify delegation amounts were deducted from balances
-    # Note: LocalNet has minimum-gas-prices = "0upokt" but small fees may still apply
     Then the account balance of "app2" should be "less" than "app2_pre_delegation_balance"
     And the account balance of "app3" should be "less" than "app3_pre_delegation_balance"
     
-    # Record post-delegation balances for reward tracking
+    # Record post-delegation balances for reward distribution assertions
     And the user remembers the balance of "app2" as "app2_initial_balance"
     And the user remembers the balance of "app3" as "app3_initial_balance" 
     And the user remembers the delegation rewards for "app2" from "validator1" as "app2_initial_rewards"
@@ -97,25 +98,9 @@ Feature: Validator Delegation Rewards
     And the user should wait for the "proof" module "SubmitProof" Message to be submitted
     And the user should wait for the ClaimSettled event with "THRESHOLD" proof requirement to be broadcast
 
-    # Validate that delegators received their proportional rewards directly
-    # Note: With ModToAcctTransfer, rewards are sent directly to delegator accounts
-    # during claim settlement - no withdrawal needed
-    # 
-    # Expected rewards calculation:
-    # - Settlement: 20 relays × 100 CUPR × 42 multiplier = 84,000 uPOKT
-    # - RelayBurnEqualsMint TLM validator rewards: 84,000 × 0.1 = 8,400 uPOKT
-    # - GlobalMint inflation: 84,000 × 0.1 = 8,400 uPOKT
-    # - GlobalMint TLM validator rewards: 8,400 × 0.1 = 840 uPOKT
-    # - Total validator rewards: 8,400 + 840 = 9,240 uPOKT
-    #
-    # Reality check: Validator has significant self-delegation
-    # - Delegators get proportional share based on their stake vs total validator delegations
-    # - These rewards are sent directly via ModToAcctTransfer during settlement
-    
     # Validate that delegators received their proportional rewards
-    # Note: Rewards are proportional to delegation amount vs validator's total stake
-    # With validator self-delegation, delegators get small percentage of total rewards
-    # Focus on validating that rewards are received rather than exact amounts
+    # Note: Rewards are distributed directly during claim settlement
+    # Delegator rewards are proportional to their stake vs total validator delegations
     Then the account balance of "app2" should be "more" than "app2_initial_balance"
     And the account balance of "app3" should be "more" than "app3_initial_balance"
 
