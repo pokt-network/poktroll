@@ -77,7 +77,7 @@ graph TD
     TotalMint -->|"🔥 Session.Cost"| AppWallet
     TotalMint -->|"💰 Session.Cost + <br/> 💰 0.7 * Session.Inflation"| SupplierWallet
     TotalMint -->|"💰 0.1 * Session.Inflation"| DAOAddress
-    TotalMint -->|"💰 0.1 * Session.Inflation"| ProposerWallet
+    TotalMint -->|"💰 0.1 * Session.Inflation<br/>(Commission + Delegator Rewards)"| ProposerWallet
     TotalMint -->|"💰 0.1 * Session.Inflation"| SourceOwnerWallet
 
     %% Define custom classes with specified colors
@@ -97,6 +97,30 @@ graph TD
     class GlobalInflation pocketdClass
     class TokenMinting blockchainClass
 ```
+
+### Validator Reward Distribution
+
+The `proposer` allocation in the Global Mint TLM distributes rewards to **all** validators proportionally based on their bonded stake weight, not just the block proposer. This reward distribution uses **direct account transfers (ModToAcctTransfer)** rather than the Cosmos SDK distribution module.
+
+#### How Validator Rewards Work
+
+1. **Stake-Weight Distribution**: Total proposer allocation is split among all bonded validators based on their stake relative to total bonded stake
+2. **Commission Calculation**: Each validator's commission is calculated based on their commission rate
+3. **Delegator Distribution**: Remaining rewards (after commission) are distributed to delegators proportional to their delegation shares
+4. **Direct Transfers**: Both validator commission and delegator rewards are sent directly to respective accounts
+
+#### Reward Flow Example
+
+For a validator with 30% of total bonded stake and 10% commission rate:
+
+```
+Total Proposer Allocation: 1000 uPOKT  
+Validator Share: 1000 × 0.3 = 300 uPOKT
+Validator Commission: 300 × 0.1 = 30 uPOKT → Validator Account
+Delegator Pool: 300 - 30 = 270 uPOKT → Split among delegators
+```
+
+This system ensures immediate reward distribution and maintains full control over reward logic within the tokenomics module.
 
 ## TLM: Global Mint Reimbursement Request (GMRR)
 
