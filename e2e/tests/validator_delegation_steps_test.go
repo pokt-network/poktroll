@@ -50,6 +50,18 @@ type cliDelegationRewardsResponse struct {
 	Rewards interface{} `json:"rewards"` // Can be string (empty) or []cliDecCoin (with rewards)
 }
 
+// cliDelegationResponse represents the response from 'query staking delegation' CLI command
+type cliDelegationResponse struct {
+	DelegationResponse struct {
+		Delegation struct {
+			Shares string `json:"shares"`
+		} `json:"delegation"`
+		Balance struct {
+			Amount string `json:"amount"`
+		} `json:"balance"`
+	} `json:"delegation_response"`
+}
+
 // TheUserRemembersTheCurrentBlockProposerValidatorAddressAs remembers the current block proposer's validator address
 func (s *suite) TheUserRemembersTheCurrentBlockProposerValidatorAddressAs(validatorName string) {
 	proposerAccAddr := s.getCurrentBlockProposer()
@@ -114,18 +126,7 @@ func (s *suite) queryExistingDelegation(delegatorAddr, validatorAddr string) int
 	}
 
 	// Parse delegation response
-	type delegationResponse struct {
-		DelegationResponse struct {
-			Delegation struct {
-				Shares string `json:"shares"`
-			} `json:"delegation"`
-			Balance struct {
-				Amount string `json:"amount"`
-			} `json:"balance"`
-		} `json:"delegation_response"`
-	}
-
-	var delResp delegationResponse
+	var delResp cliDelegationResponse
 	if err := json.Unmarshal([]byte(res.Stdout), &delResp); err != nil {
 		// Failed to parse, assume no delegation
 		s.Logf("Failed to parse delegation response: %v", err)
