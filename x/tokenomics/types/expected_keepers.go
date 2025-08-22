@@ -1,4 +1,3 @@
-// TODO: Consider organizing keeper interfaces by domain (e.g., CoreKeepers, RewardKeepers)
 //go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,SupplierKeeper,ServiceKeeper,StakingKeeper
 
 package types
