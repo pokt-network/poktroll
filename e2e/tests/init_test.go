@@ -320,6 +320,34 @@ func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
 	time.Sleep(time.Duration(dur) * time.Second)
 }
 
+// TheUserWaitsForBlocks waits for a specified number of blocks to pass
+func (s *suite) TheUserWaitsForBlocks(numBlocksStr string) {
+	numBlocks, err := strconv.Atoi(numBlocksStr)
+	require.NoError(s, err)
+	require.Greater(s, numBlocks, 0, "number of blocks must be positive")
+
+	s.Logf("Waiting for %d blocks", numBlocks)
+
+	// Get current block height
+	initialHeight := s.getCurrentBlockHeight()
+	targetHeight := initialHeight + int64(numBlocks)
+
+	// Wait for the target height
+	for {
+		currentHeight := s.getCurrentBlockHeight()
+		if currentHeight >= targetHeight {
+			break
+		}
+		// Small sleep to prevent busy waiting
+		require.Eventually(s, func() bool {
+			return s.getCurrentBlockHeight() >= targetHeight
+		}, time.Minute, time.Second, "timeout waiting for %d blocks", numBlocks)
+	}
+
+	s.Logf("Successfully waited for %d blocks (from %d to %d)", 
+		numBlocks, initialHeight, s.getCurrentBlockHeight())
+}
+
 func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount int64, accName string) {
 	// Create a temporary config file
 	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)

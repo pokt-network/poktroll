@@ -293,37 +293,4 @@ func (s *suite) TheAccountBalanceOfShouldBeThan(accName, direction, prevBalanceK
 		accName, prevBalance, currBalance, direction)
 }
 
-// TheUserWaitsForBlocks waits for a specified number of blocks to pass
-func (s *suite) TheUserWaitsForBlocks(numBlocksStr string) {
-	numBlocks, err := strconv.Atoi(numBlocksStr)
-	require.NoError(s, err)
-	require.Greater(s, numBlocks, 0, "number of blocks must be positive")
-
-	s.Logf("Waiting for %d blocks", numBlocks)
-
-	// Get current block height
-	initialHeight := s.getCurrentHeight()
-	targetHeight := initialHeight + int64(numBlocks)
-
-	// Wait for the target height
-	for {
-		currentHeight := s.getCurrentHeight()
-		if currentHeight >= targetHeight {
-			break
-		}
-		// Small sleep to prevent busy waiting
-		require.Eventually(s, func() bool {
-			return s.getCurrentHeight() >= targetHeight
-		}, time.Minute, time.Second, "timeout waiting for %d blocks", numBlocks)
-	}
-
-	s.Logf("Successfully waited for %d blocks (from %d to %d)", 
-		numBlocks, initialHeight, s.getCurrentHeight())
-}
-
-// getCurrentHeight gets the current block height
-func (s *suite) getCurrentHeight() int64 {
-	// Use the existing working implementation from the test suite
-	return s.getCurrentBlockHeight()
-}
 
