@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"sync"
+	"time"
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -15,6 +16,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
+
+// TODO_IMPROVE: Make this configurable (for the RelayMiner) and other users.
+const defaultQueryTimeout = 5 * time.Second
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)
 
@@ -84,8 +88,10 @@ func (aq *accQuerier) GetAccount(
 	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}
 	res, err := retry.Call(ctx, func() (*accounttypes.QueryAccountResponse, error) {
-		return aq.accountQuerier.Account(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return aq.accountQuerier.Account(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, ErrQueryAccountNotFound.Wrapf("address: %s [%v]", address, err)
 	}

@@ -6,11 +6,14 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
-// TODO_DISCUSS: what should this be? should it be configurable? It seems to be most
-// relevant in the context of the behavior of the observable when it has multiple
-// observers which consume at different rates.
-// defaultSubscribeBufferSize is the buffer size of a observable's publish channel.
-const defaultPublishBufferSize = 50
+// defaultPublishBufferSize is the buffer size of a observable's publish channel.
+//
+// DEV_NOTE: This was increased from 50 to 500 to prevent "missing supplier operator signature" errors during high load.
+// The relay mining pipeline needs breathing room when processing spikes to avoid blocking channel sends
+// that cause request timeouts during signature generation.
+//
+// TODO: Consider making this configurable via RelayMiner config for high-throughput deployments
+const defaultPublishBufferSize = 500
 
 var (
 	_ observable.Observable[any] = (*channelObservable[any])(nil)

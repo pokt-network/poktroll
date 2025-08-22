@@ -1,19 +1,26 @@
 package config
 
 import (
+	"time"
+
 	"github.com/docker/go-units"
 	yaml "gopkg.in/yaml.v2"
+
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // DefaultRequestTimeoutSeconds is the default timeout for requests in seconds.
 // If not specified in the config, it will be used as a fallback.
-const DefaultRequestTimeoutSeconds = 10
+// Using var to expose it for testing purposes.
+const DefaultRequestTimeoutSeconds uint64 = 10
+
+var DefaultRequestTimeoutDuration time.Duration = time.Duration(DefaultRequestTimeoutSeconds) * time.Second
 
 // DefaultMaxBodySize defines the default maximum HTTP body size as a string, used as a fallback if unspecified.
 const DefaultMaxBodySize = "20MB"
 
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
-func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
+func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*RelayMinerConfig, error) {
 	var (
 		yamlRelayMinerConfig YAMLRelayMinerConfig
 		relayMinerConfig     = &RelayMinerConfig{}
@@ -54,7 +61,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 
 	// SmtStorePath is required
 	if len(yamlRelayMinerConfig.SmtStorePath) == 0 {
-		return nil, ErrRelayMinerConfigInvalidSmtStorePath
+		return nil, ErrRelayMinerConfigInvalidSmtStorePath.Wrapf("smt store path is: '%s'", yamlRelayMinerConfig.SmtStorePath)
 	}
 	relayMinerConfig.SmtStorePath = yamlRelayMinerConfig.SmtStorePath
 
@@ -96,7 +103,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Hydrate the suppliers
-	if err := relayMinerConfig.HydrateSuppliers(yamlRelayMinerConfig.Suppliers); err != nil {
+	if err := relayMinerConfig.HydrateSuppliers(logger, yamlRelayMinerConfig.Suppliers); err != nil {
 		return nil, err
 	}
 

@@ -21,7 +21,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 
 	// Verify that the app does not exist yet
 	_, isAppFound := k.GetApplication(ctx, appAddr)
@@ -38,7 +38,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Stake the application
-	stakeAppRes, err := srv.StakeApplication(ctx, stakeMsg)
+	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Assert that the response contains the staked application.
@@ -49,7 +49,6 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 		DelegateeGatewayAddresses: make([]string, 0),
 	}
-	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
 
 	// Assert that the EventApplicationStaked event is emitted.
 	sharedParams := sharedtypes.DefaultParams()
@@ -57,7 +56,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&apptypes.EventApplicationStaked{
-			Application:      stakeAppRes.GetApplication(),
+			Application:      expectedApp,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -89,19 +88,10 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Update the staked application
-	stakeAppRes, err = srv.StakeApplication(ctx, updateStakeMsg)
+	_, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.NoError(t, err)
 
-	// Assert that the response contains the staked application.
-	expectedApp = &apptypes.Application{
-		Address:                   updateStakeMsg.GetAddress(),
-		Stake:                     updateStakeMsg.GetStake(),
-		ServiceConfigs:            updateStakeMsg.GetServices(),
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
-		DelegateeGatewayAddresses: make([]string, 0),
-	}
-	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
-
+	// Assert that the staked application is updated.
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, &upStake, foundApp.Stake)
@@ -125,7 +115,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 
 	// Prepare the application stake message
 	initialStake := &apptypes.DefaultMinStake
@@ -187,7 +177,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 
 	// Prepare the application
 	initialStake := &apptypes.DefaultMinStake
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   initialStake,
@@ -226,7 +216,7 @@ func TestMsgServer_StakeApplication_FailBelowMinStake(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	appStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 	minStake := appStake.AddAmount(math.NewInt(1))
 	expectedErr := apptypes.ErrAppInvalidStake.Wrapf("application %q must stake at least %s", addr, minStake)

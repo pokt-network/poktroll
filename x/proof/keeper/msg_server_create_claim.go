@@ -123,21 +123,29 @@ func (k msgServer) CreateClaim(
 	case true:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimUpdated{
-				Claim:                    &claim,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
+				ServiceId:                claim.SessionHeader.ServiceId,
+				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  claim.SupplierOperatorAddress,
 			},
 		)
 	case false:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimCreated{
-				Claim:                    &claim,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
+				ServiceId:                claim.SessionHeader.ServiceId,
+				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  claim.SupplierOperatorAddress,
 			},
 		)
 	}
@@ -152,9 +160,7 @@ func (k msgServer) CreateClaim(
 		)
 	}
 
-	return &types.MsgCreateClaimResponse{
-		Claim: &claim,
-	}, nil
+	return &types.MsgCreateClaimResponse{}, nil
 }
 
 // finalizeCreateClaimTelemetry defers telemetry calls to be executed after business logic,

@@ -1,6 +1,10 @@
 package config
 
-import "net/url"
+import (
+	"net/url"
+
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
 
 type RelayMinerServerType int
 
@@ -66,13 +70,14 @@ type YAMLRelayMinerMetricsConfig struct {
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
-	ListenUrl             string                              `yaml:"listen_url"`
-	ServiceConfig         YAMLRelayMinerSupplierServiceConfig `yaml:"service_config"`
-	ServiceId             string                              `yaml:"service_id"`
-	SigningKeyNames       []string                            `yaml:"signing_key_names"`
-	RequestTimeoutSeconds uint64                              `yaml:"request_timeout_seconds"`
-	MaxBodySize           string                              `yaml:"max_body_size"`
-	XForwardedHostLookup  bool                                `yaml:"x_forwarded_host_lookup"`
+	ListenUrl             string                                         `yaml:"listen_url"`
+	ServiceConfig         YAMLRelayMinerSupplierServiceConfig            `yaml:"service_config"`
+	RPCTypeServiceConfigs map[string]YAMLRelayMinerSupplierServiceConfig `yaml:"rpc_type_service_configs"`
+	ServiceId             string                                         `yaml:"service_id"`
+	SigningKeyNames       []string                                       `yaml:"signing_key_names"`
+	RequestTimeoutSeconds uint64                                         `yaml:"request_timeout_seconds"`
+	MaxBodySize           string                                         `yaml:"max_body_size"`
+	XForwardedHostLookup  bool                                           `yaml:"x_forwarded_host_lookup"`
 }
 
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
@@ -163,14 +168,35 @@ type RelayMinerMetricsConfig struct {
 type RelayMinerSupplierConfig struct {
 	// ServiceId is the serviceId corresponding to the current configuration.
 	ServiceId string
+
 	// ServerType is the transport protocol used by the supplier, it must match the
 	// type of the relay miner server it is associated with.
-
 	ServerType RelayMinerServerType
-	// ServiceConfig is the config of the service that relays will be proxied to.
-	// Other supplier types may embed other fields in the future. eg. "https" may
-	// embed a TLS config.
+
+	// TODO_TECHDEBT(@commoddity): Rename to DefaultServiceConfig.
+	// `ServiceConfig` will be renamed to `DefaultServiceConfig` in the future to make
+	// its responsibility more explicit.
+	// It is kept named `ServiceConfig` in the current release for backwards compatibility.
+	//
+	// ServiceConfig is the default config of the service that relays will be proxied to.
+	// It is required in all cases to provide a service config for the supplier.
+	//
+	// It is used if a request has no matching service config in RPCTypeServiceConfigs.
 	ServiceConfig *RelayMinerSupplierServiceConfig
+
+	// RPCTypeServiceConfigs is a map of RPC types to service configs.
+	// Used to select an alternate service config for a given RPC type.
+	//
+	// For example, if a service exposes two separate endpoints (e.g. REST and JSON-RPC),
+	// it can be configured to handle them separately by providing two RPC-type specific
+	// service configs.
+	//
+	// If the supplier is configured to handle multiple RPC types, the service config
+	// will be selected based on the `Rpc-Type` header of the request, which is set
+	// by the client.
+	//
+	// If the RPC type is not present in the map, the default service config is used.
+	RPCTypeServiceConfigs map[sharedtypes.RPCType]*RelayMinerSupplierServiceConfig
 
 	// SigningKeyNames: a list of key names that can accept relays for that supplier.
 	// If empty, we copy the values from `DefaultSigningKeyNames`.

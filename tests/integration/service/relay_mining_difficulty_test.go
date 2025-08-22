@@ -99,7 +99,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Wait until the proof window is closed
 	currentBlockHeight = sdkCtx.BlockHeight()
 	numBlocksUntilProofWindowCloseHeight := proofWindowCloseHeight - currentBlockHeight
-	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
+	require.Greater(t, numBlocksUntilProofWindowCloseHeight, int64(0), "unexpected non-positive number of blocks until the proof window close height")
 
 	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here but it was required to pass the test.
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight)+1)

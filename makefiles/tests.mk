@@ -18,31 +18,31 @@ test_e2e_verbose: test_e2e_env ## Run all E2E tests with verbose debug output
 
 .PHONY: test_e2e_relay
 test_e2e_relay: test_e2e_env ## Run only the E2E suite that exercises the relay life-cycle
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=relay.feature
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,test --features-path=relay.feature
 
 .PHONY: test_e2e_app
 test_e2e_app: test_e2e_env ## Run only the E2E suite that exercises the application life-cycle
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
 
 .PHONY: test_e2e_supplier
 test_e2e_supplier: test_e2e_env ## Run only the E2E suite that exercises the supplier life-cycle
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_supplier.feature
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,test --features-path=stake_supplier.feature
 
 .PHONY: test_e2e_gateway
 test_e2e_gateway: test_e2e_env ## Run only the E2E suite that exercises the gateway life-cycle
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
 
 .PHONY: test_e2e_session
 test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the session (i.e. claim/proof) life-cycle
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=session.feature
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,test --features-path=session.feature
 
 .PHONY: test_e2e_tokenomics
 test_e2e_tokenomics: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,test --features-path=0_tokenomics.feature
 
 .PHONY: test_e2e_params
 test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
 .PHONY: test_e2e_oneshot
 test_e2e_oneshot: test_e2e_env ## Run only the E2E suite that exercises the oneshot module.

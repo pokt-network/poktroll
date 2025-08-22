@@ -26,7 +26,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			"invalid_address",
 			morsePrivKey,
 			&testAppServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -36,10 +36,10 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 
 	t.Run("invalid Morse signature", func(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseApplication(
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 			morsePrivKey,
 			&testAppServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -61,10 +61,10 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 		// Morse private key. This populates the signature with a valid signature,
 		// but corresponding to the wrong key and address.
 		msg, err := migrationtypes.NewMsgClaimMorseApplication(
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 			wrongMorsePrivKey,
 			&testAppServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -82,10 +82,10 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 
 	t.Run("invalid service ID", func(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseApplication(
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 			morsePrivKey,
 			&sharedtypes.ApplicationServiceConfig{ServiceId: strings.Repeat("a", 43)},
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -96,10 +96,10 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 
 	t.Run("valid Morse claim account message", func(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseApplication(
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 			morsePrivKey,
 			&testAppServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 

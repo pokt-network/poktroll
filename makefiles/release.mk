@@ -184,19 +184,20 @@ release_tag_dev: ## Tag a new dev release for unmerged PRs (e.g. v1.0.1-dev-feat
 	$(call print_additional_info)
 
 .PHONY: release_tag_rc
-release_tag_rc: ## Tag a new rc release (e.g. v1.0.1 -> v1.0.1-rc1, v1.0.1-rc1 -> v1.0.1-rc2)
+release_tag_rc: ## Tag a new rc release (e.g. v0.1.28 -> v0.1.29-rc1, v0.1.29-rc1 -> v0.1.29-rc2)
 	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | head -n 1))
-	@$(eval EXISTING_RC_TAG=$(shell git tag --sort=-v:refname | grep "^$(LATEST_TAG)-rc[0-9]*$$" | head -n 1))
+	@$(eval NEXT_VERSION=$(shell echo $(LATEST_TAG) | awk -F. -v OFS=. '{ $$NF = sprintf("%d", $$NF + 1); print }'))
+	@$(eval EXISTING_RC_TAG=$(shell git tag --sort=-v:refname | grep "^$(NEXT_VERSION)-rc[0-9]*$$" | head -n 1))
 	@$(eval NEW_TAG=$(shell \
 		if [ -z "$(LATEST_TAG)" ]; then \
 			echo "No stable version tags found" >&2; \
 			exit 1; \
 		elif [ -z "$(EXISTING_RC_TAG)" ]; then \
-			echo "$(LATEST_TAG)-rc1"; \
+			echo "$(NEXT_VERSION)-rc1"; \
 		else \
 			RC_NUM=$$(echo "$(EXISTING_RC_TAG)" | sed 's/.*-rc\([0-9]*\)$$/\1/'); \
 			NEW_RC_NUM=$$((RC_NUM + 1)); \
-			echo "$(LATEST_TAG)-rc$$NEW_RC_NUM"; \
+			echo "$(NEXT_VERSION)-rc$$NEW_RC_NUM"; \
 		fi))
 	@git tag $(NEW_TAG)
 	$(call print_success,RC version tagged: $(NEW_TAG))

@@ -12,10 +12,20 @@ import (
 // newRelayRequest builds a RelayRequest from an http.Request.
 func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	// Replace DefaultMaxBodySize with config options
-	requestBody, err := SafeRequestReadBody(sync.logger, request, sync.serverConfig.MaxBodySize)
+	requestBody, resetReadBodyPoolBytes, err := SafeRequestReadBody(sync.logger, request, sync.serverConfig.MaxBodySize)
 	if err != nil {
+		if resetReadBodyPoolBytes != nil {
+			// Ensure buffer is returned to pool on error
+			resetReadBodyPoolBytes()
+		}
 		return &types.RelayRequest{}, err
 	}
+	// Handle cleanup after SafeRequestReadBody succeeded:
+	// - We must call the cleanup function to return the buffer to the pool
+	// - If there was an error above, the cleanup would have already been performed internally
+	// - This defer ensures proper resource management in the success case
+	// - This MUST be deferred so we finish (un)marshalling before releasing the buffer
+	defer resetReadBodyPoolBytes()
 
 	sync.logger.Debug().Msg("unmarshaling relay request")
 
@@ -58,7 +68,11 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 
 	// Sign the relay response and add the signature to the relay response metadata
 	if err := sync.relayAuthenticator.SignRelayResponse(relayResponse, supplierOperatorAddr); err != nil {
-		return nil, err
+		return nil, ErrRelayerProxyInternalError.Wrapf("failed to sign relay response for supplier %s: %v", supplierOperatorAddr, err)
+	}
+
+	if err := relayResponse.ValidateBasic(); err != nil {
+		return nil, ErrRelayerProxyInternalError.Wrapf("relay response validation failed after signing (supplier: %s): %v", supplierOperatorAddr, err)
 	}
 
 	return relayResponse, nil

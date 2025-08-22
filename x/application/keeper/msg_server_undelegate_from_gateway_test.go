@@ -23,11 +23,11 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application and gateways
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 	maxDelegatedGateways := k.GetParams(ctx).MaxDelegatedGateways
 	expectedGatewayAddresses := make([]string, int(maxDelegatedGateways))
 	for i := 0; i < len(expectedGatewayAddresses); i++ {
-		gatewayAddr := sample.AccAddress()
+		gatewayAddr := sample.AccAddressBech32()
 		// Mock the gateway being staked via the staked gateway map
 		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, 0)
 		expectedGatewayAddresses[i] = gatewayAddr
@@ -114,9 +114,13 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	}
 
 	// Undelegate the application from the gateway
-	undelegateRes, err := srv.UndelegateFromGateway(ctx, undelegateMsg)
+	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.NoError(t, err)
-	require.Equal(t, undelegateRes.GetApplication(), expectedApp)
+
+	// Query the updated application from the keeper
+	updatedApp, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.Equal(t, expectedApp, &updatedApp)
 
 	events = sdkCtx.EventManager().Events()
 	redelgationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
@@ -144,9 +148,9 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application and gateway
-	appAddr := sample.AccAddress()
-	gatewayAddr1 := sample.AccAddress()
-	gatewayAddr2 := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
+	gatewayAddr1 := sample.AccAddressBech32()
+	gatewayAddr2 := sample.AccAddressBech32()
 	// Mock the gateway being staked via the staked gateway map
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1, gwtypes.GatewayNotUnstaking)
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2, gwtypes.GatewayNotUnstaking)
@@ -237,8 +241,8 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application and gateways
-	appAddr := sample.AccAddress()
-	gatewayAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
+	gatewayAddr := sample.AccAddressBech32()
 	// Mock the gateway being staked via the staked gateway map
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gwtypes.GatewayNotUnstaking)
 
@@ -563,7 +567,7 @@ func createAppStakeDelegateAndUndelegate(
 	pendingUndelegateFromAddr string,
 ) {
 	// Generate an application address and stake the application.
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &apptypes.DefaultMinStake,
@@ -578,7 +582,7 @@ func createAppStakeDelegateAndUndelegate(
 
 	// Generate gateway addresses, mock the gateways being staked then delegate the
 	// application to the gateways.
-	delegateAddr = sample.AccAddress()
+	delegateAddr = sample.AccAddressBech32()
 	keepertest.AddGatewayToStakedGatewayMap(t, delegateAddr, sessionEndHeight)
 
 	delegateMsg := &apptypes.MsgDelegateToGateway{
@@ -588,7 +592,7 @@ func createAppStakeDelegateAndUndelegate(
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
 
-	pendingUndelegateFromAddr = sample.AccAddress()
+	pendingUndelegateFromAddr = sample.AccAddressBech32()
 	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateFromAddr, sessionEndHeight)
 
 	delegateMsg = &apptypes.MsgDelegateToGateway{

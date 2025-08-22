@@ -19,5 +19,5 @@ func WithTempStoresDirectory(t *testing.T) relayer.RelayerSessionsManagerOption 
 	// Delete all temporary files and directories created by the test on completion.
 	t.Cleanup(func() { _ = os.RemoveAll(tmpStoresDir) })
 
-	return session.WithStoresDirectory(tmpStoresDir)
+	return session.WithStoresDirectoryPath(tmpStoresDir)
 }

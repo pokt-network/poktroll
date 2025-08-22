@@ -77,7 +77,7 @@ func (mal metricsABCIListener) ListenFinalizeBlock(
 	req abci.RequestFinalizeBlock,
 	res abci.ResponseFinalizeBlock,
 ) error {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return nil
 	}
 
@@ -98,7 +98,7 @@ func (mal metricsABCIListener) ListenCommit(
 	res abci.ResponseCommit,
 	changeSet []*storetypes.StoreKVPair,
 ) error {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return nil
 	}
 
