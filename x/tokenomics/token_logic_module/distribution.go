@@ -142,7 +142,7 @@ func distributeValidatorRewardsToStakeholders(
 	// 1. Calculate validator commission
 	commissionRate := validator.GetCommission()
 	commissionAmount := calculateValidatorCommission(validatorRewardAmount, commissionRate)
-	
+
 	// 2. Calculate remaining amount for delegator pool
 	delegatorPoolAmount := validatorRewardAmount.Sub(commissionAmount)
 
@@ -182,7 +182,7 @@ func distributeValidatorRewardsToStakeholders(
 
 	logger.Info(fmt.Sprintf("successfully distributed (%v) to validator %s and delegators (commission: %v, delegators: %v)",
 		cosmostypes.NewCoin(pocket.DenomuPOKT, validatorRewardAmount), validator.GetOperator(),
-		cosmostypes.NewCoin(pocket.DenomuPOKT, commissionAmount), 
+		cosmostypes.NewCoin(pocket.DenomuPOKT, commissionAmount),
 		cosmostypes.NewCoin(pocket.DenomuPOKT, delegatorPoolAmount)))
 
 	return nil
@@ -218,13 +218,13 @@ func distributeToDelegators(
 
 	if len(delegations) == 0 {
 		logger.Debug("no delegations found for validator, adding delegator pool to commission")
-		
+
 		// Convert validator operator address to regular account address
 		validatorAccAddr, err := getValidatorAccountAddress(validator.GetOperator())
 		if err != nil {
 			return fmt.Errorf("failed to convert validator operator address %s to account address: %w", validator.GetOperator(), err)
 		}
-		
+
 		// If no delegators, give the delegator pool amount back to the validator as commission
 		additionalCommissionCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, delegatorPoolAmount)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
@@ -241,13 +241,13 @@ func distributeToDelegators(
 	totalShares := validator.GetDelegatorShares()
 	if totalShares.IsNil() || totalShares.IsZero() {
 		logger.Debug(fmt.Sprintf("validator %s has zero or nil delegator shares despite having delegations, giving delegator pool to validator as commission", validator.GetOperator()))
-		
+
 		// Convert validator operator address to regular account address
 		validatorAccAddr, err := getValidatorAccountAddress(validator.GetOperator())
 		if err != nil {
 			return fmt.Errorf("failed to convert validator operator address %s to account address: %w", validator.GetOperator(), err)
 		}
-		
+
 		// If delegator shares are invalid, give the delegator pool amount back to the validator as commission
 		additionalCommissionCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, delegatorPoolAmount)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
@@ -282,7 +282,7 @@ func distributeToDelegators(
 		})
 
 		totalDistributedToDelegators = totalDistributedToDelegators.Add(delegatorShare)
-		logger.Debug(fmt.Sprintf("operation queued: delegator reward (%v) to %s (shares: %s/%s)", 
+		logger.Debug(fmt.Sprintf("operation queued: delegator reward (%v) to %s (shares: %s/%s)",
 			delegatorCoin, delegation.DelegatorAddress, delegation.Shares, totalShares))
 	}
 
@@ -294,7 +294,7 @@ func distributeToDelegators(
 		if err != nil {
 			return fmt.Errorf("failed to convert validator operator address %s to account address: %w", validator.GetOperator(), err)
 		}
-		
+
 		remainderCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, remainder)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION,
@@ -318,7 +318,7 @@ func calculateValidatorCommission(totalReward math.Int, commissionRate math.Lega
 	if totalReward.IsZero() {
 		return math.ZeroInt()
 	}
-	
+
 	// Handle nil or zero commission rate
 	if commissionRate.IsNil() || commissionRate.IsZero() {
 		return math.ZeroInt()
@@ -330,13 +330,13 @@ func calculateValidatorCommission(totalReward math.Int, commissionRate math.Lega
 	precisionRat := new(big.Rat).SetInt(math.NewInt(1e18).BigInt())
 	commissionRat = commissionRat.Quo(commissionRat, precisionRat)
 	rewardRat := new(big.Rat).SetInt(totalReward.BigInt())
-	
+
 	// Calculate commission: total_reward * commission_rate
 	commissionAmountRat := new(big.Rat).Mul(rewardRat, commissionRat)
-	
+
 	// Convert back to Int, truncating (floor) any remainder
 	commissionAmount := math.NewIntFromBigInt(new(big.Int).Quo(commissionAmountRat.Num(), commissionAmountRat.Denom()))
-	
+
 	return commissionAmount
 }
 
@@ -357,7 +357,7 @@ func calculateDelegatorShares(
 		shareRatio := delegation.Shares.Quo(totalShares)
 		poolAmountDec := math.LegacyNewDecFromInt(delegatorPoolAmount)
 		delegatorAmount := poolAmountDec.Mul(shareRatio).TruncateInt()
-		
+
 		shareAmountMap[delegation.DelegatorAddress] = delegatorAmount
 		totalDistributed = totalDistributed.Add(delegatorAmount)
 	}
@@ -377,7 +377,7 @@ func calculateDelegatorShares(
 // getValidatorAccountAddress converts a validator operator address (poktvaloper...)
 // to a regular account address (pokt...) for coin transfers.
 //
-// In Cosmos SDK, validator operator addresses and account addresses have the same 
+// In Cosmos SDK, validator operator addresses and account addresses have the same
 // underlying bytes, just different bech32 prefixes.
 func getValidatorAccountAddress(validatorOperatorAddr string) (string, error) {
 	// Parse the validator operator address to get the underlying bytes
@@ -385,10 +385,10 @@ func getValidatorAccountAddress(validatorOperatorAddr string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid validator operator address %s: %w", validatorOperatorAddr, err)
 	}
-	
+
 	// Convert validator address bytes to regular account address
 	// Validator addresses and account addresses have the same underlying bytes
 	accAddr := cosmostypes.AccAddress(valAddr.Bytes())
-	
+
 	return accAddr.String(), nil
 }

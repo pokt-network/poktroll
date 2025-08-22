@@ -308,14 +308,14 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 			Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
 			Status:          stakingtypes.Bonded,
 			Commission:      stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, // 5% commission
-			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)), // Shares equal stake for simplicity
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)),                                                          // Shares equal stake for simplicity
 		},
 	}
 	mockStakingKeeper.EXPECT().
 		GetBondedValidatorsByPower(gomock.Any()).
 		Return(validators, nil).
 		AnyTimes()
-	
+
 	// Mock GetValidatorDelegations for the new ModToAcctTransfer approach
 	// Create a flexible mock that works for any validator address
 	mockStakingKeeper.EXPECT().
@@ -658,7 +658,7 @@ func NewTokenomicsModuleKeepers(
 			Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
 			Status:          stakingtypes.Bonded,
 			Commission:      stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, // 5% commission
-			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)), // Shares equal stake for simplicity
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)),                                                          // Shares equal stake for simplicity
 		},
 	}
 	mockStakingKeeper.EXPECT().
