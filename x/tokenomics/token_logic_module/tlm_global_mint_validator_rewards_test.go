@@ -136,16 +136,16 @@ func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 				for _, validator := range validators {
 					if validator.Tokens.IsPositive() {
 						valAddr, _ := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
-						
+
 						// Mock delegations for each validator (for simplicity, create self-delegation)
 						delegations := []stakingtypes.Delegation{
 							{
 								DelegatorAddress: sample.AccAddressBech32(),
-								ValidatorAddress: validator.OperatorAddress, 
+								ValidatorAddress: validator.OperatorAddress,
 								Shares:           validator.DelegatorShares,
 							},
 						}
-						
+
 						mockStakingKeeper.EXPECT().
 							GetValidatorDelegations(gomock.Any(), valAddr).
 							Return(delegations, nil).
@@ -176,15 +176,15 @@ func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				
+
 				// Validate that ModToAcctTransfer operations were created for validator rewards
 				if tt.validateDistribution && tt.globalInflationPercent > 0 && tt.proposerAllocationPercent > 0 {
 					result := tlmCtx.Result
-					
+
 					// Check that there are ModToAcctTransfer operations for validator rewards
 					hasValidatorRewards := false
 					hasDelegatorRewards := false
-					
+
 					for _, transfer := range result.ModToAcctTransfers {
 						if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_COMMISSION_REWARD_DISTRIBUTION {
 							hasValidatorRewards = true
@@ -193,7 +193,7 @@ func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 							hasDelegatorRewards = true
 						}
 					}
-					
+
 					require.True(t, hasValidatorRewards, "Expected validator commission rewards to be distributed")
 					require.True(t, hasDelegatorRewards, "Expected delegator rewards to be distributed")
 				}
@@ -438,7 +438,7 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_PrecisionTest(t *testing.T) {
 		delegations := []stakingtypes.Delegation{
 			{
 				DelegatorAddress: sample.AccAddressBech32(),
-				ValidatorAddress: validator.OperatorAddress, 
+				ValidatorAddress: validator.OperatorAddress,
 				Shares:           validator.DelegatorShares,
 			},
 		}
