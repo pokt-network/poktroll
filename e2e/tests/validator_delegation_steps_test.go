@@ -50,9 +50,8 @@ type cliDelegationRewardsResponse struct {
 	Rewards interface{} `json:"rewards"` // Can be string (empty) or []cliDecCoin (with rewards)
 }
 
-// TheUserGetsTheCurrentBlockProposerValidatorAddressAs gets the current block proposer's validator address
-func (s *suite) TheUserGetsTheCurrentBlockProposerValidatorAddressAs(validatorName string) {
-	// Reuse existing function to get proposer account address
+// TheUserRemembersTheCurrentBlockProposerValidatorAddressAs remembers the current block proposer's validator address
+func (s *suite) TheUserRemembersTheCurrentBlockProposerValidatorAddressAs(validatorName string) {
 	proposerAccAddr := s.getCurrentBlockProposer()
 	require.NotEmpty(s, proposerAccAddr)
 

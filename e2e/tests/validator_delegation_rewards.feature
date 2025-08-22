@@ -67,7 +67,7 @@ Feature: Validator Delegation Rewards
     And all "proof" module params should be updated
 
     # Get the current validator and set up delegations
-    And the user gets the current block proposer validator address as "validator1"
+    And the user remembers the current block proposer validator address as "validator1"
     
     # Record pre-delegation balances to verify delegation amounts
     And the user remembers the balance of "app2" as "app2_pre_delegation_balance"
@@ -152,7 +152,7 @@ Feature: Validator Delegation Rewards
     And all "proof" module params should be updated
 
     # Get validator and create delegation
-    And the user gets the current block proposer validator address as "validator1"
+    And the user remembers the current block proposer validator address as "validator1"
     And the user remembers the commission rate for validator "validator1" as "validator1_commission"
     
     # Record pre-delegation balance to verify delegation amount
