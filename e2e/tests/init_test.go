@@ -843,37 +843,40 @@ func (s *suite) getAccBalance(accName string) int64 {
 func (s *suite) validateAmountChange(prevAmount, currAmount int64, expectedAmountChange int64, accName, condition, balanceType string) {
 	deltaAmount := int64(math.Abs(float64(currAmount - prevAmount)))
 	
-	// Check if any delegations were skipped that would affect this balance check
+	// Check if any delegations were skipped and adjust expected change accordingly
 	// Look for skip markers for any validator (not just validator1)
-	var delegationSkipped bool
-	var delegationWasSkipped bool
+	var totalSkippedAmount int64
 	for key, value := range s.scenarioState {
 		if strings.HasPrefix(key, fmt.Sprintf("%s_to_", accName)) && strings.HasSuffix(key, "_delegation_skipped") {
-			if skipValue, ok := value.(bool); ok && skipValue {
-				delegationSkipped = true
-				delegationWasSkipped = true
-				break
+			if skipAmount, ok := value.(int64); ok {
+				totalSkippedAmount += skipAmount
+				s.Logf("Found skipped delegation for %s: %d uPOKT", accName, skipAmount)
 			}
 		}
 	}
 	
-	if delegationWasSkipped && delegationSkipped && condition == "less" && balanceType == "balance" {
-		// If delegation was skipped and we're checking for "less" balance, 
-		// the balance should be unchanged (deltaAmount = 0) rather than expecting the original change
-		s.Logf("Delegation was skipped for %s, expecting no balance change (0) instead of expected decrease (%d)", accName, expectedAmountChange)
-		require.Equal(s, currAmount, prevAmount, "%s %s should be unchanged since delegation was skipped", accName, balanceType)
-		require.Equal(s, int64(0), deltaAmount, "%s %s expected) decrease should be 0 since delegation was skipped", accName, balanceType)
-		return
+	// Adjust expected change based on skipped operations
+	adjustedExpectedChange := expectedAmountChange
+	if totalSkippedAmount > 0 && condition == "less" && balanceType == "balance" {
+		adjustedExpectedChange = expectedAmountChange - totalSkippedAmount
+		s.Logf("Adjusted expected change for %s: original=%d, skipped=%d, adjusted=%d", 
+			accName, expectedAmountChange, totalSkippedAmount, adjustedExpectedChange)
+		
+		// If all expected changes were skipped, expect no change
+		if adjustedExpectedChange <= 0 {
+			require.Equal(s, currAmount, prevAmount, "%s %s should be unchanged since all operations were skipped", accName, balanceType)
+			return
+		}
 	}
 	
-	// Verify if balance is more or less than before
+	// Verify if balance is more or less than before using adjusted expectation
 	switch condition {
 	case "more":
 		require.GreaterOrEqual(s, currAmount, prevAmount, "%s %s expected to have more upokt but actually had less", accName, balanceType)
-		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected increase in upokt was incorrect", accName, balanceType)
+		require.Equal(s, adjustedExpectedChange, deltaAmount, "%s %s expected increase in upokt was incorrect", accName, balanceType)
 	case "less":
 		require.LessOrEqual(s, currAmount, prevAmount, "%s %s expected to have less upokt but actually had more", accName, balanceType)
-		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected) decrease in upokt was incorrect", accName, balanceType)
+		require.Equal(s, adjustedExpectedChange, deltaAmount, "%s %s expected) decrease in upokt was incorrect", accName, balanceType)
 	default:
 		s.Fatalf("ERROR: unknown condition %s", condition)
 	}
