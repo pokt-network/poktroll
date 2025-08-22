@@ -34,7 +34,7 @@ Feature: Validator Delegation Rewards
     # Configure tokenomics parameters to explicitly set inflation and distribution
     # Focus on validator rewards for delegation testing  
     # Note: proposer parameter now distributes rewards to ALL validators based on staking weight
-    # IMPORTANT: Both TLM parameter sets must be configured for complete reward distribution:
+    # IMPORTANT: Both TLM parameter sets must be configured for complete reward distribution coverage:
     # - mint_equals_burn_claim_distribution: Controls RelayBurnEqualsMint TLM (main settlement rewards)
     # - mint_allocation_percentages: Controls GlobalMint TLM (inflation rewards)
     And the "tokenomics" module parameters are set as follows
