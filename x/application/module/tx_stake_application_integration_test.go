@@ -28,7 +28,7 @@ func (s *StakeApplicationIntegrationTestSuite) SetupTest() {
 
 func (s *StakeApplicationIntegrationTestSuite) TestStakeApplication_Valid() {
 	// Test valid stake application
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 	stakeAmount := int64(1000000) // 1 POKT minimum stake
 	serviceIds := []string{"svc1"}
 
@@ -69,7 +69,7 @@ func (s *StakeApplicationIntegrationTestSuite) TestStakeApplication_InvalidAddre
 }
 
 func (s *StakeApplicationIntegrationTestSuite) TestStakeApplication_InvalidStake() {
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 
 	testCases := []struct {
 		name        string
@@ -107,7 +107,7 @@ func (s *StakeApplicationIntegrationTestSuite) TestStakeApplication_InvalidStake
 }
 
 func (s *StakeApplicationIntegrationTestSuite) TestStakeApplication_InvalidService() {
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 	stakeAmount := int64(1000000) // 1 POKT minimum stake
 
 	testCases := []struct {

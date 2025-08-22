@@ -26,25 +26,25 @@ func (s *UnstakeApplicationIntegrationTestSuite) SetupTest() {
 
 func (s *UnstakeApplicationIntegrationTestSuite) TestUnstakeApplication_Valid() {
 	// Prepare address
-	appAddr := sample.AccAddress()
-	
+	appAddr := sample.AccAddressBech32()
+
 	// Fund and stake application
 	appAccAddr, err := cosmostypes.AccAddressFromBech32(appAddr)
 	require.NoError(s.T(), err)
 	s.FundAddress(s.T(), appAccAddr, 10000000)
 	s.StakeApp(s.T(), appAddr, 1000000, []string{"svc1"})
-	
+
 	// Verify app is staked
 	appQueryClient := s.GetAppQueryClient(s.T())
 	app, err := appQueryClient.GetApplication(s.SdkCtx(), appAddr)
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), appAddr, app.Address)
-	
+
 	// Unstake application
 	unstakeMsg := types.NewMsgUnstakeApplication(appAddr)
 	_, err = s.GetApp().RunMsg(s.T(), unstakeMsg)
 	require.NoError(s.T(), err)
-	
+
 	// Verify app is marked for unstaking
 	app, err = appQueryClient.GetApplication(s.SdkCtx(), appAddr)
 	require.NoError(s.T(), err)
@@ -61,8 +61,8 @@ func (s *UnstakeApplicationIntegrationTestSuite) TestUnstakeApplication_InvalidA
 
 func (s *UnstakeApplicationIntegrationTestSuite) TestUnstakeApplication_NotStaked() {
 	// Test unstaking non-existent application
-	appAddr := sample.AccAddress()
-	
+	appAddr := sample.AccAddressBech32()
+
 	msg := types.NewMsgUnstakeApplication(appAddr)
 	_, err := s.GetApp().RunMsg(s.T(), msg)
 	require.Error(s.T(), err)
@@ -71,19 +71,19 @@ func (s *UnstakeApplicationIntegrationTestSuite) TestUnstakeApplication_NotStake
 
 func (s *UnstakeApplicationIntegrationTestSuite) TestUnstakeApplication_AlreadyUnstaking() {
 	// Prepare address
-	appAddr := sample.AccAddress()
-	
+	appAddr := sample.AccAddressBech32()
+
 	// Fund and stake application
 	appAccAddr, err := cosmostypes.AccAddressFromBech32(appAddr)
 	require.NoError(s.T(), err)
 	s.FundAddress(s.T(), appAccAddr, 10000000)
 	s.StakeApp(s.T(), appAddr, 1000000, []string{"svc1"})
-	
+
 	// Unstake application first time
 	unstakeMsg := types.NewMsgUnstakeApplication(appAddr)
 	_, err = s.GetApp().RunMsg(s.T(), unstakeMsg)
 	require.NoError(s.T(), err)
-	
+
 	// Try to unstake again
 	_, err = s.GetApp().RunMsg(s.T(), unstakeMsg)
 	require.Error(s.T(), err)
