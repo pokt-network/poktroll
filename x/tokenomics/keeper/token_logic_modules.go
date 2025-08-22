@@ -190,6 +190,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		Application:           application,
 		Supplier:              supplier,
 		RelayMiningDifficulty: &relayMiningDifficulty,
+		StakingKeeper:         k.stakingKeeper,
 	}
 
 	// Execute all the token logic modules processors
@@ -205,14 +206,15 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Unbond the application if it has less than the minimum stake.
+	// Use the application from the TLM context as it may have been modified by the TLMs.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
-	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
+	if tlmCtx.Application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
-		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
+		tlmCtx.Application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, tlmCtx.Application)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-			Application:        application,
+			Application:        tlmCtx.Application,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -224,6 +226,9 @@ func (k Keeper) ProcessTokenLogicModules(
 			logger.Error(err.Error())
 			return err
 		}
+
+		// Update the application in the keeper to persist the unbonding state.
+		k.applicationKeeper.SetApplication(ctx, *tlmCtx.Application)
 	}
 
 	// TODO_IMPROVE: If the application stake has dropped to (near?) zero:
@@ -322,8 +327,8 @@ func (k Keeper) ensureClaimAmountLimits(
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
 		ApplicationAddr:      application.GetAddress(),
 		SupplierOperatorAddr: supplier.GetOperatorAddress(),
-		ExpectedBurn:         &totalClaimedCoin,
-		EffectiveBurn:        &maxClaimableCoin,
+		ExpectedBurn:         totalClaimedCoin.String(),
+		EffectiveBurn:        maxClaimableCoin.String(),
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {

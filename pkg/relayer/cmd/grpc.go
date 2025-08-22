@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"crypto/tls"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -15,19 +14,9 @@ import (
 // Fields:
 // - HostPort: gRPC host:port string
 // - Insecure: Use insecure credentials
-// - BackoffBaseDelay: Base delay for backoff
-// - BackoffMaxDelay: Max delay for backoff
-// - MinConnectTimeout: Minimum connection timeout
-// - KeepAliveTime: Keepalive interval
-// - KeepAliveTimeout: Keepalive timeout
 type GRPCConfig struct {
-	HostPort          string        `yaml:"host_port"`
-	Insecure          bool          `yaml:"insecure"`
-	BackoffBaseDelay  time.Duration `yaml:"backoff_base_delay"`
-	BackoffMaxDelay   time.Duration `yaml:"backoff_max_delay"`
-	MinConnectTimeout time.Duration `yaml:"min_connect_timeout"`
-	KeepAliveTime     time.Duration `yaml:"keep_alive_time"`
-	KeepAliveTimeout  time.Duration `yaml:"keep_alive_timeout"`
+	HostPort string `yaml:"host_port"`
+	Insecure bool   `yaml:"insecure"`
 }
 
 // connectGRPC establishes a gRPC client connection using the provided GRPCConfig.

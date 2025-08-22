@@ -41,7 +41,7 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 
 	// NB: Not possible to sample concurrently, this causes a race condition due to the keeper's gas meter.
 	for i := int64(0); i < sampleSize; i++ {
-		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
+		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddressBech32(), sample.AccAddressBech32(), expectedComputeUnits)
 
 		proofRequirementReason, err := keepers.ProofRequirementForClaim(sdkCtx, &claim)
 		require.NoError(t, err)

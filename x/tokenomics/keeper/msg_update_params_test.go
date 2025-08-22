@@ -14,7 +14,7 @@ func TestMsgUpdateParams(t *testing.T) {
 	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams()))
 
 	validParams := tokenomicstypes.DefaultParams()
-	validParams.DaoRewardAddress = sample.AccAddress()
+	validParams.DaoRewardAddress = sample.AccAddressBech32()
 
 	tests := []struct {
 		desc string
@@ -39,7 +39,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			desc: "invalid: incorrect authority address",
 
 			req: &tokenomicstypes.MsgUpdateParams{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Params:    validParams,
 			},
 
@@ -81,7 +81,7 @@ func TestMsgUpdateParams(t *testing.T) {
 
 					// DaoRewardAddress MUST NOT be empty string
 					// when MintAllocationDao is greater than 0.
-					DaoRewardAddress: sample.AccAddress(),
+					DaoRewardAddress: sample.AccAddressBech32(),
 
 					// MintAllocationXXX params MUST sum to 1. This part of the config WILL NOT make the test fail.
 					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
@@ -108,7 +108,7 @@ func TestMsgUpdateParams(t *testing.T) {
 
 					// DaoRewardAddress MUST NOT be empty string
 					// when MintAllocationDao is greater than 0.
-					DaoRewardAddress: sample.AccAddress(),
+					DaoRewardAddress: sample.AccAddressBech32(),
 
 					// MintAllocationXXX params MUST sum to 1. This part of the config WILL make the test fail.
 					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
@@ -143,7 +143,7 @@ func TestMsgUpdateParams(t *testing.T) {
 
 					// DaoRewardAddress MUST NOT be empty string
 					// when MintAllocationDao is greater than 0.
-					DaoRewardAddress: sample.AccAddress(),
+					DaoRewardAddress: sample.AccAddressBech32(),
 
 					// MintAllocationXXX params MUST sum to 1. This part of the config WILL NOT make the test fail.
 					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
@@ -180,7 +180,7 @@ func TestMsgUpdateParams(t *testing.T) {
 						SourceOwner: 0.1,
 						Application: 0.6,
 					},
-					DaoRewardAddress:                sample.AccAddress(),
+					DaoRewardAddress:                sample.AccAddressBech32(),
 					GlobalInflationPerClaim:         0,
 					MintEqualsBurnClaimDistribution: tokenomicstypes.DefaultMintEqualsBurnClaimDistribution,
 				},

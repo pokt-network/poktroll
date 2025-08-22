@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -44,6 +46,9 @@ func (s *suite) TheUserRemembersTheBalanceOfTheProposerAs(stateKey string) {
 	// Get the current block proposer address
 	proposerAddr := s.getCurrentBlockProposer()
 
+	// DEV_NOTE: fund the proposer with a MACT so that the s.getAccBalance check doesn't fail the test.
+	// s.fundAddress(proposerAddr, cosmostypes.NewInt64Coin(pocket.DenomMACT, 1))
+
 	// Store the proposer address in accNameToAddrMap if not already there
 	if _, exists := accNameToAddrMap["proposer"]; !exists {
 		accNameToAddrMap["proposer"] = proposerAddr
@@ -52,6 +57,7 @@ func (s *suite) TheUserRemembersTheBalanceOfTheProposerAs(stateKey string) {
 
 	balance := s.getAccBalance("proposer")
 	s.scenarioState[stateKey] = balance
+	require.GreaterOrEqual(s, balance, int64(0))
 }
 
 // TheUserRemembersTheBalanceOfTheServiceOwnerForAs stores the current balance of a service owner in the scenario state
@@ -203,44 +209,88 @@ func (s *suite) getTokenomicsParams() tokenomicstypes.Params {
 	return paramsRes.Params
 }
 
-// getCurrentBlockProposer gets the address of the current block proposer
+// getCurrentBlockProposer gets the operator address of the current block proposer
 func (s *suite) getCurrentBlockProposer() string {
-	// Query the latest block to get the proposer address
-	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
+	// Step 1: Query the latest block to get the proposer address
+	blockRes, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
 		"query", "block", "--output=json",
 	)
 	require.NoError(s, err)
 
-	// Parse the block info to extract proposer address
+	// Parse the block info
 	var blockInfo struct {
 		Header struct {
 			ProposerAddress string `json:"proposer_address"`
 		} `json:"header"`
 	}
+	jsonBytes := s.stdOutToJSONBytes(blockRes.Stdout)
+	err = json.Unmarshal(jsonBytes, &blockInfo)
+	require.NoError(s, err)
+	require.NotEmpty(s, blockInfo.Header.ProposerAddress)
 
-	// Strip any warning messages and get just the JSON part
-	jsonStart := strings.Index(res.Stdout, "{")
-	require.Greater(s, jsonStart, -1, "no JSON found in block query response")
-	jsonData := res.Stdout[jsonStart:]
-
-	err = json.Unmarshal([]byte(jsonData), &blockInfo)
+	// Step 2: Query all validators
+	validatorsRes, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries,
+		"query", "staking", "validators", "--output=json",
+	)
 	require.NoError(s, err)
 
-	// Ensure we have a proposer address
-	require.NotEmpty(s, blockInfo.Header.ProposerAddress, "proposer address is empty in block header")
+	// Parse validators
+	var validatorsInfo struct {
+		Validators []struct {
+			OperatorAddress string `json:"operator_address"`
+			ConsensusPubkey struct {
+				Type  string `json:"type"`
+				Value string `json:"value"`
+			} `json:"consensus_pubkey"`
+		} `json:"validators"`
+	}
+	jsonBytes = s.stdOutToJSONBytes(validatorsRes.Stdout)
+	err = json.Unmarshal(jsonBytes, &validatorsInfo)
+	require.NoError(s, err)
 
-	// Convert the base64 proposer address to the same format the TLM uses
-	// This mimics exactly what the TLM does: cosmostypes.AccAddress(BlockHeader().ProposerAddress).String()
+	// Step 3: Decode proposer address
 	proposerAddrBytes, err := base64.StdEncoding.DecodeString(blockInfo.Header.ProposerAddress)
-	require.NoError(s, err, "failed to decode proposer address from base64")
+	require.NoError(s, err)
 
-	// Convert to bech32 address using cosmos SDK format (same as TLM)
-	proposerAddr := cosmostypes.AccAddress(proposerAddrBytes).String()
+	// Step 4: Find matching validator
+	for _, validator := range validatorsInfo.Validators {
+		// Decode validator's consensus pubkey
+		pubkeyBytes, err := base64.StdEncoding.DecodeString(validator.ConsensusPubkey.Value)
+		if err != nil {
+			continue
+		}
+		// Compute address from pubkey (SHA256 then take first 20 bytes)
+		hash := sha256.Sum256(pubkeyBytes)
+		validatorConsAddr := hash[:20]
 
-	// Ensure the final address is not empty
-	require.NotEmpty(s, proposerAddr, "converted proposer address is empty")
+		// Compare with proposer address
+		if bytes.Equal(validatorConsAddr, proposerAddrBytes) {
+			valAddr, err := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
+			require.NoError(s, err)
 
-	return proposerAddr
+			// Convert validator address to account address (same bytes, different prefix)
+			accAddr := cosmostypes.AccAddress(valAddr)
+			return accAddr.String()
+		}
+	}
+
+	require.Fail(s, "could not find validator for proposer address")
+	return ""
+}
+
+// stdOutToJSONBytes returns the JSON bytes from the given stdOut string.
+//
+// It is necessary if the CLI outputs some text before the actual content.
+// For example, `pocketd query --type=height` outputs the following if a specific
+// block height is unspecified:
+//
+//	"Falling back to latest block height:"
+//	{"header":{"version ...}
+func (s *suite) stdOutToJSONBytes(stdOut string) []byte {
+	jsonStart := strings.Index(stdOut, "{")
+	require.Greater(s, jsonStart, -1)
+	jsonData := stdOut[jsonStart:]
+	return []byte(jsonData)
 }
 
 // getService queries and returns the service with the given ID

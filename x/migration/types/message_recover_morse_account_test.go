@@ -20,8 +20,8 @@ func TestMsgRecoverMorseAccount_ValidateBasic(t *testing.T) {
 		{
 			name: "valid message",
 			msg: MsgRecoverMorseAccount{
-				Authority:          sample.AccAddress(),
-				ShannonDestAddress: sample.AccAddress(),
+				Authority:          sample.AccAddressBech32(),
+				ShannonDestAddress: sample.AccAddressBech32(),
 				MorseSrcAddress:    validMorseSrcAddress,
 			},
 		},
@@ -29,7 +29,7 @@ func TestMsgRecoverMorseAccount_ValidateBasic(t *testing.T) {
 			name: "invalid authority address",
 			msg: MsgRecoverMorseAccount{
 				Authority:          "invalid_address",
-				ShannonDestAddress: sample.AccAddress(),
+				ShannonDestAddress: sample.AccAddressBech32(),
 				MorseSrcAddress:    validMorseSrcAddress,
 			},
 			expectedError: sdkerrors.ErrInvalidAddress,
@@ -37,7 +37,7 @@ func TestMsgRecoverMorseAccount_ValidateBasic(t *testing.T) {
 		{
 			name: "invalid shannon destination address",
 			msg: MsgRecoverMorseAccount{
-				Authority:          sample.AccAddress(),
+				Authority:          sample.AccAddressBech32(),
 				ShannonDestAddress: "invalid_address",
 				MorseSrcAddress:    validMorseSrcAddress,
 			},
