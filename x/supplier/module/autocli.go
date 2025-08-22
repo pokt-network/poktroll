@@ -88,18 +88,38 @@ Use the --dehydrated flag to exclude service_config_history and rev_share detail
 				//	Short:          "Send a stake-supplier tx",
 				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "stake"}, {ProtoField: "services"}},
 				//},
-				//{
-				//	RpcMethod:      "UnstakeSupplier",
-				//	Use:            "unstake-supplier",
-				//	Short:          "Send a unstake-supplier tx",
-				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
-				//},
-				//{
-				//	RpcMethod:      "UpdateParam",
-				//	Use:            "update-param [name] [as-type]",
-				//	Short:          "Send a update-param tx",
-				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "name"}, {ProtoField: "asType"}},
-				//},
+				{
+					RpcMethod: "UnstakeSupplier",
+					Use:       "unstake-supplier [operator_address]",
+					Short:     "Unstake a supplier from Pocket Network",
+					Long: `Unstake a supplier with the provided operator address.
+
+This is an onchain transaction that will initiate the unstaking process for the supplier.
+
+The --from flag specifies the signer and can be either:
+- The supplier owner address (who originally staked the supplier)
+- The operator address (the service provider address)
+
+The [operator_address] argument is the operator address of the supplier to unstake.
+The staked funds will always be returned to the owner address, regardless of who initiates the unstaking.
+
+The supplier will continue providing service until the current session ends, at which point it will be deactivated.`,
+
+					Example: `
+	# Unstake supplier as owner
+	pocketd tx supplier unstake-supplier pokt1operator... --from pokt1owner... --keyring-backend test --network mainnet
+
+	# Unstake supplier as operator
+	pocketd tx supplier unstake-supplier pokt1operator... --from pokt1operator... --keyring-backend test --network mainnet
+
+	# With custom home directory
+	pocketd tx supplier unstake-supplier pokt1operator... --from pokt1owner... --home ./pocket --keyring-backend test --network mainnet`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{
+							ProtoField: "operator_address",
+						},
+					},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
