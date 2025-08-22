@@ -857,7 +857,11 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int64, expectedAmoun
 	
 	// Adjust expected change based on skipped operations
 	adjustedExpectedChange := expectedAmountChange
-	if totalSkippedAmount > 0 && condition == "less" && balanceType == "balance" {
+	hasSkippedOperations := totalSkippedAmount > 0
+	isExpectingDecrease := condition == "less"
+	isBalanceValidation := balanceType == "balance"
+	
+	if hasSkippedOperations && isExpectingDecrease && isBalanceValidation {
 		adjustedExpectedChange = expectedAmountChange - totalSkippedAmount
 		s.Logf("Adjusted expected change for %s: original=%d, skipped=%d, adjusted=%d", 
 			accName, expectedAmountChange, totalSkippedAmount, adjustedExpectedChange)
