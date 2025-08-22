@@ -92,7 +92,9 @@ Use the --dehydrated flag to exclude service_config_history and rev_share detail
 					RpcMethod: "UnstakeSupplier",
 					Use:       "unstake-supplier [operator_address]",
 					Short:     "Unstake a supplier from Pocket Network",
-					Long: `Unstake a supplier with the provided operator address. This is a broadcast operation that will initiate the unstaking process for the supplier.
+					Long: `Unstake a supplier with the provided operator address.
+
+This is an onchain transaction that will initiate the unstaking process for the supplier.
 
 The --from flag specifies the signer and can be either:
 - The supplier owner address (who originally staked the supplier)
@@ -103,26 +105,21 @@ The staked funds will always be returned to the owner address, regardless of who
 
 The supplier will continue providing service until the current session ends, at which point it will be deactivated.`,
 
-					Example: `	# Unstake supplier as owner
-	pocketd tx supplier unstake-supplier pokt1abc...xyz --from owner_address --keyring-backend test --network mainnet
+					Example: `
+	# Unstake supplier as owner
+	pocketd tx supplier unstake-supplier pokt1operator... --from pokt1owner... --keyring-backend test --network mainnet
 
 	# Unstake supplier as operator
-	pocketd tx supplier unstake-supplier pokt1abc...xyz --from pokt1abc...xyz --keyring-backend test --network mainnet
+	pocketd tx supplier unstake-supplier pokt1operator... --from pokt1operator... --keyring-backend test --network mainnet
 
 	# With custom home directory
-	pocketd tx supplier unstake-supplier pokt1abc...xyz --from grove1 --home ./pocket --keyring-backend test --network mainnet`,
+	pocketd tx supplier unstake-supplier pokt1operator... --from pokt1owner... --home ./pocket --keyring-backend test --network mainnet`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{
 							ProtoField: "operator_address",
 						},
 					},
 				},
-				//{
-				//	RpcMethod:      "UpdateParam",
-				//	Use:            "update-param [name] [as-type]",
-				//	Short:          "Send a update-param tx",
-				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "name"}, {ProtoField: "asType"}},
-				//},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
