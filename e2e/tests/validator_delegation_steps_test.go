@@ -27,17 +27,6 @@ type cliValidatorsResponse struct {
 	Validators []cliValidatorResponse `json:"validators"`
 }
 
-// cliValidatorQueryResponse represents a single validator as returned by CLI JSON output
-type cliValidatorQueryResponse struct {
-	OperatorAddress string `json:"operator_address"`
-	Status          string `json:"status"` // CLI returns status as string
-	Tokens          string `json:"tokens"`
-	Commission      struct {
-		CommissionRates struct {
-			Rate string `json:"rate"` // CLI returns commission rate as string
-		} `json:"commission_rates"`
-	} `json:"commission"`
-}
 
 // cliDecCoin represents a DecCoin as returned by CLI JSON output (with string amounts)
 type cliDecCoin struct {
@@ -202,36 +191,6 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 		amountToDelegate, targetAmount)
 }
 
-// TheAccountWithdrawsDelegationRewardsFrom withdraws delegation rewards from a validator
-func (s *suite) TheAccountWithdrawsDelegationRewardsFrom(delegatorName, validatorName string) {
-	delegatorAddr, exists := accNameToAddrMap[delegatorName]
-	require.True(s, exists, "delegator %s not found", delegatorName)
-
-	validatorAddr, exists := accNameToAddrMap[validatorName]
-	require.True(s, exists, "validator %s not found", validatorName)
-
-	s.Logf("Withdrawing delegation rewards for %s (%s) from validator %s (%s)", 
-		delegatorName, delegatorAddr, validatorName, validatorAddr)
-
-	// Execute withdrawal transaction with proper retry handling
-	args := []string{
-		"tx", "distribution", "withdraw-rewards",
-		validatorAddr,
-		"--from", delegatorAddr,
-		keyRingFlag,
-		chainIdFlag,
-		"--gas=auto",
-		"--gas-prices=0upokt",
-		"--yes",
-	}
-
-	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error executing withdrawal transaction: %v", err)
-	s.pocketd.result = res
-
-	require.Contains(s, res.Stdout, "code: 0", "withdrawal transaction failed")
-	s.Logf("Withdrawal transaction successful")
-}
 
 // TheUserRemembersTheDelegationRewardsForFromAs stores current delegation rewards in scenario state
 func (s *suite) TheUserRemembersTheDelegationRewardsForFromAs(delegatorName, validatorName, stateKey string) {
@@ -291,161 +250,7 @@ func (s *suite) TheUserRemembersTheDelegationRewardsForFromAs(delegatorName, val
 	s.Logf("Stored delegation rewards for %s from %s: %d uPOKT", delegatorName, validatorName, rewardAmount)
 }
 
-// TheUserRemembersTheDistributionModuleBalanceAs stores the distribution module balance
-func (s *suite) TheUserRemembersTheDistributionModuleBalanceAs(stateKey string) {
-	// For compatibility, store zero as distribution module doesn't hold rewards
-	s.scenarioState[stateKey] = int64(0)
-	s.Logf("Distribution module balance tracking deprecated - rewards go directly to validators")
-}
 
-// TheDistributionModuleBalanceShouldBeUpoktMoreThan validates distribution module balance change
-func (s *suite) TheDistributionModuleBalanceShouldBeUpoktMoreThan(expectedIncreaseStr, prevBalanceKey string) {
-	// Skip this validation - distribution module doesn't hold validator rewards
-	// Rewards are immediately allocated to validators via AllocateTokensToValidator
-	s.Logf("Skipping distribution module balance check - rewards allocated directly to validators")
-}
-
-// TheDistributionModuleBalanceShouldBeUpoktThan validates distribution module balance change in any direction
-func (s *suite) TheDistributionModuleBalanceShouldBeUpoktThan(expectedChangeStr, direction, prevBalanceKey string) {
-	// Skip this validation - distribution module doesn't hold validator rewards
-	// Rewards are immediately allocated to validators via AllocateTokensToValidator
-	s.Logf("Skipping distribution module balance check - rewards allocated directly to validators")
-}
-
-// TheDelegationRewardsForFromShouldBeGreaterThan validates that rewards have increased
-func (s *suite) TheDelegationRewardsForFromShouldBeGreaterThan(delegatorName, validatorName, prevRewardsKey string) {
-	prevRewards, ok := s.scenarioState[prevRewardsKey].(int64)
-	require.True(s, ok, "previous rewards %s not found or not an int64", prevRewardsKey)
-
-	delegatorAddr, exists := accNameToAddrMap[delegatorName]
-	require.True(s, exists, "delegator %s not found", delegatorName)
-
-	validatorAddr, exists := accNameToAddrMap[validatorName]
-	require.True(s, exists, "validator %s not found", validatorName)
-
-	// Query current delegation rewards with retry
-	args := []string{
-		"q", "distribution", "rewards-by-validator",
-		delegatorAddr,
-		validatorAddr,
-		"--output=json",
-	}
-
-	rewardsRes, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error querying delegation rewards: %v", err)
-
-	var rewardsResponse cliDelegationRewardsResponse
-	err = json.Unmarshal([]byte(rewardsRes.Stdout), &rewardsResponse)
-	require.NoError(s, err)
-
-	// Extract current uPOKT rewards amount - handle both string (empty) and array (with rewards) cases
-	var currentRewardAmount int64 = 0
-	switch rewards := rewardsResponse.Rewards.(type) {
-	case string:
-		// Empty rewards returned as string, amount is 0
-		currentRewardAmount = 0
-	case []interface{}:
-		// Parse rewards array
-		for _, rewardInterface := range rewards {
-			if rewardMap, ok := rewardInterface.(map[string]interface{}); ok {
-				if denom, ok := rewardMap["denom"].(string); ok && denom == pocket.DenomuPOKT {
-					if amountStr, ok := rewardMap["amount"].(string); ok {
-						if amount, err := strconv.ParseFloat(amountStr, 64); err == nil {
-							currentRewardAmount = int64(amount)
-						}
-					}
-					break
-				}
-			}
-		}
-	}
-
-	s.Logf("Comparing delegation rewards for %s from %s: previous=%d, current=%d", 
-		delegatorName, validatorName, prevRewards, currentRewardAmount)
-	
-	require.Greater(s, currentRewardAmount, prevRewards, 
-		"delegation rewards should have increased for %s from %s", delegatorName, validatorName)
-}
-
-// TheDelegationRewardsForFromShouldBeUpokt validates exact reward amounts
-func (s *suite) TheDelegationRewardsForFromShouldBeUpokt(delegatorName, validatorName, expectedAmountStr string) {
-	expectedAmount, err := strconv.ParseInt(expectedAmountStr, 10, 64)
-	require.NoError(s, err)
-
-	delegatorAddr, exists := accNameToAddrMap[delegatorName]
-	require.True(s, exists, "delegator %s not found", delegatorName)
-
-	validatorAddr, exists := accNameToAddrMap[validatorName]
-	require.True(s, exists, "validator %s not found", validatorName)
-
-	// Query delegation rewards with retry
-	args := []string{
-		"q", "distribution", "rewards-by-validator",
-		delegatorAddr,
-		validatorAddr,
-		"--output=json",
-	}
-
-	rewardsRes, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error querying delegation rewards: %v", err)
-
-	var rewardsResponse cliDelegationRewardsResponse
-	err = json.Unmarshal([]byte(rewardsRes.Stdout), &rewardsResponse)
-	require.NoError(s, err)
-
-	// Extract uPOKT rewards amount - handle both string (empty) and array (with rewards) cases
-	var rewardAmount int64 = 0
-	switch rewards := rewardsResponse.Rewards.(type) {
-	case string:
-		// Empty rewards returned as string, amount is 0
-		rewardAmount = 0
-	case []interface{}:
-		// Parse rewards array
-		for _, rewardInterface := range rewards {
-			if rewardMap, ok := rewardInterface.(map[string]interface{}); ok {
-				if denom, ok := rewardMap["denom"].(string); ok && denom == pocket.DenomuPOKT {
-					if amountStr, ok := rewardMap["amount"].(string); ok {
-						if amount, err := strconv.ParseFloat(amountStr, 64); err == nil {
-							rewardAmount = int64(amount)
-						}
-					}
-					break
-				}
-			}
-		}
-	}
-
-	require.Equal(s, expectedAmount, rewardAmount, 
-		"delegation rewards for %s from %s should be %d uPOKT, got %d", 
-		delegatorName, validatorName, expectedAmount, rewardAmount)
-}
-
-// TheUserRemembersTheCommissionRateForValidatorAs stores the validator's commission rate
-func (s *suite) TheUserRemembersTheCommissionRateForValidatorAs(validatorName, stateKey string) {
-	validatorAddr, exists := accNameToAddrMap[validatorName]
-	require.True(s, exists, "validator %s not found", validatorName)
-
-	// Query validator information with retry
-	validatorRes, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, 
-		"q", "staking", "validator", validatorAddr, "--output=json")
-	require.NoError(s, err)
-	require.NotEmpty(s, validatorRes.Stdout)
-
-	var validator cliValidatorQueryResponse
-	err = json.Unmarshal([]byte(validatorRes.Stdout), &validator)
-	require.NoError(s, err)
-
-	commissionRate := validator.Commission.CommissionRates.Rate
-	
-	// Handle empty commission rate (default to 0%)
-	if commissionRate == "" {
-		commissionRate = "0.000000000000000000"
-		s.Logf("Empty commission rate detected, defaulting to 0%% for validator %s", validatorName)
-	}
-	
-	s.scenarioState[stateKey] = commissionRate
-	s.Logf("Stored commission rate for validator %s: %s", validatorName, commissionRate)
-}
 
 // TheAccountBalanceOfShouldBeThan validates account balance changes in any direction
 func (s *suite) TheAccountBalanceOfShouldBeThan(accName, direction, prevBalanceKey string) {
