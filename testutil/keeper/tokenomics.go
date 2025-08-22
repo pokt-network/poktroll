@@ -75,7 +75,6 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SessionKeeper
 	tokenomicstypes.ServiceKeeper
 	tokenomicstypes.StakingKeeper
-	tokenomicstypes.DistributionKeeper
 	tokenomicstypes.MigrationKeeper
 
 	Codec *codec.ProtoCodec
@@ -364,13 +363,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 
-	// Create mock distribution keeper
-	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
-	mockDistributionKeeper.EXPECT().
-		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
-
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -385,7 +377,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSessionKeeper,
 		mockServiceKeeper,
 		mockStakingKeeper,
-		mockDistributionKeeper,
 		tokenLogicModules,
 	)
 
@@ -633,7 +624,6 @@ func NewTokenomicsModuleKeepers(
 	// Create mock staking and distribution keepers for tokenomics interfaces
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
-	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
 
 	// Set up mock expectations for staking keeper
 	// If a specific proposer is configured, set up the mock to return the correct validator
@@ -683,12 +673,6 @@ func NewTokenomicsModuleKeepers(
 		}).
 		AnyTimes()
 
-	// Mock AllocateTokensToValidator to succeed (legacy support - no longer used with ModToAcctTransfer)
-	mockDistributionKeeper.EXPECT().
-		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
-
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -704,7 +688,6 @@ func NewTokenomicsModuleKeepers(
 		sessionKeeper,
 		serviceKeeper,
 		mockStakingKeeper,
-		mockDistributionKeeper,
 		cfg.tokenLogicModules,
 	)
 
@@ -744,9 +727,8 @@ func NewTokenomicsModuleKeepers(
 		SharedKeeper:       &sharedKeeper,
 		SessionKeeper:      &sessionKeeper,
 		ServiceKeeper:      &serviceKeeper,
-		StakingKeeper:      mockStakingKeeper,
-		DistributionKeeper: mockDistributionKeeper,
-		MigrationKeeper:    &migrationKeeper,
+		StakingKeeper:   mockStakingKeeper,
+		MigrationKeeper: &migrationKeeper,
 
 		Codec: cdc,
 	}

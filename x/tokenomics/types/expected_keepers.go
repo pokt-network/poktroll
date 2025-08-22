@@ -1,15 +1,13 @@
 // TODO: Consider organizing keeper interfaces by domain (e.g., CoreKeepers, RewardKeepers)
-//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,SupplierKeeper,ServiceKeeper,StakingKeeper,DistributionKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,SupplierKeeper,ServiceKeeper,StakingKeeper
 
 package types
 
 import (
 	"context"
 
-	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -141,14 +139,4 @@ type StakingKeeper interface {
 	GetValidatorDelegations(ctx context.Context, valAddr cosmostypes.ValAddress) ([]stakingtypes.Delegation, error)
 	// GetBondedValidatorsByPower gets all bonded validators sorted by voting power
 	GetBondedValidatorsByPower(ctx context.Context) ([]stakingtypes.Validator, error)
-}
-
-// DistributionKeeper defines the expected interface for the Distribution module.
-type DistributionKeeper interface {
-	// AllocateTokensToValidator allocates tokens to a validator for distribution to delegators
-	AllocateTokensToValidator(ctx context.Context, val stakingtypes.ValidatorI, tokens cosmostypes.DecCoins) error
-	// GetCommunityTax gets the community tax rate
-	GetCommunityTax(ctx context.Context) (percent math.LegacyDec, err error)
-	// GetValidatorOutstandingRewards gets the outstanding rewards for a validator
-	GetValidatorOutstandingRewards(ctx context.Context, val cosmostypes.ValAddress) (rewards distributiontypes.ValidatorOutstandingRewards, err error)
 }

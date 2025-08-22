@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -26,7 +25,6 @@ type cliValidatorResponse struct {
 type cliValidatorsResponse struct {
 	Validators []cliValidatorResponse `json:"validators"`
 }
-
 
 // cliDelegationRewardsResponse represents the response from 'query distribution rewards-by-validator' CLI command
 type cliDelegationRewardsResponse struct {
@@ -70,10 +68,10 @@ func (s *suite) TheUserRemembersTheCurrentBlockProposerValidatorAddressAs(valida
 		if validator.Status != "BOND_STATUS_BONDED" {
 			continue
 		}
-		
+
 		valAddr, err := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
 		require.NoError(s, err)
-		
+
 		// Convert validator address to account address for comparison
 		valAccAddr := cosmostypes.AccAddress(valAddr)
 		if valAccAddr.Equals(proposerAccAddrBytes) {
@@ -141,10 +139,10 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 
 	// Check existing delegation
 	existingAmount := s.queryExistingDelegation(delegatorAddr, validatorAddr)
-	
+
 	// Option 1: Skip if already delegated the target amount or more
 	if existingAmount >= targetAmount {
-		s.Logf("Skipping delegation: %s already has %d uPOKT delegated to %s (target: %d)", 
+		s.Logf("Skipping delegation: %s already has %d uPOKT delegated to %s (target: %d)",
 			delegatorName, existingAmount, validatorName, targetAmount)
 		// Store that this delegation was skipped for later balance checking
 		skipKey := fmt.Sprintf("%s_to_%s_delegation_skipped", delegatorName, validatorName)
@@ -155,11 +153,11 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 	// Option 2: Adjust delegation amount to reach target
 	// Only delegate the difference needed to reach the target amount
 	amountToDelegate := targetAmount - existingAmount
-	
+
 	// Construct delegation command
 	amountCoin := fmt.Sprintf("%d%s", amountToDelegate, pocket.DenomuPOKT)
-	
-	s.Logf("Delegating %s from %s (%s) to validator %s (%s) [existing: %d, target: %d]", 
+
+	s.Logf("Delegating %s from %s (%s) to validator %s (%s) [existing: %d, target: %d]",
 		amountCoin, delegatorName, delegatorAddr, validatorName, validatorAddr,
 		existingAmount, targetAmount)
 
@@ -181,10 +179,9 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 	s.pocketd.result = res
 
 	require.Contains(s, res.Stdout, "code: 0", "delegation transaction failed")
-	s.Logf("Delegation transaction successful: added %d uPOKT (new total: %d)", 
+	s.Logf("Delegation transaction successful: added %d uPOKT (new total: %d)",
 		amountToDelegate, targetAmount)
 }
-
 
 // TheUserRemembersTheDelegationRewardsForFromAs stores current delegation rewards in scenario state
 func (s *suite) TheUserRemembersTheDelegationRewardsForFromAs(delegatorName, validatorName, stateKey string) {
@@ -244,8 +241,6 @@ func (s *suite) TheUserRemembersTheDelegationRewardsForFromAs(delegatorName, val
 	s.Logf("Stored delegation rewards for %s from %s: %d uPOKT", delegatorName, validatorName, rewardAmount)
 }
 
-
-
 // TheAccountBalanceOfShouldBeThan validates account balance changes in any direction
 func (s *suite) TheAccountBalanceOfShouldBeThan(accName, direction, prevBalanceKey string) {
 	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
@@ -265,32 +260,30 @@ func (s *suite) TheAccountBalanceOfShouldBeThan(accName, direction, prevBalanceK
 			}
 		}
 	}
-	
+
 	if delegationWasSkipped && strings.ToLower(direction) == "less" {
-		// If delegation was skipped and we're checking for "less", 
+		// If delegation was skipped and we're checking for "less",
 		// the balance should be equal (no change) rather than less
 		s.Logf("Delegation was skipped for %s, expecting balance to be equal rather than less", accName)
-		require.Equal(s, currBalance, prevBalance, 
+		require.Equal(s, currBalance, prevBalance,
 			"account %s balance should be equal since delegation was skipped", accName)
 		return
 	}
 
 	switch strings.ToLower(direction) {
 	case "more":
-		require.Greater(s, currBalance, prevBalance, 
+		require.Greater(s, currBalance, prevBalance,
 			"account %s balance should be more than previous", accName)
 	case "less":
-		require.Less(s, currBalance, prevBalance, 
+		require.Less(s, currBalance, prevBalance,
 			"account %s balance should be less than previous", accName)
 	case "equal":
-		require.Equal(s, currBalance, prevBalance, 
+		require.Equal(s, currBalance, prevBalance,
 			"account %s balance should be equal to previous", accName)
 	default:
 		require.Fail(s, "invalid direction %s, must be 'more', 'less', or 'equal'", direction)
 	}
 
-	s.Logf("Account %s balance validation: previous=%d, current=%d, direction=%s", 
+	s.Logf("Account %s balance validation: previous=%d, current=%d, direction=%s",
 		accName, prevBalance, currBalance, direction)
 }
-
-

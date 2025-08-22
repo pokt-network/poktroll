@@ -33,7 +33,6 @@ type Keeper struct {
 	sessionKeeper      types.SessionKeeper
 	serviceKeeper      types.ServiceKeeper
 	stakingKeeper      types.StakingKeeper
-	distributionKeeper types.DistributionKeeper
 
 	// Query clients
 	sharedQuerier client.SharedQueryClient
@@ -57,7 +56,6 @@ func NewKeeper(
 	sessionKeeper types.SessionKeeper,
 	serviceKeeper types.ServiceKeeper,
 	stakingKeeper types.StakingKeeper,
-	distributionKeeper types.DistributionKeeper,
 
 	tokenLogicModules []tlm.TokenLogicModule,
 ) Keeper {
@@ -85,7 +83,6 @@ func NewKeeper(
 		sessionKeeper:      sessionKeeper,
 		serviceKeeper:      serviceKeeper,
 		stakingKeeper:      stakingKeeper,
-		distributionKeeper: distributionKeeper,
 
 		sharedQuerier: sharedQuerier,
 

@@ -40,7 +40,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -336,7 +335,6 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		prooftypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		migrationtypes.ModuleName:  {authtypes.Minter},
 		servicetypes.ModuleName:    {authtypes.Minter},
-		distrtypes.ModuleName:      nil, // distribution module doesn't need special permissions
 	}
 
 	// Prepare the account keeper and module
@@ -502,10 +500,9 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		bankKeeper,
 	)
 
-	// Prepare mock staking and distribution keepers for integration tests
+	// Prepare mock staking keeper for integration tests
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
-	mockDistributionKeeper := mocks.NewMockDistributionKeeper(ctrl)
 
 	// Set up mock expectations for the staking keeper
 	// Use a sample consensus and validator address for the mock
@@ -548,12 +545,6 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		}).
 		AnyTimes()
 
-	// Set up mock expectations for distribution keeper
-	mockDistributionKeeper.EXPECT().
-		AllocateTokensToValidator(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
-
 	// Set the proposer address in the context to match the mock expectation
 	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
 
@@ -572,7 +563,6 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		sessionKeeper,
 		serviceKeeper,
 		mockStakingKeeper,
-		mockDistributionKeeper,
 		cfg.TokenLogicModules,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
