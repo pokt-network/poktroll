@@ -61,7 +61,7 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 
 	// SmtStorePath is required
 	if len(yamlRelayMinerConfig.SmtStorePath) == 0 {
-		return nil, ErrRelayMinerConfigInvalidSmtStorePath
+		return nil, ErrRelayMinerConfigInvalidSmtStorePath.Wrapf("smt store path is: '%s'", yamlRelayMinerConfig.SmtStorePath)
 	}
 	relayMinerConfig.SmtStorePath = yamlRelayMinerConfig.SmtStorePath
 
