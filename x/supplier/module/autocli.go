@@ -74,10 +74,14 @@ Use the --dehydrated flag to exclude service_config_history and rev_share detail
 			Service:              suppliertypes.Msg_serviceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command (for backwards compatibility)
 			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
-				//{
-				//	RpcMethod: "UpdateParams",
-				//	Skip:      true, // skipped because authority gated
-				//},
+				{
+					RpcMethod: "UpdateParams",
+					Skip:      true, // skipped because authority gated
+				},
+				{
+					RpcMethod: "UpdateParam",
+					Skip:      true, // skipped because authority gated
+				},
 				//{
 				//	RpcMethod:      "StakeSupplier",
 				//	Use:            "stake-supplier [stake] [services]",
