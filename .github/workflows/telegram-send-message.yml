@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send message to Telegram groups
+        env:
+          MESSAGE_CONTENT: ${{ inputs.message }}
         run: |
           # Pocket Network Bot Testing Group
           CHAT_1="-1002895286734"
@@ -60,7 +62,7 @@ jobs:
           CHAT_17="-1002811115444"
 
           # Get the message and parse mode from the workflow inputs
-          MESSAGE="${{ inputs.message }}"
+          MESSAGE="$MESSAGE_CONTENT"
           PARSE_MODE="${{ inputs.parse_mode }}"
 
           # Function to send message to a chat

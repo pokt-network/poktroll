@@ -10,7 +10,7 @@ import (
 )
 
 func TestMsgTransferApplication_ValidateBasic(t *testing.T) {
-	dupAddr := sample.AccAddress()
+	dupAddr := sample.AccAddressBech32()
 
 	tests := []struct {
 		name string
@@ -29,14 +29,14 @@ func TestMsgTransferApplication_ValidateBasic(t *testing.T) {
 			name: "invalid bech32 source address",
 			msg: MsgTransferApplication{
 				SourceAddress:      "invalid_address",
-				DestinationAddress: sample.AccAddress(),
+				DestinationAddress: sample.AccAddressBech32(),
 			},
 			err: ErrAppInvalidAddress,
 		},
 		{
 			name: "invalid bech32 destination address",
 			msg: MsgTransferApplication{
-				SourceAddress:      sample.AccAddress(),
+				SourceAddress:      sample.AccAddressBech32(),
 				DestinationAddress: "invalid_address",
 			},
 			err: ErrAppInvalidAddress,
@@ -44,8 +44,8 @@ func TestMsgTransferApplication_ValidateBasic(t *testing.T) {
 		{
 			name: "valid source and destination addresses",
 			msg: MsgTransferApplication{
-				SourceAddress:      sample.AccAddress(),
-				DestinationAddress: sample.AccAddress(),
+				SourceAddress:      sample.AccAddressBech32(),
+				DestinationAddress: sample.AccAddressBech32(),
 			},
 		},
 	}

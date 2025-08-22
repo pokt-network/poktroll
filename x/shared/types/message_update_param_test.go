@@ -25,7 +25,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      "WRONG_num_blocks_per_session",
 				AsType:    &MsgUpdateParam_AsUint64{AsUint64: 1},
 			},
@@ -33,7 +33,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "invalid: incorrect param type",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamNumBlocksPerSession,
 				AsType:    &MsgUpdateParam_AsString{AsString: "invalid"},
 			},
@@ -41,14 +41,14 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamNumBlocksPerSession,
 				AsType:    &MsgUpdateParam_AsUint64{AsUint64: 1},
 			},
 		}, {
 			desc: "invalid ComputeUnitsToTokensMultiplier",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamComputeUnitsToTokensMultiplier,
 				AsType:    &MsgUpdateParam_AsUint64{AsUint64: 0},
 			},
@@ -56,7 +56,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "invalid ComputeUnitCostGranularity",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamComputeUnitCostGranularity,
 				AsType:    &MsgUpdateParam_AsUint64{AsUint64: 0},
 			},

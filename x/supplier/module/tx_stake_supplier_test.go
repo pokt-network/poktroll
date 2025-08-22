@@ -58,7 +58,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		    endpoints:
 		    - publicly_exposed_url: http://pokt.network:8081
 		      rpc_type: json_rpc
-		`, ownerAccount.Address.String(), sample.AccAddress())
+		`, ownerAccount.Address.String(), sample.AccAddressBech32())
 
 	tests := []struct {
 		desc         string
@@ -114,7 +114,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "stake supplier: invalid stake denom",
@@ -129,7 +129,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "stake supplier: invalid stake amount (zero)",
@@ -144,7 +144,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "stake supplier: invalid stake amount (negative)",
@@ -159,7 +159,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 
 		// Happy Paths - Service Related
@@ -179,7 +179,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8082
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: valid localhost",
@@ -193,7 +193,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://127.0.0.1:8082
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: valid loopback",
@@ -207,7 +207,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://localhost:8082
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: valid without a port",
@@ -221,7 +221,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 
 		// Error Paths - Service Related
@@ -234,7 +234,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				owner_address: %s
 				operator_address: %s
 				stake_amount: 1000upokt
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: invalid services (empty string)",
@@ -245,7 +245,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				operator_address: %s
 				stake_amount: 1000upokt
 				services:
-			`, ownerAccount.Address.String(), sample.AccAddress()),
+			`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: invalid URL",
@@ -260,7 +260,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: bad_url
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: missing URLs",
@@ -273,7 +273,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				  - service_id: svc2
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: missing service IDs",
@@ -290,7 +290,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				  - endpoints:
 				    - publicly_exposed_url: localhost:8082
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: missing rpc type",
@@ -304,7 +304,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				  - service_id: svc1
 				    endpoints:
 				    - publicly_exposed_url: localhost:8082
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 	}
 

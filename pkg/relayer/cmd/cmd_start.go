@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
 // startCmd returns the Cobra subcommand for running the relay miner.
@@ -61,10 +62,15 @@ RelayMiner Responsibilities:
 	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.7, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
 
+	// Set the default value for grpc-insecure flag if not explicitly provided
+	// This ensures the Cosmos SDK client context receives the default value
+	// TODO_TECHDEBT(#1444): Delete this once #1444 is fixed and merged.
+	if !cmd.Flags().Changed(cosmosflags.FlagGRPCInsecure) {
+		_ = cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, "true")
+	}
+
 	// Required flags
 	_ = cmd.MarkFlagRequired("config")
-	// TODO_TECHDEBT(@olshansk): Consider making this part of the relay miner config file or erroring in a more user-friendly way.
-	_ = cmd.MarkFlagRequired(cosmosflags.FlagChainID)
 
 	return cmd
 }
@@ -142,6 +148,18 @@ Totals:
 	if err != nil {
 		fmt.Printf("Could not parse config file from: %s\n", flagRelayMinerConfig)
 		return err
+	}
+
+	if relayMinerConfig.SmtStorePath == session.InMemoryStoreFilename {
+		fmt.Printf(`
+🚨 WARNING: SMT configured for in-memory storage 🚨
+----------------------------------------------------------------
+• All session data will be LOST on RelayMiner restart
+• No session state persisted to disk
+• Unsubmitted Claims and Proofs will be lost
+• TODO(#1734): Add support for backing up in-memory session trees
+----------------------------------------------------------------
+`)
 	}
 
 	// --- Log flag values ---

@@ -257,7 +257,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 		{
 			desc: "app is not found",
 
-			appAddr:   sample.AccAddress(), // Generating a random address on the fly
+			appAddr:   sample.AccAddressBech32(), // Generating a random address on the fly
 			serviceId: keepertest.TestServiceId1,
 
 			expectedErr: types.ErrSessionHydration,

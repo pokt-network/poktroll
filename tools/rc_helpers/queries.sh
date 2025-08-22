@@ -4,52 +4,79 @@
 # TODO_IMPROVE: Reference these helpers in the proper documentation in dev.poktroll.com
 
 # ===============================================
+# COLOR SETUP (TTY and NO_COLOR aware)
+# ===============================================
+
+# If stdout is a TTY and NO_COLOR is not set, enable colors; otherwise, use empty strings
+if [ -t 1 ] && [ -z "${NO_COLOR}" ]; then
+  BOLD='\033[1m'
+  DIM='\033[2m'
+  CYAN='\033[0;36m'
+  BLUE='\033[0;34m'
+  NC='\033[0m' # No Color
+else
+  BOLD=''
+  DIM=''
+  CYAN=''
+  BLUE=''
+  NC=''
+fi
+
+# ===============================================
 # HELP AND OVERVIEW
 # ===============================================
 
 function help() {
-  LATEST_BLOCK=$(pocketd query block --network=main --grpc-insecure=false -o json | tail -n +2 | jq -r '.header.height')
-  LATEST_BLOCK=$(($LATEST_BLOCK))
-  LATEST_BLOCK_MINUS_100=$(($LATEST_BLOCK - 100))
+  LATEST_BLOCK_MAIN=$(pocketd query block --network=main --grpc-insecure=false -o json | tail -n +2 | jq -r '.header.height')
+  LATEST_BLOCK_BETA=$(pocketd query block --network=beta --grpc-insecure=false -o json | tail -n +2 | jq -r '.header.height')
 
-  echo "=========================================="
-  echo "Shannon Blockchain Query Utilities"
-  echo "=========================================="
+  LATEST_BLOCK_MAIN=$(($LATEST_BLOCK_MAIN))
+  LATEST_BLOCK_BETA=$(($LATEST_BLOCK_BETA))
+
+  LATEST_BLOCK_MAIN_MINUS_100=$(($LATEST_BLOCK_MAIN - 100))
+  LATEST_BLOCK_BETA_MINUS_100=$(($LATEST_BLOCK_BETA - 100))
+
+  echo -e "${BLUE}==========================================${NC}"
+  echo -e "${BOLD}Shannon Blockchain Query Utilities${NC}"
+  echo -e "${BLUE}==========================================${NC}"
   echo ""
-  echo "Available commands:"
-  echo "  shannon_query_unique_tx_msgs_and_events  - Get unique message and event types"
-  echo "  shannon_query_unique_block_events        - Get unique block events"
-  echo "  shannon_query_tx_messages                - Query transactions by message type"
-  echo "  shannon_query_tx_events                  - Query transactions by event type"
-  echo "  shannon_query_block_events               - Query block events"
-  echo "  shannon_query_unique_claim_suppliers     - Get unique claim supplier addresses"
-  echo "  shannon_query_supplier_tx_events         - Get supplier-specific transaction events"
-  echo "  shannon_query_supplier_block_events      - Get supplier-specific block events"
-  echo "  shannon_query_application_block_events   - Get application-specific block events"
+  echo -e "${BOLD}Available commands:${NC}"
+  echo -e "  ${CYAN}shannon_query_unique_tx_msgs_and_events${NC}  - Get unique message and event types"
+  echo -e "  ${CYAN}shannon_query_unique_block_events${NC}        - Get unique block events"
+  echo -e "  ${CYAN}shannon_query_tx_messages${NC}                - Query transactions by message type"
+  echo -e "  ${CYAN}shannon_query_tx_events${NC}                  - Query transactions by event type"
+  echo -e "  ${CYAN}shannon_query_block_events${NC}               - Query block events"
+  echo -e "  ${CYAN}query_blocks${NC}                             - Query and save individual blocks to files"
+  echo -e "  ${CYAN}shannon_query_unique_claim_suppliers${NC}     - Get unique claim supplier addresses"
+  echo -e "  ${CYAN}shannon_query_supplier_tx_events${NC}         - Get supplier-specific transaction events"
+  echo -e "  ${CYAN}shannon_query_supplier_block_events${NC}      - Get supplier-specific block events"
+  echo -e "  ${CYAN}shannon_query_application_block_events${NC}   - Get application-specific block events"
   echo ""
-  echo "Current latest block on mainnet: $LATEST_BLOCK"
+  echo "Current latest block on mainnet: ${BOLD}$LATEST_BLOCK_MAIN ${NC}"
+  echo "Current latest block on beta testnet: ${BOLD}$LATEST_BLOCK_BETA ${NC}"
   echo ""
-  echo "Quick start examples (using last 100 blocks - focus on Claim messages & events):"
-  echo "  shannon_query_unique_tx_msgs_and_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_unique_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_tx_messages $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK /pocket.proof.MsgCreateClaim \"\" main"
-  echo "  shannon_query_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pocket.proof.EventClaimCreated main"
-  echo "  shannon_query_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_unique_claim_suppliers $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK main"
-  echo "  shannon_query_supplier_tx_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
-  echo "  shannon_query_supplier_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
-  echo "  shannon_query_application_block_events $LATEST_BLOCK_MINUS_100 $LATEST_BLOCK pokt14tg8v3hns5tjefnmqs9u98jqjp6mw6wmwwmuh2 main"
+  echo -e "${BOLD}Quick start examples (using last 100 blocks - focus on Claim messages & events):${NC}"
+  echo -e "  ${CYAN}shannon_query_unique_tx_msgs_and_events${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo -e "  ${CYAN}shannon_query_unique_block_events${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo -e "  ${CYAN}shannon_query_tx_messages${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN /pocket.proof.MsgCreateClaim \"\" main"
+  echo -e "  ${CYAN}shannon_query_tx_events${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pocket.proof.EventClaimCreated main"
+  echo -e "  ${CYAN}shannon_query_block_events${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo -e "  ${CYAN}query_blocks${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo -e "  ${CYAN}shannon_query_unique_claim_suppliers${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN main"
+  echo -e "  ${CYAN}shannon_query_supplier_tx_events${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
+  echo -e "  ${CYAN}shannon_query_supplier_block_events${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pokt1hcfx7lx92p03r5gwjt7t7jk0j667h7rcvart9f main"
+  echo -e "  ${CYAN}shannon_query_application_block_events${NC} $LATEST_BLOCK_MAIN_MINUS_100 $LATEST_BLOCK_MAIN pokt14tg8v3hns5tjefnmqs9u98jqjp6mw6wmwwmuh2 main"
   echo ""
-  echo "Use --help with any command for detailed information"
-  echo "=========================================="
+  echo -e "Use --help with any command for detailed information"
+  echo -e "${BLUE}==========================================${NC}"
 
   echo ""
-  echo "TIPS:"
+  echo -e "${BOLD}TIPS:${NC}"
   echo "  Available event types can be found with:"
-  echo "    find . -name \"*.proto\" -exec grep -h \"^message Event\" {} \\; | sed 's/^message \\(Event[^{]*\\).*/\\1/'"
+  echo "    ${CYAN}find . -name \"*.proto\" -exec grep -h \"^message Event\" {} \\; | sed 's/^message \\(Event[^{]*\\).*/\\1/'${NC}"
   echo ""
   echo "  Available message types can be found with:"
-  echo "    find . -name \"*.proto\" -exec grep -h \"^message Msg\" {} \\; | sed 's/^message \\(Msg[^{]*\\).*/\\1/' | head -10"
+  echo "    ${CYAN}find . -name \"*.proto\" -exec grep -h \"^message Msg\" {} \\; | sed 's/^message \\(Msg[^{]*\\).*/\\1/' | head -10${NC}"
   echo "    (Note: Add module prefix like /pocket.proof.MsgCreateClaim or /pocket.supplier.MsgStakeSupplier)"
 }
 
@@ -681,6 +708,98 @@ EOF
   echo "Query completed."
 }
 
+function query_blocks() {
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<'EOF'
+query_blocks - Query and save individual blocks to files
+
+DESCRIPTION:
+  Iterates through a range of block heights, queries each block,
+  saves it to /tmp/block_NUMBER.json, and outputs the file size
+  alongside the filename for each saved block.
+
+USAGE:
+  query_blocks <start_height> <end_height> <env>
+
+ARGUMENTS:
+  start_height    Start block height (inclusive)
+  end_height      End block height (inclusive)
+  env             Network environment - must be one of: alpha, beta, main
+
+EXAMPLES:
+  query_blocks 115575 115580 main
+  query_blocks 13000 13005 beta
+EOF
+    return 0
+  fi
+
+  if [[ $# -ne 3 ]]; then
+    echo "Error: Invalid number of arguments. Use --help for more information."
+    return 1
+  fi
+
+  local start="$1"
+  local end="$2"
+  local env="$3"
+
+  validate_env "$env" || return 1
+  validate_block_range "$start" "$end" || return 1
+
+  echo "Querying blocks from $start to $end on '$env' network..."
+  echo "Saving blocks to /tmp/block_{NUMBER}.json format"
+  echo "--------------------------------------"
+
+  # Loop through each block height
+  for ((height = $start; height <= $end; height++)); do
+    local block_file="/tmp/block_${height}.json"
+
+    echo -n "Processing block $height... "
+
+    if pocketd query block-results "$height" \
+      --network="$env" --grpc-insecure=false \
+      -o json >"$block_file" 2>/dev/null; then
+
+      # Get file size in bytes
+      local file_size=$(stat -f%z "$block_file" 2>/dev/null || stat -c%s "$block_file" 2>/dev/null || echo "unknown")
+
+      # Format file size for readability and add color coding
+      if [[ "$file_size" != "unknown" ]]; then
+        # Color codes
+        local RED='\033[0;31m'
+        local YELLOW='\033[0;33m'
+        local NC='\033[0m' # No Color
+
+        if [[ $file_size -gt 1048576 ]]; then
+          local size_display="$(echo "scale=2; $file_size / 1048576" | bc)MB"
+        elif [[ $file_size -gt 1024 ]]; then
+          local size_display="$(echo "scale=2; $file_size / 1024" | bc)KB"
+        else
+          local size_display="${file_size}B"
+        fi
+
+        # Apply color based on size thresholds
+        if [[ $file_size -gt 5242880 ]]; then  # > 5MB
+          local colored_size="${RED}${size_display}${NC}"
+        elif [[ $file_size -gt 1048576 ]]; then  # > 1MB
+          local colored_size="${YELLOW}${size_display}${NC}"
+        else  # < 100KB (plain)
+          local colored_size="$size_display"
+        fi
+      else
+        local colored_size="unknown size"
+      fi
+
+      echo -e "saved to $block_file ($colored_size)"
+    else
+      echo "failed to query block $height, skipping..."
+      rm -f "$block_file" 2>/dev/null
+    fi
+  done
+
+  echo "--------------------------------------"
+  echo "Block query completed. Files saved in /tmp/ directory."
+}
+
 # ===============================================
 # SUPPLIER-SPECIFIC FUNCTIONS
 # ===============================================
@@ -726,7 +845,7 @@ EOF
 
   local additional_query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
   local tmp_file="/tmp/shannon_txs_claim_suppliers_${min_height}_${max_height}_${env}_${additional_query_safe}.json"
-  
+
   query_txs_range "$min_height" "$max_height" "$env" "$tmp_file" "$additional_query"
 
   jq '[.txs[].tx.body.messages[]
@@ -787,7 +906,7 @@ EOF
 
   local additional_query_safe=$(echo "$additional_query" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
   local tmp_file="/tmp/shannon_txs_supplier_tx_events_${start}_${end}_${env}_${additional_query_safe}.json"
-  
+
   query_txs_range "$start" "$end" "$env" "$tmp_file" "$additional_query"
 
   jq --argjson EVENT_TYPES "$event_types_json" --arg SUPPLIER_ADDR "$supplier_addr" '

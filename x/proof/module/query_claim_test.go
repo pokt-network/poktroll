@@ -31,7 +31,7 @@ func TestClaim_Show(t *testing.T) {
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 
-	var wrongSupplierOperatorAddr = sample.AccAddress()
+	var wrongSupplierOperatorAddr = sample.AccAddressBech32()
 	tests := []struct {
 		desc                 string
 		sessionId            string
