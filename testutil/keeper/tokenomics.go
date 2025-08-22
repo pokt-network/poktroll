@@ -839,7 +839,6 @@ func WithModuleParams(moduleParams map[string]cosmostypes.Msg) TokenomicsModuleK
 	}
 }
 
-// TODO: Consider extracting validator creation to a reusable test utility
 // createValidatorForProposer creates a test validator with proper consensus key mapping
 func createValidatorForProposer(ctx context.Context, stakingKeeper *stakingkeeper.Keeper) (cosmostypes.ConsAddress, error) {
 	// Create a consensus private/public key pair for testing
