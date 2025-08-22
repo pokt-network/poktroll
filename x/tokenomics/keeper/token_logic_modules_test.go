@@ -442,7 +442,6 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	numTokensClaimedInt := cosmosmath.NewIntFromUint64(uint64(numTokensClaimed))
 	proposerConsAddr := sample.ConsAddress()
 	proposerValOperatorAddr := sample.ValOperatorAddress()
-	proposerAccAddr := cosmostypes.AccAddress(proposerValOperatorAddr).String()
 	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
@@ -461,9 +460,6 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Set the dao_reward_address param on the tokenomics keeper.
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.DaoRewardAddress = daoAddress.String()
-	// TODO: Enable proposer rewards in integration tests with proper validator setup
-	tokenomicsParams.MintAllocationPercentages.Proposer = 0
-	tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer = 0
 	keepers.Keeper.SetParams(ctx, tokenomicsParams)
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
@@ -517,7 +513,6 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Determine balances before inflation
 	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddress.String())
-	propBalanceBefore := getBalance(t, ctx, keepers, proposerAccAddr)
 	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
 	supplierShareholderBalancesBeforeSettlementMap := make(map[string]*cosmostypes.Coin, len(supplierRevShares))
@@ -550,7 +545,6 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Determine balances after inflation
 	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddress.String())
-	propBalanceAfter := getBalance(t, ctx, keepers, proposerAccAddr)
 	serviceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceAfter := getBalance(t, ctx, keepers, appAddress)
 	supplierShareholderBalancesAfter := make(map[string]*cosmostypes.Coin, len(supplierRevShares))
@@ -601,8 +595,24 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	appTotalExpected := appMintFromGlobalMint.Add(appDistributionFromBurnEqualsMint)
 	daoTotalExpected := daoMintFromGlobalMint.Add(daoDistributionFromBurnEqualsMint).Add(numTokensMinted)
 
-	// Ensure the balance was increased to the appropriate amount.
-	require.Equal(t, propBalanceBefore.Amount.Add(propTotalExpected), propBalanceAfter.Amount)
+	// Verify that ModToAcctTransfer operations include validator rewards using ModToAcctTransfer
+	modToAcctTransfers := pendingResult.GetModToAcctTransfers()
+	validatorRewardsFound := false
+	totalValidatorRewardAmount := cosmosmath.ZeroInt()
+
+	// Check for validator commission and delegator reward transfers
+	for _, transfer := range modToAcctTransfers {
+		if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION ||
+			transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION ||
+			transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION ||
+			transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION {
+			validatorRewardsFound = true
+			totalValidatorRewardAmount = totalValidatorRewardAmount.Add(transfer.Coin.Amount)
+		}
+	}
+
+	require.True(t, validatorRewardsFound, "Should find ModToAcctTransfer operations for validator/delegator rewards")
+	require.Equal(t, propTotalExpected, totalValidatorRewardAmount, "Total validator reward amount should match expected proposer allocation")
 	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerTotalExpected), serviceOwnerBalanceAfter.Amount)
 	require.Equal(t, appBalanceBefore.Amount.Add(appTotalExpected), appBalanceAfter.Amount)
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoTotalExpected), daoBalanceAfter.Amount)
@@ -903,7 +913,6 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 
 	service := prepareTestService(1)
 	numRelays := uint64(1000)
-	numTokensClaimed := cosmosmath.NewInt(int64(numRelays * service.ComputeUnitsPerRelay))
 	daoAddress := sample.AccAddressBech32()
 	proposerConsAddr := sample.ConsAddress()
 	proposerValOperatorAddr := sample.ValOperatorAddress()
@@ -989,33 +998,6 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
 
-	// Verify that ModToAcctTransfer operations include validator rewards using ModToAcctTransfer
-	modToAcctTransfers := pendingResult.GetModToAcctTransfers()
-	validatorRewardsFound := false
-	totalValidatorRewardAmount := cosmosmath.ZeroInt()
-
-	// Check for validator commission and delegator reward transfers
-	for _, transfer := range modToAcctTransfers {
-		if transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION ||
-			transfer.OpReason == tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION {
-			validatorRewardsFound = true
-			totalValidatorRewardAmount = totalValidatorRewardAmount.Add(transfer.Coin.Amount)
-		}
-	}
-
-	require.True(t, validatorRewardsFound, "Should find ModToAcctTransfer operations for validator/delegator rewards")
-	require.True(t, totalValidatorRewardAmount.IsPositive(), "Total validator reward amount should be positive")
-
-	// Verify the amount matches expected proposer allocation
-	globalInflationPerClaimRat, err := encoding.Float64ToRat(tokenomicsParams.GlobalInflationPerClaim)
-	require.NoError(t, err)
-
-	numTokensClaimedRat := new(big.Rat).SetInt(numTokensClaimed.BigInt())
-	numTokensMintedRat := new(big.Rat).Mul(numTokensClaimedRat, globalInflationPerClaimRat)
-	propMintFromGlobalMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Proposer)
-
-	require.Equal(t, propMintFromGlobalMint, totalValidatorRewardAmount,
-		"Total validator reward amount should match expected proposer mint allocation")
 }
 
 func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {
