@@ -231,107 +231,17 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 
 	// Distribute proposer rewards to all validators based on staking weight
 	if !proposerAmount.IsZero() {
-		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-
-		// Get all bonded validators sorted by voting power
-		validators, err := tlmgm.tlmCtx.StakingKeeper.GetBondedValidatorsByPower(tlmgm.ctx)
-		if err != nil {
-			tlmgm.logger.Error(fmt.Sprintf("failed to retrieve bonded validators for reward distribution: %v", err))
-			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error getting bonded validators: %v", err)
+		if err := distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
+			tlmgm.ctx,
+			tlmgm.logger,
+			tlmgm.tlmCtx.Result,
+			tlmgm.tlmCtx.StakingKeeper,
+			proposerAmount,
+			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
+			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION,
+		); err != nil {
+			return err
 		}
-
-		if len(validators) == 0 {
-			tlmgm.logger.Warn("no bonded validators found for proposer reward distribution - rewards will go to DAO")
-			// Rewards will be included in DAO allocation since no validators to distribute to
-			return nil
-		}
-
-		// Calculate total bonded tokens across all validators
-		totalBondedTokens := math.ZeroInt()
-		validatorsWithStake := 0
-		for _, validator := range validators {
-			bondedTokens := validator.GetBondedTokens()
-			if bondedTokens.IsPositive() {
-				totalBondedTokens = totalBondedTokens.Add(bondedTokens)
-				validatorsWithStake++
-			}
-		}
-
-		if totalBondedTokens.IsZero() {
-			tlmgm.logger.Warn("total bonded tokens is zero across all validators, skipping proposer reward distribution - rewards will go to DAO")
-			// Rewards will be included in DAO allocation since no stake to distribute based on
-			return nil
-		}
-
-		tlmgm.logger.Info(fmt.Sprintf("distributing (%v) to %d validators with stake (total: %s tokens bonded)",
-			proposerCoin, validatorsWithStake, totalBondedTokens))
-
-		// Distribute to each validator proportionally based on their staking weight
-		// Using direct ModToAcctTransfer operations instead of distribution keeper
-		remainingAmount := proposerAmount
-		distributedValidators := 0
-
-		for i, validator := range validators {
-			// Skip validators with zero stake
-			validatorBondedTokens := validator.GetBondedTokens()
-			if validatorBondedTokens.IsZero() {
-				tlmgm.logger.Debug(fmt.Sprintf("skipping validator %s with zero bonded tokens", validator.GetOperator()))
-				continue
-			}
-
-			var validatorShare math.Int
-
-			// For the last validator with stake, allocate any remaining tokens to avoid rounding issues
-			if distributedValidators == validatorsWithStake-1 {
-				validatorShare = remainingAmount
-			} else {
-				// Calculate proportional share: (validator_tokens / total_tokens) * proposer_amount
-				validatorShare = proposerAmount.Mul(validatorBondedTokens).Quo(totalBondedTokens)
-				remainingAmount = remainingAmount.Sub(validatorShare)
-			}
-
-			if validatorShare.IsZero() {
-				tlmgm.logger.Debug(fmt.Sprintf("validator %s calculated share is zero, skipping", validator.GetOperator()))
-				continue
-			}
-
-			// Distribute rewards directly to validator and delegators using ModToAcctTransfer
-			if err := distributeValidatorRewardsToStakeholders(
-				tlmgm.ctx,
-				tlmgm.logger,
-				tlmgm.tlmCtx.Result,
-				tlmgm.tlmCtx.StakingKeeper,
-				&validators[i],
-				validatorShare,
-				tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
-				tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION,
-			); err != nil {
-				tlmgm.logger.Error(fmt.Sprintf("failed to distribute rewards to validator %s stakeholders: %v", validator.GetOperator(), err))
-				return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error distributing rewards to validator %s stakeholders: %v", validator.GetOperator(), err)
-			}
-
-			distributedValidators++
-
-			// Emit telemetry for validator reward distribution
-			telemetry.MintedTokensFromModule(
-				tokenomicstypes.ModuleName,
-				float32(validatorShare.Int64()),
-			)
-
-			tlmgm.logger.Debug(fmt.Sprintf("distributed (%v) to validator %s and delegators (stake: %s/%s, weight: %.4f%%)",
-				cosmostypes.NewCoin(pocket.DenomuPOKT, validatorShare),
-				validator.GetOperator(),
-				validatorBondedTokens,
-				totalBondedTokens,
-				float64(validatorBondedTokens.Int64())/float64(totalBondedTokens.Int64())*100))
-		}
-
-		if distributedValidators == 0 {
-			tlmgm.logger.Error("no validators received rewards despite having stake - this should not happen")
-			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrap("no validators received rewards despite having stake")
-		}
-
-		tlmgm.logger.Info(fmt.Sprintf("successfully distributed (%v) to %d validators and their delegators using ModToAcctTransfer", proposerCoin, distributedValidators))
 
 		// Emit telemetry for total validator reward distribution
 		telemetry.MintedTokensFromModule(

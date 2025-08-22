@@ -213,32 +213,19 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to supplier shareholders", supplierCoin))
 	}
 
-	// Distribute to block proposer and delegators
+	// Distribute to all validators and their delegators
 	if !proposerAmount.IsZero() {
-		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-		consAddr := cosmostypes.UnwrapSDKContext(tlmbem.ctx).BlockHeader().ProposerAddress
-
-		// Get validator from consensus address
-		validator, err := tlmbem.tlmCtx.StakingKeeper.GetValidatorByConsAddr(tlmbem.ctx, consAddr)
-		if err != nil {
-			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error getting validator by consensus address: %v", err)
-		}
-
-		// Distribute rewards directly to block proposer validator and delegators using ModToAcctTransfer
-		if err := distributeValidatorRewardsToStakeholders(
+		if err := distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
 			tlmbem.ctx,
 			tlmbem.logger,
 			tlmbem.tlmCtx.Result,
 			tlmbem.tlmCtx.StakingKeeper,
-			&validator,
 			proposerAmount,
 			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
 			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION,
 		); err != nil {
-			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error distributing rewards to block proposer validator %s stakeholders: %v", validator.GetOperator(), err)
+			return err
 		}
-
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to block proposer validator %s and delegators using ModToAcctTransfer", proposerCoin, validator.GetOperator()))
 	}
 
 	// Distribute to service source owner
