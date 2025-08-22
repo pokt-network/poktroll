@@ -45,11 +45,15 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 		Tx: &autocliv1.ServiceCommandDescriptor{
 			Service:              prooftypes.Msg_serviceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command
-			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
-				// {
-				// 	RpcMethod: "UpdateParams",
-				// 	Skip:      true, // skipped because authority gated
-				// },
+			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
+				{
+					RpcMethod: "UpdateParams",
+					Skip:      true, // skipped because authority gated
+				},
+				{
+					RpcMethod: "UpdateParam",
+					Skip:      true, // skipped because authority gated
+				},
 				// {
 				// 	RpcMethod:      "CreateClaim",
 				// 	Use:            "create-claim [session-header] [root-hash]",
