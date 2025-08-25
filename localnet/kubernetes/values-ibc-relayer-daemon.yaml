@@ -1,0 +1,11 @@
+prefix: "daemon"
+kind: "Deployment"
+command:
+  - /root/.hermes/entrypoint.sh
+  - start
+
+service:
+  type: ClusterIP
+  ports:
+    rest: 3000
+    telemetry: 3001
