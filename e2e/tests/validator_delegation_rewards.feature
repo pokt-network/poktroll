@@ -1,6 +1,6 @@
 Feature: Validator Delegation Rewards
   # This feature validates that validator rewards from relay settlements are correctly:
-  # 1. Distributed to ALL validators proportionally by staking weight (not just block proposer)
+  # 1. Distributed to the block proposer (not all validators)
   # 2. Shared with delegators after accounting for validator commission
   #
   # This test accounts for balance decrements from delegation (escrowed tokens)
@@ -8,11 +8,11 @@ Feature: Validator Delegation Rewards
   #
   # Key implementation details:
   # - Rewards come from both RelayBurnEqualsMint TLM and GlobalMint TLM
-  # - The "proposer" allocation parameter distributes to all validators by stake
+  # - The "proposer" allocation parameter distributes to the current block proposer only
   # - Delegators receive rewards minus validator commission using consistent tokenomics distribution
   # - LocalNet has minimum-gas-prices = "0upokt" so no gas fees affect balances
 
-  Scenario: Validator rewards are distributed proportionally to delegators based on stake share
+  Scenario: Proposer rewards are distributed proportionally to delegators based on stake share
     # Baseline setup
     Given the user has the pocketd binary installed
 
@@ -33,7 +33,7 @@ Feature: Validator Delegation Rewards
 
     # Configure tokenomics parameters to explicitly set inflation and distribution
     # Focus on validator rewards for delegation testing  
-    # Note: proposer parameter now distributes rewards to ALL validators based on staking weight
+    # Note: proposer parameter distributes rewards to the current block proposer only
     # IMPORTANT: Both TLM parameter sets must be configured for complete reward distribution coverage:
     # - mint_equals_burn_claim_distribution: Controls RelayBurnEqualsMint TLM (main settlement rewards)
     # - mint_allocation_percentages: Controls GlobalMint TLM (inflation rewards)
@@ -103,30 +103,3 @@ Feature: Validator Delegation Rewards
     # Delegator rewards are proportional to their stake vs total validator delegations
     Then the account balance of "app2" should be "more" than "app2_initial_balance"
     And the account balance of "app3" should be "more" than "app3_initial_balance"
-
-    # Multi-validator delegation testing: Set up additional validators and cross-validator delegations
-    And the user remembers the 2nd validator address as "validator2"
-    And the user remembers the 3rd validator address as "validator3"
-    
-    # Cross-validator delegations: app2 delegates to multiple validators
-    And the user remembers the balance of "app2" as "app2_multi_validator_balance"
-    And the account "app2" delegates "2000000" uPOKT to validator "validator2"
-    And the account "app2" delegates "1000000" uPOKT to validator "validator3"
-    
-    # Wait for delegations to be processed
-    And the user waits for "2" blocks
-    
-    # Record initial rewards state across all validators for app2
-    And the user remembers the delegation rewards for "app2" from "validator1, validator2, validator3" as "app2_multi_validator_initial_rewards"
-    
-    # Service more relays to generate additional rewards
-    When the supplier "supplier1" has serviced a session with "15" relays for service "anvil" for application "app1"
-    
-    # Wait for the second Claim & Proof lifecycle
-    And the user should wait for the "proof" module "CreateClaim" Message to be submitted
-    And the user should wait for the "proof" module "SubmitProof" Message to be submitted
-    And the user should wait for the ClaimSettled event with "THRESHOLD" proof requirement to be broadcast
-    
-    # Validate cross-validator reward distribution is proportional to delegations
-    Then the rewards should be distributed proportionally across validators "validator1, validator2, validator3" for delegator "app2"
-    And the account balance of "app2" should increase or remain the same from "app2_multi_validator_balance"

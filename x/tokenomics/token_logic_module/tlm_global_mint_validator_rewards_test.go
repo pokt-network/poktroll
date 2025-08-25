@@ -22,7 +22,8 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
+func TestTLMGlobalMint_ValidatorRewardDistribution_DISABLED_FOR_PROPOSER_ONLY(t *testing.T) {
+	t.Skip("Disabled: This test was written for all-validators distribution. In PR 1, we only distribute to proposer.")
 	tests := []struct {
 		name                      string
 		settlementAmount          int64
@@ -202,7 +203,8 @@ func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 	}
 }
 
-func TestTLMGlobalMint_ValidatorRewardDistribution_EdgeCases(t *testing.T) {
+func TestTLMGlobalMint_ValidatorRewardDistribution_EdgeCases_DISABLED_FOR_PROPOSER_ONLY(t *testing.T) {
+	t.Skip("Disabled: This test was written for all-validators distribution. In PR 1, we only distribute to proposer.")
 	tests := []struct {
 		name          string
 		setupMocks    func(*mocks.MockStakingKeeper)
@@ -409,7 +411,8 @@ func createTestTLMContext(
 	}
 }
 
-func TestTLMGlobalMint_ValidatorRewardDistribution_PrecisionTest(t *testing.T) {
+func TestTLMGlobalMint_ValidatorRewardDistribution_PrecisionTest_DISABLED_FOR_PROPOSER_ONLY(t *testing.T) {
+	t.Skip("Disabled: This test was written for all-validators distribution. In PR 1, we only distribute to proposer.")
 	// Test rounding and precision handling with small amounts and many validators
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
