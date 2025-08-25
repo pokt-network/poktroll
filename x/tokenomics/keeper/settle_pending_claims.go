@@ -162,6 +162,9 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		"block_height", blockHeight,
 	)
 
+	// TODO_IN_THIS_PR: Activate/adjust sleep to simulate slow settlement
+	// time.Sleep(30 * time.Second)
+
 	return settledResults, expiredResults, numDiscardedFaultyClaims, nil
 }
 

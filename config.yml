@@ -114,8 +114,8 @@ validators:
     config:
       moniker: "validator1"
       consensus:
-        timeout_commit: "2s"
-        timeout_propose: "2s"
+        timeout_commit: "30s"
+        timeout_propose: "30s"
       instrumentation:
         prometheus: true
       log_level: "info"
@@ -362,13 +362,13 @@ genesis:
       params:
         proof_request_probability: "0.25"
         proof_requirement_threshold:
-          amount: "20000000"
+          amount: "1"
           denom: upokt
         proof_missing_penalty:
-          amount: "320000000"
+          amount: "1"
           denom: upokt
         proof_submission_fee:
-          amount: "1000000"
+          amount: "1"
           denom: upokt
     # For ref, see proto/poktroll/session/params.proto
     session:
