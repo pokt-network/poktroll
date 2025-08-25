@@ -45,7 +45,7 @@ type SessionPersistenceTestSuite struct {
 
 	deps                   depinject.Config
 	relayerSessionsManager relayer.RelayerSessionsManager
-	storesDirectoryOpt     relayer.RelayerSessionsManagerOption
+	storesDirectoryPathOpt relayer.RelayerSessionsManagerOption
 
 	sessionTrees            session.SessionsTreesMap
 	activeSessionHeader     *sessiontypes.SessionHeader
@@ -101,7 +101,7 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	tmpDirPattern := fmt.Sprintf("%s_smt_kvstore", strings.ReplaceAll(s.T().Name(), "/", "_"))
 	tmpStoresDir, err := os.MkdirTemp("", tmpDirPattern)
 	require.NoError(s.T(), err)
-	s.storesDirectoryOpt = session.WithStoresDirectory(tmpStoresDir)
+	s.storesDirectoryPathOpt = session.WithStoresDirectoryPath(tmpStoresDir)
 
 	// Configure test service and difficulty
 	testqueryclients.AddToExistingServices(s.T(), s.service)
@@ -411,7 +411,7 @@ func (s *SessionPersistenceTestSuite) setupNewRelayerSessionsManager() relayer.R
 	)
 
 	// Create a new relayer sessions manager with the configured dependencies
-	relayerSessionsManager, err := session.NewRelayerSessions(s.deps, s.storesDirectoryOpt, sessionTreesInspector)
+	relayerSessionsManager, err := session.NewRelayerSessions(s.deps, s.storesDirectoryPathOpt, sessionTreesInspector)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), relayerSessionsManager)
 
