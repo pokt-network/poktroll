@@ -19,11 +19,11 @@ This playbook provides comprehensive guidance for monitoring, inspecting, and un
 
 ## Overview
 
-In Pocket Network's Shannon protocol, validators receive rewards as part of the session settlement process through the **Token Logic Modules (TLMs)**. Both the **Global Mint TLM** and **RelayBurnEqualsMint TLM** distribute a configurable percentage of settlement rewards to validators based on their staking weight.
+In Pocket Network's Shannon protocol, the block proposer receives rewards as part of the session settlement process through the **Token Logic Modules (TLMs)**. Both the **Global Mint TLM** and **RelayBurnEqualsMint TLM** distribute a configurable percentage of settlement rewards to the current block proposer.
 
 ### Key Concepts
 
-- **Validator Rewards**: Distributed proportionally to all bonded validators based on staking weight
+- **Proposer Rewards**: Distributed to the current block proposer only
 - **Direct Distribution**: Rewards are sent directly to validator and delegator accounts immediately
 - **Commission**: Validators earn commission on rewards before distributing to delegators
 - **Delegator Rewards**: Distributed directly to individual delegator accounts automatically
@@ -34,8 +34,8 @@ In Pocket Network's Shannon protocol, validators receive rewards as part of the 
 ### How Rewards Flow
 
 1. **Session Settlement**: When a supplier's claim is settled, both TLMs may distribute validator rewards
-2. **Validator Allocation**: A percentage (configurable via `proposer` parameter in each TLM) goes to validators
-3. **Stake-Weight Distribution**: Rewards are distributed to ALL validators proportionally based on their bonded stake
+2. **Proposer Allocation**: A percentage (configurable via `proposer` parameter in each TLM) goes to the block proposer
+3. **Proposer Distribution**: Rewards are distributed to the current block proposer only
 4. **Direct Distribution**: 
    - **Validator Commission**: Calculated based on validator's commission rate and sent directly to validator account
    - **Delegator Rewards**: Remaining rewards distributed directly to individual delegator accounts based on their delegation shares
@@ -46,8 +46,7 @@ In Pocket Network's Shannon protocol, validators receive rewards as part of the 
 ```
 Total Session Settlement = Relays × CUPR × Multiplier  
 Global Inflation = Settlement × GlobalInflationPerClaim
-Validator Rewards = (Settlement + Inflation) × ProposerAllocation
-Individual Validator Reward = Validator Rewards × (ValidatorStake / TotalBondedStake)
+Proposer Rewards = (Settlement + Inflation) × ProposerAllocation
 ```
 
 ### Example Calculation
@@ -169,7 +168,7 @@ If telemetry is enabled, monitor these metrics:
 
 ### Expected Behavior Checklist
 
-✅ **Rewards are distributed to ALL validators** (not just block proposer)  
+✅ **Rewards are distributed to the block proposer only**  
 ✅ **Distribution is proportional to staking weight**  
 ✅ **No rewards are lost to rounding errors** (remainder given to validator as additional commission)  
 ✅ **Validators with zero stake receive zero rewards**  
@@ -185,7 +184,7 @@ If telemetry is enabled, monitor these metrics:
 #!/bin/bash
 NETWORK="<your-network>"
 
-# Get all validators and their stakes
+# Get the current block proposer and their stake
 VALIDATORS=$(pocketd query staking validators --network $NETWORK --output json | jq -r '.validators[] | "\(.operator_address) \(.tokens)"')
 
 echo "Validator Stakes:"
@@ -245,7 +244,7 @@ echo "Reward increase: $REWARD_INCREASE uPOKT"
 - `mint_allocation_percentages.proposer` is set to 0 in tokenomics params
 - `mint_equals_burn_claim_distribution.proposer` is set to 0 in tokenomics params  
 - No claim settlements occurring (no relay traffic)
-- All validators have zero bonded stake
+- The block proposer has zero bonded stake
 
 **Diagnostics**:
 ```bash

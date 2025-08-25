@@ -415,6 +415,76 @@ func getValidatorAccountAddress(validatorOperatorAddr string) (string, error) {
 	return accAddr.String(), nil
 }
 
+// distributeRewardsToProposerAndDelegators distributes rewards to the current block proposer
+// and their delegates. This function is used by TLMs to distribute validator rewards
+// specifically to the proposer of the current block.
+//
+// This function:
+// 1. Gets the current block proposer from the context
+// 2. Retrieves the validator information from the staking keeper
+// 3. Distributes the full reward amount to the proposer and their delegators
+// 4. Handles commission and delegate distribution via distributeValidatorRewardsToStakeholders
+// 5. Handles edge cases (no proposer, invalid address) by returning nil (rewards go to DAO)
+func distributeRewardsToProposerAndDelegators(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	result *tokenomicstypes.ClaimSettlementResult,
+	stakingKeeper tokenomicstypes.StakingKeeper,
+	totalRewardAmount math.Int,
+	validatorCommissionOpReason tokenomicstypes.SettlementOpReason,
+	delegateRewardOpReason tokenomicstypes.SettlementOpReason,
+) error {
+	logger = logger.With(
+		"method", "distributeRewardsToProposerAndDelegators",
+		"total_reward_amount", totalRewardAmount,
+	)
+
+	if totalRewardAmount.IsZero() {
+		logger.Debug("total reward amount is zero, skipping distribution")
+		return nil
+	}
+
+	totalRewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, totalRewardAmount)
+
+	// Get the proposer address from the block header
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	proposerAddr := sdkCtx.BlockHeader().ProposerAddress
+	if len(proposerAddr) == 0 {
+		logger.Warn("no proposer address found in block header - rewards will go to DAO")
+		return nil
+	}
+
+	// Convert byte array to consensus address
+	consAddr := cosmostypes.ConsAddress(proposerAddr)
+
+	// Get the validator from the staking keeper using consensus address
+	validator, err := stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
+	if err != nil {
+		logger.Warn(fmt.Sprintf("proposer validator not found for consensus address %s - rewards will go to DAO: %v", consAddr.String(), err))
+		return nil
+	}
+
+	logger.Info(fmt.Sprintf("distributing (%v) to block proposer %s and delegates", totalRewardCoin, validator.GetOperator()))
+
+	// Distribute rewards to the proposer and their delegates
+	if err := distributeValidatorRewardsToStakeholders(
+		ctx,
+		logger,
+		result,
+		stakingKeeper,
+		&validator,
+		totalRewardAmount,
+		validatorCommissionOpReason,
+		delegateRewardOpReason,
+	); err != nil {
+		logger.Error(fmt.Sprintf("failed to distribute rewards to proposer %s stakeholders: %v", validator.GetOperator(), err))
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error distributing rewards to proposer %s stakeholders: %v", validator.GetOperator(), err)
+	}
+
+	logger.Info(fmt.Sprintf("successfully distributed (%v) to proposer %s and their delegates using ModToAcctTransfer", totalRewardCoin, validator.GetOperator()))
+	return nil
+}
+
 // distributeRewardsToAllValidatorsAndDelegatesByStakeWeight distributes rewards to all bonded validators
 // and their delegators proportionally based on their staking weight. This function encapsulates the
 // common logic used by multiple TLMs to distribute validator rewards.

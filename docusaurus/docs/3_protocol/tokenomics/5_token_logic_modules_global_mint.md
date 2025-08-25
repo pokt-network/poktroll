@@ -100,11 +100,11 @@ graph TD
 
 ### Validator Reward Distribution
 
-The `proposer` allocation in the Global Mint TLM distributes rewards to **all** validators proportionally based on their bonded stake weight, not just the block proposer. Rewards are sent directly to validator and delegator accounts automatically during settlement.
+The `proposer` allocation in the Global Mint TLM distributes rewards to the current block proposer only. Rewards are sent directly to the proposer and their delegator accounts automatically during settlement.
 
 #### How Validator Rewards Work
 
-1. **Stake-Weight Distribution**: Total proposer allocation is split among all bonded validators based on their stake relative to total bonded stake
+1. **Proposer Distribution**: Total proposer allocation goes directly to the current block proposer
 2. **Commission Calculation**: Each validator's commission is calculated based on their commission rate
 3. **Delegator Distribution**: Remaining rewards (after commission) are distributed to delegators proportional to their delegation shares
 4. **Automatic Distribution**: Both validator commission and delegator rewards are distributed automatically to accounts
