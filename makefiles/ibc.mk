@@ -75,8 +75,6 @@ osmosis_query_tx:
 osmosis_query_tx_json:
 	POD_REGEX="osmosis-validator" CHAIN_BIN="osmosisd" CHAIN_ID="osmosis" ${MAKE} ibc_localnet_query_tx_json
 
-
-
 .PHONY: fund_agoric_account
 fund_agoric_account: check_kubectl check_docker_ps check_kind
 	bash -c '\
