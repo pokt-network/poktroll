@@ -500,8 +500,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		bankKeeper,
 	)
 
-	// Prepare the tokenomics keeper and module
-	// Create a mock staking keeper for tokenomics (integration tests don't have full staking module)
+	// Prepare mock staking keeper for integration tests
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 
@@ -520,6 +519,30 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
 		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
+	// Set up mock expectations for GetBondedValidatorsByPower (needed for global mint TLM)
+	mockStakingKeeper.EXPECT().
+		GetBondedValidatorsByPower(gomock.Any()).
+		Return([]stakingtypes.Validator{validator}, nil).
+		AnyTimes()
+
+	// Set up mock expectations for GetValidatorDelegations (needed for ModToAcctTransfer validator rewards)
+	mockStakingKeeper.EXPECT().
+		GetValidatorDelegations(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, validatorAddr sdk.ValAddress) ([]stakingtypes.Delegation, error) {
+			// Create a deterministic delegation for this validator using a fixed delegator address
+			// This ensures test determinism and commutativity
+			fixedDelegatorAddr := "pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm" // Fixed address for deterministic tests
+			delegations := []stakingtypes.Delegation{
+				{
+					DelegatorAddress: fixedDelegatorAddr,
+					ValidatorAddress: validatorAddr.String(),
+					Shares:           math.LegacyNewDecFromInt(math.NewInt(1000000)), // All shares to one delegator for simplicity
+				},
+			}
+			return delegations, nil
+		}).
 		AnyTimes()
 
 	// Set the proposer address in the context to match the mock expectation

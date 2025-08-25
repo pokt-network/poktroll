@@ -128,5 +128,14 @@ type MigrationKeeper interface {
 
 // StakingKeeper defines the expected interface for the Staking module.
 type StakingKeeper interface {
+	// GetValidatorByConsAddr gets a validator by consensus address
 	GetValidatorByConsAddr(ctx context.Context, consAddr cosmostypes.ConsAddress) (stakingtypes.Validator, error)
+	// Validator gets a validator by operator address
+	Validator(ctx context.Context, addr cosmostypes.ValAddress) (stakingtypes.ValidatorI, error)
+	// GetDelegatorDelegations gets all delegations for a delegator
+	GetDelegatorDelegations(ctx context.Context, delegator cosmostypes.AccAddress, maxRetrieve uint16) ([]stakingtypes.Delegation, error)
+	// GetValidatorDelegations gets all delegations to a validator
+	GetValidatorDelegations(ctx context.Context, valAddr cosmostypes.ValAddress) ([]stakingtypes.Delegation, error)
+	// GetBondedValidatorsByPower gets all bonded validators sorted by voting power
+	GetBondedValidatorsByPower(ctx context.Context) ([]stakingtypes.Validator, error)
 }

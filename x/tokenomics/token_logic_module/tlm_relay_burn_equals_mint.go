@@ -43,15 +43,27 @@ func (tlmbem *tlmRelayBurnEqualsMint) Process(
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
-	tlmbem.ctx = ctx
-	tlmbem.logger = logger
-	tlmbem.tlmCtx = &tlmCtx
+	blockHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	service := tlmCtx.Service
+	sessionHeader := tlmCtx.SessionHeader
+	application := tlmCtx.Application
+	supplier := tlmCtx.Supplier
+	actualSettlementCoin := tlmCtx.SettlementCoin
 
 	logger = logger.With(
 		"tlm", "TLMRelayBurnEqualsMint",
 		"method", "Process",
-		"session_id", tlmCtx.Result.GetSessionId(),
+		"height", blockHeight,
+		"session_id", sessionHeader.GetSessionId(),
+		"service_id", service.Id,
+		"application", application.Address,
+		"supplier_operator", supplier.OperatorAddress,
+		"actual_settlement_coin", actualSettlementCoin,
 	)
+
+	tlmbem.ctx = ctx
+	tlmbem.logger = logger
+	tlmbem.tlmCtx = &tlmCtx
 
 	// Burn the corresponding tokens from the application's stake.
 	if err := tlmbem.processApplicationBurn(); err != nil {
@@ -201,25 +213,19 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to supplier shareholders", supplierCoin))
 	}
 
-	// Distribute to block proposer
+	// Distribute to all validators and their delegators
 	if !proposerAmount.IsZero() {
-		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-
-		// Get the block proposer's operator address (not consensus address)
-		proposerAddr, err := getBlockProposerOperatorAddress(tlmbem.ctx, tlmbem.tlmCtx.StakingKeeper)
-		if err != nil {
-			tlmbem.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
+		if err := distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
+			tlmbem.ctx,
+			tlmbem.logger,
+			tlmbem.tlmCtx.Result,
+			tlmbem.tlmCtx.StakingKeeper,
+			proposerAmount,
+			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
+			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION,
+		); err != nil {
 			return err
 		}
-		tlmbem.logger.Info(fmt.Sprintf("TLM Relay Burn Equals Mint: resolved proposer address to %s", proposerAddr))
-
-		tlmbem.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
-			SenderModule:     tokenomicstypes.ModuleName,
-			RecipientAddress: proposerAddr,
-			Coin:             proposerCoin,
-		})
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
 	}
 
 	// Distribute to service source owner
@@ -231,7 +237,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 			RecipientAddress: tlmbem.tlmCtx.Service.OwnerAddress,
 			Coin:             sourceOwnerCoin,
 		})
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmbem.tlmCtx.Service.OwnerAddress))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to service source owner %s", sourceOwnerCoin, tlmbem.tlmCtx.Service.OwnerAddress))
 	}
 
 	// Distribute to DAO
@@ -244,7 +250,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 			RecipientAddress: daoRewardAddress,
 			Coin:             daoCoin,
 		})
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to DAO %s", daoCoin, daoRewardAddress))
 	}
 
 	// Distribute to application
@@ -256,7 +262,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 			RecipientAddress: tlmbem.tlmCtx.Application.Address,
 			Coin:             applicationCoin,
 		})
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to application %s", applicationCoin, tlmbem.tlmCtx.Application.Address))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to application %s", applicationCoin, tlmbem.tlmCtx.Application.Address))
 	}
 
 	// === VALIDATION ===

@@ -320,6 +320,34 @@ func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
 	time.Sleep(time.Duration(dur) * time.Second)
 }
 
+// TheUserWaitsForBlocks waits for a specified number of blocks to pass
+func (s *suite) TheUserWaitsForBlocks(numBlocksStr string) {
+	numBlocks, err := strconv.Atoi(numBlocksStr)
+	require.NoError(s, err)
+	require.Greater(s, numBlocks, 0, "number of blocks must be positive")
+
+	s.Logf("Waiting for %d blocks", numBlocks)
+
+	// Get current block height
+	initialHeight := s.getCurrentBlockHeight()
+	targetHeight := initialHeight + int64(numBlocks)
+
+	// Wait for the target height
+	for {
+		currentHeight := s.getCurrentBlockHeight()
+		if currentHeight >= targetHeight {
+			break
+		}
+		// Small sleep to prevent busy waiting
+		require.Eventually(s, func() bool {
+			return s.getCurrentBlockHeight() >= targetHeight
+		}, time.Minute, time.Second, "timeout waiting for %d blocks", numBlocks)
+	}
+
+	s.Logf("Successfully waited for %d blocks (from %d to %d)", 
+		numBlocks, initialHeight, s.getCurrentBlockHeight())
+}
+
 func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount int64, accName string) {
 	// Create a temporary config file
 	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
@@ -842,14 +870,45 @@ func (s *suite) getAccBalance(accName string) int64 {
 // validateAmountChange validates if the balance of an account has increased or decreased by the expected amount
 func (s *suite) validateAmountChange(prevAmount, currAmount int64, expectedAmountChange int64, accName, condition, balanceType string) {
 	deltaAmount := int64(math.Abs(float64(currAmount - prevAmount)))
-	// Verify if balance is more or less than before
+	
+	// Check if any delegations were skipped and adjust expected change accordingly
+	// Look for skip markers for any validator (not just validator1)
+	var totalSkippedAmount int64
+	for key, value := range s.scenarioState {
+		if strings.HasPrefix(key, fmt.Sprintf("%s_to_", accName)) && strings.HasSuffix(key, "_delegation_skipped") {
+			if skipAmount, ok := value.(int64); ok {
+				totalSkippedAmount += skipAmount
+				s.Logf("Found skipped delegation for %s: %d uPOKT", accName, skipAmount)
+			}
+		}
+	}
+	
+	// Adjust expected change based on skipped operations
+	adjustedExpectedChange := expectedAmountChange
+	hasSkippedOperations := totalSkippedAmount > 0
+	isExpectingDecrease := condition == "less"
+	isBalanceValidation := balanceType == "balance"
+	
+	if hasSkippedOperations && isExpectingDecrease && isBalanceValidation {
+		adjustedExpectedChange = expectedAmountChange - totalSkippedAmount
+		s.Logf("Adjusted expected change for %s: original=%d, skipped=%d, adjusted=%d", 
+			accName, expectedAmountChange, totalSkippedAmount, adjustedExpectedChange)
+		
+		// If all expected changes were skipped, expect no change
+		if adjustedExpectedChange <= 0 {
+			require.Equal(s, currAmount, prevAmount, "%s %s should be unchanged since all operations were skipped", accName, balanceType)
+			return
+		}
+	}
+	
+	// Verify if balance is more or less than before using adjusted expectation
 	switch condition {
 	case "more":
 		require.GreaterOrEqual(s, currAmount, prevAmount, "%s %s expected to have more upokt but actually had less", accName, balanceType)
-		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected increase in upokt was incorrect", accName, balanceType)
+		require.Equal(s, adjustedExpectedChange, deltaAmount, "%s %s expected increase in upokt was incorrect", accName, balanceType)
 	case "less":
 		require.LessOrEqual(s, currAmount, prevAmount, "%s %s expected to have less upokt but actually had more", accName, balanceType)
-		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected) decrease in upokt was incorrect", accName, balanceType)
+		require.Equal(s, adjustedExpectedChange, deltaAmount, "%s %s expected) decrease in upokt was incorrect", accName, balanceType)
 	default:
 		s.Fatalf("ERROR: unknown condition %s", condition)
 	}

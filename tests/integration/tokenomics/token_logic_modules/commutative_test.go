@@ -57,6 +57,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 		)
 
 		s.T().Run(testDesc, func(t *testing.T) {
+			// Setup fresh keepers and context for each permutation test
 			s.setupKeepers(t, testkeeper.WithTokenLogicModules(tlmPermutation))
 
 			// Assert that no pre-existing claims are present.
