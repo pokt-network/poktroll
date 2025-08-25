@@ -102,7 +102,7 @@ pocketd query distribution commission <validator-address> --network <network>
 Check validator stakes that determine reward distribution:
 
 ```bash
-# View all validators and their bonded tokens
+# View the current block proposer and their bonded tokens
 pocketd query staking validators --network <network> -o json | jq -r '.validators[] | "\(.operator_address) \(.tokens)"'
 
 # Calculate total bonded tokens
