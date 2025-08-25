@@ -787,7 +787,7 @@ func NewSupplyRelayerSessionsManagerFn(smtStorePath string) SupplierFn {
 	) (depinject.Config, error) {
 		relayerSessionsManager, err := session.NewRelayerSessions(
 			deps,
-			session.WithStoresDirectory(smtStorePath),
+			session.WithStoresDirectoryPath(smtStorePath),
 		)
 		if err != nil {
 			return nil, err
