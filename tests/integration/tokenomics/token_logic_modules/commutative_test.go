@@ -188,6 +188,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 				t.SkipNow()
 			}
 
+			// TODO_IN_THIS_COMMIT: fix this test.
 			s.assertExpectedSettlementState(t, settledResults, expiredResults)
 			s.assertNoPendingClaims(t)
 		})
