@@ -22,6 +22,90 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// createTestValidatorsWithUnevenStakes creates a set of 7 validators with different stake amounts
+// that don't divide evenly. This is useful for testing remainder distribution logic.
+func createTestValidatorsWithUnevenStakes() []stakingtypes.Validator {
+	return []stakingtypes.Validator{
+		{
+			OperatorAddress: sample.ValOperatorAddressBech32(),
+			Tokens:          cosmosmath.NewInt(333),
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5%
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(333)),
+		},
+		{
+			OperatorAddress: sample.ValOperatorAddressBech32(),
+			Tokens:          cosmosmath.NewInt(333),
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5%
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(333)),
+		},
+		{
+			OperatorAddress: sample.ValOperatorAddressBech32(),
+			Tokens:          cosmosmath.NewInt(334), // Slightly different
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5%
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(334)),
+		},
+		{
+			OperatorAddress: sample.ValOperatorAddressBech32(),
+			Tokens:          cosmosmath.NewInt(100),
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5%
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(100)),
+		},
+		{
+			OperatorAddress: sample.ValOperatorAddressBech32(),
+			Tokens:          cosmosmath.NewInt(200),
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5%
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(200)),
+		},
+		{
+			OperatorAddress: sample.ValOperatorAddressBech32(),
+			Tokens:          cosmosmath.NewInt(150),
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5%
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(150)),
+		},
+		{
+			OperatorAddress: sample.ValOperatorAddressBech32(),
+			Tokens:          cosmosmath.NewInt(50),
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5%
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(50)),
+		},
+	}
+}
+
 func TestTLMGlobalMint_ValidatorRewardDistribution(t *testing.T) {
 	tests := []struct {
 		name                      string
@@ -417,15 +501,7 @@ func TestTLMGlobalMint_ValidatorRewardDistribution_PrecisionTest(t *testing.T) {
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 
 	// Create 7 validators with stakes that don't divide evenly
-	validators := []stakingtypes.Validator{
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(333), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(333))},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(333), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(333))},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(334), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(334))}, // Slightly different
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(100), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(100))},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(200), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(200))},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(150), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(150))},
-		{OperatorAddress: sample.ValOperatorAddressBech32(), Tokens: cosmosmath.NewInt(50), Status: stakingtypes.Bonded, Commission: stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(50))},
-	}
+	validators := createTestValidatorsWithUnevenStakes()
 
 	mockStakingKeeper.EXPECT().
 		GetBondedValidatorsByPower(gomock.Any()).
