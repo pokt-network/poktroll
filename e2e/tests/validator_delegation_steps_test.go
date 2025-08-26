@@ -5,6 +5,7 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -26,10 +27,6 @@ type cliValidatorsResponse struct {
 	Validators []cliValidatorResponse `json:"validators"`
 }
 
-// cliDelegationRewardsResponse represents the response from 'query distribution rewards-by-validator' CLI command
-type cliDelegationRewardsResponse struct {
-	Rewards interface{} `json:"rewards"` // Can be string (empty) or array of reward objects
-}
 
 // cliDelegationResponse represents the response from 'query staking delegation' CLI command
 type cliDelegationResponse struct {
@@ -183,62 +180,44 @@ func (s *suite) TheAccountDelegatesUpoktToValidator(delegatorName, amountStr, va
 		amountToDelegate, targetAmount)
 }
 
-// TheUserRemembersTheDelegationRewardsForFromAs stores current delegation rewards in scenario state
-func (s *suite) TheUserRemembersTheDelegationRewardsForFromAs(delegatorName, validatorName, stateKey string) {
-	delegatorAddr, exists := accNameToAddrMap[delegatorName]
-	require.True(s, exists, "delegator %s not found", delegatorName)
 
+// TheUserRemembersTheBalanceOfValidatorAs stores the current balance of a validator in the scenario state
+func (s *suite) TheUserRemembersTheBalanceOfValidatorAs(validatorName, stateKey string) {
 	validatorAddr, exists := accNameToAddrMap[validatorName]
 	require.True(s, exists, "validator %s not found", validatorName)
-
-	// Query delegation rewards with retry
+	
+	// Convert validator operator address (poktvaloper...) to regular account address (pokt...)
+	valAddr, err := cosmostypes.ValAddressFromBech32(validatorAddr)
+	require.NoError(s, err, "invalid validator operator address %s", validatorAddr)
+	
+	// Validator addresses and account addresses have the same underlying bytes
+	accAddr := cosmostypes.AccAddress(valAddr.Bytes())
+	accAddrStr := accAddr.String()
+	
+	// Query balance directly using the account address
 	args := []string{
-		"query", "distribution", "rewards-by-validator",
-		delegatorAddr,
-		validatorAddr,
-		"--output=json",
+		"query",
+		"bank",
+		"balances",
+		accAddrStr,
 	}
-
-	rewardsRes, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	if err != nil {
-		// If query fails, assume zero rewards
-		s.scenarioState[stateKey] = int64(0)
-		s.Logf("No rewards found for %s from %s, storing 0: %v", delegatorName, validatorName, err)
-		return
+	
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error querying validator balance")
+	
+	// Parse the balance using regex (same as getAccBalance)
+	amountRe := regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
+	match := amountRe.FindStringSubmatch(res.Stdout)
+	
+	balance := int64(0)
+	if len(match) >= 2 {
+		accBalance, err := strconv.Atoi(match[1])
+		require.NoError(s, err)
+		balance = int64(accBalance)
 	}
-
-	var rewardsResponse cliDelegationRewardsResponse
-	if err := json.Unmarshal([]byte(rewardsRes.Stdout), &rewardsResponse); err != nil {
-		// If unmarshal fails, assume zero rewards
-		s.scenarioState[stateKey] = int64(0)
-		s.Logf("Failed to parse rewards for %s from %s, storing 0: %v", delegatorName, validatorName, err)
-		return
-	}
-
-	// Extract uPOKT rewards amount - handle both string (empty) and array (with rewards) cases
-	var rewardAmount int64 = 0
-	switch rewards := rewardsResponse.Rewards.(type) {
-	case string:
-		// Empty rewards returned as string, amount is 0
-		rewardAmount = 0
-	case []interface{}:
-		// Parse rewards array
-		for _, rewardInterface := range rewards {
-			if rewardMap, ok := rewardInterface.(map[string]interface{}); ok {
-				if denom, ok := rewardMap["denom"].(string); ok && denom == pocket.DenomuPOKT {
-					if amountStr, ok := rewardMap["amount"].(string); ok {
-						if amount, err := strconv.ParseFloat(amountStr, 64); err == nil {
-							rewardAmount = int64(amount)
-						}
-					}
-					break
-				}
-			}
-		}
-	}
-
-	s.scenarioState[stateKey] = rewardAmount
-	s.Logf("Stored delegation rewards for %s from %s: %d uPOKT", delegatorName, validatorName, rewardAmount)
+	
+	s.scenarioState[stateKey] = balance
+	s.Logf("Stored validator %s balance: %d uPOKT (account address: %s)", validatorName, balance, accAddrStr)
 }
 
 // TheAccountBalanceOfShouldBeThan validates account balance changes in any direction
@@ -246,7 +225,38 @@ func (s *suite) TheAccountBalanceOfShouldBeThan(accName, direction, prevBalanceK
 	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
 	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
 
-	currBalance := s.getAccBalance(accName)
+	// Special handling for validator accounts - need to convert operator address to account address
+	var currBalance int64
+	if accName == "validator1" || strings.HasPrefix(accNameToAddrMap[accName], "poktvaloper") {
+		validatorAddr := accNameToAddrMap[accName]
+		
+		// Convert validator operator address to account address
+		valAddr, err := cosmostypes.ValAddressFromBech32(validatorAddr)
+		require.NoError(s, err)
+		accAddr := cosmostypes.AccAddress(valAddr.Bytes())
+		
+		// Query balance directly
+		args := []string{
+			"query",
+			"bank",
+			"balances",
+			accAddr.String(),
+		}
+		res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+		require.NoError(s, err, "error getting balance")
+		
+		// Parse the balance using regex
+		amountRe := regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
+		match := amountRe.FindStringSubmatch(res.Stdout)
+		
+		if len(match) >= 2 {
+			accBalance, err := strconv.Atoi(match[1])
+			require.NoError(s, err)
+			currBalance = int64(accBalance)
+		}
+	} else {
+		currBalance = s.getAccBalance(accName)
+	}
 
 	// Note: This function doesn't handle partial skipping like validateAmountChange does
 	// because it's used for generic balance checks without specific expected amounts.

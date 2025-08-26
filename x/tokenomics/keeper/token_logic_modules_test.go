@@ -13,6 +13,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
@@ -901,48 +902,86 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 	}
 }
 
-func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators(t *testing.T) {
-	// Test that proposer rewards are distributed to all validators based on staking weight
-	// Enable proposer rewards for this test
+// TestProcessTokenLogicModules_MultipleValidators tests that both RelayBurnEqualsMint and GlobalMint TLMs
+// properly distribute rewards to multiple validators with multiple delegators each, proportionally based on staking weight.
+func TestProcessTokenLogicModules_MultipleValidators(t *testing.T) {
 
 	// Test Parameters
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
 	globalComputeUnitCostGranularity := uint64(1000000)
 	globalComputeUnitsToTokensMultiplier := uint64(1) * globalComputeUnitCostGranularity
+	numRelays := uint64(10000)
 
+	// Create service
 	service := prepareTestService(1)
-	numRelays := uint64(1000)
 	daoAddress := sample.AccAddressBech32()
-	proposerConsAddr := sample.ConsAddress()
-	proposerValOperatorAddr := sample.ValOperatorAddress()
 
-	// Prepare the keepers
+	// Create 3 validators with different stakes and commission rates for testing
+	validators := []stakingtypes.Validator{
+		{
+			OperatorAddress: sample.ValOperatorAddress().String(),
+			Tokens:          cosmosmath.NewInt(600000), // 60% of total stake
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(5, 2), // 5% commission
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(600000)),
+		},
+		{
+			OperatorAddress: sample.ValOperatorAddress().String(),
+			Tokens:          cosmosmath.NewInt(300000), // 30% of total stake
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(10, 2), // 10% commission
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(300000)),
+		},
+		{
+			OperatorAddress: sample.ValOperatorAddress().String(),
+			Tokens:          cosmosmath.NewInt(100000), // 10% of total stake
+			Status:          stakingtypes.Bonded,
+			Commission: stakingtypes.Commission{
+				CommissionRates: stakingtypes.CommissionRates{
+					Rate: cosmosmath.LegacyNewDecWithPrec(15, 2), // 15% commission
+				},
+			},
+			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(100000)),
+		},
+	}
+
+	// Set up tokenomics keepers with our custom validators
 	opts := []testkeeper.TokenomicsModuleKeepersOptFn{
 		testkeeper.WithService(*service),
-		testkeeper.WithBlockProposer(proposerConsAddr, proposerValOperatorAddr),
 		testkeeper.WithTokenLogicModules(tlm.NewDefaultTokenLogicModules()),
 		testkeeper.WithDefaultModuleBalances(),
+		testkeeper.WithValidators(validators), // Much simpler than complex mock injection!
 	}
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
+
 	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
-	// Set the dao_reward_address param on the tokenomics keeper.
+	// Set the dao_reward_address param on the tokenomics keeper
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	tokenomicsParams.DaoRewardAddress = daoAddress
-	// ENABLE proposer rewards for this test
-	tokenomicsParams.MintAllocationPercentages.Proposer = 0.1       // 10% goes to validators
-	tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer = 0.0 // Only test mint allocation
-	keepers.Keeper.SetParams(ctx, tokenomicsParams)
-
-	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
-	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	// Enable validator rewards for both TLMs
+	tokenomicsParams.MintAllocationPercentages.Proposer = 0.1       // 10% inflation goes to all validators (GlobalMint TLM)
+	tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer = 0.1 // 10% settlement goes to all validators (RelayBurnEqualsMint TLM)
+	err := keepers.Keeper.SetParams(ctx, tokenomicsParams)
 	require.NoError(t, err)
 
-	// Add a new application with non-zero app stake end balance to assert against.
+	// Set compute_units_to_tokens_multiplier to simplify expectation calculations
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err = keepers.SharedKeeper.SetParams(ctx, sharedParams)
+	require.NoError(t, err)
+
+	// Add application
 	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, appInitialStake)
 	app := apptypes.Application{
 		Address:        sample.AccAddressBech32(),
@@ -951,7 +990,7 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 	}
 	keepers.SetApplication(ctx, app)
 
-	// Add a supplier
+	// Add supplier
 	supplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, supplierInitialStake)
 	supplierAddr := sample.AccAddressBech32()
 	supplierServices := []*sharedtypes.SupplierServiceConfig{
@@ -974,7 +1013,7 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 	}
 	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
-	// Prepare the claim for which the supplier did work for the application
+	// Prepare claim and process TLMs
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 	pendingResult := tlm.NewClaimSettlementResult(claim)
 
@@ -998,6 +1037,136 @@ func TestProcessTokenLogicModules_ValidatorRewardDistribution_MultipleValidators
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
 	pendingResults.Append(pendingResult)
 
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	err = keepers.ExecutePendingSettledResults(sdkCtx, pendingResults)
+	require.NoError(t, err)
+
+	// Verify that rewards were distributed to ALL validators proportionally
+	// The mock staking keeper provides 3 validators with different stakes and commission rates.
+	// The distribution logic in distributeRewardsToAllValidatorsAndDelegatesByStakeWeight()
+	// calls GetBondedValidatorsByPower() to get ALL validators and distributes proportionally
+	// based on their stake weight, then distributes to each validator's delegators after commission.
+
+	// Check operations for validator reward distribution
+	modToAcctTransfers := pendingResult.GetModToAcctTransfers()
+
+	// Track rewards by validator and delegator
+	validatorRewards := make(map[string]cosmosmath.Int)
+	delegatorRewards := make(map[string]cosmosmath.Int)
+
+	relayBurnValidatorCount := 0
+	relayBurnDelegateCount := 0
+	globalMintValidatorCount := 0
+	globalMintDelegateCount := 0
+
+	for _, transfer := range modToAcctTransfers {
+		// Debug log all transfers to see what's actually happening
+		t.Logf("Transfer: %s -> %s: %s (%s)", transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, transfer.OpReason)
+
+		switch transfer.OpReason {
+		case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION:
+			relayBurnValidatorCount++
+			validatorRewards[transfer.RecipientAddress] = transfer.Coin.Amount
+		case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION:
+			relayBurnDelegateCount++
+			if _, exists := delegatorRewards[transfer.RecipientAddress]; !exists {
+				delegatorRewards[transfer.RecipientAddress] = cosmosmath.NewInt(0)
+			}
+			delegatorRewards[transfer.RecipientAddress] = delegatorRewards[transfer.RecipientAddress].Add(transfer.Coin.Amount)
+		case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION:
+			globalMintValidatorCount++
+			if _, exists := validatorRewards[transfer.RecipientAddress]; !exists {
+				validatorRewards[transfer.RecipientAddress] = cosmosmath.NewInt(0)
+			}
+			validatorRewards[transfer.RecipientAddress] = validatorRewards[transfer.RecipientAddress].Add(transfer.Coin.Amount)
+		case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION:
+			globalMintDelegateCount++
+			if _, exists := delegatorRewards[transfer.RecipientAddress]; !exists {
+				delegatorRewards[transfer.RecipientAddress] = cosmosmath.NewInt(0)
+			}
+			delegatorRewards[transfer.RecipientAddress] = delegatorRewards[transfer.RecipientAddress].Add(transfer.Coin.Amount)
+		}
+	}
+
+	// PRECISE ASSERTIONS: Verify exact reward distribution amounts
+	// Expected distribution for 3 validators with different stakes and commission rates:
+	//
+	// Total Rewards: 1100 uPOKT (1000 RelayBurnEqualsMint + 100 GlobalMint)
+	// - Validator 1 (60% stake, 5% commission): 660 uPOKT → 33 commission + 627 to delegators
+	// - Validator 2 (30% stake, 10% commission): 330 uPOKT → 33 commission + 297 to delegators
+	// - Validator 3 (10% stake, 15% commission): 110 uPOKT → 16.5 commission + 93.5 to delegators
+	//
+	// Total expected: 82.5 commission + 1017.5 delegator rewards = 1100 uPOKT
+
+	// Verify exact transfer counts (3 validators × 2 delegators each = 6 delegators)
+	require.Equal(t, 3, relayBurnValidatorCount, "should have exactly 3 RelayBurnEqualsMint validator rewards")
+	require.Equal(t, 6, relayBurnDelegateCount, "should have exactly 6 RelayBurnEqualsMint delegator rewards")
+	require.Equal(t, 3, globalMintValidatorCount, "should have exactly 3 GlobalMint validator rewards")
+	require.Equal(t, 6, globalMintDelegateCount, "should have exactly 6 GlobalMint delegator rewards")
+
+	// Verify exact reward amounts
+	totalValidatorRewards := cosmosmath.NewInt(0)
+	for _, amount := range validatorRewards {
+		totalValidatorRewards = totalValidatorRewards.Add(amount)
+	}
+
+	totalDelegatorRewardAmount := cosmosmath.NewInt(0)
+	for _, amount := range delegatorRewards {
+		totalDelegatorRewardAmount = totalDelegatorRewardAmount.Add(amount)
+	}
+
+	// Expected totals for multi-validator setup
+	// Total rewards: 1100 uPOKT (1000 RelayBurnEqualsMint + 100 GlobalMint)
+	// Commission calculations (using integer math):
+	// - Val1: 660 * 0.05 = 33, Val2: 330 * 0.10 = 33, Val3: 110 * 0.15 = 16 (truncated)
+	// - Total commission: 33 + 33 + 16 = 82
+	// - Total delegator rewards: 1100 - 82 = 1018
+	expectedValidatorCommission := cosmosmath.NewInt(82) // Total commission from all validators
+	expectedDelegatorRewards := cosmosmath.NewInt(1018)  // Total delegator rewards from all validators
+	expectedTotalRewards := expectedValidatorCommission.Add(expectedDelegatorRewards)
+
+	require.Equal(t, expectedValidatorCommission, totalValidatorRewards,
+		"total validator commission should be exactly %s uPOKT", expectedValidatorCommission)
+	require.Equal(t, expectedDelegatorRewards, totalDelegatorRewardAmount,
+		"total delegator rewards should be exactly %s uPOKT", expectedDelegatorRewards)
+	require.Equal(t, expectedTotalRewards, totalValidatorRewards.Add(totalDelegatorRewardAmount),
+		"total rewards should be exactly %s uPOKT", expectedTotalRewards)
+
+	// Verify proportional distribution: validators should receive rewards proportional to their stake weight
+	// Since we can't easily predict exact addresses from the mock, we verify the distribution pattern:
+	// - Should have 3 different validator addresses in validatorRewards map
+	// - Should have 6 different delegator addresses in delegatorRewards map (3 validators × 2 delegators each)
+	// - Total validator rewards should be distributed according to stake weights (60%, 30%, 10%)
+	require.Equal(t, 3, len(validatorRewards), "should have rewards distributed to exactly 3 validators")
+	require.Equal(t, 6, len(delegatorRewards), "should have rewards distributed to exactly 6 delegators")
+
+	// Verify that we have the expected variety of reward amounts (different stake weights should produce different amounts)
+	// Convert validator rewards to slice to check for variety in amounts
+	validatorAmounts := make([]int64, 0, len(validatorRewards))
+	for _, amount := range validatorRewards {
+		validatorAmounts = append(validatorAmounts, amount.Int64())
+	}
+
+	// The three validators should have different reward amounts due to different stakes and commission rates
+	// We expect at least 2 different amounts (since Val1 and Val2 might have same commission after rounding)
+	uniqueValidatorAmounts := make(map[int64]bool)
+	for _, amount := range validatorAmounts {
+		uniqueValidatorAmounts[amount] = true
+	}
+	require.GreaterOrEqual(t, len(uniqueValidatorAmounts), 2,
+		"validators should have different reward amounts based on stake weights")
+
+	t.Logf("Successfully distributed rewards to %d validators and %d delegators (total: %s uPOKT). RelayBurn: %d validator + %d delegator, GlobalMint: %d validator + %d delegator",
+		len(validatorRewards), len(delegatorRewards), expectedTotalRewards,
+		relayBurnValidatorCount, relayBurnDelegateCount, globalMintValidatorCount, globalMintDelegateCount)
+	t.Logf("Validator commission amounts: %v, Delegator reward amounts: %v", validatorAmounts,
+		func() []int64 {
+			amounts := make([]int64, 0, len(delegatorRewards))
+			for _, amt := range delegatorRewards {
+				amounts = append(amounts, amt.Int64())
+			}
+			return amounts
+		}())
 }
 
 func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {

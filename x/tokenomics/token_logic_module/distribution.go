@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sort"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -220,6 +221,22 @@ func distributeToDelegators(
 		return fmt.Errorf("failed to get delegations for validator %s: %w", validator.GetOperator(), err)
 	}
 
+	// Sort delegations deterministically to ensure consistent remainder distribution
+	// Primary sort: by delegation shares (ascending - least shares first)
+	// Secondary sort: by delegator address (lexicographical for ties)
+	sort.Slice(delegations, func(i, j int) bool {
+		sharesI := delegations[i].Shares
+		sharesJ := delegations[j].Shares
+
+		// If shares are equal, sort by delegator address (lexicographical)
+		if sharesI.Equal(sharesJ) {
+			return delegations[i].DelegatorAddress < delegations[j].DelegatorAddress
+		}
+
+		// Otherwise, sort by shares (ascending - least shares first)
+		return sharesI.LT(sharesJ)
+	})
+
 	if len(delegations) == 0 {
 		logger.Debug("no delegations found for validator, adding delegator pool to commission")
 
@@ -366,7 +383,8 @@ func calculateDelegatorShares(
 		totalDistributed = totalDistributed.Add(delegatorAmount)
 	}
 
-	// Add any remainder to the first delegator (similar to supplier distribution logic)
+	// Add any remainder to the delegator with the least shares (first in sorted order)
+	// This ensures deterministic remainder distribution regardless of execution order
 	if len(delegations) > 0 {
 		remainder := delegatorPoolAmount.Sub(totalDistributed)
 		if !remainder.IsZero() {
@@ -461,9 +479,25 @@ func distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
 	logger.Info(fmt.Sprintf("distributing (%v) to %d validators with stake (total: %s tokens bonded)",
 		totalRewardCoin, validatorsWithStake, totalBondedTokens))
 
-	// Distribute to each validator proportionally based on their staking weight
-	// Using direct ModToAcctTransfer operations instead of distribution keeper
-	remainingAmount := totalRewardAmount
+	// Sort validators deterministically to ensure consistent remainder distribution
+	// Primary sort: by bonded tokens (ascending - least stake first)
+	// Secondary sort: by operator address (lexicographical for ties)
+	sort.Slice(validators, func(i, j int) bool {
+		stakeI := validators[i].GetBondedTokens()
+		stakeJ := validators[j].GetBondedTokens()
+
+		// If stakes are equal, sort by operator address (lexicographical)
+		if stakeI.Equal(stakeJ) {
+			return validators[i].GetOperator() < validators[j].GetOperator()
+		}
+
+		// Otherwise, sort by stake (ascending - least stake first)
+		return stakeI.LT(stakeJ)
+	})
+
+	// Calculate proportional shares for all validators and track total distributed
+	validatorShares := make([]math.Int, len(validators))
+	totalDistributed := math.ZeroInt()
 	distributedValidators := 0
 
 	for i, validator := range validators {
@@ -471,19 +505,38 @@ func distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
 		validatorBondedTokens := validator.GetBondedTokens()
 		if validatorBondedTokens.IsZero() {
 			logger.Debug(fmt.Sprintf("skipping validator %s with zero bonded tokens", validator.GetOperator()))
+			validatorShares[i] = math.ZeroInt()
 			continue
 		}
 
-		var validatorShare math.Int
+		// Calculate proportional share: (validator_tokens / total_tokens) * total_reward_amount
+		validatorShare := totalRewardAmount.Mul(validatorBondedTokens).Quo(totalBondedTokens)
+		validatorShares[i] = validatorShare
+		totalDistributed = totalDistributed.Add(validatorShare)
+		distributedValidators++
+	}
 
-		// For the last validator with stake, allocate any remaining tokens to avoid rounding issues
-		if distributedValidators == validatorsWithStake-1 {
-			validatorShare = remainingAmount
-		} else {
-			// Calculate proportional share: (validator_tokens / total_tokens) * total_reward_amount
-			validatorShare = totalRewardAmount.Mul(validatorBondedTokens).Quo(totalBondedTokens)
-			remainingAmount = remainingAmount.Sub(validatorShare)
+	// Distribute any remainder to the validator with the least stake (first in sorted order)
+	// This ensures deterministic remainder distribution regardless of TLM execution order
+	remainder := totalRewardAmount.Sub(totalDistributed)
+	if !remainder.IsZero() && distributedValidators > 0 {
+		// Find first validator with non-zero stake (they are sorted by stake ascending)
+		for i := 0; i < len(validators); i++ {
+			if !validatorShares[i].IsZero() {
+				validatorShares[i] = validatorShares[i].Add(remainder)
+				logger.Debug(fmt.Sprintf("allocated remainder (%v) to validator %s with least stake (%s tokens)",
+					cosmostypes.NewCoin(pocket.DenomuPOKT, remainder),
+					validators[i].GetOperator(),
+					validators[i].GetBondedTokens()))
+				break
+			}
 		}
+	}
+
+	// Distribute rewards to each validator
+	actuallyDistributed := 0
+	for i, validator := range validators {
+		validatorShare := validatorShares[i]
 
 		if validatorShare.IsZero() {
 			logger.Debug(fmt.Sprintf("validator %s calculated share is zero, skipping", validator.GetOperator()))
@@ -505,8 +558,10 @@ func distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
 			return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error distributing rewards to validator %s stakeholders: %v", validator.GetOperator(), err)
 		}
 
-		distributedValidators++
+		actuallyDistributed++
 
+		// Get validator bonded tokens for logging
+		validatorBondedTokens := validator.GetBondedTokens()
 		logger.Debug(fmt.Sprintf("distributed (%v) to validator %s and delegators (stake: %s/%s, weight: %.4f%%)",
 			cosmostypes.NewCoin(pocket.DenomuPOKT, validatorShare),
 			validator.GetOperator(),
@@ -515,11 +570,11 @@ func distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
 			float64(validatorBondedTokens.Int64())/float64(totalBondedTokens.Int64())*100))
 	}
 
-	if distributedValidators == 0 {
+	if actuallyDistributed == 0 {
 		logger.Error("no validators received rewards despite having stake - this should not happen")
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrap("no validators received rewards despite having stake")
 	}
 
-	logger.Info(fmt.Sprintf("successfully distributed (%v) to %d validators and their delegators using ModToAcctTransfer", totalRewardCoin, distributedValidators))
+	logger.Info(fmt.Sprintf("successfully distributed (%v) to %d validators and their delegators using ModToAcctTransfer", totalRewardCoin, actuallyDistributed))
 	return nil
 }

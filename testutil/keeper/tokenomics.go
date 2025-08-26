@@ -36,6 +36,7 @@ import (
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -93,6 +94,9 @@ type tokenomicsModuleKeepersConfig struct {
 	// proposerConsAddr and proposerValOperatorAddr are used to configure the block proposer
 	proposerConsAddr        cosmostypes.ConsAddress
 	proposerValOperatorAddr cosmostypes.ValAddress
+
+	// validators allows specifying custom validators for testing multi-validator scenarios
+	validators []stakingtypes.Validator
 }
 
 // TokenomicsModuleKeepersOptFn is a function which receives and potentially modifies
@@ -621,19 +625,35 @@ func NewTokenomicsModuleKeepers(
 
 	// We will pass the concrete stakingKeeper to the option functions
 
-	// Create mock staking and distribution keepers for tokenomics interfaces
+	// Create mock staking keeper for tokenomics interfaces
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 
-	// Set up mock expectations for staking keeper
-	// If a specific proposer is configured, set up the mock to return the correct validator
-	validator := stakingtypes.Validator{
-		OperatorAddress: proposerValOperatorAddr.String(),
+	// Determine which validators to use - custom ones if provided, otherwise default
+	var validators []stakingtypes.Validator
+	if len(cfg.validators) > 0 {
+		validators = cfg.validators
+	} else {
+		// Create default single validator setup
+		validators = []stakingtypes.Validator{
+			{
+				OperatorAddress: proposerValOperatorAddr.String(),
+				Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
+				Status:          stakingtypes.Bonded,
+				Commission:      stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, // 5% commission
+				DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)),                                                          // Shares equal stake for simplicity
+			},
+		}
 	}
-	mockStakingKeeper.EXPECT().
-		GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
-		Return(validator, nil).
-		AnyTimes()
+
+	// Set up mock expectations for the proposer validator
+	if len(validators) > 0 {
+		proposerValidator := validators[0] // Use first validator as proposer
+		mockStakingKeeper.EXPECT().
+			GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
+			Return(proposerValidator, nil).
+			AnyTimes()
+	}
 
 	// Default expectation for any other consensus address
 	mockStakingKeeper.EXPECT().
@@ -641,37 +661,56 @@ func NewTokenomicsModuleKeepers(
 		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
 		AnyTimes()
 
-	// Mock GetBondedValidatorsByPower to return a single validator with all bonded tokens
-	validators := []stakingtypes.Validator{
-		{
-			OperatorAddress: proposerValOperatorAddr.String(),
-			Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
-			Status:          stakingtypes.Bonded,
-			Commission:      stakingtypes.Commission{CommissionRates: stakingtypes.CommissionRates{Rate: cosmosmath.LegacyNewDecWithPrec(5, 2)}}, // 5% commission
-			DelegatorShares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)),                                                          // Shares equal stake for simplicity
-		},
-	}
+	// Mock GetBondedValidatorsByPower to return our validators
 	mockStakingKeeper.EXPECT().
 		GetBondedValidatorsByPower(gomock.Any()).
 		Return(validators, nil).
 		AnyTimes()
 
-	// Mock GetValidatorDelegations for the new ModToAcctTransfer approach
-	// Create a flexible mock that works for any validator address
-	mockStakingKeeper.EXPECT().
-		GetValidatorDelegations(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, validatorAddr cosmostypes.ValAddress) ([]stakingtypes.Delegation, error) {
-			// Create a delegation for this validator
-			delegations := []stakingtypes.Delegation{
-				{
-					DelegatorAddress: "pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm", // Fixed address for deterministic tests
-					ValidatorAddress: validatorAddr.String(),
-					Shares:           cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(1000000)), // All shares to one delegator for simplicity
-				},
+	// Mock GetValidatorDelegations for each validator
+	for _, validator := range validators {
+		valAddr, _ := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
+
+		// Generate simple delegations based on validator's delegator shares
+		// For simplicity, create equal delegations that sum to the validator's shares
+		totalShares := validator.DelegatorShares
+		delegations := []stakingtypes.Delegation{}
+
+		if totalShares.IsPositive() {
+			// Create 2 delegators per validator for more realistic testing
+			numDelegators := 2
+			if totalShares.LT(cosmosmath.LegacyNewDec(int64(numDelegators))) {
+				numDelegators = 1 // If shares are very small, just use 1 delegator
 			}
-			return delegations, nil
-		}).
-		AnyTimes()
+
+			sharesPerDelegator := totalShares.QuoInt64(int64(numDelegators))
+
+			for i := 0; i < numDelegators; i++ {
+				// Use deterministic pre-generated addresses instead of random ones for commutativity
+				// Create a deterministic index based on validator address and delegator position
+				// Use a high offset to avoid conflicts with test addresses (accounts 0-19)
+				delegatorIdx := uint32(20 + len(delegations)*10 + i + len(validator.OperatorAddress)%5)
+				delegatorAddr := testkeyring.MustPreGeneratedAccountAtIndex(delegatorIdx).Address.String()
+				shares := sharesPerDelegator
+
+				// For the last delegator, give them any remaining shares to avoid rounding issues
+				if i == numDelegators-1 {
+					shares = totalShares.Sub(sharesPerDelegator.MulInt64(int64(i)))
+				}
+
+				delegations = append(delegations, stakingtypes.Delegation{
+					DelegatorAddress: delegatorAddr,
+					ValidatorAddress: validator.OperatorAddress,
+					Shares:           shares,
+				})
+			}
+		}
+
+		mockStakingKeeper.EXPECT().
+			GetValidatorDelegations(gomock.Any(), valAddr).
+			Return(delegations, nil).
+			AnyTimes()
+	}
 
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
@@ -944,5 +983,44 @@ func WithModuleAccountBalances(moduleAccountBalances map[string]int64) func(cfg 
 	}
 	return func(cfg *tokenomicsModuleKeepersConfig) {
 		cfg.initKeepersFns = append(cfg.initKeepersFns, setModuleAccountBalances)
+	}
+}
+
+// WithCustomKeeper is a generic option to replace any keeper in the TokenomicsModuleKeepers
+// with a custom implementation. The setKeeperFn function receives the keepers struct and
+// should set the desired field to the custom keeper instance.
+//
+// Example usage:
+//
+//	WithCustomKeeper(func(keepers *TokenomicsModuleKeepers) {
+//	    keepers.StakingKeeper = myCustomStakingKeeper
+//	})
+//	WithCustomKeeper(func(keepers *TokenomicsModuleKeepers) {
+//	    keepers.BankKeeper = myCustomBankKeeper
+//	})
+func WithCustomKeeper(setKeeperFn func(*TokenomicsModuleKeepers)) TokenomicsModuleKeepersOptFn {
+	setCustomKeeper := func(ctx context.Context, keepers *TokenomicsModuleKeepers, _ *stakingkeeper.Keeper) context.Context {
+		setKeeperFn(keepers)
+		return ctx
+	}
+
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setCustomKeeper)
+	}
+}
+
+// WithValidators is an option to specify custom validators for testing multi-validator scenarios.
+// This is much simpler than injecting custom staking keepers and allows tests to focus on
+// the business logic rather than mock setup complexity.
+//
+// Example usage:
+//
+//	WithValidators([]stakingtypes.Validator{
+//	    {OperatorAddress: "val1", Tokens: math.NewInt(600000), Status: stakingtypes.Bonded, ...},
+//	    {OperatorAddress: "val2", Tokens: math.NewInt(300000), Status: stakingtypes.Bonded, ...},
+//	})
+func WithValidators(validators []stakingtypes.Validator) TokenomicsModuleKeepersOptFn {
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.validators = validators
 	}
 }

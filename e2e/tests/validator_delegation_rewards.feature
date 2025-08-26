@@ -86,9 +86,8 @@ Feature: Validator Delegation Rewards
     
     # Record post-delegation balances for reward distribution assertions
     And the user remembers the balance of "app2" as "app2_initial_balance"
-    And the user remembers the balance of "app3" as "app3_initial_balance" 
-    And the user remembers the delegation rewards for "app2" from "validator1" as "app2_initial_rewards"
-    And the user remembers the delegation rewards for "app3" from "validator1" as "app3_initial_rewards"
+    And the user remembers the balance of "app3" as "app3_initial_balance"
+    And the user remembers the balance of validator "validator1" as "validator1_initial_balance"
 
     # Start servicing relays
     When the supplier "supplier1" has serviced a session with "20" relays for service "anvil" for application "app1"
@@ -103,3 +102,6 @@ Feature: Validator Delegation Rewards
     # Delegator rewards are proportional to their stake vs total validator delegations
     Then the account balance of "app2" should be "more" than "app2_initial_balance"
     And the account balance of "app3" should be "more" than "app3_initial_balance"
+    
+    # Validate that the validator received commission from the rewards
+    And the account balance of "validator1" should be "more" than "validator1_initial_balance"
