@@ -43,17 +43,18 @@ func setupRelayerDependencies(
 	txNodeRPCUrl := relayMinerConfig.PocketNode.TxNodeRPCUrl
 
 	// Override config file's `QueryNodeGRPCUrl` with `--grpc-addr` flag if specified.
-	// TODO(#223): Remove this check once viper is used as SoT for overridable config values.
 	if flagNodeGRPCURL != flags.OmittedDefaultFlagValue {
 		parsedFlagNodeGRPCUrl, err := url.Parse(flagNodeGRPCURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
 		}
 		queryNodeGRPCUrl = parsedFlagNodeGRPCUrl
+	} else {
+		// TODO_TECHDEBT(#1444): Delete this once #1444 is fixed and merged.
+		_ = cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCUrl.String())
 	}
 
 	// Override config file's `QueryNodeUrl` and `txNodeRPCUrl` with `--node` flag if specified.
-	// TODO(#223): Remove this check once viper is used as SoT for overridable config values.
 	if flagNodeRPCURL != flags.OmittedDefaultFlagValue {
 		parsedFlagNodeRPCUrl, err := url.Parse(flagNodeRPCURL)
 		if err != nil {
@@ -61,6 +62,9 @@ func setupRelayerDependencies(
 		}
 		queryNodeRPCUrl = parsedFlagNodeRPCUrl
 		txNodeRPCUrl = parsedFlagNodeRPCUrl
+	} else {
+		// TODO_TECHDEBT(#1444): Delete this once #1444 is fixed and merged.
+		_ = cmd.Flags().Set(cosmosflags.FlagNode, queryNodeRPCUrl.String())
 	}
 
 	signingKeyNames := uniqueSigningKeyNames(relayMinerConfig)

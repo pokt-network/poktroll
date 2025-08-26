@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"os"
 	"path"
 	"sync"
 	"sync/atomic"
@@ -153,8 +154,17 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
+	// If in-memory mode is enabled, use an empty string as the session metadata store directory.
+	// which is the equivalent of vfs.NewMem() in pebble.
+	// Otherwise, use the storesDirectoryPath as the session metadata store directory.
+	// TODO(#1734): Design a solution for restoration even when using in-memory SMT.
+	sessionSMTDir := ""
+	if rs.persistedSMT() {
+		sessionSMTDir = path.Join(rs.storesDirectoryPath, "sessions_metadata")
+	} else {
+		rs.logger.Info().Msg("Skipping session metadata store initialization as in-memory SMT is being used.")
+	}
 	// Initialize the session metadata store.
-	sessionSMTDir := path.Join(rs.storesDirectoryPath, "sessions_metadata")
 	if rs.sessionSMTStore, err = pebble.NewKVStore(sessionSMTDir); err != nil {
 		return nil, err
 	}
@@ -190,7 +200,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Preserving the relayer's state across restarts
 	//   - Ensuring no active sessions are lost when the process is interrupted
 	//   - Maintaining accumulated work when interruptions occur
-	if rs.storesDirectoryPath != InMemoryStoreFilename {
+	if rs.persistedSMT() {
 		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
 			return err
 		}
@@ -251,7 +261,7 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.relayObs.UnsubscribeAll()
 
 	// Skip persistence when using in-memory SMT (MemoryStore) as data is not saved to disk.
-	if rs.storesDirectoryPath == InMemoryStoreFilename {
+	if !rs.persistedSMT() {
 		// TODO(#1734): Design a solution for restoration even when using in-memory SMT.
 		rs.logger.Info().Msg("Skipping persistence of session data as in-memory SMT is being used.")
 		return
@@ -509,8 +519,25 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 // validateConfig validates the relayerSessionsManager's configuration.
 // TODO_TEST: Add unit tests to validate these configurations.
 func (rs *relayerSessionsManager) validateConfig() error {
+	// No error if RM is configured to use in-memory SMT.
+	if rs.storesDirectoryPath == InMemoryStoreFilename {
+		return nil
+	}
+
+	// Return an error if the stores directory path is undefined.
 	if rs.storesDirectoryPath == "" {
 		return ErrSessionTreeUndefinedStoresDirectoryPath
+	}
+
+	// Ensure the stores directory exists (mkdir -p behavior) and is a directory.
+	if info, err := os.Stat(rs.storesDirectoryPath); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(rs.storesDirectoryPath, 0o755); err != nil {
+				return ErrSessionTreeInvalidStoresDirectoryPath.Wrap(err.Error())
+			}
+		} else if !info.IsDir() {
+			return ErrSessionTreeInvalidStoresDirectoryPath.Wrapf("stores directory path is not a directory: %s", rs.storesDirectoryPath)
+		}
 	}
 
 	return nil
