@@ -333,10 +333,10 @@ func setupDependencies(
 		bankQueryClient,
 		logger,
 	)
-	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
+	storesDirectoryPathOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
-	relayerSessionsManager, err := session.NewRelayerSessions(deps, storesDirectoryOpt)
+	relayerSessionsManager, err := session.NewRelayerSessions(deps, storesDirectoryPathOpt)
 	require.NoError(t, err)
 	require.NotNil(t, relayerSessionsManager)
 
