@@ -102,6 +102,7 @@ Feature: Validator Delegation Rewards
     # Delegator rewards are proportional to their stake vs total validator delegations
     Then the account balance of "app2" should be "more" than "app2_initial_balance"
     And the account balance of "app3" should be "more" than "app3_initial_balance"
-    
-    # Validate that the validator received commission from the rewards
+
+    # Validate that the block proposer validator received commission rewards
+    # In proposer-only reward distribution, only the proposer validator receives rewards
     And the account balance of "validator1" should be "more" than "validator1_initial_balance"

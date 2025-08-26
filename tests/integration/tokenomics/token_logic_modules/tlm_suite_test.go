@@ -46,17 +46,17 @@ type tokenLogicModuleTestSuite struct {
 }
 
 // settlementState holds the expected post-settlement app stake and rewardee balances.
-// This includes all validators and delegators since TLMs now distribute validator rewards
-// to ALL validators proportionally by stake weight (not just block proposer) and their delegators.
+// This includes the proposer validator and their delegators since TLMs now distribute validator rewards
+// ONLY to the block proposer and their delegators (proposer-only reward distribution).
 type settlementState struct {
 	appModuleBalance        *cosmostypes.Coin
 	supplierModuleBalance   *cosmostypes.Coin
 	tokenomicsModuleBalance *cosmostypes.Coin
 
-	// Multi-validator and delegator reward tracking
-	// Maps validator/delegator address -> balance for comprehensive reward distribution validation
-	validatorBalances map[string]*cosmostypes.Coin // All 3 validators receive rewards by stake weight
-	delegatorBalances map[string]*cosmostypes.Coin // All delegators receive proportional rewards
+	// Proposer-only reward tracking
+	// Block proposer receives commission rewards, their delegators receive proportional rewards
+	proposerBalance   *cosmostypes.Coin                      // Proposer validator receives commission rewards
+	delegatorBalances map[string]*cosmostypes.Coin // Proposer's delegators receive proportional rewards
 
 	// Single-recipient rewards (non-validator participants)
 	appStake             *cosmostypes.Coin

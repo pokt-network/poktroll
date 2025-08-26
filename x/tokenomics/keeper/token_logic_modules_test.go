@@ -33,8 +33,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"go.uber.org/mock/gomock"
 )
 
 func init() {
@@ -1073,11 +1075,11 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 	err = keepers.ExecutePendingSettledResults(sdkContext, pendingResults)
 	require.NoError(t, err)
 
-	// Verify that rewards were distributed to ALL validators proportionally
-	// The mock staking keeper provides 3 validators with different stakes and commission rates.
-	// The distribution logic in distributeRewardsToAllValidatorsAndDelegatesByStakeWeight()
-	// calls GetBondedValidatorsByPower() to get ALL validators and distributes proportionally
-	// based on their stake weight, then distributes to each validator's delegators after commission.
+	// Verify that rewards were distributed to the PROPOSER validator only
+	// The mock staking keeper provides the proposer validator with delegators.
+	// The distribution logic in distributeRewardsToProposerAndDelegators()
+	// sends commission rewards to the proposer and distributes remaining rewards
+	// to the proposer's delegators proportionally based on their delegation amounts.
 
 	// Check operations for validator reward distribution
 	modToAcctTransfers := pendingResult.GetModToAcctTransfers()
@@ -1147,11 +1149,11 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 		t.Logf("No validator rewards found - this indicates the distributeRewardsToProposerAndDelegators function is not working properly")
 	}
 
-	// Verify exact transfer counts - the proposer now has delegators, and rewards are consolidated per recipient account
+	// Verify exact transfer counts - proposer receives commission, delegators receive separate transfers
 	require.Equal(t, 1, relayBurnValidatorCount, "should have exactly 1 RelayBurnEqualsMint proposer reward transfer")
-	require.Equal(t, 0, relayBurnDelegateCount, "RelayBurnEqualsMint delegator rewards are consolidated into the proposer transfer")
+	require.Equal(t, 2, relayBurnDelegateCount, "should have 2 RelayBurnEqualsMint delegator reward transfers (2 delegators)")
 	require.Equal(t, 1, globalMintValidatorCount, "should have exactly 1 GlobalMint proposer reward transfer")
-	require.Equal(t, 0, globalMintDelegateCount, "GlobalMint delegator rewards are consolidated into the proposer transfer")
+	require.Equal(t, 2, globalMintDelegateCount, "should have 2 GlobalMint delegator reward transfers (2 delegators)")
 
 	// Verify exact reward amounts
 	totalValidatorRewards := cosmosmath.NewInt(0)
@@ -1164,22 +1166,23 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 		totalDelegatorRewardAmount = totalDelegatorRewardAmount.Add(amount)
 	}
 
-	// Expected totals - rewards are consolidated per recipient, but the commission calculation still happens internally
-	// Total rewards: 1100 uPOKT (1000 from RelayBurnEqualsMint + 100 from GlobalMint)  
-	// The distribution function correctly calculates 5% commission and distributes the rest to delegators,
-	// but consolidates transfers per recipient account, so we see the total per account
-	expectedTotalRewards := cosmosmath.NewInt(1100)        // Total rewards distributed to proposer account
-	expectedDelegatorRewards := cosmosmath.NewInt(0)       // No separate delegator transfers (consolidated)
+	// Expected totals based on proposer-only distribution with 5% validator commission:
+	// Total proposer allocation: 1100 uPOKT (1000 from RelayBurnEqualsMint + 100 from GlobalMint)  
+	// Proposer commission (5%): 55 uPOKT (commission only goes to proposer)
+	// Delegator rewards (95%): 1045 uPOKT (distributed among proposer's delegators)
+	expectedProposerCommission := cosmosmath.NewInt(55)     // Commission: 1100 * 0.05 = 55 uPOKT
+	expectedDelegatorRewards := cosmosmath.NewInt(1045)     // Delegators: 1100 * 0.95 = 1045 uPOKT
 
-	require.Equal(t, expectedTotalRewards, totalValidatorRewards,
-		"total proposer rewards should be exactly %s uPOKT (includes commission + delegator rewards)", expectedTotalRewards)
+	require.Equal(t, expectedProposerCommission, totalValidatorRewards,
+		"proposer commission should be exactly %s uPOKT", expectedProposerCommission)
 	require.Equal(t, expectedDelegatorRewards, totalDelegatorRewardAmount,
-		"total separate delegator rewards should be %s uPOKT (rewards are consolidated)", expectedDelegatorRewards)
+		"total delegator rewards should be %s uPOKT", expectedDelegatorRewards)
+	expectedTotalRewards := expectedProposerCommission.Add(expectedDelegatorRewards)
 	require.Equal(t, expectedTotalRewards, totalValidatorRewards.Add(totalDelegatorRewardAmount),
 		"total rewards should be exactly %s uPOKT", expectedTotalRewards)
 
 	t.Logf("Successfully distributed rewards to %d validator commission and %d delegators (total: %s uPOKT). RelayBurn: %d validator + %d delegator, GlobalMint: %d validator + %d delegator",
-		len(validatorRewards), len(delegatorRewards), expectedTotalRewards,
+		len(validatorRewards), len(delegatorRewards), expectedProposerCommission.Add(expectedDelegatorRewards),
 		relayBurnValidatorCount, relayBurnDelegateCount, globalMintValidatorCount, globalMintDelegateCount)
 	t.Logf("Validator commission amounts: %v, Delegator reward amounts: %v", 
 		func() []int64 {
