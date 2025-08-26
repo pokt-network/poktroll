@@ -250,16 +250,26 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return st.compactProof, nil
 	}
 
-	// Skip save/restore for in-memory stores as data exists only in memory.
+	// Handle restoration differently for persisted vs in-memory stores
+	var sessionSMT smt.SparseMerkleSumTrie
 	if st.persistedSMT() {
 		// Restore the KVStore from disk since it has been closed after the claim has been generated.
 		st.treeStore, err = pebble.NewKVStore(st.storePath)
 		if err != nil {
 			return nil, err
 		}
+		// Import the SMT from the restored KVStore
+		sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
+	} else {
+		// For in-memory stores, the sessionSMT should have been preserved during Flush()
+		if st.sessionSMT == nil {
+			// If sessionSMT is nil, we need to reimport it from the active in-memory store
+			sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
+		} else {
+			// Use the preserved sessionSMT directly
+			sessionSMT = st.sessionSMT
+		}
 	}
-
-	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
 
 	// Generate the proof and cache it along with the path for which it was generated.
 	// There is no ProveClosest variant that generates a compact proof directly.
@@ -269,7 +279,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return nil, err
 	}
 
-	compactProof, err = smt.CompactClosestProof(proof, &sessionSMT.TrieSpec)
+	compactProof, err = smt.CompactClosestProof(proof, sessionSMT.Spec())
 	if err != nil {
 		return nil, err
 	}
@@ -324,8 +334,13 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 			return nil, err
 		}
 		st.treeStore = nil
+		// Clear the sessionSMT reference for persisted stores since it will be reimported from disk
+		st.sessionSMT = nil
 	} else {
 		st.logger.Debug().Msg("Not stopping in-memory session tree KVStore because there is nothing to flush.")
+		// IMPORTANT: For in-memory stores, we must preserve the sessionSMT reference
+		// since we cannot recreate it from disk later. The treeStore remains active
+		// and the sessionSMT will be used directly in ProveClosest().
 	}
 
 	return st.claimedRoot, nil
