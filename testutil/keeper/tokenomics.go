@@ -668,7 +668,7 @@ func NewTokenomicsModuleKeepers(
 		AnyTimes()
 
 	// Mock GetValidatorDelegations for each validator
-	for _, validator := range validators {
+	for valIdx, validator := range validators {
 		valAddr, _ := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
 
 		// Generate simple delegations based on validator's delegator shares
@@ -686,10 +686,13 @@ func NewTokenomicsModuleKeepers(
 			sharesPerDelegator := totalShares.QuoInt64(int64(numDelegators))
 
 			for i := 0; i < numDelegators; i++ {
-				// Use deterministic pre-generated addresses instead of random ones for commutativity
-				// Create a deterministic index based on validator address and delegator position
-				// Use a high offset to avoid conflicts with test addresses (accounts 0-19)
-				delegatorIdx := uint32(20 + len(delegations)*10 + i + len(validator.OperatorAddress)%5)
+				// Use deterministic pre-generated addresses to ensure uniqueness and reproducibility
+				// Each validator gets a unique range of delegator addresses:
+				// - Validator 0: delegators 20, 21
+				// - Validator 1: delegators 22, 23
+				// - Validator 2: delegators 24, 25, etc.
+				// Start at index 20 to avoid conflicts with test addresses (accounts 0-19)
+				delegatorIdx := uint32(20 + valIdx*numDelegators + i)
 				delegatorAddr := testkeyring.MustPreGeneratedAccountAtIndex(delegatorIdx).Address.String()
 				shares := sharesPerDelegator
 

@@ -100,8 +100,23 @@ Feature: Validator Delegation Rewards
     # Validate that delegators received their proportional rewards
     # Note: Rewards are distributed directly during claim settlement
     # Delegator rewards are proportional to their stake vs total validator delegations
+    
+    # Expected reward calculation:
+    # - Settlement: 20 relays × 100 CU/relay × 42 multiplier = 84,000 uPOKT
+    # - RelayBurnEqualsMint: 84,000 × 10% proposer = 8,400 uPOKT to validators
+    # - GlobalMint: 84,000 × 10% inflation × 10% proposer = 840 uPOKT to validators
+    # - Total validator rewards: 8,400 + 840 = 9,240 uPOKT
+    # - app2 has 5,000,000 uPOKT delegated, app3 has 3,000,000 uPOKT delegated
+    # - Total delegated: 8,000,000 uPOKT (assuming 5% validator commission)
+    # - After 5% commission: 9,240 × 95% = 8,778 uPOKT to delegators
+    # - app2 portion: 8,778 × (5M/8M) = 5,486 uPOKT
+    # - app3 portion: 8,778 × (3M/8M) = 3,292 uPOKT
+    
     Then the account balance of "app2" should be "more" than "app2_initial_balance"
     And the account balance of "app3" should be "more" than "app3_initial_balance"
-    
-    # Validate that the validator received commission from the rewards
     And the account balance of "validator1" should be "more" than "validator1_initial_balance"
+    
+    # Validate approximate reward amounts (allowing for rounding and other factors)
+    And the account balance of "app2" should have increased by approximately "5486" uPOKT from "app2_initial_balance"
+    And the account balance of "app3" should have increased by approximately "3292" uPOKT from "app3_initial_balance"
+    And the account balance of "validator1" should have increased by approximately "462" uPOKT from "validator1_initial_balance"
