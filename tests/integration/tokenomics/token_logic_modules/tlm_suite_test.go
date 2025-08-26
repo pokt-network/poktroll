@@ -55,7 +55,7 @@ type settlementState struct {
 
 	// Proposer-only reward tracking
 	// Block proposer receives commission rewards, their delegators receive proportional rewards
-	proposerBalance   *cosmostypes.Coin                      // Proposer validator receives commission rewards
+	proposerBalance   *cosmostypes.Coin            // Proposer validator receives commission rewards
 	delegatorBalances map[string]*cosmostypes.Coin // Proposer's delegators receive proportional rewards
 
 	// Single-recipient rewards (non-validator participants)

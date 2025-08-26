@@ -27,13 +27,13 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
+	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 	"go.uber.org/mock/gomock"
@@ -918,7 +918,7 @@ func setupProposerWithDelegators(ctrl *gomock.Controller) (*mocks.MockStakingKee
 	proposerConsAddr := cosmostypes.ConsAddress([]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14})
 	proposerAccAddr := sample.AccAddressBech32()
 	delegator1Addr := sample.AccAddressBech32()
-	delegator2Addr := sample.AccAddressBech32() 
+	delegator2Addr := sample.AccAddressBech32()
 	delegator3Addr := sample.AccAddressBech32()
 
 	// Configure proposer validator with 5% commission and total stake of 1,000,000
@@ -948,9 +948,9 @@ func setupProposerWithDelegators(ctrl *gomock.Controller) (*mocks.MockStakingKee
 		GetValidatorDelegations(gomock.Any(), proposerAddr).
 		Return([]stakingtypes.Delegation{
 			{DelegatorAddress: proposerAccAddr, ValidatorAddress: proposerOpAddr, Shares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(400000))}, // Validator self-delegation (40%)
-			{DelegatorAddress: delegator1Addr, ValidatorAddress: proposerOpAddr, Shares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(300000))}, // Delegator 1 (30%)
-			{DelegatorAddress: delegator2Addr, ValidatorAddress: proposerOpAddr, Shares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(200000))}, // Delegator 2 (20%)  
-			{DelegatorAddress: delegator3Addr, ValidatorAddress: proposerOpAddr, Shares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(100000))}, // Delegator 3 (10%)
+			{DelegatorAddress: delegator1Addr, ValidatorAddress: proposerOpAddr, Shares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(300000))},  // Delegator 1 (30%)
+			{DelegatorAddress: delegator2Addr, ValidatorAddress: proposerOpAddr, Shares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(200000))},  // Delegator 2 (20%)
+			{DelegatorAddress: delegator3Addr, ValidatorAddress: proposerOpAddr, Shares: cosmosmath.LegacyNewDecFromInt(cosmosmath.NewInt(100000))},  // Delegator 3 (10%)
 		}, nil).
 		AnyTimes()
 
@@ -973,10 +973,10 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 	service := prepareTestService(1)
 	daoAddress := sample.AccAddressBech32()
 
-	// Use the existing testkeeper setup but with explicit proposer configuration  
+	// Use the existing testkeeper setup but with explicit proposer configuration
 	proposerConsAddr := cosmostypes.ConsAddress([]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14})
 	proposerValOperatorAddr := sample.ValOperatorAddress()
-	
+
 	opts := []testkeeper.TokenomicsModuleKeepersOptFn{
 		testkeeper.WithService(*service),
 		testkeeper.WithBlockProposer(proposerConsAddr, proposerValOperatorAddr),
@@ -987,10 +987,10 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 
 	// Create and configure mock staking keeper with proposer and 3 delegators
 	mockStakingKeeper, _ := setupProposerWithDelegators(ctrl)
-	
+
 	// Replace the staking keeper with our proposer + delegators mock
 	keepers.StakingKeeper = mockStakingKeeper
-	
+
 	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
@@ -1002,7 +1002,7 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 	tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer = 0.1 // 10% settlement goes to all validators (RelayBurnEqualsMint TLM)
 	err := keepers.Keeper.SetParams(ctx, tokenomicsParams)
 	require.NoError(t, err)
-	
+
 	// Debug: Print the parameters to verify they're set correctly
 	finalParams := keepers.Keeper.GetParams(ctx)
 	t.Logf("DEBUG: MintAllocationPercentages.Proposer = %f", finalParams.MintAllocationPercentages.Proposer)
@@ -1128,17 +1128,17 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 	// RelayBurnEqualsMint TLM: 10% of settlement (10000 uPOKT) = 1000 uPOKT total
 	// - Validator commission: 1000 * 0.05 = 50 uPOKT
 	// - Delegator pool: 1000 - 50 = 950 uPOKT distributed by stake weight:
-	//   - Validator self-delegation (40%): 950 * 0.4 = 380 uPOKT  
+	//   - Validator self-delegation (40%): 950 * 0.4 = 380 uPOKT
 	//   - Delegator 1 (30%): 950 * 0.3 = 285 uPOKT
 	//   - Delegator 2 (20%): 950 * 0.2 = 190 uPOKT
 	//   - Delegator 3 (10%): 950 * 0.1 = 95 uPOKT
-	// 
+	//
 	// GlobalMint TLM: 10% inflation (1000 uPOKT minted) * 10% validator allocation = 100 uPOKT total
 	// - Validator commission: 100 * 0.05 = 5 uPOKT
 	// - Delegator pool: 100 - 5 = 95 uPOKT distributed by stake weight:
 	//   - Validator self-delegation (40%): 95 * 0.4 = 38 uPOKT
 	//   - Delegator 1 (30%): 95 * 0.3 = 28.5 → 28 uPOKT (integer division)
-	//   - Delegator 2 (20%): 95 * 0.2 = 19 uPOKT  
+	//   - Delegator 2 (20%): 95 * 0.2 = 19 uPOKT
 	//   - Delegator 3 (10%): 95 * 0.1 = 9.5 → 9 uPOKT (integer division)
 	//
 	// Total validator commission: 50 + 5 = 55 uPOKT
@@ -1167,11 +1167,11 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 	}
 
 	// Expected totals based on proposer-only distribution with 5% validator commission:
-	// Total proposer allocation: 1100 uPOKT (1000 from RelayBurnEqualsMint + 100 from GlobalMint)  
+	// Total proposer allocation: 1100 uPOKT (1000 from RelayBurnEqualsMint + 100 from GlobalMint)
 	// Proposer commission (5%): 55 uPOKT (commission only goes to proposer)
 	// Delegator rewards (95%): 1045 uPOKT (distributed among proposer's delegators)
-	expectedProposerCommission := cosmosmath.NewInt(55)     // Commission: 1100 * 0.05 = 55 uPOKT
-	expectedDelegatorRewards := cosmosmath.NewInt(1045)     // Delegators: 1100 * 0.95 = 1045 uPOKT
+	expectedProposerCommission := cosmosmath.NewInt(55) // Commission: 1100 * 0.05 = 55 uPOKT
+	expectedDelegatorRewards := cosmosmath.NewInt(1045) // Delegators: 1100 * 0.95 = 1045 uPOKT
 
 	require.Equal(t, expectedProposerCommission, totalValidatorRewards,
 		"proposer commission should be exactly %s uPOKT", expectedProposerCommission)
@@ -1184,7 +1184,7 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 	t.Logf("Successfully distributed rewards to %d validator commission and %d delegators (total: %s uPOKT). RelayBurn: %d validator + %d delegator, GlobalMint: %d validator + %d delegator",
 		len(validatorRewards), len(delegatorRewards), expectedProposerCommission.Add(expectedDelegatorRewards),
 		relayBurnValidatorCount, relayBurnDelegateCount, globalMintValidatorCount, globalMintDelegateCount)
-	t.Logf("Validator commission amounts: %v, Delegator reward amounts: %v", 
+	t.Logf("Validator commission amounts: %v, Delegator reward amounts: %v",
 		func() []int64 {
 			amounts := make([]int64, 0, len(validatorRewards))
 			for _, amount := range validatorRewards {

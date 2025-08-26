@@ -453,7 +453,7 @@ func (s *tokenLogicModuleTestSuite) getProposerAccountAddress(t *testing.T) stri
 
 	// The proposer was set to use pre-generated account #10 in the test setup
 	proposerAccount := testkeyring.MustPreGeneratedAccountAtIndex(10)
-	
+
 	// Return the account address directly (not validator operator address)
 	// Proposer rewards are sent to their account address, not their validator operator address
 	return proposerAccount.Address.String()
