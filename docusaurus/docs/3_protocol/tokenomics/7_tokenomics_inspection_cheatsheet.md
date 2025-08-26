@@ -76,25 +76,25 @@ pocketd query tokenomics params --network <network> -o json | jq -r '.mint_alloc
 pocketd query tokenomics params --network <network> -o json | jq -r '.global_inflation_per_claim'
 ```
 
-### Distribution Module Queries
+### Validator and Delegator Account Balance Queries
 
-Check validator rewards in the distribution module:
+Check validator and delegator account balances (where rewards are sent directly):
 
 ```bash
-# Check distribution module balance (where validator rewards are sent)
-pocketd query bank balance cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl upokt --network <network>
+# Check validator account balance (where validator commission is sent directly)
+pocketd query bank balance <validator-account-address> upokt --network <network>
 
-# View validator outstanding rewards
-pocketd query distribution validator-outstanding-rewards <validator-address> --network <network>
+# Check delegator account balance (where delegator rewards are sent directly)  
+pocketd query bank balance <delegator-account-address> upokt --network <network>
 
-# View delegator rewards from specific validator
-pocketd query distribution rewards-by-validator <delegator-address> <validator-address> --network <network>
+# Check validator commission rate (for reward calculation reference)
+pocketd query staking validator <validator-operator-address> --network <network> | jq '.commission.commission_rates'
 
-# View all delegator rewards
-pocketd query distribution rewards <delegator-address> --network <network>
+# Check delegation shares (for reward proportion calculations)
+pocketd query staking delegation <delegator-address> <validator-operator-address> --network <network>
 
-# Check validator commission
-pocketd query distribution commission <validator-address> --network <network>
+# List all delegations to a validator (to understand total reward distribution)
+pocketd query staking delegations-to <validator-operator-address> --network <network>
 ```
 
 ### Staking Information for Reward Distribution
