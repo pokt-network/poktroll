@@ -51,7 +51,11 @@ Update your `relayminer_config.yaml` to add `WebSocket` support like so:
 ```yaml
 default_signing_key_names:
   - supplier
-smt_store_path: ":memory:" # Options: ":memory:" (SimpleMap, recommended), ":memory_pebble:" (experimental), or /path/to/.pocket/smt
+# SMT store path options:
+# - ":memory:" - SimpleMap in-memory storage (recommended for performance)
+# - ":memory_pebble:" - Pebble in-memory storage (experimental)
+# - "/path/to/.pocket/smt" - Disk-based persistent storage
+smt_store_path: ":memory:"
 pocket_node:
   query_node_rpc_url: https://<RPC_NODE>
   query_node_grpc_url: https://<GRPC_NODE>:443
