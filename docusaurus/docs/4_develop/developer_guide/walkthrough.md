@@ -435,6 +435,7 @@ The following is an example config to get you started:
 ```bash
 cat <<🚀 >> shannon_relayminer_config.yaml
 default_signing_key_names: [ "shannon_supplier" ]
+# Options: ":memory:" (fast, in-memory), ":memory_pebble:" (experimental), or disk path
 smt_store_path: $HOME/.pocket/smt
 metrics:
   enabled: true

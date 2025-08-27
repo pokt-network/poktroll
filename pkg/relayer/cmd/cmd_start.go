@@ -150,7 +150,8 @@ Totals:
 		return err
 	}
 
-	if relayMinerConfig.SmtStorePath == session.InMemoryStoreFilename {
+	switch relayMinerConfig.SmtStorePath {
+	case session.InMemoryStoreFilename:
 		fmt.Printf(`
 🚨 WARNING: SMT configured for SimpleMap in-memory storage 🚨
 ----------------------------------------------------------------
@@ -161,7 +162,7 @@ Totals:
 • TODO(#1734): Add support for backing up in-memory session trees
 ----------------------------------------------------------------
 `)
-	} else if relayMinerConfig.SmtStorePath == session.InMemoryPebbleStoreFilename {
+	case session.InMemoryPebbleStoreFilename:
 		fmt.Printf(`
 🚨 WARNING: SMT configured for Pebble in-memory storage (EXPERIMENTAL) 🚨
 ----------------------------------------------------------------

@@ -87,9 +87,11 @@ type relayerSessionsManager struct {
 	supplierClients *supplier.SupplierClientMap
 
 	// storesDirectoryPath points to a path on disk where KVStore data files are created.
-	// If set to :memory:, session trees are kept in memory only.
+	// Special values:
+	// - ":memory:" - Uses SimpleMap for pure in-memory storage (recommended)
+	// - ":memory_pebble:" - Uses Pebble with in-memory VFS (experimental)
 	// Otherwise, session data is persisted to disk and can be restored after a process restart.
-	// TODO(#1734): Ensure in-memory mode avoids data loss on process restart.
+	// TODO(#1734): Ensure in-memory modes avoid data loss on process restart.
 	storesDirectoryPath string
 
 	// sessionSMTStore is a key-value store used to persist the metadata of
@@ -171,15 +173,15 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	// If in-memory mode is enabled, use an empty string as the session metadata store directory.
-	// which is the equivalent of vfs.NewMem() in pebble.
+	// For in-memory storage modes (SimpleMap or Pebble in-memory), use an empty string
+	// as the session metadata store directory, which creates a memory-backed Pebble store.
 	// Otherwise, use the storesDirectoryPath as the session metadata store directory.
-	// TODO(#1734): Design a solution for restoration even when using in-memory SMT.
+	// TODO(#1734): Design a solution for restoration even when using in-memory modes.
 	sessionSMTDir := ""
 	if rs.persistedSMT() {
 		sessionSMTDir = path.Join(rs.storesDirectoryPath, "sessions_metadata")
 	} else {
-		rs.logger.Info().Msg("Skipping session metadata store initialization as in-memory SMT is being used.")
+		rs.logger.Info().Msg("Using memory-backed session metadata store for in-memory SMT modes.")
 	}
 	// Initialize the session metadata store.
 	if rs.sessionSMTStore, err = pebble.NewKVStore(sessionSMTDir); err != nil {
@@ -222,8 +224,8 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 			return err
 		}
 	} else {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT.
-		rs.logger.Info().Msg("Skipping session data restoration as in-memory SMT is being used.")
+		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
+		rs.logger.Info().Msg("Skipping session data restoration for in-memory SMT modes.")
 	}
 
 	// DEV_NOTE: must cast back to generic observable type to use with Map.
@@ -277,10 +279,10 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
 
-	// Skip persistence when using in-memory SMT (MemoryStore) as data is not saved to disk.
+	// Skip persistence when using in-memory SMT modes as data is not saved to disk.
 	if !rs.persistedSMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT.
-		rs.logger.Info().Msg("Skipping persistence of session data as in-memory SMT is being used.")
+		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
+		rs.logger.Info().Msg("Skipping persistence of session data for in-memory SMT modes.")
 		return
 	}
 	rs.logger.Info().Msg("About to start persisting all session data to disk.")
