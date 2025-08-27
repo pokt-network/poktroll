@@ -957,6 +957,62 @@ func setupProposerWithDelegators(ctrl *gomock.Controller) (*mocks.MockStakingKee
 	return mockStakingKeeper, proposerConsAddr
 }
 
+// rewardDistribution helper struct to organize and validate reward distribution
+// calculations with precise assertions and clear documentation.
+type rewardDistribution struct {
+	ValidatorRewards         map[string]cosmosmath.Int
+	DelegatorRewards         map[string]cosmosmath.Int
+	RelayBurnValidatorCount  int
+	RelayBurnDelegatorCount  int
+	GlobalMintValidatorCount int
+	GlobalMintDelegatorCount int
+}
+
+// processTransfer categorizes reward transfers by type and tracks counts for verification
+func (rd *rewardDistribution) processTransfer(transfer *tokenomicstypes.ModToAcctTransfer) {
+	switch transfer.OpReason {
+	case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION:
+		rd.RelayBurnValidatorCount++
+		rd.ValidatorRewards[transfer.RecipientAddress] = transfer.Coin.Amount
+	case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION:
+		rd.RelayBurnDelegatorCount++
+		if _, exists := rd.DelegatorRewards[transfer.RecipientAddress]; !exists {
+			rd.DelegatorRewards[transfer.RecipientAddress] = cosmosmath.NewInt(0)
+		}
+		rd.DelegatorRewards[transfer.RecipientAddress] = rd.DelegatorRewards[transfer.RecipientAddress].Add(transfer.Coin.Amount)
+	case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION:
+		rd.GlobalMintValidatorCount++
+		if _, exists := rd.ValidatorRewards[transfer.RecipientAddress]; !exists {
+			rd.ValidatorRewards[transfer.RecipientAddress] = cosmosmath.NewInt(0)
+		}
+		rd.ValidatorRewards[transfer.RecipientAddress] = rd.ValidatorRewards[transfer.RecipientAddress].Add(transfer.Coin.Amount)
+	case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION:
+		rd.GlobalMintDelegatorCount++
+		if _, exists := rd.DelegatorRewards[transfer.RecipientAddress]; !exists {
+			rd.DelegatorRewards[transfer.RecipientAddress] = cosmosmath.NewInt(0)
+		}
+		rd.DelegatorRewards[transfer.RecipientAddress] = rd.DelegatorRewards[transfer.RecipientAddress].Add(transfer.Coin.Amount)
+	}
+}
+
+// getTotalValidatorRewards returns the sum of all validator commission rewards
+func (rd *rewardDistribution) getTotalValidatorRewards() cosmosmath.Int {
+	total := cosmosmath.NewInt(0)
+	for _, amount := range rd.ValidatorRewards {
+		total = total.Add(amount)
+	}
+	return total
+}
+
+// getTotalDelegatorRewards returns the sum of all delegator rewards
+func (rd *rewardDistribution) getTotalDelegatorRewards() cosmosmath.Int {
+	total := cosmosmath.NewInt(0)
+	for _, amount := range rd.DelegatorRewards {
+		total = total.Add(amount)
+	}
+	return total
+}
+
 func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 	// Create a new gomock controller for this test
 	ctrl := gomock.NewController(t)
@@ -1002,12 +1058,6 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 	tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer = 0.1 // 10% settlement goes to all validators (RelayBurnEqualsMint TLM)
 	err := keepers.Keeper.SetParams(ctx, tokenomicsParams)
 	require.NoError(t, err)
-
-	// Debug: Print the parameters to verify they're set correctly
-	finalParams := keepers.Keeper.GetParams(ctx)
-	t.Logf("DEBUG: MintAllocationPercentages.Proposer = %f", finalParams.MintAllocationPercentages.Proposer)
-	t.Logf("DEBUG: MintEqualsBurnClaimDistribution.Proposer = %f", finalParams.MintEqualsBurnClaimDistribution.Proposer)
-	t.Logf("DEBUG: GlobalInflationPerClaim = %f", finalParams.GlobalInflationPerClaim)
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
@@ -1075,130 +1125,72 @@ func TestProcessTokenLogicModules_ProposerRewards(t *testing.T) {
 	err = keepers.ExecutePendingSettledResults(sdkContext, pendingResults)
 	require.NoError(t, err)
 
-	// Verify that rewards were distributed to the PROPOSER validator only
-	// The mock staking keeper provides the proposer validator with delegators.
-	// The distribution logic in distributeRewardsToProposerAndDelegators()
-	// sends commission rewards to the proposer and distributes remaining rewards
-	// to the proposer's delegators proportionally based on their delegation amounts.
+	// PRECISE REWARD DISTRIBUTION VERIFICATION
+	// Initialize reward distribution tracker and process all transfers
+	rewardDist := &rewardDistribution{
+		ValidatorRewards: make(map[string]cosmosmath.Int),
+		DelegatorRewards: make(map[string]cosmosmath.Int),
+	}
 
-	// Check operations for validator reward distribution
 	modToAcctTransfers := pendingResult.GetModToAcctTransfers()
-
-	// Track rewards by validator and delegator
-	validatorRewards := make(map[string]cosmosmath.Int)
-	delegatorRewards := make(map[string]cosmosmath.Int)
-
-	relayBurnValidatorCount := 0
-	relayBurnDelegateCount := 0
-	globalMintValidatorCount := 0
-	globalMintDelegateCount := 0
-
 	for _, transfer := range modToAcctTransfers {
-		// Debug log all transfers to see what's actually happening
-		t.Logf("Transfer: %s -> %s: %s (%s)", transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, transfer.OpReason)
-
-		switch transfer.OpReason {
-		case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION:
-			relayBurnValidatorCount++
-			validatorRewards[transfer.RecipientAddress] = transfer.Coin.Amount
-		case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION:
-			relayBurnDelegateCount++
-			if _, exists := delegatorRewards[transfer.RecipientAddress]; !exists {
-				delegatorRewards[transfer.RecipientAddress] = cosmosmath.NewInt(0)
-			}
-			delegatorRewards[transfer.RecipientAddress] = delegatorRewards[transfer.RecipientAddress].Add(transfer.Coin.Amount)
-		case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION:
-			globalMintValidatorCount++
-			if _, exists := validatorRewards[transfer.RecipientAddress]; !exists {
-				validatorRewards[transfer.RecipientAddress] = cosmosmath.NewInt(0)
-			}
-			validatorRewards[transfer.RecipientAddress] = validatorRewards[transfer.RecipientAddress].Add(transfer.Coin.Amount)
-		case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION:
-			globalMintDelegateCount++
-			if _, exists := delegatorRewards[transfer.RecipientAddress]; !exists {
-				delegatorRewards[transfer.RecipientAddress] = cosmosmath.NewInt(0)
-			}
-			delegatorRewards[transfer.RecipientAddress] = delegatorRewards[transfer.RecipientAddress].Add(transfer.Coin.Amount)
-		}
+		t.Logf("Processing transfer: %s -> %s: %s (%s)", transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, transfer.OpReason)
+		rewardDist.processTransfer(&transfer)
 	}
 
 	// PRECISE ASSERTIONS: Verify exact reward distribution amounts
-	// Expected reward distribution with 5% validator commission and 4 delegators:
+	// Expected reward distribution with 5% validator commission and 2 active delegators:
 	//
-	// RelayBurnEqualsMint TLM: 10% of settlement (10000 uPOKT) = 1000 uPOKT total
-	// - Validator commission: 1000 * 0.05 = 50 uPOKT
-	// - Delegator pool: 1000 - 50 = 950 uPOKT distributed by stake weight:
-	//   - Validator self-delegation (40%): 950 * 0.4 = 380 uPOKT
-	//   - Delegator 1 (30%): 950 * 0.3 = 285 uPOKT
-	//   - Delegator 2 (20%): 950 * 0.2 = 190 uPOKT
-	//   - Delegator 3 (10%): 950 * 0.1 = 95 uPOKT
+	// Settlement amount: 10,000 relays × 1 CU/relay × 1 uPOKT/CU = 10,000 uPOKT
+	// Inflation: 10,000 × 10% = 1,000 uPOKT minted
 	//
-	// GlobalMint TLM: 10% inflation (1000 uPOKT minted) * 10% validator allocation = 100 uPOKT total
-	// - Validator commission: 100 * 0.05 = 5 uPOKT
-	// - Delegator pool: 100 - 5 = 95 uPOKT distributed by stake weight:
-	//   - Validator self-delegation (40%): 95 * 0.4 = 38 uPOKT
-	//   - Delegator 1 (30%): 95 * 0.3 = 28.5 → 28 uPOKT (integer division)
-	//   - Delegator 2 (20%): 95 * 0.2 = 19 uPOKT
-	//   - Delegator 3 (10%): 95 * 0.1 = 9.5 → 9 uPOKT (integer division)
+	// RelayBurnEqualsMint TLM: 10% of settlement (10,000 uPOKT) = 1,000 uPOKT total
+	// - Validator commission: 1,000 × 0.05 = 50 uPOKT
+	// - Delegator pool: 1,000 - 50 = 950 uPOKT distributed to 2 active delegators:
+	//   - Delegator 1: 475 uPOKT (50% of delegator pool)
+	//   - Delegator 2: 475 uPOKT (50% of delegator pool)
+	//
+	// GlobalMint TLM: 10% inflation (1,000 uPOKT minted) × 10% proposer allocation = 100 uPOKT total
+	// - Validator commission: 100 × 0.05 = 5 uPOKT
+	// - Delegator pool: 100 - 5 = 95 uPOKT distributed to 2 active delegators:
+	//   - Delegator 1: 48 uPOKT (integer division)
+	//   - Delegator 2: 47 uPOKT (integer division)
 	//
 	// Total validator commission: 50 + 5 = 55 uPOKT
-	// Total delegator rewards: 950 + 95 = 1045 uPOKT
+	// Total delegator rewards: 950 + 95 = 1,045 uPOKT
+	// Total distributed: 55 + 1,045 = 1,100 uPOKT ✓
 
-	// Verify validator rewards are being processed - if none found, likely an issue with the distribution function
-	if relayBurnValidatorCount == 0 && relayBurnDelegateCount == 0 && globalMintValidatorCount == 0 && globalMintDelegateCount == 0 {
-		t.Logf("No validator rewards found - this indicates the distributeRewardsToProposerAndDelegators function is not working properly")
-	}
+	// Verify transfer counts - proposer receives commission, delegators receive separate transfers
+	require.Equal(t, 1, rewardDist.RelayBurnValidatorCount, "should have exactly 1 RelayBurnEqualsMint proposer reward transfer")
+	require.Equal(t, 2, rewardDist.RelayBurnDelegatorCount, "should have 2 RelayBurnEqualsMint delegator reward transfers (2 unique delegators)")
+	require.Equal(t, 1, rewardDist.GlobalMintValidatorCount, "should have exactly 1 GlobalMint proposer reward transfer")
+	require.Equal(t, 2, rewardDist.GlobalMintDelegatorCount, "should have 2 GlobalMint delegator reward transfers (2 unique delegators)")
 
-	// Verify exact transfer counts - proposer receives commission, delegators receive separate transfers
-	require.Equal(t, 1, relayBurnValidatorCount, "should have exactly 1 RelayBurnEqualsMint proposer reward transfer")
-	require.Equal(t, 2, relayBurnDelegateCount, "should have 2 RelayBurnEqualsMint delegator reward transfers (2 delegators)")
-	require.Equal(t, 1, globalMintValidatorCount, "should have exactly 1 GlobalMint proposer reward transfer")
-	require.Equal(t, 2, globalMintDelegateCount, "should have 2 GlobalMint delegator reward transfers (2 delegators)")
-
-	// Verify exact reward amounts
-	totalValidatorRewards := cosmosmath.NewInt(0)
-	for _, amount := range validatorRewards {
-		totalValidatorRewards = totalValidatorRewards.Add(amount)
-	}
-
-	totalDelegatorRewardAmount := cosmosmath.NewInt(0)
-	for _, amount := range delegatorRewards {
-		totalDelegatorRewardAmount = totalDelegatorRewardAmount.Add(amount)
-	}
+	// Calculate actual reward totals
+	actualValidatorRewards := rewardDist.getTotalValidatorRewards()
+	actualDelegatorRewards := rewardDist.getTotalDelegatorRewards()
 
 	// Expected totals based on proposer-only distribution with 5% validator commission:
-	// Total proposer allocation: 1100 uPOKT (1000 from RelayBurnEqualsMint + 100 from GlobalMint)
+	// Total proposer allocation: 1,100 uPOKT (1,000 from RelayBurnEqualsMint + 100 from GlobalMint)
 	// Proposer commission (5%): 55 uPOKT (commission only goes to proposer)
-	// Delegator rewards (95%): 1045 uPOKT (distributed among proposer's delegators)
-	expectedProposerCommission := cosmosmath.NewInt(55) // Commission: 1100 * 0.05 = 55 uPOKT
-	expectedDelegatorRewards := cosmosmath.NewInt(1045) // Delegators: 1100 * 0.95 = 1045 uPOKT
+	// Delegator rewards (95%): 1,045 uPOKT (distributed among proposer's delegators)
+	expectedProposerCommission := cosmosmath.NewInt(55) // Commission: 1,100 × 0.05 = 55 uPOKT
+	expectedDelegatorRewards := cosmosmath.NewInt(1045) // Delegators: 1,100 × 0.95 = 1,045 uPOKT
+	expectedTotalRewards := cosmosmath.NewInt(1100)     // Total: 1,100 uPOKT
 
-	require.Equal(t, expectedProposerCommission, totalValidatorRewards,
+	// Verify exact reward amounts
+	require.Equal(t, expectedProposerCommission, actualValidatorRewards,
 		"proposer commission should be exactly %s uPOKT", expectedProposerCommission)
-	require.Equal(t, expectedDelegatorRewards, totalDelegatorRewardAmount,
+	require.Equal(t, expectedDelegatorRewards, actualDelegatorRewards,
 		"total delegator rewards should be %s uPOKT", expectedDelegatorRewards)
-	expectedTotalRewards := expectedProposerCommission.Add(expectedDelegatorRewards)
-	require.Equal(t, expectedTotalRewards, totalValidatorRewards.Add(totalDelegatorRewardAmount),
+	require.Equal(t, expectedTotalRewards, actualValidatorRewards.Add(actualDelegatorRewards),
 		"total rewards should be exactly %s uPOKT", expectedTotalRewards)
 
-	t.Logf("Successfully distributed rewards to %d validator commission and %d delegators (total: %s uPOKT). RelayBurn: %d validator + %d delegator, GlobalMint: %d validator + %d delegator",
-		len(validatorRewards), len(delegatorRewards), expectedProposerCommission.Add(expectedDelegatorRewards),
-		relayBurnValidatorCount, relayBurnDelegateCount, globalMintValidatorCount, globalMintDelegateCount)
-	t.Logf("Validator commission amounts: %v, Delegator reward amounts: %v",
-		func() []int64 {
-			amounts := make([]int64, 0, len(validatorRewards))
-			for _, amount := range validatorRewards {
-				amounts = append(amounts, amount.Int64())
-			}
-			return amounts
-		}(),
-		func() []int64 {
-			amounts := make([]int64, 0, len(delegatorRewards))
-			for _, amt := range delegatorRewards {
-				amounts = append(amounts, amt.Int64())
-			}
-			return amounts
-		}())
+	t.Logf("✓ Successfully distributed %s uPOKT in rewards: %s uPOKT validator commission + %s uPOKT delegator rewards",
+		expectedTotalRewards, actualValidatorRewards, actualDelegatorRewards)
+	t.Logf("✓ Transfer counts - RelayBurn: %d validator + %d delegator, GlobalMint: %d validator + %d delegator",
+		rewardDist.RelayBurnValidatorCount, rewardDist.RelayBurnDelegatorCount,
+		rewardDist.GlobalMintValidatorCount, rewardDist.GlobalMintDelegatorCount)
 }
 
 func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {

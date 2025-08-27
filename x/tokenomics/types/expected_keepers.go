@@ -138,4 +138,8 @@ type StakingKeeper interface {
 	GetValidatorDelegations(ctx context.Context, valAddr cosmostypes.ValAddress) ([]stakingtypes.Delegation, error)
 	// GetBondedValidatorsByPower gets all bonded validators sorted by voting power
 	GetBondedValidatorsByPower(ctx context.Context) ([]stakingtypes.Validator, error)
+	// SetValidator sets the main record holding validator details
+	SetValidator(ctx context.Context, validator stakingtypes.Validator) error
+	// SetValidatorByConsAddr sets a validator by conesensus address
+	SetValidatorByConsAddr(ctx context.Context, validator stakingtypes.Validator) error
 }
