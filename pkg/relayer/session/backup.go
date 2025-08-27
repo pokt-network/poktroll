@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -40,6 +41,7 @@ type BackupManager struct {
 	config      *relayerconfig.RelayMinerSmtBackupConfig
 	backupTimer *time.Ticker
 	stopChan    chan struct{}
+	stopOnce    sync.Once
 }
 
 // NewBackupManager creates a new backup manager with the given configuration
@@ -97,7 +99,9 @@ func (bm *BackupManager) Start(ctx context.Context, sessionsMgr *relayerSessions
 // Stop stops the backup manager
 func (bm *BackupManager) Stop() {
 	bm.logger.Info().Msg("Stopping backup manager")
-	close(bm.stopChan)
+	bm.stopOnce.Do(func() {
+		close(bm.stopChan)
+	})
 }
 
 // BackupSessionTree backs up a single session tree to disk
@@ -118,7 +122,7 @@ func (bm *BackupManager) BackupSessionTree(sessionTree relayer.SessionTree) erro
 		ClaimedRoot:             sessionTree.GetClaimRoot(),
 		ProofPath:               sessionTree.GetProofBz(),
 		CompactProofBz:          sessionTree.GetProofBz(), // Same as ProofPath for now
-		IsClaiming:              false,                     // Cannot access this from interface
+		IsClaiming:              false,                    // Cannot access this from interface
 		BackupTimestamp:         time.Now().Unix(),
 	}
 
@@ -262,14 +266,14 @@ func (bm *BackupManager) extractSMTEntries(sessionTree relayer.SessionTree) ([]S
 	// This is a simplified implementation. In practice, you would need to
 	// iterate over all entries in the SMT. For now, we'll return an empty
 	// slice as the SMT doesn't expose a direct iteration interface.
-	// 
+	//
 	// TODO: Implement proper SMT entry extraction when the SMT library
 	// provides iteration capabilities or when we can access the underlying KVStore
-	
+
 	bm.logger.Debug().
 		Str("session_id", sessionTree.GetSessionHeader().SessionId).
 		Msg("SMT entry extraction not yet implemented - storing tree metadata only")
-	
+
 	return []SMTEntry{}, nil
 }
 
@@ -347,7 +351,7 @@ func (bm *BackupManager) BackupOnEvent(
 			Str("event", string(event)).
 			Str("session_id", sessionTree.GetSessionHeader().SessionId).
 			Msg("Triggering event-based backup")
-		
+
 		return bm.BackupSessionTree(sessionTree)
 	}
 
