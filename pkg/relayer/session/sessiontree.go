@@ -291,9 +291,15 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		if st.sessionSMT != nil {
 			sessionSMT = st.sessionSMT
 		} else {
-			// TODO_IMPROVE: This fallback will likely fail since fresh store has no data
-			// Consider making this an error condition instead
-			st.logger.Warn().Msg("sessionSMT is nil for Pebble in-memory store - attempting fresh store creation (likely to fail)")
+			// 🚨 BIG RED FLASHING LIGHT 🚨 - sessionSMT should never be nil for Pebble in-memory!
+			st.logger.Error().
+				Str("store_path", st.storePath).
+				Str("session_id", st.sessionHeader.SessionId).
+				Str("supplier_operator_address", st.supplierOperatorAddress).
+				Str("claim_root", fmt.Sprintf("%x", st.claimedRoot)).
+				Msg("🚨🚨🚨 CRITICAL: sessionSMT is NULL for Pebble in-memory store! This indicates the session data was not preserved during Flush()! Attempting fallback but PROOF GENERATION WILL LIKELY FAIL! 🚨🚨🚨")
+
+			// Attempt fallback (will likely fail since fresh store has no data)
 			pebbleStore, pebbleErr := pebble.NewKVStore("") // Empty string for in-memory
 			if pebbleErr != nil {
 				return nil, pebbleErr
@@ -312,11 +318,33 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
 	}
 
+	// Final sanity check - ensure we have a valid sessionSMT before attempting proof generation
+	if sessionSMT == nil {
+		// 🚨 BIG RED FLASHING LIGHT 🚨 - No sessionSMT available for proof generation!
+		st.logger.Error().
+			Str("store_path", st.storePath).
+			Str("session_id", st.sessionHeader.SessionId).
+			Str("supplier_operator_address", st.supplierOperatorAddress).
+			Str("claim_root", fmt.Sprintf("%x", st.claimedRoot)).
+			Msg("🚨🚨🚨 CRITICAL: sessionSMT is NULL after restoration attempt! Cannot generate proof! Claims exist but REWARDS WILL BE LOST! Check session data preservation logic! 🚨🚨🚨")
+		return nil, fmt.Errorf("sessionSMT is nil - cannot generate proof for session %s", st.sessionHeader.SessionId)
+	}
+
 	// Generate the proof and cache it along with the path for which it was generated.
 	// There is no ProveClosest variant that generates a compact proof directly.
 	// Generate a regular SparseMerkleClosestProof then compact it.
 	proof, err := sessionSMT.ProveClosest(path)
 	if err != nil {
+		// 🚨 BIG RED FLASHING LIGHT 🚨 - Critical proof generation failure!
+		st.logger.Error().
+			Err(err).
+			Str("store_path", st.storePath).
+			Str("session_id", st.sessionHeader.SessionId).
+			Str("supplier_operator_address", st.supplierOperatorAddress).
+			Bool("session_smt_exists", st.sessionSMT != nil).
+			Bool("tree_store_exists", st.treeStore != nil).
+			Str("claim_root", fmt.Sprintf("%x", st.claimedRoot)).
+			Msg("🚨🚨🚨 CRITICAL: ProveClosest FAILED - Session tree data missing! Claims were created but PROOFS CANNOT BE GENERATED! This will result in REWARD LOSS and potential SLASHING! 🚨🚨🚨")
 		return nil, err
 	}
 
