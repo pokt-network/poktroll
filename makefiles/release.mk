@@ -110,22 +110,17 @@ INFO_URL := https://dev.poktroll.com/explore/account_management/pocketd_cli?_hig
 
 define print_next_steps
 	$(call print_info_section,Next Steps)
-	@echo "$(BOLD)1.$(RESET) Push the new tag:"
-	@echo "   $(CYAN)git push origin $(1)$(RESET)"
-	@echo ""
-	@echo "$(BOLD)2.$(RESET) Draft a new release:"
-	$(call print_url,$(GITHUB_REPO_URL))
-	$(if $(2),@echo "   $(CYAN)- Mark it as a pre-release$(RESET)")
-	$(if $(2),@echo "   $(CYAN)- Include PR/branch information in the description$(RESET)")
+	@echo "  $(BOLD)1.$(RESET) Push the new tag: $(CYAN)git push origin $(1)$(RESET)"
+	@echo "  $(BOLD)2.$(RESET) Draft a new release here: $(CYAN)$(GITHUB_REPO_URL)$(RESET)"
+	$(if $(2),@echo "    $(CYAN)- Mark it as a pre-release$(RESET)")
+	$(if $(2),@echo "    $(CYAN)- Include PR/branch information in the description$(RESET)")
 	@echo ""
 endef
 
 define print_cleanup_commands
 	$(call print_info_section,If you need to delete the tag)
-	@echo "$(BOLD)Local:$(RESET)"
-	@echo "   $(CYAN)git tag -d $(1)$(RESET)"
-	@echo "$(BOLD)Remote:$(RESET)"
-	@echo "   $(CYAN)git push origin --delete $(1)$(RESET)"
+	@echo "  $(BOLD)Local:$(RESET) $(CYAN)git tag -d $(1)$(RESET)"
+	@echo "  $(BOLD)Remote:$(RESET) $(CYAN)git push origin --delete $(1)$(RESET)"
 	@echo ""
 endef
 
@@ -175,7 +170,7 @@ release_tag_dev: ## Tag a new dev release for unmerged PRs (e.g. v1.0.1-dev-feat
 	@$(eval BRANCH_CLEAN=$(shell echo $(CURRENT_BRANCH) | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$$//g'))
 	@$(eval NEW_TAG=$(LATEST_TAG)-dev-$(BRANCH_CLEAN)-$(SHORT_COMMIT))
 	@git tag $(NEW_TAG)
-	$(call print_success,Dev version tagged: $(NEW_TAG))
+	$(call print_success,Dev version tagged: ${CYAN}$(NEW_TAG)${RESET})
 	@echo "$(BOLD)Branch:$(RESET) $(CYAN)$(CURRENT_BRANCH)$(RESET)"
 	@echo "$(BOLD)Commit:$(RESET) $(CYAN)$(SHORT_COMMIT)$(RESET)"
 	@echo ""
@@ -200,7 +195,7 @@ release_tag_rc: ## Tag a new rc release (e.g. v0.1.28 -> v0.1.29-rc1, v0.1.29-rc
 			echo "$(NEXT_VERSION)-rc$$NEW_RC_NUM"; \
 		fi))
 	@git tag $(NEW_TAG)
-	$(call print_success,RC version tagged: $(NEW_TAG))
+	$(call print_success,RC version tagged: ${CYAN}$(NEW_TAG)${RESET})
 	$(call print_next_steps,$(NEW_TAG))
 	$(call print_cleanup_commands,$(NEW_TAG))
 	$(call print_additional_info)
@@ -210,7 +205,7 @@ release_tag_minor: ## Tag a new minor release (e.g. v1.0.1 -> v1.0.2)
 	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | head -n 1))
 	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. -v OFS=. '{ $$NF = sprintf("%d", $$NF + 1); print }'))
 	@git tag $(NEW_TAG)
-	$(call print_success,Bug fix version tagged: $(NEW_TAG))
+	$(call print_success,Bug fix version tagged: ${CYAN}$(NEW_TAG)${RESET})
 	$(call print_next_steps,$(NEW_TAG))
 	$(call print_cleanup_commands,$(NEW_TAG))
 	$(call print_additional_info)
@@ -220,7 +215,7 @@ release_tag_major: ## Tag a new major release (e.g. v1.0.0 -> v2.0.0)
 	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | head -n 1))
 	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. '{$$2 += 1; $$3 = 0; print $$1 "." $$2 "." $$3}'))
 	@git tag $(NEW_TAG)
-	$(call print_success,Minor release version tagged: $(NEW_TAG))
+	$(call print_success,Minor release version tagged: ${CYAN}$(NEW_TAG)${RESET})
 	$(call print_next_steps,$(NEW_TAG))
 	$(call print_cleanup_commands,$(NEW_TAG))
 	$(call print_additional_info)
