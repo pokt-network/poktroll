@@ -184,25 +184,18 @@ in a BadgerDB KV store data files.
 
 **In-memory storage options:**
 
-- `:memory:` - Uses SimpleMap (pure Go map) for in-memory storage. **Recommended** for production use due to reliability and simplicity.
+- `:memory:` - Uses SimpleMap (pure Go map) for in-memory storage. **Recommended**.
 - `:memory_pebble:` - Uses Pebble database with in-memory VFS. Experimental option with more overhead.
 
-:::warning In-memory session state loss
+:::warning TODO(#1734) Experimentation in flight
 
-In-memory storage enables relay miners to be significantly more performant, but it also means that
-the session state will be lost when the relay miner is restarted.
+**This update is as of 08/2025.**
 
-TODO(#1734): Ensure session state is persisted even when using in-memory mode
+In-memory storage enables relay miners to be significantly more performant. For this reason, `:memory:` is the recommended option.
 
-:::
+**Warning:** Prior to #1734, RelayMiner restarts will result in loss of session state.
 
-:::note Experimental dual in-memory support
-
-We're currently experimenting with two in-memory storage approaches. Eventually we will either:
-- Create a proper enum for storage types (disk, memory_simple, memory_pebble)
-- Remove support for one of them based on performance/reliability testing
-
-Current recommendation: Use `:memory:` (SimpleMap) for production as it's more reliable for ephemeral data.
+**Consideration**: Once experimentation is complete, there will either only be one in-memory storage option or a proper enum will be created (disk, memory_simple, memory_pebble).
 
 :::
 

@@ -3,11 +3,7 @@
 default_signing_key_names: [supplier1]
 
 # Path to the SMT KV store.
-# Options:
-#   ":memory:" - SimpleMap in-memory storage (recommended for performance)
-#   ":memory_pebble:" - Pebble in-memory storage (experimental)
-#   "./path/to/smt_stores" - Disk-based persistent storage
-smt_store_path: ./path/to/smt_stores
+smt_store_path: ":memory:" # OR ./path/to/smt_stores
 
 # Prometheus exporter configuration
 metrics:

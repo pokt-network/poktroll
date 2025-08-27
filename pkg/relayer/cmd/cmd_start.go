@@ -152,28 +152,11 @@ Totals:
 
 	switch relayMinerConfig.SmtStorePath {
 	case session.InMemoryStoreFilename:
-		fmt.Printf(`
-🚨 WARNING: SMT configured for SimpleMap in-memory storage 🚨
-----------------------------------------------------------------
-• Using pure Go map-based storage (recommended in-memory option)
-• All session data will be LOST on RelayMiner restart
-• No session state persisted to disk
-• Unsubmitted Claims and Proofs will be lost
-• TODO(#1734): Add support for backing up in-memory session trees
-----------------------------------------------------------------
-`)
+		logger.Warn().Msg(`🚨 SMT configured for SimpleMap in-memory storage. All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
 	case session.InMemoryPebbleStoreFilename:
-		fmt.Printf(`
-🚨 WARNING: SMT configured for Pebble in-memory storage (EXPERIMENTAL) 🚨
-----------------------------------------------------------------
-• Using Pebble database with in-memory VFS (experimental option)
-• Higher overhead than SimpleMap - consider using ":memory:" instead
-• All session data will be LOST on RelayMiner restart
-• No session state persisted to disk
-• Unsubmitted Claims and Proofs will be lost
-• TODO(#1734): Add support for backing up in-memory session trees
-----------------------------------------------------------------
-`)
+		logger.Warn().Msg(`🚨 SMT configured for Pebble in-memory storage (EXPERIMENTAL). All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
+	default:
+		logger.Debug().Msgf("SMT configured for persistent storage at: %s", relayMinerConfig.SmtStorePath)
 	}
 
 	// --- Log flag values ---

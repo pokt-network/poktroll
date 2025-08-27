@@ -435,11 +435,8 @@ The following is an example config to get you started:
 ```bash
 cat <<🚀 >> shannon_relayminer_config.yaml
 default_signing_key_names: [ "shannon_supplier" ]
-# SMT store path options:
-# - ":memory:" - SimpleMap in-memory storage (fast, recommended for development)
-# - ":memory_pebble:" - Pebble in-memory storage (experimental)  
-# - "$HOME/.pocket/smt" - Disk-based persistent storage
 smt_store_path: $HOME/.pocket/smt
+smt_store_path: ":memory:"  # OR $HOME/.pocket/smt
 metrics:
   enabled: true
   addr: :9999 # you may need to change the metrics server port due to port conflicts.

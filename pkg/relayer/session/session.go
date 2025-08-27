@@ -29,23 +29,20 @@ var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
 // Session tree storage mode constants.
 //
-// TODO_TECHDEBT(#1734): We're currently experimenting with dual in-memory storage approaches.
-// Eventually we should either:
-// - Formalize this into a proper enum for storage types (disk, memory_simple, memory_pebble)
-// - Remove support for one approach based on performance/reliability testing
-// Current recommendation: Use InMemoryStoreFilename for production as it's more reliable.
+// TODO_TECHDEBT(#1734): Once in-memory modes are stabilized, do one of the following:
+// 1. Formalize this into a proper enum for storage types (disk, memory_simple, memory_pebble)
+// 2. Remove support for one approach based on performance/reliability testing
 const (
+	// ** DEV_NOTE: This is the current recommended mode for production. **
 	// InMemoryStoreFilename indicates SMTs should be stored using SimpleMap in memory.
 	// This provides pure Go map-based storage with no background processes or lifecycle management.
 	// Data will not be persisted to disk and will be lost on process restart.
-	// Selected to follow SQLite standards: https://www.sqlite.org/inmemorydb.html
 	InMemoryStoreFilename = ":memory:"
 
 	// InMemoryPebbleStoreFilename indicates SMTs should be stored using Pebble's in-memory VFS.
 	// This uses Pebble database engine but stores data in memory instead of disk.
 	// Has background processes and lifecycle management overhead compared to SimpleMap.
 	// Data will not be persisted to disk and will be lost on process restart.
-	// This is EXPERIMENTAL and should be used for testing/evaluation only.
 	InMemoryPebbleStoreFilename = ":memory_pebble:"
 )
 
