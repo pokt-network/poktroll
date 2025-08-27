@@ -27,28 +27,27 @@ import (
 // Ensure the relayerSessionsManager implements the RelayerSessions interface.
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
-// TODO_TECHDEBT: We're currently experimenting with two different in-memory storage approaches:
-// 1. SimpleMap (":memory:") - Pure Go map with mutex, no background processes
-// 2. Pebble in-memory (":memory_pebble:") - Pebble database with in-memory VFS
+// Session tree storage mode constants.
 //
-// Eventually we need to either:
-// - Create a proper enum for storage types (disk, memory_simple, memory_pebble)
-// - Delete support for one of them based on performance/reliability testing
-//
-// Current recommendation: Use ":memory:" (SimpleMap) for production as it's more reliable
-// for ephemeral data and has no lifecycle management complexity.
+// TODO_TECHDEBT(#XXX): We're currently experimenting with dual in-memory storage approaches.
+// Eventually we should either:
+// - Formalize this into a proper enum for storage types (disk, memory_simple, memory_pebble)
+// - Remove support for one approach based on performance/reliability testing
+// Current recommendation: Use InMemoryStoreFilename for production as it's more reliable.
+const (
+	// InMemoryStoreFilename indicates SMTs should be stored using SimpleMap in memory.
+	// This provides pure Go map-based storage with no background processes or lifecycle management.
+	// Data will not be persisted to disk and will be lost on process restart.
+	// Selected to follow SQLite standards: https://www.sqlite.org/inmemorydb.html
+	InMemoryStoreFilename = ":memory:"
 
-// InMemoryStoreFilename indicates SMTs should be stored in memory using SimpleMap.
-// This is a pure Go map-based storage with no background processes or lifecycle management.
-// Data will not be persisted to disk and will be lost on process restart.
-// Selected to follow SQLite standards: https://www.sqlite.org/inmemorydb.html
-const InMemoryStoreFilename = ":memory:"
-
-// InMemoryPebbleStoreFilename indicates SMTs should be stored using Pebble's in-memory VFS.
-// This uses Pebble database engine but stores data in memory instead of disk.
-// Still has background processes and lifecycle management overhead.
-// Data will not be persisted to disk and will be lost on process restart.
-const InMemoryPebbleStoreFilename = ":memory_pebble:"
+	// InMemoryPebbleStoreFilename indicates SMTs should be stored using Pebble's in-memory VFS.
+	// This uses Pebble database engine but stores data in memory instead of disk.
+	// Has background processes and lifecycle management overhead compared to SimpleMap.
+	// Data will not be persisted to disk and will be lost on process restart.
+	// This is EXPERIMENTAL and should be used for testing/evaluation only.
+	InMemoryPebbleStoreFilename = ":memory_pebble:"
+)
 
 // SessionTreesMap is an alias type for a map of
 // supplierOperatorAddress ->  sessionEndHeight -> sessionId -> SessionTree.
