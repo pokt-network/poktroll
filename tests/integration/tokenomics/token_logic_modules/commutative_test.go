@@ -220,7 +220,7 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 		validatorBalances: validatorBalances,
 		delegatorBalances: delegatorBalances,
 
-		// Single-recipient rewards
+		// Individual stakeholder balances
 		appStake:             app.GetStake(),
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
 		daoBalance:           s.getBalance(t, s.daoRewardAddr),
@@ -275,19 +275,11 @@ func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 
 		actualSettlementState := s.getSettlementState(t)
 
-		// Assert that app stake and single-recipient reward balances are non-zero.
+		// Assert that app stake and reward shareholder balances are non-zero.
 		coinIsZeroMsg := "coin has zero amount"
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.daoBalance, coinIsZeroMsg)
-
-		// Debug: Log source owner balance for troubleshooting execution order dependencies
-		t.Logf("Source owner balance: %v (address: %s)", actualSettlementState.sourceOwnerBalance, s.sourceOwnerAddr)
-
-		// IMPORTANT: This test currently fails because TLMs have execution order dependencies.
-		// The source owner receives different reward amounts based on TLM execution order,
-		// indicating that TLMs are NOT truly commutative in the current implementation.
-		// This is an architectural issue that needs to be addressed separately.
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance, coinIsZeroMsg)
 
 		// Assert that all validator balances are non-zero (they receive commission rewards)
@@ -413,10 +405,10 @@ func (s *tokenLogicModuleTestSuite) getAllDelegatorAddresses(t *testing.T) []str
 	// With the fixed delegator index calculation:
 	// - Validator 0 (index 0): delegators at indices 20, 21
 	// - Validator 1 (index 1): delegators at indices 22, 23
-	return []string{
-		"pokt13guxes2pq88am4vzzvy59ue2wcl79ckkcdmm09", // Index 20: Validator 0, Delegator 0
-		"pokt14pxp2cz3uce564qdw208yyeech5nkmlnu3m25v", // Index 21: Validator 0, Delegator 1
-		"pokt12kkvcaatnlucqxarapfvvgqfandk5sstrpkfsl", // Index 22: Validator 1, Delegator 0
-		"pokt1hhqumrg32an96up3hp8ts38h6prg8f34nvrpya", // Index 23: Validator 1, Delegator 1
+	delegatorAddresses := make([]string, 4)
+	for i := 0; i < 4; i++ {
+		account := testkeyring.MustPreGeneratedAccountAtIndex(uint32(20 + i))
+		delegatorAddresses[i] = account.Address.String()
 	}
+	return delegatorAddresses
 }
