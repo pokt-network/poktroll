@@ -24,22 +24,11 @@ package token_logic_modules
 //    - GlobalMint TLM: Inflation rewards with global_inflation_per_claim parameter
 //    - Both TLMs contribute to validator/delegator reward pools
 //
-// 4. OTHER PARTICIPANTS (Single Recipients):
+// 4. OTHER STAKEHOLDER REWARDS:
 //    - Suppliers: Revenue share rewards to operator/owner addresses
 //    - DAO: Governance rewards to dao_reward_address
 //    - Applications: Potential reward rebates
 //    - Service Source Owners: Service ownership rewards
-//
-// DETERMINISTIC TESTING STRATEGY:
-// ==============================
-//
-// - Pre-generated accounts (testkeyring) ensure consistent addresses across permutations
-// - Fixed validator stakes and delegator amounts prevent randomness
-// - Deterministic remainder distribution (stake-weighted sorting) for consistent results
-// - All TLM permutations must produce identical final balances for all participants
-//
-// This architecture mirrors the E2E validator_delegation_rewards.feature test patterns,
-// ensuring comprehensive coverage of the tokenomics reward distribution system.
 
 import (
 	"bytes"
@@ -189,7 +178,7 @@ func (s *tokenLogicModuleTestSuite) setExpectedSettlementState(
 }
 
 // getSettlementState returns a settlement state based on the current network state.
-// This now collects balances for all validators and delegators to properly validate
+// Collects balances for all validators and delegators to properly validate
 // the multi-stakeholder reward distribution implemented by TLMs.
 func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlementState {
 	t.Helper()
