@@ -29,7 +29,7 @@ var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
 // Session tree storage mode constants.
 //
-// TODO_TECHDEBT(#XXX): We're currently experimenting with dual in-memory storage approaches.
+// TODO_TECHDEBT(#1734): We're currently experimenting with dual in-memory storage approaches.
 // Eventually we should either:
 // - Formalize this into a proper enum for storage types (disk, memory_simple, memory_pebble)
 // - Remove support for one approach based on performance/reliability testing

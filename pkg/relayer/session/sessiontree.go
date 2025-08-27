@@ -104,8 +104,8 @@ func NewSessionTree(
 
 	default:
 		// Treat anything else as disk-based persistent storage using Pebble
-		// TODO_IMPROVE(#621): Use a single KV store instead of one per session for better RAM/IO efficiency.
-		// KV databases are optimized for single database writes with prefixed keys.
+		// TODO_IMPROVE(#621): Use single KV store per supplier with prefixed keys instead of one per session.
+		// This would improve RAM/IO efficiency as KV databases are optimized for this pattern.
 
 		// Validate that this looks like a reasonable file path
 		if storesDirectoryPath == "" {
@@ -296,6 +296,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 				Str("store_path", st.storePath).
 				Str("session_id", st.sessionHeader.SessionId).
 				Str("supplier_operator_address", st.supplierOperatorAddress).
+				Int64("session_end_height", st.sessionHeader.SessionEndBlockHeight).
 				Str("claim_root", fmt.Sprintf("%x", st.claimedRoot)).
 				Msg("🚨🚨🚨 CRITICAL: sessionSMT is NULL for Pebble in-memory store! This indicates the session data was not preserved during Flush()! Attempting fallback but PROOF GENERATION WILL LIKELY FAIL! 🚨🚨🚨")
 
