@@ -27,11 +27,28 @@ import (
 // Ensure the relayerSessionsManager implements the RelayerSessions interface.
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
-// InMemoryStoreFilename is the special value for smt_store_path indicating SMTs should be stored in memory.
-// They will not be persisted to disk.
-// WARNING: All session data will be lost on process restart.
-// This special could be any special string but was selected to be follow SQLIte standards; https://www.sqlite.org/inmemorydb.html.
+// TODO_TECHDEBT: We're currently experimenting with two different in-memory storage approaches:
+// 1. SimpleMap (":memory:") - Pure Go map with mutex, no background processes
+// 2. Pebble in-memory (":memory_pebble:") - Pebble database with in-memory VFS
+//
+// Eventually we need to either:
+// - Create a proper enum for storage types (disk, memory_simple, memory_pebble)
+// - Delete support for one of them based on performance/reliability testing
+//
+// Current recommendation: Use ":memory:" (SimpleMap) for production as it's more reliable
+// for ephemeral data and has no lifecycle management complexity.
+
+// InMemoryStoreFilename indicates SMTs should be stored in memory using SimpleMap.
+// This is a pure Go map-based storage with no background processes or lifecycle management.
+// Data will not be persisted to disk and will be lost on process restart.
+// Selected to follow SQLite standards: https://www.sqlite.org/inmemorydb.html
 const InMemoryStoreFilename = ":memory:"
+
+// InMemoryPebbleStoreFilename indicates SMTs should be stored using Pebble's in-memory VFS.
+// This uses Pebble database engine but stores data in memory instead of disk.
+// Still has background processes and lifecycle management overhead.
+// Data will not be persisted to disk and will be lost on process restart.
+const InMemoryPebbleStoreFilename = ":memory_pebble:"
 
 // SessionTreesMap is an alias type for a map of
 // supplierOperatorAddress ->  sessionEndHeight -> sessionId -> SessionTree.
@@ -519,8 +536,8 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 // validateConfig validates the relayerSessionsManager's configuration.
 // TODO_TEST: Add unit tests to validate these configurations.
 func (rs *relayerSessionsManager) validateConfig() error {
-	// No error if RM is configured to use in-memory SMT.
-	if rs.storesDirectoryPath == InMemoryStoreFilename {
+	// No error if RM is configured to use in-memory SMT (either SimpleMap or Pebble).
+	if rs.storesDirectoryPath == InMemoryStoreFilename || rs.storesDirectoryPath == InMemoryPebbleStoreFilename {
 		return nil
 	}
 

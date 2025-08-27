@@ -345,7 +345,9 @@ func getSessionStoreKey(supplierOperatorAddress string, sessionId string) []byte
 }
 
 // persistedSMT returns true if the session tree is persisted to disk (has a storePath),
-// false if it's in-memory only.
+// false if it's in-memory only (either SimpleMap or Pebble in-memory).
 func (rs *relayerSessionsManager) persistedSMT() bool {
-	return rs.storesDirectoryPath != "" && rs.storesDirectoryPath != InMemoryStoreFilename
+	return rs.storesDirectoryPath != "" &&
+		rs.storesDirectoryPath != InMemoryStoreFilename &&
+		rs.storesDirectoryPath != InMemoryPebbleStoreFilename
 }

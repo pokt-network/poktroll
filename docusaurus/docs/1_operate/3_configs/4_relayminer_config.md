@@ -182,14 +182,27 @@ The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
 
-`:memory:` can be used to store the `SMT` only in memory, without persisting it to disk.
+**In-memory storage options:**
+
+- `:memory:` - Uses SimpleMap (pure Go map) for in-memory storage. **Recommended** for production use due to reliability and simplicity.
+- `:memory_pebble:` - Uses Pebble database with in-memory VFS. Experimental option with more overhead.
 
 :::warning In-memory session state loss
 
-In-memory enables relay miners to be a lot more performant, but it also means that
+In-memory storage enables relay miners to be significantly more performant, but it also means that
 the session state will be lost when the relay miner is restarted.
 
 TODO(#1734): Ensure session state is persisted even when using in-memory mode
+
+:::
+
+:::note Experimental dual in-memory support
+
+We're currently experimenting with two in-memory storage approaches. Eventually we will either:
+- Create a proper enum for storage types (disk, memory_simple, memory_pebble)
+- Remove support for one of them based on performance/reliability testing
+
+Current recommendation: Use `:memory:` (SimpleMap) for production as it's more reliable for ephemeral data.
 
 :::
 
