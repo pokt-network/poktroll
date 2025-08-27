@@ -44,7 +44,6 @@ package token_logic_modules
 import (
 	"bytes"
 	"fmt"
-	"math"
 	"strings"
 	"testing"
 
@@ -59,7 +58,6 @@ import (
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -82,71 +80,6 @@ var zerouPOKT = cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0)
 //  3. Advance the block height to the settlement height and settle the claims.
 //  4. Assert that the settlement states of all TLM order permutations match.
 func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
-	// Store the original addresses to restore them after the test
-	originalDaoRewardAddr := s.daoRewardAddr
-	originalSourceOwnerAddr := s.sourceOwnerAddr
-	originalProposerConsAddr := s.proposerConsAddr
-	originalProposerValOperatorAddr := s.proposerValOperatorAddr
-	originalApp := s.app
-	originalSupplier := s.supplier
-
-	// Use fixed addresses from pre-generated accounts for all permutations to ensure deterministic results
-	// This prevents the random address generation in SetupTest from affecting commutativity
-	s.daoRewardAddr = testkeyring.MustPreGeneratedAccountAtIndex(0).Address.String()
-	s.sourceOwnerAddr = testkeyring.MustPreGeneratedAccountAtIndex(1).Address.String()
-
-	// Update service owner address to match the deterministic source owner address
-	s.service.OwnerAddress = s.sourceOwnerAddr
-
-	// Create proposer addresses from pre-generated account #10 (same as validator #1)
-	// This ensures the proposer is one of our custom validators and can receive rewards
-	proposerAccount := testkeyring.MustPreGeneratedAccountAtIndex(10)
-	proposerAccAddr := proposerAccount.Address
-	s.proposerConsAddr = cosmostypes.ConsAddress(proposerAccAddr).String()
-	s.proposerValOperatorAddr = cosmostypes.ValAddress(proposerAccAddr).String()
-
-	// Create fixed application with deterministic address from pre-generated account #3
-	appStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, math.MaxInt64)
-	s.app = &apptypes.Application{
-		Address: testkeyring.MustPreGeneratedAccountAtIndex(3).Address.String(),
-		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{ServiceId: s.service.Id},
-		},
-	}
-
-	// Create fixed supplier with deterministic address from pre-generated account #2
-	supplierAddr := testkeyring.MustPreGeneratedAccountAtIndex(2).Address.String()
-	services := []*sharedtypes.SupplierServiceConfig{
-		{
-			ServiceId: s.service.Id,
-			RevShare: []*sharedtypes.ServiceRevenueShare{
-				{
-					Address:            supplierAddr,
-					RevSharePercentage: 100,
-				},
-			},
-		},
-	}
-	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddr, services, 1, 0)
-	s.supplier = &sharedtypes.Supplier{
-		OwnerAddress:         supplierAddr,
-		OperatorAddress:      supplierAddr,
-		Stake:                &suppliertypes.DefaultMinStake,
-		Services:             services,
-		ServiceConfigHistory: serviceConfigHistory,
-	}
-
-	// Restore original addresses after test completes
-	defer func() {
-		s.daoRewardAddr = originalDaoRewardAddr
-		s.sourceOwnerAddr = originalSourceOwnerAddr
-		s.proposerConsAddr = originalProposerConsAddr
-		s.proposerValOperatorAddr = originalProposerValOperatorAddr
-		s.app = originalApp
-		s.supplier = originalSupplier
-	}()
-
 	// Generate all permutations of TLM processor ordering.
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 	tlmOrderPermutations := permute(s.T(), tokenLogicModules)
