@@ -47,8 +47,8 @@ type YAMLRelayMinerConfig struct {
 }
 
 // YAMLRelayMinerSmtBackupConfig represents the configuration for SMT backup when using in-memory storage.
+// If this entire section is omitted from the YAML, backup is disabled.
 type YAMLRelayMinerSmtBackupConfig struct {
-	Enabled              bool   `yaml:"enabled"`
 	IntervalSeconds      uint64 `yaml:"interval_seconds"`
 	BackupDir            string `yaml:"backup_dir"`
 	OnSessionClose       bool   `yaml:"on_session_close"`
@@ -131,9 +131,20 @@ type RelayMinerConfig struct {
 	EnableOverServicing          bool
 }
 
+// SessionManagerConfig encapsulates all configuration for the relayer sessions manager.
+type SessionManagerConfig struct {
+	// SmtStorePath is the path where SMT (Sparse Merkle Tree) data is stored on disk.
+	// Special value ":memory:" indicates in-memory storage.
+	SmtStorePath string
+	
+	// SmtBackupConfig contains backup configuration for SMT data.
+	// If nil, backup functionality is disabled.
+	SmtBackupConfig *RelayMinerSmtBackupConfig
+}
+
 // RelayMinerSmtBackupConfig is the structure resulting from parsing the SMT backup configuration.
+// The presence of this config (non-nil) indicates backup is enabled; nil means disabled.
 type RelayMinerSmtBackupConfig struct {
-	Enabled              bool
 	IntervalSeconds      uint64
 	BackupDir            string
 	OnSessionClose       bool

@@ -92,19 +92,26 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 		Addr:    yamlRelayMinerConfig.Ping.Addr,
 	}
 
-	// SMT backup configuration (optional - defaults to disabled)
-	relayMinerConfig.SmtBackup = &RelayMinerSmtBackupConfig{
-		Enabled:              yamlRelayMinerConfig.SmtBackup.Enabled,
-		IntervalSeconds:      yamlRelayMinerConfig.SmtBackup.IntervalSeconds,
-		BackupDir:            yamlRelayMinerConfig.SmtBackup.BackupDir,
-		OnSessionClose:       yamlRelayMinerConfig.SmtBackup.OnSessionClose,
-		OnClaimGeneration:    yamlRelayMinerConfig.SmtBackup.OnClaimGeneration,
-		OnGracefulShutdown:   yamlRelayMinerConfig.SmtBackup.OnGracefulShutdown,
-		RetainBackupCount:    yamlRelayMinerConfig.SmtBackup.RetainBackupCount,
-	}
+	// SMT backup configuration (optional - nil means disabled)
+	// Check if the YAML config has any backup-related fields set
+	hasBackupConfig := yamlRelayMinerConfig.SmtBackup.BackupDir != "" ||
+		yamlRelayMinerConfig.SmtBackup.IntervalSeconds != 0 ||
+		yamlRelayMinerConfig.SmtBackup.OnSessionClose ||
+		yamlRelayMinerConfig.SmtBackup.OnClaimGeneration ||
+		yamlRelayMinerConfig.SmtBackup.OnGracefulShutdown ||
+		yamlRelayMinerConfig.SmtBackup.RetainBackupCount != 0
 
-	// Set sensible defaults for backup configuration
-	if relayMinerConfig.SmtBackup.Enabled {
+	if hasBackupConfig {
+		relayMinerConfig.SmtBackup = &RelayMinerSmtBackupConfig{
+			IntervalSeconds:      yamlRelayMinerConfig.SmtBackup.IntervalSeconds,
+			BackupDir:            yamlRelayMinerConfig.SmtBackup.BackupDir,
+			OnSessionClose:       yamlRelayMinerConfig.SmtBackup.OnSessionClose,
+			OnClaimGeneration:    yamlRelayMinerConfig.SmtBackup.OnClaimGeneration,
+			OnGracefulShutdown:   yamlRelayMinerConfig.SmtBackup.OnGracefulShutdown,
+			RetainBackupCount:    yamlRelayMinerConfig.SmtBackup.RetainBackupCount,
+		}
+
+		// Set sensible defaults for backup configuration
 		if relayMinerConfig.SmtBackup.IntervalSeconds == 0 {
 			relayMinerConfig.SmtBackup.IntervalSeconds = 300 // 5 minutes default
 		}
@@ -114,6 +121,9 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 		if relayMinerConfig.SmtBackup.RetainBackupCount == 0 {
 			relayMinerConfig.SmtBackup.RetainBackupCount = 10 // Keep last 10 backups
 		}
+	} else {
+		// No backup config specified, leave it as nil to indicate disabled
+		relayMinerConfig.SmtBackup = nil
 	}
 
 	// Hydrate the pocket node urls

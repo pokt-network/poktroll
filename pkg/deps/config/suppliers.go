@@ -777,6 +777,7 @@ func NewSupplyRelayerProxyFn(
 //
 // Parameters:
 //   - smtStorePath: Path to the sessions store
+//   - smtBackupConfig: Relayminer SMT backup config
 //
 // Returns:
 //   - config.SupplierFn: Supplier function for dependency injection

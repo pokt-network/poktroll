@@ -58,7 +58,7 @@ func NewBackupManager(
 
 // Start starts the periodic backup process if enabled
 func (bm *BackupManager) Start(ctx context.Context, sessionsMgr *relayerSessionsManager) {
-	if !bm.config.Enabled || bm.config.IntervalSeconds == 0 {
+	if bm.config == nil || bm.config.IntervalSeconds == 0 {
 		bm.logger.Info().Msg("Backup manager disabled or no interval configured")
 		return
 	}
@@ -106,7 +106,7 @@ func (bm *BackupManager) Stop() {
 
 // BackupSessionTree backs up a single session tree to disk
 func (bm *BackupManager) BackupSessionTree(sessionTree relayer.SessionTree) error {
-	if !bm.config.Enabled {
+	if bm.config == nil {
 		return nil
 	}
 
@@ -199,7 +199,7 @@ func (bm *BackupManager) backupAllSessions(sessionsMgr *relayerSessionsManager) 
 
 // RestoreSessionTrees restores session trees from backup files
 func (bm *BackupManager) RestoreSessionTrees() ([]*SessionTreeBackupData, error) {
-	if !bm.config.Enabled {
+	if bm.config == nil {
 		bm.logger.Info().Msg("Backup manager disabled, skipping restore")
 		return nil, nil
 	}
@@ -332,7 +332,7 @@ func (bm *BackupManager) BackupOnEvent(
 	sessionTree relayer.SessionTree,
 	event BackupEvent,
 ) error {
-	if !bm.config.Enabled {
+	if bm.config == nil {
 		return nil
 	}
 

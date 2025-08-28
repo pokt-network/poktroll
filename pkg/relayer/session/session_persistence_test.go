@@ -633,7 +633,6 @@ func (s *SessionPersistenceTestSuite) TestSessionPersistenceWithBackup() {
 
 		// Create backup configuration with only claim generation enabled
 		claimBackupConfig := &relayerconfig.RelayMinerSmtBackupConfig{
-			Enabled:            true,
 			IntervalSeconds:    0, // Disable periodic backups for test
 			BackupDir:          claimBackupDir,
 			OnSessionClose:     false,
@@ -706,7 +705,7 @@ func (s *SessionPersistenceTestSuite) TestSessionPersistenceWithBackup() {
 
 		// Create backup configuration with only graceful shutdown enabled
 		shutdownBackupConfig := &relayerconfig.RelayMinerSmtBackupConfig{
-			Enabled:            true,
+
 			IntervalSeconds:    0,
 			BackupDir:          shutdownBackupDir,
 			OnSessionClose:     false,
@@ -779,7 +778,7 @@ func (s *SessionPersistenceTestSuite) TestBackupOnGracefulShutdown() {
 
 	// Create backup configuration with only graceful shutdown enabled
 	backupConfig := &relayerconfig.RelayMinerSmtBackupConfig{
-		Enabled:            true,
+
 		IntervalSeconds:    0,
 		BackupDir:          backupDir,
 		OnSessionClose:     false,
@@ -827,7 +826,7 @@ func (s *SessionPersistenceTestSuite) TestBackupRetentionPolicy() {
 
 	// Create backup configuration with low retention count
 	backupConfig := &relayerconfig.RelayMinerSmtBackupConfig{
-		Enabled:            true,
+
 		IntervalSeconds:    0,
 		BackupDir:          backupDir,
 		OnSessionClose:     true,
