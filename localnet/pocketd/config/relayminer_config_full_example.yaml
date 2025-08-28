@@ -2,8 +2,8 @@
 # These keys must correspond to the operator addresses of the suppliers.
 default_signing_key_names: [supplier1]
 
-# Relative path (on the relayminer's machine) to the SMT KV store data on disk.
-smt_store_path: ./path/to/smt_stores
+# Path to the SMT KV store.
+smt_store_path: ":memory:" # OR ./path/to/smt_stores
 
 # Prometheus exporter configuration
 metrics:
