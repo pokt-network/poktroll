@@ -46,15 +46,27 @@ func (tlmgm *tlmGlobalMint) Process(
 	logger cosmoslog.Logger,
 	tlmCtx TLMContext,
 ) error {
-	tlmgm.ctx = ctx
-	tlmgm.logger = logger
-	tlmgm.tlmCtx = &tlmCtx
+	blockHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	service := tlmCtx.Service
+	sessionHeader := tlmCtx.SessionHeader
+	application := tlmCtx.Application
+	supplier := tlmCtx.Supplier
+	actualSettlementCoin := tlmCtx.SettlementCoin
 
 	logger = logger.With(
 		"tlm", "TLMGlobalMint",
 		"method", "Process",
-		"session_id", tlmCtx.Result.GetSessionId(),
+		"height", blockHeight,
+		"session_id", sessionHeader.GetSessionId(),
+		"service_id", service.Id,
+		"application", application.Address,
+		"supplier_operator", supplier.OperatorAddress,
+		"actual_settlement_coin", actualSettlementCoin,
 	)
+
+	tlmgm.ctx = ctx
+	tlmgm.logger = logger
+	tlmgm.tlmCtx = &tlmCtx
 
 	// Mint new tokens based on global inflation
 	newMintCoin, err := tlmgm.processInflationMint()
@@ -202,7 +214,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 			RecipientAddress: tlmgm.tlmCtx.Application.GetAddress(),
 			Coin:             appCoin,
 		})
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to application %s", appCoin, tlmgm.tlmCtx.Application.GetAddress()))
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to application %s", appCoin, tlmgm.tlmCtx.Application.GetAddress()))
 	}
 
 	// Distribute to service source owner
@@ -214,28 +226,28 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 			RecipientAddress: tlmgm.tlmCtx.Service.OwnerAddress,
 			Coin:             sourceOwnerCoin,
 		})
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to service source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
 	}
 
-	// Distribute to block proposer
+	// Distribute proposer rewards to all validators based on staking weight
 	if !proposerAmount.IsZero() {
-		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-
-		// Get the block proposer's operator address (not consensus address)
-		proposerAddr, err := getBlockProposerOperatorAddress(tlmgm.ctx, tlmgm.tlmCtx.StakingKeeper)
-		if err != nil {
-			tlmgm.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
+		if err := distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
+			tlmgm.ctx,
+			tlmgm.logger,
+			tlmgm.tlmCtx.Result,
+			tlmgm.tlmCtx.StakingKeeper,
+			proposerAmount,
+			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
+			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION,
+		); err != nil {
 			return err
 		}
-		tlmgm.logger.Info(fmt.Sprintf("TLM Global Mint: resolved proposer address to %s", proposerAddr))
 
-		tlmgm.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
-			SenderModule:     tokenomicstypes.ModuleName,
-			RecipientAddress: proposerAddr,
-			Coin:             proposerCoin,
-		})
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
+		// Emit telemetry for total validator reward distribution
+		telemetry.MintedTokensFromModule(
+			tokenomicstypes.ModuleName,
+			float32(proposerAmount.Int64()),
+		)
 	}
 
 	// Distribute to DAO
@@ -250,7 +262,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 			RecipientAddress: daoRewardAddress,
 			Coin:             daoCoin,
 		})
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to DAO %s", daoCoin, daoRewardAddress))
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to DAO %s", daoCoin, daoRewardAddress))
 	}
 
 	// === VALIDATION ===

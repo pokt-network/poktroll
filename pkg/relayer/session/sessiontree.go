@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/pokt-network/smt"
@@ -284,6 +285,13 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return nil, fmt.Errorf("sessionSMT is nil - cannot generate proof for session %s", st.sessionHeader.SessionId)
 	}
 
+	// Debug logging to help diagnose proof generation issues
+	st.logger.Debug().
+		Str("claimed_root", fmt.Sprintf("%x", st.claimedRoot)).
+		Str("session_id", st.sessionHeader.SessionId).
+		Bool("persisted_smt", st.persistedSMT()).
+		Msg("Generating proof using imported SMT")
+
 	// Generate the proof and cache it along with the path for which it was generated.
 	// There is no ProveClosest variant that generates a compact proof directly.
 	// Generate a regular SparseMerkleClosestProof then compact it.
@@ -487,6 +495,37 @@ func (st *sessionTree) Delete() error {
 			}
 		}
 		return os.RemoveAll(st.storePath)
+	}
+
+	st.logger.Info().Msg("Clearing in-memory session tree KVStore.")
+
+	// Check if treeStore is nil (already cleaned up) to prevent panic
+	if st.treeStore == nil {
+		st.logger.Debug().Msg("In-memory session tree KVStore is already cleared (nil)")
+		return nil
+	}
+
+	// Attempt to clear the store, but handle panics from closed database gracefully
+	defer func() {
+		if r := recover(); r != nil {
+			// Check if it's the expected "pebble: closed" panic
+			if panicStr := fmt.Sprintf("%v", r); strings.Contains(panicStr, "pebble: closed") {
+				st.logger.Debug().Msg("In-memory session tree KVStore was already closed during cleanup (recovered from panic)")
+			} else {
+				// Re-panic if it's an unexpected panic
+				panic(r)
+			}
+		}
+	}()
+
+	if err := st.treeStore.ClearAll(); err != nil {
+		// If the database is already closed, this is expected during cleanup
+		if strings.Contains(err.Error(), "pebble: closed") {
+			st.logger.Debug().Msg("In-memory session tree KVStore was already closed during cleanup")
+			return nil
+		}
+		// Return other errors
+		return err
 	}
 
 	return nil

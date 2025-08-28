@@ -69,7 +69,7 @@ func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgTyp
 		currBalance := s.getAccBalance(supplierAccName)
 		s.scenarioState[balanceKey] = currBalance // save the balance for later
 	default:
-		s.Log("no test suite state to update for message type %s", msgType)
+		s.Logf("no test suite state to update for message type %s", msgType)
 	}
 
 	// Rebuild actor maps after the relevant messages have been committed.
@@ -79,7 +79,7 @@ func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgTyp
 	case suppliertypes.ModuleName:
 		s.buildSupplierMap()
 	default:
-		s.Log("no test suite state to update for module %s", module)
+		s.Logf("no test suite state to update for module %s", module)
 	}
 }
 
@@ -93,7 +93,7 @@ func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventT
 	case suppliertypes.ModuleName:
 		s.buildSupplierMap()
 	default:
-		s.Log("no test suite state to update for module %s", module)
+		s.Logf("no test suite state to update for module %s", module)
 	}
 }
 
