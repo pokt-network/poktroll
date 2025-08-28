@@ -333,7 +333,7 @@ func (st *sessionTree) restoreSessionSMT() (smt.SparseMerkleSumTrie, error) {
 			return sessionSMT, nil
 		}
 		// Should never happen
-		return nil, fmt.Errorf("Cannot restore sessionSMT from SimpleMap store for session %s", st.sessionHeader.SessionId)
+		return nil, fmt.Errorf("cannot restore sessionSMT from SimpleMap store for session %s", st.sessionHeader.SessionId)
 
 	// Restoring from disk storage
 	default:
