@@ -189,6 +189,7 @@ func (s *StorageModeTestSuite) TestClaimAndProofSubmission() {
 	claimRoot := sessionTree.GetClaimRoot()
 	require.NotNil(s.T(), claimRoot, "Claim root should be created for storage mode: %s", s.getStorageModeName())
 	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once for storage mode: %s", s.getStorageModeName())
+	require.Equal(s.T(), 0, s.submitProofCallCount, "SubmitProof should not be called at this step")
 
 	// Verify the claim tree has exactly one claim
 	count, err := smt.MerkleSumRoot(claimRoot).Count()
@@ -197,6 +198,11 @@ func (s *StorageModeTestSuite) TestClaimAndProofSubmission() {
 
 	// Calculate when the proof window closes for this session
 	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
+
+	// Stop and recreate the relayer sessions manager
+	// s.relayerSessionsManager.Stop()
+	// s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
+
 	// Move to one block before the proof window closes (which should trigger proof submission)
 	s.advanceToBlock(proofWindowCloseHeight)
 
@@ -241,7 +247,7 @@ func (s *StorageModeTestSuite) TestRestartDuringClaimWindow() {
 	waitSimulateIO()
 
 	// For in-memory modes, we should only proceed if the session was restored
-	if s.storageDir == session.InMemoryStoreFilename || s.storageDir == session.InMemoryPebbleStoreFilename {
+	if s.isInMemorySMT() {
 		// In-memory modes don't persist across restarts, so session should be gone
 		require.Len(s.T(), s.sessionTrees, 0, "In-memory storage should not persist sessions across restarts for mode: %s", s.getStorageModeName())
 		return

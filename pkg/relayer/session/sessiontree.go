@@ -391,6 +391,7 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 		}
 		// DEV_NOTE: DO NOT set st.sessionSMT to nil here or proof generation will fail.
 		st.treeStore = nil
+		// st.sessionSMT = nil
 		st.logger.Debug().Msg("Pebble in-memory session tree stopped - sessionSMT preserved for proof generation")
 
 	default:
