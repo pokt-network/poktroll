@@ -194,8 +194,8 @@ func (rs *relayerSessionsManager) deletePersistedSessionTree(sessionSMT *proofty
 		"session_end_height", sessionEndHeight,
 	)
 
-	// If the session tree is not persisted to disk, there is nothing to delete.
-	if !rs.persistedSMT() {
+	// If the session tree is in-memory only, there is nothing to delete.
+	if rs.isInMemorySMT() {
 		logger.Debug().Msg("Skipping session tree deletion. RelayMiner is configured for in-memory mode.")
 		return nil
 	}
@@ -344,10 +344,7 @@ func getSessionStoreKey(supplierOperatorAddress string, sessionId string) []byte
 	return []byte(sessionStoreKeyStr)
 }
 
-// persistedSMT returns true if the session tree is persisted to disk (has a storePath),
-// false if it's in-memory only (either SimpleMap or Pebble in-memory).
-func (rs *relayerSessionsManager) persistedSMT() bool {
-	return rs.storesDirectoryPath != "" &&
-		rs.storesDirectoryPath != InMemoryStoreFilename &&
-		rs.storesDirectoryPath != InMemoryPebbleStoreFilename
+// isInMemorySMT returns true if the session tree is in-memory only (either SimpleMap or Pebble in-memory).
+func (rs *relayerSessionsManager) isInMemorySMT() bool {
+	return rs.storesDirectoryPath == InMemoryStoreFilename || rs.storesDirectoryPath == InMemoryPebbleStoreFilename
 }

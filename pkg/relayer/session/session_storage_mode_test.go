@@ -113,7 +113,6 @@ func (s *StorageModeTestSuite) SetupTest() {
 		require.NoError(s.T(), err)
 		s.storageDir = tmpStoresDir
 	}
-
 	s.storesDirectoryPathOpt = session.WithStoresDirectoryPath(s.storageDir)
 
 	// Configure test service and difficulty
@@ -169,7 +168,7 @@ func (s *StorageModeTestSuite) TearDownTest() {
 	s.relayerSessionsManager.Stop()
 
 	// Clean up temporary directory for disk storage only
-	if s.storageDir != session.InMemoryStoreFilename && s.storageDir != session.InMemoryPebbleStoreFilename {
+	if !s.isInMemorySMT() {
 		_ = os.RemoveAll(s.storageDir)
 	}
 }
@@ -567,4 +566,8 @@ func (s *StorageModeTestSuite) advanceToBlock(height int64) {
 
 	// Wait for I/O operations to complete
 	waitSimulateIO()
+}
+
+func (s *StorageModeTestSuite) isInMemorySMT() bool {
+	return s.storageDir == session.InMemoryStoreFilename || s.storageDir == session.InMemoryPebbleStoreFilename
 }
