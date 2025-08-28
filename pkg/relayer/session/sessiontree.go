@@ -257,6 +257,8 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
+	logger := st.logger.With("method", "ProveClosest")
+
 	// A claim need to be generated before a proof can be generated.
 	if st.claimedRoot == nil {
 		return nil, ErrSessionTreeNotClosed
@@ -278,7 +280,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return nil, err
 	}
 	if sessionSMT == nil {
-		st.logger.Error().Msg("🚨 SHOULD RARELY HAPPEN: sessionSMT is NULL after restoration attempt! Cannot generate proof! Claims exist but REWARDS WILL BE LOST! 🚨")
+		logger.Error().Msg("🚨 SHOULD RARELY HAPPEN: sessionSMT is NULL after restoration attempt! Cannot generate proof! Claims exist but REWARDS WILL BE LOST! 🚨")
 		return nil, fmt.Errorf("sessionSMT is nil - cannot generate proof for session %s", st.sessionHeader.SessionId)
 	}
 
@@ -287,7 +289,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 	// Generate a regular SparseMerkleClosestProof then compact it.
 	proof, err := sessionSMT.ProveClosest(path)
 	if err != nil {
-		st.logger.Error().Err(err).Msg("🚨 SHOULD RARELY HAPPEN: Proving the path in the sessionSMT failed! Cannot generate proof! Claims exist but REWARDS WILL BE LOST! 🚨")
+		logger.Error().Err(err).Msg("🚨 SHOULD RARELY HAPPEN: Proving the path in the sessionSMT failed! Cannot generate proof! Claims exist but REWARDS WILL BE LOST! 🚨")
 		return nil, err
 	}
 
@@ -312,20 +314,21 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 
 // restoreSessionSMT restores the sessionSMT from the persisted or in-memory storage.
 func (st *sessionTree) restoreSessionSMT() (smt.SparseMerkleSumTrie, error) {
-	var sessionSMT smt.SparseMerkleSumTrie
+	logger := st.logger.With("method", "restoreSessionSMT")
 
+	var sessionSMT smt.SparseMerkleSumTrie
 	switch st.storePath {
 
 	// Restoring from in-memory storage
 	case InMemoryStoreFilename, InMemoryPebbleStoreFilename:
 		// In memory storage: sessionSMT should still be available (preserved during Flush)
 		if st.sessionSMT != nil {
-			st.logger.Debug().Msgf("Found cached in memory sessionSMT for session %s. Restoring from in-memory store: %s", st.sessionHeader.SessionId, st.storePath)
+			logger.Debug().Msgf("Found cached in memory sessionSMT for session %s. Restoring from in-memory store: %s", st.sessionHeader.SessionId, st.storePath)
 			return st.sessionSMT, nil
 		}
 		// Fallback: reimport from the active SimpleMap store
 		if st.treeStore != nil {
-			st.logger.Debug().Msgf("Found cached in memory treeStore for session %s. Restoring from in-memory store: %s", st.sessionHeader.SessionId, st.storePath)
+			logger.Debug().Msgf("Found cached in memory treeStore for session %s. Restoring from in-memory store: %s", st.sessionHeader.SessionId, st.storePath)
 			sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
 			return sessionSMT, nil
 		}
@@ -337,6 +340,7 @@ func (st *sessionTree) restoreSessionSMT() (smt.SparseMerkleSumTrie, error) {
 		// Only supporting pebble storage for now
 		pebbleStore, pebbleErr := pebble.NewKVStore(st.storePath)
 		if pebbleErr != nil {
+			logger.Error().Err(pebbleErr).Msgf("🚨 SHOULD RARELY HAPPEN: Failed to restore sessionSMT from disk store for session %s and store path %s", st.sessionHeader.SessionId, st.storePath)
 			return nil, pebbleErr
 		}
 		st.treeStore = pebbleStore
@@ -369,11 +373,12 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
+	logger := st.logger.With("method", "Flush")
+
 	// We already have the root hash, return it.
-	if st.claimedRoot != nil {
-		return st.claimedRoot, nil
+	if st.claimedRoot == nil {
+		st.claimedRoot = st.sessionSMT.Root()
 	}
-	st.claimedRoot = st.sessionSMT.Root()
 
 	// Post-flush cleanup: handle different storage types appropriately
 	switch st.storePath {
@@ -381,28 +386,31 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 		// SimpleMap: Keep everything in memory for later proof generation
 		// No lifecycle management needed - data persists in memory until process restart
 		// DEV_NOTE: DO NOT set either st.treeStore OR st.sessionSMT to nil here or proof generation will fail.
-		st.logger.Debug().Msg("SimpleMap session tree flushed - keeping data in memory for proof generation")
+		logger.Debug().Msg("SimpleMap session tree flushed - keeping data in memory for proof generation")
 
 	case InMemoryPebbleStoreFilename:
 		// Pebble in-memory: Stop the store but preserve the sessionSMT reference
 		// We can't restore data from disk later, so the SMT reference is crucial
-		if err := st.Stop(); err != nil {
+		if err := st.stop(); err != nil {
 			return nil, err
 		}
-		// DEV_NOTE: DO NOT set st.sessionSMT to nil here or proof generation will fail.
 		st.treeStore = nil
+
+		// DEV_NOTE: DO NOT set st.sessionSMT to nil here or proof generation will fail.
+		// The following test will fail if we set st.sessionSMT to nil:
+		// go test -count=1 -v ./pkg/relayer/session/... -run TestStorageModePebbleInMemory/TestOriginalBugReproduction
 		// st.sessionSMT = nil
-		st.logger.Debug().Msg("Pebble in-memory session tree stopped - sessionSMT preserved for proof generation")
+		logger.Debug().Msg("Pebble in-memory session tree stopped - sessionSMT preserved for proof generation")
 
 	default:
 		// Disk storage: Stop store and clear references (will be restored from disk for proofs)
-		if err := st.Stop(); err != nil {
+		if err := st.stop(); err != nil {
 			return nil, err
 		}
 		// DEV_NOTE: We can set both st.treeStore AND st.sessionSMT to nil here since we will be restoring from disk for proofs.
 		st.treeStore = nil
 		st.sessionSMT = nil
-		st.logger.Debug().Msg("Disk session tree stopped - data will be restored from disk for proof generation")
+		logger.Debug().Msg("Disk session tree stopped - data will be restored from disk for proof generation")
 	}
 
 	return st.claimedRoot, nil
@@ -430,6 +438,8 @@ func (st *sessionTree) GetClaimRoot() []byte {
 // called only after the proof has been successfully submitted onchain and the servicer
 // has confirmed that it has been rewarded.
 func (st *sessionTree) Delete() error {
+	logger := st.logger.With("method", "Delete")
+
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 	// After deletion, set treeStore to nil to:
@@ -446,22 +456,22 @@ func (st *sessionTree) Delete() error {
 
 	// Handle stopping the KVStore if it's still active
 	if st.treeStore == nil {
-		st.logger.With("claim_root", fmt.Sprintf("%x", st.GetClaimRoot())).Info().Msg("KVStore is already stopped")
+		logger.Info().Msg("KVStore is already stopped")
 		return nil
 	}
 
 	switch st.storePath {
 
 	case InMemoryStoreFilename:
-		st.logger.Info().Msg("Clearing SimpleMap in-memory session tree KVStore.")
+		logger.Info().Msg("Clearing SimpleMap in-memory session tree KVStore.")
 		if st.treeStore == nil {
-			st.logger.Debug().Msg("SimpleMap treeStore is nil - nothing to clear")
+			logger.Debug().Msg("SimpleMap treeStore is nil - nothing to clear")
 			return nil
 		}
 		return st.treeStore.ClearAll()
 
 	case InMemoryPebbleStoreFilename:
-		st.logger.Info().Msg("Clearing Pebble in-memory session tree KVStore.")
+		logger.Info().Msg("Clearing Pebble in-memory session tree KVStore.")
 		// Pebble in-memory stores need to be stopped
 		if pebbleStore, ok := st.treeStore.(pebble.PebbleKVStore); ok {
 			if err := pebbleStore.Stop(); err != nil {
@@ -503,11 +513,12 @@ func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
 }
 
-// Stop the KVStore and free up the in-memory resources used by the session tree.
-// Calling Stop:
+// stop the KVStore and free up the in-memory resources used by the session tree.
+//
+// Calling stop:
 // - DOES NOT calculate the root hash of the SMST.
 // - DOES commit the latest (current state) of the SMT to on-state storage.
-func (st *sessionTree) Stop() error {
+func (st *sessionTree) stop() error {
 	if st.treeStore == nil {
 		return nil
 	}

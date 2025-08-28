@@ -175,7 +175,7 @@ func (s *StorageModeTestSuite) TearDownTest() {
 
 // TestClaimAndProofSubmission tests the complete claim and proof submission lifecycle
 // This is the critical test that should reveal the bug in Pebble in-memory mode
-func (s *StorageModeTestSuite) TestClaimAndProofSubmission() {
+func (s *StorageModeTestSuite) TestBasicClaimAndProofSubmission() {
 	// Get the session end height from the active session header
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 
@@ -199,10 +199,6 @@ func (s *StorageModeTestSuite) TestClaimAndProofSubmission() {
 	// Calculate when the proof window closes for this session
 	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
 
-	// Stop and recreate the relayer sessions manager
-	// s.relayerSessionsManager.Stop()
-	// s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
-
 	// Move to one block before the proof window closes (which should trigger proof submission)
 	s.advanceToBlock(proofWindowCloseHeight)
 
@@ -218,8 +214,8 @@ func (s *StorageModeTestSuite) TestClaimAndProofSubmission() {
 	require.Len(s.T(), s.sessionTrees, 0, "Session tree should be removed after proof submission for storage mode: %s", s.getStorageModeName())
 }
 
-// TestRestartDuringClaimWindow tests session persistence when restarted during claim window
-func (s *StorageModeTestSuite) TestRestartDuringClaimWindow() {
+// TestProcessRestartDuringClaimWindow tests session persistence when restarted during claim window
+func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 	// Get the session end height from the active session header
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 
@@ -247,6 +243,7 @@ func (s *StorageModeTestSuite) TestRestartDuringClaimWindow() {
 	waitSimulateIO()
 
 	// For in-memory modes, we should only proceed if the session was restored
+	// TODO_TECHDEBT(#1734): Remove this once we are better at managing in-memory sessions restarts
 	if s.isInMemorySMT() {
 		// In-memory modes don't persist across restarts, so session should be gone
 		require.Len(s.T(), s.sessionTrees, 0, "In-memory storage should not persist sessions across restarts for mode: %s", s.getStorageModeName())
@@ -265,20 +262,12 @@ func (s *StorageModeTestSuite) TestRestartDuringClaimWindow() {
 	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once after restart for storage mode: %s", s.getStorageModeName())
 }
 
-// TestOriginalBugReproduction demonstrates the original bug behavior when sessionSMT preservation is disabled
-// This test is designed to show how Pebble in-memory mode would fail without our fix
-// NOTE: This test will be skipped in normal runs since the fix is currently in place
-func (s *StorageModeTestSuite) TestOriginalBugReproduction() {
-	// Skip this test for all modes since our fix is in place
-	// To enable this test and see the original bug:
-	// 1. Comment out the sessionSMT preservation in sessiontree.go Flush() method
-	// 2. Comment out the sessionSMT restoration in ProveClosest() method
-	// 3. Remove this skip statement
-	s.T().Skip("Skipping bug reproduction test - fix is currently active. See comments above to reproduce original bug.")
-
-	// Only test Pebble in-memory mode since that's where the bug occurred
-	if s.storageDir != session.InMemoryPebbleStoreFilename {
-		s.T().Skip("Bug reproduction test only relevant for Pebble in-memory mode")
+// TestInMemoryTreeStillSubmitsProofAfterFlush ensures that the in-memory tree still submits a proof after
+// a Flush is called on the RelaySessionManager.
+func (s *StorageModeTestSuite) TestInMemoryTreeStillSubmitsProofAfterFlush() {
+	// Only test in-memory modes since that's where the bug occurred
+	if !s.isInMemorySMT() {
+		s.T().Skip("Bug reproduction test only relevant for in-memory modes")
 		return
 	}
 
@@ -293,8 +282,12 @@ func (s *StorageModeTestSuite) TestOriginalBugReproduction() {
 	s.advanceToBlock(claimWindowOpenHeight)
 	sessionTree := s.getActiveSessionTree()
 	claimRoot := sessionTree.GetClaimRoot()
+
 	require.NotNil(s.T(), claimRoot, "Claim should be created")
 	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once")
+
+	// Simulates a flush
+	sessionTree.Flush()
 
 	// Move to proof window
 	s.advanceToBlock(proofWindowCloseHeight)

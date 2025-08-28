@@ -308,8 +308,8 @@ func (rs *relayerSessionsManager) Stop() {
 				}
 
 				// Stop the session tree process and underlying key-value store.
-				if err := sessionTree.Stop(); err != nil {
-					logger.Error().Err(err).Msg("❌️ Failed to stop session tree store during shutdown. ❗Check disk permissions and kvstore integrity. ❗Resources may not be properly cleaned up.")
+				if _, err := sessionTree.Flush(); err != nil {
+					logger.Error().Err(err).Msg("❌️ Failed to flush session tree store during shutdown. ❗Check disk permissions and kvstore integrity. ❗Resources may not be properly cleaned up.")
 				}
 
 				logger.Debug().Msg("💾 Successfully stored session tree to disk during shutdown")
