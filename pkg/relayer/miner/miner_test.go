@@ -22,6 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
+	"github.com/pokt-network/poktroll/pkg/relayer/types"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
@@ -47,7 +48,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 		ctx                                   = context.Background()
 		logger                                = polylog.Ctx(ctx)
 		actualMinedRelaysMu                   sync.Mutex
-		actualMinedRelays                     []*relayer.MinedRelay
+		actualMinedRelays                     []*types.MinedRelay
 		mockRelaysObs, relaysFixturePublishCh = channel.NewObservable[*servicetypes.Relay]()
 		expectedMinedRelays                   = unmarshalHexMinedRelays(t, marshaledMinableRelaysHex)
 	)
@@ -139,7 +140,7 @@ func unmarshalHexRelay(
 func unmarshalHexMinedRelays(
 	t *testing.T,
 	marshalledHexMinedRelays []string,
-) (relays []*relayer.MinedRelay) {
+) (relays []*types.MinedRelay) {
 	t.Helper()
 
 	for _, marshalledRelayHex := range marshalledHexMinedRelays {
@@ -151,7 +152,7 @@ func unmarshalHexMinedRelays(
 func unmarshalHexMinedRelay(
 	t *testing.T,
 	marshalledHexMinedRelay string,
-) *relayer.MinedRelay {
+) *types.MinedRelay {
 	t.Helper()
 
 	relayBz, err := hex.DecodeString(marshalledHexMinedRelay)
@@ -164,7 +165,7 @@ func unmarshalHexMinedRelay(
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
-	return &relayer.MinedRelay{
+	return &types.MinedRelay{
 		Relay: relay,
 		Bytes: relayBz,
 		Hash:  relayHash,

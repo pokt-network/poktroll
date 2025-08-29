@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,30 +9,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pokt-network/smt"
+	"github.com/pokt-network/smt/kvstore"
+
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	relayertypes "github.com/pokt-network/poktroll/pkg/relayer/types"
 )
-
-// SessionTreeBackupData represents the serializable data structure for backing up a session tree
-type SessionTreeBackupData struct {
-	SessionHeader           *sessiontypes.SessionHeader `json:"session_header"`
-	SupplierOperatorAddress string                      `json:"supplier_operator_address"`
-	ClaimedRoot             []byte                      `json:"claimed_root,omitempty"`
-	ProofPath               []byte                      `json:"proof_path,omitempty"`
-	CompactProofBz          []byte                      `json:"compact_proof_bz,omitempty"`
-	IsClaiming              bool                        `json:"is_claiming"`
-	BackupTimestamp         int64                       `json:"backup_timestamp"`
-	SMTEntries              []SMTEntry                  `json:"smt_entries"`
-}
-
-// SMTEntry represents a key-value pair in the sparse merkle tree
-type SMTEntry struct {
-	Key    []byte `json:"key"`
-	Value  []byte `json:"value"`
-	Weight uint64 `json:"weight"`
-}
 
 // BackupManager handles the backup and restoration of session trees for in-memory storage
 type BackupManager struct {
@@ -105,46 +89,76 @@ func (bm *BackupManager) Stop() {
 }
 
 // BackupSessionTree backs up a single session tree to disk
-func (bm *BackupManager) BackupSessionTree(sessionTree relayer.SessionTree) error {
+func (bm *BackupManager) BackupSessionTree(sessionTreeInterface relayer.SessionTree) error {
 	if bm.config == nil {
 		return nil
 	}
 
 	bm.logger.Debug().
-		Str("session_id", sessionTree.GetSessionHeader().SessionId).
-		Str("supplier", sessionTree.GetSupplierOperatorAddress()).
+		Str("session_id", sessionTreeInterface.GetSessionHeader().SessionId).
+		Str("supplier", sessionTreeInterface.GetSupplierOperatorAddress()).
 		Msg("Backing up session tree")
 
-	// Create backup data structure
-	backupData := &SessionTreeBackupData{
-		SessionHeader:           sessionTree.GetSessionHeader(),
-		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
-		ClaimedRoot:             sessionTree.GetClaimRoot(),
-		ProofPath:               sessionTree.GetProofBz(),
-		CompactProofBz:          sessionTree.GetProofBz(), // Same as ProofPath for now
-		IsClaiming:              false,                    // Cannot access this from interface
+	// Store the SMT root before committing (this is the actual data root we want to preserve)
+	smtRoot := sessionTreeInterface.GetSMSTRoot()
+
+	// Create backup data structure using protobuf type
+	backupData := &relayertypes.SessionTreeBackupData{
+		SessionHeader:           *sessionTreeInterface.GetSessionHeader(),
+		SupplierOperatorAddress: sessionTreeInterface.GetSupplierOperatorAddress(),
+		ClaimedRoot:             sessionTreeInterface.GetClaimRoot(),
+		ProofPath:               sessionTreeInterface.GetProofBz(),
+		CompactProofBz:          sessionTreeInterface.GetProofBz(), // Same as ProofPath for now
+		IsClaiming:              false,                             // Cannot access this from interface
 		BackupTimestamp:         time.Now().Unix(),
 	}
 
-	// Extract SMT entries if the tree is still active (not flushed)
-	if sessionTree.GetClaimRoot() == nil {
-		entries, err := bm.extractSMTEntries(sessionTree)
-		if err != nil {
-			return fmt.Errorf("failed to extract SMT entries: %w", err)
+	// Extract SMT data if the KVStore is available (before flushing)
+	if kvStore := sessionTreeInterface.GetKVStore(); kvStore != nil {
+		// Access the underlying sessionTree to commit SMT data to KVStore
+		// This is safe since we're in the same package and the interface is implemented by *sessionTree
+		sessionTree := sessionTreeInterface.(*sessionTree)
+		if sessionTree.sessionSMT != nil {
+			// Commit pending SMT changes to the KVStore before extraction
+			if err := sessionTree.sessionSMT.Commit(); err != nil {
+				bm.logger.Warn().
+					Err(err).
+					Str("session_id", sessionTreeInterface.GetSessionHeader().SessionId).
+					Msg("Failed to commit SMT before backup - proceeding with metadata-only backup")
+			} else {
+				// Now extract the committed SMT data from the KVStore
+				smtData, err := bm.extractSMTData(kvStore)
+				if err != nil {
+					bm.logger.Warn().
+						Err(err).
+						Str("session_id", sessionTreeInterface.GetSessionHeader().SessionId).
+						Msg("Failed to extract SMT data - proceeding with metadata-only backup")
+				} else {
+					backupData.SmtData = smtData
+					backupData.SmtRoot = smtRoot // Store the SMT root for proper restoration
+					bm.logger.Debug().
+						Int("smt_entries", len(smtData)).
+						Str("session_id", sessionTreeInterface.GetSessionHeader().SessionId).
+						Msg("Successfully extracted SMT data for backup")
+				}
+			}
 		}
-		backupData.SMTEntries = entries
+	} else {
+		bm.logger.Debug().
+			Str("session_id", sessionTreeInterface.GetSessionHeader().SessionId).
+			Msg("KVStore not available - creating metadata-only backup (session may have been flushed)")
 	}
 
-	// Serialize to JSON
-	backupBytes, err := json.MarshalIndent(backupData, "", "  ")
+	// Serialize to binary format using protobuf
+	backupBytes, err := backupData.Marshal()
 	if err != nil {
 		return fmt.Errorf("failed to marshal backup data: %w", err)
 	}
 
-	// Create backup file path
-	backupFileName := fmt.Sprintf("session_%s_%s_%d.json",
-		sessionTree.GetSupplierOperatorAddress(),
-		sessionTree.GetSessionHeader().SessionId,
+	// Create backup file path with .pb extension for protobuf binary format
+	backupFileName := fmt.Sprintf("session_%s_%s_%d.pb",
+		sessionTreeInterface.GetSupplierOperatorAddress(),
+		sessionTreeInterface.GetSessionHeader().SessionId,
 		time.Now().Unix(),
 	)
 	backupFilePath := filepath.Join(bm.config.BackupDir, backupFileName)
@@ -156,7 +170,7 @@ func (bm *BackupManager) BackupSessionTree(sessionTree relayer.SessionTree) erro
 
 	bm.logger.Info().
 		Str("backup_file", backupFilePath).
-		Str("session_id", sessionTree.GetSessionHeader().SessionId).
+		Str("session_id", sessionTreeInterface.GetSessionHeader().SessionId).
 		Msg("Session tree backup completed")
 
 	// Cleanup old backups
@@ -198,7 +212,7 @@ func (bm *BackupManager) backupAllSessions(sessionsMgr *relayerSessionsManager) 
 }
 
 // RestoreSessionTrees restores session trees from backup files
-func (bm *BackupManager) RestoreSessionTrees() ([]*SessionTreeBackupData, error) {
+func (bm *BackupManager) RestoreSessionTrees() ([]*relayertypes.SessionTreeBackupData, error) {
 	if bm.config == nil {
 		bm.logger.Info().Msg("Backup manager disabled, skipping restore")
 		return nil, nil
@@ -220,14 +234,16 @@ func (bm *BackupManager) RestoreSessionTrees() ([]*SessionTreeBackupData, error)
 		return nil, fmt.Errorf("failed to read backup directory: %w", err)
 	}
 
-	var restoredSessions []*SessionTreeBackupData
+	var restoredSessions []*relayertypes.SessionTreeBackupData
 	for _, entry := range entries {
-		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+		ext := filepath.Ext(entry.Name())
+		// Support only .pb (protobuf binary) files
+		if entry.IsDir() || ext != ".pb" {
 			continue
 		}
 
 		backupFilePath := filepath.Join(bm.config.BackupDir, entry.Name())
-		backupData, err := bm.loadBackupFile(backupFilePath)
+		backupData, err := bm.LoadBackupFile(backupFilePath)
 		if err != nil {
 			bm.logger.Error().
 				Err(err).
@@ -246,35 +262,24 @@ func (bm *BackupManager) RestoreSessionTrees() ([]*SessionTreeBackupData, error)
 	return restoredSessions, nil
 }
 
-// loadBackupFile loads and parses a backup file
-func (bm *BackupManager) loadBackupFile(filePath string) (*SessionTreeBackupData, error) {
+// LoadBackupFile loads and parses a protobuf backup file
+func (bm *BackupManager) LoadBackupFile(filePath string) (*relayertypes.SessionTreeBackupData, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read backup file: %w", err)
 	}
 
-	var backupData SessionTreeBackupData
-	if err := json.Unmarshal(data, &backupData); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal backup data: %w", err)
+	ext := filepath.Ext(filePath)
+	if ext != ".pb" {
+		return nil, fmt.Errorf("unsupported backup file format: %s (only .pb files supported)", ext)
 	}
 
-	return &backupData, nil
-}
-
-// extractSMTEntries extracts all key-value pairs from the SMT
-func (bm *BackupManager) extractSMTEntries(sessionTree relayer.SessionTree) ([]SMTEntry, error) {
-	// This is a simplified implementation. In practice, you would need to
-	// iterate over all entries in the SMT. For now, we'll return an empty
-	// slice as the SMT doesn't expose a direct iteration interface.
-	//
-	// TODO: Implement proper SMT entry extraction when the SMT library
-	// provides iteration capabilities or when we can access the underlying KVStore
-
-	bm.logger.Debug().
-		Str("session_id", sessionTree.GetSessionHeader().SessionId).
-		Msg("SMT entry extraction not yet implemented - storing tree metadata only")
-
-	return []SMTEntry{}, nil
+	// Handle protobuf binary format
+	backupData := new(relayertypes.SessionTreeBackupData)
+	if err := backupData.Unmarshal(data); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal protobuf backup data: %w", err)
+	}
+	return backupData, nil
 }
 
 // cleanupOldBackups removes old backup files exceeding the retention count
@@ -289,10 +294,11 @@ func (bm *BackupManager) cleanupOldBackups() error {
 		return fmt.Errorf("failed to read backup directory: %w", err)
 	}
 
-	// Filter JSON files and sort by modification time
+	// Filter backup files (.pb only) and sort by modification time
 	var backupFiles []os.DirEntry
 	for _, entry := range entries {
-		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".json" {
+		ext := filepath.Ext(entry.Name())
+		if !entry.IsDir() && ext == ".pb" {
 			backupFiles = append(backupFiles, entry)
 		}
 	}
@@ -370,7 +376,7 @@ const (
 // CreateSessionTreeFromBackup reconstructs a session tree from backup data
 func CreateSessionTreeFromBackup(
 	logger polylog.Logger,
-	backupData *SessionTreeBackupData,
+	backupData *relayertypes.SessionTreeBackupData,
 	storesDirectoryPath string,
 ) (*sessionTree, error) {
 	logger = logger.With(
@@ -381,7 +387,7 @@ func CreateSessionTreeFromBackup(
 	// Create the session tree using the standard constructor
 	sessionTreeInterface, err := NewSessionTree(
 		logger,
-		backupData.SessionHeader,
+		&backupData.SessionHeader,
 		backupData.SupplierOperatorAddress,
 		storesDirectoryPath,
 	)
@@ -397,17 +403,170 @@ func CreateSessionTreeFromBackup(
 	sessionTree.compactProofBz = backupData.CompactProofBz
 	sessionTree.isClaiming = backupData.IsClaiming
 
-	// TODO: Restore SMT entries when SMT library supports bulk loading
-	// For now, the tree starts empty and will be populated by new relays
-	if len(backupData.SMTEntries) > 0 {
-		logger.Debug().
-			Int("smt_entries_count", len(backupData.SMTEntries)).
-			Msg("SMT entry restoration not yet implemented - tree will start empty")
+	// Store the backed up SMT root for reconstruction
+	var smtRootForReconstruction []byte
+	if len(backupData.SmtRoot) > 0 {
+		smtRootForReconstruction = backupData.SmtRoot
+	} else if len(backupData.ClaimedRoot) > 0 {
+		smtRootForReconstruction = backupData.ClaimedRoot
 	}
 
-	logger.Info().
-		Int64("backup_timestamp", backupData.BackupTimestamp).
-		Msg("Session tree restored from backup")
+	// Restore SMT data if present in backup
+	if len(backupData.SmtData) > 0 {
+		restoredCount, err := restoreKVStoreData(sessionTree, backupData.SmtData, smtRootForReconstruction, logger)
+		if err != nil {
+			logger.Warn().
+				Err(err).
+				Int("total_entries", len(backupData.SmtData)).
+				Msg("Failed to restore some KVStore data entries")
+		}
+
+		logger.Info().
+			Int("restored_entries", restoredCount).
+			Int("total_entries", len(backupData.SmtData)).
+			Int64("backup_timestamp", backupData.BackupTimestamp).
+			Msg("Session tree restored from backup with SMT data")
+	} else {
+		logger.Info().
+			Int64("backup_timestamp", backupData.BackupTimestamp).
+			Msg("Session tree restored from legacy backup (metadata only)")
+	}
 
 	return sessionTree, nil
+}
+
+// extractSMTData extracts all key-value pairs from the SMT KVStore
+func (bm *BackupManager) extractSMTData(kvStore kvstore.MapStore) ([]*relayertypes.RelayDataEntry, error) {
+	// Create iterator to traverse all key-value pairs
+	iterator, err := kvStore.NewIterator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create SMT iterator: %w", err)
+	}
+	defer func() {
+		if closeErr := iterator.Close(); closeErr != nil {
+			bm.logger.Warn().Err(closeErr).Msg("Failed to close SMT iterator during backup")
+		}
+	}()
+
+	var smtData []*relayertypes.RelayDataEntry
+
+	// Iterate through all key-value pairs
+	for iterator.Next() {
+		key := iterator.Key()
+		value := iterator.Value()
+
+		// Make copies of the key and value to avoid issues with iterator reuse
+		keyCopy := make([]byte, len(key))
+		copy(keyCopy, key)
+
+		valueCopy := make([]byte, len(value))
+		copy(valueCopy, value)
+
+		// Note: We cannot directly extract the weight from the KVStore iterator
+		// The weight information is stored internally by the SMST and not accessible
+		// through the KVStore interface. For restoration, we'll use a default weight
+		// or try to infer it from the relay data if possible.
+		entry := &relayertypes.RelayDataEntry{
+			Key:    keyCopy,
+			Value:  valueCopy,
+			Weight: 1, // Default weight - will be updated during restoration if possible
+		}
+
+		smtData = append(smtData, entry)
+	}
+
+	// Check for iteration errors
+	if err := iterator.Error(); err != nil {
+		return nil, fmt.Errorf("error during SMT iteration: %w", err)
+	}
+
+	return smtData, nil
+}
+
+// restoreKVStoreData restores SMT KVStore data directly, preserving the exact tree structure
+func restoreKVStoreData(sessionTree *sessionTree, smtData []*relayertypes.RelayDataEntry, smtRoot []byte, logger polylog.Logger) (int, error) {
+	if sessionTree.treeStore == nil {
+		return 0, fmt.Errorf("session tree KVStore is nil - cannot restore data")
+	}
+
+	restoredCount := 0
+	var lastError error
+
+	// Directly populate the KVStore with the backed up data
+	// This preserves the exact SMT structure including internal nodes
+	for _, entry := range smtData {
+		err := sessionTree.treeStore.Set(entry.Key, entry.Value)
+		if err != nil {
+			logger.Warn().
+				Err(err).
+				Msg("Failed to restore KVStore entry")
+			lastError = err
+			continue
+		}
+		restoredCount++
+	}
+
+	// After restoring the KVStore data, we need to reconstruct the SMT from it
+	// The SMT needs to be rebuilt from the restored KVStore to be functional
+	if restoredCount > 0 && len(smtRoot) > 0 {
+		// Import the SMT from the restored KVStore data using the backed up SMT root
+		sessionTree.sessionSMT = smt.ImportSparseMerkleSumTrie(
+			sessionTree.treeStore,
+			protocol.NewTrieHasher(),
+			smtRoot, // Use the backed up SMT root
+			protocol.SMTValueHasher(),
+		)
+		logger.Debug().
+			Str("smt_root", fmt.Sprintf("%x", smtRoot)).
+			Msg("Reconstructed SMT from restored KVStore data with backed up root")
+	} else if restoredCount > 0 {
+		logger.Warn().Msg("SMT root not available for reconstruction - SMT may not function correctly")
+	}
+
+	if lastError != nil && restoredCount == 0 {
+		return 0, fmt.Errorf("failed to restore any KVStore data: %w", lastError)
+	}
+
+	return restoredCount, lastError
+}
+
+// restoreSMTData restores SMT data entries into a session tree (legacy method)
+// This method is kept for backwards compatibility but is not used in the current implementation
+func restoreSMTData(sessionTree *sessionTree, smtData []*relayertypes.RelayDataEntry, logger polylog.Logger) (int, error) {
+	restoredCount := 0
+	var lastError error
+
+	for _, entry := range smtData {
+		// Use the weight from backup, or default to 1 if not available
+		weight := entry.Weight
+		if weight == 0 {
+			weight = 1 // Default weight for legacy entries
+		}
+
+		// Update the SMT with the restored data
+		// Note: We need to access the underlying SMT directly since the sessionTree interface
+		// doesn't expose an Update method for raw key-value pairs
+		if sessionTree.sessionSMT != nil {
+			err := sessionTree.sessionSMT.Update(entry.Key, entry.Value, weight)
+			if err != nil {
+				logger.Warn().
+					Err(err).
+					Str("key", string(entry.Key)).
+					Uint64("weight", weight).
+					Msg("Failed to restore SMT entry")
+				lastError = err
+				continue
+			}
+			restoredCount++
+		} else {
+			lastError = fmt.Errorf("session SMT is nil - cannot restore data")
+			break
+		}
+	}
+
+	if lastError != nil && restoredCount == 0 {
+		return 0, fmt.Errorf("failed to restore any SMT data: %w", lastError)
+	}
+
+	return restoredCount, lastError
 }

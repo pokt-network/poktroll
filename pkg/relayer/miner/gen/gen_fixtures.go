@@ -20,7 +20,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/types"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -131,10 +131,10 @@ func main() {
 func genRandomizedMinedRelayFixtures(
 	ctx context.Context,
 	randLength int,
-) (observable.Observable[*relayer.MinedRelay], <-chan error) {
+) (observable.Observable[*types.MinedRelay], <-chan error) {
 	var (
 		errCh                      = make(chan error, 1)
-		randBzObs, randBzPublishCh = channel.NewObservable[*relayer.MinedRelay]()
+		randBzObs, randBzPublishCh = channel.NewObservable[*types.MinedRelay]()
 	)
 
 	go func() {
@@ -188,7 +188,7 @@ func genRandomizedMinedRelayFixtures(
 			}
 			relayHash := protocol.GetRelayHashFromBytes(relayBz)
 
-			randBzPublishCh <- &relayer.MinedRelay{
+			randBzPublishCh <- &types.MinedRelay{
 				Relay: relay,
 				Bytes: relayBz,
 				Hash:  relayHash[:],
@@ -239,7 +239,7 @@ func difficultyLT(hash []byte) bool {
 // to return.
 func getMarshaledRelayFmtLines(
 	ctx context.Context,
-	randRelaysObs observable.Observable[*relayer.MinedRelay],
+	randRelaysObs observable.Observable[*types.MinedRelay],
 	shouldAccept func(hash []byte) bool,
 ) string {
 	ctx, cancelFilterMapCollect := context.WithCancel(ctx)
@@ -253,7 +253,7 @@ func getMarshaledRelayFmtLines(
 
 	marshaledFilteredRelayLinesObs := channel.Map(
 		ctx, filteredRelaysObs,
-		newMapRelayMarshalLineFmt[*relayer.MinedRelay](relayFixtureLineFmt),
+		newMapRelayMarshalLineFmt[*types.MinedRelay](relayFixtureLineFmt),
 	)
 
 	// Collect the filtered relays and return them (as a slice).
@@ -268,9 +268,9 @@ func filterLimitRelays(
 	ctx context.Context,
 	cancel context.CancelFunc,
 	limit int,
-	randRelaysObs observable.Observable[*relayer.MinedRelay],
+	randRelaysObs observable.Observable[*types.MinedRelay],
 	shouldCollect func(hash []byte) bool,
-) observable.Observable[*relayer.MinedRelay] {
+) observable.Observable[*types.MinedRelay] {
 	var (
 		counterMu               sync.Mutex
 		minedRelayAcceptCounter = 0
@@ -280,8 +280,8 @@ func filterLimitRelays(
 	return channel.Map(ctx, randRelaysObs,
 		func(
 			_ context.Context,
-			minedRelay *relayer.MinedRelay,
-		) (_ *relayer.MinedRelay, skip bool) {
+			minedRelay *types.MinedRelay,
+		) (_ *types.MinedRelay, skip bool) {
 			counterMu.Lock()
 			defer counterMu.Unlock()
 

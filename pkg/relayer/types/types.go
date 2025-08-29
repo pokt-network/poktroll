@@ -1,4 +1,4 @@
-package relayer
+package types
 
 import (
 	"github.com/pokt-network/poktroll/x/service/types"

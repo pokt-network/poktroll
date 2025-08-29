@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/pokt-network/smt"
+	"github.com/pokt-network/smt/kvstore"
 	"github.com/pokt-network/smt/kvstore/pebble"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -363,29 +364,38 @@ func (st *sessionTree) Delete() error {
 
 	st.isClaiming = false
 
-	// NB: We used to call `st.treeStore.ClearAll()` here.
-	// This was intentionally removed to lower the IO load.
-	// When the database is closed, it is deleted it from disk right away.
-
-	if st.treeStore != nil {
-		if err := st.treeStore.Stop(); err != nil {
-			return err
-		}
-	} else {
+	// Check if treeStore is already nil (already stopped)
+	if st.treeStore == nil {
 		st.logger.With(
 			"claim_root", fmt.Sprintf("%x", st.GetClaimRoot()),
 		).Info().Msg("KVStore is already stopped")
+		return nil
 	}
 
-	// Remove persisted stores from disk; clear memory for in-memory stores.
+	// Handle persisted vs in-memory stores correctly to avoid race condition
 	if st.persistedSMT() {
+		// For persisted stores: close the database and delete from disk
+		// NB: We don't call ClearAll() here to lower the IO load.
+		// When the database is closed, it is deleted from disk right away.
 		st.logger.Info().Msgf("Deleting session tree KVStore from disk at %s", st.storePath)
+		
+		if err := st.treeStore.Stop(); err != nil {
+			return err
+		}
+		
 		// Delete the KVStore from disk
 		return os.RemoveAll(st.storePath)
+	} else {
+		// For in-memory stores: clear data first, then close
+		st.logger.Info().Msg("Clearing in-memory session tree KVStore.")
+		
+		if err := st.treeStore.ClearAll(); err != nil {
+			st.logger.Warn().Err(err).Msg("Failed to clear in-memory KVStore - continuing with Stop()")
+			// Continue with Stop() even if ClearAll fails
+		}
+		
+		return st.treeStore.Stop()
 	}
-
-	st.logger.Info().Msg("Clearing in-memory session tree KVStore.")
-	return st.treeStore.ClearAll()
 }
 
 // StartClaiming marks the session tree as being picked up for claiming,
@@ -407,6 +417,17 @@ func (st *sessionTree) StartClaiming() error {
 // operator this sessionTree belongs to.
 func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
+}
+
+// GetKVStore returns the underlying key-value store used by the SMST.
+// This is used for backup operations to iterate over all key-value pairs.
+// Returns nil if the tree has been flushed and the KVStore is no longer available.
+func (st *sessionTree) GetKVStore() kvstore.MapStore {
+	if st.treeStore == nil {
+		return nil
+	}
+	// The treeStore implements kvstore.MapStore interface through PebbleKVStore
+	return st.treeStore
 }
 
 // Stop the KVStore and free up the in-memory resources used by the session tree.

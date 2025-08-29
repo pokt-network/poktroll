@@ -20,6 +20,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	relayertypes "github.com/pokt-network/poktroll/pkg/relayer/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -228,8 +229,8 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 
 	// DEV_NOTE: must cast back to generic observable type to use with Map.
 	// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
-	// support for generic types.
-	relayObs := observable.Observable[*relayer.MinedRelay](rs.relayObs)
+	// support for generic relayertypes.
+	relayObs := observable.Observable[*relayertypes.MinedRelay](rs.relayObs)
 
 	// Map eitherMinedRelays to a new observable of an error type which is
 	// notified if an error occurs when attempting to add the relay to the session tree.
@@ -583,7 +584,7 @@ func (rs *relayerSessionsManager) restoreSessionTreesFromBackup(ctx context.Cont
 	restoredCount := 0
 	for _, backupData := range backupSessions {
 		// Check if the session is still relevant (not expired)
-		if rs.isSessionExpired(backupData.SessionHeader, currentHeight) {
+		if rs.isSessionExpired(&backupData.SessionHeader, currentHeight) {
 			rs.logger.Debug().
 				Str("session_id", backupData.SessionHeader.SessionId).
 				Msg("Skipping restoration of expired session")
@@ -663,10 +664,26 @@ func (rs *relayerSessionsManager) performGracefulShutdownBackup() error {
 
 // isSessionExpired checks if a session is expired based on current block height
 func (rs *relayerSessionsManager) isSessionExpired(sessionHeader *sessiontypes.SessionHeader, currentHeight int64) bool {
-	// TODO: Implement proper session expiration logic based on proof window close height
-	// For now, consider sessions expired if they ended more than 1000 blocks ago
+	// Get shared parameters to calculate proper proof window close height
+	ctx := context.Background()
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		// If we can't get shared params, fall back to a conservative heuristic
+		// This ensures we don't restore sessions that are likely expired
+		rs.logger.Warn().
+			Err(err).
+			Str("session_id", sessionHeader.SessionId).
+			Msg("Failed to get shared params for session expiry check - using fallback logic")
+		sessionEndHeight := sessionHeader.SessionEndBlockHeight
+		return currentHeight > sessionEndHeight+1000
+	}
+
+	// Use proper proof window close height calculation
 	sessionEndHeight := sessionHeader.SessionEndBlockHeight
-	return currentHeight > sessionEndHeight+1000
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+
+	// Session is expired if current height is past the proof window close height
+	return currentHeight > proofWindowCloseHeight
 }
 
 // waitForBlock blocks until the block at the given height (or greater) is
@@ -729,7 +746,7 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 // it skips output (only outputs errors).
 func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	ctx context.Context,
-	relay *relayer.MinedRelay,
+	relay *relayertypes.MinedRelay,
 ) (_ error, skip bool) {
 	// ensure the session tree exists for this relay
 	// TODO_CONSIDERATION: if we get the session header from the response, there

@@ -9,8 +9,10 @@ import (
 	"context"
 
 	"github.com/pokt-network/smt"
+	"github.com/pokt-network/smt/kvstore"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
+	relayertypes "github.com/pokt-network/poktroll/pkg/relayer/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -18,16 +20,16 @@ import (
 // RelaysObservable is an observable which is notified with Relay values.
 //
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
-// support for generic types. For the same reason, this type cannot be an
+// support for generic relayertypes. For the same reason, this type cannot be an
 // alias (i.e. RelaysObservable = observable.Observable[*servicetypes.Relay]).
 type RelaysObservable observable.Observable[*servicetypes.Relay]
 
 // MinedRelaysObservable is an observable which is notified with MinedRelay values.
 //
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
-// support for generic types. For the same reason, this type cannot be an
+// support for generic relayertypes. For the same reason, this type cannot be an
 // alias (i.e. MinedRelaysObservable = observable.Observable[*MinedRelay]).
-type MinedRelaysObservable observable.Observable[*MinedRelay]
+type MinedRelaysObservable observable.Observable[*relayertypes.MinedRelay]
 
 // Miner is responsible for observing servedRelayObs, hashing and checking the
 // difficulty of each, finally publishing those with sufficient difficulty to
@@ -187,6 +189,11 @@ type SessionTree interface {
 	// GetSupplierOperatorAddress returns a stringified bech32 address of the supplier
 	// operator this sessionTree belongs to.
 	GetSupplierOperatorAddress() string
+
+	// GetKVStore returns the underlying key-value store used by the SMST.
+	// This is used for backup operations to iterate over all key-value pairs.
+	// Returns nil if the tree has been flushed and the KVStore is no longer available.
+	GetKVStore() kvstore.MapStore
 
 	// GetTrieSpec returns the trie spec of the SMST.
 	GetTrieSpec() smt.TrieSpec

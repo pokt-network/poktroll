@@ -29,6 +29,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	relayertypes "github.com/pokt-network/poktroll/pkg/relayer/types"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
@@ -65,7 +66,7 @@ type SessionPersistenceTestSuite struct {
 	blocksObs      observable.Observable[client.Block]
 	closeOnce      sync.Once
 
-	minedRelaysPublishCh chan<- *relayer.MinedRelay
+	minedRelaysPublishCh chan<- *relayertypes.MinedRelay
 	minedRelaysObs       relayer.MinedRelaysObservable
 
 	sharedParams sharedtypes.Params
@@ -123,7 +124,7 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	s.deps = s.setupSessionManagerDependencies()
 
 	// Create mined relays observable and channel for publishing
-	mrObs, minedRelaysPublishCh := channel.NewObservable[*relayer.MinedRelay]()
+	mrObs, minedRelaysPublishCh := channel.NewObservable[*relayertypes.MinedRelay]()
 	s.minedRelaysObs = relayer.MinedRelaysObservable(mrObs)
 	s.minedRelaysPublishCh = minedRelaysPublishCh
 

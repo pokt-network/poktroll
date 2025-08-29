@@ -18,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -102,7 +103,7 @@ func (mnr *miner) MinedRelays(
 func (mnr *miner) mapMineDehydratedRelay(
 	ctx context.Context,
 	relay *servicetypes.Relay,
-) (_ either.Either[*relayer.MinedRelay], skip bool) {
+) (_ either.Either[*types.MinedRelay], skip bool) {
 	chainVersion := mnr.blockClient.GetChainVersion()
 	if block.IsChainAfterAddPayloadHashInRelayResponse(chainVersion) {
 		// Set the response payload to nil to reduce the size of SMST & onchain proofs.
@@ -114,33 +115,33 @@ func (mnr *miner) mapMineDehydratedRelay(
 	// Marshal and hash the whole relay to measure difficulty.
 	relayBz, err := relay.Marshal()
 	if err != nil {
-		return either.Error[*relayer.MinedRelay](err), false
+		return either.Error[*types.MinedRelay](err), false
 	}
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	relayDifficultyTargetHash, err := mnr.getServiceRelayDifficultyTargetHash(ctx, relay.Req)
 	if err != nil {
-		return either.Error[*relayer.MinedRelay](err), true
+		return either.Error[*types.MinedRelay](err), true
 	}
 
 	// The relay IS NOT volume / reward applicable
 	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
-		return either.Success[*relayer.MinedRelay](nil), true
+		return either.Success[*types.MinedRelay](nil), true
 	}
 
 	if err := relay.Req.ValidateBasic(); err != nil {
 		mnr.logger.Error().Err(err).Msg("⛓️‍💥 invalid relay request during mining")
-		return either.Error[*relayer.MinedRelay](fmt.Errorf("invalid relay request during mining: %w", err)), true
+		return either.Error[*types.MinedRelay](fmt.Errorf("invalid relay request during mining: %w", err)), true
 	}
 
 	if err := relay.Res.ValidateBasic(); err != nil {
 		mnr.logger.Error().Err(err).Msg("⛓️‍💥 invalid relay response during mining")
-		return either.Error[*relayer.MinedRelay](fmt.Errorf("invalid relay response during mining: %w", err)), true
+		return either.Error[*types.MinedRelay](fmt.Errorf("invalid relay response during mining: %w", err)), true
 	}
 
 	// The relay IS volume / reward applicable
-	return either.Success(&relayer.MinedRelay{
+	return either.Success(&types.MinedRelay{
 		Relay: *relay,
 		Bytes: relayBz,
 		Hash:  relayHash,

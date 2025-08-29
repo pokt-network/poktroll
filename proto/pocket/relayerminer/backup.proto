@@ -1,0 +1,57 @@
+syntax = "proto3";
+package pocket.relayerminer;
+
+option go_package = "github.com/pokt-network/poktroll/pkg/relayer/types";
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "pocket/session/types.proto";
+
+// RelayDataEntry represents a single relay entry from the SMT
+message RelayDataEntry {
+  // key is the SMT key (typically relay hash)
+  bytes key = 1;
+  
+  // value is the SMT value (typically serialized relay data)
+  bytes value = 2;
+  
+  // weight is the relay weight used in the SMST (typically compute units)
+  uint64 weight = 3;
+}
+
+// SessionTreeBackupData represents the protobuf message for backing up session trees.
+// This structure is optimized for efficient binary serialization and storage.
+// Supports both metadata-only backups (legacy) and full SMT data backups (current).
+message SessionTreeBackupData {
+  // session_header contains the session metadata
+  pocket.session.SessionHeader session_header = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  
+  // supplier_operator_address is the Bech32 address of the supplier operator
+  string supplier_operator_address = 2;
+  
+  // claimed_root is the root hash of the SMST needed for submitting the claim
+  bytes claimed_root = 3;
+  
+  // proof_path is the path for which the proof was generated
+  bytes proof_path = 4;
+  
+  // compact_proof_bz is the marshaled compact proof for the session
+  bytes compact_proof_bz = 5;
+  
+  // is_claiming indicates if the session tree is currently being processed for claiming
+  bool is_claiming = 6;
+  
+  // backup_timestamp is the Unix timestamp when this backup was created
+  int64 backup_timestamp = 7;
+  
+  // smt_data contains the actual relay data from the SMT key-value store
+  // This field is optional for backward compatibility with legacy backups
+  repeated RelayDataEntry smt_data = 8;
+  
+  // smt_root is the current SMT root at the time of backup
+  // This is used to properly reconstruct the SMT during restoration
+  bytes smt_root = 9;
+}

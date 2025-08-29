@@ -25,6 +25,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	relayertypes "github.com/pokt-network/poktroll/pkg/relayer/types"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
@@ -286,7 +287,7 @@ func setupDependencies(
 	blockHash []byte,
 	proofParams prooftypes.Params,
 	supplierOperatorBalance int64,
-) (chan<- client.Block, chan<- *relayer.MinedRelay) {
+) (chan<- client.Block, chan<- *relayertypes.MinedRelay) {
 	// Set up dependencies.
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 20)
 	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, blockHash, blocksObs)
@@ -341,7 +342,7 @@ func setupDependencies(
 	require.NotNil(t, relayerSessionsManager)
 
 	// Pass a mined relays observable via InsertRelays.
-	mrObs, minedRelaysPublishCh := channel.NewObservable[*relayer.MinedRelay]()
+	mrObs, minedRelaysPublishCh := channel.NewObservable[*relayertypes.MinedRelay]()
 	minedRelaysObs := relayer.MinedRelaysObservable(mrObs)
 	relayerSessionsManager.InsertRelays(minedRelaysObs)
 
