@@ -229,9 +229,9 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to service source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
 	}
 
-	// Distribute proposer rewards to all validators based on staking weight
+	// Distribute proposer rewards to the block proposer and their delegators
 	if !proposerAmount.IsZero() {
-		if err := distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
+		if err := distributeRewardsToProposerAndDelegators(
 			tlmgm.ctx,
 			tlmgm.logger,
 			tlmgm.tlmCtx.Result,

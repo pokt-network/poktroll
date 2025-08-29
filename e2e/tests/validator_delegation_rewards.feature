@@ -1,6 +1,6 @@
 Feature: Validator Delegation Rewards
   # This feature validates that validator rewards from relay settlements are correctly:
-  # 1. Distributed to ALL validators proportionally by staking weight (not just block proposer)
+  # 1. Distributed to the block proposer (not all validators)
   # 2. Shared with delegators after accounting for validator commission
   #
   # This test accounts for balance decrements from delegation (escrowed tokens)
@@ -8,11 +8,11 @@ Feature: Validator Delegation Rewards
   #
   # Key implementation details:
   # - Rewards come from both RelayBurnEqualsMint TLM and GlobalMint TLM
-  # - The "proposer" allocation parameter distributes to all validators by stake
+  # - The "proposer" allocation parameter distributes to the current block proposer only
   # - Delegators receive rewards minus validator commission using consistent tokenomics distribution
   # - LocalNet has minimum-gas-prices = "0upokt" so no gas fees affect balances
 
-  Scenario: Validator rewards are distributed proportionally to delegators based on stake share
+  Scenario: Proposer rewards are distributed proportionally to delegators based on stake share
     # Baseline setup
     Given the user has the pocketd binary installed
 
@@ -33,7 +33,7 @@ Feature: Validator Delegation Rewards
 
     # Configure tokenomics parameters to explicitly set inflation and distribution
     # Focus on validator rewards for delegation testing  
-    # Note: proposer parameter now distributes rewards to ALL validators based on staking weight
+    # Note: proposer parameter distributes rewards to the current block proposer only
     # IMPORTANT: Both TLM parameter sets must be configured for complete reward distribution coverage:
     # - mint_equals_burn_claim_distribution: Controls RelayBurnEqualsMint TLM (main settlement rewards)
     # - mint_allocation_percentages: Controls GlobalMint TLM (inflation rewards)
@@ -121,8 +121,11 @@ Feature: Validator Delegation Rewards
     #   - app3: 3,000,000 uPOKT staked (37.5% of delegations)
     #   - Ratio: app2 gets 45/29 = 1.55x app3's rewards (close to 5M/3M = 1.67x expected)
     #
-    # Note: The validator retains ~99% of rewards, suggesting either a very high
+    # Note: In proposer-only reward distribution, only the current block proposer validator
+    # receives rewards. The validator retains ~99% of rewards, suggesting either a very high
     # commission rate or a different distribution mechanism than initially expected.
-    And the account balance of "app2" should have increased by "45" uPOKT from "app2_initial_balance"
+
+    # Validate exact reward amounts (values are consistent across all test runs)
+    Then the account balance of "app2" should have increased by "45" uPOKT from "app2_initial_balance"
     And the account balance of "app3" should have increased by "29" uPOKT from "app3_initial_balance"
     And the account balance of "validator1" should have increased by "9166" uPOKT from "validator1_initial_balance"

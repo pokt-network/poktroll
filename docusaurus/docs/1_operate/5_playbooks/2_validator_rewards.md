@@ -19,11 +19,11 @@ This playbook provides comprehensive guidance for monitoring, inspecting, and un
 
 ## Overview
 
-In Pocket Network's Shannon protocol, validators receive rewards as part of the session settlement process through the **Token Logic Modules (TLMs)**. Both the **Global Mint TLM** and **RelayBurnEqualsMint TLM** distribute a configurable percentage of settlement rewards to validators based on their staking weight.
+In Pocket Network's Shannon protocol, the block proposer receives rewards as part of the session settlement process through the **Token Logic Modules (TLMs)**. Both the **Global Mint TLM** and **RelayBurnEqualsMint TLM** distribute a configurable percentage of settlement rewards to the current block proposer.
 
 ### Key Concepts
 
-- **Validator Rewards**: Distributed proportionally to all bonded validators based on staking weight
+- **Proposer Rewards**: Distributed to the current block proposer only
 - **Direct Distribution**: Rewards are sent directly to validator and delegator accounts immediately
 - **Commission**: Validators earn commission on rewards before distributing to delegators
 - **Delegator Rewards**: Distributed directly to individual delegator accounts automatically
@@ -34,8 +34,8 @@ In Pocket Network's Shannon protocol, validators receive rewards as part of the 
 ### How Rewards Flow
 
 1. **Session Settlement**: When a supplier's claim is settled, both TLMs may distribute validator rewards
-2. **Validator Allocation**: A percentage (configurable via `proposer` parameter in each TLM) goes to validators
-3. **Stake-Weight Distribution**: Rewards are distributed to ALL validators proportionally based on their bonded stake
+2. **Proposer Allocation**: A percentage (configurable via `proposer` parameter in each TLM) goes to the block proposer
+3. **Proposer Distribution**: Rewards are distributed to the current block proposer only
 4. **Direct Distribution**: 
    - **Validator Commission**: Calculated based on validator's commission rate and sent directly to validator account
    - **Delegator Rewards**: Remaining rewards distributed directly to individual delegator accounts based on their delegation shares
@@ -46,8 +46,7 @@ In Pocket Network's Shannon protocol, validators receive rewards as part of the 
 ```
 Total Session Settlement = Relays × CUPR × Multiplier  
 Global Inflation = Settlement × GlobalInflationPerClaim
-Validator Rewards = (Settlement + Inflation) × ProposerAllocation
-Individual Validator Reward = Validator Rewards × (ValidatorStake / TotalBondedStake)
+Proposer Rewards = (Settlement + Inflation) × ProposerAllocation
 ```
 
 ### Example Calculation
@@ -55,12 +54,21 @@ Individual Validator Reward = Validator Rewards × (ValidatorStake / TotalBonded
 For a session with 20 relays, 100 CUPR, and 42 multiplier:
 - Settlement: `20 × 100 × 42 = 84,000 uPOKT`
 - Global Inflation (10%): `84,000 × 0.1 = 8,400 uPOKT`
-- Validator Rewards (10%): `(84,000 + 8,400) × 0.1 = 9,240 uPOKT`
+- Proposer Rewards (10%): `(84,000 + 8,400) × 0.1 = 9,240 uPOKT`
 
-If there are 3 validators with stakes of 700K, 200K, and 100K tokens:
-- Validator 1: `9,240 × (700,000 / 1,000,000) = 6,468 uPOKT`
-- Validator 2: `9,240 × (200,000 / 1,000,000) = 1,848 uPOKT`
-- Validator 3: `9,240 × (100,000 / 1,000,000) = 924 uPOKT`
+**Proposer-Only Distribution:** The full 9,240 uPOKT goes to the current block proposer and their delegators:
+
+Assuming the block proposer has 10% commission and 3 delegators with the following stakes:
+- Delegator 1: 5,000,000 uPOKT (62.5% of validator's total)
+- Delegator 2: 2,000,000 uPOKT (25% of validator's total) 
+- Delegator 3: 1,000,000 uPOKT (12.5% of validator's total)
+
+Distribution:
+- **Validator Commission (10%)**: `9,240 × 0.1 = 924 uPOKT` → Block proposer's account
+- **Delegator Pool**: `9,240 - 924 = 8,316 uPOKT` distributed proportionally:
+  - Delegator 1: `8,316 × 0.625 = 5,198 uPOKT`
+  - Delegator 2: `8,316 × 0.25 = 2,079 uPOKT` 
+  - Delegator 3: `8,316 × 0.125 = 1,040 uPOKT` (includes remainder)
 
 ## Querying Validator Rewards
 
@@ -169,40 +177,44 @@ If telemetry is enabled, monitor these metrics:
 
 ### Expected Behavior Checklist
 
-✅ **Rewards are distributed to ALL validators** (not just block proposer)  
-✅ **Distribution is proportional to staking weight**  
+✅ **Rewards are distributed to the block proposer only**  
+✅ **Delegator rewards are proportional to delegation shares within the proposer's validator**  
 ✅ **No rewards are lost to rounding errors** (remainder given to validator as additional commission)  
-✅ **Validators with zero stake receive zero rewards**  
+✅ **Non-proposer validators receive zero rewards**  
 ✅ **Delegators receive rewards minus validator commission**  
 ✅ **Account balances increase immediately** after settlements
 ✅ **Commission is calculated correctly** based on validator commission rates  
 
 ### Validation Scripts
 
-#### Verify Proportional Distribution
+#### Verify Block Proposer Reward Distribution
 
 ```bash
 #!/bin/bash
 NETWORK="<your-network>"
 
-# Get all validators and their stakes
-VALIDATORS=$(pocketd query staking validators --network $NETWORK --output json | jq -r '.validators[] | "\(.operator_address) \(.tokens)"')
+# Get the current block proposer from the latest block
+LATEST_HEIGHT=$(pocketd query block --network $NETWORK | jq -r '.block.header.height')
+PROPOSER_ADDRESS=$(pocketd query block $LATEST_HEIGHT --network $NETWORK | jq -r '.block.header.proposer_address')
 
-echo "Validator Stakes:"
-TOTAL_STAKE=0
-while read -r validator_addr stake; do
-    echo "$validator_addr: $stake tokens"
-    TOTAL_STAKE=$((TOTAL_STAKE + stake))
-done <<< "$VALIDATORS"
+echo "Latest Block Height: $LATEST_HEIGHT"
+echo "Block Proposer: $PROPOSER_ADDRESS"
 
-echo "Total Stake: $TOTAL_STAKE"
+# Convert consensus address to validator operator address
+VALIDATOR_INFO=$(pocketd query staking validators --network $NETWORK --output json | jq -r --arg addr "$PROPOSER_ADDRESS" '.validators[] | select(.consensus_pubkey.value == $addr) | "\(.operator_address) \(.tokens) \(.commission.commission_rates.rate)"')
 
-# Calculate expected distribution for recent rewards
-echo "Expected reward distribution (proportional to stake):"
-while read -r validator_addr stake; do
-    PERCENTAGE=$(echo "scale=4; $stake * 100 / $TOTAL_STAKE" | bc)
-    echo "$validator_addr: $PERCENTAGE% of rewards"
-done <<< "$VALIDATORS"
+if [ -n "$VALIDATOR_INFO" ]; then
+    read -r operator_addr tokens commission_rate <<< "$VALIDATOR_INFO"
+    echo "Proposer Validator: $operator_addr"
+    echo "Validator Stake: $tokens tokens"
+    echo "Commission Rate: $commission_rate"
+    
+    # Get delegations for this validator
+    echo "Delegations to block proposer:"
+    pocketd query staking delegations-to $operator_addr --network $NETWORK --output json | jq -r '.delegation_responses[] | "\(.delegation.delegator_address): \(.delegation.shares)"'
+else
+    echo "Could not find validator information for proposer"
+fi
 ```
 
 #### Monitor Delegation Rewards
@@ -245,7 +257,7 @@ echo "Reward increase: $REWARD_INCREASE uPOKT"
 - `mint_allocation_percentages.proposer` is set to 0 in tokenomics params
 - `mint_equals_burn_claim_distribution.proposer` is set to 0 in tokenomics params  
 - No claim settlements occurring (no relay traffic)
-- All validators have zero bonded stake
+- The block proposer has zero bonded stake
 
 **Diagnostics**:
 ```bash

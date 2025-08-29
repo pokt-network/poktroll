@@ -213,9 +213,9 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to supplier shareholders", supplierCoin))
 	}
 
-	// Distribute to all validators and their delegators
+	// Distribute to the block proposer and their delegators
 	if !proposerAmount.IsZero() {
-		if err := distributeRewardsToAllValidatorsAndDelegatesByStakeWeight(
+		if err := distributeRewardsToProposerAndDelegators(
 			tlmbem.ctx,
 			tlmbem.logger,
 			tlmbem.tlmCtx.Result,
