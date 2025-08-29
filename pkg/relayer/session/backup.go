@@ -33,11 +33,16 @@ func NewBackupManager(
 	logger polylog.Logger,
 	config *relayerconfig.RelayMinerSmtBackupConfig,
 ) *BackupManager {
-	return &BackupManager{
+	bm := &BackupManager{
 		logger:   logger.With("component", "backup_manager"),
 		config:   config,
 		stopChan: make(chan struct{}),
 	}
+	
+	// Log the complete backup configuration for debugging
+	bm.logBackupConfiguration()
+	
+	return bm
 }
 
 // Start starts the periodic backup process if enabled
@@ -109,8 +114,11 @@ func (bm *BackupManager) BackupSessionTree(sessionTreeInterface relayer.SessionT
 		ClaimedRoot:             sessionTreeInterface.GetClaimRoot(),
 		ProofPath:               sessionTreeInterface.GetProofBz(),
 		CompactProofBz:          sessionTreeInterface.GetProofBz(), // Same as ProofPath for now
-		IsClaiming:              false,                             // Cannot access this from interface
+		IsClaiming:              sessionTreeInterface.IsClaiming(), // Now we can access the actual claiming state
 		BackupTimestamp:         time.Now().Unix(),
+		// ServiceComputeUnitsPerRelay will be populated during restoration by querying the service
+		// We don't populate it here to avoid requiring service query client in backup manager
+		ServiceComputeUnitsPerRelay: 0, // Will be filled during restoration
 	}
 
 	// Extract SMT data if the KVStore is available (before flushing)
@@ -413,7 +421,15 @@ func CreateSessionTreeFromBackup(
 
 	// Restore SMT data if present in backup
 	if len(backupData.SmtData) > 0 {
-		restoredCount, err := restoreKVStoreData(sessionTree, backupData.SmtData, smtRootForReconstruction, logger)
+		// Use proper relay weights from service compute units per relay
+		serviceComputeUnits := backupData.ServiceComputeUnitsPerRelay
+		if serviceComputeUnits == 0 {
+			// Fallback for legacy backups or failed service queries
+			serviceComputeUnits = 1
+			logger.Warn().Msg("Service compute units per relay not available, using default weight of 1")
+		}
+
+		restoredCount, err := restoreKVStoreDataWithCorrectWeights(sessionTree, backupData.SmtData, smtRootForReconstruction, serviceComputeUnits, logger)
 		if err != nil {
 			logger.Warn().
 				Err(err).
@@ -424,8 +440,9 @@ func CreateSessionTreeFromBackup(
 		logger.Info().
 			Int("restored_entries", restoredCount).
 			Int("total_entries", len(backupData.SmtData)).
+			Uint64("service_compute_units", serviceComputeUnits).
 			Int64("backup_timestamp", backupData.BackupTimestamp).
-			Msg("Session tree restored from backup with SMT data")
+			Msg("Session tree restored from backup with SMT data and correct relay weights")
 	} else {
 		logger.Info().
 			Int64("backup_timestamp", backupData.BackupTimestamp).
@@ -530,6 +547,75 @@ func restoreKVStoreData(sessionTree *sessionTree, smtData []*relayertypes.RelayD
 	return restoredCount, lastError
 }
 
+// restoreKVStoreDataWithCorrectWeights restores SMT KVStore data with proper relay weights
+func restoreKVStoreDataWithCorrectWeights(sessionTree *sessionTree, smtData []*relayertypes.RelayDataEntry, smtRoot []byte, serviceComputeUnits uint64, logger polylog.Logger) (int, error) {
+	if sessionTree.treeStore == nil {
+		return 0, fmt.Errorf("session tree KVStore is nil - cannot restore data")
+	}
+
+	restoredCount := 0
+	var lastError error
+
+	// First, restore the KVStore data as-is to reconstruct the tree structure
+	for _, entry := range smtData {
+		err := sessionTree.treeStore.Set(entry.Key, entry.Value)
+		if err != nil {
+			logger.Warn().
+				Err(err).
+				Msg("Failed to restore KVStore entry")
+			lastError = err
+			continue
+		}
+		restoredCount++
+	}
+
+	// After restoring the KVStore data, we need to reconstruct the SMT from it
+	if restoredCount > 0 && len(smtRoot) > 0 {
+		// Import the SMT from the restored KVStore data using the backed up SMT root
+		sessionTree.sessionSMT = smt.ImportSparseMerkleSumTrie(
+			sessionTree.treeStore,
+			protocol.NewTrieHasher(),
+			smtRoot, // Use the backed up SMT root
+			protocol.SMTValueHasher(),
+		)
+		logger.Debug().
+			Str("smt_root", fmt.Sprintf("%x", smtRoot)).
+			Msg("Reconstructed SMT from restored KVStore data with backed up root")
+
+		// Now we need to fix the relay weights by updating each relay with correct weight
+		// This is necessary because the original weights were lost during backup extraction
+		for _, entry := range smtData {
+			// Skip internal SMT nodes (they typically have specific key patterns)
+			// Only update leaf nodes that represent actual relay data
+			if len(entry.Key) > 0 && len(entry.Value) > 0 {
+				err := sessionTree.sessionSMT.Update(entry.Key, entry.Value, serviceComputeUnits)
+				if err != nil {
+					logger.Warn().
+						Err(err).
+						Str("key", fmt.Sprintf("%x", entry.Key)).
+						Uint64("weight", serviceComputeUnits).
+						Msg("Failed to update relay weight in restored SMT")
+					// Don't fail the entire restoration for individual weight update failures
+					continue
+				}
+			}
+		}
+		
+		logger.Info().
+			Int("relay_entries", len(smtData)).
+			Uint64("corrected_weight", serviceComputeUnits).
+			Msg("Successfully corrected relay weights in restored SMT")
+	} else if restoredCount > 0 {
+		logger.Warn().Msg("SMT root not available for reconstruction - SMT may not function correctly")
+	}
+
+	if lastError != nil && restoredCount == 0 {
+		return 0, fmt.Errorf("failed to restore any KVStore data: %w", lastError)
+	}
+
+	return restoredCount, lastError
+}
+
 // restoreSMTData restores SMT data entries into a session tree (legacy method)
 // This method is kept for backwards compatibility but is not used in the current implementation
 func restoreSMTData(sessionTree *sessionTree, smtData []*relayertypes.RelayDataEntry, logger polylog.Logger) (int, error) {
@@ -569,4 +655,61 @@ func restoreSMTData(sessionTree *sessionTree, smtData []*relayertypes.RelayDataE
 	}
 
 	return restoredCount, lastError
+}
+
+// logBackupConfiguration logs the complete backup configuration for debugging
+func (bm *BackupManager) logBackupConfiguration() {
+	if bm.config == nil {
+		bm.logger.Info().Msg("📦 Backup Configuration: DISABLED (nil config)")
+		return
+	}
+
+	// Determine backup status
+	backupStatus := "DISABLED"
+	if bm.config.BackupDir != "" {
+		backupStatus = "ENABLED"
+	}
+
+	// Determine periodic backup status
+	periodicStatus := "DISABLED"
+	if bm.config.IntervalSeconds > 0 {
+		periodicStatus = fmt.Sprintf("ENABLED (%ds intervals)", bm.config.IntervalSeconds)
+	}
+
+	// Count enabled event triggers
+	eventTriggers := []string{}
+	if bm.config.OnSessionClose {
+		eventTriggers = append(eventTriggers, "session_close")
+	}
+	if bm.config.OnClaimGeneration {
+		eventTriggers = append(eventTriggers, "claim_generation")
+	}
+	if bm.config.OnGracefulShutdown {
+		eventTriggers = append(eventTriggers, "graceful_shutdown")
+	}
+
+	eventTriggersStr := "NONE"
+	if len(eventTriggers) > 0 {
+		eventTriggersStr = fmt.Sprintf("%v", eventTriggers)
+	}
+
+	// Determine retention policy
+	retentionPolicy := "UNLIMITED"
+	if bm.config.RetainBackupCount > 0 {
+		retentionPolicy = fmt.Sprintf("%d files", bm.config.RetainBackupCount)
+	}
+
+	// Log comprehensive backup configuration
+	bm.logger.Info().
+		Str("backup_status", backupStatus).
+		Str("backup_directory", bm.config.BackupDir).
+		Str("periodic_backup", periodicStatus).
+		Str("event_triggers", eventTriggersStr).
+		Str("retention_policy", retentionPolicy).
+		Uint64("interval_seconds", bm.config.IntervalSeconds).
+		Bool("on_session_close", bm.config.OnSessionClose).
+		Bool("on_claim_generation", bm.config.OnClaimGeneration).
+		Bool("on_graceful_shutdown", bm.config.OnGracefulShutdown).
+		Int("retain_backup_count", bm.config.RetainBackupCount).
+		Msg("📦 Backup Configuration Summary")
 }

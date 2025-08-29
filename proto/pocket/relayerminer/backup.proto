@@ -54,4 +54,8 @@ message SessionTreeBackupData {
   // smt_root is the current SMT root at the time of backup
   // This is used to properly reconstruct the SMT during restoration
   bytes smt_root = 9;
+  
+  // service_compute_units_per_relay is the compute units per relay for this service
+  // This is needed to properly restore relay weights during restoration
+  uint64 service_compute_units_per_relay = 10;
 }

@@ -413,6 +413,13 @@ func (st *sessionTree) StartClaiming() error {
 	return nil
 }
 
+// IsClaiming returns true if the session tree has been marked as being processed for claiming.
+func (st *sessionTree) IsClaiming() bool {
+	st.sessionMu.Lock()
+	defer st.sessionMu.Unlock()
+	return st.isClaiming
+}
+
 // GetSupplierOperatorAddress returns a stringified bech32 address of the supplier
 // operator this sessionTree belongs to.
 func (st *sessionTree) GetSupplierOperatorAddress() string {

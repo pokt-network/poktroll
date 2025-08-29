@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -199,6 +200,9 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 		block.Height(),
 		block.Hash(),
 	)
+
+	// Log storage and backup configuration for debugging
+	rs.logStorageConfiguration()
 
 	// Restore previously active sessions from persistent storage by rehydrating
 	// the session tree map.
@@ -458,13 +462,44 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 				// block height and add them to the list of sessionTrees to be published.
 				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
 					// Mark the session as claimed and add it to the list of sessionTrees to be published.
-					// If the session has already been claimed, it will be skipped.
+					// If the session has already been claimed, it will be skipped UNLESS it's a restored session
+					// that was already in the claiming state when backed up (e.g., during graceful shutdown).
 					// Appending the sessionTree to the list of sessionTrees is protected
 					// against concurrent access by the sessionsTreesMu such that the first
 					// call that marks the session as claimed will be the only one to add the
 					// sessionTree to the list.
-					if err := sessionTree.StartClaiming(); err != nil {
-						continue
+					err := sessionTree.StartClaiming()
+					if err != nil {
+						// If the session is already marked as claiming, it might be a restored session
+						// that was backed up while in the claiming state. Allow it to proceed if it's
+						// still within its claim or proof windows.
+						if errors.Is(err, ErrSessionTreeAlreadyMarkedAsClaimed) {
+							// Check if session is within claim or proof window - if so, let it proceed
+							claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
+							proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+							
+							currentHeight := block.Height()
+							withinClaimWindow := currentHeight <= claimWindowCloseHeight
+							withinProofWindow := currentHeight <= proofWindowCloseHeight
+							
+							// Only allow already-claiming sessions to proceed if they're still within their windows
+							if !withinClaimWindow && !withinProofWindow {
+								rs.logger.Debug().
+									Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
+									Int64("current_height", currentHeight).
+									Int64("claim_window_close", claimWindowCloseHeight).
+									Int64("proof_window_close", proofWindowCloseHeight).
+									Msg("Skipping already-claiming session that is past its windows")
+								continue
+							}
+							// Session is already claiming but still within windows - allow it to proceed
+							rs.logger.Debug().
+								Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
+								Msg("Allowing already-claiming restored session to proceed in pipeline")
+						} else {
+							// Different error - skip this session
+							continue
+						}
 					}
 
 					// Separate the sessions that are on-time from the ones that are late.
@@ -574,22 +609,81 @@ func (rs *relayerSessionsManager) restoreSessionTreesFromBackup(ctx context.Cont
 		return fmt.Errorf("backup manager not initialized")
 	}
 
-	rs.logger.Info().Msg("Attempting to restore session trees from backup")
+	rs.logger.Info().
+		Int64("current_height", currentHeight).
+		Msg("🔄 Starting session tree restoration from backup")
 
 	backupSessions, err := rs.backupManager.RestoreSessionTrees()
 	if err != nil {
 		return fmt.Errorf("failed to restore session trees from backup: %w", err)
 	}
 
+	if len(backupSessions) == 0 {
+		rs.logger.Info().Msg("📂 No backup sessions found to restore")
+		return nil
+	}
+
+	rs.logger.Info().
+		Int("total_backup_files", len(backupSessions)).
+		Msg("📋 Found backup sessions, analyzing for restoration eligibility")
+
 	restoredCount := 0
+	expiredCount := 0
+	failedCount := 0
 	for _, backupData := range backupSessions {
+		sessionLogger := rs.logger.With(
+			"session_id", backupData.SessionHeader.SessionId,
+			"supplier", backupData.SupplierOperatorAddress,
+			"service_id", backupData.SessionHeader.ServiceId,
+		)
+
 		// Check if the session is still relevant (not expired)
 		if rs.isSessionExpired(&backupData.SessionHeader, currentHeight) {
-			rs.logger.Debug().
-				Str("session_id", backupData.SessionHeader.SessionId).
-				Msg("Skipping restoration of expired session")
+			sessionLogger.Info().
+				Int64("session_end_height", backupData.SessionHeader.SessionEndBlockHeight).
+				Msg("⏰ Skipping restoration of expired session - proof window has closed")
+			expiredCount++
 			continue
 		}
+
+		// Get session timing information for logging
+		sessionEndHeight := backupData.SessionHeader.SessionEndBlockHeight
+		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		var claimWindowCloseHeight, proofWindowCloseHeight int64
+		if err == nil {
+			claimWindowCloseHeight = sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
+			proofWindowCloseHeight = sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+		}
+
+		sessionLogger.Info().
+			Int64("session_end_height", sessionEndHeight).
+			Int64("claim_window_close", claimWindowCloseHeight).
+			Int64("proof_window_close", proofWindowCloseHeight).
+			Bool("is_claiming", backupData.IsClaiming).
+			Int("smt_entries", len(backupData.SmtData)).
+			Int64("backup_timestamp", backupData.BackupTimestamp).
+			Msg("🔍 Analyzing session backup for restoration eligibility")
+
+		// Query the service to get compute units per relay for proper weight restoration
+		// Create a minimal relay request metadata with just the session header
+		sessionHeader := backupData.SessionHeader
+		relayRequestMetadata := &servicetypes.RelayRequestMetadata{
+			SessionHeader: &sessionHeader,
+		}
+		serviceComputeUnitsPerRelay, err := rs.getServiceComputeUnitsPerRelay(ctx, relayRequestMetadata)
+		if err != nil {
+			sessionLogger.Warn().
+				Err(err).
+				Msg("⚠️ Failed to query service compute units per relay for backup restoration - using default weight of 1")
+			serviceComputeUnitsPerRelay = 1 // Fallback to default weight
+		}
+
+		// Update the backup data with the queried service compute units
+		backupData.ServiceComputeUnitsPerRelay = serviceComputeUnitsPerRelay
+
+		sessionLogger.Info().
+			Uint64("service_compute_units", serviceComputeUnitsPerRelay).
+			Msg("📊 Retrieved service compute units for weight restoration")
 
 		// Recreate the session tree from backup data
 		sessionTree, err := CreateSessionTreeFromBackup(
@@ -598,10 +692,10 @@ func (rs *relayerSessionsManager) restoreSessionTreesFromBackup(ctx context.Cont
 			rs.storesDirectoryPath,
 		)
 		if err != nil {
-			rs.logger.Error().
+			sessionLogger.Error().
 				Err(err).
-				Str("session_id", backupData.SessionHeader.SessionId).
-				Msg("Failed to restore session tree from backup")
+				Msg("❌ Failed to restore session tree from backup")
+			failedCount++
 			continue
 		}
 
@@ -610,7 +704,6 @@ func (rs *relayerSessionsManager) restoreSessionTreesFromBackup(ctx context.Cont
 		if rs.sessionsTrees[backupData.SupplierOperatorAddress] == nil {
 			rs.sessionsTrees[backupData.SupplierOperatorAddress] = make(map[int64]map[string]relayer.SessionTree)
 		}
-		sessionEndHeight := backupData.SessionHeader.SessionEndBlockHeight
 		if rs.sessionsTrees[backupData.SupplierOperatorAddress][sessionEndHeight] == nil {
 			rs.sessionsTrees[backupData.SupplierOperatorAddress][sessionEndHeight] = make(map[string]relayer.SessionTree)
 		}
@@ -618,16 +711,24 @@ func (rs *relayerSessionsManager) restoreSessionTreesFromBackup(ctx context.Cont
 		rs.sessionsTreesMu.Unlock()
 
 		restoredCount++
-		rs.logger.Info().
-			Str("session_id", backupData.SessionHeader.SessionId).
-			Str("supplier", backupData.SupplierOperatorAddress).
-			Msg("Successfully restored session tree from backup")
+		sessionLogger.Info().Msg("✅ Successfully restored session tree from backup and added to active sessions")
 	}
 
-	rs.logger.Info().
-		Int("restored_count", restoredCount).
-		Int("total_backups", len(backupSessions)).
-		Msg("Session tree restoration from backup completed")
+	// Log comprehensive restoration summary
+	if restoredCount > 0 {
+		rs.logger.Info().
+			Int("restored_count", restoredCount).
+			Int("expired_count", expiredCount).
+			Int("failed_count", failedCount).
+			Int("total_backups", len(backupSessions)).
+			Msg("🎉 Session tree restoration completed successfully - active sessions restored to memory")
+	} else {
+		rs.logger.Info().
+			Int("expired_count", expiredCount).
+			Int("failed_count", failedCount).
+			Int("total_backups", len(backupSessions)).
+			Msg("📋 Session tree restoration completed - no sessions were eligible for restoration")
+	}
 
 	return nil
 }
@@ -966,5 +1067,36 @@ func sessionSMTFromSessionTree(
 		SessionHeader:           sessionTree.GetSessionHeader(),
 		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
 		SmtRoot:                 sessionTree.GetSMSTRoot(),
+	}
+}
+
+// logStorageConfiguration logs the complete storage and backup configuration for debugging
+func (rs *relayerSessionsManager) logStorageConfiguration() {
+	// Determine storage mode
+	storageMode := "DISK_PERSISTED"
+	if rs.storesDirectoryPath == InMemoryStoreFilename {
+		storageMode = "IN_MEMORY"
+	}
+
+	// Determine backup status  
+	backupStatus := "DISABLED"
+	if rs.backupManager != nil {
+		backupStatus = "ENABLED"
+	}
+
+	// Log storage configuration
+	rs.logger.Info().
+		Str("storage_mode", storageMode).
+		Str("stores_directory_path", rs.storesDirectoryPath).
+		Str("backup_status", backupStatus).
+		Msg("🗄️ Session Storage Configuration")
+
+	// Log additional details based on storage mode
+	if rs.storesDirectoryPath == InMemoryStoreFilename {
+		rs.logger.Info().Msg("⚠️  Using in-memory storage: session data will be lost on restart unless backup is configured")
+	} else {
+		rs.logger.Info().
+			Str("disk_path", rs.storesDirectoryPath).
+			Msg("💾 Using persistent disk storage: session data will survive restarts")
 	}
 }

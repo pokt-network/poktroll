@@ -186,6 +186,9 @@ type SessionTree interface {
 	// It returns an error if it has already been marked as such.
 	StartClaiming() error
 
+	// IsClaiming returns true if the session tree has been marked as being processed for claiming.
+	IsClaiming() bool
+
 	// GetSupplierOperatorAddress returns a stringified bech32 address of the supplier
 	// operator this sessionTree belongs to.
 	GetSupplierOperatorAddress() string

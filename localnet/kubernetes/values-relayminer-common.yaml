@@ -7,7 +7,7 @@ config:
   smt_store_path: ":memory:"
   smt_backup:
     enabled: true
-    interval_seconds: 120    # Backup every 2 minutes for frequent testing
+    interval_seconds: 10    # Backup every 10 seconds for E2E testing
     backup_dir: "/root/.pocket/smt_backups"
     on_session_close: true
     on_claim_generation: true
