@@ -27,3 +27,11 @@ config:
   ping:
     enabled: true
     addr: localhost:8081
+
+# Enable persistent storage for backup/restore E2E testing
+persistence:
+  enabled: true
+  size: 1Gi  # Small size for LocalNet testing - sufficient for backup files
+  storageClass: ""  # Use default storage class (works with Kind/local clusters)
+  accessModes:
+    - ReadWriteOnce
