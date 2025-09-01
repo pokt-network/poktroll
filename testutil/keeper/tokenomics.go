@@ -89,6 +89,9 @@ type tokenomicsModuleKeepersConfig struct {
 	// proposerConsAddr and proposerValOperatorAddr are used to configure the block proposer
 	proposerConsAddr        cosmostypes.ConsAddress
 	proposerValOperatorAddr cosmostypes.ValAddress
+
+	// validators allows configuring multiple validators with custom stakes for testing
+	validators []stakingtypes.Validator
 }
 
 // TokenomicsModuleKeepersOptFn is a function which receives and potentially modifies
@@ -287,6 +290,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 	validator := stakingtypes.Validator{
 		OperatorAddress: proposerValOperatorAddr,
+		Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
+		Status:          stakingtypes.Bonded,
 	}
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
@@ -295,6 +300,13 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
 		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
+	// Mock GetBondedValidatorsByPower for validator reward distribution
+	validators := []stakingtypes.Validator{validator}
+	mockStakingKeeper.EXPECT().
+		GetBondedValidatorsByPower(gomock.Any()).
+		Return(validators, nil).
 		AnyTimes()
 
 	// Mock the service keeper
@@ -564,19 +576,37 @@ func NewTokenomicsModuleKeepers(
 	ctrl := gomock.NewController(t)
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 
-	// If a specific proposer is configured, set up the mock to return the correct validator
-	validator := stakingtypes.Validator{
-		OperatorAddress: proposerValOperatorAddr.String(),
+	// Use configured validators if provided, otherwise create default single validator
+	var validators []stakingtypes.Validator
+	if len(cfg.validators) > 0 {
+		validators = cfg.validators
+	} else {
+		// Default single validator setup
+		validator := stakingtypes.Validator{
+			OperatorAddress: proposerValOperatorAddr.String(),
+			Tokens:          cosmosmath.NewInt(1000000), // 1M tokens bonded
+			Status:          stakingtypes.Bonded,
+		}
+		validators = []stakingtypes.Validator{validator}
 	}
+
+	// Setup mock expectations for GetValidatorByConsAddr
+	// First validator is always the proposer
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), proposerConsAddr).
-		Return(validator, nil).
+		Return(validators[0], nil).
 		AnyTimes()
 
 	// Default expectation for any other consensus address
 	mockStakingKeeper.EXPECT().
 		GetValidatorByConsAddr(gomock.Any(), gomock.Any()).
 		Return(stakingtypes.Validator{}, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
+	// Mock GetBondedValidatorsByPower for validator reward distribution
+	mockStakingKeeper.EXPECT().
+		GetBondedValidatorsByPower(gomock.Any()).
+		Return(validators, nil).
 		AnyTimes()
 
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
@@ -771,5 +801,46 @@ func WithModuleAccountBalances(moduleAccountBalances map[string]int64) func(cfg 
 	}
 	return func(cfg *tokenomicsModuleKeepersConfig) {
 		cfg.initKeepersFns = append(cfg.initKeepersFns, setModuleAccountBalances)
+	}
+}
+
+// WithMultipleValidators allows configuring multiple validators with custom stakes for testing
+// validator reward distribution. Each validator is created with the specified token amount.
+func WithMultipleValidators(validatorStakes []int64) TokenomicsModuleKeepersOptFn {
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		validators := make([]stakingtypes.Validator, len(validatorStakes))
+		for i, stake := range validatorStakes {
+			validators[i] = stakingtypes.Validator{
+				OperatorAddress: sample.ValOperatorAddressBech32(),
+				Tokens:          cosmosmath.NewInt(stake),
+				Status:          stakingtypes.Bonded,
+			}
+		}
+		cfg.validators = validators
+
+		// Also need to initialize accounts and balances for all validators
+		initValidatorAccounts := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+			for _, validator := range validators {
+				valAccAddr := cosmostypes.AccAddress(cosmostypes.ValAddress(validator.OperatorAddress))
+
+				// Create account
+				acc := keepers.AccountKeeper.NewAccountWithAddress(sdkCtx, valAccAddr)
+				keepers.AccountKeeper.SetAccount(sdkCtx, acc)
+
+				// Give initial balance (1M uPOKT for testing)
+				initialBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000)
+				err := keepers.BankKeeper.MintCoins(sdkCtx, tokenomicstypes.ModuleName, cosmostypes.NewCoins(initialBalance))
+				if err != nil {
+					panic(err)
+				}
+				err = keepers.BankKeeper.SendCoinsFromModuleToAccount(sdkCtx, tokenomicstypes.ModuleName, valAccAddr, cosmostypes.NewCoins(initialBalance))
+				if err != nil {
+					panic(err)
+				}
+			}
+			return ctx
+		}
+		cfg.initKeepersFns = append(cfg.initKeepersFns, initValidatorAccounts)
 	}
 }

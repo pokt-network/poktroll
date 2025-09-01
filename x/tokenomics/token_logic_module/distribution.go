@@ -1,6 +1,7 @@
 package token_logic_module
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 
@@ -105,4 +106,145 @@ func GetShareAmountMap(
 	shareAmountMap[serviceRevShare[0].Address] = shareAmountMap[serviceRevShare[0].Address].Add(remainder)
 
 	return shareAmountMap
+}
+
+// distributeValidatorRewards distributes session settlement rewards to all bonded
+// validators proportionally based on their staking weight. This implements pure
+// stake-weighted distribution without any commission calculations, as these are
+// session settlement rewards (not consensus rewards).
+//
+// The distribution formula is:
+// validatorReward = totalValidatorReward × (validatorStake / totalBondedStake)
+func distributeValidatorRewards(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	result *tokenomicstypes.ClaimSettlementResult,
+	stakingKeeper tokenomicstypes.StakingKeeper,
+	validatorRewardAmount math.Int,
+	settlementOpReason tokenomicstypes.SettlementOpReason,
+) error {
+	logger = logger.With(
+		"method", "distributeValidatorRewards",
+		"session_id", result.GetSessionId(),
+		"total_reward_amount", validatorRewardAmount,
+	)
+
+	if validatorRewardAmount.IsZero() {
+		logger.Debug("validator reward amount is zero, skipping distribution")
+		return nil
+	}
+
+	// Get all bonded validators
+	validators, err := stakingKeeper.GetBondedValidatorsByPower(ctx)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
+			"failed to get bonded validators: %v", err,
+		)
+	}
+
+	if len(validators) == 0 {
+		logger.Warn("no bonded validators found, skipping validator reward distribution")
+		return nil
+	}
+
+	// Calculate total bonded tokens across all validators
+	totalBondedTokens := math.ZeroInt()
+	for _, validator := range validators {
+		totalBondedTokens = totalBondedTokens.Add(validator.GetBondedTokens())
+	}
+
+	if totalBondedTokens.IsZero() {
+		logger.Warn("total bonded tokens is zero, skipping validator reward distribution")
+		return nil
+	}
+
+	logger.Info(fmt.Sprintf(
+		"distributing %s to %d validators based on stake weight (total bonded: %s)",
+		validatorRewardAmount.String(),
+		len(validators),
+		totalBondedTokens.String(),
+	))
+
+	// Calculate and distribute rewards to each validator based on stake weight
+	totalDistributed := math.ZeroInt()
+
+	for i, validator := range validators {
+		validatorStake := validator.GetBondedTokens()
+
+		// Create fraction: validatorStake / totalBondedTokens
+		stakeRatio := new(big.Rat).SetFrac(
+			validatorStake.BigInt(),
+			totalBondedTokens.BigInt(),
+		)
+
+		// Multiply by total reward amount: reward × (validatorStake / totalStake)
+		validatorRewardRat := new(big.Rat).Mul(
+			stakeRatio,
+			new(big.Rat).SetInt(validatorRewardAmount.BigInt()),
+		)
+
+		// Convert back to integer (truncating decimal portion)
+		validatorReward := math.NewIntFromBigInt(new(big.Int).Quo(
+			validatorRewardRat.Num(),
+			validatorRewardRat.Denom(),
+		))
+
+		// Handle remainder: add any leftover to the last validator's reward
+		if i == len(validators)-1 {
+			remainder := validatorRewardAmount.Sub(totalDistributed.Add(validatorReward))
+			validatorReward = validatorReward.Add(remainder)
+		}
+
+		totalDistributed = totalDistributed.Add(validatorReward)
+
+		if validatorReward.IsZero() {
+			logger.Debug(fmt.Sprintf(
+				"validator %s reward is zero, skipping",
+				validator.GetOperator(),
+			))
+			continue
+		}
+
+		// Get validator account address for reward transfer
+		// Convert validator operator address to account address
+		valAddr, err := cosmostypes.ValAddressFromBech32(validator.GetOperator())
+		if err != nil {
+			logger.Error(fmt.Sprintf(
+				"failed to parse validator operator address %s: %v",
+				validator.GetOperator(), err,
+			))
+			continue
+		}
+		// Convert validator address to account address
+		validatorAccAddr := cosmostypes.AccAddress(valAddr)
+
+		// Queue the reward transfer to the validator
+		validatorRewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, validatorReward)
+		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         settlementOpReason,
+			SenderModule:     suppliertypes.ModuleName,
+			RecipientAddress: validatorAccAddr.String(),
+			Coin:             validatorRewardCoin,
+		})
+
+		logger.Info(fmt.Sprintf(
+			"queued reward transfer: %s to validator %s (stake: %s, share: %s%%)",
+			validatorRewardCoin.String(),
+			validator.GetOperator(),
+			validatorStake.String(),
+			new(big.Rat).SetFrac(
+				validatorStake.BigInt(),
+				totalBondedTokens.BigInt(),
+			).FloatString(2),
+		))
+	}
+
+	logger.Info(fmt.Sprintf(
+		"validator reward distribution complete: distributed %s of %s uPOKT to %d validators",
+		totalDistributed.String(),
+		validatorRewardAmount.String(),
+		len(validators),
+	))
+
+	return nil
 }
