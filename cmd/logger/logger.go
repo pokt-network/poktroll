@@ -17,16 +17,16 @@ import (
 )
 
 var (
-	// LogLevel is a global variable that is intended to hold the value of the
-	// "--log_level" flag when a command which has called PreRunESetup() is executed.
+	// LogLevel holds the logging level from --log-level flag.
+	// Set by commands that call PreRunESetup().
 	LogLevel string
 
-	// LogOutput is a global variable that is intended to hold the value of the
-	// "--log_output" flag when a command which has called PreRunESetup() is executed.
+	// LogOutput holds the log output destination from --log-output flag.
+	// Set by commands that call PreRunESetup().
 	LogOutput string
 
-	// Logger is a global variable that holds the logger which is configured according
-	// to the values of the LogLevel and LogOutput global variables in PreRunESetup().
+	// Logger is the configured global logger instance.
+	// Configured in PreRunESetup() based on LogLevel and LogOutput values.
 	Logger polylog.Logger
 )
 
@@ -38,9 +38,12 @@ const (
 	outputStderr  = "stderr"
 )
 
-// PreRunESetup sets up the global cmd logger (Logger) for use in any subcommand.
-// This function is intended to be passed as (or called by) a `PreRunE` function
-// of a Cobra command.
+// PreRunESetup configures the global Logger based on LogLevel and LogOutput values.
+// Should be called from (or by) a Cobra command's PreRunE function.
+// Features:
+// • Thread-safe, non-blocking logging via diode wrapper
+// • Supports stdout, stderr, discard, or file output
+// • Sets logger on command context
 //
 // TODO_CONSIDERATION: Apply this pattern to all CLI commands.
 func PreRunESetup(cmd *cobra.Command, _ []string) error {
@@ -57,7 +60,7 @@ func PreRunESetup(cmd *cobra.Command, _ []string) error {
 	case outputDiscard:
 		logWriter = io.Discard
 	default:
-		logWriter, err = os.Open(LogOutput)
+		logWriter, err = os.OpenFile(LogOutput, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 		if err != nil {
 			return err
 		}

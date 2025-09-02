@@ -76,3 +76,27 @@ func TestGetFlagValueBool(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "expected 'true' or 'false'")
 }
+
+func TestGetFlag_NotRegistered(t *testing.T) {
+	testCmd := &cobra.Command{
+		Use:   "test",
+		Short: "Test",
+		Long:  `Test`,
+	}
+
+	// Test getting a flag that doesn't exist
+	_, err := GetFlag(testCmd, "nonexistent-flag")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "flag not registered")
+	require.Contains(t, err.Error(), "nonexistent-flag")
+
+	// Test GetFlagValueString with non-existent flag
+	_, err = GetFlagValueString(testCmd, "nonexistent-flag")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "flag not registered")
+
+	// Test GetFlagBool with non-existent flag
+	_, err = GetFlagBool(testCmd, "nonexistent-flag")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "flag not registered")
+}

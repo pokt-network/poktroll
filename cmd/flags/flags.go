@@ -68,16 +68,15 @@ const (
 	FlagQueryCachingUsage   = "(Optional) Enable or disable onchain query caching"
 	DefaultFlagQueryCaching = true
 
-	// DefaultNodeRPCURL is the cosmos-sdk default --node flag value.
-	// - Hard-coded in cosmos-sdk CLI
-	// - Cannot be changed since registered by cosmos-sdk
-	// - Used only for comparison, not flag registration
+	// DefaultNodeRPCURL is the cosmos-sdk default --node flag value:
+	// • Hard-coded in cosmos-sdk CLI and cannot be changed since registered by cosmos-sdk
+	// • Used only for comparison, not flag registration
 	// See: https://github.com/cosmos/cosmos-sdk/blob/v0.53.2/client/flags/flags.go#L108
 	DefaultNodeRPCURL = "tcp://localhost:26657"
 )
 
-// GetFlagValueString returns the value of the flag with the given name.
-// If the flag is not registered, an error is returned.
+// GetFlagValueString retrieves the string value of a registered flag.
+// Returns ErrFlagNotRegistered if the flag doesn't exist on the command.
 func GetFlagValueString(cmd *cobra.Command, flagName string) (string, error) {
 	flag, err := GetFlag(cmd, flagName)
 	if err != nil {
@@ -87,8 +86,8 @@ func GetFlagValueString(cmd *cobra.Command, flagName string) (string, error) {
 	return flag.Value.String(), nil
 }
 
-// GetFlagBool returns the boolean value of the flag with the given name.
-// Returns error if flag is not registered or has invalid boolean value.
+// GetFlagBool parses a flag's string value as a boolean.
+// Returns error if flag is not registered or value is not 'true'/'false'.
 func GetFlagBool(cmd *cobra.Command, flagName string) (bool, error) {
 	flagValueString, err := GetFlagValueString(cmd, flagName)
 	if err != nil {
@@ -105,8 +104,8 @@ func GetFlagBool(cmd *cobra.Command, flagName string) (bool, error) {
 	}
 }
 
-// GetFlag returns the flag with the given name.
-// If the flag is not registered, an error is returned.
+// GetFlag retrieves a flag instance from the command.
+// Returns ErrFlagNotRegistered if the flag doesn't exist.
 func GetFlag(cmd *cobra.Command, flagName string) (*pflag.Flag, error) {
 	flag := cmd.Flag(flagName)
 	if flag == nil {

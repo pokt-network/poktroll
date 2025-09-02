@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 
@@ -166,4 +167,57 @@ func TestNetworkRelatedFlags(t *testing.T) {
 			require.Contains(t, testLogBuffer.String(), expectedLogString)
 		})
 	}
+}
+
+func TestNetworkRelatedFlags_DoesNotOverrideExistingFlags(t *testing.T) {
+	testCmd := &cobra.Command{
+		Use:     "test",
+		Short:   "Test",
+		Long:    `Test`,
+		PreRunE: testPreRunE,
+		RunE:    testRunE,
+	}
+
+	// Register relevant flags for testing
+	testCmd.Flags().String(flags.FlagNetwork, "", "network flag")
+	testCmd.Flags().String(cosmosflags.FlagGRPC, "", "grpc addr flag")
+	testCmd.Flags().String(cosmosflags.FlagGRPCInsecure, "", "grpc insecure flag")
+	testCmd.Flags().String(flags.FlagFaucetBaseURL, "", "faucet base url flag")
+	cosmosflags.AddTxFlagsToCmd(testCmd)
+
+	// Pre-set some flags to custom values
+	customChainID := "custom-chain-123"
+	customGRPCAddr := "custom-grpc:9090"
+
+	err := testCmd.Flag(cosmosflags.FlagChainID).Value.Set(customChainID)
+	require.NoError(t, err)
+	// Simulate flag being set via command line by marking it as changed
+	testCmd.Flags().Set(cosmosflags.FlagChainID, customChainID)
+
+	err = testCmd.Flag(cosmosflags.FlagGRPC).Value.Set(customGRPCAddr)
+	require.NoError(t, err)
+	// Simulate flag being set via command line by marking it as changed
+	testCmd.Flags().Set(cosmosflags.FlagGRPC, customGRPCAddr)
+
+	// Execute with LocalNet network flag
+	testCmd.SetArgs([]string{
+		fmt.Sprintf("--%s=%s", flags.FlagNetwork, flags.LocalNetworkName),
+	})
+
+	err = testCmd.ExecuteContext(context.Background())
+	require.NoError(t, err)
+
+	// Verify pre-set flags were NOT overridden
+	chainIDFlag := testCmd.Flag(cosmosflags.FlagChainID)
+	require.Equal(t, customChainID, chainIDFlag.Value.String(),
+		"pre-set chain-id should not be overridden")
+
+	grpcFlag := testCmd.Flag(cosmosflags.FlagGRPC)
+	require.Equal(t, customGRPCAddr, grpcFlag.Value.String(),
+		"pre-set grpc address should not be overridden")
+
+	// Verify flags that weren't pre-set WERE set by network logic
+	nodeFlag := testCmd.Flag(cosmosflags.FlagNode)
+	require.Equal(t, pocket.LocalNetRPCURL, nodeFlag.Value.String(),
+		"node flag should be set by network logic")
 }

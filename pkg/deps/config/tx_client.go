@@ -15,7 +15,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx/types"
 )
 
-// GetTxClientFromFlags constructs a new TxClient instance using the provided command flags.
+// GetTxClientFromFlags constructs a TxClient using CLI flags and client options.
+// Requires cosmos-sdk flags to be registered on the command (chain-id, node, etc.).
 func GetTxClientFromFlags(
 	ctx context.Context,
 	cmd *cobra.Command,
