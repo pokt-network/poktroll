@@ -207,7 +207,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	//
 	// SOLUTION: Implement reward batching where TLMs accumulate validator rewards across all
 	// claims and call distributeValidatorRewards() once per TLM processor per settlement batch.
-	// This would reduce calls from to 2 per batch, and combined with the Largest Remainder
+	// This would reduce calls from 1000s to 2 per batch, and combined with the Largest Remainder
 	// Method, would achieve perfect mathematical precision across the entire settlement process.
 	for _, tokenLogicModule := range k.tokenLogicModules {
 		tlmName := tokenLogicModule.GetId().String()

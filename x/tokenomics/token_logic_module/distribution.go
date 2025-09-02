@@ -109,28 +109,30 @@ func GetShareAmountMap(
 	return shareAmountMap
 }
 
-// distributeValidatorRewards distributes session settlement rewards to all bonded
-// validators proportionally based on their staking weight. This implements pure
-// stake-weighted distribution without any commission calculations, as these are
-// session settlement rewards (not consensus rewards).
+// distributeValidatorRewards distributes session settlement rewards to all bonded validators.
+//   - Rewards are distributed proportionally based on their staking weight regardless of who the proposer is.
+//   - This implements pure stake-weighted distribution without any commission calculations, as these are session
+//     settlement rewards (not consensus rewards).
 //
 // The distribution formula is:
-// validatorReward = totalValidatorReward × (validatorStake / totalBondedStake)
+//
+//	validatorReward = totalValidatorRewardAmount × (validatorStake / totalBondedStake)
 func distributeValidatorRewards(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	result *tokenomicstypes.ClaimSettlementResult,
 	stakingKeeper tokenomicstypes.StakingKeeper,
-	validatorRewardAmount math.Int,
+	totalValidatorRewardAmount math.Int,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
 ) error {
 	logger = logger.With(
 		"method", "distributeValidatorRewards",
 		"session_id", result.GetSessionId(),
-		"total_reward_amount", validatorRewardAmount,
+		"total_reward_amount", totalValidatorRewardAmount,
 	)
 
-	if validatorRewardAmount.IsZero() {
+	// Should theoretically never happen
+	if totalValidatorRewardAmount.IsZero() {
 		logger.Debug("validator reward amount is zero, skipping distribution")
 		return nil
 	}
@@ -142,7 +144,6 @@ func distributeValidatorRewards(
 			"failed to get bonded validators: %v", err,
 		)
 	}
-
 	if len(validators) == 0 {
 		logger.Warn("no bonded validators found, skipping validator reward distribution")
 		return nil
@@ -153,51 +154,42 @@ func distributeValidatorRewards(
 	for _, validator := range validators {
 		totalBondedTokens = totalBondedTokens.Add(validator.GetBondedTokens())
 	}
-
 	if totalBondedTokens.IsZero() {
 		logger.Warn("total bonded tokens is zero, skipping validator reward distribution")
 		return nil
 	}
-
 	logger.Info(fmt.Sprintf(
 		"distributing %s to %d validators based on stake weight (total bonded: %s)",
-		validatorRewardAmount.String(),
+		totalValidatorRewardAmount.String(),
 		len(validators),
 		totalBondedTokens.String(),
 	))
 
-	// Debug: Log individual validator stakes
-	logger.Info("Validator stakes breakdown:")
-	for i, validator := range validators {
-		logger.Info(fmt.Sprintf("  Validator %d (%s): stake = %s",
-			i, validator.GetOperator(), validator.GetBondedTokens().String()))
-	}
-
 	// Calculate rewards using optimized Largest Remainder Method
 	// This ensures mathematical fairness while maintaining deterministic execution
 	validatorRewards := make([]math.Int, len(validators))
-	totalCalculated := math.ZeroInt()
+	totalValidatorRewardsDistributed := math.ZeroInt()
 
 	// Phase 1: Calculate base rewards and track fractional remainders
 	type validatorFraction struct {
 		index    int
 		fraction *big.Rat
 	}
-	fractions := make([]validatorFraction, 0, len(validators)) // Pre-allocate capacity
+	fractions := make([]validatorFraction, 0, len(validators))
 
 	for i, validator := range validators {
 		validatorStake := validator.GetBondedTokens()
 
 		// Calculate exact proportional reward using big.Rat for determinacy
 		exactRatio := new(big.Rat).SetFrac(
-			new(big.Int).Mul(validatorStake.BigInt(), validatorRewardAmount.BigInt()),
+			new(big.Int).Mul(validatorStake.BigInt(), totalValidatorRewardAmount.BigInt()),
 			totalBondedTokens.BigInt(),
 		)
 
 		// Split into integer (base reward) and fractional parts
 		baseReward := new(big.Int).Quo(exactRatio.Num(), exactRatio.Denom())
 		validatorRewards[i] = math.NewIntFromBigInt(baseReward)
-		totalCalculated = totalCalculated.Add(validatorRewards[i])
+		totalValidatorRewardsDistributed = totalValidatorRewardsDistributed.Add(validatorRewards[i])
 
 		// Calculate fractional remainder using big.Rat for precise comparison
 		baseRat := new(big.Rat).SetInt(baseReward)
@@ -208,38 +200,38 @@ func distributeValidatorRewards(
 			fractions = append(fractions, validatorFraction{i, fractionalPart})
 		}
 
-		logger.Info(fmt.Sprintf("  Validator %d (%s): stake=%s, base_reward=%s, fraction=%s",
+		logger.Debug(fmt.Sprintf("  Validator %d (%s): stake=%s, base_reward=%s, fraction=%s",
 			i, validator.GetOperator(), validatorStake.String(), validatorRewards[i].String(), fractionalPart.FloatString(6)))
 	}
 
-	// Phase 2: Distribute remainder tokens using Largest Remainder Method
-	remainder := validatorRewardAmount.Sub(totalCalculated)
-	tokensToDistribute := remainder.Int64()
+	// Phase 2: Distribute validatorRewardsRemainder tokens using Largest Remainder Method
+	validatorRewardsRemainder := totalValidatorRewardAmount.Sub(totalValidatorRewardsDistributed)
+	remainderTokensToDistribute := validatorRewardsRemainder.Int64()
 
-	logger.Info(fmt.Sprintf("Total calculated: %s, target: %s, remainder: %s tokens",
-		totalCalculated.String(), validatorRewardAmount.String(), remainder.String()))
+	logger.Debug(fmt.Sprintf("Total calculated: %s, target: %s, remainder: %s tokens",
+		totalValidatorRewardsDistributed.String(), totalValidatorRewardAmount.String(), validatorRewardsRemainder.String()))
 
-	if tokensToDistribute > 0 && len(fractions) > 0 {
+	if remainderTokensToDistribute > 0 && len(fractions) > 0 {
 		// Sort validators by fractional remainder (descending) using deterministic big.Rat comparison
 		sort.Slice(fractions, func(i, j int) bool {
 			return fractions[i].fraction.Cmp(fractions[j].fraction) > 0
 		})
 
-		logger.Info(fmt.Sprintf("Distributing %d remainder tokens using Largest Remainder Method", tokensToDistribute))
+		logger.Debug(fmt.Sprintf("Distributing %d remainder tokens using Largest Remainder Method", remainderTokensToDistribute))
 
 		// Distribute remainder tokens to validators with largest fractional remainders
-		for t := int64(0); t < tokensToDistribute; t++ {
+		for t := range remainderTokensToDistribute {
 			// Use modulo to cycle through validators if remainder > number of validators with fractions
 			idx := fractions[t%int64(len(fractions))].index
 			validatorRewards[idx] = validatorRewards[idx].AddRaw(1)
 
-			logger.Info(fmt.Sprintf("  Added 1 token to validator %d (fraction: %s)",
+			logger.Debug(fmt.Sprintf("  Added 1 token to validator %d (fraction: %s)",
 				idx, fractions[t%int64(len(fractions))].fraction.FloatString(6)))
 		}
-	} else if tokensToDistribute > 0 {
+	} else if remainderTokensToDistribute > 0 {
 		// Edge case: remainder exists but no fractional parts (shouldn't happen with proper math)
-		logger.Warn(fmt.Sprintf("Remainder %d tokens with no fractional parts - adding to first validator", tokensToDistribute))
-		validatorRewards[0] = validatorRewards[0].Add(remainder)
+		logger.Warn(fmt.Sprintf("Rare edge case: remainder %d tokens with no fractional parts - adding to first validator", remainderTokensToDistribute))
+		validatorRewards[0] = validatorRewards[0].Add(validatorRewardsRemainder)
 	}
 
 	// Distribute the calculated rewards
@@ -278,7 +270,7 @@ func distributeValidatorRewards(
 			Coin:             validatorRewardCoin,
 		})
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"queued reward transfer: %s to validator %s (stake: %s, share: %s%%)",
 			validatorRewardCoin.String(),
 			validator.GetOperator(),
@@ -293,7 +285,7 @@ func distributeValidatorRewards(
 	logger.Info(fmt.Sprintf(
 		"validator reward distribution complete: distributed %s of %s uPOKT to %d validators",
 		totalDistributed.String(),
-		validatorRewardAmount.String(),
+		totalValidatorRewardAmount.String(),
 		len(validators),
 	))
 
