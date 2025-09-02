@@ -203,14 +203,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 
 	// Distribute to all validators based on stake weight
 	if !proposerAmount.IsZero() {
-		// Transfer from tokenomics module to supplier module first
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-		tlmbem.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
-			OpReason:        tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_ESCROW_MODULE_TRANSFER,
-			SenderModule:    tokenomicstypes.ModuleName,
-			RecipientModule: suppliertypes.ModuleName,
-			Coin:            proposerCoin,
-		})
 
 		// Distribute to all validators proportionally based on stake weight
 		if err := distributeValidatorRewards(

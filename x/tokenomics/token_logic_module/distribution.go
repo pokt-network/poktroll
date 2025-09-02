@@ -222,7 +222,7 @@ func distributeValidatorRewards(
 		validatorRewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, validatorReward)
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         settlementOpReason,
-			SenderModule:     suppliertypes.ModuleName,
+			SenderModule:     tokenomicstypes.ModuleName,
 			RecipientAddress: validatorAccAddr.String(),
 			Coin:             validatorRewardCoin,
 		})

@@ -218,16 +218,9 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 	}
 
 	// Distribute to all validators based on stake weight
+	// Transfer from tokenomics module to supplier module first
+	proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 	if !proposerAmount.IsZero() {
-		// Transfer from tokenomics module to supplier module first
-		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-		tlmgm.tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
-			OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_ESCROW_MODULE_TRANSFER,
-			SenderModule:    tokenomicstypes.ModuleName,
-			RecipientModule: suppliertypes.ModuleName,
-			Coin:            proposerCoin,
-		})
-
 		// Distribute to all validators proportionally based on stake weight
 		if err := distributeValidatorRewards(
 			tlmgm.ctx,

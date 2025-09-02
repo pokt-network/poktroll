@@ -20,9 +20,9 @@ import (
 func (s *tokenLogicModuleTestSuite) TestTLMProcessorsMultiValidatorDistribution() {
 	// Simple test case: 3 validators with different stakes
 	// Validator 1: 600,000 tokens (60% of total 1,000,000)
-	// Validator 2: 300,000 tokens (30% of total 1,000,000)  
+	// Validator 2: 300,000 tokens (30% of total 1,000,000)
 	// Validator 3: 100,000 tokens (10% of total 1,000,000)
-	
+
 	s.T().Run("Different stakes 60-30-10", func(t *testing.T) {
 		// Setup keepers with 3 validators having different stakes
 		s.setupKeepersWithMultipleValidators(t, []int64{600000, 300000, 100000})
@@ -41,7 +41,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsMultiValidatorDistribution(
 
 		// Ensure no pending claims remain
 		s.assertNoPendingClaims(t)
-		
+
 		// For now, we'll just verify that the core functionality runs without error
 		// TODO: Add more detailed balance checks once validator address tracking is implemented
 		t.Log("Multi-validator distribution test completed successfully")
@@ -63,7 +63,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 
 		// Ensure no pending claims remain
 		s.assertNoPendingClaims(t)
-		
+
 		t.Log("Single validator edge case test completed successfully")
 	})
 }
@@ -73,7 +73,7 @@ func (s *tokenLogicModuleTestSuite) setupKeepersWithMultipleValidators(t *testin
 	t.Helper()
 
 	// Setup keepers with standard options plus multi-validator setup using our new infrastructure
-	s.setupKeepers(t, 
+	s.setupKeepers(t,
 		testkeeper.WithService(*s.service),
 		testkeeper.WithApplication(*s.app),
 		testkeeper.WithSupplier(*s.supplier),
@@ -91,7 +91,6 @@ func (s *tokenLogicModuleTestSuite) setupKeepersWithMultipleValidators(t *testin
 	)
 }
 
-
 // assertValidatorRewardOperations verifies that the settlement results contain
 // the expected validator reward distribution operations.
 func (s *tokenLogicModuleTestSuite) assertValidatorRewardOperations(t *testing.T, settledResults tlm.ClaimSettlementResults) {
@@ -104,9 +103,9 @@ func (s *tokenLogicModuleTestSuite) assertValidatorRewardOperations(t *testing.T
 			if transfer.OpReason.String() == "TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION" ||
 				transfer.OpReason.String() == "TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION" {
 				foundValidatorRewards = true
-				
+
 				// Verify the transfer is from supplier module
-				require.Equal(t, "supplier", transfer.SenderModule)
+				require.Equal(t, "tokenomics", transfer.SenderModule)
 				// Verify the amount is positive
 				require.True(t, transfer.Coin.Amount.IsPositive(), "Validator reward should be positive")
 				// Verify the denom is uPOKT
@@ -114,6 +113,6 @@ func (s *tokenLogicModuleTestSuite) assertValidatorRewardOperations(t *testing.T
 			}
 		}
 	}
-	
+
 	require.True(t, foundValidatorRewards, "Settlement results should contain validator reward operations")
 }
