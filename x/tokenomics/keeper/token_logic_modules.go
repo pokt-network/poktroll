@@ -194,6 +194,21 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Execute all the token logic modules processors
+	// TODO_CRITICAL: Per-claim validator reward distribution causes significant precision loss.
+	// Currently, each TLM processor calls distributeValidatorRewards() for every individual claim,
+	// resulting in multiple function calls per settlement batch (e.g. 1000 claims × 2 TLMs).
+	// This causes accumulated truncation errors that can exceed 1000+ uPOKT per validator.
+	// 
+	// NOTE: We implemented the Largest Remainder Method in distributeValidatorRewards() which 
+	// provides mathematically fair remainder distribution within individual calls, achieving
+	// perfect precision for single distributions. However, this doesn't solve the core issue:
+	// thousands of small individual distributions still accumulate fractional losses over
+	// large settlement batches, despite each individual call being internally precise.
+	// 
+	// SOLUTION: Implement reward batching where TLMs accumulate validator rewards across all 
+	// claims and call distributeValidatorRewards() once per TLM processor per settlement batch.
+	// This would reduce calls from to 2 per batch, and combined with the Largest Remainder
+	// Method, would achieve perfect mathematical precision across the entire settlement process.
 	for _, tokenLogicModule := range k.tokenLogicModules {
 		tlmName := tokenLogicModule.GetId().String()
 		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
