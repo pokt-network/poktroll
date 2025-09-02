@@ -143,7 +143,7 @@ func (s *tokenLogicModuleTestSuite) setupKeepersWithMultipleValidators(t *testin
 			tokenomicstypes.ModuleName: s.getTokenomicsParamsWithCleanValidatorMath(), // Use 10% validator allocation
 		}),
 		testkeeper.WithDefaultModuleBalances(),
-		testkeeper.WithMultipleValidators(validatorStakes), // Use our new multi-validator option
+		testkeeper.WithMultipleValidators(validatorStakes),
 	)
 }
 
