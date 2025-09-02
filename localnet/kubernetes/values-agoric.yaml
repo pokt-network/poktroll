@@ -1,6 +1,6 @@
 fund_on_start: true
 
-chain_id: agoriclocal
+chain_id: agoric
 
 image:
   repository: agoric
@@ -20,9 +20,6 @@ service:
 env:
   DEST: "1"
   DEBUG: "SwingSet:ls,SwingSet:vat"
-
-  # Uncomment to enable delve debugging
-  # DELVE_PORT: "40009"
 
 command:
   - /usr/src/upgrade-test-scripts/entrypoint.sh

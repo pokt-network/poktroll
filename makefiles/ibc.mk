@@ -8,7 +8,7 @@ POCKET_ACCOUNT ?= pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 # key name: app1
 
 # Agoric
 AGORIC_ACCOUNT ?= agoric1vaj34dfx94y6nvwt57dfyag5gfsp6eqjmvzu8c # key name: foreigner
-AGORIC_CHAIN_ID ?= agoriclocal
+AGORIC_CHAIN_ID ?= agoric
 
 # Axelar
 AXELAR_ACCOUNT ?= axelar1sz7nw80886tuenrhvg2tttlemgfxy734st6f5e # key name: validator
@@ -62,7 +62,7 @@ agoric_query_tx:
 
 .PHONY: agoric_query_tx_json
 agoric_query_tx_json:
-	POD_REGEX="agoric-validator" CHAIN_BIN="agd" CHAIN_ID="agoriclocal" ${MAKE} ibc_localnet_query_tx
+	POD_REGEX="agoric-validator" CHAIN_BIN="agd" CHAIN_ID="agoric" ${MAKE} ibc_localnet_query_tx
 
 .PHONY: axelar_query_tx
 axelar_query_tx:

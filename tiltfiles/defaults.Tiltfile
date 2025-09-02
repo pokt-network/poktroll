@@ -105,7 +105,7 @@ ibc:
   validator_configs:
     agoric:
       enabled: false
-      chain_id: "agoriclocal"
+      chain_id: "agoric"
       values_path: localnet/kubernetes/values-agoric.yaml
       tilt_ui_name: "Agoric Validator"
       chart_name: "agoric-validator"
