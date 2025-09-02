@@ -436,6 +436,7 @@ The following is an example config to get you started:
 cat <<🚀 >> shannon_relayminer_config.yaml
 default_signing_key_names: [ "shannon_supplier" ]
 smt_store_path: $HOME/.pocket/smt
+smt_store_path: ":memory:"  # OR $HOME/.pocket/smt
 metrics:
   enabled: true
   addr: :9999 # you may need to change the metrics server port due to port conflicts.

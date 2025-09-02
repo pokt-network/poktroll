@@ -150,16 +150,13 @@ Totals:
 		return err
 	}
 
-	if relayMinerConfig.SmtStorePath == session.InMemoryStoreFilename {
-		fmt.Printf(`
-🚨 WARNING: SMT configured for in-memory storage 🚨
-----------------------------------------------------------------
-• All session data will be LOST on RelayMiner restart
-• No session state persisted to disk
-• Unsubmitted Claims and Proofs will be lost
-• TODO(#1734): Add support for backing up in-memory session trees
-----------------------------------------------------------------
-`)
+	switch relayMinerConfig.SmtStorePath {
+	case session.InMemoryStoreFilename:
+		logger.Warn().Msg(`🚨 SMT configured for SimpleMap in-memory storage. All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
+	case session.InMemoryPebbleStoreFilename:
+		logger.Warn().Msg(`🚨 SMT configured for Pebble in-memory storage (EXPERIMENTAL). All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
+	default:
+		logger.Debug().Msgf("SMT configured for persistent storage at: %s", relayMinerConfig.SmtStorePath)
 	}
 
 	// --- Log flag values ---
