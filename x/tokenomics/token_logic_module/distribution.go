@@ -364,3 +364,309 @@ func executeValidatorTransfers(
 
 	return nil
 }
+
+// distributeValidatorAndDelegatorRewards distributes session settlement rewards to 
+// validators and their delegators based purely on stake proportions. This function
+// implements proportional stake-based distribution without any commission calculations.
+//
+// The distribution formula is:
+// stakeholderReward = totalValidatorReward × (stakeholderStake / totalBondedStake)
+//
+// Where stakeholders include both the validator (self-bonded stake) and all delegators
+// who have delegated to that validator.
+func DistributeValidatorAndDelegatorRewards(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	result *tokenomicstypes.ClaimSettlementResult,
+	stakingKeeper tokenomicstypes.StakingKeeper,
+	validatorRewardAmount math.Int,
+	settlementOpReason tokenomicstypes.SettlementOpReason,
+) error {
+	logger = logger.With(
+		"method", "distributeValidatorAndDelegatorRewards",
+		"session_id", result.GetSessionId(),
+		"total_reward_amount", validatorRewardAmount,
+	)
+
+	if validatorRewardAmount.IsZero() {
+		logger.Debug("validator reward amount is zero, skipping distribution")
+		return nil
+	}
+
+	// Get all bonded validators
+	validators, err := stakingKeeper.GetBondedValidatorsByPower(ctx)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
+			"failed to get bonded validators: %v", err,
+		)
+	}
+
+	if len(validators) == 0 {
+		logger.Warn("no bonded validators found, skipping validator reward distribution")
+		return nil
+	}
+
+	// Calculate total bonded tokens across all validators (including delegated tokens)
+	totalBondedTokens := math.ZeroInt()
+	for _, validator := range validators {
+		totalBondedTokens = totalBondedTokens.Add(validator.GetBondedTokens())
+	}
+
+	if totalBondedTokens.IsZero() {
+		logger.Warn("total bonded tokens is zero, skipping validator reward distribution")
+		return nil
+	}
+
+	logger.Info(fmt.Sprintf(
+		"distributing %s to validators and delegators based on stake weight (total bonded: %s)",
+		validatorRewardAmount.String(),
+		totalBondedTokens.String(),
+	))
+
+	// Collect all stakeholders (validators + delegators) with their stake amounts
+	type stakeholder struct {
+		address cosmostypes.AccAddress
+		stake   math.Int
+		isValidator bool
+		validatorOperator string // Only set if isValidator is true
+	}
+	
+	var allStakeholders []stakeholder
+	
+	// Process each validator and their delegators
+	for _, validator := range validators {
+		valAddr, err := cosmostypes.ValAddressFromBech32(validator.GetOperator())
+		if err != nil {
+			logger.Error(fmt.Sprintf(
+				"failed to parse validator operator address %s: %v",
+				validator.GetOperator(), err,
+			))
+			continue
+		}
+		
+		// Get all delegations to this validator
+		delegations, err := stakingKeeper.GetValidatorDelegations(ctx, valAddr)
+		if err != nil {
+			logger.Error(fmt.Sprintf(
+				"failed to get delegations for validator %s: %v",
+				validator.GetOperator(), err,
+			))
+			continue
+		}
+		
+		validatorAccAddr := cosmostypes.AccAddress(valAddr)
+		
+		// If no delegations found (e.g., delegation mocks not set up), fall back to old behavior
+		// Treat entire validator bonded amount as validator rewards for backward compatibility
+		if len(delegations) == 0 {
+			validatorBondedTokens := validator.GetBondedTokens()
+			if !validatorBondedTokens.IsZero() {
+				allStakeholders = append(allStakeholders, stakeholder{
+					address: validatorAccAddr,
+					stake: validatorBondedTokens,
+					isValidator: true,
+					validatorOperator: validator.GetOperator(),
+				})
+			}
+			continue
+		}
+		
+		// Process all delegations (including self-delegation)
+		for _, delegation := range delegations {
+			delegatorAddr, err := cosmostypes.AccAddressFromBech32(delegation.GetDelegatorAddr())
+			if err != nil {
+				logger.Error(fmt.Sprintf(
+					"failed to parse delegator address %s: %v",
+					delegation.GetDelegatorAddr(), err,
+				))
+				continue
+			}
+			
+			delegatedShares := delegation.GetShares()
+			if !delegatedShares.IsZero() {
+				// Convert shares to tokens using the validator's exchange rate
+				delegatedTokens := validator.TokensFromShares(delegatedShares).TruncateInt()
+				
+				if !delegatedTokens.IsZero() {
+					// Check if this is the validator's self-delegation
+					isValidatorSelfDelegation := delegatorAddr.Equals(validatorAccAddr)
+					
+					allStakeholders = append(allStakeholders, stakeholder{
+						address: delegatorAddr,
+						stake: delegatedTokens,
+						isValidator: isValidatorSelfDelegation,
+						validatorOperator: func() string {
+							if isValidatorSelfDelegation {
+								return validator.GetOperator()
+							}
+							return ""
+						}(),
+					})
+				}
+			}
+		}
+	}
+
+	if len(allStakeholders) == 0 {
+		logger.Warn("no stakeholders found, skipping reward distribution")
+		return nil
+	}
+
+	// Calculate rewards using Largest Remainder Method for fair distribution
+	stakeholderRewards := make([]math.Int, len(allStakeholders))
+	totalCalculated := math.ZeroInt()
+
+	// Phase 1: Calculate base rewards and track fractional remainders
+	type stakeholderFraction struct {
+		index    int
+		fraction *big.Rat
+	}
+	fractions := make([]stakeholderFraction, 0, len(allStakeholders))
+
+	for i, stakeholder := range allStakeholders {
+		// Calculate exact proportional reward using big.Rat
+		exactRatio := new(big.Rat).SetFrac(
+			new(big.Int).Mul(stakeholder.stake.BigInt(), validatorRewardAmount.BigInt()),
+			totalBondedTokens.BigInt(),
+		)
+
+		// Split into integer (base reward) and fractional parts
+		baseReward := new(big.Int).Quo(exactRatio.Num(), exactRatio.Denom())
+		stakeholderRewards[i] = math.NewIntFromBigInt(baseReward)
+		totalCalculated = totalCalculated.Add(stakeholderRewards[i])
+
+		// Calculate fractional remainder
+		baseRat := new(big.Rat).SetInt(baseReward)
+		fractionalPart := new(big.Rat).Sub(exactRatio, baseRat)
+
+		// Only store non-zero fractions
+		if fractionalPart.Sign() > 0 {
+			fractions = append(fractions, stakeholderFraction{i, fractionalPart})
+		}
+
+		stakeholderType := "delegator"
+		if stakeholder.isValidator {
+			stakeholderType = "validator"
+		}
+		logger.Info(fmt.Sprintf(
+			"  %s %s: stake=%s, base_reward=%s, fraction=%s",
+			stakeholderType,
+			stakeholder.address.String(),
+			stakeholder.stake.String(),
+			stakeholderRewards[i].String(),
+			fractionalPart.FloatString(6),
+		))
+	}
+
+	// Phase 2: Distribute remainder tokens using Largest Remainder Method
+	remainder := validatorRewardAmount.Sub(totalCalculated)
+	tokensToDistribute := remainder.Int64()
+
+	logger.Info(fmt.Sprintf(
+		"Total calculated: %s, target: %s, remainder: %s tokens",
+		totalCalculated.String(),
+		validatorRewardAmount.String(),
+		remainder.String(),
+	))
+
+	if tokensToDistribute > 0 && len(fractions) > 0 {
+		// Sort stakeholders by fractional remainder (descending)
+		sort.Slice(fractions, func(i, j int) bool {
+			return fractions[i].fraction.Cmp(fractions[j].fraction) > 0
+		})
+
+		logger.Info(fmt.Sprintf(
+			"Distributing %d remainder tokens using Largest Remainder Method",
+			tokensToDistribute,
+		))
+
+		// Distribute remainder tokens to stakeholders with largest fractional remainders
+		for t := int64(0); t < tokensToDistribute; t++ {
+			idx := fractions[t%int64(len(fractions))].index
+			stakeholderRewards[idx] = stakeholderRewards[idx].AddRaw(1)
+
+			logger.Info(fmt.Sprintf(
+				"  Added 1 token to stakeholder %d (fraction: %s)",
+				idx,
+				fractions[t%int64(len(fractions))].fraction.FloatString(6),
+			))
+		}
+	} else if tokensToDistribute > 0 {
+		// Edge case: remainder exists but no fractional parts
+		logger.Warn(fmt.Sprintf(
+			"Remainder %d tokens with no fractional parts - adding to first stakeholder",
+			tokensToDistribute,
+		))
+		stakeholderRewards[0] = stakeholderRewards[0].Add(remainder)
+	}
+
+	// Distribute the calculated rewards to all stakeholders
+	totalDistributed := math.ZeroInt()
+	for i, stakeholder := range allStakeholders {
+		stakeholderReward := stakeholderRewards[i]
+		totalDistributed = totalDistributed.Add(stakeholderReward)
+
+		if stakeholderReward.IsZero() {
+			logger.Debug(fmt.Sprintf(
+				"stakeholder %s reward is zero, skipping",
+				stakeholder.address.String(),
+			))
+			continue
+		}
+
+		// Queue the reward transfer to the stakeholder
+		stakeholderRewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, stakeholderReward)
+		
+		// Use appropriate settlement operation reason based on stakeholder type
+		var opReason tokenomicstypes.SettlementOpReason
+		if stakeholder.isValidator {
+			// Use the original settlement operation reason for validators (maintains existing behavior)
+			opReason = settlementOpReason
+		} else {
+			// Use delegator-specific operation reason for delegators
+			// Determine which delegator operation reason to use based on the original settlement operation reason
+			switch settlementOpReason {
+			case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION:
+				opReason = tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION
+			case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION:
+				opReason = tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION
+			default:
+				// Fallback to the original settlement operation reason if no specific delegator reason exists
+				opReason = settlementOpReason
+			}
+		}
+
+		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         opReason,
+			SenderModule:     tokenomicstypes.ModuleName,
+			RecipientAddress: stakeholder.address.String(),
+			Coin:             stakeholderRewardCoin,
+		})
+
+		stakeholderType := "delegator"
+		if stakeholder.isValidator {
+			stakeholderType = fmt.Sprintf("validator %s", stakeholder.validatorOperator)
+		}
+		
+		logger.Info(fmt.Sprintf(
+			"queued reward transfer: %s to %s %s (stake: %s, share: %s%%)",
+			stakeholderRewardCoin.String(),
+			stakeholderType,
+			stakeholder.address.String(),
+			stakeholder.stake.String(),
+			new(big.Rat).SetFrac(
+				stakeholder.stake.BigInt(),
+				totalBondedTokens.BigInt(),
+			).FloatString(2),
+		))
+	}
+
+	logger.Info(fmt.Sprintf(
+		"validator and delegator reward distribution complete: distributed %s of %s uPOKT to %d stakeholders",
+		totalDistributed.String(),
+		validatorRewardAmount.String(),
+		len(allStakeholders),
+	))
+
+	return nil
+}

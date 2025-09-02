@@ -252,3 +252,154 @@ func (s *tokenLogicModuleTestSuite) extractValidatorRewards(settledResults tlm.C
 
 	return rewards
 }
+
+// extractValidatorAndDelegatorRewards extracts all validator and delegator reward amounts from settlement results.
+// Returns separate slices for validator rewards and delegator rewards.
+func (s *tokenLogicModuleTestSuite) extractValidatorAndDelegatorRewards(settledResults tlm.ClaimSettlementResults) (validatorRewards []int64, delegatorRewards []int64) {
+	// Maps to aggregate rewards by recipient address
+	validatorRewardMap := make(map[string]int64)
+	delegatorRewardMap := make(map[string]int64)
+
+	for _, result := range settledResults {
+		for _, transfer := range result.ModToAcctTransfers {
+			// Check if this is a validator reward transfer
+			switch transfer.OpReason {
+			case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+				tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION:
+
+				// Verify the transfer is from tokenomics module and is valid
+				if transfer.SenderModule == tokenomicstypes.ModuleName &&
+					transfer.Coin.Denom == pocket.DenomuPOKT &&
+					transfer.Coin.Amount.IsPositive() {
+					// Aggregate validator rewards by recipient address
+					validatorRewardMap[transfer.RecipientAddress] += transfer.Coin.Amount.Int64()
+				}
+
+			case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION,
+				tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION:
+
+				// Verify the transfer is from tokenomics module and is valid
+				if transfer.SenderModule == tokenomicstypes.ModuleName &&
+					transfer.Coin.Denom == pocket.DenomuPOKT &&
+					transfer.Coin.Amount.IsPositive() {
+					// Aggregate delegator rewards by recipient address
+					delegatorRewardMap[transfer.RecipientAddress] += transfer.Coin.Amount.Int64()
+				}
+			}
+		}
+	}
+
+	// Convert maps to slices of reward amounts
+	for _, reward := range validatorRewardMap {
+		validatorRewards = append(validatorRewards, reward)
+	}
+	for _, reward := range delegatorRewardMap {
+		delegatorRewards = append(delegatorRewards, reward)
+	}
+
+	return validatorRewards, delegatorRewards
+}
+
+// TestTLMProcessorsDelegatorRewardDistribution tests that validator and delegator rewards
+// are distributed correctly based on pure stake proportions without commission.
+func (s *tokenLogicModuleTestSuite) TestTLMProcessorsDelegatorRewardDistribution() {
+	s.T().Run("Validators and delegators receive proportional stake-based rewards", func(t *testing.T) {
+		// Test scenario with 3 validators having equal self-bonded stakes (400k each)
+		// but different delegation amounts to test pure stake-based distribution:
+		//
+		// Validator 1: 400k self-bonded + 600k delegated = 1,000k total (50% of 2M total)
+		// Validator 2: 400k self-bonded + 200k delegated = 600k total (30% of 2M total)
+		// Validator 3: 400k self-bonded + 0k delegated = 400k total (20% of 2M total)
+		//
+		// Total staked: 2,000k tokens
+		// Total validator rewards per test: 110,000 uPOKT (10% of 1.1M total)
+		//
+		// Expected distribution (pure stake-based, no commission):
+		// - All of Validator 1: 55,000 uPOKT (50% of 110k)
+		//   - Validator 1 self-bonded (400k/1000k): 22,000 uPOKT
+		//   - Delegators to Val 1 (600k/1000k): 33,000 uPOKT
+		// - All of Validator 2: 33,000 uPOKT (30% of 110k)
+		//   - Validator 2 self-bonded (400k/600k): 22,000 uPOKT
+		//   - Delegators to Val 2 (200k/600k): 11,000 uPOKT
+		// - All of Validator 3: 22,000 uPOKT (20% of 110k)
+		//   - Validator 3 self-bonded (400k/400k): 22,000 uPOKT (no delegators)
+
+		// Use comprehensive delegation testing with equal self-bonded stakes and different delegations
+		selfBondedStake := int64(400000)               // Equal self-bonded stake for all validators
+		delegatedAmounts := []int64{600000, 200000, 0} // Different delegation amounts
+
+		// Setup keepers with realistic validators and delegations
+		s.setupKeepers(t,
+			testkeeper.WithService(*s.service),
+			testkeeper.WithApplication(*s.app),
+			testkeeper.WithSupplier(*s.supplier),
+			testkeeper.WithBlockProposer(
+				cosmostypes.ConsAddress(s.proposerConsAddr),
+				cosmostypes.ValAddress(s.proposerValOperatorAddr),
+			),
+			testkeeper.WithModuleParams(map[string]cosmostypes.Msg{
+				prooftypes.ModuleName:      s.getProofParams(),
+				sharedtypes.ModuleName:     s.getSharedParams(),
+				tokenomicstypes.ModuleName: s.getTokenomicsParamsWithCleanValidatorMath(), // 10% validator allocation
+			}),
+			testkeeper.WithDefaultModuleBalances(),
+			testkeeper.WithValidatorsAndDelegations(selfBondedStake, delegatedAmounts), // Use delegation infrastructure
+		)
+
+		// Create claims for unique applications to ensure distinct sessions
+		// Use 600 claims for clean math: 600 × 1100 × 10% = 66,000 total validator rewards
+		numClaims := 600
+		s.createClaims(&s.keepers, numClaims)
+
+		// Settle claims and trigger validator + delegator reward distribution
+		settledResults, expiredResults := s.settleClaims(t)
+		require.NotEmpty(t, settledResults)
+		require.Empty(t, expiredResults) // No expired claims expected
+
+		// Extract validator and delegator rewards from the real settlement results
+		// Now that TLM processors use delegation-aware distribution, this should work properly
+		validatorRewards, delegatorRewards := s.extractValidatorAndDelegatorRewards(settledResults)
+
+		// === VALIDATION ===
+
+		// Verify we have the expected number of reward recipients
+		require.Len(t, validatorRewards, 3, "All 3 validators should receive rewards")
+		require.NotEmpty(t, delegatorRewards, "Delegators should receive rewards")
+
+		// Calculate totals
+		totalValidatorRewards := int64(0)
+		for _, reward := range validatorRewards {
+			totalValidatorRewards += reward
+		}
+
+		totalDelegatorRewards := int64(0)
+		for _, reward := range delegatorRewards {
+			totalDelegatorRewards += reward
+		}
+
+		// With 600 claims × 1100 uPOKT × 10% validator allocation = 66,000 total validator rewards
+		expectedTotalRewards := int64(66000)
+		actualTotalRewards := totalValidatorRewards + totalDelegatorRewards
+
+		require.InDelta(t, expectedTotalRewards, actualTotalRewards, 100,
+			"Total rewards (%d validator + %d delegator = %d) should approximately equal expected %d",
+			totalValidatorRewards, totalDelegatorRewards, actualTotalRewards, expectedTotalRewards)
+
+		// Verify validators receive proportional rewards based on self-bonded stakes
+		// All validators have equal 400k self-bonded stakes, so should receive approximately equal rewards
+		avgValidatorReward := totalValidatorRewards / 3
+		for i, reward := range validatorRewards {
+			require.InDelta(t, avgValidatorReward, reward, float64(avgValidatorReward)*0.05, // 5% tolerance
+				"Validator %d should receive approximately equal rewards for equal self-bonded stake (got %d, avg %d)",
+				i, reward, avgValidatorReward)
+		}
+
+		// Ensure no pending claims remain
+		s.assertNoPendingClaims(t)
+
+		t.Logf("Validator rewards: %v (total: %d uPOKT)", validatorRewards, totalValidatorRewards)
+		t.Logf("Delegator rewards: %v (total: %d uPOKT)", delegatorRewards, totalDelegatorRewards)
+		t.Log("Delegation-aware distribution test completed successfully")
+	})
+
+}

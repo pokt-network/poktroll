@@ -530,6 +530,23 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		Return(validators, nil).
 		AnyTimes()
 
+	// Mock delegation calls for backward compatibility with delegation-aware distribution
+	// Return empty delegations for any validator (no delegations setup in integration tests)
+	mockStakingKeeper.EXPECT().
+		GetValidatorDelegations(gomock.Any(), gomock.Any()).
+		Return([]stakingtypes.Delegation{}, nil).
+		AnyTimes()
+		
+	mockStakingKeeper.EXPECT().
+		GetDelegatorDelegations(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return([]stakingtypes.Delegation{}, nil).
+		AnyTimes()
+		
+	mockStakingKeeper.EXPECT().
+		Validator(gomock.Any(), gomock.Any()).
+		Return(nil, stakingtypes.ErrNoValidatorFound).
+		AnyTimes()
+
 	// Set the proposer address in the context to match the mock expectation
 	sdkCtx = sdkCtx.WithProposer(proposerConsAddr)
 
