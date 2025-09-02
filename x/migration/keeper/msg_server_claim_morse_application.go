@@ -89,22 +89,15 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		// ServiceConfigs:       (intentionally omitted, no service was staked),
 	}
 
-	// Construct the base response.
-	// It will be modified, as necessary, prior to returning.
-	claimMorseAppResponse := &migrationtypes.MsgClaimMorseApplicationResponse{
-		MorseSrcAddress:         morseClaimableAccount.GetMorseSrcAddress(),
-		ClaimedBalance:          claimedUnstakedBalance,
-		ClaimedApplicationStake: claimedAppStake,
-		SessionEndHeight:        sessionEndHeight,
-		Application:             unbondedApp,
-	}
+	// Construct the response.
+	claimMorseAppResponse := &migrationtypes.MsgClaimMorseApplicationResponse{}
 
 	// Construct the base application claim event.
 	// It will be modified, as necessary, prior to emission.
 	morseAppClaimedEvent := &migrationtypes.EventMorseApplicationClaimed{
 		MorseSrcAddress:         msg.GetMorseSignerAddress(),
-		ClaimedBalance:          claimedUnstakedBalance,
-		ClaimedApplicationStake: claimedAppStake,
+		ClaimedBalance:          claimedUnstakedBalance.String(),
+		ClaimedApplicationStake: claimedAppStake.String(),
 		SessionEndHeight:        sessionEndHeight,
 		Application:             unbondedApp,
 	}
@@ -178,14 +171,9 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, err
 	}
 
-	// Update the application claim response.
-	claimMorseAppResponse.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
-	claimMorseAppResponse.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake()
-	claimMorseAppResponse.Application = app
-
 	// Update the application claim event.
-	morseAppClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
-	morseAppClaimedEvent.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake()
+	morseAppClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance().String()
+	morseAppClaimedEvent.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake().String()
 	morseAppClaimedEvent.Application = app
 
 	// Emit the application claim event first.

@@ -21,7 +21,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the gateway.
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)
@@ -38,20 +38,21 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Stake the gateway.
-	stakeGatewayRes, err := srv.StakeGateway(sdkCtx, stakeMsg)
+	_, err := srv.StakeGateway(sdkCtx, stakeMsg)
 	require.NoError(t, err)
 
-	// Assert that the response contains the staked gateway.
-	gateway := stakeGatewayRes.GetGateway()
-	require.Equal(t, stakeMsg.GetAddress(), gateway.GetAddress())
-	require.Equal(t, stakeMsg.GetStake(), gateway.GetStake())
+	// Verify that the gateway exists.
+	upstakedGateway, isGatewayFound := k.GetGateway(sdkCtx, addr)
+	require.True(t, isGatewayFound)
+	require.Equal(t, addr, upstakedGateway.Address)
+	require.Equal(t, initialStake.Amount, upstakedGateway.Stake.Amount)
 
 	// Assert that the EventGatewayStaked event is emitted.
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&gatewaytypes.EventGatewayStaked{
-			Gateway:          gateway,
+			Gateway:          &upstakedGateway,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -65,12 +66,6 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	ctx, _ = testevents.ResetEventManager(sdkCtx)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
 
-	// Verify that the gateway exists.
-	foundGateway, isGatewayFound := k.GetGateway(sdkCtx, addr)
-	require.True(t, isGatewayFound)
-	require.Equal(t, addr, foundGateway.Address)
-	require.Equal(t, initialStake.Amount, foundGateway.Stake.Amount)
-
 	// Prepare an updated gateway with a higher stake.
 	updatedStake := cosmostypes.NewCoin("upokt", math.NewInt(200))
 	upStakeMsg := &gatewaytypes.MsgStakeGateway{
@@ -79,21 +74,16 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Update the staked gateway.
-	stakeGatewayRes, err = srv.StakeGateway(sdkCtx, upStakeMsg)
+	_, err = srv.StakeGateway(sdkCtx, upStakeMsg)
 	require.NoError(t, err)
-	foundGateway, isGatewayFound = k.GetGateway(sdkCtx, addr)
+	upstakedGateway, isGatewayFound = k.GetGateway(sdkCtx, addr)
 	require.True(t, isGatewayFound)
-	require.Equal(t, updatedStake.Amount, foundGateway.Stake.Amount)
-
-	// Assert that the response contains the upstaked gateway.
-	upStakedGateway := stakeGatewayRes.GetGateway()
-	require.Equal(t, upStakeMsg.GetAddress(), upStakedGateway.GetAddress())
-	require.Equal(t, upStakeMsg.GetStake(), upStakedGateway.GetStake())
+	require.Equal(t, updatedStake.Amount, upstakedGateway.Stake.Amount)
 
 	// Assert that the EventGatewayStaked event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&gatewaytypes.EventGatewayStaked{
-			Gateway:          upStakedGateway,
+			Gateway:          &upstakedGateway,
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -109,7 +99,7 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Prepare the gateway.
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &gatewaytypes.MsgStakeGateway{
 		Address: addr,
@@ -143,7 +133,7 @@ func TestMsgServer_StakeGateway_FailBelowMinStake(t *testing.T) {
 	k, ctx := keepertest.GatewayKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	gatewayStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 	minStake := gatewayStake.AddAmount(math.NewInt(1))
 	expectedErr := gatewaytypes.ErrGatewayInvalidStake.Wrapf("gateway %q must stake at least %s", addr, minStake)
@@ -175,7 +165,7 @@ func TestMsgServer_StakeGateway_CancelUnbonding(t *testing.T) {
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	// Prepare the gateway.
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &gatewaytypes.MsgStakeGateway{
 		Address: addr,

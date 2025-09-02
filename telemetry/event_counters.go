@@ -27,7 +27,7 @@ func EventSuccessCounter(
 	getValue func() float32,
 	isSuccessful func() bool,
 ) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 
@@ -61,7 +61,7 @@ func ProofRequirementCounter(
 	supplierOperatorAddress string,
 	err error,
 ) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 
@@ -99,7 +99,7 @@ func ClaimComputeUnitsCounter(
 	supplierOperatorAddress string,
 	err error,
 ) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 
@@ -138,7 +138,7 @@ func ClaimRelaysCounter(
 	supplierOperatorAddress string,
 	err error,
 ) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 
@@ -176,7 +176,7 @@ func ClaimCounter(
 	supplierOperatorAddress string,
 	err error,
 ) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 
@@ -208,7 +208,7 @@ func ClaimCounter(
 // of the relay mining difficulty. The serviceId is used as a label to be able to
 // track the difficulty for each service.
 func RelayMiningDifficultyGauge(difficulty float32, serviceId string) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 
@@ -225,7 +225,7 @@ func RelayMiningDifficultyGauge(difficulty float32, serviceId string) {
 // RelayEMAGauge sets a gauge which tracks the relay EMA for a service.
 // The serviceId is used as a label to be able to track the EMA for each service.
 func RelayEMAGauge(relayEMA uint64, serviceId string) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 
@@ -243,7 +243,7 @@ func RelayEMAGauge(relayEMA uint64, serviceId string) {
 // for session suppliers at the given maxPerSession value.
 // The serviceId is used as a label to be able to track this information for each service.
 func SessionSuppliersGauge(numCandidates int, maxPerSession int, serviceId string) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 

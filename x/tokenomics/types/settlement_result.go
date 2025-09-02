@@ -1,5 +1,7 @@
 package types
 
+import cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
 // GetNumComputeUnits returns the number of claimed compute units in the result's claim.
 func (r *ClaimSettlementResult) GetNumComputeUnits() (uint64, error) {
 	return r.Claim.GetNumClaimedComputeUnits()
@@ -55,6 +57,39 @@ func (r *ClaimSettlementResult) AppendModToAcctTransfer(transfer ModToAcctTransf
 	r.ModToAcctTransfers = append(r.ModToAcctTransfers, transfer)
 }
 
+// GetRewardDistribution returns a map of recipient addresses to their total reward amounts
+// as strings. This aggregates all module-to-account transfers for each recipient address
+// in the settlement result, providing a consolidated view of reward distribution.
+//
+// The returned map contains:
+// - Key: recipient address (string)
+// - Value: total reward amount as a coin string (e.g. "1000upokt")
+//
+// This is primarily used for event emission and observability purposes.
+func (r *ClaimSettlementResult) GetRewardDistribution() map[string]string {
+	// Start with a coin map to support arithmetic.
+	rewardDistributionCoin := make(map[string]cosmostypes.Coin)
+
+	for _, transfer := range r.ModToAcctTransfers {
+		rewardCoin, hasAcctReward := rewardDistributionCoin[transfer.RecipientAddress]
+
+		if !hasAcctReward {
+			rewardDistributionCoin[transfer.RecipientAddress] = transfer.GetCoin()
+			continue
+		}
+
+		rewardDistributionCoin[transfer.RecipientAddress] = rewardCoin.Add(transfer.GetCoin())
+	}
+
+	// Convert coin map to a string map.
+	rewardDistribution := make(map[string]string)
+	for address, coin := range rewardDistributionCoin {
+		rewardDistribution[address] = coin.String()
+	}
+
+	return rewardDistribution
+}
+
 // Validate returns an error if the MintBurnOperation has either an unspecified TLM or TLMReason.
 func (m *MintBurnOp) Validate() error {
 	return validateOpReason(m.OpReason, m)
@@ -72,7 +107,7 @@ func (m *ModToModTransfer) Validate() error {
 
 func validateOpReason(opReason SettlementOpReason, op any) error {
 	if opReason == SettlementOpReason_UNSPECIFIED {
-		return ErrTokenomicsSettlementModuleBurn.Wrapf("Settlement operation reason is unspecified: %+v", op)
+		return ErrTokenomicsSettlementBurn.Wrapf("Settlement operation reason is unspecified: %+v", op)
 	}
 	return nil
 }

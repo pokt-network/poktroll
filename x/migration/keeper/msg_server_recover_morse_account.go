@@ -99,7 +99,7 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *migrationtypes.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	event := migrationtypes.EventMorseAccountRecovered{
 		SessionEndHeight:   sessionEndHeight,
-		RecoveredBalance:   recoveredBalance,
+		RecoveredBalance:   recoveredBalance.String(),
 		ShannonDestAddress: msg.GetShannonDestAddress(),
 		MorseSrcAddress:    normalizedMorseSrcAddress,
 	}
@@ -114,10 +114,5 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *migrationtypes.
 		)
 	}
 
-	return &migrationtypes.MsgRecoverMorseAccountResponse{
-		SessionEndHeight:   sessionEndHeight,
-		RecoveredBalance:   recoveredBalance,
-		ShannonDestAddress: msg.GetShannonDestAddress(),
-		MorseSrcAddress:    normalizedMorseSrcAddress,
-	}, nil
+	return &migrationtypes.MsgRecoverMorseAccountResponse{}, nil
 }

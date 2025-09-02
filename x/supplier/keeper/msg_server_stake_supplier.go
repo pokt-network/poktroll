@@ -38,15 +38,13 @@ func (k msgServer) StakeSupplier(
 
 	logger := k.Logger().With("method", "StakeSupplier")
 	// Create or update a supplier using the configuration in the msg provided.
-	supplier, err := k.Keeper.StakeSupplier(ctx, logger, msg)
+	_, err := k.Keeper.StakeSupplier(ctx, logger, msg)
 	if err != nil {
 		return nil, err
 	}
 
 	isSuccessful = true
-	return &suppliertypes.MsgStakeSupplierResponse{
-		Supplier: supplier,
-	}, nil
+	return &suppliertypes.MsgStakeSupplierResponse{}, nil
 }
 
 // createSupplier creates a new supplier entity from the given message.
@@ -245,7 +243,7 @@ func (k Keeper) StakeSupplier(
 
 	// Emit an event which signals that the supplier staked.
 	events = append(events, &suppliertypes.EventSupplierStaked{
-		Supplier:         &supplier,
+		OperatorAddress:  supplier.OperatorAddress,
 		SessionEndHeight: sessionEndHeight,
 	})
 	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {

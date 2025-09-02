@@ -5,17 +5,14 @@ import (
 	"github.com/hashicorp/go-metrics"
 )
 
-// TODO_MAINNET(@bryanchriswhite): Revisit how telemetry is managed under `x/tokenomics` to ensure that it
-// complies with the new hardened settlement approach.
+// TODO: Compare the metrics here with the `cosmos-exporter` which uses onchain data.
+// Refs:
+// - https://github.com/cosmos/cosmos-sdk/issues/21614
+// - https://github.com/pokt-network/poktroll/pull/832
 
-// TODO_MAINNET(@red-0ne, #897): Minted, burnt and slashd tokens values might not be completely accurate.
-// While we're keeping this metric for now consider removing in favor of utilizing the `cosmos-exporter` which uses onchain data.
-// Context: https://github.com/cosmos/cosmos-sdk/issues/21614, https://github.com/pokt-network/poktroll/pull/832
-
-// MintedTokensFromModule is a function to track token minting from a specific module.
-// The metric used is an increment counter, and the label includes the module name for context.
+// MintedTokensFromModule counts how many tokens are minted to a module account.
 func MintedTokensFromModule(module string, amount float32) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 
@@ -28,10 +25,9 @@ func MintedTokensFromModule(module string, amount float32) {
 	)
 }
 
-// BurnedTokensFromModule is a function to track token burning from a specific module.
-// The metric used is an increment counter, and the label includes the module name for context.
+// BurnedTokensFromModule counts how many tokens are burnt from a module account.
 func BurnedTokensFromModule(module string, amount float32) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 
@@ -44,10 +40,9 @@ func BurnedTokensFromModule(module string, amount float32) {
 	)
 }
 
-// SlashedTokensFromModule is a function to track token slashing from a specific module.
-// The metric used is an increment counter, and the label includes the module name for context.
+// SlashedTokensFromModule counts how many tokens are slashed from a module account.
 func SlashedTokensFromModule(module string, amount float32) {
-	if !isTelemetyEnabled() {
+	if !isTelemetryEnabled() {
 		return
 	}
 

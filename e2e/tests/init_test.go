@@ -106,6 +106,7 @@ type cliBlockQueryResponse struct {
 }
 
 func init() {
+	// TODO_TECHDEBT: Use `-o json` everywhere these regexes are used, remove them, and use proper parsing.
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 	addrAndAmountRe = regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
@@ -273,7 +274,7 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 
 func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
 	bal := s.getAccBalance(accName)
-	require.Greaterf(s, bal, int(amount), "account %s does not have enough upokt", accName)
+	require.Greaterf(s, bal, amount, "account %s does not have enough upokt", accName)
 	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
 }
 
@@ -296,7 +297,7 @@ func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName stri
 	s.scenarioState[stakeKey] = currStake // save the stake for later
 
 	// Validate the change in stake
-	s.validateAmountChange(prevStake, currStake, expectedStakeChange, accName, condition, "stake")
+	s.validateAmountChange(int64(prevStake), int64(currStake), expectedStakeChange, accName, condition, "stake")
 }
 
 func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expectedBalanceChange int64, condition string) {
@@ -304,8 +305,8 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expec
 	balanceKey := accBalanceKey(accName)
 	prevBalanceAny, ok := s.scenarioState[balanceKey]
 	require.True(s, ok, "no previous balance found for %s", accName)
-	prevBalance, ok := prevBalanceAny.(int)
-	require.True(s, ok, "previous balance for %s is not an int", accName)
+	prevBalance, ok := prevBalanceAny.(int64)
+	require.True(s, ok, "previous balance for %s is not an int64", accName)
 
 	// Get current balance
 	currBalance := s.getAccBalance(accName)
@@ -816,7 +817,7 @@ func (s *suite) getSession(appName string, serviceId string) *sessiontypes.Sessi
 
 // TODO_TECHDEBT(@bryanchriswhite): Cleanup & deduplicate the code related
 // to this accessors. Ref: https://github.com/pokt-network/poktroll/pull/448/files#r1547930911
-func (s *suite) getAccBalance(accName string) int {
+func (s *suite) getAccBalance(accName string) int64 {
 	s.Helper()
 
 	args := []string{
@@ -835,11 +836,11 @@ func (s *suite) getAccBalance(accName string) int {
 	accBalance, err := strconv.Atoi(match[1])
 	require.NoError(s, err)
 
-	return accBalance
+	return int64(accBalance)
 }
 
 // validateAmountChange validates if the balance of an account has increased or decreased by the expected amount
-func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountChange int64, accName, condition, balanceType string) {
+func (s *suite) validateAmountChange(prevAmount, currAmount int64, expectedAmountChange int64, accName, condition, balanceType string) {
 	deltaAmount := int64(math.Abs(float64(currAmount - prevAmount)))
 	// Verify if balance is more or less than before
 	switch condition {
