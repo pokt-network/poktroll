@@ -1,6 +1,6 @@
 config:
   # TODO_TECHDEBT(@okdas): remove `signing_key_name` - which is currently present
-  # for backwards-compatibity with the current helm-chart.
+  # for backwards-compatibility with the current helm-chart.
   signing_key_name: supplier1
 
   default_signing_key_names: [supplier1]

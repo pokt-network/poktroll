@@ -101,7 +101,7 @@ func TestNewFaucet(t *testing.T) {
 	signAndBroadcastSuccess := newSignAndBroadcastSuccess(t, msgsPerTx)
 	txClient := newTxClientMock(t, signAndBroadcastSuccess, 2)
 
-	testRecipientAddress := cosmostypes.MustAccAddressFromBech32(sample.AccAddress())
+	testRecipientAddress := cosmostypes.MustAccAddressFromBech32(sample.AccAddressBech32())
 	ctrl := gomock.NewController(t)
 	bankQueryClient := mockclient.NewMockBankGRPCQueryClient(ctrl)
 

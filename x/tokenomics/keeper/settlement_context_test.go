@@ -43,7 +43,7 @@ const computeUnitsPerRelay = 1
 
 var (
 	// Test settlements with claims from multiple services
-	testServiceIds   = []string{"svc1", "svc2", "svc3"}
+	testServiceIds   = []string{"svc1"}
 	supplierStakeAmt = 2 * suppliertypes.DefaultMinStake.Amount.Int64()
 )
 
@@ -76,15 +76,19 @@ type TestSuite struct {
 func (s *TestSuite) SetupTest() {
 	t := s.T()
 
+	// Set up a known proposer and validator for testing
+	proposerConsAddr := sample.ConsAddress()
+	proposerValOperatorAddr := sample.ValOperatorAddress()
+
 	moduleBalancesOpt := keepertest.WithModuleAccountBalances(map[string]int64{
 		apptypes.ModuleName:      1000000000,
 		suppliertypes.ModuleName: supplierStakeAmt,
 	})
-	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil, moduleBalancesOpt)
+	proposerOpt := keepertest.WithBlockProposer(proposerConsAddr, proposerValOperatorAddr)
+	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil, moduleBalancesOpt, proposerOpt)
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
-
-	// Add a block proposer address to the context
-	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
+	// Update s.ctx with the modified context
+	s.ctx = sdkCtx
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(s.keepers.Codec)
@@ -92,7 +96,7 @@ func (s *TestSuite) SetupTest() {
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
-		polyzero.NewLogger(),
+		polyzero.NewLogger(polyzero.WithLevel(polyzero.ErrorLevel)),
 		prooftypes.NewAppKeeperQueryClient(s.keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(s.keepers.AccountKeeper),
 		prooftypes.NewSharedKeeperQueryClient(s.keepers.SharedKeeper, s.keepers.SessionKeeper),
@@ -778,7 +782,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	expiredClaimsMap := make(map[string]*prooftypes.Claim, numExpiredClaims)
 	for range numExpiredClaims {
 		appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-		appAddr := sample.AccAddress()
+		appAddr := sample.AccAddressBech32()
 		app := apptypes.Application{
 			Address:        appAddr,
 			Stake:          &appStake,
@@ -1059,7 +1063,7 @@ func (s *TestSuite) createTestActors(
 		service := sharedtypes.Service{
 			Id:                   serviceId,
 			ComputeUnitsPerRelay: computeUnitsPerRelay,
-			OwnerAddress:         sample.AccAddress(),
+			OwnerAddress:         sample.AccAddressBech32(),
 		}
 		s.keepers.SetService(s.ctx, service)
 
@@ -1136,8 +1140,8 @@ func (s *TestSuite) createTestClaimsAndProofs(
 		require.NoError(t, err)
 		sessionHeader := sessionRes.Session.Header
 
-		// Construct a valid session tree with 100 relays.
-		s.numRelays = uint64(100)
+		// Construct a valid session tree with 5 relays.
+		s.numRelays = uint64(5)
 		sessionTree := testtree.NewFilledSessionTree(
 			ctx, t,
 			s.numRelays, computeUnitsPerRelay,

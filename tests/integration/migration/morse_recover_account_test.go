@@ -33,7 +33,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 	require.NoError(t, err)
 
 	// Valid shannon destination address to be reused in all tests
-	shannonDestAddr := sample.AccAddress()
+	shannonDestAddr := sample.AccAddressBech32()
 	invalidShannonDestAddr := "invalid_shannon_dest_address"
 
 	// Get the complete state of all Morse accounts for testing

@@ -26,7 +26,7 @@ func networkWithProofObjects(t *testing.T, n int) (*network.Network, []types.Pro
 	state := types.GenesisState{}
 	for i := 0; i < n; i++ {
 		proof := types.Proof{
-			SupplierOperatorAddress: sample.AccAddress(),
+			SupplierOperatorAddress: sample.AccAddressBech32(),
 			SessionHeader: &sessiontypes.SessionHeader{
 				SessionId: "mock_session_id",
 				// Other fields omitted and unused for these tests.
@@ -77,7 +77,7 @@ func TestShowProof(t *testing.T) {
 		},
 		{
 			desc:                 "not found",
-			supplierOperatorAddr: sample.AccAddress(),
+			supplierOperatorAddr: sample.AccAddressBech32(),
 			sessionId:            proofs[0].SessionHeader.SessionId,
 
 			args:        common,

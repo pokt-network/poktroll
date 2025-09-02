@@ -108,7 +108,7 @@ var (
 	}
 
 	TestSupplierUrl             = "http://olshansky.info"
-	TestSupplierOperatorAddress = sample.AccAddress()
+	TestSupplierOperatorAddress = sample.AccAddressBech32()
 	serviceConfigHistory        = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
 		TestSupplierOperatorAddress,
 		supplierServiceConfigs,

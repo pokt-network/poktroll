@@ -11,11 +11,9 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
-	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -184,7 +182,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 
 		deps = depinject.Configs(deps, depinject.Supply(
 			query.Context(queryClientCtx),
-			grpc.ClientConn(queryClientCtx),
+			query.NewGRPCClientWithDebugMetrics(queryClientCtx),
 			queryClientCtx.Keyring,
 		))
 
@@ -514,7 +512,7 @@ func newSupplyTxClientsFn(
 
 // NewSupplyKeyValueCacheFn returns a function which constructs a KeyValueCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyValueCache[T]]) SupplierFn {
+func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -550,7 +548,7 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 
 // NewSupplyParamsCacheFn returns a function which constructs a ParamsCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsCache[T]]) SupplierFn {
+func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -575,14 +573,17 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 			return nil, err
 		}
 
-		// Apply the query cache options
+		// Supply the cache to deps before applying options to avoid circular dependencies.
+		deps = depinject.Configs(deps, depinject.Supply(paramsCache))
+
+		// Apply the query cache options after supplying the cache.
 		for _, opt := range opts {
 			if err := opt(ctx, deps, paramsCache); err != nil {
 				return nil, err
 			}
 		}
 
-		return depinject.Configs(deps, depinject.Supply(paramsCache)), nil
+		return deps, nil
 	}
 }
 
@@ -781,7 +782,7 @@ func NewSupplyRelayerSessionsManagerFn(smtStorePath string) SupplierFn {
 	) (depinject.Config, error) {
 		relayerSessionsManager, err := session.NewRelayerSessions(
 			deps,
-			session.WithStoresDirectory(smtStorePath),
+			session.WithStoresDirectoryPath(smtStorePath),
 		)
 		if err != nil {
 			return nil, err

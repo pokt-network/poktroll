@@ -1,0 +1,29 @@
+guard:
+  # TODO_IMPROVE(@okdas): Turn on guard when we are ready for it - e2e tests currently are not setup to use it.
+  # Consider adding the following in the Tiltfile:
+  # "--set=guard.enabled=true",
+  # "--set=guard.envoyGateway.enabled=true",
+  enabled: false
+  envoyGateway:
+    enabled: false
+  gateway-helm:
+    enabled: false
+    # TODO_TECHDEBT(@okdas): Use stable release of Envoy Ratelimit Service (RLS).
+    # Remove this override once the latest stable version of RLS contains this commit: https://github.com/envoyproxy/ratelimit/pull/941
+    # For now, we're using a pre-release build tag of RLS.
+    global:
+      images:
+        ratelimit:
+          # Use values file for overriding temporary GUARD values as a workaround for:
+          # - Envoy Ratelimit Service (RLS) requiring pre-release build tag
+          # - "registered extension has no hooks specified" error
+          # Discord discussion: https://discord.com/channels/824324475256438814/997192534168182905/1405986859120722050
+          image: "envoyproxy/ratelimit:38f01982"
+          pullPolicy: Always
+    # DEV_NOTE: This section is to force using null values for extensionApis and extensionManager
+    # This is a workaround to avoid the "registered extension has no hooks specified" error.
+    # Discord discussion: https://discord.com/channels/824324475256438814/997192534168182905/1405986859120722050
+    config:
+      envoyGateway:
+        extensionApis: null
+        extensionManager: null

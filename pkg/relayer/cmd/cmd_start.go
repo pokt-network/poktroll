@@ -18,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
 // startCmd returns the Cobra subcommand for running the relay miner.
@@ -136,6 +137,15 @@ Totals:
 	if err != nil {
 		fmt.Printf("Could not parse config file from: %s\n", relayMinerConfigPath)
 		return err
+	}
+
+	switch relayMinerConfig.SmtStorePath {
+	case session.InMemoryStoreFilename:
+		logger.Warn().Msg(`🚨 SMT configured for SimpleMap in-memory storage. All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
+	case session.InMemoryPebbleStoreFilename:
+		logger.Warn().Msg(`🚨 SMT configured for Pebble in-memory storage (EXPERIMENTAL). All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
+	default:
+		logger.Debug().Msgf("SMT configured for persistent storage at: %s", relayMinerConfig.SmtStorePath)
 	}
 
 	// --- Log flag values ---

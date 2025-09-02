@@ -23,7 +23,7 @@ var _ = strconv.IntSize
 func TestSupplierQuerySingle(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 2)
-	supplierAddr := sample.AccAddress()
+	supplierAddr := sample.AccAddressBech32()
 
 	tests := []struct {
 		desc        string
@@ -274,11 +274,11 @@ func TestSupplierQueryDehydrated(t *testing.T) {
 		supplierWithRevShare := suppliers[0]
 		supplierWithRevShare.Services[0].RevShare = []*sharedtypes.ServiceRevenueShare{
 			{
-				Address:            sample.AccAddress(),
+				Address:            sample.AccAddressBech32(),
 				RevSharePercentage: 50,
 			},
 			{
-				Address:            sample.AccAddress(),
+				Address:            sample.AccAddressBech32(),
 				RevSharePercentage: 50,
 			},
 		}
@@ -392,11 +392,11 @@ func TestSupplierShowDehydrated(t *testing.T) {
 		supplierWithRevShare := suppliers[0]
 		supplierWithRevShare.Services[0].RevShare = []*sharedtypes.ServiceRevenueShare{
 			{
-				Address:            sample.AccAddress(),
+				Address:            sample.AccAddressBech32(),
 				RevSharePercentage: 30,
 			},
 			{
-				Address:            sample.AccAddress(),
+				Address:            sample.AccAddressBech32(),
 				RevSharePercentage: 70,
 			},
 		}

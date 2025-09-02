@@ -21,7 +21,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the gateway.
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)
@@ -99,7 +99,7 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Prepare the gateway.
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &gatewaytypes.MsgStakeGateway{
 		Address: addr,
@@ -133,7 +133,7 @@ func TestMsgServer_StakeGateway_FailBelowMinStake(t *testing.T) {
 	k, ctx := keepertest.GatewayKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	gatewayStake := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 100)
 	minStake := gatewayStake.AddAmount(math.NewInt(1))
 	expectedErr := gatewaytypes.ErrGatewayInvalidStake.Wrapf("gateway %q must stake at least %s", addr, minStake)
@@ -165,7 +165,7 @@ func TestMsgServer_StakeGateway_CancelUnbonding(t *testing.T) {
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	// Prepare the gateway.
-	addr := sample.AccAddress()
+	addr := sample.AccAddressBech32()
 	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &gatewaytypes.MsgStakeGateway{
 		Address: addr,
