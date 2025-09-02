@@ -18,16 +18,21 @@ import (
 // distributed correctly across multiple validators based on their stake weights.
 // This test validates the core functionality implemented in distributeValidatorRewards().
 func (s *tokenLogicModuleTestSuite) TestTLMProcessorsMultiValidatorDistribution() {
-	// Simple test case: 3 validators with different stakes
-	// Validator 1: 600,000 tokens (60% of total 1,000,000)
-	// Validator 2: 300,000 tokens (30% of total 1,000,000)
-	// Validator 3: 100,000 tokens (10% of total 1,000,000)
+	// Test case with stakes designed for clean mathematical division
+	// Using 10% validator allocation in both TLMs for clean math:
+	// With 110 total validator rewards and stakes in ratio 5:4:2 (sum=11):
+	// Validator 1: 500,000 tokens (45.45% of total 1,100,000) -> 50 uPOKT (exact)
+	// Validator 2: 400,000 tokens (36.36% of total 1,100,000) -> 40 uPOKT (exact)
+	// Validator 3: 200,000 tokens (18.18% of total 1,100,000) -> 20 uPOKT (exact)
+	// Total: 1,100,000 tokens -> 110 uPOKT rewards (50+40+20=110 exact)
 
-	s.T().Run("Different stakes 60-30-10", func(t *testing.T) {
-		// Setup keepers with 3 validators having different stakes
-		s.setupKeepersWithMultipleValidators(t, []int64{600000, 300000, 100000})
+	s.T().Run("Stakes that divide cleanly into rewards", func(t *testing.T) {
+		// Use stakes in ratio 5:4:2 (which sum to 11) with 10% validator allocation
+		// to get clean division: 110,000 ÷ 11 = 10,000 per unit, so [50000, 40000, 20000]
+		validatorStakes := []int64{500000, 400000, 200000}
+		s.setupKeepersWithMultipleValidators(t, validatorStakes)
 
-		// Create claims (no proof requirements)
+		// Create claims for unique applications to ensure distinct sessions
 		numClaims := 1000 // Large enough to avoid reward truncation
 		s.createClaims(&s.keepers, numClaims)
 
@@ -36,14 +41,28 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsMultiValidatorDistribution(
 		require.NotEmpty(t, settledResults)
 		require.Empty(t, expiredResults) // No expired claims expected
 
-		// Verify settlement results contain validator reward operations
-		s.assertValidatorRewardOperations(t, settledResults)
+		// Extract actual validator rewards from settlement results
+		actualRewards := s.extractValidatorRewards(settledResults)
+
+		// Expected rewards with Largest Remainder Method:
+		// The improved distribution algorithm uses the Largest Remainder Method to fairly
+		// distribute remainder tokens based on fractional parts, achieving perfect precision.
+		//
+		// With stakes [500000, 400000, 200000] (ratio 5:4:2) and 110,000 total rewards:
+		// - Validator 1: (5/11) × 110,000 = 50,000 uPOKT (perfect precision)
+		// - Validator 2: (4/11) × 110,000 = 40,000 uPOKT (perfect precision)
+		// - Validator 3: (2/11) × 110,000 = 20,000 uPOKT (perfect precision)
+		//
+		// The Largest Remainder Method ensures mathematically fair distribution while
+		// maintaining total conservation (distributed amounts always sum to input amount).
+		expectedRewards := []int64{50000, 40000, 20000}
+
+		require.ElementsMatch(t, expectedRewards, actualRewards,
+			"Validator rewards should match expected proportional distribution")
 
 		// Ensure no pending claims remain
 		s.assertNoPendingClaims(t)
 
-		// For now, we'll just verify that the core functionality runs without error
-		// TODO: Add more detailed balance checks once validator address tracking is implemented
 		t.Log("Multi-validator distribution test completed successfully")
 	})
 }
@@ -52,19 +71,56 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsMultiValidatorDistribution(
 func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCases() {
 	s.T().Run("Single validator gets all rewards", func(t *testing.T) {
 		// Setup with single validator
-		s.setupKeepersWithMultipleValidators(t, []int64{1000000})
+		validatorStakes := []int64{1000000}
+		s.setupKeepersWithMultipleValidators(t, validatorStakes)
 
 		// Create claims and settle
-		s.createClaims(&s.keepers, 1000)
+		numClaims := 1000 // Same as multi-validator test for consistency
+		s.createClaims(&s.keepers, numClaims)
 		settledResults, _ := s.settleClaims(t)
 
-		// Verify settlement results contain validator reward operations
-		s.assertValidatorRewardOperations(t, settledResults)
+		// Extract and verify single validator gets all rewards
+		actualRewards := s.extractValidatorRewards(settledResults)
+
+		// Single validator should get all validator rewards from both TLM processors
+		// With 1000 unique claims: total = 110,000 uPOKT
+		expectedRewards := []int64{110000}
+
+		require.ElementsMatch(t, expectedRewards, actualRewards,
+			"Single validator should receive all validator rewards")
 
 		// Ensure no pending claims remain
 		s.assertNoPendingClaims(t)
 
 		t.Log("Single validator edge case test completed successfully")
+	})
+
+	s.T().Run("Equal stakes receive equal rewards", func(t *testing.T) {
+		// Setup with 5 validators having equal stakes
+		// This ensures clean division without remainder issues
+		validatorStakes := []int64{200000, 200000, 200000, 200000, 200000}
+		s.setupKeepersWithMultipleValidators(t, validatorStakes)
+
+		// Create claims and settle
+		numClaims := 1000 // Same as other tests for consistency
+		s.createClaims(&s.keepers, numClaims)
+		settledResults, _ := s.settleClaims(t)
+
+		// Extract and verify equal distribution
+		actualRewards := s.extractValidatorRewards(settledResults)
+
+		// Expected calculation for 5 equal validators with 10% allocation and 1000 unique claims:
+		// Total validator rewards: 110,000 uPOKT
+		// With equal stakes: 110,000 ÷ 5 = 22,000 uPOKT each (exact division)
+		expectedRewards := []int64{22000, 22000, 22000, 22000, 22000}
+
+		require.ElementsMatch(t, expectedRewards, actualRewards,
+			"Equal stakes should receive equal rewards")
+
+		// Ensure no pending claims remain
+		s.assertNoPendingClaims(t)
+
+		t.Log("Equal stakes edge case test completed successfully")
 	})
 }
 
@@ -84,35 +140,42 @@ func (s *tokenLogicModuleTestSuite) setupKeepersWithMultipleValidators(t *testin
 		testkeeper.WithModuleParams(map[string]cosmostypes.Msg{
 			prooftypes.ModuleName:      s.getProofParams(),
 			sharedtypes.ModuleName:     s.getSharedParams(),
-			tokenomicstypes.ModuleName: s.getTokenomicsParams(),
+			tokenomicstypes.ModuleName: s.getTokenomicsParamsWithCleanValidatorMath(), // Use 10% validator allocation
 		}),
 		testkeeper.WithDefaultModuleBalances(),
 		testkeeper.WithMultipleValidators(validatorStakes), // Use our new multi-validator option
 	)
 }
 
-// assertValidatorRewardOperations verifies that the settlement results contain
-// the expected validator reward distribution operations.
-func (s *tokenLogicModuleTestSuite) assertValidatorRewardOperations(t *testing.T, settledResults tlm.ClaimSettlementResults) {
-	t.Helper()
+// extractValidatorRewards extracts all validator reward amounts from settlement results.
+// Returns a slice of reward amounts in uPOKT aggregated by validator.
+func (s *tokenLogicModuleTestSuite) extractValidatorRewards(settledResults tlm.ClaimSettlementResults) []int64 {
+	// Map to aggregate rewards by validator address
+	validatorRewards := make(map[string]int64)
 
-	foundValidatorRewards := false
 	for _, result := range settledResults {
 		for _, transfer := range result.ModToAcctTransfers {
 			// Check if this is a validator reward transfer
-			if transfer.OpReason.String() == "TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION" ||
-				transfer.OpReason.String() == "TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION" {
-				foundValidatorRewards = true
+			switch transfer.OpReason {
+			case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+				tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION:
 
-				// Verify the transfer is from supplier module
-				require.Equal(t, "tokenomics", transfer.SenderModule)
-				// Verify the amount is positive
-				require.True(t, transfer.Coin.Amount.IsPositive(), "Validator reward should be positive")
-				// Verify the denom is uPOKT
-				require.Equal(t, pocket.DenomuPOKT, transfer.Coin.Denom, "Validator reward should be in uPOKT")
+				// Verify the transfer is from tokenomics module and is valid
+				if transfer.SenderModule == tokenomicstypes.ModuleName &&
+					transfer.Coin.Denom == pocket.DenomuPOKT &&
+					transfer.Coin.Amount.IsPositive() {
+					// Aggregate rewards by validator address
+					validatorRewards[transfer.RecipientAddress] += transfer.Coin.Amount.Int64()
+				}
 			}
 		}
 	}
 
-	require.True(t, foundValidatorRewards, "Settlement results should contain validator reward operations")
+	// Convert map to slice of reward amounts
+	var rewards []int64
+	for _, reward := range validatorRewards {
+		rewards = append(rewards, reward)
+	}
+
+	return rewards
 }

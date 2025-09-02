@@ -822,7 +822,7 @@ func WithMultipleValidators(validatorStakes []int64) TokenomicsModuleKeepersOptF
 		initValidatorAccounts := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 			for _, validator := range validators {
-				valAccAddr := cosmostypes.AccAddress(cosmostypes.ValAddress(validator.OperatorAddress))
+				valAccAddr := cosmostypes.AccAddress(validator.OperatorAddress)
 
 				// Create account
 				acc := keepers.AccountKeeper.NewAccountWithAddress(sdkCtx, valAccAddr)
