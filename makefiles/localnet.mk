@@ -41,11 +41,12 @@ k8s_kind_up: check_kind
 		kubectl create namespace path; \
 		kubectl create namespace monitoring; \
 		kubectl create namespace middleware; \
+		echo '[INFO] Installing Envoy Proxy and running helm update...'; \
+		helm repo update; \
 	else \
 		echo '[INFO] Kind cluster already exists. Skipping creation and switching to kind-pocket-localnet...'; \
 		kubectl config use-context kind-pocket-localnet; \
 	fi
-
 # Optional context for 'move_poktroll_to_pocket' to answer this question:
 # https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486
 #

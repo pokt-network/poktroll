@@ -21,4 +21,4 @@ or custom software that implements the same functionality.
 ## Configuration
 
 Configurations and additional documentation related to operating a `PATH Gateway`
-can be found at [path_gateway.md](https://path.grove.city/operate).
+can be found at [path_gateway.md](https://path.grove.city/category/path-configurations).
