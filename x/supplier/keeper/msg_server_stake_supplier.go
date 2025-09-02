@@ -188,7 +188,8 @@ func (k Keeper) StakeSupplier(
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
-		// Ensure that only the operator can change the service configurations.
+		// Only the operator can change service configurations. This ensures that
+		// the owner cannot inadvertently modify services they don't understand.
 		if !msg.IsSigner(supplier.OperatorAddress) && len(msg.Services) > 0 {
 			err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
 				"only the operator account is authorized to update the service configurations",
@@ -282,6 +283,7 @@ func (k Keeper) updateSupplier(
 	supplier *sharedtypes.Supplier,
 	msg *suppliertypes.MsgStakeSupplier,
 ) error {
+	// If no stake amount is provided, preserve the current stake
 	if msg.Stake == nil {
 		msg.Stake = supplier.Stake
 	}

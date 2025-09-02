@@ -10,7 +10,7 @@ import (
 
 // ValidatePositiveuPOKT performs the following validation steps:
 //   - Validates the coin string is a valid cosmos coin
-//   - Validates the coin is positive
+//   - Validates the coin is positive (amount > 0)
 //   - Validates the coin denom is upokt
 func ValidatePositiveuPOKT(coinStr string) error {
 	coin, err := cosmostypes.ParseCoinNormalized(coinStr)

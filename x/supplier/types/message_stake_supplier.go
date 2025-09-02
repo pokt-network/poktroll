@@ -27,13 +27,13 @@ func NewMsgStakeSupplier(
 }
 
 // ValidateBasic performs the following validation steps:
-//   - Validates the owner address is bech32 encoded.
-//   - Validates the operator address is bech32 encoded.
-//   - If the stake is not nil:
-//   - Validates the stake amount is positive.
-//   - Validates the stake denom is upokt.
-//   - If services configs are provided:
-//   - Validates each service config
+//  1. Validates the owner address is bech32 encoded.
+//  2. Validates the operator address is bech32 encoded.
+//  3. If the stake is not nil:
+//     - Validates the stake amount is positive.
+//     - Validates the stake denom is upokt.
+//  4. If services configs are provided:
+//     - Validates each service config
 func (msg *MsgStakeSupplier) ValidateBasic() error {
 	// Validate the owner address
 	if _, err := sdk.AccAddressFromBech32(msg.OwnerAddress); err != nil {
