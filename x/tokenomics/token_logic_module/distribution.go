@@ -165,11 +165,11 @@ func distributeValidatorRewards(
 		len(validators),
 		totalBondedTokens.String(),
 	))
-	
-	// Debug: Log individual validator stakes  
+
+	// Debug: Log individual validator stakes
 	logger.Info("Validator stakes breakdown:")
 	for i, validator := range validators {
-		logger.Info(fmt.Sprintf("  Validator %d (%s): stake = %s", 
+		logger.Info(fmt.Sprintf("  Validator %d (%s): stake = %s",
 			i, validator.GetOperator(), validator.GetBondedTokens().String()))
 	}
 
@@ -208,7 +208,7 @@ func distributeValidatorRewards(
 			fractions = append(fractions, validatorFraction{i, fractionalPart})
 		}
 
-		logger.Info(fmt.Sprintf("  Validator %d (%s): stake=%s, base_reward=%s, fraction=%s", 
+		logger.Info(fmt.Sprintf("  Validator %d (%s): stake=%s, base_reward=%s, fraction=%s",
 			i, validator.GetOperator(), validatorStake.String(), validatorRewards[i].String(), fractionalPart.FloatString(6)))
 	}
 
@@ -216,7 +216,7 @@ func distributeValidatorRewards(
 	remainder := validatorRewardAmount.Sub(totalCalculated)
 	tokensToDistribute := remainder.Int64()
 
-	logger.Info(fmt.Sprintf("Total calculated: %s, target: %s, remainder: %s tokens", 
+	logger.Info(fmt.Sprintf("Total calculated: %s, target: %s, remainder: %s tokens",
 		totalCalculated.String(), validatorRewardAmount.String(), remainder.String()))
 
 	if tokensToDistribute > 0 && len(fractions) > 0 {
@@ -232,8 +232,8 @@ func distributeValidatorRewards(
 			// Use modulo to cycle through validators if remainder > number of validators with fractions
 			idx := fractions[t%int64(len(fractions))].index
 			validatorRewards[idx] = validatorRewards[idx].AddRaw(1)
-			
-			logger.Info(fmt.Sprintf("  Added 1 token to validator %d (fraction: %s)", 
+
+			logger.Info(fmt.Sprintf("  Added 1 token to validator %d (fraction: %s)",
 				idx, fractions[t%int64(len(fractions))].fraction.FloatString(6)))
 		}
 	} else if tokensToDistribute > 0 {

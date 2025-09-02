@@ -830,16 +830,16 @@ func WithMultipleValidators(validatorStakes []int64) TokenomicsModuleKeepersOptF
 				valAccAddr := cosmostypes.AccAddress(valAddr)
 
 				// Create account
-				acc := keepers.AccountKeeper.NewAccountWithAddress(sdkCtx, valAccAddr)
-				keepers.AccountKeeper.SetAccount(sdkCtx, acc)
+				acc := keepers.NewAccountWithAddress(sdkCtx, valAccAddr)
+				keepers.SetAccount(sdkCtx, acc)
 
 				// Give initial balance (1M uPOKT for testing)
 				initialBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000)
-				err = keepers.BankKeeper.MintCoins(sdkCtx, tokenomicstypes.ModuleName, cosmostypes.NewCoins(initialBalance))
+				err = keepers.MintCoins(sdkCtx, tokenomicstypes.ModuleName, cosmostypes.NewCoins(initialBalance))
 				if err != nil {
 					panic(err)
 				}
-				err = keepers.BankKeeper.SendCoinsFromModuleToAccount(sdkCtx, tokenomicstypes.ModuleName, valAccAddr, cosmostypes.NewCoins(initialBalance))
+				err = keepers.SendCoinsFromModuleToAccount(sdkCtx, tokenomicstypes.ModuleName, valAccAddr, cosmostypes.NewCoins(initialBalance))
 				if err != nil {
 					panic(err)
 				}
