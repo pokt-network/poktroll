@@ -43,7 +43,7 @@ message ModToModTransfer {
 
 // SettlementOpReason is a distinct, tlm-specific causal reason for a given operation.
 enum SettlementOpReason {
-  // Next free index: 22
+  // Next free index: 25
 
   // These were removed in #1753 during the transition from proposer distribution to validator pool distribution.
   // TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION = 16;
