@@ -2,16 +2,21 @@
 # Variables #
 #############
 
+# Pocket
 NETWORK ?= local
 POCKET_ACCOUNT ?= pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 # key name: app1
+
+# Agoric
 AGORIC_ACCOUNT ?= agoric1vaj34dfx94y6nvwt57dfyag5gfsp6eqjmvzu8c # key name: foreigner
 AGORIC_CHAIN_ID ?= agoriclocal
+
+# Axelar
 AXELAR_ACCOUNT ?= axelar1sz7nw80886tuenrhvg2tttlemgfxy734st6f5e # key name: validator
 AXELAR_CHAIN_ID ?= axelar
+
+# Osmosis
 OSMOSIS_ACCOUNT ?= osmo1sz7nw80886tuenrhvg2tttlemgfxy734u7l3f2 # key name: validator
 OSMOSIS_CHAIN_ID ?= osmosis
-
-
 
 ###############################
 # Agoric `agd` helper targets #
@@ -75,8 +80,6 @@ osmosis_query_tx:
 osmosis_query_tx_json:
 	POD_REGEX="osmosis-validator" CHAIN_BIN="osmosisd" CHAIN_ID="osmosis" ${MAKE} ibc_localnet_query_tx_json
 
-
-
 .PHONY: fund_agoric_account
 fund_agoric_account: check_kubectl check_docker_ps check_kind
 	bash -c '\
@@ -94,6 +97,7 @@ fund_agoric_account: check_kubectl check_docker_ps check_kind
 #####################
 # IBC query targets #
 #####################
+
 .PHONY: ibc_list_localnet_pocket_clients
 ibc_list_pocket_clients:
 	pocketd --home=$(POCKETD_HOME) q ibc client states --node=$(POCKET_NODE) --network=$(NETWORK)

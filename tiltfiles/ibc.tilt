@@ -13,7 +13,7 @@ ibc_relayer_config = {
 # - Creates a Tilt resource that prints a message indicating IBC is disabled
 # - Shows how to enable it
 def ibc_disabled_resource(reason):
-    local_resource("⚠️ IBC Disabled",
+    local_resource("⚠️ Enabling IBC?",
                    "echo '{}'".format(reason),
                    labels=["IBC"])
 
@@ -142,7 +142,7 @@ def load_ibc_relayer_setup_resources(chart_prefix, network_name, validator_confi
         # workload=release_name,
         "ibc-relayer-setup-" + network_name,
         new_name="🏗️ " + tilt_ui_name,
-        labels=["IBC_Pairs_Setup"],
+        labels=["IBC"],
         trigger_mode=TRIGGER_MODE_MANUAL,
         resource_deps=resource_deps,
     )
