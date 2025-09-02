@@ -5,7 +5,7 @@ RUN grep -qF 'env_setup.sh' /root/.bashrc || echo "source /usr/src/upgrade-test-
 RUN grep -qF 'printKeys' /root/.bashrc || echo "printKeys" >> /root/.bashrc
 
 
-# TODO_UPNEXT: Make agoric work in localnet.
+# TODO: Make agoric work in localnet.
 # ## Install Go v1.23.0
 # RUN wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
 # RUN rm -rf /usr/local/go && tar -C /usr/local -xzf go*.tar.gz
