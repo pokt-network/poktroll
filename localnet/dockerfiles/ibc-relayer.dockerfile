@@ -15,19 +15,12 @@ RUN case "${TARGETARCH}" in \
         "arm64") HERMES_ARCH="aarch64" ;; \
         *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
-    # Smart fallback: try pokt-network first, fallback to informalsystems
-    if wget -q --spider "https://github.com/pokt-network/hermes/releases/download/v1.13.4/hermes-v1.13.4-${HERMES_ARCH}-unknown-linux-gnu.tar.gz" 2>/dev/null; then \
-        echo "✓ Using pokt-network hermes v1.13.4" && \
-        wget https://github.com/pokt-network/hermes/releases/download/v1.13.4/hermes-v1.13.4-${HERMES_ARCH}-unknown-linux-gnu.tar.gz && \
-        tar -C /root/.hermes/bin/ -vxf hermes-v1.13.4-${HERMES_ARCH}-unknown-linux-gnu.tar.gz; \
-    else \
-        echo "⚠ Falling back to informalsystems hermes v1.13.1" && \
-        wget https://github.com/informalsystems/hermes/releases/download/v1.13.1/hermes-v1.13.1-${HERMES_ARCH}-unknown-linux-gnu.tar.gz && \
-        tar -C /root/.hermes/bin/ -vxf hermes-v1.13.1-${HERMES_ARCH}-unknown-linux-gnu.tar.gz; \
-    fi && \
-    # Clean up archives and verify installation
-    rm -f *.tar.gz && \
-    /root/.hermes/bin/hermes version
+    # TODO_TECHDEBT: use informalsystems hermes image once they cut a new release.
+    # Ref: https://github.com/informalsystems/hermes/issues/4370#issuecomment-3246757714
+    wget https://github.com/pokt-network/hermes/releases/download/v1.13.5/hermes-v1.13.5-${HERMES_ARCH}-unknown-linux-gnu.tar.gz && \
+    tar -C /root/.hermes/bin/ -vxf hermes-v1.13.5-${HERMES_ARCH}-unknown-linux-gnu.tar.gz
+# wget https://github.com/informalsystems/hermes/releases/download/v1.13.1/hermes-v1.13.1-${HERMES_ARCH}-unknown-linux-gnu.tar.gz && \
+# tar -C /root/.hermes/bin/ -vxf hermes-v1.13.1-${HERMES_ARCH}-unknown-linux-gnu.tar.gz
 
 ENTRYPOINT ["/root/.hermes/bin/hermes"]
 CMD ["start"]

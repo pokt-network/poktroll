@@ -32,7 +32,7 @@ get_chain_binary() {
     local chain_id="$1"
     case "$chain_id" in
         "pocket") echo "pocketd" ;;
-        "agoric") echo "agd" ;;
+        "agoriclocal") echo "agd" ;;
         "axelar") echo "axelard" ;;
         "osmosis") echo "osmosisd" ;;
         *) echo "" ;;
@@ -44,7 +44,7 @@ get_chain_pod_pattern() {
     local chain_id="$1"
     case "$chain_id" in
         "pocket") echo "" ;;  # pocket runs locally, no pod
-        "agoric") echo "agoric-validator" ;;
+        "agoriclocal") echo "agoric-validator" ;;
         "axelar") echo "axelar-validator" ;;
         "osmosis") echo "osmosis-validator" ;;
         *) echo "" ;;
