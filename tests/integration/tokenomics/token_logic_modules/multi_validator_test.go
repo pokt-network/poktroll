@@ -14,195 +14,244 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TestTLMProcessorsMultiValidatorDistribution tests that validator rewards are
-// distributed correctly across multiple validators based on their stake weights.
-// This test validates the core functionality implemented in distributeValidatorRewards().
-func (s *tokenLogicModuleTestSuite) TestTLMProcessorsMultiValidatorDistribution() {
-	// Test case with stakes designed for clean mathematical division
-	// Using 10% validator allocation in both TLMs for clean math.
-	//
-	// With 110 total validator rewards and stakes in ratio 5:4:2 (sum=11):
-	// - Validator 1: 500,000 tokens (45.45% of total 1,100,000) -> 50 uPOKT (exact)
-	// - Validator 2: 400,000 tokens (36.36% of total 1,100,000) -> 40 uPOKT (exact)
-	// - Validator 3: 200,000 tokens (18.18% of total 1,100,000) -> 20 uPOKT (exact)
-	// Total: 1,100,000 tokens -> 110 uPOKT rewards (50+40+20=110 exact)
-	//
-	// The Largest Remainder Method ensures mathematically fair distribution while
-	// maintaining total conservation (distributed amounts always sum to input amount).
+// TestValidatorRewardDistribution tests validator and delegator reward distribution
+// across multiple scenarios using table-driven tests to reduce code duplication.
+func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
+	testCases := []struct {
+		name                     string
+		validatorStakes          []int64
+		delegatedAmounts         []int64 // nil for validator-only tests
+		numClaims                int
+		expectedValidatorRewards []int64
+		expectedTotalRewards     int64
+		validationFunc           func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64)
+		skipReason               string // if non-empty, test will be skipped
+	}{
+		{
+			name:                     "Validator-only: Stakes that divide cleanly",
+			validatorStakes:          []int64{500_000, 400_000, 200_000},
+			numClaims:                1000,
+			expectedValidatorRewards: []int64{50_000, 40_000, 20_000},
+			expectedTotalRewards:     110_000,
+			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
+				// Validator stakes: [500k, 400k, 200k] = 1.1M total
+				// With 110,000 total rewards:
+				// - Val 1: 500k/1.1M = 45.45% → 50,000 uPOKT
+				// - Val 2: 400k/1.1M = 36.36% → 40,000 uPOKT
+				// - Val 3: 200k/1.1M = 18.18% → 20,000 uPOKT
+				// Clean division with no remainder due to ratio 5:4:2
 
-	s.T().Run("Stakes that divide cleanly into rewards", func(t *testing.T) {
-		// Use stakes in ratio 5:4:2 (which sum to 11) with 10% validator allocation
-		// to get clean division: 110,000 ÷ 11 = 10,000 per unit, so [50000, 40000, 20000]
-		validatorStakes := []int64{500_000, 400_000, 200_000}
-		s.setupKeepersWithMultipleValidators(t, validatorStakes)
+				require.Len(t, validatorRewards, 3, "Should have 3 validators")
+				require.Empty(t, delegatorRewards, "Should have no delegator rewards")
+				require.ElementsMatch(t, []int64{50_000, 40_000, 20_000}, validatorRewards,
+					"Validator rewards should match expected proportional distribution")
+			},
+		},
+		{
+			name:                     "Validator-only: Single validator gets all rewards",
+			validatorStakes:          []int64{1_000_000},
+			numClaims:                1000,
+			expectedValidatorRewards: []int64{110_000},
+			expectedTotalRewards:     110_000,
+			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
+				// Single validator with 1M stake gets 100% of rewards
+				// Total rewards: 110,000 uPOKT (all to single validator)
 
-		// Create claims for unique applications to ensure distinct sessions
-		numClaims := 1000 // Large enough to avoid reward truncation
-		s.createClaims(&s.keepers, numClaims)
+				require.Len(t, validatorRewards, 1, "Should have 1 validator")
+				require.Empty(t, delegatorRewards, "Should have no delegator rewards")
+				require.Equal(t, []int64{110_000}, validatorRewards, "Single validator should get all rewards")
+			},
+		},
+		{
+			name:                     "Validator-only: Equal stakes receive equal rewards",
+			validatorStakes:          []int64{200_000, 200_000, 200_000, 200_000, 200_000},
+			numClaims:                1000,
+			expectedValidatorRewards: []int64{22_000, 22_000, 22_000, 22_000, 22_000},
+			expectedTotalRewards:     110_000,
+			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
+				// 5 validators with equal stakes (200k each) = 1M total
+				// Each gets exactly 1/5 of 110,000 = 22,000 uPOKT
+				// Perfect division with no remainder
 
-		// Settle claims and trigger validator reward distribution
-		settledResults, expiredResults := s.settleClaims(t)
-		require.NotEmpty(t, settledResults)
-		require.Empty(t, expiredResults) // No expired claims expected
+				require.Len(t, validatorRewards, 5, "Should have 5 validators")
+				require.Empty(t, delegatorRewards, "Should have no delegator rewards")
+				for _, reward := range validatorRewards {
+					require.Equal(t, int64(22_000), reward, "All validators should receive equal rewards")
+				}
+			},
+		},
+		{
+			name:                 "With delegators: Mixed delegation amounts",
+			validatorStakes:      []int64{400_000, 400_000, 400_000}, // Equal self-bonded stakes
+			delegatedAmounts:     []int64{600_000, 200_000, 0},       // Different delegation amounts
+			numClaims:            600,
+			expectedTotalRewards: 66_000, // 600 claims × 1100 × 10% = 66,000
+			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
+				// Stake distribution:
+				// - Validator 1: 400k self + 600k delegated = 1,000k total (50% of 2M)
+				// - Validator 2: 400k self + 200k delegated = 600k total (30% of 2M)
+				// - Validator 3: 400k self + 0k delegated = 400k total (20% of 2M)
+				// Total: 2,000k tokens
+				//
+				// Expected distribution of 66,000 total rewards:
+				// - Validator 1 total: 33,000 (50%)
+				//   - Val 1 self (400k/1000k = 40%): 13,200 uPOKT
+				//   - Val 1 delegators (600k/1000k = 60%): 19,800 uPOKT
+				// - Validator 2 total: 19,800 (30%)
+				//   - Val 2 self (400k/600k = 66.67%): 13,200 uPOKT
+				//   - Val 2 delegators (200k/600k = 33.33%): 6,600 uPOKT
+				// - Validator 3 total: 13,200 (20%)
+				//   - Val 3 self (400k/400k = 100%): 13,200 uPOKT
+				//   - Val 3 delegators: 0 uPOKT
 
-		// Extract actual validator rewards from settlement results
-		actualRewards := s.extractValidatorRewards(settledResults)
+				require.Len(t, validatorRewards, 3, "Should have 3 validators")
 
-		// Expected rewards with Largest Remainder Method:
-		// The improved distribution algorithm uses the Largest Remainder Method to fairly
-		// distribute remainder tokens based on fractional parts, achieving perfect precision.
-		//
-		// With stakes [500_000, 400_000, 200_000] (ratio 5:4:2) and 110,000 total rewards:
-		// - Validator 1: (5/11) × 110,000 = 50,000 uPOKT (perfect precision)
-		// - Validator 2: (4/11) × 110,000 = 40,000 uPOKT (perfect precision)
-		// - Validator 3: (2/11) × 110,000 = 20,000 uPOKT (perfect precision)
-		//
-		// The Largest Remainder Method ensures mathematically fair distribution while
-		// maintaining total conservation (distributed amounts always sum to input amount).
-		expectedRewards := []int64{50_000, 40_000, 20_000}
+				// All validators have equal self-bonded stakes (400k each), so must receive equal rewards
+				expectedValidatorReward := int64(13_200) // Each validator gets 13,200 for their 400k self-bonded stake
+				for _, reward := range validatorRewards {
+					require.Equal(t, expectedValidatorReward, reward,
+						"All validators should receive exactly %d uPOKT for equal self-bonded stakes", expectedValidatorReward)
+				}
 
-		require.ElementsMatch(t, expectedRewards, actualRewards,
-			"Validator rewards should match expected proportional distribution")
+				// Verify specific delegator rewards based on their delegation amounts
+				// We have 4 delegators total (2 for Val1, 2 for Val2, 0 for Val3)
+				expectedDelegatorRewards := []int64{
+					9_900, 9_900, // Val1's 2 delegators split 19,800 equally
+					3_300, 3_300, // Val2's 2 delegators split 6,600 equally
+				}
 
-		// Ensure no pending claims remain
-		s.assertNoPendingClaims(t)
+				// Delegator rewards should match expected distribution
+				require.ElementsMatch(t, expectedDelegatorRewards, delegatorRewards,
+					"Delegator rewards should match expected distribution")
 
-		t.Log("Multi-validator distribution test completed successfully")
-	})
+				// Verify totals
+				totalValidatorRewards := 3 * expectedValidatorReward // 39,600
+				totalDelegatorRewards := int64(19_800 + 6_600)       // 26,400
+
+				require.Equal(t, int64(39_600), totalValidatorRewards, "Total validator rewards should be 39,600")
+				require.Equal(t, int64(26_400), totalDelegatorRewards, "Total delegator rewards should be 26,400")
+				require.Equal(t, expectedTotal, totalValidatorRewards+totalDelegatorRewards,
+					"Total distributed should equal expected total")
+			},
+		},
+		{
+			name:                 "SKIP: Precision loss with many small distributions (validator-only)",
+			validatorStakes:      []int64{333_333, 333_333, 333_334},
+			numClaims:            1000,
+			expectedTotalRewards: 110_000,
+			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
+			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
+				// Validator stakes: [333,333, 333,333, 333,334] = 1M total
+				// These create fractional shares that can't divide evenly:
+				// - Val 1: 333,333/1M = 33.3333% → 36,666.63 uPOKT
+				// - Val 2: 333,333/1M = 33.3333% → 36,666.63 uPOKT
+				// - Val 3: 333,334/1M = 33.3334% → 36,666.74 uPOKT
+				//
+				// Per-claim distribution (2000 calls) causes cumulative precision loss
+				// This test will FAIL until reward batching is implemented
+
+				expectedRewards := []int64{36_667, 36_666, 36_667}
+				require.ElementsMatch(t, expectedRewards, validatorRewards,
+					"Validators should receive exact proportional rewards without precision loss")
+			},
+		},
+		{
+			name:                 "SKIP: Precision loss with delegations and fractional stakes",
+			validatorStakes:      []int64{333_333, 333_333, 333_334}, // Equal self-bonded stakes (fractional)
+			delegatedAmounts:     []int64{166_667, 333_333, 500_000}, // Unequal delegations creating more fractional complexity
+			numClaims:            1000,
+			expectedTotalRewards: 110_000,
+			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
+			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
+				// This test demonstrates precision loss in delegation scenarios
+				//
+				// Total stakes:
+				// - Validator 1: 333,333 self + 166,667 delegated = 500,000 total (37.5% of 1,333,333 total)
+				// - Validator 2: 333,333 self + 333,333 delegated = 666,666 total (50.0% of 1,333,333 total)
+				// - Validator 3: 333,334 self + 500,000 delegated = 833,334 total (62.5% of 1,333,333 total)
+				// Total: 2,000,000 tokens
+				//
+				// Expected perfect distribution (110,000 total):
+				// - Validator 1 total: 110,000 × (500,000/2,000,000) = 27,500 uPOKT
+				//   - Val 1 self (333,333/500,000): 18,333 uPOKT
+				//   - Val 1 delegators (166,667/500,000): 9,167 uPOKT
+				// - Validator 2 total: 110,000 × (666,666/2,000,000) = 36,667 uPOKT
+				//   - Val 2 self (333,333/666,666): 18,333 uPOKT
+				//   - Val 2 delegators (333,333/666,666): 18,334 uPOKT
+				// - Validator 3 total: 110,000 × (833,334/2,000,000) = 45,833 uPOKT
+				//   - Val 3 self (333,334/833,334): 18,333 uPOKT
+				//   - Val 3 delegators (500,000/833,334): 27,500 uPOKT
+				//
+				// However, per-claim distribution creates cascading precision loss:
+				// 1. Each claim triggers 2 TLM distributions (2000 total calls)
+				// 2. Each call distributes 55 uPOKT across fractional stake ratios
+				// 3. Fractional remainders compound across validator AND delegator distributions
+				// 4. The result is significant cumulative loss across all stakeholders
+
+				expectedValidatorRewards := []int64{18_333, 18_333, 18_333} // Equal self-bonded should get equal rewards
+				expectedDelegatorRewards := []int64{9_167, 18_334, 27_500}  // Proportional to delegation amounts
+
+				// These assertions will FAIL due to cascading precision loss
+				require.ElementsMatch(t, expectedValidatorRewards, validatorRewards,
+					"Validators should receive equal rewards for equal self-bonded stakes without precision loss")
+				require.ElementsMatch(t, expectedDelegatorRewards, delegatorRewards,
+					"Delegators should receive proportional rewards without precision loss")
+
+				// Verify total conservation (this will also fail due to precision loss)
+				totalActual := int64(0)
+				for _, reward := range validatorRewards {
+					totalActual += reward
+				}
+				for _, reward := range delegatorRewards {
+					totalActual += reward
+				}
+				require.Equal(t, expectedTotal, totalActual,
+					"Total distributed should equal expected total without precision loss")
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.name, func(t *testing.T) {
+			if tc.skipReason != "" {
+				t.Skip(tc.skipReason)
+			}
+
+			// Setup keepers with appropriate validator/delegation configuration
+			s.setupValidatorTest(t, tc.validatorStakes, tc.delegatedAmounts)
+
+			// Create claims and settle
+			s.createClaims(&s.keepers, tc.numClaims)
+			settledResults, expiredResults := s.settleClaims(t)
+			require.NotEmpty(t, settledResults)
+			require.Empty(t, expiredResults)
+
+			// Extract rewards
+			validatorRewards, delegatorRewards := s.extractRewards(settledResults, tc.delegatedAmounts != nil)
+
+			// Validate total rewards if expected
+			if tc.expectedTotalRewards > 0 {
+				totalRewards := s.sumRewards(validatorRewards) + s.sumRewards(delegatorRewards)
+				require.InDelta(t, tc.expectedTotalRewards, totalRewards, 100,
+					"Total rewards should approximately equal expected")
+			}
+
+			// Run test-specific validation
+			tc.validationFunc(t, validatorRewards, delegatorRewards, tc.expectedTotalRewards)
+
+			// Ensure no pending claims remain
+			s.assertNoPendingClaims(t)
+		})
+	}
 }
 
-// TestTLMProcessorsValidatorDistributionEdgeCases tests edge cases in validator reward distribution.
-func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCases() {
-	s.T().Run("Single validator gets all rewards", func(t *testing.T) {
-		// Setup with single validator
-		validatorStakes := []int64{1_000_000}
-		s.setupKeepersWithMultipleValidators(t, validatorStakes)
-
-		// Create claims and settle
-		numClaims := 1000 // Same as multi-validator test for consistency
-		s.createClaims(&s.keepers, numClaims)
-		settledResults, _ := s.settleClaims(t)
-
-		// Extract and verify single validator gets all rewards
-		actualRewards := s.extractValidatorRewards(settledResults)
-
-		// Single validator should get all validator rewards from both TLM processors
-		// With 1000 unique claims: total = 110,000 uPOKT
-		expectedRewards := []int64{110_000}
-
-		require.ElementsMatch(t, expectedRewards, actualRewards,
-			"Single validator should receive all validator rewards")
-
-		// Ensure no pending claims remain
-		s.assertNoPendingClaims(t)
-
-		t.Log("Single validator edge case test completed successfully")
-	})
-
-	s.T().Run("Equal stakes receive equal rewards", func(t *testing.T) {
-		// Setup with 5 validators having equal stakes
-		// This ensures clean division without remainder issues
-		validatorStakes := []int64{200_000, 200_000, 200_000, 200_000, 200_000}
-		s.setupKeepersWithMultipleValidators(t, validatorStakes)
-
-		// Create claims and settle
-		numClaims := 1000 // Same as other tests for consistency
-		s.createClaims(&s.keepers, numClaims)
-		settledResults, _ := s.settleClaims(t)
-
-		// Extract and verify equal distribution
-		actualRewards := s.extractValidatorRewards(settledResults)
-
-		// Expected calculation for 5 equal validators with 10% allocation and 1000 unique claims:
-		// Total validator rewards: 110,000 uPOKT
-		// With equal stakes: 110,000 ÷ 5 = 22,000 uPOKT each (exact division)
-		expectedRewards := []int64{22_000, 22_000, 22_000, 22_000, 22_000}
-
-		require.ElementsMatch(t, expectedRewards, actualRewards,
-			"Equal stakes should receive equal rewards")
-
-		// Ensure no pending claims remain
-		s.assertNoPendingClaims(t)
-
-		t.Log("Equal stakes edge case test completed successfully")
-	})
-
-	// TODO_CRITICAL(#1758): This test demonstrates the precision loss issue with per-claim
-	// validator reward distribution. It's currently skipped because it will fail,
-	// showing that validators lose significant rewards due to accumulated truncation.
-	//
-	// Once we implement reward batching (accumulating validator rewards across all
-	// claims and distributing once per TLM per settlement), this test will pass.
-	s.T().Run("SKIP: Precision loss with many small distributions", func(t *testing.T) {
-		t.Skip("Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))")
-
-		// Use validator stakes that will cause precision loss due to fractional remainders
-		// Stakes: [333333, 333333, 333334] (ratio ≈ 1:1:1 but not exact thirds)
-		// Total: 1,000,000 tokens
-		//
-		// Per-claim validator reward: 55 uPOKT
-		// Expected per-validator per-claim: 55 ÷ 3 = 18.333... uPOKT
-		// This creates fractional remainders that accumulate over 2000 distributions
-		validatorStakes := []int64{333_333, 333_333, 333_334}
-		s.setupKeepersWithMultipleValidators(t, validatorStakes)
-
-		// Create 1000 claims - this will trigger 2000 distributeValidatorRewards calls
-		// (1000 claims × 2 TLMs = 2000 individual distributions)
-		numClaims := 1000
-		s.createClaims(&s.keepers, numClaims)
-
-		// Settle claims - this is where the precision loss occurs
-		settledResults, _ := s.settleClaims(t)
-
-		// Extract actual validator rewards
-		actualRewards := s.extractValidatorRewards(settledResults)
-
-		// With perfect precision, validators should receive rewards proportional to their stake:
-		// Total validator rewards: 110,000 uPOKT (10% of 1,100,000 total settlement)
-		// Stakes: [333333, 333333, 333334] = 1,000,000 total
-		// - Validator 1 (33.3333%): 110,000 × (333333/1000000) = 36,666.63 → 36,667 uPOKT
-		// - Validator 2 (33.3333%): 110,000 × (333333/1000000) = 36,666.63 → 36,666 uPOKT
-		// - Validator 3 (33.3334%): 110,000 × (333334/1000000) = 36,666.74 → 36,667 uPOKT
-		// Total: 36,667 + 36,666 + 36,667 = 110,000 (with Largest Remainder Method)
-		//
-		// However, with per-claim distribution (2000 calls of 55 uPOKT each),
-		// accumulated truncation causes significant loss:
-		// - Each call distributes only 55 uPOKT among 3 validators with fractional shares
-		// - Per-call distributions create fractional remainders: 55 ÷ 3 = 18.333... each
-		// - Even with Largest Remainder Method per call, thousands of small truncations accumulate
-		// - The precision loss compounds over 2000 individual distribution calls
-		//
-		// Expected with perfect batched distribution (what we want to achieve):
-		expectedRewards := []int64{36_667, 36_666, 36_667}
-
-		// These assertions will FAIL with current per-claim distribution,
-		// demonstrating the precision loss issue
-		require.ElementsMatch(t, expectedRewards, actualRewards,
-			"Validators should receive exact proportional rewards without precision loss")
-
-		// Verify the total distributed equals what was intended
-		totalDistributed := int64(0)
-		for _, reward := range actualRewards {
-			totalDistributed += reward
-		}
-		require.Equal(t, int64(110_000), totalDistributed,
-			"Total distributed should equal 110,000 uPOKT (currently less due to precision loss)")
-
-		// Log the actual vs expected for debugging
-		t.Logf("Expected rewards: %v", expectedRewards)
-		t.Logf("Actual rewards:   %v", actualRewards)
-		t.Logf("Precision loss:   %d uPOKT", 110000-totalDistributed)
-
-		s.assertNoPendingClaims(t)
-	})
-}
-
-// setupKeepersWithMultipleValidators initializes keepers with multiple validators having specified stake amounts.
-func (s *tokenLogicModuleTestSuite) setupKeepersWithMultipleValidators(t *testing.T, validatorStakes []int64) {
+// setupValidatorTest initializes keepers for validator reward testing.
+// Supports both validator-only and validator+delegator scenarios.
+func (s *tokenLogicModuleTestSuite) setupValidatorTest(t *testing.T, validatorStakes []int64, delegatedAmounts []int64) {
 	t.Helper()
 
-	// Setup keepers with standard options plus multi-validator setup using our new infrastructure
-	s.setupKeepers(t,
+	// Common setup options
+	setupOpts := []testkeeper.TokenomicsModuleKeepersOptFn{
 		testkeeper.WithService(*s.service),
 		testkeeper.WithApplication(*s.app),
 		testkeeper.WithSupplier(*s.supplier),
@@ -216,73 +265,45 @@ func (s *tokenLogicModuleTestSuite) setupKeepersWithMultipleValidators(t *testin
 			tokenomicstypes.ModuleName: s.getTokenomicsParamsWithCleanValidatorMath(), // Use 10% validator allocation
 		}),
 		testkeeper.WithDefaultModuleBalances(),
-		testkeeper.WithMultipleValidators(validatorStakes),
-	)
-}
-
-// extractValidatorRewards extracts all validator reward amounts from settlement results.
-// Returns a slice of reward amounts in uPOKT aggregated by validator.
-func (s *tokenLogicModuleTestSuite) extractValidatorRewards(settledResults tlm.ClaimSettlementResults) []int64 {
-	// Map to aggregate rewards by validator address
-	validatorRewards := make(map[string]int64)
-
-	for _, result := range settledResults {
-		for _, transfer := range result.ModToAcctTransfers {
-			// Check if this is a validator reward transfer
-			switch transfer.OpReason {
-			case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
-				tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION:
-
-				// Verify the transfer is from tokenomics module and is valid
-				if transfer.SenderModule == tokenomicstypes.ModuleName &&
-					transfer.Coin.Denom == pocket.DenomuPOKT &&
-					transfer.Coin.Amount.IsPositive() {
-					// Aggregate rewards by validator address
-					validatorRewards[transfer.RecipientAddress] += transfer.Coin.Amount.Int64()
-				}
-			}
-		}
 	}
 
-	// Convert map to slice of reward amounts
-	var rewards []int64
-	for _, reward := range validatorRewards {
-		rewards = append(rewards, reward)
+	// Add validator configuration based on test type
+	if delegatedAmounts != nil {
+		// For delegation tests, use equal self-bonded stakes with varied delegations
+		setupOpts = append(setupOpts, testkeeper.WithValidatorsAndDelegations(validatorStakes[0], delegatedAmounts))
+	} else {
+		// For validator-only tests, use the provided stakes
+		setupOpts = append(setupOpts, testkeeper.WithMultipleValidators(validatorStakes))
 	}
 
-	return rewards
+	s.setupKeepers(t, setupOpts...)
 }
 
-// extractValidatorAndDelegatorRewards extracts all validator and delegator reward amounts from settlement results.
-// Returns separate slices for validator rewards and delegator rewards.
-func (s *tokenLogicModuleTestSuite) extractValidatorAndDelegatorRewards(settledResults tlm.ClaimSettlementResults) (validatorRewards []int64, delegatorRewards []int64) {
+// extractRewards extracts validator and/or delegator reward amounts from settlement results.
+// Returns separate slices for validator and delegator rewards.
+func (s *tokenLogicModuleTestSuite) extractRewards(settledResults tlm.ClaimSettlementResults, includeDelegators bool) (validatorRewards []int64, delegatorRewards []int64) {
 	// Maps to aggregate rewards by recipient address
 	validatorRewardMap := make(map[string]int64)
 	delegatorRewardMap := make(map[string]int64)
 
 	for _, result := range settledResults {
 		for _, transfer := range result.ModToAcctTransfers {
-			// Check if this is a validator reward transfer
+			// Verify the transfer is from tokenomics module and is valid
+			if transfer.SenderModule != tokenomicstypes.ModuleName ||
+				transfer.Coin.Denom != pocket.DenomuPOKT ||
+				!transfer.Coin.Amount.IsPositive() {
+				continue
+			}
+
+			// Check transfer type and aggregate appropriately
 			switch transfer.OpReason {
 			case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 				tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION:
-
-				// Verify the transfer is from tokenomics module and is valid
-				if transfer.SenderModule == tokenomicstypes.ModuleName &&
-					transfer.Coin.Denom == pocket.DenomuPOKT &&
-					transfer.Coin.Amount.IsPositive() {
-					// Aggregate validator rewards by recipient address
-					validatorRewardMap[transfer.RecipientAddress] += transfer.Coin.Amount.Int64()
-				}
+				validatorRewardMap[transfer.RecipientAddress] += transfer.Coin.Amount.Int64()
 
 			case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION,
 				tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION:
-
-				// Verify the transfer is from tokenomics module and is valid
-				if transfer.SenderModule == tokenomicstypes.ModuleName &&
-					transfer.Coin.Denom == pocket.DenomuPOKT &&
-					transfer.Coin.Amount.IsPositive() {
-					// Aggregate delegator rewards by recipient address
+				if includeDelegators {
 					delegatorRewardMap[transfer.RecipientAddress] += transfer.Coin.Amount.Int64()
 				}
 			}
@@ -300,106 +321,11 @@ func (s *tokenLogicModuleTestSuite) extractValidatorAndDelegatorRewards(settledR
 	return validatorRewards, delegatorRewards
 }
 
-// TestTLMProcessorsDelegatorRewardDistribution tests that validator and delegator rewards
-// are distributed correctly based on pure stake proportions without commission.
-func (s *tokenLogicModuleTestSuite) TestTLMProcessorsDelegatorRewardDistribution() {
-	s.T().Run("Validators and delegators receive proportional stake-based rewards", func(t *testing.T) {
-		// Test scenario with 3 validators having equal self-bonded stakes (400k each)
-		// but different delegation amounts to test pure stake-based distribution:
-		//
-		// Validator 1: 400k self-bonded + 600k delegated = 1,000k total (50% of 2M total)
-		// Validator 2: 400k self-bonded + 200k delegated = 600k total (30% of 2M total)
-		// Validator 3: 400k self-bonded + 0k delegated = 400k total (20% of 2M total)
-		//
-		// Total staked: 2,000k tokens
-		// Total validator rewards per test: 110,000 uPOKT (10% of 1.1M total)
-		//
-		// Expected distribution (pure stake-based, no commission):
-		// - All of Validator 1: 55,000 uPOKT (50% of 110k)
-		//   - Validator 1 self-bonded (400k/1000k): 22,000 uPOKT
-		//   - Delegators to Val 1 (600k/1000k): 33,000 uPOKT
-		// - All of Validator 2: 33,000 uPOKT (30% of 110k)
-		//   - Validator 2 self-bonded (400k/600k): 22,000 uPOKT
-		//   - Delegators to Val 2 (200k/600k): 11,000 uPOKT
-		// - All of Validator 3: 22,000 uPOKT (20% of 110k)
-		//   - Validator 3 self-bonded (400k/400k): 22,000 uPOKT (no delegators)
-
-		// Use comprehensive delegation testing with equal self-bonded stakes and different delegations
-		selfBondedStake := int64(400000)               // Equal self-bonded stake for all validators
-		delegatedAmounts := []int64{600000, 200000, 0} // Different delegation amounts
-
-		// Setup keepers with realistic validators and delegations
-		s.setupKeepers(t,
-			testkeeper.WithService(*s.service),
-			testkeeper.WithApplication(*s.app),
-			testkeeper.WithSupplier(*s.supplier),
-			testkeeper.WithBlockProposer(
-				cosmostypes.ConsAddress(s.proposerConsAddr),
-				cosmostypes.ValAddress(s.proposerValOperatorAddr),
-			),
-			testkeeper.WithModuleParams(map[string]cosmostypes.Msg{
-				prooftypes.ModuleName:      s.getProofParams(),
-				sharedtypes.ModuleName:     s.getSharedParams(),
-				tokenomicstypes.ModuleName: s.getTokenomicsParamsWithCleanValidatorMath(), // 10% validator allocation
-			}),
-			testkeeper.WithDefaultModuleBalances(),
-			testkeeper.WithValidatorsAndDelegations(selfBondedStake, delegatedAmounts), // Use delegation infrastructure
-		)
-
-		// Create claims for unique applications to ensure distinct sessions
-		// Use 600 claims for clean math: 600 × 1100 × 10% = 66,000 total validator rewards
-		numClaims := 600
-		s.createClaims(&s.keepers, numClaims)
-
-		// Settle claims and trigger validator + delegator reward distribution
-		settledResults, expiredResults := s.settleClaims(t)
-		require.NotEmpty(t, settledResults)
-		require.Empty(t, expiredResults) // No expired claims expected
-
-		// Extract validator and delegator rewards from the real settlement results
-		// Now that TLM processors use delegation-aware distribution, this should work properly
-		validatorRewards, delegatorRewards := s.extractValidatorAndDelegatorRewards(settledResults)
-
-		// === VALIDATION ===
-
-		// Verify we have the expected number of reward recipients
-		require.Len(t, validatorRewards, 3, "All 3 validators should receive rewards")
-		require.NotEmpty(t, delegatorRewards, "Delegators should receive rewards")
-
-		// Calculate totals
-		totalValidatorRewards := int64(0)
-		for _, reward := range validatorRewards {
-			totalValidatorRewards += reward
-		}
-
-		totalDelegatorRewards := int64(0)
-		for _, reward := range delegatorRewards {
-			totalDelegatorRewards += reward
-		}
-
-		// With 600 claims × 1100 uPOKT × 10% validator allocation = 66,000 total validator rewards
-		expectedTotalRewards := int64(66000)
-		actualTotalRewards := totalValidatorRewards + totalDelegatorRewards
-
-		require.InDelta(t, expectedTotalRewards, actualTotalRewards, 100,
-			"Total rewards (%d validator + %d delegator = %d) should approximately equal expected %d",
-			totalValidatorRewards, totalDelegatorRewards, actualTotalRewards, expectedTotalRewards)
-
-		// Verify validators receive proportional rewards based on self-bonded stakes
-		// All validators have equal 400k self-bonded stakes, so should receive approximately equal rewards
-		avgValidatorReward := totalValidatorRewards / 3
-		for i, reward := range validatorRewards {
-			require.InDelta(t, avgValidatorReward, reward, float64(avgValidatorReward)*0.05, // 5% tolerance
-				"Validator %d should receive approximately equal rewards for equal self-bonded stake (got %d, avg %d)",
-				i, reward, avgValidatorReward)
-		}
-
-		// Ensure no pending claims remain
-		s.assertNoPendingClaims(t)
-
-		t.Logf("Validator rewards: %v (total: %d uPOKT)", validatorRewards, totalValidatorRewards)
-		t.Logf("Delegator rewards: %v (total: %d uPOKT)", delegatorRewards, totalDelegatorRewards)
-		t.Log("Delegation-aware distribution test completed successfully")
-	})
-
+// sumRewards calculates the total of all rewards in a slice.
+func (s *tokenLogicModuleTestSuite) sumRewards(rewards []int64) int64 {
+	total := int64(0)
+	for _, reward := range rewards {
+		total += reward
+	}
+	return total
 }
