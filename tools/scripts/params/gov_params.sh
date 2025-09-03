@@ -16,6 +16,7 @@
 #     --export-dir <dir>: Directory to save exported parameter files (export-all-params only). Default: tools/scripts/params/bulk_params
 #     --network <network>: Network flag for query. Default: uses --env value
 #     --home <path>: Home directory for pocketd. Default: ~/.pocket
+#     --gov-key <key>: Override the FROM_KEY for transaction signing
 #     --no-prompt: Skip the edit prompt and just generate the template (update only)
 #
 # This script can:
@@ -128,6 +129,7 @@ if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
     echo "  --export-dir <dir>: Directory to save exported parameter files (export-all-params only). (REQUIRED for export-all-params)"
     echo "  --network <network>: Network flag for query. Default: uses --env value"
     echo "  --home <path>: Home directory for pocketd. Default: ~/.pocket"
+    echo "  --gov-key <key>: Override the FROM_KEY for transaction signing"
     echo "  --no-prompt: Skip the edit prompt and just generate the template (update only)"
     echo ""
     echo "Examples:"
@@ -135,6 +137,7 @@ if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
     echo "  ./tools/scripts/params/gov_params.sh query-all --env alpha"
     echo "  ./tools/scripts/params/gov_params.sh update tokenomics --env local"
     echo "  ./tools/scripts/params/gov_params.sh update auth --env beta --output-dir ./params"
+    echo "  ./tools/scripts/params/gov_params.sh update tokenomics --env beta --gov-key custom_key"
     echo "  ./tools/scripts/params/gov_params.sh export-params application --output-file tools/scripts/params/bulk_params/application_params.json"
     echo "  ./tools/scripts/params/gov_params.sh export-all-params --env beta --export-dir ./exported_params"
     exit 1
@@ -175,6 +178,7 @@ OUTPUT_FILE=""
 EXPORT_DIR=""
 HOME_DIR="~/.pocket"
 NETWORK=""
+GOV_KEY=""
 NO_PROMPT=false
 
 # Parse optional arguments
@@ -202,6 +206,10 @@ while [[ "$#" -gt 0 ]]; do
         ;;
     --home)
         HOME_DIR="$2"
+        shift 2
+        ;;
+    --gov-key)
+        GOV_KEY="$2"
         shift 2
         ;;
     --no-prompt)
@@ -251,6 +259,11 @@ main)
     exit 1
     ;;
 esac
+
+# Override FROM_KEY if --gov-key is provided
+if [ -n "$GOV_KEY" ]; then
+    FROM_KEY="$GOV_KEY"
+fi
 
 # If local environment and HOME_DIR was not overridden, set HOME_DIR to ./localnet/poktrolld
 if [ "$ENVIRONMENT" = "local" ] && [ "$HOME_DIR" = "~/.pocket" ]; then
