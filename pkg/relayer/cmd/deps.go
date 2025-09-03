@@ -42,11 +42,25 @@ func setupRelayerDependencies(
 	queryNodeGRPCUrl := relayMinerConfig.PocketNode.QueryNodeGRPCUrl
 	txNodeRPCUrl := relayMinerConfig.PocketNode.TxNodeRPCUrl
 
+	nodeRPCURL, err := cmd.Flags().GetString(cosmosflags.FlagNode)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeGRPCURL, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
+	if err != nil {
+		return nil, err
+	}
+
 	// Override config file's `QueryNodeGRPCUrl` with `--grpc-addr` flag if specified.
-	if flagNodeGRPCURL != flags.OmittedDefaultFlagValue {
-		parsedFlagNodeGRPCUrl, err := url.Parse(flagNodeGRPCURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
+	if nodeGRPCURL != flags.OmittedDefaultFlagValue {
+		if err = cmd.Flags().Set(cosmosflags.FlagGRPC, nodeGRPCURL); err != nil {
+			return nil, err
+		}
+
+		parsedFlagNodeGRPCUrl, parseErr := url.Parse(nodeGRPCURL)
+		if parseErr != nil {
+			return nil, fmt.Errorf("failed to parse grpc query URL: %w", parseErr)
 		}
 		queryNodeGRPCUrl = parsedFlagNodeGRPCUrl
 	} else {
@@ -55,8 +69,12 @@ func setupRelayerDependencies(
 	}
 
 	// Override config file's `QueryNodeUrl` and `txNodeRPCUrl` with `--node` flag if specified.
-	if flagNodeRPCURL != flags.OmittedDefaultFlagValue {
-		parsedFlagNodeRPCUrl, err := url.Parse(flagNodeRPCURL)
+	if nodeRPCURL != flags.DefaultNodeRPCURL {
+		if err = cmd.Flags().Set(cosmosflags.FlagNode, nodeRPCURL); err != nil {
+			return nil, err
+		}
+
+		parsedFlagNodeRPCUrl, err := url.Parse(nodeRPCURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse rpc query URL: %w", err)
 		}
