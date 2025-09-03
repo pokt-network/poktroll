@@ -194,7 +194,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Execute all the token logic modules processors
-	// TODO_CRITICAL: Per-claim validator reward distribution causes significant precision loss.
+	// TODO_CRITICAL(#1758): Per-claim validator reward distribution causes significant precision loss.
 	// Currently, each TLM processor calls distributeValidatorRewards() for every individual claim,
 	// resulting in multiple function calls per settlement batch (e.g. 1000 claims × 2 TLMs).
 	// This causes accumulated truncation errors that can exceed 1000+ uPOKT per validator.

@@ -25,20 +25,26 @@ func TestDistributeValidatorRewards_Success(t *testing.T) {
 	// Create mock staking keeper
 	mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 
-	// Create test validators with different stakes
+	// Define stake proportions for test validators
+	totalStake := int64(1_000_000)
+	val1Proportion := 0.7 // 70%
+	val2Proportion := 0.2 // 20%
+	val3Proportion := 0.1 // 10%
+
+	// Create test validators with different stakes based on proportions
 	validator1 := stakingtypes.Validator{
 		OperatorAddress: sample.ValOperatorAddressBech32(),
-		Tokens:          math.NewInt(700000), // 70% of total stake
+		Tokens:          math.NewInt(int64(float64(totalStake) * val1Proportion)),
 		Status:          stakingtypes.Bonded,
 	}
 	validator2 := stakingtypes.Validator{
 		OperatorAddress: sample.ValOperatorAddressBech32(),
-		Tokens:          math.NewInt(200000), // 20% of total stake
+		Tokens:          math.NewInt(int64(float64(totalStake) * val2Proportion)),
 		Status:          stakingtypes.Bonded,
 	}
 	validator3 := stakingtypes.Validator{
 		OperatorAddress: sample.ValOperatorAddressBech32(),
-		Tokens:          math.NewInt(100000), // 10% of total stake
+		Tokens:          math.NewInt(int64(float64(totalStake) * val3Proportion)),
 		Status:          stakingtypes.Bonded,
 	}
 
@@ -83,10 +89,10 @@ func TestDistributeValidatorRewards_Success(t *testing.T) {
 
 	require.Equal(t, rewardAmount, totalDistributed, "Total distributed should equal reward amount")
 
-	// Validate proportional distribution (approximately, accounting for integer division)
-	// Validator 1: 70% of 9240 = 6468 uPOKT (may have remainder added)
-	// Validator 2: 20% of 9240 = 1848 uPOKT
-	// Validator 3: 10% of 9240 = 924 uPOKT
+	// Calculate expected rewards using the same proportions
+	expectedVal1Reward := int64(float64(rewardAmount.Int64()) * val1Proportion)
+	expectedVal2Reward := int64(float64(rewardAmount.Int64()) * val2Proportion)
+	expectedVal3Reward := int64(float64(rewardAmount.Int64()) * val3Proportion)
 
 	// Find transfers by validator address
 	var val1Transfer, val2Transfer, val3Transfer *tokenomicstypes.ModToAcctTransfer
@@ -105,12 +111,12 @@ func TestDistributeValidatorRewards_Success(t *testing.T) {
 	require.NotNil(t, val2Transfer, "Validator 2 should receive reward")
 	require.NotNil(t, val3Transfer, "Validator 3 should receive reward")
 
-	// Validator 1 gets remainder, so should be >= 6468
-	require.GreaterOrEqual(t, val1Transfer.Coin.Amount.Int64(), int64(6468))
-	// Validator 2 should get approximately 1848
-	require.InDelta(t, int64(1848), val2Transfer.Coin.Amount.Int64(), 1)
-	// Validator 3 should get approximately 924
-	require.InDelta(t, int64(924), val3Transfer.Coin.Amount.Int64(), 1)
+	// Validator 1 should get expectedVal1Reward
+	require.Equal(t, expectedVal1Reward, val1Transfer.Coin.Amount.Int64())
+	// Validator 2 should get expectedVal2Reward
+	require.Equal(t, expectedVal2Reward, val2Transfer.Coin.Amount.Int64())
+	// Validator 3 should get expectedVal3Reward
+	require.Equal(t, expectedVal3Reward, val3Transfer.Coin.Amount.Int64())
 }
 
 func TestDistributeValidatorRewards_ErrorCases(t *testing.T) {

@@ -126,6 +126,75 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 
 		t.Log("Equal stakes edge case test completed successfully")
 	})
+
+	// TODO_CRITICAL(#1758): This test demonstrates the precision loss issue with per-claim
+	// validator reward distribution. It's currently skipped because it will fail,
+	// showing that validators lose significant rewards due to accumulated truncation.
+	//
+	// Once we implement reward batching (accumulating validator rewards across all
+	// claims and distributing once per TLM per settlement), this test will pass.
+	s.T().Run("SKIP: Precision loss with many small distributions", func(t *testing.T) {
+		t.Skip("Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))")
+
+		// Use validator stakes that will cause precision loss due to fractional remainders
+		// Stakes: [333333, 333333, 333334] (ratio ≈ 1:1:1 but not exact thirds)
+		// Total: 1,000,000 tokens
+		// 
+		// Per-claim validator reward: 55 uPOKT
+		// Expected per-validator per-claim: 55 ÷ 3 = 18.333... uPOKT
+		// This creates fractional remainders that accumulate over 2000 distributions
+		validatorStakes := []int64{333333, 333333, 333334}
+		s.setupKeepersWithMultipleValidators(t, validatorStakes)
+
+		// Create 1000 claims - this will trigger 2000 distributeValidatorRewards calls
+		// (1000 claims × 2 TLMs = 2000 individual distributions)
+		numClaims := 1000
+		s.createClaims(&s.keepers, numClaims)
+
+		// Settle claims - this is where the precision loss occurs
+		settledResults, _ := s.settleClaims(t)
+
+		// Extract actual validator rewards
+		actualRewards := s.extractValidatorRewards(settledResults)
+
+		// With perfect precision, validators should receive rewards proportional to their stake:
+		// Total validator rewards: 110,000 uPOKT (10% of 1,100,000 total settlement)  
+		// Stakes: [333333, 333333, 333334] = 1,000,000 total
+		// - Validator 1 (33.3333%): 110,000 × (333333/1000000) = 36,666.63 → 36,667 uPOKT
+		// - Validator 2 (33.3333%): 110,000 × (333333/1000000) = 36,666.63 → 36,666 uPOKT  
+		// - Validator 3 (33.3334%): 110,000 × (333334/1000000) = 36,666.74 → 36,667 uPOKT
+		// Total: 36,667 + 36,666 + 36,667 = 110,000 (with Largest Remainder Method)
+		//
+		// However, with per-claim distribution (2000 calls of 55 uPOKT each),
+		// accumulated truncation causes significant loss:
+		// - Each call distributes only 55 uPOKT among 3 validators with fractional shares
+		// - Per-call distributions create fractional remainders: 55 ÷ 3 = 18.333... each
+		// - Even with Largest Remainder Method per call, thousands of small truncations accumulate
+		// - The precision loss compounds over 2000 individual distribution calls
+		//
+		// Expected with perfect batched distribution (what we want to achieve):
+		expectedRewards := []int64{36667, 36666, 36667}
+
+		// These assertions will FAIL with current per-claim distribution,
+		// demonstrating the precision loss issue
+		require.ElementsMatch(t, expectedRewards, actualRewards,
+			"Validators should receive exact proportional rewards without precision loss")
+
+		// Verify the total distributed equals what was intended
+		totalDistributed := int64(0)
+		for _, reward := range actualRewards {
+			totalDistributed += reward
+		}
+		require.Equal(t, int64(110000), totalDistributed,
+			"Total distributed should equal 110,000 uPOKT (currently less due to precision loss)")
+
+		// Log the actual vs expected for debugging
+		t.Logf("Expected rewards: %v", expectedRewards)
+		t.Logf("Actual rewards:   %v", actualRewards)
+		t.Logf("Precision loss:   %d uPOKT", 110000-totalDistributed)
+
+		s.assertNoPendingClaims(t)
+	})
 }
 
 // setupKeepersWithMultipleValidators initializes keepers with multiple validators having specified stake amounts.
