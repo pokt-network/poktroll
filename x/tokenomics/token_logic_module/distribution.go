@@ -9,6 +9,7 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -131,22 +132,63 @@ func distributeValidatorRewards(
 		"total_reward_amount", totalValidatorRewardAmount,
 	)
 
+	// Phase 1: Validate inputs and prepare validator data
+	validators, totalBondedTokens, err := validateAndPrepareValidatorRewards(ctx, logger, stakingKeeper, totalValidatorRewardAmount)
+	if err != nil {
+		return err
+	}
+	if validators == nil {
+		// Skip distribution (zero amount, no validators, etc.)
+		return nil
+	}
+
+	// Phase 2: Calculate base rewards and fractional remainders
+	rewards, fractions, totalAssigned := calculateBaseValidatorRewards(
+		logger,
+		validators,
+		totalBondedTokens,
+		totalValidatorRewardAmount,
+	)
+
+	// Phase 3: Distribute remainder using Largest Remainder Method
+	distributeRemainder(logger, rewards, fractions, totalAssigned, totalValidatorRewardAmount)
+
+	// Phase 4: Execute validator transfers
+	return executeValidatorTransfers(
+		logger,
+		result,
+		validators,
+		rewards,
+		totalBondedTokens,
+		totalValidatorRewardAmount,
+		settlementOpReason,
+	)
+}
+
+// validateAndPrepareValidatorRewards performs input validation and prepares validator data for distribution.
+// Returns validators and totalBondedTokens, or (nil, zero) if distribution should be skipped.
+func validateAndPrepareValidatorRewards(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	stakingKeeper tokenomicstypes.StakingKeeper,
+	totalValidatorRewardAmount math.Int,
+) ([]stakingtypes.Validator, math.Int, error) {
 	// Should theoretically never happen
 	if totalValidatorRewardAmount.IsZero() {
 		logger.Debug("validator reward amount is zero, skipping distribution")
-		return nil
+		return nil, math.ZeroInt(), nil
 	}
 
 	// Get all bonded validators
 	validators, err := stakingKeeper.GetBondedValidatorsByPower(ctx)
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
+		return nil, math.ZeroInt(), tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
 			"failed to get bonded validators: %v", err,
 		)
 	}
 	if len(validators) == 0 {
 		logger.Warn("no bonded validators found, skipping validator reward distribution")
-		return nil
+		return nil, math.ZeroInt(), nil
 	}
 
 	// Calculate total bonded tokens across all validators
@@ -156,8 +198,9 @@ func distributeValidatorRewards(
 	}
 	if totalBondedTokens.IsZero() {
 		logger.Warn("total bonded tokens is zero, skipping validator reward distribution")
-		return nil
+		return nil, math.ZeroInt(), nil
 	}
+
 	logger.Info(fmt.Sprintf(
 		"distributing %s to %d validators based on stake weight (total bonded: %s)",
 		totalValidatorRewardAmount.String(),
@@ -165,16 +208,25 @@ func distributeValidatorRewards(
 		totalBondedTokens.String(),
 	))
 
-	// Calculate rewards using optimized Largest Remainder Method
-	// This ensures mathematical fairness while maintaining deterministic execution
+	return validators, totalBondedTokens, nil
+}
+
+// validatorFraction tracks fractional remainders for the Largest Remainder Method.
+type validatorFraction struct {
+	index    int
+	fraction *big.Rat
+}
+
+// calculateBaseValidatorRewards implements Phase 1 of the Largest Remainder Method.
+// Calculates base integer rewards for each validator and collects fractional remainders.
+func calculateBaseValidatorRewards(
+	logger cosmoslog.Logger,
+	validators []stakingtypes.Validator,
+	totalBondedTokens math.Int,
+	totalValidatorRewardAmount math.Int,
+) ([]math.Int, []validatorFraction, math.Int) {
 	validatorRewards := make([]math.Int, len(validators))
 	totalValidatorRewardsDistributed := math.ZeroInt()
-
-	// Phase 1: Calculate base rewards and track fractional remainders
-	type validatorFraction struct {
-		index    int
-		fraction *big.Rat
-	}
 	fractions := make([]validatorFraction, 0, len(validators))
 
 	for i, validator := range validators {
@@ -204,12 +256,23 @@ func distributeValidatorRewards(
 			i, validator.GetOperator(), validatorStake.String(), validatorRewards[i].String(), fractionalPart.FloatString(6)))
 	}
 
-	// Phase 2: Distribute validatorRewardsRemainder tokens using Largest Remainder Method
-	validatorRewardsRemainder := totalValidatorRewardAmount.Sub(totalValidatorRewardsDistributed)
+	return validatorRewards, fractions, totalValidatorRewardsDistributed
+}
+
+// distributeRemainder implements Phase 2 of the Largest Remainder Method.
+// Distributes remainder tokens to validators with the largest fractional remainders.
+func distributeRemainder(
+	logger cosmoslog.Logger,
+	rewards []math.Int,
+	fractions []validatorFraction,
+	totalAssigned math.Int,
+	totalValidatorRewardAmount math.Int,
+) {
+	validatorRewardsRemainder := totalValidatorRewardAmount.Sub(totalAssigned)
 	remainderTokensToDistribute := validatorRewardsRemainder.Int64()
 
 	logger.Debug(fmt.Sprintf("Total calculated: %s, target: %s, remainder: %s tokens",
-		totalValidatorRewardsDistributed.String(), totalValidatorRewardAmount.String(), validatorRewardsRemainder.String()))
+		totalAssigned.String(), totalValidatorRewardAmount.String(), validatorRewardsRemainder.String()))
 
 	if remainderTokensToDistribute > 0 && len(fractions) > 0 {
 		// Sort validators by fractional remainder (descending) using deterministic big.Rat comparison
@@ -223,7 +286,7 @@ func distributeValidatorRewards(
 		for t := range remainderTokensToDistribute {
 			// Use modulo to cycle through validators if remainder > number of validators with fractions
 			idx := fractions[t%int64(len(fractions))].index
-			validatorRewards[idx] = validatorRewards[idx].AddRaw(1)
+			rewards[idx] = rewards[idx].AddRaw(1)
 
 			logger.Debug(fmt.Sprintf("  Added 1 token to validator %d (fraction: %s)",
 				idx, fractions[t%int64(len(fractions))].fraction.FloatString(6)))
@@ -231,13 +294,23 @@ func distributeValidatorRewards(
 	} else if remainderTokensToDistribute > 0 {
 		// Edge case: remainder exists but no fractional parts (shouldn't happen with proper math)
 		logger.Warn(fmt.Sprintf("Rare edge case: remainder %d tokens with no fractional parts - adding to first validator", remainderTokensToDistribute))
-		validatorRewards[0] = validatorRewards[0].Add(validatorRewardsRemainder)
+		rewards[0] = rewards[0].Add(validatorRewardsRemainder)
 	}
+}
 
-	// Distribute the calculated rewards
+// executeValidatorTransfers converts validator addresses and queues reward transfer operations.
+func executeValidatorTransfers(
+	logger cosmoslog.Logger,
+	result *tokenomicstypes.ClaimSettlementResult,
+	validators []stakingtypes.Validator,
+	rewards []math.Int,
+	totalBondedTokens math.Int,
+	totalValidatorRewardAmount math.Int,
+	settlementOpReason tokenomicstypes.SettlementOpReason,
+) error {
 	totalDistributed := math.ZeroInt()
 	for i, validator := range validators {
-		validatorReward := validatorRewards[i]
+		validatorReward := rewards[i]
 		totalDistributed = totalDistributed.Add(validatorReward)
 
 		if validatorReward.IsZero() {
