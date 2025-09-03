@@ -19,17 +19,21 @@ import (
 // This test validates the core functionality implemented in distributeValidatorRewards().
 func (s *tokenLogicModuleTestSuite) TestTLMProcessorsMultiValidatorDistribution() {
 	// Test case with stakes designed for clean mathematical division
-	// Using 10% validator allocation in both TLMs for clean math:
+	// Using 10% validator allocation in both TLMs for clean math.
+	//
 	// With 110 total validator rewards and stakes in ratio 5:4:2 (sum=11):
-	// Validator 1: 500,000 tokens (45.45% of total 1,100,000) -> 50 uPOKT (exact)
-	// Validator 2: 400,000 tokens (36.36% of total 1,100,000) -> 40 uPOKT (exact)
-	// Validator 3: 200,000 tokens (18.18% of total 1,100,000) -> 20 uPOKT (exact)
+	// - Validator 1: 500,000 tokens (45.45% of total 1,100,000) -> 50 uPOKT (exact)
+	// - Validator 2: 400,000 tokens (36.36% of total 1,100,000) -> 40 uPOKT (exact)
+	// - Validator 3: 200,000 tokens (18.18% of total 1,100,000) -> 20 uPOKT (exact)
 	// Total: 1,100,000 tokens -> 110 uPOKT rewards (50+40+20=110 exact)
+	//
+	// The Largest Remainder Method ensures mathematically fair distribution while
+	// maintaining total conservation (distributed amounts always sum to input amount).
 
 	s.T().Run("Stakes that divide cleanly into rewards", func(t *testing.T) {
 		// Use stakes in ratio 5:4:2 (which sum to 11) with 10% validator allocation
 		// to get clean division: 110,000 ÷ 11 = 10,000 per unit, so [50000, 40000, 20000]
-		validatorStakes := []int64{500000, 400000, 200000}
+		validatorStakes := []int64{500_000, 400_000, 200_000}
 		s.setupKeepersWithMultipleValidators(t, validatorStakes)
 
 		// Create claims for unique applications to ensure distinct sessions
@@ -48,14 +52,14 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsMultiValidatorDistribution(
 		// The improved distribution algorithm uses the Largest Remainder Method to fairly
 		// distribute remainder tokens based on fractional parts, achieving perfect precision.
 		//
-		// With stakes [500000, 400000, 200000] (ratio 5:4:2) and 110,000 total rewards:
+		// With stakes [500_000, 400_000, 200_000] (ratio 5:4:2) and 110,000 total rewards:
 		// - Validator 1: (5/11) × 110,000 = 50,000 uPOKT (perfect precision)
 		// - Validator 2: (4/11) × 110,000 = 40,000 uPOKT (perfect precision)
 		// - Validator 3: (2/11) × 110,000 = 20,000 uPOKT (perfect precision)
 		//
 		// The Largest Remainder Method ensures mathematically fair distribution while
 		// maintaining total conservation (distributed amounts always sum to input amount).
-		expectedRewards := []int64{50000, 40000, 20000}
+		expectedRewards := []int64{50_000, 40_000, 20_000}
 
 		require.ElementsMatch(t, expectedRewards, actualRewards,
 			"Validator rewards should match expected proportional distribution")
@@ -71,7 +75,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsMultiValidatorDistribution(
 func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCases() {
 	s.T().Run("Single validator gets all rewards", func(t *testing.T) {
 		// Setup with single validator
-		validatorStakes := []int64{1000000}
+		validatorStakes := []int64{1_000_000}
 		s.setupKeepersWithMultipleValidators(t, validatorStakes)
 
 		// Create claims and settle
@@ -84,7 +88,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 
 		// Single validator should get all validator rewards from both TLM processors
 		// With 1000 unique claims: total = 110,000 uPOKT
-		expectedRewards := []int64{110000}
+		expectedRewards := []int64{110_000}
 
 		require.ElementsMatch(t, expectedRewards, actualRewards,
 			"Single validator should receive all validator rewards")
@@ -98,7 +102,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 	s.T().Run("Equal stakes receive equal rewards", func(t *testing.T) {
 		// Setup with 5 validators having equal stakes
 		// This ensures clean division without remainder issues
-		validatorStakes := []int64{200000, 200000, 200000, 200000, 200000}
+		validatorStakes := []int64{200_000, 200_000, 200_000, 200_000, 200_000}
 		s.setupKeepersWithMultipleValidators(t, validatorStakes)
 
 		// Create claims and settle
@@ -112,7 +116,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 		// Expected calculation for 5 equal validators with 10% allocation and 1000 unique claims:
 		// Total validator rewards: 110,000 uPOKT
 		// With equal stakes: 110,000 ÷ 5 = 22,000 uPOKT each (exact division)
-		expectedRewards := []int64{22000, 22000, 22000, 22000, 22000}
+		expectedRewards := []int64{22_000, 22_000, 22_000, 22_000, 22_000}
 
 		require.ElementsMatch(t, expectedRewards, actualRewards,
 			"Equal stakes should receive equal rewards")

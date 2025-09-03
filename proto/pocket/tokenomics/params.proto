@@ -62,6 +62,9 @@ message MintEqualsBurnClaimDistribution {
   // dao - % of claimable tokens sent to the DAO reward address.
   double dao = 1 [(gogoproto.jsontag) = "dao", (gogoproto.moretags) = "yaml:\"dao\""];
 
+  // TODO_TECHDEBT: Rename "proposer" to "validators" to reflect the work done in #1753.
+  // This will span all references to the term "proposer" across documentation, functions, protobufs, variables, tooling, etc..
+  //
   // proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.
   double proposer = 2 [(gogoproto.jsontag) = "proposer", (gogoproto.moretags) = "yaml:\"proposer\""];
 
