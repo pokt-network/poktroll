@@ -143,7 +143,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 		// Per-claim validator reward: 55 uPOKT
 		// Expected per-validator per-claim: 55 ÷ 3 = 18.333... uPOKT
 		// This creates fractional remainders that accumulate over 2000 distributions
-		validatorStakes := []int64{333333, 333333, 333334}
+		validatorStakes := []int64{333_333, 333_333, 333_334}
 		s.setupKeepersWithMultipleValidators(t, validatorStakes)
 
 		// Create 1000 claims - this will trigger 2000 distributeValidatorRewards calls
@@ -173,7 +173,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 		// - The precision loss compounds over 2000 individual distribution calls
 		//
 		// Expected with perfect batched distribution (what we want to achieve):
-		expectedRewards := []int64{36667, 36666, 36667}
+		expectedRewards := []int64{36_667, 36_666, 36_667}
 
 		// These assertions will FAIL with current per-claim distribution,
 		// demonstrating the precision loss issue
@@ -185,7 +185,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 		for _, reward := range actualRewards {
 			totalDistributed += reward
 		}
-		require.Equal(t, int64(110000), totalDistributed,
+		require.Equal(t, int64(110_000), totalDistributed,
 			"Total distributed should equal 110,000 uPOKT (currently less due to precision loss)")
 
 		// Log the actual vs expected for debugging
