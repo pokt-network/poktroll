@@ -139,7 +139,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 		// Use validator stakes that will cause precision loss due to fractional remainders
 		// Stakes: [333333, 333333, 333334] (ratio ≈ 1:1:1 but not exact thirds)
 		// Total: 1,000,000 tokens
-		// 
+		//
 		// Per-claim validator reward: 55 uPOKT
 		// Expected per-validator per-claim: 55 ÷ 3 = 18.333... uPOKT
 		// This creates fractional remainders that accumulate over 2000 distributions
@@ -158,10 +158,10 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsValidatorDistributionEdgeCa
 		actualRewards := s.extractValidatorRewards(settledResults)
 
 		// With perfect precision, validators should receive rewards proportional to their stake:
-		// Total validator rewards: 110,000 uPOKT (10% of 1,100,000 total settlement)  
+		// Total validator rewards: 110,000 uPOKT (10% of 1,100,000 total settlement)
 		// Stakes: [333333, 333333, 333334] = 1,000,000 total
 		// - Validator 1 (33.3333%): 110,000 × (333333/1000000) = 36,666.63 → 36,667 uPOKT
-		// - Validator 2 (33.3333%): 110,000 × (333333/1000000) = 36,666.63 → 36,666 uPOKT  
+		// - Validator 2 (33.3333%): 110,000 × (333333/1000000) = 36,666.63 → 36,666 uPOKT
 		// - Validator 3 (33.3334%): 110,000 × (333334/1000000) = 36,666.74 → 36,667 uPOKT
 		// Total: 36,667 + 36,666 + 36,667 = 110,000 (with Largest Remainder Method)
 		//
