@@ -31,8 +31,8 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			name:                     "Validator-only: Stakes that divide cleanly",
 			validatorStakes:          []int64{500_000, 400_000, 200_000},
 			numClaims:                1000,
-			expectedValidatorRewards: []int64{50_000, 40_000, 20_000},
-			expectedTotalRewards:     110_000,
+			expectedValidatorRewards: []int64{50_000, 40_000, 20_000}, // 1000 claims × 1100 × 10% × stakes ratio [5:4:2]
+			expectedTotalRewards:     110_000,                         // 1000 claims × 1100 × 10% = 110,000
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// Validator stakes: [500k, 400k, 200k] = 1.1M total
 				// With 110,000 total rewards:
@@ -51,8 +51,8 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			name:                     "Validator-only: Single validator gets all rewards",
 			validatorStakes:          []int64{1_000_000},
 			numClaims:                1000,
-			expectedValidatorRewards: []int64{110_000},
-			expectedTotalRewards:     110_000,
+			expectedValidatorRewards: []int64{110_000}, // 1000 claims × 1100 × 10% = 110,000 (all to single validator)
+			expectedTotalRewards:     110_000,          // 1000 claims × 1100 × 10% = 110,000
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// Single validator with 1M stake gets 100% of rewards
 				// Total rewards: 110,000 uPOKT (all to single validator)
@@ -66,8 +66,8 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			name:                     "Validator-only: Equal stakes receive equal rewards",
 			validatorStakes:          []int64{200_000, 200_000, 200_000, 200_000, 200_000},
 			numClaims:                1000,
-			expectedValidatorRewards: []int64{22_000, 22_000, 22_000, 22_000, 22_000},
-			expectedTotalRewards:     110_000,
+			expectedValidatorRewards: []int64{22_000, 22_000, 22_000, 22_000, 22_000}, // 110,000 ÷ 5 validators = 22,000 each
+			expectedTotalRewards:     110_000,                                         // 1000 claims × 1100 × 10% = 110,000
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// 5 validators with equal stakes (200k each) = 1M total
 				// Each gets exactly 1/5 of 110,000 = 22,000 uPOKT
@@ -138,7 +138,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			name:                 "SKIP: Precision loss with many small distributions (validator-only)",
 			validatorStakes:      []int64{333_333, 333_333, 333_334},
 			numClaims:            1000,
-			expectedTotalRewards: 110_000,
+			expectedTotalRewards: 110_000, // 1000 claims × 1100 × 10% = 110,000
 			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// Validator stakes: [333,333, 333,333, 333,334] = 1M total
@@ -160,7 +160,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			validatorStakes:      []int64{333_333, 333_333, 333_334}, // Equal self-bonded stakes (fractional)
 			delegatedAmounts:     []int64{166_667, 333_333, 500_000}, // Unequal delegations creating more fractional complexity
 			numClaims:            1000,
-			expectedTotalRewards: 110_000,
+			expectedTotalRewards: 110_000, // 1000 claims × 1100 × 10% = 110,000
 			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// This test demonstrates precision loss in delegation scenarios

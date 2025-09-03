@@ -188,9 +188,9 @@ func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
 				createValidator(sample.ValOperatorAddressBech32(), 400_000),
 			},
 			rewardAmount:             math.NewInt(100_000),
-			expectedTransferCount:    5, // 3 validators + 2 delegators
-			expectedValidatorRewards: 60_000,
-			expectedDelegatorRewards: 40_000,
+			expectedTransferCount:    5,      // 3 validators + 2 delegators
+			expectedValidatorRewards: 60_000, // 100k × 60% = 60,000 (self-bonded validator shares)
+			expectedDelegatorRewards: 40_000, // 100k × 40% = 40,000 (delegator shares)
 			opReason:                 tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 		},
 		{
