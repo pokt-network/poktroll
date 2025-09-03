@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
@@ -19,7 +21,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&flagLogLevel, "log-level", "", "Specifies the log level for the runner")
+	flag.StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "", "Specifies the log level for the runner")
 	flag.StringVar(
 		&flagManifestFilePath,
 		"manifest",

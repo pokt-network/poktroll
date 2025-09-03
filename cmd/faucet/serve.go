@@ -15,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/pkg/faucet"
 )
 
@@ -87,7 +88,7 @@ func preRunServe(cmd *cobra.Command, _ []string) (err error) {
 	txClientOpts = append(txClientOpts, unorderedOpt)
 
 	// Construct the tx client.
-	txClient, err = flags.GetTxClientFromFlags(cmd.Context(), cmd, txClientOpts...)
+	txClient, err = config.GetTxClientFromFlags(cmd.Context(), cmd, txClientOpts...)
 	if err != nil {
 		return err
 	}

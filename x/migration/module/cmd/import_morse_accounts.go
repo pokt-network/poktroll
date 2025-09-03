@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -47,7 +48,7 @@ For more documentation, refer to: https://dev.poktroll.com/operate/morse_migrati
 	// Add Cosmos SDK standard flags to the command
 	cosmosflags.AddTxFlagsToCmd(importMorseAcctsCmd)
 
-	importMorseAcctsCmd.Flags().String(flags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
+	importMorseAcctsCmd.Flags().String(cosmosflags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
 	importMorseAcctsCmd.Flags().String(flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 	importMorseAcctsCmd.Flags().BoolVar(&updateHashOnly, flagUpdateHashOnly, false, "Update the hash of the Morse account state JSON file after auto-unstaking accounts")
 
@@ -151,7 +152,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	)
 
 	// Initialize the tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
