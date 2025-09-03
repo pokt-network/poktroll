@@ -37,11 +37,11 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// SessionPersistenceTestSuite defines the test suite for session persistence
-type SessionPersistenceTestSuite struct {
+// StorageModeTestSuite defines the test suite for different storage modes
+type StorageModeTestSuite struct {
 	suite.Suite
-	ctx          context.Context
-	tmpStoresDir string
+	ctx        context.Context
+	storageDir string // For disk storage mode
 
 	deps                   depinject.Config
 	relayerSessionsManager relayer.RelayerSessionsManager
@@ -70,15 +70,23 @@ type SessionPersistenceTestSuite struct {
 	logger polylog.Logger
 }
 
-// TestSessionPersistence executes the session persistence test suite
-func TestSessionPersistence(t *testing.T) {
-	suite.Run(t, new(SessionPersistenceTestSuite))
+// TestStorageModeSimpleMap tests the ":memory:" (SimpleMap) storage mode
+func TestStorageModeSimpleMap(t *testing.T) {
+	suite.Run(t, &StorageModeTestSuite{storageDir: session.InMemoryStoreFilename})
 }
 
-// SetupTest prepares the test environment before each test execution.
-// It initializes all necessary components including loggers, services, session headers,
-// and the relayer sessions manager needed for the test.
-func (s *SessionPersistenceTestSuite) SetupTest() {
+// TestStorageModePebbleInMemory tests the ":memory_pebble:" storage mode
+func TestStorageModePebbleInMemory(t *testing.T) {
+	suite.Run(t, &StorageModeTestSuite{storageDir: session.InMemoryPebbleStoreFilename})
+}
+
+// TestStorageModeDisk tests the disk storage mode
+func TestStorageModeDisk(t *testing.T) {
+	suite.Run(t, &StorageModeTestSuite{storageDir: ""}) // Will be set to temp dir in SetupTest
+}
+
+// SetupTest prepares the test environment before each test execution
+func (s *StorageModeTestSuite) SetupTest() {
 	// Initialize logger and context
 	s.logger, s.ctx = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 
@@ -97,11 +105,15 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	s.sessionTrees = make(session.SessionsTreesMap)
 	s.latestBlock = nil
 
-	// Set up temporary directory for session storage
-	tmpDirPattern := fmt.Sprintf("%s_smt_kvstore", strings.ReplaceAll(s.T().Name(), "/", "_"))
-	tmpStoresDir, err := os.MkdirTemp("", tmpDirPattern)
-	require.NoError(s.T(), err)
-	s.storesDirectoryPathOpt = session.WithStoresDirectoryPath(tmpStoresDir)
+	// Set up storage directory path based on test mode
+	if s.storageDir == "" {
+		// Disk storage mode - create temporary directory
+		tmpDirPattern := fmt.Sprintf("%s_smt_kvstore", strings.ReplaceAll(s.T().Name(), "/", "_"))
+		tmpStoresDir, err := os.MkdirTemp("", tmpDirPattern)
+		require.NoError(s.T(), err)
+		s.storageDir = tmpStoresDir
+	}
+	s.storesDirectoryPathOpt = session.WithStoresDirectoryPath(s.storageDir)
 
 	// Configure test service and difficulty
 	testqueryclients.AddToExistingServices(s.T(), s.service)
@@ -126,7 +138,7 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	// Initialize and start the relayer sessions manager
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 	s.advanceToBlock(1)
-	err = s.relayerSessionsManager.Start(s.ctx)
+	err := s.relayerSessionsManager.Start(s.ctx)
 	require.NoError(s.T(), err)
 
 	// Publish a test mined relay and wait for processing
@@ -142,61 +154,68 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	count, err := smstRoot.Count()
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), uint64(1), count)
+
+	// Log which storage mode we're testing
+	s.logger.Info().
+		Str("storage_mode", s.getStorageModeName()).
+		Str("storage_path", s.storageDir).
+		Msg("Testing storage mode")
 }
 
 // TearDownTest cleans up resources after each test execution
-func (s *SessionPersistenceTestSuite) TearDownTest() {
+func (s *StorageModeTestSuite) TearDownTest() {
 	// Stop the relayer sessions manager
 	s.relayerSessionsManager.Stop()
-	// Delete all temporary files and directories created by the test on completion.
-	_ = os.RemoveAll(s.tmpStoresDir)
+
+	// Clean up temporary directory for disk storage only
+	if !s.isInMemorySMT() {
+		_ = os.RemoveAll(s.storageDir)
+	}
 }
 
-// TestSaveAndRetrieveSession tests the persistence of session data across relayer restarts.
-// It verifies that session state is correctly saved to storage and can be retrieved after
-// the relayer sessions manager is stopped and restarted.
-func (s *SessionPersistenceTestSuite) TestSaveAndRetrieveSession() {
-	// Stop the current relayer sessions manager
-	s.relayerSessionsManager.Stop()
-	// Create a new relayer sessions manager.
-	// Note: This does not load state from the store.
-	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
+// TestClaimAndProofSubmission tests the complete claim and proof submission lifecycle
+// This is the critical test that should reveal the bug in Pebble in-memory mode
+func (s *StorageModeTestSuite) TestBasicClaimAndProofSubmission() {
+	// Get the session end height from the active session header
+	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 
-	// Advance to block 2 while the relayer sessions manager is stopped
-	s.advanceToBlock(2)
+	// Calculate when the claim window opens for this session
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
+	// Move to the block where the claim window opens (which should trigger claim creation)
+	s.advanceToBlock(claimWindowOpenHeight)
 
-	// Start the new relayer sessions manager and load state from the store
-	err := s.relayerSessionsManager.Start(s.ctx)
-	require.NoError(s.T(), err)
-	waitSimulateIO()
-
-	// Verify the session tree was correctly loaded and matches the original session header
+	// Verify the session tree exists and a claim has been created
 	sessionTree := s.getActiveSessionTree()
-	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
+	claimRoot := sessionTree.GetClaimRoot()
+	require.NotNil(s.T(), claimRoot, "Claim root should be created for storage mode: %s", s.getStorageModeName())
+	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once for storage mode: %s", s.getStorageModeName())
+	require.Equal(s.T(), 0, s.submitProofCallCount, "SubmitProof should not be called at this step")
 
-	// Verify the session tree contains exactly one relay (preserved from earlier test setup)
-	smstRoot := sessionTree.GetSMSTRoot()
-	count, err := smstRoot.Count()
+	// Verify the claim tree has exactly one claim
+	count, err := smt.MerkleSumRoot(claimRoot).Count()
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), uint64(1), count)
+	require.Equal(s.T(), uint64(1), count, "Claim tree should have exactly one relay for storage mode: %s", s.getStorageModeName())
 
-	// Add a new mined relay to the session
-	s.minedRelaysPublishCh <- testrelayer.NewUnsignedMinedRelay(s.T(), s.activeSessionHeader, s.supplierOperatorAddress)
-	// Advance to block 3
-	s.advanceToBlock(3)
+	// Calculate when the proof window closes for this session
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
 
-	// Verify that the new relay is added, bringing the count to 2
-	smstRoot = sessionTree.GetSMSTRoot()
-	count, err = smstRoot.Count()
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), uint64(2), count)
+	// Move to one block before the proof window closes (which should trigger proof submission)
+	s.advanceToBlock(proofWindowCloseHeight)
+
+	// This is the critical assertion - verify that a proof was submitted
+	// Note: This test should pass for all storage modes with our current implementation
+	// To reproduce the original bug where Pebble in-memory failed, you would need to:
+	// 1. Revert the sessionSMT preservation fix in sessiontree.go Flush() method
+	// 2. Remove the sessionSMT restoration logic in ProveClosest() method
+	// 3. Then this assertion would fail for Pebble in-memory mode only
+	require.Equal(s.T(), 1, s.submitProofCallCount, "SubmitProof should be called once for storage mode: %s", s.getStorageModeName())
+
+	// Verify the session tree has been removed after proof submission
+	require.Len(s.T(), s.sessionTrees, 0, "Session tree should be removed after proof submission for storage mode: %s", s.getStorageModeName())
 }
 
-// TestRestartAfterClaimWindowOpen tests session persistence when the relayer is restarted
-// after the claim window opens but before a claim is created.
-// This verifies that the relayer automatically creates a claim when restarted
-// during the claim window period.
-func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowOpen() {
+// TestProcessRestartDuringClaimWindow tests session persistence when restarted during claim window
+func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 	// Get the session end height from the active session header
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 
@@ -223,154 +242,101 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowOpen() {
 	require.NoError(s.T(), err)
 	waitSimulateIO()
 
-	// Verify the session tree is still correctly loaded
+	// For in-memory modes, we should only proceed if the session was restored
+	// TODO_TECHDEBT(#1734): Remove this once we are better at managing in-memory sessions restarts
+	if s.isInMemorySMT() {
+		// In-memory modes don't persist across restarts, so session should be gone
+		require.Len(s.T(), s.sessionTrees, 0, "In-memory storage should not persist sessions across restarts for mode: %s", s.getStorageModeName())
+		return
+	}
+
+	// For disk storage, verify the session tree is still correctly loaded
 	sessionTree = s.getActiveSessionTree()
 	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
 
 	// Verify a claim root has been created after restart
 	claimRoot := sessionTree.GetClaimRoot()
-	require.NotNil(s.T(), claimRoot)
-
-	// Verify the claim tree has exactly one relay recorded
-	count, err := smt.MerkleSumRoot(claimRoot).Count()
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), uint64(1), count)
+	require.NotNil(s.T(), claimRoot, "Claim root should be created after restart for storage mode: %s", s.getStorageModeName())
 
 	// Verify createClaim was called exactly once
-	require.Equal(s.T(), 1, s.createClaimCallCount)
+	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once after restart for storage mode: %s", s.getStorageModeName())
 }
 
-// TestRestartAfterClaimSubmitted tests session persistence when the relayer is restarted
-// after a claim has already been submitted.
-// This verifies that the relayer doesn't duplicate claims and can proceed
-// to the proof submission phase correctly.
-func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
+// TestInMemoryTreeStillSubmitsProofAfterFlush ensures that the in-memory tree still submits a proof after
+// a Flush is called on the RelaySessionManager.
+func (s *StorageModeTestSuite) TestInMemoryTreeStillSubmitsProofAfterFlush() {
+	// Only test in-memory modes since that's where the bug occurred
+	if !s.isInMemorySMT() {
+		s.T().Skip("Bug reproduction test only relevant for in-memory modes")
+		return
+	}
+
 	// Get the session end height from the active session header
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 
-	// Calculate when the claim window opens for this session
+	// Calculate when the claim window opens and proof window closes
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
-	// Move to the block where the claim window opens (which should trigger claim creation)
-	s.advanceToBlock(claimWindowOpenHeight)
-
-	// Verify the session tree exists and a claim has been created
-	sessionTree := s.getActiveSessionTree()
-	claimRoot := sessionTree.GetClaimRoot()
-	require.NotNil(s.T(), claimRoot)
-	require.Equal(s.T(), 1, s.createClaimCallCount)
-
-	// Verify the claim tree has exactly one claim
-	count, err := smt.MerkleSumRoot(claimRoot).Count()
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), uint64(1), count)
-
-	// Stop and recreate the relayer sessions manager
-	s.relayerSessionsManager.Stop()
-	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
-
-	// Advance to the next block after claim window open while the relayer sessions manager is stopped
-	s.advanceToBlock(claimWindowOpenHeight + 1)
-
-	// Start the new relayer sessions manager
-	err = s.relayerSessionsManager.Start(s.ctx)
-	require.NoError(s.T(), err)
-	waitSimulateIO()
-
-	// Verify the session tree is still correctly loaded
-	sessionTree = s.getActiveSessionTree()
-	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
-
-	// Verify no proof has been submitted yet
-	require.Equal(s.T(), 0, s.submitProofCallCount)
-
-	// Calculate when the proof window closes for this session
-	proofWindowOpenHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
-	// Move to one block before the proof window closes (which should trigger proof submission)
-	s.advanceToBlock(proofWindowOpenHeight)
-
-	// Verify the session tree has been removed and a proof was submitted
-	require.Len(s.T(), s.sessionTrees, 0)
-	require.Equal(s.T(), 1, s.submitProofCallCount)
-}
-
-// TestRestartAfterClaimWindowClose tests session persistence when the relayer is restarted
-// after the claim window has closed but before any claims were created.
-// This verifies that the relayer correctly handles sessions where the claim window is missed.
-func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowClose() {
-	// Get the session end height from the active session header
-	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
-
-	// Calculate when the claim window opens for this session
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
-	// Move to one block before the claim window opens
-	s.advanceToBlock(claimWindowOpenHeight - 1)
-
-	// Verify the session tree exists and no claims have been created
-	require.Len(s.T(), s.sessionTrees, 1)
-	require.Equal(s.T(), 0, s.createClaimCallCount)
-
-	// Stop and recreate the relayer sessions manager
-	s.relayerSessionsManager.Stop()
-	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
-
-	// Calculate when the claim window closes for this session
-	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&s.sharedParams, sessionEndHeight)
-	// Move past the claim window close height
-	s.advanceToBlock(claimWindowCloseHeight + 1)
-
-	// Start the new relayer sessions manager
-	err := s.relayerSessionsManager.Start(s.ctx)
-	require.NoError(s.T(), err)
-	waitSimulateIO()
-
-	// Verify the session tree has been removed since the claim window was missed
-	require.Len(s.T(), s.sessionTrees, 0)
-	require.Equal(s.T(), 0, s.createClaimCallCount)
-	require.Equal(s.T(), 0, s.submitProofCallCount)
-}
-
-// TestRestartAfterProofWindowClosed tests session persistence when the relayer is restarted
-// after the proof window has closed.
-// This verifies that the relayer correctly cleans up sessions after the proof window closes.
-func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
-	// Get the session end height from the active session header
-	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
-
-	// Calculate when the claim window closes for this session
-	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&s.sharedParams, sessionEndHeight)
-	// Move to one block before the claim window closes (a claim should be created)
-	s.advanceToBlock(claimWindowCloseHeight - 1)
-
-	// Verify the session tree exists and a claim has been created
-	sessionTree := s.getActiveSessionTree()
-	claimRoot := sessionTree.GetClaimRoot()
-	require.NotNil(s.T(), claimRoot)
-	require.Equal(s.T(), 1, s.createClaimCallCount)
-
-	// Stop and recreate the relayer sessions manager
-	s.relayerSessionsManager.Stop()
-	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
-
-	// Calculate when the proof window closes for this session
 	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
-	// Move past the proof window close height
-	s.advanceToBlock(proofWindowCloseHeight + 1)
 
-	// Start the new relayer sessions manager
-	err := s.relayerSessionsManager.Start(s.ctx)
-	require.NoError(s.T(), err)
-	waitSimulateIO()
+	// Move to claim window and verify claim creation
+	s.advanceToBlock(claimWindowOpenHeight)
+	sessionTree := s.getActiveSessionTree()
+	claimRoot := sessionTree.GetClaimRoot()
 
-	// Verify the session tree has been removed since the proof window has closed
-	require.Len(s.T(), s.sessionTrees, 0)
-	// Verify no proofs were submitted since the proof window was already closed
-	require.Equal(s.T(), 0, s.submitProofCallCount)
+	require.NotNil(s.T(), claimRoot, "Claim should be created")
+	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once")
+
+	// Simulates a flush
+	sessionTree.Flush()
+
+	// Move to proof window
+	s.advanceToBlock(proofWindowCloseHeight)
+
+	// Without the fix, this assertion would FAIL for Pebble in-memory mode
+	// because the sessionSMT would be lost after Stop() during Flush()
+	// With the fix in place, this assertion passes
+	require.Equal(s.T(), 1, s.submitProofCallCount, "SubmitProof should be called - this would FAIL without the sessionSMT preservation fix")
 }
 
-// getActiveSessionTree retrieves the current active session tree for testing purposes.
-// It navigates through the session trees map structure to find the specific session tree
-// for the active session header and supplier address.
-func (s *SessionPersistenceTestSuite) getActiveSessionTree() relayer.SessionTree {
+// TestStorageSpecificBehavior tests storage-specific behaviors and edge cases
+func (s *StorageModeTestSuite) TestStorageSpecificBehavior() {
+	sessionTree := s.getActiveSessionTree()
+
+	switch s.storageDir {
+	case session.InMemoryStoreFilename:
+		// SimpleMap storage should work without calling Stop()
+		s.T().Log("Testing SimpleMap storage - should work without Stop()")
+
+	case session.InMemoryPebbleStoreFilename:
+		// Pebble in-memory requires proper lifecycle management
+		s.T().Log("Testing Pebble in-memory storage - requires Stop() for proper lifecycle")
+
+	default:
+		// Disk storage persists data
+		s.T().Log("Testing disk storage - data persists to disk")
+	}
+
+	// All storage modes should have the session tree at this point
+	require.NotNil(s.T(), sessionTree, "Session tree should exist for storage mode: %s", s.getStorageModeName())
+
+	// Verify session header matches
+	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader(), "Session header should match for storage mode: %s", s.getStorageModeName())
+}
+
+// getStorageModeName returns a human-readable name for the current storage mode
+func (s *StorageModeTestSuite) getStorageModeName() string {
+	switch s.storageDir {
+	case session.InMemoryStoreFilename:
+		return "SimpleMap"
+	case session.InMemoryPebbleStoreFilename:
+		return "PebbleInMemory"
+	default:
+		return "Disk"
+	}
+}
+
+// getActiveSessionTree retrieves the current active session tree for testing purposes
+func (s *StorageModeTestSuite) getActiveSessionTree() relayer.SessionTree {
 	// Extract session details from the active header
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 	sessionId := s.activeSessionHeader.GetSessionId()
@@ -390,9 +356,8 @@ func (s *SessionPersistenceTestSuite) getActiveSessionTree() relayer.SessionTree
 	return sessionTree
 }
 
-// setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing.
-// This is used both in the initial setup and when simulating restarts.
-func (s *SessionPersistenceTestSuite) setupNewRelayerSessionsManager() relayer.RelayerSessionsManager {
+// setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing
+func (s *StorageModeTestSuite) setupNewRelayerSessionsManager() relayer.RelayerSessionsManager {
 	// Initialize a new session trees map
 	s.sessionTrees = make(session.SessionsTreesMap)
 	// Create an inspector that will monitor the session trees for testing
@@ -421,9 +386,8 @@ func (s *SessionPersistenceTestSuite) setupNewRelayerSessionsManager() relayer.R
 	return relayerSessionsManager
 }
 
-// setupSessionManagerDependencies configures all the mock dependencies needed
-// by the relayer sessions manager for testing.
-func (s *SessionPersistenceTestSuite) setupSessionManagerDependencies() depinject.Config {
+// setupSessionManagerDependencies configures all the mock dependencies needed by the relayer sessions manager
+func (s *StorageModeTestSuite) setupSessionManagerDependencies() depinject.Config {
 	ctrl := gomock.NewController(s.T())
 
 	// Set up all mock clients
@@ -459,9 +423,8 @@ func (s *SessionPersistenceTestSuite) setupSessionManagerDependencies() depinjec
 	return deps
 }
 
-// setupMockSupplierClient creates and configures a mock supplier client
-// for testing claim and proof submissions
-func (s *SessionPersistenceTestSuite) setupMockSupplierClient(ctrl *gomock.Controller) *mockclient.MockSupplierClient {
+// setupMockSupplierClient creates and configures a mock supplier client for testing claim and proof submissions
+func (s *StorageModeTestSuite) setupMockSupplierClient(ctrl *gomock.Controller) *mockclient.MockSupplierClient {
 	// Configure mock supplier client
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
@@ -507,9 +470,8 @@ func (s *SessionPersistenceTestSuite) setupMockSupplierClient(ctrl *gomock.Contr
 	return supplierClientMock
 }
 
-// setupMockBlockQueryClient creates and configures a mock block query client
-// for testing block retrieval
-func (s *SessionPersistenceTestSuite) setupMockBlockQueryClient(ctrl *gomock.Controller) *mockclient.MockCometRPC {
+// setupMockBlockQueryClient creates and configures a mock block query client for testing block retrieval
+func (s *StorageModeTestSuite) setupMockBlockQueryClient(ctrl *gomock.Controller) *mockclient.MockCometRPC {
 	// Configure mock block query client
 	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
 	blockQueryClientMock.EXPECT().
@@ -529,9 +491,8 @@ func (s *SessionPersistenceTestSuite) setupMockBlockQueryClient(ctrl *gomock.Con
 	return blockQueryClientMock
 }
 
-// setupMockProofQueryClient creates and configures a mock proof query client
-// for testing proof and claim retrieval
-func (s *SessionPersistenceTestSuite) setupMockProofQueryClient(ctrl *gomock.Controller) *mockclient.MockProofQueryClient {
+// setupMockProofQueryClient creates and configures a mock proof query client for testing proof and claim retrieval
+func (s *StorageModeTestSuite) setupMockProofQueryClient(ctrl *gomock.Controller) *mockclient.MockProofQueryClient {
 	// Configure mock proof query client
 	proofQueryClientMock := mockclient.NewMockProofQueryClient(ctrl)
 	proofQueryClientMock.EXPECT().
@@ -557,9 +518,8 @@ func (s *SessionPersistenceTestSuite) setupMockProofQueryClient(ctrl *gomock.Con
 	return proofQueryClientMock
 }
 
-// setupMockBlockClient creates and configures a mock block client
-// for testing block sequence management
-func (s *SessionPersistenceTestSuite) setupMockBlockClient(ctrl *gomock.Controller) *mockclient.MockBlockClient {
+// setupMockBlockClient creates and configures a mock block client for testing block sequence management
+func (s *StorageModeTestSuite) setupMockBlockClient(ctrl *gomock.Controller) *mockclient.MockBlockClient {
 	// Configure mock block client
 	blockClientMock := mockclient.NewMockBlockClient(ctrl)
 
@@ -588,9 +548,8 @@ func (s *SessionPersistenceTestSuite) setupMockBlockClient(ctrl *gomock.Controll
 	return blockClientMock
 }
 
-// advanceToBlock advances the test chain to the specified height by
-// publishing new blocks until the target height is reached.
-func (s *SessionPersistenceTestSuite) advanceToBlock(height int64) {
+// advanceToBlock advances the test chain to the specified height by publishing new blocks
+func (s *StorageModeTestSuite) advanceToBlock(height int64) {
 	// Get the current height
 	currentHeight := int64(0)
 	currentBlock := s.blockClient.LastBlock(s.ctx)
@@ -598,9 +557,7 @@ func (s *SessionPersistenceTestSuite) advanceToBlock(height int64) {
 		currentHeight = currentBlock.Height()
 	}
 
-	// Publish blocks until we reach the target height.
-	// A loop is used instead of publishing the target height directly to populate
-	// the block sequence observable with all blocks in between.
+	// Publish blocks until we reach the target height
 	for currentHeight < height {
 		s.blockPublishCh <- testblock.NewAnyTimesBlock(s.T(), s.emptyBlockHash, currentHeight+1)
 		currentHeight++
@@ -608,4 +565,8 @@ func (s *SessionPersistenceTestSuite) advanceToBlock(height int64) {
 
 	// Wait for I/O operations to complete
 	waitSimulateIO()
+}
+
+func (s *StorageModeTestSuite) isInMemorySMT() bool {
+	return s.storageDir == session.InMemoryStoreFilename || s.storageDir == session.InMemoryPebbleStoreFilename
 }

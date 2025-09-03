@@ -69,10 +69,10 @@ func NewEmptySessionTree(
 
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
+		logger,
 		sessionTreeHeader,
 		supplierOperatorAddr,
 		testSessionTreeStoreDir,
-		logger,
 	)
 	require.NoError(t, err)
 

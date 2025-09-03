@@ -21,13 +21,7 @@ source ./tools/rc_helpers/queries.sh
 Available commands:
   shannon_query_unique_tx_msgs_and_events  - Get unique message and event types
   shannon_query_unique_block_events        - Get unique block events
-  shannon_query_tx_messages                - Query transactions by message type
-  shannon_query_tx_events                  - Query transactions by event type
-  shannon_query_block_events               - Query block events
-  shannon_query_unique_claim_suppliers     - Get unique claim supplier addresses
-  shannon_query_supplier_tx_events         - Get supplier-specific transaction events
-  shannon_query_supplier_block_events      - Get supplier-specific block events
-  shannon_query_application_block_events   - Get application-specific block events
+  ...
 ```
 
 ## `pocketd` CLI queries
