@@ -946,6 +946,135 @@ func WithMultipleValidators(validatorStakes []int64) TokenomicsModuleKeepersOptF
 	}
 }
 
+// createSelfDelegation creates a self-delegation for a validator
+func createSelfDelegation(validatorAddr string, selfBondedStake int64) stakingtypes.Delegation {
+	valAddr, err := cosmostypes.ValAddressFromBech32(validatorAddr)
+	if err != nil {
+		panic(fmt.Sprintf("invalid validator operator address: %v", err))
+	}
+	valAccAddr := cosmostypes.AccAddress(valAddr)
+
+	return stakingtypes.Delegation{
+		DelegatorAddress: valAccAddr.String(),
+		ValidatorAddress: validatorAddr,
+		Shares:           cosmosmath.LegacyNewDec(selfBondedStake), // Self-bonded amount
+	}
+}
+
+// createExternalDelegations creates external delegations for a validator
+func createExternalDelegations(validatorAddr string, delegatedAmount int64) (
+	delegations []stakingtypes.Delegation,
+	delegatorAddrs []cosmostypes.AccAddress,
+) {
+	if delegatedAmount <= 0 {
+		return nil, nil
+	}
+
+	// Create 2 external delegators per validator for variety
+	numDelegators := 2
+	delegationPerDelegator := delegatedAmount / int64(numDelegators)
+
+	for j := 0; j < numDelegators; j++ {
+		// Create delegator address
+		delegatorAddr := sample.AccAddressBech32()
+		delegatorAccAddr := cosmostypes.MustAccAddressFromBech32(delegatorAddr)
+		delegatorAddrs = append(delegatorAddrs, delegatorAccAddr)
+
+		// Create delegation object
+		delegationAmount := delegationPerDelegator
+		if j == 0 && delegatedAmount%int64(numDelegators) != 0 {
+			// Give remainder to first delegator
+			delegationAmount += delegatedAmount % int64(numDelegators)
+		}
+
+		delegation := stakingtypes.Delegation{
+			DelegatorAddress: delegatorAddr,
+			ValidatorAddress: validatorAddr,
+			Shares:           cosmosmath.LegacyNewDec(delegationAmount), // 1:1 share to token ratio for simplicity
+		}
+		delegations = append(delegations, delegation)
+	}
+
+	return delegations, delegatorAddrs
+}
+
+// createValidatorWithDelegations creates a single validator and its delegations
+func createValidatorWithDelegations(selfBondedStake int64, delegatedAmount int64) (
+	validator stakingtypes.Validator,
+	delegations []stakingtypes.Delegation,
+	delegatorAddrs []cosmostypes.AccAddress,
+) {
+	// Create validator with self-bonded stake
+	validatorAddr := sample.ValOperatorAddressBech32()
+	selfBondedTokens := cosmosmath.NewInt(selfBondedStake)
+	totalBondedTokens := selfBondedTokens.Add(cosmosmath.NewInt(delegatedAmount))
+
+	// Create validator with total bonded tokens
+	// For bonded validators, GetBondedTokens() returns the Tokens field
+	// The validator's self-bonded portion will be calculated from delegation records
+	validator = stakingtypes.Validator{
+		OperatorAddress: validatorAddr,
+		Tokens:          totalBondedTokens,                                 // Total bonded tokens (self + delegated) for GetBondedTokens()
+		DelegatorShares: cosmosmath.LegacyNewDecFromInt(totalBondedTokens), // Total shares
+		Status:          stakingtypes.Bonded,
+	}
+
+	// Create self-delegation for the validator
+	selfDelegation := createSelfDelegation(validatorAddr, selfBondedStake)
+	delegations = append(delegations, selfDelegation)
+
+	// Create external delegations if any
+	externalDelegations, externalDelegatorAddrs := createExternalDelegations(validatorAddr, delegatedAmount)
+	delegations = append(delegations, externalDelegations...)
+	delegatorAddrs = append(delegatorAddrs, externalDelegatorAddrs...)
+
+	return validator, delegations, delegatorAddrs
+}
+
+// initValidatorAccount creates and funds a validator account
+func initValidatorAccount(ctx cosmostypes.Context, keepers *TokenomicsModuleKeepers, validator stakingtypes.Validator) {
+	valAddr, err := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
+	if err != nil {
+		panic(fmt.Sprintf("invalid validator operator address: %v", err))
+	}
+	valAccAddr := cosmostypes.AccAddress(valAddr)
+
+	// Create validator account
+	acc := keepers.NewAccountWithAddress(ctx, valAccAddr)
+	keepers.SetAccount(ctx, acc)
+
+	// Fund validator account
+	initialBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000)
+	err = keepers.MintCoins(ctx, tokenomicstypes.ModuleName, cosmostypes.NewCoins(initialBalance))
+	if err != nil {
+		panic(fmt.Sprintf("failed to mint coins for validator: %v", err))
+	}
+	err = keepers.SendCoinsFromModuleToAccount(ctx, tokenomicstypes.ModuleName, valAccAddr, cosmostypes.NewCoins(initialBalance))
+	if err != nil {
+		panic(fmt.Sprintf("failed to send coins to validator: %v", err))
+	}
+}
+
+// initDelegatorAccounts creates and funds delegator accounts
+func initDelegatorAccounts(ctx cosmostypes.Context, keepers *TokenomicsModuleKeepers, delegatorAddrs []cosmostypes.AccAddress) {
+	for _, delegatorAddr := range delegatorAddrs {
+		// Create delegator account
+		delegatorAccount := keepers.NewAccountWithAddress(ctx, delegatorAddr)
+		keepers.SetAccount(ctx, delegatorAccount)
+
+		// Fund delegator account
+		initialBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000)
+		err := keepers.MintCoins(ctx, tokenomicstypes.ModuleName, cosmostypes.NewCoins(initialBalance))
+		if err != nil {
+			panic(fmt.Sprintf("failed to mint coins for delegator: %v", err))
+		}
+		err = keepers.SendCoinsFromModuleToAccount(ctx, tokenomicstypes.ModuleName, delegatorAddr, cosmostypes.NewCoins(initialBalance))
+		if err != nil {
+			panic(fmt.Sprintf("failed to send coins to delegator: %v", err))
+		}
+	}
+}
+
 // WithValidatorsAndDelegations creates validators with equal self-bonded stakes and realistic delegations
 // for comprehensive testing of validator and delegator reward distribution.
 func WithValidatorsAndDelegations(selfBondedStake int64, delegatedAmounts []int64) TokenomicsModuleKeepersOptFn {
@@ -955,127 +1084,33 @@ func WithValidatorsAndDelegations(selfBondedStake int64, delegatedAmounts []int6
 			panic("Must have at least one validator")
 		}
 
-		// Create validators with equal self-bonded stakes
-		// Total bonded tokens = self-bonded + delegated for each validator
 		validators := make([]stakingtypes.Validator, numValidators)
 		allDelegations := make(map[string][]stakingtypes.Delegation) // valAddr -> delegations
-		delegatorAddresses := make([]cosmostypes.AccAddress, 0)      // Track all delegator addresses
+		var allDelegatorAddrs []cosmostypes.AccAddress               // Track all delegator addresses
 
-		for i := range validators {
-			// Create validator with self-bonded stake
-			validatorAddr := sample.ValOperatorAddressBech32()
-			selfBondedTokens := cosmosmath.NewInt(selfBondedStake)
-			totalBondedTokens := selfBondedTokens.Add(cosmosmath.NewInt(delegatedAmounts[i]))
-
-			// Create validator with total bonded tokens
-			// For bonded validators, GetBondedTokens() returns the Tokens field
-			// The validator's self-bonded portion will be calculated from delegation records
-			validators[i] = stakingtypes.Validator{
-				OperatorAddress: validatorAddr,
-				Tokens:          totalBondedTokens,                                 // Total bonded tokens (self + delegated) for GetBondedTokens()
-				DelegatorShares: cosmosmath.LegacyNewDecFromInt(totalBondedTokens), // Total shares
-				Status:          stakingtypes.Bonded,
-			}
-
-			// Create delegations for this validator
-			var delegations []stakingtypes.Delegation
-
-			// First, create a self-delegation for the validator
-			valAddr, err := cosmostypes.ValAddressFromBech32(validatorAddr)
-			if err != nil {
-				panic(fmt.Sprintf("invalid validator operator address: %v", err))
-			}
-			valAccAddr := cosmostypes.AccAddress(valAddr)
-
-			selfDelegation := stakingtypes.Delegation{
-				DelegatorAddress: valAccAddr.String(),
-				ValidatorAddress: validatorAddr,
-				Shares:           cosmosmath.LegacyNewDec(selfBondedStake), // Self-bonded amount
-			}
-			delegations = append(delegations, selfDelegation)
-
-			// Then create external delegations if any
-			delegatedAmount := delegatedAmounts[i]
-			if delegatedAmount > 0 {
-				// Create 2 external delegators per validator for variety
-				numDelegators := 2
-				delegationPerDelegator := delegatedAmount / int64(numDelegators)
-
-				for j := 0; j < numDelegators; j++ {
-					// Create delegator address
-					delegatorAddr := sample.AccAddressBech32()
-					delegatorAccAddr := cosmostypes.MustAccAddressFromBech32(delegatorAddr)
-					delegatorAddresses = append(delegatorAddresses, delegatorAccAddr)
-
-					// Create delegation object
-					delegationAmount := delegationPerDelegator
-					if j == 0 && delegatedAmount%int64(numDelegators) != 0 {
-						// Give remainder to first delegator
-						delegationAmount += delegatedAmount % int64(numDelegators)
-					}
-
-					delegation := stakingtypes.Delegation{
-						DelegatorAddress: delegatorAddr,
-						ValidatorAddress: validatorAddr,
-						Shares:           cosmosmath.LegacyNewDec(delegationAmount), // 1:1 share to token ratio for simplicity
-					}
-					delegations = append(delegations, delegation)
-				}
-			}
-
-			// Store delegations for this validator
-			allDelegations[validatorAddr] = delegations
+		// Create each validator with its delegations
+		for i, delegatedAmount := range delegatedAmounts {
+			validator, delegations, delegatorAddrs := createValidatorWithDelegations(selfBondedStake, delegatedAmount)
+			validators[i] = validator
+			allDelegations[validator.OperatorAddress] = delegations
+			allDelegatorAddrs = append(allDelegatorAddrs, delegatorAddrs...)
 		}
 
 		cfg.validators = validators
-		cfg.delegatorAddresses = delegatorAddresses
+		cfg.delegatorAddresses = allDelegatorAddrs
 		cfg.delegations = allDelegations
 
 		// Initialize accounts and balances for validators and delegators
 		initValidatorAndDelegatorAccounts := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
-			// Create validator accounts
+			// Create and fund validator accounts
 			for _, validator := range validators {
-				valAddr, err := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
-				if err != nil {
-					panic(fmt.Sprintf("invalid validator operator address: %v", err))
-				}
-				valAccAddr := cosmostypes.AccAddress(valAddr)
-
-				// Create validator account
-				acc := keepers.NewAccountWithAddress(sdkCtx, valAccAddr)
-				keepers.SetAccount(sdkCtx, acc)
-
-				// Fund validator account
-				initialBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000)
-				err = keepers.MintCoins(sdkCtx, tokenomicstypes.ModuleName, cosmostypes.NewCoins(initialBalance))
-				if err != nil {
-					panic(fmt.Sprintf("failed to mint coins for validator: %v", err))
-				}
-				err = keepers.SendCoinsFromModuleToAccount(sdkCtx, tokenomicstypes.ModuleName, valAccAddr, cosmostypes.NewCoins(initialBalance))
-				if err != nil {
-					panic(fmt.Sprintf("failed to send coins to validator: %v", err))
-				}
+				initValidatorAccount(sdkCtx, keepers, validator)
 			}
 
-			// Create delegator accounts
-			for _, delegatorAddr := range delegatorAddresses {
-				// Create delegator account
-				delegatorAccount := keepers.NewAccountWithAddress(sdkCtx, delegatorAddr)
-				keepers.SetAccount(sdkCtx, delegatorAccount)
-
-				// Fund delegator account
-				initialBalance := cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 1000000)
-				err := keepers.MintCoins(sdkCtx, tokenomicstypes.ModuleName, cosmostypes.NewCoins(initialBalance))
-				if err != nil {
-					panic(fmt.Sprintf("failed to mint coins for delegator: %v", err))
-				}
-				err = keepers.SendCoinsFromModuleToAccount(sdkCtx, tokenomicstypes.ModuleName, delegatorAddr, cosmostypes.NewCoins(initialBalance))
-				if err != nil {
-					panic(fmt.Sprintf("failed to send coins to delegator: %v", err))
-				}
-			}
+			// Create and fund delegator accounts
+			initDelegatorAccounts(sdkCtx, keepers, allDelegatorAddrs)
 
 			return ctx
 		}
