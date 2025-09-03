@@ -536,12 +536,12 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		GetValidatorDelegations(gomock.Any(), gomock.Any()).
 		Return([]stakingtypes.Delegation{}, nil).
 		AnyTimes()
-		
+
 	mockStakingKeeper.EXPECT().
 		GetDelegatorDelegations(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]stakingtypes.Delegation{}, nil).
 		AnyTimes()
-		
+
 	mockStakingKeeper.EXPECT().
 		Validator(gomock.Any(), gomock.Any()).
 		Return(nil, stakingtypes.ErrNoValidatorFound).

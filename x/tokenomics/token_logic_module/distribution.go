@@ -365,7 +365,7 @@ func executeValidatorTransfers(
 	return nil
 }
 
-// distributeValidatorAndDelegatorRewards distributes session settlement rewards to 
+// distributeValidatorAndDelegatorRewards distributes session settlement rewards to
 // validators and their delegators based purely on stake proportions. This function
 // implements proportional stake-based distribution without any commission calculations.
 //
@@ -425,14 +425,14 @@ func DistributeValidatorAndDelegatorRewards(
 
 	// Collect all stakeholders (validators + delegators) with their stake amounts
 	type stakeholder struct {
-		address cosmostypes.AccAddress
-		stake   math.Int
-		isValidator bool
+		address           cosmostypes.AccAddress
+		stake             math.Int
+		isValidator       bool
 		validatorOperator string // Only set if isValidator is true
 	}
-	
+
 	var allStakeholders []stakeholder
-	
+
 	// Process each validator and their delegators
 	for _, validator := range validators {
 		valAddr, err := cosmostypes.ValAddressFromBech32(validator.GetOperator())
@@ -443,7 +443,7 @@ func DistributeValidatorAndDelegatorRewards(
 			))
 			continue
 		}
-		
+
 		// Get all delegations to this validator
 		delegations, err := stakingKeeper.GetValidatorDelegations(ctx, valAddr)
 		if err != nil {
@@ -453,24 +453,24 @@ func DistributeValidatorAndDelegatorRewards(
 			))
 			continue
 		}
-		
+
 		validatorAccAddr := cosmostypes.AccAddress(valAddr)
-		
+
 		// If no delegations found (e.g., delegation mocks not set up), fall back to old behavior
 		// Treat entire validator bonded amount as validator rewards for backward compatibility
 		if len(delegations) == 0 {
 			validatorBondedTokens := validator.GetBondedTokens()
 			if !validatorBondedTokens.IsZero() {
 				allStakeholders = append(allStakeholders, stakeholder{
-					address: validatorAccAddr,
-					stake: validatorBondedTokens,
-					isValidator: true,
+					address:           validatorAccAddr,
+					stake:             validatorBondedTokens,
+					isValidator:       true,
 					validatorOperator: validator.GetOperator(),
 				})
 			}
 			continue
 		}
-		
+
 		// Process all delegations (including self-delegation)
 		for _, delegation := range delegations {
 			delegatorAddr, err := cosmostypes.AccAddressFromBech32(delegation.GetDelegatorAddr())
@@ -481,19 +481,19 @@ func DistributeValidatorAndDelegatorRewards(
 				))
 				continue
 			}
-			
+
 			delegatedShares := delegation.GetShares()
 			if !delegatedShares.IsZero() {
 				// Convert shares to tokens using the validator's exchange rate
 				delegatedTokens := validator.TokensFromShares(delegatedShares).TruncateInt()
-				
+
 				if !delegatedTokens.IsZero() {
 					// Check if this is the validator's self-delegation
 					isValidatorSelfDelegation := delegatorAddr.Equals(validatorAccAddr)
-					
+
 					allStakeholders = append(allStakeholders, stakeholder{
-						address: delegatorAddr,
-						stake: delegatedTokens,
+						address:     delegatorAddr,
+						stake:       delegatedTokens,
 						isValidator: isValidatorSelfDelegation,
 						validatorOperator: func() string {
 							if isValidatorSelfDelegation {
@@ -616,7 +616,7 @@ func DistributeValidatorAndDelegatorRewards(
 
 		// Queue the reward transfer to the stakeholder
 		stakeholderRewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, stakeholderReward)
-		
+
 		// Use appropriate settlement operation reason based on stakeholder type
 		var opReason tokenomicstypes.SettlementOpReason
 		if stakeholder.isValidator {
@@ -647,7 +647,7 @@ func DistributeValidatorAndDelegatorRewards(
 		if stakeholder.isValidator {
 			stakeholderType = fmt.Sprintf("validator %s", stakeholder.validatorOperator)
 		}
-		
+
 		logger.Info(fmt.Sprintf(
 			"queued reward transfer: %s to %s %s (stake: %s, share: %s%%)",
 			stakeholderRewardCoin.String(),
