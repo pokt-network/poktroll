@@ -221,7 +221,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 	proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 	if !proposerAmount.IsZero() {
 		// Distribute to all validators proportionally based on stake weight
-		if err := DistributeValidatorAndDelegatorRewards(
+		if err := distributeValidatorAndDelegatorRewards(
 			tlmgm.ctx,
 			tlmgm.logger,
 			tlmgm.tlmCtx.Result,

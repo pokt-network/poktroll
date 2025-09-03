@@ -374,7 +374,7 @@ func executeValidatorTransfers(
 //
 // Where stakeholders include both the validator (self-bonded stake) and all delegators
 // who have delegated to that validator.
-func DistributeValidatorAndDelegatorRewards(
+func distributeValidatorAndDelegatorRewards(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	result *tokenomicstypes.ClaimSettlementResult,

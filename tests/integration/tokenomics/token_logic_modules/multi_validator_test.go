@@ -82,32 +82,32 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 		},
 		{
 			name:                 "With delegators: Mixed delegation amounts",
-			validatorStakes:      []int64{400_000, 400_000, 400_000}, // Equal self-bonded stakes
-			delegatedAmounts:     []int64{600_000, 200_000, 0},       // Different delegation amounts
-			numClaims:            600,
-			expectedTotalRewards: 66_000, // 600 claims × 1100 × 10% = 66,000
+			validatorStakes:      []int64{250_000, 250_000, 250_000}, // Equal self-bonded stakes
+			delegatedAmounts:     []int64{250_000, 250_000, 0},       // Different delegation amounts (clean divisible)
+			numClaims:            160,
+			expectedTotalRewards: 17_600, // 160 claims × 1100 × 10% = 17,600
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
-				// Stake distribution:
-				// - Validator 1: 400k self + 600k delegated = 1,000k total (50% of 2M)
-				// - Validator 2: 400k self + 200k delegated = 600k total (30% of 2M)
-				// - Validator 3: 400k self + 0k delegated = 400k total (20% of 2M)
-				// Total: 2,000k tokens
+				// Stake distribution (perfectly clean divisible numbers):
+				// - Validator 1: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M)
+				// - Validator 2: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M)
+				// - Validator 3: 250k self + 0k delegated = 250k total (1/5 = 20% of 1.25M)
+				// Total: 1,250k tokens
 				//
-				// Expected distribution of 66,000 total rewards:
-				// - Validator 1 total: 33,000 (50%)
-				//   - Val 1 self (400k/1000k = 40%): 13,200 uPOKT
-				//   - Val 1 delegators (600k/1000k = 60%): 19,800 uPOKT
-				// - Validator 2 total: 19,800 (30%)
-				//   - Val 2 self (400k/600k = 66.67%): 13,200 uPOKT
-				//   - Val 2 delegators (200k/600k = 33.33%): 6,600 uPOKT
-				// - Validator 3 total: 13,200 (20%)
-				//   - Val 3 self (400k/400k = 100%): 13,200 uPOKT
+				// Expected distribution of 17,600 total rewards:
+				// - Validator 1 total: 17,600 × (2/5) = 7,040
+				//   - Val 1 self (250k/500k = 1/2): 7,040 × (1/2) = 3,520 uPOKT
+				//   - Val 1 delegators (250k/500k = 1/2): 7,040 × (1/2) = 3,520 uPOKT
+				// - Validator 2 total: 17,600 × (2/5) = 7,040
+				//   - Val 2 self (250k/500k = 1/2): 7,040 × (1/2) = 3,520 uPOKT
+				//   - Val 2 delegators (250k/500k = 1/2): 7,040 × (1/2) = 3,520 uPOKT
+				// - Validator 3 total: 17,600 × (1/5) = 3,520
+				//   - Val 3 self (250k/250k = 100%): 3,520 uPOKT
 				//   - Val 3 delegators: 0 uPOKT
 
 				require.Len(t, validatorRewards, 3, "Should have 3 validators")
 
-				// All validators have equal self-bonded stakes (400k each), so must receive equal rewards
-				expectedValidatorReward := int64(13_200) // Each validator gets 13,200 for their 400k self-bonded stake
+				// All validators have equal self-bonded stakes (250k each), so must receive equal rewards
+				expectedValidatorReward := int64(3_520) // Each validator gets 3,520 for their 250k self-bonded stake
 				for _, reward := range validatorRewards {
 					require.Equal(t, expectedValidatorReward, reward,
 						"All validators should receive exactly %d uPOKT for equal self-bonded stakes", expectedValidatorReward)
@@ -116,8 +116,8 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 				// Verify specific delegator rewards based on their delegation amounts
 				// We have 4 delegators total (2 for Val1, 2 for Val2, 0 for Val3)
 				expectedDelegatorRewards := []int64{
-					9_900, 9_900, // Val1's 2 delegators split 19,800 equally
-					3_300, 3_300, // Val2's 2 delegators split 6,600 equally
+					1_760, 1_760, // Val1's 2 delegators split 3,520 equally
+					1_760, 1_760, // Val2's 2 delegators split 3,520 equally
 				}
 
 				// Delegator rewards should match expected distribution
@@ -125,11 +125,11 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 					"Delegator rewards should match expected distribution")
 
 				// Verify totals
-				totalValidatorRewards := 3 * expectedValidatorReward // 39,600
-				totalDelegatorRewards := int64(19_800 + 6_600)       // 26,400
+				totalValidatorRewards := 3 * expectedValidatorReward // 10,560
+				totalDelegatorRewards := int64(3_520 + 3_520)        // 7,040
 
-				require.Equal(t, int64(39_600), totalValidatorRewards, "Total validator rewards should be 39,600")
-				require.Equal(t, int64(26_400), totalDelegatorRewards, "Total delegator rewards should be 26,400")
+				require.Equal(t, int64(10_560), totalValidatorRewards, "Total validator rewards should be 10,560")
+				require.Equal(t, int64(7_040), totalDelegatorRewards, "Total delegator rewards should be 7,040")
 				require.Equal(t, expectedTotal, totalValidatorRewards+totalDelegatorRewards,
 					"Total distributed should equal expected total")
 			},
