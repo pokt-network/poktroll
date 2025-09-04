@@ -189,9 +189,6 @@ in a BadgerDB KV store data files.
 
 :::warning TODO(#1734) Experimentation in flight
 
-In-memory enables relay miners to be a lot more performant, but it also means that
-the session state will be lost when the relay miner is restarted.
-
 In-memory storage enables relay miners to be significantly more performant. For this reason, `:memory:` is the recommended option.
 
 **Warning:** Prior to #1734, RelayMiner restarts will result in loss of session state.

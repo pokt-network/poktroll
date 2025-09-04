@@ -226,13 +226,6 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Ensuring no active sessions are lost when the process is interrupted
 	//   - Maintaining accumulated work when interruptions occur
 	if rs.isInMemorySMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
-		rs.logger.Info().Msg("Skipping session data restoration for in-memory SMT modes.")
-	} else {
-		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
-			return err
-		}
-	} else {
 		// For in-memory mode, try to restore from backups if backup manager is available
 		if rs.backupManager != nil {
 			if err := rs.restoreSessionTreesFromBackup(ctx, block.Height()); err != nil {
@@ -241,6 +234,10 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 			}
 		} else {
 			rs.logger.Info().Msg("In-memory mode: no backup manager configured, starting with empty session state.")
+		}
+	} else {
+		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
+			return err
 		}
 	}
 

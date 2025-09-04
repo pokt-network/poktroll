@@ -332,7 +332,7 @@ func (s *BackupManagerTestSuite) TestRestoreSessionTrees_CorruptedBackupFile() {
 }
 
 // TestRelayWeightRestoration_RegresssionTest ensures that relay weights are properly restored
-// This test prevents regression of the bug where restored relays had weight=1 instead of 
+// This test prevents regression of the bug where restored relays had weight=1 instead of
 // the service's compute units per relay, causing incorrect settlement amounts.
 func (s *BackupManagerTestSuite) TestRelayWeightRestoration_RegresssionTest() {
 	config := &relayerconfig.RelayMinerSmtBackupConfig{
@@ -340,12 +340,12 @@ func (s *BackupManagerTestSuite) TestRelayWeightRestoration_RegresssionTest() {
 	}
 
 	s.backupManager = session.NewBackupManager(s.logger, config)
-	
+
 	// Test with different compute units per relay values
 	testCases := []struct {
-		name                    string
-		serviceComputeUnits     uint64
-		expectedWeight          uint64
+		name                string
+		serviceComputeUnits uint64
+		expectedWeight      uint64
 	}{
 		{"default_service", 100, 100},
 		{"high_compute_service", 500, 500},
@@ -371,7 +371,7 @@ func (s *BackupManagerTestSuite) TestRelayWeightRestoration_RegresssionTest() {
 					},
 					{
 						Key:    []byte("relay_key_2"),
-						Value:  []byte("relay_data_2"), 
+						Value:  []byte("relay_data_2"),
 						Weight: 1, // This will be corrected during restoration
 					},
 				},
@@ -391,7 +391,7 @@ func (s *BackupManagerTestSuite) TestRelayWeightRestoration_RegresssionTest() {
 			// Note: We can't directly verify the weights in the SMT, but we can verify
 			// that the restoration process completed successfully with the correct compute units
 			// The actual weight correction happens during the SMT update process
-			
+
 			s.logger.Info().
 				Uint64("service_compute_units", tc.serviceComputeUnits).
 				Uint64("expected_weight", tc.expectedWeight).
@@ -668,20 +668,6 @@ func (s *BackupManagerTestSuite) TestCleanupOldBackups_FileIntegrity() {
 	})
 }
 
-// callCleanupMethod is a helper to invoke the private cleanupOldBackups method for testing
-func (s *BackupManagerTestSuite) callCleanupMethod(backupManager *session.BackupManager) error {
-	// Since cleanupOldBackups is private, we need to trigger it indirectly
-	// The method is called during BackupSessionTree, so we create a backup to trigger cleanup
-	sessionHeader := &sessiontypes.SessionHeader{
-		SessionStartBlockHeight: 1,
-		SessionEndBlockHeight:   10,
-		ServiceId:               "trigger_service",
-		SessionId:               "trigger_cleanup",
-	}
-	sessionTree := testtree.NewEmptySessionTree(s.T(), s.ctx, sessionHeader, s.supplierAddress)
-	return backupManager.BackupSessionTree(sessionTree)
-}
-
 // cleanupBackupDir removes all files from the backup directory for test isolation
 func (s *BackupManagerTestSuite) cleanupBackupDir() {
 	files, err := os.ReadDir(s.tmpBackupDir)
@@ -898,8 +884,8 @@ func (s *BackupManagerTestSuite) TestIteratorBasedSMTExtraction() {
 		var latestModTime time.Time
 		for _, file := range files {
 			if strings.HasSuffix(file.Name(), ".pb") {
-				info, err := file.Info()
-				require.NoError(s.T(), err)
+				info, fileErr := file.Info()
+				require.NoError(s.T(), fileErr)
 				if info.ModTime().After(latestModTime) {
 					latestModTime = info.ModTime()
 					latestBackupFile = file.Name()

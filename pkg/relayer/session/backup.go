@@ -38,10 +38,10 @@ func NewBackupManager(
 		config:   config,
 		stopChan: make(chan struct{}),
 	}
-	
+
 	// Log the complete backup configuration for debugging
 	bm.logBackupConfiguration()
-	
+
 	return bm
 }
 
@@ -501,51 +501,6 @@ func (bm *BackupManager) extractSMTData(kvStore kvstore.MapStore) ([]*relayertyp
 }
 
 // restoreKVStoreData restores SMT KVStore data directly, preserving the exact tree structure
-func restoreKVStoreData(sessionTree *sessionTree, smtData []*relayertypes.RelayDataEntry, smtRoot []byte, logger polylog.Logger) (int, error) {
-	if sessionTree.treeStore == nil {
-		return 0, fmt.Errorf("session tree KVStore is nil - cannot restore data")
-	}
-
-	restoredCount := 0
-	var lastError error
-
-	// Directly populate the KVStore with the backed up data
-	// This preserves the exact SMT structure including internal nodes
-	for _, entry := range smtData {
-		err := sessionTree.treeStore.Set(entry.Key, entry.Value)
-		if err != nil {
-			logger.Warn().
-				Err(err).
-				Msg("Failed to restore KVStore entry")
-			lastError = err
-			continue
-		}
-		restoredCount++
-	}
-
-	// After restoring the KVStore data, we need to reconstruct the SMT from it
-	// The SMT needs to be rebuilt from the restored KVStore to be functional
-	if restoredCount > 0 && len(smtRoot) > 0 {
-		// Import the SMT from the restored KVStore data using the backed up SMT root
-		sessionTree.sessionSMT = smt.ImportSparseMerkleSumTrie(
-			sessionTree.treeStore,
-			protocol.NewTrieHasher(),
-			smtRoot, // Use the backed up SMT root
-			protocol.SMTValueHasher(),
-		)
-		logger.Debug().
-			Str("smt_root", fmt.Sprintf("%x", smtRoot)).
-			Msg("Reconstructed SMT from restored KVStore data with backed up root")
-	} else if restoredCount > 0 {
-		logger.Warn().Msg("SMT root not available for reconstruction - SMT may not function correctly")
-	}
-
-	if lastError != nil && restoredCount == 0 {
-		return 0, fmt.Errorf("failed to restore any KVStore data: %w", lastError)
-	}
-
-	return restoredCount, lastError
-}
 
 // restoreKVStoreDataWithCorrectWeights restores SMT KVStore data with proper relay weights
 func restoreKVStoreDataWithCorrectWeights(sessionTree *sessionTree, smtData []*relayertypes.RelayDataEntry, smtRoot []byte, serviceComputeUnits uint64, logger polylog.Logger) (int, error) {
@@ -600,7 +555,7 @@ func restoreKVStoreDataWithCorrectWeights(sessionTree *sessionTree, smtData []*r
 				}
 			}
 		}
-		
+
 		logger.Info().
 			Int("relay_entries", len(smtData)).
 			Uint64("corrected_weight", serviceComputeUnits).
@@ -618,44 +573,6 @@ func restoreKVStoreDataWithCorrectWeights(sessionTree *sessionTree, smtData []*r
 
 // restoreSMTData restores SMT data entries into a session tree (legacy method)
 // This method is kept for backwards compatibility but is not used in the current implementation
-func restoreSMTData(sessionTree *sessionTree, smtData []*relayertypes.RelayDataEntry, logger polylog.Logger) (int, error) {
-	restoredCount := 0
-	var lastError error
-
-	for _, entry := range smtData {
-		// Use the weight from backup, or default to 1 if not available
-		weight := entry.Weight
-		if weight == 0 {
-			weight = 1 // Default weight for legacy entries
-		}
-
-		// Update the SMT with the restored data
-		// Note: We need to access the underlying SMT directly since the sessionTree interface
-		// doesn't expose an Update method for raw key-value pairs
-		if sessionTree.sessionSMT != nil {
-			err := sessionTree.sessionSMT.Update(entry.Key, entry.Value, weight)
-			if err != nil {
-				logger.Warn().
-					Err(err).
-					Str("key", string(entry.Key)).
-					Uint64("weight", weight).
-					Msg("Failed to restore SMT entry")
-				lastError = err
-				continue
-			}
-			restoredCount++
-		} else {
-			lastError = fmt.Errorf("session SMT is nil - cannot restore data")
-			break
-		}
-	}
-
-	if lastError != nil && restoredCount == 0 {
-		return 0, fmt.Errorf("failed to restore any SMT data: %w", lastError)
-	}
-
-	return restoredCount, lastError
-}
 
 // logBackupConfiguration logs the complete backup configuration for debugging
 func (bm *BackupManager) logBackupConfiguration() {

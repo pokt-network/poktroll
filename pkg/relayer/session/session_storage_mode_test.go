@@ -26,6 +26,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	relayertypes "github.com/pokt-network/poktroll/pkg/relayer/types"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
@@ -61,7 +62,7 @@ type StorageModeTestSuite struct {
 	blockPublishCh chan<- client.Block
 	blocksObs      observable.Observable[client.Block]
 
-	minedRelaysPublishCh chan<- *relayer.MinedRelay
+	minedRelaysPublishCh chan<- *relayertypes.MinedRelay
 	minedRelaysObs       relayer.MinedRelaysObservable
 
 	sharedParams sharedtypes.Params
@@ -131,7 +132,7 @@ func (s *StorageModeTestSuite) SetupTest() {
 	s.deps = s.setupSessionManagerDependencies()
 
 	// Create mined relays observable and channel for publishing
-	mrObs, minedRelaysPublishCh := channel.NewObservable[*relayer.MinedRelay]()
+	mrObs, minedRelaysPublishCh := channel.NewObservable[*relayertypes.MinedRelay]()
 	s.minedRelaysObs = relayer.MinedRelaysObservable(mrObs)
 	s.minedRelaysPublishCh = minedRelaysPublishCh
 
