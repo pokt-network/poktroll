@@ -142,10 +142,7 @@ func (c *historicalKeyValueCache[T]) SetVersion(key string, value T, version int
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
 
-	latestVersion := max(version, c.getLatestVersionNumber(key))
-	if version > latestVersion {
-		latestVersion = version
-	}
+	latestVersion := max(version, max(version, c.getLatestVersionNumber(key)))
 
 	valueHistory, exists := c.valueHistories[key]
 	if !exists {
