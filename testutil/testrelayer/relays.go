@@ -15,7 +15,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/pkg/relayer"
+	relayertypes "github.com/pokt-network/poktroll/pkg/relayer/types"
 	testutilkeyring "github.com/pokt-network/poktroll/testutil/testkeyring"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -36,7 +36,7 @@ func NewUnsignedMinedRelay(
 	t *testing.T,
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress string,
-) *relayer.MinedRelay {
+) *relayertypes.MinedRelay {
 	t.Helper()
 
 	relay := servicetypes.Relay{
@@ -61,7 +61,7 @@ func NewUnsignedMinedRelay(
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
-	return &relayer.MinedRelay{
+	return &relayertypes.MinedRelay{
 		Relay: relay,
 		Bytes: relayBz,
 		Hash:  relayHash,
@@ -86,7 +86,7 @@ func NewSignedMinedRelay(
 	appAddr, supplierOperatorAddr, supplierOperatorKeyUid string,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
-) *relayer.MinedRelay {
+) *relayertypes.MinedRelay {
 	t.Helper()
 
 	relay := servicetypes.Relay{
@@ -115,7 +115,7 @@ func NewSignedMinedRelay(
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
-	return &relayer.MinedRelay{
+	return &relayertypes.MinedRelay{
 		Relay: relay,
 		Bytes: relayBz,
 		Hash:  relayHash,

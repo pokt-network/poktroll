@@ -4,10 +4,18 @@ queryCaching: false
 config:
   # TODO(#1734): Ensure that LocalNet and E2E tests are configured to have:
   # - One RM using SimpleMap in-memory store (":memory:")
-  # - One RM using Pebble in-memory store (":memory_pebble:")  
+  # - One RM using Pebble in-memory store (":memory_pebble:")
   # - One RM using on-disk persisted store (/root/.pocket/smt)
   # Currently using SimpleMap in-memory (recommended for production)
   smt_store_path: ":memory:"
+  smt_backup:
+    enabled: true
+    interval_seconds: 10    # Backup every 10 seconds for E2E testing
+    backup_dir: "/root/.pocket/smt_backups"
+    on_session_close: true
+    on_claim_generation: true
+    on_graceful_shutdown: true
+    retain_backup_count: 5   # Keep last 5 backups for LocalNet
   metrics:
     enabled: true
     addr: :9090
@@ -22,3 +30,11 @@ config:
   ping:
     enabled: true
     addr: localhost:8081
+
+# Enable persistent storage for backup/restore E2E testing
+persistence:
+  enabled: true
+  size: 1Gi  # Small size for LocalNet testing - sufficient for backup files
+  storageClass: ""  # Use default storage class (works with Kind/local clusters)
+  accessModes:
+    - ReadWriteOnce

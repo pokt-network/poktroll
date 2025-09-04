@@ -2,6 +2,8 @@ package session
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"path"
 	"sync"
@@ -19,8 +21,10 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	relayertypes "github.com/pokt-network/poktroll/pkg/relayer/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -87,7 +91,7 @@ type relayerSessionsManager struct {
 	// - ":memory:" - Uses SimpleMap for pure in-memory storage (recommended)
 	// - ":memory_pebble:" - Uses Pebble with in-memory VFS (experimental)
 	// Otherwise, session data is persisted to disk and can be restored after a process restart.
-	// TODO(#1734): Ensure in-memory modes avoid data loss on process restart.
+	// For in-memory mode, use the backup manager to prevent data loss on process restart.
 	storesDirectoryPath string
 
 	// sessionSMTStore is a key-value store used to persist the metadata of
@@ -109,6 +113,9 @@ type relayerSessionsManager struct {
 
 	// bankQueryClient is used to query for the bank module parameters.
 	bankQueryClient client.BankQueryClient
+
+	// backupManager handles backup and restoration of session trees for in-memory storage
+	backupManager *BackupManager
 
 	// stopping indicates whether the relayerSessionsManager is in the process of graceful shutdown.
 	//
@@ -209,6 +216,9 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 		block.Hash(),
 	)
 
+	// Log storage and backup configuration for debugging
+	rs.logStorageConfiguration()
+
 	// Restore previously active sessions from persistent storage by rehydrating
 	// the session tree map.
 	// This is crucial for:
@@ -216,18 +226,30 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Ensuring no active sessions are lost when the process is interrupted
 	//   - Maintaining accumulated work when interruptions occur
 	if rs.isInMemorySMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
-		rs.logger.Info().Msg("Skipping session data restoration for in-memory SMT modes.")
+		// For in-memory mode, try to restore from backups if backup manager is available
+		if rs.backupManager != nil {
+			if err := rs.restoreSessionTreesFromBackup(ctx, block.Height()); err != nil {
+				rs.logger.Error().Err(err).Msg("Failed to restore sessions from backup")
+				// Don't fail startup - continue without restored sessions
+			}
+		} else {
+			rs.logger.Info().Msg("In-memory mode: no backup manager configured, starting with empty session state.")
+		}
 	} else {
 		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
 			return err
 		}
 	}
 
+	// Start backup manager if configured and using in-memory storage
+	if rs.backupManager != nil && rs.storesDirectoryPath == InMemoryStoreFilename {
+		rs.backupManager.Start(ctx, rs)
+	}
+
 	// DEV_NOTE: must cast back to generic observable type to use with Map.
 	// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
-	// support for generic types.
-	relayObs := observable.Observable[*relayer.MinedRelay](rs.relayObs)
+	// support for generic relayertypes.
+	relayObs := observable.Observable[*relayertypes.MinedRelay](rs.relayObs)
 
 	// Map eitherMinedRelays to a new observable of an error type which is
 	// notified if an error occurs when attempting to add the relay to the session tree.
@@ -275,10 +297,17 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
 
-	// Skip persistence when using in-memory SMT modes as data is not saved to disk.
+	// Handle graceful shutdown backup for in-memory mode
 	if rs.isInMemorySMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
-		rs.logger.Info().Msg("Skipping persistence of session data for in-memory SMT modes.")
+		if rs.backupManager != nil {
+			rs.logger.Info().Msg("Triggering graceful shutdown backup for in-memory session trees")
+			if err := rs.performGracefulShutdownBackup(); err != nil {
+				rs.logger.Error().Err(err).Msg("Failed to perform graceful shutdown backup")
+			}
+			rs.backupManager.Stop()
+		} else {
+			rs.logger.Info().Msg("In-memory mode: no backup manager configured - session data will be lost on shutdown")
+		}
 		return
 	}
 	rs.logger.Info().Msg("About to start persisting all session data to disk.")
@@ -448,13 +477,44 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 				// block height and add them to the list of sessionTrees to be published.
 				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
 					// Mark the session as claimed and add it to the list of sessionTrees to be published.
-					// If the session has already been claimed, it will be skipped.
+					// If the session has already been claimed, it will be skipped UNLESS it's a restored session
+					// that was already in the claiming state when backed up (e.g., during graceful shutdown).
 					// Appending the sessionTree to the list of sessionTrees is protected
 					// against concurrent access by the sessionsTreesMu such that the first
 					// call that marks the session as claimed will be the only one to add the
 					// sessionTree to the list.
-					if err := sessionTree.StartClaiming(); err != nil {
-						continue
+					err := sessionTree.StartClaiming()
+					if err != nil {
+						// If the session is already marked as claiming, it might be a restored session
+						// that was backed up while in the claiming state. Allow it to proceed if it's
+						// still within its claim or proof windows.
+						if errors.Is(err, ErrSessionTreeAlreadyMarkedAsClaimed) {
+							// Check if session is within claim or proof window - if so, let it proceed
+							claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
+							proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+
+							currentHeight := block.Height()
+							withinClaimWindow := currentHeight <= claimWindowCloseHeight
+							withinProofWindow := currentHeight <= proofWindowCloseHeight
+
+							// Only allow already-claiming sessions to proceed if they're still within their windows
+							if !withinClaimWindow && !withinProofWindow {
+								rs.logger.Debug().
+									Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
+									Int64("current_height", currentHeight).
+									Int64("claim_window_close", claimWindowCloseHeight).
+									Int64("proof_window_close", proofWindowCloseHeight).
+									Msg("Skipping already-claiming session that is past its windows")
+								continue
+							}
+							// Session is already claiming but still within windows - allow it to proceed
+							rs.logger.Debug().
+								Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
+								Msg("Allowing already-claiming restored session to proceed in pipeline")
+						} else {
+							// Different error - skip this session
+							continue
+						}
 					}
 
 					// Separate the sessions that are on-time from the ones that are late.
@@ -558,6 +618,190 @@ func (rs *relayerSessionsManager) validateConfig() error {
 	return nil
 }
 
+// restoreSessionTreesFromBackup restores session trees from backup files when using in-memory storage
+func (rs *relayerSessionsManager) restoreSessionTreesFromBackup(ctx context.Context, currentHeight int64) error {
+	if rs.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+
+	rs.logger.Info().
+		Int64("current_height", currentHeight).
+		Msg("🔄 Starting session tree restoration from backup")
+
+	backupSessions, err := rs.backupManager.RestoreSessionTrees()
+	if err != nil {
+		return fmt.Errorf("failed to restore session trees from backup: %w", err)
+	}
+
+	if len(backupSessions) == 0 {
+		rs.logger.Info().Msg("📂 No backup sessions found to restore")
+		return nil
+	}
+
+	rs.logger.Info().
+		Int("total_backup_files", len(backupSessions)).
+		Msg("📋 Found backup sessions, analyzing for restoration eligibility")
+
+	restoredCount := 0
+	expiredCount := 0
+	failedCount := 0
+	for _, backupData := range backupSessions {
+		sessionLogger := rs.logger.With(
+			"session_id", backupData.SessionHeader.SessionId,
+			"supplier", backupData.SupplierOperatorAddress,
+			"service_id", backupData.SessionHeader.ServiceId,
+		)
+
+		// Check if the session is still relevant (not expired)
+		if rs.isSessionExpired(&backupData.SessionHeader, currentHeight) {
+			sessionLogger.Info().
+				Int64("session_end_height", backupData.SessionHeader.SessionEndBlockHeight).
+				Msg("⏰ Skipping restoration of expired session - proof window has closed")
+			expiredCount++
+			continue
+		}
+
+		// Get session timing information for logging
+		sessionEndHeight := backupData.SessionHeader.SessionEndBlockHeight
+		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		var claimWindowCloseHeight, proofWindowCloseHeight int64
+		if err == nil {
+			claimWindowCloseHeight = sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
+			proofWindowCloseHeight = sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+		}
+
+		sessionLogger.Info().
+			Int64("session_end_height", sessionEndHeight).
+			Int64("claim_window_close", claimWindowCloseHeight).
+			Int64("proof_window_close", proofWindowCloseHeight).
+			Bool("is_claiming", backupData.IsClaiming).
+			Int("smt_entries", len(backupData.SmtData)).
+			Int64("backup_timestamp", backupData.BackupTimestamp).
+			Msg("🔍 Analyzing session backup for restoration eligibility")
+
+		// Query the service to get compute units per relay for proper weight restoration
+		// Create a minimal relay request metadata with just the session header
+		sessionHeader := backupData.SessionHeader
+		relayRequestMetadata := &servicetypes.RelayRequestMetadata{
+			SessionHeader: &sessionHeader,
+		}
+		serviceComputeUnitsPerRelay, err := rs.getServiceComputeUnitsPerRelay(ctx, relayRequestMetadata)
+		if err != nil {
+			sessionLogger.Warn().
+				Err(err).
+				Msg("⚠️ Failed to query service compute units per relay for backup restoration - using default weight of 1")
+			serviceComputeUnitsPerRelay = 1 // Fallback to default weight
+		}
+
+		// Update the backup data with the queried service compute units
+		backupData.ServiceComputeUnitsPerRelay = serviceComputeUnitsPerRelay
+
+		sessionLogger.Info().
+			Uint64("service_compute_units", serviceComputeUnitsPerRelay).
+			Msg("📊 Retrieved service compute units for weight restoration")
+
+		// Recreate the session tree from backup data
+		sessionTree, err := CreateSessionTreeFromBackup(
+			rs.logger,
+			backupData,
+			rs.storesDirectoryPath,
+		)
+		if err != nil {
+			sessionLogger.Error().
+				Err(err).
+				Msg("❌ Failed to restore session tree from backup")
+			failedCount++
+			continue
+		}
+
+		// Add to session trees map
+		rs.sessionsTreesMu.Lock()
+		if rs.sessionsTrees[backupData.SupplierOperatorAddress] == nil {
+			rs.sessionsTrees[backupData.SupplierOperatorAddress] = make(map[int64]map[string]relayer.SessionTree)
+		}
+		if rs.sessionsTrees[backupData.SupplierOperatorAddress][sessionEndHeight] == nil {
+			rs.sessionsTrees[backupData.SupplierOperatorAddress][sessionEndHeight] = make(map[string]relayer.SessionTree)
+		}
+		rs.sessionsTrees[backupData.SupplierOperatorAddress][sessionEndHeight][backupData.SessionHeader.SessionId] = sessionTree
+		rs.sessionsTreesMu.Unlock()
+
+		restoredCount++
+		sessionLogger.Info().Msg("✅ Successfully restored session tree from backup and added to active sessions")
+	}
+
+	// Log comprehensive restoration summary
+	if restoredCount > 0 {
+		rs.logger.Info().
+			Int("restored_count", restoredCount).
+			Int("expired_count", expiredCount).
+			Int("failed_count", failedCount).
+			Int("total_backups", len(backupSessions)).
+			Msg("🎉 Session tree restoration completed successfully - active sessions restored to memory")
+	} else {
+		rs.logger.Info().
+			Int("expired_count", expiredCount).
+			Int("failed_count", failedCount).
+			Int("total_backups", len(backupSessions)).
+			Msg("📋 Session tree restoration completed - no sessions were eligible for restoration")
+	}
+
+	return nil
+}
+
+// performGracefulShutdownBackup backs up all active session trees during graceful shutdown
+func (rs *relayerSessionsManager) performGracefulShutdownBackup() error {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
+	backupCount := 0
+	for supplierAddr, heightMap := range rs.sessionsTrees {
+		for height, sessionMap := range heightMap {
+			for sessionId, sessionTree := range sessionMap {
+				if err := rs.backupManager.BackupOnEvent(sessionTree, BackupEventGracefulShutdown); err != nil {
+					rs.logger.Error().
+						Err(err).
+						Str("supplier", supplierAddr).
+						Int64("height", height).
+						Str("session_id", sessionId).
+						Msg("Failed to backup session tree during graceful shutdown")
+					continue
+				}
+				backupCount++
+			}
+		}
+	}
+
+	rs.logger.Info().
+		Int("backup_count", backupCount).
+		Msg("Graceful shutdown backup completed")
+
+	return nil
+}
+
+// isSessionExpired checks if a session is expired based on current block height
+func (rs *relayerSessionsManager) isSessionExpired(sessionHeader *sessiontypes.SessionHeader, currentHeight int64) bool {
+	// Get shared parameters to calculate proper proof window close height
+	ctx := context.Background()
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		// If we can't get shared params, fall back to a conservative heuristic
+		// This ensures we don't restore sessions that are likely expired
+		rs.logger.Warn().
+			Err(err).
+			Str("session_id", sessionHeader.SessionId).
+			Msg("Failed to get shared params for session expiry check - using fallback logic")
+		sessionEndHeight := sessionHeader.SessionEndBlockHeight
+		return currentHeight > sessionEndHeight+1000
+	}
+
+	// Use proper proof window close height calculation
+	sessionEndHeight := sessionHeader.SessionEndBlockHeight
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+
+	// Session is expired if current height is past the proof window close height
+	return currentHeight > proofWindowCloseHeight
+}
+
 // waitForBlock blocks until the block at the given height (or greater) is
 // observed as having been committed.
 func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight int64) client.Block {
@@ -618,7 +862,7 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 // it skips output (only outputs errors).
 func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	ctx context.Context,
-	relay *relayer.MinedRelay,
+	relay *relayertypes.MinedRelay,
 ) (_ error, skip bool) {
 	// ensure the session tree exists for this relay
 	// TODO_CONSIDERATION: if we get the session header from the response, there
@@ -766,6 +1010,16 @@ func (rs *relayerSessionsManager) deleteSessionTree(sessionTree relayer.SessionT
 		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress(),
 	)
 
+	// Trigger backup for in-memory sessions before deletion (session close)
+	if rs.backupManager != nil && rs.storesDirectoryPath == InMemoryStoreFilename {
+		if err := rs.backupManager.BackupOnEvent(sessionTree, BackupEventSessionClose); err != nil {
+			logger.Warn().
+				Err(err).
+				Msg("Failed to backup session tree before deletion")
+			// Don't fail deletion due to backup failure
+		}
+	}
+
 	// IMPORTANT: Create sessionSMT BEFORE deleting the tree
 	// This ensures we retrieve the SMT root while the KVStore is still open.
 	sessionSMT := sessionSMTFromSessionTree(sessionTree)
@@ -828,5 +1082,36 @@ func sessionSMTFromSessionTree(
 		SessionHeader:           sessionTree.GetSessionHeader(),
 		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
 		SmtRoot:                 sessionTree.GetSMSTRoot(),
+	}
+}
+
+// logStorageConfiguration logs the complete storage and backup configuration for debugging
+func (rs *relayerSessionsManager) logStorageConfiguration() {
+	// Determine storage mode
+	storageMode := "DISK_PERSISTED"
+	if rs.storesDirectoryPath == InMemoryStoreFilename {
+		storageMode = "IN_MEMORY"
+	}
+
+	// Determine backup status
+	backupStatus := "DISABLED"
+	if rs.backupManager != nil {
+		backupStatus = "ENABLED"
+	}
+
+	// Log storage configuration
+	rs.logger.Info().
+		Str("storage_mode", storageMode).
+		Str("stores_directory_path", rs.storesDirectoryPath).
+		Str("backup_status", backupStatus).
+		Msg("🗄️ Session Storage Configuration")
+
+	// Log additional details based on storage mode
+	if rs.storesDirectoryPath == InMemoryStoreFilename {
+		rs.logger.Info().Msg("⚠️  Using in-memory storage: session data will be lost on restart unless backup is configured")
+	} else {
+		rs.logger.Info().
+			Str("disk_path", rs.storesDirectoryPath).
+			Msg("💾 Using persistent disk storage: session data will survive restarts")
 	}
 }

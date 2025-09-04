@@ -44,6 +44,10 @@ test_e2e_tokenomics: test_e2e_env ## Run only the E2E suite that exercises the s
 test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
 	go test -v -count=1 ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
+.PHONY: test_e2e_relay_miner_backup_restore
+test_e2e_relay_miner_backup_restore: test_e2e_env ## Run only the E2E suite that exercises relay miner backup/restore functionality
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,test --features-path=relay_miner_backup_restore.feature
+
 .PHONY: test_e2e_oneshot
 test_e2e_oneshot: test_e2e_env ## Run only the E2E suite that exercises the oneshot module.
 	go test -v -count=1 ./e2e/tests/... -tags=e2e,oneshot --run=OneshotTaggedFeatures

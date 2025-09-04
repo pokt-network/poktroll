@@ -507,14 +507,31 @@ func (st *sessionTree) StartClaiming() error {
 	return nil
 }
 
+// IsClaiming returns true if the session tree has been marked as being processed for claiming.
+func (st *sessionTree) IsClaiming() bool {
+	st.sessionMu.Lock()
+	defer st.sessionMu.Unlock()
+	return st.isClaiming
+}
+
 // GetSupplierOperatorAddress returns a stringified bech32 address of the supplier
 // operator this sessionTree belongs to.
 func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
 }
 
+// GetKVStore returns the underlying key-value store used by the SMST.
+// This is used for backup operations to iterate over all key-value pairs.
+// Returns nil if the tree has been flushed and the KVStore is no longer available.
+func (st *sessionTree) GetKVStore() kvstore.MapStore {
+	if st.treeStore == nil {
+		return nil
+	}
+	// The treeStore implements kvstore.MapStore interface through PebbleKVStore
+	return st.treeStore
+}
+
 // stop the KVStore and free up the in-memory resources used by the session tree.
-//
 // Calling stop:
 // - DOES NOT calculate the root hash of the SMST.
 // - DOES commit the latest (current state) of the SMT to on-state storage.

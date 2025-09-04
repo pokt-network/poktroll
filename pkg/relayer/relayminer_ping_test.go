@@ -21,6 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	relayertypes "github.com/pokt-network/poktroll/pkg/relayer/types"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
@@ -47,7 +48,7 @@ func (t *RelayMinerPingSuite) SetupTest() {
 	t.servedRelaysObs = relayer.RelaysObservable(srObs)
 
 	// minedRelaysObs is NEVER published to. It exists to satisfy test mocks.
-	mrObs, _ := channel.NewObservable[*relayer.MinedRelay]()
+	mrObs, _ := channel.NewObservable[*relayertypes.MinedRelay]()
 	t.minedRelaysObs = relayer.MinedRelaysObservable(mrObs)
 }
 

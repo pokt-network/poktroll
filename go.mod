@@ -21,15 +21,15 @@ module github.com/pokt-network/poktroll
 
 go 1.24.3
 
-// replace (
-// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
-// github.com/pokt-network/shannon-sdk => ../shannon-sdk
+replace (
+	// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
+	// github.com/pokt-network/shannon-sdk => ../shannon-sdk
 
-// DEVELOPER_TIP: Uncomment to use a local copy of smt for development purposes.
-// github.com/pokt-network/smt => ../smt
-// github.com/pokt-network/smt/kvstore/badger => ../smt/kvstore/badger
-// github.com/pokt-network/smt/kvstore/pebble => ../smt/kvstore/pebble
-// )
+	// DEVELOPER_TIP: Uncomment to use a local copy of smt for development purposes.
+	github.com/pokt-network/smt => ../smt
+	github.com/pokt-network/smt/kvstore/badger => ../smt/kvstore/badger
+	github.com/pokt-network/smt/kvstore/pebble => ../smt/kvstore/pebble
+)
 
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.6
 
