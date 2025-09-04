@@ -79,21 +79,57 @@ func (sessq *sessionQuerier) GetSession(
 		return nil, err
 	}
 	sessionCacheKey := getSessionCacheKey(sharedParams, appAddress, serviceId, blockHeight)
+	
+	// Calculate expected session boundaries for validation
+	expectedSessionStartHeight := sharedtypes.GetSessionStartHeight(sharedParams, blockHeight)
+	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParams, blockHeight)
 
-	// Check if the session is present in the cache.
-	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
-		logger.Debug().Msgf("cache HIT for session key (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
-		return session, nil
-	}
-
-	// Use mutex to prevent multiple concurrent cache updates
+	// SOLUTION 5: Expand mutex scope to prevent race conditions
+	// Acquire mutex before any cache operations to ensure consistency
 	sessq.sessionsMutex.Lock()
 	defer sessq.sessionsMutex.Unlock()
 
-	// Double-check the cache after acquiring the lock
+	// Check if the session is present in the cache.
 	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
-		logger.Debug().Msgf("cache HIT for session key after lock (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
-		return session, nil
+		// SOLUTION 3: Validate the cached session matches expected session boundaries
+		// We can't calculate the exact session ID without the block hash, but we can
+		// verify that the session's start and end heights match what we expect
+		cachedStartHeight := session.GetHeader().GetSessionStartBlockHeight()
+		cachedEndHeight := session.GetHeader().GetSessionEndBlockHeight()
+		
+		if cachedStartHeight != expectedSessionStartHeight || cachedEndHeight != expectedSessionEndHeight {
+			logger.Warn().
+				Int64("expected_start_height", expectedSessionStartHeight).
+				Int64("cached_start_height", cachedStartHeight).
+				Int64("expected_end_height", expectedSessionEndHeight).
+				Int64("cached_end_height", cachedEndHeight).
+				Str("cached_session_id", session.GetSessionId()).
+				Str("cache_key", sessionCacheKey).
+				Int64("query_block_height", blockHeight).
+				Msg("⚠️ Session boundaries mismatch detected in cache - invalidating stale entry")
+			
+			// Delete the stale cache entry
+			sessq.sessionsCache.Delete(sessionCacheKey)
+			// Fall through to fetch fresh session from chain
+		} else {
+			// Additional validation: ensure the cached session is for the correct app and service
+			if session.GetHeader().GetApplicationAddress() != appAddress || 
+			   session.GetHeader().GetServiceId() != serviceId {
+				logger.Warn().
+					Str("expected_app", appAddress).
+					Str("cached_app", session.GetHeader().GetApplicationAddress()).
+					Str("expected_service", serviceId).
+					Str("cached_service", session.GetHeader().GetServiceId()).
+					Str("cache_key", sessionCacheKey).
+					Msg("⚠️ Session app/service mismatch in cache - invalidating entry")
+				
+				sessq.sessionsCache.Delete(sessionCacheKey)
+				// Fall through to fetch fresh session from chain
+			} else {
+				logger.Debug().Msgf("cache HIT for session key (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
+				return session, nil
+			}
+		}
 	}
 
 	logger.Debug().Msgf("cache MISS for session key (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
@@ -113,6 +149,23 @@ func (sessq *sessionQuerier) GetSession(
 			"address: %s; serviceId: %s; block height: %d; error: [%v]",
 			appAddress, serviceId, blockHeight, err,
 		)
+	}
+
+	// SOLUTION 3: Final validation before caching
+	fetchedStartHeight := res.Session.GetHeader().GetSessionStartBlockHeight()
+	fetchedEndHeight := res.Session.GetHeader().GetSessionEndBlockHeight()
+	
+	if fetchedStartHeight != expectedSessionStartHeight || fetchedEndHeight != expectedSessionEndHeight {
+		logger.Error().
+			Int64("expected_start_height", expectedSessionStartHeight).
+			Int64("fetched_start_height", fetchedStartHeight).
+			Int64("expected_end_height", expectedSessionEndHeight).
+			Int64("fetched_end_height", fetchedEndHeight).
+			Str("fetched_session_id", res.Session.GetSessionId()).
+			Str("cache_key", sessionCacheKey).
+			Int64("query_block_height", blockHeight).
+			Msg("🚨 Session boundaries mismatch from chain query - possible chain state or params change issue")
+		// Still cache it as this is what the chain returned, but log the discrepancy
 	}
 
 	// Cache the session using the session key.
