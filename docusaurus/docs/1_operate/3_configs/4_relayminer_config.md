@@ -182,14 +182,26 @@ The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
 
-`:memory:` can be used to store the `SMT` only in memory, without persisting it to disk.
+**In-memory storage options:**
 
-:::warning In-memory session state loss
+- `:memory:` - Uses SimpleMap (pure Go map) for in-memory storage. **Recommended**.
+- `:memory_pebble:` - Uses Pebble database with in-memory VFS. Experimental option with more overhead.
 
-In-memory storage provides optimal performance by avoiding disk I/O, but session state 
+:::warning TODO(#1734) Experimentation in flight
+
+In-memory enables relay miners to be a lot more performant, but it also means that
+the session state will be lost when the relay miner is restarted.
+
+In-memory storage enables relay miners to be significantly more performant. For this reason, `:memory:` is the recommended option.
+
+**Warning:** Prior to #1734, RelayMiner restarts will result in loss of session state.
+
+**Consideration**: Once experimentation is complete, there will either only be one in-memory storage option or a proper enum will be created (disk, memory_simple, memory_pebble).
+
+In-memory storage provides optimal performance by avoiding disk I/O, but session state
 will be lost when the relay miner restarts unless backup is configured.
 
-Configure the `smt_backup` section to enable automatic backup and restoration of 
+Configure the `smt_backup` section to enable automatic backup and restoration of
 in-memory session trees. See the SMT Backup Configuration section below.
 
 :::
@@ -200,9 +212,8 @@ _`Optional`_ Configuration for backing up in-memory SMT (Sparse Merkle Tree) ses
 
 :::info Only for In-Memory Storage
 
-This configuration is only relevant when `smt_store_path` is set to `:memory:`. 
+This configuration is only relevant when `smt_store_path` is set to `:memory:`.
 For disk-based storage, session data is already persisted and backup is not needed.
-
 :::
 
 #### `smt_backup.enabled`

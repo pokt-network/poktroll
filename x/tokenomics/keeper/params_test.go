@@ -44,29 +44,29 @@ func TestParams_ValidateMintAllocationDao(t *testing.T) {
 
 func TestParams_ValidateMintAllocationProposer(t *testing.T) {
 	tests := []struct {
-		desc                  string
-		mintAllocatioProposer any
-		expectedErr           error
+		desc                   string
+		mintAllocationProposer any
+		expectedErr            error
 	}{
 		{
-			desc:                  "invalid type",
-			mintAllocatioProposer: "0",
-			expectedErr:           tokenomicstypes.ErrTokenomicsParamInvalid.Wrap("invalid parameter type: string"),
+			desc:                   "invalid type",
+			mintAllocationProposer: "0",
+			expectedErr:            tokenomicstypes.ErrTokenomicsParamInvalid.Wrap("invalid parameter type: string"),
 		},
 		{
-			desc:                  "invalid MintAllocationProposer (<0)",
-			mintAllocatioProposer: -0.1,
-			expectedErr:           tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("mint allocation to proposer must be greater than or equal to 0: got %f", -0.1),
+			desc:                   "invalid MintAllocationProposer (<0)",
+			mintAllocationProposer: -0.1,
+			expectedErr:            tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("mint allocation to proposer must be greater than or equal to 0: got %f", -0.1),
 		},
 		{
-			desc:                  "valid MintAllocationProposer",
-			mintAllocatioProposer: tokenomicstypes.DefaultMintAllocationPercentages.Proposer,
+			desc:                   "valid MintAllocationProposer",
+			mintAllocationProposer: tokenomicstypes.DefaultMintAllocationPercentages.Proposer,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			err := tokenomicstypes.ValidateMintAllocationProposer(test.mintAllocatioProposer)
+			err := tokenomicstypes.ValidateMintAllocationProposer(test.mintAllocationProposer)
 			if test.expectedErr != nil {
 				require.ErrorContains(t, err, test.expectedErr.Error())
 			} else {

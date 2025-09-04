@@ -29,6 +29,7 @@ You can find a fully featured example configuration at [supplier_staking_config.
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
     - [`rev_share_percent`](#rev_share_percent)
+- [Configuration Use Case Matrix](#configuration-use-case-matrix)
 
 ## Gov Param References & Values
 
@@ -142,7 +143,9 @@ account.
 
 ### `owner_address`
 
-_`Required`_
+| Scenario | Requirement  |
+| -------- | ------------ |
+| Always   | _`Required`_ |
 
 ```yaml
 owner_address: <address>
@@ -173,7 +176,9 @@ the same `owner_address`.
 
 ### `operator_address`
 
-_`Optional`_
+| Scenario | Requirement  |
+| -------- | ------------ |
+| Always   | _`Optional`_ |
 
 ```yaml
 operator_address: <address>
@@ -204,7 +209,11 @@ corresponding `Supplier` has to be unstaked and a new one staked with the new
 
 ### `stake_amount`
 
-_`Required`_, _`Non-empty`_
+| Scenario                   | Requirement  |
+| -------------------------- | ------------ |
+| Initial Supplier Stake     | _`Required`_ |
+| In/Decrease Supplier Stake | _`Required`_ |
+| Otherwise                  | _`Optional`_ |
 
 ```yaml
 stake_amount: <number>upokt
@@ -215,7 +224,9 @@ This amount covers all the `service`s defined in the `services` section.
 
 ### `default_rev_share_percent`
 
-_`Optional`_, _`Non-empty`_
+| Scenario | Requirement  |
+| -------- | ------------ |
+| Always   | _`Optional`_ |
 
 ```yaml
 default_rev_share_percent:
@@ -253,7 +264,10 @@ MUST be **explicitly** defined in the map if they are to receive a share on the
 
 ### `services`
 
-_`Required`_, _`Non-empty`_
+| Scenario                          | Requirement  |
+| --------------------------------- | ------------ |
+| Initial Supplier Stake            | _`Optional`_ |
+| Update Supplier Service Config(s) | _`Required`_ |
 
 ```yaml
 services:
@@ -272,7 +286,9 @@ advertise on Pocket Network.
 
 #### `service_id`
 
-_`Required`_
+| Scenario             | Requirement  |
+| -------------------- | ------------ |
+| Always (per service) | _`Required`_ |
 
 `service_id` is a string that uniquely identifies the service that the `Supplier`
 is providing. It MUST 8 characters or less and composed of alphanumeric characters,
@@ -282,7 +298,9 @@ For example, it must match the regex `^[a-zA-Z0-9_-]{1,8}$`, and spaces are disa
 
 #### `endpoints`
 
-_`Required`_, _`Non-empty`_
+| Scenario             | Requirement  |
+| -------------------- | ------------ |
+| Always (per service) | _`Required`_ |
 
 `endpoints` is a list of `endpoint` objects that the `Supplier` will advertise
 to the Pocket Network. Each `endpoint` object consists of a `publicly_exposed_url`
@@ -290,7 +308,9 @@ and a `rpc_type`.
 
 ##### `publicly_exposed_url`
 
-_`Required`_
+| Scenario             | Requirement  |
+| -------------------- | ------------ |
+| Always (per service) | _`Required`_ |
 
 The `publicly_exposed_url` defines the endpoint for sending `RelayRequests` from
 the Pocket Network's `Gateways` and `Applications`. This endpoint is provided by
@@ -305,7 +325,9 @@ the `Supplier`'s `RelayMiner` which in turn forwards these requests to the servi
 
 ##### `rpc_type`
 
-_`Required`_
+| Scenario             | Requirement  |
+| -------------------- | ------------ |
+| Always (per service) | _`Required`_ |
 
 `rpc_type` is a string that defines the type of RPC service that the `Supplier`
 is providing.
@@ -361,3 +383,19 @@ If `rev_share_percent` is defined for a `service`, then the `owner_address` of t
 `Supplier` MUST be **explicitly** defined in the map if they are to receive a share.
 
 :::
+
+## Configuration Use Case Matrix
+
+| Action            | Signer   | Service Configs Provided? | Stake Amount Provided? | Result / Behavior                                   |
+| ----------------- | -------- | ------------------------- | ---------------------- | --------------------------------------------------- |
+| Initial Stake     | Owner    | ❌ No                     | ✅ Yes                 | ✅ Stake escrowed, no services configured           |
+|                   |          | ✅ Yes                    | ✅ Yes                 | ❌ ERROR – owner may not provide service configs    |
+|                   |          | ❌ No / ✅ Yes            | ❌ No                  | ❌ ERROR – stake amount must be provided            |
+|                   | Operator | ❌ No                     | ✅ Yes                 | ✅ Stake escrowed, no services configured           |
+|                   |          | ✅ Yes                    | ✅ Yes                 | ✅ Stake escrowed, services configured              |
+|                   |          | ❌ No / ✅ Yes            | ❌ No                  | ❌ ERROR – stake amount must be provided            |
+| Upstake/Downstake | Owner    | ❌ No                     | ✅ Yes                 | ✅ Stake (un)escrowed, no change to service configs |
+|                   |          | ✅ Yes                    | ❌ No / ✅ Yes         | ❌ ERROR – owner may not provide service configs    |
+|                   | Operator | ❌ No                     | ✅ Yes                 | ✅ Stake (un)escrowed, no change to service configs |
+|                   |          | ✅ Yes                    | ✅ Yes                 | ✅ Stake (un)escrowed, services updated             |
+|                   |          | ✅ Yes                    | ❌ No                  | ✅ Service configs updated                          |

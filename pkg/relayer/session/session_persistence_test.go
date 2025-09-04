@@ -357,9 +357,9 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 
 	// Calculate when the proof window closes for this session
-	proofWinodwCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
 	// Move past the proof window close height
-	s.advanceToBlock(proofWinodwCloseHeight + 1)
+	s.advanceToBlock(proofWindowCloseHeight + 1)
 
 	// Start the new relayer sessions manager
 	err := s.relayerSessionsManager.Start(s.ctx)

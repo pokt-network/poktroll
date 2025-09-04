@@ -214,8 +214,8 @@ acc_balance_query_modules: ## Query the balance of the network level module acco
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
-	APP1=$$(make pocketd_addr ACC_NAME=app1) && \
-	make acc_balance_query ACC=$$APP1
+	APP1=$$(make -s pocketd_addr ACC_NAME=app1) && \
+	make -s acc_balance_query ACC=$$APP1
 
 .PHONY: acc_balance_total_supply
 acc_balance_total_supply: ## Query the total supply of the network
@@ -403,3 +403,4 @@ include ./makefiles/telegram.mk
 include ./makefiles/docs.mk
 include ./makefiles/release.mk
 include ./makefiles/tools.mk
+include ./makefiles/ibc.mk

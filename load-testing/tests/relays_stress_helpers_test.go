@@ -831,7 +831,7 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 		supplier.address, // The message signer.
 		supplier.address, // The supplier owner.
 		supplier.address, // The supplier operator.
-		supplier.amountToStake,
+		&supplier.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
 			{
 				ServiceId: testedServiceId,

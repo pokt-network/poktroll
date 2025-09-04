@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
@@ -24,6 +23,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 	ownerAddress := sample.AccAddressBech32()
 	firstShareHolderAddress := sample.AccAddressBech32()
 	secondShareHolderAddress := sample.AccAddressBech32()
+	oneMilliPOKT := sdk.NewInt64Coin("upokt", 1000)
 
 	tests := []struct {
 		desc        string
@@ -51,7 +51,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
@@ -93,7 +93,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
@@ -130,7 +130,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
@@ -173,7 +173,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
@@ -233,7 +233,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc1",
@@ -308,7 +308,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
@@ -371,7 +371,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
@@ -413,7 +413,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: ownerAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
@@ -457,7 +457,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: ownerAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
@@ -499,7 +499,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedConfig: &config.SupplierStakeConfig{
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				StakeAmount:     &oneMilliPOKT,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "svc",
@@ -507,6 +507,62 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 							{
 								Url:     "http://pokt.network:8081",
 								RpcType: sharedtypes.RPCType_JSON_RPC,
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            ownerAddress,
+								RevSharePercentage: 100,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid --stake-only config",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				stake_amount: 1000upokt
+			`, ownerAddress, operatorAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     &oneMilliPOKT,
+			},
+		},
+		{
+			desc: "valid --services-only config",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				      config:
+				        timeout: 10
+				`, ownerAddress, operatorAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: "svc",
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: []*sharedtypes.ConfigOption{
+									{
+										Key:   sharedtypes.ConfigOptions_TIMEOUT,
+										Value: "10",
+									},
+								},
 							},
 						},
 						RevShare: []*sharedtypes.ServiceRevenueShare{
@@ -626,21 +682,6 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			desc:          "invalid service config with empty content",
 			expectedError: config.ErrSupplierConfigEmptyContent,
 			inputConfig:   ``,
-		},
-		{
-			desc: "missing stake amount",
-			inputConfig: fmt.Sprintf(`
-				owner_address: %s
-				operator_address: %s
-				services:
-				  - service_id: svc
-				    endpoints:
-				    - publicly_exposed_url: http://pokt.network:8081
-				      rpc_type: json_rpc
-				      config:
-				        timeout: 10
-				`, ownerAddress, operatorAddress),
-			expectedError: config.ErrSupplierConfigInvalidStake,
 		},
 		{
 			desc: "invalid stake denom",
@@ -827,7 +868,9 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			require.NoError(t, err)
 
 			require.Equal(t, tt.expectedConfig.StakeAmount, supplierServiceConfig.StakeAmount)
-			require.Equal(t, tt.expectedConfig.StakeAmount.Denom, supplierServiceConfig.StakeAmount.Denom)
+			if tt.expectedConfig.StakeAmount != nil {
+				require.Equal(t, tt.expectedConfig.StakeAmount.Denom, supplierServiceConfig.StakeAmount.Denom)
+			}
 
 			require.Equal(t, len(tt.expectedConfig.Services), len(supplierServiceConfig.Services))
 			for svcIdx, expectedService := range tt.expectedConfig.Services {
