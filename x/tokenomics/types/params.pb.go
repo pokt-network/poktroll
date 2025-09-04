@@ -186,6 +186,9 @@ func (m *MintAllocationPercentages) GetApplication() float64 {
 type MintEqualsBurnClaimDistribution struct {
 	// dao - % of claimable tokens sent to the DAO reward address.
 	Dao float64 `protobuf:"fixed64,1,opt,name=dao,proto3" json:"dao" yaml:"dao"`
+	// TODO_TECHDEBT: Rename "proposer" to "validators" to reflect the work done in #1753.
+	// This will span all references to the term "proposer" across documentation, functions, protobufs, variables, tooling, etc..
+	//
 	// proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.
 	Proposer float64 `protobuf:"fixed64,2,opt,name=proposer,proto3" json:"proposer" yaml:"proposer"`
 	// supplier - % of claimable tokens sent to the block supplier account address.
