@@ -451,12 +451,13 @@ func executeDistribution(mockStakingKeeper *mocks.MockStakingKeeper, config rewa
 
 	// Both validator-only and validator+delegator distribution now use the same function
 	// The function automatically handles delegators when delegations are present
+	rewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, config.rewardAmount)
 	return result, distributeValidatorRewards(
 		config.ctx,
 		config.logger,
 		result,
 		mockStakingKeeper,
-		config.rewardAmount,
+		rewardCoin,
 		config.opReason,
 	)
 }

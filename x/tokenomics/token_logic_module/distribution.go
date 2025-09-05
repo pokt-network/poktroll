@@ -17,6 +17,12 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// addressWithFraction stores addresses with their fractional parts; used for sorting addresses by fraction.
+type addressWithFraction struct {
+	address  string
+	fraction *big.Rat
+}
+
 // distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
 // shareholders based on the rev share percentage of the supplier service config.
 func distributeSupplierRewardsToShareHolders(
@@ -128,17 +134,17 @@ func distributeValidatorRewards(
 	logger cosmoslog.Logger,
 	result *tokenomicstypes.ClaimSettlementResult,
 	stakingKeeper tokenomicstypes.StakingKeeper,
-	totalValidatorRewardAmount math.Int,
+	totalRewardCoin cosmostypes.Coin,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
 ) error {
 	logger = logger.With(
 		"method", "distributeValidatorRewards",
 		"session_id", result.GetSessionId(),
-		"total_reward_amount", totalValidatorRewardAmount,
+		"total_reward_amount", totalRewardCoin.Amount,
 	)
 
-	// Phase 1: Validate inputs and prepare validator data
-	validators, totalBondedTokens, err := validateAndPrepareValidatorRewards(ctx, logger, stakingKeeper, totalValidatorRewardAmount)
+	// Step 1: Validate inputs and prepare validator data
+	validators, totalBondedTokens, err := validateAndPrepareValidatorRewards(ctx, logger, stakingKeeper, totalRewardCoin.Amount)
 	if err != nil {
 		return err
 	}
@@ -147,7 +153,7 @@ func distributeValidatorRewards(
 		return nil
 	}
 
-	// Phase 2: Distribute rewards to validators and their delegators
+	// Step 2: Distribute rewards to validators and their delegators
 	return distributeToValidatorsAndDelegators(
 		ctx,
 		logger,
@@ -155,7 +161,7 @@ func distributeValidatorRewards(
 		stakingKeeper,
 		validators,
 		totalBondedTokens,
-		totalValidatorRewardAmount,
+		totalRewardCoin.Amount,
 		settlementOpReason,
 	)
 }
@@ -206,15 +212,8 @@ func validateAndPrepareValidatorRewards(
 	return validators, totalBondedTokens, nil
 }
 
-// distributeToValidatorsAndDelegators is a helper function that distributes rewards to
-// validators and their delegators based purely on stake proportions. This function
-// implements proportional stake-based distribution without any commission calculations.
-//
-// The distribution formula is:
-// stakeholderReward = totalValidatorReward × (stakeholderStake / totalBondedStake)
-//
-// Where stakeholders include both the validator (self-bonded stake) and all delegators
-// who have delegated to that validator.
+// distributeToValidatorsAndDelegators distributes rewards to validators and their delegators
+// based purely on stake proportions without any commission calculations.
 func distributeToValidatorsAndDelegators(
 	ctx context.Context,
 	logger cosmoslog.Logger,
@@ -222,24 +221,46 @@ func distributeToValidatorsAndDelegators(
 	stakingKeeper tokenomicstypes.StakingKeeper,
 	validators []stakingtypes.Validator,
 	totalBondedTokens math.Int,
-	validatorRewardAmount math.Int,
+	totalRewardAmount math.Int,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
 ) error {
 	logger = logger.With(
 		"method", "distributeToValidatorsAndDelegators",
 		"session_id", result.GetSessionId(),
-		"total_reward_amount", validatorRewardAmount,
+		"total_reward_amount", totalRewardAmount,
 	)
-
-	// Input validation is already done in the main distributeValidatorRewards function
 
 	logger.Info(fmt.Sprintf(
 		"distributing %s to validators and delegators based on stake weight (total bonded: %s)",
-		validatorRewardAmount.String(),
+		totalRewardAmount.String(),
 		totalBondedTokens.String(),
 	))
 
-	// Track stakes for each recipient address during discovery phase
+	// Step 1: Discover all stakeholders and their stakes
+	stakeAmounts, err := discoverStakeholderStakes(ctx, logger, stakingKeeper, validators)
+	if err != nil {
+		return err
+	}
+	if len(stakeAmounts) == 0 {
+		logger.Warn("no stakeholders found, skipping reward distribution")
+		return nil
+	}
+
+	// Step 2: Calculate proportional rewards using Largest Remainder Method
+	rewardAmounts := calculateProportionalRewards(logger, stakeAmounts, totalBondedTokens, totalRewardAmount)
+
+	// Step 3: Create and queue reward transfers
+	return queueRewardTransfers(logger, result, rewardAmounts, stakeAmounts, totalBondedTokens, settlementOpReason)
+}
+
+// discoverStakeholderStakes discovers all validators and delegators and collects their stake amounts.
+// Returns a map of address -> stake amount for all stakeholders.
+func discoverStakeholderStakes(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	stakingKeeper tokenomicstypes.StakingKeeper,
+	validators []stakingtypes.Validator,
+) (map[string]math.Int, error) {
 	stakeAmounts := make(map[string]math.Int)
 
 	// Process each validator and their delegators
@@ -266,85 +287,116 @@ func distributeToValidatorsAndDelegators(
 			))
 
 			validatorBondedTokens := validator.GetBondedTokens()
-			if !validatorBondedTokens.IsZero() {
-				validatorAddrStr := validatorAccAddr.String()
-				stakeAmounts[validatorAddrStr] = validatorBondedTokens
-			}
-			continue
-		}
-
-		// If no delegations exist, treat entire validator bonded tokens as validator-only
-		// This is the natural default behavior
-		if len(delegations) == 0 {
-			validatorBondedTokens := validator.GetBondedTokens()
-			if !validatorBondedTokens.IsZero() {
-				validatorAddrStr := validatorAccAddr.String()
-				stakeAmounts[validatorAddrStr] = validatorBondedTokens
-			}
-			continue
-		}
-
-		// Process all delegations (including validator self-delegation)
-		// Each delegation represents a distinct stakeholder with their portion of the total stake
-		for _, delegation := range delegations {
-			delegatorAddr, err := cosmostypes.AccAddressFromBech32(delegation.GetDelegatorAddr())
-			if err != nil {
-				logger.Error(fmt.Sprintf(
-					"failed to parse delegator address %s: %v",
-					delegation.GetDelegatorAddr(), err,
-				))
+			if validatorBondedTokens.IsZero() {
 				continue
 			}
 
-			delegatedShares := delegation.GetShares()
-			if !delegatedShares.IsZero() {
-				// Convert shares to tokens using the validator's exchange rate
-				delegatedTokens := validator.TokensFromShares(delegatedShares).TruncateInt()
+			validatorAddrStr := validatorAccAddr.String()
+			stakeAmounts[validatorAddrStr] = validatorBondedTokens
+		}
 
-				if !delegatedTokens.IsZero() {
-					delegatorAddrStr := delegatorAddr.String()
-					stakeAmounts[delegatorAddrStr] = delegatedTokens
-				}
+		// If no delegations exist, all bonded tokens are validator's stake
+		if len(delegations) == 0 {
+			validatorBondedTokens := validator.GetBondedTokens()
+			if validatorBondedTokens.IsZero() {
+				continue
+			}
+
+			validatorAddrStr := validatorAccAddr.String()
+			stakeAmounts[validatorAddrStr] = validatorBondedTokens
+		}
+
+		// Extract and record stake amounts from delegations
+		collectDelegationStakes(logger, validator, delegations, stakeAmounts)
+	}
+
+	return stakeAmounts, nil
+}
+
+// collectDelegationStakes extracts and records stake amounts from a validator's delegations.
+// Converts each delegation's shares to tokens and records them individually in stakeAmounts.
+func collectDelegationStakes(
+	logger cosmoslog.Logger,
+	validator stakingtypes.Validator,
+	delegations []stakingtypes.Delegation,
+	stakeAmounts map[string]math.Int,
+) {
+	// Extract and record stake amounts for each delegator (including validator self-delegation)
+	// Each delegation represents a distinct stakeholder with their portion of the total stake
+	for _, delegation := range delegations {
+		delegatorAddr, err := cosmostypes.AccAddressFromBech32(delegation.GetDelegatorAddr())
+		if err != nil {
+			logger.Error(fmt.Sprintf(
+				"failed to parse delegator address %s: %v",
+				delegation.GetDelegatorAddr(), err,
+			))
+			continue
+		}
+
+		delegatedShares := delegation.GetShares()
+		if !delegatedShares.IsZero() {
+			// Convert shares to tokens using the validator's exchange rate
+			delegatedTokens := validator.TokensFromShares(delegatedShares).TruncateInt()
+
+			if !delegatedTokens.IsZero() {
+				delegatorAddrStr := delegatorAddr.String()
+				stakeAmounts[delegatorAddrStr] = delegatedTokens
 			}
 		}
 	}
+}
 
-	if len(stakeAmounts) == 0 {
-		logger.Warn("no stakeholders found, skipping reward distribution")
-		return nil
-	}
+// calculateProportionalRewards calculates rewards for each stakeholder using the Largest Remainder Method.
+// This ensures precise and fair proportional distribution with no remainder left unallocated.
+func calculateProportionalRewards(
+	logger cosmoslog.Logger,
+	stakeAmounts map[string]math.Int,
+	totalBondedTokens math.Int,
+	totalRewardAmount math.Int,
+) map[string]math.Int {
+	// Step 1: Calculate base proportional rewards and collect addresses with fractional remainders
+	rewardAmounts, addressesByFraction := calculateBaseProportionalRewards(logger, stakeAmounts, totalBondedTokens, totalRewardAmount)
 
-	// Calculate proportional rewards using Largest Remainder Method
+	// Step 2: Distribute any remainder using Largest Remainder Method
+	applyLargestRemainderMethod(logger, rewardAmounts, addressesByFraction, totalRewardAmount)
+
+	return rewardAmounts
+}
+
+// calculateBaseProportionalRewards calculates base integer rewards for each stakeholder
+// and returns both the reward amounts and addresses sorted by their fractional remainders.
+func calculateBaseProportionalRewards(
+	logger cosmoslog.Logger,
+	stakeAmounts map[string]math.Int,
+	totalBondedTokens math.Int,
+	totalRewardAmount math.Int,
+) (map[string]math.Int, []string) {
 	rewardAmounts := make(map[string]math.Int)
-	totalCalculated := math.ZeroInt()
 
-	// Phase 1: Calculate base rewards and track fractional remainders
-	type addressFraction struct {
-		address  string
-		fraction *big.Rat
-	}
-	var fractions []addressFraction
+	var addressesToSort []addressWithFraction
 
 	for addrStr, stake := range stakeAmounts {
-		// Calculate exact proportional reward using big.Rat
-		exactRatio := new(big.Rat).SetFrac(
-			new(big.Int).Mul(stake.BigInt(), validatorRewardAmount.BigInt()),
+		// Calculate exact proportional reward using big.Rat for maximum precision
+		// Formula: stakeholderReward = totalRewardAmount × (stake / totalBondedTokens)
+		// Rewritten as: stakeholderReward = (stake × totalRewardAmount) / totalBondedTokens
+		// This order prevents precision loss from calculating small fractions first
+		exactReward := new(big.Rat).SetFrac(
+			new(big.Int).Mul(stake.BigInt(), totalRewardAmount.BigInt()),
 			totalBondedTokens.BigInt(),
 		)
 
 		// Split into integer (base reward) and fractional parts
-		baseReward := new(big.Int).Quo(exactRatio.Num(), exactRatio.Denom())
+		baseReward := new(big.Int).Quo(exactReward.Num(), exactReward.Denom())
 		baseRewardInt := math.NewIntFromBigInt(baseReward)
 		rewardAmounts[addrStr] = baseRewardInt
-		totalCalculated = totalCalculated.Add(baseRewardInt)
 
 		// Calculate fractional remainder
 		baseRat := new(big.Rat).SetInt(baseReward)
-		fractionalPart := new(big.Rat).Sub(exactRatio, baseRat)
+		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
 
-		// Only store non-zero fractions
+		// Only collect addresses with non-zero fractions for sorting
 		if fractionalPart.Sign() > 0 {
-			fractions = append(fractions, addressFraction{addrStr, fractionalPart})
+			addressesToSort = append(addressesToSort, addressWithFraction{addrStr, fractionalPart})
 		}
 
 		logger.Debug(fmt.Sprintf(
@@ -356,40 +408,55 @@ func distributeToValidatorsAndDelegators(
 		))
 	}
 
-	// Phase 2: Distribute remainder tokens using Largest Remainder Method
-	remainder := validatorRewardAmount.Sub(totalCalculated)
-	tokensToDistribute := remainder.Int64()
+	// Sort addresses by their fractional remainders (descending)
+	sort.Slice(addressesToSort, func(i, j int) bool {
+		return addressesToSort[i].fraction.Cmp(addressesToSort[j].fraction) > 0
+	})
+
+	// Extract just the sorted addresses
+	addressesByFraction := make([]string, len(addressesToSort))
+	for i, item := range addressesToSort {
+		addressesByFraction[i] = item.address
+	}
+
+	return rewardAmounts, addressesByFraction
+}
+
+// applyLargestRemainderMethod distributes remainder tokens to addresses with the largest fractional parts.
+// This ensures all tokens are distributed while maintaining proportional fairness.
+func applyLargestRemainderMethod(
+	logger cosmoslog.Logger,
+	rewardAmounts map[string]math.Int,
+	addressesByFraction []string,
+	totalRewardAmount math.Int,
+) {
+	totalDistributedRewardAmount := math.ZeroInt()
+	for _, amount := range rewardAmounts {
+		totalDistributedRewardAmount = totalDistributedRewardAmount.Add(amount)
+	}
+
+	remainder := totalRewardAmount.Sub(totalDistributedRewardAmount).Int64()
 
 	logger.Debug(fmt.Sprintf(
-		"Total calculated: %s, target: %s, remainder: %s tokens",
-		totalCalculated.String(),
-		validatorRewardAmount.String(),
-		remainder.String(),
+		"Total calculated: %s, target: %s, remainder: %d tokens",
+		totalDistributedRewardAmount.String(),
+		totalRewardAmount.String(),
+		remainder,
 	))
 
-	if tokensToDistribute > 0 && len(fractions) > 0 {
-		// Sort by fractional remainder (descending)
-		sort.Slice(fractions, func(i, j int) bool {
-			return fractions[i].fraction.Cmp(fractions[j].fraction) > 0
-		})
+	if remainder > 0 {
+		distributeRemainderTokens(logger, rewardAmounts, addressesByFraction, remainder)
+	}
+}
 
-		logger.Debug(fmt.Sprintf(
-			"Distributing %d remainder tokens using Largest Remainder Method",
-			tokensToDistribute,
-		))
-
-		// Distribute remainder tokens to addresses with largest fractional remainders
-		for t := int64(0); t < tokensToDistribute; t++ {
-			addrStr := fractions[t%int64(len(fractions))].address
-			rewardAmounts[addrStr] = rewardAmounts[addrStr].AddRaw(1)
-
-			logger.Debug(fmt.Sprintf(
-				"  Added 1 token to %s (fraction: %s)",
-				addrStr,
-				fractions[t%int64(len(fractions))].fraction.FloatString(6),
-			))
-		}
-	} else if tokensToDistribute > 0 {
+// distributeRemainderTokens allocates remainder tokens to addresses with the largest fractional remainders.
+func distributeRemainderTokens(
+	logger cosmoslog.Logger,
+	rewardAmounts map[string]math.Int,
+	addressesByFraction []string,
+	tokensToDistribute int64,
+) {
+	if len(addressesByFraction) == 0 {
 		// Edge case: remainder exists but no fractional parts
 		logger.Warn(fmt.Sprintf(
 			"Remainder %d tokens with no fractional parts - adding to first recipient",
@@ -397,13 +464,55 @@ func distributeToValidatorsAndDelegators(
 		))
 		// Add to first address in map (deterministic iteration order not guaranteed, but rare edge case)
 		for addrStr := range rewardAmounts {
+			remainder := math.NewInt(tokensToDistribute)
 			rewardAmounts[addrStr] = rewardAmounts[addrStr].Add(remainder)
 			break
 		}
+		return
 	}
 
-	// Create transfers for all recipients
+	// Addresses are already sorted by fractional remainder (descending) from calculateBaseProportionalRewards
+	logger.Debug(fmt.Sprintf(
+		"Distributing %d remainder tokens using Largest Remainder Method",
+		tokensToDistribute,
+	))
+
+	// Calculate how many tokens each address gets: some get (tokensToDistribute / numAddresses) + 1,
+	// others get (tokensToDistribute / numAddresses)
+	numAddresses := int64(len(addressesByFraction))
+	baseTokensPerAddr := tokensToDistribute / numAddresses
+	extraTokensNeeded := tokensToDistribute % numAddresses
+
+	for i, addrStr := range addressesByFraction {
+		tokensForThisAddr := baseTokensPerAddr
+		// First 'extraTokensNeeded' addresses get one extra token
+		if int64(i) < extraTokensNeeded {
+			tokensForThisAddr++
+		}
+
+		if tokensForThisAddr > 0 {
+			rewardAmounts[addrStr] = rewardAmounts[addrStr].AddRaw(tokensForThisAddr)
+
+			logger.Debug(fmt.Sprintf(
+				"  Added %d tokens to %s (largest remaining fraction)",
+				tokensForThisAddr,
+				addrStr,
+			))
+		}
+	}
+}
+
+// queueRewardTransfers creates and queues reward transfers for all recipients.
+func queueRewardTransfers(
+	logger cosmoslog.Logger,
+	result *tokenomicstypes.ClaimSettlementResult,
+	rewardAmounts map[string]math.Int,
+	stakeAmounts map[string]math.Int,
+	totalBondedTokens math.Int,
+	settlementOpReason tokenomicstypes.SettlementOpReason,
+) error {
 	totalDistributed := math.ZeroInt()
+
 	for addrStr, rewardAmount := range rewardAmounts {
 		totalDistributed = totalDistributed.Add(rewardAmount)
 
@@ -439,9 +548,8 @@ func distributeToValidatorsAndDelegators(
 	}
 
 	logger.Info(fmt.Sprintf(
-		"validator and delegator reward distribution complete: distributed %s of %s uPOKT to %d recipients",
+		"validator and delegator reward distribution complete: distributed %s to %d recipients",
 		totalDistributed.String(),
-		validatorRewardAmount.String(),
 		len(rewardAmounts),
 	))
 

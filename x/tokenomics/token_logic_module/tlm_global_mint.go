@@ -218,15 +218,15 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 	}
 
 	// Distribute to all validators based on stake weight
-	proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 	if !proposerAmount.IsZero() {
+		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 		// Distribute to all validators and their delegators proportionally based on stake weight
 		if err := distributeValidatorRewards(
 			tlmgm.ctx,
 			tlmgm.logger,
 			tlmgm.tlmCtx.Result,
 			tlmgm.tlmCtx.StakingKeeper,
-			proposerAmount,
+			proposerCoin,
 			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 		); err != nil {
 			tlmgm.logger.Error(fmt.Sprintf("error distributing validator rewards: %v", err))
