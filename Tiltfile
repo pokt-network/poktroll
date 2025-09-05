@@ -1,11 +1,16 @@
+# Load external extensions
 load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 load("ext://configmap", "configmap_create")
 load("ext://secret", "secret_create_generic")
 load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
+
+# Load local files
 load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
+load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+
 
 # Avoid the header
 analytics_settings(enable=False)
@@ -458,5 +463,4 @@ if localnet_config["faucet"]["enabled"]:
 
 
 ### IBC relayer(s) & alt-chain node(s)
-load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
 check_and_load_ibc(chart_prefix, localnet_config["ibc"])

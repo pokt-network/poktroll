@@ -5,7 +5,8 @@
 FROM alpine:3.18 as build
 
 ARG GO_VERSION=1.23.1
-ARG ARCH=x86_64
+ARG TARGETARCH
+ARG ARCH=${TARGETARCH}
 ARG WASM=true
 ARG IBC_WASM_HOOKS=false
 
@@ -20,8 +21,13 @@ RUN apk add --no-cache --update \
     linux-headers
 
 # Download and install Go
-RUN curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o golang.tar.gz \
-    && tar -C /usr/local -xzf golang.tar.gz \
+RUN case "${TARGETARCH}" in \
+        "amd64") GO_ARCH="amd64" ;; \
+        "arm64") GO_ARCH="arm64" ;; \
+        *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz -o golang.tar.gz \
+&& tar -C /usr/local -xzf golang.tar.gz \
     && rm golang.tar.gz
 
 # Set Go paths
@@ -36,14 +42,24 @@ RUN go mod download
 # Use a compatible libwasmvm
 # Alpine Linux requires static linking against muslc: https://github.com/CosmWasm/wasmd/blob/v0.34.1/INTEGRATION.md#prerequisites
 RUN if [[ "${WASM}" == "true" ]]; then \
+    case "${TARGETARCH}" in \
+        "amd64") WASMVM_ARCH="x86_64" ;; \
+        "arm64") WASMVM_ARCH="aarch64" ;; \
+        *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
     WASMVM_VERSION=v1.5.8 && \
-    wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm_muslc.${ARCH}.a \
+    wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm_muslc.${WASMVM_ARCH}.a \
         -O /lib/libwasmvm_muslc.a && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/checksums.txt -O /tmp/checksums.txt && \
-    sha256sum /lib/libwasmvm_muslc.a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc.${ARCH}.a | cut -d ' ' -f 1); \
+    sha256sum /lib/libwasmvm_muslc.a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc.${WASMVM_ARCH}.a | cut -d ' ' -f 1); \
     fi
 
-RUN make VERSION="1.2.1" ARCH="${ARCH}" MUSLC="${WASM}" WASM="${WASM}" IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" build
+RUN case "${TARGETARCH}" in \
+        "amd64") MAKE_ARCH="x86_64" ;; \
+        "arm64") MAKE_ARCH="aarch64" ;; \
+        *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    make VERSION="1.2.1" ARCH="${MAKE_ARCH}" MUSLC="${WASM}" WASM="${WASM}" IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" build
 
 FROM alpine:3.18
 

@@ -193,7 +193,7 @@ Feature: Tokenomics Namespace
         And the user remembers the balance of "app1" as "app11_initial_balance"
         And the user remembers the balance of "supplier1" as "supplier1_initial_balance"
         And the user remembers the balance of the DAO as "dao_initial_balance"
-        And the user remembers the balance of the proposer as "proposer_initial_balance"
+        And the user remembers the total validator balances as "validators_initial_balance"
         And the user remembers the balance of the service owner for "anvil" as "service_owner_initial_balance"
 
         # Wait for the claim to be settled
@@ -206,7 +206,7 @@ Feature: Tokenomics Namespace
         #
         # Distribution:
         # - DAO 10% (4200)
-        # - Proposer 5% (2100)
+        # - Validators 5% (2100) - distributed proportionally by stake
         # - Source Owner 15% (6300)
         # - Application 0% (-4200)
         # - Supplier 70% (29400)
@@ -214,8 +214,8 @@ Feature: Tokenomics Namespace
         # The DAO should receive 10% of the settlement amount
         And the DAO balance should be "4200" uPOKT "more" than "dao_initial_balance"
 
-        # The proposer should receive 5% of the settlement amount
-        And the proposer balance should be "2100" uPOKT "more" than "proposer_initial_balance"
+        # All validators should receive 5% of the settlement amount (distributed proportionally)
+        And the total validator balances should be "2100" uPOKT "more" than "validators_initial_balance"
 
         # The service owner should receive 15% of the settlement amount
         And the service owner balance for "anvil" should be "6300" uPOKT "more" than "service_owner_initial_balance"
