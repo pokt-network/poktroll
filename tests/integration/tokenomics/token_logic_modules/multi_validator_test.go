@@ -27,8 +27,7 @@ const (
 func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 	testCases := []struct {
 		name                     string
-		validatorStakes          []int64
-		delegatedAmounts         []int64 // nil when validators have no delegators
+		validatorConfigs         []testkeeper.ValidatorDelegationConfig
 		numClaims                int
 		expectedValidatorRewards []int64
 		expectedTotalRewards     int64
@@ -37,8 +36,12 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 		skipReason string // if non-empty, test will be skipped
 	}{
 		{
-			name:                     "No vlidator delegators: Stakes that divide cleanly",
-			validatorStakes:          []int64{500_000, 400_000, 200_000},
+			name: "No validator delegators: Stakes that divide cleanly",
+			validatorConfigs: []testkeeper.ValidatorDelegationConfig{
+				{SelfBondedStake: 500_000, ExternalDelegators: []int64{}},
+				{SelfBondedStake: 400_000, ExternalDelegators: []int64{}},
+				{SelfBondedStake: 200_000, ExternalDelegators: []int64{}},
+			},
 			numClaims:                testClaimsCount,
 			expectedValidatorRewards: []int64{50_000, 40_000, 20_000}, // testExpectedValidatorRewards × stakes ratio [5:4:2]
 			expectedTotalRewards:     testExpectedValidatorRewards,
@@ -57,8 +60,10 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name:                     "No validator delegators: Single validator gets all rewards",
-			validatorStakes:          []int64{1_000_000},
+			name: "No validator delegators: Single validator gets all rewards",
+			validatorConfigs: []testkeeper.ValidatorDelegationConfig{
+				{SelfBondedStake: 1_000_000, ExternalDelegators: []int64{}},
+			},
 			numClaims:                testClaimsCount,
 			expectedValidatorRewards: []int64{110_000}, // testExpectedValidatorRewards (all to single validator)
 			expectedTotalRewards:     testExpectedValidatorRewards,
@@ -72,8 +77,14 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name:                     "No validator delegators: Equal stakes receive equal rewards",
-			validatorStakes:          []int64{200_000, 200_000, 200_000, 200_000, 200_000},
+			name: "No validator delegators: Equal stakes receive equal rewards",
+			validatorConfigs: []testkeeper.ValidatorDelegationConfig{
+				{SelfBondedStake: 200_000, ExternalDelegators: []int64{}},
+				{SelfBondedStake: 200_000, ExternalDelegators: []int64{}},
+				{SelfBondedStake: 200_000, ExternalDelegators: []int64{}},
+				{SelfBondedStake: 200_000, ExternalDelegators: []int64{}},
+				{SelfBondedStake: 200_000, ExternalDelegators: []int64{}},
+			},
 			numClaims:                testClaimsCount,
 			expectedValidatorRewards: []int64{22_000, 22_000, 22_000, 22_000, 22_000}, // 110,000 ÷ 5 validators = 22,000 each
 			expectedTotalRewards:     testExpectedValidatorRewards,                    // 1000 claims × 1100 × 10% = 110,000
@@ -90,9 +101,12 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name:                 "With validator delegators: Mixed delegation amounts",
-			validatorStakes:      []int64{250_000, 250_000, 250_000}, // Equal self-bonded stakes
-			delegatedAmounts:     []int64{250_000, 250_000, 0},       // Different delegation amounts (clean divisible)
+			name: "With validator delegators: Mixed delegation amounts",
+			validatorConfigs: []testkeeper.ValidatorDelegationConfig{
+				{SelfBondedStake: 250_000, ExternalDelegators: []int64{250_000}}, // Equal self-bonded stakes with delegation
+				{SelfBondedStake: 250_000, ExternalDelegators: []int64{250_000}}, // Different delegation amounts (clean divisible)
+				{SelfBondedStake: 250_000, ExternalDelegators: []int64{}},
+			},
 			numClaims:            160,
 			expectedTotalRewards: 17_600, // 160 claims × 1100 × 10% = 17,600
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
@@ -107,15 +121,15 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 				//
 				// Expected individual stakeholder rewards (17,600 total):
 				// - 3 validator self-stakes (250k each): 17,600 × (250k/1.25M) = 3,520 each = 10,560 total
-				// - 4 delegator stakes (125k each): 17,600 × (125k/1.25M) = 1,760 each = 7,040 total
-				// Total rewards: 7 recipients getting [3520, 1760, 1760, 3520, 1760, 1760, 3520]
+				// - 2 delegator stakes (250k each): 17,600 × (250k/1.25M) = 3,520 each = 7,040 total
+				// Total rewards: 5 recipients getting [3520, 3520, 3520, 3520, 3520]
 
 				// Since all rewards go to validatorRewards array (same operation reason), check total count
-				require.Len(t, validatorRewards, 7, "Should have 7 total stakeholders (3 validators + 4 delegators)")
+				require.Len(t, validatorRewards, 5, "Should have 5 total stakeholders (3 validators + 2 delegators)")
 				require.Empty(t, delegatorRewards, "Should have no separate delegator rewards (same operation reason)")
 
 				// Verify the expected reward distribution
-				expectedRewards := []int64{3_520, 1_760, 1_760, 3_520, 1_760, 1_760, 3_520}
+				expectedRewards := []int64{3_520, 3_520, 3_520, 3_520, 3_520}
 				require.ElementsMatch(t, expectedRewards, validatorRewards,
 					"All stakeholder rewards should match expected distribution")
 
@@ -126,8 +140,12 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name:                 "SKIP: Precision loss with many small distributions (no delegators)",
-			validatorStakes:      []int64{333_333, 333_333, 333_334},
+			name: "SKIP: Precision loss with many small distributions (no delegators)",
+			validatorConfigs: []testkeeper.ValidatorDelegationConfig{
+				{SelfBondedStake: 333_333, ExternalDelegators: []int64{}},
+				{SelfBondedStake: 333_333, ExternalDelegators: []int64{}},
+				{SelfBondedStake: 333_334, ExternalDelegators: []int64{}},
+			},
 			numClaims:            1000,
 			expectedTotalRewards: 110_000, // 1000 claims × 1100 × 10% = 110,000
 			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
@@ -147,9 +165,12 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name:                 "SKIP: Precision loss with delegations and fractional stakes",
-			validatorStakes:      []int64{333_333, 333_333, 333_334}, // Equal self-bonded stakes (fractional)
-			delegatedAmounts:     []int64{166_667, 333_333, 500_000}, // Unequal delegations creating more fractional complexity
+			name: "SKIP: Precision loss with delegations and fractional stakes",
+			validatorConfigs: []testkeeper.ValidatorDelegationConfig{
+				{SelfBondedStake: 333_333, ExternalDelegators: []int64{166_667}}, // Equal self-bonded stakes (fractional)
+				{SelfBondedStake: 333_333, ExternalDelegators: []int64{333_333}}, // Unequal delegations creating more fractional complexity
+				{SelfBondedStake: 333_334, ExternalDelegators: []int64{500_000}},
+			},
 			numClaims:            1000,
 			expectedTotalRewards: 110_000, // 1000 claims × 1100 × 10% = 110,000
 			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
@@ -211,7 +232,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			}
 
 			// Setup keepers with appropriate validator/delegation configuration
-			s.setupValidatorTest(t, tc.validatorStakes, tc.delegatedAmounts)
+			s.setupValidatorTest(t, tc.validatorConfigs)
 
 			// Create claims and settle
 			s.createClaims(&s.keepers, tc.numClaims)
@@ -220,7 +241,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			require.Empty(t, expiredResults)
 
 			// Extract rewards
-			validatorRewards, delegatorRewards := s.extractRewards(settledResults, tc.delegatedAmounts != nil)
+			validatorRewards, delegatorRewards := s.extractRewards(settledResults, s.hasExternalDelegators(tc.validatorConfigs))
 
 			// Validate total rewards if expected
 			if tc.expectedTotalRewards > 0 {
@@ -240,7 +261,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 
 // setupValidatorTest initializes keepers for validator reward testing.
 // Supports validators both with and without delegators.
-func (s *tokenLogicModuleTestSuite) setupValidatorTest(t *testing.T, validatorStakes []int64, delegatedAmounts []int64) {
+func (s *tokenLogicModuleTestSuite) setupValidatorTest(t *testing.T, validatorConfigs []testkeeper.ValidatorDelegationConfig) {
 	t.Helper()
 
 	// Common setup options
@@ -258,38 +279,20 @@ func (s *tokenLogicModuleTestSuite) setupValidatorTest(t *testing.T, validatorSt
 			tokenomicstypes.ModuleName: s.getTokenomicsParamsWithCleanValidatorMath(), // Use 10% validator allocation
 		}),
 		testkeeper.WithDefaultModuleBalances(),
-	}
-
-	// Add validator configuration based on test type
-	if delegatedAmounts != nil {
-		// For delegation tests, create validator configs with specific delegation amounts
-		// Note: These tests assume equal self-bonded stakes (validatorStakes[0]) for all validators
-		selfBondedStake := validatorStakes[0]
-		configs := make([]testkeeper.ValidatorDelegationConfig, len(delegatedAmounts))
-		for i, delegatedAmount := range delegatedAmounts {
-			// Split delegated amount equally between 2 delegators (matches old behavior)
-			var externalDelegators []int64
-			if delegatedAmount > 0 {
-				// Split into 2 equal delegators
-				delegatorAmount := delegatedAmount / 2
-				remainder := delegatedAmount % 2
-				externalDelegators = []int64{delegatorAmount + remainder, delegatorAmount}
-			} else {
-				externalDelegators = []int64{} // No external delegators
-			}
-			
-			configs[i] = testkeeper.ValidatorDelegationConfig{
-				SelfBondedStake:    selfBondedStake,
-				ExternalDelegators: externalDelegators,
-			}
-		}
-		setupOpts = append(setupOpts, testkeeper.WithValidatorDelegationConfigs(configs))
-	} else {
-		// For validators with no delegators, use the provided stakes
-		setupOpts = append(setupOpts, testkeeper.WithMultipleValidators(validatorStakes))
+		testkeeper.WithValidatorDelegationConfigs(validatorConfigs),
 	}
 
 	s.setupKeepers(t, setupOpts...)
+}
+
+// hasExternalDelegators checks if any validator config has external delegators
+func (s *tokenLogicModuleTestSuite) hasExternalDelegators(validatorConfigs []testkeeper.ValidatorDelegationConfig) bool {
+	for _, config := range validatorConfigs {
+		if len(config.ExternalDelegators) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // extractRewards extracts validator and/or delegator reward amounts from settlement results.

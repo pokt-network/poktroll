@@ -919,7 +919,6 @@ func createSelfDelegation(validatorAddr string, selfBondedStake int64) stakingty
 	}
 }
 
-
 // createValidatorWithSpecificDelegations creates a validator with specific delegation configuration
 func createValidatorWithSpecificDelegations(config ValidatorDelegationConfig) (
 	validator stakingtypes.Validator,
@@ -929,7 +928,7 @@ func createValidatorWithSpecificDelegations(config ValidatorDelegationConfig) (
 	// Calculate total bonded tokens
 	validatorAddr := sample.ValOperatorAddressBech32()
 	selfBondedTokens := cosmosmath.NewInt(config.SelfBondedStake)
-	
+
 	totalExternalDelegated := int64(0)
 	for _, amount := range config.ExternalDelegators {
 		totalExternalDelegated += amount
@@ -968,7 +967,6 @@ func createValidatorWithSpecificDelegations(config ValidatorDelegationConfig) (
 
 	return validator, delegations, delegatorAddrs
 }
-
 
 // initValidatorAccount creates and funds a validator account
 func initValidatorAccount(ctx cosmostypes.Context, keepers *TokenomicsModuleKeepers, validator stakingtypes.Validator) {
@@ -1055,4 +1053,3 @@ func WithValidatorDelegationConfigs(configs []ValidatorDelegationConfig) Tokenom
 		cfg.initKeepersFns = append(cfg.initKeepersFns, initValidatorAndDelegatorAccounts)
 	}
 }
-

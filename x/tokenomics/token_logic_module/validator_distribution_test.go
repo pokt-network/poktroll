@@ -197,7 +197,7 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 				// NOTE: These amounts represent TOTAL validator stake (self-bonded + delegations), not just self-bonded amounts
 				// Val1: 400k self + 600k delegated = 1M total
 				createValidator(sample.ValOperatorAddressBech32(), 1_000_000),
-				// Val2: 400k self + 200k delegated = 600k total  
+				// Val2: 400k self + 200k delegated = 600k total
 				createValidator(sample.ValOperatorAddressBech32(), 600_000),
 				// Val3: 400k self + 0k delegated = 400k total
 				createValidator(sample.ValOperatorAddressBech32(), 400_000),
