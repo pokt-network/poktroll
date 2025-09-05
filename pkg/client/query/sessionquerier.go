@@ -22,10 +22,11 @@ var _ client.SessionQueryClient = (*sessionQuerier)(nil)
 // querying of onchain session information through a single exposed method
 // which returns an sessiontypes.Session struct
 type sessionQuerier struct {
+	logger polylog.Logger
+
 	clientConn        grpc.ClientConn
 	sessionQuerier    sessiontypes.QueryClient
 	sharedQueryClient client.SharedQueryClient
-	logger            polylog.Logger
 
 	// sessionsCache caches sessionQueryClient.GetSession requests
 	sessionsCache cache.KeyValueCache[*sessiontypes.Session]
@@ -58,31 +59,39 @@ func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error)
 	}
 
 	sessq.sessionQuerier = sessiontypes.NewQueryClient(sessq.clientConn)
+	sessq.logger = sessq.logger.With("query_client", "session")
 
 	return sessq, nil
 }
 
 // GetSession returns an sessiontypes.Session struct for a given appAddress,
-// serviceId and blockHeight. It implements the SessionQueryClient#GetSession function.
+// serviceId and blockHeight.
+//
+// It implements the SessionQueryClient#GetSession function.
 func (sessq *sessionQuerier) GetSession(
 	ctx context.Context,
 	appAddress string,
 	serviceId string,
 	blockHeight int64,
 ) (*sessiontypes.Session, error) {
-	logger := sessq.logger.With("query_client", "session", "method", "GetSession")
+	logger := sessq.logger.
+		With("method", "GetSession").
+		With("appAddress", appAddress).
+		With("serviceId", serviceId).
+		With("blockHeight", blockHeight)
 
 	// Get the shared parameters to calculate the session start height.
 	// Use the session start height as the canonical height to be used in the cache key.
+	// TODO_IMPROVE(@red-0ne): Look into caching shared params.
 	sharedParams, err := sessq.sharedQueryClient.GetParams(ctx)
 	if err != nil {
 		return nil, err
 	}
-	sessionCacheKey := getSessionCacheKey(sharedParams, appAddress, serviceId, blockHeight)
-	
+
 	// Calculate expected session boundaries for validation
 	expectedSessionStartHeight := sharedtypes.GetSessionStartHeight(sharedParams, blockHeight)
-	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParams, blockHeight)
+
+	sessionCacheKey := getSessionCacheKey(sharedParams, appAddress, serviceId, blockHeight)
 
 	// SOLUTION 5: Expand mutex scope to prevent race conditions
 	// Acquire mutex before any cache operations to ensure consistency
@@ -92,29 +101,26 @@ func (sessq *sessionQuerier) GetSession(
 	// Check if the session is present in the cache.
 	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
 		// SOLUTION 3: Validate the cached session matches expected session boundaries
-		// We can't calculate the exact session ID without the block hash, but we can
-		// verify that the session's start and end heights match what we expect
-		cachedStartHeight := session.GetHeader().GetSessionStartBlockHeight()
-		cachedEndHeight := session.GetHeader().GetSessionEndBlockHeight()
-		
-		if cachedStartHeight != expectedSessionStartHeight || cachedEndHeight != expectedSessionEndHeight {
+		// If there is a cached session, check if it's at the expected start height.
+		// If it's not, delete the stale cache entry and fall through to fetch fresh session from chain.
+		cachedSessionStartHeight := session.GetHeader().GetSessionStartBlockHeight()
+
+		if cachedSessionStartHeight != expectedSessionStartHeight {
 			logger.Warn().
 				Int64("expected_start_height", expectedSessionStartHeight).
-				Int64("cached_start_height", cachedStartHeight).
-				Int64("expected_end_height", expectedSessionEndHeight).
-				Int64("cached_end_height", cachedEndHeight).
+				Int64("cached_start_height", cachedSessionStartHeight).
 				Str("cached_session_id", session.GetSessionId()).
 				Str("cache_key", sessionCacheKey).
 				Int64("query_block_height", blockHeight).
 				Msg("⚠️ Session boundaries mismatch detected in cache - invalidating stale entry")
-			
+
 			// Delete the stale cache entry
 			sessq.sessionsCache.Delete(sessionCacheKey)
 			// Fall through to fetch fresh session from chain
 		} else {
 			// Additional validation: ensure the cached session is for the correct app and service
-			if session.GetHeader().GetApplicationAddress() != appAddress || 
-			   session.GetHeader().GetServiceId() != serviceId {
+			if session.GetHeader().GetApplicationAddress() != appAddress ||
+				session.GetHeader().GetServiceId() != serviceId {
 				logger.Warn().
 					Str("expected_app", appAddress).
 					Str("cached_app", session.GetHeader().GetApplicationAddress()).
@@ -122,7 +128,7 @@ func (sessq *sessionQuerier) GetSession(
 					Str("cached_service", session.GetHeader().GetServiceId()).
 					Str("cache_key", sessionCacheKey).
 					Msg("⚠️ Session app/service mismatch in cache - invalidating entry")
-				
+
 				sessq.sessionsCache.Delete(sessionCacheKey)
 				// Fall through to fetch fresh session from chain
 			} else {
@@ -154,7 +160,7 @@ func (sessq *sessionQuerier) GetSession(
 	// SOLUTION 3: Final validation before caching
 	fetchedStartHeight := res.Session.GetHeader().GetSessionStartBlockHeight()
 	fetchedEndHeight := res.Session.GetHeader().GetSessionEndBlockHeight()
-	
+
 	if fetchedStartHeight != expectedSessionStartHeight || fetchedEndHeight != expectedSessionEndHeight {
 		logger.Error().
 			Int64("expected_start_height", expectedSessionStartHeight).
@@ -175,7 +181,7 @@ func (sessq *sessionQuerier) GetSession(
 
 // GetParams queries & returns the session module onchain parameters.
 func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Params, error) {
-	logger := sessq.logger.With("query_client", "session", "method", "GetParams")
+	logger := sessq.logger.With("method", "GetParams")
 
 	// Check if the params are present in the cache.
 	if params, found := sessq.paramsCache.Get(); found {
