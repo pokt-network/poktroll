@@ -27,26 +27,25 @@ type rewardDistributionTestConfig struct {
 }
 
 // TestValidatorRewardDistribution_NoDelegators tests reward distribution functionality for validators with no delegators.
-// It verifies proportional distribution based on validator stakes and precision handling with the 
-// Largest Remainder Method to ensure fair allocation of any remainder tokens.
+// It verifies proportional distribution based on validator stakes and precision handling.
 func TestValidatorRewardDistribution_NoDelegators(t *testing.T) {
 	tests := []struct {
-		name                     string
-		validatorStakes          []int64
+		name                       string
+		validatorStakes            []int64
 		totalValidatorRewardAmount math.Int
-		expectedTransferCount    int
+		expectedTransferCount      int
 	}{
 		{
-			name:                      "success: proportional distribution based on validator stakes",
-			validatorStakes:           []int64{700_000, 200_000, 100_000},
+			name:                       "success: proportional distribution based on validator stakes",
+			validatorStakes:            []int64{700_000, 200_000, 100_000},
 			totalValidatorRewardAmount: math.NewInt(9240),
-			expectedTransferCount:     3,
+			expectedTransferCount:      3,
 		},
 		{
-			name:                      "success: proportional distribution with remainder allocation",
-			validatorStakes:           []int64{333, 333, 334},
+			name:                       "success: proportional distribution with remainder allocation",
+			validatorStakes:            []int64{333, 333, 334},
 			totalValidatorRewardAmount: math.NewInt(100),
-			expectedTransferCount:     3,
+			expectedTransferCount:      3,
 		},
 	}
 
@@ -99,7 +98,7 @@ func TestValidatorRewardDistribution_NoDelegators(t *testing.T) {
 // TestValidatorRewardDistribution_ErrorCases tests error handling scenarios for validator reward distribution.
 // It covers cases including but not limited to:
 // - Zero reward amounts
-// - Staking keeper failures  
+// - Staking keeper failures
 // - Missing validators
 // - Zero stakes
 func TestValidatorRewardDistribution_ErrorCases(t *testing.T) {
@@ -182,51 +181,101 @@ func TestValidatorRewardDistribution_ErrorCases(t *testing.T) {
 // and precision handling for fractional distributions.
 func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 	tests := []struct {
-		name                     string
-		validators               []stakingtypes.Validator
-		validatorToDelegationsMap map[string][]stakingtypes.Delegation  // key is validator operator address
-		totalValidatorRewardAmount math.Int
-		expectedTransferCount    int
-		expectedValidatorRewards int64
-		expectedDelegatorRewards int64
-		opReason                 tokenomicstypes.SettlementOpReason
+		name                        string
+		validators                  []stakingtypes.Validator
+		delegationSetup             func([]stakingtypes.Validator) map[string][]stakingtypes.Delegation
+		totalValidatorRewardAmount  math.Int
+		expectedTransferCount       int
+		expectedValidatorRewards    int64
+		expectedDelegatorRewards    int64
+		opReason                    tokenomicstypes.SettlementOpReason
 		claimSettlementValidationFn func(*testing.T, *tokenomicstypes.ClaimSettlementResult)
 	}{
 		{
 			name: "success: mixed delegation amounts with equal self-bonded stakes",
 			validators: []stakingtypes.Validator{
+				// NOTE: These amounts represent TOTAL validator stake (self-bonded + delegations), not just self-bonded amounts
+				// Val1: 400k self + 600k delegated = 1M total
 				createValidator(sample.ValOperatorAddressBech32(), 1_000_000),
+				// Val2: 400k self + 200k delegated = 600k total  
 				createValidator(sample.ValOperatorAddressBech32(), 600_000),
+				// Val3: 400k self + 0k delegated = 400k total
 				createValidator(sample.ValOperatorAddressBech32(), 400_000),
 			},
+			delegationSetup: func(validators []stakingtypes.Validator) map[string][]stakingtypes.Delegation {
+				delegations := make(map[string][]stakingtypes.Delegation)
+				// Val1: 400k self + 600k delegated
+				valAddr1, _ := cosmostypes.ValAddressFromBech32(validators[0].OperatorAddress)
+				delegations[validators[0].OperatorAddress] = []stakingtypes.Delegation{
+					createDelegation(cosmostypes.AccAddress(valAddr1).String(), validators[0].OperatorAddress, 400_000),
+					createDelegation(sample.AccAddressBech32(), validators[0].OperatorAddress, 600_000),
+				}
+				// Val2: 400k self + 200k delegated
+				valAddr2, _ := cosmostypes.ValAddressFromBech32(validators[1].OperatorAddress)
+				delegations[validators[1].OperatorAddress] = []stakingtypes.Delegation{
+					createDelegation(cosmostypes.AccAddress(valAddr2).String(), validators[1].OperatorAddress, 400_000),
+					createDelegation(sample.AccAddressBech32(), validators[1].OperatorAddress, 200_000),
+				}
+				// Val3: 400k self only
+				valAddr3, _ := cosmostypes.ValAddressFromBech32(validators[2].OperatorAddress)
+				delegations[validators[2].OperatorAddress] = []stakingtypes.Delegation{
+					createDelegation(cosmostypes.AccAddress(valAddr3).String(), validators[2].OperatorAddress, 400_000),
+				}
+				return delegations
+			},
 			totalValidatorRewardAmount: math.NewInt(100_000),
-			expectedTransferCount:    5,      // 3 validators + 2 delegators
-			expectedValidatorRewards: 60_000, // 100k × 60% = 60,000 (self-bonded validator shares)
-			expectedDelegatorRewards: 40_000, // 100k × 40% = 40,000 (delegator shares)
-			opReason:                 tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+			expectedTransferCount:      5,      // 3 validators + 2 delegators
+			expectedValidatorRewards:   60_000, // 100k × 60% = 60,000 (self-bonded validator shares)
+			expectedDelegatorRewards:   40_000, // 100k × 40% = 40,000 (delegator shares)
+			opReason:                   tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 		},
 		{
 			name: "success: equal self-bonded stakes receive equal rewards despite different total delegations",
 			validators: []stakingtypes.Validator{
+				// NOTE: These amounts represent TOTAL validator stake (self-bonded + delegations), not just self-bonded amounts
+				// Val1: 300k self + 600k delegated = 900k total
 				createValidator(sample.ValOperatorAddressBech32(), 900_000),
+				// Val2: 300k self + 300k delegated = 600k total
 				createValidator(sample.ValOperatorAddressBech32(), 600_000),
+				// Val3: 300k self + 0k delegated = 300k total
 				createValidator(sample.ValOperatorAddressBech32(), 300_000),
 			},
+			delegationSetup: func(validators []stakingtypes.Validator) map[string][]stakingtypes.Delegation {
+				delegations := make(map[string][]stakingtypes.Delegation)
+				// Val1: 300k self + 600k delegated
+				valAddr1, _ := cosmostypes.ValAddressFromBech32(validators[0].OperatorAddress)
+				delegations[validators[0].OperatorAddress] = []stakingtypes.Delegation{
+					createDelegation(cosmostypes.AccAddress(valAddr1).String(), validators[0].OperatorAddress, 300_000),
+					createDelegation(sample.AccAddressBech32(), validators[0].OperatorAddress, 600_000),
+				}
+				// Val2: 300k self + 300k delegated
+				valAddr2, _ := cosmostypes.ValAddressFromBech32(validators[1].OperatorAddress)
+				delegations[validators[1].OperatorAddress] = []stakingtypes.Delegation{
+					createDelegation(cosmostypes.AccAddress(valAddr2).String(), validators[1].OperatorAddress, 300_000),
+					createDelegation(sample.AccAddressBech32(), validators[1].OperatorAddress, 300_000),
+				}
+				// Val3: 300k self only
+				valAddr3, _ := cosmostypes.ValAddressFromBech32(validators[2].OperatorAddress)
+				delegations[validators[2].OperatorAddress] = []stakingtypes.Delegation{
+					createDelegation(cosmostypes.AccAddress(valAddr3).String(), validators[2].OperatorAddress, 300_000),
+				}
+				return delegations
+			},
 			totalValidatorRewardAmount: math.NewInt(90_000),
-			expectedTransferCount: 5, // 3 validators + 2 delegators
-			opReason:              tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+			expectedTransferCount:      5, // 3 validators + 2 delegators
+			opReason:                   tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 			claimSettlementValidationFn: func(t *testing.T, result *tokenomicstypes.ClaimSettlementResult) {
 				// With simplified logic, we can't distinguish validators from delegators by operation reason,
 				// but we can verify that self-bonded stakes get proportional rewards.
 				// Since all validators have 300k self-bonded out of 1.8M total, each should get 15,000.
 				transfers := result.GetModToAcctTransfers()
-				
+
 				// Verify all transfers use the same operation reason
 				for _, transfer := range transfers {
 					require.Equal(t, tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION, transfer.OpReason)
 				}
-				
-				// Since we can't distinguish by operation reason, this test now verifies that 
+
+				// Since we can't distinguish by operation reason, this test now verifies that
 				// the total distribution is correct and proportional
 				require.Len(t, transfers, 5) // 3 validators + 2 delegators
 			},
@@ -238,9 +287,16 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 				createValidator(sample.ValOperatorAddressBech32(), 300_000),
 				createValidator(sample.ValOperatorAddressBech32(), 200_000),
 			},
+			delegationSetup: func(validators []stakingtypes.Validator) map[string][]stakingtypes.Delegation {
+				delegations := make(map[string][]stakingtypes.Delegation)
+				for _, validator := range validators {
+					delegations[validator.OperatorAddress] = []stakingtypes.Delegation{} // Empty
+				}
+				return delegations
+			},
 			totalValidatorRewardAmount: math.NewInt(10_000),
-			expectedTransferCount: 3, // validators only
-			opReason:              tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+			expectedTransferCount:      3, // validators only
+			opReason:                   tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 			claimSettlementValidationFn: func(t *testing.T, result *tokenomicstypes.ClaimSettlementResult) {
 				transfers := result.GetModToAcctTransfers()
 				// All transfers should use the same operation reason as specified in the test config
@@ -256,9 +312,20 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 				createValidator(sample.ValOperatorAddressBech32(), 333_333),
 				createValidator(sample.ValOperatorAddressBech32(), 333_334),
 			},
+			delegationSetup: func(validators []stakingtypes.Validator) map[string][]stakingtypes.Delegation {
+				delegations := make(map[string][]stakingtypes.Delegation)
+				for _, validator := range validators {
+					valAddr, _ := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
+					delegations[validator.OperatorAddress] = []stakingtypes.Delegation{
+						createDelegation(cosmostypes.AccAddress(valAddr).String(), validator.OperatorAddress, validator.Tokens.Int64()*6/10), // 60%
+						createDelegation(sample.AccAddressBech32(), validator.OperatorAddress, validator.Tokens.Int64()*4/10),                // 40%
+					}
+				}
+				return delegations
+			},
 			totalValidatorRewardAmount: math.NewInt(100),
-			expectedTransferCount: 6, // 3 validators + 3 delegators
-			opReason:              tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+			expectedTransferCount:      6, // 3 validators + 3 delegators
+			opReason:                   tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 		},
 	}
 
@@ -269,55 +336,8 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 
 			mockStakingKeeper := mocks.NewMockStakingKeeper(ctrl)
 
-			// Create delegations inline based on test case
-			delegations := make(map[string][]stakingtypes.Delegation)
-			for i, validator := range tt.validators {
-				valAddr, _ := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
-
-				switch tt.name {
-				case "success: mixed delegation amounts with equal self-bonded stakes":
-					switch i {
-					case 0: // Val1: 400k self + 600k delegated
-						delegations[validator.OperatorAddress] = []stakingtypes.Delegation{
-							createDelegation(cosmostypes.AccAddress(valAddr).String(), validator.OperatorAddress, 400_000),
-							createDelegation(sample.AccAddressBech32(), validator.OperatorAddress, 600_000),
-						}
-					case 1: // Val2: 400k self + 200k delegated
-						delegations[validator.OperatorAddress] = []stakingtypes.Delegation{
-							createDelegation(cosmostypes.AccAddress(valAddr).String(), validator.OperatorAddress, 400_000),
-							createDelegation(sample.AccAddressBech32(), validator.OperatorAddress, 200_000),
-						}
-					default: // Val3: 400k self only
-						delegations[validator.OperatorAddress] = []stakingtypes.Delegation{
-							createDelegation(cosmostypes.AccAddress(valAddr).String(), validator.OperatorAddress, 400_000),
-						}
-					}
-				case "success: equal self-bonded stakes receive equal rewards despite different total delegations":
-					switch i {
-					case 0: // 300k self + 600k delegated
-						delegations[validator.OperatorAddress] = []stakingtypes.Delegation{
-							createDelegation(cosmostypes.AccAddress(valAddr).String(), validator.OperatorAddress, 300_000),
-							createDelegation(sample.AccAddressBech32(), validator.OperatorAddress, 600_000),
-						}
-					case 1: // 300k self + 300k delegated
-						delegations[validator.OperatorAddress] = []stakingtypes.Delegation{
-							createDelegation(cosmostypes.AccAddress(valAddr).String(), validator.OperatorAddress, 300_000),
-							createDelegation(sample.AccAddressBech32(), validator.OperatorAddress, 300_000),
-						}
-					default: // 300k self only
-						delegations[validator.OperatorAddress] = []stakingtypes.Delegation{
-							createDelegation(cosmostypes.AccAddress(valAddr).String(), validator.OperatorAddress, 300_000),
-						}
-					}
-				case "success: distribution when no delegations found (validators only)":
-					delegations[validator.OperatorAddress] = []stakingtypes.Delegation{} // Empty
-				case "success: precision handling with Largest Remainder Method for fractional distributions":
-					delegations[validator.OperatorAddress] = []stakingtypes.Delegation{
-						createDelegation(cosmostypes.AccAddress(valAddr).String(), validator.OperatorAddress, validator.Tokens.Int64()*6/10), // 60%
-						createDelegation(sample.AccAddressBech32(), validator.OperatorAddress, validator.Tokens.Int64()*4/10),                // 40%
-					}
-				}
-			}
+			// Setup delegations using the test case's delegation setup function
+			delegations := tt.delegationSetup(tt.validators)
 
 			setupValidatorMocks(mockStakingKeeper, tt.validators, delegations)
 
@@ -336,7 +356,7 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 			if tt.claimSettlementValidationFn != nil {
 				tt.claimSettlementValidationFn(t, result)
 			} else if tt.expectedValidatorRewards > 0 || tt.expectedDelegatorRewards > 0 {
-				// Since we simplified the logic to treat all stakeholders equally, 
+				// Since we simplified the logic to treat all stakeholders equally,
 				// we no longer distinguish between validator and delegator operation reasons.
 				// All recipients get the same operation reason as the settlement operation.
 				totalRewards := int64(0)
@@ -344,7 +364,7 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 					require.Equal(t, tt.opReason, transfer.OpReason, "All transfers should use the same operation reason")
 					totalRewards += transfer.Coin.Amount.Int64()
 				}
-				
+
 				expectedTotal := tt.expectedValidatorRewards + tt.expectedDelegatorRewards
 				require.Equal(t, expectedTotal, totalRewards, "Total rewards should match expected validator + delegator rewards")
 			}

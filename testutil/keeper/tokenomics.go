@@ -95,7 +95,7 @@ type tokenomicsModuleKeepersConfig struct {
 	// validators allows configuring multiple validators with custom stakes for testing
 	validators []stakingtypes.Validator
 
-	// delegations maps validator addresses to their delegations for comprehensive delegation testing
+	// delegations maps validator operator addresses to their onchain delegations (i.e. accounts which have delegated stake to them)
 	delegations map[string][]stakingtypes.Delegation
 
 	// delegatorAddresses tracks all delegator addresses for account creation
@@ -323,7 +323,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		GetValidatorDelegations(gomock.Any(), gomock.Any()).
 		Return([]stakingtypes.Delegation{}, nil).
 		AnyTimes()
-
 
 	// Mock the service keeper
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
@@ -645,7 +644,6 @@ func NewTokenomicsModuleKeepers(
 				Return(delegations, nil).
 				AnyTimes()
 		}
-
 
 	} else {
 		// Default mock setup for when no delegations are configured
@@ -1031,7 +1029,7 @@ func initDelegatorAccounts(ctx cosmostypes.Context, keepers *TokenomicsModuleKee
 
 // WithValidatorsAndDelegations creates multiple validators with equal self-bonded stakes and realistic delegations
 // for comprehensive testing of validator and delegator reward distribution.
-// 
+//
 // Parameters:
 //   - selfBondedStake: The amount each validator bonds to themselves
 //   - delegatedAmounts: Array where each element represents the total delegation amount for the corresponding validator

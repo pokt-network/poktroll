@@ -33,10 +33,11 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 		expectedValidatorRewards []int64
 		expectedTotalRewards     int64
 		validationFunc           func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64)
-		skipReason               string // if non-empty, test will be skipped
+		// TODO_TECHDEBT(#1758): Remove once skipped tests are passing.
+		skipReason string // if non-empty, test will be skipped
 	}{
 		{
-			name:                     "Validator-only: Stakes that divide cleanly",
+			name:                     "No vlidator delegators: Stakes that divide cleanly",
 			validatorStakes:          []int64{500_000, 400_000, 200_000},
 			numClaims:                testClaimsCount,
 			expectedValidatorRewards: []int64{50_000, 40_000, 20_000}, // testExpectedValidatorRewards × stakes ratio [5:4:2]
@@ -56,7 +57,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name:                     "Validator-only: Single validator gets all rewards",
+			name:                     "No validator delegators: Single validator gets all rewards",
 			validatorStakes:          []int64{1_000_000},
 			numClaims:                testClaimsCount,
 			expectedValidatorRewards: []int64{110_000}, // testExpectedValidatorRewards (all to single validator)
@@ -71,7 +72,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name:                     "Validator-only: Equal stakes receive equal rewards",
+			name:                     "No validator delegators: Equal stakes receive equal rewards",
 			validatorStakes:          []int64{200_000, 200_000, 200_000, 200_000, 200_000},
 			numClaims:                testClaimsCount,
 			expectedValidatorRewards: []int64{22_000, 22_000, 22_000, 22_000, 22_000}, // 110,000 ÷ 5 validators = 22,000 each
@@ -89,7 +90,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name:                 "With delegators: Mixed delegation amounts",
+			name:                 "With validator delegators: Mixed delegation amounts",
 			validatorStakes:      []int64{250_000, 250_000, 250_000}, // Equal self-bonded stakes
 			delegatedAmounts:     []int64{250_000, 250_000, 0},       // Different delegation amounts (clean divisible)
 			numClaims:            160,
@@ -165,9 +166,11 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 				// - Validator 1 total: 110,000 × (500,000/2,000,000) = 27,500 uPOKT
 				//   - Val 1 self (333,333/500,000): 18,333 uPOKT
 				//   - Val 1 delegators (166,667/500,000): 9,167 uPOKT
+				//
 				// - Validator 2 total: 110,000 × (666,666/2,000,000) = 36,667 uPOKT
 				//   - Val 2 self (333,333/666,666): 18,333 uPOKT
 				//   - Val 2 delegators (333,333/666,666): 18,334 uPOKT
+				//
 				// - Validator 3 total: 110,000 × (833,334/2,000,000) = 45,833 uPOKT
 				//   - Val 3 self (333,334/833,334): 18,333 uPOKT
 				//   - Val 3 delegators (500,000/833,334): 27,500 uPOKT
