@@ -51,7 +51,7 @@ pocketd tx migration recover-account dao pnf --from=pnf --network=main --keyring
 	cosmosflags.AddTxFlagsToCmd(recoverCmd)
 
 	// Add common pocket specific flags
-	recoverCmd.Flags().String(flags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
+	recoverCmd.Flags().String(cosmosflags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
 	recoverCmd.Flags().String(flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
 	return recoverCmd

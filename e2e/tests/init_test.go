@@ -27,6 +27,7 @@ import (
 	cometjson "github.com/cometbft/cometbft/libs/json"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/gorilla/websocket"
 	"github.com/regen-network/gocuke"
@@ -837,6 +838,73 @@ func (s *suite) getAccBalance(accName string) int64 {
 	require.NoError(s, err)
 
 	return int64(accBalance)
+}
+
+// getTotalValidatorBalances returns the sum of all validator balances
+func (s *suite) getTotalValidatorBalances() int64 {
+	s.Helper()
+
+	// Query all validators to get their addresses
+	args := []string{
+		"query",
+		"staking",
+		"validators",
+		"--output=json",
+	}
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting validators")
+
+	// Parse the JSON response to extract validator addresses
+	var validatorsResponse struct {
+		Validators []struct {
+			OperatorAddress string `json:"operator_address"`
+		} `json:"validators"`
+	}
+
+	err = json.Unmarshal([]byte(res.Stdout), &validatorsResponse)
+	require.NoError(s, err, "error parsing validators JSON")
+
+	totalBalance := int64(0)
+
+	for _, validator := range validatorsResponse.Validators {
+		// Convert validator operator address to account address
+		valAddr, err := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
+		require.NoError(s, err, "error parsing validator address")
+
+		// Convert to account address (same bytes, different prefix)
+		accAddr := cosmostypes.AccAddress(valAddr).String()
+
+		// Query balance for this validator
+		balanceArgs := []string{
+			"query",
+			"bank",
+			"balance",
+			accAddr,
+			"upokt",
+			"--output=json",
+		}
+		balanceRes, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, balanceArgs...)
+		require.NoError(s, err, "error getting validator balance")
+
+		// Parse balance response
+		var balanceResponse struct {
+			Balance struct {
+				Denom  string `json:"denom"`
+				Amount string `json:"amount"`
+			} `json:"balance"`
+		}
+
+		err = json.Unmarshal([]byte(balanceRes.Stdout), &balanceResponse)
+		require.NoError(s, err, "error parsing balance JSON")
+
+		// Convert amount to int64 and add to total
+		if balanceResponse.Balance.Amount != "" {
+			validatorBalance, err := strconv.ParseInt(balanceResponse.Balance.Amount, 10, 64)
+			require.NoError(s, err, "error parsing balance amount")
+			totalBalance += validatorBalance
+		}
+	}
+	return totalBalance
 }
 
 // validateAmountChange validates if the balance of an account has increased or decreased by the expected amount

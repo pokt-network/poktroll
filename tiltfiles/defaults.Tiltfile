@@ -105,15 +105,14 @@ ibc:
   validator_configs:
     agoric:
       enabled: false
+      # NOTE: this chain ID is baked into the image genesis.json and is difficult to change.
       chain_id: "agoriclocal"
       values_path: localnet/kubernetes/values-agoric.yaml
       tilt_ui_name: "Agoric Validator"
       chart_name: "agoric-validator"
       dockerfile_path: localnet/dockerfiles/agoric-validator.dockerfile
-      # TODO_IMPROVE: can we consolidate this with the chart_name?
       image_name: "agoric"
       port_forwards: ["46657:26657", "11090:9090", "40009:40009" ]
-      # NOTE: this chain ID is baked into the image genesis.json and is difficult to change.
     axelar:
         enabled: True
         chain_id: "axelar"
@@ -121,7 +120,6 @@ ibc:
         tilt_ui_name: "Axelar Validator"
         chart_name: "axelar-validator"
         dockerfile_path: os.path.join("localnet", "dockerfiles", "axelar-validator.dockerfile")
-        # TODO_IMPROVE: can we consolidate this with the chart_name?
         image_name: "axelar"
         port_forwards:
           - "56657:26657"

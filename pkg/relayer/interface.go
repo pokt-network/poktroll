@@ -165,11 +165,17 @@ type SessionTree interface {
 	// a proof in byte format.
 	GetProofBz() []byte
 
-	// Flush gets the root hash of the SMST needed for submitting the claim;
-	// then commits the entire tree to disk and stops the KVStore.
-	// It should be called before submitting the claim onchain. This function frees up
-	// the in-memory resources used by the SMST that are no longer needed while waiting
-	// for the proof submission window to open.
+	// Flush should be used to safely free up resources used by the SMST without risking rewards.
+	// Flush can be seen as a safe version of "Stop" which is explicitly not exposed by this interface.
+	//
+	// It does the following:
+	// 1. Gets the root hash of the SMST needed for submitting the claim.
+	// 2. Commits the entire tree to disk (if disk storage is used)
+	// 3. Stops the KVStore.
+	//
+	// It should be called before submitting the claim onchain.
+	// This function frees up the in-memory resources used by the SMST that are
+	// no longer needed while waiting for the proof submission window to open.
 	Flush() (SMSTRoot []byte, err error)
 
 	// TODO_DISCUSS: This function should not be part of the interface as it is an optimization
@@ -190,10 +196,6 @@ type SessionTree interface {
 
 	// GetTrieSpec returns the trie spec of the SMST.
 	GetTrieSpec() smt.TrieSpec
-
-	// Stop stops the session tree and closes the KVStore.
-	// Calling Stop does not calculate the root hash of the SMST.
-	Stop() error
 }
 
 // RelayMeter is an interface that keeps track of the amount of stake consumed between

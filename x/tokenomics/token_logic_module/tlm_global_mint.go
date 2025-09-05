@@ -217,25 +217,23 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to source owner %s", sourceOwnerCoin, tlmgm.tlmCtx.Service.OwnerAddress))
 	}
 
-	// Distribute to block proposer
+	// Distribute to all validators based on stake weight
+	// Transfer from tokenomics module to supplier module first
+	proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 	if !proposerAmount.IsZero() {
-		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
-
-		// Get the block proposer's operator address (not consensus address)
-		proposerAddr, err := getBlockProposerOperatorAddress(tlmgm.ctx, tlmgm.tlmCtx.StakingKeeper)
-		if err != nil {
-			tlmgm.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
+		// Distribute to all validators proportionally based on stake weight
+		if err := distributeValidatorRewards(
+			tlmgm.ctx,
+			tlmgm.logger,
+			tlmgm.tlmCtx.Result,
+			tlmgm.tlmCtx.StakingKeeper,
+			proposerAmount,
+			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+		); err != nil {
+			tlmgm.logger.Error(fmt.Sprintf("error distributing validator rewards: %v", err))
 			return err
 		}
-		tlmgm.logger.Info(fmt.Sprintf("TLM Global Mint: resolved proposer address to %s", proposerAddr))
-
-		tlmgm.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
-			SenderModule:     tokenomicstypes.ModuleName,
-			RecipientAddress: proposerAddr,
-			Coin:             proposerCoin,
-		})
-		tlmgm.logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
+		tlmgm.logger.Info(fmt.Sprintf("operation queued: distribute %s to all validators by stake weight", proposerCoin))
 	}
 
 	// Distribute to DAO

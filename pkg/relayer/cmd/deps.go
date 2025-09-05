@@ -42,25 +42,47 @@ func setupRelayerDependencies(
 	queryNodeGRPCUrl := relayMinerConfig.PocketNode.QueryNodeGRPCUrl
 	txNodeRPCUrl := relayMinerConfig.PocketNode.TxNodeRPCUrl
 
+	nodeRPCURL, err := cmd.Flags().GetString(cosmosflags.FlagNode)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeGRPCURL, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
+	if err != nil {
+		return nil, err
+	}
+
 	// Override config file's `QueryNodeGRPCUrl` with `--grpc-addr` flag if specified.
-	// TODO(#223): Remove this check once viper is used as SoT for overridable config values.
-	if flagNodeGRPCURL != flags.OmittedDefaultFlagValue {
-		parsedFlagNodeGRPCUrl, err := url.Parse(flagNodeGRPCURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
+	if nodeGRPCURL != flags.OmittedDefaultFlagValue {
+		if err = cmd.Flags().Set(cosmosflags.FlagGRPC, nodeGRPCURL); err != nil {
+			return nil, err
+		}
+
+		parsedFlagNodeGRPCUrl, parseErr := url.Parse(nodeGRPCURL)
+		if parseErr != nil {
+			return nil, fmt.Errorf("failed to parse grpc query URL: %w", parseErr)
 		}
 		queryNodeGRPCUrl = parsedFlagNodeGRPCUrl
+	} else {
+		// TODO_TECHDEBT(#1444): Delete this once #1444 is fixed and merged.
+		_ = cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCUrl.String())
 	}
 
 	// Override config file's `QueryNodeUrl` and `txNodeRPCUrl` with `--node` flag if specified.
-	// TODO(#223): Remove this check once viper is used as SoT for overridable config values.
-	if flagNodeRPCURL != flags.OmittedDefaultFlagValue {
-		parsedFlagNodeRPCUrl, err := url.Parse(flagNodeRPCURL)
+	if nodeRPCURL != flags.DefaultNodeRPCURL {
+		if err = cmd.Flags().Set(cosmosflags.FlagNode, nodeRPCURL); err != nil {
+			return nil, err
+		}
+
+		parsedFlagNodeRPCUrl, err := url.Parse(nodeRPCURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse rpc query URL: %w", err)
 		}
 		queryNodeRPCUrl = parsedFlagNodeRPCUrl
 		txNodeRPCUrl = parsedFlagNodeRPCUrl
+	} else {
+		// TODO_TECHDEBT(#1444): Delete this once #1444 is fixed and merged.
+		_ = cmd.Flags().Set(cosmosflags.FlagNode, queryNodeRPCUrl.String())
 	}
 
 	signingKeyNames := uniqueSigningKeyNames(relayMinerConfig)
