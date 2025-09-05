@@ -324,15 +324,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return([]stakingtypes.Delegation{}, nil).
 		AnyTimes()
 
-	mockStakingKeeper.EXPECT().
-		GetDelegatorDelegations(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return([]stakingtypes.Delegation{}, nil).
-		AnyTimes()
-
-	mockStakingKeeper.EXPECT().
-		Validator(gomock.Any(), gomock.Any()).
-		Return(nil, stakingtypes.ErrNoValidatorFound).
-		AnyTimes()
 
 	// Mock the service keeper
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
@@ -655,36 +646,7 @@ func NewTokenomicsModuleKeepers(
 				AnyTimes()
 		}
 
-		// Mock GetDelegatorDelegations for each delegator
-		for _, delegatorAddr := range cfg.delegatorAddresses {
-			// Find all delegations for this delegator across all validators
-			var delegatorDelegations []stakingtypes.Delegation
-			for _, validatorDelegations := range cfg.delegations {
-				for _, delegation := range validatorDelegations {
-					if delegation.DelegatorAddress == delegatorAddr.String() {
-						delegatorDelegations = append(delegatorDelegations, delegation)
-					}
-				}
-			}
 
-			mockStakingKeeper.EXPECT().
-				GetDelegatorDelegations(gomock.Any(), delegatorAddr, gomock.Any()).
-				Return(delegatorDelegations, nil).
-				AnyTimes()
-		}
-
-		// Mock Validator method for individual validator queries
-		for _, validator := range validators {
-			valAddr, err := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
-			if err != nil {
-				panic(fmt.Sprintf("invalid validator operator address: %v", err))
-			}
-
-			mockStakingKeeper.EXPECT().
-				Validator(gomock.Any(), valAddr).
-				Return(&validator, nil).
-				AnyTimes()
-		}
 	} else {
 		// Default mock setup for when no delegations are configured
 		// Mock empty delegations for any validator
@@ -693,15 +655,6 @@ func NewTokenomicsModuleKeepers(
 			Return([]stakingtypes.Delegation{}, nil).
 			AnyTimes()
 
-		mockStakingKeeper.EXPECT().
-			GetDelegatorDelegations(gomock.Any(), gomock.Any(), gomock.Any()).
-			Return([]stakingtypes.Delegation{}, nil).
-			AnyTimes()
-
-		mockStakingKeeper.EXPECT().
-			Validator(gomock.Any(), gomock.Any()).
-			Return(nil, stakingtypes.ErrNoValidatorFound).
-			AnyTimes()
 	}
 
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.

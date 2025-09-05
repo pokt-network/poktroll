@@ -87,50 +87,32 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			numClaims:            160,
 			expectedTotalRewards: 17_600, // 160 claims × 1100 × 10% = 17,600
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
+				// With simplified logic, all stakeholders (validators + delegators) get the same operation reason,
+				// so extractRewards will put all rewards into validatorRewards array.
+				// 
 				// Stake distribution (perfectly clean divisible numbers):
 				// - Validator 1: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M)
-				// - Validator 2: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M)
+				// - Validator 2: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M) 
 				// - Validator 3: 250k self + 0k delegated = 250k total (1/5 = 20% of 1.25M)
 				// Total: 1,250k tokens
 				//
-				// Expected distribution of 17,600 total rewards:
-				// - Validator 1 total: 17,600 × (2/5) = 7,040
-				//   - Val 1 self (250k/500k = 1/2): 7,040 × (1/2) = 3,520 uPOKT
-				//   - Val 1 delegators (250k/500k = 1/2): 7,040 × (1/2) = 3,520 uPOKT
-				// - Validator 2 total: 17,600 × (2/5) = 7,040
-				//   - Val 2 self (250k/500k = 1/2): 7,040 × (1/2) = 3,520 uPOKT
-				//   - Val 2 delegators (250k/500k = 1/2): 7,040 × (1/2) = 3,520 uPOKT
-				// - Validator 3 total: 17,600 × (1/5) = 3,520
-				//   - Val 3 self (250k/250k = 100%): 3,520 uPOKT
-				//   - Val 3 delegators: 0 uPOKT
+				// Expected individual stakeholder rewards (17,600 total):
+				// - 3 validator self-stakes (250k each): 17,600 × (250k/1.25M) = 3,520 each = 10,560 total
+				// - 4 delegator stakes (125k each): 17,600 × (125k/1.25M) = 1,760 each = 7,040 total
+				// Total rewards: 7 recipients getting [3520, 1760, 1760, 3520, 1760, 1760, 3520]
 
-				require.Len(t, validatorRewards, 3, "Should have 3 validators")
+				// Since all rewards go to validatorRewards array (same operation reason), check total count
+				require.Len(t, validatorRewards, 7, "Should have 7 total stakeholders (3 validators + 4 delegators)")
+				require.Empty(t, delegatorRewards, "Should have no separate delegator rewards (same operation reason)")
 
-				// All validators have equal self-bonded stakes (250k each), so must receive equal rewards
-				expectedValidatorReward := int64(3_520) // Each validator gets 3,520 for their 250k self-bonded stake
-				for _, reward := range validatorRewards {
-					require.Equal(t, expectedValidatorReward, reward,
-						"All validators should receive exactly %d uPOKT for equal self-bonded stakes", expectedValidatorReward)
-				}
+				// Verify the expected reward distribution
+				expectedRewards := []int64{3_520, 1_760, 1_760, 3_520, 1_760, 1_760, 3_520}
+				require.ElementsMatch(t, expectedRewards, validatorRewards, 
+					"All stakeholder rewards should match expected distribution")
 
-				// Verify specific delegator rewards based on their delegation amounts
-				// We have 4 delegators total (2 for Val1, 2 for Val2, 0 for Val3)
-				expectedDelegatorRewards := []int64{
-					1_760, 1_760, // Val1's 2 delegators split 3,520 equally
-					1_760, 1_760, // Val2's 2 delegators split 3,520 equally
-				}
-
-				// Delegator rewards should match expected distribution
-				require.ElementsMatch(t, expectedDelegatorRewards, delegatorRewards,
-					"Delegator rewards should match expected distribution")
-
-				// Verify totals
-				totalValidatorRewards := 3 * expectedValidatorReward // 10,560
-				totalDelegatorRewards := int64(3_520 + 3_520)        // 7,040
-
-				require.Equal(t, int64(10_560), totalValidatorRewards, "Total validator rewards should be 10,560")
-				require.Equal(t, int64(7_040), totalDelegatorRewards, "Total delegator rewards should be 7,040")
-				require.Equal(t, expectedTotal, totalValidatorRewards+totalDelegatorRewards,
+				// Verify total matches expected
+				totalRewards := s.sumRewards(validatorRewards)
+				require.Equal(t, expectedTotal, totalRewards,
 					"Total distributed should equal expected total")
 			},
 		},

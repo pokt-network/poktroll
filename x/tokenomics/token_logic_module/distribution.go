@@ -239,9 +239,8 @@ func distributeToValidatorsAndDelegators(
 		totalBondedTokens.String(),
 	))
 
-	// Track rewards for each recipient address and which are validators
-	rewardAmounts := make(map[string]math.Int)
-	validatorAddresses := make(map[string]bool) // track which addresses are validators for operation reasons
+	// Track stakes for each recipient address during discovery phase
+	stakeAmounts := make(map[string]math.Int)
 
 	// Process each validator and their delegators
 	for _, validator := range validators {
@@ -269,8 +268,7 @@ func distributeToValidatorsAndDelegators(
 			validatorBondedTokens := validator.GetBondedTokens()
 			if !validatorBondedTokens.IsZero() {
 				validatorAddrStr := validatorAccAddr.String()
-				rewardAmounts[validatorAddrStr] = validatorBondedTokens
-				validatorAddresses[validatorAddrStr] = true
+				stakeAmounts[validatorAddrStr] = validatorBondedTokens
 			}
 			continue
 		}
@@ -281,8 +279,7 @@ func distributeToValidatorsAndDelegators(
 			validatorBondedTokens := validator.GetBondedTokens()
 			if !validatorBondedTokens.IsZero() {
 				validatorAddrStr := validatorAccAddr.String()
-				rewardAmounts[validatorAddrStr] = validatorBondedTokens
-				validatorAddresses[validatorAddrStr] = true
+				stakeAmounts[validatorAddrStr] = validatorBondedTokens
 			}
 			continue
 		}
@@ -305,26 +302,20 @@ func distributeToValidatorsAndDelegators(
 				delegatedTokens := validator.TokensFromShares(delegatedShares).TruncateInt()
 
 				if !delegatedTokens.IsZero() {
-					// Check if this is the validator's self-delegation
-					isValidatorSelfDelegation := delegatorAddr.Equals(validatorAccAddr)
 					delegatorAddrStr := delegatorAddr.String()
-
-					rewardAmounts[delegatorAddrStr] = delegatedTokens
-					if isValidatorSelfDelegation {
-						validatorAddresses[delegatorAddrStr] = true
-					}
+					stakeAmounts[delegatorAddrStr] = delegatedTokens
 				}
 			}
 		}
 	}
 
-	if len(rewardAmounts) == 0 {
-		logger.Warn("no reward recipients found, skipping reward distribution")
+	if len(stakeAmounts) == 0 {
+		logger.Warn("no stakeholders found, skipping reward distribution")
 		return nil
 	}
 
 	// Calculate proportional rewards using Largest Remainder Method
-	finalRewards := make(map[string]math.Int)
+	rewardAmounts := make(map[string]math.Int)
 	totalCalculated := math.ZeroInt()
 
 	// Phase 1: Calculate base rewards and track fractional remainders
@@ -334,7 +325,7 @@ func distributeToValidatorsAndDelegators(
 	}
 	var fractions []addressFraction
 
-	for addrStr, stake := range rewardAmounts {
+	for addrStr, stake := range stakeAmounts {
 		// Calculate exact proportional reward using big.Rat
 		exactRatio := new(big.Rat).SetFrac(
 			new(big.Int).Mul(stake.BigInt(), validatorRewardAmount.BigInt()),
@@ -344,7 +335,7 @@ func distributeToValidatorsAndDelegators(
 		// Split into integer (base reward) and fractional parts
 		baseReward := new(big.Int).Quo(exactRatio.Num(), exactRatio.Denom())
 		baseRewardInt := math.NewIntFromBigInt(baseReward)
-		finalRewards[addrStr] = baseRewardInt
+		rewardAmounts[addrStr] = baseRewardInt
 		totalCalculated = totalCalculated.Add(baseRewardInt)
 
 		// Calculate fractional remainder
@@ -356,13 +347,8 @@ func distributeToValidatorsAndDelegators(
 			fractions = append(fractions, addressFraction{addrStr, fractionalPart})
 		}
 
-		stakeholderType := "delegator"
-		if validatorAddresses[addrStr] {
-			stakeholderType = "validator"
-		}
 		logger.Debug(fmt.Sprintf(
-			"  %s %s: stake=%s, base_reward=%s, fraction=%s",
-			stakeholderType,
+			"  stakeholder %s: stake=%s, base_reward=%s, fraction=%s",
 			addrStr,
 			stake.String(),
 			baseRewardInt.String(),
@@ -395,7 +381,7 @@ func distributeToValidatorsAndDelegators(
 		// Distribute remainder tokens to addresses with largest fractional remainders
 		for t := int64(0); t < tokensToDistribute; t++ {
 			addrStr := fractions[t%int64(len(fractions))].address
-			finalRewards[addrStr] = finalRewards[addrStr].AddRaw(1)
+			rewardAmounts[addrStr] = rewardAmounts[addrStr].AddRaw(1)
 
 			logger.Debug(fmt.Sprintf(
 				"  Added 1 token to %s (fraction: %s)",
@@ -410,15 +396,15 @@ func distributeToValidatorsAndDelegators(
 			tokensToDistribute,
 		))
 		// Add to first address in map (deterministic iteration order not guaranteed, but rare edge case)
-		for addrStr := range finalRewards {
-			finalRewards[addrStr] = finalRewards[addrStr].Add(remainder)
+		for addrStr := range rewardAmounts {
+			rewardAmounts[addrStr] = rewardAmounts[addrStr].Add(remainder)
 			break
 		}
 	}
 
 	// Create transfers for all recipients
 	totalDistributed := math.ZeroInt()
-	for addrStr, rewardAmount := range finalRewards {
+	for addrStr, rewardAmount := range rewardAmounts {
 		totalDistributed = totalDistributed.Add(rewardAmount)
 
 		if rewardAmount.IsZero() {
@@ -432,41 +418,17 @@ func distributeToValidatorsAndDelegators(
 		// Queue the reward transfer
 		rewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, rewardAmount)
 
-		// Use appropriate settlement operation reason based on recipient type
-		var opReason tokenomicstypes.SettlementOpReason
-		if validatorAddresses[addrStr] {
-			// Use the original settlement operation reason for validators
-			opReason = settlementOpReason
-		} else {
-			// Use delegator-specific operation reason for delegators
-			switch settlementOpReason {
-			case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION:
-				opReason = tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION
-			case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION:
-				opReason = tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION
-			default:
-				// Fallback to the original settlement operation reason if no specific delegator reason exists
-				opReason = settlementOpReason
-			}
-		}
-
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         opReason,
+			OpReason:         settlementOpReason,
 			SenderModule:     tokenomicstypes.ModuleName,
 			RecipientAddress: addrStr,
 			Coin:             rewardCoin,
 		})
 
-		recipientType := "delegator"
-		if validatorAddresses[addrStr] {
-			recipientType = "validator"
-		}
-
-		stake := rewardAmounts[addrStr]
+		stake := stakeAmounts[addrStr]
 		logger.Info(fmt.Sprintf(
-			"queued reward transfer: %s to %s %s (stake: %s, share: %s%%)",
+			"queued reward transfer: %s to stakeholder %s (stake: %s, share: %s%%)",
 			rewardCoin.String(),
-			recipientType,
 			addrStr,
 			stake.String(),
 			new(big.Rat).SetFrac(
@@ -480,7 +442,7 @@ func distributeToValidatorsAndDelegators(
 		"validator and delegator reward distribution complete: distributed %s of %s uPOKT to %d recipients",
 		totalDistributed.String(),
 		validatorRewardAmount.String(),
-		len(finalRewards),
+		len(rewardAmounts),
 	))
 
 	return nil
