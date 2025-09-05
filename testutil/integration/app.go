@@ -530,8 +530,8 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		Return(validators, nil).
 		AnyTimes()
 
-	// Mock delegation calls for delegation-aware distribution
-	// Return empty delegations for any validator (no delegations setup in integration tests)
+	// Mock delegation calls to return empty delegations for all validators
+	// This configures the system to distribute rewards to validators only (no delegator rewards)
 	mockStakingKeeper.EXPECT().
 		GetValidatorDelegations(gomock.Any(), gomock.Any()).
 		Return([]stakingtypes.Delegation{}, nil).

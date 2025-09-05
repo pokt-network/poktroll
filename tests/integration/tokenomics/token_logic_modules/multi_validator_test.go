@@ -14,13 +14,21 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+const (
+	// Standard test values for validator reward distribution tests
+	testClaimsCount = 1000 // Number of claims to create for testing reward distribution
+	// testExpectedValidatorRewards = testClaimsCount × claimSettlementAmount × validatorAllocationPercentage
+	// = 1000 × 1100 × 0.10 = 110,000 uPOKT
+	testExpectedValidatorRewards = 110_000
+)
+
 // TestValidatorRewardDistribution tests validator and delegator reward distribution
 // across multiple scenarios using table-driven tests to reduce code duplication.
 func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 	testCases := []struct {
 		name                     string
 		validatorStakes          []int64
-		delegatedAmounts         []int64 // nil for validator-only tests
+		delegatedAmounts         []int64 // nil when validators have no delegators
 		numClaims                int
 		expectedValidatorRewards []int64
 		expectedTotalRewards     int64
@@ -30,9 +38,9 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 		{
 			name:                     "Validator-only: Stakes that divide cleanly",
 			validatorStakes:          []int64{500_000, 400_000, 200_000},
-			numClaims:                1000,
-			expectedValidatorRewards: []int64{50_000, 40_000, 20_000}, // 1000 claims × 1100 × 10% × stakes ratio [5:4:2]
-			expectedTotalRewards:     110_000,                         // 1000 claims × 1100 × 10% = 110,000
+			numClaims:                testClaimsCount,
+			expectedValidatorRewards: []int64{50_000, 40_000, 20_000}, // testExpectedValidatorRewards × stakes ratio [5:4:2]
+			expectedTotalRewards:     testExpectedValidatorRewards,
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// Validator stakes: [500k, 400k, 200k] = 1.1M total
 				// With 110,000 total rewards:
@@ -50,9 +58,9 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 		{
 			name:                     "Validator-only: Single validator gets all rewards",
 			validatorStakes:          []int64{1_000_000},
-			numClaims:                1000,
-			expectedValidatorRewards: []int64{110_000}, // 1000 claims × 1100 × 10% = 110,000 (all to single validator)
-			expectedTotalRewards:     110_000,          // 1000 claims × 1100 × 10% = 110,000
+			numClaims:                testClaimsCount,
+			expectedValidatorRewards: []int64{110_000}, // testExpectedValidatorRewards (all to single validator)
+			expectedTotalRewards:     testExpectedValidatorRewards,
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// Single validator with 1M stake gets 100% of rewards
 				// Total rewards: 110,000 uPOKT (all to single validator)
@@ -65,9 +73,9 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 		{
 			name:                     "Validator-only: Equal stakes receive equal rewards",
 			validatorStakes:          []int64{200_000, 200_000, 200_000, 200_000, 200_000},
-			numClaims:                1000,
+			numClaims:                testClaimsCount,
 			expectedValidatorRewards: []int64{22_000, 22_000, 22_000, 22_000, 22_000}, // 110,000 ÷ 5 validators = 22,000 each
-			expectedTotalRewards:     110_000,                                         // 1000 claims × 1100 × 10% = 110,000
+			expectedTotalRewards:     testExpectedValidatorRewards,                    // 1000 claims × 1100 × 10% = 110,000
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// 5 validators with equal stakes (200k each) = 1M total
 				// Each gets exactly 1/5 of 110,000 = 22,000 uPOKT
@@ -89,10 +97,10 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
 				// With simplified logic, all stakeholders (validators + delegators) get the same operation reason,
 				// so extractRewards will put all rewards into validatorRewards array.
-				// 
+				//
 				// Stake distribution (perfectly clean divisible numbers):
 				// - Validator 1: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M)
-				// - Validator 2: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M) 
+				// - Validator 2: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M)
 				// - Validator 3: 250k self + 0k delegated = 250k total (1/5 = 20% of 1.25M)
 				// Total: 1,250k tokens
 				//
@@ -107,7 +115,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 
 				// Verify the expected reward distribution
 				expectedRewards := []int64{3_520, 1_760, 1_760, 3_520, 1_760, 1_760, 3_520}
-				require.ElementsMatch(t, expectedRewards, validatorRewards, 
+				require.ElementsMatch(t, expectedRewards, validatorRewards,
 					"All stakeholder rewards should match expected distribution")
 
 				// Verify total matches expected
@@ -117,7 +125,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			},
 		},
 		{
-			name:                 "SKIP: Precision loss with many small distributions (validator-only)",
+			name:                 "SKIP: Precision loss with many small distributions (no delegators)",
 			validatorStakes:      []int64{333_333, 333_333, 333_334},
 			numClaims:            1000,
 			expectedTotalRewards: 110_000, // 1000 claims × 1100 × 10% = 110,000
@@ -214,8 +222,8 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			// Validate total rewards if expected
 			if tc.expectedTotalRewards > 0 {
 				totalRewards := s.sumRewards(validatorRewards) + s.sumRewards(delegatorRewards)
-				require.InDelta(t, tc.expectedTotalRewards, totalRewards, 100,
-					"Total rewards should approximately equal expected")
+				require.Equal(t, tc.expectedTotalRewards, totalRewards,
+					"Total rewards should equal expected")
 			}
 
 			// Run test-specific validation
@@ -228,7 +236,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 }
 
 // setupValidatorTest initializes keepers for validator reward testing.
-// Supports both validator-only and validator+delegator scenarios.
+// Supports validators both with and without delegators.
 func (s *tokenLogicModuleTestSuite) setupValidatorTest(t *testing.T, validatorStakes []int64, delegatedAmounts []int64) {
 	t.Helper()
 
@@ -254,7 +262,7 @@ func (s *tokenLogicModuleTestSuite) setupValidatorTest(t *testing.T, validatorSt
 		// For delegation tests, use equal self-bonded stakes with varied delegations
 		setupOpts = append(setupOpts, testkeeper.WithValidatorsAndDelegations(validatorStakes[0], delegatedAmounts))
 	} else {
-		// For validator-only tests, use the provided stakes
+		// For validators with no delegators, use the provided stakes
 		setupOpts = append(setupOpts, testkeeper.WithMultipleValidators(validatorStakes))
 	}
 

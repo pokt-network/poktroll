@@ -317,8 +317,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(validators, nil).
 		AnyTimes()
 
-	// Mock delegation calls for backward compatibility with delegation-aware distribution
-	// Return empty delegations for any validator (no delegations setup)
+	// Mock delegation calls to return empty delegations for all validators
+	// This configures the reward distribution to treat all stakes as validator-owned
 	mockStakingKeeper.EXPECT().
 		GetValidatorDelegations(gomock.Any(), gomock.Any()).
 		Return([]stakingtypes.Delegation{}, nil).
@@ -923,8 +923,9 @@ func createExternalDelegations(validatorAddr string, delegatedAmount int64) (
 		return nil, nil
 	}
 
-	// Create 2 external delegators per validator for variety
-	numDelegators := 2
+	// Create multiple external delegators per validator for variety in delegation testing
+	const defaultDelegatorsPerValidator = 2
+	numDelegators := defaultDelegatorsPerValidator
 	delegationPerDelegator := delegatedAmount / int64(numDelegators)
 
 	for j := 0; j < numDelegators; j++ {
@@ -1028,8 +1029,13 @@ func initDelegatorAccounts(ctx cosmostypes.Context, keepers *TokenomicsModuleKee
 	}
 }
 
-// WithValidatorsAndDelegations creates validators with equal self-bonded stakes and realistic delegations
+// WithValidatorsAndDelegations creates multiple validators with equal self-bonded stakes and realistic delegations
 // for comprehensive testing of validator and delegator reward distribution.
+// 
+// Parameters:
+//   - selfBondedStake: The amount each validator bonds to themselves
+//   - delegatedAmounts: Array where each element represents the total delegation amount for the corresponding validator
+//     The length of this array determines the number of validators created.
 func WithValidatorsAndDelegations(selfBondedStake int64, delegatedAmounts []int64) TokenomicsModuleKeepersOptFn {
 	return func(cfg *tokenomicsModuleKeepersConfig) {
 		numValidators := len(delegatedAmounts)

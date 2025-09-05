@@ -279,10 +279,10 @@ func discoverStakeholderStakes(
 		// Try to get delegations to understand the true stake breakdown
 		delegations, err := stakingKeeper.GetValidatorDelegations(ctx, valAddr)
 		if err != nil {
-			// On delegation query error, treat the entire validator bonded tokens as validator-only rewards
+			// On delegation query error, treat the entire validator bonded tokens as self-bonded rewards
 			// This maintains backward compatibility and ensures validators still receive rewards despite delegation query failures
 			logger.Error(fmt.Sprintf(
-				"failed to get delegations for validator %s: %v (using validator-only distribution)",
+				"failed to get delegations for validator %s: %v (using no delegators distribution)",
 				validator.GetOperator(), err,
 			))
 

@@ -26,27 +26,27 @@ type rewardDistributionTestConfig struct {
 	opReason     tokenomicstypes.SettlementOpReason
 }
 
-// TestDistributeValidatorRewards tests the validator-only reward distribution functionality.
-// It verifies proportional distribution based on validator stakes and precision handling
-// with the Largest Remainder Method for edge cases.
-func TestDistributeValidatorRewards(t *testing.T) {
+// TestValidatorRewardDistribution_NoDelegators tests reward distribution functionality for validators with no delegators.
+// It verifies proportional distribution based on validator stakes and precision handling with the 
+// Largest Remainder Method to ensure fair allocation of any remainder tokens.
+func TestValidatorRewardDistribution_NoDelegators(t *testing.T) {
 	tests := []struct {
-		name            string
-		validatorStakes []int64
-		rewardAmount    math.Int
-		expectedCount   int
+		name                     string
+		validatorStakes          []int64
+		totalValidatorRewardAmount math.Int
+		expectedTransferCount    int
 	}{
 		{
-			name:            "success: proportional distribution based on validator stakes",
-			validatorStakes: []int64{700_000, 200_000, 100_000},
-			rewardAmount:    math.NewInt(9240),
-			expectedCount:   3,
+			name:                      "success: proportional distribution based on validator stakes",
+			validatorStakes:           []int64{700_000, 200_000, 100_000},
+			totalValidatorRewardAmount: math.NewInt(9240),
+			expectedTransferCount:     3,
 		},
 		{
-			name:            "success: precision handling with Largest Remainder Method",
-			validatorStakes: []int64{333, 333, 334},
-			rewardAmount:    math.NewInt(100),
-			expectedCount:   3,
+			name:                      "success: proportional distribution with remainder allocation",
+			validatorStakes:           []int64{333, 333, 334},
+			totalValidatorRewardAmount: math.NewInt(100),
+			expectedTransferCount:     3,
 		},
 	}
 
@@ -63,12 +63,12 @@ func TestDistributeValidatorRewards(t *testing.T) {
 				validators[i] = createValidator(sample.ValOperatorAddressBech32(), stake)
 			}
 
-			// Setup mocks for validator-only distribution
+			// Setup mocks for validators with no delegators
 			mockStakingKeeper.EXPECT().
 				GetBondedValidatorsByPower(gomock.Any()).
 				Return(validators, nil)
 
-			// Mock GetValidatorDelegations for each validator to return empty delegations (validator-only test)
+			// Mock GetValidatorDelegations for each validator to return empty delegations (no delegators test)
 			for _, validator := range validators {
 				valAddr, _ := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
 				mockStakingKeeper.EXPECT().
@@ -78,15 +78,15 @@ func TestDistributeValidatorRewards(t *testing.T) {
 
 			// Execute and validate
 			config := getDefaultTestConfig()
-			config.rewardAmount = tt.rewardAmount
+			config.rewardAmount = tt.totalValidatorRewardAmount
 
 			result, err := executeDistribution(mockStakingKeeper, config, false)
 			require.NoError(t, err)
 
 			transfers := result.GetModToAcctTransfers()
-			require.Len(t, transfers, tt.expectedCount)
+			require.Len(t, transfers, tt.expectedTransferCount)
 
-			assertTotalDistribution(t, result, tt.rewardAmount)
+			assertTotalDistribution(t, result, tt.totalValidatorRewardAmount)
 
 			// Verify all transfers are validator rewards
 			for _, transfer := range transfers {
@@ -96,9 +96,13 @@ func TestDistributeValidatorRewards(t *testing.T) {
 	}
 }
 
-// TestDistributeValidatorRewards_ErrorCases tests error handling scenarios for validator reward distribution.
-// It covers cases like zero reward amounts, staking keeper failures, missing validators, and zero stakes.
-func TestDistributeValidatorRewards_ErrorCases(t *testing.T) {
+// TestValidatorRewardDistribution_ErrorCases tests error handling scenarios for validator reward distribution.
+// It covers cases including but not limited to:
+// - Zero reward amounts
+// - Staking keeper failures  
+// - Missing validators
+// - Zero stakes
+func TestValidatorRewardDistribution_ErrorCases(t *testing.T) {
 	tests := []struct {
 		name             string
 		setupMocks       func(*mocks.MockStakingKeeper)
@@ -173,20 +177,20 @@ func TestDistributeValidatorRewards_ErrorCases(t *testing.T) {
 	}
 }
 
-// TestDistributeValidatorAndDelegatorRewards tests the combined validator and delegator reward distribution.
-// It verifies correct distribution to both validators and their delegators based on delegation amounts,
-// backward compatibility fallbacks, and precision handling for fractional distributions.
-func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
+// TestValidatorRewardDistribution_WithDelegators tests the combined validator and delegator reward distribution.
+// It verifies correct distribution to both validators and their delegators based on delegation amounts
+// and precision handling for fractional distributions.
+func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 	tests := []struct {
 		name                     string
 		validators               []stakingtypes.Validator
-		delegations              map[string][]stakingtypes.Delegation
-		rewardAmount             math.Int
+		validatorToDelegationsMap map[string][]stakingtypes.Delegation  // key is validator operator address
+		totalValidatorRewardAmount math.Int
 		expectedTransferCount    int
 		expectedValidatorRewards int64
 		expectedDelegatorRewards int64
 		opReason                 tokenomicstypes.SettlementOpReason
-		validation               func(*testing.T, *tokenomicstypes.ClaimSettlementResult)
+		claimSettlementValidationFn func(*testing.T, *tokenomicstypes.ClaimSettlementResult)
 	}{
 		{
 			name: "success: mixed delegation amounts with equal self-bonded stakes",
@@ -195,7 +199,7 @@ func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
 				createValidator(sample.ValOperatorAddressBech32(), 600_000),
 				createValidator(sample.ValOperatorAddressBech32(), 400_000),
 			},
-			rewardAmount:             math.NewInt(100_000),
+			totalValidatorRewardAmount: math.NewInt(100_000),
 			expectedTransferCount:    5,      // 3 validators + 2 delegators
 			expectedValidatorRewards: 60_000, // 100k × 60% = 60,000 (self-bonded validator shares)
 			expectedDelegatorRewards: 40_000, // 100k × 40% = 40,000 (delegator shares)
@@ -208,10 +212,10 @@ func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
 				createValidator(sample.ValOperatorAddressBech32(), 600_000),
 				createValidator(sample.ValOperatorAddressBech32(), 300_000),
 			},
-			rewardAmount:          math.NewInt(90_000),
+			totalValidatorRewardAmount: math.NewInt(90_000),
 			expectedTransferCount: 5, // 3 validators + 2 delegators
 			opReason:              tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION,
-			validation: func(t *testing.T, result *tokenomicstypes.ClaimSettlementResult) {
+			claimSettlementValidationFn: func(t *testing.T, result *tokenomicstypes.ClaimSettlementResult) {
 				// With simplified logic, we can't distinguish validators from delegators by operation reason,
 				// but we can verify that self-bonded stakes get proportional rewards.
 				// Since all validators have 300k self-bonded out of 1.8M total, each should get 15,000.
@@ -228,16 +232,16 @@ func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
 			},
 		},
 		{
-			name: "success: backward compatibility when no delegations found (falls back to validator-only)",
+			name: "success: distribution when no delegations found (validators only)",
 			validators: []stakingtypes.Validator{
 				createValidator(sample.ValOperatorAddressBech32(), 500_000),
 				createValidator(sample.ValOperatorAddressBech32(), 300_000),
 				createValidator(sample.ValOperatorAddressBech32(), 200_000),
 			},
-			rewardAmount:          math.NewInt(10_000),
+			totalValidatorRewardAmount: math.NewInt(10_000),
 			expectedTransferCount: 3, // validators only
 			opReason:              tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
-			validation: func(t *testing.T, result *tokenomicstypes.ClaimSettlementResult) {
+			claimSettlementValidationFn: func(t *testing.T, result *tokenomicstypes.ClaimSettlementResult) {
 				transfers := result.GetModToAcctTransfers()
 				// All transfers should use the same operation reason as specified in the test config
 				for _, transfer := range transfers {
@@ -252,7 +256,7 @@ func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
 				createValidator(sample.ValOperatorAddressBech32(), 333_333),
 				createValidator(sample.ValOperatorAddressBech32(), 333_334),
 			},
-			rewardAmount:          math.NewInt(100),
+			totalValidatorRewardAmount: math.NewInt(100),
 			expectedTransferCount: 6, // 3 validators + 3 delegators
 			opReason:              tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 		},
@@ -305,7 +309,7 @@ func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
 							createDelegation(cosmostypes.AccAddress(valAddr).String(), validator.OperatorAddress, 300_000),
 						}
 					}
-				case "success: backward compatibility when no delegations found (falls back to validator-only)":
+				case "success: distribution when no delegations found (validators only)":
 					delegations[validator.OperatorAddress] = []stakingtypes.Delegation{} // Empty
 				case "success: precision handling with Largest Remainder Method for fractional distributions":
 					delegations[validator.OperatorAddress] = []stakingtypes.Delegation{
@@ -318,7 +322,7 @@ func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
 			setupValidatorMocks(mockStakingKeeper, tt.validators, delegations)
 
 			execConfig := getDefaultTestConfig()
-			execConfig.rewardAmount = tt.rewardAmount
+			execConfig.rewardAmount = tt.totalValidatorRewardAmount
 			execConfig.opReason = tt.opReason
 
 			result, err := executeDistribution(mockStakingKeeper, execConfig, true)
@@ -327,10 +331,10 @@ func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
 			transfers := result.GetModToAcctTransfers()
 			require.Len(t, transfers, tt.expectedTransferCount)
 
-			assertTotalDistribution(t, result, tt.rewardAmount)
+			assertTotalDistribution(t, result, tt.totalValidatorRewardAmount)
 
-			if tt.validation != nil {
-				tt.validation(t, result)
+			if tt.claimSettlementValidationFn != nil {
+				tt.claimSettlementValidationFn(t, result)
 			} else if tt.expectedValidatorRewards > 0 || tt.expectedDelegatorRewards > 0 {
 				// Since we simplified the logic to treat all stakeholders equally, 
 				// we no longer distinguish between validator and delegator operation reasons.
@@ -348,14 +352,14 @@ func TestDistributeValidatorAndDelegatorRewards(t *testing.T) {
 	}
 }
 
-// TestDistributeValidatorAndDelegatorRewards_ErrorCases tests delegation-specific error scenarios.
-// Common error cases are covered by TestDistributeValidatorRewards_ErrorCases since both functions
+// TestValidatorRewardDistribution_WithDelegators_ErrorCases tests delegation-specific error scenarios.
+// Common error cases are covered by TestValidatorRewardDistribution_ErrorCases since both functions
 // share the same validation logic. This focuses on delegation-specific failures like
-// GetValidatorDelegations errors and graceful fallback to validator-only distribution.
-func TestDistributeValidatorAndDelegatorRewards_ErrorCases(t *testing.T) {
+// GetValidatorDelegations errors and graceful fallback to no delegators distribution.
+func TestValidatorRewardDistribution_WithDelegators_ErrorCases(t *testing.T) {
 	// NOTE: Common error cases (zero_reward_amount, get_validators_error, no_bonded_validators)
-	// are already covered by TestDistributeValidatorRewards_ErrorCases since
-	// distributeValidatorAndDelegatorRewards includes all the same validation logic.
+	// are already covered by TestValidatorRewardDistribution_ErrorCases since
+	// the reward distribution function includes all the same validation logic.
 	// This test only covers delegation-specific error scenarios.
 
 	tests := []struct {
@@ -366,7 +370,7 @@ func TestDistributeValidatorAndDelegatorRewards_ErrorCases(t *testing.T) {
 		expectedErrorMsg string
 	}{
 		{
-			name: "no error: GetValidatorDelegations failure falls back to validator-only distribution",
+			name: "no error: GetValidatorDelegations failure falls back to no delegators distribution",
 			setupMocks: func(mock *mocks.MockStakingKeeper) {
 				validator := createValidator(sample.ValOperatorAddressBech32(), 1000)
 				mock.EXPECT().
@@ -379,7 +383,7 @@ func TestDistributeValidatorAndDelegatorRewards_ErrorCases(t *testing.T) {
 					Return(nil, sdkerrors.ErrInvalidRequest)
 			},
 			rewardAmount:  math.NewInt(1000),
-			expectedError: false, // Error is logged but not returned - falls back to validator-only distribution
+			expectedError: false, // Error is logged but not returned - falls back to no delegators distribution
 		},
 	}
 
@@ -444,12 +448,12 @@ func setupValidatorMocks(mockStakingKeeper *mocks.MockStakingKeeper, validators 
 	}
 }
 
-// executeDistribution executes either validator-only or validator+delegator reward distribution
+// executeDistribution executes validator reward distribution with or without delegators
 // based on the distributeDelegators flag. Returns the settlement result and any error.
 func executeDistribution(mockStakingKeeper *mocks.MockStakingKeeper, config rewardDistributionTestConfig, distributeDelegators bool) (*tokenomicstypes.ClaimSettlementResult, error) {
 	result := &tokenomicstypes.ClaimSettlementResult{}
 
-	// Both validator-only and validator+delegator distribution now use the same function
+	// Both cases (with and without delegators) use the same function
 	// The function automatically handles delegators when delegations are present
 	rewardCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, config.rewardAmount)
 	return result, distributeValidatorRewards(
