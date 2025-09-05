@@ -39,7 +39,7 @@ import (
 	solomachine "github.com/cosmos/ibc-go/v8/modules/light-clients/06-solomachine"
 	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
 
-	flags2 "github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/flags"
 )
 
 // registerIBCModules register IBC keepers and non dependency inject modules.
@@ -164,8 +164,8 @@ func (app *App) registerIBCModules() {
 		&app.Keepers.PacketForwardKeeper,
 		// TODO_IMPROVE: Ideally these values would be loaded from custom validator configs;
 		// E.g., see: https://github.com/pokt-network/poktroll/issues/1454#issuecomment-2975939482.
-		flags2.PacketForwardMiddlewareMaxRetries,
-		flags2.PacketForwardMiddlewareRetryTimeoutDuration,
+		flags.PacketForwardMiddlewareMaxRetries,
+		flags.PacketForwardMiddlewareRetryTimeoutDuration,
 	)
 
 	transferIBCModule := ibcfee.NewIBCMiddleware(transferWithPFM, app.Keepers.IBCFeeKeeper)

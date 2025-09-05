@@ -27,7 +27,7 @@ RUN case "${TARGETARCH}" in \
         *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz -o golang.tar.gz \
-&& tar -C /usr/local -xzf golang.tar.gz \
+    && tar -C /usr/local -xzf golang.tar.gz \
     && rm golang.tar.gz
 
 # Set Go paths
