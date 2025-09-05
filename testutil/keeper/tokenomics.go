@@ -851,6 +851,13 @@ func WithModuleAccountBalances(moduleAccountBalances map[string]int64) func(cfg 
 	}
 }
 
+// ValidatorDelegationConfig defines the staking configuration for a single validator,
+// including their self-bonded stake and the amounts delegated by external delegators.
+type ValidatorDelegationConfig struct {
+	SelfBondedStake    int64   // Amount the validator bonds to themselves
+	ExternalDelegators []int64 // Array of delegation amounts from external delegators
+}
+
 // WithMultipleValidators allows configuring multiple validators with custom stakes for testing
 // validator reward distribution. Each validator is created with the specified token amount.
 func WithMultipleValidators(validatorStakes []int64) TokenomicsModuleKeepersOptFn {
@@ -912,76 +919,56 @@ func createSelfDelegation(validatorAddr string, selfBondedStake int64) stakingty
 	}
 }
 
-// createExternalDelegations creates external delegations for a validator
-func createExternalDelegations(validatorAddr string, delegatedAmount int64) (
-	delegations []stakingtypes.Delegation,
-	delegatorAddrs []cosmostypes.AccAddress,
-) {
-	if delegatedAmount <= 0 {
-		return nil, nil
-	}
 
-	// Create multiple external delegators per validator for variety in delegation testing
-	const defaultDelegatorsPerValidator = 2
-	numDelegators := defaultDelegatorsPerValidator
-	delegationPerDelegator := delegatedAmount / int64(numDelegators)
-
-	for j := 0; j < numDelegators; j++ {
-		// Create delegator address
-		delegatorAddr := sample.AccAddressBech32()
-		delegatorAccAddr := cosmostypes.MustAccAddressFromBech32(delegatorAddr)
-		delegatorAddrs = append(delegatorAddrs, delegatorAccAddr)
-
-		// Create delegation object
-		delegationAmount := delegationPerDelegator
-		if j == 0 && delegatedAmount%int64(numDelegators) != 0 {
-			// Give remainder to first delegator
-			delegationAmount += delegatedAmount % int64(numDelegators)
-		}
-
-		delegation := stakingtypes.Delegation{
-			DelegatorAddress: delegatorAddr,
-			ValidatorAddress: validatorAddr,
-			Shares:           cosmosmath.LegacyNewDec(delegationAmount), // 1:1 share to token ratio for simplicity
-		}
-		delegations = append(delegations, delegation)
-	}
-
-	return delegations, delegatorAddrs
-}
-
-// createValidatorWithDelegations creates a single validator and its delegations
-func createValidatorWithDelegations(selfBondedStake int64, delegatedAmount int64) (
+// createValidatorWithSpecificDelegations creates a validator with specific delegation configuration
+func createValidatorWithSpecificDelegations(config ValidatorDelegationConfig) (
 	validator stakingtypes.Validator,
 	delegations []stakingtypes.Delegation,
 	delegatorAddrs []cosmostypes.AccAddress,
 ) {
-	// Create validator with self-bonded stake
+	// Calculate total bonded tokens
 	validatorAddr := sample.ValOperatorAddressBech32()
-	selfBondedTokens := cosmosmath.NewInt(selfBondedStake)
-	totalBondedTokens := selfBondedTokens.Add(cosmosmath.NewInt(delegatedAmount))
+	selfBondedTokens := cosmosmath.NewInt(config.SelfBondedStake)
+	
+	totalExternalDelegated := int64(0)
+	for _, amount := range config.ExternalDelegators {
+		totalExternalDelegated += amount
+	}
+	totalBondedTokens := selfBondedTokens.Add(cosmosmath.NewInt(totalExternalDelegated))
 
 	// Create validator with total bonded tokens
-	// For bonded validators, GetBondedTokens() returns the Tokens field
-	// The validator's self-bonded portion will be calculated from delegation records
 	validator = stakingtypes.Validator{
 		OperatorAddress: validatorAddr,
-		Tokens:          totalBondedTokens,                                 // Total bonded tokens (self + delegated) for GetBondedTokens()
+		Tokens:          totalBondedTokens,                                 // Total bonded tokens (self + delegated)
 		DelegatorShares: cosmosmath.LegacyNewDecFromInt(totalBondedTokens), // Total shares
 		Status:          stakingtypes.Bonded,
 	}
 
 	// Create self-delegation for the validator
-	selfDelegation := createSelfDelegation(validatorAddr, selfBondedStake)
+	selfDelegation := createSelfDelegation(validatorAddr, config.SelfBondedStake)
 	delegations = append(delegations, selfDelegation)
 
-	// Create external delegations if any
-	externalDelegations, externalDelegatorAddrs := createExternalDelegations(validatorAddr, delegatedAmount)
-	delegations = append(delegations, externalDelegations...)
-	delegatorAddrs = append(delegatorAddrs, externalDelegatorAddrs...)
+	// Create external delegations based on the specified amounts
+	for _, delegationAmount := range config.ExternalDelegators {
+		if delegationAmount > 0 {
+			// Create delegator address
+			delegatorAddr := sample.AccAddressBech32()
+			delegatorAccAddr := cosmostypes.MustAccAddressFromBech32(delegatorAddr)
+			delegatorAddrs = append(delegatorAddrs, delegatorAccAddr)
+
+			// Create delegation object
+			delegation := stakingtypes.Delegation{
+				DelegatorAddress: delegatorAddr,
+				ValidatorAddress: validatorAddr,
+				Shares:           cosmosmath.LegacyNewDec(delegationAmount), // 1:1 share to token ratio for simplicity
+			}
+			delegations = append(delegations, delegation)
+		}
+	}
 
 	return validator, delegations, delegatorAddrs
 }
+
 
 // initValidatorAccount creates and funds a validator account
 func initValidatorAccount(ctx cosmostypes.Context, keepers *TokenomicsModuleKeepers, validator stakingtypes.Validator) {
@@ -1027,27 +1014,21 @@ func initDelegatorAccounts(ctx cosmostypes.Context, keepers *TokenomicsModuleKee
 	}
 }
 
-// WithValidatorsAndDelegations creates multiple validators with equal self-bonded stakes and realistic delegations
-// for comprehensive testing of validator and delegator reward distribution.
-//
-// Parameters:
-//   - selfBondedStake: The amount each validator bonds to themselves
-//   - delegatedAmounts: Array where each element represents the total delegation amount for the corresponding validator
-//     The length of this array determines the number of validators created.
-func WithValidatorsAndDelegations(selfBondedStake int64, delegatedAmounts []int64) TokenomicsModuleKeepersOptFn {
+// WithValidatorDelegationConfigs creates validators with the specified delegation configurations.
+// This provides granular control over each validator's self-bonded stake and external delegators.
+func WithValidatorDelegationConfigs(configs []ValidatorDelegationConfig) TokenomicsModuleKeepersOptFn {
 	return func(cfg *tokenomicsModuleKeepersConfig) {
-		numValidators := len(delegatedAmounts)
-		if numValidators == 0 {
-			panic("Must have at least one validator")
+		if len(configs) == 0 {
+			panic("Must have at least one validator configuration")
 		}
 
-		validators := make([]stakingtypes.Validator, numValidators)
-		allDelegations := make(map[string][]stakingtypes.Delegation) // valAddr -> delegations
-		var allDelegatorAddrs []cosmostypes.AccAddress               // Track all delegator addresses
+		validators := make([]stakingtypes.Validator, len(configs))
+		allDelegations := make(map[string][]stakingtypes.Delegation)
+		var allDelegatorAddrs []cosmostypes.AccAddress
 
-		// Create each validator with its delegations
-		for i, delegatedAmount := range delegatedAmounts {
-			validator, delegations, delegatorAddrs := createValidatorWithDelegations(selfBondedStake, delegatedAmount)
+		// Create each validator with its specific delegation configuration
+		for i, config := range configs {
+			validator, delegations, delegatorAddrs := createValidatorWithSpecificDelegations(config)
 			validators[i] = validator
 			allDelegations[validator.OperatorAddress] = delegations
 			allDelegatorAddrs = append(allDelegatorAddrs, delegatorAddrs...)
@@ -1074,3 +1055,4 @@ func WithValidatorsAndDelegations(selfBondedStake int64, delegatedAmounts []int6
 		cfg.initKeepersFns = append(cfg.initKeepersFns, initValidatorAndDelegatorAccounts)
 	}
 }
+

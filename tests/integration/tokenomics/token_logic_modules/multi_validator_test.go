@@ -262,8 +262,28 @@ func (s *tokenLogicModuleTestSuite) setupValidatorTest(t *testing.T, validatorSt
 
 	// Add validator configuration based on test type
 	if delegatedAmounts != nil {
-		// For delegation tests, use equal self-bonded stakes with varied delegations
-		setupOpts = append(setupOpts, testkeeper.WithValidatorsAndDelegations(validatorStakes[0], delegatedAmounts))
+		// For delegation tests, create validator configs with specific delegation amounts
+		// Note: These tests assume equal self-bonded stakes (validatorStakes[0]) for all validators
+		selfBondedStake := validatorStakes[0]
+		configs := make([]testkeeper.ValidatorDelegationConfig, len(delegatedAmounts))
+		for i, delegatedAmount := range delegatedAmounts {
+			// Split delegated amount equally between 2 delegators (matches old behavior)
+			var externalDelegators []int64
+			if delegatedAmount > 0 {
+				// Split into 2 equal delegators
+				delegatorAmount := delegatedAmount / 2
+				remainder := delegatedAmount % 2
+				externalDelegators = []int64{delegatorAmount + remainder, delegatorAmount}
+			} else {
+				externalDelegators = []int64{} // No external delegators
+			}
+			
+			configs[i] = testkeeper.ValidatorDelegationConfig{
+				SelfBondedStake:    selfBondedStake,
+				ExternalDelegators: externalDelegators,
+			}
+		}
+		setupOpts = append(setupOpts, testkeeper.WithValidatorDelegationConfigs(configs))
 	} else {
 		// For validators with no delegators, use the provided stakes
 		setupOpts = append(setupOpts, testkeeper.WithMultipleValidators(validatorStakes))
