@@ -18,8 +18,8 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// testExecutionConfig holds common configuration for reward distribution test execution.
-type testExecutionConfig struct {
+// rewardDistributionTestConfig holds common configuration for reward distribution test execution.
+type rewardDistributionTestConfig struct {
 	ctx          context.Context
 	logger       log.Logger
 	rewardAmount math.Int
@@ -67,6 +67,14 @@ func TestDistributeValidatorRewards(t *testing.T) {
 			mockStakingKeeper.EXPECT().
 				GetBondedValidatorsByPower(gomock.Any()).
 				Return(validators, nil)
+
+			// Mock GetValidatorDelegations for each validator to return empty delegations (validator-only test)
+			for _, validator := range validators {
+				valAddr, _ := cosmostypes.ValAddressFromBech32(validator.OperatorAddress)
+				mockStakingKeeper.EXPECT().
+					GetValidatorDelegations(gomock.Any(), valAddr).
+					Return([]stakingtypes.Delegation{}, nil)
+			}
 
 			// Execute and validate
 			config := getDefaultTestConfig()
@@ -445,20 +453,11 @@ func setupValidatorMocks(mockStakingKeeper *mocks.MockStakingKeeper, validators 
 
 // executeDistribution executes either validator-only or validator+delegator reward distribution
 // based on the distributeDelegators flag. Returns the settlement result and any error.
-func executeDistribution(mockStakingKeeper *mocks.MockStakingKeeper, config testExecutionConfig, distributeDelegators bool) (*tokenomicstypes.ClaimSettlementResult, error) {
+func executeDistribution(mockStakingKeeper *mocks.MockStakingKeeper, config rewardDistributionTestConfig, distributeDelegators bool) (*tokenomicstypes.ClaimSettlementResult, error) {
 	result := &tokenomicstypes.ClaimSettlementResult{}
 
-	if distributeDelegators {
-		return result, distributeValidatorAndDelegatorRewards(
-			config.ctx,
-			config.logger,
-			result,
-			mockStakingKeeper,
-			config.rewardAmount,
-			config.opReason,
-		)
-	}
-
+	// Both validator-only and validator+delegator distribution now use the same function
+	// The function automatically handles delegators when delegations are present
 	return result, distributeValidatorRewards(
 		config.ctx,
 		config.logger,
@@ -484,8 +483,8 @@ func assertTotalDistribution(t *testing.T, result *tokenomicstypes.ClaimSettleme
 }
 
 // getDefaultTestConfig returns a standard test configuration for reward distribution tests.
-func getDefaultTestConfig() testExecutionConfig {
-	return testExecutionConfig{
+func getDefaultTestConfig() rewardDistributionTestConfig {
+	return rewardDistributionTestConfig{
 		ctx:          context.Background(),
 		logger:       log.NewNopLogger(),
 		rewardAmount: math.NewInt(100_000),

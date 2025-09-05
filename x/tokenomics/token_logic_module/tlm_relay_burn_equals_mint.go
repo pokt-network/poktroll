@@ -205,8 +205,8 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 	if !proposerAmount.IsZero() {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 
-		// Distribute to all validators proportionally based on stake weight
-		if err := distributeValidatorAndDelegatorRewards(
+		// Distribute to all validators and their delegators proportionally based on stake weight
+		if err := distributeValidatorRewards(
 			tlmbem.ctx,
 			tlmbem.logger,
 			tlmbem.tlmCtx.Result,
