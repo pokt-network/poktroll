@@ -1,4 +1,12 @@
 #!/bin/bash
+# IBC Channel Discovery Script
+# Provides utility functions for discovering and managing IBC channels
+# between different blockchain networks in a localnet environment.
+# Features:
+# - Dynamic channel discovery between chains
+# - Connection validation and counterparty resolution
+# - Support for Pocket, Agoric, Axelar, and Osmosis networks
+
 set -eo pipefail
 
 # Check if jq is installed, if not, provide installation instructions

@@ -146,7 +146,7 @@ func (app *App) registerIBCModules() {
 	)
 	app.Keepers.GovKeeper.SetLegacyRouter(govRouter)
 
-	// Create IBC packet forward keeper
+	// Create IBC packet forward keeper for multi-hop transfers
 	app.Keepers.PacketForwardKeeper = *packetforwardkeeper.NewKeeper(
 		app.AppCodec(),
 		app.GetKey(packetforwardtypes.StoreKey),
@@ -162,12 +162,12 @@ func (app *App) registerIBCModules() {
 	transferWithPFM := packetforward.NewIBCMiddleware(
 		rawTransferModule,
 		&app.Keepers.PacketForwardKeeper,
-		// TODO_IMPROVE: Ideally these values would be loaded from custom validator configs;
-		// E.g., see: https://github.com/pokt-network/poktroll/issues/1454#issuecomment-2975939482.
+		// TODO_IMPROVE(@bryanchriswhite): Load PFM retry config from validator-specific configs
+		// instead of using global CLI flags.
+		// See: https://github.com/pokt-network/poktroll/issues/1454#issuecomment-2975939482
 		flags.PacketForwardMiddlewareMaxRetries,
 		flags.PacketForwardMiddlewareRetryTimeoutDuration,
 	)
-
 	transferIBCModule := ibcfee.NewIBCMiddleware(transferWithPFM, app.Keepers.IBCFeeKeeper)
 
 	// integration point for custom authentication modules

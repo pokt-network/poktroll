@@ -195,9 +195,9 @@ func appExport(
 }
 
 // addPacketForwardMiddlewareFlags adds flags for packet forward IBC middleware configuration.
-//
-// TODO_IMPROVE: Ideally these values would be loaded from custom validator configs;
-// E.g., see: https://github.com/pokt-network/poktroll/issues/1454#issuecomment-2975939482.
+// TODO_IMPROVE(@olshansky, #1454): Move PFM configuration to validator-specific configs
+// instead of using global CLI flags.
+// See: https://github.com/pokt-network/poktroll/issues/1454#issuecomment-2975939482
 func addPacketForwardMiddlewareFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint8Var(
 		&flags2.PacketForwardMiddlewareMaxRetries,

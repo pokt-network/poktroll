@@ -78,16 +78,15 @@ const (
 	FlagQueryCachingUsage   = "(Optional) Enable or disable onchain query caching"
 	DefaultFlagQueryCaching = true
 
-	// DefaultNodeRPCURL is the cosmos-sdk default --node flag value:
-	// - Hard-coded in cosmos-sdk CLI and cannot be changed since registered by cosmos-sdk
-	// - Used only for comparison, not flag registration
+	// DefaultNodeRPCURL is the cosmos-sdk default --node flag value.
+	// Hard-coded in cosmos-sdk CLI and cannot be changed since registered by cosmos-sdk.
+	// Used only for comparison, not flag registration.
 	// See: https://github.com/cosmos/cosmos-sdk/blob/v0.53.2/client/flags/flags.go#L108
 	DefaultNodeRPCURL = "tcp://localhost:26657"
 )
 
-// DEV_NOTE: Defining runtime variables for PFM flag values because their usage
-// scope (app/ibc.go) does not contain a reference to the cobra command, which
-// would otherwise be necessary
+// PacketForwardMiddleware runtime variables are defined here because the usage
+// scope (app/ibc.go) doesn't have access to the cobra command context.
 var (
 	PacketForwardMiddlewareMaxRetries           uint8
 	PacketForwardMiddlewareRetryTimeoutDuration time.Duration
