@@ -122,7 +122,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 				// Expected individual stakeholder rewards (17,600 total):
 				// - 3 validator self-stakes (250k each): 17,600 × (250k/1.25M) = 3,520 each = 10,560 total
 				// - 2 delegator stakes (250k each): 17,600 × (250k/1.25M) = 3,520 each = 7,040 total
-				// Total rewards: 5 recipients getting [3520, 3520, 3520, 3520, 3520]
+				// Total rewards: 5 recipients getting [3_520, 3_520, 3_520, 3_520, 3_520]
 
 				// Since all rewards go to validatorRewards array (same operation reason), check total count
 				require.Len(t, validatorRewards, 5, "Should have 5 total stakeholders (3 validators + 2 delegators)")
@@ -150,7 +150,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			expectedTotalRewards: 110_000, // 1000 claims × 1100 × 10% = 110,000
 			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
-				// Validator stakes: [333,333, 333,333, 333,334] = 1M total
+				// Validator stakes: [333_333, 333_333, 333_334] = 1M total
 				// These create fractional shares that can't divide evenly:
 				// - Val 1: 333,333/1M = 33.3333% → 36,666.63 uPOKT
 				// - Val 2: 333,333/1M = 33.3333% → 36,666.63 uPOKT
