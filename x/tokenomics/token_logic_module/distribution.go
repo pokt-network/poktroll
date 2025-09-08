@@ -585,7 +585,6 @@ func queueRewardTransfers(
 		recipientType := "validator"
 
 		// This is a delegator reward - use delegator operation reason
-
 		if !isValidator {
 			recipientType = "delegator"
 
