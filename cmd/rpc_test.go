@@ -62,21 +62,6 @@ func testRunE(cmd *cobra.Command, _ []string) error {
 }
 
 func TestNetworkRelatedFlags(t *testing.T) {
-	testCmd := &cobra.Command{
-		Use:     "test",
-		Short:   "Test",
-		Long:    `Test`,
-		PreRunE: testPreRunE,
-		RunE:    testRunE,
-	}
-
-	// Register relevant flags for testing, defaulting to empty values.
-	testCmd.Flags().String(flags.FlagNetwork, "", "network flag")
-	testCmd.Flags().String(cosmosflags.FlagGRPC, "", "grpc addr flag")
-	testCmd.Flags().String(cosmosflags.FlagGRPCInsecure, "", "grpc insecure flag")
-	testCmd.Flags().String(flags.FlagFaucetBaseURL, "", "faucet base url flag")
-	cosmosflags.AddTxFlagsToCmd(testCmd)
-
 	testCases := []struct {
 		networkFlagValue               string
 		expectedChainIDFlagValue       string
@@ -122,15 +107,28 @@ func TestNetworkRelatedFlags(t *testing.T) {
 	for _, test := range testCases {
 		desc := fmt.Sprintf("with %q network flag value", test.networkFlagValue)
 		t.Run(desc, func(t *testing.T) {
-			// Set flags and execute as if invoked from the command line.
-			err := testCmd.Flag(flags.FlagNetwork).Value.Set("test")
-			require.NoError(t, err)
+			// Create a fresh command for each test to avoid flag state leakage
+			testCmd := &cobra.Command{
+				Use:     "test",
+				Short:   "Test",
+				Long:    `Test`,
+				PreRunE: testPreRunE,
+				RunE:    testRunE,
+			}
 
+			// Register relevant flags for testing, defaulting to empty values.
+			testCmd.Flags().String(flags.FlagNetwork, "", "network flag")
+			testCmd.Flags().String(cosmosflags.FlagGRPC, "", "grpc addr flag")
+			testCmd.Flags().String(cosmosflags.FlagGRPCInsecure, "", "grpc insecure flag")
+			testCmd.Flags().String(flags.FlagFaucetBaseURL, "", "faucet base url flag")
+			cosmosflags.AddTxFlagsToCmd(testCmd)
+
+			// Set flags and execute as if invoked from the command line.
 			testCmd.SetArgs([]string{
 				fmt.Sprintf("--%s=%s", flags.FlagNetwork, test.networkFlagValue),
 			})
 
-			err = testCmd.ExecuteContext(t.Context())
+			err := testCmd.ExecuteContext(t.Context())
 			require.NoError(t, err)
 
 			t.Logf("test log buffer:\n%s", testLogBuffer.String())

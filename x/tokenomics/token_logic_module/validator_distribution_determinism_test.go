@@ -341,5 +341,3 @@ func TestValidatorRewardDistribution_MultipleRunsDeterminism(t *testing.T) {
 		ctrl.Finish()
 	}
 }
-
-// helper functions are already defined in validator_distribution_test.go
