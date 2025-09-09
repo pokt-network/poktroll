@@ -72,11 +72,15 @@ This is hard to track/avoid so here is an opinionated solution:
 3. Ask it the following:
 
    ```bash
+   You are a senior CosmosSDK protocol engineer in charge of the next protocol upgrade.
+
    Do a git diff v0.1.28.
 
    Identify any potential bugs, edge cases or issues.
 
-   In particular, focus on any onchain behaviour that can result in non-deterministic outcomes. For example, iterating a map.
+   In particular, focus on any onchain behaviour that can result in non-deterministic outcomes. For example, iterating a map without sorting the keys first.
+
+   This is critical to avoid chain halts. Take your time and provide a comprehensive analysis.
    ```
 
 ## 1. Prepare a New Upgrade Handler

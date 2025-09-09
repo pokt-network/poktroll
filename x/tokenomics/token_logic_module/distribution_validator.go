@@ -165,7 +165,7 @@ func distributeRewardsToValidatorsAndDelegators(
 //  2. Collects validator and delegator stake amounts
 //  3. Returns both a stake map and deterministically sorted addresses (by stake descending)
 //
-// DEV_NOTE: The sorted addresses MUST be used when iterating through the map to ensure determinism.
+// IMPORTANT: The returned slice MUST be used to iterate over the map to ensure determinism.
 func discoverStakeholderStakes(
 	ctx context.Context,
 	logger cosmoslog.Logger,
@@ -231,8 +231,8 @@ func discoverStakeholderStakes(
 	}
 
 	// Sort addresses by stake (descending) to ensure deterministic reward distribution
-	sortedAddresses := sortAddressesByStakeDesc(stakeAmounts)
-	return stakeAmounts, sortedAddresses, nil
+	sortedAddressesByStake := sortAddressesByStakeDesc(stakeAmounts)
+	return stakeAmounts, sortedAddressesByStake, nil
 }
 
 // collectDelegationStakes extracts and records stake amounts from a validator's delegations.
@@ -293,32 +293,20 @@ func calculateBaseProportionalRewards(
 	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
 ) map[string]math.Int {
-	// A mapping of address -> reward amount for all stakeholders
-	rewardAmounts := make(map[string]math.Int)
+	// Use consolidated calculation to get reward data for all addresses
+	rewardData := calculateAddressRewards(stakeAmounts, totalBondedTokens, totalRewardAmount)
 
-	for addrStr, stake := range stakeAmounts {
-		// Calculate exact proportional reward using big.Rat for precision.
-		// Formula: reward = (stake × totalRewardAmount) / totalBondedTokens
-		exactReward := new(big.Rat).SetFrac(
-			new(big.Int).Mul(stake.BigInt(), totalRewardAmount.BigInt()),
-			totalBondedTokens.BigInt(),
-		)
-
-		// Extract integer portion as base reward
-		baseReward := new(big.Int).Quo(exactReward.Num(), exactReward.Denom())
-		baseRewardInt := math.NewIntFromBigInt(baseReward)
-		rewardAmounts[addrStr] = baseRewardInt
-
-		// Track fractional remainder for LRM distribution
-		baseRat := new(big.Rat).SetInt(baseReward)
-		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
+	// Build reward amounts map and log details
+	rewardAmounts := make(map[string]math.Int, len(rewardData))
+	for _, data := range rewardData {
+		rewardAmounts[data.address] = data.baseReward
 
 		logger.Debug(fmt.Sprintf(
 			"  stakeholder %s: stake=%s, base_reward=%s, fraction=%s",
-			addrStr,
-			stake.String(),
-			baseRewardInt.String(),
-			fractionalPart.FloatString(6),
+			data.address,
+			data.stake.String(),
+			data.baseReward.String(),
+			data.fraction.FloatString(6),
 		))
 	}
 
@@ -368,8 +356,8 @@ func distributeRemainderTokens(
 	tokensToDistribute int64,
 ) {
 	// Sort addresses by fractional remainder (descending) for LRM distribution
-	addressesByFractionDesc := sortAddressesByFractionDesc(stakeAmounts, totalBondedTokens, totalRewardAmount)
-	numAddresses := int64(len(addressesByFractionDesc))
+	sortedAddressesByFractionDesc := sortAddressesByFractionDesc(stakeAmounts, totalBondedTokens, totalRewardAmount)
+	numAddresses := int64(len(sortedAddressesByFractionDesc))
 
 	// Sanity check: remainder should only exist if addresses have fractional parts
 	if numAddresses == 0 {
@@ -393,7 +381,7 @@ func distributeRemainderTokens(
 	baseTokensPerAddr := tokensToDistribute / numAddresses
 	extraTokensNeeded := tokensToDistribute % numAddresses
 
-	for i, addrStr := range addressesByFractionDesc {
+	for i, addrStr := range sortedAddressesByFractionDesc {
 		tokensForThisAddr := baseTokensPerAddr
 		// Distribute extra tokens to addresses with largest fractions
 		if int64(i) < extraTokensNeeded {

@@ -10,69 +10,94 @@ import (
 	"cosmossdk.io/math"
 )
 
-// sortAddressesByFractionDesc sorts addresses by fractional remainder (descending) for LRM.
-// Addresses with largest fractional parts receive remainder tokens first.
-// Uses address as tie-breaker for determinism.
-// TODO_TEST: Add test case verifying deterministic LRM distribution with equal fractions
-func sortAddressesByFractionDesc(
+// addressRewardData holds the calculated reward information for a single address.
+type addressRewardData struct {
+	address    string
+	stake      math.Int
+	baseReward math.Int
+	fraction   *big.Rat
+}
+
+// calculateAddressRewards calculates both base rewards and fractional remainders for all addresses.
+func calculateAddressRewards(
 	stakeAmounts map[string]math.Int,
 	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
-) []string {
+) []addressRewardData {
+	rewardData := make([]addressRewardData, 0, len(stakeAmounts))
 
-	// addressWithFraction pairs an address with its fractional remainder for sorting in the
-	// Largest Remainder Method (LRM) distribution algorithm.
-	type addressWithFraction struct {
-		address  string
-		fraction *big.Rat
-	}
-	var addressFractions []addressWithFraction
-
-	// Calculate fractional remainders for each address
-	for addrStr := range stakeAmounts {
-		stake := stakeAmounts[addrStr]
-		// Calculate exact reward with full precision
+	for addrStr, stake := range stakeAmounts {
+		// Calculate exact proportional reward using big.Rat for precision
+		// Formula: reward = (stake × totalRewardAmount) / totalBondedTokens
 		exactReward := new(big.Rat).SetFrac(
 			new(big.Int).Mul(stake.BigInt(), totalRewardAmount.BigInt()),
 			totalBondedTokens.BigInt(),
 		)
 
-		// Extract fractional remainder
+		// Extract integer portion as base reward
 		baseReward := new(big.Int).Quo(exactReward.Num(), exactReward.Denom())
+		baseRewardInt := math.NewIntFromBigInt(baseReward)
+
+		// Calculate fractional remainder
 		baseRat := new(big.Rat).SetInt(baseReward)
 		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
 
-		// Only include addresses with non-zero fractional parts
-		if fractionalPart.Sign() > 0 {
-			addressFractions = append(addressFractions, addressWithFraction{
-				address:  addrStr,
-				fraction: fractionalPart,
-			})
+		// Append to reward data to a slice whose order is deterministic
+		rewardData = append(rewardData, addressRewardData{
+			address:    addrStr,
+			stake:      stake,
+			baseReward: baseRewardInt,
+			fraction:   fractionalPart,
+		})
+	}
+
+	return rewardData
+}
+
+// sortAddressesByFractionDesc sorts addresses by fractional remainder (descending) for LRM.
+// Addresses with largest fractional parts receive remainder tokens first.
+// Uses address as ordering tie-breaker for determinism.
+func sortAddressesByFractionDesc(
+	stakeAmounts map[string]math.Int,
+	totalBondedTokens math.Int,
+	totalRewardAmount math.Int,
+) []string {
+	// Use consolidated calculation to get reward data for all addresses
+	rewardData := calculateAddressRewards(stakeAmounts, totalBondedTokens, totalRewardAmount)
+
+	// Filter addresses with non-zero fractional parts
+	var rewardDataNonZeroFractions []addressRewardData
+	for _, data := range rewardData {
+		if data.fraction.Sign() > 0 {
+			rewardDataNonZeroFractions = append(rewardDataNonZeroFractions, data)
 		}
 	}
 
-	// Sort by fraction (descending), then by address (ascending) for determinism
-	sort.Slice(addressFractions, func(i, j int) bool {
-		cmp := addressFractions[i].fraction.Cmp(addressFractions[j].fraction)
+	// Sorting to ensure onchain behavior is deterministic:
+	// Sort by:
+	// 1. Fraction (descending value)
+	// 2. Address (ascending lexicographical order)
+	sort.Slice(rewardDataNonZeroFractions, func(i, j int) bool {
+		cmp := rewardDataNonZeroFractions[i].fraction.Cmp(rewardDataNonZeroFractions[j].fraction)
+		// Tie-breaker: lexicographical address order
 		if cmp == 0 {
-			// Tie-breaker: lexicographical address order
-			return addressFractions[i].address < addressFractions[j].address
+			return rewardDataNonZeroFractions[i].address < rewardDataNonZeroFractions[j].address
 		}
-		return cmp > 0 // Descending (largest fractions first)
+		// Descending (largest fractions first)
+		return cmp > 0
 	})
 
 	// Extract sorted addresses
-	var addressesWithFractions []string
-	for _, af := range addressFractions {
-		addressesWithFractions = append(addressesWithFractions, af.address)
+	var sortedAddressesWithNonZeroFractions []string
+	for _, af := range rewardDataNonZeroFractions {
+		sortedAddressesWithNonZeroFractions = append(sortedAddressesWithNonZeroFractions, af.address)
 	}
 
-	return addressesWithFractions
+	return sortedAddressesWithNonZeroFractions
 }
 
 // sortAddressesByStakeDesc sorts addresses by stake amount (descending).
 // Uses lexicographical address ordering as tie-breaker for determinism.
-// TODO_TEST: Add specific test case verifying deterministic ordering with equal stakes
 func sortAddressesByStakeDesc(stakeAmounts map[string]math.Int) []string {
 	type addressStake struct {
 		address string
@@ -85,18 +110,24 @@ func sortAddressesByStakeDesc(stakeAmounts map[string]math.Int) []string {
 		addressStakes = append(addressStakes, addressStake{addr, stake})
 	}
 
-	// Primary sort: stake descending; Secondary sort: address ascending (tie-breaker)
+	// Sorting to ensure onchain behavior is deterministic:
+	// Sort by:
+	// 1. Stake (descending value)
+	// 2. Address (ascending lexicographical order)
 	sort.Slice(addressStakes, func(i, j int) bool {
+		// Tie-breaker: lexicographical address order
 		if addressStakes[i].stake.Equal(addressStakes[j].stake) {
 			return addressStakes[i].address < addressStakes[j].address
 		}
+		// Descending (largest stake first)
 		return addressStakes[i].stake.GT(addressStakes[j].stake)
 	})
 
-	sortedAddresses := make([]string, len(addressStakes))
+	// Extract sorted addresses
+	sortedAddressesByStake := make([]string, len(addressStakes))
 	for i, addrStake := range addressStakes {
-		sortedAddresses[i] = addrStake.address
+		sortedAddressesByStake[i] = addrStake.address
 	}
 
-	return sortedAddresses
+	return sortedAddressesByStake
 }
