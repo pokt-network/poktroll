@@ -46,27 +46,33 @@ func GetShareAmountMap(
 	return shareAmountMap
 }
 
-// addressWithFraction stores addresses with their fractional reward parts.
-// Used for sorting addresses by fraction.
-type addressWithFraction struct {
-	address  string
-	fraction *big.Rat
-}
-
-// sortAddressesByFracDesc sorts addresses by their fractional remainders (descending).
-func sortAddressesByFracDesc(addressesToSort []addressWithFraction) []string {
-	// Sort addresses by their fractional remainders (descending)
-	sort.Slice(addressesToSort, func(i, j int) bool {
-		return addressesToSort[i].fraction.Cmp(addressesToSort[j].fraction) > 0
-	})
-
-	// Extract just the sorted addresses
-	sortedAddressesByFraction := make([]string, len(addressesToSort))
-	for i, item := range addressesToSort {
-		sortedAddressesByFraction[i] = item.address
+// sortAddressesByStakeDesc sorts addresses by their stake amounts (descending).
+// For equal stakes, it sorts alphabetically by address to ensure determinism.
+func sortAddressesByStakeDesc(stakeAmounts map[string]math.Int) []string {
+	type addressStake struct {
+		address string
+		stake   math.Int
 	}
 
-	return sortedAddressesByFraction
+	addressStakes := make([]addressStake, 0, len(stakeAmounts))
+	for addr, stake := range stakeAmounts {
+		addressStakes = append(addressStakes, addressStake{addr, stake})
+	}
+
+	// Sort by stake descending, then by address for determinism
+	sort.Slice(addressStakes, func(i, j int) bool {
+		if addressStakes[i].stake.Equal(addressStakes[j].stake) {
+			return addressStakes[i].address < addressStakes[j].address
+		}
+		return addressStakes[i].stake.GT(addressStakes[j].stake)
+	})
+
+	sortedAddresses := make([]string, len(addressStakes))
+	for i, addrStake := range addressStakes {
+		sortedAddresses[i] = addrStake.address
+	}
+
+	return sortedAddresses
 }
 
 // distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
@@ -260,7 +266,7 @@ func distributeRewardsToValidatorsAndDelegators(
 	))
 
 	// Step 1: Discover all stakeholders and their stakes
-	stakeholderStakeAmounts, err := discoverStakeholderStakes(ctx, logger, stakingKeeper, validators)
+	stakeholderStakeAmounts, sortedStakeAddresses, err := discoverStakeholderStakes(ctx, logger, stakingKeeper, validators)
 	if err != nil {
 		return err
 	}
@@ -270,22 +276,22 @@ func distributeRewardsToValidatorsAndDelegators(
 	}
 
 	// Step 2: Calculate proportional rewards using Largest Remainder Method
-	proportionalRewardAmounts := calculateProportionalRewards(logger, stakeholderStakeAmounts, totalBondedTokens, totalRewardAmount)
+	proportionalRewardAmounts := calculateProportionalRewards(logger, stakeholderStakeAmounts, totalBondedTokens, totalRewardAmount, sortedStakeAddresses)
 
-	// Step 3: Create and queue reward transfers
-	return queueRewardTransfers(logger, result, proportionalRewardAmounts, stakeholderStakeAmounts, totalBondedTokens, validators, settlementOpReason)
+	// Step 3: Create and queue reward transfers - use the sorted addresses from step 1
+	return queueRewardTransfers(logger, result, proportionalRewardAmounts, stakeholderStakeAmounts, totalBondedTokens, validators, settlementOpReason, sortedStakeAddresses)
 }
 
 // discoverStakeholderStakes does the following:
 //  1. Discovers all validator delegators
 //  2. Collects the validator and delegator stake amounts
-//  3. Returns a map of address -> stake amount for all stakeholders (validators + delegators)
+//  3. Returns a map of address -> stake amount and sorted addresses (by stake descending)
 func discoverStakeholderStakes(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	stakingKeeper tokenomicstypes.StakingKeeper,
 	validators []stakingtypes.Validator,
-) (map[string]math.Int, error) {
+) (map[string]math.Int, []string, error) {
 	// A mapping of address -> stake amount for all stakeholders (validators + delegators)
 	stakeAmounts := make(map[string]math.Int)
 
@@ -344,7 +350,9 @@ func discoverStakeholderStakes(
 		collectDelegationStakes(logger, validator, delegations, stakeAmounts)
 	}
 
-	return stakeAmounts, nil
+	// Sort addresses by stake amount (descending) for deterministic processing
+	sortedAddresses := sortAddressesByStakeDesc(stakeAmounts)
+	return stakeAmounts, sortedAddresses, nil
 }
 
 // collectDelegationStakes extracts and records stake amounts from a validator's delegations.
@@ -387,32 +395,31 @@ func calculateProportionalRewards(
 	stakeAmounts map[string]math.Int,
 	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
+	sortedStakeAddresses []string,
 ) map[string]math.Int {
-	// Step 1: Calculate base proportional rewards and collect addresses with fractional remainders
-	rewardAmounts, addressesByFraction := calculateBaseProportionalRewards(logger, stakeAmounts, totalBondedTokens, totalRewardAmount)
+	// Step 1: Calculate base proportional rewards
+	rewardAmounts := calculateBaseProportionalRewards(logger, stakeAmounts, totalBondedTokens, totalRewardAmount, sortedStakeAddresses)
 
 	// Step 2: Distribute any remainder using Largest Remainder Method
-	applyLargestRemainderMethod(logger, rewardAmounts, addressesByFraction, totalRewardAmount)
+	applyLargestRemainderMethod(logger, rewardAmounts, stakeAmounts, totalBondedTokens, totalRewardAmount, sortedStakeAddresses)
 
 	return rewardAmounts
 }
 
 // calculateBaseProportionalRewards calculates base integer rewards for each stakeholder.
-// It returns both the reward amounts and addresses sorted by their fractional remainders.
+// It returns the reward amounts map with base rewards (fractional parts are handled by LRM).
 func calculateBaseProportionalRewards(
 	logger cosmoslog.Logger,
 	stakeAmounts map[string]math.Int,
 	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
-) (map[string]math.Int, []string) {
+	sortedStakeAddresses []string,
+) map[string]math.Int {
 	// A mapping of address -> reward amount for all stakeholders
 	rewardAmounts := make(map[string]math.Int)
 
-	// Addresses receiving rewards.
-	// Needed to sort by their fractional remainders
-	var addressesToSort []addressWithFraction
-
-	for addrStr, stake := range stakeAmounts {
+	for _, addrStr := range sortedStakeAddresses {
+		stake := stakeAmounts[addrStr]
 		// Calculate exact proportional reward using big.Rat for maximum precision
 		// Formula: stakeholderReward = totalRewardAmount × (stake / totalBondedTokens)
 		// Rewritten as: stakeholderReward = (stake × totalRewardAmount) / totalBondedTokens
@@ -427,14 +434,9 @@ func calculateBaseProportionalRewards(
 		baseRewardInt := math.NewIntFromBigInt(baseReward)
 		rewardAmounts[addrStr] = baseRewardInt
 
-		// Calculate fractional remainder
+		// Calculate fractional remainder for debugging
 		baseRat := new(big.Rat).SetInt(baseReward)
 		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
-
-		// Only collect addresses with non-zero fractions for sorting
-		if fractionalPart.Sign() > 0 {
-			addressesToSort = append(addressesToSort, addressWithFraction{addrStr, fractionalPart})
-		}
 
 		logger.Debug(fmt.Sprintf(
 			"  stakeholder %s: stake=%s, base_reward=%s, fraction=%s",
@@ -445,22 +447,20 @@ func calculateBaseProportionalRewards(
 		))
 	}
 
-	// Sort addresses by their fractional remainders in descending order
-	sortedAddressesByFraction := sortAddressesByFracDesc(addressesToSort)
-
-	// Return the reward amounts and sorted addresses by their fractional remainders
-	return rewardAmounts, sortedAddressesByFraction
+	return rewardAmounts
 }
 
 // applyLargestRemainderMethod distributes remainder tokens.
-// It allocates remainder tokens to addresses with the largest fractional parts.
-// This ensures all tokens are distributed while maintaining proportional fairness.
+// It allocates remainder tokens to addresses with fractional parts, using stake-based ordering.
+// This ensures all tokens are distributed while maintaining deterministic distribution.
 // DEV_NOTE: This function transforms the rewardAmounts map in place.
 func applyLargestRemainderMethod(
 	logger cosmoslog.Logger,
 	rewardAmounts map[string]math.Int,
-	addressesByFraction []string,
+	stakeAmounts map[string]math.Int,
+	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
+	sortedAddresses []string,
 ) {
 	// Compute the total distributed reward amount
 	totalDistributedRewardAmount := math.ZeroInt()
@@ -479,49 +479,107 @@ func applyLargestRemainderMethod(
 	))
 
 	if remainder > 0 {
-		distributeRemainderTokens(logger, rewardAmounts, addressesByFraction, remainder)
+		distributeRemainderTokens(logger, rewardAmounts, stakeAmounts, totalBondedTokens, totalRewardAmount, remainder)
 	}
 }
 
-// distributeRemainderTokens allocates remainder tokens to addresses with the largest fractional remainders.
+// addressWithFraction pairs an address with its fractional remainder for sorting in LRM.
+type addressWithFraction struct {
+	address  string
+	fraction *big.Rat
+}
+
+// sortAddressesByFractionDesc sorts addresses by their fractional remainders in descending order.
+// This implements the proper Largest Remainder Method (LRM) ordering where addresses with
+// the largest fractional parts receive remainder tokens first.
+// Uses lexicographical address ordering as a tie-breaker for determinism.
+func sortAddressesByFractionDesc(
+	stakeAmounts map[string]math.Int,
+	totalBondedTokens math.Int,
+	totalRewardAmount math.Int,
+) []string {
+	var addressFractions []addressWithFraction
+
+	// Calculate fractional remainders for each address
+	for addrStr := range stakeAmounts {
+		stake := stakeAmounts[addrStr]
+		// Calculate exact proportional reward
+		exactReward := new(big.Rat).SetFrac(
+			new(big.Int).Mul(stake.BigInt(), totalRewardAmount.BigInt()),
+			totalBondedTokens.BigInt(),
+		)
+
+		// Calculate fractional remainder
+		baseReward := new(big.Int).Quo(exactReward.Num(), exactReward.Denom())
+		baseRat := new(big.Rat).SetInt(baseReward)
+		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
+
+		// Only include addresses with non-zero fractional parts
+		if fractionalPart.Sign() > 0 {
+			addressFractions = append(addressFractions, addressWithFraction{
+				address:  addrStr,
+				fraction: fractionalPart,
+			})
+		}
+	}
+
+	// Sort by fractional size (descending) for proper LRM, with address as tie-breaker for determinism
+	sort.Slice(addressFractions, func(i, j int) bool {
+		cmp := addressFractions[i].fraction.Cmp(addressFractions[j].fraction)
+		if cmp == 0 {
+			// Tie-breaker: use lexicographical order of addresses for determinism
+			return addressFractions[i].address < addressFractions[j].address
+		}
+		return cmp > 0 // Descending order (largest fractions first)
+	})
+
+	// Extract addresses with largest fractions first
+	var addressesWithFractions []string
+	for _, af := range addressFractions {
+		addressesWithFractions = append(addressesWithFractions, af.address)
+	}
+
+	return addressesWithFractions
+}
+
+// distributeRemainderTokens allocates remainder tokens to addresses with fractional remainders.
+// Uses the Largest Remainder Method (LRM) ordering for proper distribution.
 func distributeRemainderTokens(
 	logger cosmoslog.Logger,
 	rewardAmounts map[string]math.Int,
-	addressesByFraction []string,
+	stakeAmounts map[string]math.Int,
+	totalBondedTokens math.Int,
+	totalRewardAmount math.Int,
 	tokensToDistribute int64,
 ) {
-	// Edge case: remainder exists but no fractional parts
-	if len(addressesByFraction) == 0 {
-		// Add to first address in map (deterministic iteration order not guaranteed, but rare edge case)
-		// TODO_TECHDEBT(@bryanchriswhite): Resolve this edge case deterministically.
-		for addrStr := range rewardAmounts {
-			logger.Warn(fmt.Sprintf(
-				"Remainder %d tokens but no fractional parts found. Adding to first recipient so tokens are not lost: %s.",
-				tokensToDistribute,
-				addrStr,
-			))
+	// Get addresses sorted by largest fractional remainders first (proper LRM)
+	addressesByFractionDesc := sortAddressesByFractionDesc(stakeAmounts, totalBondedTokens, totalRewardAmount)
 
-			remainder := math.NewInt(tokensToDistribute)
-			rewardAmounts[addrStr] = rewardAmounts[addrStr].Add(remainder)
-			break
-		}
+	// Sanity check: if there's a remainder, there should be addresses with fractional parts
+	if len(addressesByFractionDesc) == 0 {
+		logger.Error(fmt.Sprintf(
+			"SHOULD NEVER HAPPEN: remainder %d tokens to distribute but no addresses with fractional parts found. This indicates a bug in the reward calculation logic.",
+			tokensToDistribute,
+		))
 		return
 	}
 
-	// Addresses are already sorted by fractional remainder (descending) from calculateBaseProportionalRewards
-	logger.Debug(fmt.Sprintf(
-		"Distributing %d remainder tokens using Largest Remainder Method",
-		tokensToDistribute,
-	))
+	{
+		logger.Debug(fmt.Sprintf(
+			"Distributing %d remainder tokens to %d addresses with fractional parts (by LRM ordering)",
+			tokensToDistribute,
+			len(addressesByFractionDesc),
+		))
+	}
 
 	// Calculate how many tokens each address gets. Will be one of:
 	// 	(tokensToDistribute / numAddresses) + 1
 	// 	(tokensToDistribute / numAddresses)
-	numAddresses := int64(len(addressesByFraction))
+	numAddresses := int64(len(addressesByFractionDesc))
 	baseTokensPerAddr := tokensToDistribute / numAddresses
 	extraTokensNeeded := tokensToDistribute % numAddresses
 
-	for i, addrStr := range addressesByFraction {
+	for i, addrStr := range addressesByFractionDesc {
 		tokensForThisAddr := baseTokensPerAddr
 		// First 'extraTokensNeeded' addresses get one extra token
 		if int64(i) < extraTokensNeeded {
@@ -531,7 +589,7 @@ func distributeRemainderTokens(
 		if tokensForThisAddr > 0 {
 			rewardAmounts[addrStr] = rewardAmounts[addrStr].AddRaw(tokensForThisAddr)
 			logger.Debug(fmt.Sprintf(
-				"  Added %d tokens to %s (largest remaining fraction)",
+				"  Added %d tokens to %s (by stake order)",
 				tokensForThisAddr,
 				addrStr,
 			))
@@ -548,6 +606,7 @@ func queueRewardTransfers(
 	totalBondedTokens math.Int,
 	validators []stakingtypes.Validator,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
+	sortedStakeAddresses []string,
 ) error {
 	logger = logger.With("method", "queueRewardTransfers")
 
@@ -567,7 +626,9 @@ func queueRewardTransfers(
 	}
 
 	// Queue a ModToAcctTransfer for each recipient with the appropriate operation reason.
-	for addrStr, rewardAmount := range rewardAmounts {
+	// Use the sorted addresses provided to avoid duplicate sorting
+	for _, addrStr := range sortedStakeAddresses {
+		rewardAmount := rewardAmounts[addrStr]
 		if rewardAmount.IsZero() {
 			logger.Debug(fmt.Sprintf(
 				"SHOULD RARELY HAPPEN: recipient %s reward is zero, skipping",
