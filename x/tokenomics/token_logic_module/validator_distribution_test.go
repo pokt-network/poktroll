@@ -265,18 +265,27 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 			expectedTransferCount:      5, // 3 validators + 2 delegators
 			opReason:                   tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 			claimSettlementValidationFn: func(t *testing.T, result *tokenomicstypes.ClaimSettlementResult) {
-				// With simplified logic, we can't distinguish validators from delegators by operation reason,
-				// but we can verify that self-bonded stakes get proportional rewards.
+				// We can distinguish validators from delegators by operation reason.
 				// Since all validators have 300k self-bonded out of 1.8M total, each should get 15,000.
 				transfers := result.GetModToAcctTransfers()
 
-				// Verify all transfers use the same operation reason
+				// Count validators and delegators based on operation reason
+				validatorCount := 0
+				delegatorCount := 0
 				for _, transfer := range transfers {
-					require.Equal(t, tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION, transfer.OpReason)
+					switch transfer.OpReason {
+					case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION:
+						validatorCount++
+					case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION:
+						delegatorCount++
+					default:
+						t.Errorf("Unexpected operation reason: %v", transfer.OpReason)
+					}
 				}
 
-				// Since we can't distinguish by operation reason, this test now verifies that
-				// the total distribution is correct and proportional
+				// Verify we have the expected number of validators and delegators
+				require.Equal(t, 3, validatorCount, "Should have 3 validators")
+				require.Equal(t, 2, delegatorCount, "Should have 2 delegators")
 				require.Len(t, transfers, 5) // 3 validators + 2 delegators
 			},
 		},
@@ -356,17 +365,34 @@ func TestValidatorRewardDistribution_WithDelegators(t *testing.T) {
 			if tt.claimSettlementValidationFn != nil {
 				tt.claimSettlementValidationFn(t, result)
 			} else if tt.expectedValidatorRewards > 0 || tt.expectedDelegatorRewards > 0 {
-				// Since we simplified the logic to treat all stakeholders equally,
-				// we no longer distinguish between validator and delegator operation reasons.
-				// All recipients get the same operation reason as the settlement operation.
-				totalRewards := int64(0)
-				for _, transfer := range transfers {
-					require.Equal(t, tt.opReason, transfer.OpReason, "All transfers should use the same operation reason")
-					totalRewards += transfer.Coin.Amount.Int64()
+				// Verify that transfers use the correct operation reasons:
+				// Validators get the base operation reason, delegators get the delegator-specific reason
+				totalValidatorRewards := int64(0)
+				totalDelegatorRewards := int64(0)
+
+				var delegatorOpReason tokenomicstypes.SettlementOpReason
+				switch tt.opReason {
+				case tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_VALIDATOR_REWARD_DISTRIBUTION:
+					delegatorOpReason = tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DELEGATOR_REWARD_DISTRIBUTION
+				case tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION:
+					delegatorOpReason = tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_DELEGATOR_REWARD_DISTRIBUTION
+				default:
+					delegatorOpReason = tt.opReason
 				}
 
-				expectedTotal := tt.expectedValidatorRewards + tt.expectedDelegatorRewards
-				require.Equal(t, expectedTotal, totalRewards, "Total rewards should match expected validator + delegator rewards")
+				for _, transfer := range transfers {
+					switch transfer.OpReason {
+					case tt.opReason:
+						totalValidatorRewards += transfer.Coin.Amount.Int64()
+					case delegatorOpReason:
+						totalDelegatorRewards += transfer.Coin.Amount.Int64()
+					default:
+						t.Errorf("Unexpected operation reason: %v", transfer.OpReason)
+					}
+				}
+
+				require.Equal(t, tt.expectedValidatorRewards, totalValidatorRewards, "Validator rewards should match expected")
+				require.Equal(t, tt.expectedDelegatorRewards, totalDelegatorRewards, "Delegator rewards should match expected")
 			}
 		})
 	}

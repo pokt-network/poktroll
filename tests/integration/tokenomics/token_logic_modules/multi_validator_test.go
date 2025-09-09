@@ -110,9 +110,6 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			numClaims:            160,
 			expectedTotalRewards: 17_600, // 160 claims × 1100 × 10% = 17,600
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
-				// With simplified logic, all stakeholders (validators + delegators) get the same operation reason,
-				// so extractRewards will put all rewards into validatorRewards array.
-				//
 				// Stake distribution (perfectly clean divisible numbers):
 				// - Validator 1: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M)
 				// - Validator 2: 250k self + 250k delegated = 500k total (2/5 = 40% of 1.25M)
@@ -122,19 +119,22 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 				// Expected individual stakeholder rewards (17,600 total):
 				// - 3 validator self-stakes (250k each): 17,600 × (250k/1.25M) = 3,520 each = 10,560 total
 				// - 2 delegator stakes (250k each): 17,600 × (250k/1.25M) = 3,520 each = 7,040 total
-				// Total rewards: 5 recipients getting [3520, 3520, 3520, 3520, 3520]
+				// Total rewards: 5 recipients each getting 3,520 tokens
 
-				// Since all rewards go to validatorRewards array (same operation reason), check total count
-				require.Len(t, validatorRewards, 5, "Should have 5 total stakeholders (3 validators + 2 delegators)")
-				require.Empty(t, delegatorRewards, "Should have no separate delegator rewards (same operation reason)")
+				// Verify we have correct number of validators and delegators
+				require.Len(t, validatorRewards, 3, "Should have 3 validators")
+				require.Len(t, delegatorRewards, 2, "Should have 2 delegators")
 
 				// Verify the expected reward distribution
-				expectedRewards := []int64{3_520, 3_520, 3_520, 3_520, 3_520}
-				require.ElementsMatch(t, expectedRewards, validatorRewards,
-					"All stakeholder rewards should match expected distribution")
+				expectedValidatorRewards := []int64{3_520, 3_520, 3_520}
+				expectedDelegatorRewards := []int64{3_520, 3_520}
+				require.ElementsMatch(t, expectedValidatorRewards, validatorRewards,
+					"Validator rewards should match expected distribution")
+				require.ElementsMatch(t, expectedDelegatorRewards, delegatorRewards,
+					"Delegator rewards should match expected distribution")
 
 				// Verify total matches expected
-				totalRewards := s.sumRewards(validatorRewards)
+				totalRewards := s.sumRewards(validatorRewards) + s.sumRewards(delegatorRewards)
 				require.Equal(t, expectedTotal, totalRewards,
 					"Total distributed should equal expected total")
 			},
@@ -150,7 +150,7 @@ func (s *tokenLogicModuleTestSuite) TestValidatorRewardDistribution() {
 			expectedTotalRewards: 110_000, // 1000 claims × 1100 × 10% = 110,000
 			skipReason:           "Skipping until reward batching is implemented to fix per-claim precision loss (TODO_CRITICAL(#1758))",
 			validationFunc: func(t *testing.T, validatorRewards, delegatorRewards []int64, expectedTotal int64) {
-				// Validator stakes: [333,333, 333,333, 333,334] = 1M total
+				// Validator stakes: [333_333, 333_333, 333_334] = 1M total
 				// These create fractional shares that can't divide evenly:
 				// - Val 1: 333,333/1M = 33.3333% → 36,666.63 uPOKT
 				// - Val 2: 333,333/1M = 33.3333% → 36,666.63 uPOKT
