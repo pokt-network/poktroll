@@ -1,10 +1,12 @@
 package token_logic_module
 
+// This file contains the business logic necessary to distribute rewards to validators
+// and their delegators.
+
 import (
 	"context"
 	"fmt"
 	"math/big"
-	"sort"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -12,109 +14,8 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
-
-// addressWithFraction pairs an address with its fractional remainder for sorting in LRM.
-type addressWithFraction struct {
-	address  string
-	fraction *big.Rat
-}
-
-// GetShareAmountMap calculates the amount of uPOKT to distribute to each revenue
-// shareholder based on the rev share percentage of the service.
-// It returns a map of the shareholder address to the amount of uPOKT to distribute.
-// The first shareholder gets any remainder resulting from the integer division.
-// DEV_NOTE: It is publicly exposed to be used in the tests.
-func GetShareAmountMap(
-	serviceRevShare []*sharedtypes.ServiceRevenueShare,
-	amountToDistribute math.Int,
-) (shareAmountMap map[string]math.Int) {
-	totalDistributed := math.NewInt(0)
-	shareAmountMap = make(map[string]math.Int, len(serviceRevShare))
-
-	for _, revShare := range serviceRevShare {
-		sharePercentageRat := new(big.Rat).SetFrac64(int64(revShare.RevSharePercentage), 100)
-		amountToDistributeRat := new(big.Rat).SetInt(amountToDistribute.BigInt())
-		shareAmountRat := new(big.Rat).Mul(amountToDistributeRat, sharePercentageRat)
-		shareAmountInt := new(big.Int).Quo(shareAmountRat.Num(), shareAmountRat.Denom())
-		shareAmountMap[revShare.Address] = math.NewIntFromBigInt(shareAmountInt)
-
-		totalDistributed = totalDistributed.Add(shareAmountMap[revShare.Address])
-	}
-
-	// Add any remainder to the first shareholder.
-	remainder := amountToDistribute.Sub(totalDistributed)
-	shareAmountMap[serviceRevShare[0].Address] = shareAmountMap[serviceRevShare[0].Address].Add(remainder)
-
-	return shareAmountMap
-}
-
-// distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
-// shareholders based on the rev share percentage of the supplier service config.
-func distributeSupplierRewardsToShareHolders(
-	logger cosmoslog.Logger,
-	result *tokenomicstypes.ClaimSettlementResult,
-	settlementOpReason tokenomicstypes.SettlementOpReason,
-	supplier *sharedtypes.Supplier,
-	serviceId string,
-	amountToDistribute math.Int,
-) error {
-	logger = logger.With(
-		"method", "distributeSupplierRewardsToShareHolders",
-		"session_id", result.GetSessionId(),
-	)
-
-	var serviceRevShares []*sharedtypes.ServiceRevenueShare
-	for _, svc := range supplier.Services {
-		if svc.ServiceId == serviceId {
-			serviceRevShares = svc.RevShare
-			break
-		}
-	}
-
-	// This should theoretically never happen because the following validation
-	// is done during staking: MsgStakeSupplier.ValidateBasic() -> ValidateSupplierServiceConfigs() -> ValidateServiceRevShare().
-	// The check is here just for redundancy.
-	if serviceRevShares == nil {
-		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
-			"SHOULD NEVER HAPPEN: service %q not found for supplier %v",
-			serviceId,
-			supplier,
-		)
-	}
-
-	// NOTE: Use the serviceRevShares slice to iterate through the serviceRevSharesMap deterministically.
-	shareAmountMap := GetShareAmountMap(serviceRevShares, amountToDistribute)
-	for _, revShare := range serviceRevShares {
-		shareAmount := shareAmountMap[revShare.GetAddress()]
-
-		// Don't queue zero amount transfer operations.
-		if shareAmount.IsZero() {
-			// DEV_NOTE: This should never happen, but it mitigates a chain halt if it does.
-			logger.Warn(fmt.Sprintf("zero shareAmount for service rev share address %q", revShare.GetAddress()))
-			continue
-		}
-
-		// Queue the sending of the newley minted uPOKT from the supplier module
-		// account to the supplier's shareholders.
-		shareAmountCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, shareAmount)
-		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         settlementOpReason,
-			SenderModule:     suppliertypes.ModuleName,
-			RecipientAddress: revShare.GetAddress(),
-			Coin:             shareAmountCoin,
-		})
-
-		logger.Info(fmt.Sprintf("operation queued: send %s from the supplier module to the supplier shareholder with address %q", shareAmountCoin, supplier.GetOperatorAddress()))
-	}
-
-	logger.Info(fmt.Sprintf("operation queued: distribute %d uPOKT to supplier %q shareholders", amountToDistribute, supplier.GetOperatorAddress()))
-
-	return nil
-}
 
 // distributeValidatorRewards distributes session settlement rewards to
 // all bonded validators and their delegators.
@@ -255,14 +156,16 @@ func distributeRewardsToValidatorsAndDelegators(
 	// Step 2: Calculate proportional rewards using Largest Remainder Method
 	proportionalRewardAmounts := calculateProportionalRewards(logger, stakeholderStakeAmounts, totalBondedTokens, totalRewardAmount)
 
-	// Step 3: Create and queue reward transfers - use the sorted addresses from step 1
+	// Step 3: Create and queue reward transfers using sorted addresses for determinism
 	return queueRewardTransfers(logger, result, proportionalRewardAmounts, stakeholderStakeAmounts, totalBondedTokens, validators, settlementOpReason, sortedStakeAddresses)
 }
 
-// discoverStakeholderStakes does the following:
-//  1. Discovers all validator delegators
-//  2. Collects the validator and delegator stake amounts
-//  3. Returns a map of address -> stake amount and sorted addresses (by stake descending)
+// discoverStakeholderStakes discovers all stakeholders and their stakes:
+//  1. Identifies all validator delegators
+//  2. Collects validator and delegator stake amounts
+//  3. Returns both a stake map and deterministically sorted addresses (by stake descending)
+//
+// DEV_NOTE: The sorted addresses MUST be used when iterating through the map to ensure determinism.
 func discoverStakeholderStakes(
 	ctx context.Context,
 	logger cosmoslog.Logger,
@@ -327,38 +230,9 @@ func discoverStakeholderStakes(
 		collectDelegationStakes(logger, validator, delegations, stakeAmounts)
 	}
 
-	// Sort addresses by stake amount (descending) for deterministic processing
+	// Sort addresses by stake (descending) to ensure deterministic reward distribution
 	sortedAddresses := sortAddressesByStakeDesc(stakeAmounts)
 	return stakeAmounts, sortedAddresses, nil
-}
-
-// sortAddressesByStakeDesc sorts addresses by their stake amounts (descending).
-// For equal stakes, it sorts alphabetically by address to ensure determinism.
-func sortAddressesByStakeDesc(stakeAmounts map[string]math.Int) []string {
-	type addressStake struct {
-		address string
-		stake   math.Int
-	}
-
-	addressStakes := make([]addressStake, 0, len(stakeAmounts))
-	for addr, stake := range stakeAmounts {
-		addressStakes = append(addressStakes, addressStake{addr, stake})
-	}
-
-	// Sort by stake descending, then by address for determinism
-	sort.Slice(addressStakes, func(i, j int) bool {
-		if addressStakes[i].stake.Equal(addressStakes[j].stake) {
-			return addressStakes[i].address < addressStakes[j].address
-		}
-		return addressStakes[i].stake.GT(addressStakes[j].stake)
-	})
-
-	sortedAddresses := make([]string, len(addressStakes))
-	for i, addrStake := range addressStakes {
-		sortedAddresses[i] = addrStake.address
-	}
-
-	return sortedAddresses
 }
 
 // collectDelegationStakes extracts and records stake amounts from a validator's delegations.
@@ -412,7 +286,7 @@ func calculateProportionalRewards(
 }
 
 // calculateBaseProportionalRewards calculates base integer rewards for each stakeholder.
-// It returns the reward amounts map with base rewards (fractional parts are handled by LRM).
+// Returns reward amounts map with base rewards; fractional parts handled separately by LRM.
 func calculateBaseProportionalRewards(
 	logger cosmoslog.Logger,
 	stakeAmounts map[string]math.Int,
@@ -422,23 +296,20 @@ func calculateBaseProportionalRewards(
 	// A mapping of address -> reward amount for all stakeholders
 	rewardAmounts := make(map[string]math.Int)
 
-	for addrStr := range stakeAmounts {
-		stake := stakeAmounts[addrStr]
-		// Calculate exact proportional reward using big.Rat for maximum precision
-		// Formula: stakeholderReward = totalRewardAmount × (stake / totalBondedTokens)
-		// Rewritten as: stakeholderReward = (stake × totalRewardAmount) / totalBondedTokens
-		// This order prevents precision loss from calculating small fractions first
+	for addrStr, stake := range stakeAmounts {
+		// Calculate exact proportional reward using big.Rat for precision.
+		// Formula: reward = (stake × totalRewardAmount) / totalBondedTokens
 		exactReward := new(big.Rat).SetFrac(
 			new(big.Int).Mul(stake.BigInt(), totalRewardAmount.BigInt()),
 			totalBondedTokens.BigInt(),
 		)
 
-		// Split into integer (base reward) and fractional parts
+		// Extract integer portion as base reward
 		baseReward := new(big.Int).Quo(exactReward.Num(), exactReward.Denom())
 		baseRewardInt := math.NewIntFromBigInt(baseReward)
 		rewardAmounts[addrStr] = baseRewardInt
 
-		// Calculate fractional remainder
+		// Track fractional remainder for LRM distribution
 		baseRat := new(big.Rat).SetInt(baseReward)
 		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
 
@@ -454,9 +325,9 @@ func calculateBaseProportionalRewards(
 	return rewardAmounts
 }
 
-// applyLargestRemainderMethod distributes remainder tokens.
-// It allocates remainder tokens to addresses with the largest fractional parts.
-// This ensures all tokens are distributed while maintaining proportional fairness.
+// applyLargestRemainderMethod distributes remainder tokens using LRM.
+// Ensures exact token distribution by allocating remainders to addresses
+// with the largest fractional parts first.
 // DEV_NOTE: This function transforms the rewardAmounts map in place.
 func applyLargestRemainderMethod(
 	logger cosmoslog.Logger,
@@ -471,7 +342,7 @@ func applyLargestRemainderMethod(
 		totalDistributedRewardAmount = totalDistributedRewardAmount.Add(amount)
 	}
 
-	// Compute the remainder by comparing total reward and total distributed reward amount
+	// Calculate remainder tokens to distribute
 	remainder := totalRewardAmount.Sub(totalDistributedRewardAmount).Int64()
 
 	logger.Debug(fmt.Sprintf(
@@ -486,8 +357,8 @@ func applyLargestRemainderMethod(
 	}
 }
 
-// distributeRemainderTokens allocates remainder tokens to addresses with fractional remainders.
-// Uses the Largest Remainder Method (LRM) ordering for proper distribution.
+// distributeRemainderTokens allocates remainder tokens using LRM.
+// Distributes to addresses with largest fractional remainders first.
 func distributeRemainderTokens(
 	logger cosmoslog.Logger,
 	rewardAmounts map[string]math.Int,
@@ -496,16 +367,17 @@ func distributeRemainderTokens(
 	totalRewardAmount math.Int,
 	tokensToDistribute int64,
 ) {
-	// Get addresses sorted by largest fractional remainders first (proper LRM)
+	// Sort addresses by fractional remainder (descending) for LRM distribution
 	addressesByFractionDesc := sortAddressesByFractionDesc(stakeAmounts, totalBondedTokens, totalRewardAmount)
 	numAddresses := int64(len(addressesByFractionDesc))
 
-	// Sanity check: if there's a remainder, there should be addresses with fractional parts
+	// Sanity check: remainder should only exist if addresses have fractional parts
 	if numAddresses == 0 {
 		logger.Error(fmt.Sprintf(
 			"SHOULD NEVER HAPPEN: remainder %d tokens to distribute but no addresses with fractional parts found. This indicates a bug in the reward calculation logic.",
 			tokensToDistribute,
 		))
+		// TODO_INVESTIGATE: This edge case should be investigated further to understand when it might occur
 		return
 	}
 
@@ -515,15 +387,15 @@ func distributeRemainderTokens(
 		numAddresses,
 	))
 
-	// Calculate how many tokens each address gets. Will be one of:
-	// 	(tokensToDistribute / numAddresses) + 1
-	// 	(tokensToDistribute / numAddresses)
+	// Each address gets either:
+	//   - baseTokensPerAddr + 1 (first 'extraTokensNeeded' addresses)
+	//   - baseTokensPerAddr (remaining addresses)
 	baseTokensPerAddr := tokensToDistribute / numAddresses
 	extraTokensNeeded := tokensToDistribute % numAddresses
 
 	for i, addrStr := range addressesByFractionDesc {
 		tokensForThisAddr := baseTokensPerAddr
-		// First 'extraTokensNeeded' addresses get one extra token
+		// Distribute extra tokens to addresses with largest fractions
 		if int64(i) < extraTokensNeeded {
 			tokensForThisAddr++
 		}
@@ -537,59 +409,6 @@ func distributeRemainderTokens(
 			))
 		}
 	}
-}
-
-// sortAddressesByFractionDesc sorts addresses by their fractional remainders in descending order.
-// This implements the proper Largest Remainder Method (LRM) ordering where addresses with
-// the largest fractional parts receive remainder tokens first.
-// Uses lexicographical address ordering as a tie-breaker for determinism.
-func sortAddressesByFractionDesc(
-	stakeAmounts map[string]math.Int,
-	totalBondedTokens math.Int,
-	totalRewardAmount math.Int,
-) []string {
-	var addressFractions []addressWithFraction
-
-	// Calculate fractional remainders for each address
-	for addrStr := range stakeAmounts {
-		stake := stakeAmounts[addrStr]
-		// Calculate exact proportional reward
-		exactReward := new(big.Rat).SetFrac(
-			new(big.Int).Mul(stake.BigInt(), totalRewardAmount.BigInt()),
-			totalBondedTokens.BigInt(),
-		)
-
-		// Calculate fractional remainder
-		baseReward := new(big.Int).Quo(exactReward.Num(), exactReward.Denom())
-		baseRat := new(big.Rat).SetInt(baseReward)
-		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
-
-		// Only include addresses with non-zero fractional parts
-		if fractionalPart.Sign() > 0 {
-			addressFractions = append(addressFractions, addressWithFraction{
-				address:  addrStr,
-				fraction: fractionalPart,
-			})
-		}
-	}
-
-	// Sort by fractional size (descending) for proper LRM, with address as tie-breaker for determinism
-	sort.Slice(addressFractions, func(i, j int) bool {
-		cmp := addressFractions[i].fraction.Cmp(addressFractions[j].fraction)
-		if cmp == 0 {
-			// Tie-breaker: use lexicographical order of addresses for determinism
-			return addressFractions[i].address < addressFractions[j].address
-		}
-		return cmp > 0 // Descending order (largest fractions first)
-	})
-
-	// Extract addresses with largest fractions first
-	var addressesWithFractions []string
-	for _, af := range addressFractions {
-		addressesWithFractions = append(addressesWithFractions, af.address)
-	}
-
-	return addressesWithFractions
 }
 
 // queueRewardTransfers creates and queues reward transfers for all recipients.
@@ -620,8 +439,7 @@ func queueRewardTransfers(
 		validatorAddresses[validatorAccAddr.String()] = true
 	}
 
-	// Queue a ModToAcctTransfer for each recipient with the appropriate operation reason.
-	// Use the sorted addresses provided to avoid duplicate sorting
+	// Queue ModToAcctTransfer for each recipient in deterministic order
 	for _, addrStr := range sortedStakeAddresses {
 		rewardAmount := rewardAmounts[addrStr]
 		if rewardAmount.IsZero() {

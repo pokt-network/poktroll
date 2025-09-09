@@ -20,7 +20,10 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
 
 ## Table of Contents <!-- omit in toc -->
 
-- [0. Communicate](#0-communicate)
+- [Pre-Requisites to Upgrade](#pre-requisites-to-upgrade)
+  - [1. Communicate Outwards](#1-communicate-outwards)
+  - [2. Test Locally](#2-test-locally)
+  - [3. Avoid Non-Determinism](#3-avoid-non-determinism)
 - [1. Prepare a New Upgrade Handler](#1-prepare-a-new-upgrade-handler)
 - [2. Create a GitHub Release](#2-create-a-github-release)
 - [3. Prepare the Upgrade Transactions](#3-prepare-the-upgrade-transactions)
@@ -37,7 +40,9 @@ This is the step-by-step (almost) 🖨🍝 checklist for core protocol developer
   - [9.3 Telegram Release Bot](#93-telegram-release-bot)
 - [10. Troubleshooting \& Canceling an Upgrade](#10-troubleshooting--canceling-an-upgrade)
 
-## 0. Communicate
+## Pre-Requisites to Upgrade
+
+### 1. Communicate Outwards
 
 Start a discord thread similar to [this v0.1.21 thread](https://discord.com/channels/824324475256438814/1384985059873918986) to communicate updates along the way in case of any issues.
 
@@ -52,14 +57,36 @@ make telegram_broadcast MSG="📣 Update from Pocket Network: `v0.1.21` is sched
 
 :::
 
+### 2. Test Locally
+
+Follow the instructions in [Testing Protocol Upgrades Locally](3_testing_upgrades_locally.md) if this is not something you do often.
+
+### 3. Avoid Non-Determinism
+
+The most common cause of chain halts is non-deterministic onchain behavior.
+
+This is hard to track/avoid so here is an opinionated solution:
+
+1. Start a session of [Claude code](https://www.anthropic.com/claude-code) or CLI agent of choice
+2. Identify the tag of the previous MainNet release (e.g. `v0.1.28`)
+3. Ask it the following:
+
+   ```bash
+   Do a git diff v0.1.28.
+
+   Identify any potential bugs, edge cases or issues.
+
+   In particular, focus on any onchain behaviour that can result in non-deterministic outcomes. For example, iterating a map.
+   ```
+
 ## 1. Prepare a New Upgrade Handler
 
 1. Identify the version of the [latest release](https://github.com/pokt-network/poktroll/releases/latest) from the [full list of releases](https://github.com/pokt-network/poktroll/releases) (e.g. `v0.1.20`)
 2. Prepare a new upgrade handler by copying `vNEXT.go` to the next release (e.g. `v0.1.21`) like so:
 
-   ```bash
-   cp app/upgrades/vNEXT.go app/upgrades/v0.1.21.go
-   ```
+```bash
+cp app/upgrades/vNEXT.go app/upgrades/v0.1.21.go
+```
 
 3. Open `v0.1.21.go` and replace all instances of `vNEXT` with `v0.1.21`.
 4. Remove all the general purpose template comments from `v0.1.21.go`.

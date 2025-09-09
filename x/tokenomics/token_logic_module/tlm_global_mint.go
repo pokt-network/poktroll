@@ -176,7 +176,7 @@ func (tlmgm *tlmGlobalMint) processMintDistribution(newMintCoin cosmostypes.Coin
 		})
 
 		// Distribute to supplier's shareholders based on revenue share percentage
-		if err := distributeSupplierRewardsToShareHolders(
+		if err := distributeSupplierRewardsToShareholders(
 			tlmgm.logger,
 			tlmgm.tlmCtx.Result,
 			tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
