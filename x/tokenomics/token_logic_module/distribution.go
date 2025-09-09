@@ -139,7 +139,7 @@ func distributeSupplierRewardsToShareHolders(
 // Specifically:
 //   - Validator stake weight is used to distribute rewards regardless of who the block proposer is.
 //   - Commission is not taken into account since this is independent of consensus rewards.
-//   - The validator's self-bonded and delegated-stakes is taken into account.
+//   - The validator's self-bonded and delegated stake is taken into account.
 //   - Delegators receive rewards proportional to their delegated stake.
 //
 // For a stakeholder (self-bonded validator or delegator), the distribution formula is:
