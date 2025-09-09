@@ -276,7 +276,7 @@ func distributeRewardsToValidatorsAndDelegators(
 	}
 
 	// Step 2: Calculate proportional rewards using Largest Remainder Method
-	proportionalRewardAmounts := calculateProportionalRewards(logger, stakeholderStakeAmounts, totalBondedTokens, totalRewardAmount, sortedStakeAddresses)
+	proportionalRewardAmounts := calculateProportionalRewards(logger, stakeholderStakeAmounts, totalBondedTokens, totalRewardAmount)
 
 	// Step 3: Create and queue reward transfers - use the sorted addresses from step 1
 	return queueRewardTransfers(logger, result, proportionalRewardAmounts, stakeholderStakeAmounts, totalBondedTokens, validators, settlementOpReason, sortedStakeAddresses)
@@ -395,13 +395,12 @@ func calculateProportionalRewards(
 	stakeAmounts map[string]math.Int,
 	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
-	sortedStakeAddresses []string,
 ) map[string]math.Int {
 	// Step 1: Calculate base proportional rewards
-	rewardAmounts := calculateBaseProportionalRewards(logger, stakeAmounts, totalBondedTokens, totalRewardAmount, sortedStakeAddresses)
+	rewardAmounts := calculateBaseProportionalRewards(logger, stakeAmounts, totalBondedTokens, totalRewardAmount)
 
 	// Step 2: Distribute any remainder using Largest Remainder Method
-	applyLargestRemainderMethod(logger, rewardAmounts, stakeAmounts, totalBondedTokens, totalRewardAmount, sortedStakeAddresses)
+	applyLargestRemainderMethod(logger, rewardAmounts, stakeAmounts, totalBondedTokens, totalRewardAmount)
 
 	return rewardAmounts
 }
@@ -413,12 +412,11 @@ func calculateBaseProportionalRewards(
 	stakeAmounts map[string]math.Int,
 	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
-	sortedStakeAddresses []string,
 ) map[string]math.Int {
 	// A mapping of address -> reward amount for all stakeholders
 	rewardAmounts := make(map[string]math.Int)
 
-	for _, addrStr := range sortedStakeAddresses {
+	for addrStr := range stakeAmounts {
 		stake := stakeAmounts[addrStr]
 		// Calculate exact proportional reward using big.Rat for maximum precision
 		// Formula: stakeholderReward = totalRewardAmount × (stake / totalBondedTokens)
@@ -451,8 +449,8 @@ func calculateBaseProportionalRewards(
 }
 
 // applyLargestRemainderMethod distributes remainder tokens.
-// It allocates remainder tokens to addresses with fractional parts, using stake-based ordering.
-// This ensures all tokens are distributed while maintaining deterministic distribution.
+// It allocates remainder tokens to addresses with the largest fractional parts.
+// This ensures all tokens are distributed while maintaining proportional fairness.
 // DEV_NOTE: This function transforms the rewardAmounts map in place.
 func applyLargestRemainderMethod(
 	logger cosmoslog.Logger,
@@ -460,7 +458,6 @@ func applyLargestRemainderMethod(
 	stakeAmounts map[string]math.Int,
 	totalBondedTokens math.Int,
 	totalRewardAmount math.Int,
-	sortedAddresses []string,
 ) {
 	// Compute the total distributed reward amount
 	totalDistributedRewardAmount := math.ZeroInt()
