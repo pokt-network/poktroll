@@ -184,7 +184,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 		})
 
 		// Distribute to supplier's shareholders based on revenue share percentage
-		if err := distributeSupplierRewardsToShareHolders(
+		if err := distributeSupplierRewardsToShareholders(
 			tlmbem.logger,
 			tlmbem.tlmCtx.Result,
 			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
