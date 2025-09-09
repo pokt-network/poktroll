@@ -17,6 +17,8 @@
 # - Scenario: No emissions or burn when a claim is created and a proof is required but is not submitted
 # - Scenario: No emissions or burn when no claim is created
 
+# TODO_UPNEXT(@bryanchriswhite): Add an E2E that includes validator delegation per the work implemented in #1755.
+
 Feature: Tokenomics Namespace
     Scenario: TLM Mint=Burn when a valid claim is within max limits and a valid proof is submitted and required via threshold
         # Baseline
