@@ -17,6 +17,12 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// addressWithFraction pairs an address with its fractional remainder for sorting in LRM.
+type addressWithFraction struct {
+	address  string
+	fraction *big.Rat
+}
+
 // GetShareAmountMap calculates the amount of uPOKT to distribute to each revenue
 // shareholder based on the rev share percentage of the service.
 // It returns a map of the shareholder address to the amount of uPOKT to distribute.
@@ -44,35 +50,6 @@ func GetShareAmountMap(
 	shareAmountMap[serviceRevShare[0].Address] = shareAmountMap[serviceRevShare[0].Address].Add(remainder)
 
 	return shareAmountMap
-}
-
-// sortAddressesByStakeDesc sorts addresses by their stake amounts (descending).
-// For equal stakes, it sorts alphabetically by address to ensure determinism.
-func sortAddressesByStakeDesc(stakeAmounts map[string]math.Int) []string {
-	type addressStake struct {
-		address string
-		stake   math.Int
-	}
-
-	addressStakes := make([]addressStake, 0, len(stakeAmounts))
-	for addr, stake := range stakeAmounts {
-		addressStakes = append(addressStakes, addressStake{addr, stake})
-	}
-
-	// Sort by stake descending, then by address for determinism
-	sort.Slice(addressStakes, func(i, j int) bool {
-		if addressStakes[i].stake.Equal(addressStakes[j].stake) {
-			return addressStakes[i].address < addressStakes[j].address
-		}
-		return addressStakes[i].stake.GT(addressStakes[j].stake)
-	})
-
-	sortedAddresses := make([]string, len(addressStakes))
-	for i, addrStake := range addressStakes {
-		sortedAddresses[i] = addrStake.address
-	}
-
-	return sortedAddresses
 }
 
 // distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
@@ -355,6 +332,35 @@ func discoverStakeholderStakes(
 	return stakeAmounts, sortedAddresses, nil
 }
 
+// sortAddressesByStakeDesc sorts addresses by their stake amounts (descending).
+// For equal stakes, it sorts alphabetically by address to ensure determinism.
+func sortAddressesByStakeDesc(stakeAmounts map[string]math.Int) []string {
+	type addressStake struct {
+		address string
+		stake   math.Int
+	}
+
+	addressStakes := make([]addressStake, 0, len(stakeAmounts))
+	for addr, stake := range stakeAmounts {
+		addressStakes = append(addressStakes, addressStake{addr, stake})
+	}
+
+	// Sort by stake descending, then by address for determinism
+	sort.Slice(addressStakes, func(i, j int) bool {
+		if addressStakes[i].stake.Equal(addressStakes[j].stake) {
+			return addressStakes[i].address < addressStakes[j].address
+		}
+		return addressStakes[i].stake.GT(addressStakes[j].stake)
+	})
+
+	sortedAddresses := make([]string, len(addressStakes))
+	for i, addrStake := range addressStakes {
+		sortedAddresses[i] = addrStake.address
+	}
+
+	return sortedAddresses
+}
+
 // collectDelegationStakes extracts and records stake amounts from a validator's delegations.
 // Converts each delegation's shares to tokens and records them individually in stakeAmounts.
 // DEV_NOTE: This transforms the stakeAmounts map in place.
@@ -432,7 +438,7 @@ func calculateBaseProportionalRewards(
 		baseRewardInt := math.NewIntFromBigInt(baseReward)
 		rewardAmounts[addrStr] = baseRewardInt
 
-		// Calculate fractional remainder for debugging
+		// Calculate fractional remainder
 		baseRat := new(big.Rat).SetInt(baseReward)
 		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
 
@@ -478,65 +484,6 @@ func applyLargestRemainderMethod(
 	if remainder > 0 {
 		distributeRemainderTokens(logger, rewardAmounts, stakeAmounts, totalBondedTokens, totalRewardAmount, remainder)
 	}
-}
-
-// addressWithFraction pairs an address with its fractional remainder for sorting in LRM.
-type addressWithFraction struct {
-	address  string
-	fraction *big.Rat
-}
-
-// sortAddressesByFractionDesc sorts addresses by their fractional remainders in descending order.
-// This implements the proper Largest Remainder Method (LRM) ordering where addresses with
-// the largest fractional parts receive remainder tokens first.
-// Uses lexicographical address ordering as a tie-breaker for determinism.
-func sortAddressesByFractionDesc(
-	stakeAmounts map[string]math.Int,
-	totalBondedTokens math.Int,
-	totalRewardAmount math.Int,
-) []string {
-	var addressFractions []addressWithFraction
-
-	// Calculate fractional remainders for each address
-	for addrStr := range stakeAmounts {
-		stake := stakeAmounts[addrStr]
-		// Calculate exact proportional reward
-		exactReward := new(big.Rat).SetFrac(
-			new(big.Int).Mul(stake.BigInt(), totalRewardAmount.BigInt()),
-			totalBondedTokens.BigInt(),
-		)
-
-		// Calculate fractional remainder
-		baseReward := new(big.Int).Quo(exactReward.Num(), exactReward.Denom())
-		baseRat := new(big.Rat).SetInt(baseReward)
-		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
-
-		// Only include addresses with non-zero fractional parts
-		if fractionalPart.Sign() > 0 {
-			addressFractions = append(addressFractions, addressWithFraction{
-				address:  addrStr,
-				fraction: fractionalPart,
-			})
-		}
-	}
-
-	// Sort by fractional size (descending) for proper LRM, with address as tie-breaker for determinism
-	sort.Slice(addressFractions, func(i, j int) bool {
-		cmp := addressFractions[i].fraction.Cmp(addressFractions[j].fraction)
-		if cmp == 0 {
-			// Tie-breaker: use lexicographical order of addresses for determinism
-			return addressFractions[i].address < addressFractions[j].address
-		}
-		return cmp > 0 // Descending order (largest fractions first)
-	})
-
-	// Extract addresses with largest fractions first
-	var addressesWithFractions []string
-	for _, af := range addressFractions {
-		addressesWithFractions = append(addressesWithFractions, af.address)
-	}
-
-	return addressesWithFractions
 }
 
 // distributeRemainderTokens allocates remainder tokens to addresses with fractional remainders.
@@ -592,6 +539,59 @@ func distributeRemainderTokens(
 			))
 		}
 	}
+}
+
+// sortAddressesByFractionDesc sorts addresses by their fractional remainders in descending order.
+// This implements the proper Largest Remainder Method (LRM) ordering where addresses with
+// the largest fractional parts receive remainder tokens first.
+// Uses lexicographical address ordering as a tie-breaker for determinism.
+func sortAddressesByFractionDesc(
+	stakeAmounts map[string]math.Int,
+	totalBondedTokens math.Int,
+	totalRewardAmount math.Int,
+) []string {
+	var addressFractions []addressWithFraction
+
+	// Calculate fractional remainders for each address
+	for addrStr := range stakeAmounts {
+		stake := stakeAmounts[addrStr]
+		// Calculate exact proportional reward
+		exactReward := new(big.Rat).SetFrac(
+			new(big.Int).Mul(stake.BigInt(), totalRewardAmount.BigInt()),
+			totalBondedTokens.BigInt(),
+		)
+
+		// Calculate fractional remainder
+		baseReward := new(big.Int).Quo(exactReward.Num(), exactReward.Denom())
+		baseRat := new(big.Rat).SetInt(baseReward)
+		fractionalPart := new(big.Rat).Sub(exactReward, baseRat)
+
+		// Only include addresses with non-zero fractional parts
+		if fractionalPart.Sign() > 0 {
+			addressFractions = append(addressFractions, addressWithFraction{
+				address:  addrStr,
+				fraction: fractionalPart,
+			})
+		}
+	}
+
+	// Sort by fractional size (descending) for proper LRM, with address as tie-breaker for determinism
+	sort.Slice(addressFractions, func(i, j int) bool {
+		cmp := addressFractions[i].fraction.Cmp(addressFractions[j].fraction)
+		if cmp == 0 {
+			// Tie-breaker: use lexicographical order of addresses for determinism
+			return addressFractions[i].address < addressFractions[j].address
+		}
+		return cmp > 0 // Descending order (largest fractions first)
+	})
+
+	// Extract addresses with largest fractions first
+	var addressesWithFractions []string
+	for _, af := range addressFractions {
+		addressesWithFractions = append(addressesWithFractions, af.address)
+	}
+
+	return addressesWithFractions
 }
 
 // queueRewardTransfers creates and queues reward transfers for all recipients.
