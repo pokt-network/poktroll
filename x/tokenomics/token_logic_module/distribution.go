@@ -498,9 +498,10 @@ func distributeRemainderTokens(
 ) {
 	// Get addresses sorted by largest fractional remainders first (proper LRM)
 	addressesByFractionDesc := sortAddressesByFractionDesc(stakeAmounts, totalBondedTokens, totalRewardAmount)
+	numAddresses := int64(len(addressesByFractionDesc))
 
 	// Sanity check: if there's a remainder, there should be addresses with fractional parts
-	if len(addressesByFractionDesc) == 0 {
+	if numAddresses == 0 {
 		logger.Error(fmt.Sprintf(
 			"SHOULD NEVER HAPPEN: remainder %d tokens to distribute but no addresses with fractional parts found. This indicates a bug in the reward calculation logic.",
 			tokensToDistribute,
@@ -508,18 +509,15 @@ func distributeRemainderTokens(
 		return
 	}
 
-	{
-		logger.Debug(fmt.Sprintf(
-			"Distributing %d remainder tokens to %d addresses with fractional parts (by LRM ordering)",
-			tokensToDistribute,
-			len(addressesByFractionDesc),
-		))
-	}
+	logger.Debug(fmt.Sprintf(
+		"Distributing %d remainder tokens to %d addresses with fractional parts (by LRM ordering)",
+		tokensToDistribute,
+		numAddresses,
+	))
 
 	// Calculate how many tokens each address gets. Will be one of:
 	// 	(tokensToDistribute / numAddresses) + 1
 	// 	(tokensToDistribute / numAddresses)
-	numAddresses := int64(len(addressesByFractionDesc))
 	baseTokensPerAddr := tokensToDistribute / numAddresses
 	extraTokensNeeded := tokensToDistribute % numAddresses
 
