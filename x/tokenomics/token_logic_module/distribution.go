@@ -493,6 +493,7 @@ func distributeRemainderTokens(
 	// Edge case: remainder exists but no fractional parts
 	if len(addressesByFraction) == 0 {
 		// Add to first address in map (deterministic iteration order not guaranteed, but rare edge case)
+		// TODO_TECHDEBT(@bryanchriswhite): Resolve this edge case deterministically.
 		for addrStr := range rewardAmounts {
 			logger.Warn(fmt.Sprintf(
 				"Remainder %d tokens but no fractional parts found. Adding to first recipient so tokens are not lost: %s.",
