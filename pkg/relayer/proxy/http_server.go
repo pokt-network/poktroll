@@ -5,11 +5,13 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -70,6 +72,20 @@ type relayMinerHTTPServer struct {
 	// It is used to ensure that the relays are metered and priced correctly.
 	relayMeter relayer.RelayMeter
 
+	// knownSession is a map of known session IDs to their corresponding session end block heights.
+	// It is used to cache session information to avoid redundant validations and queries.
+	// The map is protected by a RWMutex to allow concurrent access.
+	knownSessions      map[string]int64
+	knownSessionsMutex *sync.RWMutex
+
+	// eagerValidationEnabled indicates whether eager validation is enabled.
+	// When enabled, all incoming relay requests are validated immediately upon receipt.
+	// When disabled, relay requests are:
+	// 1. Validated immediately if their session is known
+	// 2. Deferred for validation if their session is unknown
+	// TODO_FOLLOWUP(@red-0ne): Make this configurable via the RelayMinerServerConfig.
+	eagerValidationEnabled bool
+
 	// Query clients used to query for the served session's parameters.
 	blockClient        client.BlockClient
 	sharedQueryClient  client.SharedQueryClient
@@ -120,6 +136,9 @@ func NewHTTPServer(
 		blockClient:                    blockClient,
 		sharedQueryClient:              sharedQueryClient,
 		sessionQueryClient:             sessionQueryClient,
+		knownSessions:                  make(map[string]int64),
+		knownSessionsMutex:             &sync.RWMutex{},
+		eagerValidationEnabled:         false,
 	}
 }
 
@@ -131,6 +150,10 @@ func (server *relayMinerHTTPServer) Start(ctx context.Context) error {
 		<-ctx.Done()
 		_ = server.server.Shutdown(ctx)
 	}()
+
+	// Subscribe to new blocks to prune outdated known sessions.
+	committedBlocksSequence := server.blockClient.CommittedBlocksSequence(ctx)
+	channel.ForEach(ctx, committedBlocksSequence, server.pruneOutdatedKnownSessions)
 
 	// Set the HTTP handler.
 	server.server.Handler = server
