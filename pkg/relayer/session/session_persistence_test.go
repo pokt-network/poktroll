@@ -99,9 +99,10 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 
 	// Set up temporary directory for session storage
 	tmpDirPattern := fmt.Sprintf("%s_smt_kvstore", strings.ReplaceAll(s.T().Name(), "/", "_"))
-	tmpStoresDir, err := os.MkdirTemp("", tmpDirPattern)
+	var err error
+	s.tmpStoresDir, err = os.MkdirTemp("", tmpDirPattern)
 	require.NoError(s.T(), err)
-	s.storesDirectoryPathOpt = session.WithStoresDirectoryPath(tmpStoresDir)
+	s.storesDirectoryPathOpt = session.WithStoresDirectoryPath(s.tmpStoresDir)
 
 	// Configure test service and difficulty
 	testqueryclients.AddToExistingServices(s.T(), s.service)
@@ -146,10 +147,36 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 
 // TearDownTest cleans up resources after each test execution
 func (s *SessionPersistenceTestSuite) TearDownTest() {
-	// Stop the relayer sessions manager
-	s.relayerSessionsManager.Stop()
-	// Delete all temporary files and directories created by the test on completion.
-	_ = os.RemoveAll(s.tmpStoresDir)
+	// Stop the relayer sessions manager first
+	if s.relayerSessionsManager != nil {
+		s.relayerSessionsManager.Stop()
+	}
+
+	// Close the block client to clean up observables (this should close blockPublishCh)
+	if s.blockClient != nil {
+		s.blockClient.Close()
+	}
+
+	// Close the mined relays channel if it exists (safe close with recover)
+	if s.minedRelaysPublishCh != nil {
+		func() {
+			defer func() {
+				// Recover from potential panic if channel is already closed
+				recover()
+			}()
+			close(s.minedRelaysPublishCh)
+		}()
+	}
+
+	// Wait a longer moment for all async operations and cleanup to complete  
+	// This helps prevent test interference from lingering goroutines/observables
+	waitSimulateIO()
+	waitSimulateIO() // Double wait to ensure cleanup completion
+
+	// Delete all temporary files and directories created by the test on completion
+	if s.tmpStoresDir != "" {
+		_ = os.RemoveAll(s.tmpStoresDir)
+	}
 }
 
 // TestSaveAndRetrieveSession tests the persistence of session data across relayer restarts.
@@ -577,11 +604,17 @@ func (s *SessionPersistenceTestSuite) setupMockBlockClient(ctrl *gomock.Controll
 		}).
 		AnyTimes()
 
-	// Mock the Close method to close the block publish channel
+	// Mock the Close method to close the block publish channel (safe close)
 	blockClientMock.EXPECT().
 		Close().
 		DoAndReturn(func() {
-			close(s.blockPublishCh)
+			func() {
+				defer func() {
+					// Recover from potential panic if channel is already closed
+					recover()
+				}()
+				close(s.blockPublishCh)
+			}()
 		}).
 		AnyTimes()
 

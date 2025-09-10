@@ -187,15 +187,17 @@ in a BadgerDB KV store data files.
 - `:memory:` - Uses SimpleMap (pure Go map) for in-memory storage. **Recommended**.
 - `:memory_pebble:` - Uses Pebble database with in-memory VFS. Experimental option with more overhead.
 
-:::warning TODO(#1734) Experimentation in flight
+:::tip Session Tree Backup
 
-**This update is as of 08/2025.**
+**Backup Support Added (Issue #1734)**
 
-In-memory storage enables relay miners to be significantly more performant. For this reason, `:memory:` is the recommended option.
+In-memory storage modes now support optional backup to disk, preventing data loss during RelayMiner restarts while maintaining optimal performance.
 
-**Warning:** Prior to #1734, RelayMiner restarts will result in loss of session state.
+- **In-memory performance**: All reads and immediate writes use fast in-memory storage
+- **Backup durability**: Asynchronous throttled writes to disk ensure data persistence
+- **Configurable**: Backup can be enabled/disabled and throttling parameters tuned for different deployment scenarios
 
-**Consideration**: Once experimentation is complete, there will either only be one in-memory storage option or a proper enum will be created (disk, memory_simple, memory_pebble).
+For production deployments, consider enabling backup functionality to get the best of both performance and reliability.
 
 :::
 

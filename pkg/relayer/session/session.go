@@ -28,10 +28,6 @@ import (
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
 // Session tree storage mode constants.
-//
-// TODO_TECHDEBT(#1734): Once in-memory modes are stabilized, do one of the following:
-// 1. Formalize this into a proper enum for storage types (disk, memory_simple, memory_pebble)
-// 2. Remove support for one approach based on performance/reliability testing
 const (
 	// ** DEV_NOTE: This is the current recommended mode for production. **
 	// InMemoryStoreFilename indicates SMTs should be stored using SimpleMap in memory.
@@ -87,7 +83,7 @@ type relayerSessionsManager struct {
 	// - ":memory:" - Uses SimpleMap for pure in-memory storage (recommended)
 	// - ":memory_pebble:" - Uses Pebble with in-memory VFS (experimental)
 	// Otherwise, session data is persisted to disk and can be restored after a process restart.
-	// TODO(#1734): Ensure in-memory modes avoid data loss on process restart.
+	// In-memory modes can now use backup functionality to avoid data loss on restart.
 	storesDirectoryPath string
 
 	// sessionSMTStore is a key-value store used to persist the metadata of
@@ -121,6 +117,11 @@ type relayerSessionsManager struct {
 	// - These should NOT trigger deletion.
 	// - This ensures session trees are persisted for recovery after restart.
 	stopping atomic.Bool
+
+	// backupConfig defines the configuration for session tree backups.
+	// When enabled, session trees are backed up to disk while maintaining
+	// in-memory performance for reads.
+	backupConfig BackupConfig
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -172,7 +173,7 @@ func NewRelayerSessions(
 	// For in-memory storage modes (SimpleMap or Pebble in-memory), use an empty string
 	// as the session metadata store directory, which creates a memory-backed Pebble store.
 	// Otherwise, use the storesDirectoryPath as the session metadata store directory.
-	// TODO(#1734): Design a solution for restoration even when using in-memory modes.
+	// Restoration is now supported for in-memory modes when backup is enabled.
 	sessionSMTDir := ""
 	if rs.isInMemorySMT() {
 		rs.logger.Info().Msg("Using memory-backed session metadata store for in-memory SMT modes.")
@@ -216,7 +217,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Ensuring no active sessions are lost when the process is interrupted
 	//   - Maintaining accumulated work when interruptions occur
 	if rs.isInMemorySMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
+		// Restoration is now supported for in-memory modes when backup is enabled.
 		rs.logger.Info().Msg("Skipping session data restoration for in-memory SMT modes.")
 	} else {
 		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
@@ -277,7 +278,7 @@ func (rs *relayerSessionsManager) Stop() {
 
 	// Skip persistence when using in-memory SMT modes as data is not saved to disk.
 	if rs.isInMemorySMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
+		// Restoration is now supported for in-memory modes when backup is enabled.
 		rs.logger.Info().Msg("Skipping persistence of session data for in-memory SMT modes.")
 		return
 	}
@@ -367,7 +368,7 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 	// sessionTreeWithSessionId map for the given supplier operator address.
 	if !ok {
 		var err error
-		sessionTree, err = NewSessionTree(rs.logger, sessionHeader, supplierOperatorAddress, rs.storesDirectoryPath)
+		sessionTree, err = NewSessionTree(rs.logger, sessionHeader, supplierOperatorAddress, rs.storesDirectoryPath, &rs.backupConfig)
 		if err != nil {
 			return nil, err
 		}

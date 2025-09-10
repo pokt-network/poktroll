@@ -73,6 +73,7 @@ func NewEmptySessionTree(
 		sessionTreeHeader,
 		supplierOperatorAddr,
 		testSessionTreeStoreDir,
+		nil, // No backup config for tests - use disk persistence
 	)
 	require.NoError(t, err)
 

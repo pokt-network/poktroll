@@ -21,3 +21,12 @@ func WithSessionTreesInspector(sessionTreeMap *SessionsTreesMap) relayer.Relayer
 		*sessionTreeMap = relSessionMgr.(*relayerSessionsManager).sessionsTrees
 	}
 }
+
+// WithBackupConfig sets the backup configuration for session trees.
+// When enabled, session trees will be backed up to disk while maintaining
+// in-memory performance for reads and immediate writes.
+func WithBackupConfig(config BackupConfig) relayer.RelayerSessionsManagerOption {
+	return func(relSessionMgr relayer.RelayerSessionsManager) {
+		relSessionMgr.(*relayerSessionsManager).backupConfig = config
+	}
+}

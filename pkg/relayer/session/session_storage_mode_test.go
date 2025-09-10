@@ -243,7 +243,7 @@ func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 	waitSimulateIO()
 
 	// For in-memory modes, we should only proceed if the session was restored
-	// TODO_TECHDEBT(#1734): Remove this once we are better at managing in-memory sessions restarts
+	// This test verifies in-memory session management behavior
 	if s.isInMemorySMT() {
 		// In-memory modes don't persist across restarts, so session should be gone
 		require.Len(s.T(), s.sessionTrees, 0, "In-memory storage should not persist sessions across restarts for mode: %s", s.getStorageModeName())

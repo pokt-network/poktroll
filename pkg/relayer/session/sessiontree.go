@@ -75,6 +75,7 @@ func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress string,
 	storesDirectoryPath string,
+	backupConfig *BackupConfig, // Optional backup configuration
 ) (relayer.SessionTree, error) {
 	logger = logger.With(
 		"session_id", sessionHeader.SessionId,
@@ -93,12 +94,39 @@ func NewSessionTree(
 
 	case InMemoryStoreFilename:
 		// SimpleMap in-memory storage (pure Go map)
-		logger.Info().Msg("⚠️ TODO_TECHDEBT(#1734): Using SimpleMap in-memory store for session tree. Data will not be persisted on restart.⚠️")
-		treeStore = simplemap.NewSimpleMap()
+		primaryStore := simplemap.NewSimpleMap()
+		
+		// Check if backup is enabled
+		if backupConfig != nil && backupConfig.Enabled {
+			// Create backup store with throttling
+			backupPath := backupConfig.GetBackupPath(supplierOperatorAddress, sessionHeader.SessionId)
+			
+			// Ensure backup directory exists
+			backupDir := filepath.Dir(backupPath)
+			if err := os.MkdirAll(backupDir, 0755); err != nil {
+				return nil, fmt.Errorf("failed to create backup directory: %w", err)
+			}
+			
+			// Create Pebble store for backup (direct writes, no throttling)
+			backupStore, err := pebble.NewKVStore(backupPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create backup store: %w", err)
+			}
+			
+			// Create the backup wrapper with direct writes to backup store
+			treeStore = NewBackupKVStore(logger, primaryStore, backupStore)
+			logger.Info().
+				Str("backup_path", backupPath).
+				Msg("Using SimpleMap in-memory store with disk backup for session tree")
+		} else {
+			// No backup - use primary store directly
+			logger.Warn().Msg("Using SimpleMap in-memory store without backup. Data will not be persisted on restart.")
+			treeStore = primaryStore
+		}
 
 	case InMemoryPebbleStoreFilename:
 		// Pebble in-memory storage (with in-memory VFS)
-		logger.Info().Msg("⚠️ TODO_TECHDEBT(#1734): Using Pebble in-memory store for session tree. Data will not be persisted on restart. ⚠️")
+		logger.Warn().Msg("Using Pebble in-memory store. Data will not be persisted on restart.")
 		pebbleStore, err := pebble.NewKVStore("") // Empty string triggers in-memory VFS in Pebble
 		if err != nil {
 			return nil, err
@@ -155,13 +183,32 @@ func importSessionTree(
 	sessionSMT *prooftypes.SessionSMT,
 	claim *prooftypes.Claim,
 	storesDirectoryPath string,
+	backupConfig *BackupConfig, // Optional backup configuration
 ) (relayer.SessionTree, error) {
 	sessionId := sessionSMT.SessionHeader.SessionId
 	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
 	applicationAddress := sessionSMT.SessionHeader.ApplicationAddress
 	serviceId := sessionSMT.SessionHeader.ServiceId
 	smtRoot := sessionSMT.SmtRoot
-	storePath := filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionId)
+	
+	// Determine the storage path based on configuration
+	var storePath string
+	var isInMemoryWithBackup bool
+	
+	if storesDirectoryPath == InMemoryStoreFilename && backupConfig != nil && backupConfig.Enabled {
+		// In-memory mode with backup - use backup path
+		storePath = backupConfig.GetBackupPath(supplierOperatorAddress, sessionId)
+		isInMemoryWithBackup = true
+	} else if storesDirectoryPath != InMemoryStoreFilename && storesDirectoryPath != InMemoryPebbleStoreFilename {
+		// Regular disk storage mode
+		storePath = filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionId)
+	} else {
+		// Pure in-memory mode without backup - cannot restore
+		logger.Warn().
+			Str("mode", storesDirectoryPath).
+			Msg("Cannot import session tree in pure in-memory mode without backup")
+		return nil, fmt.Errorf("cannot import session tree: in-memory mode without backup")
+	}
 
 	// Verify the storage path exists - if not, the session data is missing or corrupted
 	if _, err := os.Stat(storePath); err != nil {
@@ -199,13 +246,44 @@ func importSessionTree(
 	// The session is still active and mutable, so we need to reconstruct the full tree
 	// from the persisted storage to allow for additional relay updates.
 
-	// Open the existing KVStore that contains the session's merkle tree data
-	treeStore, err := pebble.NewKVStore(storePath)
-	if err != nil {
-		return nil, err
+	var treeStore kvstore.MapStore
+	
+	if isInMemoryWithBackup {
+		// In-memory mode with backup - restore from backup to in-memory store
+		logger.Info().Msg("Restoring session tree from backup to in-memory store")
+		
+		// Create primary in-memory store
+		primaryStore := simplemap.NewSimpleMap()
+		
+		// Open backup store to read data
+		backupStore, err := pebble.NewKVStore(storePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open backup store for restoration: %w", err)
+		}
+		
+		// Create a temporary non-throttled backup wrapper for restoration
+		// We'll restore from backup to primary, then wrap with throttling for future writes
+		tempBackupWrapper := NewBackupKVStore(logger, primaryStore, backupStore)
+		
+		// Restore data from backup to primary store
+		if err := tempBackupWrapper.RestoreFromBackup(); err != nil {
+			return nil, fmt.Errorf("failed to restore from backup: %w", err)
+		}
+		
+		// Now create the backup wrapper for ongoing operations
+		treeStore = NewBackupKVStore(logger, primaryStore, backupStore)
+		
+		logger.Info().Msg("Successfully restored session tree from backup to in-memory store")
+	} else {
+		// Regular disk storage mode - open the existing KVStore
+		var err error
+		treeStore, err = pebble.NewKVStore(storePath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// Reconstruct the SMST from the persisted KVStore data using the previously saved root as the starting point
+	// Reconstruct the SMST from the KVStore data using the previously saved root as the starting point
 	trie := smt.ImportSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smtRoot, protocol.SMTValueHasher())
 
 	sessionTree.sessionSMT = trie
@@ -383,10 +461,18 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	// Post-flush cleanup: handle different storage types appropriately
 	switch st.storePath {
 	case InMemoryStoreFilename:
-		// SimpleMap: Keep everything in memory for later proof generation
-		// No lifecycle management needed - data persists in memory until process restart
+		// SimpleMap with backup: Close backup store but keep primary in memory
+		if backupStore, ok := st.treeStore.(*BackupKVStore); ok {
+			// Close backup store to free file handles - primary remains in memory
+			if err := backupStore.CloseBackupStore(); err != nil {
+				logger.Warn().Err(err).Msg("failed to close backup store after flush")
+			}
+			logger.Debug().Msg("SimpleMap session tree flushed - backup closed, primary kept in memory for proof generation")
+		} else {
+			// Pure SimpleMap: Keep everything in memory for later proof generation
+			logger.Debug().Msg("SimpleMap session tree flushed - keeping data in memory for proof generation")
+		}
 		// DEV_NOTE: DO NOT set either st.treeStore OR st.sessionSMT to nil here or proof generation will fail.
-		logger.Debug().Msg("SimpleMap session tree flushed - keeping data in memory for proof generation")
 
 	case InMemoryPebbleStoreFilename:
 		// Pebble in-memory: Stop the store but preserve the sessionSMT reference
