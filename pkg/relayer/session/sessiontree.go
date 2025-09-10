@@ -466,6 +466,8 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	switch st.storePath {
 	case InMemoryStoreFilename:
 		// SimpleMap with backup: Close backup store but keep primary in memory
+		// TODO_IN_THIS_COMMIT: revisit this - don't like this type assertion...
+		// consider setting the st.treeStore type to BackupKVStore...
 		if backupStore, ok := st.treeStore.(*BackupKVStore); ok {
 			// Close backup store to free file handles - primary remains in memory
 			if err := backupStore.CloseBackupStore(); err != nil {

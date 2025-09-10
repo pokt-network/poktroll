@@ -28,6 +28,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
@@ -767,23 +768,35 @@ func NewSupplyRelayerProxyFn(
 // newSupplyRelayerSessionsManagerFn returns a function which constructs a RelayerSessionsManager and returns a new depinject.Config with it supplied.
 //
 // - Accepts smtStorePath for sessions manager setup
+// - Accepts smtBackupConfig for backup functionality
 // - Returns a SupplierFn for dependency injection
 //
 // Parameters:
 //   - smtStorePath: Path to the sessions store
+//   - smtBackupConfig: Configuration for backup functionality (may be nil)
 //
 // Returns:
 //   - config.SupplierFn: Supplier function for dependency injection
-func NewSupplyRelayerSessionsManagerFn(smtStorePath string) SupplierFn {
+func NewSupplyRelayerSessionsManagerFn(smtStorePath string, smtBackupConfig *relayerconfig.RelayMinerSmtBackupConfig) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		relayerSessionsManager, err := session.NewRelayerSessions(
-			deps,
+		opts := []relayer.RelayerSessionsManagerOption{
 			session.WithStoresDirectoryPath(smtStorePath),
-		)
+		}
+
+		// Add backup configuration if provided and enabled
+		if smtBackupConfig != nil && smtBackupConfig.Enabled {
+			backupConfig := session.BackupConfig{
+				Enabled:   smtBackupConfig.Enabled,
+				BackupDir: smtBackupConfig.BackupDir,
+			}
+			opts = append(opts, session.WithBackupConfig(backupConfig))
+		}
+
+		relayerSessionsManager, err := session.NewRelayerSessions(deps, opts...)
 		if err != nil {
 			return nil, err
 		}

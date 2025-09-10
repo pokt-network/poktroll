@@ -29,6 +29,7 @@ type YAMLRelayMinerConfig struct {
 	PocketNode                   YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
 	Pprof                        YAMLRelayMinerPprofConfig      `yaml:"pprof"`
 	SmtStorePath                 string                         `yaml:"smt_store_path"`
+	SmtBackup                    YAMLRelayMinerSmtBackupConfig  `yaml:"smt_backup"`
 	Suppliers                    []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
 	Ping                         YAMLRelayMinerPingConfig       `yaml:"ping"`
 	EnableOverServicing          bool                           `yaml:"enable_over_servicing"`
@@ -97,6 +98,13 @@ type YAMLRelayMinerSupplierServiceAuthentication struct {
 	Password string `yaml:"password,omitempty"`
 }
 
+// YAMLRelayMinerSmtBackupConfig is the structure used to unmarshal the SMT backup
+// configuration for the RelayMiner.
+type YAMLRelayMinerSmtBackupConfig struct {
+	Enabled   bool   `yaml:"enabled"`
+	BackupDir string `yaml:"backup_dir"`
+}
+
 // YAMLRelayMinerPprofConfig is the structure used to unmarshal the config
 // for `pprof`.
 type YAMLRelayMinerPprofConfig struct {
@@ -114,6 +122,7 @@ type RelayMinerConfig struct {
 	Pprof                        *RelayMinerPprofConfig
 	Servers                      map[string]*RelayMinerServerConfig
 	SmtStorePath                 string
+	SmtBackup                    *RelayMinerSmtBackupConfig
 	Ping                         *RelayMinerPingConfig
 	EnableOverServicing          bool
 }
@@ -233,6 +242,13 @@ type RelayMinerSupplierServiceConfig struct {
 type RelayMinerSupplierServiceAuthentication struct {
 	Username string
 	Password string
+}
+
+// RelayMinerSmtBackupConfig is the structure resulting from parsing the SMT backup
+// configuration for the RelayMiner.
+type RelayMinerSmtBackupConfig struct {
+	Enabled   bool
+	BackupDir string
 }
 
 // RelayMinerPprofConfig is the structure resulting from parsing the pprof config
