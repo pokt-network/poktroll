@@ -3,7 +3,6 @@ package session
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/pokt-network/smt/kvstore/simplemap"
@@ -34,10 +33,7 @@ func TestBackupKVStore_BasicOperations(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, value, primaryValue)
 
-		// Give workers time to process backup operations
-		time.Sleep(50 * time.Millisecond)
-
-		// Verify data eventually exists in internalBackupStore
+		// Verify data exists immediately in internalBackupStore (synchronous writes)
 		backupValue, err := internalBackupStore.Get(key)
 		require.NoError(t, err)
 		require.Equal(t, value, backupValue)
@@ -98,10 +94,7 @@ func TestBackupKVStore_BasicOperations(t *testing.T) {
 		_, err = primaryStore.Get(key)
 		require.Error(t, err) // Should not exist
 
-		// Give workers time to process delete operation
-		time.Sleep(100 * time.Millisecond)
-
-		// Verify data is eventually deleted from internalBackupStore
+		// Verify data is immediately deleted from internalBackupStore (synchronous writes)
 		_, err = internalBackupStore.Get(key)
 		require.Error(t, err) // Should not exist
 	})
@@ -134,9 +127,10 @@ func TestBackupKVStore_BasicOperations(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 0, length)
 
-		// DEV_NOTE: Skipping internalBackupStore because
-		// 1. simplemap.NewSimpleMap() is not concurrency-safe
-		// 2. pebble.NewKVStore() can take some time to ClearAll()
+		// Verify backup store is also cleared immediately (synchronous writes)
+		backupLength, err := internalBackupStore.Len()
+		require.NoError(t, err)
+		require.Equal(t, 0, backupLength)
 	})
 }
 
@@ -209,7 +203,7 @@ func TestBackupKVStore_RestoreEmptyBackup(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestBackupKVStore_AsyncWorkerPool(t *testing.T) {
+func TestBackupKVStore_SynchronousOperations(t *testing.T) {
 	logger := polyzero.NewLogger()
 
 	// Create stores
@@ -221,7 +215,7 @@ func TestBackupKVStore_AsyncWorkerPool(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	// Write multiple operations quickly
+	// Write multiple operations and verify immediate consistency
 	numOps := 100
 	for i := 0; i < numOps; i++ {
 		key := []byte(fmt.Sprintf("key%d", i))
@@ -236,10 +230,7 @@ func TestBackupKVStore_AsyncWorkerPool(t *testing.T) {
 		require.Equal(t, value, primaryValue)
 	}
 
-	// Give workers time to process backup operations
-	time.Sleep(100 * time.Millisecond)
-
-	// Verify all data eventually made it to backup store
+	// Verify all data immediately made it to backup store (synchronous writes)
 	for i := 0; i < numOps; i++ {
 		key := []byte(fmt.Sprintf("key%d", i))
 		expectedValue := []byte(fmt.Sprintf("value%d", i))
@@ -260,14 +251,27 @@ func TestBackupKVStore_AsyncWorkerPool(t *testing.T) {
 		require.Error(t, err)
 	}
 
-	// Give workers time to process delete operations
-	time.Sleep(100 * time.Millisecond)
-
-	// Verify deletes made it to backup store
+	// Verify deletes immediately made it to backup store (synchronous writes)
 	for i := 0; i < 10; i++ {
 		key := []byte(fmt.Sprintf("key%d", i))
 		_, err := internalBackupStore.Get(key)
 		require.Error(t, err) // Should not exist
+	}
+
+	// Verify remaining items still exist in both stores
+	for i := 10; i < numOps; i++ {
+		key := []byte(fmt.Sprintf("key%d", i))
+		expectedValue := []byte(fmt.Sprintf("value%d", i))
+		
+		// Check primary store
+		primaryValue, err := primaryStore.Get(key)
+		require.NoError(t, err)
+		require.Equal(t, expectedValue, primaryValue)
+		
+		// Check backup store
+		backupValue, err := internalBackupStore.Get(key)
+		require.NoError(t, err)
+		require.Equal(t, expectedValue, backupValue)
 	}
 }
 
@@ -289,8 +293,7 @@ func TestBackupKVStore_CloseBackupStore(t *testing.T) {
 	err := backupKV.Set(key, value)
 	require.NoError(t, err)
 
-	// Give workers time to process backup operation
-	time.Sleep(50 * time.Millisecond)
+	// No delay needed - operations are synchronous
 
 	// Verify data exists in both stores
 	primaryValue, err := primaryStore.Get(key)
@@ -321,12 +324,47 @@ func TestBackupKVStore_CloseBackupStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newValue, primaryNewValue)
 
-	// Give time for backup operations (should be no-ops now)
-	time.Sleep(50 * time.Millisecond)
+	// Verify backup store still has the original data (it was closed, not cleared)
+	originalBackupValue, err := backupStore.Get(key)
+	require.NoError(t, err)
+	require.Equal(t, value, originalBackupValue)
+	
+	// Verify backup store does NOT have the new data (it was closed before the new write)
+	_, err = backupStore.Get(newKey)
+	require.Error(t, err) // Should not exist in backup
 
-	// Backup store should NOT have new data (it's closed)
-	// Note: We can't test this directly since the backup store reference
-	// is set to nil, but the important thing is no errors occurred
+	// Verify the BackupKVStore operations after closing backup don't error
+	// This tests that closed backup is handled gracefully
+	testKey := []byte("test_after_close")
+	testValue := []byte("value_after_close")
+	err = backupKV.Set(testKey, testValue)
+	require.NoError(t, err)
+	
+	// Primary should have the new test data
+	primaryTestValue, err := primaryStore.Get(testKey)
+	require.NoError(t, err)
+	require.Equal(t, testValue, primaryTestValue)
+	
+	// Backup should NOT have the test data (it's closed)
+	_, err = backupStore.Get(testKey)
+	require.Error(t, err)
+
+	// Test Delete operation after backup is closed
+	err = backupKV.Delete(testKey)
+	require.NoError(t, err)
+	
+	// Primary should have the key deleted
+	_, err = primaryStore.Get(testKey)
+	require.Error(t, err)
+	
+	// Test ClearAll operation after backup is closed
+	err = backupKV.ClearAll()
+	require.NoError(t, err)
+	
+	// Primary should be empty
+	primaryLen, err := primaryStore.Len()
+	require.NoError(t, err)
+	require.Equal(t, 0, primaryLen)
 
 	// Double-close should not error
 	err = backupKV.CloseBackupStore()

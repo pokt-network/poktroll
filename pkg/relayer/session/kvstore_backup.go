@@ -1,7 +1,6 @@
 package session
 
 import (
-	"context"
 	"fmt"
 	"sync"
 
@@ -11,151 +10,58 @@ import (
 
 var _ kvstore.MapStore = (*BackupKVStore)(nil)
 
-// backupOp represents an operation to be performed on the backup store.
-type backupOp struct {
-	opType backupOpType
-	key    []byte
-	value  []byte
-}
-
-type backupOpType int
-
-const (
-	backupOpSet backupOpType = iota
-	backupOpDelete
-	backupOpClear
-)
-
 // BackupKVStore wraps two KVStores to provide backup functionality.
 // 
 // Read operations: SYNCHRONOUS - only from primary store for fast performance
-// Write operations: PRIMARY is SYNCHRONOUS, BACKUP is ASYNCHRONOUS via worker pool
+// Write operations: SYNCHRONOUS dual writes to both primary and backup stores
 //
 // This design ensures:
-// - Fast relay processing (primary operations never block)
-// - Data durability (backup operations eventually complete)
-// - Bounded resource usage (fixed worker pool, no unbounded goroutines)
+// - Fast relay processing (primary store is typically in-memory)
+// - Data durability (backup store provides persistence)
+// - Simple and predictable behavior (no async complexity)
+// - Lifecycle management (backup can be closed while primary remains active)
 type BackupKVStore struct {
 	logger polylog.Logger
 
 	// primaryStore is the main store used for all operations requiring immediate responses.
-	// ALL reads are SYNCHRONOUS from this store only.
-	// ALL writes are SYNCHRONOUS to this store (fast, typically in-memory).
+	// Typically fast in-memory storage (e.g., SimpleMap).
 	primaryStore kvstore.MapStore
 
 	// backupStore is the secondary store used for durability.
-	// ALL operations to this store are ASYNCHRONOUS via worker pool.
-	// This is typically a disk-based store (may be throttled for performance).
+	// Typically persistent disk storage (e.g., Pebble).
+	// Can be closed via CloseBackupStore() while primary remains active.
 	backupStore kvstore.MapStore
 
-	// Worker pool for async backup operations
-	backupChan chan backupOp
-	workers    sync.WaitGroup
-	ctx        context.Context
-	cancel     context.CancelFunc
-	
-	// Synchronization for backup store access
-	backupMu sync.Mutex
-	
-	// Configuration
-	numWorkers int
-	queueSize  int
+	// Synchronization for backup store access (protects against concurrent close)
+	backupMu sync.RWMutex
 }
 
 // NewBackupKVStore creates a new BackupKVStore with the given primary and backup stores.
-// It starts a worker pool to handle backup operations asynchronously.
 func NewBackupKVStore(
 	logger polylog.Logger,
 	primaryStore kvstore.MapStore,
 	backupStore kvstore.MapStore,
 ) *BackupKVStore {
-	ctx, cancel := context.WithCancel(context.Background())
-	
-	b := &BackupKVStore{
+	return &BackupKVStore{
 		logger:       logger.With("module", "backup_kvstore"),
 		primaryStore: primaryStore,
 		backupStore:  backupStore,
-		ctx:          ctx,
-		cancel:       cancel,
-		numWorkers:   4,    // Default 4 workers
-		queueSize:    1000, // Default 1000 operation buffer
-	}
-	
-	// Initialize the backup operation channel
-	b.backupChan = make(chan backupOp, b.queueSize)
-	
-	// Start worker pool
-	b.startWorkers()
-	
-	return b
-}
-
-// startWorkers starts the worker pool for processing backup operations.
-func (b *BackupKVStore) startWorkers() {
-	for i := 0; i < b.numWorkers; i++ {
-		b.workers.Add(1)
-		go b.worker(i)
 	}
 }
 
-// worker processes backup operations ASYNCHRONOUSLY from the queue.
-// Each worker runs in its own goroutine and processes operations independently.
-// Workers coordinate via shared backup mutex to ensure thread-safe access to backup store.
-func (b *BackupKVStore) worker(workerID int) {
-	defer b.workers.Done()
+// writeToBackup performs a synchronous write operation to the backup store.
+// Thread-safe: Uses read lock to protect against concurrent backup store closure.
+func (b *BackupKVStore) writeToBackup(operation func(kvstore.MapStore) error) error {
+	b.backupMu.RLock()
+	defer b.backupMu.RUnlock()
 	
-	logger := b.logger.With("worker_id", workerID)
-	logger.Debug().Msg("backup worker started - processing async operations")
-	
-	for {
-		select {
-		case op := <-b.backupChan:
-			if err := b.processBackupOp(op); err != nil {
-				logger.Warn().
-					Err(err).
-					Int("key_len", len(op.key)).
-					Int("value_len", len(op.value)).
-					Msg("backup operation failed")
-			}
-		case <-b.ctx.Done():
-			logger.Debug().Msg("backup worker shutting down")
-			return
-		}
-	}
-}
-
-// processBackupOp processes a single backup operation SYNCHRONOUSLY within worker context.
-//
-// Called by worker goroutines to process queued operations.
-// SYNCHRONOUS within worker: Each operation completes before worker processes next one.
-// ASYNCHRONOUS from caller perspective: Caller queued this operation and continued.
-// 
-// Thread-safety: Mutex ensures multiple workers don't corrupt backup store concurrently.
-func (b *BackupKVStore) processBackupOp(op backupOp) error {
 	// Check if backup store has been closed (after claim submission)
 	if b.backupStore == nil {
-		// Backup store closed - operations are no longer needed
+		// Backup store closed - operation is no longer needed
 		return nil
 	}
 	
-	b.backupMu.Lock()
-	defer b.backupMu.Unlock()
-	
-	// Double-check after acquiring lock
-	if b.backupStore == nil {
-		return nil
-	}
-	
-	switch op.opType {
-	case backupOpSet:
-		return b.backupStore.Set(op.key, op.value)
-	case backupOpDelete:
-		return b.backupStore.Delete(op.key)
-	case backupOpClear:
-		return b.backupStore.ClearAll()
-	default:
-		return fmt.Errorf("unknown backup operation type: %d", op.opType)
-	}
+	return operation(b.backupStore)
 }
 
 // Get retrieves a value from the primary store only.
@@ -165,94 +71,65 @@ func (b *BackupKVStore) Get(key []byte) ([]byte, error) {
 	return b.primaryStore.Get(key)
 }
 
-// Set writes a key-value pair to both stores with different timing guarantees.
+// Set writes a key-value pair to both stores synchronously.
 //
-// PRIMARY store: SYNCHRONOUS write - must succeed before returning
-// BACKUP store: ASYNCHRONOUS write - queued for worker pool processing
+// PRIMARY store: SYNCHRONOUS write - must succeed before continuing
+// BACKUP store: SYNCHRONOUS write - written immediately after primary
 //
-// This ensures Set() returns quickly while still providing durability.
-// If primary write fails, the entire operation fails immediately.
-// If backup queue is full, the backup write is dropped (logged) but Set() still succeeds.
+// This ensures Set() provides immediate durability with predictable behavior.
+// If either write fails, the entire operation fails.
 func (b *BackupKVStore) Set(key, value []byte) error {
 	// SYNCHRONOUS: Write to primary store first - MUST succeed
 	if err := b.primaryStore.Set(key, value); err != nil {
 		return err
 	}
 
-	// ASYNCHRONOUS: Queue backup operation for worker pool (non-blocking)
-	b.queueBackupOp(backupOp{
-		opType: backupOpSet,
-		key:    append([]byte(nil), key...),   // Copy to prevent data races
-		value:  append([]byte(nil), value...), // Copy to prevent data races
+	// SYNCHRONOUS: Write to backup store immediately
+	return b.writeToBackup(func(backup kvstore.MapStore) error {
+		return backup.Set(key, value)
 	})
-
-	return nil
 }
 
-// queueBackupOp queues a backup operation for ASYNCHRONOUS processing.
-// 
-// NON-BLOCKING operation: Uses non-blocking channel send to avoid delays.
-// If queue is full, operation is dropped (with warning) rather than blocking caller.
-// This ensures primary relay processing is never delayed by backup queue congestion.
-func (b *BackupKVStore) queueBackupOp(op backupOp) {
-	select {
-	case b.backupChan <- op:
-		// Successfully queued for async processing
-	default:
-		// Queue is full - drop operation to maintain non-blocking guarantee
-		b.logger.Warn().
-			Int("queue_size", len(b.backupChan)).
-			Int("max_queue_size", cap(b.backupChan)).
-			Msg("backup queue full, dropping operation to prevent blocking")
-	}
-}
-
-// Delete removes a key from both stores with different timing guarantees.
+// Delete removes a key from both stores synchronously.
 //
-// PRIMARY store: SYNCHRONOUS delete - must succeed before returning  
-// BACKUP store: ASYNCHRONOUS delete - queued for worker pool processing
+// PRIMARY store: SYNCHRONOUS delete - must succeed before continuing
+// BACKUP store: SYNCHRONOUS delete - removed immediately after primary
 //
-// This ensures Delete() returns quickly while maintaining data consistency.
+// This ensures Delete() provides immediate consistency with predictable behavior.
 func (b *BackupKVStore) Delete(key []byte) error {
 	// SYNCHRONOUS: Delete from primary store first - MUST succeed
 	if err := b.primaryStore.Delete(key); err != nil {
 		return err
 	}
 
-	// ASYNCHRONOUS: Queue backup delete operation (non-blocking)
-	b.queueBackupOp(backupOp{
-		opType: backupOpDelete,
-		key:    append([]byte(nil), key...), // Copy to prevent data races
+	// SYNCHRONOUS: Delete from backup store immediately
+	return b.writeToBackup(func(backup kvstore.MapStore) error {
+		return backup.Delete(key)
 	})
-
-	return nil
 }
 
 // Len returns the number of entries in the primary store.
 // SYNCHRONOUS operation - reads only from primary store for immediate response.
-// Note: May temporarily differ from backup store due to async nature of backup operations.
 func (b *BackupKVStore) Len() (int, error) {
 	return b.primaryStore.Len()
 }
 
-// ClearAll removes all entries from both stores with different timing guarantees.
+// ClearAll removes all entries from both stores synchronously.
 //
-// PRIMARY store: SYNCHRONOUS clear - must succeed before returning
-// BACKUP store: ASYNCHRONOUS clear - queued for worker pool processing  
+// PRIMARY store: SYNCHRONOUS clear - must succeed before continuing
+// BACKUP store: SYNCHRONOUS clear - cleared immediately after primary
 //
-// This ensures ClearAll() returns quickly (typically used during session cleanup).
+// This ensures ClearAll() provides immediate consistency.
 func (b *BackupKVStore) ClearAll() error {
 	// SYNCHRONOUS: Clear primary store first - MUST succeed
 	if err := b.primaryStore.ClearAll(); err != nil {
 		return err
 	}
 
-	// ASYNCHRONOUS: Queue backup clear operation (non-blocking)
-	b.queueBackupOp(backupOp{
-		opType: backupOpClear,
+	// SYNCHRONOUS: Clear backup store immediately
+	return b.writeToBackup(func(backup kvstore.MapStore) error {
+		return backup.ClearAll()
 	})
-
-	return nil
 }
 
 // RestoreFromBackup populates the primary store from the backup store.
@@ -260,14 +137,14 @@ func (b *BackupKVStore) ClearAll() error {
 // SYNCHRONOUS OPERATION: Blocks until all data is restored from backup to primary.
 // This is typically called during startup/restart before normal operations begin.
 // 
-// Thread-safety: Acquires backup mutex to prevent interference with worker operations.
+// Thread-safety: Acquires backup read lock to prevent interference with backup store closure.
 func (b *BackupKVStore) RestoreFromBackup() error {
 	logger := b.logger.With("method", "RestoreFromBackup")
 
 	// SYNCHRONOUS: Block and restore all data from backup to primary
-	// Lock protects against concurrent backup store access by workers
-	b.backupMu.Lock()
-	defer b.backupMu.Unlock()
+	// Read lock protects against concurrent backup store closure
+	b.backupMu.RLock()
+	defer b.backupMu.RUnlock()
 
 	// Check if backup store has data
 	backupLen, err := b.backupStore.Len()
@@ -329,7 +206,7 @@ func (b *BackupKVStore) RestoreFromBackup() error {
 // LIFECYCLE OPERATION: Called after claim submission when backup durability is achieved.
 // This closes backup store to free file handles while preserving primary store for proofs.
 //
-// SYNCHRONOUS OPERATION: Blocks until backup store is closed and workers acknowledge.
+// SYNCHRONOUS OPERATION: Blocks until backup store is closed.
 func (b *BackupKVStore) CloseBackupStore() error {
 	logger := b.logger.With("method", "CloseBackupStore")
 	
@@ -356,33 +233,22 @@ func (b *BackupKVStore) CloseBackupStore() error {
 	return nil
 }
 
-// Close gracefully shuts down the worker pool and both stores.
+// Close gracefully shuts down both stores.
 //
-// SYNCHRONOUS OPERATION: Blocks until all pending backup operations complete.
-// This ensures data durability - no backup operations are lost during shutdown.
-//
-// Shutdown sequence:
-// 1. Signal workers to stop accepting new work (cancel context)
-// 2. Close backup channel (no new operations can be queued) 
-// 3. Wait for workers to finish processing pending operations (blocks)
-// 4. Close underlying stores
+// SYNCHRONOUS OPERATION: Blocks until both stores are closed.
+// This ensures proper cleanup of all resources.
 func (b *BackupKVStore) Close() error {
-	// STEP 1: Signal workers to prepare for shutdown
-	b.cancel()
-	
-	// STEP 2: Stop accepting new backup operations
-	close(b.backupChan)
-	
-	// STEP 3: SYNCHRONOUS wait for all pending backup operations to complete
-	b.workers.Wait()
-	
-	b.logger.Info().Msg("backup worker pool shut down gracefully - all operations completed")
+	b.backupMu.Lock()
+	defer b.backupMu.Unlock()
 
-	// Close the backup store if it implements io.Closer
-	if closer, ok := b.backupStore.(interface{ Close() error }); ok {
-		if err := closer.Close(); err != nil {
-			b.logger.Warn().Err(err).Msg("failed to close backup store")
+	// Close the backup store if it exists and implements io.Closer
+	if b.backupStore != nil {
+		if closer, ok := b.backupStore.(interface{ Close() error }); ok {
+			if err := closer.Close(); err != nil {
+				b.logger.Warn().Err(err).Msg("failed to close backup store")
+			}
 		}
+		b.backupStore = nil
 	}
 
 	// Close the primary store if it implements io.Closer

@@ -95,24 +95,24 @@ func NewSessionTree(
 	case InMemoryStoreFilename:
 		// SimpleMap in-memory storage (pure Go map)
 		primaryStore := simplemap.NewSimpleMap()
-		
+
 		// Check if backup is enabled
 		if backupConfig != nil && backupConfig.Enabled {
 			// Create backup store with throttling
 			backupPath := backupConfig.GetBackupPath(supplierOperatorAddress, sessionHeader.SessionId)
-			
+
 			// Ensure backup directory exists
 			backupDir := filepath.Dir(backupPath)
 			if err := os.MkdirAll(backupDir, 0755); err != nil {
 				return nil, fmt.Errorf("failed to create backup directory: %w", err)
 			}
-			
+
 			// Create Pebble store for backup (direct writes, no throttling)
 			backupStore, err := pebble.NewKVStore(backupPath)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create backup store: %w", err)
 			}
-			
+
 			// Create the backup wrapper with direct writes to backup store
 			treeStore = NewBackupKVStore(logger, primaryStore, backupStore)
 			logger.Info().
@@ -190,19 +190,23 @@ func importSessionTree(
 	applicationAddress := sessionSMT.SessionHeader.ApplicationAddress
 	serviceId := sessionSMT.SessionHeader.ServiceId
 	smtRoot := sessionSMT.SmtRoot
-	
+
 	// Determine the storage path based on configuration
 	var storePath string
-	var isInMemoryWithBackup bool
-	
-	if storesDirectoryPath == InMemoryStoreFilename && backupConfig != nil && backupConfig.Enabled {
+
+	isSimpleInMemoryStore := storesDirectoryPath == InMemoryStoreFilename
+	isInMemoryPebbleStore := storesDirectoryPath == InMemoryPebbleStoreFilename
+	isInMemoryStore := isSimpleInMemoryStore || isInMemoryPebbleStore
+	isBackupEnabled := backupConfig != nil && backupConfig.Enabled
+	isInMemoryWithBackup := isInMemoryStore && isBackupEnabled
+	switch {
+	case isInMemoryWithBackup:
 		// In-memory mode with backup - use backup path
 		storePath = backupConfig.GetBackupPath(supplierOperatorAddress, sessionId)
-		isInMemoryWithBackup = true
-	} else if storesDirectoryPath != InMemoryStoreFilename && storesDirectoryPath != InMemoryPebbleStoreFilename {
+	case !isInMemoryStore:
 		// Regular disk storage mode
 		storePath = filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionId)
-	} else {
+	default:
 		// Pure in-memory mode without backup - cannot restore
 		logger.Warn().
 			Str("mode", storesDirectoryPath).
@@ -247,32 +251,32 @@ func importSessionTree(
 	// from the persisted storage to allow for additional relay updates.
 
 	var treeStore kvstore.MapStore
-	
+
 	if isInMemoryWithBackup {
 		// In-memory mode with backup - restore from backup to in-memory store
 		logger.Info().Msg("Restoring session tree from backup to in-memory store")
-		
+
 		// Create primary in-memory store
 		primaryStore := simplemap.NewSimpleMap()
-		
+
 		// Open backup store to read data
 		backupStore, err := pebble.NewKVStore(storePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open backup store for restoration: %w", err)
 		}
-		
+
 		// Create a temporary non-throttled backup wrapper for restoration
 		// We'll restore from backup to primary, then wrap with throttling for future writes
 		tempBackupWrapper := NewBackupKVStore(logger, primaryStore, backupStore)
-		
+
 		// Restore data from backup to primary store
 		if err := tempBackupWrapper.RestoreFromBackup(); err != nil {
 			return nil, fmt.Errorf("failed to restore from backup: %w", err)
 		}
-		
+
 		// Now create the backup wrapper for ongoing operations
 		treeStore = NewBackupKVStore(logger, primaryStore, backupStore)
-		
+
 		logger.Info().Msg("Successfully restored session tree from backup to in-memory store")
 	} else {
 		// Regular disk storage mode - open the existing KVStore
