@@ -418,7 +418,11 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// In case the current request is not validated yet perform a late validation
 	// before mining the relay.
+	// DEV_NOTE: If eager validation is enabled, then the session is already known.
 	if !isSessionKnown {
+		// TODO_IN_THIS_PR(@red-0ne): Add metrics for:
+		// 1. Late validation occurrences.
+		// 2. Late validation failures.
 		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta)
 		shouldRateLimit := isOverServicing && !server.relayMeter.AllowOverServicing()
 		if shouldRateLimit {

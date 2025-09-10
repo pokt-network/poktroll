@@ -83,7 +83,7 @@ type relayMinerHTTPServer struct {
 	// When disabled, relay requests are:
 	// 1. Validated immediately if their session is known
 	// 2. Deferred for validation if their session is unknown
-	// TODO_FOLLOWUP(@red-0ne): Make this configurable via the RelayMinerServerConfig.
+	// TODO_IN_THIS_PR(@red-0ne): Make this configurable via the RelayMinerServerConfig.
 	eagerValidationEnabled bool
 
 	// Query clients used to query for the served session's parameters.
