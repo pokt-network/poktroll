@@ -2,16 +2,18 @@ package session
 
 import (
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/pokt-network/smt/kvstore"
+
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ kvstore.MapStore = (*BackupKVStore)(nil)
 
 // BackupKVStore wraps two KVStores to provide backup functionality.
-// 
+//
 // Read operations: SYNCHRONOUS - only from primary store for fast performance
 // Write operations: SYNCHRONOUS dual writes to both primary and backup stores
 //
@@ -230,6 +232,40 @@ func (b *BackupKVStore) CloseBackupStore() error {
 	b.backupStore = nil
 	
 	logger.Info().Msg("backup store closed - primary store remains active for proof generation")
+	return nil
+}
+
+// DeleteBackupDirectory completely removes the backup directory from the filesystem.
+//
+// CLEANUP OPERATION: Called after successful proof submission to free disk space.
+// This should be called after CloseBackupStore() to ensure the backup store is closed first.
+//
+// SYNCHRONOUS OPERATION: Blocks until backup directory is deleted.
+// 
+// Parameters:
+//   - backupDirPath: The full path to the backup directory to delete
+func (b *BackupKVStore) DeleteBackupDirectory(backupDirPath string) error {
+	logger := b.logger.With("method", "DeleteBackupDirectory", "backup_path", backupDirPath)
+	
+	b.backupMu.RLock()
+	defer b.backupMu.RUnlock()
+	
+	// Verify backup store is already closed before deleting directory
+	if b.backupStore != nil {
+		logger.Warn().Msg("backup store still open - should close backup store before deleting directory")
+	}
+	
+	// Remove the entire backup directory
+	if err := os.RemoveAll(backupDirPath); err != nil {
+		if os.IsNotExist(err) {
+			logger.Debug().Msg("backup directory does not exist, nothing to delete")
+			return nil
+		}
+		logger.Error().Err(err).Msg("failed to delete backup directory")
+		return fmt.Errorf("failed to delete backup directory %s: %w", backupDirPath, err)
+	}
+	
+	logger.Info().Msg("backup directory successfully deleted - disk space freed")
 	return nil
 }
 

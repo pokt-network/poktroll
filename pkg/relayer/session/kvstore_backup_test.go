@@ -149,8 +149,8 @@ func TestBackupKVStore_RestoreFromBackup(t *testing.T) {
 	}
 
 	for k, v := range testData {
-		err := internalBackupStore.Set([]byte(k), []byte(v))
-		require.NoError(t, err)
+		setErr := internalBackupStore.Set([]byte(k), []byte(v))
+		require.NoError(t, setErr)
 	}
 
 	// Create empty primary store
@@ -163,8 +163,8 @@ func TestBackupKVStore_RestoreFromBackup(t *testing.T) {
 
 	// Verify all data was restored to primary
 	for k, expectedV := range testData {
-		value, err := primaryStore.Get([]byte(k))
-		require.NoError(t, err)
+		value, getErr := primaryStore.Get([]byte(k))
+		require.NoError(t, getErr)
 		require.Equal(t, []byte(expectedV), value)
 	}
 
@@ -262,12 +262,11 @@ func TestBackupKVStore_SynchronousOperations(t *testing.T) {
 	for i := 10; i < numOps; i++ {
 		key := []byte(fmt.Sprintf("key%d", i))
 		expectedValue := []byte(fmt.Sprintf("value%d", i))
-		
 		// Check primary store
 		primaryValue, err := primaryStore.Get(key)
 		require.NoError(t, err)
 		require.Equal(t, expectedValue, primaryValue)
-		
+
 		// Check backup store
 		backupValue, err := internalBackupStore.Get(key)
 		require.NoError(t, err)
@@ -328,7 +327,7 @@ func TestBackupKVStore_CloseBackupStore(t *testing.T) {
 	originalBackupValue, err := backupStore.Get(key)
 	require.NoError(t, err)
 	require.Equal(t, value, originalBackupValue)
-	
+
 	// Verify backup store does NOT have the new data (it was closed before the new write)
 	_, err = backupStore.Get(newKey)
 	require.Error(t, err) // Should not exist in backup
@@ -339,12 +338,12 @@ func TestBackupKVStore_CloseBackupStore(t *testing.T) {
 	testValue := []byte("value_after_close")
 	err = backupKV.Set(testKey, testValue)
 	require.NoError(t, err)
-	
+
 	// Primary should have the new test data
 	primaryTestValue, err := primaryStore.Get(testKey)
 	require.NoError(t, err)
 	require.Equal(t, testValue, primaryTestValue)
-	
+
 	// Backup should NOT have the test data (it's closed)
 	_, err = backupStore.Get(testKey)
 	require.Error(t, err)
@@ -352,15 +351,15 @@ func TestBackupKVStore_CloseBackupStore(t *testing.T) {
 	// Test Delete operation after backup is closed
 	err = backupKV.Delete(testKey)
 	require.NoError(t, err)
-	
+
 	// Primary should have the key deleted
 	_, err = primaryStore.Get(testKey)
 	require.Error(t, err)
-	
+
 	// Test ClearAll operation after backup is closed
 	err = backupKV.ClearAll()
 	require.NoError(t, err)
-	
+
 	// Primary should be empty
 	primaryLen, err := primaryStore.Len()
 	require.NoError(t, err)

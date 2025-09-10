@@ -64,6 +64,10 @@ type sessionTree struct {
 	// to delete the KVStore when it is no longer needed.
 	storePath string
 
+	// backupConfig holds the backup configuration for this session tree.
+	// This is used to determine backup directory paths for cleanup operations.
+	backupConfig *BackupConfig
+
 	isClaiming bool
 }
 
@@ -167,6 +171,7 @@ func NewSessionTree(
 		sessionSMT:              trie,
 		sessionMu:               &sync.Mutex{},
 		supplierOperatorAddress: supplierOperatorAddress,
+		backupConfig:            backupConfig,
 	}
 
 	return sessionTree, nil
@@ -227,6 +232,7 @@ func importSessionTree(
 		storePath:               storePath,
 		sessionMu:               &sync.Mutex{},
 		supplierOperatorAddress: supplierOperatorAddress,
+		backupConfig:            backupConfig,
 	}
 
 	logger = logger.With(
@@ -560,6 +566,23 @@ func (st *sessionTree) Delete() error {
 			logger.Debug().Msg("SimpleMap treeStore is nil - nothing to clear")
 			return nil
 		}
+
+		// Check if this is a BackupKVStore and handle backup directory cleanup
+		if backupStore, ok := st.treeStore.(*BackupKVStore); ok {
+			// Close backup store first if not already closed
+			if err := backupStore.CloseBackupStore(); err != nil {
+				logger.Warn().Err(err).Msg("failed to close backup store during deletion")
+			}
+
+			// Delete backup directory if it exists and we have backup config
+			if st.backupConfig != nil && st.backupConfig.Enabled {
+				backupDirPath := filepath.Join(st.backupConfig.BackupDir, st.supplierOperatorAddress, st.sessionHeader.SessionId)
+				if err := backupStore.DeleteBackupDirectory(backupDirPath); err != nil {
+					logger.Warn().Err(err).Msg("failed to delete backup directory - disk space may not be freed")
+				}
+			}
+		}
+
 		return st.treeStore.ClearAll()
 
 	case InMemoryPebbleStoreFilename:

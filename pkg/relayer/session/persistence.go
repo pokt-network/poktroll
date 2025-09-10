@@ -173,6 +173,7 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 	// claim creation step.
 	rs.proveClaimedSessions(ctx)
 
+
 	return nil
 }
 
@@ -194,9 +195,23 @@ func (rs *relayerSessionsManager) deletePersistedSessionTree(sessionSMT *proofty
 		"session_end_height", sessionEndHeight,
 	)
 
-	// If the session tree is in-memory only, there is nothing to delete.
+	// Handle different storage modes: in-memory, in-memory with backup, and disk-based
 	if rs.isInMemorySMT() {
-		logger.Debug().Msg("Skipping session tree deletion. RelayMiner is configured for in-memory mode.")
+		// Check if backup cleanup is needed for in-memory + backup mode
+		if rs.backupConfig.Enabled {
+			// In-memory with backup: cleanup backup directory
+			backupDirPath := filepath.Join(rs.backupConfig.BackupDir, supplierOperatorAddress, sessionId)
+			if err := os.RemoveAll(backupDirPath); err != nil && !os.IsNotExist(err) {
+				logger.Error().Err(err).Msg("failed to delete backup directory for expired session")
+				return err
+			}
+			logger.Info().Msg("Backup directory deleted for expired in-memory session")
+		} else {
+			// Pure in-memory mode: nothing to delete from disk
+			logger.Debug().Msg("Skipping session tree deletion. RelayMiner is configured for pure in-memory mode.")
+		}
+		// Always clean up the in-memory session tree reference
+		delete(rs.sessionsTrees[supplierOperatorAddress][sessionEndHeight], sessionId)
 		return nil
 	}
 
@@ -348,3 +363,4 @@ func getSessionStoreKey(supplierOperatorAddress string, sessionId string) []byte
 func (rs *relayerSessionsManager) isInMemorySMT() bool {
 	return rs.storesDirectoryPath == InMemoryStoreFilename || rs.storesDirectoryPath == InMemoryPebbleStoreFilename
 }
+

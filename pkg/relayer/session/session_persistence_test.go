@@ -168,7 +168,7 @@ func (s *SessionPersistenceTestSuite) TearDownTest() {
 		}()
 	}
 
-	// Wait a longer moment for all async operations and cleanup to complete  
+	// Wait a longer moment for all async operations and cleanup to complete
 	// This helps prevent test interference from lingering goroutines/observables
 	waitSimulateIO()
 	waitSimulateIO() // Double wait to ensure cleanup completion
@@ -248,6 +248,11 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowOpen() {
 	// Start the new relayer sessions manager
 	err := s.relayerSessionsManager.Start(s.ctx)
 	require.NoError(s.T(), err)
+	waitSimulateIO()
+
+	// Trigger another block event to ensure loaded sessions get processed by the claim creation pipeline
+	// This is needed because the claimWindowOpenHeight block was published before the session manager started
+	s.blockPublishCh <- testblock.NewAnyTimesBlock(s.T(), s.emptyBlockHash, claimWindowOpenHeight)
 	waitSimulateIO()
 
 	// Verify the session tree is still correctly loaded
