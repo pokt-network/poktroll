@@ -1,7 +1,14 @@
 ---
 sidebar_position: 9
-title: Chain Halt Recovery
+title: Chain Halt - Recovery
 ---
+
+:::tip Grove Employee 🌿
+
+The documentation in [Grove's Infrastructure](https://github.com/buildwithgrove/infrastructure/tree/main/docs)
+repo can be followed to restart Grove's validator network.
+
+:::
 
 ## Chain Halt Recovery <!-- omit in toc -->
 
@@ -9,12 +16,6 @@ This document describes how to recover from a chain halt.
 
 It assumes that the cause of the chain halt has been identified, and that the
 new release has been created and verified to function correctly.
-
-:::tip
-
-See [Chain Halt Troubleshooting](7_chain_halt_troubleshooting.md) for more information on identifying the cause of a chain halt.
-
-:::
 
 - [Background](#background)
 - [Resolving halts during a network upgrade](#resolving-halts-during-a-network-upgrade)
@@ -37,7 +38,7 @@ and use the same version of the software.
 If the halt is caused by the network upgrade, it is possible the solution can be as simple as
 skipping an upgrade (i.e. `unsafe-skip-upgrade`) and creating a new (fixed) upgrade.
 
-Read more about [upgrade contingency plans](8_contigency_plans.md).
+Read more about [upgrade contingency plans](8_chain_halt_upgrade_contigency_plans.md).
 
 ### Manual binary replacement (preferred)
 
@@ -61,7 +62,7 @@ The steps to doing so are:
 
 1. Prepare and verify a new binary that addresses the consensus-breaking issue.
 2. Reach out to the community and validators so they can upgrade the binary manually.
-3. Update [the documentation](4_upgrade_list.md) to include a range a height when the binary needs
+3. Update [the documentation](6_upgrade_list.md) to include a range a height when the binary needs
    to be replaced.
 
 :::warning
@@ -115,8 +116,8 @@ propagating the existing blocks signed by the Validators, making it hard to roll
 However, if necessary, the instructions to follow are:
 
 1. Prepare & verify a new binary that addresses the consensus-breaking issue.
-2. [Create a release](2_release_procedure.md).
-3. [Prepare an upgrade transaction](3_testing_upgrades_locally.md#writing-an-upgrade-transaction) to the new version.
+2. [Create a release](4_protocol_upgrade_preparation.md).
+3. [Prepare an upgrade transaction](4_localnet_upgrade_testing.md#writing-an-upgrade-transaction) to the new version.
 4. Disconnect the `Validator set` from the rest of the network **3 blocks** prior to the height of the chain halt. For example:
    - Assume an issue at height `103`.
    - Revert the `validator set` to height `100`.

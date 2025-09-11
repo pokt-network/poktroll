@@ -1,12 +1,12 @@
 ---
-title: Protocol Upgrades Overview
+title: Upgrade Overview
 sidebar_position: 1
 ---
 
 :::important Managing Protocol Upgrades
 This is a _high-level meta-overview_ of protocol upgrades.
 
-**❗ If you need to trigger a protocol upgrade, see the [Protocol Upgrade Release Procedure](2_release_procedure.md) section ❗**
+**❗ If you need to trigger a protocol upgrade, see the [Protocol Upgrade Release Procedure](4_protocol_upgrade_preparation.md) section ❗**
 :::
 
 Pocket Network evolves through protocol upgrades that keep the network secure, efficient, and up-to-date. These upgrades are coordinated by the DAO (offchain governance) and executed by validators (onchain).
@@ -36,7 +36,7 @@ A protocol upgrade changes the onchain software to:
 ## Where to Find Upgrade Info
 
 - [GitHub Releases](https://github.com/pokt-network/poktroll/releases): All software updates and release notes
-- [Upgrade List](4_upgrade_list.md): Details on each upgrade, breaking changes, and manual steps
+- [Upgrade List](6_upgrade_list.md): Details on each upgrade, breaking changes, and manual steps
 
 :::info Not All Releases Are Upgrades
 Not every [GitHub release](https://github.com/pokt-network/poktroll/releases) triggers a protocol upgrade.

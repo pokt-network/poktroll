@@ -1,14 +1,9 @@
 ---
-title: Protocol Upgrades Local Testing
+title: LocalNet Upgrade Testing
 sidebar_position: 3
 ---
 
-:::warning
-**For core protocol developers only!**
-
-Make sure to complete steps 1–4 in [Release Procedure](./2_release_procedure.md) before starting.
-
-:::
+An Alpha & Beta TestNet release procedure intended for core protocol developers.
 
 ## 📠🍝 Testing Protocol Upgrades Locally: Step-by-Step <!-- omit in toc -->
 
@@ -70,7 +65,7 @@ make go_develop ignite_release ignite_release_extract_binaries
 
 ## 3. Prepare the upgrade transaction
 
-In `pocket_old`, the following file should already exist if you have completed the [Release Procedure](2_release_procedure.md):
+In `pocket_old`, the following file should already exist if you have completed the [Release Procedure](4_protocol_upgrade_preparation.md):
 
 ```bash
 tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json

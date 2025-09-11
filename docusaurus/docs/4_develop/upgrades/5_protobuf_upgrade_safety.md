@@ -1,6 +1,6 @@
 ---
-title: Protocol Protobufs Upgrades
-description: Handling protobuf changes in protocol upgrades
+title: Protobuf Upgrade Safety
+description: Safely managing protobuf changes in protocol upgrades
 sidebar_position: 5
 ---
 
