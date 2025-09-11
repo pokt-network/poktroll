@@ -161,6 +161,13 @@ Totals:
 		logger.Info().Msg("query caching DISABLED")
 	}
 
+	// Log validation type
+	if relayMinerConfig.EnableEagerValidation {
+		logger.Info().Msg("validation type: EAGER")
+	} else {
+		logger.Info().Msg("validation type: LAZY")
+	}
+
 	// --- Set up dependencies for relay miner ---
 	deps, err := setupRelayerDependencies(ctx, cmd, relayMinerConfig)
 	if err != nil {

@@ -420,17 +420,21 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// before mining the relay.
 	// DEV_NOTE: If eager validation is enabled, then the session is already known.
 	if !isSessionKnown {
-		// TODO_IN_THIS_PR(@red-0ne): Add metrics for:
-		// 1. Late validation occurrences.
-		// 2. Late validation failures.
+		relayer.CaptureDelayedValidationOccurrence(serviceId)
+
+		logger.Info().Msg("🔄 Performing delayed validation - session was unknown at request time")
+
 		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta)
 		shouldRateLimit := isOverServicing && !server.relayMeter.AllowOverServicing()
 		if shouldRateLimit {
+			relayer.CaptureDelayedValidationRateLimiting(serviceId)
+
 			return relayRequest, ErrRelayerProxyRateLimited
 		}
 
 		if err = server.relayAuthenticator.VerifyRelayRequest(ctxWithDeadline, relayRequest, serviceId); err != nil {
-			logger.Error().Err(err).Msg("❌ Failed verifying relay request")
+			logger.Error().Err(err).Msg("❌ Failed delayed validation - relay request verification failed after successful response")
+			relayer.CaptureDelayedValidationFailure(serviceId)
 			return relayRequest, err
 		}
 
