@@ -38,8 +38,9 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 		}
 
 		serverConfig := &RelayMinerServerConfig{
-			XForwardedHostLookup: yamlSupplierConfig.XForwardedHostLookup,
-			SupplierConfigsMap:   make(map[string]*RelayMinerSupplierConfig),
+			XForwardedHostLookup:  yamlSupplierConfig.XForwardedHostLookup,
+			SupplierConfigsMap:    make(map[string]*RelayMinerSupplierConfig),
+			EnableEagerValidation: relayMinerConfig.EnableEagerValidation,
 		}
 
 		if yamlSupplierConfig.MaxBodySize == "" {
