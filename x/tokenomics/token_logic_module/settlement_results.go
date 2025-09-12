@@ -98,7 +98,9 @@ func (rs ClaimSettlementResults) GetServiceIds() (serviceIds []string) {
 // IMPORTANT: **DO NOT** directly iterate over returned map in onchain code.
 // Iterating over the returned map can cause non-determinism.
 // Instead, iterate over a sorted slice of the service ID keys.
-func (rs ClaimSettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs error) {
+// TODO_IMPROVE: Return a sorted slice of the service ID keys alongside the map for iteration.
+func (rs ClaimSettlementResults) GetRelaysPerServiceMap() (map[string]uint64, error) {
+	var errs error
 	relaysPerServiceMap := make(map[string]uint64)
 
 	for _, result := range rs {

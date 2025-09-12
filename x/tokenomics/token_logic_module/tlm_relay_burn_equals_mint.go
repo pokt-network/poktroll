@@ -184,7 +184,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 		})
 
 		// Distribute to supplier's shareholders based on revenue share percentage
-		if err := distributeSupplierRewardsToShareHolders(
+		if err := distributeSupplierRewardsToShareholders(
 			tlmbem.logger,
 			tlmbem.tlmCtx.Result,
 			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
@@ -205,13 +205,13 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 	if !proposerAmount.IsZero() {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 
-		// Distribute to all validators proportionally based on stake weight
+		// Distribute to all validators and their delegators proportionally based on stake weight
 		if err := distributeValidatorRewards(
 			tlmbem.ctx,
 			tlmbem.logger,
 			tlmbem.tlmCtx.Result,
 			tlmbem.tlmCtx.StakingKeeper,
-			proposerAmount,
+			proposerCoin,
 			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION,
 		); err != nil {
 			tlmbem.logger.Error(fmt.Sprintf("error distributing validator rewards: %v", err))
