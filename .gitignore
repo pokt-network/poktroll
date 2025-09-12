@@ -127,3 +127,6 @@ localnet_testing_msg_import_morse_accounts.json
 
 # Gov Param Update transaction templates
 *_params_*.json
+
+# Used for telegram announcements
+release_prep_announcement.txt

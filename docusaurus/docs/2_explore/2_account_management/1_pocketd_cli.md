@@ -220,7 +220,7 @@ This section is intended **only for core protocol developers**.
 
 It is also only intended for for dev releases of the `pocketd` CLI.
 
-If you are publishing an official protocol upgrade accompanies by a CLI update, visit the [release procedure docs](../../4_develop/upgrades/4_protocol_upgrade_preparation.md).
+If you are publishing an official protocol upgrade accompanies by a CLI update, visit the [release procedure docs](../../4_develop/upgrades/2_upgrade_preparation.md).
 
 :::
 

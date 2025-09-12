@@ -65,7 +65,7 @@ make go_develop ignite_release ignite_release_extract_binaries
 
 ## 3. Prepare the upgrade transaction
 
-In `pocket_old`, the following file should already exist if you have completed the [Release Procedure](4_protocol_upgrade_preparation.md):
+In `pocket_old`, the following file should already exist if you have completed the [Release Procedure](./2_upgrade_preparation.md):
 
 ```bash
 tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json

@@ -6,7 +6,7 @@ sidebar_position: 1
 :::important Managing Protocol Upgrades
 This is a _high-level meta-overview_ of protocol upgrades.
 
-**❗ If you need to trigger a protocol upgrade, see the [Protocol Upgrade Release Procedure](4_protocol_upgrade_preparation.md) section ❗**
+**❗ If you need to trigger a protocol upgrade, see the [Protocol Upgrade Release Procedure](./2_upgrade_preparation.md) section ❗**
 :::
 
 Pocket Network evolves through protocol upgrades that keep the network secure, efficient, and up-to-date. These upgrades are coordinated by the DAO (offchain governance) and executed by validators (onchain).
