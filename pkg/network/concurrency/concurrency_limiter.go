@@ -26,7 +26,6 @@ package concurrency
 import (
 	"context"
 	"sync"
-	"time"
 )
 
 // TODO_IMPROVE: Make this configurable via settings
@@ -71,13 +70,6 @@ func (cl *ConcurrencyLimiter) Acquire(ctx context.Context) bool {
 	}
 }
 
-// tryAcquireWithTimeout attempts to acquire a slot with timeout.
-func (cl *ConcurrencyLimiter) tryAcquireWithTimeout(timeout time.Duration) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	return cl.Acquire(ctx)
-}
-
 // Release returns a slot to the pool.
 func (cl *ConcurrencyLimiter) Release() {
 	select {
@@ -88,12 +80,4 @@ func (cl *ConcurrencyLimiter) Release() {
 	default:
 		// TODO_TECHDEBT: Log acquire/release mismatch for debugging
 	}
-}
-
-// getActiveRequests returns the current number of active requests.
-func (cl *ConcurrencyLimiter) getActiveRequests() int64 {
-	cl.mu.RLock()
-	defer cl.mu.RUnlock()
-
-	return cl.activeRequests
 }

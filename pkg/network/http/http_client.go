@@ -126,11 +126,14 @@ func NewDefaultHTTPClientWithDebugMetrics() *HTTPClientWithDebugMetrics {
 
 // TODO_TECHDEBT(@adshmh): Switch to buffered reading of the HTTP response.
 //
-// SendHTTPRelay sends an HTTP POST request with the relay data to the specified URL.
-// Uses the provided context for timeout and cancellation control.
-// Logs detailed metrics and debugging information on failure for debugging.
+// Do executes an HTTP request using the provided context and logger.
+// It acquires a concurrency slot before proceeding and sets up a debugging context
+// to track detailed metrics of the request lifecycle. In case of an error, it logs
+// the metrics for debugging purposes.
 //
-// Returns: response body, HTTP status code, error
+// Returns:
+// - *http.Response: the HTTP response received from the server.
+// - error: an error if the request fails, or nil if successful.
 func (h *HTTPClientWithDebugMetrics) Do(
 	ctx context.Context,
 	logger polylog.Logger,

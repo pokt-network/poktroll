@@ -274,14 +274,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	// Set the new timeout via a context on the HTTP request.
-	ctxWithRemainingTimeout, cancelCtxWithRemainingTimeout := context.WithTimeout(context.Background(), remainingTimeout)
+	ctxWithRemainingTimeout, cancelCtxWithRemainingTimeout := context.WithTimeout(ctxWithDeadline, remainingTimeout)
 	defer cancelCtxWithRemainingTimeout()
 
 	httpRequestWithUpdatedTimeout := httpRequest.WithContext(ctxWithRemainingTimeout)
 
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
-	httpResponse, err := server.httpClient.Do(ctx, logger, httpRequestWithUpdatedTimeout)
+	httpResponse, err := server.httpClient.Do(ctxWithRemainingTimeout, logger, httpRequestWithUpdatedTimeout)
 
 	backendServiceProcessingEnd := time.Now()
 	// Add response preparation duration to the logger such that any log before errors will have
