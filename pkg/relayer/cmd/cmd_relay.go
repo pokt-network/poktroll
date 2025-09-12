@@ -183,7 +183,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer func(grpcConn *grpc.ClientConn) {
-		err := grpcConn.Close()
+		err = grpcConn.Close()
 		if err != nil {
 			logger.Error().Err(err).Msg("❌ Error closing gRPC connection")
 		}

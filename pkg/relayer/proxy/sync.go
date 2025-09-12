@@ -326,8 +326,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Check if the response is a stream
 	streamThis := IsStreamingResponse(httpResponse)
-	// Capture the time after response time for the relay.
-	responsePreparationEnd := time.Now()
+
 	// Create empty relay response
 	relayResponse := &types.RelayResponse{
 		Meta:    types.RelayResponseMetadata{SessionHeader: meta.SessionHeader},
@@ -382,7 +381,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		// Build the relay response using the original service's response.
 		// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 		// was verified to be valid and has to be the same as the relayResponse session header.
-		relayResponse, err := server.newRelayResponse(responseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
+		relayResponse, err = server.newRelayResponse(responseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
 		if err != nil {
 			logger.Error().Err(err).Msg("❌ Failed building the relay response")
 			// The client should not have knowledge about the RelayMiner's issues with
@@ -392,7 +391,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		}
 
 		// Capture the time after response time for the relay.
-		responsePreparationEnd = time.Now()
+		responsePreparationEnd := time.Now()
 		// Add response preparation duration to the logger such that any log before errors will have
 		// as much request duration information as possible.
 		logger = logger.With(
