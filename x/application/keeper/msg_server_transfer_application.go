@@ -74,7 +74,6 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferBegin{
 		SourceAddress:      srcApp.GetAddress(),
 		DestinationAddress: srcApp.GetPendingTransfer().GetDestinationAddress(),
-		SourceApplication:  &srcApp,
 		SessionEndHeight:   sessionEndHeight,
 		TransferEndHeight:  transferEndHeight,
 	}); err != nil {
