@@ -29,11 +29,15 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // SessionHeader is a lightweight header for a session that can be passed around.
 // It is the minimal amount of data required to hydrate & retrieve all data relevant to the session.
 type SessionHeader struct {
+	// The Bech32 address of the application.
 	ApplicationAddress string `protobuf:"bytes,1,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
-	ServiceId          string `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The service id this session is for
+	ServiceId string `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
 	// NOTE: session_id can be derived from the above values using onchain but is included in the header for convenience
-	SessionId               string `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	SessionStartBlockHeight int64  `protobuf:"varint,4,opt,name=session_start_block_height,json=sessionStartBlockHeight,proto3" json:"session_start_block_height,omitempty"`
+	// A unique pseudorandom ID for this session
+	SessionId string `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	// The height at which this session started
+	SessionStartBlockHeight int64 `protobuf:"varint,4,opt,name=session_start_block_height,json=sessionStartBlockHeight,proto3" json:"session_start_block_height,omitempty"`
 	// Note that`session_end_block_height` is a derivative of (`start` + `num_blocks_per_session`)
 	// as governed by onchain params at the time of the session start.
 	// It is stored as an additional field to simplify business logic in case
@@ -108,12 +112,18 @@ func (m *SessionHeader) GetSessionEndBlockHeight() int64 {
 // Session is a fully hydrated session object that contains all the information for the Session
 // and its participants.
 type Session struct {
-	Header              *SessionHeader     `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
-	SessionId           string             `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	SessionNumber       int64              `protobuf:"varint,3,opt,name=session_number,json=sessionNumber,proto3" json:"session_number,omitempty"`
-	NumBlocksPerSession int64              `protobuf:"varint,4,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session,omitempty"`
-	Application         *types.Application `protobuf:"bytes,5,opt,name=application,proto3" json:"application,omitempty"`
-	Suppliers           []*types1.Supplier `protobuf:"bytes,6,rep,name=suppliers,proto3" json:"suppliers,omitempty"`
+	// The header of the session containing lightweight data
+	Header *SessionHeader `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// A unique pseudorandom ID for this session
+	SessionId string `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	// The session number since genesis
+	SessionNumber int64 `protobuf:"varint,3,opt,name=session_number,json=sessionNumber,proto3" json:"session_number,omitempty"`
+	// The number of blocks per session when this session started
+	NumBlocksPerSession int64 `protobuf:"varint,4,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session,omitempty"`
+	// A fully hydrated application object this session is for
+	Application *types.Application `protobuf:"bytes,5,opt,name=application,proto3" json:"application,omitempty"`
+	// A fully hydrated set of servicers that are serving the application
+	Suppliers []*types1.Supplier `protobuf:"bytes,6,rep,name=suppliers,proto3" json:"suppliers,omitempty"`
 }
 
 func (m *Session) Reset()         { *m = Session{} }
