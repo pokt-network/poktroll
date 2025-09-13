@@ -1,0 +1,350 @@
+---
+sidebar_position: 9
+title: LevelDB Stores FAQ
+---
+
+# Cometbft & Cosmos-sdk LevelDB Stores FAQ
+
+## What This Document Covers
+
+This guide explains disk storage for **Pocket Network validators and full nodes**. When you run a `pocketd` node (whether as a validator or full node), it creates several databases on disk that grow over time. Understanding these databases helps you:
+
+- Plan server disk capacity
+- Optimize storage costs
+- Troubleshoot disk space issues
+- Configure your node for your specific use case
+
+:::info Node Types
+- **Validators**: Participate in consensus and need all data for validation
+- **Full Nodes**: Sync and serve blockchain data but don't validate
+- **Archive Nodes**: Store complete historical data for queries and analysis
+:::
+
+This document explains the disk usage patterns of LevelDB databases in Cosmos SDK nodes backed by CometBFT, helping operators understand and manage storage requirements.
+
+## 📦 Overview
+
+A Cosmos SDK node uses four main LevelDB databases for different purposes:
+
+| Path                 | Owner       | Purpose                                 | Contains Event Data?                  | Growth Driver               |
+|----------------------|-------------|------------------------------------------|---------------------------------------|-----------------------------|
+| `data/blockstore.db` | CometBFT    | Full blocks, txs, and tx results         | ✅ Yes                                 | Tx/event verbosity, tx rate |
+| `data/tx_index.db`   | CometBFT    | Event attribute → tx index               | ⚠️ If indexed (attributes only)       | Indexed events & attributes |
+| `data/state.db`      | CometBFT    | Metadata: app hash, validators, etc.     | ⚠️ Via ABCI responses (archival only) | Chain age                   |
+| `data/application.db`| Cosmos SDK | Module state (IAVL/SMT-backed store)     | ❌ No                                  | State size & write volume   |
+
+## 📈 Impact Analysis
+
+### Behavioral Summary
+
+#### ✂️ For Pruning Nodes (Full Nodes/Validators)
+| Change Type                   | Affected DB                    | Expected Outcome                                |
+| ----------------------------- | ------------------------------ | ----------------------------------------------- |
+| Increase tx volume            | `blockstore.db`                | Linear growth (with pruning limits)            |
+| Emit more/larger events       | `blockstore.db`, `tx_index.db` | Larger tx logs and more index entries           |
+| Add new indexed event types   | `tx_index.db`                  | More entries per tx → faster growth             |
+| Disable tx indexing           | `tx_index.db`                  | Stops growth; existing data still occupies disk |
+| Reduce event verbosity        | `blockstore.db`, `state.db`    | Smaller txs → smaller blocks & ABCI responses   |
+| Enable aggressive pruning     | `blockstore.db`, `state.db`    | Maintains bounded size over time                |
+
+#### 📚 For Archival Nodes
+| Change Type                   | Affected DB                    | Expected Outcome                                |
+| ----------------------------- | ------------------------------ | ----------------------------------------------- |
+| Increase tx volume            | `blockstore.db`, `state.db`    | **Unlimited growth** - stores all history      |
+| Emit more/larger events       | `blockstore.db`, `tx_index.db`, `state.db` | **Significant impact** on all event-related DBs |
+| Add new indexed event types   | `tx_index.db`                  | **Exponential growth** - all historical events indexed |
+| Disable tx indexing           | `tx_index.db`                  | Stops growth; existing data still occupies disk |
+| Reduce event verbosity        | `blockstore.db`, `state.db`    | **Critical** - directly impacts long-term storage |
+| Snapshot reset                | All except `application.db`    | ⚠️ **Data loss** - removes historical records   |
+
+## 🔧 Best Practices
+
+### Configuration Changes
+
+#### For Full Nodes and Validators
+- Audit `index_events` in `app.toml` and minimize to only essential attributes
+- Set `indexer = "null"` for non-querying nodes
+- Enable aggressive pruning: `pruning = "everything"` or `pruning = "custom"`
+- Set `min-retain-blocks` to limit historical data retention
+
+#### 📚 For Archival Nodes
+- **Keep `pruning = "nothing"`** (this is correct for archival nodes)
+- **Keep `min-retain-blocks = 0`** (archival nodes need all historical data)
+- Focus on optimizing application-level event emissions instead of pruning
+- Monitor individual block sizes rather than total database size
+
+### Development Best Practices
+
+- Avoid emitting verbose or unnecessary event attributes
+- Minimize event payload sizes where possible
+- Use efficient data structures in custom module state
+
+### Operational Maintenance
+
+- Monitor disk usage trends and plan capacity accordingly
+- Use `--min-retain-blocks` flag to limit historical block storage
+- Set up automated disk space alerts for early warning
+
+
+## Database Details
+
+### 📂 `blockstore.db`
+
+**Purpose**: Stores full block data for replay and RPC access.
+
+**Contents**:
+- Block headers (`H:<height>`)
+- Block data: txs, evidence (`B:<height>`)
+- Commit signatures (`C:<height>`)
+
+**Encodes**:
+- Full transaction execution results including emitted events/logs
+- In CometBFT v0.38+: [`FinalizeBlock`](https://github.com/cometbft/cometbft/blob/v0.38.x/proto/tendermint/abci/types.proto#L352) response containing `ExecTxResult` for each transaction
+- Pre-v0.38: `DeliverTx` results (deprecated)
+
+**Growth Factors**:
+- Tx volume per block
+- Verbosity of events (e.g., long strings or serialized protos)
+
+**Typical Behavior**:
+- Grows linearly with chain traffic
+- Can balloon with high-volume or verbose txs
+
+**Mitigation**:
+- **Block retention**: Use `--min-retain-blocks` flag when starting `pocketd` or set `min-retain-blocks` in `app.toml` to limit stored blocks (e.g., `--min-retain-blocks=1000` keeps only last 1000 blocks)
+- **Snapshots**: Periodic snapshot resets to reduce overall data size
+- **Pruning**: Enable aggressive pruning for non-validator nodes
+
+### 📂 `tx_index.db`
+
+**Purpose**: Enables `tx_search` by event attributes via RPC.
+
+**Contents**:
+- Keys: `eventType.attrKey=attrValue`
+- Values: Set of tx hashes
+
+**Configuration**: Based on `app.toml` settings. By default, CometBFT indexes **all** transaction events and attributes, which can lead to significant disk usage.
+
+```toml
+[tx_index]
+indexer = "kv"  # Default: indexes everything
+# index_events = []  # Uncommented = index all events (default)
+# indexer = "null"   # Disable indexing entirely
+```
+
+To limit indexing to specific events:
+```toml
+[tx_index]
+indexer = "kv"
+index_events = ["message.sender", "transfer.amount"]
+```
+
+**Growth Factors**:
+- Number of indexed events and attributes
+- Frequency of those events
+
+**Typical Behavior**:
+- Can rival `application.db` in size
+- Redundant attributes (e.g., full addresses, denoms, etc.) multiply size
+
+**Mitigation**:
+- Reduce `index_events`
+- Avoid emitting attributes that aren't needed off-chain
+- Set `indexer = "null"` for non-querying archival nodes
+
+### 📂 `state.db`
+
+**Purpose**: Tracks block height → AppHash + validator sets
+
+**Contents**:
+- App hashes for every block height
+- Validator sets and historical changes
+- Consensus parameters and their history
+- IAVL tree root hashes and metadata
+
+**Growth Factors**:
+- Number of blocks (stores app hash per height)
+- Validator set churn (frequent changes create snapshots)
+- Consensus parameter changes (governance proposals)
+- IAVL tree node storage (each node = separate DB record)
+
+**Typical Behavior**:
+- **Full Nodes/Validators**: Grows slowly, usually < 100MB with proper pruning
+- **Archival Nodes**: Multi-GB growth is normal and expected
+- **⚠️ Warning**: > 1GB for non-archival nodes indicates pruning issues
+
+**Common Issues Causing Large state.db**:
+- **For Non-Archival Nodes**: Missing pruning configuration allowing indefinite retention
+- **For All Node Types**: Abnormally large ABCI responses (>10MB per block)
+- Excessive validator set changes storing complete metadata snapshots
+- IAVL tree inefficiencies with historical app hash storage
+
+**Mitigation**:
+- **Non-Archival Nodes**: Enable pruning in `app.toml` and set `min-retain-blocks`
+- **Archival Nodes**: Focus on optimizing event emissions and ABCI response sizes
+- Use `leveldb-inspector` tool to identify large ABCI responses
+- Consider state sync recovery (non-archival nodes only)
+- Monitor for blocks with abnormally large ABCI responses
+
+### 📂 `application.db`
+
+**Purpose**: Stores the actual state of all SDK modules
+
+**Contents**:
+- x/bank balances
+- x/staking delegations
+- Custom module state
+
+**Growth Factors**:
+- Number of accounts, validators, contracts, etc.
+- Write volume to store
+
+**Typical Behavior**:
+- Grows with app-level complexity
+- Compacted over time with IAVL pruning
+
+**Mitigation**:
+- Enable pruning in `app.toml`
+- Periodic state sync or snapshots
+
+
+## 🚨 Troubleshooting
+
+### When Database Sizes Indicate Problems
+
+Normal database size ranges vary significantly by node type:
+
+#### Full Nodes and Validators
+| Database | Typical Size | Warning Signs |
+|----------|-------------|---------------|
+| `application.db` | Varies by chain activity | Growth matches network usage |
+| `blockstore.db` | Linear with chain age (with pruning) | Sudden spikes indicate verbose events |
+| `tx_index.db` | 0 (if disabled) to large | Should be 0 if `indexer = "null"` |
+| **`state.db`** | **< 100MB even on large chains** | **> 1GB indicates pruning issues** |
+
+#### Archival Nodes (Expected Larger Sizes)
+| Database | Expected Behavior | Investigation Threshold |
+|----------|-------------------|------------------------|
+| `application.db` | Grows with chain activity | Same as other node types |
+| `blockstore.db` | **Linear growth, no pruning** | Sudden spikes in block size |
+| `tx_index.db` | **Large (if indexing enabled)** | Only if indexer should be disabled |
+| **`state.db`** | **Multi-GB growth over time** | **Individual blocks > 50MB** |
+
+### Investigating Large state.db
+
+**For Full Nodes/Validators (> 1GB)** or **Archival Nodes (individual blocks > 50MB)**:
+
+**Abnormally Large ABCI Responses** (most common issue):
+- Individual blocks storing 10MB+ ABCI response data
+- Caused by excessive event emissions or verbose transaction logs
+- Check specific block heights with large responses
+
+**IAVL Tree Issues**:
+- IAVL stores each tree node as separate database record
+- Historical app hashes retained indefinitely (normal for archival)
+- Potential state inconsistencies or corruption
+
+**Validator Set Churn**:
+- Frequent validator changes create new validator set snapshots
+- Each change stores complete validator metadata (normal for archival)
+
+**Consensus Parameter Changes**:
+- Governance proposals modifying consensus parameters
+- Historical parameter versions accumulate (normal for archival)
+
+**Incorrect Pruning Configuration** (Full Nodes/Validators only):
+- No `min-retain-blocks` configured on non-archival nodes
+- Pruning disabled when it should be enabled
+
+### Diagnostic Tools
+
+The Pocket Network codebase includes specialized tools for database analysis:
+
+#### LevelDB Inspector
+Analyzes database contents and identifies space usage:
+
+```bash
+# Navigate to your node directory
+cd /path/to/your/pocketd/data
+
+# Get database statistics and identify large entries
+/path/to/poktroll/tools/leveldb-inspector/leveldb-inspector stats -d state.db
+/path/to/poktroll/tools/leveldb-inspector/leveldb-inspector size -d state.db
+
+# Check for abnormally large ABCI responses
+/path/to/poktroll/tools/leveldb-inspector/leveldb-inspector keys -d state.db | grep "abciResponsesKey" | tail -10
+```
+
+#### IAVL Tree Analysis
+For investigating IAVL tree issues:
+
+```bash
+# Check IAVL tree consistency (if available)
+/path/to/poktroll/tools/iavl-tree-diff/main.go
+
+# Query current consensus parameters
+pocketd query consensus params
+
+# Review validator set history
+pocketd query staking validators --height <specific_height>
+```
+
+#### Configuration Review
+Check your current settings:
+
+```bash
+# Review pruning configuration
+grep -A 10 "pruning" ~/.pocketd/config/app.toml
+
+# Check min-retain-blocks setting
+grep "min-retain-blocks" ~/.pocketd/config/app.toml
+
+# Verify indexing configuration
+grep -A 5 "tx_index" ~/.pocketd/config/config.toml
+```
+
+### Recovery Options for Oversized Databases
+
+If databases have grown too large, consider these recovery methods:
+
+#### Snapshot-Based Recovery (Recommended)
+The most efficient approach for database recovery is using pre-built snapshots:
+
+```bash
+# Stop your node
+sudo systemctl stop pocketd
+
+# Backup your validator key and node key (if validator)
+cp ~/.pocketd/config/priv_validator_key.json ~/backup/
+cp ~/.pocketd/config/node_key.json ~/backup/
+
+# Remove old data (keep config)
+rm -rf ~/.pocketd/data
+
+# Download recent snapshot (replace with actual snapshot source)
+wget https://snapshots.example.com/poktroll-latest.tar.gz
+
+# Extract to data directory
+tar -xzf poktroll-latest.tar.gz -C ~/.pocketd/data/
+
+# Restart with proper pruning configuration
+sudo systemctl start pocketd
+```
+
+
+#### Selective Database Reset
+For specific database issues:
+
+```bash
+# Stop node first
+sudo systemctl stop pocketd
+
+# Remove only problematic database (e.g., oversized tx_index.db)
+rm -rf ~/.pocketd/data/tx_index.db
+
+# Ensure indexer is disabled if not needed
+# Edit config.toml: indexer = "null"
+
+# Restart node
+sudo systemctl start pocketd
+```
