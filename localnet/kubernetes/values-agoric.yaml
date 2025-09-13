@@ -1,6 +1,7 @@
 fund_on_start: true
 
-chain_id: agoric
+# Chain ID matches the standard agoric localnet configuration
+chain_id: agoriclocal
 
 image:
   repository: agoric
