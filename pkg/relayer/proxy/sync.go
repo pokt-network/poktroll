@@ -76,10 +76,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	sessionHeader := meta.SessionHeader
 	serviceId := sessionHeader.ServiceId
 
-	blockHeight := server.blockClient.LastBlock(ctx).Height()
-
 	logger = logger.With(
-		"current_height", blockHeight,
+		"current_height", startHeight,
 		"session_id", sessionHeader.SessionId,
 		"session_start_height", sessionHeader.SessionStartBlockHeight,
 		"session_end_height", sessionHeader.SessionEndBlockHeight,
