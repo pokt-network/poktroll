@@ -25,6 +25,8 @@ Operational (non-technical) instructions on releasing an upgrade to MainNet
   - [4.5 Update the Documentation Upgrade List](#45-update-the-documentation-upgrade-list)
   - [4.6 Send out an announcement to all exchanges](#46-send-out-an-announcement-to-all-exchanges)
 - [5. Update the `pocketd` binary](#5-update-the-pocketd-binary)
+- [6. How to Cancel an Upgrade](#6-how-to-cancel-an-upgrade)
+  - [Verify Upgrade Status](#verify-upgrade-status)
 
 ## 1. Protocol Upgrade Preparation
 
@@ -215,3 +217,58 @@ OR
 ```bash
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash
 ```
+
+## 6. How to Cancel an Upgrade
+
+In emergency situations, you may need to cancel a pending upgrade.
+
+You can run the cancellation command like so:
+
+```bash
+pocketd \
+    --keyring-backend="test" --home="~/.pocket" \
+    --fees=300upokt --network=main \
+    tx authz exec tools/scripts/upgrades/cancel_upgrade_main.json --from=pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh
+```
+
+### Verify Upgrade Status
+
+You can check the current upgrade plan status (whether pending or cancelled) using:
+
+```bash
+pocketd query upgrade plan --network=main -o json | jq
+```
+
+:::warning Emergency Use Only
+
+The upgrade cancellation command should only be used in emergency situations where the upgrade needs to be stopped before it executes.
+
+:::
+
+<details>
+<summary>Make sure to inform Exchanges of the cancellation</summary>
+
+```bash
+cat <<'EOF' >> release_prep_announcement.txt
+Reminder that v0.1.29 is still scheduled to go live at approximately 10:00am PST tomorrow, Tuesday (09/16/2025).
+
+Due to some slower blocks, we have updated the upgrade height from 382,991 to 382,250.
+
+Find all the details here: https://github.com/pokt-network/poktroll/releases/tag/v0.1.29.
+
+EOF
+```
+
+Then, run a test broadcast:
+
+```bash
+make telegram_test_broadcast_msg MSG_FILE=release_prep_announcement.txt
+```
+
+If it looks good, broadcast it to all exchanges:
+
+```bash
+make telegram_broadcast_msg MSG_FILE=release_prep_announcement.txt
+```
+
+</details>
