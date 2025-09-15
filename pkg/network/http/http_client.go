@@ -206,17 +206,6 @@ func (h *HTTPClientWithDebugMetrics) setupRequestDebugging(
 	return debugCtx, requestRecorder
 }
 
-// categorizeError categorizes HTTP client errors and updates counters for monitoring
-func (h *HTTPClientWithDebugMetrics) categorizeError(ctx context.Context, err error) error {
-	if ctx.Err() == context.DeadlineExceeded {
-		h.timeoutErrors.Add(1)
-		return fmt.Errorf("request timeout: %w", err)
-	} else {
-		h.connectionErrors.Add(1)
-		return fmt.Errorf("connection error: %w", err)
-	}
-}
-
 // createDetailedHTTPTrace creates comprehensive HTTP tracing using the httptrace library:
 // https://pkg.go.dev/net/http/httptrace
 // Captures granular timing for every phase of the HTTP request lifecycle to identify bottlenecks.
