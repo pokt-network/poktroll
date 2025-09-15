@@ -1,6 +1,6 @@
 ---
+title: Chain Halt - Troubleshooting
 sidebar_position: 7
-title: Chain Halt Troubleshooting
 ---
 
 ## Chain Halt Troubleshooting <!-- omit in toc -->
@@ -112,4 +112,4 @@ to sync a node from genesis by automatically using the appropriate binary for ea
 
 ## Syncing from genesis
 
-If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running the correct version of the binary in accordance with this table [Upgrade List](4_upgrade_list.md).
+If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running the correct version of the binary in accordance with this table [Upgrade List](6_upgrade_list.md).

@@ -1,7 +1,14 @@
 ---
-title: Failed upgrade contingency plan
+title: Chain Halt Upgrade - Contingency Plans
 sidebar_position: 8
 ---
+
+:::tip Grove Employee 🌿
+
+The documentation in [Grove's Infrastructure](https://github.com/buildwithgrove/infrastructure/tree/main/docs)
+repo can be followed to restart Grove's validator network.
+
+:::
 
 ## Contingency plans <!-- omit in toc -->
 
@@ -19,7 +26,7 @@ This document is intended to help you recover with minimal downtime.
 
 **tl;dr cancel the upgrade plan!**
 
-See the instructions of [how to do that here](3_testing_upgrades_locally.md#cancelling-the-upgrade-plan).
+See the instructions of [how to do that here](4_localnet_upgrade_testing.md#cancelling-the-upgrade-plan).
 
 ### Option 1: The migration didn't start (i.e. migration halt)
 
@@ -78,13 +85,13 @@ In such a case, we need:
 
 **tl;dr This should be treated as a consensus or non-determinism bug that is unrelated to the upgrade.**
 
-See [Recovery From Chain Halt](9_recovery_from_chain_halt.md) for more information on how to handle such issues.
+See [Recovery From Chain Halt](9_chain_halt_recovery.md) for more information on how to handle such issues.
 
 ### Failed Upgrade Checklist
 
 The following is a list of documentation & scripts that need to be updated on a failed upgrade:
 
-- [ ] The [upgrade list](4_upgrade_list.md) should reflect a failed upgrade and provide a range of heights that served by each version.
+- [ ] The [upgrade list](6_upgrade_list.md) should reflect a failed upgrade and provide a range of heights that served by each version.
 - [ ] Systemd service should include`--unsafe-skip-upgrade=$upgradeHeightNumber` argument in its start command [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/full-node.sh).
 - [ ] The [Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/pocketd/templates/StatefulSet.yaml) should point to the latest version;consider exposing via a `values.yaml` file
 - [ ] The [docker-compose](https://github.com/pokt-network/poktroll-docker-compose-example/tree/main/scripts) examples should point to the latest version
