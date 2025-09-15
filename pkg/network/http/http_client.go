@@ -217,18 +217,6 @@ func (h *HTTPClientWithDebugMetrics) categorizeError(ctx context.Context, err er
 	}
 }
 
-// readAndValidateResponse reads the response body and validates the HTTP status code
-func (h *HTTPClientWithDebugMetrics) readAndValidateResponse(resp *http.Response) ([]byte, error) {
-	// Read response body with size protection using buffer pool
-	responseBody, err := h.bufferPool.ReadWithBuffer(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	// TODO_TECHDEBT(@adshmh): Do we need to verify the HTTP status code is 200?
-	return responseBody, nil
-}
-
 // createDetailedHTTPTrace creates comprehensive HTTP tracing using the httptrace library:
 // https://pkg.go.dev/net/http/httptrace
 // Captures granular timing for every phase of the HTTP request lifecycle to identify bottlenecks.
