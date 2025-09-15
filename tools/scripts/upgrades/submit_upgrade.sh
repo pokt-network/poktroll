@@ -303,3 +303,36 @@ echo -e "6. Notify all exchanges on Telegram: ${CYAN}make telegram_release_notif
 echo ""
 echo -e "7. Only proceed to the next environment after current upgrade succeeds (Alpha → Beta → MainNet)"
 echo ""
+
+# Upgrade cancellation section
+echo ""
+echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║${NC}         Emergency: Cancel Upgrade          ${BLUE}║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
+echo ""
+print_header "🚨 COPY-PASTE COMMAND TO CANCEL UPGRADE (EMERGENCY ONLY):"
+echo ""
+
+# Set the cancel upgrade JSON based on environment
+case $ENVIRONMENT in
+local)
+    CANCEL_UPGRADE_JSON="tools/scripts/upgrades/cancel_upgrade_alpha.json"
+    ;;
+alpha)
+    CANCEL_UPGRADE_JSON="tools/scripts/upgrades/cancel_upgrade_alpha.json"
+    ;;
+beta)
+    CANCEL_UPGRADE_JSON="tools/scripts/upgrades/cancel_upgrade_beta.json"
+    ;;
+main)
+    CANCEL_UPGRADE_JSON="tools/scripts/upgrades/cancel_upgrade_main.json"
+    ;;
+esac
+
+echo -e "${CYAN}pocketd \\\\"
+echo -e "    --keyring-backend=\"$KEYRING_BACKEND\" --home=\"$HOME_DIR\" \\\\"
+echo -e "    --fees=$FEES --network=${ENVIRONMENT} \\\\"
+echo -e "    tx authz exec ${CANCEL_UPGRADE_JSON} --from=${FROM_ACCOUNT}${NC}"
+echo ""
+print_warning "⚠️  Use this command ONLY in emergency situations to cancel a pending upgrade!"
+echo ""

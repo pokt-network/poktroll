@@ -25,6 +25,7 @@ Operational (non-technical) instructions on releasing an upgrade to MainNet
   - [4.5 Update the Documentation Upgrade List](#45-update-the-documentation-upgrade-list)
   - [4.6 Send out an announcement to all exchanges](#46-send-out-an-announcement-to-all-exchanges)
 - [5. Update the `pocketd` binary](#5-update-the-pocketd-binary)
+- [6. How to Cancel an Upgrade](#6-how-to-cancel-an-upgrade)
 
 ## 1. Protocol Upgrade Preparation
 
@@ -215,3 +216,5 @@ OR
 ```bash
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash
 ```
+
+## 6. How to Cancel an Upgrade
