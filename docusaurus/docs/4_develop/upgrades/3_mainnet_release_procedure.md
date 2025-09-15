@@ -220,13 +220,9 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
 
 ## 6. How to Cancel an Upgrade
 
-In emergency situations, you may need to cancel a pending upgrade. Use the upgrade script to get the proper cancellation command:
+In emergency situations, you may need to cancel a pending upgrade.
 
-```bash
-./tools/scripts/upgrades/submit_upgrade.sh main v0.1.29 --instruction-only
-```
-
-This will display the cancellation command at the bottom of the output. You can also run the cancellation command directly:
+You can run the cancellation command like so:
 
 ```bash
 pocketd \
@@ -248,3 +244,31 @@ pocketd query upgrade plan --network=main -o json | jq
 The upgrade cancellation command should only be used in emergency situations where the upgrade needs to be stopped before it executes.
 
 :::
+
+<details>
+<summary>Make sure to inform Exchanges of the cancellation</summary>
+
+```bash
+cat <<'EOF' >> release_prep_announcement.txt
+Reminder that v0.1.29 is still scheduled to go live at approximately 10:00am PST tomorrow, Tuesday (09/16/2025).
+
+Due to some slower blocks, we have updated the upgrade height from 382,991 to 382,250.
+
+Find all the details here: https://github.com/pokt-network/poktroll/releases/tag/v0.1.29.
+
+EOF
+```
+
+Then, run a test broadcast:
+
+```bash
+make telegram_test_broadcast_msg MSG_FILE=release_prep_announcement.txt
+```
+
+If it looks good, broadcast it to all exchanges:
+
+```bash
+make telegram_broadcast_msg MSG_FILE=release_prep_announcement.txt
+```
+
+</details>
