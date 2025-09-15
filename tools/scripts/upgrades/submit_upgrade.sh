@@ -267,6 +267,7 @@ if [ "$GRAFANA_DASHBOARD" != "NA" ]; then
 fi
 echo -e "${NC}1. Watch the upgrade plan:${NC}"
 echo -e "   ${CYAN}watch -n 5 \"pocketd query upgrade plan --network=${ENVIRONMENT}\"${NC}"
+echo -e "   ${CYAN}pocketd query upgrade plan --network=${ENVIRONMENT} -o json | jq${NC}"
 echo ""
 echo -e "${NC}2. Watch node version:${NC}"
 echo -e "   ${CYAN}watch -n 5 \"curl -s ${RPC_ENDPOINT}/abci_info | jq '.result.response.version'\"${NC}"

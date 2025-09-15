@@ -218,3 +218,32 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
 ```
 
 ## 6. How to Cancel an Upgrade
+
+In emergency situations, you may need to cancel a pending upgrade. Use the upgrade script to get the proper cancellation command:
+
+```bash
+./tools/scripts/upgrades/submit_upgrade.sh main v0.1.29 --instruction-only
+```
+
+This will display the cancellation command at the bottom of the output. You can also run the cancellation command directly:
+
+```bash
+pocketd \
+    --keyring-backend="test" --home="~/.pocket" \
+    --fees=300upokt --network=main \
+    tx authz exec tools/scripts/upgrades/cancel_upgrade_main.json --from=pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh
+```
+
+### Verify Upgrade Status
+
+You can check the current upgrade plan status (whether pending or cancelled) using:
+
+```bash
+pocketd query upgrade plan --network=main -o json | jq
+```
+
+:::warning Emergency Use Only
+
+The upgrade cancellation command should only be used in emergency situations where the upgrade needs to be stopped before it executes.
+
+:::
