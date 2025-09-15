@@ -26,6 +26,7 @@ Operational (non-technical) instructions on releasing an upgrade to MainNet
   - [4.6 Send out an announcement to all exchanges](#46-send-out-an-announcement-to-all-exchanges)
 - [5. Update the `pocketd` binary](#5-update-the-pocketd-binary)
 - [6. How to Cancel an Upgrade](#6-how-to-cancel-an-upgrade)
+  - [Verify Upgrade Status](#verify-upgrade-status)
 
 ## 1. Protocol Upgrade Preparation
 
