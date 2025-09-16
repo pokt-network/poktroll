@@ -9,8 +9,10 @@ telegram_broadcast_msg: ## Broadcast a custom message to all Telegram groups. Us
 		exit 1; \
 	fi
 	@echo "Broadcasting message to all Telegram groups...\n"
-	@MSG="$$(sed -E 's/([_*$begin:math:display$$end:math:display$()~`>#+\-=|{}.!])/\\\1/g' $(MSG_FILE))"; \
-	gh workflow run telegram-broadcast.yml -f message="$$MSG" -f test_mode=false;
+	@MSG="$$(cat $(MSG_FILE))"; \
+	gh workflow run telegram-broadcast.yml \
+		--raw-field message="$$MSG" \
+		--raw-field test_mode=false \
 	@echo "\nBroadcast initiated. Check the workflow status at: $(CYAN)https://github.com/pokt-network/poktroll/actions/workflows/telegram-broadcast.yml$(RESET)"
 
 .PHONY: telegram_test_broadcast_msg
