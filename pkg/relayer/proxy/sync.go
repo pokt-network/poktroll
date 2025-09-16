@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"slices"
@@ -306,7 +307,19 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
-	httpResponse, err := client.Do(httpRequest)
+	var httpResponse *http.Response
+	// Treat "hey" as a special service: return a static JSON response without
+	// calling the backend, since we're not testing backend service latency here.
+	if serviceId == "hey" {
+		httpResponse = &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader("{\"jsonrpc\": \"2.0\", \"result\": \"0x6942\"}")),
+		}
+		err = nil
+	} else {
+		httpResponse, err = client.Do(httpRequest)
+	}
 
 	backendServiceProcessingEnd := time.Now()
 	// Add response preparation duration to the logger such that any log before errors will have
