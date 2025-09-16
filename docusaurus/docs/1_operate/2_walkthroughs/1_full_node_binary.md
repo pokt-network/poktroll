@@ -684,7 +684,7 @@ You should review this section if:
 
 A reorg MAY be necessary if one of the following occurs:
 
-1. A [protocol upgrade](../../4_develop/upgrades) does not go as planned
+1. A [protocol upgrade(../../4_develop/upgrades/2_upgrade_preparation.md) does not go as planned
 2. An onchain bug results in a chain halt
 
 The list is to long to enumerate as to why this may happen, how it should be fixed, and different ways to approach in fixing it.
