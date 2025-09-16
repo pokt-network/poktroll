@@ -153,29 +153,44 @@ Use the [release notes](https://github.com/pokt-network/poktroll/releases/latest
 
 ### 4.6 Send out an announcement to all exchanges
 
-Assuming you have the [gh cli](https://cli.github.com/) installed, run the following command and verify the message is properly formatted:
+<details>
+<summary>Prepare `release_prep_announcement.txt`</summary>
 
 ```bash
-make telegram_test_release
+cat <<'EOF' >> release_prep_announcement.txt
+📢 Pocket Network Upgrade Update 📢
+
+The network successfully upgraded to `v0.1.29` at height `382,250` around 12pm PST on Tuesday (09/16/2025).
+
+Please make sure update your binaries and full nodes to the latest:
+https://github.com/pokt-network/poktroll/releases/tag/v0.1.29
+
+Snapshots are available here: https://snapshots.us-nj.poktroll.com/ 💾
+
+If you need an RPC endpoint, let us know and [Grove](https://www.grove.city/) will happily help out 🌿
+
+❓ What's new ❓
+- Improved RelayMiner performance
+- Validator reward distribution
+- Additional supplier configurations and management
+- A lot of quality of life enhancements
+
+EOF
 ```
 
-You can then broadcast the release to all exchanges by running:
+</details>
+
+Then, run a test broadcast:
 
 ```bash
-make telegram_release_notify
+make telegram_test_broadcast_msg MSG_FILE=release_prep_announcement.txt
 ```
 
-:::warning TODO: Releases that are too long
+If it looks good, broadcast it to all exchanges:
 
-You might get an error that the [message is too long](https://github.com/pokt-network/poktroll/actions/runs/15860176445/job/44715185450).
-
-If this happens, then:
-
-1. Remove unnecessary content from the release notes
-2. Run the workflow again
-3. Revert the release with all the details
-
-:::
+```bash
+make telegram_broadcast_msg MSG_FILE=release_prep_announcement.txt
+```
 
 ## 5. Update the `pocketd` binary
 
