@@ -119,7 +119,7 @@ query_network_upgrade() {
 
     log_info "Querying $network network for upgrade $version..."
 
-    local cmd="pocketd query upgrade applied $version --network=$network --grpc-insecure=false -o json"
+    local cmd="pocketd query upgrade applied $version --network=$network -o json"
 
     if [[ "$VERBOSE" == "true" ]]; then
         log_info "Executing: $cmd"
@@ -149,8 +149,8 @@ query_network_upgrade() {
     fi
 }
 
-# Query upgrade transaction hash for a specific network and height
-query_upgrade_tx_hash() {
+# Query block hash for a specific network and height
+query_upgrade_block_hash() {
     local network="$1"
     local height="$2"
     local home_dir="${HOME}/.pocket_prod"
@@ -161,19 +161,9 @@ query_upgrade_tx_hash() {
         return
     fi
 
-    log_info "Querying transaction hash for upgrade at height $height on $network..."
+    log_info "Querying block hash for upgrade at height $height on $network..."
 
-    # Calculate search range around the upgrade height
-    local height_start=$((height - 25))
-    local height_end=$((height + 25))
-
-    # Ensure height_start is not negative
-    if [[ $height_start -lt 1 ]]; then
-        height_start=1
-    fi
-
-    local query="message.action='/cosmos.authz.v1beta1.MsgExec' AND tx.height > $height_start AND tx.height < $height_end"
-    local cmd="pocketd query txs --network=$network --grpc-insecure=false --query=\"$query\" --limit 1000000 --page 1 -o json --home=\"$home_dir\""
+    local cmd="pocketd query block --type=height $height --network=$network -o json --home=\"$home_dir\""
 
     if [[ "$VERBOSE" == "true" ]]; then
         log_info "Executing: $cmd"
@@ -186,27 +176,25 @@ query_upgrade_tx_hash() {
     result=$(eval "$cmd" 2>&1) || exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
-        # Parse JSON and extract upgrade transaction hash
-        local tx_hash
-        tx_hash=$(echo "$result" | jq -r '
-            .txs[]? |
-            select(.tx.body.messages[]? |
-                select(."@type" == "/cosmos.authz.v1beta1.MsgExec") |
-                .msgs[]? |
-                select(."@type" == "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade")
-            ) |
-            .txhash
-        ' 2>/dev/null | head -n1)
+        # Parse JSON and extract block hash
+        local block_hash
+        # Try multiple possible locations for the block hash
+        block_hash=$(echo "$result" | jq -r '.block_id.hash // .block.block_id.hash // .header.hash // "N/A"' 2>/dev/null)
 
-        if [[ -n "$tx_hash" && "$tx_hash" != "null" ]]; then
-            log_success "Found upgrade transaction hash $tx_hash for $network"
-            echo "$tx_hash"
+        # If still not found, use the block height as a fallback identifier
+        if [[ "$block_hash" == "N/A" || "$block_hash" == "null" ]]; then
+            block_hash="$height"
+        fi
+
+        if [[ -n "$block_hash" && "$block_hash" != "N/A" && "$block_hash" != "null" ]]; then
+            log_success "Found upgrade block hash $block_hash for $network"
+            echo "$block_hash"
         else
-            log_warn "No upgrade transaction hash found for $network at height $height"
+            log_error "No block hash found for $network at height $height"
             echo "N/A"
         fi
     else
-        log_warn "Failed to query transactions for $network: $result"
+        log_error "Failed to query block for $network at height $height: $result"
         echo "ERROR"
     fi
 }
@@ -226,18 +214,18 @@ generate_markdown() {
     # Extract values from results string
     local alpha_height=$(get_result_value "$results" 0)
     local alpha_height_url="https://shannon-alpha.trustsoothe.io/block/${alpha_height}"
-    local alpha_tx=$(get_result_value "$results" 1)
-    local alpha_tx_url="https://shannon-alpha.trustsoothe.io/tx/${alpha_tx}"
+    local alpha_block=$(get_result_value "$results" 1)
+    local alpha_block_url="https://shannon-alpha.trustsoothe.io/block/${alpha_block}"
 
     local beta_height=$(get_result_value "$results" 2)
     local beta_height_url="https://shannon-beta.trustsoothe.io/block/${beta_height}"
-    local beta_tx=$(get_result_value "$results" 3)
-    local beta_tx_url="https://shannon-beta.trustsoothe.io/tx/${beta_tx}"
+    local beta_block=$(get_result_value "$results" 3)
+    local beta_block_url="https://shannon-beta.trustsoothe.io/block/${beta_block}"
 
     local main_height=$(get_result_value "$results" 4)
     local main_height_url="https://shannon-mainnet.trustsoothe.io/block/${main_height}"
-    local main_tx=$(get_result_value "$results" 5)
-    local main_tx_url="https://shannon-mainnet.trustsoothe.io/tx/${main_tx}"
+    local main_block=$(get_result_value "$results" 5)
+    local main_block_url="https://shannon-mainnet.trustsoothe.io/block/${main_block}"
 
     # Add query time header
     echo "Query Time: $(date)"
@@ -252,30 +240,11 @@ generate_markdown() {
 
 ## Upgrade Details
 
-| Network       | Upgrade Height | Upgrade Transaction Hash | Notes |
-| ------------- | -------------- | ------------------------ | ----- |
-| Alpha TestNet | [${alpha_height:-⚪}](${alpha_height_url:-⚪}) | [${alpha_tx:-⚪}](${alpha_tx_url:-⚪}) | ⚪ |
-| Beta TestNet  | [${beta_height:-⚪}](${beta_height_url:-⚪}) | [${beta_tx:-⚪}](${beta_tx_url:-⚪}) | ⚪ |
-| MainNet       | [${main_height:-⚪}](${main_height_url:-⚪}) | [${main_tx:-⚪}](${main_tx_url:-⚪}) | ⚪ |
-
-> [!NOTE]
-> TO PROTOCOL MAINTAINER: Make sure to update the section below.
-> Remove this note afterwards.
-
-| Category                     | Notes                                |
-| ---------------------------- | ------------------------------------ |
-| Planned Upgrade              | UPDATE ME           |
-| Consensus Breaking Change    | UPDATE ME          |
-| Manual Intervention Required | UPDATE ME                                     |
-
-**Legend**:
-
-- 🚨 - Failed
-- ⚠️ - Warning / Caution / Special Note
-- ✅ - Yes / Success
-- ❌ - No
-- ⚪ - TODO / TBD
-- ❓ - Unknown / Needs Discussion
+| Network       | Upgrade Block Height | Notes |
+| ------------- | -------------------- | ----- |
+| Alpha TestNet | [${alpha_height:-⚪}](${alpha_height_url:-⚪}) | $([ "${alpha_block}" ] && echo "🟢" || echo "⚪") |
+| Beta TestNet  | [${beta_height:-⚪}](${beta_height_url:-⚪}) | $([ "${beta_block}" ] && echo "🟢" || echo "⚪") |
+| MainNet       | [${main_height:-⚪}](${main_height_url:-⚪}) | $([ "${main_block}" ] && echo "🟢" || echo "⚪") |
 
 ## What's changed? (Autogenerated release notes)
 
@@ -290,18 +259,18 @@ generate_json_output() {
     # Extract values from results string
     local alpha_height=$(get_result_value "$results" 0)
     local alpha_height_url="https://shannon-alpha.trustsoothe.io/block/${alpha_height}"
-    local alpha_tx=$(get_result_value "$results" 1)
-    local alpha_tx_url="https://shannon-alpha.trustsoothe.io/tx/${alpha_tx}"
+    local alpha_block=$(get_result_value "$results" 1)
+    local alpha_block_url="https://shannon-alpha.trustsoothe.io/block/${alpha_block}"
 
     local beta_height=$(get_result_value "$results" 2)
     local beta_height_url="https://shannon-beta.trustsoothe.io/block/${beta_height}"
-    local beta_tx=$(get_result_value "$results" 3)
-    local beta_tx_url="https://shannon-beta.trustsoothe.io/tx/${beta_tx}"
+    local beta_block=$(get_result_value "$results" 3)
+    local beta_block_url="https://shannon-beta.trustsoothe.io/block/${beta_block}"
 
     local main_height=$(get_result_value "$results" 4)
     local main_height_url="https://shannon-mainnet.trustsoothe.io/block/${main_height}"
-    local main_tx=$(get_result_value "$results" 5)
-    local main_tx_url="https://shannon-mainnet.trustsoothe.io/tx/${main_tx}"
+    local main_block=$(get_result_value "$results" 5)
+    local main_block_url="https://shannon-mainnet.trustsoothe.io/block/${main_block}"
 
     cat <<EOF
 {
@@ -312,22 +281,22 @@ generate_json_output() {
       "name": "Alpha TestNet",
       "upgrade_height": "$alpha_height",
       "upgrade_height_url": "$alpha_height_url",
-      "upgrade_tx_hash": "$alpha_tx",
-      "upgrade_tx_url": "$alpha_tx_url"
+      "upgrade_block_hash": "$alpha_block",
+      "upgrade_block_url": "$alpha_block_url"
     },
     "beta": {
       "name": "Beta TestNet",
       "upgrade_height": "$beta_height",
       "upgrade_height_url": "$beta_height_url",
-      "upgrade_tx_hash": "$beta_tx",
-      "upgrade_tx_url": "$beta_tx_url"
+      "upgrade_block_hash": "$beta_block",
+      "upgrade_block_url": "$beta_block_url"
     },
     "main": {
       "name": "MainNet",
       "upgrade_height": "$main_height",
       "upgrade_height_url": "$main_height_url",
-      "upgrade_tx_hash": "$main_tx",
-      "upgrade_tx_url": "$main_tx_url"
+      "upgrade_block_hash": "$main_block",
+      "upgrade_block_url": "$main_block_url"
     }
   }
 }
@@ -399,14 +368,14 @@ main() {
         local height
         height=$(query_network_upgrade "$network" "$UPGRADE_VERSION")
 
-        local tx_hash
-        tx_hash=$(query_upgrade_tx_hash "$network" "$height")
+        local block_hash
+        block_hash=$(query_upgrade_block_hash "$network" "$height")
 
         if [[ "$first" == "true" ]]; then
-            results="$height $tx_hash"
+            results="$height $block_hash"
             first=false
         else
-            results="$results $height $tx_hash"
+            results="$results $height $block_hash"
         fi
     done
 

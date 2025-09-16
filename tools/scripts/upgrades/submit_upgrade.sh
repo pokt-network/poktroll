@@ -300,7 +300,7 @@ else
     echo -e "5. Update and commit the upgrade JSON file: ${CYAN}${UPGRADE_TX_JSON}${NC}"
 fi
 echo ""
-echo -e "6. Notify all exchanges on Telegram: ${CYAN}make telegram_release_notify${NC}"
+echo -e "6. Notify all exchanges on Telegram: ${CYAN}make telegram_test_broadcast_msg ...${NC}"
 echo ""
 echo -e "7. Only proceed to the next environment after current upgrade succeeds (Alpha → Beta → MainNet)"
 echo ""

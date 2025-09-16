@@ -7,12 +7,6 @@ This playbook provides step-by-step instructions for tracking and inspecting val
 
 _**NOTE**: It is the first (terse) version of the instructions and will be simplified into a more user-friendly script in the future._
 
-:::warning TODO(@olshansk)
-
-Remove `--grpc-insecure=false` once `pocketd` is updated
-
-:::
-
 ## Table of Contents <!-- omit in toc -->
 
 - [A. Identifying the Validator Sets](#a-identifying-the-validator-sets)
@@ -75,7 +69,7 @@ poktvalcons1uyrynx4fylgnnfkzjkfjuknypzczc64drjtysy  MJ/4c5pwP3e8tdbyJEv3TFIlPzVT
 Get all bonded (active) validators that are not jailed:
 
 ```bash
-pocketd query staking validators --output json --network=main --grpc-insecure=false \
+pocketd query staking validators --output json --network=main \
   | jq -r '["Operator_Address_secp256k1","Consensus_Pubkey_ed25519"],
            (.validators[] | select(.jailed != true and .status=="BOND_STATUS_BONDED") | [.operator_address, .consensus_pubkey.value])
            | @tsv' | column -t
@@ -163,7 +157,7 @@ done
 View accumulated tx commissions that haven't been withdrawn across all validators:
 
 ```bash
-pocketd query distribution community-pool --network=main --grpc-insecure=false -o json | jq
+pocketd query distribution community-pool --network=main -o json | jq
 ```
 
 ### View Validator Commission Accumulated
@@ -173,15 +167,15 @@ export VALIDATOR_ADDRESS="poktvaloper18808wvw0h4t450t06uvauny8lvscsxjfx0wu80"
 
 # View all un-withdrawn rewards for a particular validator:
 echo -e "\n === View all un-withdrawn rewards for a particular validator ==="
-pocketd query distribution validator-outstanding-rewards $VALIDATOR_ADDRESS --network=main --grpc-insecure=false -o json | jq
+pocketd query distribution validator-outstanding-rewards $VALIDATOR_ADDRESS --network=main -o json | jq
 
 # View accumulated tx commissions that haven't been withdrawn across all validators:
 echo -e "\n === View accumulated tx commissions that haven't been withdrawn across all validators ==="
-pocketd query distribution commission $VALIDATOR_ADDRESS --network=main --grpc-insecure=false -o json | jq
+pocketd query distribution commission $VALIDATOR_ADDRESS --network=main -o json | jq
 
 # View all distribution-related information for your validator:
 echo -e "\n === View all distribution-related information for your validator ==="
-pocketd query distribution validator-distribution-info $VALIDATOR_ADDRESS --network=main --grpc-insecure=false -o json | jq
+pocketd query distribution validator-distribution-info $VALIDATOR_ADDRESS --network=main -o json | jq
 ```
 
 ### Withdraw Validator Commission Rewards
@@ -191,7 +185,7 @@ Withdraw rewards from for your validator and its delegations:
 ```bash
 pocketd tx distribution withdraw-all-rewards \
   --from=pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh \
-  --network=main --grpc-insecure=false --gas=auto --fees=10upokt
+  --network=main --gas=auto --fees=10upokt
 ```
 
 ## D. [WIP] Delegator Rewards
@@ -201,14 +195,14 @@ pocketd tx distribution withdraw-all-rewards \
 View rewards from delegations (including self-delegation):
 
 ```bash
-pocketd query distribution rewards <delegator-address> --network=main --grpc-insecure=false -o json | jq
+pocketd query distribution rewards <delegator-address> --network=main -o json | jq
 ```
 
 ### Withdraw Delegator Rewards
 
 ```bash
 pocketd tx distribution withdraw-all-rewards --from=<delegator-address> \
-  --network=main --grpc-insecure=false --gas=auto --fees=10upokt
+  --network=main --gas=auto --fees=10upokt
 ```
 
 ## E. [WIP] Tokenomics Relay Distribution Parameters
@@ -219,7 +213,7 @@ pocketd tx distribution withdraw-all-rewards --from=<delegator-address> \
 Verify the current distribution parameters for relay rewards:
 
 ```bash
-pocketd query tokenomics params --network=main --grpc-insecure=false -o json | jq
+pocketd query tokenomics params --network=main -o json | jq
 ```
 
 Key parameters to check:

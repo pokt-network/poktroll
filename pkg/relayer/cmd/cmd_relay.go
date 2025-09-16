@@ -86,7 +86,6 @@ For more info, run 'relay --help'.`,
 	--supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
 	--node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
 	--grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
-	--grpc-insecure=false \
 	--payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 `,
 		RunE: runRelay,

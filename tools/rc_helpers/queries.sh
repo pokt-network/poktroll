@@ -27,8 +27,8 @@ fi
 # ===============================================
 
 function help() {
-  LATEST_BLOCK_MAIN=$(pocketd query block --network=main --grpc-insecure=false -o json | tail -n +2 | jq -r '.header.height')
-  LATEST_BLOCK_BETA=$(pocketd query block --network=beta --grpc-insecure=false -o json | tail -n +2 | jq -r '.header.height')
+  LATEST_BLOCK_MAIN=$(pocketd query block --network=main -o json | tail -n +2 | jq -r '.header.height')
+  LATEST_BLOCK_BETA=$(pocketd query block --network=beta -o json | tail -n +2 | jq -r '.header.height')
 
   LATEST_BLOCK_MAIN=$(($LATEST_BLOCK_MAIN))
   LATEST_BLOCK_BETA=$(($LATEST_BLOCK_BETA))
@@ -130,7 +130,7 @@ query_txs_range() {
 
   echo "Querying transactions from height $start to $end on '$env' network..."
   pocketd query txs \
-    --network="$env" --grpc-insecure=false \
+    --network="$env" \
     --query="$query" \
     --limit "10000000000" --page 1 -o json >"$output_file"
 }
@@ -142,7 +142,7 @@ query_single_block() {
   local output_file="$3"
 
   if ! pocketd query block-results "$height" \
-    --network="$env" --grpc-insecure=false \
+    --network="$env" \
     -o json >"$output_file" 2>/dev/null; then
     echo "Warning: Failed to query block $height, skipping..."
     return 1
@@ -756,7 +756,7 @@ EOF
     echo -n "Processing block $height... "
 
     if pocketd query block-results "$height" \
-      --network="$env" --grpc-insecure=false \
+      --network="$env" \
       -o json >"$block_file" 2>/dev/null; then
 
       # Get file size in bytes
