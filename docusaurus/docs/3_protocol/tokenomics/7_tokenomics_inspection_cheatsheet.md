@@ -71,7 +71,7 @@ for ((h=205950; h<=210000; h+=30)); do echo -n "Height $h: "; curl -s -H "x-cosm
 If some block was used for claim settlemend (e.g. `210033`), you can download it like so:
 
 ```bash
-pocketd query block-results 210033 --network=main --grpc-insecure=false -o json >> block_210033.json
+pocketd query block-results 210033 --network=main -o json >> block_210033.json
 ```
 
 And identify all the events related to token transfers associated with a particular account (e.g. `pokt1lla0yhjf2fhzrlgu6le3ymw9aqayepxlx3lf4q`)

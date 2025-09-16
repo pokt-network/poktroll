@@ -21,7 +21,7 @@ const (
 
 // generated via: ./tools/scripts/migration/collect_non_existent_morse_output_accounts.sh --defaults
 // Once onchain, this can be verified like so:
-// pocketd query migration show-morse-claimable-account 0C3B325133D65B6136CD59511CC63F17EF992BE6 --network=main --grpc-insecure=false -o json
+// pocketd query migration show-morse-claimable-account 0C3B325133D65B6136CD59511CC63F17EF992BE6 --network=main -o json
 var mainNetZeroBalanceMorseClaimableAccountsJSONBZ = []byte(`[
   {
     "morse_src_address": "0C3B325133D65B6136CD59511CC63F17EF992BE6",

@@ -119,7 +119,7 @@ query_network_upgrade() {
 
     log_info "Querying $network network for upgrade $version..."
 
-    local cmd="pocketd query upgrade applied $version --network=$network --grpc-insecure=false -o json"
+    local cmd="pocketd query upgrade applied $version --network=$network -o json"
 
     if [[ "$VERBOSE" == "true" ]]; then
         log_info "Executing: $cmd"
@@ -164,7 +164,7 @@ query_upgrade_tx_hash() {
     log_info "Querying transaction hash for upgrade at height $height on $network..."
 
     # Calculate search range around the upgrade height
-    local height_start=$((height - 25))
+    local height_start=$((height - 50))
     local height_end=$((height + 25))
 
     # Ensure height_start is not negative
@@ -172,22 +172,22 @@ query_upgrade_tx_hash() {
         height_start=1
     fi
 
+    # Try multiple query approaches based on network
+    local tx_hash=""
+
+    # First try MsgExec (used by alpha and beta)
     local query="message.action='/cosmos.authz.v1beta1.MsgExec' AND tx.height > $height_start AND tx.height < $height_end"
-    local cmd="pocketd query txs --network=$network --grpc-insecure=false --query=\"$query\" --limit 1000000 --page 1 -o json --home=\"$home_dir\""
+    local cmd="pocketd query txs --network=$network --query=\"$query\" --limit 1000000 --page 1 -o json --home=\"$home_dir\""
 
     if [[ "$VERBOSE" == "true" ]]; then
-        log_info "Executing: $cmd"
+        log_info "Trying MsgExec query: $cmd"
     fi
 
-    # Execute command and capture both stdout and stderr
     local result
     local exit_code=0
-
     result=$(eval "$cmd" 2>&1) || exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
-        # Parse JSON and extract upgrade transaction hash
-        local tx_hash
         tx_hash=$(echo "$result" | jq -r '
             .txs[]? |
             select(.tx.body.messages[]? |
@@ -197,17 +197,59 @@ query_upgrade_tx_hash() {
             ) |
             .txhash
         ' 2>/dev/null | head -n1)
+    fi
 
-        if [[ -n "$tx_hash" && "$tx_hash" != "null" ]]; then
-            log_success "Found upgrade transaction hash $tx_hash for $network"
-            echo "$tx_hash"
-        else
-            log_warn "No upgrade transaction hash found for $network at height $height"
-            echo "N/A"
+    # If not found, try direct MsgSoftwareUpgrade
+    if [[ -z "$tx_hash" || "$tx_hash" == "null" ]]; then
+        query="message.action='/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade' AND tx.height > $height_start AND tx.height < $height"
+        cmd="pocketd query txs --network=$network --query=\"$query\" --limit 1000000 --page 1 -o json --home=\"$home_dir\""
+
+        if [[ "$VERBOSE" == "true" ]]; then
+            log_info "Trying direct MsgSoftwareUpgrade query: $cmd"
         fi
+
+        result=$(eval "$cmd" 2>&1) || exit_code=$?
+
+        if [[ $exit_code -eq 0 ]]; then
+            tx_hash=$(echo "$result" | jq -r '.txs[0]?.txhash' 2>/dev/null)
+        fi
+    fi
+
+    # If still not found, try governance proposal
+    if [[ -z "$tx_hash" || "$tx_hash" == "null" ]]; then
+        # Try v1beta1 governance
+        query="message.action='/cosmos.gov.v1beta1.MsgSubmitProposal' AND tx.height > $height_start AND tx.height < $height"
+        cmd="pocketd query txs --network=$network --query=\"$query\" --limit 1000000 --page 1 -o json --home=\"$home_dir\""
+
+        if [[ "$VERBOSE" == "true" ]]; then
+            log_info "Trying governance v1beta1 query: $cmd"
+        fi
+
+        result=$(eval "$cmd" 2>&1) || exit_code=$?
+
+        if [[ $exit_code -eq 0 ]]; then
+            tx_hash=$(echo "$result" | jq -r '
+                .txs[]? |
+                select(.tx.body.messages[]?.content."@type" == "/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal") |
+                .txhash
+            ' 2>/dev/null | head -n1)
+        fi
+    fi
+
+    # Special handling for mainnet upgrades without on-chain transactions
+    if [[ "$network" == "main" && (-z "$tx_hash" || "$tx_hash" == "null") ]]; then
+        log_info "No on-chain transaction found for mainnet upgrade at height $height"
+        log_info "This appears to be a coordinated upgrade without an on-chain transaction"
+        echo "COORDINATED_UPGRADE"
+        return
+    fi
+
+    if [[ -n "$tx_hash" && "$tx_hash" != "null" ]]; then
+        log_success "Found upgrade transaction hash $tx_hash for $network"
+        echo "$tx_hash"
     else
-        log_warn "Failed to query transactions for $network: $result"
-        echo "ERROR"
+        log_warn "No upgrade transaction hash found for $network at height $height"
+        echo "N/A"
     fi
 }
 
@@ -258,24 +300,6 @@ generate_markdown() {
 | Beta TestNet  | [${beta_height:-⚪}](${beta_height_url:-⚪}) | [${beta_tx:-⚪}](${beta_tx_url:-⚪}) | ⚪ |
 | MainNet       | [${main_height:-⚪}](${main_height_url:-⚪}) | [${main_tx:-⚪}](${main_tx_url:-⚪}) | ⚪ |
 
-> [!NOTE]
-> TO PROTOCOL MAINTAINER: Make sure to update the section below.
-> Remove this note afterwards.
-
-| Category                     | Notes                                |
-| ---------------------------- | ------------------------------------ |
-| Planned Upgrade              | UPDATE ME           |
-| Consensus Breaking Change    | UPDATE ME          |
-| Manual Intervention Required | UPDATE ME                                     |
-
-**Legend**:
-
-- 🚨 - Failed
-- ⚠️ - Warning / Caution / Special Note
-- ✅ - Yes / Success
-- ❌ - No
-- ⚪ - TODO / TBD
-- ❓ - Unknown / Needs Discussion
 
 ## What's changed? (Autogenerated release notes)
 
