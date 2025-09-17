@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
+	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -41,16 +42,6 @@ var (
 	flagRelayPayload                   string // Relay payload
 	flagSupplierPublicEndpointOverride string // Optional endpoint override
 	flagRelayRequestCount              int    // Number of requests to send
-
-	// Cosmos flags for 'pocketd relayminer relay' subcommand
-	flagNodeGRPCURLRelay      string
-	flagNodeGRPCInsecureRelay bool
-
-	// TODO_TECHDEBT(@olshansk): Reconsider the need for this flag.
-	// This flag can theoretically be avoided because it is only used to get the height of the latest block for session generation.
-	// Passing `0` as the block height defaults to the latest height.
-	// We are keeping it to use this file as an example of an end-to-end system that leverages the shannon-sdk for example purposes.
-	flagNodeRPCURLRelay string
 )
 
 // relayCmd defines the `relay` subcommand for sending a relay as an application.
@@ -59,7 +50,7 @@ var (
 // - Useful for local testing, debugging, and verifying Supplier setup
 // - See TODO_IMPROVE for planned enhancements
 func relayCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmdRelay := &cobra.Command{
 		Use:   "relay --app <app> --supplier <supplier> --payload <payload> [--supplier-public-endpoint-override <url>]",
 		Short: "Send a relay as an application to a particular supplier",
 		Long: `Send a test relay to a Supplier's RelayMiner from a staked Application.
@@ -95,29 +86,35 @@ For more info, run 'relay --help'.`,
 	--supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
 	--node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
 	--grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
-	--grpc-insecure=false \
 	--payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 `,
 		RunE: runRelay,
 	}
 
-	// Cosmos flags
-	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (defaults to LocalNet)")
-	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (defaults to LocalNet)")
-	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options (defaults to true for LocalNet)")
-	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-
 	// Custom Flags
-	cmd.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
-	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
-	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
-	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
-	cmd.Flags().IntVar(&flagRelayRequestCount, "count", 1, "(Optional) Number of requests to send (default: 1)")
+	cmdRelay.Flags().StringVar(&flagRelayApp, FlagApp, DefaultFlagApp, FlagAppUsage)
+	cmdRelay.Flags().StringVar(&flagRelayPayload, FlagPayload, DefaultFlagPayload, FlagPayloadUsage)
+	cmdRelay.Flags().StringVar(&flagRelaySupplier, FlagSupplier, DefaultFlagSupplier, FlagSupplierUsage)
+	cmdRelay.Flags().StringVar(
+		&flagSupplierPublicEndpointOverride,
+		FlagSupplierPublicEndpointOverride,
+		DefaultFlagSupplierPublicEndpointOverride,
+		FlagSupplierPublicEndpointOverrideUsage,
+	)
+	cmdRelay.Flags().IntVar(&flagRelayRequestCount, FlagCount, DefaultFlagCount, FlagCountUsage)
 
-	_ = cmd.MarkFlagRequired("app")
-	_ = cmd.MarkFlagRequired("payload")
+	// Required cosmos-sdk CLI query flags.
+	cmdRelay.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, flags.FlagGRPCUsage)
+	cmdRelay.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, flags.FlagGRPCInsecureUsage)
 
-	return cmd
+	// This command depends on the conventional cosmos-sdk CLI tx flags.
+	cosmosflags.AddTxFlagsToCmd(cmdRelay)
+
+	// Required flags
+	_ = cmdRelay.MarkFlagRequired(FlagApp)
+	_ = cmdRelay.MarkFlagRequired(FlagPayload)
+
+	return cmdRelay
 }
 
 // runRelay executes the relay command logic.
@@ -136,10 +133,30 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
+	logLevel, err := flags.GetFlagValueString(cmd, cosmosflags.FlagLogLevel)
+	if err != nil {
+		return err
+	}
+
+	nodeRPCURL, err := flags.GetFlagValueString(cmd, cosmosflags.FlagNode)
+	if err != nil {
+		return err
+	}
+
+	nodeGRPCURL, err := flags.GetFlagValueString(cmd, cosmosflags.FlagGRPC)
+	if err != nil {
+		return err
+	}
+
+	nodeGRPCInsecure, err := flags.GetFlagBool(cmd, cosmosflags.FlagGRPCInsecure)
+	if err != nil {
+		return err
+	}
+
 	// Set up logger options
 	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
+		polyzero.WithLevel(polyzero.ParseLevel(logLevel)),
 		polyzero.WithOutput(os.Stderr),
 		polyzero.WithTimestamp(),
 	}
@@ -153,8 +170,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
-		HostPort: flagNodeGRPCURLRelay,
-		Insecure: flagNodeGRPCInsecureRelay,
+		HostPort: nodeGRPCURL,
+		Insecure: nodeGRPCInsecure,
 	})
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error connecting to gRPC")
@@ -164,7 +181,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	logger.Info().Msgf("✅ gRPC connection initialized: %v", grpcConn)
 
 	// Create a connection to the POKT full node
-	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURLRelay)
+	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(nodeRPCURL)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error fetching block height")
 		return err

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/jhump/protoreflect/desc"            //nolint:staticcheck // deprecated but still functional
 	"github.com/jhump/protoreflect/desc/protoparse" //nolint:staticcheck // deprecated but still functional
 	"github.com/spf13/cobra"
@@ -73,7 +74,7 @@ The output groups violations by field type to help prioritize refactoring effort
 	// Add logger flags
 	eventFieldsCmd.Flags().StringVar(
 		&logger.LogLevel,
-		flags.FlagLogLevel,
+		cosmosflags.FlagLogLevel,
 		flags.DefaultLogLevel,
 		flags.FlagLogLevelUsage,
 	)

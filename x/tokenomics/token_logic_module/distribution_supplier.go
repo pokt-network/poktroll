@@ -1,5 +1,8 @@
 package token_logic_module
 
+// This file contains the business logic necessary to distribute rewards to suppliesr
+// and their shareholders.
+
 import (
 	"fmt"
 	"math/big"
@@ -14,9 +17,41 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
+// GetSupplierShareholderAmountMap calculates the amount of uPOKT to distribute to each revenue
+// shareholder based on the rev share percentage of the service.
+//
+// It returns a map of the shareholder address to the amount of uPOKT to distribute.
+// The first shareholder gets any remainder resulting from the integer division.
+//
+// DEV_NOTE: ONLY exposed publicly for testing purposes.
+func GetSupplierShareholderAmountMap(
+	serviceRevShare []*sharedtypes.ServiceRevenueShare,
+	amountToDistribute math.Int,
+) (shareAmountMap map[string]math.Int) {
+	totalDistributed := math.NewInt(0)
+	shareAmountMap = make(map[string]math.Int, len(serviceRevShare))
+
+	for _, revShare := range serviceRevShare {
+		sharePercentageRat := new(big.Rat).SetFrac64(int64(revShare.RevSharePercentage), 100)
+		amountToDistributeRat := new(big.Rat).SetInt(amountToDistribute.BigInt())
+		shareAmountRat := new(big.Rat).Mul(amountToDistributeRat, sharePercentageRat)
+		shareAmountInt := new(big.Int).Quo(shareAmountRat.Num(), shareAmountRat.Denom())
+		shareAmountMap[revShare.Address] = math.NewIntFromBigInt(shareAmountInt)
+
+		totalDistributed = totalDistributed.Add(shareAmountMap[revShare.Address])
+	}
+
+	// Add any remainder to the first shareholder.
+	firstShareholder := serviceRevShare[0]
+	remainder := amountToDistribute.Sub(totalDistributed)
+	shareAmountMap[firstShareholder.Address] = shareAmountMap[firstShareholder.Address].Add(remainder)
+
+	return shareAmountMap
+}
+
+// distributeSupplierRewardsToShareholders distributes the supplier rewards to its
 // shareholders based on the rev share percentage of the supplier service config.
-func distributeSupplierRewardsToShareHolders(
+func distributeSupplierRewardsToShareholders(
 	logger cosmoslog.Logger,
 	result *tokenomicstypes.ClaimSettlementResult,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
@@ -25,7 +60,7 @@ func distributeSupplierRewardsToShareHolders(
 	amountToDistribute math.Int,
 ) error {
 	logger = logger.With(
-		"method", "distributeSupplierRewardsToShareHolders",
+		"method", "distributeSupplierRewardsToShareholders",
 		"session_id", result.GetSessionId(),
 	)
 
@@ -49,7 +84,7 @@ func distributeSupplierRewardsToShareHolders(
 	}
 
 	// NOTE: Use the serviceRevShares slice to iterate through the serviceRevSharesMap deterministically.
-	shareAmountMap := GetShareAmountMap(serviceRevShares, amountToDistribute)
+	shareAmountMap := GetSupplierShareholderAmountMap(serviceRevShares, amountToDistribute)
 	for _, revShare := range serviceRevShares {
 		shareAmount := shareAmountMap[revShare.GetAddress()]
 
@@ -76,33 +111,4 @@ func distributeSupplierRewardsToShareHolders(
 	logger.Info(fmt.Sprintf("operation queued: distribute %d uPOKT to supplier %q shareholders", amountToDistribute, supplier.GetOperatorAddress()))
 
 	return nil
-}
-
-// GetShareAmountMap calculates the amount of uPOKT to distribute to each revenue
-// shareholder based on the rev share percentage of the service.
-// It returns a map of the shareholder address to the amount of uPOKT to distribute.
-// The first shareholder gets any remainder resulting from the integer division.
-// DEV_NOTE: It is publicly exposed to be used in the tests.
-func GetShareAmountMap(
-	serviceRevShare []*sharedtypes.ServiceRevenueShare,
-	amountToDistribute math.Int,
-) (shareAmountMap map[string]math.Int) {
-	totalDistributed := math.NewInt(0)
-	shareAmountMap = make(map[string]math.Int, len(serviceRevShare))
-
-	for _, revShare := range serviceRevShare {
-		sharePercentageRat := new(big.Rat).SetFrac64(int64(revShare.RevSharePercentage), 100)
-		amountToDistributeRat := new(big.Rat).SetInt(amountToDistribute.BigInt())
-		shareAmountRat := new(big.Rat).Mul(amountToDistributeRat, sharePercentageRat)
-		shareAmountInt := new(big.Int).Quo(shareAmountRat.Num(), shareAmountRat.Denom())
-		shareAmountMap[revShare.Address] = math.NewIntFromBigInt(shareAmountInt)
-
-		totalDistributed = totalDistributed.Add(shareAmountMap[revShare.Address])
-	}
-
-	// Add any remainder to the first shareholder.
-	remainder := amountToDistribute.Sub(totalDistributed)
-	shareAmountMap[serviceRevShare[0].Address] = shareAmountMap[serviceRevShare[0].Address].Add(remainder)
-
-	return shareAmountMap
 }

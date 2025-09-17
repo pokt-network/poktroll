@@ -58,7 +58,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid different owner and operator address",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -76,7 +76,27 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 		},
 		{
-			desc: "valid signer is neither the operator nor the owner",
+			desc: "valid signer is neither the operator nor the owner - empty service configs",
+			msg: MsgStakeSupplier{
+				Signer:          sample.AccAddressBech32(),
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				Services:        []*sharedtypes.SupplierServiceConfig{},
+			},
+		},
+		{
+			desc: "valid signer is neither the operator nor the owner - omitted service configs",
+			msg: MsgStakeSupplier{
+				Signer:          sample.AccAddressBech32(),
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				// Services:     (intentionally omitted),
+			},
+		},
+		{
+			desc: "invalid signer is neither the operator nor the owner - with service configs",
 			msg: MsgStakeSupplier{
 				Signer:          sample.AccAddressBech32(),
 				OwnerAddress:    ownerAddress,
@@ -84,6 +104,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
 			},
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
 			desc: "invalid operator address",
@@ -155,7 +176,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid stake",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -163,15 +184,14 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 		},
 		{
-			desc: "invalid stake - missing stake",
+			desc: "valid stake - omitted stake because the signer is the operator",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				// Stake explicitly omitted
 				Services: defaultServicesList,
 			},
-			expectedErr: ErrSupplierInvalidStake,
 		},
 		{
 			desc: "invalid stake - zero amount",
@@ -222,7 +242,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid service configs - multiple services",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -263,7 +283,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 		},
 		{
-			desc: "invalid service configs - omitted",
+			desc: "valid service configs - omitted - owner signed",
 			msg: MsgStakeSupplier{
 				Signer:          ownerAddress,
 				OwnerAddress:    ownerAddress,
@@ -271,10 +291,19 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				// Services explicitly omitted
 			},
-			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
-			desc: "invalid service configs - empty",
+			desc: "valid service configs - omitted - operator signed",
+			msg: MsgStakeSupplier{
+				Signer:          operatorAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				// Services explicitly omitted
+			},
+		},
+		{
+			desc: "valid service configs - empty - owner signed",
 			msg: MsgStakeSupplier{
 				Signer:          ownerAddress,
 				OwnerAddress:    ownerAddress,
@@ -282,12 +311,21 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        []*sharedtypes.SupplierServiceConfig{},
 			},
-			expectedErr: ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc: "valid service configs - empty - operator signed",
+			msg: MsgStakeSupplier{
+				Signer:          operatorAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				Services:        []*sharedtypes.SupplierServiceConfig{},
+			},
 		},
 		{
 			desc: "invalid service configs - invalid service ID that's too long",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -315,7 +353,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - invalid service ID that contains invalid characters",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -343,7 +381,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - missing url",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -371,7 +409,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - invalid url",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -399,7 +437,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - missing rpc type",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -427,7 +465,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - empty revenue share config",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -450,7 +488,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service configs - missing revenue share config",
 			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
+				Signer:          operatorAddress,
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
@@ -462,6 +500,34 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Url: "http://localhost:8080",
 								// RpcType explicitly omitted,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc: "invalid service configs - owner cannot update",
+			msg: MsgStakeSupplier{
+				Signer:          ownerAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: pocket.DenomuPOKT, Amount: math.NewInt(100)},
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: "svcId1",
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url:     "http://localhost:8081",
+								RpcType: sharedtypes.RPCType_JSON_RPC,
+								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddressBech32(),
+								RevSharePercentage: 100,
 							},
 						},
 					},

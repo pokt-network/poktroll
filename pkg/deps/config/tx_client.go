@@ -1,4 +1,4 @@
-package flags
+package config
 
 import (
 	"context"
@@ -13,10 +13,10 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/client/tx/types"
-	"github.com/pokt-network/poktroll/pkg/deps/config"
 )
 
-// GetTxClientFromFlags constructs a new TxClient instance using the provided command flags.
+// GetTxClientFromFlags constructs a TxClient using CLI flags and client options.
+// Requires cosmos-sdk flags to be registered on the command (chain-id, node, etc.).
 func GetTxClientFromFlags(
 	ctx context.Context,
 	cmd *cobra.Command,
@@ -47,10 +47,10 @@ func GetTxClientFromFlags(
 	}
 
 	// Construct dependencies for the tx client
-	deps, err := config.SupplyConfig(ctx, cmd, []config.SupplierFn{
-		config.NewSupplyLoggerFromCtx(ctx),
-		config.NewSupplyCometClientFn(queryNodeRPCUrl),
-		config.NewSupplyBlockClientFn(queryNodeRPCUrl),
+	deps, err := SupplyConfig(ctx, cmd, []SupplierFn{
+		NewSupplyLoggerFromCtx(ctx),
+		NewSupplyBlockClientFn(queryNodeRPCUrl),
+		NewSupplyCometClientFn(queryNodeRPCUrl),
 	})
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func GetTxClientFromFlags(
 		return nil, err
 	}
 
-	gasAndFeesOptions, err := config.GetTxClientGasAndFeesOptionsFromFlags(cmd, gasSettingStr)
+	gasAndFeesOptions, err := GetTxClientGasAndFeesOptionsFromFlags(cmd, gasSettingStr)
 	if err != nil {
 		return nil, err
 	}

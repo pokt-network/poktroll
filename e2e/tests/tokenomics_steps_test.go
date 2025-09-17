@@ -135,6 +135,41 @@ func (s *suite) TheProposerBalanceShouldBeUpoktThan(expectedChangeStr, direction
 	s.validateAmountChange(prevBalance, currBalance, expectedChange, "proposer", direction, "balance")
 }
 
+// TheUserRemembersTheTotalValidatorBalancesAs stores the sum of all validator balances
+func (s *suite) TheUserRemembersTheTotalValidatorBalancesAs(stateKey string) {
+	totalBalance := s.getTotalValidatorBalances()
+	s.scenarioState[stateKey] = totalBalance
+	require.GreaterOrEqual(s, totalBalance, int64(0))
+}
+
+// TheTotalValidatorBalancesShouldBeUpoktMoreThan checks if the total validator balances increased by the expected amount
+func (s *suite) TheTotalValidatorBalancesShouldBeUpoktMoreThan(expectedIncreaseStr, prevBalanceKey string) {
+	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
+	require.NoError(s, err)
+
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
+
+	currBalance := s.getTotalValidatorBalances()
+
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedIncrease, "validators", "more", "balance")
+}
+
+// TheTotalValidatorBalancesShouldBeUpoktThan checks if the total validator balances changed by the expected amount in the specified direction
+func (s *suite) TheTotalValidatorBalancesShouldBeUpoktThan(expectedChangeStr, direction, prevBalanceKey string) {
+	expectedChange, err := strconv.ParseInt(expectedChangeStr, 10, 64)
+	require.NoError(s, err)
+
+	prevBalance, ok := s.scenarioState[prevBalanceKey].(int64)
+	require.True(s, ok, "previous balance %s not found or not an int64", prevBalanceKey)
+
+	currBalance := s.getTotalValidatorBalances()
+
+	// Validate the change in balance
+	s.validateAmountChange(prevBalance, currBalance, expectedChange, "validators", direction, "balance")
+}
+
 // TheServiceOwnerBalanceForShouldBeUpoktMoreThan checks if the service owner balance increased by the expected amount
 func (s *suite) TheServiceOwnerBalanceForShouldBeUpoktMoreThan(serviceId, expectedIncreaseStr, prevBalanceKey string) {
 	expectedIncrease, err := strconv.ParseInt(expectedIncreaseStr, 10, 64)
