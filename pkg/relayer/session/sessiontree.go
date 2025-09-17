@@ -241,11 +241,6 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 		return ErrSessionUpdatingTree.Wrapf("error: %v", err)
 	}
 
-	// DO NOT DELETE: Uncomment this for debugging and change to .Debug logs post MainNet.
-	// count := st.sessionSMT.MustCount()
-	// sum := st.sessionSMT.MustSum()
-	// st.logger.Debug().Msgf("session tree updated and has count %d and sum %d", count, sum)
-
 	return nil
 }
 

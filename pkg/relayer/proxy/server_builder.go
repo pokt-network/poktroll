@@ -50,16 +50,15 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 	// serverConfigs is a map with ListenAddress as the key which guarantees that
 	// there are no duplicate servers with the same ListenAddress.
 	for _, serverConfig := range rp.serverConfigs {
-		rp.logger.Info().Str("server host", serverConfig.ListenAddress).Msg("starting relay proxy server")
+		logger := rp.logger.With(
+			"server_type", serverConfig.ServerType,
+			"server_host", serverConfig.ListenAddress,
+		)
+		logger.Info().Msg("starting relay proxy server")
 
 		// Initialize the server according to the server type defined in the config file
 		switch serverConfig.ServerType {
 		case config.RelayMinerServerTypeHTTP:
-			logger := rp.logger.With(
-				"server_type", "http",
-				"server_host", serverConfig.ListenAddress,
-			)
-
 			servers[serverConfig.ListenAddress] = NewHTTPServer(
 				logger,
 				serverConfig,

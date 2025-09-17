@@ -195,6 +195,8 @@ func NewRelayerSessions(
 //
 // It IS NOT BLOCKING as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) error {
+	logger := rs.logger.With("method", "relayerSessionsManager.Start")
+
 	// Ensure the context is set with the session manager component kind.
 	// This is used to capture the component kind in gRPC call duration metrics collection.
 	ctx = context.WithValue(ctx, query.ComponentCtxRelayMinerKey, query.ComponentCtxRelayMinerSessionsManager)
@@ -203,7 +205,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Identify which sessions have expired based on their end heights
 	block := rs.blockClient.LastBlock(ctx)
 
-	rs.logger.Info().Msgf(
+	logger.Info().Msgf(
 		"📊 Chain head at height %d (block hash: %X) during session manager startup",
 		block.Height(),
 		block.Hash(),
@@ -217,7 +219,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Maintaining accumulated work when interruptions occur
 	if rs.isInMemorySMT() {
 		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
-		rs.logger.Info().Msg("Skipping session data restoration for in-memory SMT modes.")
+		logger.Info().Msg("Skipping session data restoration for in-memory SMT modes.")
 	} else {
 		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
 			return err
@@ -260,6 +262,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 //
 // This ensures no data is lost during shutdown and resources are properly cleaned up.
 func (rs *relayerSessionsManager) Stop() {
+	logger := rs.logger.With("method", "relayerSessionsManager.Stop")
 	// Mark the manager as stopping to prevent misinterpreting shutdown cancellations as failures.
 	//
 	// This ensures:
@@ -278,10 +281,10 @@ func (rs *relayerSessionsManager) Stop() {
 	// Skip persistence when using in-memory SMT modes as data is not saved to disk.
 	if rs.isInMemorySMT() {
 		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
-		rs.logger.Info().Msg("Skipping persistence of session data for in-memory SMT modes.")
+		logger.Info().Msg("Skipping persistence of session data for in-memory SMT modes.")
 		return
 	}
-	rs.logger.Info().Msg("About to start persisting all session data to disk.")
+	logger.Info().Msg("About to start persisting all session data to disk.")
 
 	// Lock the mutex before accessing and modifying the sessionsTrees map to ensure
 	// thread safety during shutdown.
@@ -297,7 +300,7 @@ func (rs *relayerSessionsManager) Stop() {
 			for _, sessionTree := range sessionTreesAtHeight {
 				sessionId := sessionTree.GetSessionHeader().GetSessionId()
 
-				logger := rs.logger.
+				logger = logger.
 					With("method", "RSM.Stop").
 					With("session_id", sessionId).
 					With("supplier_operator_address", sessionTree.GetSupplierOperatorAddress())
@@ -320,11 +323,11 @@ func (rs *relayerSessionsManager) Stop() {
 
 	// Close the metadata store that tracks all sessions and release its resources.
 	if err := rs.sessionSMTStore.Stop(); err != nil {
-		rs.logger.Error().Err(err).Msg("❌️ Failed to stop sessions metadata store during shutdown. ❗Check disk permissions and kvstore integrity. ❗Resources may not be properly cleaned up.")
+		logger.Error().Err(err).Msg("❌️ Failed to stop sessions metadata store during shutdown. ❗Check disk permissions and kvstore integrity. ❗Resources may not be properly cleaned up.")
 	}
 
 	clear(rs.sessionsTrees)
-	rs.logger.Info().Msgf("🧹 Successfully cleared %d session trees from memory during shutdown", numSessionTrees)
+	logger.Info().Msgf("🧹 Successfully cleared %d session trees from memory during shutdown", numSessionTrees)
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
@@ -409,6 +412,7 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 		rs.sessionsTreesMu.Lock()
 		defer rs.sessionsTreesMu.Unlock()
 
+		logger := rs.logger.With("method", "forEachBlockClaimSessionsFn")
 		// onTimeSessions are the sessions that are still within their grace period.
 		// They are on time and will wait for their create claim window to open.
 		// They will be emitted last, after all the late sessions have been emitted.
@@ -416,7 +420,7 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
-			rs.logger.Error().Err(err).Msg("❌️ Failed to query shared module parameters. ❗Check node connectivity and sync status. ❗Cannot process session claims without network parameters.")
+			logger.Error().Err(err).Msg("❌️ Failed to query shared module parameters. ❗Check node connectivity and sync status. ❗Cannot process session claims without network parameters.")
 			return
 		}
 
@@ -569,6 +573,8 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	logger := rs.logger.With("method", "relayerSessionsManager.waitForBlock")
+
 	committedBlocksObs := rs.blockClient.CommittedBlocksSequence(ctx)
 	committedBlocksObserver := committedBlocksObs.Subscribe(ctx)
 
@@ -582,7 +588,7 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	currentHeight := currentBlock.Height()
 	minNumReplayBlocks := currentHeight - targetHeight + 1
 
-	rs.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
 		"📊 Chain head at height %d (block hash: %X) while waiting for target block %d",
 		currentHeight,
 		currentBlock.Hash(),
@@ -596,7 +602,7 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	if committedBlocksObs.GetReplayBufferSize() < int(minNumReplayBlocks) {
 		blockResult, err := rs.blockQueryClient.Block(ctx, &targetHeight)
 		if err != nil {
-			rs.logger.Error().Err(err).Msgf("❌️ Failed to query block at height %d. ❗Check node connectivity and sync status. ❗Session timing calculations may be affected.", targetHeight)
+			logger.Error().Err(err).Msgf("❌️ Failed to query block at height %d. ❗Check node connectivity and sync status. ❗Session timing calculations may be affected.", targetHeight)
 			return nil
 		}
 
@@ -764,6 +770,7 @@ func (rs *relayerSessionsManager) deleteSessionTree(sessionTree relayer.SessionT
 		"application_address", sessionHeader.GetApplicationAddress(),
 		"service_id", sessionHeader.GetServiceId(),
 		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress(),
+		"operation", "delete_session_tree",
 	)
 
 	// IMPORTANT: Create sessionSMT BEFORE deleting the tree
