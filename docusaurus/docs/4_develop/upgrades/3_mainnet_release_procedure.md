@@ -25,6 +25,8 @@ Operational (non-technical) instructions on releasing an upgrade to MainNet
   - [4.5 Update the Documentation Upgrade List](#45-update-the-documentation-upgrade-list)
   - [4.6 Send out an announcement to all exchanges](#46-send-out-an-announcement-to-all-exchanges)
 - [5. Update the `pocketd` binary](#5-update-the-pocketd-binary)
+- [6. How to Cancel an Upgrade](#6-how-to-cancel-an-upgrade)
+  - [Verify Upgrade Status](#verify-upgrade-status)
 
 ## 1. Protocol Upgrade Preparation
 
@@ -151,29 +153,44 @@ Use the [release notes](https://github.com/pokt-network/poktroll/releases/latest
 
 ### 4.6 Send out an announcement to all exchanges
 
-Assuming you have the [gh cli](https://cli.github.com/) installed, run the following command and verify the message is properly formatted:
+<details>
+<summary>Prepare `release_prep_announcement.txt`</summary>
 
 ```bash
-make telegram_test_release
+cat <<'EOF' >> release_prep_announcement.txt
+📢 Pocket Network Upgrade Update 📢
+
+The network successfully upgraded to `v0.1.29` at height `382,250` around 12pm PST on Tuesday (09/16/2025).
+
+Please make sure update your binaries and full nodes to the latest:
+https://github.com/pokt-network/poktroll/releases/tag/v0.1.29
+
+Snapshots are available here: https://snapshots.us-nj.poktroll.com/ 💾
+
+If you need an RPC endpoint, let us know and [Grove](https://www.grove.city/) will happily help out 🌿
+
+❓ What's new ❓
+- Improved RelayMiner performance
+- Validator reward distribution
+- Additional supplier configurations and management
+- A lot of quality of life enhancements
+
+EOF
 ```
 
-You can then broadcast the release to all exchanges by running:
+</details>
+
+Then, run a test broadcast:
 
 ```bash
-make telegram_release_notify
+make telegram_test_broadcast_msg MSG_FILE=release_prep_announcement.txt
 ```
 
-:::warning TODO: Releases that are too long
+If it looks good, broadcast it to all exchanges:
 
-You might get an error that the [message is too long](https://github.com/pokt-network/poktroll/actions/runs/15860176445/job/44715185450).
-
-If this happens, then:
-
-1. Remove unnecessary content from the release notes
-2. Run the workflow again
-3. Revert the release with all the details
-
-:::
+```bash
+make telegram_broadcast_msg MSG_FILE=release_prep_announcement.txt
+```
 
 ## 5. Update the `pocketd` binary
 
@@ -215,3 +232,58 @@ OR
 ```bash
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash
 ```
+
+## 6. How to Cancel an Upgrade
+
+In emergency situations, you may need to cancel a pending upgrade.
+
+You can run the cancellation command like so:
+
+```bash
+pocketd \
+    --keyring-backend="test" --home="~/.pocket" \
+    --fees=300upokt --network=main \
+    tx authz exec tools/scripts/upgrades/cancel_upgrade_main.json --from=pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh
+```
+
+### Verify Upgrade Status
+
+You can check the current upgrade plan status (whether pending or cancelled) using:
+
+```bash
+pocketd query upgrade plan --network=main -o json | jq
+```
+
+:::warning Emergency Use Only
+
+The upgrade cancellation command should only be used in emergency situations where the upgrade needs to be stopped before it executes.
+
+:::
+
+<details>
+<summary>Make sure to inform Exchanges of the cancellation</summary>
+
+```bash
+cat <<'EOF' >> release_prep_announcement.txt
+Reminder that v0.1.29 is still scheduled to go live at approximately 10:00am PST tomorrow, Tuesday (09/16/2025).
+
+Due to some slower blocks, we have updated the upgrade height from 382,991 to 382,250.
+
+Find all the details here: https://github.com/pokt-network/poktroll/releases/tag/v0.1.29.
+
+EOF
+```
+
+Then, run a test broadcast:
+
+```bash
+make telegram_test_broadcast_msg MSG_FILE=release_prep_announcement.txt
+```
+
+If it looks good, broadcast it to all exchanges:
+
+```bash
+make telegram_broadcast_msg MSG_FILE=release_prep_announcement.txt
+```
+
+</details>
