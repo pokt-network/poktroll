@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
@@ -299,27 +300,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		logger.Warn().Msgf("⚠️ Using override endpoint URL: %s", endpointUrl)
 	}
 
-	// Prepare the JSON-RPC request payload
-	body := io.NopCloser(bytes.NewReader([]byte(flagRelayPayload)))
-	jsonRpcServiceReq, err := http.NewRequest(http.MethodPost, endpointUrl, body)
-	if err != nil {
-		return fmt.Errorf("failed to create a new HTTP request for url %s: %w", endpointUrl, err)
-	}
-	jsonRpcServiceReq.Header.Set("Content-Type", "application/json")
-	_, payloadBz, err := sdktypes.SerializeHTTPRequest(jsonRpcServiceReq)
-	if err != nil {
-		return fmt.Errorf("failed to Serialize HTTP Request for URL %s: %w", endpointUrl, err)
-	}
-	logger.Info().Msg("✅ JSON-RPC request payload serialized.")
-
-	// Build a relay request
-	relayReq, err := sdk.BuildRelayRequest(endpoint, payloadBz)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error building relay request")
-		return err
-	}
-	logger.Info().Msg("✅ Relay request built.")
-
 	// TODO_TECHDEBT(@olshansk): Retrieve the passphrase from the keyring.
 	// The initial version of this assumes the keyring is unlocked.
 	passphrase := ""
@@ -333,20 +313,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Retrieved private key for app %s", app.Address)
 	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
-	signedRelayReq, err := appSigner.Sign(ctx, relayReq, ring)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error signing relay request")
-		return err
-	}
-	logger.Info().Msg("✅ Relay request signed.")
-
-	// Marshal the signed relay request
-	relayReqBz, err := signedRelayReq.Marshal()
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error marshaling relay request")
-		return err
-	}
-	logger.Info().Msg("✅ Relay request marshaled.")
 
 	// Parse the endpoint URL
 	reqUrl, err := url.Parse(endpointUrl)
@@ -361,6 +327,59 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		if flagRelayRequestCount > 1 {
 			logger.Info().Msgf("📤 Sending request %d of %d", i, flagRelayRequestCount)
 		}
+
+		beforeRequestPreparationTime := time.Now()
+
+		// Prepare the JSON-RPC request payload
+		body := io.NopCloser(bytes.NewReader([]byte(flagRelayPayload)))
+		jsonRpcServiceReq, err := http.NewRequest(http.MethodPost, endpointUrl, body)
+		if err != nil {
+			return fmt.Errorf("failed to create a new HTTP request for url %s: %w", endpointUrl, err)
+		}
+		jsonRpcServiceReq.Header.Set("Content-Type", "application/json")
+		_, payloadBz, err := sdktypes.SerializeHTTPRequest(jsonRpcServiceReq)
+		if err != nil {
+			return fmt.Errorf("failed to Serialize HTTP Request for URL %s: %w", endpointUrl, err)
+		}
+		logger.Info().Msg("✅ JSON-RPC request payload serialized.")
+
+		// Build a relay request
+		relayReq, err := sdk.BuildRelayRequest(endpoint, payloadBz)
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error building relay request")
+			return err
+		}
+		logger.Info().Msg("✅ Relay request built.")
+
+		requestBuildingDuration := time.Since(beforeRequestPreparationTime)
+		logger.Info().Msgf("⏱️ Request building duration: %s", requestBuildingDuration)
+
+		beforeRequestSigningTime := time.Now()
+
+		signedRelayReq, err := appSigner.Sign(ctx, relayReq, ring)
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error signing relay request")
+			return err
+		}
+		logger.Info().Msg("✅ Relay request signed.")
+
+		requestSigningDuration := time.Since(beforeRequestSigningTime)
+		logger.Info().Msgf("⏱️ Request signing duration: %s", requestSigningDuration)
+
+		beforeRequestMarshallingTime := time.Now()
+
+		// Marshal the signed relay request
+		relayReqBz, err := signedRelayReq.Marshal()
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error marshaling relay request")
+			return err
+		}
+		logger.Info().Msg("✅ Relay request marshaled.")
+
+		requestMarshallingDuration := time.Since(beforeRequestMarshallingTime)
+		logger.Info().Msgf("⏱️ Request marshalling duration: %s", requestMarshallingDuration)
+
+		beforeRequestSendingTime := time.Now()
 
 		// Create the HTTP request with the relay request body
 		httpReq := &http.Request{
@@ -383,6 +402,11 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Error().Err(err).Msgf("❌ Error sending relay request %d due to response status code %d", i, httpResp.StatusCode)
 			continue
 		}
+
+		requestSendingDuration := time.Since(beforeRequestSendingTime)
+		logger.Info().Msgf("⏱️ Request sending duration: %s", requestSendingDuration)
+
+		beforeResponseReadTime := time.Now()
 
 		// Read the response
 		respBz, err := io.ReadAll(httpResp.Body)
@@ -412,6 +436,11 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
+		responseReadDuration := time.Since(beforeResponseReadTime)
+		logger.Info().Msgf("⏱️ Response building duration: %s", responseReadDuration)
+
+		beforeResponseVerificationTime := time.Now()
+
 		// Validate the relay response
 		relayResp, err := sdk.ValidateRelayResponse(
 			ctx,
@@ -423,12 +452,24 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Error().Err(err).Msgf("❌ Error validating response %d", i)
 			continue
 		}
+
+		responseVerificationDuration := time.Since(beforeResponseVerificationTime)
+		logger.Info().Msgf("⏱️ Response verification duration: %s", responseVerificationDuration)
+
+		beforeBackendResponseExtractionTime := time.Now()
+
 		// Deserialize the relay response
 		backendHttpResponse, err := sdktypes.DeserializeHTTPResponse(relayResp.Payload)
 		if err != nil {
 			logger.Error().Err(err).Msgf("❌ Error deserializing response payload %d", i)
 			continue
 		}
+
+		backendResponseExtractionDuration := time.Since(beforeBackendResponseExtractionTime)
+		logger.Info().Msgf("⏱️ Backend response extraction duration: %s", backendResponseExtractionDuration)
+
+		totalRequestDuration := time.Since(beforeRequestPreparationTime)
+		logger.Info().Msgf("⏱️ Total request duration: %s", totalRequestDuration)
 
 		// Unmarshal the HTTP response body into jsonMap
 		var jsonMap map[string]interface{}
