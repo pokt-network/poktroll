@@ -88,6 +88,7 @@ func setupRelayerDependencies(
 	signingKeyNames := uniqueSigningKeyNames(relayMinerConfig)
 	servicesConfigMap := relayMinerConfig.Servers
 	smtStorePath := relayMinerConfig.SmtStorePath
+	smtBackupConfig := relayMinerConfig.SmtBackup
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
@@ -143,7 +144,7 @@ func setupRelayerDependencies(
 		config.NewSupplySupplierClientsFn(signingKeyNames, cosmosflags.GasFlagAuto),
 		config.NewSupplyRelayAuthenticatorFn(signingKeyNames),
 		config.NewSupplyRelayerProxyFn(servicesConfigMap, relayMinerConfig.Ping.Enabled),
-		config.NewSupplyRelayerSessionsManagerFn(smtStorePath),
+		config.NewSupplyRelayerSessionsManagerFn(smtStorePath, smtBackupConfig),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)

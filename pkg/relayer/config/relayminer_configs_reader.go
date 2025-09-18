@@ -65,6 +65,12 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 	}
 	relayMinerConfig.SmtStorePath = yamlRelayMinerConfig.SmtStorePath
 
+	// SmtBackup configuration
+	relayMinerConfig.SmtBackup = &RelayMinerSmtBackupConfig{
+		Enabled:   yamlRelayMinerConfig.SmtBackup.Enabled,
+		BackupDir: yamlRelayMinerConfig.SmtBackup.BackupDir,
+	}
+
 	// EnableOverServicing is a flag that indicates whether the relay miner
 	// should enable over-servicing for the relays it serves.
 	//
