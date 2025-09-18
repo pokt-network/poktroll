@@ -13,8 +13,9 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/x/migration/types"
-	"github.com/pokt-network/poktroll/x/supplier/config"
+	supplierconfig "github.com/pokt-network/poktroll/x/supplier/config"
 )
 
 // TODO_MAINNET_MIGRATION: Add a few examples,
@@ -160,14 +161,14 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
 	// Sign and broadcast the claim Morse account message.
 	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseSupplier)
-	if err, _ = eitherErr.SyncOrAsyncError(); err != nil {
+	if _, err = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 
@@ -181,7 +182,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 
 // loadSupplierStakeConfigYAML loads, parses, and validates the supplier stake
 // config from configYAMLPath.
-func loadSupplierStakeConfigYAML(configYAMLPath string) (*config.SupplierStakeConfig, error) {
+func loadSupplierStakeConfigYAML(configYAMLPath string) (*supplierconfig.SupplierStakeConfig, error) {
 	// Read the YAML file from the provided path.
 	yamlStakeConfigBz, err := os.ReadFile(configYAMLPath)
 	if err != nil {
@@ -189,14 +190,14 @@ func loadSupplierStakeConfigYAML(configYAMLPath string) (*config.SupplierStakeCo
 	}
 
 	// Unmarshal the YAML into a config.YAMLStakeConfig struct.
-	var yamlStakeConfig config.YAMLStakeConfig
+	var yamlStakeConfig supplierconfig.YAMLStakeConfig
 	if err = yaml.Unmarshal(yamlStakeConfigBz, &yamlStakeConfig); err != nil {
 		return nil, err
 	}
 
 	// Validate that the stake amount is not set in the YAML config.
 	if len(yamlStakeConfig.StakeAmount) != 0 {
-		return nil, config.ErrSupplierConfigInvalidStake.Wrapf("stake_amount MUST NOT be set in the supplier config YAML; it is automatically determined by the onchain MorseClaimableAccount state")
+		return nil, supplierconfig.ErrSupplierConfigInvalidStake.Wrapf("stake_amount MUST NOT be set in the supplier config YAML; it is automatically determined by the onchain MorseClaimableAccount state")
 	}
 
 	// Validate the owner and operator addresses.
@@ -216,7 +217,7 @@ func loadSupplierStakeConfigYAML(configYAMLPath string) (*config.SupplierStakeCo
 		return nil, err
 	}
 
-	return &config.SupplierStakeConfig{
+	return &supplierconfig.SupplierStakeConfig{
 		OwnerAddress:    yamlStakeConfig.OwnerAddress,
 		OperatorAddress: yamlStakeConfig.OperatorAddress,
 		Services:        supplierServiceConfigs,

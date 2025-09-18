@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -130,14 +131,14 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
 	// Sign and broadcast the claim Morse account message.
 	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseApplication)
-	if err, _ = eitherErr.SyncOrAsyncError(); err != nil {
+	if _, err = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 

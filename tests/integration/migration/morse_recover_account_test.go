@@ -1,3 +1,5 @@
+//go:build test
+
 package migration
 
 import (
@@ -31,7 +33,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 	require.NoError(t, err)
 
 	// Valid shannon destination address to be reused in all tests
-	shannonDestAddr := sample.AccAddress()
+	shannonDestAddr := sample.AccAddressBech32()
 	invalidShannonDestAddr := "invalid_shannon_dest_address"
 
 	// Get the complete state of all Morse accounts for testing
@@ -171,12 +173,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 			claimedAccount := accountState.Accounts[claimedAccountIdx]
 			claimedAccountBalance := claimedAccount.TotalTokens()
 
-			expectedRecoveryRes := &migrationtypes.MsgRecoverMorseAccountResponse{
-				ShannonDestAddress: shannonDestAddr,
-				MorseSrcAddress:    test.morseSrcAddress,
-				RecoveredBalance:   claimedAccountBalance,
-				SessionEndHeight:   sessionEndHeight,
-			}
+			expectedRecoveryRes := &migrationtypes.MsgRecoverMorseAccountResponse{}
 			require.Equal(t, msgRecoveryRes, expectedRecoveryRes)
 
 			allEvents := s.GetApp().GetSdkCtx().EventManager().Events()
@@ -185,7 +182,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 
 			expectedEventMorseAccountRecovered := &migrationtypes.EventMorseAccountRecovered{
 				SessionEndHeight:   sessionEndHeight,
-				RecoveredBalance:   claimedAccountBalance,
+				RecoveredBalance:   claimedAccountBalance.String(),
 				ShannonDestAddress: shannonDestAddr,
 				MorseSrcAddress:    test.morseSrcAddress,
 			}
@@ -205,10 +202,10 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 
 	// Configure valid accounts (regular accounts, applications, validators, module accounts).
 	validAccountsConfig := testmigration.ValidAccountsConfig{
-		NumAccounts:       3, // Standard EOA accounts
-		NumApplications:   3, // Application accounts with stake
-		NumValidators:     3, // Validator accounts with stake
-		NumModuleAccounts: 3, // System module accounts
+		NumAccountsValid:     3, // Standard EOA accounts
+		NumApplicationsValid: 3, // Application accounts with stake
+		NumValidatorsValid:   3, // Validator accounts with stake
+		NumModuleAccounts:    3, // System module accounts
 	}
 
 	// Configure accounts with invalid addresses to test error handling.
@@ -221,8 +218,8 @@ func initMigrationFixtures(t *testing.T) (*testmigration.MorseMigrationFixtures,
 	// Configure orphaned actors (applications and validators without corresponding accounts).
 	// Used for testing recovery of unclaimed stakes.
 	orphanedActors := testmigration.OrphanedActorsConfig{
-		NumApplications: 3, // Orphaned application actors
-		NumValidators:   3, // Orphaned validator actors
+		NumApplicationsOrphaned: 3, // Orphaned application actors
+		NumValidatorsOrphaned:   3, // Orphaned validator actors
 	}
 
 	// Step 2: Initialize the recovery allowlist and address categorization structure

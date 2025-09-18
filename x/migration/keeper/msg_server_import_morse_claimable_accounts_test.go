@@ -35,7 +35,7 @@ func TestMsgServer_ImportMorseClaimableAccounts_Success(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	res, err := srv.ImportMorseClaimableAccounts(ctx, msgImportMorseClaimableAccounts)
+	_, err = srv.ImportMorseClaimableAccounts(ctx, msgImportMorseClaimableAccounts)
 	require.NoError(t, err)
 
 	// Assert that the response matches expectations.
@@ -47,12 +47,6 @@ func TestMsgServer_ImportMorseClaimableAccounts_Success(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, expectedStateHash)
 	require.Len(t, expectedStateHash, 32)
-
-	expectedRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{
-		StateHash:   expectedStateHash,
-		NumAccounts: uint64(numAccounts),
-	}
-	require.Equal(t, expectedRes, res)
 
 	// Assert that the MorseAccountState was created and matches expectations.
 	morseClaimableAccounts = k.GetAllMorseClaimableAccounts(ctx)

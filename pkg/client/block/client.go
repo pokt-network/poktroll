@@ -2,21 +2,27 @@ package block
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	"cosmossdk.io/depinject"
+	cometclient "github.com/cometbft/cometbft/rpc/client"
+	"github.com/hashicorp/go-version"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 const (
-	// committedBlocksQuery is the query used to subscribe to new committed block
-	// events used by the EventsQueryClient to subscribe to new block events from
-	// the chain.
-	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-	committedBlocksQuery = "tm.event='NewBlock'"
+	// cometNewBlockHeaderQuery is the subscription query for block events.
+	// - Uses 'NewBlockHeader' events instead of 'NewBlock' for efficiency
+	// - 'NewBlock' has complete data but higher bandwidth requirements
+	// - Only header information is needed for most block tracking operations
+	// - See: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
+	cometNewBlockHeaderQuery = "tm.event='NewBlockHeader'"
 
 	// defaultBlocksReplayLimit is the number of blocks that the replay
 	// observable returned by LastNBlocks() will be able to replay.
@@ -25,59 +31,66 @@ const (
 	defaultBlocksReplayLimit = 100
 )
 
-// NewBlockClient creates a new block client from the given dependencies and
-// cometWebsocketURL. It uses a pre-defined committedBlocksQuery to subscribe to
-// newly committed block events which are mapped to Block objects.
+// NewBlockClient creates a new block client from the given dependencies.
+//
+// It uses a pre-defined cometNewBlockHeaderQuery to subscribe to newly
+// committed block events which are mapped to Block objects.
 //
 // This lightly wraps the EventsReplayClient[Block] generic to correctly mock
 // the interface.
 //
 // Required dependencies:
-// - client.EventsQueryClient
 // - client.BlockQueryClient
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
-	opts ...client.BlockClientOption,
 ) (_ client.BlockClient, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	// latestBlockPublishCh is the channel that notifies the latestBlockReplayObs of a
 	// new block, whether it comes from a direct query or an event subscription query.
 	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, 10)
-	bClient := &blockReplayClient{
+	blockClient := &blockReplayClient{
 		latestBlockReplayObs: latestBlockReplayObs,
 		close:                cancel,
 	}
 
-	for _, opt := range opts {
-		opt(bClient)
-	}
-
-	bClient.eventsReplayClient, err = events.NewEventsReplayClient[client.Block](
+	blockClient.eventsReplayClient, err = events.NewEventsReplayClient(
 		ctx,
 		deps,
-		committedBlocksQuery,
+		cometNewBlockHeaderQuery,
 		UnmarshalNewBlock,
 		defaultBlocksReplayLimit,
-		events.WithConnRetryLimit[client.Block](bClient.connRetryLimit),
 	)
 	if err != nil {
 		cancel()
 		return nil, err
 	}
 
-	if err := depinject.Inject(deps, &bClient.onStartQueryClient); err != nil {
+	if err := depinject.Inject(
+		deps,
+		&blockClient.onStartQueryClient,
+		&blockClient.cometClient,
+		&blockClient.logger,
+	); err != nil {
 		return nil, err
 	}
 
-	bClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
+	// Start asynchronously forwarding block events to the latestBlockPublishCh
+	blockClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
 
-	if err := bClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
+	// Get access to the latest block one time and publish it to the latestBlockPublishCh
+	// TODO_CONSIDERATION: Should we make this initializeInitialBlock (sync) instead of getInitialBlockAsync (async)?
+	if err := blockClient.getInitialBlockAsync(ctx, latestBlockPublishCh); err != nil {
 		return nil, err
 	}
 
-	return bClient, nil
+	// Initialize the chain version one time to ensure that its never nil
+	if err := blockClient.initializeChainVersion(ctx); err != nil {
+		return nil, err
+	}
+
+	return blockClient, nil
 }
 
 // blockReplayClient is BlockClient implementation that combines a CometRPC client
@@ -85,10 +98,20 @@ func NewBlockClient(
 // to new committed block events.
 // It uses a ReplayObservable to retain and replay past observed blocks.
 type blockReplayClient struct {
+	logger polylog.Logger
+
 	// onStartQueryClient is the RPC client that is used to query for the initial block
 	// upon blockReplayClient construction. The result of this query is only used if it
 	// returns before the eventsReplayClient receives its first event.
 	onStartQueryClient client.BlockQueryClient
+
+	// cometClient is the CometBFT client used to get ABCI info for chain version.
+	cometClient cometclient.Client
+
+	// chainVersion is the version of the chain that the block client is connected to.
+	// It is protected by chainVersionMu for concurrent access safety.
+	chainVersion   *version.Version
+	chainVersionMu sync.RWMutex
 
 	// eventsReplayClient is the underlying EventsReplayClient that is used to
 	// subscribe to new committed block events. It uses both the Block type
@@ -97,6 +120,11 @@ type blockReplayClient struct {
 	// to Block objects and to correctly return a BlockReplayObservable
 	eventsReplayClient client.EventsReplayClient[client.Block]
 
+	// chainVersionQueryCancel cancels any ongoing ABCI info request for chain version updates.
+	// This ensures that when a new block arrives, we cancel the previous request and start fresh.
+	chainVersionQueryCancel context.CancelFunc
+	chainVersionCancelMu    sync.Mutex
+
 	// latestBlockReplayObs is a replay observable that combines blocks observed by
 	// the block query client & the events replay client. It is the "canonical"
 	// source of block notifications for the blockReplayClient.
@@ -104,11 +132,6 @@ type blockReplayClient struct {
 
 	// close is a function that cancels the context of the blockReplayClient.
 	close context.CancelFunc
-
-	// connRetryLimit is the number of times the underlying replay client
-	// should retry in the event that it encounters an error or its connection is interrupted.
-	// If connRetryLimit is < 0, it will retry indefinitely.
-	connRetryLimit int
 }
 
 // CommittedBlocksSequence returns a replay observable of new block events.
@@ -127,12 +150,82 @@ func (b *blockReplayClient) LastBlock(ctx context.Context) (block client.Block) 
 // Close closes the underlying websocket connection for the EventsQueryClient
 // and closes all downstream connections.
 func (b *blockReplayClient) Close() {
-	b.eventsReplayClient.Close()
+	// Cancel any ongoing requests to retrieve the chain version
+	b.chainVersionCancelMu.Lock()
+	if b.chainVersionQueryCancel != nil {
+		b.chainVersionQueryCancel()
+		b.chainVersionQueryCancel = nil
+	}
+	b.chainVersionCancelMu.Unlock()
+
 	b.close()
 }
 
-// asyncForwardBlockEvent asynchronously observes block event notifications from the
-// EventsReplayClient's EventsSequence observable & publishes each to latestBlockPublishCh.
+// GetChainVersion returns the current chain version.
+func (b *blockReplayClient) GetChainVersion() *version.Version {
+	b.chainVersionMu.RLock()
+	defer b.chainVersionMu.RUnlock()
+	return b.chainVersion
+}
+
+// initializeChainVersion synchronously initializes the chain version.
+// Returns an error if initialization fails.
+func (b *blockReplayClient) initializeChainVersion(ctx context.Context) error {
+	abciInfo, err := b.cometClient.ABCIInfo(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get ABCI info: %w", err)
+	}
+
+	chainVersion, err := version.NewVersion(abciInfo.Response.Version)
+	if err != nil {
+		return fmt.Errorf("failed to parse chain version: %w", err)
+	}
+
+	b.chainVersionMu.Lock()
+	b.chainVersion = chainVersion
+	b.chainVersionMu.Unlock()
+
+	return nil
+}
+
+// updateChainVersionAsync updates the chain version in the background.
+// Cancels any previous ongoing query and handles errors gracefully.
+func (b *blockReplayClient) updateChainVersionAsync(ctx context.Context) {
+	// Cancel any ongoing chain version query and start a new one
+	b.chainVersionCancelMu.Lock()
+	if b.chainVersionQueryCancel != nil {
+		b.chainVersionQueryCancel()
+	}
+
+	queryCtx, cancel := context.WithCancel(ctx)
+	b.chainVersionQueryCancel = cancel
+	b.chainVersionCancelMu.Unlock()
+
+	go func() {
+		defer cancel()
+
+		abciInfo, err := b.cometClient.ABCIInfo(queryCtx)
+		if err != nil {
+			b.logger.Debug().Err(err).Msg("failed to get ABCI info for chain version update")
+			return
+		}
+
+		chainVersion, err := version.NewVersion(abciInfo.Response.Version)
+		if err != nil {
+			b.logger.Debug().Err(err).Msg("failed to parse chain version")
+			return
+		}
+
+		b.chainVersionMu.Lock()
+		b.chainVersion = chainVersion
+		b.chainVersionMu.Unlock()
+	}()
+}
+
+// asyncForwardBlockEvent does the following:
+// - Asynchronously observes block event notifications from the EventsReplayClient's EventsSequence observable
+// - Publishes each block to latestBlockPublishCh
+// - Updates the chain version on each block
 func (b *blockReplayClient) asyncForwardBlockEvent(
 	ctx context.Context,
 	latestBlockPublishCh chan<- client.Block,
@@ -140,16 +233,17 @@ func (b *blockReplayClient) asyncForwardBlockEvent(
 	channel.ForEach(ctx, b.eventsReplayClient.EventsSequence(ctx),
 		func(ctx context.Context, block client.Block) {
 			latestBlockPublishCh <- block
+			b.updateChainVersionAsync(ctx)
 		},
 	)
 }
 
-// getInitialBlock fetches the latest committed onchain block at the time the
-// client starts up, while concurrently waiting for the next block event,
-// publishing whichever occurs first to latestBlockPublishCh.
-// This is necessary to ensure that the most recent block is available to the
-// blockReplayClient when it is first created.
-func (b *blockReplayClient) getInitialBlock(
+// getInitialBlockAsync:
+// - Fetches the latest committed onchain block at client startup.
+// - Concurrently waits for the next block event.
+// - Publishes whichever occurs first to latestBlockPublishCh.
+// - Ensures the most recent block is available to blockReplayClient when first created.
+func (b *blockReplayClient) getInitialBlockAsync(
 	ctx context.Context,
 	latestBlockPublishCh chan<- client.Block,
 ) error {
@@ -158,7 +252,7 @@ func (b *blockReplayClient) getInitialBlock(
 
 	// Query the latest block asynchronously.
 	blockQueryResultCh := make(chan client.Block)
-	queryErrCh := b.queryLatestBlock(ctx, blockQueryResultCh)
+	queryErrCh := b.queryLatestBlockAsync(ctx, blockQueryResultCh)
 
 	// Wait for either the latest block query response, error, or the first block
 	// event to arrive & use whichever occurs first or return an error.
@@ -177,10 +271,11 @@ func (b *blockReplayClient) getInitialBlock(
 	return nil
 }
 
-// queryLatestBlock uses comet RPC block client to asynchronously query for
-// the latest block. It returns an error channel which may be sent a block query error.
-// It is *NOT* intended to be called in a goroutine.
-func (b *blockReplayClient) queryLatestBlock(
+// queryLatestBlockAsync:
+// - Uses comet RPC block client to asynchronously query for the latest block.
+// - Returns an error channel which may be sent a block query error.
+// - *NOT* intended to be called in a goroutine.
+func (b *blockReplayClient) queryLatestBlockAsync(
 	ctx context.Context,
 	blockQueryResultCh chan<- client.Block,
 ) <-chan error {

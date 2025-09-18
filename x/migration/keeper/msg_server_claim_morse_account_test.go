@@ -49,9 +49,9 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 
 		// Claim the MorseClaimableAccount.
 		msgClaim, err := migrationtypes.NewMsgClaimMorseAccount(
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 			morsePrivKey,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -64,11 +64,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		expectedClaimedBalance := morseAccount.GetUnstakedBalance().
 			Add(morseAccount.GetSupplierStake()).
 			Add(morseAccount.GetApplicationStake())
-		expectedRes := &migrationtypes.MsgClaimMorseAccountResponse{
-			MorseSrcAddress:  msgClaim.GetMorseSignerAddress(),
-			ClaimedBalance:   expectedClaimedBalance,
-			SessionEndHeight: expectedSessionEndHeight,
-		}
+		expectedRes := &migrationtypes.MsgClaimMorseAccountResponse{}
 		require.Equal(t, expectedRes, msgClaimRes)
 
 		// Assert that the persisted MorseClaimableAccount is updated.
@@ -83,7 +79,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		expectedEvent := &migrationtypes.EventMorseAccountClaimed{
 			ShannonDestAddress: msgClaim.ShannonDestAddress,
 			MorseSrcAddress:    msgClaim.GetMorseSignerAddress(),
-			ClaimedBalance:     expectedClaimedBalance,
+			ClaimedBalance:     expectedClaimedBalance.String(),
 			SessionEndHeight:   expectedSessionEndHeight,
 		}
 		claimEvents := events.FilterEvents[*migrationtypes.EventMorseAccountClaimed](t, ctx.EventManager().Events())
@@ -122,9 +118,9 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 
 	// Claim the MorseClaimableAccount with a random Shannon address.
 	msgClaim, err := migrationtypes.NewMsgClaimMorseAccount(
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 		morsePrivKey,
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 	)
 	require.NoError(t, err)
 
@@ -153,7 +149,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		invalidMsgClaim, claimErr := migrationtypes.NewMsgClaimMorseAccount(
 			msgClaim.GetShannonDestAddress(),
 			wrongMorsePrivKey,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, claimErr)
 
@@ -193,7 +189,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		// Set the Shannon destination address BUT NOT the claimed at height.
 		morseClaimableAccount := *accountState.Accounts[0]
 		morseClaimableAccount.ClaimedAtHeight = 0
-		morseClaimableAccount.ShannonDestAddress = sample.AccAddress()
+		morseClaimableAccount.ShannonDestAddress = sample.AccAddressBech32()
 		k.SetMorseClaimableAccount(ctx, morseClaimableAccount)
 
 		expectedErr := status.Error(
@@ -220,9 +216,9 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		require.False(t, morseAccount.ApplicationStake.IsZero())
 
 		msgClaim, err = migrationtypes.NewMsgClaimMorseAccount(
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 			morsePrivKey,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 
@@ -248,9 +244,9 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		require.False(t, morseAccount.SupplierStake.IsZero())
 
 		msgClaim, err = migrationtypes.NewMsgClaimMorseAccount(
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 			morsePrivKey,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		require.NoError(t, err)
 

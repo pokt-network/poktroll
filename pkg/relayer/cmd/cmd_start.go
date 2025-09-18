@@ -13,12 +13,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/cmd/signals"
-	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
 // startCmd returns the Cobra subcommand for running the relay miner.
@@ -30,7 +30,7 @@ import (
 // - Cache various data
 // - Rate limit incoming requests
 func startCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmdStart := &cobra.Command{
 		Use:   "start --config <path-to-relay-miner-config-file> --chain-id <chain-id>",
 		Short: "Start a RelayMiner",
 		Long: `Start a RelayMiner Process.
@@ -47,26 +47,28 @@ RelayMiner Responsibilities:
 		RunE: runRelayer,
 	}
 
-	// Custom flags
-	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "(Required) The path to the relayminer config file")
-	cmd.Flags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "(Optional) Enable or disable onchain query caching")
+	// Global logger flags
+	// DEV_NOTE: Since the root command runs logger.PreRunESetup(), we need to ensure that the log level and output flags are registered on this subcommand.
+	cmdStart.PersistentFlags().StringVar(&logger.LogLevel, cosmosflags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
+	cmdStart.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
-	// Cosmos flags
-	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, flags.OmittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
-	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
-	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
-	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
-	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
-	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.7, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
-	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
+	// Custom flags
+	cmdStart.Flags().StringVar(&relayMinerConfigPath, FlagConfig, DefaultFlagConfig, FlagConfigUsage)
+	cmdStart.Flags().BoolVar(&flagQueryCaching, flags.FlagQueryCaching, flags.DefaultFlagQueryCaching, flags.FlagQueryCachingUsage)
+
+	// Required cosmos-sdk CLI query flags.
+	cmdStart.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, flags.FlagGRPCUsage)
+	cmdStart.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, flags.FlagGRPCInsecureUsage)
+
+	// This command depends on the conventional cosmos-sdk CLI tx flags.
+	cosmosflags.AddTxFlagsToCmd(cmdStart)
 
 	// Required flags
-	_ = cmd.MarkFlagRequired("config")
+	_ = cmdStart.MarkFlagRequired(FlagConfig)
 	// TODO_TECHDEBT(@olshansk): Consider making this part of the relay miner config file or erroring in a more user-friendly way.
-	_ = cmd.MarkFlagRequired(cosmosflags.FlagChainID)
+	_ = cmdStart.MarkFlagRequired(cosmosflags.FlagChainID)
 
-	return cmd
+	return cmdStart
 }
 
 // runRelayer starts the relay miner with the provided configuration and context.
@@ -77,39 +79,76 @@ RelayMiner Responsibilities:
 // - Set up logger and dependencies
 // - Initialize and start the relay miner
 func runRelayer(cmd *cobra.Command, _ []string) error {
+	// --- Context setup and cancellation ---
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
-	// Set up logger options
-	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
-	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
-		polyzero.WithOutput(os.Stderr),
-	}
+	// Retrieve the logger from the command context.
+	logger := polylog.Ctx(cmd.Context())
 
-	// Construct logger and associate with command context
-	logger := polyzero.NewLogger(loggerOpts...)
-	ctx = logger.WithContext(ctx)
-	cmd.SetContext(ctx)
-
-	// Handle interrupt/kill signals asynchronously
-	signals.GoOnExitSignal(cancelCtx)
+	// --- Signal handling ---
+	signals.GoOnExitSignal(logger, cancelCtx)
 
 	// Read relay miner config file
-	configContent, err := os.ReadFile(flagRelayMinerConfig)
+	configContent, err := os.ReadFile(relayMinerConfigPath)
 	if err != nil {
-		fmt.Printf("Could not read config file from: %s\n", flagRelayMinerConfig)
+		fmt.Printf("Could not read config file from: %s\n", relayMinerConfigPath)
 		return err
 	}
 
-	// Parse relay miner configuration
+	// --- Print full-node configuration guidelines ---
+	// Not using logger here to avoid multiple log entries and json formatting issues.
+	fmt.Printf(`
+❗RPC Full Node Configuration Guide ❗
+====================================
+
+🔧 When running multiple RelayMiners or Suppliers, adjust these settings
+in your Full Node's config.toml file:
+
+📐 Configuration Formulas:
+-------------------------
+🩺 Subscriptions
+  - 'max_subscriptions_per_client' > 'total_suppliers' + 'total_relay_miners'
+  - Each Supplier needs 1 subscription
+  - Each RelayMiner needs 1 subscription
+
+🔌 Connections:
+  - 'max_open_connections' > 2 × 'total_relay_miners'
+  - Each RelayMiner typically needs 2 connections
+
+💡 Example Setup:
+----------------
+• RelayMiner 1: 2 Suppliers
+• RelayMiner 2: 3 Suppliers
+• RelayMiner 3: 1 Supplier
+
+Totals:
+- 'total_suppliers' = 6
+- 'total_relay_miners' = 3
+
+✅ Required config.toml settings:
+'max_subscriptions_per_client' = 10  (must be > 6 + 3 = 9)
+'max_open_connections' = 7           (must be > 2 × 3 = 6)
+`)
+
+	// --- Parse relay miner configuration ---
 	// TODO_IMPROVE: Add logger level/output options to config.
-	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(configContent)
+	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(logger, configContent)
 	if err != nil {
-		fmt.Printf("Could not parse config file from: %s\n", flagRelayMinerConfig)
+		fmt.Printf("Could not parse config file from: %s\n", relayMinerConfigPath)
 		return err
 	}
 
+	switch relayMinerConfig.SmtStorePath {
+	case session.InMemoryStoreFilename:
+		logger.Warn().Msg(`🚨 SMT configured for SimpleMap in-memory storage. All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
+	case session.InMemoryPebbleStoreFilename:
+		logger.Warn().Msg(`🚨 SMT configured for Pebble in-memory storage (EXPERIMENTAL). All session data will be LOST on RelayMiner restart. See #1734 for more info.`)
+	default:
+		logger.Debug().Msgf("SMT configured for persistent storage at: %s", relayMinerConfig.SmtStorePath)
+	}
+
+	// --- Log flag values ---
 	if err = logFlagValues(logger, cmd); err != nil {
 		logger.Error().Err(err).Msg("Could not read provided flags")
 		return err
@@ -122,21 +161,21 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		logger.Info().Msg("query caching DISABLED")
 	}
 
-	// Set up dependencies for relay miner
+	// --- Set up dependencies for relay miner ---
 	deps, err := setupRelayerDependencies(ctx, cmd, relayMinerConfig)
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not setup dependencies")
 		return err
 	}
 
-	// Initialize the relay miner
+	// --- Initialize the relay miner ---
 	relayMiner, err := relayer.NewRelayMiner(ctx, deps)
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not initialize relay miner")
 		return err
 	}
 
-	// Serve metrics endpoint if enabled
+	// --- Serve metrics endpoint if enabled ---
 	if relayMinerConfig.Metrics.Enabled {
 		err = relayMiner.ServeMetrics(relayMinerConfig.Metrics.Addr)
 		if err != nil {
@@ -145,7 +184,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	// Serve pprof endpoint if enabled
+	// --- Serve pprof endpoint if enabled ---
 	if relayMinerConfig.Pprof.Enabled {
 		err = relayMiner.ServePprof(ctx, relayMinerConfig.Pprof.Addr)
 		if err != nil {
@@ -154,7 +193,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	// Serve ping endpoint if enabled
+	// --- Serve ping endpoint if enabled ---
 	if relayMinerConfig.Ping.Enabled {
 		if err = relayMiner.ServePing(ctx, "tcp", relayMinerConfig.Ping.Addr); err != nil {
 			logger.Error().Err(err).Msg("Could not start ping endpoint")
@@ -162,7 +201,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	// Start the relay miner
+	// --- Start the relay miner ---
 	logger.Info().Msg("Starting relay miner...")
 
 	err = relayMiner.Start(ctx)
@@ -185,13 +224,12 @@ func logFlagValues(logger polylog.Logger, cmd *cobra.Command) error {
 	clientCtx := client.GetClientContextFromCmd(cmd)
 
 	logger.Info().Msgf(
-		"Config in use: chain_id: %s, version: %s, home: %s, keyring_backend: %s, keyring_dir: %s, grpc_insecure: %s",
+		"Config in use: chain_id: %s, version: %s, home: %s, keyring_backend: %s, keyring_dir: %s",
 		clientCtx.ChainID,
 		version.NewInfo().Version,
 		clientCtx.HomeDir,
 		clientCtx.Keyring.Backend(),
 		clientCtx.KeyringDir,
-		cmd.Flag(cosmosflags.FlagGRPCInsecure).Value.String(),
 	)
 
 	return nil

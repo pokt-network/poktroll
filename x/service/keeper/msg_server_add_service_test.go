@@ -20,8 +20,8 @@ func TestMsgServer_AddService(t *testing.T) {
 	k, ctx := keepertest.ServiceKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	oldServiceOwnerAddr := sample.AccAddress()
-	newServiceOwnerAddr := sample.AccAddress()
+	oldServiceOwnerAddr := sample.AccAddressBech32()
+	newServiceOwnerAddr := sample.AccAddressBech32()
 
 	// Pre-existing service
 	oldService := sharedtypes.Service{
@@ -43,12 +43,11 @@ func TestMsgServer_AddService(t *testing.T) {
 	keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, pocket.DenomuPOKT, oneUPOKTGreaterThanFee)
 
 	// Add the service to the store
-	addSvcRes, err := srv.AddService(ctx, &types.MsgAddService{
+	_, err := srv.AddService(ctx, &types.MsgAddService{
 		OwnerAddress: oldServiceOwnerAddr,
 		Service:      oldService,
 	})
 	require.NoError(t, err)
-	require.Equal(t, &oldService, addSvcRes.GetService())
 
 	// Validate the service was added
 	serviceFound, found := k.GetService(ctx, oldService.Id)

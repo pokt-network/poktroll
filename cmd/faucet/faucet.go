@@ -3,6 +3,7 @@ package faucet
 import (
 	"errors"
 
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -50,7 +51,7 @@ The --network flag can also be used to set the faucet base URL by network name (
 	faucetCmd.AddCommand(FundCmd())
 	faucetCmd.AddCommand(ServeCmd())
 
-	faucetCmd.PersistentFlags().StringVar(&logger.LogLevel, flags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
+	faucetCmd.PersistentFlags().StringVar(&logger.LogLevel, cosmosflags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
 	faucetCmd.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
 	return faucetCmd

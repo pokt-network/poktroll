@@ -69,7 +69,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 			SessionId:               "sessionId",
 		},
 	}
-	supplierOperatorAddress := sample.AccAddress()
+	supplierOperatorAddress := sample.AccAddressBech32()
 	// Set the supplier operator balance to be able to submit the expected number of proofs.
 	feePerProof := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
 	gasCost := session.ClaimAndProofGasCost.Amount.Int64()
@@ -154,14 +154,14 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	lowCUPRService := sharedtypes.Service{
 		Id:                   "lowCUPRService",
-		ComputeUnitsPerRelay: 10000,
+		ComputeUnitsPerRelay: 1,
 	}
 	testqueryclients.AddToExistingServices(t, lowCUPRService)
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, lowCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	highCUPRService := sharedtypes.Service{
 		Id:                   "highCUPRService",
-		ComputeUnitsPerRelay: 20000,
+		ComputeUnitsPerRelay: 2,
 	}
 	testqueryclients.AddToExistingServices(t, highCUPRService)
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, highCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
@@ -204,7 +204,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	ctrl := gomock.NewController(t)
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
-	supplierOperatorAddress := sample.AccAddress()
+	supplierOperatorAddress := sample.AccAddressBech32()
 
 	proofSubmissionFee := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
 	claimAndProofGasCost := session.ClaimAndProofGasCost.Amount.Int64()
@@ -217,7 +217,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	supplierClientMock.EXPECT().
 		CreateClaims(
-			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(ctx),
 			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
@@ -231,7 +231,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	supplierClientMock.EXPECT().
 		SubmitProofs(
-			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(ctx),
 			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
@@ -266,10 +266,11 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 }
 
 // waitSimulateIO sleeps for a bit to allow the relayer sessions manager to
-// process asynchronously. This effectively simulates I/O delays which would
-// normally be present.
+// process asynchronously.
+// This effectively simulates I/O delays which would normally be present.
+// Uses a longer delay for session persistence tests.
 func waitSimulateIO() {
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 }
 
 // uPOKTCoin returns a pointer to a uPOKT denomination coin with the given amount.
@@ -332,10 +333,10 @@ func setupDependencies(
 		bankQueryClient,
 		logger,
 	)
-	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
+	storesDirectoryPathOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
-	relayerSessionsManager, err := session.NewRelayerSessions(deps, storesDirectoryOpt)
+	relayerSessionsManager, err := session.NewRelayerSessions(deps, storesDirectoryPathOpt)
 	require.NoError(t, err)
 	require.NotNil(t, relayerSessionsManager)
 

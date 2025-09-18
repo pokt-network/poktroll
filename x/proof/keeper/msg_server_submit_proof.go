@@ -143,23 +143,29 @@ func (k msgServer) SubmitProof(
 	case true:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
-				Claim:                    claim,
-				Proof:                    proof,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
+				ServiceId:                claim.SessionHeader.ServiceId,
+				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  supplierOperatorAddress,
 			},
 		)
 	case false:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
-				Claim:                    claim,
-				Proof:                    proof,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputeUnits,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
+				ServiceId:                claim.SessionHeader.ServiceId,
+				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  supplierOperatorAddress,
 			},
 		)
 	}
@@ -175,9 +181,7 @@ func (k msgServer) SubmitProof(
 		)
 	}
 
-	return &types.MsgSubmitProofResponse{
-		Proof: proof,
-	}, nil
+	return &types.MsgSubmitProofResponse{}, nil
 }
 
 // deductProofSubmissionFee deducts the proof submission fee from the supplier operator's account balance.

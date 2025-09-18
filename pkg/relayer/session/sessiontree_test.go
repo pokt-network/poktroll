@@ -6,10 +6,11 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 )
 
 const (
@@ -44,7 +45,7 @@ func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 			// Insert numLeaf random leaves.
 			for i := 0; i < numLeafs; i++ {
 				key := make([]byte, 32)
-				_, err = rand.Read(key)
+				_, err = rand.Read(key) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 				require.NoError(t, err)
 				// Insert an empty value since this does not get affected by the compaction,
 				// this is also to not favor proof compression that compresses the value too.
@@ -53,7 +54,7 @@ func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 
 			// Generate a random path.
 			var path = make([]byte, 32)
-			_, err = rand.Read(path)
+			_, err = rand.Read(path) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 			require.NoError(t, err)
 
 			// Create the proof.

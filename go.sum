@@ -475,8 +475,6 @@ github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06/go.mod h1:
 github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd/go.mod h1:sE/e/2PUdi/liOCUjSTXgM1o87ZssimdTWN964YiIeI=
 github.com/coder/websocket v1.8.6 h1:OmNKdwUvLj7VvHnl5o8skaVghSPLjWdHGCnFbkWqs9w=
 github.com/coder/websocket v1.8.6/go.mod h1:B70DZP8IakI65RVQ51MsWP/8jndNma26DVA/nFSCgW0=
-github.com/cometbft/cometbft v0.38.17 h1:FkrQNbAjiFqXydeAO81FUzriL4Bz0abYxN/eOHrQGOk=
-github.com/cometbft/cometbft v0.38.17/go.mod h1:5l0SkgeLRXi6bBfQuevXjKqML1jjfJJlvI1Ulp02/o4=
 github.com/cometbft/cometbft-db v0.14.1 h1:SxoamPghqICBAIcGpleHbmoPqy+crij/++eZz3DlerQ=
 github.com/cometbft/cometbft-db v0.14.1/go.mod h1:KHP1YghilyGV/xjD5DP3+2hyigWx0WTp9X+0Gnx0RxQ=
 github.com/containerd/continuity v0.4.5 h1:ZRoN1sXq9u7V6QoHMcVWGhOwDFqZ4B9i5H6un1Wh0x4=
@@ -1285,12 +1283,14 @@ github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10/go.mod h1
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811 h1:WpmIfpDCXSJVCZ1zm7S6nJI3HjNjkhxCFeV9PuSR/ks=
+github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811/go.mod h1:5l0SkgeLRXi6bBfQuevXjKqML1jjfJJlvI1Ulp02/o4=
 github.com/pokt-network/ring-go v0.1.0 h1:hF7mDR4VVCIqqDAsrloP8azM9y1mprc99YgnTjKSSwk=
 github.com/pokt-network/ring-go v0.1.0/go.mod h1:8NHPH7H3EwrPX3XHfpyRI6bz4gApkE3+fd0XZRbMWP0=
-github.com/pokt-network/shannon-sdk v0.0.0-20250603210336-969a825fddd5 h1:TTtN4ln+AWWPb8wbUZESAyZqUWFxV/kQNkNCEE6FgmM=
-github.com/pokt-network/shannon-sdk v0.0.0-20250603210336-969a825fddd5/go.mod h1:D7ZoOsLtOzDD7Vj9bnIIPFDbqfcUBR0Ic995vyfbdQM=
-github.com/pokt-network/smt v0.13.0 h1:C2F8FlJh34aU+DVeRU/Bt8BOkFXn4QjWMK+nbT9PUj4=
-github.com/pokt-network/smt v0.13.0/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
+github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770 h1:ztJnRBnkdNCSkRi6yT7ATQ1mw/i28JQKzhLoUXXHkzw=
+github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770/go.mod h1:qy22/ATxOZ20moRaPx6DJupFdWCwoV0pSR89qNTtX6w=
+github.com/pokt-network/smt v0.14.1 h1:q8pZCo01RY+kzGurRcHArSGGEV3UhBywUZnbVn9nDM8=
+github.com/pokt-network/smt v0.14.1/go.mod h1:TehzlxITd3EqLzo428VY0QID7Ajdn7QJP4ZzdPiYbZE=
 github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188 h1:QK1WmFKQ/OzNVob/br55Brh+EFbWhcdq41WGC8UMihM=
 github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188/go.mod h1:CZlY7W+7LU5hMFoTb9PmyL4wu/i41t3+gVMvDePxAmo=
 github.com/polyfloyd/go-errorlint v1.7.1 h1:RyLVXIbosq1gBdk/pChWA8zWYLsq9UEw7a1L5TVMCnA=

@@ -3,6 +3,14 @@ title: RelayMiner config
 sidebar_position: 4
 ---
 
+:::warning Supplier Public Key Requirement
+
+If you are setting up a `RelayMiner` using a `Supplier` that does not have an onchain public key, you must follow the instructions [**here**](../../2_explore/4_morse_migration/7_claiming_supplier.md#6-ensure-your-shannon-supplier-has-an-onchain-public-key) to ensure your `Supplier` has an onchain public key.
+
+Alternatively, if you have a `Supplier` that has was not staked by the operator, you must follow the instructions [**here**](../1_cheat_sheets/4_supplier_cheatsheet.md#4-suppliers-staked-on-behalf-of-owners).
+
+:::
+
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
 co-processor/sidecar that acts as the real server for querying request, building
 claims, and submitting proofs.
@@ -19,6 +27,7 @@ You can find a fully featured example configuration at [relayminer_config_full_e
 - [Global options](#global-options)
   - [`default_signing_key_names`](#default_signing_key_names)
   - [`default_request_timeout_seconds`](#default_request_timeout_seconds)
+  - [`default_max_body_size`](#default_max_body_size)
   - [`smt_store_path`](#smt_store_path)
   - [`enable_over_servicing`](#enable_over_servicing)
   - [`metrics`](#metrics)
@@ -33,11 +42,13 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`signing_key_names`](#signing_key_names)
   - [`listen_url`](#listen_url)
   - [`request_timeout_seconds`](#request_timeout_seconds)
+  - [`max_body_size`](#max_body_size)
   - [`service_config`](#service_config)
     - [`backend_url`](#backend_url)
     - [`authentication`](#authentication)
     - [`headers`](#headers)
     - [`forward_pocket_headers`](#forward_pocket_headers)
+  - [`rpc_type_service_configs`](#rpc_type_service_configs)
 - [Configuring Signing Keys](#configuring-signing-keys)
   - [Example Configuration](#example-configuration)
 - [Supported server types](#supported-server-types)
@@ -45,6 +56,11 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [Overview](#overview)
   - [Key Requirements for Operators](#key-requirements-for-operators)
   - [Recommendations for Supplier Operators](#recommendations-for-supplier-operators)
+- [Recommended Full / RPC Node Configuration for RelayMiners](#recommended-full--rpc-node-configuration-for-relayminers)
+  - [Why does a RelayMiner's Full Node need custom configurations?](#why-does-a-relayminers-full-node-need-custom-configurations)
+  - [Required `config.toml` Config Adjustments](#required-configtoml-config-adjustments)
+  - [How to Calculate Scalable Values?](#how-to-calculate-scalable-values)
+  - [Example Full Node Config Changes](#example-full-node-config-changes)
 
 ## Introduction
 
@@ -113,6 +129,7 @@ and `supplier` specific sections and configurations.
 ```yaml
 default_signing_key_names: [<string>, <string>]
 default_request_timeout_seconds: <uint64>
+default_max_body_size: <string>
 smt_store_path: <string>
 enable_over_servicing: <boolean>
 ```
@@ -142,6 +159,21 @@ is configured, the `RelayMiner` will use a system default.
 This timeout applies to the duration that the `RelayMiner` will wait for a response
 from the backend service before considering the request as timed out.
 
+### `default_max_body_size`
+
+_`Optional`_
+
+The default max payload size for requests and responses. This value is used
+when a supplier does not specify its own `max_body_size` configuration.
+If neither `default_max_body_size` nor supplier-specific `max_body_size`
+is configured, the `RelayMiner` will use a system default.
+
+This max payload size applies to the request and response size that the `RelayMiner` will accepts.
+
+Supports common unit suffixes like `B`, `KB`, `MB`, `GB`, or `TB`
+
+Defaults to: 20MB
+
 ### `smt_store_path`
 
 _`Required`_
@@ -149,6 +181,23 @@ _`Required`_
 The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
+
+**In-memory storage options:**
+
+- `:memory:` - Uses SimpleMap (pure Go map) for in-memory storage. **Recommended**.
+- `:memory_pebble:` - Uses Pebble database with in-memory VFS. Experimental option with more overhead.
+
+:::warning TODO(#1734) Experimentation in flight
+
+**This update is as of 08/2025.**
+
+In-memory storage enables relay miners to be significantly more performant. For this reason, `:memory:` is the recommended option.
+
+**Warning:** Prior to #1734, RelayMiner restarts will result in loss of session state.
+
+**Consideration**: Once experimentation is complete, there will either only be one in-memory storage option or a proper enum will be created (disk, memory_simple, memory_pebble).
+
+:::
 
 ### `enable_over_servicing`
 
@@ -161,6 +210,7 @@ stake can cover in a given session. This means the Supplier will mine relays for
 "free" without being compensated onchain for the additional service.
 
 Over-servicing is commonly used by Suppliers to:
+
 - Build goodwill with Applications
 - Improve their off-chain quality-of-service rating
 
@@ -324,6 +374,37 @@ This timeout controls how long the `RelayMiner` will wait for a response from
 the backend service before considering the request as failed and returning a
 timeout error to the client.
 
+### `max_body_size`
+
+_`Optional`_
+
+The max body size for relay requests specific to a supplier's service.
+This value overrides the global `default_max_body_size` setting for
+this particular supplier's service.
+
+If not specified, the `default_max_body_size` will be used.
+
+This max payload size applies to the request and response size that the `RelayMiner` will accepts.
+
+Supports common unit suffixes like `B`, `KB`, `MB`, `GB`, or `TB`
+
+Defaults to: `20MB`
+
+:::info default service configuration
+
+`service_config` is the default configuration and **WILL BE USED UNLESS** both of the following are true:
+
+1. The `rpc_type_service_configs` section is present for the supplier
+2. The request from an application or gateway contains a `Rpc-Type` header specifying the request should be handled by a specific RPC-type service-specific config
+
+:::
+
+:::warning TODO: Will be renamed in the future
+
+The `service_config` field will be renamed to `default_service_config` in the future to make this responsibility more explicit. It is kept named `service_config` in the current release for backwards compatibility.
+
+:::
+
 ### `service_config`
 
 _`Required`_
@@ -373,6 +454,74 @@ These headers help identify the Supplier, the Service, and the Application withi
 | Pocket-Application          | The address of the Application making the request.                   |
 | Pocket-Session-Start-Height | The block height at which the current session began.                 |
 | Pocket-Session-End-Height   | The block height at which the current session will end.              |
+
+### `rpc_type_service_configs`
+
+_`Optional`_
+
+The `rpc_type_service_configs` section enables RPC-type-specific backend configurations.
+For example, a service may expose multiple protocol endpoints or API types (e.g., CometBFT, JSON-RPC, REST, etc.)
+
+When a relay request is received, the `RelayMiner` will check the `Rpc-Type` header
+to determine which service configuration to use. If no matching RPC type is found
+in `rpc_type_service_configs`, the default `service_config` will be used.
+
+Supported RPC types include:
+
+- `json_rpc`: For JSON-RPC endpoints (e.g., Ethereum-compatible APIs)
+- `rest`: For REST API endpoints (e.g., Cosmos SDK REST APIs)
+- `comet_bft`: For CometBFT RPC endpoints (consensus layer queries)
+- `websocket`: For WebSocket endpoints (real-time event streaming)
+
+Each RPC type configuration supports all the same options as the main `service_config`:
+
+- `backend_url` (required)
+- `authentication` (optional)
+- `headers` (optional)
+- `forward_pocket_headers` (optional)
+
+Example configuration:
+
+```yaml
+suppliers:
+  - service_id: xrplevm-testnet
+    listen_url: http://0.0.0.0:8545
+
+    # Default configuration (fallback)
+    service_config:
+      backend_url: http://xrplevm-node:8545
+      forward_pocket_headers: true
+
+    rpc_type_service_configs:
+      # JSON-RPC for Ethereum-compatible API
+      json_rpc:
+        backend_url: http://xrplevm-node:8545
+        headers:
+          Authorization: "Bearer api-key-123"
+        forward_pocket_headers: true
+
+      # REST API for Cosmos SDK endpoints
+      rest:
+        backend_url: http://xrplevm-node:1317
+        authentication:
+          username: restuser
+          password: restpass
+        forward_pocket_headers: true
+
+      # CometBFT for consensus queries
+      comet_bft:
+        backend_url: http://xrplevm-node:26657
+        forward_pocket_headers: true
+
+      # WebSocket for real-time events
+      websocket:
+        backend_url: ws://xrplevm-node:8546
+        forward_pocket_headers: false
+```
+
+This configuration allows a single service to handle different types of requests
+by routing them to appropriate backend endpoints based on the RPC type specified
+in the relay request headers.
 
 ## Configuring Signing Keys
 
@@ -573,5 +722,92 @@ Having insufficient funds could lead to rejected `Proof` submissions . This
 can disrupt the operator’s participation in the Pocket Network. To maintain a
 smooth operation, avoid being slashed, and earn your rewards, operators must plan
 and manage their account balance as part of their operational procedures.
+
+:::
+
+## Recommended Full / RPC Node Configuration for RelayMiners
+
+:::critical Must read for all Relay Miners
+
+You must run your own full node (i.e. RPC node) with modified `config.toml` settings for your RelayMiners and Suppliers to scale.
+
+:::
+
+### Why does a RelayMiner's Full Node need custom configurations?
+
+- Each RelayMiner requires an event subscription to each supplier it manages.
+- Each RelayMiner requires another event subscription to block events for basic functionality.
+- If these limits are not properly configured, your RelayMiner may experience:
+  - Disconnections
+  - Missed events
+  - Other operational issues
+
+### Required `config.toml` Config Adjustments
+
+In your RPC node's `config.toml` file, you must adjust the following parameters:
+
+```toml
+
+# [rpc] section
+
+# Set max_subscriptions_per_client  > (num_suppliers + num_relayminers)
+max_subscriptions_per_client = <VALUE>
+
+# Set max_open_connections > (2 * num_relayminers)
+max_open_connections = <VALUE>
+```
+
+### How to Calculate Scalable Values?
+
+| Parameter                      | Formula                           | Explanation                                                                  |
+| ------------------------------ | --------------------------------- | ---------------------------------------------------------------------------- |
+| `max_subscriptions_per_client` | > num_suppliers + num_relayminers | Each supplier requires 1 subscription + 1 for each RelayMiner's block events |
+| `max_open_connections`         | > 2 × num_relayminers             | Each RelayMiner requires at least 2 connections for basic functionality.     |
+
+### Example Full Node Config Changes
+
+**Scenario 1: 1 RelayMiner managing N Suppliers**
+
+Example:
+
+- 1 RelayMiner managing 20 Suppliers
+
+```toml
+# 20 suppliers + 1 RelayMiner = 21 (rounded up to 25 for safety)
+max_subscriptions_per_client = 25
+
+# 2 × 1 RelayMiner = 2 (rounded up to 5 for safety)
+max_open_connections = 5
+```
+
+**Scenario 2: N RelayMiners w/ M Suppliers Each**
+
+Example:
+
+- RelayMiner 1: managing 2 Suppliers
+- RelayMiner 2: managing 3 Suppliers
+- RelayMiner 3: managing 1 Supplier
+
+```toml
+# (2 + 3 + 1) suppliers + 3 RelayMiners = 9 (rounded up to 15 for safety)
+max_subscriptions_per_client = 15
+
+# 2 × 3 RelayMiners = 6 (rounded up to 10 for safety)
+max_open_connections = 10
+```
+
+:::tip Overhead Considerations
+
+Always set these values higher than the calculated minimum to allow for:
+
+- Extra connections
+- Unexpected new subscriptions
+
+For large deployments with many suppliers, do one of the following:
+
+- Increase these values substantially
+- Or, split RelayMiners across multiple RPC nodes
+
+This helps maintain stability and performance as your system scales.
 
 :::

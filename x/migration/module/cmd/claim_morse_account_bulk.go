@@ -17,6 +17,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -236,7 +237,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
@@ -347,7 +348,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	// Sign and broadcast the claim Morse account message.
 	logger.Logger.Info().Int("messages", len(claimMessages)).Msg("Sign and broadcast transaction")
 	tx, eitherErr := txClient.SignAndBroadcast(ctx, claimMessages...)
-	broadcastErr, broadcastErrCh := eitherErr.SyncOrAsyncError()
+	broadcastErrCh, broadcastErr := eitherErr.SyncOrAsyncError()
 
 	// Handle a successful tx broadcast.
 	if tx != nil {

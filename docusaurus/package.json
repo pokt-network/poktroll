@@ -20,7 +20,7 @@
     "@easyops-cn/docusaurus-search-local": "^0.46.1",
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
-    "docusaurus-plugin-chat-page": "github:buildwithgrove/docusaurus-plugin-chat-page#main",
+    "docusaurus-plugin-chat-page": "github:olshansk/docusaurus-plugin-chat-page#main",
     "docusaurus-plugin-openapi-docs": "^4.4.0",
     "docusaurus-theme-openapi-docs": "^4.4.0",
     "katex": "^0.16.22",

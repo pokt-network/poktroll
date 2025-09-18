@@ -45,7 +45,6 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/x/bank"         // import for side-effects
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	_ "github.com/cosmos/cosmos-sdk/x/consensus" // import for side-effects
-	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	consensustypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	_ "github.com/cosmos/cosmos-sdk/x/crisis" // import for side-effects
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
@@ -73,15 +72,6 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	applicationmodulev1 "github.com/pokt-network/poktroll/api/pocket/application/module"
-	gatewaymodulev1 "github.com/pokt-network/poktroll/api/pocket/gateway/module"
-	migrationmodulev1 "github.com/pokt-network/poktroll/api/pocket/migration/module"
-	proofmodulev1 "github.com/pokt-network/poktroll/api/pocket/proof/module"
-	servicemodulev1 "github.com/pokt-network/poktroll/api/pocket/service/module"
-	sessionmodulev1 "github.com/pokt-network/poktroll/api/pocket/session/module"
-	sharedmodulev1 "github.com/pokt-network/poktroll/api/pocket/shared/module"
-	suppliermodulev1 "github.com/pokt-network/poktroll/api/pocket/supplier/module"
-	tokenomicsmodulev1 "github.com/pokt-network/poktroll/api/pocket/tokenomics/module"
 	_ "github.com/pokt-network/poktroll/x/application/module" // import for side-effects
 	applicationmoduletypes "github.com/pokt-network/poktroll/x/application/types"
 	_ "github.com/pokt-network/poktroll/x/gateway/module" // import for side-effects
@@ -133,7 +123,7 @@ var (
 		vestingtypes.ModuleName,
 		circuittypes.ModuleName,
 		group.ModuleName,
-		consensusparamtypes.ModuleName,
+		consensustypes.ModuleName,
 		circuittypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,
@@ -310,7 +300,7 @@ var (
 				Name: stakingtypes.ModuleName,
 				Config: appconfig.WrapAny(&stakingmodulev1.Module{
 					// NOTE: specifying a prefix is only necessary when using bech32 addresses
-					// If not specfied, the auth Bech32Prefix appended with "valoper" and "valcons" is used by default
+					// If not specified, the auth Bech32Prefix appended with "valoper" and "valcons" is used by default
 					Bech32PrefixValidator: AccountAddressPrefix + "valoper",
 					Bech32PrefixConsensus: AccountAddressPrefix + "valcons",
 				}),
@@ -380,39 +370,39 @@ var (
 			},
 			{
 				Name:   servicemoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&servicemodulev1.Module{}),
+				Config: appconfig.WrapAny(&servicemoduletypes.Module{}),
 			},
 			{
 				Name:   gatewaymoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&gatewaymodulev1.Module{}),
+				Config: appconfig.WrapAny(&gatewaymoduletypes.Module{}),
 			},
 			{
 				Name:   applicationmoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&applicationmodulev1.Module{}),
+				Config: appconfig.WrapAny(&applicationmoduletypes.Module{}),
 			},
 			{
 				Name:   suppliermoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&suppliermodulev1.Module{}),
+				Config: appconfig.WrapAny(&suppliermoduletypes.Module{}),
 			},
 			{
 				Name:   sessionmoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&sessionmodulev1.Module{}),
+				Config: appconfig.WrapAny(&sessionmoduletypes.Module{}),
 			},
 			{
 				Name:   proofmoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&proofmodulev1.Module{}),
+				Config: appconfig.WrapAny(&proofmoduletypes.Module{}),
 			},
 			{
 				Name:   tokenomicsmoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&tokenomicsmodulev1.Module{}),
+				Config: appconfig.WrapAny(&tokenomicsmoduletypes.Module{}),
 			},
 			{
 				Name:   sharedmoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&sharedmodulev1.Module{}),
+				Config: appconfig.WrapAny(&sharedmoduletypes.Module{}),
 			},
 			{
 				Name:   migrationmoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&migrationmodulev1.Module{}),
+				Config: appconfig.WrapAny(&migrationmoduletypes.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

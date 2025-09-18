@@ -18,7 +18,7 @@ import (
 const polyzeroEventTypeName = "*polyzero.zerologEvent"
 
 var (
-	expectedErr  = fmt.Errorf("%d", 42)
+	errTest      = fmt.Errorf("%d", 42)
 	expectedTime = time.Now()
 	// expectedTimestampDayPrecisionLayout is a "layout" which is described using
 	// the "reference time", as per the time package usage convention.
@@ -143,7 +143,7 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 		},
 		{
 			EventMethodName:        "Err",
-			Value:                  expectedErr,
+			Value:                  errTest,
 			ExpectedOutputContains: `"error":"42"`,
 		},
 		{
@@ -336,9 +336,9 @@ func TestWithErrorKey(t *testing.T) {
 	})
 	logger, logOutput := newTestLogger(t, polyzero.DebugLevel, errorKeyOpt)
 
-	logger.Debug().Err(expectedErr).Send()
+	logger.Debug().Err(errTest).Send()
 
-	require.Contains(t, logOutput.String(), expectedErr.Error())
+	require.Contains(t, logOutput.String(), errTest.Error())
 	require.Contains(t, logOutput.String(), expectedErrKey)
 
 	// Print log output for manual inspection.

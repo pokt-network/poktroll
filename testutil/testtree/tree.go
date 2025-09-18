@@ -69,10 +69,10 @@ func NewEmptySessionTree(
 
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
+		logger,
 		sessionTreeHeader,
 		supplierOperatorAddr,
 		testSessionTreeStoreDir,
-		logger,
 	)
 	require.NoError(t, err)
 
@@ -94,13 +94,21 @@ func FillSessionTree(
 	t.Helper()
 
 	for i := 0; i < int(numRelays); i++ {
-		relay := testrelayer.NewSignedEmptyRelay(
+		relay := testrelayer.NewSignedRandRelay(
 			ctx, t,
 			supplierOperatorKeyUid, supplierOperatorAddr,
 			reqHeader, resHeader,
 			keyRing,
 			ringClient,
 		)
+
+		// TODO(v0.1.26): Remove this if structure once all actors (miners, validators, etc.)
+		// update to the version of the protocol that enforce the payload hash
+		// and a nil payload.
+		if len(relay.Res.PayloadHash) > 0 {
+			relay.Res.Payload = nil
+		}
+
 		relayBz, err := relay.Marshal()
 		require.NoError(t, err)
 

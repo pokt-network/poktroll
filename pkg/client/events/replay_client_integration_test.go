@@ -9,13 +9,15 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
 
 // Create the generic event type and decoder for the replay client
@@ -35,15 +37,16 @@ func (t *tEvent) EventMessage() string {
 }
 
 func newDecodeEventMessageFn() events.NewEventsFn[messageEvent] {
-	return func(eventBz []byte) (messageEvent, error) {
-		t := new(tEvent)
-		if err := json.Unmarshal(eventBz, t); err != nil {
-			return nil, err
+	return func(eventResult *coretypes.ResultEvent) (messageEvent, error) {
+		if data, ok := eventResult.Data.([]byte); ok {
+			event := &tEvent{}
+			err := json.Unmarshal(data, event)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal event message: %w", err)
+			}
+			return event, nil
 		}
-		if t.Message == "" {
-			return nil, events.ErrEventsUnmarshalEvent
-		}
-		return t, nil
+		return nil, fmt.Errorf("failed to decode event message")
 	}
 }
 
@@ -55,7 +58,6 @@ func newMessageEventBz(eventNum int32) []byte {
 func TestReplayClient_Remapping(t *testing.T) {
 	var (
 		ctx               = context.Background()
-		connClosed        atomic.Bool
 		firstEventDelayed atomic.Bool
 		readEventCounter  atomic.Int32
 		eventsReceived    atomic.Int32
@@ -64,51 +66,33 @@ func TestReplayClient_Remapping(t *testing.T) {
 		timeoutAfter      = 3 * time.Second // 1 second delay on retry.OnError
 	)
 
-	// Setup the mock connection and dialer
-	connMock, dialerMock := testeventsquery.NewNTimesReconnectMockConnAndDialer(t, 2, &connClosed, &firstEventDelayed)
-	// Mock the connection receiving events
-	connMock.EXPECT().Receive().
-		// Receive is called in the tightest loop possible (max speed limited
-		// by a goroutine) and as such the sleep's within are used to slow down
-		// the time between events to prevent unexpected behavior. As in this
-		// test environment, there are no "real" delays between "#Receive" calls
-		// (events being emitted) and as such the sleep's enable the publishing
-		// of notifications to observers to occur in a flake-free manner.
-		DoAndReturn(func() (any, error) {
-			// Simulate ErrConnClosed if connection is isClosed.
-			if connClosed.Load() {
-				return nil, events.ErrEventsConnClosed
-			}
+	resultEventCh := make(chan coretypes.ResultEvent, 1)
 
-			// Delay the event if needed, this is to allow for the events query
-			// client to subscribe and receive the first event.
+	go func() {
+		for range eventsToRecv {
 			if !firstEventDelayed.CompareAndSwap(false, true) {
 				time.Sleep(50 * time.Millisecond)
 			}
 
 			eventNum := readEventCounter.Add(1) - 1
-			event := newMessageEventBz(eventNum)
-			// After an arbitrary number of events (2 in this case), simulate
-			// the connection closing so that the replay client can remap the
-			// events it receives without the caller having to resubscribe.
-			if eventNum == 2 {
-				// Simulate the connection closing
-				connMock.Close()
+			event := coretypes.ResultEvent{
+				Data: newMessageEventBz(eventNum),
 			}
 
-			// Simulate IO delay between sequential events.
+			resultEventCh <- event
 			time.Sleep(50 * time.Microsecond)
+		}
+	}()
 
-			return event, nil
-		}).
-		MinTimes(int(eventsToRecv))
-
-	// Setup the events query client dependency
-	dialerOpt := events.WithDialer(dialerMock)
-	queryClient := events.NewEventsQueryClient("", dialerOpt)
+	ctrl := gomock.NewController(t)
+	cometHTTPClientMock := mockclient.NewMockClient(ctrl)
+	cometHTTPClientMock.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(resultEventCh, nil).
+		Times(1)
 
 	logger := polylog.Ctx(ctx)
-	deps := depinject.Supply(queryClient, logger)
+	deps := depinject.Supply(cometHTTPClientMock, logger)
 
 	// Create the replay client
 	replayClient, err := events.NewEventsReplayClient[messageEvent](

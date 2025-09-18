@@ -74,7 +74,7 @@ func TestIsValidService(t *testing.T) {
 				Id:                   test.serviceId,
 				Name:                 test.serviceName,
 				ComputeUnitsPerRelay: 1,
-				OwnerAddress:         sample.AccAddress(),
+				OwnerAddress:         sample.AccAddressBech32(),
 			}
 			err := service.ValidateBasic()
 			if test.expectedIsValid {
@@ -135,7 +135,7 @@ func TestIsValidServiceName(t *testing.T) {
 				Id:                   "svc",
 				Name:                 test.serviceName,
 				ComputeUnitsPerRelay: 1,
-				OwnerAddress:         sample.AccAddress(),
+				OwnerAddress:         sample.AccAddressBech32(),
 			}
 			err := service.ValidateBasic()
 			if test.expectedIsValid {
@@ -215,7 +215,7 @@ func TestIsValidServiceId(t *testing.T) {
 			service := &Service{
 				Id:                   test.serviceId,
 				ComputeUnitsPerRelay: 1,
-				OwnerAddress:         sample.AccAddress(),
+				OwnerAddress:         sample.AccAddressBech32(),
 			}
 			err := service.ValidateBasic()
 			if test.expectedIsValid {

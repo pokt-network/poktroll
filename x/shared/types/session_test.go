@@ -34,10 +34,10 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 		// NB: sample concurrently to save time.
 		go func() {
 			queryHeight := rand.Int63()
-			supplierOperatorAddr := sample.AccAddress()
+			supplierOperatorAddr := sample.AccAddressBech32()
 			var claimWindowOpenBlockHash [32]byte
 
-			_, err := rand.Read(claimWindowOpenBlockHash[:]) //nolint:staticcheck // We need a deterministic pseudo-random source.
+			_, err := rand.Read(claimWindowOpenBlockHash[:]) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 			require.NoError(t, err)
 
 			expected := sharedtypes.GetEarliestSupplierClaimCommitHeight(
@@ -97,9 +97,9 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 		go func() {
 			// Randomize queryHeight, proofWindowOpenBlockHash, and supplierOperatorAddr.
 			queryHeight := rand.Int63()
-			supplierOperatorAddr := sample.AccAddress()
+			supplierOperatorAddr := sample.AccAddressBech32()
 			var proofWindowOpenBlockHash [32]byte
-			_, err := rand.Read(proofWindowOpenBlockHash[:]) //nolint:staticcheck // We need a deterministic pseudo-random source.
+			_, err := rand.Read(proofWindowOpenBlockHash[:]) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
 
 			if !assert.NoError(t, err) {
 				cancel()
@@ -185,7 +185,7 @@ func TestClaimProofWindows(t *testing.T) {
 				go func() {
 					// Randomize the supplier operator address for each sample.
 					// This will produce different randomized earliest claim & proof offsets.
-					supplierOperatorAddr := sample.AccAddress()
+					supplierOperatorAddr := sample.AccAddressBech32()
 
 					claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&test.sharedParams, test.queryHeight)
 					claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&test.sharedParams, test.queryHeight)

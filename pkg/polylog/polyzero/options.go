@@ -33,6 +33,14 @@ func WithTimestampKey(key string) polylog.LoggerOption {
 	}
 }
 
+// WithTimestamp configures the logger to include a timestamp field using zerolog's built-in Timestamp().
+func WithTimestamp() polylog.LoggerOption {
+	return func(logger polylog.Logger) {
+		zl := logger.(*zerologLogger)
+		zl.Logger = zl.Logger.With().Timestamp().Logger()
+	}
+}
+
 // WithErrKey returns an option function which configures the logger to use the
 // given key when `polylog.Event#Err()` is called.
 func WithErrKey(key string) polylog.LoggerOption {

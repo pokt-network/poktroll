@@ -3,6 +3,7 @@ package supplier_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -13,6 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/cmd"
+	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/yaml"
@@ -21,17 +25,23 @@ import (
 )
 
 func TestCLI_StakeSupplier(t *testing.T) {
+	logger.Logger = polyzero.NewLogger()
+
 	net, _ := networkWithSupplierObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
 
 	// Create a keyring and add an account for the supplier to be staked
 	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
+	accounts := testutil.CreateKeyringAccounts(t, kr, 2)
 	ownerAccount := accounts[0]
+	operatorAccount := accounts[1]
 
 	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
 	network.InitAccount(t, net, ownerAccount.Address)
+	err := net.WaitForNextBlock()
+	require.NoError(t, err)
+	network.InitAccount(t, net, operatorAccount.Address)
 
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
@@ -41,6 +51,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%t", flags.FlagUnordered, true),
+		fmt.Sprintf("--%s=%s", flags.TimeoutDuration, 5*time.Second),
 	}
 
 	defaultConfig := fmt.Sprintf(`
@@ -52,19 +64,58 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		    endpoints:
 		    - publicly_exposed_url: http://pokt.network:8081
 		      rpc_type: json_rpc
-		`, ownerAccount.Address.String(), sample.AccAddress())
+		`, ownerAccount.Address.String(), operatorAccount.Address.String())
+
+	stakeOnlyConfig := fmt.Sprintf(`
+		owner_address: %s
+		operator_address: %s
+		stake_amount: 1000upokt
+		`, ownerAccount.Address.String(), operatorAccount.Address.String())
+
+	servicesOnlyConfig := fmt.Sprintf(`
+		owner_address: %s
+		operator_address: %s
+		services:
+		  - service_id: svc1
+		    endpoints:
+		    - publicly_exposed_url: http://pokt.network:8081
+		      rpc_type: json_rpc
+		`, ownerAccount.Address.String(), operatorAccount.Address.String())
 
 	tests := []struct {
-		desc         string
-		ownerAddress string
-		config       string
-		expectedErr  *sdkerrors.Error
+		desc            string
+		ownerAddress    string
+		signerAddress   string
+		config          string
+		additionalFlags []string
+		expectedErr     *sdkerrors.Error
 	}{
 		// Happy Paths
 		{
-			desc:         "stake supplier: valid",
+			desc:         "owner stake supplier: valid stake only config",
 			ownerAddress: ownerAccount.Address.String(),
-			config:       defaultConfig,
+			config:       stakeOnlyConfig,
+			additionalFlags: []string{
+				fmt.Sprintf("--%s=true", "stake-only"),
+			},
+		},
+		{
+			desc:          "operator stake supplier: valid stake only config",
+			ownerAddress:  ownerAccount.Address.String(),
+			signerAddress: operatorAccount.Address.String(),
+			config:        stakeOnlyConfig,
+			additionalFlags: []string{
+				fmt.Sprintf("--%s=true", "stake-only"),
+			},
+		},
+		{
+			desc:          "operator stake supplier: valid services only configs",
+			ownerAddress:  ownerAccount.Address.String(),
+			signerAddress: operatorAccount.Address.String(),
+			config:        servicesOnlyConfig,
+			additionalFlags: []string{
+				fmt.Sprintf("--%s=true", "services-only"),
+			},
 		},
 		{
 			desc:         "stake supplier: valid, omitted operator address",
@@ -108,7 +159,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), operatorAccount.Address.String()),
 		},
 		{
 			desc:         "stake supplier: invalid stake denom",
@@ -123,7 +174,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), operatorAccount.Address.String()),
 		},
 		{
 			desc:         "stake supplier: invalid stake amount (zero)",
@@ -138,7 +189,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), operatorAccount.Address.String()),
 		},
 		{
 			desc:         "stake supplier: invalid stake amount (negative)",
@@ -153,13 +204,46 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), operatorAccount.Address.String()),
+		},
+		// Error Paths - Flag related
+		{
+			desc:          "stake supplier: --stake-only and --services-only flags are mutually exclusive",
+			signerAddress: operatorAccount.Address.String(),
+			ownerAddress:  ownerAccount.Address.String(),
+			config:        defaultConfig,
+			additionalFlags: []string{
+				fmt.Sprintf("--%s=true", "stake-only"),
+				fmt.Sprintf("--%s=true", "services-only"),
+			},
+			expectedErr: cmd.ErrInvalidFlagUsage,
+		},
+		{
+			desc:          "stake supplier: --stake-only with services in config",
+			signerAddress: operatorAccount.Address.String(),
+			ownerAddress:  ownerAccount.Address.String(),
+			config:        servicesOnlyConfig,
+			additionalFlags: []string{
+				fmt.Sprintf("--%s=true", "stake-only"),
+			},
+			expectedErr: cmd.ErrInvalidFlagUsage,
+		},
+		{
+			desc:          "stake supplier: --services-only with stake in config",
+			signerAddress: operatorAccount.Address.String(),
+			ownerAddress:  ownerAccount.Address.String(),
+			config:        stakeOnlyConfig,
+			additionalFlags: []string{
+				fmt.Sprintf("--%s=true", "services-only"),
+			},
+			expectedErr: cmd.ErrInvalidFlagUsage,
 		},
 
 		// Happy Paths - Service Related
 		{
-			desc:         "services_test: valid multiple services",
-			ownerAddress: ownerAccount.Address.String(),
+			desc:          "services_test: valid multiple services",
+			ownerAddress:  ownerAccount.Address.String(),
+			signerAddress: operatorAccount.Address.String(),
 			config: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -173,11 +257,12 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8082
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), operatorAccount.Address.String()),
 		},
 		{
-			desc:         "services_test: valid localhost",
-			ownerAddress: ownerAccount.Address.String(),
+			desc:          "services_test: valid localhost",
+			ownerAddress:  ownerAccount.Address.String(),
+			signerAddress: operatorAccount.Address.String(),
 			config: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -187,11 +272,12 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://127.0.0.1:8082
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), operatorAccount.Address.String()),
 		},
 		{
-			desc:         "services_test: valid loopback",
-			ownerAddress: ownerAccount.Address.String(),
+			desc:          "services_test: valid loopback",
+			ownerAddress:  ownerAccount.Address.String(),
+			signerAddress: operatorAccount.Address.String(),
 			config: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -201,11 +287,12 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://localhost:8082
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), operatorAccount.Address.String()),
 		},
 		{
-			desc:         "services_test: valid without a port",
-			ownerAddress: ownerAccount.Address.String(),
+			desc:          "services_test: valid without a port",
+			ownerAddress:  ownerAccount.Address.String(),
+			signerAddress: operatorAccount.Address.String(),
 			config: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -215,10 +302,36 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), operatorAccount.Address.String()),
 		},
 
 		// Error Paths - Service Related
+		{
+			desc:         "owner stake supplier: unauthorized valid service configs",
+			ownerAddress: ownerAccount.Address.String(),
+			config:       defaultConfig,
+			expectedErr:  types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:         "owner stake supplier: missing --stake-only flag",
+			ownerAddress: ownerAccount.Address.String(),
+			config:       stakeOnlyConfig,
+			expectedErr:  types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:          "operator stake supplier: missing --stake-only flag",
+			signerAddress: operatorAccount.Address.String(),
+			ownerAddress:  ownerAccount.Address.String(),
+			config:        stakeOnlyConfig,
+			expectedErr:   types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:          "operator stake supplier: missing --services-only flag",
+			signerAddress: operatorAccount.Address.String(),
+			ownerAddress:  ownerAccount.Address.String(),
+			config:        servicesOnlyConfig,
+			expectedErr:   types.ErrSupplierInvalidServiceConfig,
+		},
 		{
 			desc:         "services_test: invalid services (missing argument)",
 			ownerAddress: ownerAccount.Address.String(),
@@ -228,7 +341,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				owner_address: %s
 				operator_address: %s
 				stake_amount: 1000upokt
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: invalid services (empty string)",
@@ -239,7 +352,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				operator_address: %s
 				stake_amount: 1000upokt
 				services:
-			`, ownerAccount.Address.String(), sample.AccAddress()),
+			`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: invalid URL",
@@ -254,7 +367,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				    endpoints:
 				    - publicly_exposed_url: bad_url
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: missing URLs",
@@ -267,7 +380,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				  - service_id: svc2
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: missing service IDs",
@@ -284,7 +397,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				  - endpoints:
 				    - publicly_exposed_url: localhost:8082
 				      rpc_type: json_rpc
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 		{
 			desc:         "services_test: missing rpc type",
@@ -298,7 +411,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				  - service_id: svc1
 				    endpoints:
 				    - publicly_exposed_url: localhost:8082
-				`, ownerAccount.Address.String(), sample.AccAddress()),
+				`, ownerAccount.Address.String(), sample.AccAddressBech32()),
 		},
 	}
 
@@ -308,14 +421,26 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
-			// write the stake config to a file
-			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(test.config)).Name()
-
-			// Prepare the arguments for the CLI command
-			args := []string{
-				fmt.Sprintf("--config=%s", configPath),
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.ownerAddress),
+			signerAddress := test.signerAddress
+			if signerAddress == "" {
+				signerAddress = test.ownerAddress
 			}
+			args := []string{
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, signerAddress),
+			}
+
+			if test.config != "" {
+				// write the stake config to a file
+				configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(test.config)).Name()
+
+				// Append the config file path to the arguments
+				args = append(args, fmt.Sprintf("--config=%s", configPath))
+			}
+
+			if len(test.additionalFlags) > 0 {
+				args = append(args, test.additionalFlags...)
+			}
+
 			args = append(args, commonArgs...)
 
 			// Execute the command
