@@ -32,6 +32,7 @@ type YAMLRelayMinerConfig struct {
 	Suppliers                    []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
 	Ping                         YAMLRelayMinerPingConfig       `yaml:"ping"`
 	EnableOverServicing          bool                           `yaml:"enable_over_servicing"`
+	EnableEagerValidation        bool                           `yaml:"enable_eager_validation"`
 
 	// TODO_IMPROVE: Add a EnableErrorPropagation flag to control whether errors (i.e. non-2XX HTTP status codes)
 	// are propagated back to the client or masked as internal errors.
@@ -116,6 +117,7 @@ type RelayMinerConfig struct {
 	SmtStorePath                 string
 	Ping                         *RelayMinerPingConfig
 	EnableOverServicing          bool
+	EnableEagerValidation        bool
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
@@ -154,6 +156,10 @@ type RelayMinerServerConfig struct {
 	SupplierConfigsMap map[string]*RelayMinerSupplierConfig
 	// MaxBodySize sets the largest request or response body size (in bytes) that the RelayMiner will accept for this service.
 	MaxBodySize int64
+	// EnableEagerValidation enables immediate validation of all incoming relay requests.
+	// When enabled, all requests are validated upon receipt. When disabled, validation
+	// is only performed for known sessions or deferred for unknown sessions.
+	EnableEagerValidation bool
 }
 
 // RelayMinerMetricsConfig is the structure resulting from parsing the metrics

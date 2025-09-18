@@ -18,7 +18,9 @@ import (
 )
 
 // TODO_IMPROVE: Make this configurable (for the RelayMiner) and other users.
-const defaultQueryTimeout = 5 * time.Second
+// Choosing a relatively low timeout to give a chance for retries to succeed
+// before the overall relay request handling times out.
+const defaultQueryTimeout = 2 * time.Second
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)
 

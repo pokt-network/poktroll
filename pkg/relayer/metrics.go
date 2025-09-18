@@ -21,6 +21,9 @@ const (
 	requestPreparationDurationSeconds  = "relay_request_preparation_duration_seconds"
 	responsePreparationDurationSeconds = "relay_response_preparation_duration_seconds"
 	fullNodeGRPCCallDurationSeconds    = "full_node_grpc_call_duration_seconds"
+	delayedValidationTotal             = "delayed_validation_total"
+	delayedValidationFailuresTotal     = "delayed_validation_failures_total"
+	delayedValidationRateLimitingTotal = "delayed_validation_rate_limiting_total"
 )
 
 var (
@@ -176,6 +179,35 @@ var (
 		Help:      "Histogram of request sizes in bytes for performance analysis.",
 		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
 	}, []string{"service_id"})
+
+	// DelayedValidationTotal is a Counter metric for tracking delayed validation occurrences.
+	// It increments when relay requests are validated after being served (late validation)
+	// rather than being validated upfront. This indicates sessions that weren't known at
+	// request time and required deferred validation.
+	DelayedValidationTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      delayedValidationTotal,
+		Help:      "Total number of delayed validation occurrences, labeled by service ID.",
+	}, []string{"service_id"})
+
+	// DelayedValidationFailuresTotal is a Counter metric for tracking delayed validation failures.
+	// It increments when relay requests fail validation during the delayed validation process.
+	// This typically occurs when the relay request signature is invalid or session validation
+	// fails after the relay has already been served.
+	DelayedValidationFailuresTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      delayedValidationFailuresTotal,
+		Help:      "Total number of delayed validation failures, labeled by service ID.",
+	}, []string{"service_id"})
+
+	// DelayedValidationRateLimitingTotal is a Counter metric for tracking rate limiting during delayed validation.
+	// It increments when relay requests are rate limited during the delayed validation process.
+	// This occurs when the application exceeds its allocated stake during delayed validation checks.
+	DelayedValidationRateLimitingTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      delayedValidationRateLimitingTotal,
+		Help:      "Total number of delayed validation rate limiting events, labeled by service ID.",
+	}, []string{"service_id"})
 )
 
 // CaptureRelayDuration records the internal end-to-end duration of handling a relay which includes
@@ -233,4 +265,28 @@ func CaptureGRPCCallDuration(component, method string, startTime time.Time) {
 		With("component", component).
 		With("method", method).
 		Observe(duration)
+}
+
+// CaptureDelayedValidationFailure records a delayed validation failure event.
+// This metric is incremented when a relay request fails validation during the delayed
+// validation process, typically due to invalid signature or session validation failure
+// after the relay has already been served.
+func CaptureDelayedValidationFailure(serviceId string) {
+	DelayedValidationFailuresTotal.With("service_id", serviceId).Add(1)
+}
+
+// CaptureDelayedValidationOccurrence records a delayed validation occurrence.
+// This metric is incremented when relay requests are validated after being served
+// (late validation) rather than being validated upfront. This indicates sessions
+// that weren't known at request time and required deferred validation.
+func CaptureDelayedValidationOccurrence(serviceId string) {
+	DelayedValidationTotal.With("service_id", serviceId).Add(1)
+}
+
+// CaptureDelayedValidationRateLimiting records a rate limiting event during delayed validation.
+// This metric is incremented when relay requests are rate limited during the delayed
+// validation process, typically when the application exceeds its allocated stake
+// during delayed validation checks.
+func CaptureDelayedValidationRateLimiting(serviceId string) {
+	DelayedValidationRateLimitingTotal.With("service_id", serviceId).Add(1)
 }
