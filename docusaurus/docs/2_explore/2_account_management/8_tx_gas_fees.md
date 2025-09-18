@@ -49,7 +49,7 @@ All examples use the `send` transaction with different fee configurations:
 pocketd tx bank send [from] [to] 1000000upokt \
   --gas=auto \
   --fees=1upokt \
-  --network=main --grpc-insecure=false
+  --network=main
 ```
 
 ### Conservative Send (Higher Fee)
@@ -58,7 +58,7 @@ pocketd tx bank send [from] [to] 1000000upokt \
 pocketd tx bank send [from] [to] 1000000upokt \
   --gas=auto \
   --fees=2upokt \
-  --network=main --grpc-insecure=false
+  --network=main
 ```
 
 ### Gas Price Method Send
@@ -68,7 +68,7 @@ pocketd tx bank send [from] [to] 1000000upokt \
   --gas=auto \
   --gas-prices=0.000001upokt \
   --gas-adjustment=1.2 \
-  --network=main --grpc-insecure=false
+  --network=main
 ```
 
 ### Manual Gas Send
@@ -77,7 +77,7 @@ pocketd tx bank send [from] [to] 1000000upokt \
 pocketd tx bank send [from] [to] 1000000upokt \
   --gas=500000 \
   --fees=1upokt \
-  --network=main --grpc-insecure=false
+  --network=main
 ```
 
 ## Cosmos SDK Introduction
