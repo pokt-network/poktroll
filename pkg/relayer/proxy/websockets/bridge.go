@@ -210,7 +210,9 @@ func (b *bridge) Run(closeHeight int64) {
 		b.blockClient.CommittedBlocksSequence(b.ctx),
 		func(ctx context.Context, block client.Block) {
 			if block.Height() >= closeHeight {
-				b.logger.Info().Msg("session closing, bridge stopped")
+				// Create a logger with the session ID.
+				logger := b.logger.With("session_id", b.session.Header.SessionId)
+				logger.Info().Msg("session closing, bridge stopped")
 				// TODO_MAINNET(@red-0ne) Propagate the session closing as a close message
 				// to the gateway so end user can be informed.
 				b.cancelCtx()

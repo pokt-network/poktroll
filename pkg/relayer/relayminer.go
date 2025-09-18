@@ -56,9 +56,10 @@ func NewRelayMiner(ctx context.Context, deps depinject.Config) (*relayMiner, err
 // This method is blocking while the relayer proxy is running and returns when Stop is called
 // or when the relayer proxy fails to start.
 func (rel *relayMiner) Start(ctx context.Context) error {
+	logger := rel.logger.With("method", "relayMiner.Start")
 	// relayerSessionsManager.Start does not block.
 	// Set up the session (proof/claim) lifecycle pipeline.
-	rel.logger.Info().Msg("starting relayer sessions manager")
+	logger.Info().Msg("starting relayer sessions manager")
 	if err := rel.relayerSessionsManager.Start(ctx); err != nil {
 		return err
 	}
@@ -66,7 +67,8 @@ func (rel *relayMiner) Start(ctx context.Context) error {
 	// Start the flow of relays by starting relayer proxy.
 	// This is a blocking call as it waits for the waitgroup in relayerProxy.Start()
 	// that starts all the relay servers to be done.
-	rel.logger.Info().Msg("starting relayer proxy")
+	logger.Info().Msg("starting relayer proxy")
+
 	// TODO_TECHDEBT: Listen for onchain and local configuration changes, stop
 	// the relayerProxy if they do not match, then wait until they match again
 	// before starting the relayerProxy with the new config.
@@ -78,7 +80,7 @@ func (rel *relayMiner) Start(ctx context.Context) error {
 		return err
 	}
 
-	rel.logger.Info().Msg("relayer proxy stopped; exiting")
+	logger.Info().Msg("relayer proxy stopped; exiting")
 	return nil
 }
 

@@ -84,9 +84,10 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	sessionTrees []relayer.SessionTree,
 	failedSubmitProofsSessionsCh chan<- []relayer.SessionTree,
 ) []relayer.SessionTree {
+	logger := rs.logger.With("method", "waitForEarliestSubmitProofsHeightAndGenerateProofs")
 	// Guard against empty sessionTrees to prevent index out of bounds errors
 	if len(sessionTrees) == 0 {
-		rs.logger.Warn().Msg("⚠️ Received empty session trees array - no sessions to process")
+		logger.Warn().Msg("⚠️ Received empty session trees array - no sessions to process")
 		return nil
 	}
 
@@ -95,7 +96,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 
-	logger := rs.logger.With("session_end_height", sessionEndHeight)
+	logger = logger.With("session_end_height", sessionEndHeight)
 
 	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
@@ -191,6 +192,8 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ either.SessionTrees, skip bool) {
+		logger := rs.logger.With("method", "newMapProveSessionsFn")
+
 		if len(sessionTrees) == 0 {
 			return either.Success(sessionTrees), false
 		}
@@ -220,19 +223,21 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Rewards may not be secured and supplier may be slashed.")
+			logger.Error().Err(err).Msg("❌️ Failed to retrieve shared network parameters. ❗Check node connectivity. ❗Rewards may not be secured and supplier may be slashed.")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
 
 		// Submit proofs for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.SubmitProofs(ctx, proofWindowCloseHeight, proofMsgs...); err != nil {
+			logger := logger.With("operation", "submit_proofs")
 			failedSubmitProofSessionsCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("❌ Failed to submit proofs to the network. ❗Check node connectivity and transaction fees. ❗Rewards may not be secured and supplier may be slashed.")
+			logger.Error().Err(err).Msg("❌ Failed to submit proofs to the network. ❗Check node connectivity and transaction fees. ❗Rewards may not be secured and supplier may be slashed.")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		rs.logger.Info().Msgf(
+		logger = logger.With("operation", "submit_proofs_success")
+		logger.Info().Msgf(
 			"🎯 Successfully submitted %d proofs to the network - rewards secured!",
 			len(sessionTrees),
 		)
