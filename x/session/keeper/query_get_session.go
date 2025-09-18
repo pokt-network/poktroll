@@ -11,8 +11,9 @@ import (
 	"github.com/pokt-network/poktroll/x/session/types"
 )
 
-// GetSession should be deterministic and always return the same session for
-// the same block height.
+// GetSession
+// - Deterministically returns the same session for the same block height.
+// - Always produces consistent results for identical inputs.
 func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionRequest) (*types.QueryGetSessionResponse, error) {
 	logger := k.Logger().With("method", "GetSession")
 
@@ -24,15 +25,14 @@ func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionReques
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Note that `GetSession` is called via the `Query` service rather than the `Msg` server.
-	// The former is stateful but does not lead to state transitions, while the latter one
-	// does. The request height depends on how much the node has synched and only acts as a read,
-	// while the `Msg` server handles the code flow of the validator when a new block is being proposed.
+	// Notes on usage:
+	// - Called via the Query service (stateful, no state transitions).
+	// - Msg server is used for state transitions (e.g., block proposals).
+	// - The request height reflects node sync status; Query only reads state.
 	var blockHeight int64
-	// If the request specifies a block height, use it. Otherwise, use the current
-	// block height.
-	// Requesting a session with a block height of 0 allows to get the current session,
-	// which is useful for querying from CLI.
+	// Block height selection:
+	// - Use the specified block height if provided.
+	// - If block height is 0, use the current block height (useful for CLI queries).
 	blockHeight = sdk.UnwrapSDKContext(ctx).BlockHeight()
 	if req.BlockHeight > 0 {
 		blockHeight = req.BlockHeight
