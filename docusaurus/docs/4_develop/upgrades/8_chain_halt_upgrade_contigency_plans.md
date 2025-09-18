@@ -26,7 +26,7 @@ This document is intended to help you recover with minimal downtime.
 
 **tl;dr cancel the upgrade plan!**
 
-See the instructions of [how to do that here](4_localnet_upgrade_testing.md#cancelling-the-upgrade-plan).
+See the instructions of [how to do that here](3_mainnet_release_procedure.md#6-how-to-cancel-an-upgrade).
 
 ### Option 1: The migration didn't start (i.e. migration halt)
 
