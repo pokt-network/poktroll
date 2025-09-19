@@ -1082,6 +1082,9 @@ var ledgerAllowlist = []string{
 
 	// https://github.com/pokt-network/poktroll/issues/1676
 	"7B403A92D62123252C0BFCBE1449E0521C2C587D",
+
+	// TG Convo (LS)
+	"2A5907A0C3D6C092B82FF4EE4730A564578A2E16",
 }
 
 var exchangesAllowlist = []string{
