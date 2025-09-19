@@ -1,0 +1,67 @@
+---
+id: evidence-reflection-service-list-all-interfaces
+title: "ListAllInterfaces lists all the interfaces registered in the interface
+registry."
+description: "ListAllInterfaces lists all the interfaces registered in the interface"
+sidebar_label: "ListAllInterfaces lists all the interfaces registered in the interface
+registry."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VMFu2zAM/RVB56xuu1tOC4JgC7BDkGanLCgYmbbVyJInyVmDIP8+0k5cp247YMByiUXxkY+PpI4yQh7keC2XmBlUUTv7gH6vFcrNSLoKPbBtnsqxnO11ilbhwPXxuw5xYszcRvQZKAxyJD2GytlA3+OjvL+95b8Ug/K6YijFm4hQK3IOWW3Exf2GoMpRIBsZAVVltGo4JE+BYUcZVIElDOMNWCzPMYUOIhbY5RDxUKFwWWMcoMRyMWUW7ERR3faJiqVz5VmOqNuK9MX/0ULZmq7ZvHJgDmAFeA8HTg3GnDnlRAA9pqJDhF76BkBHHbFsspztIXptc3lqfyNKnkFt4hsqW1FbfK6oCMqB3jv/b2J/rIdyKfa8uJYcPbllzpcQW9Pne9lQjaBNv5j3inwn15f2eqjFSEKaauYPZtGHNBJRFwLkbwI7ET+cJ2HIErrWvfTruovXlz9te+kPrHaJsXC8TDk2dUEs6JAoF0oXki0ETHy3Xsn+bkta3SW6v1jaZm7Y5mkBlDnXsai3N8qVSeV28ZPF+Nv5XXPwjngvZw8rMVnMecB0NCzCt9VqwSYxpZFwZGpnAlQzEzy8TPcvgbmve/ShJXP+EtZFEahQuqxciCXYXsj/Ie+VJl2bIz7HpDIkEDOpveG7Vvq1bKUnLIvfvFsX+elwbkCjetcCehgLqobBxyOjfnhzOrH5V43+QHb63IPXsGWB1xtKWiCktA7j9VHu8MBrSS9fxSOwB1M3O/B6+U6b3rh8na1oTP8AGh4DmQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"ListAllInterfaces lists all the interfaces registered in the interface\nregistry."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/reflection/v1beta1/interfaces"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+ListAllInterfaces lists all the interfaces registered in the interface
+registry.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"ListAllInterfacesResponse is the response type of the ListAllInterfaces RPC.","type":"object","properties":{"interface_names":{"description":"interface_names is an array of all the registered interfaces.","type":"array","items":{"type":"string"}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

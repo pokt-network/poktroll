@@ -1,0 +1,72 @@
+---
+id: evidence-query-owner
+title: "Owner queries the owner of the NFT based on its class and id, same as ownerOf in ERC721"
+description: "Owner queries the owner of the NFT based on its class and id, same as ownerOf in ERC721"
+sidebar_label: "Owner queries the owner of the NFT based on its class and id, same as ownerOf in ERC721"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VcFu2zAM/RVBpw3I6rY7DPBpRZBtvaxZlp2KomBkOlYrS64kpy2M/PtIOUndJUCLbsvBkSU+kXwknzsZYRlkfil/tOgf5dVIugY9RO3seSFzOVnpAq3CdHx9cW/Ry5FswEONET1DO1lgUF43DCKIMhDCtS4E/TmlIWIh7nWsRKxQ2DIS3hJ6YEk7mpENxIrWHu9a7ZHcR9/iSAZVYQ0y72R8bBgXotd2Kdfr0Z++yasOAkRr9V2LgmOPutTohSuT/+9f5k/+/8LzFRuHxtmAgc9Pj4/573k0ZyK0SmEIZWvE1vyI/ChnI0XGCGgao1UiPLsJDOv23brFDSomLupoeCOVI1VjtrmW8+YEt24EQ0XpfNpN9lkCiNl0LKh4lePsG8/1jrrPwqX67qX75DcZbF31L1AU5DNsCeYCr9NvRGyU0Jp4gBhLFcKHhpKi5kDvKcx/ws/zdJQrcGCl6dJl6l+ipYbYb308lSnUCNqEgTV4D4/cHxHr8LKvz/3xgR6VxJDm+MFMh5BEUU3UwfIgcEfikLm+hNTbni4ZVOGpvcUCApHqrNAxiDRiAizNRTESgfqexrLHXJRCWzGZjT+dnkiOJLVELpeYsuOJyGWmXKhdyKis2epkQSydZAmdddvpXWcdPdIklW6/1uMKyM2SBKBdHClXZ427jR8sxnvnb9OLd8aI2eTnXJxNzwfN9m0+n/KWGFNfONrqGwNUaozNDL90MRd3RULVB7NZCeuiCJQnHTYuxBrs4Mr/x/EzZnYVj/gQs8YQTRxP6w2f9fxfyp5/1qyknJsa0MpttDgfqGhOT1KmilJibNdxnL+8Wa95+y5JfH5JyxV4DQtmmeVbB15T7UswAffC3E2jfDfbCOR78QqVP5jedrosz9YKTMtvtLzFx+EXIUn7W+J65RfgDbFxVFdkVSEUrJLEXH9wRhrfxAFkT7P4c7Gbr6+TOU33b3g0k2o=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Owner queries the owner of the NFT based on its class and id, same as ownerOf in ERC721"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/nft/v1beta1/owner/{class_id}/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Owner queries the owner of the NFT based on its class and id, same as ownerOf in ERC721
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"class_id associated with the nft","name":"class_id","in":"path","required":true,"schema":{"type":"string"}},{"description":"id is a unique identifier of the NFT","name":"id","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"QueryOwnerResponse is the response type for the Query/Owner RPC method","properties":{"owner":{"type":"string","title":"owner is the owner address of the nft"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

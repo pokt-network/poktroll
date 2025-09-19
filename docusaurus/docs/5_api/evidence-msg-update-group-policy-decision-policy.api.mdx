@@ -1,0 +1,72 @@
+---
+id: evidence-msg-update-group-policy-decision-policy
+title: "UpdateGroupPolicyDecisionPolicy allows a group policy's decision policy to be updated."
+description: "UpdateGroupPolicyDecisionPolicy allows a group policy's decision policy to be updated."
+sidebar_label: "UpdateGroupPolicyDecisionPolicy allows a group policy's decision policy to be updated."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VsFu2zAM/RVBl13SpOtuObXriq2HYUGbnoKiUGTGVitLmiSnDYz8+0jZ7rzESLYBySGxqCfykXxiXPMo8sCnC/495PxxxK0DL6Ky5jbjU36zVhkYCbj59OAyEeGrt5WbWa3k5gtIFRDZrPiIe/hZQYifbbbh05pLayKYSI/COcQkv5PnYA3ZgiygFPSUQZBeOdrFmBjrSCimAosFMEROjkFbTixuHIyRI/1iELt8Bhlx7TxlHBWExDMrldmnlMxdVCGlrUxkIss8hMDsKplzosASshcnRK9Mzrcj9NjwenJNuTDIYS6XzXa96wp9YWhF1ISe9Y+kKH3eOzG7DKpUs6yl3Ox9CKxDt5YxsU6Q9vhTm/F+fYZQB8rVjztQK/rsZnJaUdBaeUDFR1/BlgzBWROaRlycn++nfMVCJSUmtKo06+Dk62Sqv2uD/Fui7Zlh+XeVXolKx4EcDasMvDmEolrAe+v/L9XDQpc26+tcodMcPMJW1pciNqZPF80likLp0EML7wXNHhWhDCe5VLRXYqNFPnhwUK7H+iK0tq+BiSNXkEXLlu/3lUpeQiwsTWZnQ8pOxAJXE2lDacM4uRuvP47/Qhx4mjp193to37yJ0mnoDcIuzcHxdbk344anRQ+gzMru6+y6EDhecxWLajmWtpw4+xLPDMRX61/Swlut2d3N/ZxdzW5JxioST/5tPp+RiV2jJi2aGlEKmURpREmgY46J2Bp8aMi0T8zYyAJE2qRal8L0XJ6sv38U5l1sEd7ixGmsEtGpvKa9pvULPtB6dHSs+fhXX5CE0EFdL0WAB6+3WzKjHDz2d4GPa+GVWFKlF48YuACR4cWcLmr+AhtqXDMAzuZEk+C6SndydxhsR92JK5yZLh7EPvZUPvtxP0fwsn2jKNOk4F680tDG7ynn9MpCp9P1Traaa2HyKt1X3vikzy/5qDQa
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UpdateGroupPolicyDecisionPolicy allows a group policy's decision policy to be updated."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.group.v1.Msg/UpdateGroupPolicyDecisionPolicy"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UpdateGroupPolicyDecisionPolicy allows a group policy's decision policy to be updated.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateGroupPolicyDecisionPolicy is the Msg/UpdateGroupPolicyDecisionPolicy request type.","type":"object","properties":{"admin":{"description":"admin is the account address of the group admin.","type":"string"},"decision_policy":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"decision_policy is the updated group policy's decision policy."},"group_policy_address":{"description":"group_policy_address is the account address of group policy.","type":"string"}}}}},"description":"MsgUpdateGroupPolicyDecisionPolicy is the Msg/UpdateGroupPolicyDecisionPolicy request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateGroupPolicyDecisionPolicyResponse is the Msg/UpdateGroupPolicyDecisionPolicy response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

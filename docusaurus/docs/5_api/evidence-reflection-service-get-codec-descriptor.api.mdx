@@ -1,0 +1,64 @@
+---
+id: evidence-reflection-service-get-codec-descriptor
+title: "GetCodecDescriptor returns the descriptor of the codec of the application"
+description: "GetCodecDescriptor returns the descriptor of the codec of the application"
+sidebar_label: "GetCodecDescriptor returns the descriptor of the codec of the application"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk1v2zgQ/SuELmkBb9R2bzltkA3aALtA4KanuDAoaSQxoUiVpJwahv/7zpCSTEVqti3ii0VyPt+8GfKQOF7Z5OI+WUMpIXdCq89gdiKH5Osq0S0YTns3RXKRXO9EASqHmej2I7grXUD+N9jciNZpk6wSA7bVygKaPyQf3r2jv6IXQF00eMlsl+dgbdlJNoifo2qulQPlSIO3rRS5DyJ9sKR2SGxeQ8Ppy+1bQEM6e8CAUNEJJ2ljHtC6N8+EZa6G0R1+uM4oKFi29wdzVba+vULbrSE4nAgJ5STjQ+hd+g0WEswgOImCZ+EcE64Zt+i1EtaBQb8CczUlRxwYV7hsWgkNZu/VLCX1LMlpICf1CBBuDN9HeEQ+MH/OJDpnuuyRCKG4aSzFmD/FIBw09iXEbwbNCLcpGNPEyDtXJ4ezvJATUvEGIqfWGaGqyOkgMxTVf/dpnSwfV6f8txwJh/xT1bZB4vHq52BbUGNEUi4UIqpKbZqQFYLJTYFyPgbMyGk2ajzVAqvf602DRE5sVKV1JeHca2VdeX6p9qwUIItfKsDlEOq/we9iQTgbvAzhTaPDaOLqYF4tdgwWD0nCSX0h1nkJKfbtiUhbqs9LeC8rzCk7xu4L/kZpxwYqvB1kvK2NmmY1A30pD/ZmKtWTy6L1Fcs6t1HCsRzhyUiKNZ10AqkdPNrBP4lPCfB2oYw9pY/I0d8h/AjEeNB7JwND1gMbo444HidNMbYmmJ9rh1hhXp5odMy6kU18/Qqvb06Ky5RWy15eZbKMQH/rwOx5Jn8wbCaOj2F2bzsjX/I1yGAupVD9tPQF/LL+h3UWW+6pBiQaN7bmUg719CLUjGq/Ua4WvhIGvnWCrhWr2RN4mmLsdHMHectLWCR9bB3voY3qVLS1wvNHOrKdQUs1d2S90OrMsTAb2UOHDDjDYM68J+wSHPKdibAJDeLZd/qt8FFQcuyhhfeBYp2C7y0SAhMCY7Der/JMmF/lkRTFW3nahLEetv78kPhQsaHkUo/8kMdTX3+F46X+50UhKH4ub2MVD1E/QZYURxBj5BYeMeGdY5816EDg8DrpFxGYCfl2tab3XwU+H+5qXKS5to22acYtpGZ8Eaa79xli9D5FG9EgT8NziWZOqeeFvqrpQqyEq7vsPNdN2upH94cC96TNo18YLSVbX3++Y5e3N1HvfLq7u6UtdoWk0BJ6VvDcsyJ0efJ/hqmyOxxHIZj+i9GtYjFlPGy1dQ1XkcnXBHiCxVhgB99d2koEhiLoR0gA/z4J4KMuwe/f2kMBcNGXAL+mRfDYUBnwZV9jRmTocCALX4w8HmnbTzfcx88dN4LmHK0wgBp4gU1xcX9IHmFPzem7ntxx2flOeN6Cx68ReT5e3yFZ/wOKLXqq
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GetCodecDescriptor returns the descriptor of the codec of the application"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/base/reflection/v1beta1/app_descriptor/codec"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GetCodecDescriptor returns the descriptor of the codec of the application
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"GetCodecDescriptorResponse is the response returned by the GetCodecDescriptor RPC","properties":{"codec":{"title":"codec describes the application codec such as registered interfaces and implementations","type":"object","properties":{"interfaces":{"type":"array","title":"interfaces is a list of the registerted interfaces descriptors","items":{"type":"object","title":"InterfaceDescriptor describes the implementation of an interface","properties":{"fullname":{"type":"string","title":"fullname is the name of the interface"},"interface_accepting_messages":{"type":"array","title":"interface_accepting_messages contains information regarding the proto messages which contain the interface as\ngoogle.protobuf.Any field","items":{"type":"object","title":"InterfaceAcceptingMessageDescriptor describes a protobuf message which contains\nan interface represented as a google.protobuf.Any","properties":{"field_descriptor_names":{"type":"array","title":"field_descriptor_names is a list of the protobuf name (not fullname) of the field\nwhich contains the interface as google.protobuf.Any (the interface is the same, but\nit can be in multiple fields of the same proto message)","items":{"type":"string"}},"fullname":{"type":"string","title":"fullname is the protobuf fullname of the type containing the interface"}}}},"interface_implementers":{"type":"array","title":"interface_implementers is a list of the descriptors of the interface implementers","items":{"type":"object","title":"InterfaceImplementerDescriptor describes an interface implementer","properties":{"fullname":{"type":"string","title":"fullname is the protobuf queryable name of the interface implementer"},"type_url":{"type":"string","title":"type_url defines the type URL used when marshalling the type as any\nthis is required so we can provide type safe google.protobuf.Any marshalling and\nunmarshalling, making sure that we don't accept just 'any' type\nin our interface fields"}}}}}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

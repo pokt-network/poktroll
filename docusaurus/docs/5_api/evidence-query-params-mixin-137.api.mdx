@@ -1,0 +1,75 @@
+---
+id: evidence-query-params-mixin-137
+title: "Params queries a specific parameter of a module, given its subspace and
+key."
+description: "Params queries a specific parameter of a module, given its subspace and"
+sidebar_label: "Params queries a specific parameter of a module, given its subspace and
+key."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVUtv2zAM/iuCzl7dx2FATyuKouthQJZlp64YGJm21ciSJ8lZiyD/faTsJk6TtUW3XGJRfHz8+NBKRqiCPL+VXzv0j/Iuk65FD1E7e1PIc3m11AVahen65wQ8NOGLftD25OyjzGTLAozo2cdKFhiU1y1bk23o5qEFhaLAUlsMItYoGld0BkV04he7TLKNF1E6f0RuLR1HDkii2WGyoENQNTYgz1cyPrZJMXptK7leZ88xLPBxJzyfXfksqrZJ8BRuhIDU3x6cyPMYWmcDBr4/PT7mv11AFxRGKQyh7Ix4UueIytmINrIFtK3RKhUhvw9sthqF3fWXCtPXZTp4EzpsPAsGybSmDJNy3muL6eRSUP61Kzj8kIyb36OKXFnPjRB1n0riaj94Eu/wyyxpLLbkvu6bOd5nM9tW/9DlEkx36Gb4ZQS0hM7EAwWworP40BIUwoneEzfvqsPLWSlXjPFpclqhJzWqRQOxF52dygQ1gjZhpA3eQ2q8iE14Pdan/vrAOEgoCs34wUzGJomihroQqr+zmD1jbuibvsRBgAhEoi61Go0SzRYMM56JSi/RCh3DZrQE2OKHpYoz033zkeMKU04QazrkyoXGhTz5DPnyZE70nAzHNIyl26/qZQ00xZWOdTc/Uq7JW7eIHyzG384v0sE7Y8T06ttMXExuuCl1NJzz59lswiJxSR3gDA4tACq1wLAHXnOcWpK2YA9m+BLWRREoN7psXYgN2JHL/83mDh+bikZ8iHlriBxG0XnTTzMzfSt7pp/WOH8MbG9FtNNqgs7aq9UcAn73Zr1mcb8P09bXAeYGqZIlmIB7UDYT9Q8vwsF00uYYvxLDVpAyPQRvhvXeR+IFUP3DscVzxwevGRBxdkd6NUJBC4EJ7E0u6Flo48hqb/2wl83QXF/NaFD/AIYAtVU=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Params queries a specific parameter of a module, given its subspace and\nkey."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/params/v1beta1/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Params queries a specific parameter of a module, given its subspace and
+key.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"subspace defines the module to query the parameter for.","name":"subspace","in":"query","schema":{"type":"string"}},{"description":"key defines the key of the parameter in the subspace.","name":"key","in":"query","schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"param":{"description":"param defines the queried parameter.","type":"object","properties":{"key":{"type":"string"},"subspace":{"type":"string"},"value":{"type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

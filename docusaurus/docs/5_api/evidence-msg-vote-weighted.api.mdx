@@ -1,0 +1,72 @@
+---
+id: evidence-msg-vote-weighted
+title: "VoteWeighted defines a method to add a weighted vote on a specific proposal."
+description: "VoteWeighted defines a method to add a weighted vote on a specific proposal."
+sidebar_label: "VoteWeighted defines a method to add a weighted vote on a specific proposal."
+hide_title: true
+hide_table_of_contents: true
+api: eJytVkuP2kgQ/iutPhPIY7UHTktmicIhAxqciSI0Qo1d2J2xu73dZWYQ4r+nyg+wMTORNuGA7Krqen71tQ8SVezleCW/+Fg+DKTNwSnU1swiOZbTnY7AhEDK9b1F+AY6ThAiOZAO/ivA40cb7eX4IENrEAzyo8rzVIelk9EPbw3LfJhApvgpAh86nbOWApDjtl8RwVYb8EKJDLxXMQi0IlQeSbIjwyFFxn0OdNRufkCI9J47Tho1ePafAapI4ZVYjUZo8m/2QrmNRqfcXpw0ClFRphFHxQREO7dWaI9Om1geuV3s3PeD1YpTQeztqamSKxG1Rcutck7t6VUjZKXLy0q7IZrEOMl5KWy1rzAahd1WobbWVQ+eJoPDXs9s7fJ6EZ0adirV3QIGgiJlBY3IWBSMA6XpTFGBAF4qtu4hF7VVRUrIkffzYLqeL4LZ/Hb99Xa5mN7MPs2m/5INmCJjkL5s0dZ8ny4vJJOPy2Ayu72Q3s57gvW3WfB5fT8N5vKBxltNrN+YSs5AKnvCFdYi5b0NteIpP2lMzvqqA1dARL9qHtardK2jfrSWsjMLmjHtoCApDZoFjeG1NhMGMsVdLrTBv/9i8HJerh+uFLdrc0JFkaN9LIH0eqBjVc/vbznzi3ZENWN0BRxZ4HOCUIXY92/f9hOfCF+EIXncFqlozNnXnyGnu9pjZwZkM+rU1sQV3Jc+XTXtqTHfK8HQVOE5J1PyBc5Rw/9XJa+TZGgjaFkRIiAmKLRQQqIP72WZKu1z2qajX9JUN9Y/lfrQA8pAEqw056/SRftI2aIaGdcOXsXYiwDDxJZ8TsHo/YKDDYk8dVtvddhBdXWOl8/6siaFCb2NQusz64ex3Q1374aX0ydDHsXd+W6cPqssT6F7M5238nR/rM4s/ArLNXx06sXDBXWcPdfL3bqrtNnaPuJuEqbrmLiq2AxDm41y+4hvDOCTdY/li7NpKu6my0BMFjMGtEYuSH4OggWLxA1VYElUwVOFJTyNytjoV45LHgLna+qpnsqbxAOykvufKdNy+Ycn3WnHCWwIzzjKU+oNJ1G4lHUVCFayBwK+R9owoLEkjBuyPRw2ysNXlx6PLCZgOPpgWtHjTjmtNtzKFd81CaiIJ0ZIeIQ9T6ba9TcBZ8TmaVGu3+XeHwfNiQmxX46v2j60oL2YLwMy3tSfcFlJCtKpJ6Zf+h9L2fnCKWUHmSoTF+Vqyson/34C8nmXRA==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"VoteWeighted defines a method to add a weighted vote on a specific proposal."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.gov.v1.Msg/VoteWeighted"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+VoteWeighted defines a method to add a weighted vote on a specific proposal.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgVoteWeighted defines a message to cast a vote.","type":"object","properties":{"metadata":{"description":"metadata is any arbitrary metadata attached to the VoteWeighted.","type":"string"},"options":{"description":"options defines the weighted vote options.","type":"array","items":{"type":"object","description":"WeightedVoteOption defines a unit of vote for vote split.","properties":{"option":{"description":"option defines the valid vote options, it must not contain duplicate vote options.","type":"string","default":"VOTE_OPTION_UNSPECIFIED","enum":["VOTE_OPTION_UNSPECIFIED","VOTE_OPTION_YES","VOTE_OPTION_ABSTAIN","VOTE_OPTION_NO","VOTE_OPTION_NO_WITH_VETO"]},"weight":{"description":"weight is the vote weight associated with the vote option.","type":"string"}}}},"proposal_id":{"description":"proposal_id defines the unique id of the proposal.","type":"string","format":"uint64"},"voter":{"description":"voter is the voter address for the proposal.","type":"string"}}}}},"description":"MsgVoteWeighted defines a message to cast a vote.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgVoteWeightedResponse defines the Msg/VoteWeighted response type.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

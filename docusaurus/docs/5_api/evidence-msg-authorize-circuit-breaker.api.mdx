@@ -1,0 +1,75 @@
+---
+id: evidence-msg-authorize-circuit-breaker
+title: "AuthorizeCircuitBreaker allows a super-admin to grant (or revoke) another
+account's circuit breaker permissions."
+description: "AuthorizeCircuitBreaker allows a super-admin to grant (or revoke) another"
+sidebar_label: "AuthorizeCircuitBreaker allows a super-admin to grant (or revoke) another
+account's circuit breaker permissions."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFVt9z4jYQ/lc0emk7Q+B6fctTuZzbMkMSBkhfIMMIecE6bMmVZAjH8L93V7YT88O5ttNOeUgsefXt7rffrnzgXqwdv53xe7fmzx1ucrDCK6MHMb/l0VbFoCXgy0W/8Imx6ivcKSsL5T9ZEBuwvMMt/FGA859MvOe3By6N9qA9PYo8T5UMeL0vzmjaczKBTNBTDE5aldNb9IU+WlywGFZKg2M+AYZmvTa7KhDm9zl0MTD6j8hm+QWkx3VuKT2vwJH7tRUYKFxGUr1gqvQopDSF9kzUXmO2Uz4J7xCRKIoZ4mbKOQRwDc/OW6XX/NipMG2bM1s7q5dmFZayTJAtqwwbbpjQMcsKTDcRW5jrYfR7NFxMnkbReNH/fD94uBpHA+AylhN0C9+MwCfCN6IGLIAEtQXXnetpAg6QqDRlZgt2Z5VHKvWewYtyHqM5oYyV0T88PkSLp4fJKLob/DKIPjMp9FwvgbkcpFopJNob9LI1GwRD6Ou0txQ8hS2kl1mH7Zr/coHsN/Ms0wu+fYKGlSIuCe4g9EoUKYqfX88ITUAXGXVcq0FVycf7aHE/+XXyutMfDk83GsXmz1jcVGXKLyikRWHTKwU+M6CkC1fr+cwtZRvsS16waI54wf4L/TXXT+NhQwJ1l2DFGJKRd9nAEz4uwVpjCQ59sfMQyPVci5p4hLIEqs/DaZAtrBV7XKKispDkmcqrX+e/HzC0VhZwVHpbwJE2XI6KKfX28cOHyxL0mSukBOdWRcpqc8L618fmuAL/G9lVB/7a/KzyaBRgaUwKQvM3/qtmuCBBs0LDCzY1tVWpj3/ExfsRShNDw0oh6DrcWCtjM+HLrZ8+8hCqFyptJtOmshZfP5evL8XY4SKOFcUv0lHzSKAoQwbF+urBqyJuqx0OQ7PDbkN1oYcbEWdKU8uF0cW+D/zS1PwBGzI0GfZc2bHfufdmPFUjA/RJnwO5cSFx4RNc9aRxmXHd6nR3+2P3HXXhOSrf+O1bIXoRWZ7CyVX8NkhfL8y3rbO7qxrn7XP0YhzOaqxnIlbplbmU5l0ikLk1TqVi2ZUm6+Vm4280+J2xm7CwBi+ecTSZsv5oQF2iPGXBf5tOR7TF7jBAbIRKx0IGHWuRkdG3gEmLeF26MpjqiWHJmAMfLnCsQSZ0A/L/kMQJZ6/S9fDie3mKBFKkyDm9K9Uy41fVglBtesGP0YT0hkcPh6Vw8GTT45G2UUEWvzRn+LgVVokl0T+jCzABEZNmZge+gT1VsxwkN1MKkMzTIvT2+VA5duoTfRxquX/X9rnREqPHyRSNl9W3bxYmDrdiR7cD/r3lnD6qfS3asIfaFXpdhL7nJSb9/gQV6xh3
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"AuthorizeCircuitBreaker allows a super-admin to grant (or revoke) another\naccount's circuit breaker permissions."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.circuit.v1.Msg/AuthorizeCircuitBreaker"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+AuthorizeCircuitBreaker allows a super-admin to grant (or revoke) another
+account's circuit breaker permissions.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgAuthorizeCircuitBreaker defines the Msg/AuthorizeCircuitBreaker request type.","type":"object","properties":{"grantee":{"description":"grantee is the account authorized with the provided permissions.","type":"string"},"granter":{"description":"granter is the granter of the circuit breaker permissions and must have\nLEVEL_SUPER_ADMIN.","type":"string"},"permissions":{"description":"permissions are the circuit breaker permissions that the grantee receives.\nThese will overwrite any existing permissions. LEVEL_NONE_UNSPECIFIED can\nbe specified to revoke all permissions.","type":"object","properties":{"level":{"description":"level is the level of permissions granted to this account.","type":"string","default":"LEVEL_NONE_UNSPECIFIED","enum":["LEVEL_NONE_UNSPECIFIED","LEVEL_SOME_MSGS","LEVEL_ALL_MSGS","LEVEL_SUPER_ADMIN"]},"limit_type_urls":{"description":"limit_type_urls is used with LEVEL_SOME_MSGS to limit the lists of Msg type\nURLs that the account can trip. It is an error to use limit_type_urls with\na level other than LEVEL_SOME_MSGS.","type":"array","items":{"type":"string"}}}}}}}},"description":"MsgAuthorizeCircuitBreaker defines the Msg/AuthorizeCircuitBreaker request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgAuthorizeCircuitBreakerResponse defines the Msg/AuthorizeCircuitBreaker response type.","type":"object","properties":{"success":{"type":"boolean"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

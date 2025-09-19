@@ -1,0 +1,75 @@
+---
+id: github-compokt-networkpoktroll-msg-update-params-mixin-18
+title: "UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account."
+description: "UpdateParams defines a (governance) operation for updating the module"
+sidebar_label: "UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account."
+hide_title: true
+hide_table_of_contents: true
+api: eJzVV99PIzcQ/lesfQIJkjtOrao8lVLUIh0cgvAEp8jZnez68Npb20uCovzv9429CUvIATr1oc0DbLzz85tvZpxlFmTps9Ftdu7L7OtBZhtyMihrzopslP2lQtVOT2zd2PtwQWFu3T0/Oqs1FCY3TSEDXUona3+uFsp8/C07yBz905IPf9jiMRsts9yaQCbwo2warfJof/jNW8NnPq+olvxUkM+davgtfMN+37xQXoSKBI6Hz847byI8NjS4M3fmUNx4KsTMOtGyoDJl1KxVmVITtS1aTaJhAxTIefGgpCjtAzkjTU5s41jrvkDdwsWUhG85BSrY0QUtgpg5IqFMQYuR+ITkOQxEb6ffKA/43jiGNCjyEYA2VNap8Pgy382rdaayKBx5fpZBMIhAPb3p4t8raCZbHXBoxWKI+EVrNKtwJnPYAu77g6egfHAAI1shqogdBxFU0Pzu/AUmMBrxAxwXX8ano7cggZ/nGXUFQpTKUIq8p871eUpm8LOAam3nk9o6TxOZ57Y1YaJAVxcmaxBoB9bv0OIySDEjGVpHYqZlKeaVyis+b5lgwIeMnGoaFsrz/zvD+Tg6TKaYd3YmztmLyLVUNQuJzp8X08dU5nXdAcF1C/vyyYSYK61HTMez0liEsacGNBCa5APti+PPn5NdBIP84DDR+7qSxuD/2tNQ5gFBsJk/SQP9qEkL5VOMJq+kMinQk3Wcx51ydJ6C4WgNzYWnsEnshTzqZ+tUa2cfVIHY0LLJwo88jCvlO1hnrU7MoBRc07rGevIHYtoG4Svb6oJJ10FegCnsqGhzTr3H9am1gMkw2edSPVBX7YjXpJR+MqPEoC35g01H/FhtBzV2MyLiwHY6LsCAiAZiiovU27G+J+hvLgItUCz9iKKgsShvjn759f6j8Ko05PpyGAkIFw3IgoliXblTtRMxRI1pIEtKtbfC2DRJogUDL4jPbYS6r4jJvMNktkqf7a7/n85tDkc5TLFRcC2t+MA31vhEkqMPH15OkWNYzXPAwaRdizMF/52Nd9VZfDZA124EZjk4H/kHwGhBeRsRk2K7AF3BOoxP6wYrZmMGqHZJvBi16+LGHbMje4NtQ4sGoqgaOYcwfgqE1wd8bgvqSSkYLclBDGnXMqSjT0dZDBXE1v2mls7JR8hinNf+bV+/p9fL7X0J21jGiuOX+rKvEiHqAN6luLNDnlVnXVwp9p6IvC8297Ad/RC74M48sXwgxv1FIvr3AtZId4Oue7qe5hJBu7J8z8OIjWjIUOHbsLH5PYXBpvEG280LWa7j1dNF73Qh60bT1h1nDUT/wvG+jc1N+Prkjm0KbJWZ2ZfsPIkrrYz310Fu6yFfWw9NusIO13dYcXV6PRbHl2e9sf/3eHzJRzxqPXZCR2WMQPZiADmE3jLMdEQyPgXTPcXxi+UZL2BAvJamZ/I/w4pnQG4oHTA0hw1qEFdq6zS/S4S5zXYRBpaeUQY/LiqmGcSXy6n0dOP0asXHIJEDWW7x+CCd4sXJ3+CmIlmg2Ue3y+yemE8naagcjjkoFtdt7PPtAbM6WGvglkFNeFX2a68TLr9cjyE87X671HH6ZE7OeUXg7yjL+EcSa0c2x7NlpqUp2zgDsmSTP98Be1nU3g==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.migration.Msg/UpdateParams"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParams is the Msg/UpdateParams request type.\n\n- Used for updating the migration module parameters via governance\n- All parameters must be supplied\n\nNext free index: 3","type":"object","properties":{"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"params":{"title":"Module parameters to update\nNOTE: All parameters must be supplied","description":"Params defines the parameters for the module.\n\nNext free index: 3","type":"object","properties":{"allow_morse_account_import_overwrite":{"description":"allow_morse_account_import_overwrite is a feature flag which is used to enable/disable\nthe re-importing of Morse claimable accounts by the authority.\nSuch a re-import will:\n- Ignore (i.e. leave) ALL claimed destination Shannon accounts/actors\n- Delete ALL existing onchain MorseClaimableAccounts\n- Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts\nThis is useful for testing purposes, but should be disabled in production.","type":"boolean"},"waive_morse_claim_gas_fees":{"type":"boolean","title":"waive_morse_claim_gas_fees is a feature flag used to enable/disable the waiving of gas fees for txs that:\n- Contain exactly one secp256k1 signer\n- Contain at least one Morse account/actor claim messages\n- Do not contain any other messages other than Morse account/actor claim messages"}}}}}}},"description":"MsgUpdateParams is the Msg/UpdateParams request type.\n\n- Used for updating the migration module parameters via governance\n- All parameters must be supplied\n\nNext free index: 3","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateParamsResponse defines the response structure for executing a MsgUpdateParams message.\n\n- Empty response on success","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

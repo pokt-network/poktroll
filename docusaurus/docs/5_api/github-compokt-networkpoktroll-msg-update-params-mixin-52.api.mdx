@@ -1,0 +1,75 @@
+---
+id: github-compokt-networkpoktroll-msg-update-params-mixin-52
+title: "UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account."
+description: "UpdateParams defines a (governance) operation for updating the module"
+sidebar_label: "UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account."
+hide_title: true
+hide_table_of_contents: true
+api: eJztWN1v2zYQ/1cIvqwFXNtIsZc8zc2KrtiyGKn7FAcGLV0s1hSp8SN2YPh/7x0l2ZKtJcViDH2wHxKJPB5/9326Dfdi4fjlHb92C37f46YAK7w0+nPKL/kn6bMwvzJ5YZb+b/ArY5f0aI1SeGD2tUiFh7GwInfXci31rxe8xy38E8D5DyZ94pcbnhjtQXt6FEWhZBL5D745o2nNJRnkgp5ScImVBe3i3ci/yZ5Jx3wGDJcHrfXqNuafCmDesBA3mVCKFSWF8MzoBPoIjYiQt5l/g8Tje2FJYC/BRXjBZ8ZK/3SMZrdV4xBpasHRM7InEVEn5U5u0qCAvUnhQQTlHYFaDxbmkQWt6Ih5BLtCXqiVtw1QzlupF3yLqCLuYxCVxMhYaigvi6TgwTr2YGxc8mYJ2uQycRWUlwVPhZlZWAmbziq5ji8/pjlShWGrTCYZy6X2MzSAKU09w6MMb0vQC8QCmHmgY1NNZJCWeNFKFshSxBB0SkSJEjJnDrxXkOPZ/lRP9QdIsvcXqHGXG1df3aXEhTJzoWZSP6gSBSKYRZbHsv07bS1jG74osf3iyv9ijvYO45s/J0zkJmhf6WEl0QnnwCpBjW4Ks8esQz4Hi+9owVx40rUJyJKkOFTlHkeHia6ReLSjHe9JMUgK1BO+ldKkkvQ0D0RG8mhYqSfWskdvqp+3Ro8J1D9ydujklU3Zp6hIRkDY5K/rHwi5fUboCLq93A26bpPEyGs5VGkDcisSfKrRPaO3NjiJJInmqj04DeQ9x473Y7ZCN+8Mm1cC/n10w8rAOxFOsoBxuHsEtt55JeI5mm3JdsxOq2VnAoKamZXukqC5+0opEPqjTPB/ZMlKlieWJZAzdspR7ZzEEjtmp0Rf/3r/R90mYmkBexJvA2xpwRVGuzKJXAyHxxocodhJglI+BMVqcuJ1mn7ktuLYqsb1NQzTa0h8QHNQVYY1JJhrUdNiqg/1kyNENOvLqfLcFZy7gnNXcO4Kzl3BuSv46buC2BbE79+OyqzxSxjWBUY+QgVrsUT9pwL9fBJJTAoNKlLMog0al95fxBgFL6RyDWphrXhCWukhdy/f9Vu5vTksOMgbtSoJv1Dj5pGooqr2dx3s7K1ajUNd8AV7s6CRghbYLL1luwlOLP2xqyJr7icTU71vD/psQslvN9xozizoRDm3qCYalZ+QifB0ZmhChLEctSF8hm+DAh0LfH/fbPQP+z4kJkPe7mdEH9ciLxQcDGBqTbSmIR0NyZ7uudI+fLFmtkrOsErbw2ZaHB5mmWEzVIfRXHh5R7a/yoTUbBGHaf3E5AOaob3T5TxtUA/U2O3HLxM2Gn+mOJOeNML/mEzGtMSuMDgMLpXRIZIYHRqtSH3KC4zJw9E/XAmmemLaeArumPrRiLnQDZY/jaO1FLmLEg9rPyjQtJrgB6vK/ph88I53+iCyannhfY9n5LpIv9nMhYOvVm23tIx+adH/7vDxUVhJXRy94T0ZiJRMfbfhSyAXvSoT1bsJoSJyFWLuOExa2159YoRfJIV/lva+EV3jmy8TJJ5Xk9Q8ZjRuxYo+ifDvJec0sqXT0Ynj2oYroRch5hVe8qTfd4t36rA=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.tokenomics.Msg/UpdateParams"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.","type":"object","properties":{"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"params":{"description":"Params defines the parameters for the tokenomics module.","type":"object","properties":{"dao_reward_address":{"description":"dao_reward_address is the address to which mint_allocation_dao percentage of the\nminted tokens are at the end of claim settlement.\n\nBech32 cosmos address","type":"string"},"global_inflation_per_claim":{"description":"global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.","type":"number","format":"double"},"mint_allocation_percentages":{"description":"MintAllocationPercentages represents the distribution of newly minted tokens,\nat the end of claim settlement, as a result of the Global Mint TLM.","type":"object","properties":{"application":{"description":"allocation_application is the percentage of the minted tokens which are sent\nto the application account address during claim settlement.","type":"number","format":"double"},"dao":{"description":"dao is the percentage of the minted tokens which are sent\nto the DAO reward address during claim settlement.","type":"number","format":"double"},"proposer":{"description":"proposer is the percentage of the minted tokens which are sent\nto the block proposer account address during claim settlement.","type":"number","format":"double"},"source_owner":{"description":"source_owner is the percentage of the minted tokens which are sent\nto the service source owner account address during claim settlement.","type":"number","format":"double"},"supplier":{"description":"supplier is the percentage of the minted tokens which are sent\nto the block supplier account address during claim settlement.","type":"number","format":"double"}}}}}}}}},"description":"MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.","type":"object","properties":{"params":{"description":"Params defines the parameters for the tokenomics module.","type":"object","properties":{"dao_reward_address":{"description":"dao_reward_address is the address to which mint_allocation_dao percentage of the\nminted tokens are at the end of claim settlement.\n\nBech32 cosmos address","type":"string"},"global_inflation_per_claim":{"description":"global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.","type":"number","format":"double"},"mint_allocation_percentages":{"description":"MintAllocationPercentages represents the distribution of newly minted tokens,\nat the end of claim settlement, as a result of the Global Mint TLM.","type":"object","properties":{"application":{"description":"allocation_application is the percentage of the minted tokens which are sent\nto the application account address during claim settlement.","type":"number","format":"double"},"dao":{"description":"dao is the percentage of the minted tokens which are sent\nto the DAO reward address during claim settlement.","type":"number","format":"double"},"proposer":{"description":"proposer is the percentage of the minted tokens which are sent\nto the block proposer account address during claim settlement.","type":"number","format":"double"},"source_owner":{"description":"source_owner is the percentage of the minted tokens which are sent\nto the service source owner account address during claim settlement.","type":"number","format":"double"},"supplier":{"description":"supplier is the percentage of the minted tokens which are sent\nto the block supplier account address during claim settlement.","type":"number","format":"double"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

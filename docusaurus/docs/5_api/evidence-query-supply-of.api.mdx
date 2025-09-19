@@ -1,0 +1,73 @@
+---
+id: evidence-query-supply-of
+title: "SupplyOf queries the supply of a single coin."
+description: "When called from another module, this query might consume a high amount of"
+sidebar_label: "SupplyOf queries the supply of a single coin."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFVU1P3DAQ/StWzlvS0tueihBqubRbulUPUKFJMkncdezUdhZWK/5738RZWGBVRC9FQmB7Zvw+xpNtVnEove6jdjabZz9atqokY7hStXedIutiy151rhoMz1RsdVC/B/Yb1emmjap0NgwdK1It1oo6N9ioXH1lGwpK18hg1VOjLckdqtZsKoUi2pbOey6j2ajA8SibZZGakM0vs69SP/s5y1zPfkw7rwDubK0rtiWPx9ffhr43my818nry1HFkL9nbJ5SQAh64UICUTluVdqKbeBRkCFWDqp0XFBa1dnlYaikyRmIRypY7yubbLG56iQrRa9tkd3dA6zn0UIODnB+/fSt/HmM5UWEocVWoB6N24XInVIxso2QQaOlyZJ3/CpK23bv2cb1RiZ0QF1O9HdddfSVQhdy4O6bkuxx1sThVkK511WhAIuWKX/BFhPXiQNSJUvL2OYrTJGqtLUQkCLtCE93oiG5IWu+8J1vhd+qRoyt7ZT9/WZ7N1RK4psa5bw/EnWN90+qyVbrrDXcQaHJxCBEOJtxXNugGFwzgC86/B+3RvMVGNa5xIBDda5g9sXU2tcEBw9OPBNQ0mAOynFg1WL7tcSEAsfdw4J88/zv20lW8F6VRtGGPMDjeUUxb748Tl0jahL1o8p6kr3XkLrx814d0/FyMWUZVpQU/mcV+yihRh46n5mDiJGKyEgcNj7dSbLHISxc6F/KC7CpfvysA/10extbNi831wwut3YGubAlt2aANh+KodF3eu1V8YzneOL8aF94Zoy7Ovi3VyeJcekRHI+A+LZcL2VKnsMphK3lF5ejVNB5eKix6rzGREpjpP4VpKsNODnsXYkd2r+T9o5RpA/nGXk90MVDxmAI0M2mISQM94rt96Kf/PcWTxZFvY94bmCBsB28EYzL2MkvGIlisxZ/JXJmwI1852RmMydpCK0nbbgsK/N2buzvZTlN5HPk6UAG62bwmE/gv2rz6c3CQzoo3e5+INZlBYjL5CqzJa8ECXD8R2TJVeI4CMiWd4APQx72sZ49fqtw/iI9nSzyTP7gash8=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"SupplyOf queries the supply of a single coin."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/cosmos/bank/v1beta1/supply/by_denom"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+When called from another module, this query might consume a high amount of
+gas if the pagination field is incorrectly set.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"description":"denom is the coin denom to query balances for.","name":"denom","in":"query","schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QuerySupplyOfResponse is the response type for the Query/SupplyOf RPC method.","type":"object","properties":{"amount":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
