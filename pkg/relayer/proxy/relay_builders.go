@@ -69,7 +69,7 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddr string,
 ) (*types.RelayResponse, func(), error) {
-	relayResponse := relayRequestPool.Get().(*types.RelayResponse)
+	relayResponse := relayResponsePool.Get().(*types.RelayResponse)
 	relayResponse.Reset()
 
 	relayResponse.Meta = types.RelayResponseMetadata{SessionHeader: sessionHeader}
@@ -77,7 +77,7 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 
 	release := func() {
 		relayResponse.Reset()
-		relayRequestPool.Put(relayResponse)
+		relayResponsePool.Put(relayResponse)
 	}
 
 	chainVersion := sync.blockClient.GetChainVersion()
@@ -120,7 +120,7 @@ func (sync *relayMinerHTTPServer) newRelayResponseWithHash(
 
 	release := func() {
 		relayResp.Reset()
-		relayRequestPool.Put(relayResp)
+		relayResponsePool.Put(relayResp)
 	}
 
 	// Only set hash when protocol requires it
