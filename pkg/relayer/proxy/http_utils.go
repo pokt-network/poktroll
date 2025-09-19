@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -217,4 +218,99 @@ func SerializeHTTPResponse(
 	}
 
 	return poktHTTPResponse, poktHTTPResponseBz, nil
+}
+
+// SafeResponseReadBodyWithHash reads the response body with size limits into a pooled buffer
+// while computing sha256(body) in a single pass. Caller MUST call cleanupFunc() when done.
+func SafeResponseReadBodyWithHash(
+	logger polylog.Logger,
+	response *http.Response,
+	maxSize int64,
+) (bodyBytes []byte, payloadHash [32]byte, cleanupFunc func(), err error) {
+	// Reuse the existing single-pass reader, but add hashing via MultiWriter.
+	defer CloseBody(logger, response.Body)
+
+	if maxSize <= 0 {
+		return nil, [32]byte{}, nil, config.ErrRelayMinerConfigInvalidMaxBodySize.Wrapf(
+			"invalid max body size %q", maxSize,
+		)
+	}
+
+	limited := io.LimitReader(response.Body, maxSize+1)
+
+	buf := bodyBufPool.Get().(*bytes.Buffer)
+	buf.Reset() // ensure clean before fill
+
+	cleaned := false
+	cleanup := func() {
+		if cleaned {
+			return
+		}
+		buf.Reset()
+		bodyBufPool.Put(buf)
+		cleaned = true
+	}
+
+	hasher := sha256.New() // import "crypto/sha256"
+	mw := io.MultiWriter(buf, hasher)
+
+	n, copyErr := io.Copy(mw, limited)
+	if copyErr != nil && copyErr != io.EOF {
+		cleanup()
+		return nil, [32]byte{}, nil, ErrRelayerProxyInternalError.Wrapf("failed to read response body: %s", copyErr)
+	}
+
+	if n > maxSize {
+		cleanup()
+		return nil, [32]byte{}, nil, ErrRelayerProxyResponseLimitExceeded.Wrapf(
+			"body size exceeds maximum allowed body: %d bytes read > %d bytes limit", n, maxSize,
+		)
+	}
+
+	sum := hasher.Sum(nil) // 32 bytes
+	var h32 [32]byte
+	copy(h32[:], sum)
+
+	return buf.Bytes(), h32, cleanup, nil
+}
+
+// SerializeHTTPResponseWithHash serializes an http.Response and returns the protobuf bytes
+// alongside sha256(body). It still uses the pooled buffer and deterministic proto encoding.
+func SerializeHTTPResponseWithHash(
+	logger polylog.Logger,
+	response *http.Response,
+	maxBodySize int64,
+) (poktHTTPResponse *sdktypes.POKTHTTPResponse, poktHTTPResponseBz []byte, payloadHash [32]byte, err error) {
+	// Single-pass read + hash
+	responseBodyBz, cleanup, hash, readErr := func() ([]byte, func(), [32]byte, error) {
+		body, h, c, e := SafeResponseReadBodyWithHash(logger, response, maxBodySize)
+		return body, c, h, e
+	}()
+	if readErr != nil {
+		if cleanup != nil {
+			cleanup()
+		}
+		return nil, nil, [32]byte{}, readErr
+	}
+	defer cleanup()
+
+	// Convert headers
+	headers := make(map[string]*sdktypes.Header, len(response.Header))
+	for k := range response.Header {
+		headers[k] = &sdktypes.Header{Key: k, Values: response.Header.Values(k)}
+	}
+
+	poktHTTPResponse = &sdktypes.POKTHTTPResponse{
+		StatusCode: uint32(response.StatusCode),
+		Header:     headers,
+		BodyBz:     responseBodyBz,
+	}
+
+	mopts := proto.MarshalOptions{Deterministic: true}
+	bz, mErr := mopts.Marshal(poktHTTPResponse)
+	if mErr != nil {
+		return nil, nil, [32]byte{}, fmt.Errorf("❌ failed to marshal POKT HTTP response: %w", mErr)
+	}
+
+	return poktHTTPResponse, bz, hash, nil
 }

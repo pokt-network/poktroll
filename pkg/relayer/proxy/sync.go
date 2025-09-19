@@ -62,11 +62,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Extract the relay request from the request body.
 	logger.Debug().Msg("extracting relay request from request body")
-	relayRequest, err := server.newRelayRequest(request)
+	relayRequest, relayRequestRelease, err := server.newRelayRequest(request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("❌ Failed creating relay request")
 		return relayRequest, err
 	}
+	defer relayRequestRelease()
 
 	if err = relayRequest.ValidateBasic(); err != nil {
 		logger.Warn().Err(err).Msg("❌ Failed validating relay request")
@@ -354,7 +355,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
-	wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
+	//wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
+	wrappedHTTPResponse, responseBz, payloadHash, err := SerializeHTTPResponseWithHash(logger, httpResponse, server.serverConfig.MaxBodySize)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return relayRequest, err
@@ -388,7 +390,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
-	relayResponse, err := server.newRelayResponse(responseBz, sessionHeader, meta.SupplierOperatorAddress)
+	relayResponse, relayResponseRelease, err := server.newRelayResponseWithHash(responseBz, payloadHash, sessionHeader, meta.SupplierOperatorAddress)
+	//relayResponse, err := server.newRelayResponse(responseBz, sessionHeader, meta.SupplierOperatorAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed building the relay response")
 		// The client should not have knowledge about the RelayMiner's issues with
@@ -396,6 +399,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		// original error is not exposed to the client.
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
+	defer relayResponseRelease()
 
 	relay := &types.Relay{Req: relayRequest, Res: relayResponse}
 

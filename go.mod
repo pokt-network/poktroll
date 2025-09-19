@@ -40,6 +40,8 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 // Ref: https://github.com/pokt-network/cometbft/issues/3
 replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811
 
+replace github.com/pokt-network/ring-go => github.com/jorgecuesta/ring-go v0.0.0-20250919035725-2f93470e1fb2
+
 require (
 	cosmossdk.io/api v0.9.2
 	cosmossdk.io/client/v2 v2.0.0-beta.8
@@ -80,13 +82,13 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	go.uber.org/multierr v1.11.0
-	golang.org/x/crypto v0.38.0
+	golang.org/x/crypto v0.42.0
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
-	golang.org/x/sync v0.14.0
-	golang.org/x/text v0.25.0
-	golang.org/x/tools v0.33.0 // indirect
+	golang.org/x/sync v0.17.0
+	golang.org/x/text v0.29.0
+	golang.org/x/tools v0.36.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2
 	google.golang.org/grpc v1.72.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.4.0 // indirect
@@ -108,7 +110,7 @@ require (
 	// a hard blocker.
 	github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770
 	go.uber.org/mock v0.5.2
-	golang.org/x/term v0.32.0
+	golang.org/x/term v0.35.0
 )
 
 require (
@@ -484,11 +486,13 @@ require (
 	go.uber.org/zap/exp v0.3.0 // indirect
 	golang.org/x/arch v0.15.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20250210185358-939b2ce775ac // indirect
-	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/mod v0.27.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
+	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
+	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	google.golang.org/api v0.223.0 // indirect
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250505200425-f936aa4a68b2 // indirect
@@ -517,3 +521,5 @@ tool (
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc
 	google.golang.org/protobuf/cmd/protoc-gen-go
 )
+
+replace github.com/athanorlabs/go-dleq => github.com/jorgecuesta/go-dleq v0.0.0-20250918223310-7a1fc288336f
