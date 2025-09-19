@@ -1,6 +1,8 @@
 package flags
 
 import (
+	"time"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -60,6 +62,14 @@ const (
 	BetaNetworkName  = "beta"
 	MainNetworkName  = "main"
 
+	FlagPacketForwardMiddlewareMaxRetries      = "pfm-max-retries"
+	FlagPacketForwardMiddlewareMaxRetriesUsage = "Maximum number of retries for packet forward middleware operations"
+	DefaultPacketForwardMiddlewareMaxRetries   = 3
+
+	FlagPacketForwardMiddlewareRetryTimeoutDuration      = "pfm-retry-timeout"
+	FlagPacketForwardMiddlewareRetryTimeoutDurationUsage = "Timeout duration for packet forward middleware retry attempts (e.g. 30s, 5m, 1h)"
+	DefaultPacketForwardMiddlewareRetryTimeoutDuration   = 5 * time.Minute
+
 	BooleanTrueValue  = "true"
 	BooleanFalseValue = "false"
 
@@ -68,11 +78,18 @@ const (
 	FlagQueryCachingUsage   = "(Optional) Enable or disable onchain query caching"
 	DefaultFlagQueryCaching = true
 
-	// DefaultNodeRPCURL is the cosmos-sdk default --node flag value:
-	// • Hard-coded in cosmos-sdk CLI and cannot be changed since registered by cosmos-sdk
-	// • Used only for comparison, not flag registration
+	// DefaultNodeRPCURL is the cosmos-sdk default --node flag value.
+	// Hard-coded in cosmos-sdk CLI and cannot be changed since registered by cosmos-sdk.
+	// Used only for comparison, not flag registration.
 	// See: https://github.com/cosmos/cosmos-sdk/blob/v0.53.2/client/flags/flags.go#L108
 	DefaultNodeRPCURL = "tcp://localhost:26657"
+)
+
+// PacketForwardMiddleware runtime variables are defined here because the usage
+// scope (app/ibc.go) doesn't have access to the cobra command context.
+var (
+	PacketForwardMiddlewareMaxRetries           uint8
+	PacketForwardMiddlewareRetryTimeoutDuration time.Duration
 )
 
 // GetFlagValueString retrieves the string value of a registered flag.

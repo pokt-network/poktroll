@@ -50,7 +50,6 @@ osmosis_shell: check_kubectl check_docker_ps check_kind
 		source ./tools/scripts/ibc-channels.sh && \
 		kubectl_exec_grep_pod_interactive osmosis-validator "bash" \
 	'
-
 .PHONY: fund_agoric_account
 fund_agoric_account: check_kubectl check_docker_ps check_kind
 	bash -c '\
@@ -190,6 +189,9 @@ ibc_query_osmosis_balance:
 # IBC transfer targets #
 ########################
 
+############
+## Axelar ##
+############
 .PHONY: ibc_test_transfer_axelar_to_pocket
 ibc_test_transfer_axelar_to_pocket:
 	bash -c '\
@@ -213,6 +215,9 @@ ibc_test_transfer_pocket_to_axelar:
 			--from=app1 --yes \
 	'
 
+############
+## Agoric ##
+############
 .PHONY: ibc_test_transfer_agoric_to_pocket
 ibc_test_transfer_agoric_to_pocket:
 	bash -c '\

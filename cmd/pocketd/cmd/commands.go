@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/pokt-network/poktroll/app"
+	flags2 "github.com/pokt-network/poktroll/cmd/flags"
 )
 
 func initRootCmd(
@@ -58,6 +59,8 @@ func initRootCmd(
 func addModuleInitFlags(startCmd *cobra.Command) {
 	//nolint:staticcheck // SA1019 TODO_TECHDEBT: remove deprecated code.
 	crisis.AddModuleInitFlags(startCmd)
+
+	addPacketForwardMiddlewareFlags(startCmd)
 }
 
 // genesisCommand builds genesis-related `pocketd genesis` command. Users may provide application specific commands as a parameter
@@ -189,4 +192,25 @@ func appExport(
 	}
 
 	return bApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+}
+
+// addPacketForwardMiddlewareFlags adds CLI flags for packet forward IBC middleware configuration.
+// These flags control retry behavior for multi-hop IBC transfers through the PFM.
+// TODO_IMPROVE(@olshansky, #1454): Move PFM configuration to validator-specific configs
+// instead of using global CLI flags.
+// See: https://github.com/pokt-network/poktroll/issues/1454#issuecomment-2975939482
+func addPacketForwardMiddlewareFlags(cmd *cobra.Command) {
+	cmd.Flags().Uint8Var(
+		&flags2.PacketForwardMiddlewareMaxRetries,
+		flags2.FlagPacketForwardMiddlewareMaxRetries,
+		flags2.DefaultPacketForwardMiddlewareMaxRetries,
+		flags2.FlagPacketForwardMiddlewareMaxRetriesUsage,
+	)
+
+	cmd.Flags().DurationVar(
+		&flags2.PacketForwardMiddlewareRetryTimeoutDuration,
+		flags2.FlagPacketForwardMiddlewareRetryTimeoutDuration,
+		flags2.DefaultPacketForwardMiddlewareRetryTimeoutDuration,
+		flags2.FlagPacketForwardMiddlewareRetryTimeoutDurationUsage,
+	)
 }
