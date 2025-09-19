@@ -194,7 +194,8 @@ func appExport(
 	return bApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
 }
 
-// addPacketForwardMiddlewareFlags adds flags for packet forward IBC middleware configuration.
+// addPacketForwardMiddlewareFlags adds CLI flags for packet forward IBC middleware configuration.
+// These flags control retry behavior for multi-hop IBC transfers through the PFM.
 // TODO_IMPROVE(@olshansky, #1454): Move PFM configuration to validator-specific configs
 // instead of using global CLI flags.
 // See: https://github.com/pokt-network/poktroll/issues/1454#issuecomment-2975939482

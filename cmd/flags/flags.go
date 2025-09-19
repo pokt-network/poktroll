@@ -68,7 +68,7 @@ const (
 
 	FlagPacketForwardMiddlewareRetryTimeoutDuration      = "pfm-retry-timeout"
 	FlagPacketForwardMiddlewareRetryTimeoutDurationUsage = "Timeout duration for packet forward middleware retry attempts (e.g. 30s, 5m, 1h)"
-	DefaultPacketForwardMiddlewareRetryTimeoutDuration   = time.Minute
+	DefaultPacketForwardMiddlewareRetryTimeoutDuration   = 5 * time.Minute
 
 	BooleanTrueValue  = "true"
 	BooleanFalseValue = "false"

@@ -157,7 +157,8 @@ func (app *App) registerIBCModules() {
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-	// Create IBC modules with ibcfee middleware, wrapped in packet forward middleware
+	// Create IBC modules with middleware stacking: raw transfer → PFM → fee middleware
+	// This order ensures multi-hop forwarding works before fee processing
 	rawTransferModule := ibctransfer.NewIBCModule(app.Keepers.TransferKeeper)
 	transferWithPFM := packetforward.NewIBCMiddleware(
 		rawTransferModule,
