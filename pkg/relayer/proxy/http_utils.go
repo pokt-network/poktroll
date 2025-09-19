@@ -227,7 +227,7 @@ func SafeResponseReadBodyWithHash(
 	response *http.Response,
 	maxSize int64,
 ) (bodyBytes []byte, payloadHash [32]byte, cleanupFunc func(), err error) {
-	// Reuse the existing single-pass reader, but add hashing via MultiWriter.
+	// Reuse the existing single-pass reader but add hashing via MultiWriter.
 	defer CloseBody(logger, response.Body)
 
 	if maxSize <= 0 {
@@ -239,7 +239,7 @@ func SafeResponseReadBodyWithHash(
 	limited := io.LimitReader(response.Body, maxSize+1)
 
 	buf := bodyBufPool.Get().(*bytes.Buffer)
-	buf.Reset() // ensure clean before fill
+	buf.Reset()
 
 	cleaned := false
 	cleanup := func() {
@@ -251,7 +251,7 @@ func SafeResponseReadBodyWithHash(
 		cleaned = true
 	}
 
-	hasher := sha256.New() // import "crypto/sha256"
+	hasher := sha256.New()
 	mw := io.MultiWriter(buf, hasher)
 
 	n, copyErr := io.Copy(mw, limited)

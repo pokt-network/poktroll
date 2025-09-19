@@ -355,7 +355,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
-	//wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
+	// wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
 	wrappedHTTPResponse, responseBz, payloadHash, err := SerializeHTTPResponseWithHash(logger, httpResponse, server.serverConfig.MaxBodySize)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
@@ -390,6 +390,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
+	// PERF_NOTE: Added this to avoid reading again the payload to hash it, now the hash is generated during the serialization.
 	relayResponse, relayResponseRelease, err := server.newRelayResponseWithHash(responseBz, payloadHash, sessionHeader, meta.SupplierOperatorAddress)
 	//relayResponse, err := server.newRelayResponse(responseBz, sessionHeader, meta.SupplierOperatorAddress)
 	if err != nil {
