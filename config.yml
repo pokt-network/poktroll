@@ -114,8 +114,8 @@ validators:
     config:
       moniker: "validator1"
       consensus:
-        timeout_commit: "2s"
-        timeout_propose: "2s"
+        timeout_commit: "30s"
+        timeout_propose: "30s"
       instrumentation:
         prometheus: true
       log_level: "info"
@@ -283,6 +283,14 @@ genesis:
           stake:
             amount: "100000068" # ~100 POKT
             denom: upokt
+        - address: pokt1pn64d94e6u5g8cllsnhgrl6t96ysnjw59j5gst
+          delegatee_gateway_addresses:
+            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
+          service_configs:
+            - service_id: static
+          stake:
+            amount: "10000000000000"
+            denom: upokt
     # For ref, see proto/poktroll/supplier/params.proto
     supplier:
       params:
@@ -311,6 +319,14 @@ genesis:
                 - configs: []
                   rpc_type: WEBSOCKET
                   url: ws://relayminer1:8545
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: 100
+            - service_id: static
+              endpoints:
+                - configs: []
+                  rpc_type: JSON_RPC
+                  url: http://relayminer1:8545
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: 100
@@ -356,6 +372,10 @@ genesis:
         - id: rest
           name: "rest"
           compute_units_per_relay: 100
+          owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
+        - id: static
+          name: "static"
+          compute_units_per_relay: 1
           owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
     # For ref, see proto/poktroll/proof/params.proto
     proof:

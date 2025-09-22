@@ -16,7 +16,7 @@ load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
 analytics_settings(enable=False)
 
 # A list of directories where changes trigger a hot-reload of the validator
-hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
+hot_reload_dirs = ["app", "cmd", "x", "pkg", "telemetry"]
 
 # TODO_IMPROVE: Non urgent requirement, but we need to find a way to ensure that the Tiltfile works (e.g. through config checks)
 # so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
@@ -241,6 +241,11 @@ for x in range(localnet_config["relayminers"]["count"]):
     flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.websocket.backend_url=ws://anvil:8547/")
     supplier_number = supplier_number + 1
 
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=static")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://nginx-chainid/")
+    supplier_number = supplier_number + 1
+
     if localnet_config["rest"]["enabled"]:
        flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=rest")
        flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
@@ -428,6 +433,92 @@ if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
+
+# Provision high-performance nginx server for static EVM chainId JSON-RPC response
+deployment_create(
+    "nginx-chainid",
+    image="nginx:alpine",
+    command=["sh", "-c"],
+    args=[
+        """echo '{"jsonrpc":"2.0","id":1,"result":"0x1"}' > /usr/share/nginx/html/index.html && \
+        echo 'user nginx;
+worker_processes auto;
+worker_rlimit_nofile 100000;
+
+events {
+    worker_connections 65536;
+    multi_accept on;
+    use epoll;
+}
+
+http {
+    # Performance settings
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+
+    # Connection optimization
+    keepalive_requests 10000;
+    keepalive_timeout 300s;
+
+    # Disable logging for maximum performance
+    access_log off;
+    error_log /var/log/nginx/error.log crit;
+
+    # Buffer optimizations
+    client_body_buffer_size 128k;
+    client_max_body_size 10m;
+    client_header_buffer_size 1k;
+    large_client_header_buffers 4 4k;
+    output_buffers 1 32k;
+    postpone_output 1460;
+
+    # Disable unnecessary features
+    gzip off;
+
+    server {
+        listen 80 backlog=65535 reuseport;
+
+        # Performance optimizations
+        keepalive_requests 10000;
+        keepalive_timeout 300s;
+        access_log off;
+        error_log off;
+        tcp_nopush on;
+        tcp_nodelay on;
+
+        root /usr/share/nginx/html;
+        location / {
+            add_header Content-Type application/json always;
+            add_header Access-Control-Allow-Origin * always;
+            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Content-Type" always;
+            if ($$request_method = OPTIONS) {
+                return 200;
+            }
+            if ($$request_method = POST) {
+                error_page 405 =200 $uri;
+            }
+            try_files $$uri /index.html;
+        }
+    }
+}' > /etc/nginx/nginx.conf && \
+        nginx -g 'daemon off;'"""
+    ],
+    ports="80",
+)
+
+k8s_resource("nginx-chainid", labels=["data_nodes"], port_forwards=["8548:80"])
+
+# Provision wrk2 load testing tool
+deployment_create(
+    "wrk2",
+    image="cylab/wrk2",
+    command=["sleep"],
+    args=["infinity"],
+)
+
+k8s_resource("wrk2", labels=["tools"])
 
 # Check if sibling pocketdex repo exists.
 # If it does, load the pocketdex.tilt file from the sibling repo.

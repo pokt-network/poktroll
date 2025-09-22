@@ -35,48 +35,63 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) (*types.RelayRequest, error) {
+	requestStartTime := time.Now()
+	instructionTimes := &relayer.InstructionTimer{
+		Timestamps: make([]*relayer.InstructionTimestamp, 0),
+	}
 	// Default to a failure (5XX).
 	// Success is implied by reaching the end of the function where status is set to 2XX.
 	statusCode := http.StatusInternalServerError
-	// Ensure the context is set with the proxy component kind.
-	// This is used to capture the component kind in gRPC call duration metrics collection.
-	ctx = context.WithValue(ctx, query.ComponentCtxRelayMinerKey, query.ComponentCtxRelayMinerProxy)
 
 	logger := server.logger.With(
 		"relay_request_type", "⚡ synchronous",
 		"rpc_type", request.Header.Get(RPCTypeHeader),
 	)
-	requestStartTime := time.Now()
+	instructionTimes.Record("init_request_logger")
 	startBlock := server.blockClient.LastBlock(ctx)
+	instructionTimes.Record("get_start_block")
 	startHeight := startBlock.Height()
+
+	// Ensure the context is set with the proxy component kind.
+	// This is used to capture the component kind in gRPC call duration metrics collection.
+	ctx = context.WithValue(ctx, query.ComponentCtxRelayMinerKey, query.ComponentCtxRelayMinerProxy)
+	instructionTimes.Record("set_context_value_component_kind")
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
 		"📊 Chain head at height %d (block hash: %X) at relay request start",
 		startHeight,
 		startBlock.Hash(),
 	)
+	instructionTimes.Record("chain_head_probabilistic_debug_info")
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("handling HTTP request")
+	instructionTimes.Record("handling_request_probabilistic_debug_info")
 
 	// Extract the relay request from the request body.
 	logger.Debug().Msg("extracting relay request from request body")
+	instructionTimes.Record("debug_relay_request_extraction")
 	relayRequest, err := server.newRelayRequest(request)
+	request.Body.Close() // Close the body after reading
 	if err != nil {
 		logger.Warn().Err(err).Msg("❌ Failed creating relay request")
 		return relayRequest, err
 	}
+	instructionTimes.Record("new_relay_request")
 
 	if err = relayRequest.ValidateBasic(); err != nil {
 		logger.Warn().Err(err).Msg("❌ Failed validating relay request")
 		return relayRequest, err
 	}
+	instructionTimes.Record("relay_request_basic_validation")
 
 	meta := relayRequest.Meta
 	sessionHeader := meta.SessionHeader
-	serviceId := sessionHeader.ServiceId
+	serviceId := meta.SessionHeader.ServiceId
+
+	blockHeight := server.blockClient.LastBlock(ctx).Height()
 
 	logger = logger.With(
-		"current_height", startHeight,
+		"current_height", blockHeight,
 		"session_id", sessionHeader.SessionId,
 		"session_start_height", sessionHeader.SessionStartBlockHeight,
 		"session_end_height", sessionHeader.SessionEndBlockHeight,
@@ -85,9 +100,11 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		"supplier_operator_address", meta.SupplierOperatorAddress,
 		"request_start_time", requestStartTime.String(),
 	)
+	instructionTimes.Record("logger_with_request_details")
 
 	// Check if the request's selected supplier is available for relaying.
 	availableSuppliers := server.relayAuthenticator.GetSupplierOperatorAddresses()
+	instructionTimes.Record("get_available_suppliers")
 
 	if !slices.Contains(availableSuppliers, meta.SupplierOperatorAddress) {
 		logger.Warn().
@@ -99,10 +116,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			)
 		return relayRequest, ErrRelayerProxySupplierNotReachable
 	}
+	instructionTimes.Record("check_supplier_available")
 
 	// Set per-request timeouts based on the service ID configuration.
 	// This overrides the server's default timeout values for this specific request.
 	requestTimeout := server.requestTimeoutForServiceId(serviceId)
+	instructionTimes.Record("determine_request_timeout_for_service_id")
 
 	// Calculate the absolute requestDeadline for this request processing cycle.
 	// Includes both the service request timeout and additional buffer for response writing.
@@ -111,6 +130,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	ctxWithDeadline, cancel := context.WithDeadline(ctx, requestDeadline)
 	defer cancel()
+	instructionTimes.Record("set_context_deadline")
 
 	// This is important to ensure that the server's timeout defaults are overridden
 	// by the request-specific timeout.
@@ -121,6 +141,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Warn().Err(err).Msg("failed setting write deadline for response controller")
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
+	instructionTimes.Record("set_response_controller_write_deadline")
 
 	// TODO_TECHDEBT: Consider re-enabling ResponseController write deadlines
 	// after investigating potential compatibility issues with the current setup.
@@ -177,6 +198,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// requests when application stake is insufficient. This would allow processing
 	// once earlier requests complete and free up stake.
 	isOverServicing := false
+	instructionTimes.Record("setup_reward_management_flags")
 	// Check whether the relay's session is already known and its corresponding data cached.
 	isSessionKnown := server.isSessionKnown(sessionHeader.SessionId)
 	// Perform relay request checks and validation only if the session is known
@@ -192,6 +214,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		server.markSessionAsKnown(sessionHeader.SessionId, sessionHeader.SessionEndBlockHeight)
 		isSessionKnown = true
 	}
+	instructionTimes.Record("eager_check__rate_limiting")
 
 	// Mark that relay rewards have been optimistically accumulated.
 	// This flag enables the cleanup function to revert rewards if the relay fails.
@@ -221,12 +244,16 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		)
 	}
 
+	instructionTimes.Record("get_service_config")
+
 	// Hydrate the logger with relevant values.
 	logger = logger.With(
 		"server_addr", server.server.Addr,
 		"destination_url", serviceConfig.BackendUrl.String(),
 		"service_config_type", serviceConfigTypeLog,
 	)
+
+	instructionTimes.Record("logger_with_service_details")
 
 	// Increment the relays counter.
 	relayer.RelaysTotal.With(
@@ -245,10 +272,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// 1. The session is already known (cached)
 	// 2. Eager validation is enabled (immediate validation for all requests)
 	if isSessionKnown || server.eagerValidationEnabled {
+		instructionTimes.Record("pre_request_verification")
 		if err = server.relayAuthenticator.VerifyRelayRequest(ctxWithDeadline, relayRequest, serviceId); err != nil {
 			logger.Error().Err(err).Msg("❌ Failed verifying relay request")
 			return relayRequest, err
 		}
+		instructionTimes.Record("post_request_verification")
 	}
 
 	httpRequest, err := relayer.BuildServiceBackendRequest(relayRequest, serviceConfig)
@@ -256,7 +285,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("❌ Failed building the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer CloseBody(logger, httpRequest.Body)
+	instructionTimes.Record("build_service_backend_request")
 
 	logger = logger.With("request_preparation_duration", time.Since(requestStartTime).String())
 	relayer.CaptureRequestPreparationDuration(serviceId, requestStartTime)
@@ -292,11 +321,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	ctxWithRemainingTimeout, cancelCtxWithRemainingTimeout := context.WithTimeout(ctxWithDeadline, remainingTimeout)
 	defer cancelCtxWithRemainingTimeout()
 
-	httpRequestWithUpdatedTimeout := httpRequest.WithContext(ctxWithRemainingTimeout)
+	instructionTimes.Record("set_request_timeout_with_remaining_time")
 
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
-	httpResponse, err := server.httpClient.Do(ctxWithRemainingTimeout, logger, httpRequestWithUpdatedTimeout)
+	httpResponse, err := server.httpClient.Do(ctxWithRemainingTimeout, logger, httpRequest)
+	httpRequest.Body.Close()
+
+	instructionTimes.Record("http_client_do")
 
 	backendServiceProcessingEnd := time.Now()
 	// Add response preparation duration to the logger such that any log before errors will have
@@ -325,9 +357,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	defer CloseBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
+
+	instructionTimes.Record("defer_close_response_body_and_capture_service_duration")
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
@@ -336,6 +369,9 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return relayRequest, err
 	}
+	CloseBody(logger, httpResponse.Body)
+
+	instructionTimes.Record("serialize_http_response")
 
 	// Pass through all backend responses including errors.
 	// Allows clients to see real HTTP status codes from backend service.
@@ -343,7 +379,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	if httpResponse.StatusCode >= http.StatusMultipleChoices {
 		logger.Error().
 			Int("status_code", httpResponse.StatusCode).
-			Str("request_url", httpRequestWithUpdatedTimeout.URL.String()).
+			Str("request_url", httpRequest.URL.String()).
 			Str("request_payload_first_bytes", polylog.Preview(string(relayRequest.Payload))).
 			Str("response_payload_first_bytes", polylog.Preview(string(wrappedHTTPResponse.BodyBz))).
 			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
@@ -362,6 +398,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		)
 	}
 
+	instructionTimes.Record("check_deadline_before_response")
+
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
@@ -376,6 +414,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	relay := &types.Relay{Req: relayRequest, Res: relayResponse}
 
+	instructionTimes.Record("relay_response_generated")
+
 	// Capture the time after response time for the relay.
 	responsePreparationEnd := time.Now()
 	// Add response preparation duration to the logger such that any log before errors will have
@@ -385,6 +425,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		time.Since(backendServiceProcessingEnd).String(),
 	)
 	relayer.CaptureResponsePreparationDuration(serviceId, backendServiceProcessingEnd)
+
+	instructionTimes.Record("logger_with_response_preparation")
 
 	// Send the relay response to the client.
 	err = server.sendRelayResponse(relay.Res, writer)
@@ -397,6 +439,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Warn().Err(err).Time("current_time", time.Now()).Msg("❌ Failed sending relay response")
 		return relayRequest, clientError
 	}
+
+	instructionTimes.Record("response_sent")
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("relay request served successfully")
 
@@ -420,15 +464,21 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			return relayRequest, ErrRelayerProxyRateLimited
 		}
 
+		instructionTimes.Record("delayed_check_rate_limiting")
+
 		if err = server.relayAuthenticator.VerifyRelayRequest(ctxWithDeadline, relayRequest, serviceId); err != nil {
 			logger.Error().Err(err).Msg("❌ Failed delayed validation - relay request verification failed after successful response")
 			relayer.CaptureDelayedValidationFailure(serviceId)
 			return relayRequest, err
 		}
 
+		instructionTimes.Record("delayed_request_verification")
+
 		// Mark the session as known to skip late validations for subsequent requests.
 		server.markSessionAsKnown(sessionHeader.SessionId, sessionHeader.SessionEndBlockHeight)
 	}
+
+	relayer.RecordDurations(instructionTimes.Timestamps)
 
 	// Verify relay reward eligibility a SECOND time AFTER completing backend request.
 	//
