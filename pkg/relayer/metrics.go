@@ -350,7 +350,7 @@ func RecordDurations(instructionTimestamps []*InstructionTimestamp) {
 		}
 
 		instructionTimeSeconds := inst.timestamp.Sub(lastTime).Seconds()
-		InstructionTimeSeconds.With("instruction", fmt.Sprintf("%s", inst.instruction)).Observe(float64(instructionTimeSeconds))
+		InstructionTimeSeconds.With("instruction", inst.instruction).Observe(float64(instructionTimeSeconds))
 		lastTime = inst.timestamp
 	}
 }

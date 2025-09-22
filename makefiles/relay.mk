@@ -70,8 +70,8 @@ test_baseline_static_server_load: ## Establish baseline load test performance ag
 	@echo "=========================="
 	kubectl exec -it deployment/wrk2 -- wrk -R $(or $(R),100000) -L -d $(or $(D),30s) -t $(or $(T),16) -c $(or $(C),5000) http://nginx-chainid/
 
-.PHONY: test_relay_load_generator
-test_relay_load_generator: ## Generate and run load test against RelayMiner using real RelayRequest data (RPS=512 THREADS=16 CONNECTIONS=256 DURATION=300s)
+.PHONY: test_relayminer_only_load
+test_relayminer_only_load: ## Generate and run load test against RelayMiner using real RelayRequest data (RPS=512 THREADS=16 CONNECTIONS=256 DURATION=300s)
 	@echo "=== RelayRequest Load Testing ==="
 	@echo "This tool generates proper RelayRequest data and runs load tests against RelayMiner endpoints"
 	@echo ""
@@ -82,10 +82,10 @@ test_relay_load_generator: ## Generate and run load test against RelayMiner usin
 	@echo "  c: Concurrent connections (default: 256)"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make test_relay_load_generator                          # Default test"
-	@echo "  make test_relay_load_generator R=1000 d=60s             # Higher rate, shorter duration"
-	@echo "  make test_relay_load_generator R=100 t=4 c=50 d=30s     # Light load test"
-	@echo "  make test_relay_load_generator R=2000 t=32 c=1000       # Heavy load test"
+	@echo "  make test_relayminer_only_load                          # Default test"
+	@echo "  make test_relayminer_only_load R=1000 d=60s             # Higher rate, shorter duration"
+	@echo "  make test_relayminer_only_load R=100 t=4 c=50 d=30s     # Light load test"
+	@echo "  make test_relayminer_only_load R=2000 t=32 c=1000       # Heavy load test"
 	@echo ""
 	@echo "Running with: R=$(or $(R),512) d=$(or $(d),300s) t=$(or $(t),16) c=$(or $(c),256)"
 	@echo "================================"
