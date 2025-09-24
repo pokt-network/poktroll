@@ -204,7 +204,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Perform relay request checks and validation only if the session is known
 	// or if eager validation is enabled.
 	if isSessionKnown || server.eagerValidationEnabled {
-		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta)
+		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta, instructionTimes)
 		shouldRateLimit := isOverServicing && !server.relayMeter.AllowOverServicing()
 		if shouldRateLimit {
 			return relayRequest, ErrRelayerProxyRateLimited
@@ -456,7 +456,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 		logger.Info().Msg("🔄 Performing delayed validation - session was unknown at request time")
 
-		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta)
+		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta, instructionTimes)
 		shouldRateLimit := isOverServicing && !server.relayMeter.AllowOverServicing()
 		if shouldRateLimit {
 			relayer.CaptureDelayedValidationRateLimiting(serviceId)

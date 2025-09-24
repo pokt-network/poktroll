@@ -331,9 +331,13 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 
 	logger.Debug().Msg("relay emitted to miner")
 
+	instructionTimes := &relayer.InstructionTimer{
+		Timestamps: make([]*relayer.InstructionTimestamp, 0),
+	}
+
 	// Check if the relay should be rate-limited.
 	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
-	isOverServicing := b.relayMeter.IsOverServicing(b.ctx, relayRequest.Meta)
+	isOverServicing := b.relayMeter.IsOverServicing(b.ctx, relayRequest.Meta, instructionTimes)
 	shouldRateLimit := isOverServicing && !b.relayMeter.AllowOverServicing()
 	if shouldRateLimit {
 		b.serviceBackendConn.handleError(
@@ -441,9 +445,13 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 
 	logger.Debug().Msg("relay emitted to miner")
 
+	instructionTimes := &relayer.InstructionTimer{
+		Timestamps: make([]*relayer.InstructionTimestamp, 0),
+	}
+
 	// Check if the relay should be rate-limited.
 	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
-	isOverServicing := b.relayMeter.IsOverServicing(b.ctx, b.latestRelayRequest.Meta)
+	isOverServicing := b.relayMeter.IsOverServicing(b.ctx, b.latestRelayRequest.Meta, instructionTimes)
 	shouldRateLimit := isOverServicing && !b.relayMeter.AllowOverServicing()
 	if shouldRateLimit {
 		b.serviceBackendConn.handleError(
