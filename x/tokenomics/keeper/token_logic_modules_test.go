@@ -208,7 +208,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierOnly_Valid(t *t
 	// the appropriate amount w.r.t token distribution.
 	// The supplier gets a percentage of the total settlement based on MintEqualsBurnClaimDistribution
 	supplierAllocation := appBurn.MulRaw(int64(keepers.Keeper.GetParams(ctx).MintEqualsBurnClaimDistribution.Supplier * 100)).QuoRaw(100)
-	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, supplierAllocation)
+	shareAmounts := tlm.GetSupplierShareholderAmountMap(supplierRevShares, supplierAllocation)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, expectedShareAmount, shareHolderBalance.Amount)
@@ -396,7 +396,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_AppToSupplierExceedsMaxClaim
 	// the appropriate amount w.r.t token distribution.
 	// The supplier gets a percentage of the total settlement based on MintEqualsBurnClaimDistribution
 	supplierAllocation := appBurn.MulRaw(int64(keepers.Keeper.GetParams(ctx).MintEqualsBurnClaimDistribution.Supplier * 100)).QuoRaw(100)
-	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, supplierAllocation)
+	shareAmounts := tlm.GetSupplierShareholderAmountMap(supplierRevShares, supplierAllocation)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, expectedShareAmount, shareHolderBalance.Amount)
@@ -1182,7 +1182,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_WithRewardDistribution
 		"Application cost amount mismatch: expected %s, got %s", expectedApplicationCostAmount, actualApplicationCostAmount)
 
 	// Verify supplier shareholders received expected reward distribution
-	expectedSupplierShareholderRewardAmounts := tlm.GetShareAmountMap(supplierRevenueShareholders, expectedSupplierRewardAmount)
+	expectedSupplierShareholderRewardAmounts := tlm.GetSupplierShareholderAmountMap(supplierRevenueShareholders, expectedSupplierRewardAmount)
 	for shareholderAddress, expectedShareholderRewardAmount := range expectedSupplierShareholderRewardAmounts {
 		shareholderBalanceAfterSettlement := getBalance(t, ctx, keepers, shareholderAddress)
 		shareholderBalanceBeforeSettlement := supplierShareholderBalancesBeforeSettlement[shareholderAddress]

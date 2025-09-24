@@ -419,7 +419,6 @@ Start the RelayMiner (i.e. the offchain co-processor) server:
 ```bash
 pocketd \
   relayminer start \
-  --grpc-insecure=false \
   --log_level=debug \
   --config=/tmp/relayminer_config.yaml \
   --chain-id=$BETA_NETWORK
@@ -439,7 +438,6 @@ pocketd relayminer relay \
   --supplier=$SUPPLIER_ADDR \
   --node=$BETA_RPC_URL \
   --grpc-addr=$BETA_GRPC_URL_RAW \
-  --grpc-insecure=false \
   --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 ```
 

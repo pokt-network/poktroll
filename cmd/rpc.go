@@ -91,6 +91,8 @@ func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr, grpc
 			if err := chainIDFlag.Value.Set(chainId); err != nil {
 				return err
 			}
+			// Mark the flag as changed so Cosmos SDK recognizes the new value
+			chainIDFlag.Changed = true
 		}
 	}
 
@@ -100,6 +102,8 @@ func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr, grpc
 			if err := nodeFlag.Value.Set(nodeUrl); err != nil {
 				return err
 			}
+			// Mark the flag as changed so Cosmos SDK recognizes the new value
+			nodeFlag.Changed = true
 		}
 	}
 
@@ -109,6 +113,8 @@ func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr, grpc
 			if err := grpcFlag.Value.Set(grpcAddr); err != nil {
 				return err
 			}
+			// Mark the flag as changed so Cosmos SDK recognizes the new value
+			grpcFlag.Changed = true
 		}
 	}
 
@@ -118,6 +124,8 @@ func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr, grpc
 			if err := grpcInsecureFlag.Value.Set(grpcInsecure); err != nil {
 				return err
 			}
+			// Mark the flag as changed so Cosmos SDK recognizes the new value
+			grpcInsecureFlag.Changed = true
 		}
 	}
 
@@ -127,6 +135,8 @@ func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr, grpc
 			if err := faucetBaseURLFlag.Value.Set(faucetBaseUrl); err != nil {
 				return err
 			}
+			// Mark the flag as changed so Cosmos SDK recognizes the new value
+			faucetBaseURLFlag.Changed = true
 		}
 	}
 
