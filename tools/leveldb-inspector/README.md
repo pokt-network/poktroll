@@ -1,28 +1,53 @@
-# LevelDB Inspector
+# LevelDB Inspector <!-- omit in toc -->
 
 A high-performance CLI tool for analyzing LevelDB databases, specifically designed for inspecting CometBFT transaction indexer databases. Features optimized algorithms, tabular output, and intelligent key analysis.
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Database Statistics](#database-statistics)
+    - [Basic Usage](#basic-usage)
+    - [Configurable Prefix Display](#configurable-prefix-display)
+  - [Browse Database Keys](#browse-database-keys)
+  - [Retrieve Specific Values](#retrieve-specific-values)
+  - [Analyze Size Distribution](#analyze-size-distribution)
+  - [Advanced Prefix Analysis](#advanced-prefix-analysis)
+- [CometBFT Transaction Indexer Analysis](#cometbft-transaction-indexer-analysis)
+  - [Common Patterns Identified:](#common-patterns-identified)
+  - [Use Cases:](#use-cases)
+- [Output Formats](#output-formats)
+- [Performance Features](#performance-features)
+- [Requirements](#requirements)
+- [Troubleshooting](#troubleshooting)
+  - [Database Access Issues](#database-access-issues)
+  - [Large Database Performance](#large-database-performance)
+- [Example: Analyzing a Real CometBFT Database](#example-analyzing-a-real-cometbft-database)
 
 ## Features
 
 - **📊 Stats**: Comprehensive database statistics with tabular output
+
   - Key count, total size, and size distributions
   - Configurable top N key prefixes with longest common prefix analysis (default: 10)
   - Remaining keys count for prefixes not shown in top N
   - Sorted size distributions (largest to smallest)
-  
+
 - **🔍 Keys**: Browse and filter database keys
+
   - Pagination with customizable limits
   - Prefix filtering (hex or string)
   - Automatic key truncation for readability
   - Sort by value size (memory-efficient top-k algorithm)
 
 - **📝 Get**: Retrieve specific key-value pairs
+
   - Support for hex and string keys
   - Automatic truncation of large values (with --full flag to show complete content)
   - Both hex and string output modes
   - Helpful truncation messages guide users to --full flag
 
 - **📈 Size Analysis**: Identify space consumption patterns
+
   - Top 20 largest entries in tabular format
   - Key size, value size, and total size breakdown
   - Helps identify what's consuming database space
@@ -43,6 +68,7 @@ go build -o leveldb-inspector
 ## Usage
 
 ### Database Statistics
+
 Get comprehensive database overview with intelligent prefix analysis:
 
 #### Basic Usage
@@ -58,13 +84,16 @@ Get comprehensive database overview with intelligent prefix analysis:
 ```
 
 #### Configurable Prefix Display
+
 The `--top-prefixes` (or `-t`) flag controls how many top prefixes to show:
+
 - **Default**: 10 prefixes
 - **Range**: 1 to total number of unique prefixes
 - **Remaining count**: Shows count and percentage of keys not in top N
 - **Works with all output formats**: table, JSON, and CSV
 
 **Example Output:**
+
 ```
 Database Statistics:
 ===================
@@ -95,6 +124,7 @@ Size Range           Count  Percent
 ```
 
 ### Browse Database Keys
+
 List and filter keys with intelligent truncation:
 
 ```bash
@@ -118,6 +148,7 @@ List and filter keys with intelligent truncation:
 ```
 
 ### Retrieve Specific Values
+
 Get individual key-value pairs:
 
 ```bash
@@ -135,6 +166,7 @@ Get individual key-value pairs:
 ```
 
 ### Analyze Size Distribution
+
 Identify what's consuming space:
 
 ```bash
@@ -142,6 +174,7 @@ Identify what's consuming space:
 ```
 
 **Example Output:**
+
 ```
 Top 20 Largest Entries:
 =======================
@@ -152,6 +185,7 @@ Rank Key (hex)                                             Key Size   Value Size
 ```
 
 ### Advanced Prefix Analysis
+
 Understand data organization patterns:
 
 ```bash
@@ -159,6 +193,7 @@ Understand data organization patterns:
 ```
 
 **Example Output:**
+
 ```
 Top Prefixes by Size:
 ====================
@@ -173,6 +208,7 @@ Len  Prefix (hex)               Size    Count
 This tool is particularly effective for analyzing CometBFT transaction indexer databases:
 
 ### Common Patterns Identified:
+
 - **`block_events`**: Block event indexing (typically 99%+ of keys)
 - **`coin`**: Coin transfer and receipt events
 - **`message.`**: Message event indexing
@@ -183,6 +219,7 @@ This tool is particularly effective for analyzing CometBFT transaction indexer d
 - **`pocket.migration.Event`**: Migration-specific events
 
 ### Use Cases:
+
 - **Space Analysis**: Identify what's consuming database space
 - **Performance Optimization**: Understand query patterns
 - **Data Cleanup**: Find oversized entries or unnecessary data
@@ -223,6 +260,7 @@ The tool supports multiple output formats for different use cases:
 ## Troubleshooting
 
 ### Database Access Issues
+
 ```bash
 # Ensure database exists and is readable
 ls -la /path/to/leveldb
@@ -232,7 +270,9 @@ ls -la /path/to/leveldb
 ```
 
 ### Large Database Performance
+
 The tool is optimized for large databases, but for databases with millions of keys:
+
 - Use `keys -l` to limit output
 - Use prefix filtering to focus analysis
 - Consider the `size` command for quick space analysis
