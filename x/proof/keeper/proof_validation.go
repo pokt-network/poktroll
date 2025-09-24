@@ -161,6 +161,9 @@ func (k Keeper) EnsureWellFormedProof(ctx context.Context, proof *types.Proof) e
 	}
 	logger.Debug("successfully compared relay response session header")
 
+	// TODO_TECHDEBT(@red-0ne): The current implementation gets the difficulty for the current session.
+	// We need a GetRelayMiningDifficultyAtHeight method to retrieve the difficulty that was active
+	// during the session when this proof was actually generated.
 	// Get the service's relay mining difficulty.
 	serviceRelayDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, sessionHeader.GetServiceId())
 

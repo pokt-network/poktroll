@@ -44,9 +44,9 @@ func WithNewBlockCacheClearing[C Cache](ctx context.Context, deps depinject.Conf
 func WithSessionCountCacheClearFn(numSessionsToClearCache uint) func(context.Context, depinject.Config, Cache) error {
 	return func(ctx context.Context, deps depinject.Config, cache Cache) error {
 		var blockClient client.BlockClient
-		var sharedClient client.ParamsCache[sharedtypes.Params]
+		var sharedParamsCache client.ParamsCache[sharedtypes.Params]
 		var logger polylog.Logger
-		if err := depinject.Inject(deps, &blockClient, &sharedClient, &logger); err != nil {
+		if err := depinject.Inject(deps, &blockClient, &sharedParamsCache, &logger); err != nil {
 			return err
 		}
 
@@ -54,7 +54,7 @@ func WithSessionCountCacheClearFn(numSessionsToClearCache uint) func(context.Con
 			ctx,
 			blockClient.CommittedBlocksSequence(ctx),
 			func(ctx context.Context, block client.Block) {
-				sharedParams, found := sharedClient.Get()
+				sharedParams, found := sharedParamsCache.Get()
 				if !found {
 					logger.Debug().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
 					return
@@ -70,6 +70,50 @@ func WithSessionCountCacheClearFn(numSessionsToClearCache uint) func(context.Con
 					logger.Debug().Msgf(
 						"🧹 Clearing cache at session number %d (start height: %d)",
 						currentSessionNumber, currentSessionStartHeight,
+					)
+					cache.Clear()
+				}
+			},
+		)
+
+		return nil
+	}
+}
+
+// WithClaimSettlementCacheClearFn returns a cache option that clears the cache
+// at claim settlement height. This timing is critical for relay mining difficulty
+// caches to ensure suppliers aren't penalized for using outdated difficulty values
+// when submitting proofs that were generated at session start.
+func WithClaimSettlementCacheClearFn() func(context.Context, depinject.Config, Cache) error {
+	return func(ctx context.Context, deps depinject.Config, cache Cache) error {
+		var blockClient client.BlockClient
+		var sharedParamsCache client.ParamsCache[sharedtypes.Params]
+		var logger polylog.Logger
+		if err := depinject.Inject(deps, &blockClient, &sharedParamsCache, &logger); err != nil {
+			return err
+		}
+
+		channel.ForEach(
+			ctx,
+			blockClient.CommittedBlocksSequence(ctx),
+			func(ctx context.Context, block client.Block) {
+				sharedParams, found := sharedParamsCache.Get()
+				if !found {
+					logger.Debug().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
+					return
+				}
+
+				currentHeight := block.Height()
+				// Calculate the height at which claims for the current session will be settled
+				currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, currentHeight)
+				sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)
+				claimSettlementHeight := currentSessionStartHeight + sessionEndToProofWindowCloseNumBlocks
+
+				// Clear cache when claims are settled to allow fresh difficulty values for the next cycle
+				if currentHeight == claimSettlementHeight {
+					logger.Error().Msgf(
+						"🧹 Clearing cache at claim settlement height: %d",
+						claimSettlementHeight,
 					)
 					cache.Clear()
 				}

@@ -108,11 +108,15 @@ func setupRelayerDependencies(
 		config.NewSupplyParamsCacheFn[suppliertypes.Params](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 
 		// Setup key-value caches for pocket types (clear on new sessions).
-		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),                // leaf
-		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
-		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),               // leaf
-		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),                    // leaf
-		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),                   // leaf
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
+		// RelayMiningDifficulty cache uses claim settlement clearing strategy instead of session-based clearing to address:
+		// - Difficulty changes can occur mid-session (at claim settlement height)
+		// - Cached value must remain stable until claims are settled
+		// - Prevents suppliers from being penalized for using the difficulty that was active at session start
+		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithClaimSettlementCacheClearFn()),                   // leaf
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
+		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),      // leaf
+		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),     // leaf
 		// Session querier returns *sessiontypes.Session, so cache must return pointers.
 		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 		// Clear on new blocks to refresh application state after each block.

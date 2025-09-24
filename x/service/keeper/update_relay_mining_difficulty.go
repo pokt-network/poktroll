@@ -78,6 +78,10 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// To avoid continuing to increase the difficulty (i.e. scaling down), the
 		// relative starting difficulty has to be kept constant.
 		difficultyHash := protocol.ComputeNewDifficultyTargetHash(protocol.BaseRelayDifficultyHashBz, targetNumRelays, newRelaysEma)
+		// TODO_TECHDEBT(@red-0ne): The current implementation applies difficulty changes to the current
+		// block height, which can occur mid-session.
+		// This should be updated to apply changes to the next session start height to prevent suppliers
+		// from being slashed for submitting proofs based on an outdated difficulty.
 		newDifficulty := types.RelayMiningDifficulty{
 			ServiceId:    serviceId,
 			BlockHeight:  sdkCtx.BlockHeight(),
