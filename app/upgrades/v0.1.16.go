@@ -40,7 +40,7 @@ var Upgrade_0_1_16 = Upgrade{
 
 			// Adds new authz that were previously incorrect. See #1425
 			// These can be validated like so:
-			// pocketd query authz grants-by-granter <addr> --network=<network> -o json --grpc-insecure=false
+			// pocketd query authz grants-by-granter <addr> --network=<network> -o json
 			// 	| jq '.grants[]|select(.authorization.value.msg == "/pocket.migration.MsgRecoverMorseAccount")'
 			grantAuthorizationMessages := []string{
 				"/pocket.migration.MsgUpdateParams",

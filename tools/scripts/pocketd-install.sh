@@ -63,7 +63,7 @@ install_pocketd() {
         echo ""
         echo "You can also install a specific version by using the --tag flag like so:"
         echo ""
-        echo "  curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev1"
+        echo "  curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev1 --upgrade"
         echo ""
         echo "You can find available versions, including dev-releases, at https://github.com/pokt-network/poktroll/releases"
         return

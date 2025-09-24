@@ -135,8 +135,36 @@ func (s *tokenLogicModuleTestSuite) getTokenomicsParams() *tokenomicstypes.Param
 	return &tokenomicsParams
 }
 
-// createClaim creates numClaims number of claims for the current session given
-// the suites service, application, and supplier.
+// getTokenomicsParamsWithCleanValidatorMath returns tokenomics params with 10% validator allocation
+// for both TLMs to ensure clean mathematical divisions in validator reward distribution tests.
+func (s *tokenLogicModuleTestSuite) getTokenomicsParamsWithCleanValidatorMath() *tokenomicstypes.Params {
+	tokenomicsParams := tokenomicstypes.DefaultParams()
+	tokenomicsParams.DaoRewardAddress = s.daoRewardAddr
+
+	// Set validator allocation to 10% (instead of default 5%) for clean math
+	// This makes total validator rewards = 110 with our test setup, which divides
+	// evenly by stake ratio sum of 11, giving clean results [50, 40, 20]
+	tokenomicsParams.MintAllocationPercentages.Proposer = 0.10
+	tokenomicsParams.MintEqualsBurnClaimDistribution.Proposer = 0.10
+
+	// Adjust other percentages to maintain 100% total
+	// TLMGlobalMint: DAO=0.05, Proposer=0.10, Supplier=0.70, SourceOwner=0.15, Application=0.0
+	tokenomicsParams.MintAllocationPercentages.Dao = 0.05
+	tokenomicsParams.MintAllocationPercentages.Supplier = 0.70
+	tokenomicsParams.MintAllocationPercentages.SourceOwner = 0.15
+	tokenomicsParams.MintAllocationPercentages.Application = 0.0
+
+	// TLMRelayBurnEqualsMint: DAO=0.05, Proposer=0.10, Supplier=0.70, SourceOwner=0.15, Application=0.0
+	tokenomicsParams.MintEqualsBurnClaimDistribution.Dao = 0.05
+	tokenomicsParams.MintEqualsBurnClaimDistribution.Supplier = 0.70
+	tokenomicsParams.MintEqualsBurnClaimDistribution.SourceOwner = 0.15
+	tokenomicsParams.MintEqualsBurnClaimDistribution.Application = 0.0
+
+	return &tokenomicsParams
+}
+
+// createClaims creates numClaims number of claims, each for a unique application address.
+// This ensures that each claim represents a distinct session, avoiding UpsertClaim updating the same claim.
 // DEV_NOTE: The sum/count must be large enough to avoid a proposer reward
 // (or other small proportion rewards) from being truncated to zero (> 1upokt).
 func (s *tokenLogicModuleTestSuite) createClaims(
@@ -145,15 +173,30 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 ) {
 	s.T().Helper()
 
-	session, err := s.keepers.GetSession(s.ctx, &sessiontypes.QueryGetSessionRequest{
-		ServiceId:          s.service.GetId(),
-		ApplicationAddress: s.app.GetAddress(),
-		BlockHeight:        1,
-	})
-	require.NoError(s.T(), err)
-
-	// Create claims (no proof requirements)
+	// Create claims for unique applications to ensure distinct sessions
 	for i := 0; i < numClaims; i++ {
+		// Generate a unique application address for each claim
+		uniqueAppAddr := sample.AccAddressBech32()
+
+		// Create an application entry for this address
+		uniqueApp := apptypes.Application{
+			Address: uniqueAppAddr,
+			Stake:   s.app.Stake, // Use same stake as default app
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{ServiceId: s.service.GetId()},
+			},
+		}
+		keepers.SetApplication(s.ctx, uniqueApp)
+
+		// Get session for this unique application
+		session, err := s.keepers.GetSession(s.ctx, &sessiontypes.QueryGetSessionRequest{
+			ServiceId:          s.service.GetId(),
+			ApplicationAddress: uniqueAppAddr,
+			BlockHeight:        1,
+		})
+		require.NoError(s.T(), err)
+
+		// Create claim for this unique session
 		claim := prooftypes.Claim{
 			SupplierOperatorAddress: s.supplier.GetOperatorAddress(),
 			SessionHeader:           session.GetSession().GetHeader(),

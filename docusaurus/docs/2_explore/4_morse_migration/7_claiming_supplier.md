@@ -146,7 +146,7 @@ pocketd tx bank send <your_supplier_address> <some_address_you_own> 1upokt --fro
 #### How to check if you have an onchain account
 
 ```bash
-pocketd q auth account <your_supplier_address> --network=<network> --grpc-insecure=false
+pocketd q auth account <your_supplier_address> --network=<network>
 ```
 
 Account without public key:

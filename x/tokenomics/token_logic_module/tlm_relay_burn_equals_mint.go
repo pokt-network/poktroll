@@ -184,7 +184,7 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 		})
 
 		// Distribute to supplier's shareholders based on revenue share percentage
-		if err := distributeSupplierRewardsToShareHolders(
+		if err := distributeSupplierRewardsToShareholders(
 			tlmbem.logger,
 			tlmbem.tlmCtx.Result,
 			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
@@ -201,25 +201,23 @@ func (tlmbem *tlmRelayBurnEqualsMint) processRewardDistribution() error {
 		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute (%v) to supplier shareholders", supplierCoin))
 	}
 
-	// Distribute to block proposer
+	// Distribute to all validators based on stake weight
 	if !proposerAmount.IsZero() {
 		proposerCoin := cosmostypes.NewCoin(pocket.DenomuPOKT, proposerAmount)
 
-		// Get the block proposer's operator address (not consensus address)
-		proposerAddr, err := getBlockProposerOperatorAddress(tlmbem.ctx, tlmbem.tlmCtx.StakingKeeper)
-		if err != nil {
-			tlmbem.logger.Error(fmt.Sprintf("error getting block proposer operator address: %v", err))
+		// Distribute to all validators and their delegators proportionally based on stake weight
+		if err := distributeValidatorRewards(
+			tlmbem.ctx,
+			tlmbem.logger,
+			tlmbem.tlmCtx.Result,
+			tlmbem.tlmCtx.StakingKeeper,
+			proposerCoin,
+			tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_VALIDATOR_REWARD_DISTRIBUTION,
+		); err != nil {
+			tlmbem.logger.Error(fmt.Sprintf("error distributing validator rewards: %v", err))
 			return err
 		}
-		tlmbem.logger.Info(fmt.Sprintf("TLM Relay Burn Equals Mint: resolved proposer address to %s", proposerAddr))
-
-		tlmbem.tlmCtx.Result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-			OpReason:         tokenomicstypes.SettlementOpReason_TLM_RELAY_BURN_EQUALS_MINT_PROPOSER_REWARD_DISTRIBUTION,
-			SenderModule:     tokenomicstypes.ModuleName,
-			RecipientAddress: proposerAddr,
-			Coin:             proposerCoin,
-		})
-		tlmbem.logger.Info(fmt.Sprintf("operation queued: send (%v) to proposer %s", proposerCoin, proposerAddr))
+		tlmbem.logger.Info(fmt.Sprintf("operation queued: distribute %s to all validators by stake weight", proposerCoin))
 	}
 
 	// Distribute to service source owner

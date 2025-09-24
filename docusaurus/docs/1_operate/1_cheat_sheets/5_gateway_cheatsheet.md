@@ -291,7 +291,6 @@ pocketd relayminer relay \
     --app=${APP_ADDR} \
     --node=${BETA_RPC_URL} \
     --grpc-addr=${BETA_GRPC_URL_RAW} \
-    --grpc-insecure=false \
     --keyring-backend="$POCKET_TEST_KEYRING_BACKEND" --home="$POCKET_HOME_PROD" \
     --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 ```

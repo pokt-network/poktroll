@@ -1,6 +1,6 @@
 ---
 title: Module Authorizations
-sidebar_position: 6
+sidebar_position: 4
 ---
 
 Pocket Network utilizes an onchain governance mechanism that enables the community to vote on proposals.
