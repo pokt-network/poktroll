@@ -33,7 +33,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 	require.NoError(t, err)
 
 	// Valid shannon destination address to be reused in all tests
-	shannonDestAddr := sample.AccAddress()
+	shannonDestAddr := sample.AccAddressBech32()
 	invalidShannonDestAddr := "invalid_shannon_dest_address"
 
 	// Get the complete state of all Morse accounts for testing
@@ -173,12 +173,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 			claimedAccount := accountState.Accounts[claimedAccountIdx]
 			claimedAccountBalance := claimedAccount.TotalTokens()
 
-			expectedRecoveryRes := &migrationtypes.MsgRecoverMorseAccountResponse{
-				ShannonDestAddress: shannonDestAddr,
-				MorseSrcAddress:    test.morseSrcAddress,
-				RecoveredBalance:   claimedAccountBalance,
-				SessionEndHeight:   sessionEndHeight,
-			}
+			expectedRecoveryRes := &migrationtypes.MsgRecoverMorseAccountResponse{}
 			require.Equal(t, msgRecoveryRes, expectedRecoveryRes)
 
 			allEvents := s.GetApp().GetSdkCtx().EventManager().Events()
@@ -187,7 +182,7 @@ func (s *MigrationModuleTestSuite) TestRecoverMorseAccount_AllowListSuccess() {
 
 			expectedEventMorseAccountRecovered := &migrationtypes.EventMorseAccountRecovered{
 				SessionEndHeight:   sessionEndHeight,
-				RecoveredBalance:   claimedAccountBalance,
+				RecoveredBalance:   claimedAccountBalance.String(),
 				ShannonDestAddress: shannonDestAddr,
 				MorseSrcAddress:    test.morseSrcAddress,
 			}

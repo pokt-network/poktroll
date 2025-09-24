@@ -14,9 +14,19 @@ on:
         default: false
 
 jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug raw message
+        run: |
+          echo "=== Debug: Raw message input ==="
+          printf '%s\n' "${{ inputs.message }}"
+          echo "================================"
+
   broadcast:
+    needs: debug
     uses: ./.github/workflows/telegram-send-message.yml
     with:
       message: ${{ inputs.message }}
-      parse_mode: "MarkdownV2"
+      parse_mode: "HTML"
       test_mode: ${{ inputs.test_mode }}

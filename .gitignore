@@ -51,17 +51,13 @@ ts-client/
 # Localnet config
 localnet_config.yaml
 # Localnet config with the missing keys to show diff on Tilt UI
-localnet_config_expanded.yaml
+localnet_config_extended.yaml
 # NB: The helper sed command to update `localnet_config` was updated
 # so its universal across Linux & macOS. Though it work, it creates this
 # extra file. If you are reading this and can think of a way to improve
 # `docusaurus/docs/infrastructure/localnet.md`, please do!
 # Ref: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
 localnet_config.yaml-e
-# These are needed to ignore byproducts of `make proto_fix_self_import`
-# Since sed functions different on macOS and Linux, we need to implement
-# some workarounds by always using "sed -i'' -e" instead of just "sed -i -e".
-api/pocket/**/*.go-E
 
 # Release artifacts produced by `ignite chain build --release`
 release
@@ -131,3 +127,6 @@ localnet_testing_msg_import_morse_accounts.json
 
 # Gov Param Update transaction templates
 *_params_*.json
+
+# Used for telegram announcements
+release_prep_announcement.txt

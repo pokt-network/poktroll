@@ -27,7 +27,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			name: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      "non_existent",
 				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 0},
 			},
@@ -36,7 +36,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			name: "invalid: incorrect param type",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamProofMissingPenalty,
 				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 0},
 			},
@@ -44,7 +44,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		}, {
 			name: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
+				Authority: sample.AccAddressBech32(),
 				Name:      ParamProofMissingPenalty,
 				AsType:    &MsgUpdateParam_AsCoin{AsCoin: &DefaultProofMissingPenalty},
 			},

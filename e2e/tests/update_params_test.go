@@ -50,9 +50,6 @@ var allModuleMsgUpdateParamTypes = []string{
 	"/pocket.service.MsgUpdateParams",
 }
 
-func init() {
-}
-
 // AllModuleParamsAreSetToTheirDefaultValues asserts that all module params are set to their default values.
 func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 	argsAndFlags := []string{
@@ -68,6 +65,8 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 	case tokenomicstypes.ModuleName:
 		var tokenomicsParamsRes tokenomicstypes.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &tokenomicsParamsRes)
+		fmt.Println("OLSH1", tokenomicsParamsRes.GetParams())
+		fmt.Println("OLSH2", tokenomicstypes.DefaultParams())
 		require.Equal(s, tokenomicstypes.DefaultParams(), tokenomicsParamsRes.GetParams())
 
 	case prooftypes.ModuleName:
@@ -341,12 +340,36 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
+		params := tokenomicstypes.DefaultParams()
+		paramsMap := s.expectedModuleParams[moduleName]
+
+		daoRewardAddress, ok := paramsMap[tokenomicstypes.ParamDaoRewardAddress]
+		if ok {
+			params.DaoRewardAddress = daoRewardAddress.value.(string)
+		}
+
+		globalInflationPerClaim, ok := paramsMap[tokenomicstypes.ParamGlobalInflationPerClaim]
+		if ok {
+			params.GlobalInflationPerClaim = globalInflationPerClaim.value.(float64)
+		}
+
+		mintAllocationPercentages, ok := paramsMap[tokenomicstypes.ParamMintAllocationPercentages]
+		if ok {
+			params.MintAllocationPercentages = mintAllocationPercentages.value.(tokenomicstypes.MintAllocationPercentages)
+		}
+
+		mintEqualsBurnClaimDistribution, ok := paramsMap[tokenomicstypes.ParamMintEqualsBurnClaimDistribution]
+		if ok {
+			params.MintEqualsBurnClaimDistribution = mintEqualsBurnClaimDistribution.value.(tokenomicstypes.MintEqualsBurnClaimDistribution)
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&tokenomicstypes.QueryParamsResponse{
-				Params: tokenomicstypes.Params{},
+				Params: params,
 			},
 		)
+
 	case prooftypes.ModuleName:
 		params := prooftypes.DefaultParams()
 		paramsMap := s.expectedModuleParams[moduleName]

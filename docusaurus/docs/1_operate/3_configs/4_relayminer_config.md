@@ -42,11 +42,13 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`signing_key_names`](#signing_key_names)
   - [`listen_url`](#listen_url)
   - [`request_timeout_seconds`](#request_timeout_seconds)
+  - [`max_body_size`](#max_body_size)
   - [`service_config`](#service_config)
     - [`backend_url`](#backend_url)
     - [`authentication`](#authentication)
     - [`headers`](#headers)
     - [`forward_pocket_headers`](#forward_pocket_headers)
+  - [`rpc_type_service_configs`](#rpc_type_service_configs)
 - [Configuring Signing Keys](#configuring-signing-keys)
   - [Example Configuration](#example-configuration)
 - [Supported server types](#supported-server-types)
@@ -179,6 +181,23 @@ _`Required`_
 The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
+
+**In-memory storage options:**
+
+- `:memory:` - Uses SimpleMap (pure Go map) for in-memory storage. **Recommended**.
+- `:memory_pebble:` - Uses Pebble database with in-memory VFS. Experimental option with more overhead.
+
+:::warning TODO(#1734) Experimentation in flight
+
+**This update is as of 08/2025.**
+
+In-memory storage enables relay miners to be significantly more performant. For this reason, `:memory:` is the recommended option.
+
+**Warning:** Prior to #1734, RelayMiner restarts will result in loss of session state.
+
+**Consideration**: Once experimentation is complete, there will either only be one in-memory storage option or a proper enum will be created (disk, memory_simple, memory_pebble).
+
+:::
 
 ### `enable_over_servicing`
 
@@ -369,7 +388,22 @@ This max payload size applies to the request and response size that the `RelayMi
 
 Supports common unit suffixes like `B`, `KB`, `MB`, `GB`, or `TB`
 
-Defaults to: 20MB
+Defaults to: `20MB`
+
+:::info default service configuration
+
+`service_config` is the default configuration and **WILL BE USED UNLESS** both of the following are true:
+
+1. The `rpc_type_service_configs` section is present for the supplier
+2. The request from an application or gateway contains a `Rpc-Type` header specifying the request should be handled by a specific RPC-type service-specific config
+
+:::
+
+:::warning TODO: Will be renamed in the future
+
+The `service_config` field will be renamed to `default_service_config` in the future to make this responsibility more explicit. It is kept named `service_config` in the current release for backwards compatibility.
+
+:::
 
 ### `service_config`
 
@@ -420,6 +454,74 @@ These headers help identify the Supplier, the Service, and the Application withi
 | Pocket-Application          | The address of the Application making the request.                   |
 | Pocket-Session-Start-Height | The block height at which the current session began.                 |
 | Pocket-Session-End-Height   | The block height at which the current session will end.              |
+
+### `rpc_type_service_configs`
+
+_`Optional`_
+
+The `rpc_type_service_configs` section enables RPC-type-specific backend configurations.
+For example, a service may expose multiple protocol endpoints or API types (e.g., CometBFT, JSON-RPC, REST, etc.)
+
+When a relay request is received, the `RelayMiner` will check the `Rpc-Type` header
+to determine which service configuration to use. If no matching RPC type is found
+in `rpc_type_service_configs`, the default `service_config` will be used.
+
+Supported RPC types include:
+
+- `json_rpc`: For JSON-RPC endpoints (e.g., Ethereum-compatible APIs)
+- `rest`: For REST API endpoints (e.g., Cosmos SDK REST APIs)
+- `comet_bft`: For CometBFT RPC endpoints (consensus layer queries)
+- `websocket`: For WebSocket endpoints (real-time event streaming)
+
+Each RPC type configuration supports all the same options as the main `service_config`:
+
+- `backend_url` (required)
+- `authentication` (optional)
+- `headers` (optional)
+- `forward_pocket_headers` (optional)
+
+Example configuration:
+
+```yaml
+suppliers:
+  - service_id: xrplevm-testnet
+    listen_url: http://0.0.0.0:8545
+
+    # Default configuration (fallback)
+    service_config:
+      backend_url: http://xrplevm-node:8545
+      forward_pocket_headers: true
+
+    rpc_type_service_configs:
+      # JSON-RPC for Ethereum-compatible API
+      json_rpc:
+        backend_url: http://xrplevm-node:8545
+        headers:
+          Authorization: "Bearer api-key-123"
+        forward_pocket_headers: true
+
+      # REST API for Cosmos SDK endpoints
+      rest:
+        backend_url: http://xrplevm-node:1317
+        authentication:
+          username: restuser
+          password: restpass
+        forward_pocket_headers: true
+
+      # CometBFT for consensus queries
+      comet_bft:
+        backend_url: http://xrplevm-node:26657
+        forward_pocket_headers: true
+
+      # WebSocket for real-time events
+      websocket:
+        backend_url: ws://xrplevm-node:8546
+        forward_pocket_headers: false
+```
+
+This configuration allows a single service to handle different types of requests
+by routing them to appropriate backend endpoints based on the RPC type specified
+in the relay request headers.
 
 ## Configuring Signing Keys
 

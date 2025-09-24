@@ -155,7 +155,7 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 
 		// Scenarios 2: The claim window is still open.
 		// The session has still a chance to reach settlement by creating the claim and submitting the proof.
-		sessionTree, treeErr := importSessionTree(sessionSMT, claim, rs.storesDirectory, sessionLogger)
+		sessionTree, treeErr := importSessionTree(sessionLogger, sessionSMT, claim, rs.storesDirectoryPath)
 		if treeErr != nil {
 			sessionLogger.Error().Err(treeErr).Msg("failed to import session tree")
 			continue
@@ -194,8 +194,14 @@ func (rs *relayerSessionsManager) deletePersistedSessionTree(sessionSMT *proofty
 		"session_end_height", sessionEndHeight,
 	)
 
+	// If the session tree is in-memory only, there is nothing to delete.
+	if rs.isInMemorySMT() {
+		logger.Debug().Msg("Skipping session tree deletion. RelayMiner is configured for in-memory mode.")
+		return nil
+	}
+
 	// Delete the corresponding kv store for the session tree.
-	storePath := filepath.Join(rs.storesDirectory, supplierOperatorAddress, sessionId)
+	storePath := filepath.Join(rs.storesDirectoryPath, supplierOperatorAddress, sessionId)
 	if err := os.RemoveAll(storePath); err != nil {
 		if os.IsNotExist(err) {
 			logger.Warn().Msg("session tree store does not exist, nothing to delete")
@@ -336,4 +342,9 @@ func (rs *relayerSessionsManager) proveClaimedSessions(ctx context.Context) {
 func getSessionStoreKey(supplierOperatorAddress string, sessionId string) []byte {
 	sessionStoreKeyStr := fmt.Sprintf("%s/%s", supplierOperatorAddress, sessionId)
 	return []byte(sessionStoreKeyStr)
+}
+
+// isInMemorySMT returns true if the session tree is in-memory only (either SimpleMap or Pebble in-memory).
+func (rs *relayerSessionsManager) isInMemorySMT() bool {
+	return rs.storesDirectoryPath == InMemoryStoreFilename || rs.storesDirectoryPath == InMemoryPebbleStoreFilename
 }

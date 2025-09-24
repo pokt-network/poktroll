@@ -13,7 +13,7 @@ import (
 )
 
 func TestGenesisState_Validate(t *testing.T) {
-	addr1 := sample.AccAddress()
+	addr1 := sample.AccAddressBech32()
 	stake1 := sdk.NewCoin("upokt", math.NewInt(100))
 	serviceConfig1 := &sharedtypes.SupplierServiceConfig{
 		ServiceId: "svcId1",
@@ -33,7 +33,7 @@ func TestGenesisState_Validate(t *testing.T) {
 	}
 	serviceList1 := []*sharedtypes.SupplierServiceConfig{serviceConfig1}
 
-	addr2 := sample.AccAddress()
+	addr2 := sample.AccAddressBech32()
 	stake2 := sdk.NewCoin("upokt", math.NewInt(100))
 	serviceConfig2 := &sharedtypes.SupplierServiceConfig{
 		ServiceId: "svcId2",

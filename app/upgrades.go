@@ -131,7 +131,27 @@ var allUpgrades = []upgrades.Upgrade{
 
 	// v0.1.26 - upgrade to:
 	// - Implement backward compatible relay response signature verification to enable smooth protocol upgrades
-	upgrades.Upgrade_0_1_26,
+	// upgrades.Upgrade_0_1_26,
+
+	// v0.1.27 - upgrade to:
+	// - Updates to the Morse account recovery allowlist
+	// - Distributed Settlement TLM: enable_distribute_settlement parameter
+	// - Reward distribution for the mint=burn TLM
+	// - Updates to the Morse account recovery allowlist
+	// - Sets all IBC parameters to enable IBC support
+	// upgrades.Upgrade_0_1_27,
+
+	// v0.1.28 - upgrade to:
+	// - Shared module param update: increased `ComputeUnitsPerRelayMax`.
+	// - Tokenomics updates: validator proper decoding fix; updated DAO address in mint_equals_burn_claim_distribution;
+	// - Recovery: updated Morse account recovery allowlist (multiple iterations, incl. 8 Aug 2025 update).
+	// upgrades.Upgrade_0_1_28,
+
+	// v0.1.29 - upgrade to:
+	// - update Morse account recovery allowlist
+	// - tokenomics update: "proposer" reward distributed to all validators/delegators
+	// - supplier stake message handling & authorization
+	upgrades.Upgrade_0_1_29,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

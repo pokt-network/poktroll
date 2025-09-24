@@ -42,6 +42,7 @@ See the [Full Node Cheat Sheet](../1_cheat_sheets/2_full_node_cheatsheet.md) if 
   - [9. Set Up `systemd` Service](#9-set-up-systemd-service)
   - [10. Configure your Firewall](#10-configure-your-firewall)
   - [11. Check \& Monitor the Status of your Node](#11-check--monitor-the-status-of-your-node)
+- [Restart a Full Node After a Reorg](#restart-a-full-node-after-a-reorg)
 - [Next Steps](#next-steps)
 
 ## Introduction
@@ -673,6 +674,42 @@ pocketd status | jq '.sync_info.latest_block_height'
 ```
 
 :::
+
+## Restart a Full Node After a Reorg
+
+You should review this section if:
+
+1. Your node is not syncing
+2. Your node is seeing an `AppHash` error
+
+A reorg MAY be necessary if one of the following occurs:
+
+1. A [protocol upgrade(../../4_develop/upgrades/2_upgrade_preparation.md) does not go as planned
+2. An onchain bug results in a chain halt
+
+The list is to long to enumerate as to why this may happen, how it should be fixed, and different ways to approach in fixing it.
+
+Assuming the core protocol team has identified and issued a fix, we recommend one of two things:
+
+1. Completely decommission your existing FullNode server
+2. If you want to keep your existing Cosmovisor installation, you can use the following commands:
+
+```bash
+rm /home/pocket/.pocket/data/addrbook.json
+rm -rf /home/pocket/.pocket/cosmovisor/upgrades/v0.1.29
+rm -f /home/pocket/.pocket/cosmovisor/current
+ln -s /home/pocket/.pocket/cosmovisor/upgrades/v0.1.28/ /home/pocket/.pocket/cosmovisor/current
+rm -f /home/pocket/.pocket/data/upgrade-info.json
+rm -rf /home/pocket/.pocket/data/cs.wal/
+rm -rf /home/pocket/.pocket/data/evidence.db
+rm -f /home/pocket/.pocket/data/priv_validator_state.json
+
+echo '{
+  "height": "0",
+  "round": 0,
+  "step": 0
+}' > /home/pocket/.pocket/data/priv_validator_state.json
+```
 
 ## Next Steps
 

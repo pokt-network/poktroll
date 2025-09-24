@@ -2,8 +2,8 @@
 # These keys must correspond to the operator addresses of the suppliers.
 default_signing_key_names: [supplier1]
 
-# Relative path (on the relayminer's machine) to the SMT KV store data on disk.
-smt_store_path: ./path/to/smt_stores
+# Path to the SMT KV store.
+smt_store_path: ":memory:" # OR ./path/to/smt_stores
 
 # Prometheus exporter configuration
 metrics:
@@ -83,3 +83,39 @@ suppliers:
     service_config:
       backend_url: http://localhost:11434
       forward_pocket_headers: false
+
+  # Example with different RPC type configurations for XRPL EVM
+  - service_id: xrplevm
+    listen_url: http://0.0.0.0:8545
+
+    # Default service configuration (used when no specific RPC type matches)
+    service_config:
+      backend_url: http://xrplevm-node:8545
+      forward_pocket_headers: true
+
+    # RPC type specific configurations for different XRPL EVM endpoints
+    rpc_type_service_configs:
+      # JSON-RPC endpoints (Ethereum-compatible API)
+      json_rpc:
+        backend_url: http://xrplevm-node:8545
+        headers:
+          Authorization: "Bearer xrpl-api-key"
+        forward_pocket_headers: true
+
+      # REST API endpoints (Cosmos SDK REST for XRPL sidechain)
+      rest:
+        backend_url: http://xrplevm-node:1317
+        authentication:
+          username: xrpluser
+          password: xrplpass
+        forward_pocket_headers: true
+
+      # CometBFT RPC endpoints (for consensus layer queries)
+      comet_bft:
+        backend_url: http://xrplevm-node:26657
+        forward_pocket_headers: true
+
+      # WebSocket endpoints (for real-time event streaming)
+      websocket:
+        backend_url: ws://xrplevm-node:8546
+        forward_pocket_headers: false

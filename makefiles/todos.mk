@@ -44,7 +44,7 @@
 # TODO_UPNEXT(@???)			  - Indicates this should be done shortly after an existing PR. THIS MUST HAVE A USER ASSIGNED TO IT and has workflows to prevent it.
 
 # Define shared variable for the exclude parameters
-EXCLUDE_GREP = --exclude-dir={.git,vendor,./docusaurus,.vscode,.idea} --exclude={Makefile,reviewdog.yml,*.pb.go,*.pulsar.go}
+EXCLUDE_GREP = --exclude-dir={.git,vendor,./docusaurus,.vscode,.idea} --exclude={Makefile,reviewdog.yml,*.pb.go}
 
 .PHONY: todo_list
 todo_list: ## List all the TODOs in the project (excludes vendor and prototype directories)

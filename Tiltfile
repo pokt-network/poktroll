@@ -1,11 +1,19 @@
+# Load external extensions
 load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 load("ext://configmap", "configmap_create")
 load("ext://secret", "secret_create_generic")
 load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
+
+# Load local files
 load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
+load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+
+
+# Avoid the header
+analytics_settings(enable=False)
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
@@ -207,6 +215,8 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
             "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
+            # Default queryCaching to false if not set in localnet_config
+            "--set=queryCaching=" + str(localnet_config["relayminers"].get("queryCaching", False)),
             "--set=image.repository=pocketd",
     ]
 
@@ -222,11 +232,13 @@ for x in range(localnet_config["relayminers"]["count"]):
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvil")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.json_rpc.backend_url=http://anvil:8547/")
     supplier_number = supplier_number + 1
 
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvilws")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
-    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=ws://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.websocket.backend_url=ws://anvil:8547/")
     supplier_number = supplier_number + 1
 
     if localnet_config["rest"]["enabled"]:
@@ -301,10 +313,9 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=guard.global.serviceName=path" + str(actor_number) + "-http", # Override the default service name
         "--set=guard.services[0].serviceId=anvil", # Ensure HTTPRoute resources are created for Anvil
         "--set=observability.enabled=false",
-
-        # TODO_IMPROVE(@okdas): Turn on guard when we are ready for it - e2e tests currently are not setup to use it.
-        # "--set=guard.enabled=true",
-        # "--set=guard.envoyGateway.enabled=true",
+        # TODO_TECHDEBT(@okdas): Remove the need for an override that uses a pre-released version of RLS.
+        # See 'guard-overrides.yaml' for more details and TODOs.
+        "--values=./localnet/kubernetes/guard-overrides.yaml",
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
@@ -449,3 +460,7 @@ if localnet_config["faucet"]["enabled"]:
             "8080:8080",
         ],
     )
+
+
+### IBC relayer(s) & alt-chain node(s)
+check_and_load_ibc(chart_prefix, localnet_config["ibc"])
