@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -256,21 +255,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("❌ Failed building the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer CloseBody(logger, httpRequest.Body)
-
-	// Configure HTTP client based on backend URL scheme.
-	var client http.Client
-	switch serviceConfig.BackendUrl.Scheme {
-	case "https":
-		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{},
-		}
-		client = http.Client{Transport: transport}
-	default:
-		// Copy default client to avoid modifying global instance.
-		// Prevents race conditions from concurrent timeout modifications.
-		client = *http.DefaultClient
-	}
 
 	logger = logger.With("request_preparation_duration", time.Since(requestStartTime).String())
 	relayer.CaptureRequestPreparationDuration(serviceId, requestStartTime)
@@ -291,7 +275,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		)
 	}
 
-	// Set HTTP client timeout to match remaining request budget.
+	// Set HTTP request timeout to match remaining request budget.
 	// Subtract preparation time from total timeout to avoid exceeding limit.
 	remainingTimeout := requestTimeout - time.Since(requestStartTime)
 	if remainingTimeout <= 0 {
@@ -301,11 +285,18 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			Msg("Request preparation exceeded timeout. Providing additional time.")
 		remainingTimeout = fallbackTimeout
 	}
-	client.Timeout = remainingTimeout
+
+	// Set the new timeout via a context on the HTTP request.
+	ctxWithRemainingTimeout, cancelCtxWithRemainingTimeout := context.WithTimeout(ctxWithDeadline, remainingTimeout)
+	defer cancelCtxWithRemainingTimeout()
+
+	httpRequestWithUpdatedTimeout := httpRequest.WithContext(ctxWithRemainingTimeout)
 
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
-	httpResponse, err := client.Do(httpRequest)
+	httpResponse, err := server.httpClient.Do(ctxWithRemainingTimeout, logger, httpRequestWithUpdatedTimeout)
+	// Early close backend request body to free up pool resources.
+	CloseBody(logger, httpRequest.Body)
 
 	backendServiceProcessingEnd := time.Now()
 	// Add response preparation duration to the logger such that any log before errors will have
@@ -334,7 +325,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	defer CloseBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 
@@ -345,6 +335,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return relayRequest, err
 	}
+	// Early close backend response body to free up pool resources.
+	CloseBody(logger, httpResponse.Body)
 
 	// Pass through all backend responses including errors.
 	// Allows clients to see real HTTP status codes from backend service.
@@ -352,7 +344,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	if httpResponse.StatusCode >= http.StatusMultipleChoices {
 		logger.Error().
 			Int("status_code", httpResponse.StatusCode).
-			Str("request_url", httpRequest.URL.String()).
+			Str("request_url", httpRequestWithUpdatedTimeout.URL.String()).
 			Str("request_payload_first_bytes", polylog.Preview(string(relayRequest.Payload))).
 			Str("response_payload_first_bytes", polylog.Preview(string(wrappedHTTPResponse.BodyBz))).
 			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
