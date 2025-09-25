@@ -250,7 +250,7 @@ ignite_acc_list: ## List all the accounts in LocalNet
 
 .PHONY: ignite_pocketd_build
 ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary using Ignite
-	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
+	CGO_ENABLED=1 ignite chain build --build.tags="ethereum_secp256k1" --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_openapi_gen
 ignite_openapi_gen: ignite_check_version ## Generate the OpenAPI spec natively and process the output
