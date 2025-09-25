@@ -31,7 +31,7 @@ docs_build: ## Generate OpenAPI spec (Docker) and Docusaurus API docs
 .PHONY: openapi_ignite_gen
 openapi_ignite_gen: ignite_check_version ## Generate the OpenAPI spec natively and process the output
 	# Ensure Buf deps (incl. grpc-gateway) are available for imports like openapiv2 annotations
-	buf mod update
+	buf dep update
 	ignite generate openapi --yes
 	$(MAKE) openapi_process
 
