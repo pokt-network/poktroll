@@ -12,6 +12,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 import "pocket/supplier/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/shared/supplier.proto";
 
 service Query {
@@ -19,6 +20,10 @@ service Query {
   // supplier.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/params";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QuerySupplierParams"
+      summary: "supplier.QueryParams"
+    };
   }
 
   rpc Supplier (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
@@ -73,4 +78,3 @@ message QueryAllSuppliersResponse {
   repeated pocket.shared.Supplier supplier = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
-

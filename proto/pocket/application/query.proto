@@ -11,6 +11,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 import "pocket/application/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/application/types.proto";
 
 
@@ -20,6 +21,10 @@ service Query {
   // application.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/params";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryApplicationParams"
+      summary: "application.QueryParams"
+    };
   }
 
   rpc Application    (QueryGetApplicationRequest) returns (QueryGetApplicationResponse) {
@@ -58,4 +63,3 @@ message QueryAllApplicationsResponse {
   repeated Application applications = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination  = 2;
 }
-

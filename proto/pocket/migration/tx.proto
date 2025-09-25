@@ -12,6 +12,7 @@ import "pocket/migration/params.proto";
 import "pocket/application/types.proto";
 import "pocket/shared/supplier.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
@@ -24,7 +25,12 @@ service Msg {
   option (cosmos.msg.v1.service) = true;
 
   // migration.MsgUpdateParams
-  rpc UpdateParams                 (MsgUpdateParams                ) returns (MsgUpdateParamsResponse                );
+  rpc UpdateParams                 (MsgUpdateParams                ) returns (MsgUpdateParamsResponse                ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgMigrationUpdateParams"
+      summary: "migration.MsgUpdateParams updates all module parameters via governance."
+    };
+  };
   rpc ImportMorseClaimableAccounts (MsgImportMorseClaimableAccounts) returns (MsgImportMorseClaimableAccountsResponse);
   rpc ClaimMorseAccount            (MsgClaimMorseAccount           ) returns (MsgClaimMorseAccountResponse           );
   rpc ClaimMorseApplication        (MsgClaimMorseApplication       ) returns (MsgClaimMorseApplicationResponse       );
@@ -319,4 +325,3 @@ message MsgRecoverMorseAccountResponse {
 
   // TODO_MAINNET_MIGRATION(@bryanchriswhite): Add shannon_dest_address to MsgRecoverMorseAccountResponse.
 }
-

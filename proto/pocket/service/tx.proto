@@ -12,6 +12,7 @@ import "gogoproto/gogo.proto";
 
 import "pocket/service/params.proto";
 import "pocket/shared/service.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 
 // Msg defines the Msg service.
@@ -19,9 +20,19 @@ service Msg {
   option (cosmos.msg.v1.service) = true;
 
   // service.MsgUpdateParams
-  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgServiceUpdateParams"
+      summary: "service.MsgUpdateParams updates all module parameters via governance."
+    };
+  };
   // service.MsgUpdateParam
-  rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse );
+  rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgServiceUpdateParam"
+      summary: "service.MsgUpdateParam updates a single module parameter via governance."
+    };
+  };
   rpc AddService   (MsgAddService  ) returns (MsgAddServiceResponse  );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -78,4 +89,3 @@ message MsgAddServiceResponse {
   // pocket.shared.Service service = 1;
   reserved 1;
 }
-

@@ -11,6 +11,7 @@ import "cosmos_proto/cosmos.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 
 import "pocket/proof/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/proof/types.proto";
 
 // Query defines the gRPC querier service.
@@ -19,6 +20,10 @@ service Query {
   // proof.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/proof/params";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryProofParams"
+      summary: "proof.QueryParams"
+    };
   }
 
   rpc Claim (QueryGetClaimRequest ) returns (QueryGetClaimResponse ) {
@@ -93,4 +98,3 @@ message QueryAllProofsResponse {
   repeated Proof proofs = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
-

@@ -21,8 +21,6 @@ docs_update_gov_params_page: ## Update the page in Docusaurus documenting all th
 .PHONY: docusaurus_gen_api_docs
 docusaurus_gen_api_docs: ## Generate docusaurus OpenAPI docs
 	(cd docusaurus && yarn install && yarn docusaurus clean-api-docs pocket && yarn docusaurus gen-api-docs pocket)
-	# Fix the API console page to prevent React errors
-	./scripts/fix_api_console_page.sh
 
 .PHONY: openapi_ignite_gen
 openapi_ignite_gen: ignite_check_version ## Generate the OpenAPI spec natively and process the output
@@ -38,18 +36,7 @@ openapi_ignite_gen_docker: ## Generate the OpenAPI spec using Docker and process
 
 .PHONY: openapi_process
 # Internal helper target - Ensure OpenAPI JSON and YAML files are properly formatted
-openapi_process:
-	# The original command incorrectly outputs a JSON-formatted file with a .yml extension.
-	# This fixes the issue by properly converting the JSON to a valid YAML format.
-	mv docs/static/openapi.yml docs/static/openapi.json
-	yq -o=json '.' docs/static/openapi.json -I=4 > docs/static/openapi.json.tmp && mv docs/static/openapi.json.tmp docs/static/openapi.json
+openapi_process: check_yq
+# Ignite currently writes JSON content to docs/static/openapi.yml. Create canonical JSON, then YAML from it.
+	yq -o=json '.' docs/static/openapi.yml -I=4 > docs/static/openapi.json
 	yq -P -o=yaml '.' docs/static/openapi.json > docs/static/openapi.yml
-# Clean up verbose operation IDs (e.g., GithubCompoktNetworkpoktrollMsg_StakeApplication -> MsgStakeApplication)
-	./scripts/clean_openapi_operation_ids.sh docs/static/openapi.yml
-	./scripts/clean_openapi_operation_ids.sh docs/static/openapi.json
-	# Clean Mixin operations with module-specific names
-	python3 scripts/clean_openapi_mixins.py docs/static/openapi.yml || echo "Warning: Mixin cleanup failed for YAML"
-	python3 scripts/clean_openapi_mixins.py docs/static/openapi.json || echo "Warning: Mixin cleanup failed for JSON"
-	# Clean up verbose descriptions
-	python3 scripts/clean_openapi_descriptions.py docs/static/openapi.yml || echo "Warning: Description cleanup failed for YAML"
-	python3 scripts/clean_openapi_descriptions.py docs/static/openapi.json || echo "Warning: Description cleanup failed for JSON"

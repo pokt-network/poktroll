@@ -10,15 +10,26 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "pocket/tokenomics/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // Msg defines the Msg service.
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
   // tokenomics.MsgUpdateParams
-  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgTokenomicsUpdateParams"
+      summary: "tokenomics.MsgUpdateParams updates all module parameters via governance."
+    };
+  };
   // tokenomics.MsgUpdateParam
-  rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse );
+  rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgTokenomicsUpdateParam"
+      summary: "tokenomics.MsgUpdateParam updates a single module parameter via governance."
+    };
+  };
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
@@ -61,4 +72,3 @@ message MsgUpdateParamResponse {
   // Params params = 1;
   reserved 1;
 }
-

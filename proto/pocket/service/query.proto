@@ -10,6 +10,7 @@ import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 
 import "pocket/service/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/shared/service.proto";
 import "pocket/service/relay_mining_difficulty.proto";
 
@@ -19,6 +20,10 @@ service Query {
   // service.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/params";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryServiceParams"
+      summary: "service.QueryParams"
+    };
   }
 
   rpc Service (QueryGetServiceRequest) returns (QueryGetServiceResponse) {

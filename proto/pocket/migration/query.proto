@@ -7,6 +7,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "pocket/migration/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/migration/morse_onchain.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
@@ -18,6 +19,10 @@ service Query {
   // migration.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/params";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryMigrationParams"
+      summary: "migration.QueryParams"
+    };
   }
 
   rpc MorseClaimableAccount    (QueryMorseClaimableAccountRequest) returns (QueryMorseClaimableAccountResponse) {
@@ -51,4 +56,3 @@ message QueryAllMorseClaimableAccountResponse {
   repeated MorseClaimableAccount                  morseClaimableAccount = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination            = 2;
 }
-

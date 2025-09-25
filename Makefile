@@ -272,10 +272,17 @@ ignite_check_version:
 		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
 		exit 1 ; \
 	fi ; \
-	if [ "$$(printf "v29\n$$version" | sort -V | head -n1)" != "v29" ]; then \
-		echo "Error: Version $$version is less than v29. Please update Ignite via Homebrew or make ignite_install." ; \
-		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
-		exit 1 ; \
+	# Allow dev builds and nightly strings that don't sort nicely (e.g., 'development'). \
+	if echo "$$version" | grep -Eq 'development|devel|nightly'; then \
+		echo "Detected Ignite CLI $$version (treating as >= v29)"; \
+	else \
+		min_ver=v29; \
+		lowest=$$(printf "$$min_ver\n$$version" | sort -V | head -n1); \
+		if [ "$$lowest" != "$$min_ver" ]; then \
+			echo "Error: Version $$version is less than v29. Please update Ignite via Homebrew or make ignite_install." ; \
+			echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
+			exit 1 ; \
+		fi ; \
 	fi
 
 .PHONY: ignite_install

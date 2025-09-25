@@ -15,6 +15,6 @@ plugins:
     opt:
       - logtostderr=true
       - openapi_naming_strategy=simple
-      - ignore_comments=true
-      - simple_operation_ids=false
+      - simple_operation_ids=true
+      - ignore_comments=false
       - json_names_for_fields=false
