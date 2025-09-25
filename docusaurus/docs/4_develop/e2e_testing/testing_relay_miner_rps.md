@@ -57,7 +57,7 @@ The fastest way to test RelayMiner performance:
    ```
 3. Run the RelayMiner load test:
    ```bash
-   make test_relay_miner_only_load
+   make test_relayminer_only_load
    ```
 :::
 
