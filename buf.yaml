@@ -10,6 +10,7 @@ deps:
   - buf.build/cosmos/ics23
   - buf.build/googleapis/googleapis
   - buf.build/protocolbuffers/wellknowntypes
+  - buf.build/grpc-ecosystem/grpc-gateway
 lint:
   use:
     - COMMENTS
