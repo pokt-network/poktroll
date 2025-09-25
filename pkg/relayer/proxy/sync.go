@@ -55,8 +55,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// - If we fail before unmarshalling, these defaults ensure:
 	//   - Metric labels are always populated (never empty)
 	//   - Downstream monitoring and dashboards remain consistent
-	supplierOperatorAddress := "unknown_supplier_operator_address"
-	serviceId := "unknown_service_id"
+	supplierOperatorAddress := UnknownSupplierOperatorAddress
+	serviceId := UnknownServiceID
 
 	// Defer metrics to guarantee they are always recorded:
 	// - Ensures RelaysTotal and relay duration are captured regardless of how/when the function returns
