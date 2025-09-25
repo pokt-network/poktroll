@@ -1,0 +1,84 @@
+---
+id: fee-msg-register-payee
+title: "RegisterPayee defines a rpc handler method for MsgRegisterPayee
+RegisterPayee is called by the relayer on each channelEnd and allows them to set an optional
+payee to which reverse and timeout relayer packet fees will be paid out. The payee should be registered on
+the source chain from which packets originate as this is where fee distribution takes place. This function may be
+called more than once by a relayer, in which case, the latest payee is always used."
+description: "RegisterPayee defines a rpc handler method for MsgRegisterPayee"
+sidebar_label: "RegisterPayee defines a rpc handler method for MsgRegisterPayee
+RegisterPayee is called by the relayer on each channelEnd and allows them to set an optional
+payee to which reverse and timeout relayer packet fees will be paid out. The payee should be registered on
+the source chain from which packets originate as this is where fee distribution takes place. This function may be
+called more than once by a relayer, in which case, the latest payee is always used."
+hide_title: true
+hide_table_of_contents: true
+api: eJztVktv2zgQ/isEz67d7d5y2myRRXsoaqTekxMUY3IssaZILTmKYxj+7ztDyY7sBkkPPRU18pCH8/jm8Q211wRV1ldL/SlX+n6iY4sJyMXw0eor/Q8iy7/eYuUyYZrDDlFPdML/Osz0d7Q7fbXXJgbCQPIIbeudKQ5m33IMIsumxgbkiXYtste4+oaG2A858iLgGGchlMW1C5gV1aiGYEqM1TqmIjxXT61hb20S8OQwF1A1hID+q7OjyJmSC9Uochcce1eDsnKW83Brh0kf2GFJ9wVrQVKUFFibMOdiFRP9WFTRvAiZ0LO/9FrQQe0prHz6vriEHJtSh0WQ2xhyX5F3b9/KP4vZJNdKi9jbtcqdMexj3Xl1VJ9yuJ/e1NvB+UVzB+Er3e3zY0voPD2TRVBdwMeWEaBVmBI7+inJXMxUtON5cOy04mZNNANvgHrRn+90gUrgfB5pQ0qwY11H2OTXY/3VH1/OgZSBu+4EP/j52KSUqOFWQvWs4eFYxHHlnucdSNEVk8J6nrIGqY62dOeyqXfh3IHLyoD33ITVTo0nNQaFYOoj026CVSC/3sdtGYVGUVQZicUqtn16d6FnF59sa8fWCR8w8bSIKbkGY0enCC2YDZuvkfFvnfdqJeR0VrHSVC1OVM117LyV0zRAZ7Qx3AWBm2OXTNkHLqh1is0QuHeeVUyucgGIIQhqTpd/tjX7kMDKOqn2qhP4imDDUFoPBiU+K667YMpRAzsGcBeGWjWR7amWzANH59LBMa2JYiA9BgMZJ6WongHwRmyPJQe/hV1WXUYr0973i5vbxlwGC6jmbzO3MtPR+OcpQ54+/DHlps4uV7xQ4/Zpzd88QtN6vFysT9tp2JUjwXENPolOy+00k8yGsI7f8/l9qX/lqO5WUxObWRs39CYgbWPalC8pcodvb74s1PX842jrfFgs5iJS7znB6HEgP5hC/gCNKL3mWIDJoPVghicVIsmA9js+UwNh5PI3j349Hp3N5GmfEj7SjNG4IJPQJS9nPcWW+gWKscNzkvHbVi0EZbP9fsWg/k3+cBAx0y7xm9WSHx8gOVjJaC/vOVyNYIVBy73e4E6Y0t9sbxYCTtR9Vy6by1vuMDlaXPN139KLuvejHTL//GXByqvhXa8pV6BOsBVC898rreWtsWQrCkW21x5C1ZWLSPc+5fM/7pq1WQ==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"RegisterPayee defines a rpc handler method for MsgRegisterPayee\nRegisterPayee is called by the relayer on each channelEnd and allows them to set an optional\npayee to which reverse and timeout relayer packet fees will be paid out. The payee should be registered on\nthe source chain from which packets originate as this is where fee distribution takes place. This function may be\ncalled more than once by a relayer, in which case, the latest payee is always used."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/ibc.applications.fee.v1.Msg/RegisterPayee"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+RegisterPayee defines a rpc handler method for MsgRegisterPayee
+RegisterPayee is called by the relayer on each channelEnd and allows them to set an optional
+payee to which reverse and timeout relayer packet fees will be paid out. The payee should be registered on
+the source chain from which packets originate as this is where fee distribution takes place. This function may be
+called more than once by a relayer, in which case, the latest payee is always used.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","title":"MsgRegisterPayee defines the request type for the RegisterPayee rpc","properties":{"channel_id":{"type":"string","title":"unique channel identifier"},"payee":{"type":"string","title":"the payee address"},"port_id":{"type":"string","title":"unique port identifier"},"relayer":{"type":"string","title":"the relayer address"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","title":"MsgRegisterPayeeResponse defines the response type for the RegisterPayee rpc"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

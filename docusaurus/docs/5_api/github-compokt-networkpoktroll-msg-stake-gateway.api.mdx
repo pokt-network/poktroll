@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-msg-stake-gateway
+title: "GithubCompoktNetworkpoktrollMsg_StakeGateway"
+description: "GithubCompoktNetworkpoktrollMsg_StakeGateway"
+sidebar_label: "GithubCompoktNetworkpoktrollMsg_StakeGateway"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsFu00AQ/ZXRnkAKSVUQh5xoqwoqBI1oOKVVtbEn9hJ71+yOSaMoH8CH8GN8CTNru3HaCIQEByQqpVrPzszOe/Nm7Y0inQU1nql3IVM3A+Uq9JqMsxepGqvXhvJ6fubKyi3pPdLK+aUsvSsKDri9Ir3E15pwpddqoDx+rjHQqUvXarxRibOElmSpq6owSUw8+hScFVtIciy1rGhdIZ/m5p8wIc5TeSmDDIYYm6YeQ+g5BvLGZuxIhgoxTHOEU0zy58fQeoNbALE1a4vbDjiKi5UsKYbEm0qK4dgzZyykuDAWA2ggt0QLKwbODylaVxob6wZtU/6BLl1taXhtr+37y+n5GOTwxggLg0UKJojfBT+vcpPkYMqqwJKZCLGkpA7kSiiRcpde22AyPqDmokH4Mx5TmK8hc5ljHsgNBefPCYqHP+aHMUcAB3a2+9yRI110IJi5enL5dtrnTzAJfxw8hHcMAOYI379+48gWk/cMsEtBuaa98Fw38YztiVkwPeunXMRW6uhAqzH5GqMhVM6GBtvx0dHjlp1AqJOEu7yoC+jchac/pLhONP+l+S9Ic6ctSVvbuL5l/QSm5hZtepujyfIDVQzUwvlS846qjaWXL3p9u2rigeOhiQfdsbY3GNaQ4XUKzcmcF54cAYvcOtrZWrlHxXNHdV3QAV1bDsC7ipnkfOi9839D3olLsefFyDFD32eDTc+PmyaRNkVf4Nr7eNcbwjL8+qxXzfahLvM4GKlfF5N+SKSoZPZ1djDwnsQ+c7/5omoEznGVC7FmTTk/jSqXLJGGbW+HHDl6EClcf9i95s7vtEzQ3l2wU9f9WHdjsNtq1d/nw9iFO3AH5JovgSziGyauHAmsZ7aBOOowwofzqymcTC56Cn4znU7EBGesH8emRkA6iQKyuhSnXyUWEXxBH5pi2lWUdkCSTWGw1LaXsukFtM2AB90AJhUiqbBjdQ/yfcsJ72hUFYw/DrYvZK9p1Uw9bhXn2WsWf83k0l523mzmOuBHX2y3Yub2eb7dZ7z8or3Rc+FrdsOH5KhTHoXxbKOWuI5XcBy5Z1MpSdyLOk7Bw/HbDrqIE34zVfRT35ueAieXV1N2nrffTGWcTeX1Sr6n+P9YKfkqk+g4UNG2UYW2WR0nRDU55e8H/TR2bQ==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GithubCompoktNetworkpoktrollMsg_StakeGateway"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.gateway.Msg/StakeGateway"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+GithubCompoktNetworkpoktrollMsg_StakeGateway
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"address":{"type":"string","title":"The Bech32 address of the gateway"},"stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}},"title":"The total amount of uPOKT the gateway is staking. Must be ≥ to the current amount that the gateway has staked (if any)"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"gateway":{"type":"object","properties":{"address":{"type":"string","title":"The Bech32 address of the gateway"},"stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}},"title":"The total amount of uPOKT the gateway has staked"},"unstake_session_end_height":{"type":"string","format":"uint64","title":"Session end height at which the gateway initiated unstaking (0 if not unstaking)"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

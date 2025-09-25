@@ -1,0 +1,72 @@
+---
+id: evidence-msg-create-group-with-policy
+title: "CreateGroupWithPolicy creates a new group with policy."
+description: "CreateGroupWithPolicy creates a new group with policy."
+sidebar_label: "CreateGroupWithPolicy creates a new group with policy."
+hide_title: true
+hide_table_of_contents: true
+api: eJytV81y4zYMfhUOL3vxOum200NOm6aZNodOPVl3ekgyDizBFjcSqZKUHY/H716AlG3FopJtuj4kEgDi9wNAbaWHpZMXd/IPt5QPI2lqtOCV0Te5vJDXK5WjzpCYsyuL4PE3a5r6b+WLiSlVtpEjafGfBp3/xeQbebGVmdEetedHqGuSCdrOvjqjmeayAivgpxxdZlXNXLJEFpIGhHLCFyiIf5YWaO0Lv6lxTP7wf1Jo5l8x8/ReW47JK3TBp7xSum8+kPe2IMtMo72APLfonDCLQF6yYQE6b5/qaD8c7Rh23iq9lLsRmciUI/2zKMlWX3fuc2RvT1WRLvJFsa9QTrpHgpVuICc2hauJsCDhTgiR9cGJvXBLGbPTQWRWoYccfKJQL/mcMtCUBDtX3oLdiAMHvAcqdi68OdpO5imqjD7MwM0GapQUCw6IuTElghYUaJmPhFoIhz4Ytg2OeqH3KrxWZSnmKBpH/oKLwvf6zVq3dntBvJW+E7H/msVDvRLJrLCao3V9yy2Dir5Q+gUeWk5HHVgL3NvKY+VSuD1p3qDgtm1EizUllWYAV6ZrgWPYJ5kqRy1NZbIrYrQ97Mb3+ormR0gBCT9GxY9UUS9yg05/8KKAFYZsPVL1MJ+Bf4x1v9dO0ayiwCidgSIy0Np4Nsp4oMLWYD3388FgYkAESKRGRMRKOyRiSNREJ1gaKMoQHt4BgWg5aWeNaln4vpVI77m+Mp4OipbrC/DCFaahxM0ZGzxtLZO1OE+Ya389MHy3Sc7vyiItIm7jHRNcbbSLhfp0ft4P9FK4JsuoDIumFHtx1vWd19Jtq/pbgmolv20/xfmg8qHJofK9yUYrSpe4+XW/nzSuy43Ighf7ubUmRwanxUgujK2AkiIbpf3PP/WH8VAzpKTeWJ8p9wbn2AFZC2jKBKAvNcWPz7TcWBlaa+z7yv16NTKTd/cxJQmXaLuJI9KPn+Ky96DK7rB8c4j+7+W/C6PFOVgmDybbM43SWBYe2FSmNHZoHhWGL4W1ccF78AW9nWXGVcaN43pf/TAebAU6w/m/Pd4Xr5+hqkvs3MuO0Excnj4P3ByO0/V4fOBOEe4DQ7v6ePqwRO86C6HL7h/Zj96Ddw/kn9IL0wfvVQG0/paUmGY+zkx1Vpsn/1GjXxv7FF6sofvI7fWXqbic3HB3KM9pkr9PpxMmCdqSjq4eLdIhC0jXULHQW4o5cbR0XXSmfRK8J2lJMpMLXIHuqHw3aF4EfkCox2d/VpeUBTbX2JJ5EU93MoEnUpRGFH2wFIxGOrbdzsHhX7bc7ZhMGLMEmjt6XIFVMOf83XFNCoScephL+4QbDi7Oio9Tdo7Fyya07+nc2I32Jy5pxdT+VdmHTsNM/vwyJeF5+4VUhaEiLax5x9HfCyn5w4tPh0kQaFtZgl42obVl1Mm/fwHQMeZZ
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"CreateGroupWithPolicy creates a new group with policy."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.group.v1.Msg/CreateGroupWithPolicy"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+CreateGroupWithPolicy creates a new group with policy.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgCreateGroupWithPolicy is the Msg/CreateGroupWithPolicy request type.","type":"object","properties":{"admin":{"description":"admin is the account address of the group and group policy admin.","type":"string"},"decision_policy":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{},"description":"decision_policy specifies the group policy's decision policy."},"group_metadata":{"description":"group_metadata is any arbitrary metadata attached to the group.","type":"string"},"group_policy_as_admin":{"description":"group_policy_as_admin is a boolean field, if set to true, the group policy account address will be used as group\nand group policy admin.","type":"boolean"},"group_policy_metadata":{"description":"group_policy_metadata is any arbitrary metadata attached to the group policy.","type":"string"},"members":{"description":"members defines the group members.","type":"array","items":{"type":"object","description":"MemberRequest represents a group member to be used in Msg server requests.\nContrary to `Member`, it doesn't have any `added_at` field\nsince this field cannot be set as part of requests.","properties":{"address":{"description":"address is the member's account address.","type":"string"},"metadata":{"description":"metadata is any arbitrary metadata attached to the member.","type":"string"},"weight":{"description":"weight is the member's voting weight that should be greater than 0.","type":"string"}}}}}}}},"description":"MsgCreateGroupWithPolicy is the Msg/CreateGroupWithPolicy request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgCreateGroupWithPolicyResponse is the Msg/CreateGroupWithPolicy response type.","type":"object","properties":{"group_id":{"description":"group_id is the unique ID of the newly created group with policy.","type":"string","format":"uint64"},"group_policy_address":{"description":"group_policy_address is the account address of the newly created group policy.","type":"string"}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

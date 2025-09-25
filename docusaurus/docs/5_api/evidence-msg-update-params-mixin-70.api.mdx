@@ -1,0 +1,75 @@
+---
+id: evidence-msg-update-params-mixin-70
+title: "UpdateParams defines a governance operation for updating the x/bank module parameters.
+The authority is defined in the keeper."
+description: "UpdateParams defines a governance operation for updating the x/bank module parameters."
+sidebar_label: "UpdateParams defines a governance operation for updating the x/bank module parameters.
+The authority is defined in the keeper."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFVk1vGzcQ/SsETykgS05aIIBOdV0XzSGNYMsn2zC4uyOJEZfc8kOSYei/9w1Xkncl1waCAtXBJofz+fhmuM8yqnmQ4zv5Nczlw0C6hryK2tkvlRzLq5WuyJaEw8fbplKRJsqrOnzVG20/n8uB9PR3ohB/c9WTHD/L0tlINvJSNY3RZfY1+h6cZVkoF1QrXlUUSq8bPkUc+O+6FzqIuCAB8agn30UT8amhIaLzf5i74juVEfvGc/5RU8gZpLhwXsen04CHo30oVVWeAq9VFFyFd6Y9qV2VDIkPFc1UMhFCJzajuVuJZA2buBX5NXyh8J86SYXotZ3LLbLKyZ8m0coFHGtLbbDNqFB2KfIJRfI5WsoQDO/tvf3r2/RqLC6M6arUCZAUJEJiyKl6H5ldLY+BbPVIVhWGKpbvrArnDCnLuR9r9Cv4nRpPuGOqxuI2kHAzcQODq1ZfaCuaw4VWB11U8ofzYk6oWoeBSLDk4i2tzRPfBEy7ccVMk8neWGtnJtrS4OsmOq/mNBDGuWVqBkLZStTK6iaZTD9OKy5gou3M+bqVYWvdeu90SQR4MsQXgfVLF2oXzkK1FOfDXz4PWgfOIkHa6AAawJUoVLlcK18F6NcNHBfaMKngYJ/mTIMknRtR3qsnbHWklhPHN9VHuAtnrRoOhJTRlK5maqg+UCGqmIL4sF4QqvI4bjV1uLesyFqZo8d0gFInlxfqvsGNw+845R9tZt5rz8GiT7RlQWgc8s45fjo/P+XfBThflmjCWTJir86+/ps5dL3z2GvRfRiA7VMZk6dMBdpQmSJgE+reHkNQI0VQ9LQx9/jldnylPoshQ5sGqrhd8h6BfqjMt8dB6SrqaGk4nZOHWtsurejnTzKnGpU2XeK+S+h+rF/b4xOuwTc6X3P+yky6JhmiHYKvGb5Kwh78++tTYs7D2io8aeLw0uXryzOWb68zhXeT/2XSYj5M+a3oPh6t7+pokEjOGFr8iDYuZBhUXGA3aifLkCMMVx8L4PlxeNwbUOc7vH55XK82qm4MHT1rexD6b8xrs51b6nia3x06/8VPz2D7wMDy1Dyl5uVCoeS5jotUDDH9Ro1bxjNLce38Mm/wghpxfXUzFReTL8x8HbkA+ed0OmGRuASNMUx2PFZl5rEF1lB6zzFzEVcZ2mR2K0z0iIEY86ML1PEIdFz+/5ToIXggcqRNHDUGcHLeyRs+a9lyJ/+FLXDW4wu+3BZMM1g8Pxcq0K032y2LwSAPptxhuVJe8+3yDpEWpCp0OdNgSUymy3aanE05L1Y3KTf48WTZDvYWFxi+TXxT96HTCZNvN1MoF7uPxTqPHenVmqc//o6l5C9Qts5UzrJnaZSdp9z8svXJv38AY1bRZQ==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UpdateParams defines a governance operation for updating the x/bank module parameters.\nThe authority is defined in the keeper."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/cosmos.bank.v1beta1.Msg/UpdateParams"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UpdateParams defines a governance operation for updating the x/bank module parameters.
+The authority is defined in the keeper.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParams is the Msg/UpdateParams request type.","type":"object","properties":{"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"params":{"description":"params defines the x/bank parameters to update.\n\nNOTE: All parameters must be supplied.","type":"object","properties":{"default_send_enabled":{"type":"boolean"},"send_enabled":{"description":"Deprecated: Use of SendEnabled in params is deprecated.\nFor genesis, use the newly added send_enabled field in the genesis object.\nStorage, lookup, and manipulation of this information is now in the keeper.\n\nAs of cosmos-sdk 0.47, this only exists for backwards compatibility of genesis files.","type":"array","items":{"type":"object","description":"SendEnabled maps coin denom to a send_enabled status (whether a denom is\nsendable).","properties":{"denom":{"type":"string"},"enabled":{"type":"boolean"}}}}}}}}}},"description":"MsgUpdateParams is the Msg/UpdateParams request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
