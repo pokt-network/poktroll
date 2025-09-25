@@ -110,9 +110,12 @@ require (
 )
 
 require (
+	github.com/athanorlabs/go-dleq v0.1.0
 	github.com/docker/go-units v0.5.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/hashicorp/go-version v1.7.0
+	github.com/pokt-network/go-dleq v0.0.0-20250925202155-488f42ad642a
+	github.com/pokt-network/ring-go v0.1.1-0.20250925213458-782cc69bc1ec
 )
 
 require (
@@ -394,8 +397,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/pokt-network/go-dleq v0.0.0-20250925202155-488f42ad642a // indirect
-	github.com/pokt-network/ring-go v0.1.1-0.20250925213458-782cc69bc1ec // indirect
 	github.com/polyfloyd/go-errorlint v1.7.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.63.0 // indirect
