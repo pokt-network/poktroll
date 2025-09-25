@@ -1,4 +1,12 @@
 #!/bin/bash
+# IBC Channel Discovery Script
+# Provides utility functions for discovering and managing IBC channels
+# between different blockchain networks in a localnet environment.
+# Features:
+# - Dynamic channel discovery between chains
+# - Connection validation and counterparty resolution
+# - Support for Pocket, Agoric, Axelar, and Osmosis networks
+
 set -eo pipefail
 
 # Check if jq is installed, if not, provide installation instructions
@@ -115,7 +123,6 @@ ibc_get_counterparty_channel_id() {
             return 0
         fi
     done
-
     # If no channel found, return empty string
     return 1
 }
@@ -143,7 +150,6 @@ ibc_find_channel_to_target() {
         # Get the connection ID from this channel
         connection_id=$(echo "$channel" | jq -r '.connection_hops[0]')
         channel_port=$(echo "$channel" | jq -r '.port_id')
-
         # Skip if not the right port
         if [ "$channel_port" != "$port_id" ]; then
             continue
@@ -170,7 +176,6 @@ ibc_find_channel_to_target() {
             fi
         fi
     done
-
     return 1
 }
 
@@ -226,12 +231,12 @@ ibc_find_pocket_channel_to_chain() {
 }
 
 # Discover pocket channels dynamically
-export POCKET_AGORIC_SRC_CHANNEL_ID=$(ibc_find_pocket_channel_to_chain "agoric" 2>/dev/null || echo "")
+export POCKET_AGORIC_SRC_CHANNEL_ID=$(ibc_find_pocket_channel_to_chain "agoriclocal" 2>/dev/null || echo "")
 export POCKET_AXELAR_SRC_CHANNEL_ID=$(ibc_find_pocket_channel_to_chain "axelar" 2>/dev/null || echo "")
 export POCKET_OSMOSIS_SRC_CHANNEL_ID=$(ibc_find_pocket_channel_to_chain "osmosis" 2>/dev/null || echo "")
 # Direct connections between Agoric and Osmosis (for PFM)
-export AGORIC_OSMOSIS_SRC_CHANNEL_ID=$(ibc_find_channel_to_target "agoric" "osmosis" "transfer" 2>/dev/null || echo "channel-1")
-export OSMOSIS_AGORIC_SRC_CHANNEL_ID=$(ibc_find_channel_to_target "osmosis" "agoric" "transfer" 2>/dev/null || echo "channel-1")
+export AGORIC_OSMOSIS_SRC_CHANNEL_ID=$(ibc_find_channel_to_target "agoriclocal" "osmosis" "transfer" 2>/dev/null || echo "channel-1")
+export OSMOSIS_AGORIC_SRC_CHANNEL_ID=$(ibc_find_channel_to_target "osmosis" "agoriclocal" "transfer" 2>/dev/null || echo "channel-1")
 
 # Debug output for troubleshooting
 if [[ "${IBC_DEBUG:-}" == "true" ]]; then

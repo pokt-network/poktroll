@@ -10,6 +10,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward"
+	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/keeper"
+	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/types"
 	"github.com/cosmos/ibc-go/modules/capability"
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
@@ -35,6 +38,8 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 	solomachine "github.com/cosmos/ibc-go/v8/modules/light-clients/06-solomachine"
 	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+
+	"github.com/pokt-network/poktroll/cmd/flags"
 )
 
 // registerIBCModules register IBC keepers and non dependency inject modules.
@@ -49,6 +54,7 @@ func (app *App) registerIBCModules() {
 		storetypes.NewKVStoreKey(icacontrollertypes.StoreKey),
 		storetypes.NewMemoryStoreKey(capabilitytypes.MemStoreKey),
 		storetypes.NewTransientStoreKey(paramstypes.TStoreKey),
+		storetypes.NewKVStoreKey(packetforwardtypes.StoreKey),
 	); err != nil {
 		panic(err)
 	}
@@ -140,8 +146,30 @@ func (app *App) registerIBCModules() {
 	)
 	app.Keepers.GovKeeper.SetLegacyRouter(govRouter)
 
-	// Create IBC modules with ibcfee middleware
-	transferIBCModule := ibcfee.NewIBCMiddleware(ibctransfer.NewIBCModule(app.Keepers.TransferKeeper), app.Keepers.IBCFeeKeeper)
+	// Create IBC packet forward keeper for multi-hop transfers
+	app.Keepers.PacketForwardKeeper = *packetforwardkeeper.NewKeeper(
+		app.AppCodec(),
+		app.GetKey(packetforwardtypes.StoreKey),
+		app.Keepers.TransferKeeper,
+		app.Keepers.IBCKeeper.ChannelKeeper,
+		app.Keepers.BankKeeper,
+		app.Keepers.IBCFeeKeeper,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
+	// Create IBC modules with middleware stacking: raw transfer → PFM → fee middleware
+	// This order ensures multi-hop forwarding works before fee processing
+	rawTransferModule := ibctransfer.NewIBCModule(app.Keepers.TransferKeeper)
+	transferWithPFM := packetforward.NewIBCMiddleware(
+		rawTransferModule,
+		&app.Keepers.PacketForwardKeeper,
+		// TODO_IMPROVE(@bryanchriswhite): Load PFM retry config from validator-specific configs
+		// instead of using global CLI flags.
+		// See: https://github.com/pokt-network/poktroll/issues/1454#issuecomment-2975939482
+		flags.PacketForwardMiddlewareMaxRetries,
+		flags.PacketForwardMiddlewareRetryTimeoutDuration,
+	)
+	transferIBCModule := ibcfee.NewIBCMiddleware(transferWithPFM, app.Keepers.IBCFeeKeeper)
 
 	// integration point for custom authentication modules
 	var noAuthzModule porttypes.IBCModule
@@ -176,6 +204,7 @@ func (app *App) registerIBCModules() {
 		capability.NewAppModule(app.appCodec, *app.Keepers.CapabilityKeeper, false),
 		ibctm.AppModule{},
 		solomachine.AppModule{},
+		packetforward.NewAppModule(&app.Keepers.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
 	); err != nil {
 		panic(err)
 	}
