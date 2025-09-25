@@ -288,9 +288,9 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// session.MsgUpdateParams
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
+	// session.MsgUpdateParam
 	UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ...grpc.CallOption) (*MsgUpdateParamResponse, error)
 }
 
@@ -322,9 +322,9 @@ func (c *msgClient) UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ..
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// session.MsgUpdateParams
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
+	// session.MsgUpdateParam
 	UpdateParam(context.Context, *MsgUpdateParam) (*MsgUpdateParamResponse, error)
 }
 

@@ -873,8 +873,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// migration.MsgUpdateParams
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	ImportMorseClaimableAccounts(ctx context.Context, in *MsgImportMorseClaimableAccounts, opts ...grpc.CallOption) (*MsgImportMorseClaimableAccountsResponse, error)
 	ClaimMorseAccount(ctx context.Context, in *MsgClaimMorseAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error)
@@ -947,8 +946,7 @@ func (c *msgClient) RecoverMorseAccount(ctx context.Context, in *MsgRecoverMorse
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// migration.MsgUpdateParams
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	ImportMorseClaimableAccounts(context.Context, *MsgImportMorseClaimableAccounts) (*MsgImportMorseClaimableAccountsResponse, error)
 	ClaimMorseAccount(context.Context, *MsgClaimMorseAccount) (*MsgClaimMorseAccountResponse, error)

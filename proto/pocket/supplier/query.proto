@@ -14,26 +14,21 @@ import "cosmos/base/v1beta1/coin.proto";
 import "pocket/supplier/params.proto";
 import "pocket/shared/supplier.proto";
 
-// Query defines the gRPC querier service.
 service Query {
 
-  // Parameters queries the parameters of the module.
+  // supplier.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/params";
-
   }
 
-  // Queries a list of Supplier items.
-  rpc Supplier    (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
+  rpc Supplier (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier/{operator_address}";
-
   }
+
   rpc AllSuppliers (QueryAllSuppliersRequest) returns (QueryAllSuppliersResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier";
-
   }
 }
-// QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
@@ -45,12 +40,15 @@ message QueryParamsResponse {
 
 message QueryGetSupplierRequest {
   string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  // TODO_TECHDEBT: Add the ability to query for a supplier by owner_id
 
-  // if true, return a dehydrated version of the supplier.
-  // Why? This enables smaller response payloads to reduce payload size.
+  // If true, return a dehydrated version of the supplier.
+  // If false, return a hydrated version of the supplier.
+  // Rationale: This enables smaller response payloads to reduce payload size.
   // Example: Removes service_config_history and rev_share details from the response. See the implementation for more details.
   bool dehydrated = 2;
+
+    // TODO_TECHDEBT: Add the ability to query for a supplier by owner_id
+
 }
 
 message QueryGetSupplierResponse {
@@ -64,8 +62,9 @@ message QueryAllSuppliersRequest {
     string service_id = 2; // unique service identifier to filter by
   }
 
-  // if true, return a dehydrated version of the supplier.
-  // Why? This enables smaller response payloads to reduce pagination of the supplier list.
+  // If true, return a dehydrated version of the supplier.
+  // If false, return a hydrated version of the supplier.
+  // Rationale: This enables smaller response payloads to reduce pagination of the supplier list.
   // Example: Removes service_config_history and rev_share details from the response. See the implementation for more details.
   bool dehydrated = 3;
 }

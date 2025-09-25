@@ -1,0 +1,64 @@
+---
+id: query-params
+title: "application.QueryParams"
+description: "application.QueryParams"
+sidebar_label: "application.QueryParams"
+hide_title: true
+hide_table_of_contents: true
+api: eJydVcFu4zYQ/ZXBnFV7sS32oFMXQdDm0nqz3pNtBGNqLHFNDrnkKIlh+N8LSo6hbNwGqA+2TL15b94bUjqiUpuxXuGXntMBNxWGyInUBrlrsB6XF5TIZ6wwcY5BMmesj/jxw4fy03A2ycZSgTV+htwbwznvegcv8BlWaIIoi5YKitFZM2jMv+dSdsRsOvb0lm+if39mA5svzKCHyLALCbRjGMDzEQ33ixvwrF1oinzBYY1h+52NYoUxFZ9qRytxNPhG/UzV8M4K50FjgLJyyhdZH5re8fsqnp4fGnbcknLzUL6f6HBF9TruVReenq3vPUjvt5wg7OAC044UCLKV1vFaJmGDIYEXYtAwg2Vnc4mzz9yABoiJH1kUIqddSJ7ElLRzz3ktttSXxDuGxI4OkKy0kG0rpH1i2LIJvvQXAjhK7TSRrAWMFQ60ijX2VvTTb3iq0Ft5yEp7fpvETbBy8U2gYc8CT1Y7IGhYgrcyOiNpgATIh150tpa1/PX38raGZcfnRdhZdk0xSwJ3ovDUWdOB9dGxZ9ExV9NnDf68b9ZyMVd23I/eJm5ge4A2tCGmoOH9mY/i5ep1EqcKBwNX7lw+BbKj3umVYybQCz9HNsoNcEoh/b/T9t/dm9DwBGVFueU0HaMV/fXj6EbJujxBU0p0wAqtss/va/0+3n4bR4XUNLb0T24xLRki8pwztVcLLyFOk5vEMXv9cBuHjjW2PHRH2mGN8xj2+ouwPoW0H/6k4Nx8mmp8YbCyC1c2cUdWoLXa9duZCf46I9zffl3C58Vd2VJWXXHy53K5KEtwEyQHx+fBkhkGK+QL6D3iMpxHTnls5nwFEhQya7kZQ1ZPMqH894xeObskrvys8+jISuHrkxufqSW/FU6bKrG+tFVNZYa8B41NhV3IWiqPxy1l/pbc6VSWfwxvqHq1qfCRkqVtyWi1OVXYMTWcsF4dcc+HcjyM4ViG+Eiu/8nReAhOm8nA/7hd4un0D37GgdM=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"application.QueryParams"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/application/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+application.QueryParams
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"max_delegated_gateways":{"description":"max_delegated_gateways defines the maximum number of gateways that a single\napplication can delegate to. This is used to prevent performance issues\nin case the relay ring signature becomes too large.","type":"string","format":"uint64"},"min_stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

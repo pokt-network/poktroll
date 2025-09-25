@@ -17,32 +17,24 @@ import "pocket/gateway/types.proto";
 // Query defines the gRPC querier service.
 service Query {
 
-  // Parameters queries the parameters of the module.
+  // gateway.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/params";
-
   }
 
-  // Queries a list of Gateway items.
-  rpc Gateway    (QueryGetGatewayRequest) returns (QueryGetGatewayResponse) {
+  rpc Gateway (QueryGetGatewayRequest) returns (QueryGetGatewayResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway/{address}";
-
   }
+
   rpc AllGateways (QueryAllGatewaysRequest) returns (QueryAllGatewaysResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway";
 
   }
 }
-// QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
-
-// QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-
-  // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
-
 message QueryGetGatewayRequest {
   string address = 1;
 }

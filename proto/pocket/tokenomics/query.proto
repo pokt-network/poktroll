@@ -12,20 +12,15 @@ import "cosmos_proto/cosmos.proto";
 
 import "pocket/tokenomics/params.proto";
 
-// Query defines the gRPC querier service.
 service Query {
 
-  // Parameters queries the parameters of the module.
+  // tokenomics.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/tokenomics/params";
-
   }
 }
-// QueryParamsRequest is request type for the Query/Params RPC method.
-message QueryParamsRequest {}
 
-// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsRequest {}
 message QueryParamsResponse {
-  // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }

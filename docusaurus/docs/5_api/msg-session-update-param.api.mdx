@@ -1,0 +1,72 @@
+---
+id: msg-session-update-param
+title: "session.MsgUpdateParam"
+description: "session.MsgUpdateParam"
+sidebar_label: "session.MsgUpdateParam"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVE1v2zAM/SsCTxvgJkU37ODTsqLAeigWtOkpCAbGZmw1sqRKVD4Q5L8PtNPFTdYVGOaTzM+nRz7tgLGKkE/hLlYwy8B5Csja2dsScjE+UIza2UdfItMYAzaQQaDnRJG/uXIL+Q4KZ5ksyxG9N7poKwyforNii0VNDcqJt54gBzd/ooIhAx+kH2uKbW78mbTlL597oZGDthVksHChQYYcDiH7DDBx7YLmFkNJsQjaS2PIjy6lo+KaFJZloChnZCV4gzOdp3FlMqQ+lLTAZDgqdmozrNxKJWskxa0orINmJvtxANkJsn0GFhs6h7yXr6NKByoh55CoNUTvbOyufHV5eQ5+pGIqCopxkYx6CZfO/8hzB+Rwvz+0sypZ2ngqmEpFIbjwP7qeTrdwZZ8lbZkqCv3JasufrqCFyqhN7EVjCLiFDDRTE9/v9bVzn48kAyxLLfjRjPspLUUNxYjVW7PsSOwzFzttDO5i9VofDXHtREDexRYdcg05DL0rlsSDXt7wdaKQen8U180GG2/oRBxHUfQUcDR269jbT20X7nzs1zVqqyrNdZoPCtcMvVvyhSVeu7Bsf4IzRt3fPEzUaHwri69ZsMD3yWQsJnXtbHSGDjuCRbsjh/bvFRZgKwqxA3M4KetYRWJxCnUN2l7JN+l+dbHfs2Pa8NAb1FbKpWDE101iCueTgAz6VWcZ1DK8fAq73RwjPQaz34v5OVHYQj6dZbDCoHEupExn+wxqwpIC5NMdLElmct1J52IiiCTcpHabT2W0z14yRkVBnv8aO+vt1/jHwwQymB8e4qbVGARcyyONa8gB5E2X7FYYrW0HBm2V2k2HrqZ8vwBi1x3q
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"session.MsgUpdateParam"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.session.Msg/UpdateParam"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+session.MsgUpdateParam
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"as_uint64":{"type":"string","format":"uint64"},"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"name":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: msg-unstake-application
+title: "MsgUnstakeApplication"
+description: "MsgUnstakeApplication"
+sidebar_label: "MsgUnstakeApplication"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVE1P4zAQ/SvRnE2L2FtO20VIy6HaCsqp6mHqTBNTxzb2hLaq+t9X4xQI0F2k1eYSZz5f3rzxARjrBOUCpqmGpQIfKCIb724rKMX44BLjhiYhWKOzBxREeuoo8Q9f7aE8gPaOybEc8S1u/Ji8E1vSDbUoJ94HghL86pE0g4IQpR8bSjm3qiKlNAhMHI2r4ShP39VEqqDk2FE2pOBd6rOvLi/lVVHS0YQMtIRJkTqtKaV1Z4uX8BGof4XcA6lojZ3lM+1c0TnaBdJMVUEx+vg/un4kSvuKBlHGMdUUQcHaxxa5N327ggyV0dghpxgj7kGBYWrT172+9+7PI1EyLyP40c6GKZmillLC+mzi8YXEIXN/UlpL3HiRYvApg0NuoIRx8HpDPBqwOJqmeny2htB796bYmx22wdI7xb2iU2Dc2n+e7HWDxhW14aZbjbRvx8Fv+MIRb33c5I/orS3ubu7nxWR2CwrYsDSBn/P5TEzFtXfJWzrJAHWWgcNWgr4qLMCeKaYezOlUOM9FIhan0NOiG5Scpro40VG85+Pdn73Oh2nH42DROKnXRSu+nu4FnKcbFJwhfKmgkWGVCzgcVpjoIdrjUcxPHcU9lIulgmeMBldC0GJ5VNAQVhShXBxgQ3vhu9+Ui7mAk3DbZfF+3JqjesmYaE2B/xq7HOhp9ut+DgpWpyuszSsFEbdyveEWSgC5DSU770G2HcCiq7ssbOhryvMbvj/ZuQ==
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"MsgUnstakeApplication"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.application.Msg/UnstakeApplication"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+MsgUnstakeApplication
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"address":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

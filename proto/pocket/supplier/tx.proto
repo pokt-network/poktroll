@@ -18,11 +18,11 @@ import "pocket/shared/supplier.proto";
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // UpdateParams defines a (governance) operation for updating the module
-  // parameters. The authority defaults to the x/gov module account.
+  // supplier.MsgUpdateParams
   rpc UpdateParams    (MsgUpdateParams   ) returns (MsgUpdateParamsResponse   );
   rpc StakeSupplier   (MsgStakeSupplier  ) returns (MsgStakeSupplierResponse  );
   rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse);
+  // supplier.MsgUpdateParam
   rpc UpdateParam     (MsgUpdateParam    ) returns (MsgUpdateParamResponse    );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.

@@ -1,0 +1,64 @@
+---
+id: query-params-mixin-51
+title: "tokenomics.QueryParams"
+description: "tokenomics.QueryParams"
+sidebar_label: "tokenomics.QueryParams"
+hide_title: true
+hide_table_of_contents: true
+api: eJzFV9tu4zYQ/ZUBiyItoHVuWBTwU3PrbtCmSbPKUxwYFDWyuaFILYdMYhj+92Io25ET57Lp7tYvlsgZzpkznCNyKoIckehfin8i+om4yoRr0MugnT0uRb8dPpNe1nSi77R9vy0y4ZEaZwlJ9KdiZ2uL/0ok5XXDjqIv9oCiUkhURQML857IhHI2oA3sIZvGaJVCbX4mdpsKUmOsJT+FSYOiL1zxGVUQmWg8Awu6DdokRI/jtkihxEpbJAhjhGSKAT1B5XwaCu4arau1IqhdGU1C9nzAUrqhx1vpy6EsS4+0JvhjG9AEt2P0mMIe7p1uEDTOsz24CpSRuiagWNQ6BCxBeoRSU/C6iAHL3sAO7D6q8e4OKEe1I1gEX+JlYzsSs0yMjCukGWpbmUTqsEE/TCEeQ33aliEn2tArtEGOkJHKFusGtf+yMAjx7PTPHGTtog0QHBQItbachrNAGILBGm3oDeyHFO1E25D/ddKHU2smEAlLKCYp1so8yJAG0ZZLjrrL3aduY12gF5monK9l4Aq4WBhkMhjJUBrj1DK/eTprCseR95a2Z/emoGQTop/vpGVl5uWzeGsmi5zTnqLewOZjBIp1Ys0YNprPLSzrSAHwS5QGtr81OQObnx6eDg+PP+V7f+fDPy7yi/OjPpxj7W54E2oCZxVCW39Y1p+rXmriupagLVe/wRB1mLzcGp0+fkxtZxLewc8L2vABb0DYbiJOrusjlUr7a77vX1n9Urq17flqCId7p9C28ldGZmocoX8cfjHzagyFceoalm6/6B724EYaXcrg/NYbqSEXvcKhu7XrQHZnXw2U0N9ohdA6Q+v8RnSRa78W2XzmK+lbur0Fz2whJKlbaVhEb1uVHHa1YL2gHCWf/ejtAXscdsXjWVm5V9inNGWebYHajoBBBai8qx82zwYBBXmNTyvOPcaXtGfF8vUS/Y0k4yElP1gung3/HaQiaXh+dPDx8Gg/Z/W2skYYLD0GgoMPxFIMqB3xWBlUbW1unb+G0llkOf9p+7f3u2kf8YFEGwPUSJv2kscKPVrFm7FNKKCvV4NJ5R0RlE5Frm+iOoMqWsVPlLFIBVfEijK4kV4zVZRBcM5oO8oAg+qls8xDDXyW2Bf079cfJoDPovxfxO8VvP1H4Zv/MlFiJaMJa474FqLFuwYVCzB67/z3OOkrV2LHiuV+tApa27C7k9oYg9SGOtbSezkRmdABa3o51u/t9PTh2XqWCVmWmvFLc9Z1aT8RSCRHax2XJHaZu79+9DrXK8ELhbHjW9cIEzgZxqIvNht3Hd5ZDNzS6cU7YzbvV9lsFgtoW61RsoOx1BZGOoxj0VOuXr8gnB99ymHv7Jg3iA6G8/iY52c8BAfOkjM4L6tUqaysSgz2hYW5NDfoqQUzfwLrAn8ykhA6CrW0nSWfZGglsSXdAe/CZmOktrxc9Ka9IjJ7l6KLiUldoMo6URLZKcRVJsaOAjtOp4UkvPBmNuPhL+mC3L+8ysRC4/htlokxypK79nIqrnHCraEUNlzBG2kirn7S2gaYXXWq/eEoF7PZv+oohcw=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"tokenomics.QueryParams"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/tokenomics/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+tokenomics.QueryParams
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"params":{"description":"Params defines the parameters for the tokenomics module.","type":"object","properties":{"dao_reward_address":{"description":"dao_reward_address is where the DAO's portion of claims submitted are distributed.\n\nBech32 cosmos address","type":"string"},"global_inflation_per_claim":{"description":"global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount to be minted on settlement.\nGlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.","type":"number","format":"double"},"mint_allocation_percentages":{"description":"MintAllocationPercentages captures the distribution of newly minted tokens.\nThe sum of all new tokens minted must equal 1.\nGlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.\nTODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.","type":"object","properties":{"application":{"description":"application - % of newley minted tokens sent to the application account address.","type":"number","format":"double"},"dao":{"description":"dao - % of newley minted tokens sent to the DAO reward address.","type":"number","format":"double"},"proposer":{"description":"proposer - % of newley minted tokens sent to the block proposer (i.e. validator0 account address.","type":"number","format":"double"},"source_owner":{"description":"source_owner - % of newley minted tokens sent to the service source owner account address.","type":"number","format":"double"},"supplier":{"description":"supplier - % of newley minted tokens sent to the block supplier account address.","type":"number","format":"double"}}},"mint_equals_burn_claim_distribution":{"description":"MintEqualsBurnClaimDistribution captures the distribution of claimable tokens.\nThe sum of all tokens being burnt from the application's stake must equal 1.\nGlobalMintEqualsBurnTLM: Only used by the GlobalMintEqualsBurnTLM at the end of claim settlement.","type":"object","properties":{"application":{"description":"application - % of claimable tokens sent to the application account address.","type":"number","format":"double"},"dao":{"description":"dao - % of claimable tokens sent to the DAO reward address.","type":"number","format":"double"},"proposer":{"description":"TODO_TECHDEBT: Rename \"proposer\" to \"validators\" to reflect the work done in #1753.\nThis will span all references to the term \"proposer\" across documentation, functions, protobufs, variables, tooling, etc..\n\nproposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.","type":"number","format":"double"},"source_owner":{"description":"source_owner - % of claimable tokens sent to the service source owner account address.","type":"number","format":"double"},"supplier":{"description":"supplier - % of claimable tokens sent to the block supplier account address.","type":"number","format":"double"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

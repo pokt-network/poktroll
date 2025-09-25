@@ -23,8 +23,7 @@ option (gogoproto.stable_marshaler_all) = true;
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // UpdateParams defines a (governance) operation for updating the module
-  // parameters. The authority defaults to the x/gov module account.
+  // migration.MsgUpdateParams
   rpc UpdateParams                 (MsgUpdateParams                ) returns (MsgUpdateParamsResponse                );
   rpc ImportMorseClaimableAccounts (MsgImportMorseClaimableAccounts) returns (MsgImportMorseClaimableAccountsResponse);
   rpc ClaimMorseAccount            (MsgClaimMorseAccount           ) returns (MsgClaimMorseAccountResponse           );
