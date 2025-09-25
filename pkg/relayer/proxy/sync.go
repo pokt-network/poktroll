@@ -336,22 +336,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		Meta:    types.RelayResponseMetadata{SessionHeader: meta.SessionHeader},
 		Payload: nil,
 	}
-<<<<<<< HEAD
-	// Early close backend response body to free up pool resources.
-	CloseBody(logger, httpResponse.Body)
 
-	// Pass through all backend responses including errors.
-	// Allows clients to see real HTTP status codes from backend service.
-	// Log non-2XX status codes for monitoring but don't block response.
-	if httpResponse.StatusCode >= http.StatusMultipleChoices {
-		logger.Error().
-			Int("status_code", httpResponse.StatusCode).
-			Str("request_url", httpRequestWithUpdatedTimeout.URL.String()).
-			Str("request_payload_first_bytes", polylog.Preview(string(relayRequest.Payload))).
-			Str("response_payload_first_bytes", polylog.Preview(string(wrappedHTTPResponse.BodyBz))).
-			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
-	}
-=======
 	var responseSize float64
 	if streamThis {
 		logger.Debug().Msg("Handling streaming request.")
@@ -361,7 +346,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		if err != nil {
 			return relayRequest, err
 		}
->>>>>>> 127fdce0e (Add stream support for CLI relayminer relay cmd)
 
 	} else {
 		logger.Debug().Msg("Handling normal request.")
@@ -438,22 +422,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	}
 
-<<<<<<< HEAD
-	// Build the relay response using the original service's response.
-	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
-	// was verified to be valid and has to be the same as the relayResponse session header.
-	relayResponse, err := server.newRelayResponse(responseBz, meta.SessionHeader, supplierOperatorAddress)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Failed building the relay response")
-		// The client should not have knowledge about the RelayMiner's issues with
-		// building the relay response. Reply with an internal error so that the
-		// original error is not exposed to the client.
-		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
-	}
-
-=======
 	// Create the relay response
->>>>>>> 127fdce0e (Add stream support for CLI relayminer relay cmd)
 	relay := &types.Relay{Req: relayRequest, Res: relayResponse}
 
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("relay request served successfully")
