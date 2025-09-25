@@ -55,6 +55,9 @@ func WithSessionCountCacheClearFn(numSessionsToClearCache uint) func(context.Con
 			blockClient.CommittedBlocksSequence(ctx),
 			func(ctx context.Context, block client.Block) {
 				sharedParams, found := sharedParamsCache.Get()
+				// If shared params are not in the cache, skip clearing because:
+				// - The calculation of when to clear depends on values from shared params.
+				// - This code cannot depend on shared params querier to avoid circular dependency.
 				if !found {
 					logger.Debug().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
 					return
@@ -105,8 +108,10 @@ func WithClaimSettlementCacheClearFn() func(context.Context, depinject.Config, C
 			ctx,
 			blockClient.CommittedBlocksSequence(ctx),
 			func(ctx context.Context, block client.Block) {
-				// If
 				sharedParams, found := sharedParamsCache.Get()
+				// If shared params are not in the cache, skip clearing because:
+				// - The calculation of when to clear depends on values from shared params.
+				// - This code cannot depend on shared params querier to avoid circular dependency.
 				if !found {
 					logger.Debug().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
 					return
