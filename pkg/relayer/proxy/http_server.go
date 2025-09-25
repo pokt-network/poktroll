@@ -11,6 +11,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	poktrollhttp "github.com/pokt-network/poktroll/pkg/network/http"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -89,6 +90,10 @@ type relayMinerHTTPServer struct {
 	blockClient        client.BlockClient
 	sharedQueryClient  client.SharedQueryClient
 	sessionQueryClient client.SessionQueryClient
+
+	// HTTP client used for communication with backend server(s).
+	// Customized for high throughput.
+	httpClient *poktrollhttp.HTTPClientWithDebugMetrics
 }
 
 // NewHTTPServer creates a new RelayServer that listens for incoming relay requests
@@ -125,6 +130,9 @@ func NewHTTPServer(
 		},
 	}
 
+	// Initialize separate HTTP clients for handling all backend server calls
+	httpClient := poktrollhttp.NewDefaultHTTPClientWithDebugMetrics()
+
 	return &relayMinerHTTPServer{
 		logger:                         logger,
 		server:                         httpServer,
@@ -138,6 +146,7 @@ func NewHTTPServer(
 		knownSessions:                  make(map[string]int64),
 		knownSessionsMutex:             &sync.RWMutex{},
 		eagerValidationEnabled:         serverConfig.EnableEagerValidation,
+		httpClient:                     httpClient,
 	}
 }
 
