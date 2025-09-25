@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -50,6 +49,29 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	startBlock := server.blockClient.LastBlock(ctx)
 	startHeight := startBlock.Height()
 
+	// Initialize with default values for metrics:
+	// - We don't know the actual supplierOperatorAddress and serviceId until the relay request is unmarshalled.
+	// - If we fail before unmarshalling, these defaults ensure:
+	//   - Metric labels are always populated (never empty)
+	//   - Downstream monitoring and dashboards remain consistent
+	supplierOperatorAddress := UnknownSupplierOperatorAddress
+	serviceId := UnknownServiceID
+
+	// Defer metrics to guarantee they are always recorded:
+	// - Ensures RelaysTotal and relay duration are captured regardless of how/when the function returns
+	// - Even on early error returns, metrics are updated with the best-known values
+	// - Prevents accidental metric omission due to premature exit
+	defer func(startTime time.Time, statusCode *int) {
+		// Increment the relays counter.
+		relayer.RelaysTotal.With(
+			"service_id", serviceId,
+			"supplier_operator_address", supplierOperatorAddress,
+		).Add(1)
+
+		// Capture the relay request duration metric.
+		relayer.CaptureRelayDuration(serviceId, startTime, *statusCode)
+	}(requestStartTime, &statusCode)
+
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
 		"📊 Chain head at height %d (block hash: %X) at relay request start",
 		startHeight,
@@ -72,7 +94,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	meta := relayRequest.Meta
-	serviceId := meta.SessionHeader.ServiceId
+	supplierOperatorAddress = meta.SupplierOperatorAddress
+	serviceId = meta.SessionHeader.ServiceId
 
 	blockHeight := server.blockClient.LastBlock(ctx).Height()
 
@@ -83,19 +106,19 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		"session_end_height", meta.SessionHeader.SessionEndBlockHeight,
 		"service_id", serviceId,
 		"application_address", meta.SessionHeader.ApplicationAddress,
-		"supplier_operator_address", meta.SupplierOperatorAddress,
+		"supplier_operator_address", supplierOperatorAddress,
 		"request_start_time", requestStartTime.String(),
 	)
 
 	// Check if the request's selected supplier is available for relaying.
 	availableSuppliers := server.relayAuthenticator.GetSupplierOperatorAddresses()
 
-	if !slices.Contains(availableSuppliers, meta.SupplierOperatorAddress) {
+	if !slices.Contains(availableSuppliers, supplierOperatorAddress) {
 		logger.Warn().
 			Msgf(
 				"❌ The request's selected supplier with operator_address (%q) is not available for relaying! "+
 					"This could be a network or configuration issue. Available suppliers: [%s] 🚦",
-				meta.SupplierOperatorAddress,
+				supplierOperatorAddress,
 				strings.Join(availableSuppliers, ", "),
 			)
 		return relayRequest, ErrRelayerProxySupplierNotReachable
@@ -218,16 +241,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		"service_config_type", serviceConfigTypeLog,
 	)
 
-	// Increment the relays counter.
-	relayer.RelaysTotal.With(
-		"service_id", serviceId,
-		"supplier_operator_address", meta.SupplierOperatorAddress,
-	).Add(1)
-	defer func(startTime time.Time, statusCode *int) {
-		// Capture the relay request duration metric.
-		relayer.CaptureRelayDuration(serviceId, startTime, *statusCode)
-	}(requestStartTime, &statusCode)
-
 	relayer.RelayRequestSizeBytes.With("service_id", serviceId).
 		Observe(float64(relayRequest.Size()))
 
@@ -241,21 +254,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed building the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
-	}
-	defer CloseBody(logger, httpRequest.Body)
-
-	// Configure HTTP client based on backend URL scheme.
-	var client http.Client
-	switch serviceConfig.BackendUrl.Scheme {
-	case "https":
-		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{},
-		}
-		client = http.Client{Transport: transport}
-	default:
-		// Copy default client to avoid modifying global instance.
-		// Prevents race conditions from concurrent timeout modifications.
-		client = *http.DefaultClient
 	}
 
 	logger = logger.With("request_preparation_duration", time.Since(requestStartTime).String())
@@ -277,7 +275,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		)
 	}
 
-	// Set HTTP client timeout to match remaining request budget.
+	// Set HTTP request timeout to match remaining request budget.
 	// Subtract preparation time from total timeout to avoid exceeding limit.
 	remainingTimeout := requestTimeout - time.Since(requestStartTime)
 	if remainingTimeout <= 0 {
@@ -287,11 +285,18 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			Msg("Request preparation exceeded timeout. Providing additional time.")
 		remainingTimeout = fallbackTimeout
 	}
-	client.Timeout = remainingTimeout
+
+	// Set the new timeout via a context on the HTTP request.
+	ctxWithRemainingTimeout, cancelCtxWithRemainingTimeout := context.WithTimeout(ctxWithDeadline, remainingTimeout)
+	defer cancelCtxWithRemainingTimeout()
+
+	httpRequestWithUpdatedTimeout := httpRequest.WithContext(ctxWithRemainingTimeout)
 
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
-	httpResponse, err := client.Do(httpRequest)
+	httpResponse, err := server.httpClient.Do(ctxWithRemainingTimeout, logger, httpRequestWithUpdatedTimeout)
+	// Early close backend request body to free up pool resources.
+	CloseBody(logger, httpRequest.Body)
 
 	backendServiceProcessingEnd := time.Now()
 	// Add response preparation duration to the logger such that any log before errors will have
@@ -320,7 +325,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	defer CloseBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 
@@ -331,6 +335,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return relayRequest, err
 	}
+	// Early close backend response body to free up pool resources.
+	CloseBody(logger, httpResponse.Body)
 
 	// Pass through all backend responses including errors.
 	// Allows clients to see real HTTP status codes from backend service.
@@ -338,7 +344,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	if httpResponse.StatusCode >= http.StatusMultipleChoices {
 		logger.Error().
 			Int("status_code", httpResponse.StatusCode).
-			Str("request_url", httpRequest.URL.String()).
+			Str("request_url", httpRequestWithUpdatedTimeout.URL.String()).
 			Str("request_payload_first_bytes", polylog.Preview(string(relayRequest.Payload))).
 			Str("response_payload_first_bytes", polylog.Preview(string(wrappedHTTPResponse.BodyBz))).
 			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
@@ -360,7 +366,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
-	relayResponse, err := server.newRelayResponse(responseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
+	relayResponse, err := server.newRelayResponse(responseBz, meta.SessionHeader, supplierOperatorAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed building the relay response")
 		// The client should not have knowledge about the RelayMiner's issues with
