@@ -71,7 +71,6 @@ type RelayAuthenticator interface {
 	VerifyRelayRequest(
 		ctx context.Context,
 		relayRequest *servicetypes.RelayRequest,
-		serviceId string,
 	) error
 
 	// CheckRelayRewardEligibility verifies the Relay Request is still reward eligible.

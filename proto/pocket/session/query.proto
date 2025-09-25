@@ -25,6 +25,8 @@ service Query {
   rpc GetSession (QueryGetSessionRequest) returns (QueryGetSessionResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/session/get_session";
   }
+
+  // TODO_IMPROVE: Add a `GetSession` function that takes a `SessionId` as a parameter and returns the full session and header.
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}

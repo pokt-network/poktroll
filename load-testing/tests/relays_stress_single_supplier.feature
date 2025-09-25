@@ -10,7 +10,7 @@ Feature: Loading gateway server with relays
       | supplier    | 1     |
     And more actors are staked as follows:
       | actor       | actor inc amount | blocks per inc | max actors |
-      | application | 4                | 10             | 12         |
+      | application | 1                | 10             | 12         |
       | gateway     | 1                | 10             | 1          |
       | supplier    | 1                | 10             | 1          |
     When a load of concurrent relay requests are sent from the applications

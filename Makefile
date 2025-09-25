@@ -386,6 +386,7 @@ include ./makefiles/warnings.mk
 include ./makefiles/todos.mk
 include ./makefiles/checks.mk
 include ./makefiles/tests.mk
+include ./makefiles/tests_load.mk
 include ./makefiles/localnet.mk
 include ./makefiles/query.mk
 include ./makefiles/testnet.mk

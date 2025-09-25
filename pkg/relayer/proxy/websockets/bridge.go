@@ -292,7 +292,7 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 		Observe(float64(relayRequest.Size()))
 
 	// Verify the relay request signature and session.
-	if err := b.relayAuthenticator.VerifyRelayRequest(b.ctx, &relayRequest, serviceId); err != nil {
+	if err := b.relayAuthenticator.VerifyRelayRequest(b.ctx, &relayRequest); err != nil {
 		b.serviceBackendConn.handleError(
 			ErrWebsocketsGatewayMessage.Wrapf("failed to verify relay request: %v", err),
 		)

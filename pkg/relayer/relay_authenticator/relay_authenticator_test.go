@@ -137,7 +137,7 @@ func (s *RelayAuthenticatorTestSuite) TestVerifyRelayRequest_Success() {
 	relayReq.Meta.Signature = testproxy.GetApplicationRingSignature(s.T(), relayReq, s.appPrivKey)
 
 	// Verify the relay request
-	err = auth.VerifyRelayRequest(s.ctx, relayReq, serviceId)
+	err = auth.VerifyRelayRequest(s.ctx, relayReq)
 	require.NoError(s.T(), err)
 }
 
