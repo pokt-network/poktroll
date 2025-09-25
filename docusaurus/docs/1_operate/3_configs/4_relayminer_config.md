@@ -30,6 +30,7 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`default_max_body_size`](#default_max_body_size)
   - [`smt_store_path`](#smt_store_path)
   - [`enable_over_servicing`](#enable_over_servicing)
+  - [`enable_eager_relay_request_validation`](#enable_eager_relay_request_validation)
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
   - [`ping`](#ping)
@@ -132,6 +133,7 @@ default_request_timeout_seconds: <uint64>
 default_max_body_size: <string>
 smt_store_path: <string>
 enable_over_servicing: <boolean>
+enable_eager_relay_request_validation: <boolean>
 ```
 
 ### `default_signing_key_names`
@@ -218,6 +220,45 @@ When disabled (`false`), the `RelayMiner` will strictly enforce rate limiting ba
 on the Application's allocated stake, rejecting requests that would exceed the
 Application's ability to pay.
 
+### `enable_eager_relay_request_validation`
+
+_`Optional`_ (default: `false`)
+
+Controls when validation happens relative to forwarding the request.
+
+:::info Summary
+- EAGER (`true`): Validate first (signature, session, rate limiting), then serve. Predictable backend load; higher per-request latency.
+- LAZY (`false`, default): Serve first for unknown sessions, then validate (“late validation”).
+  - Known sessions still validate up-front.
+  - Best cold-start throughput/latency.
+- This flag changes timing, not policy. Over-servicing and rate limits still apply.
+:::
+
+Metrics (useful in LAZY mode):
+- `delayed_relay_request_validation_total`
+- `delayed_relay_request_validation_failures_total`
+- `delayed_relay_request_rate_limiting_check_total`
+
+Example
+
+```yaml
+# Strict validation up-front
+enable_eager_relay_request_validation: true
+
+# Optimistic serving (default behavior)
+# enable_eager_relay_request_validation: false
+```
+
+:::tip When to use which mode:
+
+- Use EAGER (`true`) when you prefer strict validation before backend load, e.g.,
+  for highly constrained backends or when minimizing optimistic risk is critical.
+- Use LAZY (`false`, default) to optimize throughput and latency during cold starts
+  or when many sessions are initially unknown. This typically improves perceived
+  QoS but may transiently forward requests that later fail validation.
+
+:::
+
 ### `metrics`
 
 _`Optional`_
@@ -260,7 +301,7 @@ You can learn how to use that endpoint on the [Performance Troubleshooting](../.
 
 _`Optional`_
 
-Configures a `ping` healh check server to test the connectivity of all backend
+Configures a `ping` health check server to test the connectivity of all backend
 URLs. If all the backend URLs are reachable, the endpoint returns a 204 HTTP
 Code. If one or more backend URLs aren't reachable, the service returns an
 appropriate HTTP error.

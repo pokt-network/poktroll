@@ -22,17 +22,17 @@ const (
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
 type YAMLRelayMinerConfig struct {
-	DefaultSigningKeyNames       []string                       `yaml:"default_signing_key_names"`
-	DefaultRequestTimeoutSeconds uint64                         `yaml:"default_request_timeout_seconds"`
-	DefaultMaxBodySize           string                         `yaml:"default_max_body_size"`
-	Metrics                      YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
-	PocketNode                   YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
-	Pprof                        YAMLRelayMinerPprofConfig      `yaml:"pprof"`
-	SmtStorePath                 string                         `yaml:"smt_store_path"`
-	Suppliers                    []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
-	Ping                         YAMLRelayMinerPingConfig       `yaml:"ping"`
-	EnableOverServicing          bool                           `yaml:"enable_over_servicing"`
-	EnableEagerValidation        bool                           `yaml:"enable_eager_validation"`
+	DefaultSigningKeyNames            []string                       `yaml:"default_signing_key_names"`
+	DefaultRequestTimeoutSeconds      uint64                         `yaml:"default_request_timeout_seconds"`
+	DefaultMaxBodySize                string                         `yaml:"default_max_body_size"`
+	Metrics                           YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
+	PocketNode                        YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
+	Pprof                             YAMLRelayMinerPprofConfig      `yaml:"pprof"`
+	SmtStorePath                      string                         `yaml:"smt_store_path"`
+	Suppliers                         []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
+	Ping                              YAMLRelayMinerPingConfig       `yaml:"ping"`
+	EnableOverServicing               bool                           `yaml:"enable_over_servicing"`
+	EnableEagerRelayRequestValidation bool                           `yaml:"enable_eager_relay_request_validation"`
 
 	// TODO_IMPROVE: Add a EnableErrorPropagation flag to control whether errors (i.e. non-2XX HTTP status codes)
 	// are propagated back to the client or masked as internal errors.
