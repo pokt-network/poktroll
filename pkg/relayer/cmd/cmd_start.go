@@ -162,10 +162,10 @@ Totals:
 	}
 
 	// Log validation type
-	if relayMinerConfig.EnableEagerValidation {
-		logger.Info().Msg("validation type: EAGER")
+	if relayMinerConfig.EnableEagerRelayRequestValidation {
+		logger.Info().Msg("Relay request validation type: EAGER. Validate first, serve later.")
 	} else {
-		logger.Info().Msg("validation type: LAZY")
+		logger.Info().Msg("Relay request validation type: LAZY. Serve first, validate later.")
 	}
 
 	// --- Set up dependencies for relay miner ---

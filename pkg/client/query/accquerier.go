@@ -18,8 +18,14 @@ import (
 )
 
 // TODO_IMPROVE: Make this configurable (for the RelayMiner) and other users.
-// Choosing a relatively low timeout to give a chance for retries to succeed
-// before the overall relay request handling times out.
+// DEV_NOTE: Use a relatively short per-attempt timeout:
+//   - Fail fast: stuck calls return quickly so the retry strategy can try again.
+//   - Higher-level deadline bound: if a single attempt needs > this timeout, the
+//     overall request (e.g. relay/miner flow) will likely hit its own deadline anyway;
+//     increasing this value just burns budget without improving success.
+//   - Better under transients: multiple quick attempts fit within the same time budget
+//     and often succeed where one long attempt would not (e.g., 2 x 2s ≈ 4s is better
+//     than 1 x 5s that still times out end-to-end).
 const defaultQueryTimeout = 2 * time.Second
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)

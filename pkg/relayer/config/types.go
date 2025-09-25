@@ -107,17 +107,17 @@ type YAMLRelayMinerPprofConfig struct {
 
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
-	DefaultSigningKeyNames       []string
-	DefaultRequestTimeoutSeconds uint64
-	DefaultMaxBodySize           int64
-	Metrics                      *RelayMinerMetricsConfig
-	PocketNode                   *RelayMinerPocketNodeConfig
-	Pprof                        *RelayMinerPprofConfig
-	Servers                      map[string]*RelayMinerServerConfig
-	SmtStorePath                 string
-	Ping                         *RelayMinerPingConfig
-	EnableOverServicing          bool
-	EnableEagerValidation        bool
+	DefaultSigningKeyNames            []string
+	DefaultRequestTimeoutSeconds      uint64
+	DefaultMaxBodySize                int64
+	Metrics                           *RelayMinerMetricsConfig
+	PocketNode                        *RelayMinerPocketNodeConfig
+	Pprof                             *RelayMinerPprofConfig
+	Servers                           map[string]*RelayMinerServerConfig
+	SmtStorePath                      string
+	Ping                              *RelayMinerPingConfig
+	EnableOverServicing               bool
+	EnableEagerRelayRequestValidation bool
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
@@ -156,10 +156,22 @@ type RelayMinerServerConfig struct {
 	SupplierConfigsMap map[string]*RelayMinerSupplierConfig
 	// MaxBodySize sets the largest request or response body size (in bytes) that the RelayMiner will accept for this service.
 	MaxBodySize int64
-	// EnableEagerValidation enables immediate validation of all incoming relay requests.
-	// When enabled, all requests are validated upon receipt. When disabled, validation
-	// is only performed for known sessions or deferred for unknown sessions.
-	EnableEagerValidation bool
+	// EnableEagerRelayRequestValidation enables immediate validation of all incoming relay requests.
+	//
+	// Known vs Unknown sessions:
+	// - Known session: the session ID is already present in the RelayMiner's in-memory cache
+	//   (e.g., after the first request for that session was validated). Related session data
+	//   is cached until the session end height, allowing subsequent relays in the same session
+	//   to validate faster without needing to block at onchain queries.
+	// - Unknown session: first encounter of a session ID  and therefore not yet cached.
+	//
+	// Behavior:
+	// - When enabled: all requests (known or unknown) are validated immediately on receipt
+	//   and the session becomes known for subsequent requests.
+	// - When disabled: immediate validation is performed only for known sessions; for unknown
+	//   sessions, validation is deferred (late validation) after serving the backend request
+	//   but before mining/rewarding.
+	EnableEagerRelayRequestValidation bool
 }
 
 // RelayMinerMetricsConfig is the structure resulting from parsing the metrics
