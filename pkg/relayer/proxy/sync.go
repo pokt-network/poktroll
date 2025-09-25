@@ -50,6 +50,29 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	startBlock := server.blockClient.LastBlock(ctx)
 	startHeight := startBlock.Height()
 
+	// Initialize with default values for metrics:
+	// - We don't know the actual supplierOperatorAddress and serviceId until the relay request is unmarshalled.
+	// - If we fail before unmarshalling, these defaults ensure:
+	//   - Metric labels are always populated (never empty)
+	//   - Downstream monitoring and dashboards remain consistent
+	supplierOperatorAddress := UnknownSupplierOperatorAddress
+	serviceId := UnknownServiceID
+
+	// Defer metrics to guarantee they are always recorded:
+	// - Ensures RelaysTotal and relay duration are captured regardless of how/when the function returns
+	// - Even on early error returns, metrics are updated with the best-known values
+	// - Prevents accidental metric omission due to premature exit
+	defer func(startTime time.Time, statusCode *int) {
+		// Increment the relays counter.
+		relayer.RelaysTotal.With(
+			"service_id", serviceId,
+			"supplier_operator_address", supplierOperatorAddress,
+		).Add(1)
+
+		// Capture the relay request duration metric.
+		relayer.CaptureRelayDuration(serviceId, startTime, *statusCode)
+	}(requestStartTime, &statusCode)
+
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
 		"📊 Chain head at height %d (block hash: %X) at relay request start",
 		startHeight,
@@ -72,7 +95,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	meta := relayRequest.Meta
-	serviceId := meta.SessionHeader.ServiceId
+	supplierOperatorAddress = meta.SupplierOperatorAddress
+	serviceId = meta.SessionHeader.ServiceId
 
 	blockHeight := server.blockClient.LastBlock(ctx).Height()
 
@@ -83,19 +107,19 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		"session_end_height", meta.SessionHeader.SessionEndBlockHeight,
 		"service_id", serviceId,
 		"application_address", meta.SessionHeader.ApplicationAddress,
-		"supplier_operator_address", meta.SupplierOperatorAddress,
+		"supplier_operator_address", supplierOperatorAddress,
 		"request_start_time", requestStartTime.String(),
 	)
 
 	// Check if the request's selected supplier is available for relaying.
 	availableSuppliers := server.relayAuthenticator.GetSupplierOperatorAddresses()
 
-	if !slices.Contains(availableSuppliers, meta.SupplierOperatorAddress) {
+	if !slices.Contains(availableSuppliers, supplierOperatorAddress) {
 		logger.Warn().
 			Msgf(
 				"❌ The request's selected supplier with operator_address (%q) is not available for relaying! "+
 					"This could be a network or configuration issue. Available suppliers: [%s] 🚦",
-				meta.SupplierOperatorAddress,
+				supplierOperatorAddress,
 				strings.Join(availableSuppliers, ", "),
 			)
 		return relayRequest, ErrRelayerProxySupplierNotReachable
@@ -217,16 +241,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		"destination_url", serviceConfig.BackendUrl.String(),
 		"service_config_type", serviceConfigTypeLog,
 	)
-
-	// Increment the relays counter.
-	relayer.RelaysTotal.With(
-		"service_id", serviceId,
-		"supplier_operator_address", meta.SupplierOperatorAddress,
-	).Add(1)
-	defer func(startTime time.Time, statusCode *int) {
-		// Capture the relay request duration metric.
-		relayer.CaptureRelayDuration(serviceId, startTime, *statusCode)
-	}(requestStartTime, &statusCode)
 
 	relayer.RelayRequestSizeBytes.With("service_id", serviceId).
 		Observe(float64(relayRequest.Size()))
@@ -360,7 +374,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
-	relayResponse, err := server.newRelayResponse(responseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
+	relayResponse, err := server.newRelayResponse(responseBz, meta.SessionHeader, supplierOperatorAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed building the relay response")
 		// The client should not have knowledge about the RelayMiner's issues with
