@@ -241,7 +241,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("❌ Failed building the service backend request")
 		return relayRequest, ErrRelayerProxyInternalError.Wrapf("failed to build the service backend request: %v", err)
 	}
-	defer CloseBody(logger, httpRequest.Body)
 
 	logger = logger.With("request_preparation_duration", time.Since(requestStartTime).String())
 	relayer.CaptureRequestPreparationDuration(serviceId, requestStartTime)
@@ -282,6 +281,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
 	httpResponse, err := server.httpClient.Do(ctxWithRemainingTimeout, logger, httpRequestWithUpdatedTimeout)
+	// Early close backend request body to free up pool resources.
+	CloseBody(logger, httpRequest.Body)
 
 	backendServiceProcessingEnd := time.Now()
 	// Add response preparation duration to the logger such that any log before errors will have
@@ -310,7 +311,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	defer CloseBody(logger, httpResponse.Body)
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 
@@ -321,6 +321,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return relayRequest, err
 	}
+	// Early close backend response body to free up pool resources.
+	CloseBody(logger, httpResponse.Body)
 
 	// Pass through all backend responses including errors.
 	// Allows clients to see real HTTP status codes from backend service.
