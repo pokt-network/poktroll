@@ -17,6 +17,12 @@ import (
 
 var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 
+// UnknownServiceID is the default service ID used as a fallback when the actual
+// service ID cannot be determined.
+// This occurs during error scenarios before relay request validation, ensuring
+// metrics labels and error responses always have a valid service ID value.
+const UnknownServiceID = "unknown_service_id"
+
 // relayerProxy is the main relayer proxy that takes relay requests of supported
 // services from the client and proxies them to the supported backend services.
 // It is responsible for notifying the miner about the relays that have been
