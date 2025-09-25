@@ -13,27 +13,29 @@ import SchemaTabs from "@theme/SchemaTabs";
 import TabItem from "@theme/TabItem";
 import Export from "@theme/ApiExplorer/Export";
 
+:::warning IN PROGRESS
+
+Please use the API docs as a reference for now while we work on making the HTTP API Console live.
+
+:::
+
 <span
   className={"theme-doc-version-badge badge badge--secondary"}
   children={"Version: version%20not%20set"}
->
-</span>
+></span>
 
 <Export
   url={"../docs/static/openapi.yml"}
   proxy={undefined}
 >
-  
+
 </Export>
 
 <Heading
   as={"h1"}
   className={"openapi__heading"}
   children={"HTTP API Console"}
->
-</Heading>
-
-
+></Heading>
 
 Chain github.com/pokt-network/poktroll REST API
 
@@ -45,14 +47,13 @@ Chain github.com/pokt-network/poktroll REST API
   >
     Contact
   </h3><span>
-    github.com/pokt-network/poktroll: 
+    github.com/pokt-network/poktroll:
   </span>
 </div>
-
+{/*
 ```mdx-code-block
 import DocCardList from '@theme/DocCardList';
 import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
 
-<DocCardList items={useCurrentSidebarCategory().items}/>
-```
-      
+<DocCardList items={useCurrentSidebarCategory().items} />
+``` */}
