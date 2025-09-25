@@ -6,26 +6,24 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "pocket/shared/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 option (gogoproto.stable_marshaler_all) = true;
 
-// Query defines the gRPC querier service.
 service Query {
-  // Parameters queries the parameters of the module.
+  // shared.QueryParams
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/shared/params";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QuerySharedParams"
+      summary: "shared.QueryParams"
+    };
   }
 }
 
-// QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
 
-// QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-  // params holds all the parameters of this module.
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }

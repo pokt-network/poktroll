@@ -37,7 +37,7 @@ The Swagger UI for the Shannon Beta TestNet OpenAPI Spec may be viewed at [shann
 You can re-generate the OpenAPI spec by running the following command:
 
 ```bash
-make ignite_openapi_gen_docker
+make openapi_ignite_gen_docker
 ```
 
 ## `Cosmos` REST API vs `CometBFT` RPC

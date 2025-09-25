@@ -1,0 +1,72 @@
+---
+id: msg-submit-proof
+title: "MsgSubmitProof"
+description: "MsgSubmitProof"
+sidebar_label: "MsgSubmitProof"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVk1P5DgQ/SslH1b7kYERs9pDTsuwSMOBGTT0ngA1Fbs68eDYwa4009vq/74qpwOB7gFptRxQ2q4vv1fP5bVirJMqr9R5qtVNoUJHEdkGf2ZUKYuXfdVavoghLFShIt33lPhjMCtVrpUOnsmzfGLXOauz6+G3FLysJd1Qi/LFq45UqUL1jTSrQnVRErGlJLtdjv5kljhaX6tCLUJskVWpqhWTKhRbdtmAokVn/yEDS4rJBg9hAb+mlg8uO4yJTkLboeZzineOTlxIlLZn2BQqURKXeUNoKEpeQ0lH20nxqlSXw/6nvA02AYKzdcMPJP9hcINFiICwjQXcIINGDxVBhymRAYyh9+bg2p+xBOGGoLXetugA29B7lpoNMoKgaiMZ4ADNykRkgp8gEkdLSwJ0brRztETPYifhtskPBJlXAZ6QM0djIqW0e+xZQ/CRdPPhCLY2UqDkmbhPcm1ZyoDGpdU0t2YfiSNps1xxtgRrgBubHuGzSfCckkPezCsX9N28ybDv1vs5MGXcb3/kczuQZyjaJbJdkhzo59vEGPkWfoNb37eDQ5p3FOfbOLe/XHtMUIclRU8GqhUErxu0HjqM2CZAzriwbWnEaDxJDv5IeuIgvGIC9IKqldrRwcKSy3Qn23bOLlZQ9cl6wdyF2mqwHjQmuvYS2/dtRVEy7RYLukFfUwLTC97P+uLaX3tBfUBDqn5orG6eQ0/ekCmGtW2bOkw8pHpxuh3yJxK1nv/4fcrg0A3POTuG3tv7nqBL1JsQ0ZvQwtlfWU3TsvZkGvvo85fZaQlPWUbZZZrJwCKGdmjbKiwJluh6SiDw1o88Vn2mx3rtekNG4OYM1KO0dfBL8pa8pumhMr07jfkGKM818CobOT4ZtdlI0l6ER3E+3MohTsX7QoWb7DHeJKrk2FNeSF3wabgGjt6/30dJ6rWmlBa9g9FcZP4fL/ehEEML7N0e1R576D1970gzGaAYQ/w/sr688XQwNLGynqmm+IKaD0cql8po3RRTjBFXqlCWqU1v5/pz2N6lpFBPkr+YumSIWkoJ672OmxHEKXI7w7glboKM6S6kXBVyo0p12AV9R3yQp+rBeaoPn7sJlF+f5vjpd2w7R5M5/NTHu5Ny7ySZOjxNgt0wu3f6rs1+z32ymw6gHwtlYmX9Iuw25Em+EGrLTV8d6NAeduGO33nihxDv8o8YnIOvp5czOL44m4j502x2IUtwEnwKjrbdizp3r8dWjN4KLIVt3zCqHL/AB4ZELJtCbot+EvI81TBQCiOnz4702E9M3/mwc2i9BOqjyyTnLrlSL7tEFWraJzeFaqStyiu1XleY6O/oNhtZvu8prlR5dVOoJUaLlYBxdbMp1NgmV2t1RyvBdhDzu5nUI+auz/p6KexNMXoca00dv2p7M+n8iy+XM1WoavsebbPqVcQHeavigyqVkjeteGep5rW1cujrPmtPDTHl719oXu8D
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"MsgSubmitProof"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.proof.Msg/SubmitProof"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+MsgSubmitProof
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"proof":{"type":"string","format":"byte","title":"serialized version of *smt.SparseCompactMerkleClosestProof"},"session_header":{"description":"SessionHeader is a lightweight header for a session that can be passed around.\nIt is the minimal amount of data required to hydrate & retrieve all data relevant to the session.","type":"object","properties":{"application_address":{"description":"The Bech32 address of the application.","type":"string"},"service_id":{"type":"string","title":"The service id this session is for"},"session_end_block_height":{"description":"Note that`session_end_block_height` is a derivative of (`start` + `num_blocks_per_session`)\nas governed by onchain params at the time of the session start.\nIt is stored as an additional field to simplify business logic in case\nthe number of blocks_per_session changes during the session.\n\nThe height at which this session ended, this is the last block of the session","type":"string","format":"int64"},"session_id":{"description":"A unique pseudorandom ID for this session","type":"string","title":"NOTE: session_id can be derived from the above values using onchain but is included in the header for convenience"},"session_start_block_height":{"type":"string","format":"int64","title":"The height at which this session started"}}},"supplier_operator_address":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

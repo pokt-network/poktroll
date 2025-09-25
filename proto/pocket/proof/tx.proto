@@ -11,6 +11,7 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "pocket/proof/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/proof/types.proto";
 import "pocket/session/types.proto";
 import "pocket/shared/service.proto";
@@ -19,12 +20,32 @@ import "pocket/shared/service.proto";
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // UpdateParams defines a (governance) operation for updating the module
-  // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
-  rpc CreateClaim  (MsgCreateClaim) returns (MsgCreateClaimResponse);
-  rpc SubmitProof  (MsgSubmitProof) returns (MsgSubmitProofResponse);
-  rpc UpdateParam  (MsgUpdateParam) returns (MsgUpdateParamResponse);
+  // proof.MsgUpdateParams
+  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgProofUpdateParams"
+      summary: "proof.MsgUpdateParams updates all module parameters via governance."
+    };
+  };
+  rpc CreateClaim  (MsgCreateClaim) returns (MsgCreateClaimResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgCreateClaim"
+      summary: "proof.MsgCreateClaim creates a claim for a session."
+    };
+  };
+  rpc SubmitProof  (MsgSubmitProof) returns (MsgSubmitProofResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgSubmitProof"
+      summary: "proof.MsgSubmitProof submits a proof for a claim."
+    };
+  };
+  // proof.MsgUpdateParam
+  rpc UpdateParam  (MsgUpdateParam) returns (MsgUpdateParamResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgProofUpdateParam"
+      summary: "proof.MsgUpdateParam updates a single module parameter via governance."
+    };
+  };
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.

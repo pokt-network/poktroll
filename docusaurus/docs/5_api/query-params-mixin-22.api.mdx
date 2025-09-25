@@ -1,0 +1,64 @@
+---
+id: query-params-mixin-22
+title: "proof.QueryParams"
+description: "proof.QueryParams"
+sidebar_label: "proof.QueryParams"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsFu40YM/RWCl7aAai/Sm05dBEGbQ1s3dU9OYIwlSprNiNQOqSSG4X8vZqQEzsbbFD2vLpIp8j3ykUP5gOZaxXKDf44U93hXoAwUnXnh6xrLybxy0fX6m3/yfHGBBUbSQVhJsTzgxYcP6VaTVtEPKRBL/Ag6VhWpNmOAZ/cFFlgJG7GlCDcMwVeZavlJU9gBteqod2/xTtK4mdHA6wsy2H4gaCSCdQTZeTl5w83qEnqyTupEn/ywRNl9osqwwCGmcs1PpQw55C37ZIdOQq3gQsgs2UhGUUEasM4r9FKPgf4DTxRptr1X9dxuB2IXbP+W9lI8Q02NZ1JwYHJPDI/eOnBQE0vvOasHjmtwDK6XkW1xy7f8+x/rqxLWHc1GaDyFOknmGK7Z4LHzVQe+HwL1xKa5pGpUk36W65bVt+xsjJSE/jz6SDXs9tBKK0MUk/cLncjT0+ynFj23eCwwF3DmzfFYzPokTlLbDlF2bueDP6fRV11TrblNJyZpwIGSahJtKslzCw4yyi37Brx9p1CJGnzvF7SASvphNIKRvUElrGOfqX9I+DsK8phZVgngZhIp6bnuImmalxONeOx3FLHARmLvDEusZdwFwlcVzwBbe0b4NhdfzIWOu3x0hLcN0Td5ZnnmK7k0bgx2ZikzjExPA1VGNVCMEv/fbv737Cup6cTLs1H7eu49208XUzXmfNATbxej22OB3qjX97l+nl6/laNAV9c+5e/C6jQkS9STqmvPBr6I+GbLLE4+QpgwUruxxJZyXs46LHE5yL39yGSPEu/zjyghLDPAcniO9dzImcHtnGdovXXjblFJfx4Lbq7+WsPH1XUaI28hZf/rer1KJrgUVgk0N9NVuZns+uT0HnBqyANFnZKZn4DFQMnykhK13vEJ5DldXtX0oq/Rky2H4DwnpDGG6XubNNvgaTpJyueE5hOf1c3odwV2opZiDoedU/o7huMxmT/nvy/l5q7ABxe9S3u13NwdC+zI1RSx3BzwnvbpGFQVDallDy6Meea+HPbj3Ul7f7la4/H4Dz5TReM=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"proof.QueryParams"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/proof/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+proof.QueryParams
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"params holds all the parameters of this module.","type":"object","properties":{"proof_missing_penalty":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"proof_request_probability":{"description":"proof_request_probability is the probability of a session requiring a proof\nif it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.","type":"number","format":"double"},"proof_requirement_threshold":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"proof_submission_fee":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

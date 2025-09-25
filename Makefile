@@ -252,25 +252,6 @@ ignite_acc_list: ## List all the accounts in LocalNet
 ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary using Ignite
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
-.PHONY: ignite_openapi_gen
-ignite_openapi_gen: ignite_check_version ## Generate the OpenAPI spec natively and process the output
-	ignite generate openapi --yes
-	$(MAKE) process_openapi
-
-.PHONY: ignite_openapi_gen_docker
-ignite_openapi_gen_docker: ## Generate the OpenAPI spec using Docker and process the output; workaround due to https://github.com/ignite/cli/issues/4495
-	docker build -f ./proto/Dockerfile.ignite -t ignite-openapi .
-	docker run --rm -v "$(PWD):/workspace" ignite-openapi
-	$(MAKE) process_openapi
-
-.PHONY: process_openapi
-process_openapi: ## Ensure OpenAPI JSON and YAML files are properly formatted
-	# The original command incorrectly outputs a JSON-formatted file with a .yml extension.
-	# This fixes the issue by properly converting the JSON to a valid YAML format.
-	mv docs/static/openapi.yml docs/static/openapi.json
-	yq -o=json '.' docs/static/openapi.json -I=4 > docs/static/openapi.json.tmp && mv docs/static/openapi.json.tmp docs/static/openapi.json
-	yq -P -o=yaml '.' docs/static/openapi.json > docs/static/openapi.yml
-
 ##################
 ### CI Helpers ###
 ##################
@@ -291,10 +272,17 @@ ignite_check_version:
 		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
 		exit 1 ; \
 	fi ; \
-	if [ "$$(printf "v29\n$$version" | sort -V | head -n1)" != "v29" ]; then \
-		echo "Error: Version $$version is less than v29. Please update Ignite via Homebrew or make ignite_install." ; \
-		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
-		exit 1 ; \
+	# Allow dev builds and nightly strings that don't sort nicely (e.g., 'development'). \
+	if echo "$$version" | grep -Eq 'development|devel|nightly'; then \
+		echo "Detected Ignite CLI $$version (treating as >= v29)"; \
+	else \
+		min_ver=v29; \
+		lowest=$$(printf "$$min_ver\n$$version" | sort -V | head -n1); \
+		if [ "$$lowest" != "$$min_ver" ]; then \
+			echo "Error: Version $$version is less than v29. Please update Ignite via Homebrew or make ignite_install." ; \
+			echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
+			exit 1 ; \
+		fi ; \
 	fi
 
 .PHONY: ignite_install

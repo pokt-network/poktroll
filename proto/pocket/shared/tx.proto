@@ -7,6 +7,7 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "pocket/shared/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 option (gogoproto.stable_marshaler_all) = true;
@@ -15,10 +16,20 @@ option (gogoproto.stable_marshaler_all) = true;
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // UpdateParams defines a (governance) operation for updating the module
-  // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
-  rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse );
+  // shared.MsgUpdateParams
+  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgSharedUpdateParams"
+      summary: "shared.MsgUpdateParams updates all module parameters via governance."
+    };
+  };
+  // shared.MsgUpdateParam
+  rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgSharedUpdateParam"
+      summary: "shared.MsgUpdateParam updates a single module parameter via governance."
+    };
+  };
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -59,4 +70,3 @@ message MsgUpdateParamResponse {
   // Params params = 1;
   reserved 1;
 }
-

@@ -494,11 +494,11 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// supplier.MsgUpdateParams
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	StakeSupplier(ctx context.Context, in *MsgStakeSupplier, opts ...grpc.CallOption) (*MsgStakeSupplierResponse, error)
 	UnstakeSupplier(ctx context.Context, in *MsgUnstakeSupplier, opts ...grpc.CallOption) (*MsgUnstakeSupplierResponse, error)
+	// supplier.MsgUpdateParam
 	UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ...grpc.CallOption) (*MsgUpdateParamResponse, error)
 }
 
@@ -548,11 +548,11 @@ func (c *msgClient) UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ..
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// supplier.MsgUpdateParams
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	StakeSupplier(context.Context, *MsgStakeSupplier) (*MsgStakeSupplierResponse, error)
 	UnstakeSupplier(context.Context, *MsgUnstakeSupplier) (*MsgUnstakeSupplierResponse, error)
+	// supplier.MsgUpdateParam
 	UpdateParam(context.Context, *MsgUpdateParam) (*MsgUpdateParamResponse, error)
 }
 

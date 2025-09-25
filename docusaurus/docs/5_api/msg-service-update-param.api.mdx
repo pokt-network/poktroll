@@ -1,0 +1,72 @@
+---
+id: msg-service-update-param
+title: "service.MsgUpdateParam"
+description: "service.MsgUpdateParam"
+sidebar_label: "service.MsgUpdateParam"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1Vt9v20YM/lcIPrWAahfdsAc9LS0CLA9dg9R9coKGPtHSNdKdeseLYxj+3wee5ESJvXYYNj+d+evIjx952qFQHbFc4sdY402BvudAYr27qLBU4WcO99bwl74i4UsK1GGBgb8njvLeV1ssd2i8E3aiR+r71pocYf4teqeyaBruSE8VRxNsr9oh+iQs2AjSMHyM9XwqHu8C2fYM4iFlHRBE6+qWoVerGRaoBliiX31jI1hgH7QYsRxzYvGr8dYdZ/HBWwcVr63jCATi79jBxkoDBBU731mXywFyFZAD6nxyMrt21+7PT4vzEhYNj0JYW24rLYQcXDiBTWNNA7brW+7YyVCgSVF8Bx1L46trF23tSFLgmEu1gStYbaH2te+DF/8PSsuX62m0ixKsq3FfYC7ghGa/LxSRZJ389uuxvsC1Dx0JljiaqH2Sxgcr22MMH1WHJlJVBY56JgGlR/DtoOl8lVqGVxWvKbUKiYeHee3vIblWXfw9h02wIuxeT2p/qslRx6dSFiutCrQfr9SoAIpf1eo1SOpbhi5FgY7ENEMjfAgce+8q62pQj9zjTDSK1y72bOzacgXWZYfbzMh4Cx3HSDWr/LYP3q/nmYVxNnTsVgHeZ/j/R74f2IKlhMR7FWgxcSDFu7dvj/t0BjEZwzGuUwsHc431n0zw1RjwcZq0vMMtECUkozyHtQ/AD2ySKO507V4Ac0CX1sLhReEjHMdDcQA8s+pE5Q6S44eejXAFHIIP/w6AH4+i8dWUm9YJ1xym82Sd/PJuGE0h28aJNYVAWyzQCnfx53f9PqiPZ7tAqiqr+VN7OXXJEI3onlwKp1gbhwdg9rxJqIF0gWGJvY85O5IGS5z33tyxzCZ+8+eOCurV0wty/kC6IF8s6cNSe5rvcZdNNsFkgz2ZTdbUk3DYGRNX69b+xFvQkHVQW2nSamZ8N+/9nbxxLBsf7vKf4NsWrs4/L+Ds8mKydP5YLC5VBB+8i77lkVJkMqXG638WWBO75xCHZMYTOC8QWVSpSHfkJiH/tjvPCntstfCDzPuWrNNwKbSqGxq3xOPGYYHTqDcFNtrrcom73Yoifwntfq/i74nDFsvlTYH3FCytFJTlzb7AhqnigOVyh3e8ze9tnrQ3C81IzduUyf9y6vbFwePMGO7lh7Y3Ezpefvq8wAJX48dJl0cSA210Z9IGS0T9zlHvPEdZtsOWXJ3yYOAQU39/AdW4OZY=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"service.MsgUpdateParam"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.service.Msg/UpdateParam"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+service.MsgUpdateParam
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParam is the Msg/UpdateParam request type to update a single param.","type":"object","properties":{"as_coin":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"as_uint64":{"type":"string","format":"uint64"},"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"name":{"type":"string","title":"The (name, as_type) tuple must match the corresponding name and type as\nspecified in the `Params` message in `proof/params.proto.`"}}}}},"description":"MsgUpdateParam is the Msg/UpdateParam request type to update a single param.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateParamResponse defines the response structure for executing a\nMsgUpdateParam message after a single param update.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

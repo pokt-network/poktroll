@@ -1,0 +1,72 @@
+---
+id: msg-shared-update-param
+title: "shared.MsgUpdateParam"
+description: "shared.MsgUpdateParam"
+sidebar_label: "shared.MsgUpdateParam"
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VVFv00AM/isnP4EUVjQQD3liTEjsAVFt5alUyE3c5LbLXfD5tlZV/ztyktJ0HUNC0Ker7fvO/vzZ2YJgFSGfw+dYwSKD0BKj2OCvSsjVeFMjU/m1LVFoiowNZMD0I1GUD6HcQL6FInghL3rEtnW26AAmtzF4tcWipgb1VFIs2Lbq7cFHsMZGIzWZz7GajM3DW0Y2LRkJJnU+gyZaXzkyrUadQQYaADmE5S0VAhm0rLWIpdglFr8vN9Kfh8gobH0FGawCNyiQg0bALtPgwXkS3XuT9fLu7bNYQ4jGJ6kDW9mcUvDLta8ey5Ip6hnFKK8cXO9pQpkcmRclrTA5icrFelKFe5O80yvhnviBrQj5lyM+Dnl7bOiJgvSX/d/WaKBlKiEXTrRTQ2yDj307zl+/PmXmwsRUFBTjKjmzD1esfyK26wHQlLSynvry9q+YKJwKSUxmFdjQmook1lcGv/lHxDQUI1ZkcCXEjwof6DiV5p7wro9PVO5N8rRuqRAqDTEH/jsCnh+IIpRjNVgvVBGPFWy9vDmHLlVB68ajg8y4gQysUBP//Nb73n0qvQywLK3mj246vtJRNLD7G82eqjZ2q+rsuEegOFIHXWdtiF1yKDXkMGlDcUdydrg2Ob6nlF4fVt3HNTato+Ntcpj80dI4Mu53xch4WAgHYz+do3G1fhVO1XFZo/WmslKn5VkRmkkb7uSVJ3kIfNf94eCcuf54MzMX0ysVnxVNGj7NZlM1mcvgY3A0SAmLTkrD838C1sTuiWOfzHAyPoiJJOpUihv0I8jfdeWorl8dFlrLpHVovaIldurrGzaHk4ZBBmPQRQa1tjifw3a7xEhf2e12av6RiDeQzxcZ3CNbXCol88Uug5qwJIZ8voU70o5c9vP1aqYJabhLneQfz9ou29+4KApq5dnYxUiF0y83M8hgOXw9m24QgfFBNyU+QA6g32G93U1PZ9uCQ1+lbhygx9TfT5agub4=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"shared.MsgUpdateParam"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.shared.Msg/UpdateParam"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+shared.MsgUpdateParam
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParam is the Msg/UpdateParam request type to update a single param.","type":"object","properties":{"as_bytes":{"type":"string","format":"byte"},"as_string":{"type":"string"},"as_uint64":{"type":"string","format":"uint64"},"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"name":{"type":"string"}}}}},"description":"MsgUpdateParam is the Msg/UpdateParam request type to update a single param.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateParamResponse defines the response structure for executing a\nMsgUpdateParam message after a single param update.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -11,26 +11,36 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 import "pocket/application/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/application/types.proto";
 
 
 // Query defines the gRPC querier service.
 service Query {
 
-  // Parameters queries the parameters of the module.
+  // application.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/params";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryApplicationParams"
+      summary: "application.QueryParams"
+    };
   }
 
-  // Queries a list of Application items.
   rpc Application    (QueryGetApplicationRequest) returns (QueryGetApplicationResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/application/{address}";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryApplication"
+      summary: "application.QueryApplication retrieves a specific application by address."
+    };
   }
+
   rpc AllApplications (QueryAllApplicationsRequest) returns (QueryAllApplicationsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/application";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryAllApplications"
+      summary: "application.QueryAllApplications lists applications with pagination."
+    };
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -38,8 +48,6 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-
-  // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
@@ -62,4 +70,3 @@ message QueryAllApplicationsResponse {
   repeated Application applications = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination  = 2;
 }
-
