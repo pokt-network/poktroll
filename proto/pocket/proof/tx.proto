@@ -27,8 +27,18 @@ service Msg {
       summary: "proof.MsgUpdateParams updates all module parameters via governance."
     };
   };
-  rpc CreateClaim  (MsgCreateClaim) returns (MsgCreateClaimResponse);
-  rpc SubmitProof  (MsgSubmitProof) returns (MsgSubmitProofResponse);
+  rpc CreateClaim  (MsgCreateClaim) returns (MsgCreateClaimResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgCreateClaim"
+      summary: "proof.MsgCreateClaim creates a claim for a session."
+    };
+  };
+  rpc SubmitProof  (MsgSubmitProof) returns (MsgSubmitProofResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgSubmitProof"
+      summary: "proof.MsgSubmitProof submits a proof for a claim."
+    };
+  };
   // proof.MsgUpdateParam
   rpc UpdateParam  (MsgUpdateParam) returns (MsgUpdateParamResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {

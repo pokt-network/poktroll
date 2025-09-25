@@ -25,8 +25,18 @@ service Msg {
       summary: "gateway.MsgUpdateParams updates all module parameters via governance."
     };
   };
-  rpc StakeGateway   (MsgStakeGateway  ) returns (MsgStakeGatewayResponse  );
-  rpc UnstakeGateway (MsgUnstakeGateway) returns (MsgUnstakeGatewayResponse);
+  rpc StakeGateway   (MsgStakeGateway  ) returns (MsgStakeGatewayResponse  ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgStakeGateway"
+      summary: "gateway.MsgStakeGateway stakes a gateway."
+    };
+  };
+  rpc UnstakeGateway (MsgUnstakeGateway) returns (MsgUnstakeGatewayResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgUnstakeGateway"
+      summary: "gateway.MsgUnstakeGateway unstakes a gateway."
+    };
+  };
   // gateway.MsgUpdateParam
   rpc UpdateParam    (MsgUpdateParam   ) returns (MsgUpdateParamResponse   ) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {

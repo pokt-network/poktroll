@@ -28,10 +28,18 @@ service Query {
 
   rpc Supplier (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier/{operator_address}";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QuerySupplier"
+      summary: "supplier.QuerySupplier retrieves a specific supplier by operator address."
+    };
   }
 
   rpc AllSuppliers (QueryAllSuppliersRequest) returns (QueryAllSuppliersResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryAllSuppliers"
+      summary: "supplier.QueryAllSuppliers lists suppliers with pagination."
+    };
   }
 }
 message QueryParamsRequest {}

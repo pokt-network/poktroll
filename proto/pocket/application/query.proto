@@ -29,11 +29,18 @@ service Query {
 
   rpc Application    (QueryGetApplicationRequest) returns (QueryGetApplicationResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/application/{address}";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryApplication"
+      summary: "application.QueryApplication retrieves a specific application by address."
+    };
   }
 
   rpc AllApplications (QueryAllApplicationsRequest) returns (QueryAllApplicationsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/application";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryAllApplications"
+      summary: "application.QueryAllApplications lists applications with pagination."
+    };
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.

@@ -16,6 +16,7 @@ plugins:
       - logtostderr=true
       - openapi_naming_strategy=simple
       - simple_operation_ids=true
+      - include_package_in_tags=true
       - ignore_comments=false
       - json_names_for_fields=false
       - generate_unbound_methods=true

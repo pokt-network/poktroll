@@ -29,11 +29,18 @@ service Query {
 
   rpc Gateway (QueryGetGatewayRequest) returns (QueryGetGatewayResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway/{address}";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryGateway"
+      summary: "gateway.QueryGateway retrieves a specific gateway by address."
+    };
   }
 
   rpc AllGateways (QueryAllGatewaysRequest) returns (QueryAllGatewaysResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryAllGateways"
+      summary: "gateway.QueryAllGateways lists gateways with pagination."
+    };
   }
 }
 message QueryParamsRequest {}

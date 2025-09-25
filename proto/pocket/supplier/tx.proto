@@ -26,8 +26,18 @@ service Msg {
       summary: "supplier.MsgUpdateParams updates all module parameters via governance."
     };
   };
-  rpc StakeSupplier   (MsgStakeSupplier  ) returns (MsgStakeSupplierResponse  );
-  rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse);
+  rpc StakeSupplier   (MsgStakeSupplier  ) returns (MsgStakeSupplierResponse  ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgStakeSupplier"
+      summary: "supplier.MsgStakeSupplier stakes a supplier for specified services."
+    };
+  };
+  rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgUnstakeSupplier"
+      summary: "supplier.MsgUnstakeSupplier unstakes a supplier."
+    };
+  };
   // supplier.MsgUpdateParam
   rpc UpdateParam     (MsgUpdateParam    ) returns (MsgUpdateParamResponse    ) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {

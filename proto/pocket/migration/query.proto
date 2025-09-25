@@ -27,11 +27,18 @@ service Query {
 
   rpc MorseClaimableAccount    (QueryMorseClaimableAccountRequest) returns (QueryMorseClaimableAccountResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account/{address}";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryMorseClaimableAccount"
+      summary: "migration.QueryMorseClaimableAccount retrieves a Morse claimable account."
+    };
   }
 
   rpc MorseClaimableAccountAll (QueryAllMorseClaimableAccountRequest) returns (QueryAllMorseClaimableAccountResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryMorseClaimableAccountAll"
+      summary: "migration.QueryMorseClaimableAccountAll lists Morse claimable accounts."
+    };
   }
 }
 message QueryParamsRequest {}

@@ -28,19 +28,34 @@ service Query {
 
   rpc Service (QueryGetServiceRequest) returns (QueryGetServiceResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/service/{id}";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryService"
+      summary: "service.QueryService retrieves a specific service by ID."
+    };
   }
 
   rpc AllServices (QueryAllServicesRequest) returns (QueryAllServicesResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/service";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryAllServices"
+      summary: "service.QueryAllServices lists services with pagination."
+    };
   }
 
   // Queries a list of RelayMiningDifficulty items.
   rpc RelayMiningDifficulty    (QueryGetRelayMiningDifficultyRequest) returns (QueryGetRelayMiningDifficultyResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryRelayMiningDifficulty"
+      summary: "service.QueryRelayMiningDifficulty retrieves the relay mining difficulty for a service."
+    };
   }
   rpc RelayMiningDifficultyAll (QueryAllRelayMiningDifficultyRequest) returns (QueryAllRelayMiningDifficultyResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryRelayMiningDifficultyAll"
+      summary: "service.QueryRelayMiningDifficultyAll lists relay mining difficulties."
+    };
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.

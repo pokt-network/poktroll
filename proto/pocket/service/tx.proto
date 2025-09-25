@@ -33,7 +33,12 @@ service Msg {
       summary: "service.MsgUpdateParam updates a single module parameter via governance."
     };
   };
-  rpc AddService   (MsgAddService  ) returns (MsgAddServiceResponse  );
+  rpc AddService   (MsgAddService  ) returns (MsgAddServiceResponse  ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgAddService"
+      summary: "service.MsgAddService adds a new service to the network."
+    };
+  };
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {

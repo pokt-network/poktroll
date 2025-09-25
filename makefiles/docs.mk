@@ -22,6 +22,12 @@ docs_update_gov_params_page: ## Update the page in Docusaurus documenting all th
 docusaurus_gen_api_docs: ## Generate docusaurus OpenAPI docs
 	(cd docusaurus && yarn install && yarn docusaurus clean-api-docs pocket && yarn docusaurus gen-api-docs pocket)
 
+# High-level entrypoint to (re)generate OpenAPI spec and Docusaurus pages
+.PHONY: docs_build
+docs_build: ## Generate OpenAPI spec (Docker) and Docusaurus API docs
+	$(MAKE) openapi_ignite_gen_docker
+	$(MAKE) docusaurus_gen_api_docs
+
 .PHONY: openapi_ignite_gen
 openapi_ignite_gen: ignite_check_version ## Generate the OpenAPI spec natively and process the output
 	ignite generate openapi --yes
