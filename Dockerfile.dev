@@ -1,47 +1,37 @@
 # This Dockerfile is used to build container image for development purposes.
 # It intentionally contains no security features, ships with code and troubleshooting tools.
-# Updated to build inside Linux with CGO enabled (avoids macOS headers/toolchain issues).
 
 FROM golang:1.24.3 AS base
 
-# Core tooling + CGO toolchain for Linux builds
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      build-essential pkg-config git ca-certificates \
-      net-tools kubernetes-client \
-      curl jq yq make vim less dnsutils rsync && \
-    rm -rf /var/lib/apt/lists/*
+# Install build dependencies including CGO toolchain
+RUN apt update && \
+    apt-get install -y \
+    build-essential pkg-config \
+    ca-certificates net-tools kubernetes-client \
+    curl jq yq make vim less dnsutils rsync
+
+# Enable CGO and set build flags for secp256k1
+ENV CGO_ENABLED=1
+ENV CGO_CFLAGS="-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration"
 
 # enable faster module downloading.
 ENV GOPROXY=https://proxy.golang.org
-# Ensure CGO is enabled and we're targeting Linux
-ENV CGO_ENABLED=1 GOOS=linux
 
-# Optional: if your ethereum_secp256k1 path needs system headers instead of vendored ones,
-# uncomment the next line to install the dev package.
-# RUN apt-get update && apt-get install -y --no-install-recommends libsecp256k1-dev && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /pocket
 COPY . /pocket
 
-# If you keep prebuilt tools in repo, keep ignite; but build pocketd for Linux here.
-# (Avoid copying a potentially darwin binary from /pocket/bin.)
-RUN mv /pocket/bin/ignite /usr/bin/ || true
+WORKDIR /pocket
 
-# Go module cache + build cache for faster rebuilds
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    go mod download
+# Build pocketd with CGO and ethereum_secp256k1 tags
+RUN go build -tags "ethereum_secp256k1" -o /usr/bin/pocketd ./cmd/poktrolld
+RUN mv /pocket/bin/ignite /usr/bin/
 
-# Build pocketd with your required tags (CGO is already enabled via ENV)
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    go build -tags "ethereum_secp256k1" -o /usr/bin/pocketd ./cmd/poktrolld
-
-# Install Cosmovisor (relies on Makefile target)
+# Install Cosmovisor
 RUN make install_cosmovisor
 
-# Spin a fresh localnet (dev convenience)
+# These are helpful for testing locally:
+# RUN mv bin/pocketd /usr/bin/
+# RUN mv bin/ignite /usr/bin/
+
 RUN make localnet_regenesis
 
 EXPOSE 8545
