@@ -108,11 +108,16 @@ func setupRelayerDependencies(
 		config.NewSupplyParamsCacheFn[suppliertypes.Params](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 
 		// Setup key-value caches for pocket types (clear on new sessions).
-		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),                // leaf
-		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
-		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),               // leaf
-		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),                    // leaf
-		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),                   // leaf
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
+		// RelayMiningDifficulty cache uses claim settlement clearing strategy instead of session-based clearing.
+		// This ensures suppliers aren't penalized for using the difficulty that was active at session start:
+		//   - Difficulty changes can occur mid-session (at claim settlement height)
+		//   - Cached value must remain stable until claims are settled
+		//   - Fresh difficulty is applied only after claims are submitted
+		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithClaimSettlementCacheClearFn()),                   // leaf
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
+		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),      // leaf
+		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)),     // leaf
 		// Session querier returns *sessiontypes.Session, so cache must return pointers.
 		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 		// Clear on new blocks to refresh application state after each block.
@@ -125,6 +130,7 @@ func setupRelayerDependencies(
 		// Balance cache is used for caching supplier operator account balances (clear on new sessions).
 		config.NewSupplyKeyValueCacheFn[query.Balance](cache.WithSessionCountCacheClearFn(defaultSessionCountForCacheClearing)), // leaf
 
+		// Prepare all the pocket specific query clients
 		config.NewSupplySharedQueryClientFn(),
 		config.NewSupplyServiceQueryClientFn(),
 		config.NewSupplyApplicationQuerierFn(),
@@ -136,10 +142,13 @@ func setupRelayerDependencies(
 		config.NewSupplySupplierQuerierFn(),
 		config.NewSupplyProofQueryClientFn(),
 		config.NewSupplyRingClientFn(),
+
+		// Prepare tx factory and context
 		config.SupplyTxFactory,
 		config.SupplyTxContext,
-		// RelayMiner always uses tx simulation for gas estimation (variable by tx).
-		// Always use "auto" gas setting for RelayMiner.
+
+		// RelayMiner always uses tx simulation for gas estimation.
+		// In PROD, always use "auto" gas setting for RelayMiner.
 		config.NewSupplySupplierClientsFn(signingKeyNames, cosmosflags.GasFlagAuto),
 		config.NewSupplyRelayAuthenticatorFn(signingKeyNames),
 		config.NewSupplyRelayerProxyFn(servicesConfigMap, relayMinerConfig.Ping.Enabled),
