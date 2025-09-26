@@ -13,100 +13,113 @@
 # - CGO enabled cryptography (Decred implementation)
 # - CGO disabled cryptography (Ethereum implementation)
 
-IGNITE_CMD ?= ignite chain build
-IGNITE_BASE_CGO_ENABLED := CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration" $(IGNITE_CMD) --build.tags="ethereum_secp256k1"
-IGNITE_BASE_CGO_DISABLED := CGO_ENABLED=0 $(IGNITE_CMD)
 
-# Build targets (for release builds)
-LINUX_TARGETS := -t linux:amd64 -t linux:arm64
+# ⚠️ The crypto backend is a BUILD-TIME configuration ⚠️
+# CGO=0 uses pure-Go secp256k1 (portable). CGO=1 uses Decred (C-backed).
+
+IGNITE_CMD ?= ignite chain build
+IGNITE_BASE_CGO_ENABLED   := CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration" $(IGNITE_CMD) --build.tags="ethereum_secp256k1"
+IGNITE_BASE_CGO_DISABLED  := CGO_ENABLED=0 $(IGNITE_CMD)
+
+# Release targets
+LINUX_TARGETS  := -t linux:amd64 -t linux:arm64
 DARWIN_TARGETS := -t darwin:amd64 -t darwin:arm64
-RELEASE_TARGETS := $(LINUX_TARGETS) $(DARWIN_TARGETS)
+
+# On Ubuntu:
+# - CGO=0: linux + darwin are OK
+# - CGO=1: build linux per-arch with a proper cross-compiler
+RELEASE_TARGETS_NOCGO := $(LINUX_TARGETS) $(DARWIN_TARGETS)
+
+# Cross C compilers on Ubuntu runners (install via apt)
+CC_LINUX_AMD64 ?= x86_64-linux-gnu-gcc
+CC_LINUX_ARM64 ?= aarch64-linux-gnu-gcc
 
 ##########################
 ### Ignite Build Tasks ###
 ##########################
 
-.PHONY: ignite_build
-ignite_build: check_go_version ignite_check_version ## Build the pocketd binary using ignite (CGO enabled)
-	$(IGNITE_BASE_CGO_ENABLED) --skip-proto --debug -v -o .
-
-.PHONY: ignite_build_pocketd
-ignite_build_pocketd: check_go_version ignite_check_version ## Build the pocketd binary to GOPATH/bin (CGO enabled)
-	$(IGNITE_BASE_CGO_ENABLED) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
-
-.PHONY: ignite_release_local
-ignite_release_local: ignite_check_version ## Build production binary for current architecture only (CGO enabled)
-	$(IGNITE_BASE_CGO_ENABLED) --release -o release
-	$(MAKE) _ignite_rename_archives
-
 .PHONY: ignite_release_cgo_disabled
-ignite_release_cgo_disabled: ignite_check_version ## CGO=0 ignite release with default names
-	CGO_ENABLED=0 $(IGNITE_CMD) \
-		--release $(RELEASE_TARGETS) \
+ignite_release_cgo_disabled: ignite_check_version ## CGO=0 release with default names (linux + darwin)
+	$(IGNITE_BASE_CGO_DISABLED) \
+		--release $(RELEASE_TARGETS_NOCGO) \
 		-o release
 	$(MAKE) _ignite_rename_archives
+	# Optional: $(MAKE) ignite_release_repackage
 
-.PHONY: ignite_release_cgo_enabled
-ignite_release_cgo_enabled: ignite_check_version ## CGO=1 ignite release with _cgo suffix
-	CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration" $(IGNITE_CMD) \
-		--build.tags="ethereum_secp256k1" \
-		--release $(RELEASE_TARGETS) \
+# CGO=1: build per linux arch to set CC explicitly; keep artifacts with "_cgo" suffix.
+
+.PHONY: ignite_release_cgo_enabled_linux_amd64
+ignite_release_cgo_enabled_linux_amd64: ignite_check_version ## CGO=1 release for linux/amd64 (_cgo suffix)
+	CC=$(CC_LINUX_AMD64) $(IGNITE_BASE_CGO_ENABLED) \
+		--release -t linux:amd64 \
 		--release.prefix cgo_ \
 		-o release
 	$(MAKE) _ignite_suffix_cgo
 
+.PHONY: ignite_release_cgo_enabled_linux_arm64
+ignite_release_cgo_enabled_linux_arm64: ignite_check_version ## CGO=1 release for linux/arm64 (_cgo suffix)
+	CC=$(CC_LINUX_ARM64) $(IGNITE_BASE_CGO_ENABLED) \
+		--release -t linux:arm64 \
+		--release.prefix cgo_ \
+		-o release
+	$(MAKE) _ignite_suffix_cgo
+
+.PHONY: ignite_release_cgo_enabled
+ignite_release_cgo_enabled: ignite_release_cgo_enabled_linux_amd64 ignite_release_cgo_enabled_linux_arm64
+
+# Aggregate: build both families.
 .PHONY: ignite_release
-ignite_release: ignite_release_cgo_disabled ignite_release_cgo_enabled ## Build production binaries for all architectures (CGO disabled)
+ignite_release: ignite_release_cgo_disabled ignite_release_cgo_enabled
 
 ######################################
 ### Ignite Release Post-Processing ###
 ######################################
 
-# Convert the CGO-enabled files to use a _cgo suffix and unify naming to "pocket_*"
+# Rename CGO-enabled tarballs from cgo_poktroll_* to pocket_*_cgo
 .PHONY: _ignite_suffix_cgo
 _ignite_suffix_cgo:
 	@cd release && \
 	for f in cgo_poktroll_*.tar.gz; do \
-		# strip the cgo_ prefix, switch poktroll->pocket, then add _cgo before .tar.gz
 		base_no_pref=$${f#cgo_}; \
 		swapped=$${base_no_pref/poktroll/pocket}; \
 		mv "$$f" "$${swapped%.tar.gz}_cgo.tar.gz"; \
 	done; \
-	# refresh checksums to include both normal and _cgo artifacts
 	sha256sum pocket_*.tar.gz > release_checksum || true
 
+# Rename poktroll_* to pocket_* (CGO=0 path and any others that slipped through)
 .PHONY: _ignite_rename_archives
-_ignite_rename_archives: # Internal helper: Rename poktroll archives to pocket and update checksums
+_ignite_rename_archives:
 	@cd release && for f in poktroll_*.tar.gz; do [ -f "$$f" ] && mv "$$f" "pocket_$${f#poktroll_}" || true; done
 	@cd release && if [ -f release_checksum ]; then \
 		sed 's/poktroll/pocket/g' release_checksum > release_checksum.tmp && \
 		mv release_checksum.tmp release_checksum; \
 	fi
 
+# Repackage to contain only pocketd at root, then refresh checksums
 .PHONY: ignite_release_repackage
-ignite_release_repackage: # CI/CD Helper: Repackage release archives to contain only pocketd binary at root level
+ignite_release_repackage:
 	@for archive in release/pocket_*.tar.gz; do \
 		if [ -f "$$archive" ]; then \
-			binary_name=$$(basename "$$archive" .tar.gz); \
-			temp_dir=$$(mktemp -d); \
-			tar -zxf "$$archive" -C "$$temp_dir"; \
-			find "$$temp_dir" -name "pocketd" -type f -exec cp {} "$$temp_dir/pocketd" \; ; \
-			tar -czf "$$archive.new" -C "$$temp_dir" pocketd; \
+			tmp=$$(mktemp -d); \
+			tar -zxf "$$archive" -C "$$tmp"; \
+			find "$$tmp" -name "pocketd" -type f -exec cp {} "$$tmp/pocketd" \; ; \
+			tar -czf "$$archive.new" -C "$$tmp" pocketd; \
 			mv "$$archive.new" "$$archive"; \
-			rm -rf "$$temp_dir"; \
+			rm -rf "$$tmp"; \
 		fi; \
 	done
 	@cd release && sha256sum pocket_*.tar.gz > release_checksum
 
+# Extract all archives to release_binaries/<archive base> (Dockerfile.release expects pocket_linux_$ARCH)
 .PHONY: ignite_release_extract_binaries
-ignite_release_extract_binaries: # CI/CD Helper: Extract binaries from release archives to release_binaries/
+ignite_release_extract_binaries:
 	@mkdir -p release_binaries
 	@for archive in release/*.tar.gz; do \
-		binary_name=$$(basename "$$archive" .tar.gz); \
-		temp_dir=$$(mktemp -d); \
-		tar -zxf "$$archive" -C "$$temp_dir"; \
-		find "$$temp_dir" -name "pocketd" -type f -exec cp {} "release_binaries/$$binary_name" \; ; \
-		rm -rf "$$temp_dir"; \
+		bname=$$(basename "$$archive" .tar.gz); \
+		tmp=$$(mktemp -d); \
+		tar -zxf "$$archive" -C "$$tmp"; \
+		find "$$tmp" -name "pocketd" -type f -exec cp {} "release_binaries/$$bname" \; ; \
+		rm -rf "$$tmp"; \
 	done
 
 #################################
@@ -114,11 +127,11 @@ ignite_release_extract_binaries: # CI/CD Helper: Extract binaries from release a
 #################################
 
 .PHONY: ignite_update_ldflags
-ignite_update_ldflags: # CI/CD Helper: Update build ldflags with version and build date
+ignite_update_ldflags:
 	@yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
 
 .PHONY: ignite_check_version
-ignite_check_version: # Internal helper: Check ignite version compatibility
+ignite_check_version:
 	@version=$$(ignite version 2>&1 | awk -F':' '/Ignite CLI version/ {gsub(/^[ \t]+/, "", $$2); print $$2}'); \
 	if [ "$$version" = "" ]; then \
 		echo "Error: Ignite CLI not found."; \
@@ -133,23 +146,13 @@ ignite_check_version: # Internal helper: Check ignite version compatibility
 	fi
 
 .PHONY: ignite_install
-ignite_install: ## Install Ignite CLI (used by CI and heighliner)
-	@if command -v sudo &>/dev/null; then \
-		SUDO="sudo"; \
-	else \
-		SUDO=""; \
-	fi; \
-	echo "Downloading Ignite CLI..."; \
+ignite_install:
+	@if command -v sudo &>/dev/null; then SUDO="sudo"; else SUDO=""; fi; \
 	wget https://github.com/ignite/cli/releases/download/v29.0.0-rc.1/ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
-	echo "Extracting Ignite CLI..."; \
 	tar -xzf ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
-	echo "Moving Ignite CLI to /usr/local/bin..."; \
 	$$SUDO mv ignite /usr/local/bin/ignite; \
-	echo "Cleaning up..."; \
 	rm ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
-	echo "Configuring ignite so it doesn't block CI by asking for tracking consent..."; \
-	mkdir -p $(HOME)/.ignite; \
-	echo '{"name":"doNotTrackMe","doNotTrack":true}' > $(HOME)/.ignite/anon_identity.json; \
+	mkdir -p $(HOME)/.ignite; echo '{"name":"doNotTrackMe","doNotTrack":true}' > $(HOME)/.ignite/anon_identity.json; \
 	ignite version
 
 ###############################
@@ -157,26 +160,20 @@ ignite_install: ## Install Ignite CLI (used by CI and heighliner)
 ###############################
 
 .PHONY: install_cosmovisor
-install_cosmovisor: ## Installs `cosmovisor`
+install_cosmovisor:
 	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
 
 .PHONY: cosmovisor_cross_compile
-cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
+cosmovisor_cross_compile:
 	@COSMOVISOR_VERSION="v1.6.0"; \
 	PLATFORMS="linux/amd64 linux/arm64"; \
 	mkdir -p ./tmp; \
-	echo "Fetching Cosmovisor source..."; \
-	temp_dir=$$(mktemp -d); \
-	cd $$temp_dir; \
+	tmpd=$$(mktemp -d); cd $$tmpd; \
 	go mod init temp; \
 	go get cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@$$COSMOVISOR_VERSION; \
 	for platform in $$PLATFORMS; do \
-		OS=$${platform%/*}; \
-		ARCH=$${platform#*/}; \
-		echo "Compiling for $$OS/$$ARCH..."; \
+		OS=$${platform%/*}; ARCH=$${platform#*/}; \
 		GOOS=$$OS GOARCH=$$ARCH go build -o $(CURDIR)/tmp/cosmovisor-$$OS-$$ARCH cosmossdk.io/tools/cosmovisor/cmd/cosmovisor; \
 	done; \
-	cd $(CURDIR); \
-	rm -rf $$temp_dir; \
-	echo "Compilation complete. Binaries are in ./tmp/"; \
+	cd $(CURDIR); rm -rf $$tmpd; \
 	ls -l ./tmp/cosmovisor-*

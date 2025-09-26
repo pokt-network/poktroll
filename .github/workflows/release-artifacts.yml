@@ -30,23 +30,29 @@ jobs:
         with:
           go-version: "1.24.3"
 
-      - name: install ignite
+      - name: Install cross-compilers for CGO (linux/amd64 + linux/arm64)
         run: |
-          make ignite_install
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-x86-64-linux-gnu
+
+      - name: install ignite
+        # The ignite tarballs are named like ignite_29.0.0-rc.1_Linux_x86_64.tar.gz
+        run: |
+          make OS=Linux ARCH=x86_64 ignite_install
 
       - name: Install CI dependencies
         run: make install_ci_deps
 
-      # This is commented out because proto generated code is now tracked in the
-      # repo so this step is skipped.
-      # TODO_IMPROVE(@okdas): Have a step that regenerates the proto files and ensures
-      # if they are up to date. See https://github.com/pokt-network/poktroll/pull/544#issuecomment-2123063491
+      # Proto generation is skipped (tracked in repo)
       # - name: Generate protobufs
       #   run: make proto_regen
 
       - name: Build and extract binaries for container build
         run: |
           make ignite_update_ldflags
+          # Builds both:
+          #   - CGO_DISABLED (linux+darwin) -> normal names
+          #   - CGO_ENABLED (linux)        -> *_cgo names
           make ignite_release
           make ignite_release_repackage
           make ignite_release_extract_binaries
@@ -63,7 +69,6 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
-          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
           images: |
             ghcr.io/pokt-network/pocketd
             ghcr.io/pokt-network/poktrolld
@@ -82,7 +87,6 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
-          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
           images: |
             ghcr.io/pokt-network/pocketd
             ghcr.io/pokt-network/poktrolld
@@ -104,7 +108,6 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
-          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
           images: |
             ghcr.io/pokt-network/pocketd
             ghcr.io/pokt-network/poktrolld
