@@ -56,7 +56,7 @@ require (
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20250704180202-e527d4172770
+	github.com/pokt-network/shannon-sdk v0.0.0-20250926005543-248477bab1f9
 	go.uber.org/mock v0.5.2
 	golang.org/x/term v0.32.0
 )
@@ -112,8 +112,6 @@ require (
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v2 v2.4.0
 )
-
-require github.com/athanorlabs/go-dleq v0.1.0
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
