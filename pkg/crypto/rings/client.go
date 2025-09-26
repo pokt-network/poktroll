@@ -23,11 +23,11 @@ import (
 var (
 	_ crypto.RingClient = (*ringClient)(nil)
 
-	// placeholderRingPubKey is a deterministic dummy public key used when an application
+	// PlaceholderRingPubKey is a deterministic dummy public key used when an application
 	// has no delegated gateways.
 	// This ensures the ring has at least two keys without using duplicates.
-	placeholderRingPubKey  = secp256k1.GenPrivKeyFromSecret([]byte("placeholder_ring_key_for_apps_without_gateways")).PubKey()
-	placeholderRingAddress = placeholderRingPubKey.Address().String()
+	PlaceholderRingPubKey  = secp256k1.GenPrivKeyFromSecret([]byte("placeholder_ring_key_for_apps_without_gateways")).PubKey()
+	PlaceholderRingAddress = PlaceholderRingPubKey.Address().String()
 )
 
 // ringClient is an implementation of the RingClient interface that uses the
@@ -197,7 +197,7 @@ func (rc *ringClient) getRingPubKeysForAddress(
 	// If the Application has not delegated to any gateways, use a placeholder
 	// deterministic address to avoid duplicate keys in the ring.
 	if len(delegateeGatewayAddresses) == 0 {
-		delegateeGatewayAddresses = append(delegateeGatewayAddresses, placeholderRingAddress)
+		delegateeGatewayAddresses = append(delegateeGatewayAddresses, PlaceholderRingAddress)
 	}
 
 	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
@@ -223,8 +223,8 @@ func (rc *ringClient) addressesToPubKeys(
 	pubKeys := make([]cryptotypes.PubKey, len(addresses))
 	for i, addr := range addresses {
 		// Check if this is the dummy gateway address
-		if addr == placeholderRingAddress {
-			pubKeys[i] = placeholderRingPubKey
+		if addr == PlaceholderRingAddress {
+			pubKeys[i] = PlaceholderRingPubKey
 			continue
 		}
 		acc, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, addr)
