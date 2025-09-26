@@ -39,13 +39,13 @@ func WithNewBlockCacheClearing[C Cache](ctx context.Context, deps depinject.Conf
 	return nil
 }
 
-// WithSessionCountCacheClearFn returns a cache option that clears the cache at the start
-// of every nth session, where n is determined by DefaultApplicationUnbondingPeriodSessions.
+// WithSessionCountCacheClearFn returns a cache option that clears the cache at
+// the start of every nth session.
 func WithSessionCountCacheClearFn(numSessionsToClearCache uint) func(context.Context, depinject.Config, Cache) error {
 	return func(ctx context.Context, deps depinject.Config, cache Cache) error {
+		var logger polylog.Logger
 		var blockClient client.BlockClient
 		var sharedParamsCache client.ParamsCache[sharedtypes.Params]
-		var logger polylog.Logger
 		if err := depinject.Inject(deps, &blockClient, &sharedParamsCache, &logger); err != nil {
 			return err
 		}
@@ -54,18 +54,15 @@ func WithSessionCountCacheClearFn(numSessionsToClearCache uint) func(context.Con
 			ctx,
 			blockClient.CommittedBlocksSequence(ctx),
 			func(ctx context.Context, block client.Block) {
-				sharedParams, found := sharedParamsCache.Get()
-				// If shared params are not in the cache, skip clearing because:
-				// - The calculation of when to clear depends on values from shared params.
-				// - This code cannot depend on shared params querier to avoid circular dependency.
-				if !found {
-					logger.Debug().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
+				sharedParams, shouldClearCache := shouldClearCache(sharedParamsCache)
+				if !shouldClearCache {
+					logger.Debug().Msg("ℹ️ Shared params not found in cache. Skipping cache altogether")
 					return
 				}
 
 				currentHeight := block.Height()
-				currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, currentHeight)
-				currentSessionNumber := sharedtypes.GetSessionNumber(&sharedParams, currentHeight)
+				currentSessionStartHeight := sharedtypes.GetSessionStartHeight(sharedParams, currentHeight)
+				currentSessionNumber := sharedtypes.GetSessionNumber(sharedParams, currentHeight)
 
 				isAtSessionStart := currentHeight == currentSessionStartHeight
 				isCacheClearableSession := currentSessionNumber%int64(numSessionsToClearCache) == 0
@@ -94,9 +91,9 @@ func WithSessionCountCacheClearFn(numSessionsToClearCache uint) func(context.Con
 //   - Allow fresh difficulty calculations for the next session cycle
 func WithClaimSettlementCacheClearFn() func(context.Context, depinject.Config, Cache) error {
 	return func(ctx context.Context, deps depinject.Config, cache Cache) error {
+		var logger polylog.Logger
 		var blockClient client.BlockClient
 		var sharedParamsCache client.ParamsCache[sharedtypes.Params]
-		var logger polylog.Logger
 
 		// Inject dependencies
 		if err := depinject.Inject(deps, &blockClient, &sharedParamsCache, &logger); err != nil {
@@ -108,24 +105,16 @@ func WithClaimSettlementCacheClearFn() func(context.Context, depinject.Config, C
 			ctx,
 			blockClient.CommittedBlocksSequence(ctx),
 			func(ctx context.Context, block client.Block) {
-				sharedParams, found := sharedParamsCache.Get()
-				// If shared params are not in the cache, skip clearing because:
-				// - The calculation of when to clear depends on values from shared params.
-				// - This code cannot depend on shared params querier to avoid circular dependency.
-				if !found {
-					logger.Debug().Msg("ℹ️ Shared params not found in cache, skipping cache clearing")
+				sharedParams, shouldClearCache := shouldClearCache(sharedParamsCache)
+				if !shouldClearCache {
+					logger.Debug().Msg("ℹ️ Shared params not found in cache. Skipping cache altogether")
 					return
 				}
 
 				// Calculate the height at which claims for the current session will be settled
 				currentHeight := block.Height()
-				currentSessionStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, currentHeight)
-				sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)
-				claimSettlementHeight := currentSessionStartHeight + sessionEndToProofWindowCloseNumBlocks
-
-				// Clear cache when claims are settled to allow fresh difficulty values for the next cycle
-				if currentHeight == claimSettlementHeight {
-					logger.Debug().Msgf("🧹 Clearing cache at claim settlement height: %d", claimSettlementHeight)
+				if isAtClaimSettlementHeight(sharedParams, currentHeight) {
+					logger.Debug().Msgf("🧹 Clearing cache at claim settlement height: %d", currentHeight)
 					cache.Clear()
 				}
 			},
@@ -133,4 +122,29 @@ func WithClaimSettlementCacheClearFn() func(context.Context, depinject.Config, C
 
 		return nil
 	}
+}
+
+// isAtClaimSettlementHeight returns true if the current height is the height at
+// which claims for the current session will be settled.
+func isAtClaimSettlementHeight(sharedParams *sharedtypes.Params, currentHeight int64) bool {
+	currentSessionStartHeight := sharedtypes.GetSessionStartHeight(sharedParams, currentHeight)
+	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
+	claimSettlementHeight := currentSessionStartHeight + sessionEndToProofWindowCloseNumBlocks
+	return currentHeight == claimSettlementHeight
+}
+
+// shouldClearCache is used bye the helpers in this file to:
+// 1. Determine if the cache should be cleared.
+// 2. Return the shared params if they are in the cache.
+//
+// Why do we use the presence of shared params in the cache to determine if the cache should be cleared?
+// - SharedParams are a critical signal for when to clear the cache.
+// - It helps workaround cyclical dependencies between shared params querier and cache clearing.
+// - Most caching operations are dependent on shared params.
+func shouldClearCache(sharedParamsCache client.ParamsCache[sharedtypes.Params]) (*sharedtypes.Params, bool) {
+	sharedParams, found := sharedParamsCache.Get()
+	if !found {
+		return nil, false
+	}
+	return &sharedParams, true
 }
