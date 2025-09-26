@@ -10,6 +10,7 @@ load("ext://execute_in_pod", "execute_in_pod")
 load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
 load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+load("./tiltfiles/env.Tiltfile", "build_env", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_BUILD_TAGS", "IGNITE_CMD_WITH_TAGS", "IGNITE_CMD_WITHOUT_TAGS", "IGNITE_CGO_CFLAGS")
 
 
 # Avoid the header
@@ -140,42 +141,38 @@ secret_create_generic(
 # Import configuration files into Kubernetes ConfigMap
 configmap_create("pocketd-configs", from_file=listdir("localnet/pocketd/config/"), watch=True)
 
-# ---- Ignite build config (one place) ----
-IGNITE_BUILD_TAGS = "ethereum_secp256k1"
-IGNITE_BASE = "ignite chain build --build.tags=%s --skip-proto --debug -v" % IGNITE_BUILD_TAGS
-
 # Common deps for hot reload targets
-HOT_RELOAD_LABELS = ["hot-reloading"]
 PROTO_RESOURCE = "hot-reload: generate protobufs"
 
 if localnet_config["hot-reloading"]:
-    # Hot reload protobuf changes
     local_resource(
         PROTO_RESOURCE,
         "make proto_regen",
         deps=["proto"],
-        labels=HOT_RELOAD_LABELS,
+        labels=["hot-reloading"],
     )
 
-    # Hot reload the pocketd binary used by the k8s cluster
+    # TODO_TECHDEBT: Fix the cross-env dependencies so we can build a bin/pocketd
+    # on a mac for linux.
+    # 1. Uncomment (and fix) the build_env helper
+    # 2. Use IGNITE_CMD_WITH_TAGS and remove IGNITE_CMD_WITHOUT_TAGS
+    # 3. Set CGO_ENABLED=1 in the local_resource
     local_resource(
-        "hot-reload: pocketd",
-        "bash -c 'export CGO_ENABLED=1 CGO_CFLAGS=\"-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration\" && %s --output=./bin'" % IGNITE_BASE,
+        "hot-reload: pocketd (bin)",
+        # "GOOS=linux CGO_ENABLED=0 %s -o ./bin/pocketd" % IGNITE_CMD_WITHOUT_TAGS,
+        "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 %s --output=./bin" % IGNITE_CMD_WITHOUT_TAGS,
         deps=hot_reload_dirs,
-        labels=HOT_RELOAD_LABELS,
+        labels=["hot-reloading"],
         resource_deps=[PROTO_RESOURCE],
+        # env=build_env(TARGET_GOOS, TARGET_GOARCH),
     )
-
-    # TODO_TECHDEBT: We should only build it once and then copy it over.
-    # We need to do it in both places to ensure the developer interacting with
-    # Localnet is always using the latest pocked.
 
     # Hot reload the local pocketd binary used by the CLI
     local_resource(
-        "hot-reload: pocketd - local cli",
-        "bash -c 'export CGO_ENABLED=1 CGO_CFLAGS=\"-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration\" && %s -o $(go env GOPATH)/bin'" % IGNITE_BASE,
+        "hot-reload: pocketd (host)",
+        '%s %s -o $(go env GOPATH)/bin' % (IGNITE_CGO_CFLAGS, IGNITE_CMD_WITH_TAGS),
         deps=hot_reload_dirs,
-        labels=HOT_RELOAD_LABELS,
+        labels=["hot-reloading"],
         resource_deps=[PROTO_RESOURCE],
     )
 
@@ -191,7 +188,10 @@ WORKDIR /
 """,
     only=["./bin/pocketd"],
     entrypoint=["pocketd"],
-    live_update=[sync("bin/pocketd", "/usr/local/bin/pocketd")],
+    live_update=[
+        sync("bin/pocketd", "/usr/local/bin/pocketd"),
+        run("chmod +x /usr/local/bin/pocketd"),
+    ],
 )
 
 # Run data nodes & validators
