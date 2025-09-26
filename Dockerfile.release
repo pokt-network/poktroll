@@ -1,14 +1,14 @@
 # This Dockerfile is used to build container image for production workloads.
 # The image depends on `cosmovisor_cross_compile`, `ignite_release` and `ignite_release_extract_binaries` make targets.
 #
-# NOTE: The pre-built binaries in release_binaries/ must be built with CGO_ENABLED=1 and ethereum_secp256k1 tags.
-# Build command: CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration" go build -tags "ethereum_secp256k1" -ldflags "-s -w" -o release_binaries/pocket_linux_$TARGETARCH ./cmd/poktrolld
+# NOTE: The pre-built binaries in release_binaries/ are built with CGO_ENABLED=0 without ethereum_secp256k1 tag.
+# This uses the Decred pure Go implementation of secp256k1 for cross-platform compatibility.
 FROM debian:bookworm
 ARG TARGETARCH
 
-# Install necessary packages including runtime libraries for CGO binaries.
+# Install necessary packages.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates libc6 && \
+    apt-get install -y --no-install-recommends ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Use `1025` G/UID so users can switch between this and `heighliner` image without a need to chown the files.

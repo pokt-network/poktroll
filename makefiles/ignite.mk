@@ -3,10 +3,17 @@
 ##########################
 
 # Build configuration
-BUILD_TAGS ?= ethereum_secp256k1
-IGNITE_ENV ?= CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration"
+# Local builds use ethereum_secp256k1 tag with CGO enabled
+BUILD_TAGS_LOCAL ?= ethereum_secp256k1
+# Release builds use no tags (Decred implementation) with CGO disabled for cross-platform support
+BUILD_TAGS_RELEASE ?=
+# For local development with CGO
+IGNITE_ENV_LOCAL ?= CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration"
+# For cross-platform releases (must use CGO_ENABLED=0)
+IGNITE_ENV_RELEASE ?= CGO_ENABLED=0
 IGNITE_CMD ?= ignite chain build
-IGNITE_BASE := $(IGNITE_ENV) $(IGNITE_CMD) --build.tags="$(BUILD_TAGS)"
+IGNITE_BASE_LOCAL := $(IGNITE_ENV_LOCAL) $(IGNITE_CMD) --build.tags="$(BUILD_TAGS_LOCAL)"
+IGNITE_BASE_RELEASE := $(IGNITE_ENV_RELEASE) $(IGNITE_CMD) --build.tags="$(BUILD_TAGS_RELEASE)"
 
 # Build targets (for release builds)
 LINUX_TARGETS := -t linux:amd64 -t linux:arm64
@@ -19,20 +26,20 @@ RELEASE_TARGETS := $(LINUX_TARGETS) $(DARWIN_TARGETS)
 
 .PHONY: ignite_build
 ignite_build: ignite_check_version ## Build the pocketd binary using Ignite (development mode)
-	$(IGNITE_BASE) --skip-proto --debug -v -o .
+	$(IGNITE_BASE_LOCAL) --skip-proto --debug -v -o .
 
 .PHONY: ignite_pocketd_build
 ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary to GOPATH/bin
-	$(IGNITE_BASE) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
+	$(IGNITE_BASE_LOCAL) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_release
 ignite_release: ignite_check_version ## Build production binaries for all architectures
-	$(IGNITE_BASE) --release $(RELEASE_TARGETS) -o release
+	$(IGNITE_BASE_RELEASE) --release $(RELEASE_TARGETS) -o release
 	$(MAKE) _ignite_rename_archives
 
 .PHONY: ignite_release_local
 ignite_release_local: ignite_check_version ## Build production binary for current architecture only
-	$(IGNITE_BASE) --release -o release
+	$(IGNITE_BASE_LOCAL) --release -o release
 	$(MAKE) _ignite_rename_archives
 
 ##################################
