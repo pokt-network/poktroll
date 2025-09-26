@@ -126,21 +126,35 @@ ignite_install: ## Install Ignite CLI (used by CI and heighliner)
 ignite_acc_list: ## List all accounts in LocalNet
 	@ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
-.PHONY: ignite_openapi_gen
-ignite_openapi_gen: ignite_check_version ## Generate OpenAPI spec natively and process output
-	@ignite generate openapi --yes
-	@$(MAKE) process_openapi
+############################
+### Cosmovisor Decencies ###
+############################
 
-.PHONY: ignite_openapi_gen_docker
-ignite_openapi_gen_docker: ## Generate OpenAPI spec using Docker (workaround for ignite/cli#4495)
-	@docker build -f ./proto/Dockerfile.ignite -t ignite-openapi .
-	@docker run --rm -v "$(PWD):/workspace" ignite-openapi
-	@$(MAKE) process_openapi
+.PHONY: install_cosmovisor
+install_cosmovisor: ## Installs `cosmovisor`
+	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
 
-.PHONY: process_openapi
-# Internal helper: Process OpenAPI output to proper JSON/YAML format
-process_openapi:
-	@# Fix incorrectly named .yml file that contains JSON
-	@mv docs/static/openapi.yml docs/static/openapi.json
-	@yq -o=json '.' docs/static/openapi.json -I=4 > docs/static/openapi.json.tmp && mv docs/static/openapi.json.tmp docs/static/openapi.json
-	@yq -P -o=yaml '.' docs/static/openapi.json > docs/static/openapi.yml
+.PHONY: cosmovisor_cross_compile
+cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
+	@COSMOVISOR_VERSION="v1.6.0"; \
+	PLATFORMS="linux/amd64 linux/arm64"; \
+	mkdir -p ./tmp; \
+	echo "Fetching Cosmovisor source..."; \
+	temp_dir=$$(mktemp -d); \
+	cd $$temp_dir; \
+	go mod init temp; \
+	go get cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@$$COSMOVISOR_VERSION; \
+	for platform in $$PLATFORMS; do \
+		OS=$${platform%/*}; \
+		ARCH=$${platform#*/}; \
+		echo "Compiling for $$OS/$$ARCH..."; \
+		GOOS=$$OS GOARCH=$$ARCH go build -o $(CURDIR)/tmp/cosmovisor-$$OS-$$ARCH cosmossdk.io/tools/cosmovisor/cmd/cosmovisor; \
+	done; \
+	cd $(CURDIR); \
+	rm -rf $$temp_dir; \
+	echo "Compilation complete. Binaries are in ./tmp/"; \
+	ls -l ./tmp/cosmovisor-*
+
+.PHONY: cosmovisor_clean
+cosmovisor_clean:
+	rm -f ./tmp/cosmovisor-*

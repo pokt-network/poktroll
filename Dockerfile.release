@@ -1,5 +1,31 @@
 # This Dockerfile is used to build container image for production workloads.
 # The image depends on `cosmovisor_cross_compile`, `ignite_release` and `ignite_release_extract_binaries` make targets.
+
+# --- Build stage (CGO-enabled) ---
+FROM golang:1.24.3-bookworm AS build
+
+# Install build dependencies for CGO
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential pkg-config ca-certificates git && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# Cache modules
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+
+# Copy source
+COPY . .
+
+# Ensure CGO is enabled and targeting Linux
+ENV CGO_ENABLED=1 GOOS=linux
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -tags "ethereum_secp256k1" -ldflags "-s -w" -o /out/pocketd ./cmd/poktrolld
+
+# --- Runtime stage ---
 FROM debian:bookworm
 ARG TARGETARCH
 
@@ -12,18 +38,18 @@ RUN apt-get update && \
 # Ref: https://github.com/strangelove-ventures/heighliner
 RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin pocket
 
-COPY --chown=pocket:pocket release_binaries/pocket_linux_$TARGETARCH /bin/pocketd
+COPY --chown=pocket:pocket --from=build /out/pocketd /bin/pocketd
 COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
 
 # GODEBUG and GOGC are commented out but can be enabled by operators who want to build a custom image.
-
-# Use MADV_DONTNEED to aggressively return freed memory to the OS
-# This helps reduce RSS and is more transparent in container environments
+#
+# Use MADV_DONTNEED to aggressively return freed memory to the OS.
+# This helps reduce RSS and is more transparent in container environments.
 # ENV GODEBUG="madvdontneed=1"
-
-# Lower GC target percentage (default is 100)
-# Triggers GC when heap grows 50% since last collection
-# Helps control memory growth in production environments
+#
+# Lower GC target percentage (default is 100).
+# Triggers GC when heap grows 50% since last collection.
+# Helps control memory growth in production environments.
 # ENV GOGC="50"
 
 USER pocket
