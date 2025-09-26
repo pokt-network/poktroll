@@ -140,29 +140,42 @@ secret_create_generic(
 # Import configuration files into Kubernetes ConfigMap
 configmap_create("pocketd-configs", from_file=listdir("localnet/pocketd/config/"), watch=True)
 
+# ---- Ignite build config (one place) ----
+IGNITE_BUILD_TAGS = "ethereum_secp256k1"
+IGNITE_BASE = f'ignite chain build --build.tags="{BUILD_TAGS}" --skip-proto --debug -v'
+
+# Common deps for hot reload targets
+HOT_LABELS = ["hot-reloading"]
+HOT_DEPS = hot_reload_dirs  # already defined in your Tiltfile
+PROTO_RES = "hot-reload: generate protobufs"
+
 if localnet_config["hot-reloading"]:
     # Hot reload protobuf changes
     local_resource(
-        "hot-reload: generate protobufs",
+        PROTO_RES,
         "make proto_regen",
         deps=["proto"],
-        labels=["hot-reloading"],
+        labels=HOT_LABELS,
     )
+
     # Hot reload the pocketd binary used by the k8s cluster
     local_resource(
         "hot-reload: pocketd",
-        "GOOS=linux CGO_ENABLED=1 ignite chain build --build.tags=\"ethereum_secp256k1\" --skip-proto --output=./bin --debug -v",
-        deps=hot_reload_dirs,
-        labels=["hot-reloading"],
-        resource_deps=["hot-reload: generate protobufs"],
+        f"{IGNITE_BASE} --output=./bin",
+        deps=HOT_DEPS,
+        labels=HOT_LABELS,
+        resource_deps=[PROTO_RES],
+        env={"CGO_ENABLED": "1", "GOOS": "linux"},
     )
+
     # Hot reload the local pocketd binary used by the CLI
     local_resource(
         "hot-reload: pocketd - local cli",
-        "CGO_ENABLED=1 ignite chain build --build.tags=\"ethereum_secp256k1\" --skip-proto --debug -v -o $(go env GOPATH)/bin",
-        deps=hot_reload_dirs,
-        labels=["hot-reloading"],
-        resource_deps=["hot-reload: generate protobufs"],
+        f"{IGNITE_BASE} -o $(go env GOPATH)/bin",
+        deps=HOT_DEPS,
+        labels=HOT_LABELS,
+        resource_deps=[PROTO_RES],
+        env={"CGO_ENABLED": "1"},
     )
 
 # Build an image with a pocketd binary
