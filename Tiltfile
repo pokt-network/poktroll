@@ -144,37 +144,40 @@ configmap_create("pocketd-configs", from_file=listdir("localnet/pocketd/config/"
 IGNITE_BUILD_TAGS = "ethereum_secp256k1"
 IGNITE_BASE = "ignite chain build --build.tags=%s --skip-proto --debug -v" % IGNITE_BUILD_TAGS
 
-# Common deps/labels
+# Common deps for hot reload targets
 HOT_RELOAD_LABELS = ["hot-reloading"]
 PROTO_RESOURCE = "hot-reload: generate protobufs"
 
-# Build env for pocketd
-BUILD_ENV = {
-    "CGO_ENABLED": "1",
-    "CGO_CFLAGS": "-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration",
-}
-
-# Helper to build pocketd on hot reload
-def hot_reload_pocketd(resource_name, out_dir_flag):
+if localnet_config["hot-reloading"]:
+    # Hot reload protobuf changes
     local_resource(
-        name=resource_name,
-        cmd=IGNITE_BASE + " " + out_dir_flag,
+        PROTO_RESOURCE,
+        "make proto_regen",
+        deps=["proto"],
+        labels=HOT_RELOAD_LABELS,
+    )
+
+    # Hot reload the pocketd binary used by the k8s cluster
+    local_resource(
+        "hot-reload: pocketd",
+        "bash -c 'export CGO_ENABLED=1 CGO_CFLAGS=\"-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration\" && %s --output=./bin'" % IGNITE_BASE,
         deps=hot_reload_dirs,
         labels=HOT_RELOAD_LABELS,
         resource_deps=[PROTO_RESOURCE],
-        env=BUILD_ENV,
     )
 
-# Rebuild pocketd on hot reload
-if localnet_config["hot-reloading"]:
-    # 1) Protobufs
-    local_resource(name=PROTO_RESOURCE, cmd="make proto_regen", deps=["proto"], labels=HOT_RELOAD_LABELS)
+    # TODO_TECHDEBT: We should only build it once and then copy it over.
+    # We need to do it in both places to ensure the developer interacting with
+    # Localnet is always using the latest pocked.
 
-    # 2) pocketd for k8s cluster image/bin
-    hot_reload_pocketd("hot-reload: pocketd", "--output=./bin")
-
-    # 3) pocketd for local CLI
-    hot_reload_pocketd("hot-reload: pocketd - local cli", "-o $(go env GOPATH)/bin")
+    # Hot reload the local pocketd binary used by the CLI
+    local_resource(
+        "hot-reload: pocketd - local cli",
+        "bash -c 'export CGO_ENABLED=1 CGO_CFLAGS=\"-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration\" && %s -o $(go env GOPATH)/bin'" % IGNITE_BASE,
+        deps=hot_reload_dirs,
+        labels=HOT_RELOAD_LABELS,
+        resource_deps=[PROTO_RESOURCE],
+    )
 
 # Build an image with a pocketd binary
 docker_build_with_restart(

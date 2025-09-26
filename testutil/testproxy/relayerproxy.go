@@ -485,9 +485,14 @@ func GetApplicationRingSignature(
 	point, err := curve.DecodeToPoint(publicKey.Bytes())
 	require.NoError(t, err)
 
-	// At least two points are required to create a ring signer so we are reusing
-	// the same key for it
-	points := []ringtypes.Point{point, point}
+	// Ring signatures require at least two points. Use the same deterministic
+	// dummy key that the ring client uses for apps without delegations.
+	dummyPubKey := secp256k1.GenPrivKeyFromSecret([]byte("dummy_ring_key_for_apps_without_gateways")).PubKey()
+	dummyPoint, err := curve.DecodeToPoint(dummyPubKey.Bytes())
+	require.NoError(t, err)
+
+	// Sort the points to match the order used in verification
+	points := []ringtypes.Point{point, dummyPoint}
 	pointsRing, err := ring.NewFixedKeyRingFromPublicKeys(curve, points)
 	require.NoError(t, err)
 

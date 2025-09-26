@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"cosmossdk.io/depinject"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
 	ringtypes "github.com/pokt-network/go-dleq/types"
@@ -19,7 +20,20 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ crypto.RingClient = (*ringClient)(nil)
+var (
+	_ crypto.RingClient = (*ringClient)(nil)
+
+	// dummyRingPubKey is a deterministic dummy public key used when an application
+	// has no delegated gateways. This ensures the ring has at least two keys without
+	// using duplicates.
+	dummyRingPubKey = secp256k1.GenPrivKeyFromSecret([]byte("dummy_ring_key_for_apps_without_gateways")).PubKey()
+)
+
+const (
+	// dummyGatewayAddress is the address used for the dummy gateway when an application
+	// has no delegated gateways.
+	dummyGatewayAddress = "pokt1dummy_gateway_for_apps_without_delegations"
+)
 
 // ringClient is an implementation of the RingClient interface that uses the
 // client.ApplicationQueryClient to get application's delegation information
@@ -184,13 +198,11 @@ func (rc *ringClient) getRingPubKeysForAddress(
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
 
-	// TODO_IMPROVE: The appAddress is added twice because a ring signature
-	// requires AT LEAST two pubKeys. If the Application has not delegated
-	// to any gateways, the app's own address needs to be used twice to
-	// create a ring. This is not a huge issue but an improvement should
-	// be investigated in the future.
+	// Ring signatures require at least two pubKeys. If the Application has not
+	// delegated to any gateways, use a dummy deterministic address to avoid
+	// duplicate keys in the ring.
 	if len(delegateeGatewayAddresses) == 0 {
-		delegateeGatewayAddresses = append(delegateeGatewayAddresses, app.Address)
+		delegateeGatewayAddresses = append(delegateeGatewayAddresses, dummyGatewayAddress)
 	}
 
 	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
@@ -215,6 +227,11 @@ func (rc *ringClient) addressesToPubKeys(
 ) ([]cryptotypes.PubKey, error) {
 	pubKeys := make([]cryptotypes.PubKey, len(addresses))
 	for i, addr := range addresses {
+		// Check if this is the dummy gateway address
+		if addr == dummyGatewayAddress {
+			pubKeys[i] = dummyRingPubKey
+			continue
+		}
 		acc, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, addr)
 		if err != nil {
 			return nil, err
