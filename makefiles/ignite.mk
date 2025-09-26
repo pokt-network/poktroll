@@ -4,7 +4,7 @@
 
 # Build configuration
 BUILD_TAGS ?= ethereum_secp256k1
-IGNITE_ENV ?= CGO_ENABLED=1
+IGNITE_ENV ?= CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration"
 IGNITE_CMD ?= ignite chain build
 IGNITE_BASE := $(IGNITE_ENV) $(IGNITE_CMD) --build.tags="$(BUILD_TAGS)"
 
@@ -126,9 +126,9 @@ ignite_install: ## Install Ignite CLI (used by CI and heighliner)
 ignite_acc_list: ## List all accounts in LocalNet
 	@ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
-############################
-### Cosmovisor Decencies ###
-############################
+###############################
+### Cosmovisor Dependencies ###
+###############################
 
 .PHONY: install_cosmovisor
 install_cosmovisor: ## Installs `cosmovisor`

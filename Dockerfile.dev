@@ -2,7 +2,7 @@
 # It intentionally contains no security features, ships with code and troubleshooting tools.
 # Updated to build inside Linux with CGO enabled (avoids macOS headers/toolchain issues).
 
-FROM golang:1.24.3-bookworm AS base
+FROM golang:1.24.3 AS base
 
 # Core tooling + CGO toolchain for Linux builds
 RUN apt-get update && \

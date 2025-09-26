@@ -142,7 +142,7 @@ configmap_create("pocketd-configs", from_file=listdir("localnet/pocketd/config/"
 
 # ---- Ignite build config (one place) ----
 IGNITE_BUILD_TAGS = "ethereum_secp256k1"
-IGNITE_BASE = f'ignite chain build --build.tags="{BUILD_TAGS}" --skip-proto --debug -v'
+IGNITE_BASE = "ignite chain build --build.tags=" + str(IGNITE_BUILD_TAGS) + " --skip-proto --debug -v"
 
 # Common deps for hot reload targets
 HOT_LABELS = ["hot-reloading"]
@@ -161,21 +161,19 @@ if localnet_config["hot-reloading"]:
     # Hot reload the pocketd binary used by the k8s cluster
     local_resource(
         "hot-reload: pocketd",
-        f"{IGNITE_BASE} --output=./bin",
+        "bash -c 'export CGO_ENABLED=1 CGO_CFLAGS=\"-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration\" && " + str(IGNITE_BASE) + " --output=./bin'",
         deps=HOT_DEPS,
         labels=HOT_LABELS,
         resource_deps=[PROTO_RES],
-        env={"CGO_ENABLED": "1", "GOOS": "linux"},
     )
 
     # Hot reload the local pocketd binary used by the CLI
     local_resource(
         "hot-reload: pocketd - local cli",
-        f"{IGNITE_BASE} -o $(go env GOPATH)/bin",
+        "bash -c 'export CGO_ENABLED=1 CGO_CFLAGS=\"-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration\" && " + str(IGNITE_BASE) + " -o $(go env GOPATH)/bin'",
         deps=HOT_DEPS,
         labels=HOT_LABELS,
         resource_deps=[PROTO_RES],
-        env={"CGO_ENABLED": "1"},
     )
 
 # Build an image with a pocketd binary
