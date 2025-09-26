@@ -177,3 +177,7 @@ cosmovisor_cross_compile:
 	done; \
 	cd $(CURDIR); rm -rf $$tmpd; \
 	ls -l ./tmp/cosmovisor-*
+
+.PHONY: cosmovisor_clean
+cosmovisor_clean:
+	rm -f ./tmp/cosmovisor-*
