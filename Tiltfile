@@ -152,8 +152,12 @@ if localnet_config["hot-reloading"]:
         labels=["hot-reloading"],
     )
 
-    # Cross-compilation for container use - uses appropriate build tags and CGO settings
-    # Automatically selects Decred (no CGO) for cross-compilation or Ethereum (CGO) for native builds
+    # TODO_IMPROVE: Enable CGO cross-compilation.
+    # Given the complexity of containerized environments, CGO, static/dynamic linking, darwin/linux, etc.
+    # it is not currently possible to enable CGO cross-compilation.
+
+    # Cross-compilation for container use - uses appropriate build tags and CGO settings.
+    # Automatically selects Decred (no CGO) for cross-compilation or Ethereum (CGO) for native builds.
     local_resource(
         "hot-reload: pocketd (bin)",
         "%s --output=./bin" % build_cmd(TARGET_GOOS, TARGET_GOARCH),
@@ -163,8 +167,8 @@ if localnet_config["hot-reloading"]:
         env=build_env(TARGET_GOOS, TARGET_GOARCH),
     )
 
-    # Hot reload the local pocketd binary used by the CLI (host architecture)
-    # Always uses CGO + ethereum_secp256k1 for optimal performance on host
+    # Hot reload the local pocketd binary used by the CLI (host architecture).
+    # Always uses CGO + ethereum_secp256k1 for optimal performance on host.
     local_resource(
         "hot-reload: pocketd (host)",
         '%s %s -o $(go env GOPATH)/bin' % (IGNITE_CGO_CFLAGS, IGNITE_CMD),

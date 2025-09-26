@@ -52,15 +52,17 @@ def _zig_triple(goos, goarch):
     return ""
 
 def build_env(target_goos="linux", target_goarch="amd64"):
-    host_os = _host_os()           # Darwin / Linux
+    # Darwin / Linux
+    host_os = _host_os()
     host_goos = "darwin" if host_os == "Darwin" else "linux" if host_os == "Linux" else host_os.lower()
     host_arch = _host_arch()
 
     need_cross = (target_goos != host_goos) or (target_goarch != host_arch)
+    triple = _zig_triple(target_goos, target_goarch)
 
     if need_cross:
         # For cross-compilation, disable CGO and use pure Go implementation (Decred)
-        # This avoids Zig/UBSAN linking issues while maintaining functionality
+        # This avoids dynamic linking issues and works reliably in containers
         return {
             "GOOS": target_goos,
             "GOARCH": target_goarch,
