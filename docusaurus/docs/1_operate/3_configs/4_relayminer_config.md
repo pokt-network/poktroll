@@ -1,15 +1,7 @@
 ---
-title: RelayMiner config
+title: RelayMiner Config
 sidebar_position: 4
 ---
-
-:::warning Supplier Public Key Requirement
-
-If you are setting up a `RelayMiner` using a `Supplier` that does not have an onchain public key, you must follow the instructions [**here**](../../2_explore/4_morse_migration/7_claiming_supplier.md#6-ensure-your-shannon-supplier-has-an-onchain-public-key) to ensure your `Supplier` has an onchain public key.
-
-Alternatively, if you have a `Supplier` that has was not staked by the operator, you must follow the instructions [**here**](../1_cheat_sheets/4_supplier_cheatsheet.md#4-suppliers-staked-on-behalf-of-owners).
-
-:::
 
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
 co-processor/sidecar that acts as the real server for querying request, building
@@ -226,38 +218,10 @@ _`Optional`_ (default: `false`)
 
 Controls when validation happens relative to forwarding the request.
 
-:::info Summary
-- EAGER (`true`): Validate first (signature, session, rate limiting), then serve. Predictable backend load; higher per-request latency.
-- LAZY (`false`, default): Serve first for unknown sessions, then validate (“late validation”).
-  - Known sessions still validate up-front.
-  - Best cold-start throughput/latency.
-- This flag changes timing, not policy. Over-servicing and rate limits still apply.
-:::
-
-Metrics (useful in LAZY mode):
-- `delayed_relay_request_validation_total`
-- `delayed_relay_request_validation_failures_total`
-- `delayed_relay_request_rate_limiting_check_total`
-
-Example
-
-```yaml
-# Strict validation up-front
-enable_eager_relay_request_validation: true
-
-# Optimistic serving (default behavior)
-# enable_eager_relay_request_validation: false
-```
-
-:::tip When to use which mode:
-
-- Use EAGER (`true`) when you prefer strict validation before backend load, e.g.,
-  for highly constrained backends or when minimizing optimistic risk is critical.
-- Use LAZY (`false`, default) to optimize throughput and latency during cold starts
-  or when many sessions are initially unknown. This typically improves perceived
-  QoS but may transiently forward requests that later fail validation.
-
-:::
+| Mode                    | Value   | Behavior                                                                                       | Pros                               | Cons                                                        | When to Use                                                                                                                                                                        |
+| ----------------------- | ------- | ---------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Eager Mode**          | `true`  | Validate first (signature, session, rate limiting), serve later                                | Predictable backend load           | Higher per-request latency                                  | Use when you prefer strict validation before backend load (e.g., highly constrained backends or when minimizing optimistic risk is critical).                                      |
+| **Lazy Mode (default)** | `false` | Serve first for unknown sessions, then validate later. Known sessions still validate up-front. | Best cold-start throughput/latency | May transiently forward requests that later fail validation | Use to optimize throughput and latency during cold starts or when many sessions are initially unknown. Improves perceived QoS but may forward requests that later fail validation. |
 
 ### `metrics`
 

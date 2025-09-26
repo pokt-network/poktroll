@@ -18,6 +18,7 @@ import (
 )
 
 // TODO_IMPROVE: Make this configurable (for the RelayMiner) and other users.
+//
 // DEV_NOTE: Use a relatively short per-attempt timeout:
 //   - Fail fast: stuck calls return quickly so the retry strategy can try again.
 //   - Higher-level deadline bound: if a single attempt needs > this timeout, the
