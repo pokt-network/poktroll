@@ -14,7 +14,7 @@ module github.com/pokt-network/poktroll
 // 4. make proto_regen
 // 5. Uncomment above / comment below...
 // 6. go mod tidy
-// 7. ignite chain build --skip-proto # and/or (re)start/build localnet
+// 7. make ignite_build # and/or (re)start/build localnet
 
 //module github.com/pokt-network/pocket
 //replace github.com/pokt-network/poktroll => .

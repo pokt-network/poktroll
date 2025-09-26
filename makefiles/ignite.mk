@@ -1,19 +1,21 @@
-##########################
+############################
 ### Ignite Configuration ###
-##########################
+############################
 
-# Build configuration
-# Local builds use ethereum_secp256k1 tag with CGO enabled
-BUILD_TAGS_LOCAL ?= ethereum_secp256k1
-# Release builds use no tags (Decred implementation) with CGO disabled for cross-platform support
-BUILD_TAGS_RELEASE ?=
-# For local development with CGO
-IGNITE_ENV_LOCAL ?= CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration"
-# For cross-platform releases (must use CGO_ENABLED=0)
-IGNITE_ENV_RELEASE ?= CGO_ENABLED=0
+# ⚠️The crypto backend is a BUILD-TIME configuration ⚠️
+#
+# The crypto stack is a complex system that involves multiple dependencies:
+# - go-dleq: https://github.com/pokt-network/go-dleq
+# - ring-go: https://github.com/pokt-network/ring-go
+# - shannon-sdk: https://github.com/pokt-network/shannon-sdk
+#
+# These repos can choose between:
+# - CGO enabled cryptography (Decred implementation)
+# - CGO disabled cryptography (Ethereum implementation)
+
 IGNITE_CMD ?= ignite chain build
-IGNITE_BASE_LOCAL := $(IGNITE_ENV_LOCAL) $(IGNITE_CMD) --build.tags="$(BUILD_TAGS_LOCAL)"
-IGNITE_BASE_RELEASE := $(IGNITE_ENV_RELEASE) $(IGNITE_CMD) --build.tags="$(BUILD_TAGS_RELEASE)"
+IGNITE_BASE_CGO_ENABLED := CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration" $(IGNITE_CMD) --build.tags="ethereum_secp256k1"
+IGNITE_BASE_CGO_DISABLED := CGO_ENABLED=0 $(IGNITE_CMD)
 
 # Build targets (for release builds)
 LINUX_TARGETS := -t linux:amd64 -t linux:arm64
@@ -25,30 +27,56 @@ RELEASE_TARGETS := $(LINUX_TARGETS) $(DARWIN_TARGETS)
 ##########################
 
 .PHONY: ignite_build
-ignite_build: ignite_check_version ## Build the pocketd binary using Ignite (development mode)
-	$(IGNITE_BASE_LOCAL) --skip-proto --debug -v -o .
+ignite_build: check_go_version ignite_check_version ## Build the pocketd binary using ignite (CGO enabled)
+	$(IGNITE_BASE_CGO_ENABLED) --skip-proto --debug -v -o .
 
-.PHONY: ignite_pocketd_build
-ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary to GOPATH/bin
-	$(IGNITE_BASE_LOCAL) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
-
-.PHONY: ignite_release
-ignite_release: ignite_check_version ## Build production binaries for all architectures
-	$(IGNITE_BASE_RELEASE) --release $(RELEASE_TARGETS) -o release
-	$(MAKE) _ignite_rename_archives
+.PHONY: ignite_build_pocketd
+ignite_build_pocketd: check_go_version ignite_check_version ## Build the pocketd binary to GOPATH/bin (CGO enabled)
+	$(IGNITE_BASE_CGO_ENABLED) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_release_local
-ignite_release_local: ignite_check_version ## Build production binary for current architecture only
-	$(IGNITE_BASE_LOCAL) --release -o release
+ignite_release_local: ignite_check_version ## Build production binary for current architecture only (CGO enabled)
+	$(IGNITE_BASE_CGO_ENABLED) --release -o release
 	$(MAKE) _ignite_rename_archives
 
-##################################
+.PHONY: ignite_release_cgo_disabled
+ignite_release_cgo_disabled: ignite_check_version ## CGO=0 ignite release with default names
+	CGO_ENABLED=0 $(IGNITE_CMD) \
+		--release $(RELEASE_TARGETS) \
+		-o release
+	$(MAKE) _ignite_rename_archives
+
+.PHONY: ignite_release_cgo_enabled
+ignite_release_cgo_enabled: ignite_check_version ## CGO=1 ignite release with _cgo suffix
+	CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration" $(IGNITE_CMD) \
+		--build.tags="ethereum_secp256k1" \
+		--release $(RELEASE_TARGETS) \
+		--release.prefix cgo_ \
+		-o release
+	$(MAKE) _ignite_suffix_cgo
+
+.PHONY: ignite_release
+ignite_release: ignite_release_cgo_disabled ignite_release_cgo_enabled ## Build production binaries for all architectures (CGO disabled)
+
+######################################
 ### Ignite Release Post-Processing ###
-##################################
+######################################
+
+# Convert the CGO-enabled files to use a _cgo suffix and unify naming to "pocket_*"
+.PHONY: _ignite_suffix_cgo
+_ignite_suffix_cgo:
+	@cd release && \
+	for f in cgo_poktroll_*.tar.gz; do \
+		# strip the cgo_ prefix, switch poktroll->pocket, then add _cgo before .tar.gz
+		base_no_pref=$${f#cgo_}; \
+		swapped=$${base_no_pref/poktroll/pocket}; \
+		mv "$$f" "$${swapped%.tar.gz}_cgo.tar.gz"; \
+	done; \
+	# refresh checksums to include both normal and _cgo artifacts
+	sha256sum pocket_*.tar.gz > release_checksum || true
 
 .PHONY: _ignite_rename_archives
-# Internal helper: Rename poktroll archives to pocket and update checksums
-_ignite_rename_archives:
+_ignite_rename_archives: # Internal helper: Rename poktroll archives to pocket and update checksums
 	@cd release && for f in poktroll_*.tar.gz; do [ -f "$$f" ] && mv "$$f" "pocket_$${f#poktroll_}" || true; done
 	@cd release && if [ -f release_checksum ]; then \
 		sed 's/poktroll/pocket/g' release_checksum > release_checksum.tmp && \
@@ -56,7 +84,7 @@ _ignite_rename_archives:
 	fi
 
 .PHONY: ignite_release_repackage
-ignite_release_repackage: ## Repackage release archives to contain only pocketd binary at root level
+ignite_release_repackage: # CI/CD Helper: Repackage release archives to contain only pocketd binary at root level
 	@for archive in release/pocket_*.tar.gz; do \
 		if [ -f "$$archive" ]; then \
 			binary_name=$$(basename "$$archive" .tar.gz); \
@@ -71,7 +99,7 @@ ignite_release_repackage: ## Repackage release archives to contain only pocketd 
 	@cd release && sha256sum pocket_*.tar.gz > release_checksum
 
 .PHONY: ignite_release_extract_binaries
-ignite_release_extract_binaries: ## Extract binaries from release archives to release_binaries/
+ignite_release_extract_binaries: # CI/CD Helper: Extract binaries from release archives to release_binaries/
 	@mkdir -p release_binaries
 	@for archive in release/*.tar.gz; do \
 		binary_name=$$(basename "$$archive" .tar.gz); \
@@ -86,12 +114,11 @@ ignite_release_extract_binaries: ## Extract binaries from release archives to re
 #################################
 
 .PHONY: ignite_update_ldflags
-ignite_update_ldflags: ## Update build ldflags with version and build date
+ignite_update_ldflags: # CI/CD Helper: Update build ldflags with version and build date
 	@yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
 
 .PHONY: ignite_check_version
-# Internal helper: Check ignite version compatibility
-ignite_check_version:
+ignite_check_version: # Internal helper: Check ignite version compatibility
 	@version=$$(ignite version 2>&1 | awk -F':' '/Ignite CLI version/ {gsub(/^[ \t]+/, "", $$2); print $$2}'); \
 	if [ "$$version" = "" ]; then \
 		echo "Error: Ignite CLI not found."; \
@@ -125,14 +152,6 @@ ignite_install: ## Install Ignite CLI (used by CI and heighliner)
 	echo '{"name":"doNotTrackMe","doNotTrack":true}' > $(HOME)/.ignite/anon_identity.json; \
 	ignite version
 
-##########################
-### Ignite Development ###
-##########################
-
-.PHONY: ignite_acc_list
-ignite_acc_list: ## List all accounts in LocalNet
-	@ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
-
 ###############################
 ### Cosmovisor Dependencies ###
 ###############################
@@ -161,7 +180,3 @@ cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different 
 	rm -rf $$temp_dir; \
 	echo "Compilation complete. Binaries are in ./tmp/"; \
 	ls -l ./tmp/cosmovisor-*
-
-.PHONY: cosmovisor_clean
-cosmovisor_clean:
-	rm -f ./tmp/cosmovisor-*
