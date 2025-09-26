@@ -36,7 +36,7 @@ jobs:
       #   run: make proto_regen
 
       - name: Build
-        run: CGO_ENABLED=1 ignite chain build --build.tags="ethereum_secp256k1" -v --debug --skip-proto
+        run: CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration" ignite chain build --build.tags="ethereum_secp256k1" -v --debug --skip-proto
 
       - name: Set up Docker Buildx
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image')) || (contains(github.event.pull_request.labels.*.name, 'devnet-test-e2e'))

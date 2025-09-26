@@ -21,9 +21,7 @@ COPY . /pocket
 
 WORKDIR /pocket
 
-# Build pocketd with CGO and ethereum_secp256k1 tags
-RUN go build -tags "ethereum_secp256k1" -o /usr/bin/pocketd ./cmd/poktrolld
-RUN mv /pocket/bin/ignite /usr/bin/
+RUN mv /pocket/bin/ignite /usr/bin/ && mv /pocket/bin/pocketd /usr/bin/
 
 # Install Cosmovisor
 RUN make install_cosmovisor
