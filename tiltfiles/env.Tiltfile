@@ -23,8 +23,14 @@ IGNITE_CGO_CFLAGS = 'CGO_ENABLED=1 CGO_CFLAGS="%s"' % CGO_CFLAGS
 
 # --- tiny helper ---
 def _run(cmd):
-    # local() -> Blob; use .read()
-    return local(cmd, quiet=True).read().strip()
+    # local() returns a Blob in newer Tilt versions, string in older ones
+    result = local(cmd, quiet=True)
+    if hasattr(result, 'strip'):
+        return result.strip()
+    elif hasattr(result, 'read'):
+        return result.read().strip()
+    else:
+        return str(result).strip()
 
 def _host_os():
     # Darwin or Linux
@@ -46,25 +52,40 @@ def _zig_triple(goos, goarch):
     return ""
 
 def build_env(target_goos="linux", target_goarch="amd64"):
-    env = {
-        "GOOS": target_goos,
-        "GOARCH": target_goarch,
-        "CGO_ENABLED": "1",
-        "CGO_CFLAGS": CGO_CFLAGS,
-    }
-
     host_os = _host_os()           # Darwin / Linux
     host_goos = "darwin" if host_os == "Darwin" else "linux" if host_os == "Linux" else host_os.lower()
     host_arch = _host_arch()
 
     need_cross = (target_goos != host_goos) or (target_goarch != host_arch)
-    triple = _zig_triple(target_goos, target_goarch)
 
     if need_cross:
-        if not _has_zig():
-            fail("Cross-compiling CGO requires zig. Install zig (macOS: brew install zig; Linux: apt/yum or ziglang.org).")
-        if triple:
-            env["CC"]  = "zig cc -target %s" % triple
-            env["CXX"] = "zig c++ -target %s" % triple
+        # For cross-compilation, disable CGO and use pure Go implementation (Decred)
+        # This avoids Zig/UBSAN linking issues while maintaining functionality
+        return {
+            "GOOS": target_goos,
+            "GOARCH": target_goarch,
+            "CGO_ENABLED": "0",
+        }
+    else:
+        # For native builds, use CGO with ethereum_secp256k1 for optimal performance
+        return {
+            "GOOS": target_goos,
+            "GOARCH": target_goarch,
+            "CGO_ENABLED": "1",
+            "CGO_CFLAGS": CGO_CFLAGS,
+        }
 
-    return env
+def build_cmd(target_goos="linux", target_goarch="amd64"):
+    """Returns the appropriate ignite command with correct build tags for the target"""
+    host_os = _host_os()
+    host_goos = "darwin" if host_os == "Darwin" else "linux" if host_os == "Linux" else host_os.lower()
+    host_arch = _host_arch()
+
+    need_cross = (target_goos != host_goos) or (target_goarch != host_arch)
+
+    if need_cross:
+        # Cross-compilation: use no build tags (Decred implementation with CGO_ENABLED=0)
+        return IGNITE_CMD_CROSS
+    else:
+        # Native compilation: use ethereum_secp256k1 tag with CGO
+        return IGNITE_CMD_LOCAL

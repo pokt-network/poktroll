@@ -10,7 +10,7 @@ load("ext://execute_in_pod", "execute_in_pod")
 load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
 load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
-load("./tiltfiles/env.Tiltfile", "build_env", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_CMD", "IGNITE_CGO_CFLAGS")
+load("./tiltfiles/env.Tiltfile", "build_env", "build_cmd", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_CMD", "IGNITE_CGO_CFLAGS")
 
 
 # Avoid the header
@@ -152,11 +152,11 @@ if localnet_config["hot-reloading"]:
         labels=["hot-reloading"],
     )
 
-    # Cross-compilation with CGO enabled using Zig as cross-compiler
-    # Uses ethereum_secp256k1 build tag for optimal performance in development
+    # Cross-compilation for container use - uses appropriate build tags and CGO settings
+    # Automatically selects Decred (no CGO) for cross-compilation or Ethereum (CGO) for native builds
     local_resource(
         "hot-reload: pocketd (bin)",
-        "%s --output=./bin" % IGNITE_CMD,
+        "%s --output=./bin" % build_cmd(TARGET_GOOS, TARGET_GOARCH),
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
         resource_deps=[PROTO_RESOURCE],
@@ -164,6 +164,7 @@ if localnet_config["hot-reloading"]:
     )
 
     # Hot reload the local pocketd binary used by the CLI (host architecture)
+    # Always uses CGO + ethereum_secp256k1 for optimal performance on host
     local_resource(
         "hot-reload: pocketd (host)",
         '%s %s -o $(go env GOPATH)/bin' % (IGNITE_CGO_CFLAGS, IGNITE_CMD),

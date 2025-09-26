@@ -23,16 +23,11 @@ import (
 var (
 	_ crypto.RingClient = (*ringClient)(nil)
 
-	// dummyRingPubKey is a deterministic dummy public key used when an application
-	// has no delegated gateways. This ensures the ring has at least two keys without
-	// using duplicates.
-	dummyRingPubKey = secp256k1.GenPrivKeyFromSecret([]byte("dummy_ring_key_for_apps_without_gateways")).PubKey()
-)
-
-const (
-	// dummyGatewayAddress is the address used for the dummy gateway when an application
+	// placeholderRingPubKey is a deterministic dummy public key used when an application
 	// has no delegated gateways.
-	dummyGatewayAddress = "pokt1dummy_gateway_for_apps_without_delegations"
+	// This ensures the ring has at least two keys without using duplicates.
+	placeholderRingPubKey  = secp256k1.GenPrivKeyFromSecret([]byte("placeholder_ring_key_for_apps_without_gateways")).PubKey()
+	placeholderRingAddress = placeholderRingPubKey.Address().String()
 )
 
 // ringClient is an implementation of the RingClient interface that uses the
@@ -198,11 +193,11 @@ func (rc *ringClient) getRingPubKeysForAddress(
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
 
-	// Ring signatures require at least two pubKeys. If the Application has not
-	// delegated to any gateways, use a dummy deterministic address to avoid
-	// duplicate keys in the ring.
+	// Ring signatures require at least two pubKeys.
+	// If the Application has not delegated to any gateways, use a placeholder
+	// deterministic address to avoid duplicate keys in the ring.
 	if len(delegateeGatewayAddresses) == 0 {
-		delegateeGatewayAddresses = append(delegateeGatewayAddresses, dummyGatewayAddress)
+		delegateeGatewayAddresses = append(delegateeGatewayAddresses, placeholderRingAddress)
 	}
 
 	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
@@ -228,8 +223,8 @@ func (rc *ringClient) addressesToPubKeys(
 	pubKeys := make([]cryptotypes.PubKey, len(addresses))
 	for i, addr := range addresses {
 		// Check if this is the dummy gateway address
-		if addr == dummyGatewayAddress {
-			pubKeys[i] = dummyRingPubKey
+		if addr == placeholderRingAddress {
+			pubKeys[i] = placeholderRingPubKey
 			continue
 		}
 		acc, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, addr)

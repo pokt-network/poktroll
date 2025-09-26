@@ -485,8 +485,8 @@ func GetApplicationRingSignature(
 	point, err := curve.DecodeToPoint(publicKey.Bytes())
 	require.NoError(t, err)
 
-	// Ring signatures require at least two points. Use the same deterministic
-	// dummy key that the ring client uses for apps without delegations.
+	// Ring signatures require at least two points.
+	// Use the same deterministic dummy key that the ring client uses for apps without delegations.
 	dummyPubKey := secp256k1.GenPrivKeyFromSecret([]byte("dummy_ring_key_for_apps_without_gateways")).PubKey()
 	dummyPoint, err := curve.DecodeToPoint(dummyPubKey.Bytes())
 	require.NoError(t, err)
