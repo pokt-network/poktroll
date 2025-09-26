@@ -223,6 +223,12 @@ func importSessionTree(
 	// 1. Sessions to continue accumulating relays after restart
 	// 2. The claim creation process to work correctly by calling Flush()
 	// 3. The same root to be generated since the imported SMT has the persisted state
+	//
+	// TODO_CONSIDERATION: For sessions that were previously flushed during shutdown,
+	// consider restoring the claimedRoot synchronously during import to avoid race
+	// conditions in tests that expect GetClaimRoot() to return immediately after restart.
+	// This would require distinguishing between "flushed but not claimed" vs "never flushed"
+	// sessions, possibly by storing flush state in the session metadata.
 	sessionTree.claimedRoot = nil  // Keep nil to allow updates
 	sessionTree.isClaiming = false // Not yet in the claiming pipeline
 

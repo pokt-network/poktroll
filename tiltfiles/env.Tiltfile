@@ -2,9 +2,18 @@
 TARGET_GOOS = "linux"
 TARGET_GOARCH = "amd64"
 
-IGNITE_BUILD_TAGS = "--build.tags=ethereum_secp256k1"
-IGNITE_CMD_WITH_TAGS = "ignite chain build %s --skip-proto --debug -v" % IGNITE_BUILD_TAGS
-IGNITE_CMD_WITHOUT_TAGS = "ignite chain build --skip-proto --debug -v"
+# Build configuration aligned with makefiles/ignite.mk
+# For local/development builds with CGO
+IGNITE_BUILD_TAGS_LOCAL = "--build.tags=ethereum_secp256k1"
+# For cross-platform builds without CGO (uses Decred implementation)
+IGNITE_BUILD_TAGS_CROSS = ""
+
+# Unified build commands for different contexts
+IGNITE_CMD_LOCAL = "ignite chain build %s --skip-proto --debug -v" % IGNITE_BUILD_TAGS_LOCAL
+IGNITE_CMD_CROSS = "ignite chain build %s --skip-proto --debug -v" % IGNITE_BUILD_TAGS_CROSS
+
+# Primary command for development (local + cross-compilation with CGO)
+IGNITE_CMD = IGNITE_CMD_LOCAL
 
 HOT_RELOAD_LABELS = ["hot-reloading"]
 PROTO_RESOURCE = "hot-reload: generate protobufs"
@@ -41,7 +50,7 @@ def build_env(target_goos="linux", target_goarch="amd64"):
         "GOOS": target_goos,
         "GOARCH": target_goarch,
         "CGO_ENABLED": "1",
-        "CGO_CFLAGS": IGNITE_CGO_CFLAGS,
+        "CGO_CFLAGS": CGO_CFLAGS,
     }
 
     host_os = _host_os()           # Darwin / Linux
