@@ -66,6 +66,8 @@ var (
 
 // main orchestrates the relay load testing process by generating a RelayRequest,
 // creating a wrk2 Lua script, and executing the load test.
+// TODO_IMPROVEMENT: Embed this logic into `pocketd relayminer relay` command for
+// more integrated testing capabilities.
 func main() {
 	flag.Parse()
 
