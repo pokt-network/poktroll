@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -48,8 +49,10 @@ func (sync *relayMinerHTTPServer) newRelayRequest(request *http.Request) (*types
 // - Embeds the entire serialized response (status code, headers, and body) into the RelayResponse.
 func (sync *relayMinerHTTPServer) newRelayResponse(
 	responseBz []byte,
+	payloadHash [32]byte,
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddr string,
+	instructionTimes *relayer.InstructionTimer,
 ) (*types.RelayResponse, error) {
 	relayResponse := &types.RelayResponse{
 		Meta:    types.RelayResponseMetadata{SessionHeader: sessionHeader},
@@ -58,22 +61,23 @@ func (sync *relayMinerHTTPServer) newRelayResponse(
 
 	chainVersion := sync.blockClient.GetChainVersion()
 	if block.IsChainAfterAddPayloadHashInRelayResponse(chainVersion) {
-		// Compute hash of the response payload for proof verification.
-		// This hash will be stored in the RelayResponse and used during proof validation
-		// to verify the integrity of the response without requiring the full payload.
-		if err := relayResponse.UpdatePayloadHash(); err != nil {
-			return nil, err
-		}
+		relayResponse.PayloadHash = payloadHash[:]
 	}
+
+	instructionTimes.Record("chain_version_check")
 
 	// Sign the relay response and add the signature to the relay response metadata
 	if err := sync.relayAuthenticator.SignRelayResponse(relayResponse, supplierOperatorAddr); err != nil {
 		return nil, ErrRelayerProxyInternalError.Wrapf("failed to sign relay response for supplier %s: %v", supplierOperatorAddr, err)
 	}
 
+	instructionTimes.Record("sign_relay_response")
+
 	if err := relayResponse.ValidateBasic(); err != nil {
 		return nil, ErrRelayerProxyInternalError.Wrapf("relay response validation failed after signing (supplier: %s): %v", supplierOperatorAddr, err)
 	}
+
+	instructionTimes.Record("sign_relay_response_validation")
 
 	return relayResponse, nil
 }

@@ -326,7 +326,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
 	httpResponse, err := server.httpClient.Do(ctxWithRemainingTimeout, logger, httpRequest)
-	httpRequest.Body.Close()
+	CloseBody(logger, httpRequest.Body) // release resource asap, since it is already read
 
 	instructionTimes.Record("http_client_do")
 
@@ -363,8 +363,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	instructionTimes.Record("defer_close_response_body_and_capture_service_duration")
 
 	// Serialize the service response to be sent back to the client.
-	// This will include the status code, headers, and body.
-	wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
+	// This will include the status code, headers, body and body hash
+	wrappedHTTPResponse, responseBz, payloadHash, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize, instructionTimes)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return relayRequest, err
@@ -389,7 +389,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		Str("relay_request_session_header", sessionHeader.String()).
 		Msg("building relay response protobuf from service response")
 
-	// Check context cancellation before building relay response to prevent signature race conditions
+	// Check context cancellation before building a relay response to prevent signature race conditions
 	if ctxErr := ctxWithDeadline.Err(); ctxErr != nil {
 		logger.Warn().Err(ctxErr).Msg("⚠️ Context canceled before building relay response - preventing signature race condition")
 		return relayRequest, ErrRelayerProxyTimeout.Wrapf(
@@ -403,7 +403,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
-	relayResponse, err := server.newRelayResponse(responseBz, sessionHeader, meta.SupplierOperatorAddress)
+	relayResponse, err := server.newRelayResponse(responseBz, payloadHash, sessionHeader, meta.SupplierOperatorAddress, instructionTimes)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed building the relay response")
 		// The client should not have knowledge about the RelayMiner's issues with

@@ -2,12 +2,14 @@ package proxy
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"sync"
 
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"google.golang.org/protobuf/proto"
 
@@ -72,6 +74,7 @@ func SafeReadBody(
 
 	// Get a reusable *bytes.Buffer from the pool
 	buf := bodyBufPool.Get().(*bytes.Buffer)
+	buf.Reset()
 
 	// Create a cleanup function that resets and returns the buffer to the pool.
 	// This closure pattern is necessary because:
@@ -129,92 +132,138 @@ func SafeRequestReadBody(
 	return body, resetReadBodyPoolBytes, err
 }
 
-// SafeResponseReadBody reads the HTTP response body up to a specified size limit, enforcing safety and logging errors.
-// Logs and wraps errors for size violations or reading issues, using the provided logger. Returns body as []byte or error.
+// SafeResponseReadBody reads the response body with size limits into a pooled buffer
+// while computing sha256(body) in a single pass. Caller MUST call cleanupFunc() when done.
 func SafeResponseReadBody(
 	logger polylog.Logger,
 	response *http.Response,
 	maxSize int64,
-) (bodyBytes []byte, cleanupFunc func(), err error) {
-	body, resetReadBodyPoolBytes, err := SafeReadBody(logger, response.Body, maxSize)
+) (bodyBytes []byte, payloadHash [32]byte, cleanupFunc func(), err error) {
+	defer CloseBody(logger, response.Body)
 
-	if errors.Is(err, ErrRelayerProxyMaxBodyExceeded) {
-		return nil, resetReadBodyPoolBytes, ErrRelayerProxyResponseLimitExceeded.Wrap(err.Error())
+	if maxSize <= 0 {
+		return nil, [32]byte{}, nil, config.ErrRelayMinerConfigInvalidMaxBodySize.Wrapf(
+			"invalid max body size %q", maxSize,
+		)
 	}
 
-	return body, resetReadBodyPoolBytes, err
+	// Create a limited reader that will read at most maxSize+1 bytes
+	// The +1 allows us to detect when the body exceeds the limit
+	limitedReader := io.LimitReader(response.Body, maxSize+1)
+
+	// Get a reusable *bytes.Buffer from the pool
+	buf := bodyBufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+
+	// Create a cleanup function that resets and returns the buffer to the pool.
+	// This closure pattern is necessary because:
+	// - The buffer contents (buf.Bytes()) are returned to the caller
+	// - The buffer itself must be returned to the pool only after the caller has finished using the data
+	// - The caller is responsible for calling this cleanup function when the buffer data is no longer needed
+	// - This MUST be deferred to ensure any (un)marshalling is complete before releasing the buffer
+	// - The cleanup function MUST be called only once to avoid double cleanup
+	bufferCleanedUp := false
+	resetReadBodyPoolBytes := func() {
+		// Avoid double cleanup
+		if bufferCleanedUp {
+			return
+		}
+		buf.Reset() // Always reset before use
+		bodyBufPool.Put(buf)
+		// Mark as cleaned up to prevent double cleanup
+		bufferCleanedUp = true
+	}
+
+	hasher := sha256.New()
+	mw := io.MultiWriter(buf, hasher)
+
+	bytesRead, copyErr := io.Copy(mw, limitedReader)
+	if copyErr != nil && copyErr != io.EOF {
+		resetReadBodyPoolBytes()
+		return nil, [32]byte{}, nil, ErrRelayerProxyInternalError.Wrapf(
+			"failed to read response body: %s", copyErr.Error(),
+		)
+	}
+
+	// Check if the body exceeded our size limit
+	if bytesRead > maxSize {
+		resetReadBodyPoolBytes()
+		return nil, [32]byte{}, nil, ErrRelayerProxyResponseLimitExceeded.Wrapf(
+			"body size exceeds maximum allowed body: %d bytes read > %d bytes limit",
+			bytesRead,
+			maxSize,
+		)
+	}
+
+	sum := hasher.Sum(nil) // 32 bytes
+	var h32 [32]byte
+	copy(h32[:], sum)
+
+	return buf.Bytes(), h32, resetReadBodyPoolBytes, nil
 }
 
 // TODO_TECHDEBT: Move this function back to the Shannon SDK. It was moved:
 // 1. To ensure proper body closure
 // 2. To avoid using io.ReadAll which doesn't implement size limits.
 // 3. To iterate faster
+// 4. To reduce memory allocations
+// 5. To run the response hash at the same time is read from the response (2in1)
 //
-// SerializeHTTPResponse converts an http.Response into a protobuf-serialized byte slice.
+// SerializeHTTPResponse converts an http.Response into a protobuf-serialized byte slice and sha256 hash of it too.
 //
 // The function:
 //   - Safely reads the response body with size limits
 //   - Preserves all HTTP headers (including multiple values per header key)
 //   - Uses deterministic protobuf marshaling for consistent serialization
+//   - Computes the sha256 hash of the response body
 //   - Properly closes the response body
 //
 // Parameters:
 //   - response: The HTTP response to serialize
 //   - logger: Logger for error reporting
+//   - maxBodySize: Maximum allowed body size in bytes (uses defaultMaxBodySize if <= 0)
 //
 // Returns:
 //   - poktHTTPResponse: The structured response object
 //   - poktHTTPResponseBz: The serialized response as bytes
+//   - payloadHash: The sha256 hash of the response body
 //   - err: Any error encountered during processing
+//
+
+// SerializeHTTPResponse serializes an http.Response and returns the protobuf bytes
+// alongside sha256(body). It still uses the pooled buffer and deterministic proto encoding.
 func SerializeHTTPResponse(
 	logger polylog.Logger,
 	response *http.Response,
 	maxBodySize int64,
-) (poktHTTPResponse *sdktypes.POKTHTTPResponse, poktHTTPResponseBz []byte, err error) {
-	// Read the response body with size limits
-	responseBodyBz, resetReadBodyPoolBytes, err := SafeResponseReadBody(logger, response, maxBodySize)
-	// Handle error case if SafeResponseReadBody fails:
-	// - The buffer pool cleanup has already been performed internally
-	// - We can return early without calling resetReadBodyPoolBytes
-	// - resetReadBodyPoolBytes would be nil anyway in this case
-	if err != nil {
-		if resetReadBodyPoolBytes != nil {
-			// Ensure buffer is returned to pool on error
-			resetReadBodyPoolBytes()
-		}
-		return nil, nil, err
+	instructionTimes *relayer.InstructionTimer,
+) (poktHTTPResponse *sdktypes.POKTHTTPResponse, poktHTTPResponseBz []byte, payloadHash [32]byte, err error) {
+	// Single-pass read + hash
+	responseBodyBz, hash, cleanup, readErr := SafeResponseReadBody(logger, response, maxBodySize)
+	if readErr != nil {
+		return nil, nil, [32]byte{}, readErr
 	}
-	// Ensure buffer is returned to pool when function exits.
-	// - responseBodyBz will no longer be needed when poktHTTPResponseBz is marshaled below.
-	// - This MUST be deferred to ensure any (un)marshalling is complete before releasing the buffer
-	defer resetReadBodyPoolBytes()
+	defer cleanup()
+	instructionTimes.Record("safe_response_read_body")
 
-	// Convert HTTP headers to the POKT header format
-	// Note: We use Values() instead of Get() to preserve all header values,
-	// since HTTP allows multiple values for the same header key
+	// Convert headers
 	headers := make(map[string]*sdktypes.Header, len(response.Header))
-	for headerKey := range response.Header {
-		headerValues := response.Header.Values(headerKey)
-		headers[headerKey] = &sdktypes.Header{
-			Key:    headerKey,
-			Values: headerValues,
-		}
+	for k := range response.Header {
+		headers[k] = &sdktypes.Header{Key: k, Values: response.Header.Values(k)}
 	}
 
-	// Create the POKT HTTP response structure
 	poktHTTPResponse = &sdktypes.POKTHTTPResponse{
 		StatusCode: uint32(response.StatusCode),
 		Header:     headers,
 		BodyBz:     responseBodyBz,
 	}
 
-	// Use deterministic marshaling to ensure consistent byte-for-byte serialization
-	// This is crucial for consensus mechanisms that rely on deterministic hashing
-	marshalOpts := proto.MarshalOptions{Deterministic: true}
-	poktHTTPResponseBz, err = marshalOpts.Marshal(poktHTTPResponse)
-	if err != nil {
-		return nil, nil, fmt.Errorf("❌ failed to marshal POKT HTTP response: %w", err)
+	mopts := proto.MarshalOptions{Deterministic: true}
+	bz, mErr := mopts.Marshal(poktHTTPResponse)
+	if mErr != nil {
+		return nil, nil, [32]byte{}, fmt.Errorf("❌ failed to marshal POKT HTTP response: %w", mErr)
 	}
+	instructionTimes.Record("wrapped_http_response_marshaling")
 
-	return poktHTTPResponse, poktHTTPResponseBz, nil
+	return poktHTTPResponse, bz, hash, nil
 }
