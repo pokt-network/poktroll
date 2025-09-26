@@ -145,40 +145,36 @@ IGNITE_BUILD_TAGS = "ethereum_secp256k1"
 IGNITE_BASE = "ignite chain build --build.tags=%s --skip-proto --debug -v" % IGNITE_BUILD_TAGS
 
 # Common deps/labels
-HOT_LABELS = ["hot-reloading"]
-HOT_DEPS = hot_reload_dirs            # already defined in your Tiltfile
-PROTO_RES = "hot-reload: generate protobufs"
+HOT_RELOAD_LABELS = ["hot-reloading"]
+PROTO_RESOURCE = "hot-reload: generate protobufs"
 
-# Build env (no subshell/export noise)
+# Build env for pocketd
 BUILD_ENV = {
     "CGO_ENABLED": "1",
     "CGO_CFLAGS": "-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration",
 }
 
-def hot_reload(name, out_flag):
+# Helper to build pocketd on hot reload
+def hot_reload_pocketd(resource_name, out_dir_flag):
     local_resource(
-        name=name,
-        cmd=IGNITE_BASE + " " + out_flag,
-        deps=HOT_DEPS,
-        labels=HOT_LABELS,
-        resource_deps=[PROTO_RES],
+        name=resource_name,
+        cmd=IGNITE_BASE + " " + out_dir_flag,
+        deps=hot_reload_dirs,
+        labels=HOT_RELOAD_LABELS,
+        resource_deps=[PROTO_RESOURCE],
         env=BUILD_ENV,
     )
 
+# Rebuild pocketd on hot reload
 if localnet_config["hot-reloading"]:
     # 1) Protobufs
-    local_resource(
-        name=PROTO_RES,
-        cmd="make proto_regen",
-        deps=["proto"],
-        labels=HOT_LABELS,
-    )
+    local_resource(name=PROTO_RESOURCE, cmd="make proto_regen", deps=["proto"], labels=HOT_RELOAD_LABELS)
 
     # 2) pocketd for k8s cluster image/bin
-    hot_reload("hot-reload: pocketd", "--output=./bin")
+    hot_reload_pocketd("hot-reload: pocketd", "--output=./bin")
 
     # 3) pocketd for local CLI
-    hot_reload("hot-reload: pocketd - local cli", "-o $(go env GOPATH)/bin")
+    hot_reload_pocketd("hot-reload: pocketd - local cli", "-o $(go env GOPATH)/bin")
 
 # Build an image with a pocketd binary
 docker_build_with_restart(
