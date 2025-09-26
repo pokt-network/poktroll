@@ -153,10 +153,11 @@ if localnet_config["hot-reloading"]:
     )
 
     # TODO_TECHDEBT: Fix the cross-env dependencies so we can build a bin/pocketd
-    # on a mac for linux.
-    # 1. Uncomment (and fix) the build_env helper
+    # on a mac for linux with CGO_ENABLED=1.
+    # 1. Uncomment (and fix) the 'build_env' helper below.
     # 2. Use IGNITE_CMD_WITH_TAGS and remove IGNITE_CMD_WITHOUT_TAGS
-    # 3. Set CGO_ENABLED=1 in the local_resource
+    # 3. Rename IGNITE_CMD_WITH_TAGS to simply IGNITE_CMD and use it in both places
+    # 4. Ensure it works in Local, Dev and Release envs
     local_resource(
         "hot-reload: pocketd (bin)",
         # "GOOS=linux CGO_ENABLED=0 %s -o ./bin/pocketd" % IGNITE_CMD_WITHOUT_TAGS,
