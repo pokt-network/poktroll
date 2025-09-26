@@ -40,7 +40,7 @@ CC_LINUX_ARM64 ?= aarch64-linux-gnu-gcc
 
 .PHONY: ignite_build
 ignite_build: ignite_check_version ## Build the pocketd binary using Ignite (development mode)
-	$(IGNITE_BASE_LOCAL) --skip-proto --debug -v -o .
+	$(IGNITE_BASE_LOCAL) --skip-proto --debug -v -o ./bin
 
 .PHONY: ignite_pocketd_build
 ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary to GOPATH/bin
