@@ -77,11 +77,10 @@ INFO_URL := https://dev.poktroll.com/explore/account_management/pocketd_cli?_hig
 define print_next_steps
 	$(call print_info_section,Next Steps)
 	@echo "  $(BOLD)1.$(RESET) Push the new tag: $(CYAN)git push origin $(1)$(RESET)"
-	@echo "  $(BOLD)2.$(RESET) Draft the release with gh:"
-	@echo "     $(CYAN)gh release create $(1) $(if $(2),--prerelease,) --generate-notes$(RESET)"
+	@echo "  $(BOLD)2.$(RESET) Draft the release with gh: $(CYAN)gh release create $(1) $(if $(2),--prerelease,) --generate-notes$(RESET)"
 	@echo ""
 	@repo_url=$$(gh repo view --json url -q .url); \
-		echo "  $(BOLD)Release URL:$(RESET) $(CYAN)$${repo_url}/releases/tag/$(1)$(RESET)"
+		echo "$(BOLD)Release URL:$(RESET) $(CYAN)$${repo_url}/releases/tag/$(1)$(RESET)"
 	@echo ""
 endef
 
