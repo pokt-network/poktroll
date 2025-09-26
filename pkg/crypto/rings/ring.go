@@ -1,10 +1,10 @@
 package rings
 
 import (
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
+	ringtypes "github.com/pokt-network/go-dleq/types"
 	ring "github.com/pokt-network/ring-go"
 )
 

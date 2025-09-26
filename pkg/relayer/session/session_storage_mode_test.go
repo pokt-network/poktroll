@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"cosmossdk.io/depinject"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -253,6 +254,14 @@ func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 	// For disk storage, verify the session tree is still correctly loaded
 	sessionTree = s.getActiveSessionTree()
 	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
+
+	// TODO_TECHDEBT: This sleep is a workaround for the race condition where claim creation
+	// happens asynchronously via processClaimsAsync. The test expects GetClaimRoot() to return
+	// immediately after restart, but claim creation takes time. A proper fix would either:
+	// 1. Make claim restoration synchronous for previously flushed sessions during import, or
+	// 2. Add proper synchronization/waiting mechanisms in the test framework.
+	// This sleep should be removed once the underlying race condition is properly addressed.
+	time.Sleep(100 * time.Millisecond)
 
 	// Verify a claim root has been created after restart
 	claimRoot := sessionTree.GetClaimRoot()
