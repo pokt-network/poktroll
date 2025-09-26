@@ -3,7 +3,7 @@ package signer
 import (
 	"fmt"
 
-	ringtypes "github.com/athanorlabs/go-dleq/types"
+	ringtypes "github.com/pokt-network/go-dleq/types"
 	ring "github.com/pokt-network/ring-go"
 )
 
