@@ -38,6 +38,24 @@ CC_LINUX_ARM64 ?= aarch64-linux-gnu-gcc
 ### Ignite Build Tasks ###
 ##########################
 
+.PHONY: ignite_build
+ignite_build: ignite_check_version ## Build the pocketd binary using Ignite (development mode)
+	$(IGNITE_BASE_LOCAL) --skip-proto --debug -v -o .
+
+.PHONY: ignite_pocketd_build
+ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary to GOPATH/bin
+	$(IGNITE_BASE_LOCAL) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
+
+.PHONY: ignite_release
+ignite_release: ignite_check_version ## Build production binaries for all architectures
+	$(IGNITE_BASE_RELEASE) --release $(RELEASE_TARGETS) -o release
+	$(MAKE) _ignite_rename_archives
+
+.PHONY: ignite_release_local
+ignite_release_local: ignite_check_version ## Build production binary for current architecture only
+	$(IGNITE_BASE_LOCAL) --release -o release
+	$(MAKE) _ignite_rename_archives
+
 .PHONY: ignite_release_cgo_disabled
 ignite_release_cgo_disabled: ignite_check_version ## CGO=0 release with default names (linux + darwin)
 	$(IGNITE_BASE_CGO_DISABLED) \
