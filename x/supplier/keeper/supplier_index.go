@@ -31,12 +31,12 @@ package keeper
 //   ⑤ Unstaking suppliers
 
 import (
-	"context"
+    "context"
 
-	storetypes "cosmossdk.io/store/types"
+    storetypes "cosmossdk.io/store/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+    sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+    "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // indexSupplierServiceConfigUpdates maintains multiple indices for efficient
@@ -51,8 +51,8 @@ import (
 // Each index stores a reference to the primary key, which allows efficient retrieval
 // of the full configuration data when needed.
 func (k Keeper) indexSupplierServiceConfigUpdates(
-	ctx context.Context,
-	supplier sharedtypes.Supplier,
+    ctx context.Context,
+    supplier sharedtypes.Supplier,
 ) {
 	// Get all the necessary stores
 	serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
@@ -84,6 +84,73 @@ func (k Keeper) indexSupplierServiceConfigUpdates(
 			serviceConfigUpdateDeactivationHeightStore.Set(serviceConfigDeactivationKey, serviceConfigPrimaryKey)
 		}
 	}
+}
+
+// removeSupplierServiceConfigUpdateIndexEntries removes only the supplier-to-service
+// index entries for the given operator address. It does NOT touch the primary
+// store or the height-based indices. This is useful to rebuild the operator index
+// from an authoritative source (e.g. the supplier's in-memory ServiceConfigHistory
+// or the primary store) without risking data loss.
+func (k Keeper) removeSupplierServiceConfigUpdateIndexEntries(
+    ctx context.Context,
+    supplierOperatorAddress string,
+) {
+    supplierServiceConfigUpdateStore := k.getSupplierServiceConfigUpdatesStore(ctx)
+
+    // Iterate over all operator-scoped index entries and delete them.
+    iter := storetypes.KVStorePrefixIterator(
+        supplierServiceConfigUpdateStore,
+        types.SupplierOperatorKey(supplierOperatorAddress),
+    )
+    defer iter.Close()
+
+    keysToDelete := make([][]byte, 0)
+    for ; iter.Valid(); iter.Next() {
+        // Collect the exact index keys to delete after the iteration to avoid
+        // mutating the iterator's underlying store while iterating.
+        keysToDelete = append(keysToDelete, append([]byte{}, iter.Key()...))
+    }
+    for _, kKey := range keysToDelete {
+        supplierServiceConfigUpdateStore.Delete(kKey)
+    }
+}
+
+// rebuildOperatorServiceConfigIndexFromPrimary reconstructs the supplier-to-service
+// index entries for the given operator by scanning the primary service config
+// updates store and re-linking all records that belong to that operator.
+//
+// If serviceId is non-empty, the rebuild is restricted to that service.
+func (k Keeper) rebuildOperatorServiceConfigIndexFromPrimary(
+    ctx context.Context,
+    supplierOperatorAddress string,
+    serviceId string,
+) {
+    serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
+    supplierServiceConfigUpdateStore := k.getSupplierServiceConfigUpdatesStore(ctx)
+
+    // Scan the entire primary store (scoped to all services). Although this is
+    // O(n), it is only used as a safety net when indexes are missing.
+    iter := storetypes.KVStorePrefixIterator(serviceConfigUpdateStore, []byte{})
+    defer iter.Close()
+
+    for ; iter.Valid(); iter.Next() {
+        // Unmarshal the primary record
+        var serviceConfig sharedtypes.ServiceConfigUpdate
+        k.cdc.MustUnmarshal(iter.Value(), &serviceConfig)
+
+        // Filter by operator and (optionally) service id
+        if serviceConfig.OperatorAddress != supplierOperatorAddress {
+            continue
+        }
+        if serviceId != "" && serviceConfig.Service.GetServiceId() != serviceId {
+            continue
+        }
+
+        // Recreate the operator index link to the primary key
+        operatorKey := types.SupplierServiceConfigUpdateKey(serviceConfig)
+        primaryKey := types.ServiceConfigUpdateKey(serviceConfig)
+        supplierServiceConfigUpdateStore.Set(operatorKey, primaryKey)
+    }
 }
 
 // indexSupplierUnstakingHeight maintains an index of suppliers that are currently
@@ -128,9 +195,9 @@ func (k Keeper) indexSupplierUnstakingHeight(
 // - If an empty serviceId ("") is passed, returns all service configurations of the given supplier
 // - Otherwise, filters service configurations by both the operator address and service ID
 func (k Keeper) getSupplierServiceConfigUpdates(
-	ctx context.Context,
-	supplierOperatorAddress string,
-	serviceId string,
+    ctx context.Context,
+    supplierOperatorAddress string,
+    serviceId string,
 ) []*sharedtypes.ServiceConfigUpdate {
 	// Get the necessary stores
 	supplierServiceConfigUpdateStore := k.getSupplierServiceConfigUpdatesStore(ctx)
@@ -144,28 +211,49 @@ func (k Keeper) getSupplierServiceConfigUpdates(
 		supplierServiceConfigUpdateKey = types.SupplierOperatorServiceKey(supplierOperatorAddress, serviceId)
 	}
 
-	// Create iterator for the supplier's service configs
-	supplierServiceConfigIterator := storetypes.KVStorePrefixIterator(
-		supplierServiceConfigUpdateStore,
-		supplierServiceConfigUpdateKey,
-	)
-	defer supplierServiceConfigIterator.Close()
+    // Create iterator for the supplier's service configs
+    supplierServiceConfigIterator := storetypes.KVStorePrefixIterator(
+        supplierServiceConfigUpdateStore,
+        supplierServiceConfigUpdateKey,
+    )
+    defer supplierServiceConfigIterator.Close()
 
-	// Collect all service configuration updates
-	serviceConfigUpdates := make([]*sharedtypes.ServiceConfigUpdate, 0)
-	for ; supplierServiceConfigIterator.Valid(); supplierServiceConfigIterator.Next() {
-		// Get the primary key from the supplier index
-		serviceConfigPrimaryKey := supplierServiceConfigIterator.Value()
-		// Use the primary key to get the actual service config data
-		serviceConfigBz := serviceConfigUpdateStore.Get(serviceConfigPrimaryKey)
+    // Collect all service configuration updates
+    serviceConfigUpdates := make([]*sharedtypes.ServiceConfigUpdate, 0)
+    for ; supplierServiceConfigIterator.Valid(); supplierServiceConfigIterator.Next() {
+        // Get the primary key from the supplier index
+        serviceConfigPrimaryKey := supplierServiceConfigIterator.Value()
+        // Use the primary key to get the actual service config data
+        serviceConfigBz := serviceConfigUpdateStore.Get(serviceConfigPrimaryKey)
 
-		// Unmarshal and collect the service config
-		var serviceConfig sharedtypes.ServiceConfigUpdate
-		k.cdc.MustUnmarshal(serviceConfigBz, &serviceConfig)
-		serviceConfigUpdates = append(serviceConfigUpdates, &serviceConfig)
-	}
+        // Unmarshal and collect the service config
+        var serviceConfig sharedtypes.ServiceConfigUpdate
+        k.cdc.MustUnmarshal(serviceConfigBz, &serviceConfig)
+        serviceConfigUpdates = append(serviceConfigUpdates, &serviceConfig)
+    }
 
-	return serviceConfigUpdates
+    // Safety net: if no entries were found via the operator index, rebuild the
+    // operator index from the primary store and retry the lookup once.
+    if len(serviceConfigUpdates) == 0 {
+        k.rebuildOperatorServiceConfigIndexFromPrimary(ctx, supplierOperatorAddress, serviceId)
+
+        // Retry once after rebuilding
+        retryIter := storetypes.KVStorePrefixIterator(
+            supplierServiceConfigUpdateStore,
+            supplierServiceConfigUpdateKey,
+        )
+        defer retryIter.Close()
+
+        for ; retryIter.Valid(); retryIter.Next() {
+            serviceConfigPrimaryKey := retryIter.Value()
+            serviceConfigBz := serviceConfigUpdateStore.Get(serviceConfigPrimaryKey)
+            var serviceConfig sharedtypes.ServiceConfigUpdate
+            k.cdc.MustUnmarshal(serviceConfigBz, &serviceConfig)
+            serviceConfigUpdates = append(serviceConfigUpdates, &serviceConfig)
+        }
+    }
+
+    return serviceConfigUpdates
 }
 
 // removeSupplierServiceConfigUpdateIndexes removes all service configuration indexes for a supplier.
