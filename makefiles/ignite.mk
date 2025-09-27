@@ -46,10 +46,7 @@ ignite_build: ignite_check_version ## Build the pocketd binary using Ignite (dev
 ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary to GOPATH/bin
 	$(IGNITE_BASE_CGO_ENABLED) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
-.PHONY: ignite_release
-ignite_release: ignite_check_version ## Build production binaries for all architectures
-	$(IGNITE_BASE_RELEASE) --release $(RELEASE_TARGETS) -o release
-	$(MAKE) _ignite_rename_archives
+## Aggregate release target is defined later to include CGO-disabled and CGO-enabled variants.
 
 .PHONY: ignite_release_local
 ignite_release_local: ignite_check_version ## Build production binary for current architecture only
@@ -99,7 +96,8 @@ _ignite_suffix_cgo:
 	@cd release && \
 	for f in cgo_poktroll_*.tar.gz; do \
 		base_no_pref=$${f#cgo_}; \
-		swapped=$${base_no_pref/poktroll/pocket}; \
+		# POSIX-safe: replace leading 'poktroll_' with 'pocket_'
+		swapped=pocket_$${base_no_pref#poktroll_}; \
 		mv "$$f" "$${swapped%.tar.gz}_cgo.tar.gz"; \
 	done; \
 	sha256sum pocket_*.tar.gz > release_checksum || true
