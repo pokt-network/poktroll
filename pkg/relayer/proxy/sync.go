@@ -434,7 +434,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 		logger.Info().Msg("🔄 Performing delayed validation - session was unknown at request time")
 
-		isOverServicing := server.relayMeter.IsOverServicing(ctxWithDeadline, meta)
+		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta)
 		disallowOverServicing := !server.relayMeter.AllowOverServicing()
 		shouldRateLimit := isOverServicing && disallowOverServicing
 		if shouldRateLimit {
