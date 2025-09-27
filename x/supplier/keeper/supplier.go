@@ -20,11 +20,13 @@ import (
 // - Indexes unstaking height (if applicable)
 // - Stores a dehydrated form of the supplier (without services and history)
 func (k Keeper) SetAndIndexDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
-	// Index service config updates for efficient retrieval
-	k.indexSupplierServiceConfigUpdates(ctx, supplier)
-	k.indexSupplierUnstakingHeight(ctx, supplier)
-	// Store the supplier in a dehydrated form to reduce state bloat
-	k.SetDehydratedSupplier(ctx, supplier)
+    // Rebuild the operator index to avoid stale/partial entries and then index
+    // the full set of service config updates for efficient retrieval.
+    k.removeSupplierServiceConfigUpdateIndexEntries(ctx, supplier.OperatorAddress)
+    k.indexSupplierServiceConfigUpdates(ctx, supplier)
+    k.indexSupplierUnstakingHeight(ctx, supplier)
+    // Store the supplier in a dehydrated form to reduce state bloat
+    k.SetDehydratedSupplier(ctx, supplier)
 }
 
 // SetDehydratedSupplier stores a dehydrated supplier in the store.

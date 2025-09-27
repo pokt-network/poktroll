@@ -18,10 +18,10 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	// Only process unbonding gateways at the end of the session.
-	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
-		return numUnbondedGateways, nil
-	}
+    // Only process unbonding gateways at the end of the session.
+    if !sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+        return numUnbondedGateways, nil
+    }
 
 	// Iterate over all gateways and unbond the ones that have finished the unbonding period.
 	// TODO_POST_MAINNET: Use an index to iterate over the gateways that have initiated
