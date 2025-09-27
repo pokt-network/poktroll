@@ -164,22 +164,26 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	}
 	instructionTimes.Record(relayer.InstructionRelayMeterGetSingleRelayCostCoin)
 
-	// Increase the consumed stake amount by relay cost.
+	// Safely update consumed amount and determine if this relay overserves.
+	// Acquire write lock only for the critical section to avoid long-held locks.
+	rmtr.relayMeterMu.Lock()
+	// Recompute using up-to-date consumed amount to avoid races.
 	newConsumedCoin := appRelayMeter.consumedCoin.Add(relayCostCoin)
-
 	if appRelayMeter.maxCoin.IsGTE(newConsumedCoin) {
 		appRelayMeter.consumedCoin = newConsumedCoin
+		rmtr.relayMeterMu.Unlock()
 		return false
 	}
-
 	appRelayMeter.numOverServicedRelays++
+	overServicedCount := appRelayMeter.numOverServicedRelays
+	rmtr.relayMeterMu.Unlock()
 
 	// Exponential backoff, only log over-servicing when numOverServicedRelays is a power of 2
-	if shouldLogOverServicing(appRelayMeter.numOverServicedRelays) {
+	if shouldLogOverServicing(overServicedCount) {
 		logger.Warn().Msgf(
-			"overservicing enabled, application %q over-serviced %s",
+			"over-servicing enabled, application %q over-serviced %d",
 			appRelayMeter.app.GetAddress(),
-			appRelayMeter.numOverServicedRelays,
+			overServicedCount,
 		)
 	}
 
@@ -191,26 +195,13 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 // This is used when the relay is not volume / reward applicable but was optimistically
 // accounted for in the relay meter.
 func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) {
-	rmtr.relayMeterMu.Lock()
-	defer rmtr.relayMeterMu.Unlock()
-
 	// Create a context-specific logger to avoid concurrent access issues
 	logger := rmtr.logger.With(
 		"method", "SetNonApplicableRelayReward",
 		"session_id", reqMeta.GetSessionHeader().GetSessionId(),
 	)
 
-	sessionRelayMeter, ok := rmtr.sessionToRelayMeterMap[reqMeta.GetSessionHeader().GetSessionId()]
-	if !ok {
-		logger.Warn().Msgf(
-			"[Non critical] Unable to find session relay meter for session %s. Application may be rate limited more than intended: %v",
-			reqMeta.GetSessionHeader().GetSessionId(),
-			ErrRelayerProxyUnknownSession.Wrap("session relay meter not found"),
-		)
-
-		return
-	}
-
+	// Fetch params and service outside of locks to avoid long-held critical sections.
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
 		logger.Warn().Msgf(
@@ -239,11 +230,26 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 			reqMeta.GetSessionHeader().GetSessionId(),
 			err,
 		)
+		// Continue, but if relayCost is invalid, next checks will handle.
+	}
+
+	// Lock only for map access and updating meter values.
+	rmtr.relayMeterMu.Lock()
+	sessionRelayMeter, ok := rmtr.sessionToRelayMeterMap[reqMeta.GetSessionHeader().GetSessionId()]
+	if !ok {
+		rmtr.relayMeterMu.Unlock()
+		logger.Warn().Msgf(
+			"[Non critical] Unable to find session relay meter for session %s. Application may be rate limited more than intended: %v",
+			reqMeta.GetSessionHeader().GetSessionId(),
+			ErrRelayerProxyUnknownSession.Wrap("session relay meter not found"),
+		)
+		return
 	}
 
 	// TODO_FOLLOWUP(@red-0ne): Consider fixing the relay meter logic to never have
 	// a less than relay cost consumed amount.
 	if sessionRelayMeter.consumedCoin.IsLT(relayCost) {
+		rmtr.relayMeterMu.Unlock()
 		logger.Warn().Msgf(
 			"(SHOULD NEVER HAPPEN) Your session earned less than the cost of a single relay. Not submitting a claim for application (%s), service id: (%s), session id: (%s), with consumed amount: (%s), relay cost: (%s)",
 			sessionRelayMeter.app.GetAddress(),
@@ -254,10 +260,10 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 		)
 		return
 	}
-	// Decrease the consumed stake amount by relay cost.
-	newConsumedAmount := sessionRelayMeter.consumedCoin.Sub(relayCost)
 
-	sessionRelayMeter.consumedCoin = newConsumedAmount
+	// Decrease the consumed stake amount by relay cost.
+	sessionRelayMeter.consumedCoin = sessionRelayMeter.consumedCoin.Sub(relayCost)
+	rmtr.relayMeterMu.Unlock()
 }
 
 // AllowOverServicing returns true if the relay meter is configured to allow over-servicing.
@@ -295,7 +301,7 @@ func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client
 	rmtr.relayMeterMu.RUnlock()
 
 	// Second pass: Write lock only for deletions (if needed)
-	if len(sessionsToDelete) > 0 {
+	if len(sessionsToDelete) == 0 {
 		return
 	}
 

@@ -11,20 +11,20 @@ import (
 const (
 	relayMinerProcess = "relayminer"
 
-	requestsTotal                      = "requests_total"
-	requestsErrorsTotal                = "requests_errors_total"
-	requestsSuccessTotal               = "requests_success_total"
-	requestSizeBytes                   = "request_size_bytes"
-	responseSizeBytes                  = "response_size_bytes"
-	relayDurationSeconds               = "relay_duration_seconds"
-	serviceDurationSeconds             = "service_duration_seconds"
-	requestPreparationDurationSeconds  = "relay_request_preparation_duration_seconds"
-	responsePreparationDurationSeconds = "relay_response_preparation_duration_seconds"
-	fullNodeGRPCCallDurationSeconds    = "full_node_grpc_call_duration_seconds"
-	delayedValidationTotal             = "delayed_validation_total"
-	delayedValidationFailuresTotal     = "delayed_validation_failures_total"
-	delayedValidationRateLimitingTotal = "delayed_validation_rate_limiting_total"
-	instructionTimeSeconds             = "instruction_time_seconds"
+	requestsTotal                              = "requests_total"
+	requestsErrorsTotal                        = "requests_errors_total"
+	requestsSuccessTotal                       = "requests_success_total"
+	requestSizeBytes                           = "request_size_bytes"
+	responseSizeBytes                          = "response_size_bytes"
+	relayDurationSeconds                       = "relay_duration_seconds"
+	serviceDurationSeconds                     = "service_duration_seconds"
+	requestPreparationDurationSeconds          = "relay_request_preparation_duration_seconds"
+	responsePreparationDurationSeconds         = "relay_response_preparation_duration_seconds"
+	fullNodeGRPCCallDurationSeconds            = "full_node_grpc_call_duration_seconds"
+	delayedRelayRequestValidationTotal         = "delayed_relay_request_validation_total"
+	delayedRelayRequestValidationFailuresTotal = "delayed_relay_request_validation_failures_total"
+	delayedRelayRequestRateLimitingCheckTotal  = "delayed_relay_request_rate_limiting_check_total"
+	instructionTimeSeconds                     = "instruction_time_seconds"
 )
 
 var (
@@ -181,34 +181,38 @@ var (
 		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
 	}, []string{"service_id"})
 
-	// DelayedValidationTotal is a Counter metric for tracking delayed validation occurrences.
+	// DelayedRelayRequestValidationTotal is a Counter metric for tracking delayed validation occurrences.
 	// It increments when relay requests are validated after being served (late validation)
 	// rather than being validated upfront. This indicates sessions that weren't known at
 	// request time and required deferred validation.
-	DelayedValidationTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+	DelayedRelayRequestValidationTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: relayMinerProcess,
-		Name:      delayedValidationTotal,
+		Name:      delayedRelayRequestValidationTotal,
 		Help:      "Total number of delayed validation occurrences, labeled by service ID.",
-	}, []string{"service_id"})
+	}, []string{"service_id", "supplier_operator_address"})
 
-	// DelayedValidationFailuresTotal is a Counter metric for tracking delayed validation failures.
+	// DelayedRelayRequestValidationFailuresTotal is a Counter metric for tracking delayed validation failures.
 	// It increments when relay requests fail validation during the delayed validation process.
 	// This typically occurs when the relay request signature is invalid or session validation
 	// fails after the relay has already been served.
-	DelayedValidationFailuresTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+	DelayedRelayRequestValidationFailuresTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: relayMinerProcess,
-		Name:      delayedValidationFailuresTotal,
+		Name:      delayedRelayRequestValidationFailuresTotal,
 		Help:      "Total number of delayed validation failures, labeled by service ID.",
-	}, []string{"service_id"})
+	}, []string{"service_id", "supplier_operator_address"})
 
-	// DelayedValidationRateLimitingTotal is a Counter metric for tracking rate limiting during delayed validation.
-	// It increments when relay requests are rate limited during the delayed validation process.
-	// This occurs when the application exceeds its allocated stake during delayed validation checks.
-	DelayedValidationRateLimitingTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+	// DelayedRelayRequestRateLimitingCheckTotal is a Counter metric for tracking rate limiting during delayed validation.
+	// It increments when, during late (deferred) validation, the application is found to have
+	// exceeded its allocated stake and the relay is rate limited.
+	//
+	// User/payment impact:
+	// - The relay becomes reward-ineligible (no on-chain payment to the supplier for this relay).
+	// - Signals potential fee leakage and helps rate-limit thresholds.
+	DelayedRelayRequestRateLimitingCheckTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: relayMinerProcess,
-		Name:      delayedValidationRateLimitingTotal,
+		Name:      delayedRelayRequestRateLimitingCheckTotal,
 		Help:      "Total number of delayed validation rate limiting events, labeled by service ID.",
-	}, []string{"service_id"})
+	}, []string{"service_id", "supplier_operator_address"})
 
 	// InstructionTimeSeconds is a Histogram metric for tracking the duration of individual
 	// instructions during relay processing. It measures the time between consecutive
@@ -279,26 +283,32 @@ func CaptureGRPCCallDuration(component, method string, startTime time.Time) {
 		Observe(duration)
 }
 
-// CaptureDelayedValidationFailure records a delayed validation failure event.
+// CaptureDelayedRelayRequestValidationFailure records a delayed validation failure event.
 // This metric is incremented when a relay request fails validation during the delayed
 // validation process, typically due to invalid signature or session validation failure
 // after the relay has already been served.
-func CaptureDelayedValidationFailure(serviceId string) {
-	DelayedValidationFailuresTotal.With("service_id", serviceId).Add(1)
+func CaptureDelayedRelayRequestValidationFailure(serviceId string, supplierOperatorAddress string) {
+	DelayedRelayRequestValidationFailuresTotal.
+		With("service_id", serviceId, "supplier_operator_address", supplierOperatorAddress).
+		Add(1)
 }
 
-// CaptureDelayedValidationOccurrence records a delayed validation occurrence.
+// CaptureDelayedRelayRequestValidation records a delayed validation occurrence.
 // This metric is incremented when relay requests are validated after being served
 // (late validation) rather than being validated upfront. This indicates sessions
 // that weren't known at request time and required deferred validation.
-func CaptureDelayedValidationOccurrence(serviceId string) {
-	DelayedValidationTotal.With("service_id", serviceId).Add(1)
+func CaptureDelayedRelayRequestValidation(serviceId string, supplierOperatorAddress string) {
+	DelayedRelayRequestValidationTotal.
+		With("service_id", serviceId, "supplier_operator_address", supplierOperatorAddress).
+		Add(1)
 }
 
-// CaptureDelayedValidationRateLimiting records a rate limiting event during delayed validation.
+// CaptureDelayedRelayRequestRateLimitingCheck records a rate limiting event during delayed validation.
 // This metric is incremented when relay requests are rate limited during the delayed
 // validation process, typically when the application exceeds its allocated stake
 // during delayed validation checks.
-func CaptureDelayedValidationRateLimiting(serviceId string) {
-	DelayedValidationRateLimitingTotal.With("service_id", serviceId).Add(1)
+func CaptureDelayedRelayRequestRateLimitingCheck(serviceId string, supplierOperatorAddress string) {
+	DelayedRelayRequestRateLimitingCheckTotal.
+		With("service_id", serviceId, "supplier_operator_address", supplierOperatorAddress).
+		Add(1)
 }
