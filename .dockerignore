@@ -1,0 +1,9 @@
+# Ignore everything by default
+**
+
+# Allow just what the image needs
+!Dockerfile.dev
+!bin/
+!bin/pocketd
+!bin/ignite
+!bin/cosmovisor
