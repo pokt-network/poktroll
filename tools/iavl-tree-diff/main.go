@@ -148,12 +148,6 @@ func getLatestVersion(dir string, prefix string) (int64, error) {
 	return tree.Version(), nil
 }
 
-func min(a, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
-}
 
 func ReadTree(dir string, version int64, prefix []byte) (*iavl.MutableTree, dbm.DB, error) {
 	db, err := OpenDB(dir)
