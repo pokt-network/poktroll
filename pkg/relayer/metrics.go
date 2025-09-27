@@ -24,6 +24,7 @@ const (
 	delayedValidationTotal             = "delayed_validation_total"
 	delayedValidationFailuresTotal     = "delayed_validation_failures_total"
 	delayedValidationRateLimitingTotal = "delayed_validation_rate_limiting_total"
+	instructionTimeSeconds             = "instruction_time_seconds"
 )
 
 var (
@@ -208,6 +209,17 @@ var (
 		Name:      delayedValidationRateLimitingTotal,
 		Help:      "Total number of delayed validation rate limiting events, labeled by service ID.",
 	}, []string{"service_id"})
+
+	// InstructionTimeSeconds is a Histogram metric for tracking the duration of individual
+	// instructions during relay processing. It measures the time between consecutive
+	// instruction steps to identify performance bottlenecks and optimize relay handling.
+	// The metric is labeled by instruction name to provide granular timing analysis.
+	InstructionTimeSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		Subsystem: relayMinerProcess,
+		Name:      instructionTimeSeconds,
+		Help:      "Histogram of request instruction times in milliseconds for performance analysis.",
+		Buckets:   defaultBuckets,
+	}, []string{"instruction"})
 )
 
 // CaptureRelayDuration records the internal end-to-end duration of handling a relay which includes
