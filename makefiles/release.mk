@@ -42,21 +42,6 @@ install_act: ## Install act for local GitHub Actions testing
 	fi
 	@echo "✅ act installed successfully"
 
-###########################
-###   Release Helpers   ###
-###########################
-
-
-
-
-
-
-
-
-
-
-
-
 ########################
 ###   Act Triggers   ###
 ########################
@@ -186,3 +171,11 @@ release_tag_major: ## Tag a new major release (e.g. v1.0.0 -> v2.0.0)
 	$(call print_next_steps,$(NEW_TAG))
 	$(call print_cleanup_commands,$(NEW_TAG))
 	$(call print_additional_info)
+
+.PHONY: release_artifacts_current_branch
+release_artifacts_current_branch: ## Trigger the release-artifacts workflow using the current branch to build artifacts for all environments
+	@echo "Triggering release-artifacts workflow for current branch..."
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD) && \
+	gh workflow run release-artifacts.yml --ref $$BRANCH
+	@echo "Workflow triggered for branch: ${CYAN} $$(git rev-parse --abbrev-ref HEAD)${RESET}"
+	@echo "Check the workflow status at: ${BLUE}https://github.com/$(shell git config --get remote.origin.url | sed 's/.*github.com[:/]\([^/]*\/[^.]*\).*/\1/')/actions/workflows/release-artifacts.yml${RESET}"
