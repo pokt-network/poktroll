@@ -83,6 +83,24 @@ jobs:
             type=sha,suffix=-prod
             type=sha,format=long,suffix=-prod
 
+      - name: Docker Metadata action for tag events (CGO)
+        id: meta-tag-cgo
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: "true"
+        with:
+          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
+          images: |
+            ghcr.io/pokt-network/pocketd
+            ghcr.io/pokt-network/poktrolld
+          tags: |
+            type=semver,pattern={{version}},suffix=-cgo
+            type=semver,pattern={{major}}.{{minor}},suffix=-cgo
+            type=ref,event=tag,suffix=-prod-cgo
+            type=sha,suffix=-prod-cgo
+            type=sha,format=long,suffix=-prod-cgo
+
       # For main branch pushes
       - name: Docker Metadata action for main branch pushes
         id: meta-main
@@ -99,6 +117,22 @@ jobs:
             type=raw,value=main-prod
             type=sha,suffix=-main-prod
             type=sha,format=long,suffix=-main-prod
+
+      - name: Docker Metadata action for main branch pushes (CGO)
+        id: meta-main-cgo
+        if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: "true"
+        with:
+          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
+          images: |
+            ghcr.io/pokt-network/pocketd
+            ghcr.io/pokt-network/poktrolld
+          tags: |
+            type=raw,value=main-prod-cgo
+            type=sha,suffix=-main-prod-cgo
+            type=sha,format=long,suffix=-main-prod-cgo
 
       # For manual workflow triggers
       - name: Extract branch name
@@ -121,6 +155,21 @@ jobs:
             type=raw,value=${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
             type=sha,suffix=-${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
 
+      - name: Docker Metadata action for manual workflow_dispatch (CGO)
+        id: meta-manual-cgo
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: "true"
+        with:
+          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
+          images: |
+            ghcr.io/pokt-network/pocketd
+            ghcr.io/pokt-network/poktrolld
+          tags: |
+            type=raw,value=${{ env.BRANCH_NAME }}-prod-cgo${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
+            type=sha,suffix=-${{ env.BRANCH_NAME }}-prod-cgo${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -142,6 +191,21 @@ jobs:
           cache-to: type=gha,mode=max
           context: .
 
+      - name: Build and push Docker image for tag events (CGO)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-tag-cgo.outputs.tags }}
+          labels: ${{ steps.meta-tag-cgo.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.release
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
+          build-args: |
+            BIN_PREFIX=release_binaries/pocket_cgo_linux
+
       # For main branch pushes
       - name: Build and push Docker image for main branch
         if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
@@ -156,6 +220,21 @@ jobs:
           cache-to: type=gha,mode=max
           context: .
 
+      - name: Build and push Docker image for main branch (CGO)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-main-cgo.outputs.tags }}
+          labels: ${{ steps.meta-main-cgo.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.release
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
+          build-args: |
+            BIN_PREFIX=release_binaries/pocket_cgo_linux
+
       # For manual workflow triggers
       - name: Build and push Docker image for manual workflow_dispatch
         if: github.event_name == 'workflow_dispatch'
@@ -169,6 +248,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           context: .
+
+      - name: Build and push Docker image for manual workflow_dispatch (CGO)
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-manual-cgo.outputs.tags }}
+          labels: ${{ steps.meta-manual-cgo.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.release
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
+          build-args: |
+            BIN_PREFIX=release_binaries/pocket_cgo_linux
 
       # Only publish GitHub releases for tag events
       - name: Add release and publish binaries

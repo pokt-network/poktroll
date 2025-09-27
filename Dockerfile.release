@@ -1,13 +1,15 @@
 # This Dockerfile is used to build container image for production workloads.
 # The image depends on `cosmovisor_cross_compile`, `ignite_release` and `ignite_release_extract_binaries` make targets.
 #
-# NOTE: The pre-built binaries in release_binaries/ are built with CGO_ENABLED=0
-# (pure-Go secp256k1) for portability. CGO-enabled linux tarballs are also
-# produced (_cgo suffix) and published to GitHub Releases, but the container
-# intentionally uses the CGO_DISABLED binaries.
+# NOTE: This image embeds pre-built binaries from release_binaries/.
+# The default (BIN_PREFIX=release_binaries/pocket_linux) uses CGO=0 builds for
+# portability. Pass BIN_PREFIX=release_binaries/pocket_cgo_linux to produce a
+# CGO-enabled image.
 
 FROM debian:bookworm
 ARG TARGETARCH
+# Select which prebuilt pocketd binary to embed (default: CGO disabled)
+ARG BIN_PREFIX=release_binaries/pocket_linux
 
 # Minimal runtime deps
 RUN apt-get update && \
@@ -18,10 +20,11 @@ RUN apt-get update && \
 # Ref: https://github.com/strangelove-ventures/heighliner
 RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin pocket
 
-# NOCGO linux binaries, extracted by ignite_release_extract_binaries:
-#   release_binaries/pocket_linux_amd64
-#   release_binaries/pocket_linux_arm64
-COPY --chown=pocket:pocket release_binaries/pocket_linux_$TARGETARCH /bin/pocketd
+# Selected linux binaries (CGO disabled by default), extracted by
+# ignite_release_extract_binaries:
+#   ${BIN_PREFIX}_amd64
+#   ${BIN_PREFIX}_arm64
+COPY --chown=pocket:pocket ${BIN_PREFIX}_${TARGETARCH} /bin/pocketd
 COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
 
 # Optional runtime tuning
