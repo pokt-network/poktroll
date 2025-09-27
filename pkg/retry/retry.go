@@ -53,6 +53,10 @@ var (
 
 		// Server-side errors that might occasionally resolve with retry
 		codes.Internal,
+
+		// Context canceled errors are often transient - the context may have been
+		// canceled due to timeouts or temporary conditions that can be resolved on retry
+		codes.Canceled,
 	}
 )
 
