@@ -51,7 +51,6 @@ ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd
 .PHONY: ignite_release_local
 ignite_release_local: ignite_check_version ## Build production binary for current architecture only
 	$(IGNITE_BASE_CGO_ENABLED) --release -o release
-	$(MAKE) _ignite_rename_archives
 
 .PHONY: ignite_release_cgo_disabled
 ignite_release_cgo_disabled: ignite_check_version ## CGO=0 release with default names (linux + darwin)
@@ -59,48 +58,30 @@ ignite_release_cgo_disabled: ignite_check_version ## CGO=0 release with default 
 		--release $(RELEASE_TARGETS_NOCGO) \
 		-o release
 	$(MAKE) _ignite_rename_archives
-	# Optional: $(MAKE) ignite_release_repackage
-
-# CGO=1: build per linux arch to set CC explicitly; keep artifacts with "_cgo" suffix.
 
 .PHONY: ignite_release_cgo_enabled_linux_amd64
 ignite_release_cgo_enabled_linux_amd64: ignite_check_version ## CGO=1 release for linux/amd64 (_cgo suffix)
 	CC=$(CC_LINUX_AMD64) $(IGNITE_BASE_CGO_ENABLED) \
 		--release -t linux:amd64 \
-		--release.prefix cgo_ \
+		--release.prefix pocket_cgo_ \
 		-o release
-	$(MAKE) _ignite_suffix_cgo
 
 .PHONY: ignite_release_cgo_enabled_linux_arm64
 ignite_release_cgo_enabled_linux_arm64: ignite_check_version ## CGO=1 release for linux/arm64 (_cgo suffix)
 	CC=$(CC_LINUX_ARM64) $(IGNITE_BASE_CGO_ENABLED) \
 		--release -t linux:arm64 \
-		--release.prefix cgo_ \
+		--release.prefix pocket_cgo_ \
 		-o release
-	$(MAKE) _ignite_suffix_cgo
 
 .PHONY: ignite_release_cgo_enabled
 ignite_release_cgo_enabled: ignite_release_cgo_enabled_linux_amd64 ignite_release_cgo_enabled_linux_arm64
 
-# Aggregate: build both families.
 .PHONY: ignite_release
-ignite_release: ignite_release_cgo_disabled ignite_release_cgo_enabled
+ignite_release: ignite_release_cgo_disabled ignite_release_cgo_enabled ## Build production binaries for all architectures
 
 ######################################
 ### Ignite Release Post-Processing ###
 ######################################
-
-# Rename CGO-enabled tarballs from cgo_poktroll_* to pocket_*_cgo
-.PHONY: _ignite_suffix_cgo
-_ignite_suffix_cgo:
-	@cd release && \
-	for f in cgo_poktroll_*.tar.gz; do \
-		base_no_pref=$${f#cgo_}; \
-		# POSIX-safe: replace leading 'poktroll_' with 'pocket_'
-		swapped=pocket_$${base_no_pref#poktroll_}; \
-		mv "$$f" "$${swapped%.tar.gz}_cgo.tar.gz"; \
-	done; \
-	sha256sum pocket_*.tar.gz > release_checksum || true
 
 # Rename poktroll_* to pocket_* (CGO=0 path and any others that slipped through)
 .PHONY: _ignite_rename_archives
@@ -128,7 +109,7 @@ ignite_release_repackage:
 
 # Extract all archives to release_binaries/<archive base> (Dockerfile.release expects pocket_linux_$ARCH)
 .PHONY: ignite_release_extract_binaries
-ignite_release_extract_binaries:
+ignite_release_extract_binaries: ## Extract all archives to release_binaries/<archive base>
 	@mkdir -p release_binaries
 	@for archive in release/*.tar.gz; do \
 		bname=$$(basename "$$archive" .tar.gz); \
