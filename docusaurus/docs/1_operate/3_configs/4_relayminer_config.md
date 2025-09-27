@@ -1,15 +1,7 @@
 ---
-title: RelayMiner config
+title: RelayMiner Config
 sidebar_position: 4
 ---
-
-:::warning Supplier Public Key Requirement
-
-If you are setting up a `RelayMiner` using a `Supplier` that does not have an onchain public key, you must follow the instructions [**here**](../../2_explore/4_morse_migration/7_claiming_supplier.md#6-ensure-your-shannon-supplier-has-an-onchain-public-key) to ensure your `Supplier` has an onchain public key.
-
-Alternatively, if you have a `Supplier` that has was not staked by the operator, you must follow the instructions [**here**](../1_cheat_sheets/4_supplier_cheatsheet.md#4-suppliers-staked-on-behalf-of-owners).
-
-:::
 
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
 co-processor/sidecar that acts as the real server for querying request, building
@@ -30,6 +22,7 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`default_max_body_size`](#default_max_body_size)
   - [`smt_store_path`](#smt_store_path)
   - [`enable_over_servicing`](#enable_over_servicing)
+  - [`enable_eager_relay_request_validation`](#enable_eager_relay_request_validation)
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
   - [`ping`](#ping)
@@ -132,6 +125,7 @@ default_request_timeout_seconds: <uint64>
 default_max_body_size: <string>
 smt_store_path: <string>
 enable_over_servicing: <boolean>
+enable_eager_relay_request_validation: <boolean>
 ```
 
 ### `default_signing_key_names`
@@ -218,6 +212,17 @@ When disabled (`false`), the `RelayMiner` will strictly enforce rate limiting ba
 on the Application's allocated stake, rejecting requests that would exceed the
 Application's ability to pay.
 
+### `enable_eager_relay_request_validation`
+
+_`Optional`_ (default: `false`)
+
+Controls when validation happens relative to forwarding the request.
+
+| Mode                    | Value   | Behavior                                                                                       | Pros                               | Cons                                                        | When to Use                                                                                                                                                                        |
+| ----------------------- | ------- | ---------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Eager Mode**          | `true`  | Validate first (signature, session, rate limiting), serve later                                | Predictable backend load           | Higher per-request latency                                  | Use when you prefer strict validation before backend load (e.g., highly constrained backends or when minimizing optimistic risk is critical).                                      |
+| **Lazy Mode (default)** | `false` | Serve first for unknown sessions, then validate later. Known sessions still validate up-front. | Best cold-start throughput/latency | May transiently forward requests that later fail validation | Use to optimize throughput and latency during cold starts or when many sessions are initially unknown. Improves perceived QoS but may forward requests that later fail validation. |
+
 ### `metrics`
 
 _`Optional`_
@@ -260,7 +265,7 @@ You can learn how to use that endpoint on the [Performance Troubleshooting](../.
 
 _`Optional`_
 
-Configures a `ping` healh check server to test the connectivity of all backend
+Configures a `ping` health check server to test the connectivity of all backend
 URLs. If all the backend URLs are reachable, the endpoint returns a 204 HTTP
 Code. If one or more backend URLs aren't reachable, the service returns an
 appropriate HTTP error.
