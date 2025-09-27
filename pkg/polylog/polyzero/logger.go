@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/rand"
 	"os"
+	"sync"
 
 	"github.com/rs/zerolog"
 
@@ -13,6 +14,9 @@ import (
 // zerologLogger is a thin wrapper around a zerolog logger which implements
 // the polylog.Logger interface.
 type zerologLogger struct {
+	// mu protects concurrent access to the logger when creating events.
+	// zerolog is not safe for concurrent event creation on the same logger instance.
+	mu sync.Mutex
 	// NB: Default (0) is Debug.
 	level zerolog.Level
 	zerolog.Logger
@@ -45,6 +49,8 @@ func NewLogger(
 //
 // You must call Msg on the returned event in order to send the event.
 func (ze *zerologLogger) Debug() polylog.Event {
+	ze.mu.Lock()
+	defer ze.mu.Unlock()
 	return newEvent(ze.Logger.Debug())
 }
 
@@ -59,6 +65,9 @@ func (ze *zerologLogger) ProbabilisticDebugInfo(p float64) polylog.Event {
 	enforceProbRange(p)
 	// Generate a random float64 in [0.0, 1.0)
 	r := rand.Float64()
+
+	ze.mu.Lock()
+	defer ze.mu.Unlock()
 
 	// Only log info sometimes
 	if r < p {
@@ -81,6 +90,8 @@ func enforceProbRange(prob float64) {
 //
 // You must call Msg, Msgf, or Send on the returned event in order to send the event.
 func (ze *zerologLogger) Info() polylog.Event {
+	ze.mu.Lock()
+	defer ze.mu.Unlock()
 	return newEvent(ze.Logger.Info())
 }
 
@@ -88,6 +99,8 @@ func (ze *zerologLogger) Info() polylog.Event {
 //
 // You must call Msg, Msgf, or Send on the returned event in order to send the event.
 func (ze *zerologLogger) Warn() polylog.Event {
+	ze.mu.Lock()
+	defer ze.mu.Unlock()
 	return newEvent(ze.Logger.Warn())
 }
 
@@ -95,12 +108,16 @@ func (ze *zerologLogger) Warn() polylog.Event {
 //
 // You must call Msg, Msgf, or Send on the returned event in order to send the event.
 func (ze *zerologLogger) Error() polylog.Event {
+	ze.mu.Lock()
+	defer ze.mu.Unlock()
 	return newEvent(ze.Logger.Error())
 }
 
 // With creates a child logger with the fields constructed from keyVals added
 // to its context.
 func (ze *zerologLogger) With(keyVals ...any) polylog.Logger {
+	ze.mu.Lock()
+	defer ze.mu.Unlock()
 	return &zerologLogger{
 		level:  ze.level,
 		Logger: ze.Logger.With().Fields(keyVals).Logger(),
@@ -111,6 +128,8 @@ func (ze *zerologLogger) With(keyVals ...any) polylog.Logger {
 //
 // You must call Msg, Msgf, or Send on the returned event in order to send the event.
 func (ze *zerologLogger) WithLevel(level polylog.Level) polylog.Event {
+	ze.mu.Lock()
+	defer ze.mu.Unlock()
 	return newEvent(ze.Logger.WithLevel(zerolog.Level(level.Int())))
 }
 
@@ -135,5 +154,7 @@ func (ze *zerologLogger) WithContext(ctx context.Context) context.Context {
 // Write implements io.Writer. This is useful to set as a writer for the
 // standard library log.
 func (ze *zerologLogger) Write(p []byte) (n int, err error) {
+	ze.mu.Lock()
+	defer ze.mu.Unlock()
 	return ze.Logger.Write(p)
 }
