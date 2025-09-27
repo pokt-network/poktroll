@@ -194,13 +194,14 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseSupplierClaimed{
-		MorseNodeAddress:     msgClaim.GetMorseNodeAddress(),
-		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
-		ClaimedBalance:       expectedClaimedUnstakedTokens.String(),
-		ClaimedSupplierStake: supplierStake.String(),
-		SessionEndHeight:     expectedSessionEndHeight,
-		Supplier:             &expectedSupplier,
+		MorseNodeAddress:        msgClaim.GetMorseNodeAddress(),
+		MorseOutputAddress:      morseClaimableAccount.GetMorseOutputAddress(),
+		ClaimSignerType:         migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR,
+		ClaimedBalance:          expectedClaimedUnstakedTokens.String(),
+		ClaimedSupplierStake:    supplierStake.String(),
+		SessionEndHeight:        expectedSessionEndHeight,
+		SupplierOperatorAddress: expectedSupplier.OperatorAddress,
+		SupplierOwnerAddress:    expectedSupplier.OwnerAddress,
 	}
 	claimEvents := events.FilterEvents[*migrationtypes.EventMorseSupplierClaimed](t, ctx.EventManager().Events())
 	require.Equal(t, 1, len(claimEvents))

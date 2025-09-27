@@ -226,22 +226,24 @@ func (k msgServer) ClaimMorseSupplier(
 	// Construct the base supplier claim event. It will be modified, as necessary, prior to emission.
 	// ALWAYS emit an event which signals that the morse supplier has been claimed.
 	morseSupplierClaimedEvent := &migrationtypes.EventMorseSupplierClaimed{
-		MorseNodeAddress:     msg.GetMorseNodeAddress(),
-		MorseOutputAddress:   morseNodeClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       claimedUnstakedBalance.String(),
-		ClaimedSupplierStake: claimedSupplierStake.String(),
-		SessionEndHeight:     sessionEndHeight,
-		Supplier:             unbondedSupplier,
+		MorseNodeAddress:        msg.GetMorseNodeAddress(),
+		MorseOutputAddress:      morseNodeClaimableAccount.GetMorseOutputAddress(),
+		ClaimSignerType:         claimSignerType,
+		ClaimedBalance:          claimedUnstakedBalance.String(),
+		ClaimedSupplierStake:    claimedSupplierStake.String(),
+		SessionEndHeight:        sessionEndHeight,
+		SupplierOperatorAddress: unbondedSupplier.OperatorAddress,
+		SupplierOwnerAddress:    unbondedSupplier.OwnerAddress,
 	}
 
 	// Conditionally emit an event which signals that the claimed Morse supplier's unbonding
 	// period began on Morse, and ended while waiting to be claimed.
 	morseSupplierUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
-		Supplier:           unbondedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: previousSessionEndHeight,
+		OperatorAddress:    unbondedSupplier.OperatorAddress,
+		OwnerAddress:       unbondedSupplier.OwnerAddress,
 	}
 
 	// Short circuit #1
@@ -306,7 +308,8 @@ func (k msgServer) ClaimMorseSupplier(
 	// Update the supplier claim event.
 	morseSupplierClaimedEvent.ClaimedBalance = morseNodeClaimableAccount.GetUnstakedBalance().String()
 	morseSupplierClaimedEvent.ClaimedSupplierStake = morseNodeClaimableAccount.GetSupplierStake().String()
-	morseSupplierClaimedEvent.Supplier = supplier
+	morseSupplierClaimedEvent.SupplierOperatorAddress = supplier.OperatorAddress
+	morseSupplierClaimedEvent.SupplierOwnerAddress = supplier.OwnerAddress
 
 	// Emit the supplier claim event first, an unbonding begin event MAY follow.
 	events = append(events, morseSupplierClaimedEvent)
@@ -336,10 +339,11 @@ func (k msgServer) ClaimMorseSupplier(
 		// period began on Morse and will end on Shannon at unbonding_end_height
 		// (i.e. estimatedUnstakeSessionEndHeight).
 		morseSupplierUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:           supplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_MIGRATION,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: estimatedUnstakeSessionEndHeight,
+			OperatorAddress:    supplier.OperatorAddress,
+			OwnerAddress:       supplier.OwnerAddress,
 		}
 
 		// Emit the supplier unbonding begin event
