@@ -145,32 +145,40 @@ type RelayMinerPocketNodeConfig struct {
 type RelayMinerServerConfig struct {
 	// ServerType is the transport protocol used by the server like (http, https, etc.)
 	ServerType RelayMinerServerType
+
 	// ListenAddress is the host on which the relay miner server will listen
 	// for incoming relay requests
 	ListenAddress string
+
 	// XForwardedHostLookup is a flag that indicates whether the relay miner server
 	// should lookup the host from the X-Forwarded-Host header before falling
 	// back to the Host header.
 	XForwardedHostLookup bool
 	// SupplierConfigsMap is a map of serviceIds -> RelayMinerSupplierConfig
 	SupplierConfigsMap map[string]*RelayMinerSupplierConfig
+
 	// MaxBodySize sets the largest request or response body size (in bytes) that the RelayMiner will accept for this service.
 	MaxBodySize int64
+
 	// EnableEagerRelayRequestValidation enables immediate validation of all incoming relay requests.
 	//
-	// Known vs Unknown sessions:
-	// - Known session: the session ID is already present in the RelayMiner's in-memory cache
-	//   (e.g., after the first request for that session was validated). Related session data
-	//   is cached until the session end height, allowing subsequent relays in the same session
-	//   to validate faster without needing to block at onchain queries.
-	// - Unknown session: first encounter of a session ID  and therefore not yet cached.
+	// When enabled (true, eager validation):
+	// 1. All requests (known or unknown session) are validated immediately on receipt
+	// 2. The session becomes known for subsequent requests.
 	//
-	// Behavior:
-	// - When enabled: all requests (known or unknown) are validated immediately on receipt
-	//   and the session becomes known for subsequent requests.
-	// - When disabled: immediate validation is performed only for known sessions; for unknown
-	//   sessions, validation is deferred (late validation) after serving the backend request
-	//   but before mining/rewarding.
+	// When disabled (false, late validation):
+	// 1. Immediate validation is performed only for known sessions
+	// 2. For unknown sessions, validation is deferred after serving the backend request but before mining/rewarding.
+	//
+	// Known session background:
+	//   - The session ID is already present in the RelayMiner's in-memory cache
+	//   - Example: after the first request for that session was validated
+	//   - Related session data is cached until the session end height
+	// 	 - Allows subsequent relays in the same session to validate faster without needing to block at onchain queries
+	//
+	// Unknown session background:
+	//   - First encounter of a session ID
+	//   - Not yet cached.
 	EnableEagerRelayRequestValidation bool
 }
 

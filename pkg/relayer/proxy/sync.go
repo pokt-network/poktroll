@@ -268,7 +268,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			logger.Error().Err(err).Msg("❌ Failed verifying relay request")
 			return relayRequest, err
 		}
-
 		isRequestVerified = true
 	}
 
@@ -439,8 +438,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		disallowOverServicing := !server.relayMeter.AllowOverServicing()
 		shouldRateLimit := isOverServicing && disallowOverServicing
 		if shouldRateLimit {
-			relayer.CaptureDelayedRelayRequestRateLimitingCheck(serviceId, supplierOperatorAddress)
 			logger.Warn().Msg("⚠️ Delayed validation rate limiting triggered - application exceeded allocated stake")
+			relayer.CaptureDelayedRelayRequestRateLimitingCheck(serviceId, supplierOperatorAddress)
 			return relayRequest, ErrRelayerProxyRateLimited
 		}
 
@@ -635,20 +634,17 @@ func (server *relayMinerHTTPServer) markSessionAsKnown(sessionId string, session
 	server.knownSessions[sessionId] = sessionEndBlockHeight
 }
 
-// pruneOutdatedKnownSessions removes known sessions that have ended before
-// the current block height to free up memory and keep the known sessions map
-// up-to-date.
+// pruneOutdatedKnownSessions removes known sessions that have ended before the
+// current block height to free up memory and keep the known sessions map up-to-date.
 func (server *relayMinerHTTPServer) pruneOutdatedKnownSessions(ctx context.Context, block client.Block) {
-	// TODO_IMPROVE: Do not prune at each block, instead do it periodically each num blocks per session.
+	// TODO_IMPROVE(@red-0ne): Do not prune at each block, instead do it periodically each num blocks per session.
 	server.knownSessionsMutex.Lock()
 	defer server.knownSessionsMutex.Unlock()
 
 	for sessionId, endHeight := range server.knownSessions {
-		// TODO_IMPROVE:
-		// - Replace the hard-coded +1 buffer with grace period.
-		//   Purpose: avoid prematurely pruning sessions of late requests
-		// - Only prune when current height > endHeight + gracePeriod, ensuring the session
-		//   is definitively out of service.
+		// TODO_IMPROVE(@red-0ne):
+		// 1. Replace (endHeight+1) with (endHeight + gracePeriod) to avoid prematurely pruning sessions of late requests
+		// 2. Only prune when (current_height > endHeight + gracePeriod), ensuring the session is definitively out of service.
 		if endHeight+1 < block.Height() {
 			delete(server.knownSessions, sessionId)
 		}
@@ -656,12 +652,9 @@ func (server *relayMinerHTTPServer) pruneOutdatedKnownSessions(ctx context.Conte
 }
 
 // isTimeoutError checks if the error is a timeout error.
+// It is used to determine if the request timed out by verified if
+// the error is a context deadline exceeded error.
 func isTimeoutError(err error) bool {
-	// Check if the error is a context deadline exceeded error.
-	// This is used to determine if the request timed out.
 	urlErr, ok := err.(*url.Error)
-	if ok && urlErr.Timeout() {
-		return true
-	}
-	return false
+	return ok && urlErr.Timeout()
 }
