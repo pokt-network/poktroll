@@ -14,7 +14,7 @@ module github.com/pokt-network/poktroll
 // 4. make proto_regen
 // 5. Uncomment above / comment below...
 // 6. go mod tidy
-// 7. ignite chain build --skip-proto # and/or (re)start/build localnet
+// 7. make ignite_build # and/or (re)start/build localnet
 
 //module github.com/pokt-network/pocket
 //replace github.com/pokt-network/poktroll => .
@@ -37,9 +37,6 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 // Ref: https://github.com/pokt-network/cometbft/issues/3
 replace github.com/cometbft/cometbft => github.com/pokt-network/cometbft v0.38.17-0.20250808222235-91d271231811
 
-// TODO_IN_THIS_PR: Remove this.
-replace github.com/pokt-network/shannon-sdk => github.com/pokt-network/shannon-sdk v0.0.0-20250926005543-248477bab1f9
-
 require (
 	cosmossdk.io/x/tx v0.14.0
 	github.com/docker/go-units v0.5.0
@@ -57,7 +54,7 @@ require (
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20250926005543-248477bab1f9
+	github.com/pokt-network/shannon-sdk v0.0.0-20250926214315-b721a0025673
 	go.uber.org/mock v0.5.2
 	golang.org/x/term v0.32.0
 )

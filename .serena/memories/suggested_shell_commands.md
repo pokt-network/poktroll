@@ -25,7 +25,7 @@ make localnet_reset
 make proto_regen
 
 # Build the pocketd binary
-make ignite_pocketd_build
+make ignite_build_pocketd
 ```
 
 ### Testing Commands

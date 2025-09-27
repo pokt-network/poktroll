@@ -1,34 +1,32 @@
 # This Dockerfile is used to build container image for production workloads.
 # The image depends on `cosmovisor_cross_compile`, `ignite_release` and `ignite_release_extract_binaries` make targets.
 #
-# NOTE: The pre-built binaries in release_binaries/ are built with CGO_ENABLED=0 without ethereum_secp256k1 tag.
-# This uses the Decred pure Go implementation of secp256k1 for cross-platform compatibility.
+# NOTE: The pre-built binaries in release_binaries/ are built with CGO_ENABLED=0
+# (pure-Go secp256k1) for portability. CGO-enabled linux tarballs are also
+# produced (_cgo suffix) and published to GitHub Releases, but the container
+# intentionally uses the CGO_DISABLED binaries.
+
 FROM debian:bookworm
 ARG TARGETARCH
 
-# Install necessary packages.
+# Minimal runtime deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# Use `1025` G/UID so users can switch between this and `heighliner` image without a need to chown the files.
+# Use `1025` G/UID so users can switch between this and `heighliner` image without chown.
 # Ref: https://github.com/strangelove-ventures/heighliner
 RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin pocket
 
+# NOCGO linux binaries, extracted by ignite_release_extract_binaries:
+#   release_binaries/pocket_linux_amd64
+#   release_binaries/pocket_linux_arm64
 COPY --chown=pocket:pocket release_binaries/pocket_linux_$TARGETARCH /bin/pocketd
 COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
 
-# GODEBUG and GOGC are commented out but can be enabled by operators who want to build a custom image.
-
-# Use MADV_DONTNEED to aggressively return freed memory to the OS
-# This helps reduce RSS and is more transparent in container environments
+# Optional runtime tuning
 # ENV GODEBUG="madvdontneed=1"
-
-# Lower GC target percentage (default is 100)
-# Triggers GC when heap grows 50% since last collection
-# Helps control memory growth in production environments
 # ENV GOGC="50"
 
 USER pocket
-
 ENTRYPOINT ["pocketd"]

@@ -28,15 +28,23 @@ jobs:
       - name: install ignite
         run: make ignite_install
 
-      # This is commented out because proto generated code is now tracked in the
-      # repo so this step is skipped.
-      # TODO_IMPROVE(@okdas): Have a step that regenerates the proto files and ensures
-      # if they are up to date. See https://github.com/pokt-network/poktroll/pull/544#issuecomment-2123063491
+      - name: Install cosmovisor (optional)
+        run: |
+          set -e
+          # Build/install; if your Makefile installs to $(go env GOPATH)/bin
+          make install_cosmovisor || true
+          COSMOVISOR="$(go env GOPATH)/bin/cosmovisor"
+          if [ -x "$COSMOVISOR" ]; then
+            mkdir -p ./bin
+            cp "$COSMOVISOR" ./bin/
+          fi
+
+      # TODO_IMPROVE(@okdas): Add this step. See https://github.com/pokt-network/poktroll/pull/544#issuecomment-2123063491
       # - name: Generate protobufs
       #   run: make proto_regen
 
       - name: Build
-        run: CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration" ignite chain build --build.tags="ethereum_secp256k1" -v --debug --skip-proto
+        run: make ignite_pocketd_build
 
       - name: Set up Docker Buildx
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image')) || (contains(github.event.pull_request.labels.*.name, 'devnet-test-e2e'))
@@ -72,6 +80,8 @@ jobs:
           mkdir -p ./bin # Make sure the bin directory exists
           cp $(which ignite) ./bin # Copy ignite binary to the repo's bin directory
           cp $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
+          # If cosmovisor was built, it will already be in ./bin from the previous step; this is a no-op fallback:
+          test -f $(go env GOPATH)/bin/cosmovisor && cp $(go env GOPATH)/bin/cosmovisor ./bin || true
           ls -la ./bin
 
       - name: Build and push Docker image
@@ -119,6 +129,5 @@ jobs:
           IMAGE_TAG: sha-${{ github.event.pull_request.head.sha || github.sha }}
           NAMESPACE: devnet-issue-${{ github.event.number }}
           JOB_NAME: e2e-test-${{ github.event.pull_request.head.sha || github.sha }}
-          # TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
           POCKET_NODE: tcp://devnet-issue-${{ github.event.number }}-validator-pocketd:26657
         run: bash .github/workflows-helpers/run-e2e-test.sh

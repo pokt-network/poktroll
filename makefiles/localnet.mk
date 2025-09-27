@@ -95,3 +95,12 @@ localnet_cancel_upgrade: ## Cancels the planed upgrade on local node
 .PHONY: localnet_show_upgrade_plan
 localnet_show_upgrade_plan: ## Shows the upgrade plan on local node
 	pocketd query upgrade plan
+
+
+##########################
+### Ignite Development ###
+##########################
+
+.PHONY: ignite_acc_list
+ignite_acc_list: ## List all accounts in LocalNet
+	@ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)

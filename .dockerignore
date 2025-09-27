@@ -1,0 +1,16 @@
+# Ignore everything by default
+**
+
+# Allow files needed for development image
+!Dockerfile.dev
+!bin/
+!bin/pocketd
+!bin/ignite
+!bin/cosmovisor
+
+# Allow files needed for release image build
+!Dockerfile.release
+!release_binaries/
+!release_binaries/**
+!tmp/
+!tmp/cosmovisor-*
