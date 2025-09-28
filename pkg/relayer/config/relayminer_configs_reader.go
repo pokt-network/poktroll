@@ -81,7 +81,7 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 	// When enabled, all incoming relay requests are validated immediately upon receipt.
 	// When disabled, relay requests are validated only if their session is known,
 	// or validation is deferred if their session is unknown.
-	relayMinerConfig.EnableEagerValidation = yamlRelayMinerConfig.EnableEagerValidation
+	relayMinerConfig.EnableEagerRelayRequestValidation = yamlRelayMinerConfig.EnableEagerRelayRequestValidation
 
 	// No additional validation on metrics. The server would fail to start if they are invalid
 	// which is the intended behaviour.

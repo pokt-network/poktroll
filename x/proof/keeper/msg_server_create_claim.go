@@ -114,6 +114,15 @@ func (k msgServer) CreateClaim(
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
 	serviceId := session.GetHeader().GetServiceId()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	// TODO_CRITICAL(#1789): Ensure to use the RelayMiningDifficulty from the correct session.
+	// Issue:
+	// - The current implementation gets the difficulty for the current session.
+	// - This is incorrect as claims are submitted for previous sessions.
+	// - The difficulty used for validation should match the difficulty that was active during the session when the work was performed.
+	// Solution:
+	// - Implement GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
+	// - Use the historical difficulty value that was active during the claim's session.
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 

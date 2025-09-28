@@ -207,7 +207,7 @@ type RelayMeter interface {
 	Start(ctx context.Context) error
 
 	// IsOverServicing returns whether the relay would result in over-servicing the application.
-	IsOverServicing(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata, instructionTimes *InstructionTimer) bool
+	IsOverServicing(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) bool
 
 	// SetNonApplicableRelayReward updates the relay meter for the given relay request as
 	// non-applicable between a single Application and a single Supplier for a single session.

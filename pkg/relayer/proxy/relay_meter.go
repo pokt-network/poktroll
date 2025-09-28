@@ -109,7 +109,6 @@ func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
 func (rmtr *ProxyRelayMeter) IsOverServicing(
 	ctx context.Context,
 	reqMeta servicetypes.RelayRequestMetadata,
-	instructionTimes *relayer.InstructionTimer,
 ) bool {
 	// Create a context-specific logger to avoid concurrent access issues
 	logger := rmtr.logger.With(
@@ -119,7 +118,7 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 
 	// Ensure that the served application has a relay meter and update the consumed
 	// stake amount.
-	appRelayMeter, err := rmtr.ensureRequestSessionRelayMeter(ctx, reqMeta, instructionTimes)
+	appRelayMeter, err := rmtr.ensureRequestSessionRelayMeter(ctx, reqMeta)
 	if err != nil {
 		logger.Warn().Msgf(
 			"[Non critical] Unable to set up relay meter in session %s. Relay will continue without rate limiting: %v",
@@ -128,7 +127,6 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 		)
 		return false
 	}
-	instructionTimes.Record(relayer.InstructionRelayMeterEnsureRequestSessionRelayMeter)
 
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
@@ -139,7 +137,6 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 		)
 		return false
 	}
-	instructionTimes.Record(relayer.InstructionRelayMeterSharedQuerierGetParams)
 
 	service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
 	if err != nil {
@@ -150,7 +147,6 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 		)
 		return false
 	}
-	instructionTimes.Record(relayer.InstructionRelayMeterServiceQuerierGetService)
 
 	// Get the cost of the relay based on the service and shared parameters.
 	relayCostCoin, err := getSingleRelayCostCoin(sharedParams, &service)
@@ -162,7 +158,6 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 		)
 		return false
 	}
-	instructionTimes.Record(relayer.InstructionRelayMeterGetSingleRelayCostCoin)
 
 	// Increase the consumed stake amount by relay cost.
 	newConsumedCoin := appRelayMeter.consumedCoin.Add(relayCostCoin)
@@ -315,7 +310,7 @@ func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client
 
 // ensureRequestSessionRelayMeter ensures that the relay miner has a relay meter
 // ready for monitoring the requests's application's consumption.
-func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata, instructionTimes *relayer.InstructionTimer) (*sessionRelayMeter, error) {
+func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) (*sessionRelayMeter, error) {
 	appAddress := reqMeta.GetSessionHeader().GetApplicationAddress()
 	sessionId := reqMeta.GetSessionHeader().GetSessionId()
 
@@ -332,7 +327,6 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		instructionTimes.Record(relayer.InstructionRelayMeterApplicationQuerierGetApplication)
 
 		// In order to prevent over-servicing, the protocol must split the application's stake
 		// among all the suppliers that are serving it.
@@ -348,13 +342,11 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		instructionTimes.Record(relayer.InstructionRelayMeterEnsureRequestSessionRelayMeterSharedGetParams)
 
 		sessionParams, err := rmtr.sessionQuerier.GetParams(ctx)
 		if err != nil {
 			return nil, err
 		}
-		instructionTimes.Record(relayer.InstructionRelayMeterSessionQuerierGetParams)
 
 		// calculate the max amount of stake the application can consume in the current session.
 		supplierAppStake := getAppStakePortionPayableToSessionSupplier(
@@ -362,7 +354,6 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 			sharedParams,
 			sessionParams.GetNumSuppliersPerSession(),
 		)
-		instructionTimes.Record(relayer.InstructionRelayMeterGetAppStakePortionPayableToSessionSupplier)
 
 		relayMeter = &sessionRelayMeter{
 			app:           app,

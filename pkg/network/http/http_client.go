@@ -21,7 +21,7 @@ const (
 	maxResponseSize = 100 * 1024 * 1024 // 100MB limit
 
 	// Maximum number of concurrent HTTP requests.
-	concurrencyLimiterMax = 10_000
+	concurrencyLimiterMax = 100_000
 )
 
 // HTTPClientWithDebugMetrics provides HTTP client functionality with embedded tracking of debug metrics.
@@ -31,6 +31,11 @@ const (
 // - Detailed logging
 // - Timeout debugging
 // - Connection issue visibility
+//
+// TODO_TECHDEBT(@red-0ne): Consider moving this HTTP client implementation to ShannonSDK
+// for sharing between RelayMiner and PATH once optimizations stabilize and requirements align.
+// For now, keeping separate implementations to allow independent optimization.
+// See: https://github.com/pokt-network/poktroll/pull/1764#pullrequestreview-3232115767
 type HTTPClientWithDebugMetrics struct {
 	httpClient *http.Client
 	limiter    *concurrency.ConcurrencyLimiter

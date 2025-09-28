@@ -57,6 +57,29 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	ctx = context.WithValue(ctx, query.ComponentCtxRelayMinerKey, query.ComponentCtxRelayMinerProxy)
 	instructionTimes.Record(relayer.InstructionSetContextValueComponentKind)
 
+	// Initialize with default values for metrics:
+	// - We don't know the actual supplierOperatorAddress and serviceId until the relay request is unmarshalled.
+	// - If we fail before unmarshalling, these defaults ensure:
+	//   - Metric labels are always populated (never empty)
+	//   - Downstream monitoring and dashboards remain consistent
+	supplierOperatorAddress := UnknownSupplierOperatorAddress
+	serviceId := UnknownServiceID
+
+	// Defer metrics to guarantee they are always recorded:
+	// - Ensures RelaysTotal and relay duration are captured regardless of how/when the function returns
+	// - Even on early error returns, metrics are updated with the best-known values
+	// - Prevents accidental metric omission due to premature exit
+	defer func(startTime time.Time, statusCode *int) {
+		// Increment the relays counter.
+		relayer.RelaysTotal.With(
+			"service_id", serviceId,
+			"supplier_operator_address", supplierOperatorAddress,
+		).Add(1)
+
+		// Capture the relay request duration metric.
+		relayer.CaptureRelayDuration(serviceId, startTime, *statusCode)
+	}(requestStartTime, &statusCode)
+
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
 		"📊 Chain head at height %d (block hash: %X) at relay request start",
 		startHeight,
@@ -86,18 +109,17 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	meta := relayRequest.Meta
 	sessionHeader := meta.SessionHeader
-	serviceId := meta.SessionHeader.ServiceId
-
-	blockHeight := server.blockClient.LastBlock(ctx).Height()
+	supplierOperatorAddress = meta.SupplierOperatorAddress
+	serviceId = sessionHeader.ServiceId
 
 	logger = logger.With(
-		"current_height", blockHeight,
+		"current_height", startHeight,
 		"session_id", sessionHeader.SessionId,
 		"session_start_height", sessionHeader.SessionStartBlockHeight,
 		"session_end_height", sessionHeader.SessionEndBlockHeight,
 		"service_id", serviceId,
 		"application_address", sessionHeader.ApplicationAddress,
-		"supplier_operator_address", meta.SupplierOperatorAddress,
+		"supplier_operator_address", supplierOperatorAddress,
 		"request_start_time", requestStartTime.String(),
 	)
 	instructionTimes.Record(relayer.InstructionLoggerWithRequestDetails)
@@ -106,12 +128,12 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	availableSuppliers := server.relayAuthenticator.GetSupplierOperatorAddresses()
 	instructionTimes.Record(relayer.InstructionGetAvailableSuppliers)
 
-	if !slices.Contains(availableSuppliers, meta.SupplierOperatorAddress) {
+	if !slices.Contains(availableSuppliers, supplierOperatorAddress) {
 		logger.Warn().
 			Msgf(
 				"❌ The request's selected supplier with operator_address (%q) is not available for relaying! "+
 					"This could be a network or configuration issue. Available suppliers: [%s] 🚦",
-				meta.SupplierOperatorAddress,
+				supplierOperatorAddress,
 				strings.Join(availableSuppliers, ", "),
 			)
 		return relayRequest, ErrRelayerProxySupplierNotReachable
@@ -194,18 +216,21 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Reward accumulation is reverted automatically when the relay isn't successfully completed.
 	// This approach prioritizes accurate accounting over optimistic processing.
 	//
-	// TODO_CONSIDERATION: Consider implementing a delay queue instead of rejecting
-	// requests when application stake is insufficient. This would allow processing
-	// once earlier requests complete and free up stake.
+	// isOverServicing semantics:
+	// - Unknown session (not cached): skip rate limiting; isOverServicing remains false until delayed validation.
+	// - Known session (cached) OR eager validation enabled: check over-servicing before the backend call.
 	isOverServicing := false
-	instructionTimes.Record(relayer.InstructionSetupRewardManagementFlags)
+
 	// Check whether the relay's session is already known and its corresponding data cached.
 	isSessionKnown := server.isSessionKnown(sessionHeader.SessionId)
-	// Perform relay request checks and validation only if the session is known
-	// or if eager validation is enabled.
-	if isSessionKnown || server.eagerValidationEnabled {
-		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta, instructionTimes)
-		shouldRateLimit := isOverServicing && !server.relayMeter.AllowOverServicing()
+
+	// Perform rate limiting checks and validation only if one of the following conditions is met:
+	// - The session is known
+	// - Eager validation is enabled
+	if isSessionKnown || server.eagerRelayRequestValidationEnabled {
+		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta)
+		disallowOverServicing := !server.relayMeter.AllowOverServicing()
+		shouldRateLimit := isOverServicing && disallowOverServicing
 		if shouldRateLimit {
 			return relayRequest, ErrRelayerProxyRateLimited
 		}
@@ -254,30 +279,24 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	)
 
 	instructionTimes.Record(relayer.InstructionLoggerWithServiceDetails)
-
-	// Increment the relays counter.
-	relayer.RelaysTotal.With(
-		"service_id", serviceId,
-		"supplier_operator_address", meta.SupplierOperatorAddress,
-	).Add(1)
-	defer func(startTime time.Time, statusCode *int) {
-		// Capture the relay request duration metric.
-		relayer.CaptureRelayDuration(serviceId, startTime, *statusCode)
-	}(requestStartTime, &statusCode)
-
 	relayer.RelayRequestSizeBytes.With("service_id", serviceId).
 		Observe(float64(relayRequest.Size()))
 
 	// Verify the relay request signature and session when:
-	// 1. The session is already known (cached)
+	// 1. The session is already known (cached/available)
 	// 2. Eager validation is enabled (immediate validation for all requests)
-	if isSessionKnown || server.eagerValidationEnabled {
+	isRequestVerified := false
+	if isSessionKnown || server.eagerRelayRequestValidationEnabled {
 		instructionTimes.Record(relayer.InstructionPreRequestVerification)
+
 		if err = server.relayAuthenticator.VerifyRelayRequest(ctxWithDeadline, relayRequest, serviceId); err != nil {
 			logger.Error().Err(err).Msg("❌ Failed verifying relay request")
 			return relayRequest, err
 		}
+
 		instructionTimes.Record(relayer.InstructionPostRequestVerification)
+
+		isRequestVerified = true
 	}
 
 	httpRequest, err := relayer.BuildServiceBackendRequest(relayRequest, serviceConfig)
@@ -326,7 +345,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Send the relay request to the native service.
 	serviceCallStartTime := time.Now()
 	httpResponse, err := server.httpClient.Do(ctxWithRemainingTimeout, logger, httpRequest)
-	httpRequest.Body.Close()
+	// Early close backend request body to free up pool resources.
+	CloseBody(logger, httpRequest.Body)
 
 	instructionTimes.Record(relayer.InstructionHTTPClientDo)
 
@@ -369,6 +389,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return relayRequest, err
 	}
+	// Early close backend response body to free up pool resources.
 	CloseBody(logger, httpResponse.Body)
 
 	instructionTimes.Record(relayer.InstructionSerializeHTTPResponse)
@@ -403,7 +424,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
-	relayResponse, err := server.newRelayResponse(responseBz, sessionHeader, meta.SupplierOperatorAddress)
+	relayResponse, err := server.newRelayResponse(responseBz, sessionHeader, supplierOperatorAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed building the relay response")
 		// The client should not have knowledge about the RelayMiner's issues with
@@ -448,34 +469,35 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
 
-	// In case the current request is not validated yet perform a late validation
-	// before mining the relay.
+	// In case the current request is not validated yet perform a late validation before mining the relay.
 	// DEV_NOTE: If eager validation is enabled, then the session is already known.
-	if !isSessionKnown {
-		relayer.CaptureDelayedValidationOccurrence(serviceId)
+	// TODO_TECHDEBT(@red-0ne): Extract late validation logic to a separate method for better testability.
+	if !isRequestVerified {
+		relayer.CaptureDelayedRelayRequestValidation(serviceId, supplierOperatorAddress)
 
 		logger.Info().Msg("🔄 Performing delayed validation - session was unknown at request time")
 
-		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta, instructionTimes)
-		shouldRateLimit := isOverServicing && !server.relayMeter.AllowOverServicing()
+		isOverServicing = server.relayMeter.IsOverServicing(ctxWithDeadline, meta)
+		disallowOverServicing := !server.relayMeter.AllowOverServicing()
+		shouldRateLimit := isOverServicing && disallowOverServicing
 		if shouldRateLimit {
-			relayer.CaptureDelayedValidationRateLimiting(serviceId)
-
+			logger.Warn().Msg("⚠️ Delayed validation rate limiting triggered - application exceeded allocated stake")
+			relayer.CaptureDelayedRelayRequestRateLimitingCheck(serviceId, supplierOperatorAddress)
 			return relayRequest, ErrRelayerProxyRateLimited
 		}
 
-		instructionTimes.Record(relayer.InstructionDelayedCheckRateLimiting)
-
 		if err = server.relayAuthenticator.VerifyRelayRequest(ctxWithDeadline, relayRequest, serviceId); err != nil {
 			logger.Error().Err(err).Msg("❌ Failed delayed validation - relay request verification failed after successful response")
-			relayer.CaptureDelayedValidationFailure(serviceId)
+			relayer.CaptureDelayedRelayRequestValidationFailure(serviceId, supplierOperatorAddress)
 			return relayRequest, err
 		}
 
-		instructionTimes.Record(relayer.InstructionDelayedRequestVerification)
-
 		// Mark the session as known to skip late validations for subsequent requests.
 		server.markSessionAsKnown(sessionHeader.SessionId, sessionHeader.SessionEndBlockHeight)
+		logger.Info().Msgf(
+			"🧠 Marking session as known, will perform eager validation for future requests with sessionID (%s)",
+			sessionHeader.SessionId,
+		)
 	}
 
 	relayer.RecordDurations(instructionTimes.Timestamps)
@@ -658,16 +680,17 @@ func (server *relayMinerHTTPServer) markSessionAsKnown(sessionId string, session
 	server.knownSessions[sessionId] = sessionEndBlockHeight
 }
 
-// pruneOutdatedKnownSessions removes known sessions that have ended before
-// the current block height to free up memory and keep the known sessions map
-// up-to-date.
+// pruneOutdatedKnownSessions removes known sessions that have ended before the
+// current block height to free up memory and keep the known sessions map up-to-date.
 func (server *relayMinerHTTPServer) pruneOutdatedKnownSessions(ctx context.Context, block client.Block) {
-	// TODO_TECHDEBT: Do not prune at each block, instead do it periodically each num blocks per session.
+	// TODO_IMPROVE(@red-0ne): Do not prune at each block, instead do it periodically each num blocks per session.
 	server.knownSessionsMutex.Lock()
 	defer server.knownSessionsMutex.Unlock()
 
 	for sessionId, endHeight := range server.knownSessions {
-		// TODO_TECHDEBT: Use grace period blocks instead of +1
+		// TODO_IMPROVE(@red-0ne):
+		// 1. Replace (endHeight+1) with (endHeight + gracePeriod) to avoid prematurely pruning sessions of late requests
+		// 2. Only prune when (current_height > endHeight + gracePeriod), ensuring the session is definitively out of service.
 		if endHeight+1 < block.Height() {
 			delete(server.knownSessions, sessionId)
 		}
@@ -675,12 +698,9 @@ func (server *relayMinerHTTPServer) pruneOutdatedKnownSessions(ctx context.Conte
 }
 
 // isTimeoutError checks if the error is a timeout error.
+// It is used to determine if the request timed out by verified if
+// the error is a context deadline exceeded error.
 func isTimeoutError(err error) bool {
-	// Check if the error is a context deadline exceeded error.
-	// This is used to determine if the request timed out.
 	urlErr, ok := err.(*url.Error)
-	if ok && urlErr.Timeout() {
-		return true
-	}
-	return false
+	return ok && urlErr.Timeout()
 }

@@ -152,7 +152,7 @@ func generateRelayRequest(ctx context.Context, logger polylog.Logger) ([]byte, e
 	logger.Info().Msg("✅ Account client initialized")
 
 	// Create an application ring for signing
-	ring := sdk.ApplicationRing{
+	ring := &sdk.ApplicationRing{
 		Application:      *session.Application,
 		PublicKeyFetcher: &accountClient,
 	}

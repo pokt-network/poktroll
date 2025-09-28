@@ -19,7 +19,6 @@ const (
 	InstructionDetermineRequestTimeoutForServiceID    string = "determine_request_timeout_for_service_id"
 	InstructionSetContextDeadline                     string = "set_context_deadline"
 	InstructionSetResponseControllerWriteDeadline     string = "set_response_controller_write_deadline"
-	InstructionSetupRewardManagementFlags             string = "setup_reward_management_flags"
 	InstructionEagerCheckRateLimiting                 string = "eager_check__rate_limiting"
 	InstructionGetServiceConfig                       string = "get_service_config"
 	InstructionLoggerWithServiceDetails               string = "logger_with_service_details"
@@ -34,18 +33,6 @@ const (
 	InstructionRelayResponseGenerated                 string = "relay_response_generated"
 	InstructionLoggerWithResponsePreparation          string = "logger_with_response_preparation"
 	InstructionResponseSent                           string = "response_sent"
-	InstructionDelayedCheckRateLimiting               string = "delayed_check_rate_limiting"
-	InstructionDelayedRequestVerification             string = "delayed_request_verification"
-
-	// Relay meter flow
-	InstructionRelayMeterEnsureRequestSessionRelayMeter                string = "relay_meter_ensureRequestSessionRelayMeter"
-	InstructionRelayMeterSharedQuerierGetParams                        string = "relay_meter_sharedQuerier_GetParams"
-	InstructionRelayMeterServiceQuerierGetService                      string = "relay_meter_serviceQuerier_GetService"
-	InstructionRelayMeterGetSingleRelayCostCoin                        string = "relay_meter_getSingleRelayCostCoin"
-	InstructionRelayMeterApplicationQuerierGetApplication              string = "relay_meter_applicationQuerier_GetApplication"
-	InstructionRelayMeterEnsureRequestSessionRelayMeterSharedGetParams string = "relay_meter_ensureRequestSessionRelayMeter_sharedQuerier_GetParams"
-	InstructionRelayMeterSessionQuerierGetParams                       string = "relay_meter_sessionQuerier_GetParams"
-	InstructionRelayMeterGetAppStakePortionPayableToSessionSupplier    string = "relay_meter_getAppStakePortionPayableToSessionSupplier"
 )
 
 // InstructionTimestamp represents a single timing measurement for an instruction.
