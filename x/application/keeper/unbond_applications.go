@@ -18,10 +18,10 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
 	currentHeight := sdkCtx.BlockHeight()
 
-    // Only process unbonding applications at the end of the session.
-    if !sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
-        return nil
-    }
+	// Only process unbonding applications at the end of the session.
+	if !sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+		return nil
+	}
 
 	// Iterate over all unstaking applications and unbond the ones that have finished the unbonding period.
 	// This iterator retrieves all applications that are in the unbonding state regardless of
