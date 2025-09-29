@@ -296,16 +296,12 @@ func (k Keeper) updateSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
-	// If new service configs were provided, mark all the supplier's service
-	// configurations as to be deactivated at the start of the next session.
-	if len(msg.Services) > 0 {
-		for _, oldServiceConfigUpdate := range supplier.ServiceConfigHistory {
-			oldServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
-		}
-	}
+	updatedServiceConfigHistory := make([]*sharedtypes.ServiceConfigUpdate, 0)
+	updatedServices := make(map[string]struct{})
 
-	// Initialize the supplier's service configurations with the new ones from the msg.
-	// These will take effect at the start of the next session.
+	// Step 1: Add all new service configurations from the message
+	// - These configs will activate at the start of the next session
+	// - Track service IDs to identify which old inactive configs need replacement
 	for _, newServiceConfig := range msg.Services {
 		newServiceConfigUpdate := &sharedtypes.ServiceConfigUpdate{
 			OperatorAddress: msg.OperatorAddress,
@@ -313,8 +309,34 @@ func (k Keeper) updateSupplier(
 			// The effective block height is the start of the next session.
 			ActivationHeight: nextSessionStartHeight,
 		}
-		supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, newServiceConfigUpdate)
+		updatedServiceConfigHistory = append(updatedServiceConfigHistory, newServiceConfigUpdate)
+		updatedServices[newServiceConfig.ServiceId] = struct{}{}
 	}
+
+	// Step 2: Handle existing service configurations
+	if len(msg.Services) > 0 {
+		for _, oldServiceConfigUpdate := range supplier.ServiceConfigHistory {
+			// Check if this old config would normally activate at the next session
+			shouldActivateAtNextSession := oldServiceConfigUpdate.ActivationHeight == nextSessionStartHeight
+			// Check if we have a new config replacing this service
+			_, hasNewConfig := updatedServices[oldServiceConfigUpdate.Service.ServiceId]
+			// Skip old inactive configs that are being replaced by new ones for the same service
+			shouldUpdateExistingNewConfig := shouldActivateAtNextSession && hasNewConfig
+
+			if shouldUpdateExistingNewConfig {
+				continue
+			}
+
+			// Deactivate old configs that are not being replaced:
+			// - Currently active configs (no deactivation height set)
+			// - Configs scheduled to activate at next session but not being replaced
+			oldServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
+			updatedServiceConfigHistory = append(updatedServiceConfigHistory, oldServiceConfigUpdate)
+		}
+	}
+
+	// Step 3: Update the supplier with the final service configuration history
+	supplier.ServiceConfigHistory = updatedServiceConfigHistory
 
 	return nil
 }

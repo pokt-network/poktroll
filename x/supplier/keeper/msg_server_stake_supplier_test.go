@@ -844,6 +844,86 @@ func TestMsgServer_StakeSupplier_SignerOwnerStakeDestination(t *testing.T) {
 	require.Equal(t, stakeDifference, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 }
 
+func TestMsgServer_StakeSupplier_UpdateServiceBeforeActivation(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	// Generate an owner and operator address for the supplier
+	ownerAddr := sample.AccAddressBech32()
+	operatorAddr := sample.AccAddressBech32()
+
+	// Step 1: Stake supplier with initial service
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId")
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Verify supplier is staked with service pending activation
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.Len(t, foundSupplier.Services, 0) // No active services yet
+	require.Len(t, foundSupplier.ServiceConfigHistory, 1)
+
+	// Assert that the service config history contains the initial service
+	initialServiceConfig := foundSupplier.ServiceConfigHistory[0]
+	require.Equal(t, "svcId", initialServiceConfig.Service.ServiceId)
+	require.Equal(t, "http://localhost:8080", initialServiceConfig.Service.Endpoints[0].Url)
+	require.Greater(t, initialServiceConfig.ActivationHeight, int64(0)) // Has activation height set
+	require.Equal(t, int64(0), initialServiceConfig.DeactivationHeight) // No deactivation height
+
+	// Fast forward for a single block before restaking again
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	ctx = keepertest.SetBlockHeight(ctx, currentHeight+1)
+
+	// Step 2: Update the service before it becomes active
+	updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, 1000000, "svcId")
+	setStakeMsgSigner(updateMsg, operatorAddr)
+	updateMsg.Services[0].Endpoints[0].Url = "http://localhost:8081" // Change URL
+
+	_, err = srv.StakeSupplier(ctx, updateMsg)
+	require.NoError(t, err)
+
+	// Verify service config history after update
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.Len(t, foundSupplier.Services, 0)             // Still no active services
+	require.Len(t, foundSupplier.ServiceConfigHistory, 1) // Original overriden config
+
+	// Find the latest service config (should have the updated URL)
+	latestServiceUpdate := getLatestSupplierServiceConfigUpdate(t, foundSupplier)
+	require.Len(t, latestServiceUpdate, 1)
+	require.Equal(t, "svcId", latestServiceUpdate[0].Service.ServiceId)
+	require.Equal(t, "http://localhost:8081", latestServiceUpdate[0].Service.Endpoints[0].Url)
+
+	// Step 3: Activate services and verify the updated service is present
+	ctx = setBlockHeightToNextSessionStart(ctx, supplierModuleKeepers.SharedKeeper)
+	numSuppliersWithServicesActivation, err := supplierModuleKeepers.BeginBlockerActivateSupplierServices(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, numSuppliersWithServicesActivation)
+
+	// Run EndBlockerPruneSupplierServiceConfigHistory to clean up old configs
+	_, err = supplierModuleKeepers.EndBlockerPruneSupplierServiceConfigHistory(ctx)
+	require.NoError(t, err)
+
+	// Verify the updated service is now active
+	// NOTE: These assertions validate the fix for issue #1794 where service config
+	// updates before activation were not properly handled in v0.1.29
+	// See: https://github.com/pokt-network/poktroll/issues/1794
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.Len(t, foundSupplier.Services, 1) // Now has active service
+	require.Equal(t, "svcId", foundSupplier.Services[0].ServiceId)
+	require.Equal(t, "http://localhost:8081", foundSupplier.Services[0].Endpoints[0].Url) // Updated URL
+
+	// Assert that the service config history contains a single updated service
+	require.Len(t, foundSupplier.ServiceConfigHistory, 1) // Should be pruned to only active config
+	finalServiceConfig := foundSupplier.ServiceConfigHistory[0]
+	require.Equal(t, "svcId", finalServiceConfig.Service.ServiceId)
+	require.Equal(t, "http://localhost:8081", finalServiceConfig.Service.Endpoints[0].Url) // Updated URL
+	require.Greater(t, finalServiceConfig.ActivationHeight, int64(0))                      // Has activation height set
+	require.Equal(t, int64(0), finalServiceConfig.DeactivationHeight)                      // No deactivation height
+}
+
 // newSupplierStakeMsg prepares and returns a MsgStakeSupplier that stakes
 // the given supplier operator address, stake amount, and service IDs.
 func newSupplierStakeMsg(
