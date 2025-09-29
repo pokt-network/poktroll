@@ -61,7 +61,7 @@ make acc_initialize_pubkeys POCKET_NODE=http://localhost:26657
 ```
 Troubleshooting
 
-If you see this error:
+If you see this error:"Failed to receive any response from endpoints..."
 
 It usually means you forgot to run the make acc_initialize_pubkeys step.
 ```
