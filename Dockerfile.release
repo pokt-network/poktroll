@@ -6,10 +6,37 @@
 # portability. Pass BIN_PREFIX=release_binaries/pocket_cgo_linux to produce a
 # CGO-enabled image.
 
+# Stage 1: Binary selection stage
+FROM busybox:stable as binary-selector
+ARG TARGETARCH
+ARG BIN_PREFIX=release_binaries/pocket_linux
+
+# Copy only the pocket binaries (reduces context size)
+COPY release_binaries/pocket* /tmp/release_binaries/
+COPY tmp/cosmovisor-linux-* /tmp/
+
+# Select the correct binary for the architecture
+RUN set -eu; \
+    prefix="/tmp/${BIN_PREFIX}"; \
+    for candidate in "${prefix}_${TARGETARCH}" "${prefix}-${TARGETARCH}"; do \
+        if [ -f "${candidate}" ]; then \
+            cp "${candidate}" /tmp/pocketd; \
+            chmod 755 /tmp/pocketd; \
+            break; \
+        fi; \
+    done; \
+    if [ ! -f /tmp/pocketd ]; then \
+        echo "pocketd binary not found for TARGETARCH=${TARGETARCH} (BIN_PREFIX=${BIN_PREFIX})" >&2; \
+        echo "Available artifacts:" >&2; \
+        find /tmp/release_binaries -maxdepth 1 -type f -exec basename {} \; >&2 || true; \
+        exit 1; \
+    fi; \
+    cp /tmp/cosmovisor-linux-${TARGETARCH} /tmp/cosmovisor; \
+    chmod 755 /tmp/cosmovisor
+
+# Stage 2: Final runtime image
 FROM debian:bookworm
 ARG TARGETARCH
-# Select which prebuilt pocketd binary to embed (default: CGO disabled)
-ARG BIN_PREFIX=release_binaries/pocket_linux
 
 # Minimal runtime deps
 RUN apt-get update && \
@@ -20,25 +47,9 @@ RUN apt-get update && \
 # Ref: https://github.com/strangelove-ventures/heighliner
 RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin pocket
 
-# Selected linux binaries (CGO disabled by default), extracted by
-# ignite_release_extract_binaries. Some Ignite versions emit `os-arch`
-# filenames, others use `os_arch`, so we try both naming conventions.
-# Copy only the specific binary for the target architecture to save space.
-COPY ${BIN_PREFIX}_${TARGETARCH} ${BIN_PREFIX}-${TARGETARCH}* /tmp/
-RUN set -eu; \
-    prefix="/tmp/$(basename ${BIN_PREFIX})"; \
-    for candidate in "${prefix}_${TARGETARCH}" "${prefix}-${TARGETARCH}"; do \
-        if [ -f "${candidate}" ]; then \
-            install -o pocket -g pocket -m 0555 "${candidate}" /bin/pocketd; \
-            rm -f /tmp/pocket*; \
-            exit 0; \
-        fi; \
-    done; \
-    echo "pocketd binary not found for TARGETARCH=${TARGETARCH} (BIN_PREFIX=${BIN_PREFIX})" >&2; \
-    echo "Available artifacts in /tmp:" >&2; \
-    ls -la /tmp/pocket* 2>/dev/null || true; \
-    exit 1
-COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
+# Copy the selected binaries from the selector stage
+COPY --from=binary-selector --chown=pocket:pocket /tmp/pocketd /bin/pocketd
+COPY --from=binary-selector --chown=pocket:pocket /tmp/cosmovisor /bin/cosmovisor
 
 # Optional runtime tuning
 # ENV GODEBUG="madvdontneed=1"
