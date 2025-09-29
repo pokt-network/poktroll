@@ -110,9 +110,11 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	_, isDstFound := k.GetApplication(ctx, dstBech32)
 	require.False(t, isDstFound)
 
-	// Set the height to the transfer end height for the session.
+	// Set the height to the next session end height at or after the transfer end height.
+	// The transfer can only complete at a session end height.
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
-	ctx = sdkCtx.WithBlockHeight(transferEndHeight)
+	transferCompletionHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight)
+	ctx = sdkCtx.WithBlockHeight(transferCompletionHeight)
 
 	// Run application module end-blockers to complete the transfer.
 	err = k.EndBlockerTransferApplication(ctx)
@@ -127,7 +129,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.Equal(t, "svc1", dstApp.GetServiceConfigs()[0].GetServiceId())
 
 	// Assert that the EventTransferEnd event was emitted.
-	transferEndSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight)
+	transferEndSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferCompletionHeight)
 	expectedTransferEndEvent := &apptypes.EventTransferEnd{
 		SourceAddress:          srcBech32,
 		DestinationAddress:     dstBech32,
