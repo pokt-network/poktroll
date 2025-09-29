@@ -22,21 +22,21 @@ RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin poc
 
 # Selected linux binaries (CGO disabled by default), extracted by
 # ignite_release_extract_binaries. Some Ignite versions emit `os-arch`
-# filenames, others use `os_arch`, so stage the full directory and pick
-# the correct variant at build time.
-COPY release_binaries/ /tmp/release_binaries/
+# filenames, others use `os_arch`, so we try both naming conventions.
+# Copy only the specific binary for the target architecture to save space.
+COPY ${BIN_PREFIX}_${TARGETARCH} ${BIN_PREFIX}-${TARGETARCH}* /tmp/
 RUN set -eu; \
-    prefix="/tmp/${BIN_PREFIX}"; \
+    prefix="/tmp/$(basename ${BIN_PREFIX})"; \
     for candidate in "${prefix}_${TARGETARCH}" "${prefix}-${TARGETARCH}"; do \
         if [ -f "${candidate}" ]; then \
             install -o pocket -g pocket -m 0555 "${candidate}" /bin/pocketd; \
-            rm -rf /tmp/release_binaries; \
+            rm -f /tmp/pocket*; \
             exit 0; \
         fi; \
     done; \
     echo "pocketd binary not found for TARGETARCH=${TARGETARCH} (BIN_PREFIX=${BIN_PREFIX})" >&2; \
-    echo "Available artifacts:" >&2; \
-    find /tmp/release_binaries -maxdepth 1 -type f -exec basename {} \; >&2 || true; \
+    echo "Available artifacts in /tmp:" >&2; \
+    ls -la /tmp/pocket* 2>/dev/null || true; \
     exit 1
 COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
 
