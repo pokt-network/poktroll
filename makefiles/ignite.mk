@@ -46,6 +46,14 @@ ignite_build: ignite_check_version ## Build the pocketd binary using Ignite (dev
 ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary to GOPATH/bin
 	$(IGNITE_BASE_CGO_ENABLED) --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
+.PHONY: ignite_serve
+ignite_serve: ignite_check_version ## Start a local blockchain node for development
+	ignite chain serve --skip-proto
+
+.PHONY: ignite_serve_reset
+ignite_serve_reset: ignite_check_version ## Start a local blockchain node with state reset
+	ignite chain serve --reset-once --skip-proto
+
 ## Aggregate release target is defined later to include CGO-disabled and CGO-enabled variants.
 
 .PHONY: ignite_release_local
