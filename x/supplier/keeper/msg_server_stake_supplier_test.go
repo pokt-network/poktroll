@@ -887,7 +887,7 @@ func TestMsgServer_StakeSupplier_UpdateServiceBeforeActivation(t *testing.T) {
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Len(t, foundSupplier.Services, 0)             // Still no active services
-	require.Len(t, foundSupplier.ServiceConfigHistory, 1) // Original overriden config
+	require.Len(t, foundSupplier.ServiceConfigHistory, 1) // Original overridden config
 
 	// Find the latest service config (should have the updated URL)
 	latestServiceUpdate := getLatestSupplierServiceConfigUpdate(t, foundSupplier)
