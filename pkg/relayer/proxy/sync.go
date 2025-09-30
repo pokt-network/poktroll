@@ -349,10 +349,10 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Capture the service call request duration metric.
 	relayer.CaptureServiceDuration(serviceId, serviceCallStartTime, httpResponse.StatusCode)
 
-	// Check if the response is a stream
-	streamThis := IsStreamingResponse(httpResponse)
+	// Determine response type: streaming (SSE/NDJSON) or standard HTTP
+	streamThis := isStreamingResponse(httpResponse)
 
-	// Create empty relay response
+	// Initialize relay response container
 	relayResponse := &types.RelayResponse{
 		Meta:    types.RelayResponseMetadata{SessionHeader: meta.SessionHeader},
 		Payload: nil,
@@ -362,7 +362,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	if streamThis {
 		logger.Debug().Msg("Handling streaming request.")
 
-		// Process and assign the relay response
+		// Process streaming response: signs each chunk individually
 		relayResponse, responseSize, err = server.HandleHttpStream(httpResponse, writer, meta, logger)
 		if err != nil {
 			return relayRequest, err
@@ -371,13 +371,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	} else {
 		logger.Debug().Msg("Handling normal request.")
 
-		// Serialize the service response to be sent back to the client.
-		// This will include the status code, headers, and body.
+		// Serialize backend response (status code + headers + body)
 		wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
 		if err != nil {
 			logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 			return relayRequest, err
 		}
+		// Close backend response body early to free connection pool resources
+		CloseBody(logger, httpResponse.Body)
 
 		// Pass through all backend responses including errors.
 		// Allows clients to see real HTTP status codes from backend service.
