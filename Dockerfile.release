@@ -1,5 +1,8 @@
 # This Dockerfile is used to build container image for production workloads.
 # The image depends on `cosmovisor_cross_compile`, `ignite_release` and `ignite_release_extract_binaries` make targets.
+#
+# NOTE: The pre-built binaries in release_binaries/ are built with CGO_ENABLED=0 without ethereum_secp256k1 tag.
+# This uses the Decred pure Go implementation of secp256k1 for cross-platform compatibility.
 FROM debian:bookworm
 ARG TARGETARCH
 

@@ -210,8 +210,27 @@ func importSessionTree(
 
 	sessionTree.sessionSMT = trie
 	sessionTree.treeStore = treeStore
-	sessionTree.claimedRoot = nil  // explicitly set for posterity
-	sessionTree.isClaiming = false // explicitly set for posterity
+
+	// When importing a session without an onchain claim, DO NOT set the claimedRoot.
+	// Setting claimedRoot blocks further updates via the Update() method.
+	//
+	// The session may have been flushed during shutdown, but we still want to allow
+	// updates after restart for sessions that haven't been claimed yet.
+	// The claim creation process will call Flush() when needed, which will set
+	// the claimedRoot at the appropriate time.
+	//
+	// This design allows:
+	// 1. Sessions to continue accumulating relays after restart
+	// 2. The claim creation process to work correctly by calling Flush()
+	// 3. The same root to be generated since the imported SMT has the persisted state
+	//
+	// TODO_CONSIDERATION: For sessions that were previously flushed during shutdown,
+	// consider restoring the claimedRoot synchronously during import to avoid race
+	// conditions in tests that expect GetClaimRoot() to return immediately after restart.
+	// This would require distinguishing between "flushed but not claimed" vs "never flushed"
+	// sessions, possibly by storing flush state in the session metadata.
+	sessionTree.claimedRoot = nil  // Keep nil to allow updates
+	sessionTree.isClaiming = false // Not yet in the claiming pipeline
 
 	logger.Info().Msg("imported a session tree WITHOUT A PREVIOUSLY COMMITTED onchain claim")
 

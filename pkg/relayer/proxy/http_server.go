@@ -5,12 +5,14 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	poktrollhttp "github.com/pokt-network/poktroll/pkg/network/http"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -71,6 +73,22 @@ type relayMinerHTTPServer struct {
 	// It is used to ensure that the relays are metered and priced correctly.
 	relayMeter relayer.RelayMeter
 
+	// knownSessions is a map of known session IDs to their corresponding session end block heights.
+	// It is used to cache session information to avoid redundant validations and queries.
+	// The map is protected by a RWMutex to allow concurrent access.
+	// TODO_TECHDEBT: Consider using an LRU cache with size limits to prevent unbounded memory growth.
+	knownSessions      map[string]int64
+	knownSessionsMutex *sync.RWMutex
+
+	// eagerRelayRequestValidationEnabled indicates whether eager validation is enabled.
+	//
+	// When enabled: all incoming relay requests are validated immediately upon receipt.
+	// When disabled, relay requests are:
+	//   1. Validated immediately if their session is known
+	//   2. Deferred for validation if their session is unknown
+	//   3. Any deferred validation will mark the session as known for future requests
+	eagerRelayRequestValidationEnabled bool
+
 	// Query clients used to query for the served session's parameters.
 	blockClient        client.BlockClient
 	sharedQueryClient  client.SharedQueryClient
@@ -119,16 +137,19 @@ func NewHTTPServer(
 	httpClient := poktrollhttp.NewDefaultHTTPClientWithDebugMetrics()
 
 	return &relayMinerHTTPServer{
-		logger:                         logger,
-		server:                         httpServer,
-		relayAuthenticator:             relayAuthenticator,
-		servedRewardableRelaysProducer: servedRelaysProducer,
-		serverConfig:                   serverConfig,
-		relayMeter:                     relayMeter,
-		blockClient:                    blockClient,
-		sharedQueryClient:              sharedQueryClient,
-		sessionQueryClient:             sessionQueryClient,
-		httpClient:                     httpClient,
+		logger:                             logger,
+		server:                             httpServer,
+		relayAuthenticator:                 relayAuthenticator,
+		servedRewardableRelaysProducer:     servedRelaysProducer,
+		serverConfig:                       serverConfig,
+		relayMeter:                         relayMeter,
+		blockClient:                        blockClient,
+		sharedQueryClient:                  sharedQueryClient,
+		sessionQueryClient:                 sessionQueryClient,
+		knownSessions:                      make(map[string]int64),
+		knownSessionsMutex:                 &sync.RWMutex{},
+		eagerRelayRequestValidationEnabled: serverConfig.EnableEagerRelayRequestValidation,
+		httpClient:                         httpClient,
 	}
 }
 
@@ -140,6 +161,10 @@ func (server *relayMinerHTTPServer) Start(ctx context.Context) error {
 		<-ctx.Done()
 		_ = server.server.Shutdown(ctx)
 	}()
+
+	// Subscribe to new blocks to prune outdated known sessions.
+	committedBlocksSequence := server.blockClient.CommittedBlocksSequence(ctx)
+	channel.ForEach(ctx, committedBlocksSequence, server.pruneOutdatedKnownSessions)
 
 	// Set the HTTP handler.
 	server.server.Handler = server

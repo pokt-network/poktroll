@@ -6,7 +6,7 @@
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
           "unbonding_time": "504h0m0s",
-          "max_validators": 6,
+          "max_validators": 16,
           "max_entries": 8,
           "historical_entries": 10000,
           "bond_denom": "upokt",

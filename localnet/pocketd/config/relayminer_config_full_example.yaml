@@ -5,6 +5,20 @@ default_signing_key_names: [supplier1]
 # Path to the SMT KV store.
 smt_store_path: ":memory:" # OR ./path/to/smt_stores
 
+# Eager validation configuration for incoming relay requests
+# When enabled: All relay requests are validated immediately upon receipt against
+# the current session state, providing upfront validation and rate limiting.
+# When disabled (default): Validation is deferred for unknown sessions until
+# the session data is retrieved from the blockchain.
+# This setting affects performance and rate limiting behavior.
+enable_eager_relay_request_validation: false
+
+# Over-servicing configuration
+# Works in conjunction with eager validation for upfront rate limiting.
+# When enabled: Allows suppliers to serve requests beyond session limits.
+# When disabled (default): Strictly enforces session-based rate limits.
+enable_over_servicing: false
+
 # Prometheus exporter configuration
 metrics:
   # Enable or disable the metrics exporter
