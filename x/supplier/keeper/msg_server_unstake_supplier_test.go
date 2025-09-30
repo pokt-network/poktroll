@@ -240,10 +240,9 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 
 	expectedSupplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
 	expectedSupplier.Stake = stakeMsg.GetStake()
-	// Set the deactivation height of the current service configuration to the next block after session end
-	// This mimics the behavior of the staking process, which effectively marks all
-	// the previous service configurations as deactivated.
-	expectedSupplier.ServiceConfigHistory[0].DeactivationHeight = sessionEndHeight + 1
+	// When restaking without providing services, existing service configs are preserved unchanged
+	// Since no new services were provided in the restake, the service config history remains empty
+	expectedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
 
 	// Assert that the EventSupplierUnbondingCanceled event is emitted.
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
