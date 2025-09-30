@@ -193,8 +193,7 @@ docker_test_build_local: ## Test Docker build locally with current architecture 
 	@echo "$(CYAN)Testing Docker build (CGO disabled)...$(RESET)"
 	docker build -f Dockerfile.release -t pocketd-test:nocgo .
 	@echo "$(CYAN)Testing Docker build (CGO enabled)...$(RESET)"
-	docker build -f Dockerfile.release -t pocketd-test:cgo \
-		--build-arg BIN_PREFIX=release_binaries/pocket_cgo_linux .
+	docker build -f Dockerfile.release.cgo -t pocketd-test:cgo .
 	$(call print_success,Docker build test successful!)
 
 .PHONY: docker_test_build_multiplatform
@@ -211,8 +210,7 @@ docker_test_build_multiplatform: ## Test multi-platform Docker build locally (re
 		-f Dockerfile.release -t pocketd-test:nocgo-multi . --progress=plain
 	@echo "$(CYAN)Testing multi-platform Docker build (CGO enabled)...$(RESET)"
 	docker buildx build --platform linux/amd64,linux/arm64 \
-		-f Dockerfile.release -t pocketd-test:cgo-multi \
-		--build-arg BIN_PREFIX=release_binaries/pocket_cgo_linux . --progress=plain
+		-f Dockerfile.release.cgo -t pocketd-test:cgo-multi . --progress=plain
 	$(call print_success,Multi-platform Docker build test successful!)
 
 .PHONY: docker_test_run

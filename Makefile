@@ -100,22 +100,22 @@ help: ## Prints all the targets in all the Makefiles
 	@echo "$(BOLD)$(CYAN)🚀 Poktroll Makefile Targets$(RESET)"
 	@echo ""
 	@echo "$(BOLD)=== 📋 Information & Discovery ===$(RESET)"
-	@grep -h -E '^(help|list):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@grep -h -E '^(help|help-params|list):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BOLD)=== 🔨 Build & Run ===$(RESET)"
-	@grep -h -E '^(ignite_build|ignite_pocketd_build|ignite_serve|ignite_serve_reset|ignite_release.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@grep -h -E '^(ignite_build|ignite_pocketd_build|ignite_serve|ignite_serve_reset|ignite_release.*|cosmovisor_start_node):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BOLD)=== ⚙️ Development ===$(RESET)"
 	@grep -h -E '^(go_develop|go_develop_and_test|proto_regen|go_mockgen|go_testgen_fixtures|go_testgen_accounts|go_imports):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BOLD)=== 🧪 Testing ===$(RESET)"
-	@grep -h -E '^(test_all|test_unit|test_e2e|test_integration|test_timing|test_govupgrade|go_test_verbose|go_test):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@grep -h -E '^(test_all|test_unit|test_e2e|test_integration|test_timing|test_govupgrade|test_e2e_relay|go_test_verbose|go_test):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BOLD)=== ✅ Linting & Quality ===$(RESET)"
 	@grep -h -E '^(go_lint|go_vet|go_sec|gosec_version_fix|check_todos):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BOLD)=== 🌐 LocalNet Operations ===$(RESET)"
-	@grep -h -E '^(localnet_up|localnet_up_quick|localnet_down|localnet_regenesis|localnet_cancel_upgrade|localnet_show_upgrade_plan|test_e2e_relay|cosmovisor_start_node):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@grep -h -E '^(localnet_up|localnet_up_quick|localnet_down|localnet_regenesis|localnet_cancel_upgrade|localnet_show_upgrade_plan):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BOLD)=== 🔗 TestNet Operations ===$(RESET)"
 	@grep -h -E '^(testnet_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
@@ -125,9 +125,6 @@ help: ## Prints all the targets in all the Makefiles
 	@echo ""
 	@echo "$(BOLD)=== 📊 Query Commands ===$(RESET)"
 	@grep -h -E '^(query_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
-	@echo ""
-	@echo "$(BOLD)=== ⚙️ Parameter Management ===$(RESET)"
-	@grep -h -E '^(params_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BOLD)=== 🛡️ Applications ===$(RESET)"
 	@grep -h -E '^(app_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
@@ -159,8 +156,55 @@ help: ## Prints all the targets in all the Makefiles
 	@echo "$(BOLD)=== 🔧 Tools & Utilities ===$(RESET)"
 	@grep -h -E '^(install_.*|check_.*|grove_.*|act_.*|trigger_ci|docker_wipe):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
+	@echo "$(BOLD)=== 📱 Telegram ===$(RESET)"
+	@grep -h -E '^(telegram_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
 	@echo "$(BOLD)=== 🤖 AI & Sync ===$(RESET)"
-	@grep -h -E '^(claudesync_.*|telegram_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@grep -h -E '^(claudesync_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)Use $(CYAN)make help-params$(RESET) to see parameter management commands"
+	@echo ""
+
+.PHONY: help-params
+help-params: ## Show parameter management commands
+	@echo ""
+	@echo "$(BOLD)$(CYAN)⚙️ Parameter Management Commands$(RESET)"
+	@echo ""
+	@echo "$(BOLD)=== 🌐 All Modules ===$(RESET)"
+	@grep -h -E '^(params_query_all):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏛️ Cosmos Modules ===$(RESET)"
+	@grep -h -E '^(params_(auth|bank|consensus|crisis|distribution|gov|mint|protocolpool|slashing|staking)_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 💰 Tokenomics ===$(RESET)"
+	@grep -h -E '^(params_tokenomics_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔧 Service ===$(RESET)"
+	@grep -h -E '^(params_service_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔍 Proof ===$(RESET)"
+	@grep -h -E '^(params_proof_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🤝 Shared ===$(RESET)"
+	@grep -h -E '^(params_shared_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🌉 Gateway ===$(RESET)"
+	@grep -h -E '^(params_gateway_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🛡️ Application ===$(RESET)"
+	@grep -h -E '^(params_application_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏭 Supplier ===$(RESET)"
+	@grep -h -E '^(params_supplier_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📜 Session ===$(RESET)"
+	@grep -h -E '^(params_session_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔄 Migration ===$(RESET)"
+	@grep -h -E '^(params_migration_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏛️ Consensus ===$(RESET)"
+	@grep -h -E '^(params_consensus_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 
 #######################
