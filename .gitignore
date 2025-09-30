@@ -129,3 +129,6 @@ localnet_testing_msg_import_morse_accounts.json
 
 # Used for telegram announcements
 release_prep_announcement.txt
+
+# Testing binaries
+test_binaries/

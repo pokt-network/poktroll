@@ -7,7 +7,7 @@
 # CGO-enabled image.
 
 # Stage 1: Binary selection stage
-FROM busybox:stable as binary-selector
+FROM busybox:stable AS binary-selector
 ARG TARGETARCH
 ARG BIN_PREFIX=release_binaries/pocket_linux
 
@@ -17,15 +17,29 @@ COPY tmp/cosmovisor-linux-* /tmp/
 
 # Select the correct binary for the architecture
 RUN set -eu; \
-    prefix="/tmp/${BIN_PREFIX}"; \
-    for candidate in "${prefix}_${TARGETARCH}" "${prefix}-${TARGETARCH}"; do \
-        if [ -f "${candidate}" ]; then \
-            cp "${candidate}" /tmp/pocketd; \
+    # Try different naming patterns (ignite sometimes adds extra underscores) \
+    found=0; \
+    if echo "${BIN_PREFIX}" | grep -q "cgo"; then \
+        # Try both double underscore (old) and single underscore (fixed) patterns for CGO \
+        for pattern in "pocket_cgo__linux_${TARGETARCH}" "pocket_cgo_linux_${TARGETARCH}"; do \
+            binary_name="/tmp/release_binaries/${pattern}"; \
+            if [ -f "${binary_name}" ]; then \
+                cp "${binary_name}" /tmp/pocketd; \
+                chmod 755 /tmp/pocketd; \
+                found=1; \
+                break; \
+            fi; \
+        done; \
+    else \
+        # Non-CGO builds: pocket_linux_arch \
+        binary_name="/tmp/release_binaries/pocket_linux_${TARGETARCH}"; \
+        if [ -f "${binary_name}" ]; then \
+            cp "${binary_name}" /tmp/pocketd; \
             chmod 755 /tmp/pocketd; \
-            break; \
+            found=1; \
         fi; \
-    done; \
-    if [ ! -f /tmp/pocketd ]; then \
+    fi; \
+    if [ ${found} -eq 0 ]; then \
         echo "pocketd binary not found for TARGETARCH=${TARGETARCH} (BIN_PREFIX=${BIN_PREFIX})" >&2; \
         echo "Available artifacts:" >&2; \
         find /tmp/release_binaries -maxdepth 1 -type f -exec basename {} \; >&2 || true; \

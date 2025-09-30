@@ -71,14 +71,14 @@ ignite_release_cgo_disabled: ignite_check_version ## CGO=0 release with default 
 ignite_release_cgo_enabled_linux_amd64: ignite_check_version ## CGO=1 release for linux/amd64 (_cgo suffix)
 	CC=$(CC_LINUX_AMD64) $(IGNITE_BASE_CGO_ENABLED) \
 		--release -t linux:amd64 \
-		--release.prefix pocket_cgo_ \
+		--release.prefix pocket_cgo \
 		-o release
 
 .PHONY: ignite_release_cgo_enabled_linux_arm64
 ignite_release_cgo_enabled_linux_arm64: ignite_check_version ## CGO=1 release for linux/arm64 (_cgo suffix)
 	CC=$(CC_LINUX_ARM64) $(IGNITE_BASE_CGO_ENABLED) \
 		--release -t linux:arm64 \
-		--release.prefix pocket_cgo_ \
+		--release.prefix pocket_cgo \
 		-o release
 
 .PHONY: ignite_release_cgo_enabled

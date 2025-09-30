@@ -150,6 +150,9 @@ help: ## Prints all the targets in all the Makefiles
 	@echo "$(BOLD)=== 🚢 Release Management ===$(RESET)"
 	@grep -h -E '^(release_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
+	@echo "$(BOLD)=== 🐳 Docker Testing ===$(RESET)"
+	@grep -h -E '^(docker_test_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
 	@echo "$(BOLD)=== 📚 Documentation ===$(RESET)"
 	@grep -h -E '^(go_docs|docusaurus_.*|gen_.*_docs):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
