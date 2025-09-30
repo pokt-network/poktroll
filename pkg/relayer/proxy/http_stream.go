@@ -2,9 +2,11 @@ package proxy
 
 import (
 	"bufio"
-	"bytes"
+	"context"
 	"fmt"
+	"mime"
 	"net/http"
+	"slices"
 	"strings"
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
@@ -14,93 +16,75 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
+// A custom delimiter used to separate chunks in a streaming response.
+const streamDelimiter = "||POKT_STREAM||"
+
 // Target streaming types
 var httpStreamingTypes = []string{
 	"text/event-stream",
 	"application/x-ndjson",
 }
 
-const streamDelimiter = "||POKT_STREAM||"
-
-// ScanEvents is a custom bufio.SplitFunc for scanning POKT streaming responses.
-//
-// POKT streams contain a signature and the body of the request to the backend,
-// requiring a custom delimiter (||POKT_STREAM||) instead of standard newlines.
-//
-// This function splits incoming stream data by the POKT_STREAM delimiter,
-// allowing clients to parse individual signed chunks from the relay response.
-func ScanEvents(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
-	}
-
-	// Look for the POKT_STREAM delimiter
-	delimiterBz := []byte(streamDelimiter)
-	if i := bytes.Index(data, delimiterBz); i >= 0 {
-		// Return chunk without the delimiter
-		return i + len(delimiterBz), data[0:i], nil
-	}
-
-	// If we're at EOF, return whatever we have
-	if atEOF {
-		return len(data), data, nil
-	}
-
-	// Request more data
-	return 0, nil, nil
-}
-
 // isStreamingResponse determines if an HTTP response should be handled as a stream.
 //
-// Checks the Content-Type header against supported streaming types:
+// Checks the "Content-Type" HTTP header against supported streaming types:
 //   - text/event-stream (Server-Sent Events)
 //   - application/x-ndjson (Newline-Delimited JSON)
 //
-// Note: While we could handle any chunked stream, we limit support to these
-// content types to ensure predictable behavior and proper testing coverage.
+// Returns true if the response should be streamed based on the content type.
 //
-// Returns true if the response should be streamed chunk-by-chunk with
-// individual signatures per chunk.
+// DEV_NOTE: While we could handle any chunked stream, we limit support to these
+// content types to ensure predictable behavior and proper testing coverage.
 func isStreamingResponse(response *http.Response) bool {
-	contentType := strings.ToLower(response.Header.Get("Content-Type"))
-	for _, streamType := range httpStreamingTypes {
-		if strings.Contains(contentType, streamType) {
-			return true
-		}
+	// Extract the content type from the response header
+	ct := response.Header.Get("Content-Type")
+	if ct == "" {
+		return false
 	}
-	return false
+
+	// Parse the media type to strip parameters (e.g., "; charset=utf-8")
+	// and compare the canonical type/subtype only. This avoids substring
+	// false-positives and handles case-insensitivity per RFC.
+	mediaType, _, err := mime.ParseMediaType(ct)
+	if err != nil {
+		return false
+	}
+
+	return slices.Contains(httpStreamingTypes, strings.ToLower(mediaType))
 }
 
-// HandleHttpStream processes streaming HTTP responses from backend services.
+// handleHttpStream processes streaming HTTP responses from backend services.
 //
 // Streaming flow:
 //  1. Read each newline-delimited chunk from backend response
 //  2. Wrap chunk in POKT HTTP response structure (status code, headers, body)
 //  3. Sign each chunk individually using supplier's key
-//  4. Write signed chunk with POKT_STREAM delimiter to client
+//  4. Write signed chunk with delimiter to client
 //  5. Flush immediately to ensure low-latency streaming
 //
 // This enables real-time streaming for SSE and NDJSON responses while maintaining
 // POKT's signature verification requirements.
 //
-// Note: Only handles streams with newline (\n) delimiters. Other delimiters
-// require custom scanner configuration.
-//
 // TODO_IMPROVE: Consider adding configurable buffer size for scanner to handle
-// large streaming chunks (default is 64KB). Some LLM responses may exceed this.
+// large streaming chunks (default is 64KB).
+// Some LLM responses may exceed this.
 //
 // Returns:
 //   - Final relay response (contains last chunk's signature)
 //   - Total response size across all chunks (for metrics)
 //   - Error if streaming fails (network errors, signature failures, etc.)
-func (server *relayMinerHTTPServer) HandleHttpStream(
+func (server *relayMinerHTTPServer) handleHttpStream(
+	ctx context.Context,
+	logger polylog.Logger,
+	relayRequest *types.RelayRequest,
 	response *http.Response,
 	writer http.ResponseWriter,
-	meta types.RelayRequestMetadata,
-	logger polylog.Logger,
-) (relayResponse *types.RelayResponse, responseSize float64, err error) {
-	// Ensure response body is closed when streaming completes or fails
+) (*types.RelayResponse, float64, error) {
+	// Close the response body early to free up connection pool resources.
 	defer CloseBody(logger, response.Body)
+
+	// Extract the metadata from the relay request
+	meta := relayRequest.Meta
 
 	// Copy all backend headers to client response
 	for k, v := range response.Header {
@@ -113,17 +97,25 @@ func (server *relayMinerHTTPServer) HandleHttpStream(
 	// Verify writer supports flushing (required for streaming)
 	flusher, ok := writer.(http.Flusher)
 	if !ok {
-		logger.Error().Msg("Streaming not supported - ResponseWriter does not implement http.Flusher")
+		logger.Error().Msg("❌ Streaming not supported - ResponseWriter does not implement http.Flusher")
 		return nil, 0, fmt.Errorf("❌ failed to open stream request: flusher unavailable")
 	}
 
 	// Create scanner with default newline delimiter
 	scanner := bufio.NewScanner(response.Body)
 
+	// Initialize the return values
+	relayResponse := &types.RelayResponse{
+		Meta: types.RelayResponseMetadata{SessionHeader: meta.SessionHeader},
+	}
+	responseSize := float64(0)
+
 	// Process each chunk from backend stream
 	for scanner.Scan() {
-		line := scanner.Bytes()
+		// TODO_TECHDEBT: Need to periodically check for context cancellation to prevent signature race conditions
+
 		// Restore newline stripped by scanner (needed for protocol compatibility)
+		line := scanner.Bytes()
 		line = append(line, '\n')
 
 		// Wrap chunk in POKT HTTP response structure
@@ -172,5 +164,6 @@ func (server *relayMinerHTTPServer) HandleHttpStream(
 		return nil, 0, fmt.Errorf("❌ stream scanning error: %w", err)
 	}
 
-	return
+	// Return the relay response, response size, and nil error.
+	return relayResponse, responseSize, nil
 }
