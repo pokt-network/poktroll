@@ -18,11 +18,11 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
-  packages: write
+  contents: write  # Needed for GitHub releases
+  packages: write  # Needed for Docker registry
 
 jobs:
-  release-artifacts:
+  build-artifacts:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -53,16 +53,25 @@ jobs:
       # - name: Generate protobufs
       #   run: make proto_regen
 
-      - name: Build and extract binaries for container build
+      - name: Build binaries for specific variant
         run: |
           make ignite_update_ldflags
-          # Builds both:
-          #   - CGO_DISABLED (linux+darwin) -> normal names
-          #   - CGO_ENABLED (linux)        -> *_cgo names
-          make ignite_release
+
+          # Build cosmovisor (needed by both variants)
+          make cosmovisor_cross_compile
+
+          # Build specific variant
+          if [[ "${{ matrix.cgo_variant }}" == "cgo" ]]; then
+            echo "Building CGO-enabled binaries..."
+            make ignite_release_cgo_enabled
+          else
+            echo "Building CGO-disabled binaries..."
+            make ignite_release_cgo_disabled
+          fi
+
+          # Repackage and extract
           make ignite_release_repackage
           make ignite_release_extract_binaries
-          make cosmovisor_cross_compile
 
       - name: Free disk space
         run: |
@@ -159,10 +168,9 @@ jobs:
           cache-to: type=gha,mode=max
           context: .
 
-      # Only publish GitHub releases for tag events - run only once (no matrix)
+      # Attach artifacts to GitHub release (both variants upload)
       - name: Add release and publish binaries
-        if: startsWith(github.ref, 'refs/tags/v') && matrix.cgo_variant == 'nocgo'
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2.3.2
         with:
-          files: |
-            release/*
+          files: release/*
