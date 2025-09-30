@@ -47,7 +47,6 @@ type SessionPersistenceTestSuite struct {
 	relayerSessionsManager relayer.RelayerSessionsManager
 	storesDirectoryPathOpt relayer.RelayerSessionsManagerOption
 
-	sessionTrees            session.SessionsTreesMap
 	activeSessionHeader     *sessiontypes.SessionHeader
 	supplierOperatorAddress string
 	service                 sharedtypes.Service
@@ -94,7 +93,6 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	s.createClaimCallCount = 0
 	s.submitProofCallCount = 0
 	s.claimToReturn = nil
-	s.sessionTrees = make(session.SessionsTreesMap)
 	s.latestBlock = nil
 
 	// Set up temporary directory for session storage
@@ -289,7 +287,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
 	s.advanceToBlock(proofWindowOpenHeight)
 
 	// Verify the session tree has been removed and a proof was submitted
-	require.Len(s.T(), s.sessionTrees, 0)
+	require.Len(s.T(), s.snapshotSessionTrees(), 0)
 	require.Equal(s.T(), 1, s.submitProofCallCount)
 }
 
@@ -306,7 +304,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowClose() {
 	s.advanceToBlock(claimWindowOpenHeight - 1)
 
 	// Verify the session tree exists and no claims have been created
-	require.Len(s.T(), s.sessionTrees, 1)
+	require.Len(s.T(), s.snapshotSessionTrees(), 1)
 	require.Equal(s.T(), 0, s.createClaimCallCount)
 
 	// Stop and recreate the relayer sessions manager
@@ -324,7 +322,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowClose() {
 	waitSimulateIO()
 
 	// Verify the session tree has been removed since the claim window was missed
-	require.Len(s.T(), s.sessionTrees, 0)
+	require.Len(s.T(), s.snapshotSessionTrees(), 0)
 	require.Equal(s.T(), 0, s.createClaimCallCount)
 	require.Equal(s.T(), 0, s.submitProofCallCount)
 }
@@ -362,7 +360,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
 	waitSimulateIO()
 
 	// Verify the session tree has been removed since the proof window has closed
-	require.Len(s.T(), s.sessionTrees, 0)
+	require.Len(s.T(), s.snapshotSessionTrees(), 0)
 	// Verify no proofs were submitted since the proof window was already closed
 	require.Equal(s.T(), 0, s.submitProofCallCount)
 }
@@ -371,33 +369,38 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
 // It navigates through the session trees map structure to find the specific session tree
 // for the active session header and supplier address.
 func (s *SessionPersistenceTestSuite) getActiveSessionTree() relayer.SessionTree {
-	// Extract session details from the active header
-	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
-	sessionId := s.activeSessionHeader.GetSessionId()
-
-	// Get the specific session tree for this supplier
-	supplierSessionTrees, ok := s.sessionTrees[s.supplierOperatorAddress]
+	sessionTree, ok := s.findSessionTreeForHeader(s.activeSessionHeader)
 	require.True(s.T(), ok)
-
-	// Get all session trees for this session end height
-	sessionTreesWithEndHeight, ok := supplierSessionTrees[sessionEndHeight]
-	require.True(s.T(), ok)
-
-	// Get all session trees for this session ID
-	sessionTree, ok := sessionTreesWithEndHeight[sessionId]
-	require.True(s.T(), ok)
-
 	return sessionTree
+}
+
+func (s *SessionPersistenceTestSuite) findSessionTreeForHeader(header *sessiontypes.SessionHeader) (relayer.SessionTree, bool) {
+	sessionEndHeight := header.GetSessionEndBlockHeight()
+	sessionID := header.GetSessionId()
+
+	for _, snapshot := range s.relayerSessionsManager.SnapshotSessionTrees() {
+		if snapshot.SupplierOperatorAddress != s.supplierOperatorAddress {
+			continue
+		}
+		if snapshot.SessionEndHeight != sessionEndHeight {
+			continue
+		}
+		if snapshot.SessionID != sessionID {
+			continue
+		}
+		return snapshot.Tree, true
+	}
+
+	return nil, false
+}
+
+func (s *SessionPersistenceTestSuite) snapshotSessionTrees() []relayer.SessionTreeSnapshot {
+	return s.relayerSessionsManager.SnapshotSessionTrees()
 }
 
 // setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing.
 // This is used both in the initial setup and when simulating restarts.
 func (s *SessionPersistenceTestSuite) setupNewRelayerSessionsManager() relayer.RelayerSessionsManager {
-	// Initialize a new session trees map
-	s.sessionTrees = make(session.SessionsTreesMap)
-	// Create an inspector that will monitor the session trees for testing
-	sessionTreesInspector := session.WithSessionTreesInspector(&s.sessionTrees)
-
 	// Create a new replay observable for blocks
 	s.blocksObs, s.blockPublishCh = channel.NewReplayObservable[client.Block](s.ctx, 20)
 
@@ -411,7 +414,7 @@ func (s *SessionPersistenceTestSuite) setupNewRelayerSessionsManager() relayer.R
 	)
 
 	// Create a new relayer sessions manager with the configured dependencies
-	relayerSessionsManager, err := session.NewRelayerSessions(s.deps, s.storesDirectoryPathOpt, sessionTreesInspector)
+	relayerSessionsManager, err := session.NewRelayerSessions(s.deps, s.storesDirectoryPathOpt)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), relayerSessionsManager)
 

@@ -114,6 +114,17 @@ type RelayServers []RelayServer
 //
 // TODO_TECHDEBT: add architecture diagrams covering observable flows throughout
 // the relayer package.
+// SessionTreeSnapshot captures the identifying information for a session tree
+// along with the tree itself. It is intended for diagnostic and testing
+// scenarios where the caller needs a consistent view of the manager's current
+// session state without reaching into its internal maps.
+type SessionTreeSnapshot struct {
+	SupplierOperatorAddress string
+	SessionEndHeight        int64
+	SessionID               string
+	Tree                    SessionTree
+}
+
 type RelayerSessionsManager interface {
 	// InsertRelays receives an observable of relays that should be included
 	// in their respective session's SMST (tree).
@@ -132,6 +143,12 @@ type RelayerSessionsManager interface {
 	// and/or ensure that the state at each pipeline stage is persisted to disk
 	// and exit as early as possible.
 	Stop()
+
+	// SnapshotSessionTrees returns a point-in-time view of all session trees the
+	// manager is currently tracking. The snapshot is safe to iterate without
+	// holding the internal session tree mutex, making it suitable for tests and
+	// diagnostics.
+	SnapshotSessionTrees() []SessionTreeSnapshot
 }
 
 type RelayerSessionsManagerOption func(RelayerSessionsManager)
