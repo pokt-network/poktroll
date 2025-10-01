@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-query-relay-mining-difficulty
+title: "Queries a list of RelayMiningDifficulty items."
+description: "Queries a list of RelayMiningDifficulty items."
+sidebar_label: "Queries a list of RelayMiningDifficulty items."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VsFy2zYQ/ZWdPdkzrCQ7aQ481bXdxIc2qaOeLI8GJJciYhCggaVkRcN/7yxIS3IkO9NDdRFJ7OK9fbuLxQZZLQKmd/h3S36N9wm6hrxi7exNgSl+1Fy12aWrG/fAfxGvnH+QR++MiS7zWzJq/ae22i6udFnqvDW8xgQb5VVNTF6236BVNWGKgfxS53RTYILaYoqN4goT9PTYak8FpuxbSjDkFdUK0w3yuomO7LVdYNfdi3FonA0UZP18MpG/gkLudSPEMcULCG2eUwhla+DZfIQJ5s4yWRYP1TRG5zHU8bcgbptDWJd9o5wlHC/CsO5B/dGgD2gc1QZ0AAU1haAWBG2gAthBYOcJuCJwNq+UthCdofee2WLnr0JwuVZMBaw0V6AgNJTrUucwyAs3V6OZnX6++jyfXl9+urr+fZrCdZ0JVKXDFlzbiPh18Bo+i05vh58Zlz/MK9KLig+jnlYE0QJ6C1AMq0rnVQ8etYM6xgV7Ya1UgNzVTctUCHux1QEsUdFLVEg11doSVG4FdSsb6pqgUgEaFUTIoG3eq2hU4Lg8s/JKT42zZFkrA7VbCrRakhcRXuDuQh8KLsHS+Voxpqgtf3iPXYK2recxijAfquVQgDcAXRkZ2rbOyMtbvxeUzvcKDVl8k0y7ZTNYz3VxnMmuJiLsa/JLVb4srEP8LkFWfkE8r1SojsP1BpKUapsxgRLsPTh2EFP5Wuwz+4fzQE+qbgwloEtYxWaBUKnzXz+If4SQbU9iq9zSY0uBk1t6jG99058Ct7LDzCpb/EhCKuc9GFKFMPxO3kGmOSRi17fGfjQr15oCMkpndpJNJpPJ2dnZaDSCk9ayNvDuHLI1UwDlCUptDBXQNqdvZlEcsBt+CRZUqtYcaakLC62lp4ZySQ557/z/cazlrqA9K22ZFuR/6IF35xipstIm7Fkr75Uc/JqpDj/H+q1fPjzgE1RFoYW/Ml/2XaJEwxl1zHEr4r5yMqS0JAWMDizd9sqhLKxFypq4cjL6FhRJy3xKcSxD7xfbD8Dx8wQcD9U6jlU87yt9viuw8WY777o48Ep3mNvLeNov4qAd5a4+DgW311+ncPHlRspJs5HIP02nX+QTXDobnKGhEFQeC2GYuD/bWJK5JB96MsMTWMcQiGWxcYFrZfe2/M+avgh4mzimJx43RmkrMK03stbrfYf7XCUNz2y35128NBxVHRNMd/eM+wQrF1j23GwyFegfb7pOPj/GK096d5/gUnmtMhH1boOFDvJcYFoqE+iA/rbZ8OR2uLacwq7LX4b13BxWaC2VaeUNE3yg9YvrUHffJViRKshHEv36RZ5Tw3ueB90t96FtyX68nmLX/QuIQHqP
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Queries a list of RelayMiningDifficulty items."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Queries a list of RelayMiningDifficulty items.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"serviceId","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"relayMiningDifficulty":{"description":"RelayMiningDifficulty is a message used to store the onchain Relay Mining\ndifficulty associated with a specific service ID.\nTODO_TECHDEBT: Embed this message in the Service message.","type":"object","properties":{"block_height":{"description":"The block height at which this relay mining difficulty was computed.\nThis is needed to determine how much time has passed since the last time\nthe exponential moving average was computed.","type":"string","format":"int64"},"num_relays_ema":{"description":"The exponential moving average of the number of relays for this service.","type":"string","format":"uint64"},"service_id":{"description":"The service ID the relay mining difficulty is associated with.","type":"string"},"target_hash":{"description":"The target hash determining the difficulty to mine relays for this service.\nFor example, if we use sha256 to hash the (RelayRequest,ReqlayResponse) tuple,\nand the difficulty has 4 leading zero bits, then the target hash would be:\n0b0000111... (until 32 bytes are filled up).","type":"string","format":"byte"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

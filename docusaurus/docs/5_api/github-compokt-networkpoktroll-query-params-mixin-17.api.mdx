@@ -1,0 +1,64 @@
+---
+id: github-compokt-networkpoktroll-query-params-mixin-17
+title: "Parameters queries the parameters of the module."
+description: "Parameters queries the parameters of the module."
+sidebar_label: "Parameters queries the parameters of the module."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVlFv2zYQ/isHPq2AErcZtgF+WpAWXYBm8JLsKQmcM3WW2FCkyjvZMQz/94Gk7Ci1m2T1iyTy7ruP393xvFaCFavxjfqno7BSd4XyLQUU4915qcbqs5G6m535pvUP8jfJ0oeH+Bq8tcllOsGADV+YR+M+/KEKFYhb75hYjdfq5P37+CiJdTBtRFVjdQrcaU3M887C1vxYFUp7J+QkemDbWqMTj9FXjm5rxbqmBvfxEo9M47JHA8M7ZJBVSzD3AaQmSMajbA2XkzNoSGpfxvDRTo2Vn30lLapQbYhaiMlHaZPLfvS8DrW3JQNam6KkRRIKDH4OUhuGxpedpdfjoLV+OW18YJqi1r5zMjVN64NM/YLCMhihfRZv8YqiIMwJpQsEc4sVLGuj67jeMZUgHsjhzNKoNByfty4eJtBRhjKuise5iFFAWzRNNII+HsNslQ6PndQ+GFkd37qrTteATxCwNNaOb90RnFfOB4JfzDEdgyVc0Ds4/fIl41IJJbEYlyoArmp0zrtdpBFq8YEjzEeyJJQ86dFw5uh0jcZlomdbnqe9cwqeyUS2jpbAJLuD7dnDPPgmZzX4hSmphAuuMsKPIlzHjGdZY5Gn4qNMru1C65m4gFknwLXvbAkzgl7yEoyLgcpOx6MP6mXmvSV0alOo53lOihlXTXPyyv3qeNn+/9fFVo3YxM+Kog+R85NTCQ0xY0V863Ku7y+4SpIll16z+wLun8Q8fer++wLQlcPNqy7uUrh/d1icJZoF9a2QGEwr5Omccnt9Z18oMWLjyo/dDujzgiwRp9ekQoYEkPL/yCA1Sir+M+8kVig9oha7Au8ImHR78tvvDx+ATeUoDO1QYouwJMO3SH0EHz04L6C3CG4FXmoKO6P+U2p0b4BUm/5XqJLm2Fk5cLE76Bw9tqSFSqAQfPi5+/3lG1L7kgZWxglVFFSh5j40KHnp1xOVqAoaO0w8hoArVSgj1PDrsf7M2zszlmBcpaIMWJYm8kc7GbokiXrVDjnuRBwqN3maF986Cob44BihwRTJc0uNVUWJNkqtxmoUh/ORy4N6tJ3Uo8ZUeaiP+jFWKOPmfj+FZ+nirNLUP9a+OYwHl5+uruF0cj7on7+urydxKdYse0t9vlGnfDtsotFrwDFnCwqcyfRvqY6ZJG62nqVBN4D8CemeHXmXIaFHGbUWTbpFumDz1I+y3qgh26j2lm+hdtKmJCRx7wpVe5bot17PkOnfYDebuPwt/csa39wVaoHBxEsjfm0KVROWFNT4Zq0eaBWbSWtqY2YXaLtUud+3zOZuUAWfP12rzeY/U1uJkA==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the parameters of the module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/migration/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the parameters of the module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"params holds all the parameters of this module.","type":"object","properties":{"allow_morse_account_import_overwrite":{"description":"allow_morse_account_import_overwrite is a feature flag which is used to enable/disable\nthe re-importing of Morse claimable accounts by the authority.\nSuch a re-import will:\n- Ignore (i.e. leave) ALL claimed destination Shannon accounts/actors\n- Delete ALL existing onchain MorseClaimableAccounts\n- Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts\nThis is useful for testing purposes, but should be disabled in production.","type":"boolean"},"morse_account_claiming_enabled":{"description":"morse_account_claiming_enabled is a feature flag which is used to enable/disable the processing of Morse account/actor claim messages\n(i.e. `MsgClaimMorseAccount`, `MorseClaimApplication`, and `MorseClaimSupplier`).","type":"boolean"},"waive_morse_claim_gas_fees":{"type":"boolean","title":"waive_morse_claim_gas_fees is a feature flag used to enable/disable the waiving of gas fees for txs that:\n- Contain exactly one secp256k1 signer\n- Contain at least one Morse account/actor claim messages\n- Do not contain any other messages other than Morse account/actor claim messages"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

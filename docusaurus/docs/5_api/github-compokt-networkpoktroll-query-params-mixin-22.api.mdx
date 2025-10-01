@@ -1,0 +1,64 @@
+---
+id: github-compokt-networkpoktroll-query-params-mixin-22
+title: "Parameters queries the parameters of the module."
+description: "Parameters queries the parameters of the module."
+sidebar_label: "Parameters queries the parameters of the module."
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsFu40YM/RWCl24B1V6kN526CIJtDrt1U/eUGMZYoqTZzJDKDJXEMPzvxYwUw4ndptjz+mJhRL5HPnJI7VBNG7G8xT8HCltcFSg9BaNW+LrGEj9b7YbNpfhe7vUr6ZOE+/QYxLnssl6YYHz8Yp8tX1xggYFiLxwpYrnDi48f019NsQq2T6hY4ieIQ1VRjM3g4MV8hgVWwkqsycP0vbNVjmP+LSa3HcaqI29O8XIcYxg3ExrYeEAG3fYEjQTQjiAbz0druFlcgiftpE70yQ5LlM03qhQL7EPSQu2YSp9dTtknqJoayxQzRzYlpRAPtF7qwdH/YAkizdrbGC23657YON2ekl6K5QOlAZV7Yniy2oGBmli85awdGK7BMBgvA+vsju/46x/LqxKWHU2H0FhydRLMMFyzwlNnqw6s7x15Yh1Tqoao4iex7jjalo0OgZLMD4MNVMNmC6200gdReT/RkTw9TXZRg+UW9wXmBM682e+LSZ/ESVHXfZCN2Vhnz2n0r6Yp11ymoyNpwECkGJNoY0qWWzCQUe7YNmD1pwiVRIUPdkYzqMT3gxIMbBUq4Tj4TP1zwt+Qk6fMskgAN6NISc9lFyh24o5bjge/oYAFNhK8USyxlmHjCF9lPAGs9QXhR1+86Ys4bPLVEV43RD/kmeSZfsmkMYPTMyOZYWB67qlSqoFCkPB9k/m/o6+kpiMry0rt6763rL9ejNmosS4eWZsQzBYLtEo+vs/12/j6VI4CTV3bFL9xi2OXLJGnGE171vEg4sn4H2f9w0DBnq4Aad5sgLEbsMSWcthGOyxxntbqLzyu2PnLjp3nxp5Py6dAy42c6evOWIY27+pZJf48Ftxc/bWET4vr1GVWXUru9+VykY7gUjiKo6nWpsq1ZuOT0XvAqV6PFOIYzPQELAqRNM8wieoNH0F+h2yvUj5UR+lZ570zlhPRENy4q5Okt3gcbVL6Jd5pXmTxs7CrAjuJmnx2u42J9Hdw+306fsjfReXtqsBHE6xJU7m8Xe0L7MjUFLC83eE9bdMlqirqU0UfjRtyx769KvvVUfU/Xy1xv/8H9CNnrw==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the parameters of the module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/proof/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the parameters of the module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"proof_missing_penalty":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"proof_request_probability":{"description":"proof_request_probability is the probability of a session requiring a proof\nif it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.","type":"number","format":"double"},"proof_requirement_threshold":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"proof_submission_fee":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-query-proof
+title: "Queries a list of Proof items."
+description: "Queries a list of Proof items."
+sidebar_label: "Queries a list of Proof items."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9Vt1v2zYQ/1cOHLC1mNYU7bAHPS3LijYP69LGe0oC+0SeLTYUqZInp56h/304yh9y7TTAgM0PsiDe5+93d7y1YlwkVd6oDx3FlborVGgpItvgL40q1VvLdVddhKYN9/ye+CHEe3mNwbmsMr2KIcxVoVqM2BBTFHNr5bEhVapEKdngp9aoQlmvStUi16pQkT53NpJRJceOCpV0TQ2qcq141WZNjtYvVN8Xe2Nd2zpLcTrEGOIUjYmU0r+2fSfCqQ0+UZLzVy9fyp+hpKNtBQVVqnNIndaU0rxzsBV/oQqlg2fyLBookemM29mnJGrrY7eh+kSaBasoGbAdnLYZwSfFtAuJEk8biveOpjutw2AnNUGiaNHZv8nA9R/XE9ChaVEzGchKMI+hAa4JZt9dDEYzic+ez6AhroOR5A6hKtQ8xAZZlapaMam+2FFbExqKx5FcD+fv8jHYBAjOLmp+IHnCoAbzEAFhYwu4RgaNHiqCFlMiAxhD582LW3/JYkTCbqy3DTrAJnSeIczBICNsaQcOUK9MRCb4HiJxtLQkQOe2co6W6FnkOMOVnY+SfoSBEcm7yjtJwG+k69evYCMjAYqfkfoxwBnQuLSapFeOSrVQbNnRnmCRBGuAa5t28NkkeI7JIW+mlQv6flpn2I/jfR+YMu6zx3RmA3mGol0i2yVJQs9miTHyDH6Eme+aQSFNW4rTjZ3Z81uPCRZhSdGTgWoFwesarYc8KxIgZ1zYNrTFaJtJNr4jPXEQXjEBekHVSuzoYG7JZbqTbVpn5yuoumS9YO7CwmqwHjQmuvVi23dNRVE8HQcLuka/oASmE7wP6uLW33pBfUBDon6ora4PoSdvyBTDt02ZOkw8uPoqu291l/X8y89jBodq+Hoidd5+7gjaRJ0JEb0JDVz+nrtpHNYJT9s6ev/n5E0Jey/btss0k9kPCazCkmCJrqMEAu9ix2PVZXqs164zZARuzkDtWlsHvyRvyeuDmZHpPSrMJ0A57IFvspHtk1F9L04fvTaOgT3s2K3mDwm2usOISl3VWJaJmt3msXqipze/QhmaY+dOdN+5h87Tl5byeKYYQ/wvrhgdDI2krGdaUPwK4tevVA6V0bo0ksYYcSVXLFOTnvb163B84iJX+9a9GqtkiBpKCRcnFXcgjpGT7cPScKukfAnkSwxylALdcJWpUi0oBym7QanOZHv5yQ+bzNl2lTnLDG6e631T9GfrR6unz1vHPByTepGbY5FXpxc6NKd9wsc31xM4v7ocFfa7yeRKPsFF8Ck42lQA6lwBmzXoKcPC4pJiGoLZvIEPDIlYDtuQuEE/MvkkmAcJ7hhi+sJnrUPrxWwXXV5nMtA3ahyb4L+NrtgsPPv/8mBLLB/v17tC1SGxWF+vK0z0V3R9L58/5/W1vLkr1BKjxUrgvFkrY5O8G1XO0SU6SmTXX+rZx8368Bz2jXyY4LYfvHRDHoiqVKpQ97Q6XHVlZ/0/PT8KWH/XF2q7oN2sN/LnWlPLI0tHo0UW413/vH0zUX3/D2oZUww=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Queries a list of Proof items."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/proof/proof/{session_id}/{supplier_operator_address}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Queries a list of Proof items.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"session_id","in":"path","required":true,"schema":{"type":"string"}},{"name":"supplier_operator_address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"proof":{"type":"object","properties":{"closest_merkle_proof":{"description":"The serialized SMST compacted proof from the `#ClosestProof()` method.","type":"string","format":"byte"},"session_header":{"description":"SessionHeader is a lightweight header for a session that can be passed around.\nIt is the minimal amount of data required to hydrate & retrieve all data relevant to the session.","type":"object","properties":{"application_address":{"description":"The Bech32 address of the application.","type":"string"},"service_id":{"type":"string","title":"The service id this session is for"},"session_end_block_height":{"description":"Note that`session_end_block_height` is a derivative of (`start` + `num_blocks_per_session`)\nas governed by onchain params at the time of the session start.\nIt is stored as an additional field to simplify business logic in case\nthe number of blocks_per_session changes during the session.\n\nThe height at which this session ended, this is the last block of the session","type":"string","format":"int64"},"session_id":{"description":"A unique pseudorandom ID for this session","type":"string","title":"NOTE: session_id can be derived from the above values using onchain but is included in the header for convenience"},"session_start_block_height":{"type":"string","format":"int64","title":"The height at which this session started"}}},"supplier_operator_address":{"description":"Address of the supplier's operator that submitted this proof.","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

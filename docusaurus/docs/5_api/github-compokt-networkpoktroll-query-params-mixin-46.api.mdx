@@ -1,0 +1,64 @@
+---
+id: github-compokt-networkpoktroll-query-params-mixin-46
+title: "Parameters queries the parameters of the module."
+description: "Parameters queries the parameters of the module."
+sidebar_label: "Parameters queries the parameters of the module."
+hide_title: true
+hide_table_of_contents: true
+api: eJztVU1v2zAM/SsCz14zdMMOPq0oiq6HdVmXndKgYGzaViNRrkS3DQL/90GyE2RNsAA9L5cI0iMf+fjhDQjWAfI5/OzIr2GRgWvJo2jHNyXkcK2l6ZaXzrZuJbckL86v4tE7Y5LJwxQ92vBdv2r+/AUy8BRax4EC5Bs4//gx/pUUCq/b6BVyuFChKwoKoeqM2sLPIIPCsRBLtMC2NbpIcUweQzTbQCgasnjoL8UxhHE3elM67DwrWbekKueVNKQSeDKg1d30UlmSxpWRPuIgB7d8pEIgg9ZHLUQPqbTJ5JB9dFVSpZlC4khQEvJhR2td2Rk6zWI1PwTBFR0SXTrNOxpU4lbE6kVLo1CVxM5qTnop5FIhK7SuYzm753u+/TG7ytWsofFSVZpMGUVCVjcs6qXRRaO0bQ1ZYhnSKLogzo4C3XPQNaN0nqK0T532VKrlWtWudq134k4nN5DH04gL4jXX0GeQEjjy0vcZRD001w8V/Vdlq8r4i5AKOyNHpoxVx/TaUiFUKvLe+fcN27+jL1xJeyjNQjV5yKBy3qIMV5/Oh2wEtQl7aPQe15CBFrLhNNfX4flQjgywLHWMH8103yRJZCkErI8a7kQ8mOhhfJ868vpwql31ZqiHboAcakphozSQwyRuyg88bM3Jdm1OQhf1Jj8ZV0oGmit3pLUb1KzqtIHPCmePu1N3V79m6mJ6ExtNi4n5fZvNpvFKXToOztBYbixSuRltBJ1yHEv2TD4MwYwnxU5UIImPrQtikfdcvkO5v1LeFUjoVSatQc2RqPNm2MBR1TnsRxvF3sabwVbZVIKk7SKDxgWJZpvNEgP99qbv4/VT+uDl80UGz+g1LqNy80WfQUNYkod8voEVreMoFQW1sa7PaLrUt28Hpl/s9cD11Qz6/g8NB50Y
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the parameters of the module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/supplier/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the parameters of the module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"min_stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"staking_fee":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -9,7 +9,7 @@ go_docs: check_godoc ## Generate documentation for the project
 
 .PHONY: docusaurus_start
 docusaurus_start: check_yarn check_node ## Start the Docusaurus server
-	(cd docusaurus && yarn install && yarn start --port 4000)
+	(cd docusaurus && { [ -d node_modules ] || yarn install; } && node ../tools/scripts/docusaurus/ensure_node_compatibility.js && yarn start --port 4000)
 
 .PHONY: docs_update_gov_params_page
 docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
@@ -20,7 +20,7 @@ docs_update_gov_params_page: ## Update the page in Docusaurus documenting all th
 # Outputs docs files to docusaurus/docs/5_api/*.mdx
 .PHONY: docusaurus_gen_api_docs
 docusaurus_gen_api_docs: ## Generate docusaurus OpenAPI docs
-	(cd docusaurus && yarn install && yarn docusaurus clean-api-docs pocket && yarn docusaurus gen-api-docs pocket)
+	(cd docusaurus && { [ -d node_modules ] || yarn install; } && node ../tools/scripts/docusaurus/ensure_node_compatibility.js && yarn docusaurus clean-api-docs pocket && yarn docusaurus gen-api-docs pocket)
 
 # High-level entrypoint to (re)generate OpenAPI spec and Docusaurus pages
 .PHONY: docs_build

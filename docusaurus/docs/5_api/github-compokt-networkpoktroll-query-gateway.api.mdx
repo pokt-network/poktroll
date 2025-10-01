@@ -1,0 +1,72 @@
+---
+id: github-compokt-networkpoktroll-query-gateway
+title: "Queries a list of Gateway items."
+description: "Queries a list of Gateway items."
+sidebar_label: "Queries a list of Gateway items."
+hide_title: true
+hide_table_of_contents: true
+api: eJy1VU1v2zgQ/SuDObWAGgdpsQedNhsEaVCgzbbeU2IEY3EksZaGKjlKahj67wUpy1VgA9lLfRFNcj7em5nHHSpVAfN7/Ldnv8VVhq5jT2qd3BrM8cZq3a+vXNu5jX5mfXZ+E5feNU0yebwh5WfaYoYdeWpZ2UeHOxRqGXMkYzyHgBlawRw70hoz9Pyjt54N5up7zjAUNbeE+Q5120WzoN5KhcOwipdD5yRwiOcX5+fxYzgU3nYxUczxEkJfFBxC2TcwXT/DDAsnyqLRgrqusUWCtvgeotnuOKxbf+dCIxgfiVA7Bq32IF+9OKE9ApKhWm3ixrJm+IeL+v0F7G+DK0FrhinKkGFQ2vAxzitnBQyXVjgAgboNCzxbrYHAsLjWSgIIJAZIgFrXi549yIN8/rK8ziEGHzehtNwYsCHeuxWF59oWNdi2a7hl0ZBSKvqgroWWtXbmQYKthLT3HGCqIKy3ULnKdd6pi5S/QlAKfqLQGSYAp1rgJXfqlJoJhCuhv/vyaTnnD2oKkAg00W0vaf0YOATr5JHFPNZsq/pEFhmWzrekmGNvRf/6MKvbt9EeWAyM9kATa/PoVqxaUjYwRrZSwZtzsCWI0997b3HY/yLykvpGT/S1QC/8s+Mi+mPvnf8T7V04w7NbVpQr9nM2rOj7i7FISraZNzh5n8bfKrfh9Vh/j8enqkzG2Jg/NXdzk0RRyyFQddLwQOKcuShONg1JY0Pqk5upPjHPSN7Y1JhjxSnNqEw5LqK8vZNR6haT1i321T18d/vZHZKwle7ErNZkBaokoGeFa087hq/X35ZweXc767SPy+Vd3IIrJ8E1vC80FanQe119zXEs1hP7MCazX6UWDKzxsHNBW5KZy//B2QuIh1Io/9RF15CVNHC+iWcjn/c4zy7SPOWXHVR1vsonBV1lWLug0cNut6bA//lmGOL2j/RU5ferDJ/IW1pH0u53aGyIa4N5SU3go2QPw4Jvvu7F6y38FqyXIKbmlpjUEzV9/IcZbng7e9SG1ZBhzWTYpxTG08ui4E5ndkezGV+1Q/vdXC9xGH4Bo9mklQ==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Queries a list of Gateway items."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/gateway/gateway/{address}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Queries a list of Gateway items.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"gateway":{"type":"object","properties":{"address":{"type":"string","title":"The Bech32 address of the gateway"},"stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}},"title":"The total amount of uPOKT the gateway has staked"},"unstake_session_end_height":{"type":"string","format":"uint64","title":"Session end height at which the gateway initiated unstaking (0 if not unstaking)"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

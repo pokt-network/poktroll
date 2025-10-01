@@ -1,0 +1,75 @@
+---
+id: github-compokt-networkpoktroll-msg-update-params-mixin-31
+title: "UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account."
+description: "UpdateParams defines a (governance) operation for updating the module"
+sidebar_label: "UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account."
+hide_title: true
+hide_table_of_contents: true
+api: eJzNVktv2zgQ/ivEnFpAtbvtYg86bTYIdnNIa6TuyQ4MmhpJTKShSg5jG4b/+2IoP5TYaItFD+uLKXKG8/rmG26BdRUgn8FdqOAhA9eh12wd3RaQw9+W67i8dm3nnvgT8sr5J1l61zR3oVp87QrNONFet+HOri19/A0y8PgtYuC/XLGBfAvGESOxLHXXNdak+8ePwZHsBVNjq2VVYDDednIKuTg0vF7ZoLhGdReq8Yv9vTXFmw5HkIH8Qw5u+YiGIYPOS0xsMSQPItfOW96cGzweHUzpovAYZK1ZSRTeNf1J64rYoHpTYKljw0GxU+tx5Z5VpEZU3DP6lbfMSG8HTgX2lirYZdAl58+d2AdVYGkJe2NJFBl9UKXzA/s/EW1RLAL6Z2twUSKem7t2lo7GtGL3hKRWlmulVYHkWkupWkpToTQp3bpIPJrTnD59nt7kaip5SpuqtNgUkjtN6pZYrWpramXbrsEWiftgTAzsWtUi166YU7AVaY4e+zpaj4VablTlKtd5x+4nQkzGZXWW4xTAhZPdLgPWvkJeUGwXHhu9uVCKM5EDLvqDYzFu7q6UK9OSYrtEL197jQ69ChiCdTSa0yR9pXJkypGptaVeUrWWLFWqsGVpTWx4o1a2adRSUPgYA2MhGGu1JRYlrsWX5Mc5vDIonW81Qw7REv/xu4S8S2H/mhY7lApy9hF3shE6R6GvyIf378+TeaVCNAZDKGOjDuJy169hh/v9jS8a52BGBfbRCMpSzXCNJrJkW8/pdQpaDEFXF1rrkL/U8BfiIxUJ1x0aKRV67/x/C/P7aDeuwIGUJcYK/bDilvjjhx79rG0TBtLae72BDCxjG35s68/++Lx9MuEVK/7rZjJUSSnaZ/Bi310C4Yv0n6joTSUcSpoMvlXHqZQKGEVD6neiwjmdWHLUk9KRzYckLRo9Ue8pXBuTGA3EceEkyKFzIWVDcw05jDtnnpBH+8Ydve4OyECqeH8aejdrLaT3atycuvPE/Rf4+cBnJ/E9jQ2I7QJ5DatjqXQXqD6xTZUm+si4diyD/B31Q318mOrq/ubLVF1NbqUBLEsU8M90OpEtde0ouAb3cNYmwZl0K0I/ulj8fkYfemf2K0WOVUBOE9EFbjUNrvzfIONFIo+wZlzzuGu0JXE/+kbOetDM4Bw0kL0ISB5btQAtn8F2u9QBv/pmt5PtbxH9BvLZQwbP2lu9lCrMHnYZ1KgL9JDPtvCEmzS/E628m4pLIt7E1OmvKWaXHTSujMGOvyv7MOiFyecvU8hguX/LtYl/wOuVjAG9ghxAHo2inRCd9rbQaKpiYgHo75Tfvw8XudM=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.service.Msg/UpdateParams"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParams is the Msg/UpdateParams request type.","type":"object","properties":{"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"add_service_fee":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"target_num_relays":{"description":"target_num_relays is the target for the EMA of the number of relays per session.\nPer service, onchain relay mining difficulty will be adjusted to maintain this target.","type":"string","format":"uint64"}}}}}}},"description":"MsgUpdateParams is the Msg/UpdateParams request type.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
