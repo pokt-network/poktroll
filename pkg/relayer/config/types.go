@@ -131,6 +131,7 @@ type RelayMinerPingConfig struct {
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
+// node URLs section of the RelayMiner config file
 type RelayMinerPocketNodeConfig struct {
 	QueryNodeRPCUrl  *url.URL
 	QueryNodeGRPCUrl *url.URL

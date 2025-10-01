@@ -283,6 +283,7 @@ func CaptureGRPCCallDuration(component, method string, startTime time.Time) {
 		Observe(duration)
 }
 
+// CaptureDelayedRelayRequestValidationFailure records a delayed validation failure event.
 // This metric is incremented when a relay request fails validation during the delayed
 // validation process, typically due to invalid signature or session validation failure
 // after the relay has already been served.
