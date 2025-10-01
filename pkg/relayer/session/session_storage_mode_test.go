@@ -353,7 +353,7 @@ func (s *StorageModeTestSuite) findActiveSessionTree() (relayer.SessionTree, boo
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 	sessionID := s.activeSessionHeader.GetSessionId()
 
-	for _, snapshot := range s.relayerSessionsManager.SnapshotSessionTrees() {
+	for _, snapshot := range s.relayerSessionsManager.SessionTreesSnapshots() {
 		if snapshot.SupplierOperatorAddress != s.supplierOperatorAddress {
 			continue
 		}

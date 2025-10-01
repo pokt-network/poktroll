@@ -287,7 +287,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
 	s.advanceToBlock(proofWindowOpenHeight)
 
 	// Verify the session tree has been removed and a proof was submitted
-	require.Len(s.T(), s.snapshotSessionTrees(), 0)
+	require.Len(s.T(), s.SessionTreesSnapshots(), 0)
 	require.Equal(s.T(), 1, s.submitProofCallCount)
 }
 
@@ -304,7 +304,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowClose() {
 	s.advanceToBlock(claimWindowOpenHeight - 1)
 
 	// Verify the session tree exists and no claims have been created
-	require.Len(s.T(), s.snapshotSessionTrees(), 1)
+	require.Len(s.T(), s.SessionTreesSnapshots(), 1)
 	require.Equal(s.T(), 0, s.createClaimCallCount)
 
 	// Stop and recreate the relayer sessions manager
@@ -322,7 +322,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowClose() {
 	waitSimulateIO()
 
 	// Verify the session tree has been removed since the claim window was missed
-	require.Len(s.T(), s.snapshotSessionTrees(), 0)
+	require.Len(s.T(), s.SessionTreesSnapshots(), 0)
 	require.Equal(s.T(), 0, s.createClaimCallCount)
 	require.Equal(s.T(), 0, s.submitProofCallCount)
 }
@@ -360,7 +360,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
 	waitSimulateIO()
 
 	// Verify the session tree has been removed since the proof window has closed
-	require.Len(s.T(), s.snapshotSessionTrees(), 0)
+	require.Len(s.T(), s.SessionTreesSnapshots(), 0)
 	// Verify no proofs were submitted since the proof window was already closed
 	require.Equal(s.T(), 0, s.submitProofCallCount)
 }
@@ -378,7 +378,7 @@ func (s *SessionPersistenceTestSuite) findSessionTreeForHeader(header *sessionty
 	sessionEndHeight := header.GetSessionEndBlockHeight()
 	sessionID := header.GetSessionId()
 
-	for _, snapshot := range s.relayerSessionsManager.SnapshotSessionTrees() {
+	for _, snapshot := range s.relayerSessionsManager.SessionTreesSnapshots() {
 		if snapshot.SupplierOperatorAddress != s.supplierOperatorAddress {
 			continue
 		}
@@ -394,8 +394,8 @@ func (s *SessionPersistenceTestSuite) findSessionTreeForHeader(header *sessionty
 	return nil, false
 }
 
-func (s *SessionPersistenceTestSuite) snapshotSessionTrees() []relayer.SessionTreeSnapshot {
-	return s.relayerSessionsManager.SnapshotSessionTrees()
+func (s *SessionPersistenceTestSuite) SessionTreesSnapshots() []relayer.SessionTreeSnapshot {
+	return s.relayerSessionsManager.SessionTreesSnapshots()
 }
 
 // setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing.

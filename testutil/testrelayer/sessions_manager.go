@@ -31,7 +31,7 @@ func NewMockOneTimeRelayerSessionsManager(
 		Start(gomock.Eq(ctx)).
 		Times(1)
 	relayerSessionsManagerMock.EXPECT().
-		SnapshotSessionTrees().
+		SessionTreesSnapshots().
 		AnyTimes().
 		Return(nil)
 	relayerSessionsManagerMock.EXPECT().
