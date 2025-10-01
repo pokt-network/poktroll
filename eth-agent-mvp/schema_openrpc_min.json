@@ -1,0 +1,43 @@
+{
+  "openrpc": "1.2.6",
+  "info": { "title": "Ethereum JSON-RPC (minimal)", "version": "0.0.1" },
+  "methods": [
+    {
+      "name": "eth_blockNumber",
+      "summary": "Returns the number of the most recent block.",
+      "description": "Returns the current chain head block number as hex quantity (0x-prefixed).",
+      "params": [],
+      "result": {
+        "name": "blockNumber",
+        "schema": { "type": "string", "description": "Hex quantity, e.g. 0x1234abcd" }
+      },
+      "examples": [
+        {
+          "name": "Latest height",
+          "params": [],
+          "result": "0x1234abcd"
+        }
+      ]
+    },
+    {
+      "name": "eth_getBlockByNumber",
+      "summary": "Returns information about a block by number.",
+      "description": "Takes a block number (hex or tags like latest) and a boolean for full tx objects.",
+      "params": [
+        { "name": "blockNumber", "schema": { "type": "string" }, "description": "\"latest\" or hex quantity" },
+        { "name": "fullTransactions", "schema": { "type": "boolean" }, "description": "If true, returns full tx objects." }
+      ],
+      "result": {
+        "name": "block",
+        "schema": { "type": "object" }
+      }
+    },
+    {
+      "name": "net_version",
+      "summary": "Returns the current network ID.",
+      "description": "Useful sanity check for which network you're on.",
+      "params": [],
+      "result": { "name": "networkId", "schema": { "type": "string" } }
+    }
+  ]
+}
