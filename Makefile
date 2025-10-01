@@ -163,6 +163,7 @@ help: ## Prints all the targets in all the Makefiles
 	@grep -h -E '^(claudesync_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BOLD)Use $(CYAN)make help-params$(RESET) to see parameter management commands"
+	@echo "$(BOLD)Use $(CYAN)make help-unclassified$(RESET) to see uncategorized targets"
 	@echo ""
 
 .PHONY: help-params
@@ -205,6 +206,42 @@ help-params: ## Show parameter management commands
 	@echo ""
 	@echo "$(BOLD)=== 🏛️ Consensus ===$(RESET)"
 	@grep -h -E '^(params_consensus_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+
+.PHONY: help-unclassified
+help-unclassified: ## Show uncategorized targets
+	@echo ""
+	@echo "$(BOLD)$(CYAN)🧭 Unclassified Targets$(RESET)"
+	@echo ""
+	@tmp_script=$$(mktemp); \
+		printf '%s\n' \
+			"import os" \
+			"import re" \
+			"" \
+			"files = os.environ.get(\"MAKEFILE_LIST_STR\", \"\").split()" \
+			"target_re = re.compile(r'^([A-Za-z0-9_.-]+):.*?## (.*)$$')" \
+			"exclude_re = re.compile(r'^(help|help-params|help-unclassified|list|ignite_build|ignite_pocketd_build|ignite_serve|ignite_serve_reset|ignite_release.*|cosmovisor_start_node|go_develop|go_develop_and_test|proto_regen|go_mockgen|go_testgen_fixtures|go_testgen_accounts|go_imports|test_all|test_unit|test_e2e|test_integration|test_timing|test_govupgrade|test_e2e_relay|go_test_verbose|go_test|go_lint|go_vet|go_sec|gosec_version_fix|check_todos|localnet_up|localnet_up_quick|localnet_down|localnet_regenesis|localnet_cancel_upgrade|localnet_show_upgrade_plan|testnet_.*|acc_.*|pocketd_addr|pocketd_key|query_.*|app_.*|supplier_.*|gateway_.*|relay_.*|claim_.*|ping_.*|session_.*|ibc_.*|release_.*|docker_test_.*|go_docs|docusaurus_.*|gen_.*_docs|install_.*|check_.*|grove_.*|act_.*|trigger_ci|docker_wipe|telegram_.*|claudesync_.*)$$')" \
+			"cyan = \"\\033[0;36m\"" \
+			"reset = \"\\033[0m\"" \
+			"" \
+			"for path in files:" \
+			"    try:" \
+			"        with open(path, 'r') as fh:" \
+			"            for line in fh:" \
+			"                match = target_re.match(line)" \
+			"                if not match:" \
+			"                    continue" \
+			"                name, desc = match.groups()" \
+			"                if exclude_re.match(name):" \
+			"                    continue" \
+			"                desc = desc.replace(r'\\n', ' ')" \
+			"                print(f\"{cyan}{name:<40}{reset} {desc}\")" \
+			"    except FileNotFoundError:" \
+			"        continue" \
+			"print()" \
+		> $$tmp_script; \
+		MAKEFILE_LIST_STR="$(MAKEFILE_LIST)" python3 $$tmp_script; \
+		rm $$tmp_script
 	@echo ""
 
 #######################

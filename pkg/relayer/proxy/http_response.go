@@ -10,26 +10,30 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// handleHttpStream processes streaming HTTP responses from backend services.
+// handleHttp builds and sends a signed POKT relay response from a backend HTTP response.
 //
-// Streaming flow:
-//  1. Read each newline-delimited chunk from backend response
-//  2. Wrap chunk in POKT HTTP response structure (status code, headers, body)
-//  3. Sign each chunk individually using supplier's key
-//  4. Write signed chunk with delimiter to client
-//  5. Flush immediately to ensure low-latency streaming
+// Flow:
+//  1. Record backend processing end time for metrics.
+//  2. Extract request metadata; initialize an empty RelayResponse with SessionHeader.
+//  3. Serialize backend response (status, headers, body) with MaxBodySize limit.
+//  4. Close backend response body to free resources.
+//  5. If status >= 300, log details and pass through (do not block).
+//  6. Check context cancellation to avoid signature race conditions.
+//  7. Build the signed relay response via newRelayResponse(...).
+//  8. Capture preparation timing, annotate logger, and record metrics via
+//     relayer.CaptureResponsePreparationDuration.
+//  9. Send the relay response to the client via sendRelayResponse(...); map
+//     any error to an internal error and return.
+// 10. Compute and return the relay response and its size.
 //
-// This enables real-time streaming for SSE and NDJSON responses while maintaining
-// POKT's signature verification requirements.
-//
-// TODO_IMPROVE: Consider adding configurable buffer size for scanner to handle
-// large streaming chunks (default is 64KB).
-// Some LLM responses may exceed this.
+// Notes:
+// - This path handles full HTTP responses, not streaming chunked signing.
+// - For streaming/SSE/NDJSON, use dedicated streaming handlers.
 //
 // Returns:
-//   - Final relay response (contains last chunk's signature)
-//   - Total response size across all chunks (for metrics)
-//   - Error if streaming fails (network errors, signature failures, etc.)
+//  - Final relay response.
+//  - Total response size (bytes) for metrics.
+//  - Error if serialization, signing, or write fails.
 func (server *relayMinerHTTPServer) handleHttp(
 	ctx context.Context,
 	logger polylog.Logger,
