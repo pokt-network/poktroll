@@ -1,39 +1,30 @@
 # This Dockerfile is used to build container image for development purposes.
 # It intentionally contains no security features, ships with code and troubleshooting tools.
 
-FROM golang:1.24.3 AS base
+# Runtime-only base (much smaller than golang:)
+FROM debian:bookworm-slim
 
-# Install build dependencies including CGO toolchain
-RUN apt update && \
-    apt-get install -y \
-    build-essential pkg-config \
-    ca-certificates net-tools kubernetes-client \
-    curl jq yq make vim less dnsutils rsync
+# Minimal, useful tools (leave this lean to avoid bloating layers)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl jq yq net-tools dnsutils rsync bash vim less make \
+ && rm -rf /var/lib/apt/lists/*
 
-# Enable CGO and set build flags for secp256k1
-ENV CGO_ENABLED=1
-ENV CGO_CFLAGS="-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration"
+# Optional: kubectl (the 'kubernetes-client' Debian pkg is not always available)
+# Pin a recent stable; change as needed.
+RUN curl -L -o /usr/local/bin/kubectl https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl \
+ && chmod +x /usr/local/bin/kubectl
 
-# enable faster module downloading.
-ENV GOPROXY=https://proxy.golang.org
+# Copy only prebuilt binaries; the workflow places them in ./bin
+COPY bin/pocketd /usr/bin/pocketd
+COPY bin/ignite /usr/bin/ignite
+# If present (see workflow), include cosmovisor without building it in-image
+COPY bin/cosmovisor /usr/bin/cosmovisor
 
-COPY . /pocket
+# Make sure they’re executable even if host perms were weird
+RUN chmod +x /usr/bin/pocketd /usr/bin/ignite || true \
+ && (test -f /usr/bin/cosmovisor && chmod +x /usr/bin/cosmovisor || true)
 
-WORKDIR /pocket
-
-RUN mv /pocket/bin/ignite /usr/bin/ && mv /pocket/bin/pocketd /usr/bin/
-
-# Install Cosmovisor
-RUN make install_cosmovisor
-
-# These are helpful for testing locally:
-# RUN mv bin/pocketd /usr/bin/
-# RUN mv bin/ignite /usr/bin/
-
-RUN make localnet_regenesis
-
-EXPOSE 8545
-EXPOSE 8546
-EXPOSE 8547
+# These ports were exposed in your original dev image:
+EXPOSE 8545 8546 8547
 
 ENTRYPOINT ["pocketd"]
