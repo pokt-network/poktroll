@@ -116,8 +116,8 @@ validators:
       consensus:
         # TODO_TECHDEBT: Add env-specific block times (2s E2E/CI, 30s Load/Prod)
         # via config overlays or env vars (Make/Tilt); keep 30s default here.
-        timeout_commit: "30s"
-        timeout_propose: "30s"
+        timeout_commit: "2s"
+        timeout_propose: "2s"
       instrumentation:
         prometheus: true
       log_level: "info"
