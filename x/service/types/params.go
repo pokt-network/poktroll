@@ -20,6 +20,10 @@ var (
 	ParamAddServiceFee = "add_service_fee"
 	MinAddServiceFee   = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1))
 
+	KeyUpdateServiceFee   = []byte("UpdateServiceFee")
+	ParamUpdateServiceFee = "update_service_fee"
+	MinUpdateServiceFee   = cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1))
+
 	KeyTargetNumRelays     = []byte("TargetNumRelays")
 	ParamTargetNumRelays   = "target_num_relays"
 	DefaultTargetNumRelays = uint64(10e4)
@@ -33,11 +37,13 @@ func ParamKeyTable() paramtypes.KeyTable {
 // NewParams creates a new Params instance
 func NewParams(
 	addServiceFee *cosmostypes.Coin,
+	updateServiceFee *cosmostypes.Coin,
 	targetNumRelays uint64,
 ) Params {
 	return Params{
-		AddServiceFee:   addServiceFee,
-		TargetNumRelays: targetNumRelays,
+		AddServiceFee:    addServiceFee,
+		UpdateServiceFee: updateServiceFee,
+		TargetNumRelays:  targetNumRelays,
 	}
 }
 
@@ -45,6 +51,7 @@ func NewParams(
 func DefaultParams() Params {
 	return NewParams(
 		&MinAddServiceFee,
+		&MinUpdateServiceFee,
 		DefaultTargetNumRelays,
 	)
 }
@@ -53,13 +60,18 @@ func DefaultParams() Params {
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(KeyAddServiceFee, &p.AddServiceFee, ValidateAddServiceFee),
-		paramtypes.NewParamSetPair(KeyTargetNumRelays, &p.AddServiceFee, ValidateTargetNumRelays),
+		paramtypes.NewParamSetPair(KeyUpdateServiceFee, &p.UpdateServiceFee, ValidateUpdateServiceFee),
+		paramtypes.NewParamSetPair(KeyTargetNumRelays, &p.TargetNumRelays, ValidateTargetNumRelays),
 	}
 }
 
 // ValidateBasic validates the set of params
 func (p Params) ValidateBasic() error {
 	if err := ValidateAddServiceFee(p.AddServiceFee); err != nil {
+		return err
+	}
+
+	if err := ValidateUpdateServiceFee(p.UpdateServiceFee); err != nil {
 		return err
 	}
 
@@ -91,6 +103,33 @@ func ValidateAddServiceFee(addServiceFeeAny any) error {
 			"add_service_fee param is below minimum value %s: got %s",
 			MinAddServiceFee,
 			addServiceFee,
+		)
+	}
+
+	return nil
+}
+
+// ValidateUpdateServiceFee validates the UpdateServiceFee param
+func ValidateUpdateServiceFee(updateServiceFeeAny any) error {
+	updateServiceFee, ok := updateServiceFeeAny.(*cosmostypes.Coin)
+	if !ok {
+		return ErrServiceParamInvalid.Wrapf("invalid parameter type: %T", updateServiceFeeAny)
+	}
+
+	if updateServiceFee == nil {
+		return ErrServiceParamInvalid.Wrap("missing update_service_fee")
+	}
+
+	if updateServiceFee.Denom != pocket.DenomuPOKT {
+		return ErrServiceParamInvalid.Wrapf("invalid update_service_fee denom: %s", updateServiceFee.Denom)
+	}
+
+	// TODO_MAINNET: Look into better validation
+	if updateServiceFee.Amount.LT(MinUpdateServiceFee.Amount) {
+		return ErrServiceParamInvalid.Wrapf(
+			"update_service_fee param is below minimum value %s: got %s",
+			MinUpdateServiceFee,
+			updateServiceFee,
 		)
 	}
 
