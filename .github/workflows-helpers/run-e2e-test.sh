@@ -60,7 +60,7 @@ kubectl logs -f "${POD_NAME}" -n "${NAMESPACE}" --all-containers=true &
 while :; do
     CURRENT_STATUS=$(kubectl get pod "${POD_NAME}" -n "${NAMESPACE}" -o jsonpath="{.status.containerStatuses[0].state}")
     INIT_CONTAINER_STATUS=$(kubectl get pod "${POD_NAME}" -n "${NAMESPACE}" -o jsonpath="{.status.initContainerStatuses[0].state}")
-    
+
     if echo $INIT_CONTAINER_STATUS | grep -q 'terminated'; then
         INIT_EXIT_CODE=$(echo $INIT_CONTAINER_STATUS | jq '.terminated.exitCode')
         if [[ "$INIT_EXIT_CODE" != "0" ]]; then
