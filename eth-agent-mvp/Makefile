@@ -1,6 +1,7 @@
 SHELL := /bin/sh
 
 UV ?= uv
+PYTHON_VERSION ?= 3.11
 VENV ?= .venv
 PYTHON := $(VENV)/bin/python
 ENV_SCRIPT ?= env.sh
@@ -49,8 +50,15 @@ env-file: ## Create $(ENV_SCRIPT) exporting ETH_RPC_URL if absent
 		echo "$(ENV_SCRIPT) already exists. Edit it to set ETH_RPC_URL."; \
 	fi
 
-venv: ## Create Python virtual environment with uv
-	$(UV) venv $(VENV)
+venv: ## Create/refresh Python $(PYTHON_VERSION) virtual environment with uv
+	@if [ -d $(VENV) ]; then \
+		CURRENT_VER=`$(PYTHON) -c 'import sys; print("{}.{}".format(sys.version_info[0], sys.version_info[1]))' 2>/dev/null || echo ""`; \
+		if [ "$$CURRENT_VER" != "$(PYTHON_VERSION)" ]; then \
+			echo "Recreating $(VENV) with Python $(PYTHON_VERSION) (was $$CURRENT_VER)"; \
+			rm -rf $(VENV); \
+		fi; \
+	fi
+	$(UV) venv --python $(PYTHON_VERSION) $(VENV)
 
 install: venv ## Install dependencies into the virtual environment
 	$(UV) pip install --python $(PYTHON) -r requirements.txt
