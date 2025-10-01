@@ -337,170 +337,6 @@ func (m *MsgAddServiceResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgAddServiceResponse proto.InternalMessageInfo
 
-// MsgUpdateService defines a message for updating an existing service.
-// Only the service owner can update their service.
-type MsgUpdateService struct {
-	OwnerAddress string         `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
-	Service      types1.Service `protobuf:"bytes,2,opt,name=service,proto3" json:"service"`
-}
-
-func (m *MsgUpdateService) Reset()         { *m = MsgUpdateService{} }
-func (m *MsgUpdateService) String() string { return proto.CompactTextString(m) }
-func (*MsgUpdateService) ProtoMessage()    {}
-func (*MsgUpdateService) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c139846c83c36dca, []int{6}
-}
-func (m *MsgUpdateService) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgUpdateService) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *MsgUpdateService) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgUpdateService.Merge(m, src)
-}
-func (m *MsgUpdateService) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgUpdateService) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgUpdateService.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgUpdateService proto.InternalMessageInfo
-
-func (m *MsgUpdateService) GetOwnerAddress() string {
-	if m != nil {
-		return m.OwnerAddress
-	}
-	return ""
-}
-
-func (m *MsgUpdateService) GetService() types1.Service {
-	if m != nil {
-		return m.Service
-	}
-	return types1.Service{}
-}
-
-type MsgUpdateServiceResponse struct {
-}
-
-func (m *MsgUpdateServiceResponse) Reset()         { *m = MsgUpdateServiceResponse{} }
-func (m *MsgUpdateServiceResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgUpdateServiceResponse) ProtoMessage()    {}
-func (*MsgUpdateServiceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c139846c83c36dca, []int{7}
-}
-func (m *MsgUpdateServiceResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgUpdateServiceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *MsgUpdateServiceResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgUpdateServiceResponse.Merge(m, src)
-}
-func (m *MsgUpdateServiceResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgUpdateServiceResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgUpdateServiceResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgUpdateServiceResponse proto.InternalMessageInfo
-
-// MsgDeleteService defines a message for deleting a service from the network.
-// Only the service owner can delete their service.
-type MsgDeleteService struct {
-	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
-	ServiceId    string `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
-}
-
-func (m *MsgDeleteService) Reset()         { *m = MsgDeleteService{} }
-func (m *MsgDeleteService) String() string { return proto.CompactTextString(m) }
-func (*MsgDeleteService) ProtoMessage()    {}
-func (*MsgDeleteService) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c139846c83c36dca, []int{8}
-}
-func (m *MsgDeleteService) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgDeleteService) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *MsgDeleteService) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgDeleteService.Merge(m, src)
-}
-func (m *MsgDeleteService) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgDeleteService) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgDeleteService.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgDeleteService proto.InternalMessageInfo
-
-func (m *MsgDeleteService) GetOwnerAddress() string {
-	if m != nil {
-		return m.OwnerAddress
-	}
-	return ""
-}
-
-func (m *MsgDeleteService) GetServiceId() string {
-	if m != nil {
-		return m.ServiceId
-	}
-	return ""
-}
-
-type MsgDeleteServiceResponse struct {
-}
-
-func (m *MsgDeleteServiceResponse) Reset()         { *m = MsgDeleteServiceResponse{} }
-func (m *MsgDeleteServiceResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgDeleteServiceResponse) ProtoMessage()    {}
-func (*MsgDeleteServiceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c139846c83c36dca, []int{9}
-}
-func (m *MsgDeleteServiceResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgDeleteServiceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *MsgDeleteServiceResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgDeleteServiceResponse.Merge(m, src)
-}
-func (m *MsgDeleteServiceResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgDeleteServiceResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgDeleteServiceResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgDeleteServiceResponse proto.InternalMessageInfo
-
 func init() {
 	proto.RegisterType((*MsgUpdateParams)(nil), "pocket.service.MsgUpdateParams")
 	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "pocket.service.MsgUpdateParamsResponse")
@@ -508,59 +344,50 @@ func init() {
 	proto.RegisterType((*MsgUpdateParamResponse)(nil), "pocket.service.MsgUpdateParamResponse")
 	proto.RegisterType((*MsgAddService)(nil), "pocket.service.MsgAddService")
 	proto.RegisterType((*MsgAddServiceResponse)(nil), "pocket.service.MsgAddServiceResponse")
-	proto.RegisterType((*MsgUpdateService)(nil), "pocket.service.MsgUpdateService")
-	proto.RegisterType((*MsgUpdateServiceResponse)(nil), "pocket.service.MsgUpdateServiceResponse")
-	proto.RegisterType((*MsgDeleteService)(nil), "pocket.service.MsgDeleteService")
-	proto.RegisterType((*MsgDeleteServiceResponse)(nil), "pocket.service.MsgDeleteServiceResponse")
 }
 
 func init() { proto.RegisterFile("pocket/service/tx.proto", fileDescriptor_c139846c83c36dca) }
 
 var fileDescriptor_c139846c83c36dca = []byte{
-	// 686 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x55, 0xcf, 0x4f, 0x13, 0x41,
-	0x14, 0xee, 0x40, 0x05, 0xf6, 0x41, 0x11, 0x37, 0x08, 0x65, 0x0d, 0xdb, 0xa6, 0x89, 0xda, 0x10,
-	0xd9, 0x15, 0x30, 0x24, 0x92, 0x78, 0x60, 0xf5, 0x80, 0x26, 0x18, 0xb3, 0x84, 0xc4, 0xe8, 0xa1,
-	0x99, 0x76, 0x27, 0xcb, 0x06, 0xba, 0xb3, 0xd9, 0x19, 0x7e, 0xdd, 0x8c, 0xf1, 0xe4, 0xc9, 0xb3,
-	0x89, 0x77, 0x8f, 0x1c, 0xbc, 0xf8, 0x1f, 0x90, 0x78, 0x21, 0x9e, 0x38, 0x11, 0x53, 0x0e, 0x18,
-	0xfe, 0x0a, 0xb3, 0xb3, 0xb3, 0x6d, 0x77, 0xad, 0x34, 0x31, 0x1e, 0xbc, 0xb4, 0x33, 0xef, 0x7b,
-	0xf3, 0xcd, 0xf7, 0xcd, 0x7b, 0x33, 0x0b, 0xd3, 0x01, 0x6d, 0x6c, 0x13, 0x6e, 0x32, 0x12, 0xee,
-	0x79, 0x0d, 0x62, 0xf2, 0x03, 0x23, 0x08, 0x29, 0xa7, 0xea, 0x78, 0x0c, 0x18, 0x12, 0xd0, 0x6e,
-	0xe0, 0xa6, 0xe7, 0x53, 0x53, 0xfc, 0xc6, 0x29, 0x9a, 0xde, 0xa0, 0xac, 0x49, 0x99, 0x59, 0xc7,
-	0x8c, 0x98, 0x7b, 0x0b, 0x75, 0xc2, 0xf1, 0x82, 0xd9, 0xa0, 0x9e, 0x2f, 0xf1, 0x69, 0x89, 0x37,
-	0x99, 0x6b, 0xee, 0x2d, 0x44, 0x7f, 0x12, 0x98, 0x89, 0x81, 0x9a, 0x98, 0x99, 0xf1, 0x44, 0x42,
-	0x93, 0x2e, 0x75, 0x69, 0x1c, 0x8f, 0x46, 0x32, 0x7a, 0x2b, 0xa3, 0x32, 0xc0, 0x21, 0x6e, 0xb2,
-	0x2c, 0xb8, 0x85, 0x43, 0xe2, 0x24, 0x39, 0x31, 0x58, 0xf9, 0x8a, 0xe0, 0xfa, 0x3a, 0x73, 0x37,
-	0x03, 0x07, 0x73, 0xf2, 0x42, 0x2c, 0x53, 0x97, 0x41, 0xc1, 0xbb, 0x7c, 0x8b, 0x86, 0x1e, 0x3f,
-	0x2c, 0xa2, 0x32, 0xaa, 0x2a, 0x56, 0xf1, 0xfb, 0x97, 0xf9, 0x49, 0x29, 0x64, 0xd5, 0x71, 0x42,
-	0xc2, 0xd8, 0x06, 0x0f, 0x3d, 0xdf, 0xb5, 0x3b, 0xa9, 0xea, 0x43, 0x18, 0x8a, 0x37, 0x2e, 0x0e,
-	0x94, 0x51, 0x75, 0x74, 0x71, 0xca, 0x48, 0x9f, 0x91, 0x11, 0xf3, 0x5b, 0xca, 0xf1, 0x59, 0x29,
-	0xf7, 0xf9, 0xe2, 0x68, 0x0e, 0xd9, 0x72, 0xc1, 0xca, 0xd2, 0xdb, 0x8b, 0xa3, 0xb9, 0x0e, 0xd5,
-	0xfb, 0x8b, 0xa3, 0xb9, 0xb2, 0x94, 0x7d, 0xd0, 0x76, 0x95, 0xd1, 0x59, 0x99, 0x81, 0xe9, 0x4c,
-	0xc8, 0x26, 0x2c, 0xa0, 0x3e, 0x23, 0x95, 0x9f, 0x08, 0xc6, 0xd3, 0xd8, 0x5f, 0xbb, 0x52, 0x21,
-	0xef, 0xe3, 0x26, 0x11, 0x9e, 0x14, 0x5b, 0x8c, 0xd5, 0x55, 0x18, 0xc6, 0xac, 0x16, 0x95, 0xb2,
-	0x38, 0x28, 0xac, 0xce, 0x18, 0x92, 0x26, 0xaa, 0xb5, 0x21, 0x6b, 0x6d, 0x3c, 0xa6, 0x9e, 0x6f,
-	0x8d, 0x5e, 0x9e, 0x95, 0x92, 0xec, 0xb5, 0x9c, 0x3d, 0x84, 0x59, 0x14, 0x56, 0xef, 0x81, 0x82,
-	0x59, 0x6d, 0xd7, 0xf3, 0xf9, 0xf2, 0x83, 0x62, 0xbe, 0x8c, 0xaa, 0x79, 0xab, 0x70, 0x79, 0x56,
-	0xea, 0x04, 0xd7, 0x72, 0xf6, 0x08, 0x66, 0x9b, 0x62, 0xbc, 0x32, 0x9e, 0x3e, 0x1f, 0x4b, 0x11,
-	0x02, 0xf8, 0x61, 0x40, 0x2a, 0x3a, 0x4c, 0xa5, 0x9d, 0x26, 0x87, 0xf0, 0x2c, 0x3f, 0x82, 0x26,
-	0x06, 0x2a, 0x1f, 0x11, 0x14, 0xd6, 0x99, 0xbb, 0xea, 0x38, 0x1b, 0xf1, 0x39, 0xaa, 0x8f, 0xa0,
-	0x40, 0xf7, 0x7d, 0x12, 0xd6, 0x70, 0xec, 0xb9, 0xef, 0x69, 0x8c, 0x89, 0x74, 0x19, 0x53, 0x97,
-	0x61, 0x58, 0x56, 0xe4, 0xb7, 0x3a, 0x8b, 0x0e, 0x33, 0xe4, 0x3e, 0x56, 0x3e, 0xaa, 0xb3, 0x9d,
-	0x24, 0xaf, 0xa8, 0x91, 0x87, 0xf4, 0xce, 0x95, 0x59, 0xb8, 0x99, 0xd2, 0x96, 0xd1, 0xfe, 0x09,
-	0xc1, 0x44, 0xdb, 0xdc, 0x7f, 0x28, 0xbf, 0x0c, 0xc5, 0xac, 0xbc, 0x8c, 0x83, 0x77, 0xb1, 0x83,
-	0x27, 0x64, 0x87, 0xfc, 0x33, 0x07, 0xb3, 0x00, 0x52, 0x54, 0xcd, 0x73, 0x64, 0x5f, 0x2a, 0x32,
-	0xf2, 0xd4, 0xe9, 0x29, 0x54, 0x13, 0x42, 0x53, 0x2a, 0x12, 0xa1, 0x8b, 0xdf, 0x06, 0x61, 0x70,
-	0x9d, 0xb9, 0xea, 0x4b, 0x18, 0x4b, 0x3d, 0x03, 0xa5, 0xec, 0xf5, 0xcd, 0x5c, 0x36, 0xed, 0x6e,
-	0x9f, 0x84, 0x64, 0x07, 0x75, 0x13, 0x46, 0xbb, 0x6f, 0xa2, 0x7e, 0xf5, 0x3a, 0xed, 0xce, 0xd5,
-	0x78, 0x9b, 0xd6, 0x06, 0xe8, 0xea, 0xea, 0xd9, 0x1e, 0xab, 0x3a, 0xb0, 0x76, 0xfb, 0x4a, 0xb8,
-	0xcd, 0xf9, 0x1a, 0x0a, 0xe9, 0x6e, 0x2b, 0xff, 0x51, 0x4c, 0xc2, 0x5c, 0xed, 0x97, 0xd1, 0x4d,
-	0x9e, 0x6e, 0x84, 0x5e, 0xe4, 0xa9, 0x8c, 0x9e, 0xe4, 0x3d, 0xcb, 0xa8, 0x5d, 0x7b, 0x13, 0xbd,
-	0xa8, 0xd6, 0xf3, 0xe3, 0x96, 0x8e, 0x4e, 0x5a, 0x3a, 0x3a, 0x6d, 0xe9, 0xe8, 0x47, 0x4b, 0x47,
-	0x1f, 0xce, 0xf5, 0xdc, 0xc9, 0xb9, 0x9e, 0x3b, 0x3d, 0xd7, 0x73, 0xaf, 0xee, 0xbb, 0x1e, 0xdf,
-	0xda, 0xad, 0x1b, 0x0d, 0xda, 0x34, 0x03, 0xba, 0xcd, 0xe7, 0x7d, 0xc2, 0xf7, 0x69, 0xb8, 0x2d,
-	0x26, 0x21, 0xdd, 0xd9, 0xe9, 0x7a, 0x6e, 0xa3, 0xd7, 0x85, 0xd5, 0x87, 0xc4, 0x77, 0x62, 0xe9,
-	0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0xcf, 0xaf, 0xec, 0x4c, 0x09, 0x07, 0x00, 0x00,
+	// 606 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x3f, 0x6f, 0xd3, 0x40,
+	0x14, 0xf7, 0xb5, 0xa1, 0xad, 0xaf, 0x7f, 0x00, 0xab, 0xb4, 0xa9, 0x51, 0x9d, 0xc8, 0x12, 0x50,
+	0x55, 0xd4, 0xa6, 0x2d, 0xaa, 0x44, 0x25, 0x86, 0x98, 0xa5, 0x42, 0x0a, 0x42, 0xae, 0x22, 0x21,
+	0x96, 0xe8, 0x12, 0x9f, 0x1c, 0x2b, 0xb5, 0xcf, 0xf2, 0x5d, 0xd2, 0x76, 0x43, 0x8c, 0x4c, 0xb0,
+	0xf2, 0x09, 0x18, 0x33, 0xb0, 0xf0, 0x0d, 0x3a, 0x56, 0x4c, 0x9d, 0x22, 0x94, 0x0c, 0x41, 0xfd,
+	0x14, 0xc8, 0xe7, 0x73, 0x13, 0x1b, 0x94, 0x4a, 0x2c, 0xc9, 0xdd, 0xfb, 0xbd, 0x3f, 0xbf, 0xdf,
+	0x7b, 0xef, 0x0c, 0xd7, 0x43, 0xd2, 0x6c, 0x63, 0x66, 0x52, 0x1c, 0x75, 0xbd, 0x26, 0x36, 0xd9,
+	0x99, 0x11, 0x46, 0x84, 0x11, 0x65, 0x25, 0x01, 0x0c, 0x01, 0xa8, 0xf7, 0x91, 0xef, 0x05, 0xc4,
+	0xe4, 0xbf, 0x89, 0x8b, 0xaa, 0x35, 0x09, 0xf5, 0x09, 0x35, 0x1b, 0x88, 0x62, 0xb3, 0xbb, 0xdb,
+	0xc0, 0x0c, 0xed, 0x9a, 0x4d, 0xe2, 0x05, 0x02, 0x5f, 0x17, 0xb8, 0x4f, 0x5d, 0xb3, 0xbb, 0x1b,
+	0xff, 0x09, 0x60, 0x23, 0x01, 0xea, 0xfc, 0x66, 0x26, 0x17, 0x01, 0xad, 0xba, 0xc4, 0x25, 0x89,
+	0x3d, 0x3e, 0x09, 0xeb, 0xc3, 0x1c, 0xcb, 0x10, 0x45, 0xc8, 0xa7, 0x79, 0xb0, 0x85, 0x22, 0xec,
+	0xa4, 0x3e, 0x09, 0xa8, 0xff, 0x00, 0xf0, 0x6e, 0x95, 0xba, 0xb5, 0xd0, 0x41, 0x0c, 0xbf, 0xe5,
+	0x61, 0xca, 0x01, 0x94, 0x51, 0x87, 0xb5, 0x48, 0xe4, 0xb1, 0xf3, 0x22, 0x28, 0x83, 0x2d, 0xd9,
+	0x2a, 0xfe, 0xfc, 0xbe, 0xb3, 0x2a, 0x88, 0x54, 0x1c, 0x27, 0xc2, 0x94, 0x1e, 0xb3, 0xc8, 0x0b,
+	0x5c, 0x7b, 0xec, 0xaa, 0xbc, 0x80, 0x73, 0x49, 0xe1, 0xe2, 0x4c, 0x19, 0x6c, 0x2d, 0xee, 0xad,
+	0x19, 0xd9, 0x1e, 0x19, 0x49, 0x7e, 0x4b, 0xbe, 0xe8, 0x97, 0xa4, 0x6f, 0xa3, 0xde, 0x36, 0xb0,
+	0x45, 0xc0, 0xe1, 0xfe, 0xc7, 0x51, 0x6f, 0x7b, 0x9c, 0xea, 0xd3, 0xa8, 0xb7, 0x5d, 0x16, 0xb4,
+	0xcf, 0x6e, 0x54, 0xe5, 0x78, 0xea, 0x1b, 0x70, 0x3d, 0x67, 0xb2, 0x31, 0x0d, 0x49, 0x40, 0xb1,
+	0xfe, 0x1b, 0xc0, 0x95, 0x2c, 0xf6, 0xdf, 0xaa, 0x14, 0x58, 0x08, 0x90, 0x8f, 0xb9, 0x26, 0xd9,
+	0xe6, 0x67, 0xa5, 0x02, 0xe7, 0x11, 0xad, 0xc7, 0xa3, 0x2c, 0xce, 0x72, 0xa9, 0x1b, 0x86, 0x48,
+	0x13, 0xcf, 0xda, 0x10, 0xb3, 0x36, 0x5e, 0x11, 0x2f, 0xb0, 0x16, 0xaf, 0xfb, 0xa5, 0xd4, 0xfb,
+	0x48, 0xb2, 0xe7, 0x10, 0x8d, 0xcd, 0xca, 0x53, 0x28, 0x23, 0x5a, 0xef, 0x78, 0x01, 0x3b, 0x78,
+	0x5e, 0x2c, 0x94, 0xc1, 0x56, 0xc1, 0x5a, 0xbe, 0xee, 0x97, 0xc6, 0xc6, 0x23, 0xc9, 0x5e, 0x40,
+	0xb4, 0xc6, 0xcf, 0x87, 0x2b, 0xd9, 0xfe, 0x58, 0x32, 0x27, 0xc0, 0xce, 0x43, 0xac, 0x6b, 0x70,
+	0x2d, 0xab, 0x34, 0x6d, 0xc2, 0xeb, 0xc2, 0x02, 0xb8, 0x37, 0xa3, 0x7f, 0x05, 0x70, 0xb9, 0x4a,
+	0xdd, 0x8a, 0xe3, 0x1c, 0x27, 0x7d, 0x54, 0x5e, 0xc2, 0x65, 0x72, 0x1a, 0xe0, 0xa8, 0x8e, 0x12,
+	0xcd, 0xb7, 0x76, 0x63, 0x89, 0xbb, 0x0b, 0x9b, 0x72, 0x00, 0xe7, 0xc5, 0x44, 0xfe, 0x9a, 0x33,
+	0xdf, 0x30, 0x43, 0xd4, 0xb1, 0x0a, 0xf1, 0x9c, 0xed, 0xd4, 0xf9, 0x50, 0x89, 0x35, 0x64, 0x2b,
+	0xeb, 0x9b, 0xf0, 0x41, 0x86, 0x5b, 0x96, 0xfb, 0xde, 0x97, 0x19, 0x38, 0x5b, 0xa5, 0xae, 0xf2,
+	0x0e, 0x2e, 0x65, 0x36, 0xb4, 0x94, 0xdf, 0xac, 0xdc, 0x1e, 0xa8, 0x4f, 0x6e, 0x71, 0x48, 0xeb,
+	0x28, 0x35, 0xb8, 0x38, 0xb9, 0x24, 0xda, 0xf4, 0x38, 0xf5, 0xf1, 0x74, 0xfc, 0x26, 0xad, 0x0d,
+	0xe1, 0x44, 0xc3, 0x37, 0xff, 0x11, 0x35, 0x86, 0xd5, 0x47, 0x53, 0xe1, 0x34, 0xa7, 0x7a, 0xe7,
+	0x43, 0xfc, 0x64, 0xac, 0x37, 0x17, 0x03, 0x0d, 0x5c, 0x0e, 0x34, 0x70, 0x35, 0xd0, 0xc0, 0xaf,
+	0x81, 0x06, 0x3e, 0x0f, 0x35, 0xe9, 0x72, 0xa8, 0x49, 0x57, 0x43, 0x4d, 0x7a, 0xff, 0xcc, 0xf5,
+	0x58, 0xab, 0xd3, 0x30, 0x9a, 0xc4, 0x37, 0x43, 0xd2, 0x66, 0x3b, 0x01, 0x66, 0xa7, 0x24, 0x6a,
+	0xf3, 0x4b, 0x44, 0x4e, 0x4e, 0x26, 0xde, 0x53, 0xbc, 0x3e, 0xb4, 0x31, 0xc7, 0x3f, 0x04, 0xfb,
+	0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x78, 0xb5, 0x15, 0xff, 0xea, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -580,8 +407,6 @@ type MsgClient interface {
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ...grpc.CallOption) (*MsgUpdateParamResponse, error)
 	AddService(ctx context.Context, in *MsgAddService, opts ...grpc.CallOption) (*MsgAddServiceResponse, error)
-	UpdateService(ctx context.Context, in *MsgUpdateService, opts ...grpc.CallOption) (*MsgUpdateServiceResponse, error)
-	DeleteService(ctx context.Context, in *MsgDeleteService, opts ...grpc.CallOption) (*MsgDeleteServiceResponse, error)
 }
 
 type msgClient struct {
@@ -619,24 +444,6 @@ func (c *msgClient) AddService(ctx context.Context, in *MsgAddService, opts ...g
 	return out, nil
 }
 
-func (c *msgClient) UpdateService(ctx context.Context, in *MsgUpdateService, opts ...grpc.CallOption) (*MsgUpdateServiceResponse, error) {
-	out := new(MsgUpdateServiceResponse)
-	err := c.cc.Invoke(ctx, "/pocket.service.Msg/UpdateService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) DeleteService(ctx context.Context, in *MsgDeleteService, opts ...grpc.CallOption) (*MsgDeleteServiceResponse, error) {
-	out := new(MsgDeleteServiceResponse)
-	err := c.cc.Invoke(ctx, "/pocket.service.Msg/DeleteService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
 	// UpdateParams defines a (governance) operation for updating the module
@@ -644,8 +451,6 @@ type MsgServer interface {
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	UpdateParam(context.Context, *MsgUpdateParam) (*MsgUpdateParamResponse, error)
 	AddService(context.Context, *MsgAddService) (*MsgAddServiceResponse, error)
-	UpdateService(context.Context, *MsgUpdateService) (*MsgUpdateServiceResponse, error)
-	DeleteService(context.Context, *MsgDeleteService) (*MsgDeleteServiceResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -660,12 +465,6 @@ func (*UnimplementedMsgServer) UpdateParam(ctx context.Context, req *MsgUpdatePa
 }
 func (*UnimplementedMsgServer) AddService(ctx context.Context, req *MsgAddService) (*MsgAddServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddService not implemented")
-}
-func (*UnimplementedMsgServer) UpdateService(ctx context.Context, req *MsgUpdateService) (*MsgUpdateServiceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateService not implemented")
-}
-func (*UnimplementedMsgServer) DeleteService(ctx context.Context, req *MsgDeleteService) (*MsgDeleteServiceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteService not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -726,42 +525,6 @@ func _Msg_AddService_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_UpdateService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgUpdateService)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).UpdateService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pocket.service.Msg/UpdateService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).UpdateService(ctx, req.(*MsgUpdateService))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_DeleteService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgDeleteService)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).DeleteService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pocket.service.Msg/DeleteService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).DeleteService(ctx, req.(*MsgDeleteService))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var Msg_serviceDesc = _Msg_serviceDesc
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "pocket.service.Msg",
@@ -778,14 +541,6 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddService",
 			Handler:    _Msg_AddService_Handler,
-		},
-		{
-			MethodName: "UpdateService",
-			Handler:    _Msg_UpdateService_Handler,
-		},
-		{
-			MethodName: "DeleteService",
-			Handler:    _Msg_DeleteService_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1020,129 +775,6 @@ func (m *MsgAddServiceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgUpdateService) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgUpdateService) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgUpdateService) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.Service.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintTx(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	if len(m.OwnerAddress) > 0 {
-		i -= len(m.OwnerAddress)
-		copy(dAtA[i:], m.OwnerAddress)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.OwnerAddress)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgUpdateServiceResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgUpdateServiceResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgUpdateServiceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgDeleteService) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgDeleteService) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgDeleteService) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.ServiceId) > 0 {
-		i -= len(m.ServiceId)
-		copy(dAtA[i:], m.ServiceId)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.ServiceId)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.OwnerAddress) > 0 {
-		i -= len(m.OwnerAddress)
-		copy(dAtA[i:], m.OwnerAddress)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.OwnerAddress)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgDeleteServiceResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgDeleteServiceResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgDeleteServiceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -1244,56 +876,6 @@ func (m *MsgAddService) Size() (n int) {
 }
 
 func (m *MsgAddServiceResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *MsgUpdateService) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.OwnerAddress)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = m.Service.Size()
-	n += 1 + l + sovTx(uint64(l))
-	return n
-}
-
-func (m *MsgUpdateServiceResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *MsgDeleteService) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.OwnerAddress)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = len(m.ServiceId)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	return n
-}
-
-func (m *MsgDeleteServiceResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1834,335 +1416,6 @@ func (m *MsgAddServiceResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MsgAddServiceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgUpdateService) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgUpdateService: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgUpdateService: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OwnerAddress", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.OwnerAddress = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Service", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Service.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgUpdateServiceResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgUpdateServiceResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgUpdateServiceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgDeleteService) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgDeleteService: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgDeleteService: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OwnerAddress", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.OwnerAddress = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ServiceId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgDeleteServiceResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgDeleteServiceResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgDeleteServiceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
