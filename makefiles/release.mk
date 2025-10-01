@@ -42,21 +42,6 @@ install_act: ## Install act for local GitHub Actions testing
 	fi
 	@echo "✅ act installed successfully"
 
-###########################
-###   Release Helpers   ###
-###########################
-
-
-
-
-
-
-
-
-
-
-
-
 ########################
 ###   Act Triggers   ###
 ########################
@@ -77,11 +62,10 @@ INFO_URL := https://dev.poktroll.com/explore/account_management/pocketd_cli?_hig
 define print_next_steps
 	$(call print_info_section,Next Steps)
 	@echo "  $(BOLD)1.$(RESET) Push the new tag: $(CYAN)git push origin $(1)$(RESET)"
-	@echo "  $(BOLD)2.$(RESET) Draft the release with gh:"
-	@echo "     $(CYAN)gh release create $(1) $(if $(2),--prerelease,) --generate-notes$(RESET)"
+	@echo "  $(BOLD)2.$(RESET) Draft the release with gh: $(CYAN)gh release create $(1) $(if $(2),--prerelease,) --generate-notes$(RESET)"
 	@echo ""
 	@repo_url=$$(gh repo view --json url -q .url); \
-		echo "  $(BOLD)Release URL:$(RESET) $(CYAN)$${repo_url}/releases/tag/$(1)$(RESET)"
+		echo "$(BOLD)Release URL:$(RESET) $(CYAN)$${repo_url}/releases/tag/$(1)$(RESET)"
 	@echo ""
 endef
 
@@ -187,3 +171,80 @@ release_tag_major: ## Tag a new major release (e.g. v1.0.0 -> v2.0.0)
 	$(call print_next_steps,$(NEW_TAG))
 	$(call print_cleanup_commands,$(NEW_TAG))
 	$(call print_additional_info)
+
+.PHONY: release_artifacts_current_branch
+release_artifacts_current_branch: ## Trigger the release-artifacts workflow using the current branch to build artifacts for all environments
+	@echo "Triggering release-artifacts workflow for current branch..."
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD) && \
+	gh workflow run release-artifacts.yml --ref $$BRANCH
+	@echo "Workflow triggered for branch: ${CYAN} $$(git rev-parse --abbrev-ref HEAD)${RESET}"
+	@echo "Check the workflow status at: ${BLUE}https://github.com/$(shell git config --get remote.origin.url | sed 's/.*github.com[:/]\([^/]*\/[^.]*\).*/\1/')/actions/workflows/release-artifacts.yml${RESET}"
+
+###################################
+### Local Docker Build Testing ###
+###################################
+
+.PHONY: docker_test_build_local
+docker_test_build_local: ## Test Docker build locally with current architecture binaries only
+	@echo "$(CYAN)Building binaries for local testing...$(RESET)"
+	$(MAKE) ignite_release_local
+	$(MAKE) ignite_release_extract_binaries
+	$(MAKE) cosmovisor_cross_compile
+	@echo "$(CYAN)Testing Docker build (CGO disabled)...$(RESET)"
+	docker build -f Dockerfile.release -t pocketd-test:nocgo .
+	@echo "$(CYAN)Testing Docker build (CGO enabled)...$(RESET)"
+	docker build -f Dockerfile.release.cgo -t pocketd-test:cgo .
+	$(call print_success,Docker build test successful!)
+
+.PHONY: docker_test_build_multiplatform
+docker_test_build_multiplatform: ## Test multi-platform Docker build locally (requires Docker buildx)
+	@echo "$(CYAN)Building all platform binaries...$(RESET)"
+	$(MAKE) ignite_release
+	$(MAKE) ignite_release_repackage
+	$(MAKE) ignite_release_extract_binaries
+	$(MAKE) cosmovisor_cross_compile
+	@echo "$(CYAN)Setting up Docker buildx...$(RESET)"
+	@docker buildx create --name poktroll-builder --use 2>/dev/null || docker buildx use poktroll-builder
+	@echo "$(CYAN)Testing multi-platform Docker build (CGO disabled)...$(RESET)"
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		-f Dockerfile.release -t pocketd-test:nocgo-multi . --progress=plain
+	@echo "$(CYAN)Testing multi-platform Docker build (CGO enabled)...$(RESET)"
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		-f Dockerfile.release.cgo -t pocketd-test:cgo-multi . --progress=plain
+	$(call print_success,Multi-platform Docker build test successful!)
+
+.PHONY: docker_test_run
+docker_test_run: ## Run the locally built Docker image to verify it works
+	@echo "$(CYAN)Running Docker image test...$(RESET)"
+	@docker run --rm pocketd-test:nocgo version || \
+		(echo "$(RED)❌ Failed to run pocketd version$(RESET)" && exit 1)
+	$(call print_success,Docker runtime test successful!)
+
+.PHONY: docker_test_quick
+docker_test_quick: ## Quick Docker build test - builds minimal binaries if needed (fastest)
+	@# Check if we have Linux binaries (required for Docker)
+	@if [ ! -d "release_binaries" ] || ! ls release_binaries/pocket*linux* >/dev/null 2>&1; then \
+		echo "$(YELLOW)⚠️  No Linux binaries found. Building minimal set for Docker testing...$(RESET)"; \
+		echo "$(CYAN)Building Linux binaries (CGO disabled)...$(RESET)"; \
+		$(MAKE) ignite_release_cgo_disabled; \
+		$(MAKE) ignite_release_extract_binaries; \
+	fi
+	@if [ ! -d "tmp" ] || [ ! -f "tmp/cosmovisor-linux-amd64" -a ! -f "tmp/cosmovisor-linux-arm64" ]; then \
+		echo "$(YELLOW)⚠️  Building cosmovisor for testing...$(RESET)"; \
+		$(MAKE) cosmovisor_cross_compile; \
+	fi
+	@echo "$(CYAN)Testing Docker build with Linux binaries...$(RESET)"
+	@echo "$(CYAN)Available binaries:$(RESET)"
+	@ls -la release_binaries/pocket*linux* 2>/dev/null || echo "No Linux binaries found"
+	docker build -f Dockerfile.release -t pocketd-test:quick . --progress=plain
+	$(call print_success,Quick Docker build test successful!)
+
+.PHONY: docker_test_clean
+docker_test_clean: ## Clean up test Docker images and build cache
+	@echo "$(CYAN)Cleaning up test Docker images...$(RESET)"
+	@docker rmi -f pocketd-test:nocgo pocketd-test:cgo \
+		pocketd-test:nocgo-multi pocketd-test:cgo-multi \
+		pocketd-test:quick 2>/dev/null || true
+	@docker builder prune -f
+	@docker buildx rm poktroll-builder 2>/dev/null || true
+	$(call print_success,Docker test cleanup complete!)
