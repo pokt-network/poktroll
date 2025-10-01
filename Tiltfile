@@ -10,6 +10,7 @@ load("ext://execute_in_pod", "execute_in_pod")
 load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
 load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+load("./tiltfiles/env.Tiltfile", "build_env", "build_cmd", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_CMD", "IGNITE_CGO_CFLAGS")
 
 
 # Avoid the header
@@ -140,29 +141,40 @@ secret_create_generic(
 # Import configuration files into Kubernetes ConfigMap
 configmap_create("pocketd-configs", from_file=listdir("localnet/pocketd/config/"), watch=True)
 
+# Common deps for hot reload targets
+PROTO_RESOURCE = "hot-reload: generate protobufs"
+
 if localnet_config["hot-reloading"]:
-    # Hot reload protobuf changes
     local_resource(
-        "hot-reload: generate protobufs",
+        PROTO_RESOURCE,
         "make proto_regen",
         deps=["proto"],
         labels=["hot-reloading"],
     )
-    # Hot reload the pocketd binary used by the k8s cluster
+
+    # TODO_IMPROVE: Enable CGO cross-compilation.
+    # Given the complexity of containerized environments, CGO, static/dynamic linking, darwin/linux, etc.
+    # it is not currently possible to enable CGO cross-compilation.
+
+    # Cross-compilation for container use - uses appropriate build tags and CGO settings.
+    # Automatically selects Decred (no CGO) for cross-compilation or Ethereum (CGO) for native builds.
     local_resource(
-        "hot-reload: pocketd",
-        "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
+        "hot-reload: pocketd (bin)",
+        "%s --output=./bin" % build_cmd(TARGET_GOOS, TARGET_GOARCH),
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
-        resource_deps=["hot-reload: generate protobufs"],
+        resource_deps=[PROTO_RESOURCE],
+        env=build_env(TARGET_GOOS, TARGET_GOARCH),
     )
-    # Hot reload the local pocketd binary used by the CLI
+
+    # Hot reload the local pocketd binary used by the CLI (host architecture).
+    # Always uses CGO + ethereum_secp256k1 for optimal performance on host.
     local_resource(
-        "hot-reload: pocketd - local cli",
-        "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
+        "hot-reload: pocketd (host)",
+        '%s %s -o $(go env GOPATH)/bin' % (IGNITE_CGO_CFLAGS, IGNITE_CMD),
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
-        resource_deps=["hot-reload: generate protobufs"],
+        resource_deps=[PROTO_RESOURCE],
     )
 
 # Build an image with a pocketd binary
@@ -177,7 +189,10 @@ WORKDIR /
 """,
     only=["./bin/pocketd"],
     entrypoint=["pocketd"],
-    live_update=[sync("bin/pocketd", "/usr/local/bin/pocketd")],
+    live_update=[
+        sync("bin/pocketd", "/usr/local/bin/pocketd"),
+        run("chmod +x /usr/local/bin/pocketd"),
+    ],
 )
 
 # Run data nodes & validators

@@ -356,7 +356,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 
 		beforeRequestSigningTime := time.Now()
 
-		signedRelayReq, err := appSigner.Sign(ctx, relayReq, ring)
+		signedRelayReq, err := appSigner.Sign(ctx, relayReq, &ring)
 		if err != nil {
 			logger.Error().Err(err).Msg("❌ Error signing relay request")
 			return err
@@ -594,4 +594,8 @@ func (e *supplierEndpointWithHeader) Supplier() sdk.SupplierAddress {
 
 func (e *supplierEndpointWithHeader) Endpoint() sharedtypes.SupplierEndpoint {
 	return e.endpoint
+}
+
+func (e *supplierEndpointWithHeader) RPCType() sharedtypes.RPCType {
+	return e.endpoint.RpcType
 }

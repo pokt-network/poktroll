@@ -39,7 +39,9 @@ func (sync *relayMinerHTTPServer) replyWithError(
 	if relayRequest == nil {
 		relayRequest = &types.RelayRequest{
 			Meta: types.RelayRequestMetadata{
-				SessionHeader: &sessiontypes.SessionHeader{},
+				SessionHeader: &sessiontypes.SessionHeader{
+					ServiceId: UnknownServiceID,
+				},
 			},
 		}
 	}

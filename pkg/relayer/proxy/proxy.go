@@ -17,6 +17,15 @@ import (
 
 var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 
+// UnknownServiceID and UnknownSupplierOperatorAddress are the default values used
+// as a fallback when the actual service ID or supplier operator cannot be determined.
+// This occurs during error scenarios before relay request validation, ensuring
+// metrics labels and error responses always have a valid service ID value.
+const (
+	UnknownServiceID               = "unknown_service_id"
+	UnknownSupplierOperatorAddress = "unknown_supplier_operator_address"
+)
+
 // relayerProxy is the main relayer proxy that takes relay requests of supported
 // services from the client and proxies them to the supported backend services.
 // It is responsible for notifying the miner about the relays that have been
