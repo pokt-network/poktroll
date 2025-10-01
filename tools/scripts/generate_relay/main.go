@@ -180,7 +180,14 @@ func generateRelayRequest(ctx context.Context, logger polylog.Logger) ([]byte, e
 	// Get the endpoint URL
 	endpointUrl := endpoint.Endpoint().Url
 
-	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
+	// Initialize the signer properly so that the private key hex is decoded into bytes.
+	// Previously this was constructed as a literal which left privateKeyBytes empty and
+	// caused: "Sign: error decoding private key to scalar: invalid scalar length".
+	appSigner, err := sdk.NewSignerFromHex(appPrivateKeyHex)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error initializing signer from private key hex")
+		return nil, err
+	}
 
 	// Parse the endpoint URL
 	reqUrl, err := url.Parse(endpointUrl)
