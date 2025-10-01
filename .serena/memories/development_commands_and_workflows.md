@@ -6,7 +6,7 @@
 
 - `make go_develop` - Generate protos and mocks (run after proto changes)
 - `make go_develop_and_test` - Generate code + run all tests
-- `make ignite_pocketd_build` - Build pocketd binary
+- `make ignite_build_pocketd` - Build pocketd binary
 - `make proto_regen` - Regenerate protobuf artifacts
 
 ### LocalNet Management

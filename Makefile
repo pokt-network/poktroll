@@ -84,35 +84,6 @@ install_ci_deps: ## Installs `golangci-lint` and other go tools
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
-.PHONY: install_cosmovisor
-install_cosmovisor: ## Installs `cosmovisor`
-	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
-
-.PHONY: cosmovisor_cross_compile
-cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
-	@COSMOVISOR_VERSION="v1.6.0"; \
-	PLATFORMS="linux/amd64 linux/arm64"; \
-	mkdir -p ./tmp; \
-	echo "Fetching Cosmovisor source..."; \
-	temp_dir=$$(mktemp -d); \
-	cd $$temp_dir; \
-	go mod init temp; \
-	go get cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@$$COSMOVISOR_VERSION; \
-	for platform in $$PLATFORMS; do \
-		OS=$${platform%/*}; \
-		ARCH=$${platform#*/}; \
-		echo "Compiling for $$OS/$$ARCH..."; \
-		GOOS=$$OS GOARCH=$$ARCH go build -o $(CURDIR)/tmp/cosmovisor-$$OS-$$ARCH cosmossdk.io/tools/cosmovisor/cmd/cosmovisor; \
-	done; \
-	cd $(CURDIR); \
-	rm -rf $$temp_dir; \
-	echo "Compilation complete. Binaries are in ./tmp/"; \
-	ls -l ./tmp/cosmovisor-*
-
-.PHONY: cosmovisor_clean
-cosmovisor_clean:
-	rm -f ./tmp/cosmovisor-*
-
 ########################
 ### Makefile Helpers ###
 ########################
@@ -122,14 +93,119 @@ cosmovisor_clean:
 prompt_user:
 	@echo "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-.PHONY: list
-list: ## List all make targets
-	@${MAKE} -pRrn : -f $(MAKEFILE_LIST) 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | sort
-
 .PHONY: help
 .DEFAULT_GOAL := help
 help: ## Prints all the targets in all the Makefiles
-	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-60s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)$(CYAN)🚀 Poktroll Makefile Targets$(RESET)"
+	@echo ""
+	@echo "$(BOLD)=== 📋 Information & Discovery ===$(RESET)"
+	@grep -h -E '^(help|help-params|list):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔨 Build & Run ===$(RESET)"
+	@grep -h -E '^(ignite_build|ignite_pocketd_build|ignite_serve|ignite_serve_reset|ignite_release.*|cosmovisor_start_node):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== ⚙️ Development ===$(RESET)"
+	@grep -h -E '^(go_develop|go_develop_and_test|proto_regen|go_mockgen|go_testgen_fixtures|go_testgen_accounts|go_imports):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🧪 Testing ===$(RESET)"
+	@grep -h -E '^(test_all|test_unit|test_e2e|test_integration|test_timing|test_govupgrade|test_e2e_relay|go_test_verbose|go_test):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== ✅ Linting & Quality ===$(RESET)"
+	@grep -h -E '^(go_lint|go_vet|go_sec|gosec_version_fix|check_todos):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🌐 LocalNet Operations ===$(RESET)"
+	@grep -h -E '^(localnet_up|localnet_up_quick|localnet_down|localnet_regenesis|localnet_cancel_upgrade|localnet_show_upgrade_plan):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔗 TestNet Operations ===$(RESET)"
+	@grep -h -E '^(testnet_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 💰 Accounts & Balances ===$(RESET)"
+	@grep -h -E '^(acc_.*|pocketd_addr|pocketd_key):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📊 Query Commands ===$(RESET)"
+	@grep -h -E '^(query_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🛡️ Applications ===$(RESET)"
+	@grep -h -E '^(app_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏭 Suppliers ===$(RESET)"
+	@grep -h -E '^(supplier_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🌉 Gateways ===$(RESET)"
+	@grep -h -E '^(gateway_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📡 Relays & Claims ===$(RESET)"
+	@grep -h -E '^(relay_.*|claim_.*|ping_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📜 Sessions ===$(RESET)"
+	@grep -h -E '^(session_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔄 IBC ===$(RESET)"
+	@grep -h -E '^(ibc_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🚢 Release Management ===$(RESET)"
+	@grep -h -E '^(release_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🐳 Docker Testing ===$(RESET)"
+	@grep -h -E '^(docker_test_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📚 Documentation ===$(RESET)"
+	@grep -h -E '^(go_docs|docusaurus_.*|gen_.*_docs):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔧 Tools & Utilities ===$(RESET)"
+	@grep -h -E '^(install_.*|check_.*|grove_.*|act_.*|trigger_ci|docker_wipe):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📱 Telegram ===$(RESET)"
+	@grep -h -E '^(telegram_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🤖 AI & Sync ===$(RESET)"
+	@grep -h -E '^(claudesync_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)Use $(CYAN)make help-params$(RESET) to see parameter management commands"
+	@echo ""
+
+.PHONY: help-params
+help-params: ## Show parameter management commands
+	@echo ""
+	@echo "$(BOLD)$(CYAN)⚙️ Parameter Management Commands$(RESET)"
+	@echo ""
+	@echo "$(BOLD)=== 🌐 All Modules ===$(RESET)"
+	@grep -h -E '^(params_query_all):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏛️ Cosmos Modules ===$(RESET)"
+	@grep -h -E '^(params_(auth|bank|consensus|crisis|distribution|gov|mint|protocolpool|slashing|staking)_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 💰 Tokenomics ===$(RESET)"
+	@grep -h -E '^(params_tokenomics_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔧 Service ===$(RESET)"
+	@grep -h -E '^(params_service_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔍 Proof ===$(RESET)"
+	@grep -h -E '^(params_proof_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🤝 Shared ===$(RESET)"
+	@grep -h -E '^(params_shared_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🌉 Gateway ===$(RESET)"
+	@grep -h -E '^(params_gateway_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🛡️ Application ===$(RESET)"
+	@grep -h -E '^(params_application_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏭 Supplier ===$(RESET)"
+	@grep -h -E '^(params_supplier_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 📜 Session ===$(RESET)"
+	@grep -h -E '^(params_session_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🔄 Migration ===$(RESET)"
+	@grep -h -E '^(params_migration_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)=== 🏛️ Consensus ===$(RESET)"
+	@grep -h -E '^(params_consensus_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
 
 #######################
 ### Proto  Helpers ####
@@ -239,72 +315,14 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			--home=$(POCKETD_HOME) \
 			--node $(POCKET_NODE);)
 
-######################
-### Ignite Helpers ###
-######################
-
-# TODO_TECHDEBT(@olshansk): Change this to pocketd keys list
-.PHONY: ignite_acc_list
-ignite_acc_list: ## List all the accounts in LocalNet
-	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
-
-.PHONY: ignite_pocketd_build
-ignite_pocketd_build: check_go_version ignite_check_version ## Build the pocketd binary using Ignite
-	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
-
 ##################
 ### CI Helpers ###
 ##################
-
 
 .PHONY: trigger_ci
 trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
 	git commit --allow-empty -m "Empty commit"
 	git push
-
-.PHONY: ignite_check_version
-# Internal helper target - check ignite version
-ignite_check_version:
-	@version=$$(ignite version 2>&1 | awk -F':' '/Ignite CLI version/ {gsub(/^[ \t]+/, "", $$2); print $$2}'); \
-	if [ "$$version" = "" ]; then \
-		echo "Error: Ignite CLI not found."; \
-		echo "Please install it via Homebrew (recommended) or make ignite_install." ; \
-		echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
-		exit 1 ; \
-	fi ; \
-	# Allow dev builds and nightly strings that don't sort nicely (e.g., 'development'). \
-	if echo "$$version" | grep -Eq 'development|devel|nightly'; then \
-		echo "Detected Ignite CLI $$version (treating as >= v29)"; \
-	else \
-		min_ver=v29; \
-		lowest=$$(printf "$$min_ver\n$$version" | sort -V | head -n1); \
-		if [ "$$lowest" != "$$min_ver" ]; then \
-			echo "Error: Version $$version is less than v29. Please update Ignite via Homebrew or make ignite_install." ; \
-			echo "For Homebrew installation, follow: https://docs.ignite.com/welcome/install" ; \
-			exit 1 ; \
-		fi ; \
-	fi
-
-.PHONY: ignite_install
-ignite_install: ## Install ignite. Used by CI and heighliner.
-	# Determine if sudo is available and use it if it is
-	if command -v sudo &>/dev/null; then \
-		SUDO="sudo"; \
-	else \
-		SUDO=""; \
-	fi; \
-	echo "Downloading Ignite CLI..."; \
-	wget https://github.com/ignite/cli/releases/download/v29.0.0-rc.1/ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
-	echo "Extracting Ignite CLI..."; \
-	tar -xzf ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
-	echo "Moving Ignite CLI to /usr/local/bin..."; \
-	$$SUDO mv ignite /usr/local/bin/ignite; \
-	echo "Cleaning up..."; \
-	rm ignite_29.0.0-rc.1_$(OS)_$(ARCH).tar.gz; \
-	echo "Configuring ignite so it doesn't block CI by asking for tracking consent..."; \
-	mkdir -p $(HOME)/.ignite; \
-	echo '{"name":"doNotTrackMe","doNotTrack":true}' > $(HOME)/.ignite/anon_identity.json; \
-	ignite version
 
 #######################
 ### Keyring Helpers ###
@@ -389,6 +407,7 @@ include ./makefiles/migrate.mk
 include ./makefiles/claudesync.mk
 include ./makefiles/telegram.mk
 include ./makefiles/docs.mk
+include ./makefiles/ignite.mk
 include ./makefiles/release.mk
 include ./makefiles/tools.mk
 include ./makefiles/ibc.mk

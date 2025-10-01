@@ -7,9 +7,9 @@ import (
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
 	"github.com/pokt-network/ring-go"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"

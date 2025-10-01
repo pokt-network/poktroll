@@ -11,16 +11,19 @@ import (
 const (
 	relayMinerProcess = "relayminer"
 
-	requestsTotal                      = "requests_total"
-	requestsErrorsTotal                = "requests_errors_total"
-	requestsSuccessTotal               = "requests_success_total"
-	requestSizeBytes                   = "request_size_bytes"
-	responseSizeBytes                  = "response_size_bytes"
-	relayDurationSeconds               = "relay_duration_seconds"
-	serviceDurationSeconds             = "service_duration_seconds"
-	requestPreparationDurationSeconds  = "relay_request_preparation_duration_seconds"
-	responsePreparationDurationSeconds = "relay_response_preparation_duration_seconds"
-	fullNodeGRPCCallDurationSeconds    = "full_node_grpc_call_duration_seconds"
+	requestsTotal                              = "requests_total"
+	requestsErrorsTotal                        = "requests_errors_total"
+	requestsSuccessTotal                       = "requests_success_total"
+	requestSizeBytes                           = "request_size_bytes"
+	responseSizeBytes                          = "response_size_bytes"
+	relayDurationSeconds                       = "relay_duration_seconds"
+	serviceDurationSeconds                     = "service_duration_seconds"
+	requestPreparationDurationSeconds          = "relay_request_preparation_duration_seconds"
+	responsePreparationDurationSeconds         = "relay_response_preparation_duration_seconds"
+	fullNodeGRPCCallDurationSeconds            = "full_node_grpc_call_duration_seconds"
+	delayedRelayRequestValidationTotal         = "delayed_relay_request_validation_total"
+	delayedRelayRequestValidationFailuresTotal = "delayed_relay_request_validation_failures_total"
+	delayedRelayRequestRateLimitingCheckTotal  = "delayed_relay_request_rate_limiting_check_total"
 )
 
 var (
@@ -176,6 +179,39 @@ var (
 		Help:      "Histogram of request sizes in bytes for performance analysis.",
 		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
 	}, []string{"service_id"})
+
+	// DelayedRelayRequestValidationTotal is a Counter metric for tracking delayed validation occurrences.
+	// It increments when relay requests are validated after being served (late validation)
+	// rather than being validated upfront. This indicates sessions that weren't known at
+	// request time and required deferred validation.
+	DelayedRelayRequestValidationTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      delayedRelayRequestValidationTotal,
+		Help:      "Total number of delayed validation occurrences, labeled by service ID.",
+	}, []string{"service_id", "supplier_operator_address"})
+
+	// DelayedRelayRequestValidationFailuresTotal is a Counter metric for tracking delayed validation failures.
+	// It increments when relay requests fail validation during the delayed validation process.
+	// This typically occurs when the relay request signature is invalid or session validation
+	// fails after the relay has already been served.
+	DelayedRelayRequestValidationFailuresTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      delayedRelayRequestValidationFailuresTotal,
+		Help:      "Total number of delayed validation failures, labeled by service ID.",
+	}, []string{"service_id", "supplier_operator_address"})
+
+	// DelayedRelayRequestRateLimitingCheckTotal is a Counter metric for tracking rate limiting during delayed validation.
+	// It increments when, during late (deferred) validation, the application is found to have
+	// exceeded its allocated stake and the relay is rate limited.
+	//
+	// User/payment impact:
+	// - The relay becomes reward-ineligible (no on-chain payment to the supplier for this relay).
+	// - Signals potential fee leakage and helps rate-limit thresholds.
+	DelayedRelayRequestRateLimitingCheckTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      delayedRelayRequestRateLimitingCheckTotal,
+		Help:      "Total number of delayed validation rate limiting events, labeled by service ID.",
+	}, []string{"service_id", "supplier_operator_address"})
 )
 
 // CaptureRelayDuration records the internal end-to-end duration of handling a relay which includes
@@ -233,4 +269,34 @@ func CaptureGRPCCallDuration(component, method string, startTime time.Time) {
 		With("component", component).
 		With("method", method).
 		Observe(duration)
+}
+
+// CaptureDelayedRelayRequestValidationFailure records a delayed validation failure event.
+// This metric is incremented when a relay request fails validation during the delayed
+// validation process, typically due to invalid signature or session validation failure
+// after the relay has already been served.
+func CaptureDelayedRelayRequestValidationFailure(serviceId string, supplierOperatorAddress string) {
+	DelayedRelayRequestValidationFailuresTotal.
+		With("service_id", serviceId, "supplier_operator_address", supplierOperatorAddress).
+		Add(1)
+}
+
+// CaptureDelayedRelayRequestValidation records a delayed validation occurrence.
+// This metric is incremented when relay requests are validated after being served
+// (late validation) rather than being validated upfront. This indicates sessions
+// that weren't known at request time and required deferred validation.
+func CaptureDelayedRelayRequestValidation(serviceId string, supplierOperatorAddress string) {
+	DelayedRelayRequestValidationTotal.
+		With("service_id", serviceId, "supplier_operator_address", supplierOperatorAddress).
+		Add(1)
+}
+
+// CaptureDelayedRelayRequestRateLimitingCheck records a rate limiting event during delayed validation.
+// This metric is incremented when relay requests are rate limited during the delayed
+// validation process, typically when the application exceeds its allocated stake
+// during delayed validation checks.
+func CaptureDelayedRelayRequestRateLimitingCheck(serviceId string, supplierOperatorAddress string) {
+	DelayedRelayRequestRateLimitingCheckTotal.
+		With("service_id", serviceId, "supplier_operator_address", supplierOperatorAddress).
+		Add(1)
 }
