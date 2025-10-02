@@ -22,8 +22,6 @@ config:
       listen_url: http://0.0.0.0:8545
       service_config:
         backend_url: https://<YOUR_POKT_NODE>.<YOUR_TLD>:443
-        publicly_exposed_endpoints:
-          - <PUBLICLY_EXPOSED_SUBDOMAIN>.<YOUR_TLD>.com
       rpc_type_service_configs:
         rest:
           backend_url: http://<YOUR_INTERNALIP>:1317
@@ -46,8 +44,6 @@ config:
       listen_url: http://0.0.0.0:8545
       service_config:
         backend_url: https://<YOUR_POKT_NODE>.<YOUR_TLD>:443
-        publicly_exposed_endpoints:
-          - <PUBLICLY_EXPOSED_SUBDOMAIN>.<YOUR_TLD>.com
       rpc_type_service_configs:
         rest:
           backend_url: http://<YOUR_INTERNALIP>:1317
