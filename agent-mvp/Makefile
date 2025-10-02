@@ -6,6 +6,8 @@ VENV ?= .venv
 PYTHON := $(VENV)/bin/python
 ENV_SCRIPT ?= env.sh
 INDEX_ARTIFACTS := methods.index methods.meta.pkl
+OPENRPC_SPEC_URL := https://raw.githubusercontent.com/etclabscore/ethereum-json-rpc-specification/refs/heads/master/openrpc.json
+OPENRPC_SPEC_FILE := openrpc_eth.json
 
 .DEFAULT_GOAL := help
 
@@ -13,7 +15,7 @@ INDEX_ARTIFACTS := methods.index methods.meta.pkl
 ### Commands ###
 ################
 
-.PHONY: help quickstart env-file venv install build-index ask clean
+.PHONY: help quickstart env-file venv install download-spec build-index ask clean
 
 help: ## Display grouped command list
 	@echo ""
@@ -21,7 +23,7 @@ help: ## Display grouped command list
 	@grep -h -E '^(quickstart):.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 	@echo ""
 	@echo "=== Setup ==="
-	@grep -h -E '^(env-file|venv|install):.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
+	@grep -h -E '^(env-file|venv|install|download-spec):.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 	@echo ""
 	@echo "=== Workflow ==="
 	@grep -h -E '^(build-index|ask):.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
@@ -63,6 +65,15 @@ venv: ## Create/refresh Python $(PYTHON_VERSION) virtual environment with uv
 install: venv ## Install dependencies into the virtual environment
 	$(UV) pip install --python $(PYTHON) -r requirements.txt
 
+download-spec: ## Download Ethereum OpenRPC specification
+	@if [ -f $(OPENRPC_SPEC_FILE) ]; then \
+		echo "$(OPENRPC_SPEC_FILE) already exists. Remove it first to re-download."; \
+	else \
+		echo "Downloading Ethereum OpenRPC spec from $(OPENRPC_SPEC_URL)"; \
+		curl -L -o $(OPENRPC_SPEC_FILE) $(OPENRPC_SPEC_URL); \
+		echo "Downloaded $(OPENRPC_SPEC_FILE)"; \
+	fi
+
 ################
 ### Workflow ###
 ################
@@ -85,4 +96,4 @@ ask: install ## Retrieve best method for Q="question" and output curl command
 ################
 
 clean: ## Remove virtual environment, artifacts, and env script
-	rm -rf $(VENV) $(INDEX_ARTIFACTS) $(ENV_SCRIPT)
+	rm -rf $(VENV) $(INDEX_ARTIFACTS) $(ENV_SCRIPT) $(OPENRPC_SPEC_FILE)

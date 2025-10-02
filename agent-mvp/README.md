@@ -1,4 +1,4 @@
-# Ethereum JSON-RPC Retrieval MVP
+# Ethereum JSON-RPC Retrieval MVP <!-- omit in toc -->
 
 Local prototype that turns a natural-language Ethereum question into the right JSON-RPC method and a ready-to-run `curl` command—no external services required.
 
@@ -12,6 +12,10 @@ make ask Q="What is the height of the ethereum blockchain?"
 ```
 
 > `make quickstart` forces the virtualenv to use CPython 3.11 so the `faiss-cpu` wheel resolves. You can override with `PYTHON_VERSION=3.11` (default) or another compatible release.
+
+- [Quickstart](#quickstart)
+- [Architecture](#architecture)
+- [OpenAPI vs. OpenRPC](#openapi-vs-openrpc)
 
 ## Architecture
 
@@ -33,11 +37,11 @@ flowchart TD
 
 ## OpenAPI vs. OpenRPC
 
-| Aspect | OpenAPI | OpenRPC |
-| --- | --- | --- |
-| Primary use case | REST/HTTP APIs | JSON-RPC APIs |
-| Spec focus | HTTP verbs, paths, request/response schemas | JSON-RPC methods, params, result schemas |
-| Ethereum alignment | Requires custom adaptation | Mirrors EIP-1474 and Ethereum JSON-RPC semantics |
-| Docs | [OpenAPI Specification](https://spec.openapis.org/oas/v3.1.0) | [OpenRPC Specification](https://spec.open-rpc.org/) |
+| Aspect             | OpenAPI                                                       | OpenRPC                                             |
+| ------------------ | ------------------------------------------------------------- | --------------------------------------------------- |
+| Primary use case   | REST/HTTP APIs                                                | JSON-RPC APIs                                       |
+| Spec focus         | HTTP verbs, paths, request/response schemas                   | JSON-RPC methods, params, result schemas            |
+| Ethereum alignment | Requires custom adaptation                                    | Mirrors EIP-1474 and Ethereum JSON-RPC semantics    |
+| Docs               | [OpenAPI Specification](https://spec.openapis.org/oas/v3.1.0) | [OpenRPC Specification](https://spec.open-rpc.org/) |
 
 Ethereum JSON-RPC is natively described via OpenRPC, so this MVP keeps a local OpenRPC snippet that later can be swapped for the full schema.

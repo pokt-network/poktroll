@@ -5,10 +5,11 @@ import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-SCHEMA_PATH = "schema_openrpc_min.json"
+# SCHEMA_PATH = "schema_openrpc_min.json"
+SCHEMA_PATH = "openrpc_eth.json"
 INDEX_PATH = "methods.index"
 META_PATH = "methods.meta.pkl"
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDINGS_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 
 def doc_for_method(method):
@@ -44,7 +45,7 @@ def main():
     methods = schema["methods"]
     docs = [doc_for_method(method) for method in methods]
 
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(EMBEDDINGS_MODEL_NAME)
     embeddings = model.encode(docs, normalize_embeddings=True)
     dim = embeddings.shape[1]
 
