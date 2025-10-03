@@ -636,6 +636,10 @@ var knownRecoveryRequestedAllowlist = []string{
 	"F98A60B648ABB265E3903CCBA989459FCCE3ECFA",
 	"0D5B7B7D16F08B958B02612BFF4E11AEA281CE51",
 	"BFA5E910FF9024B6D1B62741078605FFB0EA18AB",
+
+	// https://github.com/pokt-network/poktroll/issues/1814
+	"3b5e804b37bff591f9f86e307c81d21fdb5355d4",
+	"18cc4d01fb572b07a7286a16cc23edd0dfa7fc1d",
 }
 
 var moduleAccountsAllowlist = []string{
@@ -1101,6 +1105,9 @@ var ledgerAllowlist = []string{
 
 	// TG Convo (LS)
 	"2A5907A0C3D6C092B82FF4EE4730A564578A2E16",
+
+	// https://github.com/pokt-network/poktroll/issues/1816
+	"19e18bc48a1662c60e94939bbedabb7c988094b5"
 }
 
 var exchangesAllowlist = []string{
