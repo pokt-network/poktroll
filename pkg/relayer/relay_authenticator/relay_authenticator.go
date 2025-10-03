@@ -20,11 +20,13 @@ type relayAuthenticator struct {
 	logger polylog.Logger
 
 	// signingKeyNames are the supplier operator key names in the Cosmos's keybase.
-	// They are used along with the keyring to get the supplier operator addresses
-	// and sign relay responses.
+	// They are used along with the keyring to get the supplier operator addresses.
 	signingKeyNames []string
 	keyring         keyring.Keyring
-	signers         map[string]signer.Signer
+	// signers is a map of supplier operator addresses to their corresponding signers.
+	// It is used to cache signers and avoid initializing a signer from the keyring
+	// for every incoming relay request.
+	signers map[string]signer.Signer
 
 	// sessionQuerier is the query client used to get the current session & session
 	// params from the blockchain, which are needed to check if the relay proxy

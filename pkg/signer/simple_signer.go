@@ -9,13 +9,13 @@ import (
 
 var _ Signer = (*SimpleSigner)(nil)
 
-// SimpleSigner is a signer implementation that uses the local keyring to sign
-// messages, for verification using the signer's corresponding public key.
+// SimpleSigner is a signer implementation that uses a private key to sign messages.
 type SimpleSigner struct {
 	privKey cryptotypes.PrivKey
 }
 
 // NewSimpleSigner creates a new SimpleSigner instance with the keyring and keyName provided
+// It uses the private key associated with the keyName in the keyring to sign messages.
 func NewSimpleSigner(kr keyring.Keyring, keyName string) (*SimpleSigner, error) {
 	// Resolve key info
 	info, err := kr.Key(keyName)
@@ -38,8 +38,7 @@ func NewSimpleSigner(kr keyring.Keyring, keyName string) (*SimpleSigner, error) 
 	}, nil
 }
 
-// Sign signs the given message using the SimpleSigner's keyring and keyName
+// Sign signs the given message using the SimpleSigner's private key.
 func (s *SimpleSigner) Sign(msg [32]byte) (signature []byte, err error) {
-	sig, err := s.privKey.Sign(msg[:])
-	return sig, nil
+	return s.privKey.Sign(msg[:])
 }

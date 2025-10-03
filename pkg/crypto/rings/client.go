@@ -29,6 +29,9 @@ var (
 	PlaceholderRingPubKey  = secp256k1.GenPrivKeyFromSecret([]byte("placeholder_ring_key_for_apps_without_gateways")).PubKey()
 	PlaceholderRingAddress = PlaceholderRingPubKey.Address().String()
 
+	// ringCurve is the elliptic curve used for the ring signatures.
+	// It is used to deserialize the ring signatures.
+	// It is used as a package-level variable to avoid re-initializing for every RelayRequest verification.
 	ringCurve = ring_secp256k1.NewCurve()
 )
 
