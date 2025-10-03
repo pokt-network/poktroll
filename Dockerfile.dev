@@ -1,5 +1,7 @@
-# This Dockerfile is used to build container image for development purposes.
-# It intentionally contains no security features, ships with code and troubleshooting tools.
+# This Dockerfile is used to build container image for development and CI purposes.
+# It intentionally contains helpful tooling and the repository source code so that
+# workflows like E2E tests can run inside the container image.
+# TODO(@olshansky): Split the E2E/config preparation image from the runtime image once CI supports it.
 
 FROM golang:1.24.3 AS base
 
@@ -14,7 +16,7 @@ RUN apt update && \
 ENV CGO_ENABLED=1
 ENV CGO_CFLAGS="-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration"
 
-# enable faster module downloading.
+# Enable faster module downloading.
 ENV GOPROXY=https://proxy.golang.org
 
 COPY . /pocket
@@ -23,17 +25,13 @@ WORKDIR /pocket
 
 RUN mv /pocket/bin/ignite /usr/bin/ && mv /pocket/bin/pocketd /usr/bin/
 
-# Install Cosmovisor
+# Install Cosmovisor (required for configmaps/secret creation jobs)
 RUN make install_cosmovisor
 
-# These are helpful for testing locally:
-# RUN mv bin/pocketd /usr/bin/
-# RUN mv bin/ignite /usr/bin/
-
+# Regenerate localnet artifacts that populate /root/.pocket; fail fast if the
+# regenesis does not complete because downstream jobs rely on these files.
 RUN make localnet_regenesis
 
-EXPOSE 8545
-EXPOSE 8546
-EXPOSE 8547
+EXPOSE 8545 8546 8547
 
 ENTRYPOINT ["pocketd"]

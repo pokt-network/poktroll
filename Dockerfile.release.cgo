@@ -1,0 +1,40 @@
+# CGO-enabled release Dockerfile
+FROM busybox:stable AS binary-selector
+ARG TARGETARCH
+
+# Copy CGO binaries
+COPY release_binaries/pocket_cgo_*linux* /tmp/release_binaries/
+COPY tmp/cosmovisor-linux-* /tmp/
+
+# Select the CGO binary for the architecture
+RUN set -eu; \
+    binary_name="/tmp/release_binaries/pocket_cgo_linux_${TARGETARCH}"; \
+    if [ -f "${binary_name}" ]; then \
+        cp "${binary_name}" /tmp/pocketd; \
+        chmod 755 /tmp/pocketd; \
+    else \
+        echo "CGO binary not found: ${binary_name}" >&2; \
+        ls -la /tmp/release_binaries/ >&2; \
+        exit 1; \
+    fi; \
+    cp /tmp/cosmovisor-linux-${TARGETARCH} /tmp/cosmovisor; \
+    chmod 755 /tmp/cosmovisor
+
+# Final runtime image
+FROM debian:bookworm
+ARG TARGETARCH
+
+# Minimal runtime deps
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# User setup
+RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin pocket
+
+# Copy binaries
+COPY --from=binary-selector --chown=pocket:pocket /tmp/pocketd /bin/pocketd
+COPY --from=binary-selector --chown=pocket:pocket /tmp/cosmovisor /bin/cosmovisor
+
+USER pocket
+ENTRYPOINT ["pocketd"]
