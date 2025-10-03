@@ -1107,7 +1107,7 @@ var ledgerAllowlist = []string{
 	"2A5907A0C3D6C092B82FF4EE4730A564578A2E16",
 
 	// https://github.com/pokt-network/poktroll/issues/1816
-	"19e18bc48a1662c60e94939bbedabb7c988094b5"
+	"19e18bc48a1662c60e94939bbedabb7c988094b5",
 }
 
 var exchangesAllowlist = []string{
