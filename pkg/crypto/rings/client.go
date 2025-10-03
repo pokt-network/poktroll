@@ -28,6 +28,8 @@ var (
 	// This ensures the ring has at least two keys without using duplicates.
 	PlaceholderRingPubKey  = secp256k1.GenPrivKeyFromSecret([]byte("placeholder_ring_key_for_apps_without_gateways")).PubKey()
 	PlaceholderRingAddress = PlaceholderRingPubKey.Address().String()
+
+	ringCurve = ring_secp256k1.NewCurve()
 )
 
 // ringClient is an implementation of the RingClient interface that uses the
@@ -125,7 +127,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 
 	// Deserialize the request signature bytes back into a ring signature.
 	relayRequestRingSig := new(ring.RingSig)
-	if err := relayRequestRingSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
+	if err := relayRequestRingSig.Deserialize(ringCurve, signature); err != nil {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"error deserializing ring signature: %s", err,
 		)
