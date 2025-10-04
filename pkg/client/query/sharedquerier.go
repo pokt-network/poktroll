@@ -3,7 +3,7 @@ package query
 import (
 	"context"
 	"strconv"
-	"sync"
+	//"sync"
 
 	"cosmossdk.io/depinject"
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -30,12 +30,12 @@ type sharedQuerier struct {
 	// blockHashCache caches blockQuerier.Block requests
 	blockHashCache cache.KeyValueCache[BlockHash]
 	// blockHashMutex to protect cache access patterns for block hashes
-	blockHashMutex sync.Mutex
+	//blockHashMutex sync.Mutex
 
 	// paramsCache caches sharedQueryClient.Params requests
 	paramsCache client.ParamsCache[sharedtypes.Params]
 	// paramsMutex to protect cache access patterns for params
-	paramsMutex sync.Mutex
+	//paramsMutex sync.Mutex
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
@@ -76,10 +76,6 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 		logger.Debug().Msg("cache HIT for shared params")
 		return &params, nil
 	}
-
-	// Use mutex to prevent multiple concurrent cache updates
-	sq.paramsMutex.Lock()
-	defer sq.paramsMutex.Unlock()
 
 	// Double-check the cache after acquiring the lock
 	if params, found := sq.paramsCache.Get(); found {
@@ -183,8 +179,8 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 
 	if !found {
 		// Use mutex for cache miss pattern
-		sq.blockHashMutex.Lock()
-		defer sq.blockHashMutex.Unlock()
+		//sq.blockHashMutex.Lock()
+		//defer sq.blockHashMutex.Unlock()
 
 		// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 		claimWindowOpenBlockHash, found = sq.blockHashCache.Get(blockHashCacheKey)
@@ -244,8 +240,8 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 
 	if !found {
 		// Use mutex for cache miss pattern
-		sq.blockHashMutex.Lock()
-		defer sq.blockHashMutex.Unlock()
+		//sq.blockHashMutex.Lock()
+		//defer sq.blockHashMutex.Unlock()
 
 		// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 		proofWindowOpenBlockHash, found = sq.blockHashCache.Get(blockHashCacheKey)

@@ -19,6 +19,17 @@ var DefaultRequestTimeoutDuration time.Duration = time.Duration(DefaultRequestTi
 // DefaultMaxBodySize defines the default maximum HTTP body size as a string, used as a fallback if unspecified.
 const DefaultMaxBodySize = "20MB"
 
+const DefaultEagerRelayRequestValidation = false
+
+// --- Defaults of Mining Supervisor ---
+
+const DefaultMSQueueSize = uint64(10000)
+const DefaultMSWorkers = uint8(0)
+const DefaultMSEnqueueTimeout = uint8(0)
+const DefaultMSDropPolicy = "drop-new"
+const DefaultMSGaugeSampleInterval = uint64(200)
+const DefaultMSDropLogInterval = uint64(2)
+
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
 func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*RelayMinerConfig, error) {
 	var (
@@ -81,7 +92,7 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 	// When enabled, all incoming relay requests are validated immediately upon receipt.
 	// When disabled, relay requests are validated only if their session is known,
 	// or validation is deferred if their session is unknown.
-	relayMinerConfig.EnableEagerRelayRequestValidation = yamlRelayMinerConfig.EnableEagerRelayRequestValidation
+	relayMinerConfig.DefaultEagerRelayRequestValidation = yamlRelayMinerConfig.DefaultEnableEagerRelayRequestValidation
 
 	// No additional validation on metrics. The server would fail to start if they are invalid
 	// which is the intended behaviour.
@@ -112,6 +123,10 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 
 	// Hydrate the suppliers
 	if err := relayMinerConfig.HydrateSuppliers(logger, yamlRelayMinerConfig.Suppliers); err != nil {
+		return nil, err
+	}
+
+	if err := relayMinerConfig.HydrateMiningSupervisor(&yamlRelayMinerConfig.MiningSupervisor); err != nil {
 		return nil, err
 	}
 

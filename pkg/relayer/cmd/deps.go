@@ -151,7 +151,7 @@ func setupRelayerDependencies(
 		// In PROD, always use "auto" gas setting for RelayMiner.
 		config.NewSupplySupplierClientsFn(signingKeyNames, cosmosflags.GasFlagAuto),
 		config.NewSupplyRelayAuthenticatorFn(signingKeyNames),
-		config.NewSupplyRelayerProxyFn(servicesConfigMap, relayMinerConfig.Ping.Enabled),
+		config.NewSupplyRelayerProxyFn(servicesConfigMap, relayMinerConfig.MiningSupervisorConfig, relayMinerConfig.Ping.Enabled),
 		config.NewSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 

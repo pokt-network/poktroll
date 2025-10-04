@@ -89,6 +89,8 @@ path_local_repo:
 relayminers:
   # Number of relay miner nodes to run
   count: 1
+  queryCaching: true
+  eagerValidation: false
   delve:
     # Enable delve debugger for relay miners
     enabled: false

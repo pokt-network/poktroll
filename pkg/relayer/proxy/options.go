@@ -23,3 +23,9 @@ func WithPingEnabled(pingEnabled bool) relayer.RelayerProxyOption {
 		relProxy.(*relayerProxy).pingEnabled = pingEnabled
 	}
 }
+
+func WithMiningSupervisorConfig(miningSupervisorConfig *config.MiningSupervisorConfig) relayer.RelayerProxyOption {
+	return func(relProxy relayer.RelayerProxy) {
+		relProxy.(*relayerProxy).miningSupervisorConfig = miningSupervisorConfig
+	}
+}

@@ -8,6 +8,15 @@ import (
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
+// UnknownServiceID and UnknownSupplierOperatorAddress are the default values used
+// as a fallback when the actual service ID or supplier operator cannot be determined.
+// This occurs during error scenarios before relay request validation, ensuring
+// metrics labels and error responses always have a valid service ID value.
+const (
+	UnknownServiceID               = "unknown_service_id"
+	UnknownSupplierOperatorAddress = "unknown_supplier_operator_address"
+)
+
 const (
 	relayMinerProcess = "relayminer"
 
@@ -26,6 +35,12 @@ const (
 	delayedRelayRequestRateLimitingCheckTotal  = "delayed_relay_request_rate_limiting_check_total"
 	blockHeightCurrent                         = "block_height_current"
 	instructionTimeSeconds                     = "instruction_time_seconds"
+
+	// TODO: implement metrics for the following:
+	miningQueueEnqueuedTotal = "mining_queue_enqueued_total"
+	miningQueueDroppedTotal  = "mining_queue_dropped_total"
+	miningQueueLen           = "mining_queue_len"
+	miningWorkerPanicsTotal  = "mining_worker_panics_total"
 )
 
 var (
@@ -234,13 +249,49 @@ var (
 	// instructions during relay processing. It measures the time between consecutive
 	// instruction steps to identify performance bottlenecks and optimize relay handling.
 	// The metric is labeled by instruction name to provide granular timing analysis.
-	InstructionTimeSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+	InstructionTimeSeconds = stdprometheus.NewHistogramVec(
+		stdprometheus.HistogramOpts{
+			Subsystem: relayMinerProcess,
+			Name:      instructionTimeSeconds,
+			Help:      "Duration by instruction and service_id.",
+			Buckets:   defaultBuckets,
+		},
+		[]string{"instruction", "service_id"},
+	)
+
+	// Count of relays accepted into the in-process mining queue, labeled by service.
+	MiningQueueEnqueuedTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: relayMinerProcess,
-		Name:      instructionTimeSeconds,
-		Help:      "Histogram of request instruction times in milliseconds for performance analysis.",
-		Buckets:   defaultBuckets,
-	}, []string{"instruction"})
+		Name:      miningQueueEnqueuedTotal,
+		Help:      "Total relays enqueued for mining, labeled by service_id.",
+	}, []string{"service_id"})
+
+	MiningQueueDroppedTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      miningQueueDroppedTotal,
+		Help:      "Total relays dropped from mining enqueue, labeled by service_id and reason.",
+	}, []string{"service_id", "reason"})
+
+	// Current queue depth (single global gauge for the in-process queue).
+	MiningQueueLen = prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		Subsystem: relayMinerProcess,
+		Name:      miningQueueLen,
+		Help:      "Current length of the in-process mining queue.",
+	}, []string{})
+
+	// Count of worker panics (labeled so you can see if a specific worker is flaky).
+	MiningWorkerPanicsTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      miningWorkerPanicsTotal,
+		Help:      "Total number of mining worker panics, labeled by worker_id.",
+	}, []string{"worker_id"})
 )
+
+func init() {
+	// for this one hot metric, switch from the go-kit wrapper to the native Prometheus client’s HistogramVec so
+	// we don’t pay the makeLabels cost on every Observe
+	stdprometheus.MustRegister(InstructionTimeSeconds)
+}
 
 // CaptureRelayDuration records the internal end-to-end duration of handling a relay which includes
 // the network call to the backend data / service node.
@@ -333,4 +384,26 @@ func CaptureDelayedRelayRequestRateLimitingCheck(serviceId string, supplierOpera
 // This metric is used to monitor block progression over time and detect stalled block updates.
 func CaptureBlockHeight(height int64) {
 	BlockHeightCurrent.Set(float64(height))
+}
+
+func CaptureMiningQueueEnqueued(serviceId string) {
+	MiningQueueEnqueuedTotal.With("service_id", serviceId).Add(1)
+}
+
+// CaptureMiningQueueDropped records a dropped relay from the in-process mining queue.
+func CaptureMiningQueueDropped(serviceId, reason string) {
+	if reason == "" {
+		reason = "unknown"
+	}
+	MiningQueueDroppedTotal.With("service_id", serviceId).With("reason", reason).Add(1)
+}
+
+// SetMiningQueueLen sets the current queue depth (single global gauge for the in-process queue).
+func SetMiningQueueLen(n int) {
+	MiningQueueLen.Set(float64(n))
+}
+
+// CaptureMiningWorkerPanic records a panic in a mining worker.
+func CaptureMiningWorkerPanic(workerID int) {
+	MiningWorkerPanicsTotal.With("worker_id", fmt.Sprintf("%d", workerID)).Add(1)
 }

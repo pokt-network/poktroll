@@ -312,7 +312,11 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	logger.Info().Msgf("✅ Retrieved private key for app %s", app.Address)
-	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
+	appSigner, err := sdk.NewSignerFromHex(appPrivateKeyHex)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error creating application signer")
+		return err
+	}
 
 	// Parse the endpoint URL
 	reqUrl, err := url.Parse(endpointUrl)
