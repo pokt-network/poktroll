@@ -106,7 +106,7 @@ type blockReplayClient struct {
 	onStartQueryClient client.BlockQueryClient
 
 	// cometClient is the CometBFT client used to get ABCI info for chain version.
-	cometClient cometclienthttp.HTTP
+	cometClient *cometclienthttp.HTTP
 
 	// chainVersion is the version of the chain that the block client is connected to.
 	// It is protected by chainVersionMu for concurrent access safety.

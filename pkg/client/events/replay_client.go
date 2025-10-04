@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	cometclient "github.com/cometbft/cometbft/rpc/client"
+	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -39,7 +39,7 @@ type replayClient[T any] struct {
 	// cometClient:
 	// - CometBFT client used to subscribe to events via the WebSocket connection
 	// - Provides direct access to the node's RPC endpoints for event subscription
-	cometClient cometclient.Client
+	cometClient *rpchttp.HTTP
 
 	// eventDecoder:
 	// - Function which decodes event subscription into the type defined by the EventsReplayClient's generic type parameter
