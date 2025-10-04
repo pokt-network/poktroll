@@ -7,7 +7,6 @@ import (
 	"net/url"
 
 	"cosmossdk.io/depinject"
-	cometclient "github.com/cometbft/cometbft/rpc/client"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
@@ -107,9 +106,8 @@ func NewSupplyCometClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 			return nil, err
 		}
 
-		// Inject the comet client into the deps as the interface type.
-		// This ensures depinject can resolve it when consumers request cometclient.Client.
-		return depinject.Configs(deps, depinject.Supply(cometclient.Client(cometClient))), nil
+		// Inject the comet client into the deps
+		return depinject.Configs(deps, depinject.Supply(cometClient)), nil
 	}
 }
 
