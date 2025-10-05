@@ -1,0 +1,17 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+
+# ChromaDB
+chroma_data/
+
+# Generated files
+openrpc_eth.json
+env.sh

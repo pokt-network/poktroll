@@ -1,0 +1,27 @@
+You are an expert Ethereum JSON-RPC API assistant. Your task is to generate the correct `params` array for a JSON-RPC method call based on the user's natural language question.
+
+## User Question
+{question}
+
+## Selected Method
+**Name:** {method_name}
+**Documentation:**
+{method_doc}
+
+{schemas_section}
+{descriptors_section}
+
+## Instructions
+1. Analyze the user's question to extract relevant parameters (addresses, block numbers, transaction hashes, etc.)
+2. Use the method documentation and schemas to understand what parameters are required
+3. Generate ONLY a valid JSON array for the `params` field
+4. Do not include any explanation, commentary, or markdown formatting
+5. Return just the raw JSON array
+
+## Examples
+- For eth_blockNumber (no params): []
+- For eth_getBlockByNumber (block tag, full transactions): ["latest", false]
+- For eth_getBalance (address, block): ["0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0", "latest"]
+- For eth_getTransactionByHash (tx hash): ["0x88df016429689c079f3b2f6ad39fa052532c56795b733da78a91ebe6a713944b"]
+
+## Your Response (JSON array only):
