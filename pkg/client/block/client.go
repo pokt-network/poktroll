@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
-	cometclienthttp "github.com/cometbft/cometbft/rpc/client/http"
+	cometclient "github.com/cometbft/cometbft/rpc/client"
 	"github.com/hashicorp/go-version"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -106,7 +106,7 @@ type blockReplayClient struct {
 	onStartQueryClient client.BlockQueryClient
 
 	// cometClient is the CometBFT client used to get ABCI info for chain version.
-	cometClient *cometclienthttp.HTTP
+	cometClient cometclient.Client
 
 	// chainVersion is the version of the chain that the block client is connected to.
 	// It is protected by chainVersionMu for concurrent access safety.

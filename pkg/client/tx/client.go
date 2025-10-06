@@ -163,7 +163,7 @@ type (
 //   - client.TxContext
 //   - client.EventsQueryClient
 //   - client.BlockClient
-//   - cometbft/rpc/client/http.HTTP
+//   - cometbft/rpc/client.Client
 //
 // Available options:
 //   - WithSigningKeyName
