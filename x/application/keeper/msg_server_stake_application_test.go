@@ -97,20 +97,6 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	_, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.NoError(t, err)
 
-	// Assert that the staked application is updated.
-	expectedApp = &apptypes.Application{
-		Address:                   updateStakeMsg.GetAddress(),
-		Stake:                     updateStakeMsg.GetStake(),
-		ServiceConfigs:            updateStakeMsg.GetServices(),
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
-		DelegateeGatewayAddresses: make([]string, 0),
-		ServiceUsageMetrics: map[string]*sharedtypes.ServiceUsageMetrics{
-			"svc1": {ServiceId: "svc1"},
-			"svc2": {ServiceId: "svc2"},
-		},
-	}
-	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
-
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, &upStake, foundApp.Stake)

@@ -787,7 +787,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	//   despite having multiple expired claims for the same supplier
 	expiredClaimsMap := make(map[string]*prooftypes.Claim, numExpiredClaims)
 	for range numExpiredClaims {
-		appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+		appStake := cosmostypes.NewInt64Coin("upokt", 1000000)
 		appAddr := sample.AccAddressBech32()
 		app := apptypes.Application{
 			Address:        appAddr,
@@ -1158,7 +1158,7 @@ func (s *TestSuite) createTestActors(
 		preGeneratedAccts,
 	).String()
 
-	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+	appStake := cosmostypes.NewInt64Coin("upokt", 1000000)
 
 	// Setup the test for each service:
 	// - Create and store the service in the service keeper.
@@ -1210,7 +1210,7 @@ func (s *TestSuite) createTestActors(
 	}
 
 	// Make the supplier staked for each tested service.
-	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(supplierStakeAmt))
+	supplierStake := cosmostypes.NewInt64Coin("upokt", supplierStakeAmt)
 	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:         supplierOwnerAddr,
