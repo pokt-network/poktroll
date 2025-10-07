@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -38,7 +39,9 @@ func (sync *relayMinerHTTPServer) replyWithError(
 	if relayRequest == nil {
 		relayRequest = &types.RelayRequest{
 			Meta: types.RelayRequestMetadata{
-				SessionHeader: &sessiontypes.SessionHeader{},
+				SessionHeader: &sessiontypes.SessionHeader{
+					ServiceId: UnknownServiceID,
+				},
 			},
 		}
 	}
@@ -85,6 +88,9 @@ func (sync *relayMinerHTTPServer) replyWithError(
 		return
 	}
 
+	relayResponseBzLenStr := fmt.Sprintf("%d", len(relayResponseBz))
+	writer.Header().Set("Content-Length", relayResponseBzLenStr)
+	writer.Header().Set("Connection", "close")
 	if _, err = writer.Write(relayResponseBz); err != nil {
 		errorLogger.Err(err).Msg("failed writing error relay response")
 		return

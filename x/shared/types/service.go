@@ -1,9 +1,11 @@
 package types
 
 import (
+	fmt "fmt"
 	"net/url"
 	"regexp"
 	"slices"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -12,9 +14,7 @@ var validUrlSchemes = []string{"http", "https", "ws", "wss"}
 
 const (
 	// ComputeUnitsPerRelayMax is the maximum allowed compute_units_per_relay value when adding or updating a service.
-	// TODO_MAINNET: The reason we have a maximum is to account for potential integer overflows.
-	// Should we revisit all uint64 and convert them to BigInts?
-	ComputeUnitsPerRelayMax uint64 = 1 << 16 // 65536 (2^16)
+	ComputeUnitsPerRelayMax uint64 = 2 << 20 // 1048576 (2^20)
 
 	// TODO_IMPROVE: Consider making these configurable via governance parameters.
 	// The current values were selected arbitrarily simply to avoid excessive onchain bloat.
@@ -134,4 +134,34 @@ func ValidateComputeUnitsPerRelay(computeUnitsPerRelay uint64) error {
 		return ErrSharedInvalidComputeUnitsPerRelay.Wrapf("compute units per relay must be less than %d", ComputeUnitsPerRelayMax)
 	}
 	return nil
+}
+
+// GetRPCTypeFromConfig converts the string RPC type to the
+// types.RPCType enum and performs validation.
+//
+// eg. "rest" -> types.RPCType_REST
+func GetRPCTypeFromConfig(rpcType string) (RPCType, error) {
+	rpcTypeInt, ok := RPCType_value[strings.ToUpper(rpcType)]
+	if !ok {
+		return 0, fmt.Errorf("invalid rpc type %s", rpcType)
+	}
+	if !RPCTypeIsValid(RPCType(rpcTypeInt)) {
+		return 0, fmt.Errorf("rpc type %s is in the list of valid RPC types", rpcType)
+	}
+	return RPCType(rpcTypeInt), nil
+}
+
+// rpcTypeIsValid checks if the RPC type is valid.
+// It is used to validate the RPC-type service-specific service configs.
+func RPCTypeIsValid(rpcType RPCType) bool {
+	switch rpcType {
+	case RPCType_GRPC,
+		RPCType_WEBSOCKET,
+		RPCType_JSON_RPC,
+		RPCType_REST,
+		RPCType_COMET_BFT:
+		return true
+	default:
+		return false
+	}
 }

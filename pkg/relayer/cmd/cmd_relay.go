@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
@@ -20,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
+	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -32,7 +34,8 @@ import (
 // --dry-run avoid sending the relay
 // --dont-validate to avoid requiring a valid signature
 // --bypass-session to avoid requiring a valid session and going straight to the supplier
-
+//
+// TODO_IMPROVE: Add support for REST and WebSocket relays in pocketd relayminer relay
 var (
 	// Custom flags for 'pocketd relayminer relay' subcommand
 	flagRelayApp                       string // Application address
@@ -40,16 +43,6 @@ var (
 	flagRelayPayload                   string // Relay payload
 	flagSupplierPublicEndpointOverride string // Optional endpoint override
 	flagRelayRequestCount              int    // Number of requests to send
-
-	// Cosmos flags for 'pocketd relayminer relay' subcommand
-	flagNodeGRPCURLRelay      string
-	flagNodeGRPCInsecureRelay bool
-
-	// TODO_TECHDEBT(@olshansk): Reconsider the need for this flag.
-	// This flag can theoretically be avoided because it is only used to get the height of the latest block for session generation.
-	// Passing `0` as the block height defaults to the latest height.
-	// We are keeping it to use this file as an example of an end-to-end system that leverages the shannon-sdk for example purposes.
-	flagNodeRPCURLRelay string
 )
 
 // relayCmd defines the `relay` subcommand for sending a relay as an application.
@@ -58,7 +51,7 @@ var (
 // - Useful for local testing, debugging, and verifying Supplier setup
 // - See TODO_IMPROVE for planned enhancements
 func relayCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	cmdRelay := &cobra.Command{
 		Use:   "relay --app <app> --supplier <supplier> --payload <payload> [--supplier-public-endpoint-override <url>]",
 		Short: "Send a relay as an application to a particular supplier",
 		Long: `Send a test relay to a Supplier's RelayMiner from a staked Application.
@@ -94,29 +87,35 @@ For more info, run 'relay --help'.`,
 	--supplier=pokt1hwed7rlkh52v6u952lx2j6y8k9cn5ahravmzfa \
 	--node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
 	--grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 \
-	--grpc-insecure=false \
 	--payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 `,
 		RunE: runRelay,
 	}
 
-	// Cosmos flags
-	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (defaults to LocalNet)")
-	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (defaults to LocalNet)")
-	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options (defaults to true for LocalNet)")
-	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-
 	// Custom Flags
-	cmd.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
-	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
-	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Optional) Staked Supplier address")
-	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "", "(Optional) Override the publicly exposed endpoint of the Supplier (useful for LocalNet testing)")
-	cmd.Flags().IntVar(&flagRelayRequestCount, "count", 1, "(Optional) Number of requests to send (default: 1)")
+	cmdRelay.Flags().StringVar(&flagRelayApp, FlagApp, DefaultFlagApp, FlagAppUsage)
+	cmdRelay.Flags().StringVar(&flagRelayPayload, FlagPayload, DefaultFlagPayload, FlagPayloadUsage)
+	cmdRelay.Flags().StringVar(&flagRelaySupplier, FlagSupplier, DefaultFlagSupplier, FlagSupplierUsage)
+	cmdRelay.Flags().StringVar(
+		&flagSupplierPublicEndpointOverride,
+		FlagSupplierPublicEndpointOverride,
+		DefaultFlagSupplierPublicEndpointOverride,
+		FlagSupplierPublicEndpointOverrideUsage,
+	)
+	cmdRelay.Flags().IntVar(&flagRelayRequestCount, FlagCount, DefaultFlagCount, FlagCountUsage)
 
-	_ = cmd.MarkFlagRequired("app")
-	_ = cmd.MarkFlagRequired("payload")
+	// Required cosmos-sdk CLI query flags.
+	cmdRelay.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, flags.FlagGRPCUsage)
+	cmdRelay.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, flags.FlagGRPCInsecureUsage)
 
-	return cmd
+	// This command depends on the conventional cosmos-sdk CLI tx flags.
+	cosmosflags.AddTxFlagsToCmd(cmdRelay)
+
+	// Required flags
+	_ = cmdRelay.MarkFlagRequired(FlagApp)
+	_ = cmdRelay.MarkFlagRequired(FlagPayload)
+
+	return cmdRelay
 }
 
 // runRelay executes the relay command logic.
@@ -135,10 +134,30 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation
 
+	logLevel, err := flags.GetFlagValueString(cmd, cosmosflags.FlagLogLevel)
+	if err != nil {
+		return err
+	}
+
+	nodeRPCURL, err := flags.GetFlagValueString(cmd, cosmosflags.FlagNode)
+	if err != nil {
+		return err
+	}
+
+	nodeGRPCURL, err := flags.GetFlagValueString(cmd, cosmosflags.FlagGRPC)
+	if err != nil {
+		return err
+	}
+
+	nodeGRPCInsecure, err := flags.GetFlagBool(cmd, cosmosflags.FlagGRPCInsecure)
+	if err != nil {
+		return err
+	}
+
 	// Set up logger options
 	// TODO_TECHDEBT: Populate logger from config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
+		polyzero.WithLevel(polyzero.ParseLevel(logLevel)),
 		polyzero.WithOutput(os.Stderr),
 		polyzero.WithTimestamp(),
 	}
@@ -152,8 +171,8 @@ func runRelay(cmd *cobra.Command, args []string) error {
 
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
-		HostPort: flagNodeGRPCURLRelay,
-		Insecure: flagNodeGRPCInsecureRelay,
+		HostPort: nodeGRPCURL,
+		Insecure: nodeGRPCInsecure,
 	})
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error connecting to gRPC")
@@ -163,7 +182,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	logger.Info().Msgf("✅ gRPC connection initialized: %v", grpcConn)
 
 	// Create a connection to the POKT full node
-	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURLRelay)
+	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(nodeRPCURL)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Error fetching block height")
 		return err
@@ -281,27 +300,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		logger.Warn().Msgf("⚠️ Using override endpoint URL: %s", endpointUrl)
 	}
 
-	// Prepare the JSON-RPC request payload
-	body := io.NopCloser(bytes.NewReader([]byte(flagRelayPayload)))
-	jsonRpcServiceReq, err := http.NewRequest(http.MethodPost, endpointUrl, body)
-	if err != nil {
-		return fmt.Errorf("failed to create a new HTTP request for url %s: %w", endpointUrl, err)
-	}
-	jsonRpcServiceReq.Header.Set("Content-Type", "application/json")
-	_, payloadBz, err := sdktypes.SerializeHTTPRequest(jsonRpcServiceReq)
-	if err != nil {
-		return fmt.Errorf("failed to Serialize HTTP Request for URL %s: %w", endpointUrl, err)
-	}
-	logger.Info().Msg("✅ JSON-RPC request payload serialized.")
-
-	// Build a relay request
-	relayReq, err := sdk.BuildRelayRequest(endpoint, payloadBz)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error building relay request")
-		return err
-	}
-	logger.Info().Msg("✅ Relay request built.")
-
 	// TODO_TECHDEBT(@olshansk): Retrieve the passphrase from the keyring.
 	// The initial version of this assumes the keyring is unlocked.
 	passphrase := ""
@@ -315,20 +313,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Retrieved private key for app %s", app.Address)
 	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
-	signedRelayReq, err := appSigner.Sign(ctx, relayReq, ring)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error signing relay request")
-		return err
-	}
-	logger.Info().Msg("✅ Relay request signed.")
-
-	// Marshal the signed relay request
-	relayReqBz, err := signedRelayReq.Marshal()
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error marshaling relay request")
-		return err
-	}
-	logger.Info().Msg("✅ Relay request marshaled.")
 
 	// Parse the endpoint URL
 	reqUrl, err := url.Parse(endpointUrl)
@@ -343,6 +327,59 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		if flagRelayRequestCount > 1 {
 			logger.Info().Msgf("📤 Sending request %d of %d", i, flagRelayRequestCount)
 		}
+
+		beforeRequestPreparationTime := time.Now()
+
+		// Prepare the JSON-RPC request payload
+		body := io.NopCloser(bytes.NewReader([]byte(flagRelayPayload)))
+		jsonRpcServiceReq, err := http.NewRequest(http.MethodPost, endpointUrl, body)
+		if err != nil {
+			return fmt.Errorf("failed to create a new HTTP request for url %s: %w", endpointUrl, err)
+		}
+		jsonRpcServiceReq.Header.Set("Content-Type", "application/json")
+		_, payloadBz, err := sdktypes.SerializeHTTPRequest(jsonRpcServiceReq)
+		if err != nil {
+			return fmt.Errorf("failed to Serialize HTTP Request for URL %s: %w", endpointUrl, err)
+		}
+		logger.Info().Msg("✅ JSON-RPC request payload serialized.")
+
+		// Build a relay request
+		relayReq, err := sdk.BuildRelayRequest(endpoint, payloadBz)
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error building relay request")
+			return err
+		}
+		logger.Info().Msg("✅ Relay request built.")
+
+		requestBuildingDuration := time.Since(beforeRequestPreparationTime)
+		logger.Info().Msgf("⏱️ Request building duration: %s", requestBuildingDuration)
+
+		beforeRequestSigningTime := time.Now()
+
+		signedRelayReq, err := appSigner.Sign(ctx, relayReq, &ring)
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error signing relay request")
+			return err
+		}
+		logger.Info().Msg("✅ Relay request signed.")
+
+		requestSigningDuration := time.Since(beforeRequestSigningTime)
+		logger.Info().Msgf("⏱️ Request signing duration: %s", requestSigningDuration)
+
+		beforeRequestMarshallingTime := time.Now()
+
+		// Marshal the signed relay request
+		relayReqBz, err := signedRelayReq.Marshal()
+		if err != nil {
+			logger.Error().Err(err).Msg("❌ Error marshaling relay request")
+			return err
+		}
+		logger.Info().Msg("✅ Relay request marshaled.")
+
+		requestMarshallingDuration := time.Since(beforeRequestMarshallingTime)
+		logger.Info().Msgf("⏱️ Request marshalling duration: %s", requestMarshallingDuration)
+
+		beforeRequestSendingTime := time.Now()
 
 		// Create the HTTP request with the relay request body
 		httpReq := &http.Request{
@@ -365,6 +402,11 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Error().Err(err).Msgf("❌ Error sending relay request %d due to response status code %d", i, httpResp.StatusCode)
 			continue
 		}
+
+		requestSendingDuration := time.Since(beforeRequestSendingTime)
+		logger.Info().Msgf("⏱️ Request sending duration: %s", requestSendingDuration)
+
+		beforeResponseReadTime := time.Now()
 
 		// Read the response
 		respBz, err := io.ReadAll(httpResp.Body)
@@ -394,6 +436,11 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
+		responseReadDuration := time.Since(beforeResponseReadTime)
+		logger.Info().Msgf("⏱️ Response building duration: %s", responseReadDuration)
+
+		beforeResponseVerificationTime := time.Now()
+
 		// Validate the relay response
 		relayResp, err := sdk.ValidateRelayResponse(
 			ctx,
@@ -405,12 +452,24 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Error().Err(err).Msgf("❌ Error validating response %d", i)
 			continue
 		}
+
+		responseVerificationDuration := time.Since(beforeResponseVerificationTime)
+		logger.Info().Msgf("⏱️ Response verification duration: %s", responseVerificationDuration)
+
+		beforeBackendResponseExtractionTime := time.Now()
+
 		// Deserialize the relay response
 		backendHttpResponse, err := sdktypes.DeserializeHTTPResponse(relayResp.Payload)
 		if err != nil {
 			logger.Error().Err(err).Msgf("❌ Error deserializing response payload %d", i)
 			continue
 		}
+
+		backendResponseExtractionDuration := time.Since(beforeBackendResponseExtractionTime)
+		logger.Info().Msgf("⏱️ Backend response extraction duration: %s", backendResponseExtractionDuration)
+
+		totalRequestDuration := time.Since(beforeRequestPreparationTime)
+		logger.Info().Msgf("⏱️ Total request duration: %s", totalRequestDuration)
 
 		// Unmarshal the HTTP response body into jsonMap
 		var jsonMap map[string]interface{}
@@ -508,7 +567,7 @@ func querySupplier(
 			return sdk.Endpoint(endpoint), nil
 		}
 	}
-	return nil, errors.New("No endpoint found")
+	return nil, errors.New("no endpoint found")
 }
 
 // Struct to comply with interface requiring Header, Supplier, and Endpoint fields
@@ -535,4 +594,8 @@ func (e *supplierEndpointWithHeader) Supplier() sdk.SupplierAddress {
 
 func (e *supplierEndpointWithHeader) Endpoint() sharedtypes.SupplierEndpoint {
 	return e.endpoint
+}
+
+func (e *supplierEndpointWithHeader) RPCType() sharedtypes.RPCType {
+	return e.endpoint.RpcType
 }

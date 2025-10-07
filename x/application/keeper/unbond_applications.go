@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -20,7 +19,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding applications at the end of the session.
-	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 
@@ -63,7 +62,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			return err
 		}
 
-		sdkCtx = sdk.UnwrapSDKContext(ctx)
+		sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
 
 		unbondingReason := apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE
 		if application.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
@@ -101,7 +100,7 @@ func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application
 
 	// Send the coins from the application pool back to the application.
 	err = k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, apptypes.ModuleName, appAddr, []sdk.Coin{*app.Stake},
+		ctx, apptypes.ModuleName, appAddr, []cosmostypes.Coin{*app.Stake},
 	)
 	if err != nil {
 		logger.Error(fmt.Sprintf(

@@ -161,19 +161,19 @@ Then, you have a few options:
 1. Use the `make` target helper to use ignite indirecly:
 
    ```bash
-   make ignite_pocketd_build
+   make ignite_build_pocketd
    ```
 
 2. Use `Ignite` to build the binary directly to the `GOPATH`:
 
    ```bash
-   ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
+   make ignite_build_pocketd
    ```
 
 3. Use `Ignite` to build the binary directly to the current directory:
 
    ```bash
-   ignite chain build --skip-proto --debug -v -o
+   make ignite_build
    ```
 
 When you're done, verify the installation:
@@ -220,7 +220,7 @@ This section is intended **only for core protocol developers**.
 
 It is also only intended for for dev releases of the `pocketd` CLI.
 
-If you are publishing an official protocol upgrade accompanies by a CLI update, visit the [release procedure docs](../../4_develop//upgrades/2_release_procedure.md).
+If you are publishing an official protocol upgrade accompanies by a CLI update, visit the [release procedure docs](../../4_develop/upgrades/2_upgrade_preparation.md).
 
 :::
 

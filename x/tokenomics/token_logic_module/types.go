@@ -39,7 +39,6 @@ const (
 	//   - Applications are overcharged by an amount equal to global inflation
 	//   - Overcharged funds are sent to the DAO/PNF
 	//   - Event emitted to track and send reimbursements (managed offchain by PNF)
-	// - TODO_POST_MAINNET: Introduce proper tokenomics based on research by @rawthil and @shane
 	TLMGlobalMintReimbursementRequest
 )
 
@@ -90,6 +89,7 @@ type TLMContext struct {
 	Application           *apptypes.Application
 	Supplier              *sharedtypes.Supplier
 	RelayMiningDifficulty *servicetypes.RelayMiningDifficulty
+	StakingKeeper         tokenomicstypes.StakingKeeper
 }
 
 // NewDefaultTokenLogicModules

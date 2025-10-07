@@ -105,15 +105,24 @@ func (k msgServer) CreateClaim(
 		)
 	}
 
-	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierOperatorAddress())
+	_, isExistingClaim = k.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierOperatorAddress())
 
 	// Upsert the claim
-	k.Keeper.UpsertClaim(ctx, claim)
+	k.UpsertClaim(ctx, claim)
 	logger.Info("successfully upserted the claim")
 
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
 	serviceId := session.GetHeader().GetServiceId()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	// TODO_CRITICAL(#1789): Ensure to use the RelayMiningDifficulty from the correct session.
+	// Issue:
+	// - The current implementation gets the difficulty for the current session.
+	// - This is incorrect as claims are submitted for previous sessions.
+	// - The difficulty used for validation should match the difficulty that was active during the session when the work was performed.
+	// Solution:
+	// - Implement GetRelayMiningDifficultyAtHeight(ctx, serviceId, sessionStartHeight)
+	// - Use the historical difficulty value that was active during the claim's session.
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 
@@ -123,21 +132,29 @@ func (k msgServer) CreateClaim(
 	case true:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimUpdated{
-				Claim:                    &claim,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
+				ServiceId:                claim.SessionHeader.ServiceId,
+				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  claim.SupplierOperatorAddress,
 			},
 		)
 	case false:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimCreated{
-				Claim:                    &claim,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
-				ClaimedUpokt:             &claimedUPOKT,
+				ClaimedUpokt:             claimedUPOKT.String(),
+				ServiceId:                claim.SessionHeader.ServiceId,
+				ApplicationAddress:       claim.SessionHeader.ApplicationAddress,
+				SessionEndBlockHeight:    claim.SessionHeader.SessionEndBlockHeight,
+				ClaimProofStatusInt:      int32(types.ClaimProofStatus_PENDING_VALIDATION),
+				SupplierOperatorAddress:  claim.SupplierOperatorAddress,
 			},
 		)
 	}
@@ -152,9 +169,7 @@ func (k msgServer) CreateClaim(
 		)
 	}
 
-	return &types.MsgCreateClaimResponse{
-		Claim: &claim,
-	}, nil
+	return &types.MsgCreateClaimResponse{}, nil
 }
 
 // finalizeCreateClaimTelemetry defers telemetry calls to be executed after business logic,

@@ -77,9 +77,9 @@ func GetApplicationTransferHeight(
 	sharedParams *sharedtypes.Params,
 	application *Application,
 ) int64 {
-	sessionEndToProofWindowCloseBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
+	pendingTransferSessionEnd := int64(application.GetPendingTransfer().GetSessionEndHeight())
 
-	return int64(application.GetPendingTransfer().GetSessionEndHeight()) + sessionEndToProofWindowCloseBlocks
+	return sharedtypes.GetSettlementSessionEndHeight(sharedParams, pendingTransferSessionEnd)
 }
 
 // DehydratedApplication returns a version of the application that is stripped of

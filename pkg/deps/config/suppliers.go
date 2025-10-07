@@ -7,15 +7,13 @@ import (
 	"net/url"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/pkg/cache"
+	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -32,9 +30,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
-
-// FlagQueryCaching is the flag name to enable or disable query caching.
-const FlagQueryCaching = "query-caching"
 
 // SupplierFn is a function that is used to supply a depinject config.
 type SupplierFn func(
@@ -145,7 +140,6 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value to be restored later, after
 		// the client context has been created with queryNodeGRPCURL.
-		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
 		tmpGRPC, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
 		if err != nil {
 			return nil, err
@@ -188,7 +182,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 
 		deps = depinject.Configs(deps, depinject.Supply(
 			query.Context(queryClientCtx),
-			grpc.ClientConn(queryClientCtx),
+			query.NewGRPCClientWithDebugMetrics(queryClientCtx),
 			queryClientCtx.Keyring,
 		))
 
@@ -216,7 +210,6 @@ func NewSupplyTxClientContextFn(
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value to be restored later, after
 		// the client context has been created with txNodeRPCURL.
-		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
 		tmpNode, err := cmd.Flags().GetString(cosmosflags.FlagNode)
 		if err != nil {
 			return nil, err
@@ -224,7 +217,6 @@ func NewSupplyTxClientContextFn(
 
 		// Temporarily store the flag's current value to be restored later, after
 		// the client context has been created with queryNodeGRPCURL.
-		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
 		tmpGRPC, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
 		if err != nil {
 			return nil, err
@@ -520,14 +512,14 @@ func newSupplyTxClientsFn(
 
 // NewSupplyKeyValueCacheFn returns a function which constructs a KeyValueCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyValueCache[T]]) SupplierFn {
+func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Check if query caching is enabled
-		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		queryCachingEnabled, err := cmd.Flags().GetBool(flags.FlagQueryCaching)
 		if err != nil {
 			return nil, err
 		}
@@ -556,14 +548,14 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 
 // NewSupplyParamsCacheFn returns a function which constructs a ParamsCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsCache[T]]) SupplierFn {
+func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Check if params caching is enabled
-		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		queryCachingEnabled, err := cmd.Flags().GetBool(flags.FlagQueryCaching)
 		if err != nil {
 			return nil, err
 		}
@@ -581,14 +573,17 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 			return nil, err
 		}
 
-		// Apply the query cache options
+		// Supply the cache to deps before applying options to avoid circular dependencies.
+		deps = depinject.Configs(deps, depinject.Supply(paramsCache))
+
+		// Apply the query cache options after supplying the cache.
 		for _, opt := range opts {
 			if err := opt(ctx, deps, paramsCache); err != nil {
 				return nil, err
 			}
 		}
 
-		return depinject.Configs(deps, depinject.Supply(paramsCache)), nil
+		return deps, nil
 	}
 }
 
@@ -669,7 +664,7 @@ func SupplyTxFactory(
 		return nil, err
 	}
 
-	clientCtx := cosmosclient.Context(txClientCtx)
+	clientCtx := sdkclient.Context(txClientCtx)
 	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
 	if err != nil {
 		return nil, err
@@ -787,7 +782,7 @@ func NewSupplyRelayerSessionsManagerFn(smtStorePath string) SupplierFn {
 	) (depinject.Config, error) {
 		relayerSessionsManager, err := session.NewRelayerSessions(
 			deps,
-			session.WithStoresDirectory(smtStorePath),
+			session.WithStoresDirectoryPath(smtStorePath),
 		)
 		if err != nil {
 			return nil, err

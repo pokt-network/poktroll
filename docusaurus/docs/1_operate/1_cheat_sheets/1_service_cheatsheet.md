@@ -48,6 +48,12 @@ Service IDs are limited to `42` chars and descriptions are limited to `169` char
 
 ### 1. Add a Service
 
+:::danger Grove Employees Service Creation
+
+If you are a Grove Employee, you **ABSOLUTELY MUST** create all Mainnet Services using the Grove Master Gateway: `pokt1lf0kekv9zcv9v3wy4v6jx2wh7v4665s8e0sl9s` 
+
+:::
+
 Use the `add-service` command to create a new service like so:
 
 ```bash

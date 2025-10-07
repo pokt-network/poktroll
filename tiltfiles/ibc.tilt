@@ -1,0 +1,197 @@
+load("ext://helm_resource", "helm_resource", "helm_repo")
+
+pocket_chain_id = "pocket"
+pocket_validator_resource_name = "validator"
+
+default_context_path = os.path.join("localnet", "kubernetes")
+ibc_relayer_dockerfile_path = os.path.join("localnet", "dockerfiles", "ibc-relayer.dockerfile")
+ibc_relayer_config = {
+    "dockerfile_path": ibc_relayer_dockerfile_path,
+}
+
+# ⚠️ IBC Disabled Resource
+# - Creates a Tilt resource that prints a message indicating IBC is disabled
+# - Shows how to enable it
+def ibc_disabled_resource(reason):
+    local_resource("⚠️ Enabling IBC?",
+                   "echo '{}'".format(reason),
+                   labels=["IBC"])
+
+
+# Check and Load IBC
+# - Loads IBC resources if enabled in config
+# - Otherwise, creates a disabled resource with instructions
+def check_and_load_ibc(chart_prefix, ibc_config):
+    if ibc_config.get("enabled", False):
+        load_ibc_resources(chart_prefix, ibc_config["validator_configs"])
+    else:
+        ibc_disabled_resource(
+            "Localnet IBC resources disabled. Set `ibc.enabled` to `true` in `localnet_config.yaml` to enable them.")
+
+
+# Load IBC Resources
+# - Loads IBC validator resources if enabled
+# - Builds ibc-relayer docker image if any validator configs are enabled
+# - Iterates through all enabled validator configs and loads relayer resources for each
+def load_ibc_resources(chart_prefix, validator_configs):
+    has_validator_configs = len(validator_configs.keys()) != 0
+    has_enabled_validator_configs = False
+    if has_validator_configs:
+        for validator_config in validator_configs.values():
+            if validator_config.get("enabled", False):
+                has_enabled_validator_configs = True
+                break
+
+    if not validator_configs or not has_validator_configs or not has_enabled_validator_configs:
+        ibc_disabled_resource(
+            "Localnet IBC resources disabled. Set `ibc.validator_configs.<network_name>.enabled` to `true` in `localnet_config.yaml` to enable them.")
+        return
+
+    docker_build(
+        "ibc-relayer",
+        context=os.path.join(".", "localnet", "ibc-relayer"),  # needs any folder, doesn't matter
+        dockerfile=ibc_relayer_dockerfile_path)
+
+    load_ibc_relayer_server_resources(chart_prefix, validator_configs)
+
+    for network_name, validator_config in validator_configs.items():
+        if not validator_config.get("enabled", False):
+            continue
+
+        load_ibc_relayer_setup_resources(chart_prefix, network_name, validator_config)
+        load_ibc_validator(chart_prefix, validator_config)
+
+
+# Load IBC relayer server resources sets up the hermes relayer for
+# pairs of pocket with each enabled IBC validator.
+def load_ibc_relayer_server_resources(chart_prefix, ibc_validator_configs):
+    resource_deps = [
+        pocket_validator_resource_name,
+    ]
+
+    chain_config_values_flags = []
+    for network_name, ibc_validator_config in ibc_validator_configs.items():
+        chain_id = ibc_validator_config["chain_id"]
+        tilt_ui_name = "Pokt->" + network_name.title()
+        ibc_setup_resource_name = "🏗️ " + tilt_ui_name
+        chain_config_values_flags.append(
+            "--values=" +
+            os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_id + ".yaml"))
+
+        validator_resource_name = ibc_validator_config.get("tilt_ui_name", chain_id.title() + " Validator")
+        resource_deps.append(validator_resource_name)
+        resource_deps.append(ibc_setup_resource_name)
+
+    # Deploy helm chart
+    helm_resource(
+        "ibc-relayer",
+        chart_prefix + "ibc-relayer",
+        flags=[
+                  "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
+                  "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-daemon.yaml"),
+                  "--values=" + os.path.join("localnet", "kubernetes",
+                                             "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
+              ] + chain_config_values_flags,
+        resource_deps=resource_deps,
+        image_deps=["ibc-relayer"],
+        image_keys=[("image.repository", "image.tag")],
+    )
+
+    # Update k8s resource with new name, lebels, and port-forwards
+    k8s_resource(
+        "ibc-relayer",
+        new_name="🔁 Hermes Relayer",
+        labels=["IBC"],
+        resource_deps=resource_deps,
+    )
+
+
+# Load IBC Relayer Setup Resource
+# - Sets up the CLI/setup resource for a given pair
+# - Adds appropriate resource dependencies based on which chain is "pocket"
+def load_ibc_relayer_setup_resources(chart_prefix, network_name, validator_config):
+    chain_id = validator_config["chain_id"]
+    tilt_ui_name = "Pokt->" + network_name.title()
+    validator_resource_name = validator_config.get("tilt_ui_name", chain_id.title() + " Validator")
+    resource_deps = [
+        pocket_validator_resource_name,
+        validator_resource_name,
+    ]
+
+    # Deploy helm chart
+    helm_resource(
+        "ibc-relayer-setup-" + network_name,
+        chart_prefix + "ibc-relayer",
+        flags=[
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-common.yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-cli.yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes",
+                                       "values-ibc-relayer-config-" + pocket_chain_id + ".yaml"),
+            "--values=" + os.path.join("localnet", "kubernetes", "values-ibc-relayer-config-" + chain_id + ".yaml"),
+            "--set=chain_a_id=" + pocket_chain_id,
+            "--set=chain_b_id=" + chain_id
+        ],
+        resource_deps=resource_deps,
+        image_deps=["ibc-relayer"],
+        image_keys=[("image.repository", "image.tag")],
+    )
+
+    # Update k8s resource with new name, lebels,
+    # port-forwards, and the manual trigger mode.
+    k8s_resource(
+        # workload=release_name,
+        "ibc-relayer-setup-" + network_name,
+        new_name="🏗️ " + tilt_ui_name,
+        labels=["IBC"],
+        trigger_mode=TRIGGER_MODE_MANUAL,
+        resource_deps=resource_deps,
+    )
+
+
+# Check and load the given IBC validator
+# - If the given validator config is enabled:
+#   - Builds validator docker image
+#   - Deploys up validator k8s resource with port-forwards
+def load_ibc_validator(chart_prefix, validator_config):
+    image_deps_and_keys = {}
+    if validator_config.get("dockerfile_path", False):
+        image_name = validator_config["image_name"]
+        context_path = validator_config.get("docker_context_path", default_context_path)
+        dockerfile_path = validator_config.get("dockerfile_path", None)
+
+        image_deps_and_keys = {
+            "image_deps": [image_name],
+            "image_keys": [("image.repository", "image.tag")],
+        }
+
+        docker_build(
+            image_name,
+            context=context_path,
+            dockerfile=dockerfile_path
+        )
+
+    # TODO_IMPROVE: consider computing a default chart_name.
+    chain_id = validator_config["chain_id"]
+    chart_name = validator_config["chart_name"]
+    values_path = validator_config["values_path"]
+    port_forwards = validator_config["port_forwards"]
+    # Tilt UI name defaults to the titlized chain ID plus "Validator" (e.g. "Agoriclocal Validator")
+    tilt_ui_name = validator_config.get("tilt_ui_name", chain_id.title() + " Validator")
+
+    # Deploy helm chart
+    helm_resource(
+        chart_name,
+        chart_prefix + chart_name,
+        flags=[
+            "--values=" + values_path,
+        ],
+        **image_deps_and_keys,
+    )
+
+    # Update k8s resource with new name, lebels, and port-forwards
+    k8s_resource(
+        chart_name,
+        new_name=tilt_ui_name,
+        labels=["IBC"],
+        port_forwards=port_forwards,
+    )

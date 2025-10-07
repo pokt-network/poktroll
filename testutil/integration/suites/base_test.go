@@ -89,7 +89,7 @@ func (s *baseIntegrationSuiteTestSuite) TestSdkCtx() {
 func (s *baseIntegrationSuiteTestSuite) TestFundAddressAndGetBankQueryClient() {
 	s.NewApp(s.T())
 	fundAmount := int64(1000)
-	fundAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddress())
+	fundAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddressBech32())
 	require.NoError(s.T(), err)
 
 	// Assert that the balance is zero before funding.
@@ -177,7 +177,7 @@ func (s *baseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents 
 		faucetAddr, err := cosmostypes.AccAddressFromBech32(s.GetApp().GetFaucetBech32())
 		require.NoError(s.T(), err)
 
-		randomAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddress())
+		randomAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddressBech32())
 		require.NoError(s.T(), err)
 
 		sendMsg := banktypes.NewMsgSend(
@@ -199,7 +199,7 @@ func (s *baseIntegrationSuiteTestSuite) emitPocketGatewayUnbondingBeginEvents(ex
 	for i := 0; i < expectedNumEvents; i++ {
 		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnbondingBegin{
 			Gateway: &gatewaytypes.Gateway{
-				Address: sample.AccAddress(),
+				Address: sample.AccAddressBech32(),
 			},
 		})
 		require.NoError(s.T(), err)

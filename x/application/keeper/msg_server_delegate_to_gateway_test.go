@@ -20,9 +20,9 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application and gateways
-	appAddr := sample.AccAddress()
-	gatewayAddr1 := sample.AccAddress()
-	gatewayAddr2 := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
+	gatewayAddr1 := sample.AccAddressBech32()
+	gatewayAddr2 := sample.AccAddressBech32()
 	// Mock the gateway being staked via the staked gateway map
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1, gatewaytypes.GatewayNotUnstaking)
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2, gatewaytypes.GatewayNotUnstaking)
@@ -65,9 +65,8 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	expectedApp.DelegateeGatewayAddresses = append(expectedApp.DelegateeGatewayAddresses, gatewayAddr1)
 
 	// Delegate the application to the gateway
-	delegateRes, err := srv.DelegateToGateway(ctx, delegateMsg)
+	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
-	require.Equal(t, delegateRes.GetApplication(), expectedApp)
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
@@ -115,8 +114,8 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application and gateway
-	appAddr := sample.AccAddress()
-	gatewayAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
+	gatewayAddr := sample.AccAddressBech32()
 	// Mock the gateway being staked via the staked gateway map
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
 
@@ -203,8 +202,8 @@ func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application and gateway
-	appAddr := sample.AccAddress()
-	gatewayAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
+	gatewayAddr := sample.AccAddressBech32()
 
 	// Prepare the application
 	stakeMsg := &apptypes.MsgStakeApplication{
@@ -242,7 +241,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application
-	appAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
 
 	// Prepare the application
 	stakeMsg := &apptypes.MsgStakeApplication{
@@ -266,7 +265,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	gatewayAddresses := make([]string, maxDelegatedParam)
 	for i := uint64(0); i < k.GetParams(ctx).MaxDelegatedGateways; i++ {
 		// Prepare the delegation message
-		gatewayAddr := sample.AccAddress()
+		gatewayAddr := sample.AccAddressBech32()
 		gatewayAddresses[i] = gatewayAddr
 		// Mock the gateway being staked via the staked gateway map
 		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
@@ -317,7 +316,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Generate an address for the gateway that'll exceed the max
-	gatewayAddr := sample.AccAddress()
+	gatewayAddr := sample.AccAddressBech32()
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
 
 	// Prepare the delegation message
@@ -344,8 +343,8 @@ func TestMsgServer_DelegateToGateway_FailGatewayInactive(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application and gateway.
-	appAddr := sample.AccAddress()
-	gatewayAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
+	gatewayAddr := sample.AccAddressBech32()
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)
@@ -398,8 +397,8 @@ func TestMsgServer_DelegateToGateway_UnbondingButActive_Success(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application and gateway.
-	appAddr := sample.AccAddress()
-	gatewayAddr := sample.AccAddress()
+	appAddr := sample.AccAddressBech32()
+	gatewayAddr := sample.AccAddressBech32()
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)

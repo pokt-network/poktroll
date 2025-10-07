@@ -18,8 +18,9 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/x/migration/types"
-	"github.com/pokt-network/poktroll/x/supplier/config"
+	supplierconfig "github.com/pokt-network/poktroll/x/supplier/config"
 )
 
 var (
@@ -430,7 +431,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 
 	// Construct a tx client.
 	logger.Logger.Info().Msg("Preparing transaction client")
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
@@ -438,7 +439,7 @@ func runClaimSuppliers(cmd *cobra.Command, _ []string) error {
 	// Sign and broadcast the claim Morse account message.
 	logger.Logger.Info().Int("messages", len(claimMessages)).Msg("Sign and broadcast transaction")
 	tx, eitherErr := txClient.SignAndBroadcast(ctx, claimMessages...)
-	broadcastErr, broadcastErrCh := eitherErr.SyncOrAsyncError()
+	broadcastErrCh, broadcastErr := eitherErr.SyncOrAsyncError()
 
 	// Handle a successful tx broadcast.
 	if tx != nil {
@@ -494,7 +495,7 @@ func getMorseAccountsFromFile(morseNodesFile string) ([]MorseAccountInfo, error)
 	}
 
 	if len(morsePrivateKeys) == 0 {
-		return nil, fmt.Errorf("Zero morse private keys found in %s. Check the logs and the input file before trying again.", morseNodesFile)
+		return nil, fmt.Errorf("zero morse private keys found in %s; check the logs and the input file before trying again", morseNodesFile)
 	}
 
 	// Parse each hex-encoded Morse private key and derive its address.
@@ -522,7 +523,7 @@ func getMorseAccountsFromFile(morseNodesFile string) ([]MorseAccountInfo, error)
 // - Stake amount is omitted (set by protocol logic).
 // - Owner/operator addresses should not be set in the template.
 // - Only service configs and revenue share settings should be included.
-func loadTemplateSupplierStakeConfigYAML(configYAMLPath string) (*config.YAMLStakeConfig, error) {
+func loadTemplateSupplierStakeConfigYAML(configYAMLPath string) (*supplierconfig.YAMLStakeConfig, error) {
 	// Read the YAML file from the provided path.
 	yamlStakeConfigBz, err := os.ReadFile(configYAMLPath)
 	if err != nil {
@@ -530,7 +531,7 @@ func loadTemplateSupplierStakeConfigYAML(configYAMLPath string) (*config.YAMLSta
 	}
 
 	// Unmarshal the YAML into a config.YAMLStakeConfig struct.
-	var yamlStakeConfig config.YAMLStakeConfig
+	var yamlStakeConfig supplierconfig.YAMLStakeConfig
 	if err = yaml.Unmarshal(yamlStakeConfigBz, &yamlStakeConfig); err != nil {
 		return nil, err
 	}
@@ -600,13 +601,12 @@ func queryMorseClaimableAccount(
 func buildSupplierStakeConfig(
 	ownerAddress string,
 	operatorAddress string,
-	templateSupplierStakeConfig *config.YAMLStakeConfig,
-) (*config.SupplierStakeConfig, error) {
+	templateSupplierStakeConfig *supplierconfig.YAMLStakeConfig,
+) (*supplierconfig.SupplierStakeConfig, error) {
 	logger.Logger.Info().
 		Str("owner", ownerAddress).
 		Str("operator", operatorAddress).
 		Msg("Building stake config")
-
 	if ownerAddress == "" {
 		return nil, fmt.Errorf("owner address must be non-empty")
 	}
@@ -617,11 +617,11 @@ func buildSupplierStakeConfig(
 	// clone the provided template.
 	// DefaultRevSharePercent is a map which is a reference if assign to the new one
 	// Services are pointers so clone them too
-	yamlStakeConfig := &config.YAMLStakeConfig{
+	yamlStakeConfig := &supplierconfig.YAMLStakeConfig{
 		OwnerAddress:    ownerAddress,
 		OperatorAddress: operatorAddress,
 		StakeAmount:     "", // intentionally empty
-		Services:        make([]*config.YAMLStakeService, 0),
+		Services:        make([]*supplierconfig.YAMLStakeService, 0),
 		DefaultRevSharePercent: func() map[string]uint64 {
 			m := make(map[string]uint64, len(templateSupplierStakeConfig.DefaultRevSharePercent))
 			for k, v := range templateSupplierStakeConfig.DefaultRevSharePercent {
@@ -633,7 +633,7 @@ func buildSupplierStakeConfig(
 
 	for _, service := range templateSupplierStakeConfig.Services {
 		// clone to avoid modify the template on multiple iterations
-		yamlStakeConfig.Services = append(yamlStakeConfig.Services, &config.YAMLStakeService{
+		yamlStakeConfig.Services = append(yamlStakeConfig.Services, &supplierconfig.YAMLStakeService{
 			ServiceId:       service.ServiceId,
 			RevSharePercent: service.RevSharePercent,
 			Endpoints:       service.Endpoints,
@@ -680,7 +680,7 @@ func buildSupplierStakeConfig(
 		return nil, err
 	}
 
-	return &config.SupplierStakeConfig{
+	return &supplierconfig.SupplierStakeConfig{
 		OwnerAddress:    yamlStakeConfig.OwnerAddress,
 		OperatorAddress: yamlStakeConfig.OperatorAddress,
 		Services:        supplierServiceConfigs,

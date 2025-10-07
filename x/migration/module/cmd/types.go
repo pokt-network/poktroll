@@ -9,7 +9,6 @@ import (
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/logger"
@@ -37,7 +36,7 @@ func (m MorseAccountInfo) MarshalJSON() ([]byte, error) {
 // - Address and private key are in bech32 format.
 type ShannonAccountInfo struct {
 	// Address is the Shannon account address in bech32 format.
-	Address sdk.AccAddress `json:"address"`
+	Address cosmostypes.AccAddress `json:"address"`
 
 	// PrivateKey is the Shannon account private key in secp256k1 format.
 	PrivateKey secp256k1.PrivKey `json:"private_key"`

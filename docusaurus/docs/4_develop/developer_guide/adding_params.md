@@ -83,34 +83,15 @@ Until the [go module](https://github.com/pokt-network/poktroll/blob/main/go.mod#
 1. Rename the local go module in go.mod (see related comments there)
 2. `go mod tidy`
 3. `ignite scaffold ...`
-4. `make proto_fix_self_import && make proto_regen`
+4. `make proto_regen`
 5. Restore the original go.mod
 6. `go mod tidy`
-7. `ignite chain build --skip-proto` and/or (re)start/build localnet
+7. `make ignite_build` and/or (re)start/build localnet
 
 :::
 
 ```bash
 ignite scaffold message update-param --module examplemod --signer authority name as_type --response params
-```
-
-Try running `make proto_clean_pulsar` if you experience errors like these:
-
-```bash
-✘ Error while running command /home/bwhite/go/bin/buf generate /tmp/proto-sdk2893110128/cosmos/upgrade/v1beta1/tx.proto ...: {..."message":"import \"gogoproto/gogo.proto\": file does not exist"}
-: exit status 100
-```
-
-```bash
-✘ Error while running command go mod tidy: go:
-...
-go: github.com/pokt-network/poktroll/api/pocket/examplemod imports
-        cosmossdk.io/api/pocket/shared: module cosmossdk.io/api@latest found (v0.7.6), but does not contain package cosmossdk.io/api/pocket/shared
-```
-
-```bash
-✘ Error while running command /home/bwhite/go/bin/buf dep update /home/bwhite/Projects/pokt/pocket/proto: Failure: decode proto/buf.lock: no digest specified for module buf.build/cosmos/ics23
-: exit status 1
 ```
 
 #### 0.2. Update `MsgUpdateParam` and `MsgUpdateParamResponse` Fields

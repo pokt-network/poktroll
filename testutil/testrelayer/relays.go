@@ -195,10 +195,10 @@ func SignRelayResponse(
 	relay.Res.Meta.SupplierOperatorSignature = signatureBz
 }
 
-// NewSignedEmptyRelay creates a new relay structure for the given req & res headers.
+// NewSignedRandRelay creates a new relay structure for the given req & res headers.
 // It signs the relay request on behalf of application in the reqHeader.
 // It signs the relay response on behalf of supplier provided..
-func NewSignedEmptyRelay(
+func NewSignedRandRelay(
 	ctx context.Context,
 	t *testing.T,
 	supplierOperatorKeyUid, supplierOperatorAddr string,
@@ -208,7 +208,21 @@ func NewSignedEmptyRelay(
 ) *servicetypes.Relay {
 	t.Helper()
 
+	randBz := make([]byte, 16)
+	_, err := rand.Read(randBz) //nolint:staticcheck // Using rand.Read in tests as a deterministic pseudo-random source is okay.
+	require.NoError(t, err)
+
+	// Prepare an empty relay with the given req & res headers.
 	relay := NewEmptyRelay(reqHeader, resHeader, supplierOperatorAddr)
+	// Populate the relay request and response payloads with random data.
+	relay.Req.Payload = randBz
+	relay.Res.Payload = randBz
+
+	// Update the relay response with the payload hash
+	err = relay.Res.UpdatePayloadHash()
+	require.NoError(t, err)
+
+	// Sign both the request and response.
 	SignRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
 	SignRelayResponse(ctx, t, relay, supplierOperatorKeyUid, supplierOperatorAddr, keyRing)
 

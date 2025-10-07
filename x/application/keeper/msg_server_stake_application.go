@@ -24,7 +24,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 
 	logger := k.Logger().With("method", "StakeApplication")
 	// Update the staking configurations of a existing app or stake a new app
-	stakedApp, err := k.Keeper.StakeApplication(ctx, logger, msg)
+	_, err := k.Keeper.StakeApplication(ctx, logger, msg)
 	if err != nil {
 		// DEV_NOTE: If the error is non-nil, StakeApplication SHOULD ALWAYS return a gRPC status error.
 		return nil, err
@@ -32,9 +32,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 
 	isSuccessful = true
 
-	return &types.MsgStakeApplicationResponse{
-		Application: stakedApp,
-	}, nil
+	return &types.MsgStakeApplicationResponse{}, nil
 }
 
 // StakeApplication stakes (or updates) the application according to the given msg by applying the following logic:

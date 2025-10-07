@@ -1,7 +1,3 @@
-// TODO_AUTOMATE: Add a CI workflow that automatically detects .proto files with names incompatible with the package name (e.g., files named exactly as the package, like "application.proto").
-// NB: This file CANNOT be named "application.proto" due to an unresolved issue in how cosmos-proto generates the pulsar plugin output Go source code.
-// See: https://github.com/pokt-network/poktroll/issues/XXX for tracking and future resolution.
-
 syntax = "proto3";
 package pocket.application;
 

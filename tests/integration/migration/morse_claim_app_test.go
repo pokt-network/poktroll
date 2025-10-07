@@ -33,7 +33,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 	for morseAccountIdx, morseClaimableAccount := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
-			shannonDestAddr := sample.AccAddress()
+			shannonDestAddr := sample.AccAddressBech32()
 			bankClient := s.GetBankQueryClient(s.T())
 
 			// Assert that the shannonDestAddr account initially has a zero balance.
@@ -46,7 +46,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.appServiceConfig,
-				sample.AccAddress(),
+				sample.AccAddressBech32(),
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -68,14 +68,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 					serviceId: {ServiceId: serviceId},
 				},
 			}
-			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
-			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-				MorseSrcAddress:         morseSrcAddr,
-				ClaimedBalance:          expectedBalance,
-				ClaimedApplicationStake: expectedStake,
-				SessionEndHeight:        expectedSessionEndHeight,
-				Application:             &expectedApp,
-			}
+			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{}
 			s.Equal(expectedClaimApplicationRes, claimAppRes)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -114,7 +107,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
 			// Stake an initial application.
-			shannonDestAddr := sample.AccAddress()
+			shannonDestAddr := sample.AccAddressBech32()
 			shannonDestAccAddr := cosmostypes.MustAccAddressFromBech32(shannonDestAddr)
 
 			initialAppStake := &s.minStake
@@ -139,7 +132,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.appServiceConfig,
-				sample.AccAddress(),
+				sample.AccAddressBech32(),
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -159,14 +152,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 					serviceId: {ServiceId: serviceId},
 				},
 			}
-			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
-			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-				MorseSrcAddress:         morseSrcAddr,
-				ClaimedBalance:          expectedBalance,
-				ClaimedApplicationStake: expectedClaimedStake,
-				SessionEndHeight:        expectedSessionEndHeight,
-				Application:             &expectedApp,
-			}
+			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{}
 			s.Equal(expectedClaimApplicationRes, claimAppRes)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -201,7 +187,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_BelowMinStake() {
 	s.GenerateMorseAccountState(s.T(), 1, testmigration.AllApplicationMorseAccountActorType)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	shannonDestAddr := sample.AccAddress()
+	shannonDestAddr := sample.AccAddressBech32()
 	bankClient := s.GetBankQueryClient(s.T())
 
 	// Assert that the shannonDestAddr account initially has a zero balance.
@@ -221,7 +207,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_BelowMinStake() {
 		shannonDestAddr,
 		morsePrivateKey,
 		s.appServiceConfig,
-		sample.AccAddress(),
+		sample.AccAddressBech32(),
 	)
 	s.NoError(err)
 
@@ -328,13 +314,13 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 	unbondedAppFixture := fixtures.GetApplicationFixtures(testmigration.MorseUnbondedApplication)[0]
 
 	s.Run("application unbonding began", func() {
-		shannonDestAddr := sample.AccAddress()
+		shannonDestAddr := sample.AccAddressBech32()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 			shannonDestAddr,
 			unbondingAppFixture.GetPrivateKey(),
 			s.appServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		s.NoError(err)
 
@@ -378,8 +364,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
 			Application:             expectedApp,
 		}
@@ -404,13 +390,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		expectedApp.PendingUndelegations = nil
 
 		// Check the Morse claim response.
-		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: morseClaimableAccount.GetApplicationStake(),
-			SessionEndHeight:        expectedSessionEndHeight,
-			Application:             expectedApp,
-		}
+		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{}
 		s.Equal(expectedMorseClaimRes, morseClaimRes)
 
 		// Assert that the morseClaimableAccount is updated on-chain.
@@ -446,13 +426,13 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 	})
 
 	s.Run("application unbonding ended", func() {
-		shannonDestAddr := sample.AccAddress()
+		shannonDestAddr := sample.AccAddressBech32()
 
 		morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 			shannonDestAddr,
 			unbondedAppFixture.GetPrivateKey(),
 			s.appServiceConfig,
-			sample.AccAddress(),
+			sample.AccAddressBech32(),
 		)
 		s.NoError(err)
 
@@ -483,8 +463,8 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		// Assert that the expected events were emitted.
 		expectedMorseAppClaimEvent := &migrationtypes.EventMorseApplicationClaimed{
 			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
+			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance().String(),
+			ClaimedApplicationStake: expectedAppStake.String(),
 			SessionEndHeight:        expectedSessionEndHeight,
 			Application:             expectedApp,
 		}
@@ -507,13 +487,7 @@ func (s *MigrationModuleTestSuite) TestMsgClaimMorseApplication_Unbonding() {
 		expectedApp.ServiceConfigs = nil
 		expectedApp.ServiceUsageMetrics = nil
 
-		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-			MorseSrcAddress:         morseClaimMsg.GetMorseSignerAddress(),
-			ClaimedBalance:          morseClaimableAccount.GetUnstakedBalance(),
-			ClaimedApplicationStake: expectedAppStake,
-			SessionEndHeight:        expectedSessionEndHeight,
-			Application:             expectedApp,
-		}
+		expectedMorseClaimRes := &migrationtypes.MsgClaimMorseApplicationResponse{}
 		s.Equal(expectedMorseClaimRes, morseClaimRes)
 
 		// Assert that the morseClaimableAccount is updated on-chain.

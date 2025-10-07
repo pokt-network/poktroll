@@ -1,15 +1,7 @@
 ---
-title: RelayMiner config
+title: RelayMiner Config
 sidebar_position: 4
 ---
-
-:::warning Supplier Public Key Requirement
-
-If you are setting up a `RelayMiner` using a `Supplier` that does not have an onchain public key, you must follow the instructions [**here**](../../2_explore/4_morse_migration/7_claiming_supplier.md#6-ensure-your-shannon-supplier-has-an-onchain-public-key) to ensure your `Supplier` has an onchain public key.
-
-Alternatively, if you have a `Supplier` that has was not staked by the operator, you must follow the instructions [**here**](../1_cheat_sheets/4_supplier_cheatsheet.md#4-suppliers-staked-on-behalf-of-owners).
-
-:::
 
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
 co-processor/sidecar that acts as the real server for querying request, building
@@ -27,8 +19,10 @@ You can find a fully featured example configuration at [relayminer_config_full_e
 - [Global options](#global-options)
   - [`default_signing_key_names`](#default_signing_key_names)
   - [`default_request_timeout_seconds`](#default_request_timeout_seconds)
+  - [`default_max_body_size`](#default_max_body_size)
   - [`smt_store_path`](#smt_store_path)
   - [`enable_over_servicing`](#enable_over_servicing)
+  - [`enable_eager_relay_request_validation`](#enable_eager_relay_request_validation)
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
   - [`ping`](#ping)
@@ -41,11 +35,13 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`signing_key_names`](#signing_key_names)
   - [`listen_url`](#listen_url)
   - [`request_timeout_seconds`](#request_timeout_seconds)
+  - [`max_body_size`](#max_body_size)
   - [`service_config`](#service_config)
     - [`backend_url`](#backend_url)
     - [`authentication`](#authentication)
     - [`headers`](#headers)
     - [`forward_pocket_headers`](#forward_pocket_headers)
+  - [`rpc_type_service_configs`](#rpc_type_service_configs)
 - [Configuring Signing Keys](#configuring-signing-keys)
   - [Example Configuration](#example-configuration)
 - [Supported server types](#supported-server-types)
@@ -126,8 +122,10 @@ and `supplier` specific sections and configurations.
 ```yaml
 default_signing_key_names: [<string>, <string>]
 default_request_timeout_seconds: <uint64>
+default_max_body_size: <string>
 smt_store_path: <string>
 enable_over_servicing: <boolean>
+enable_eager_relay_request_validation: <boolean>
 ```
 
 ### `default_signing_key_names`
@@ -155,6 +153,21 @@ is configured, the `RelayMiner` will use a system default.
 This timeout applies to the duration that the `RelayMiner` will wait for a response
 from the backend service before considering the request as timed out.
 
+### `default_max_body_size`
+
+_`Optional`_
+
+The default max payload size for requests and responses. This value is used
+when a supplier does not specify its own `max_body_size` configuration.
+If neither `default_max_body_size` nor supplier-specific `max_body_size`
+is configured, the `RelayMiner` will use a system default.
+
+This max payload size applies to the request and response size that the `RelayMiner` will accepts.
+
+Supports common unit suffixes like `B`, `KB`, `MB`, `GB`, or `TB`
+
+Defaults to: 20MB
+
 ### `smt_store_path`
 
 _`Required`_
@@ -162,6 +175,23 @@ _`Required`_
 The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
+
+**In-memory storage options:**
+
+- `:memory:` - Uses SimpleMap (pure Go map) for in-memory storage. **Recommended**.
+- `:memory_pebble:` - Uses Pebble database with in-memory VFS. Experimental option with more overhead.
+
+:::warning TODO(#1734) Experimentation in flight
+
+**This update is as of 08/2025.**
+
+In-memory storage enables relay miners to be significantly more performant. For this reason, `:memory:` is the recommended option.
+
+**Warning:** Prior to #1734, RelayMiner restarts will result in loss of session state.
+
+**Consideration**: Once experimentation is complete, there will either only be one in-memory storage option or a proper enum will be created (disk, memory_simple, memory_pebble).
+
+:::
 
 ### `enable_over_servicing`
 
@@ -181,6 +211,17 @@ Over-servicing is commonly used by Suppliers to:
 When disabled (`false`), the `RelayMiner` will strictly enforce rate limiting based
 on the Application's allocated stake, rejecting requests that would exceed the
 Application's ability to pay.
+
+### `enable_eager_relay_request_validation`
+
+_`Optional`_ (default: `false`)
+
+Controls when validation happens relative to forwarding the request.
+
+| Mode                    | Value   | Behavior                                                                                       | Pros                               | Cons                                                        | When to Use                                                                                                                                                                        |
+| ----------------------- | ------- | ---------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Eager Mode**          | `true`  | Validate first (signature, session, rate limiting), serve later                                | Predictable backend load           | Higher per-request latency                                  | Use when you prefer strict validation before backend load (e.g., highly constrained backends or when minimizing optimistic risk is critical).                                      |
+| **Lazy Mode (default)** | `false` | Serve first for unknown sessions, then validate later. Known sessions still validate up-front. | Best cold-start throughput/latency | May transiently forward requests that later fail validation | Use to optimize throughput and latency during cold starts or when many sessions are initially unknown. Improves perceived QoS but may forward requests that later fail validation. |
 
 ### `metrics`
 
@@ -224,7 +265,7 @@ You can learn how to use that endpoint on the [Performance Troubleshooting](../.
 
 _`Optional`_
 
-Configures a `ping` healh check server to test the connectivity of all backend
+Configures a `ping` health check server to test the connectivity of all backend
 URLs. If all the backend URLs are reachable, the endpoint returns a 204 HTTP
 Code. If one or more backend URLs aren't reachable, the service returns an
 appropriate HTTP error.
@@ -338,6 +379,37 @@ This timeout controls how long the `RelayMiner` will wait for a response from
 the backend service before considering the request as failed and returning a
 timeout error to the client.
 
+### `max_body_size`
+
+_`Optional`_
+
+The max body size for relay requests specific to a supplier's service.
+This value overrides the global `default_max_body_size` setting for
+this particular supplier's service.
+
+If not specified, the `default_max_body_size` will be used.
+
+This max payload size applies to the request and response size that the `RelayMiner` will accepts.
+
+Supports common unit suffixes like `B`, `KB`, `MB`, `GB`, or `TB`
+
+Defaults to: `20MB`
+
+:::info default service configuration
+
+`service_config` is the default configuration and **WILL BE USED UNLESS** both of the following are true:
+
+1. The `rpc_type_service_configs` section is present for the supplier
+2. The request from an application or gateway contains a `Rpc-Type` header specifying the request should be handled by a specific RPC-type service-specific config
+
+:::
+
+:::warning TODO: Will be renamed in the future
+
+The `service_config` field will be renamed to `default_service_config` in the future to make this responsibility more explicit. It is kept named `service_config` in the current release for backwards compatibility.
+
+:::
+
 ### `service_config`
 
 _`Required`_
@@ -387,6 +459,74 @@ These headers help identify the Supplier, the Service, and the Application withi
 | Pocket-Application          | The address of the Application making the request.                   |
 | Pocket-Session-Start-Height | The block height at which the current session began.                 |
 | Pocket-Session-End-Height   | The block height at which the current session will end.              |
+
+### `rpc_type_service_configs`
+
+_`Optional`_
+
+The `rpc_type_service_configs` section enables RPC-type-specific backend configurations.
+For example, a service may expose multiple protocol endpoints or API types (e.g., CometBFT, JSON-RPC, REST, etc.)
+
+When a relay request is received, the `RelayMiner` will check the `Rpc-Type` header
+to determine which service configuration to use. If no matching RPC type is found
+in `rpc_type_service_configs`, the default `service_config` will be used.
+
+Supported RPC types include:
+
+- `json_rpc`: For JSON-RPC endpoints (e.g., Ethereum-compatible APIs)
+- `rest`: For REST API endpoints (e.g., Cosmos SDK REST APIs)
+- `comet_bft`: For CometBFT RPC endpoints (consensus layer queries)
+- `websocket`: For WebSocket endpoints (real-time event streaming)
+
+Each RPC type configuration supports all the same options as the main `service_config`:
+
+- `backend_url` (required)
+- `authentication` (optional)
+- `headers` (optional)
+- `forward_pocket_headers` (optional)
+
+Example configuration:
+
+```yaml
+suppliers:
+  - service_id: xrplevm-testnet
+    listen_url: http://0.0.0.0:8545
+
+    # Default configuration (fallback)
+    service_config:
+      backend_url: http://xrplevm-node:8545
+      forward_pocket_headers: true
+
+    rpc_type_service_configs:
+      # JSON-RPC for Ethereum-compatible API
+      json_rpc:
+        backend_url: http://xrplevm-node:8545
+        headers:
+          Authorization: "Bearer api-key-123"
+        forward_pocket_headers: true
+
+      # REST API for Cosmos SDK endpoints
+      rest:
+        backend_url: http://xrplevm-node:1317
+        authentication:
+          username: restuser
+          password: restpass
+        forward_pocket_headers: true
+
+      # CometBFT for consensus queries
+      comet_bft:
+        backend_url: http://xrplevm-node:26657
+        forward_pocket_headers: true
+
+      # WebSocket for real-time events
+      websocket:
+        backend_url: ws://xrplevm-node:8546
+        forward_pocket_headers: false
+```
+
+This configuration allows a single service to handle different types of requests
+by routing them to appropriate backend endpoints based on the RPC type specified
+in the relay request headers.
 
 ## Configuring Signing Keys
 

@@ -1,4 +1,4 @@
-//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,SupplierKeeper,ServiceKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,SupplierKeeper,ServiceKeeper,StakingKeeper
 
 package types
 
@@ -7,6 +7,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
@@ -127,4 +128,14 @@ type MigrationKeeper interface {
 	// Getters
 	GetMorseClaimableAccount(ctx context.Context, morseHexAddress string) (morseAccount migrationtypes.MorseClaimableAccount, isFound bool)
 	GetAllMorseClaimableAccounts(ctx context.Context) (morseAccounts []migrationtypes.MorseClaimableAccount)
+}
+
+// StakingKeeper defines the expected interface for the Staking module.
+type StakingKeeper interface {
+	// GetValidatorByConsAddr gets a validator by consensus address
+	GetValidatorByConsAddr(ctx context.Context, consAddr cosmostypes.ConsAddress) (stakingtypes.Validator, error)
+	// GetValidatorDelegations gets all delegations to a validator
+	GetValidatorDelegations(ctx context.Context, valAddr cosmostypes.ValAddress) ([]stakingtypes.Delegation, error)
+	// GetBondedValidatorsByPower gets all bonded validators sorted by voting power
+	GetBondedValidatorsByPower(ctx context.Context) ([]stakingtypes.Validator, error)
 }
