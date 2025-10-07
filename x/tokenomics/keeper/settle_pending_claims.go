@@ -526,7 +526,7 @@ func (k Keeper) slashSupplierStake(
 		// - Supplier will still appear in current sessions but won't receive rewards in next settlement
 		// - If this settlement coincides with session end, supplier won't service further relays
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:           supplierToSlash,
+			Supplier:           &dehydratedSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   unstakeSessionEndHeight,
 			UnbondingEndHeight: unstakeSessionEndHeight,
