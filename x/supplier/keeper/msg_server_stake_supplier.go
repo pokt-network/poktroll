@@ -300,8 +300,8 @@ func (k Keeper) updateSupplier(
 	updatedServices := make(map[string]struct{})
 
 	// Step 1: Add all new service configurations from the message
-	// - These configs will activate at the start of the next session
-	// - Track service IDs to identify which old inactive configs need replacement
+	//   - These configs will activate at the start of the next session
+	//   - Track service IDs to identify which old inactive configs need replacement
 	for _, newServiceConfig := range msg.Services {
 		newServiceConfigUpdate := &sharedtypes.ServiceConfigUpdate{
 			OperatorAddress: msg.OperatorAddress,
@@ -316,20 +316,21 @@ func (k Keeper) updateSupplier(
 	// Step 2: Handle existing service configurations
 	if len(msg.Services) > 0 {
 		for _, oldServiceConfigUpdate := range supplier.ServiceConfigHistory {
-			// Check if this old config would normally activate at the next session
+			// Determine if this old config should be replaced vs deactivated:
+			//   1. Check if this config would normally activate at next session
+			//   2. Check if we have a new config for the same service
+			//   3. If both true, skip it (new config already replaced it in Step 1)
 			shouldActivateAtNextSession := oldServiceConfigUpdate.ActivationHeight == nextSessionStartHeight
-			// Check if we have a new config replacing this service
 			_, hasNewConfig := updatedServices[oldServiceConfigUpdate.Service.ServiceId]
-			// Skip old inactive configs that are being replaced by new ones for the same service
-			shouldUpdateExistingNewConfig := shouldActivateAtNextSession && hasNewConfig
+			shouldReplaceWithNewConfig := shouldActivateAtNextSession && hasNewConfig
 
-			if shouldUpdateExistingNewConfig {
+			if shouldReplaceWithNewConfig {
 				continue
 			}
 
-			// Deactivate old configs that are not being replaced:
-			// - Currently active configs (no deactivation height set)
-			// - Configs scheduled to activate at next session but not being replaced
+			// Deactivate old configs that are NOT being replaced:
+			//   - Currently active configs (no deactivation height set)
+			//   - Configs scheduled to activate but for different services
 			oldServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
 			updatedServiceConfigHistory = append(updatedServiceConfigHistory, oldServiceConfigUpdate)
 		}

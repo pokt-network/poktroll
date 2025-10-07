@@ -870,7 +870,7 @@ func TestMsgServer_StakeSupplier_UpdateServiceBeforeActivation(t *testing.T) {
 	require.Greater(t, initialServiceConfig.ActivationHeight, int64(0)) // Has activation height set
 	require.Equal(t, int64(0), initialServiceConfig.DeactivationHeight) // No deactivation height
 
-	// Fast forward for a single block before restaking again
+	// Fast forward by one block (still before activation) to simulate update timing
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	ctx = keepertest.SetBlockHeight(ctx, currentHeight+1)
@@ -883,13 +883,13 @@ func TestMsgServer_StakeSupplier_UpdateServiceBeforeActivation(t *testing.T) {
 	_, err = srv.StakeSupplier(ctx, updateMsg)
 	require.NoError(t, err)
 
-	// Verify service config history after update
+	// Verify service config history after update (pre-activation)
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Len(t, foundSupplier.Services, 0)             // Still no active services
-	require.Len(t, foundSupplier.ServiceConfigHistory, 1) // Original overridden config
+	require.Len(t, foundSupplier.ServiceConfigHistory, 1) // Only 1 config (replacement worked!)
 
-	// Find the latest service config (should have the updated URL)
+	// Verify the config has the updated URL
 	latestServiceUpdate := getLatestSupplierServiceConfigUpdate(t, foundSupplier)
 	require.Len(t, latestServiceUpdate, 1)
 	require.Equal(t, "svcId", latestServiceUpdate[0].Service.ServiceId)
@@ -907,7 +907,8 @@ func TestMsgServer_StakeSupplier_UpdateServiceBeforeActivation(t *testing.T) {
 
 	// Verify the updated service is now active
 	// NOTE: These assertions validate the fix for issue #1794 where service config
-	// updates before activation were not properly handled in v0.1.29
+	// updates before activation were not properly handled in v0.1.29.
+	// The bug caused duplicate configs in history instead of replacement.
 	// See: https://github.com/pokt-network/poktroll/issues/1794
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
@@ -915,8 +916,8 @@ func TestMsgServer_StakeSupplier_UpdateServiceBeforeActivation(t *testing.T) {
 	require.Equal(t, "svcId", foundSupplier.Services[0].ServiceId)
 	require.Equal(t, "http://localhost:8081", foundSupplier.Services[0].Endpoints[0].Url) // Updated URL
 
-	// Assert that the service config history contains a single updated service
-	require.Len(t, foundSupplier.ServiceConfigHistory, 1) // Should be pruned to only active config
+	// Assert that service config history contains only the active config (old ones pruned)
+	require.Len(t, foundSupplier.ServiceConfigHistory, 1)
 	finalServiceConfig := foundSupplier.ServiceConfigHistory[0]
 	require.Equal(t, "svcId", finalServiceConfig.Service.ServiceId)
 	require.Equal(t, "http://localhost:8081", finalServiceConfig.Service.Endpoints[0].Url) // Updated URL
