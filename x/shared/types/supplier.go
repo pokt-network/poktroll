@@ -58,7 +58,9 @@ func (s *Supplier) UpdateServiceUsageMetrics(serviceId string, numRelays, numCom
 }
 
 // TODO_TECHDEBT: Consider removing this method and forcing the use of the keeper directly.
-// This requires the supplier to be hydrated, which is not always the case.
+// This method requires the supplier to be fully hydrated with ServiceConfigHistory populated.
+// If the supplier is not hydrated, this method will return an empty slice even if the supplier
+// has active service configurations, which can lead to incorrect behavior.
 //
 // GetActiveServiceConfigs returns a list of all service configurations that are active
 // at the specified block height.

@@ -148,7 +148,7 @@ func (k Keeper) getSupplierServiceUsageMetricsIterator(
 	return sharedtypes.NewRecordIterator(serviceUsageMetricsIterator, serviceUsageMetricsAccessor)
 }
 
-// hydrateFullSupplierServiceConfigs populates a supplier with all of its service configurations
+// hydrateFullSupplierServiceConfigs populates a supplier with complete service configurations
 // based on the current block height.
 //
 // The function:
