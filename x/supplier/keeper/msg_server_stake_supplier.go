@@ -277,12 +277,12 @@ func (k Keeper) StakeSupplier(
 // This includes updating the stake amount, owner address, and service configurations.
 //
 // Service configuration update behavior:
-// - New service configs: Scheduled to activate at the next session start
-// - Current service configs with new configs:
+// - NEW Services: Scheduled to activate at the next session start
+// - EXISTING Services WITH NEW configs:
 //   - If not yet activated (scheduled for next session): Replaced silently (not deactivated)
 //   - If already active or scheduled for later: Marked for deactivation at next session start
 //
-// - Current service configs without new configs: Marked for deactivation at next session start
+// - EXISTING Services WITHOUT NEW configs: Marked for deactivation at next session start
 //
 // This session-boundary approach ensures current sessions remain stable and deterministic
 // while allowing configuration updates to take effect seamlessly.
@@ -304,69 +304,66 @@ func (k Keeper) updateSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
-	// Service configuration update logic:
-	// When a supplier updates their service configurations, we maintain a complete history
-	// to support session-based activation. The process involves:
-	// 1. Adding new service configs scheduled for next session activation
-	// 2. Replacing current inactive configs with new ones for the same service ID
-	// 3. Deactivating current configs that aren't being replaced
-	// This ensures deterministic session hydration while allowing config updates.
+	// Service configuration update logic when msg.Services is non-empty:
+	//
+	// We maintain complete history to support session-based activation through 3 steps:
+	// 1. Add: Add new service configs scheduled for next session activation
+	// 2. Replace: Replace inactive configs with new ones for the same service ID
+	// 3. Remove: Deactivate configs that aren't being replaced/updated
+	//
+	// This ensures deterministic session hydration while allowing seamless config updates.
 	updatedServiceConfigHistory := make([]*sharedtypes.ServiceConfigUpdate, 0)
 
-	// Track which service IDs are being updated or newly added.
-	// This map is used to distinguish between:
-	// - Services that need their current configs replaced (service ID present in this map)
-	// - Services that need their current configs deactivated (service ID absent from this map)
+	// Track which service IDs are being updated or newly added for O(1) lookups.
+	// Used to distinguish:
+	// - Services with new configs (present in map) → replace inactive configs
+	// - Services without new configs (absent from map) → deactivate current configs
 	updatedServices := make(map[string]struct{})
 
-	// Step 1: Add all new service configurations from the message
-	//   - These configs will activate at the start of the next session
-	//   - Track service IDs to identify which old inactive configs need replacement
+	// Step 1: Add all new service configurations from the message.
+	// - Configs activate at next session start
+	// - Track service IDs for identifying which old inactive configs need replacement
 	for _, newServiceConfig := range msg.Services {
 		newServiceConfigUpdate := &sharedtypes.ServiceConfigUpdate{
-			OperatorAddress: msg.OperatorAddress,
-			Service:         newServiceConfig,
-			// The effective block height is the start of the next session.
+			OperatorAddress:  msg.OperatorAddress,
+			Service:          newServiceConfig,
 			ActivationHeight: nextSessionStartHeight,
 		}
 		updatedServiceConfigHistory = append(updatedServiceConfigHistory, newServiceConfigUpdate)
-		// Flag the service ID as being updated/added
-		//
-		// DEV_NOTE: This map does not affect CosmosSDK determinism.
-		// - It is used only for O(1) existence lookups during processing and is discarded after use.
-		// - All deterministic state that goes on-chain is managed by the updatedServiceConfigHistory slice.
+
+		// DEV_NOTE: This map does not affect CosmosSDK determinism:
+		// - Used only for O(1) lookups during processing, discarded after use
+		// - All on-chain state is managed by updatedServiceConfigHistory slice
 		updatedServices[newServiceConfig.ServiceId] = struct{}{}
 	}
 
-	// Step 2: Update existing service configurations
-	//  - Replace current configs for services with new configs if they haven't activated yet
-	//	- Deactivate current configs for services without new configs or already active ones
+	// Step 2: Process existing service configurations.
+	// - Replace inactive configs if new config exists for same service
+	// - Deactivate configs without new replacements or already active ones
 	if len(msg.Services) > 0 {
-		// Must loop over a deterministic list.
+		// Loop over deterministic list (supplier.ServiceConfigHistory).
 		for _, currentServiceConfigUpdate := range supplier.ServiceConfigHistory {
-			// Determine if this current config should be replaced vs deactivated:
-			//   1. Check if this config would normally activate at next session
-			//   2. Check if we have a new config for the same service
-			//   3. If both true, skip it (new config already replaced it in Step 1)
+			// Replacement vs deactivation logic:
+			// 1. Config scheduled for next session + new config exists → replace (skip)
+			// 2. Otherwise → deactivate
 			shouldActivateAtNextSession := currentServiceConfigUpdate.ActivationHeight == nextSessionStartHeight
 			_, hasNewConfig := updatedServices[currentServiceConfigUpdate.Service.ServiceId]
 			shouldReplaceWithNewConfig := shouldActivateAtNextSession && hasNewConfig
 
-			// Skip this config if it's already been replaced by the new config added in Step 1.
-			// No need to deactivate since it never activated.
+			// Skip configs replaced in Step 1 (never activated, no deactivation needed).
 			if shouldReplaceWithNewConfig {
 				continue
 			}
 
-			// Deactivate old configs that are NOT being replaced:
-			//   - Currently active configs (no deactivation height set)
-			//   - Configs scheduled to activate but for different services
+			// Deactivate old configs NOT being replaced:
+			// - Active configs (no deactivation height set)
+			// - Scheduled configs for different services
 			currentServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
 			updatedServiceConfigHistory = append(updatedServiceConfigHistory, currentServiceConfigUpdate)
 		}
 	}
 
-	// Step 3: Update the supplier with the final service configuration history
+	// Step 3: Update supplier with final service configuration history.
 	supplier.ServiceConfigHistory = updatedServiceConfigHistory
 
 	return nil
