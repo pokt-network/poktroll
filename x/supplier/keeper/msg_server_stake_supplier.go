@@ -278,11 +278,10 @@ func (k Keeper) StakeSupplier(
 //
 // Service configuration update behavior:
 // - NEW Services: Scheduled to activate at the next session start
+// - EXISTING Services WITHOUT NEW configs: Marked for deactivation at next session start
 // - EXISTING Services WITH NEW configs:
 //   - If not yet activated (scheduled for next session): Replaced silently (not deactivated)
-//   - If already active or scheduled for later: Marked for deactivation at next session start
-//
-// - EXISTING Services WITHOUT NEW configs: Marked for deactivation at next session start
+//   - If already active or scheduled for later: Replace at the next session start
 //
 // This session-boundary approach ensures current sessions remain stable and deterministic
 // while allowing configuration updates to take effect seamlessly.

@@ -404,8 +404,8 @@ you provide in the configuration file and which account signs the transaction.
 There are three modes:
 
 1. **Stake-only updates**
-2. **Service configuration updates**:
-3. **Combined updates**:
+2. **Service configuration updates**
+3. **Combined updates**
 
 See `pocketd tx stake-supplier --help` for more details.
 
@@ -467,7 +467,3 @@ Both stake and services can be updated in a single transaction.
 |                   | Operator | ❌ No                     | ✅ Yes                 | ✅ Stake (un)escrowed, no change to service configs |
 |                   |          | ✅ Yes                    | ✅ Yes                 | ✅ Stake (un)escrowed, services updated             |
 |                   |          | ✅ Yes                    | ❌ No                  | ✅ Service configs updated                          |
-
-```
-
-```
