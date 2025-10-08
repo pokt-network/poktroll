@@ -11,64 +11,64 @@ accounts:
   - name: pnf
     mnemonic: "crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade"
     coins:
-      - 690_000_000_000_042upokt
-      - 6_900_000_000_000_042mact
+      - 690000000000042upokt
+      - 6900000000000042mact
   - name: validator1
     mnemonic: "creek path rule retire evolve vehicle bargain champion roof whisper prize endorse unknown anchor fashion energy club sauce elder parent cotton old affair visa"
     coins:
-      - 900_000_000_000_000upokt
+      - 900000000000000upokt
   - name: app1
     mnemonic: "mention spy involve verb exercise fiction catalog order agent envelope mystery text defy sing royal fringe return face alpha knife wonder vocal virus drum"
     coins:
-      - 100_000_000upokt
+      - 100000000upokt
   - name: app2
     mnemonic: "material little labor strong search device trick amateur action crouch invite glide provide elite mango now paper sense found hamster neglect work install bulk"
     coins:
-      - 200_000_000upokt
+      - 200000000upokt
   - name: app3
     mnemonic: "involve clean slab term real human green immune valid swing protect talk silent unique cart few ice era right thunder again drop among bounce"
     coins:
-      - 300_000_000upokt
+      - 300000000upokt
   - name: app4
     mnemonic: "blade light diagram grocery quit orchard patient wonder usual category later want offer increase blush this business protect village top cricket laundry holiday measure"
     coins:
-      - 300_000_000upokt
+      - 300000000upokt
   - name: app5
     mnemonic: "worry pupil rival such jump pitch flame prosper tattoo eternal round receive cube crowd remove afraid garment brand toy nut guitar toy sausage fragile"
     coins:
-      - 300_000_000upokt
+      - 300000000upokt
   - name: supplier1
     mnemonic: "cool industry busy tumble funny relax error state height like board wing goat emerge visual idle never unveil announce hill primary okay spatial frog"
     coins:
-      - 110_000_000upokt
+      - 110000000upokt
   - name: supplier2
     mnemonic: "peanut hen enroll meat legal have error input bulk later correct denial onion fossil wing excuse elephant object apology switch claim rare decide surface"
     coins:
-      - 220_000_000upokt
+      - 220000000upokt
   - name: supplier3
     mnemonic: "client city senior tenant source soda spread buffalo shaft amused bar carbon keen off feel coral easily announce metal orphan sustain maple expand loop"
     coins:
-      - 330_000_000upokt
+      - 330000000upokt
   - name: gateway1
     mnemonic: "salt iron goat also absorb depend involve agent apology between lift shy door left bulb arrange industry father jelly olive rifle return predict into"
     coins:
-      - 100_000_000upokt
+      - 100000000upokt
   - name: gateway2
     mnemonic: "suffer wet jelly furnace cousin flip layer render finish frequent pledge feature economy wink like water disease final erase goat include apple state furnace"
     coins:
-      - 200_000_000upokt
+      - 200000000upokt
   - name: gateway3
     mnemonic: "elder spatial erosion soap athlete tide subject recipe also awkward head pattern cart version beach usual oxygen confirm erupt diamond maze smooth census garment"
     coins:
-      - 300_000_000upokt
+      - 300000000upokt
   - name: source_owner_anvil
     mnemonic: "burden effort glue note honey erupt fiscal vote gold addict toy flag spare wrap chest table bomb sort arena phone sadness sustain urge wink"
     coins:
-      - 6_900_000_000_042upokt
+      - 6900000000042upokt
   - name: source_owner_ollama
     mnemonic: "initial scorpion soccer decrease sorry convince donor canoe bid pill monster today cycle slot judge bulb dismiss reject hurt mesh glare fork sustain wash"
     coins:
-      - 6_900_000_000_042upokt
+      - 6900000000042upokt
   - name: unauthorized
     mnemonic: "abuse tumble whip pioneer immense pipe method note upon glory switch rail metal camp gasp top require rain party total struggle glance between fossil"
     coins:
@@ -291,7 +291,7 @@ genesis:
           service_configs:
             - service_id: static
           stake:
-            amount: "10_000_000_000_000"
+            amount: "10000000000000"
             denom: upokt
     # For ref, see proto/poktroll/supplier/params.proto
     supplier:
@@ -436,5 +436,5 @@ genesis:
         supplier_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
-        compute_units_to_tokens_multiplier: 42_000_000 # Sets the cost of 1 compute unit to 42 uPOKT (denominated in pPOKT units).
-        compute_unit_cost_granularity: 1_000_000 # Sets compute unit pricing granularity to pPOKT (1e-6 uPOKT per unit).
+        compute_units_to_tokens_multiplier: 42000000 # Sets the cost of 1 compute unit to 42 uPOKT (denominated in pPOKT units).
+        compute_unit_cost_granularity: 1000000 # Sets compute unit pricing granularity to pPOKT (1e-6 uPOKT per unit).
