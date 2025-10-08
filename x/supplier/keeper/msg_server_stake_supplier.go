@@ -276,8 +276,16 @@ func (k Keeper) StakeSupplier(
 // updateSupplier updates an existing supplier with new configuration from the stake message.
 // This includes updating the stake amount, owner address, and service configurations.
 //
-// Service configuration changes are scheduled to take effect at the next session start
-// to ensure that current sessions remain stable and deterministic.
+// Service configuration update behavior:
+// - New service configs: Scheduled to activate at the next session start
+// - Current service configs with new configs:
+//   - If not yet activated (scheduled for next session): Replaced silently (not deactivated)
+//   - If already active or scheduled for later: Marked for deactivation at next session start
+//
+// - Current service configs without new configs: Marked for deactivation at next session start
+//
+// This session-boundary approach ensures current sessions remain stable and deterministic
+// while allowing configuration updates to take effect seamlessly.
 func (k Keeper) updateSupplier(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
@@ -296,7 +304,19 @@ func (k Keeper) updateSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
+	// Service configuration update logic:
+	// When a supplier updates their service configurations, we maintain a complete history
+	// to support session-based activation. The process involves:
+	// 1. Adding new service configs scheduled for next session activation
+	// 2. Replacing current inactive configs with new ones for the same service ID
+	// 3. Deactivating current configs that aren't being replaced
+	// This ensures deterministic session hydration while allowing config updates.
 	updatedServiceConfigHistory := make([]*sharedtypes.ServiceConfigUpdate, 0)
+
+	// Track which service IDs are being updated or newly added.
+	// This map is used to distinguish between:
+	// - Services that need their current configs replaced (service ID present in this map)
+	// - Services that need their current configs deactivated (service ID absent from this map)
 	updatedServices := make(map[string]struct{})
 
 	// Step 1: Add all new service configurations from the message
@@ -310,20 +330,30 @@ func (k Keeper) updateSupplier(
 			ActivationHeight: nextSessionStartHeight,
 		}
 		updatedServiceConfigHistory = append(updatedServiceConfigHistory, newServiceConfigUpdate)
+		// Flag the service ID as being updated/added
+		//
+		// DEV_NOTE: This map does not affect CosmosSDK determinism.
+		// - It is used only for O(1) existence lookups during processing and is discarded after use.
+		// - All deterministic state that goes on-chain is managed by the updatedServiceConfigHistory slice.
 		updatedServices[newServiceConfig.ServiceId] = struct{}{}
 	}
 
-	// Step 2: Handle existing service configurations
+	// Step 2: Update existing service configurations
+	//  - Replace current configs for services with new configs if they haven't activated yet
+	//	- Deactivate current configs for services without new configs or already active ones
 	if len(msg.Services) > 0 {
-		for _, oldServiceConfigUpdate := range supplier.ServiceConfigHistory {
-			// Determine if this old config should be replaced vs deactivated:
+		// Must loop over a deterministic list.
+		for _, currentServiceConfigUpdate := range supplier.ServiceConfigHistory {
+			// Determine if this current config should be replaced vs deactivated:
 			//   1. Check if this config would normally activate at next session
 			//   2. Check if we have a new config for the same service
 			//   3. If both true, skip it (new config already replaced it in Step 1)
-			shouldActivateAtNextSession := oldServiceConfigUpdate.ActivationHeight == nextSessionStartHeight
-			_, hasNewConfig := updatedServices[oldServiceConfigUpdate.Service.ServiceId]
+			shouldActivateAtNextSession := currentServiceConfigUpdate.ActivationHeight == nextSessionStartHeight
+			_, hasNewConfig := updatedServices[currentServiceConfigUpdate.Service.ServiceId]
 			shouldReplaceWithNewConfig := shouldActivateAtNextSession && hasNewConfig
 
+			// Skip this config if it's already been replaced by the new config added in Step 1.
+			// No need to deactivate since it never activated.
 			if shouldReplaceWithNewConfig {
 				continue
 			}
@@ -331,8 +361,8 @@ func (k Keeper) updateSupplier(
 			// Deactivate old configs that are NOT being replaced:
 			//   - Currently active configs (no deactivation height set)
 			//   - Configs scheduled to activate but for different services
-			oldServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
-			updatedServiceConfigHistory = append(updatedServiceConfigHistory, oldServiceConfigUpdate)
+			currentServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
+			updatedServiceConfigHistory = append(updatedServiceConfigHistory, currentServiceConfigUpdate)
 		}
 	}
 

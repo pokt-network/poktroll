@@ -29,7 +29,10 @@ You can find a fully featured example configuration at [supplier_staking_config.
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
     - [`rev_share_percent`](#rev_share_percent)
-- [Configuration Use Case Matrix](#configuration-use-case-matrix)
+- [Staking Modes](#staking-modes)
+  - [Key Concepts:](#key-concepts)
+  - [Permission Rules:](#permission-rules)
+  - [Configuration Use Case Matrix](#configuration-use-case-matrix)
 
 ## Gov Param References & Values
 
@@ -384,7 +387,38 @@ If `rev_share_percent` is defined for a `service`, then the `owner_address` of t
 
 :::
 
-## Configuration Use Case Matrix
+## Staking Modes
+
+The `stake-supplier` command supports different operational modes depending on what
+you provide in the configuration file and which account signs the transaction.
+
+### Key Concepts:
+
+- **Stake-only updates:** When `services` section is empty, only the stake amount changes.
+  Service configuration history remains completely unchanged.
+
+- **Service configuration updates:** When `services` section is provided, new configs are
+  scheduled to activate at the next session start. Existing configs are either replaced
+  (if inactive and for the same service) or marked for deactivation.
+
+- **Combined updates:** Both stake and services can be updated together in a single transaction.
+
+### Permission Rules:
+
+- **Owner:** Can update stake amount only (services section must be empty)
+- **Operator:** Can update stake amount, service configs, or both
+
+
+:::info
+
+**Session Boundary Behavior:**
+
+All service configuration changes take effect at the next session start to ensure
+current sessions remain stable and deterministic.
+
+:::
+
+### Configuration Use Case Matrix
 
 | Action            | Signer   | Service Configs Provided? | Stake Amount Provided? | Result / Behavior                                   |
 | ----------------- | -------- | ------------------------- | ---------------------- | --------------------------------------------------- |
