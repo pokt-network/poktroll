@@ -33,10 +33,14 @@ const (
 	// struct that defaults to this but can be overridden via an option.
 	defaultBlocksReplayLimit = 100
 
-	// blockUpdateStallThreshold is the duration after which a warning is logged
+	// blockUpdateDelayThreshold is the duration after which a warning is logged
 	// and an alert is raised if no new block has been received.
-	// TODO_TECHDEBT: Make this value be fetched from the full node.
-	blockUpdateStallThreshold = 60 * time.Second
+	// TODO_TECHDEBT: Change this from a hard-coded value to one off:
+	// - Be configurable by the RelayMiner operator
+	// - Fetched from a full node base on block-time configs
+	// This is currently set to 60 seconds, which is approximately
+	// twice the expected block time of 30 seconds.
+	blockUpdateDelayThreshold = 60 * time.Second
 )
 
 // NewBlockClient creates a new block client from the given dependencies.
@@ -99,8 +103,8 @@ func NewBlockClient(
 		return nil, err
 	}
 
-	// Start monitoring for stalled block updates in the background
-	go blockClient.monitorBlockUpdateStalls(ctx)
+	// Start monitoring for delayed block updates in the background
+	go blockClient.monitorBlockUpdateDelays(ctx)
 
 	return blockClient, nil
 }
@@ -143,7 +147,7 @@ type blockReplayClient struct {
 	latestBlockReplayObs observable.ReplayObservable[client.Block]
 
 	// lastBlockUpdateTimeMillis stores the Unix timestamp (in milliseconds) of when
-	// the last block was received. Used atomically for detecting stalled block updates.
+	// the last block was received. Used atomically for detecting delayed block updates.
 	lastBlockUpdateTimeMillis atomic.Int64
 
 	// blockUpdateNotifyCh is used to notify the monitoring goroutine when a new
@@ -332,19 +336,22 @@ func (b *blockReplayClient) queryLatestBlockAsync(
 	return errCh
 }
 
-// monitorBlockUpdateStalls monitors for stalled block updates and raises alerts.
-// It uses a timer that resets on each block update. When the timer expires without
-// a block update, it logs a warning with the last known block height.
-func (b *blockReplayClient) monitorBlockUpdateStalls(ctx context.Context) {
-	timer := time.NewTimer(blockUpdateStallThreshold)
+// monitorBlockUpdateDelays monitors for delayed block updates and raises alerts.
+// It uses a timer that resets on each block update.
+// When the timer expires without a block update, it logs a warning with the last known block height.
+func (b *blockReplayClient) monitorBlockUpdateDelays(ctx context.Context) {
+	timer := time.NewTimer(blockUpdateDelayThreshold)
 	defer timer.Stop()
 
 	for {
 		select {
+
+		// Context done - exit
 		case <-ctx.Done():
 			return
+
+		// Block received - reset the timer
 		case <-b.blockUpdateNotifyCh:
-			// Block received - reset the timer
 			if !timer.Stop() {
 				// Drain the channel if timer already fired
 				select {
@@ -352,9 +359,10 @@ func (b *blockReplayClient) monitorBlockUpdateStalls(ctx context.Context) {
 				default:
 				}
 			}
-			timer.Reset(blockUpdateStallThreshold)
+			timer.Reset(blockUpdateDelayThreshold)
+
+		// Timer expired - delay detected
 		case <-timer.C:
-			// Timer expired - stall detected
 			lastUpdateMillis := b.lastBlockUpdateTimeMillis.Load()
 			lastUpdateTime := time.UnixMilli(lastUpdateMillis)
 			timeSinceLastUpdate := time.Since(lastUpdateTime)
@@ -365,10 +373,10 @@ func (b *blockReplayClient) monitorBlockUpdateStalls(ctx context.Context) {
 
 			b.logger.Warn().
 				Int64("last_block_height", lastHeight).
-				Msgf("Block update stalled: no new block received for %s", timeSinceLastUpdate)
+				Msgf("Block update delayed: no new block received for %s", timeSinceLastUpdate)
 
 			// Reset timer to continue monitoring
-			timer.Reset(blockUpdateStallThreshold)
+			timer.Reset(blockUpdateDelayThreshold)
 		}
 	}
 }
