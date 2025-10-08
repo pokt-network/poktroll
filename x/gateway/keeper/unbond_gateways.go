@@ -19,7 +19,7 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding gateways at the end of the session.
-	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return numUnbondedGateways, nil
 	}
 

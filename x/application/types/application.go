@@ -52,7 +52,7 @@ func GetApplicationTransferHeight(
 	sharedParams *sharedtypes.Params,
 	application *Application,
 ) int64 {
-	sessionEndToProofWindowCloseBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
+	pendingTransferSessionEnd := int64(application.GetPendingTransfer().GetSessionEndHeight())
 
-	return int64(application.GetPendingTransfer().GetSessionEndHeight()) + sessionEndToProofWindowCloseBlocks
+	return sharedtypes.GetSettlementSessionEndHeight(sharedParams, pendingTransferSessionEnd)
 }

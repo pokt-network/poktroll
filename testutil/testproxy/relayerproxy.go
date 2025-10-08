@@ -16,17 +16,18 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
 	keyringtypes "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
+	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
+	ringtypes "github.com/pokt-network/go-dleq/types"
 	"github.com/pokt-network/ring-go"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -485,9 +486,13 @@ func GetApplicationRingSignature(
 	point, err := curve.DecodeToPoint(publicKey.Bytes())
 	require.NoError(t, err)
 
-	// At least two points are required to create a ring signer so we are reusing
-	// the same key for it
-	points := []ringtypes.Point{point, point}
+	// Ring signatures require at least two points.
+	// Use the same deterministic dummy key that the ring client uses for apps without delegations.
+	placeholderPoint, err := curve.DecodeToPoint(rings.PlaceholderRingPubKey.Bytes())
+	require.NoError(t, err)
+
+	// Sort the points to match the order used in verification
+	points := []ringtypes.Point{point, placeholderPoint}
 	pointsRing, err := ring.NewFixedKeyRingFromPublicKeys(curve, points)
 	require.NoError(t, err)
 
