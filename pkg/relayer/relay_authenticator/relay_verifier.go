@@ -67,7 +67,7 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	// - applicationAddress (which is used to verify the relayRequest signature)
 	if session.SessionId != sessionHeader.GetSessionId() {
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"session ID mismatch, expecting: %+v, got: %+v. "+
+			"session ID mismatch, expecting: %s, got: %s. "+
 				"This may indicate a full node synchronization issue. "+
 				"Please verify your full node is in sync and not overwhelmed with websocket connections.",
 			session.GetSessionId(),
