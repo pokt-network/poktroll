@@ -3169,7 +3169,7 @@ definitions:
           The Bech32 address of the service owner / creator
         type: string
       metadata:
-        description: Optional metadata describing the service API; exposed as base64 and limited to 100 KiB when decoded.
+        description: Optional experimental metadata describing the service API; exposed as base64 and limited to 100 KiB when decoded.
         $ref: '#/definitions/pocket.shared.Metadata'
   pocket.shared.ServiceConfigUpdate:
     description: |-
@@ -3281,8 +3281,8 @@ definitions:
     type: object
     title: Metadata message to hold additional metadata for a service
     properties:
-      api_specs:
-        description: Base64 encoded API specification payload (<= 100 KiB when decoded)
+      experimental_api_specs:
+        description: EXPERIMENTAL payload for API specs, limited to 100 KiB when decoded
         type: string
         format: byte
   pocket.supplier.MsgStakeSupplier:

@@ -100,17 +100,17 @@ func TestServiceMetadata_ValidateBasic(t *testing.T) {
 		},
 		{
 			name:     "empty payload rejected",
-			metadata: &Metadata{ApiSpecs: []byte{}},
+			metadata: &Metadata{ExperimentalApiSpecs: []byte{}},
 			wantErr:  ErrSharedInvalidServiceMetadata,
 		},
 		{
 			name:     "payload within size limit",
-			metadata: &Metadata{ApiSpecs: bytes.Repeat([]byte("a"), MaxServiceMetadataSizeBytes)},
+			metadata: &Metadata{ExperimentalApiSpecs: bytes.Repeat([]byte("a"), MaxServiceMetadataSizeBytes)},
 			wantErr:  nil,
 		},
 		{
 			name:     "payload over size limit",
-			metadata: &Metadata{ApiSpecs: bytes.Repeat([]byte("a"), MaxServiceMetadataSizeBytes+1)},
+			metadata: &Metadata{ExperimentalApiSpecs: bytes.Repeat([]byte("a"), MaxServiceMetadataSizeBytes+1)},
 			wantErr:  ErrSharedInvalidServiceMetadata,
 		},
 	}

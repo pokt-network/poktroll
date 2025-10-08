@@ -26,8 +26,9 @@ const (
 	// TODO_TECHDEBT: Rename "service name" to "service description"
 	maxServiceNameLength = 169
 
-	// MaxServiceMetadataSizeBytes is the maximum allowed size for the metadata.api_specs payload.
+	// MaxServiceMetadataSizeBytes is the maximum allowed size for the experimental metadata payload.
 	// This cap is enforced onchain to prevent excessively large API specifications from bloating state.
+	// The experimental metadata bytes cannot exceed this limit.
 	MaxServiceMetadataSizeBytes = 100 * 1024
 
 	regexServiceId   = "^[a-zA-Z0-9_-]+$"  // Define the regex pattern to match allowed characters
@@ -76,14 +77,14 @@ func (metadata *Metadata) ValidateBasic() error {
 		return nil
 	}
 
-	if len(metadata.ApiSpecs) == 0 {
-		return ErrSharedInvalidServiceMetadata.Wrap("metadata api_specs must not be empty")
+	if len(metadata.ExperimentalApiSpecs) == 0 {
+		return ErrSharedInvalidServiceMetadata.Wrap("metadata experimental_api_specs must not be empty")
 	}
 
-	if len(metadata.ApiSpecs) > MaxServiceMetadataSizeBytes {
+	if len(metadata.ExperimentalApiSpecs) > MaxServiceMetadataSizeBytes {
 		return ErrSharedInvalidServiceMetadata.Wrapf(
-			"metadata api_specs exceeds maximum size: got %d bytes, max %d bytes",
-			len(metadata.ApiSpecs), MaxServiceMetadataSizeBytes,
+			"metadata experimental_api_specs exceeds maximum size: got %d bytes, max %d bytes",
+			len(metadata.ExperimentalApiSpecs), MaxServiceMetadataSizeBytes,
 		)
 	}
 

@@ -60,10 +60,10 @@ Use the `add-service` command to create a new service like so:
 pocketd tx service add-service \
     ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
     --fees 300upokt --from ${SERVICE_OWNER} --network=beta \
-    [--metadata-file ./openapi.json | --metadata-base64 $(base64 ./openapi.json)]
+    [--experimental--metadata-file ./openapi.json | --experimental--metadata-base64 $(base64 ./openapi.json)]
 
-Attach an API specification to the service by providing **either** `--metadata-file` (raw bytes) **or**
-`--metadata-base64` (pre-encoded). These flags are mutually exclusive and the payload must decode to 100 KiB or less.
+Attach an API specification to the service by providing **either** `--experimental--metadata-file` (raw bytes) **or**
+`--experimental--metadata-base64` (pre-encoded). These flags are mutually exclusive and the payload must decode to 100 KiB or less.
 ```
 
 For example, assuming you have an account with the name $USER (`pocketd keys show $USER -a`), you can run the following for Beta TestNet:
@@ -71,9 +71,9 @@ For example, assuming you have an account with the name $USER (`pocketd keys sho
 ```bash
 pocketd tx service add-service \
    "svc-$USER" "service description for $USER" 13 \
-   --fees 300upokt --from $USER \
+    --fees 300upokt --from $USER \
    --network=beta \
-   --metadata-file ./svc-$USER-openapi.json
+   --experimental--metadata-file ./svc-$USER-openapi.json
 ```
 
 ### 2. Query for the Service
@@ -105,7 +105,7 @@ Provide the `SERVICE_ID` of the `Service` you want to update, but with a new val
 pocketd tx service add-service \
     ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${NEW_COMPUTE_UNITS_PER_RELAY} \
     --fees 300upokt --from ${SERVICE_OWNER} --network=beta \
-    [--metadata-file ./openapi.json | --metadata-base64 $(base64 ./openapi.json)]
+    [--experimental--metadata-file ./openapi.json | --experimental--metadata-base64 $(base64 ./openapi.json)]
 ```
 
 For example:
@@ -113,7 +113,7 @@ For example:
 ```bash
 pocketd tx service add-service \
    "svc-$USER" "service description for $USER" 20 \
-   --fees 300upokt --from $USER \
+    --fees 300upokt --from $USER \
    --network=beta \
-   --metadata-base64 $(base64 -w0 ./svc-$USER-openapi.json)
+   --experimental--metadata-base64 $(base64 -w0 ./svc-$USER-openapi.json)
 ```

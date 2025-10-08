@@ -119,7 +119,7 @@ func TestCLI_AddService(t *testing.T) {
 			ownerAddress:     account.Address.String(),
 			service:          sharedtypes.Service{Id: "svc-metadata-too-big", Name: "svc large", ComputeUnitsPerRelay: 1},
 			metadataBase64:   base64.StdEncoding.EncodeToString(bytes.Repeat([]byte("c"), sharedtypes.MaxServiceMetadataSizeBytes+1)),
-			expectedCLIError: "service metadata size",
+			expectedCLIError: "experimental service metadata size",
 		},
 		{
 			desc:         "invalid - missing service id",
@@ -167,7 +167,7 @@ func TestCLI_AddService(t *testing.T) {
 			args := append(argsAndFlags, commonArgs...)
 
 			if test.metadataBase64 != "" {
-				args = append(args, fmt.Sprintf("--%s=%s", service.FlagMetadataBase64, test.metadataBase64))
+				args = append(args, fmt.Sprintf("--%s=%s", service.FlagExperimentalMetadataBase64, test.metadataBase64))
 			}
 
 			if len(test.metadataFile) > 0 {
@@ -175,7 +175,7 @@ func TestCLI_AddService(t *testing.T) {
 				require.NoError(t, err)
 				require.NoError(t, os.WriteFile(f.Name(), test.metadataFile, 0o600))
 				require.NoError(t, f.Close())
-				args = append(args, fmt.Sprintf("--%s=%s", service.FlagMetadataFile, f.Name()))
+				args = append(args, fmt.Sprintf("--%s=%s", service.FlagExperimentalMetadataFile, f.Name()))
 			}
 
 			// Execute the command
