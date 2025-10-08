@@ -169,10 +169,11 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 
 	appRelayMeter.numOverServicedRelays++
 
-	// Exponential backoff, only log over-servicing when numOverServicedRelays is a power of 2
+	// Exponential backoff: only log over-servicing when numOverServicedRelays is a power of 2
+	// This prevents log spam while still tracking the issue at exponentially growing intervals
 	if shouldLogOverServicing(appRelayMeter.numOverServicedRelays) {
 		logger.Warn().Msgf(
-			"overservicing enabled, application %q over-serviced %s",
+			"overservicing enabled, application %q over-serviced %d times",
 			appRelayMeter.app.GetAddress(),
 			appRelayMeter.numOverServicedRelays,
 		)
@@ -290,15 +291,17 @@ func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client
 	rmtr.relayMeterMu.RUnlock()
 
 	// Second pass: Write lock only for deletions (if needed)
-	if len(sessionsToDelete) > 0 {
+	if len(sessionsToDelete) == 0 {
 		return
 	}
 
+	// !!! CRITICAL MUTEX !!!
 	// DEV_NOTE: This is a WRITE lock on relay-meter-wide mutex, shared across all served relays:
 	// - This critical section is delicate for performance.
 	// - Keep the work here minimal and fast.
 	// - Avoid unnecessary allocations, I/O, or blocking calls.
 	// - Prolonged holds will throttle relay throughput across the process.
+	// TODO_IMPROVE: Identify potential ways to avoid a write lock if possible.
 	rmtr.relayMeterMu.Lock()
 	for _, sessionId := range sessionsToDelete {
 		// The session started its claim phase and the corresponding session relay meter
@@ -317,6 +320,7 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 	rmtr.relayMeterMu.RLock()
 	relayMeter, ok := rmtr.sessionToRelayMeterMap[sessionId]
 	rmtr.relayMeterMu.RUnlock()
+
 	// If the application is seen for the first time in this session, calculate the
 	// max amount of stake the application can consume.
 	if !ok {

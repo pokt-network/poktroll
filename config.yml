@@ -6,7 +6,7 @@ accounts:
   - name: faucet
     mnemonic: "baby advance work soap slow exclude blur humble lucky rough teach wide chuckle captain rack laundry butter main very cannon donate armor dress follow"
     coins:
-      - 999999999999999999upokt
+      - 999_999_999_999_999_999upokt
   # PNF represents the multisig address that acts on behalf of the DAO
   - name: pnf
     mnemonic: "crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade"
@@ -33,10 +33,10 @@ accounts:
     mnemonic: "blade light diagram grocery quit orchard patient wonder usual category later want offer increase blush this business protect village top cricket laundry holiday measure"
     coins:
       - 300000000upokt
-  - name: apptiny
+  - name: app5
     mnemonic: "worry pupil rival such jump pitch flame prosper tattoo eternal round receive cube crowd remove afraid garment brand toy nut guitar toy sausage fragile"
     coins:
-      - 1000000upokt # 1 POKT
+      - 300000000upokt
   - name: supplier1
     mnemonic: "cool industry busy tumble funny relax error state height like board wing goat emerge visual idle never unveil announce hill primary okay spatial frog"
     coins:
@@ -436,5 +436,5 @@ genesis:
         supplier_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
-        compute_units_to_tokens_multiplier: 42_000_000 # Sets the cost of 1 compute unit to 42 uPOKT (denominated in pPOKT units).
-        compute_unit_cost_granularity: 1_000_000 # Sets compute unit pricing granularity to pPOKT (1e-6 uPOKT per unit).
+        compute_units_to_tokens_multiplier: 42000000 # Sets the cost of 1 compute unit to 42 uPOKT (denominated in pPOKT units).
+        compute_unit_cost_granularity: 1000000 # Sets compute unit pricing granularity to pPOKT (1e-6 uPOKT per unit).

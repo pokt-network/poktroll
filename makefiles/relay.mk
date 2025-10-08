@@ -52,7 +52,7 @@ test_relay_util_100: check_path_up check_relay_util  ## Test anvil PATH behind G
 		-b
 
 .PHONY: test_baseline_static_server_load
-test_baseline_static_server_load: ## Establish baseline load test performance against static nginx chainid server (RPS=100000 THREADS=16 CONNECTIONS=5000 DURATION=30s)
+test_baseline_static_server_load: ## Establish baseline load test performance against static nginx chainid server (default: R=100000 T=16 C=5000 D=30s)
 	@echo "=== Load Testing Options ==="
 	@echo "Parameters:"
 	@echo "  R: Requests per second rate (default: 100,000)"
@@ -71,7 +71,7 @@ test_baseline_static_server_load: ## Establish baseline load test performance ag
 	kubectl exec -it deployment/wrk2 -- wrk -R $(or $(R),100000) -L -d $(or $(D),30s) -t $(or $(T),16) -c $(or $(C),5000) http://nginx-chainid/
 
 .PHONY: test_relayminer_only_load
-test_relayminer_only_load: ## Generate and run load test against RelayMiner using real RelayRequest data (RPS=512 THREADS=16 CONNECTIONS=256 DURATION=300s)
+test_relayminer_only_load: ## Generate and run load test against RelayMiner using real RelayRequest data (default: R=512 t=16 c=256 d=300s)
 	@echo "=== RelayRequest Load Testing ==="
 	@echo "This tool generates proper RelayRequest data and runs load tests against RelayMiner endpoints"
 	@echo ""
@@ -89,7 +89,7 @@ test_relayminer_only_load: ## Generate and run load test against RelayMiner usin
 	@echo ""
 	@echo "Running with: R=$(or $(R),512) d=$(or $(d),300s) t=$(or $(t),16) c=$(or $(c),256)"
 	@echo "================================"
-	go run tools/scripts/generate_relay/main.go \
+	go run tools/scripts/wrk2_relays/main.go \
 		-R $(or $(R),512) \
 		-d $(or $(d),300s) \
 		-t $(or $(t),16) \

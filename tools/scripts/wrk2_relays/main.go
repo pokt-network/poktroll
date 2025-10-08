@@ -1,16 +1,21 @@
-// generate_relay.go - Tool for generating RelayRequest data and running load tests
+// wrk2_relays.go - Tool for generating RelayRequest data and running load tests
 //
 // This tool generates a properly formatted RelayRequest, creates a Lua script for wrk2,
 // and executes load testing against a RelayMiner endpoint using kubectl.
 //
 // Usage:
-//   go run tools/scripts/generate_relay/main.go [flags]
+//   go run tools/scripts/wrk2_relays/main.go [flags]
 //
 // Flags:
 //   -R int     Number of requests per second (default 512)
 //   -d string  Duration of the test (default "300s")
 //   -t int     Number of threads to use (default 16)
 //   -c int     Number of connections to keep open (default 256)
+//
+// TODO_IMPROVE: Embed this logic into `pocketd relayminer relay` command such that:
+// - It is easier to invoke from the build binary / CLI
+// - Avoid duplicate logic between this tool and `pocketd relayminer relay`
+// - Reduce code complexity and engineering cognitive overload
 
 package main
 
@@ -29,12 +34,12 @@ import (
 	"strings"
 
 	sdk "github.com/pokt-network/shannon-sdk"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	sdktypes "github.com/pokt-network/shannon-sdk/types"
 )
 
 // Test configuration constants for relay generation and load testing.
@@ -42,12 +47,16 @@ import (
 const (
 	// nodeGRPCURL is the gRPC endpoint for connecting to the Poktroll node
 	nodeGRPCURL = "localhost:9090"
+
 	// serviceId identifies the service type for the relay request
 	serviceId = "static"
+
 	// appAddress is the Pokt application address used for relay authentication
 	appAddress = "pokt1pn64d94e6u5g8cllsnhgrl6t96ysnjw59j5gst"
+
 	// appPrivateKeyHex is the private key used to sign relay requests
 	appPrivateKeyHex = "84e4f2257f24d9e1517d414b834bbbfa317e0d53fef21c1528a07a5fa8c70d57"
+
 	// relayPayload is the JSON-RPC payload sent in each relay request
 	relayPayload = `{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}`
 )
@@ -56,18 +65,19 @@ const (
 var (
 	// requestRate controls the number of requests per second for the load test
 	requestRate = flag.Int("R", 512, "Number of requests per second")
+
 	// duration specifies how long the load test should run
 	duration = flag.String("d", "300s", "Duration of the test")
+
 	// threads sets the number of worker threads for wrk2
 	threads = flag.Int("t", 16, "Number of threads to use")
+
 	// connections controls the number of concurrent connections to maintain
 	connections = flag.Int("c", 256, "Number of connections to keep open")
 )
 
 // main orchestrates the relay load testing process by generating a RelayRequest,
 // creating a wrk2 Lua script, and executing the load test.
-// TODO_IMPROVEMENT: Embed this logic into `pocketd relayminer relay` command for
-// more integrated testing capabilities.
 func main() {
 	flag.Parse()
 
@@ -120,6 +130,11 @@ func main() {
 // from the blockchain. It connects to the Poktroll node, fetches an active session,
 // builds a properly formatted relay request, and signs it with the application's
 // private key. This ensures the generated RelayRequest matches production format.
+//
+// WARNING: The generated RelayRequest is only valid for the CURRENT session.
+// If the session changes during your load test (typically every few blocks),
+// ALL requests will fail validation. Set consensus timeout_commit/timeout_propose
+// to 30s in config.yml to slow session changes.
 func generateRelayRequest(ctx context.Context, logger polylog.Logger) ([]byte, error) {
 
 	// Initialize gRPC connection
