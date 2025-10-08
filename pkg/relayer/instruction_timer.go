@@ -36,25 +36,19 @@ const (
 )
 
 // InstructionTimestamp represents a single timing measurement for an instruction.
-// It captures both the instruction identifier and the precise timestamp when
-// the instruction was recorded during relay processing.
+// - Captures instruction identifier and timestamp during relay processing
 type InstructionTimestamp struct {
 	instruction string
 	timestamp   time.Time
 }
 
 // InstructionTimer tracks a collection of instruction timing measurements.
-// It maintains a slice of SingleInstructionTime entries to record the timing
-// of different instructions during relay processing.
+// - Maintains slice of timestamps for relay processing instructions
 type InstructionTimer struct {
 	Timestamps []*InstructionTimestamp
 }
 
-// Record adds a new instruction timing entry to the collection.
-// It captures the current timestamp when the instruction is recorded.
-//
-// Parameters:
-//   - instruction: A string identifier for the instruction being timed
+// Record adds a new instruction timing entry with current timestamp.
 func (it *InstructionTimer) Record(instruction string) {
 	it.Timestamps = append(it.Timestamps, &InstructionTimestamp{
 		instruction: instruction,
@@ -62,17 +56,10 @@ func (it *InstructionTimer) Record(instruction string) {
 	})
 }
 
-// RecordDurations processes a slice of instruction times and records
-// the duration between consecutive instructions as metrics. It calculates the
-// time difference between each instruction and the previous one, then observes
-// this duration in the InstructionTimeSeconds metric.
-//
-// The first instruction in the slice is used as the baseline timestamp and
-// no metric is recorded for it. Each subsequent instruction has its duration
-// calculated relative to the previous instruction.
-//
-// Parameters:
-//   - instructionTimes: A slice of SingleInstructionTime entries to process
+// RecordDurations calculates and records durations between consecutive instructions.
+// - First instruction establishes baseline (no metric recorded)
+// - Subsequent instructions record delta from previous instruction
+// - Observes durations in InstructionTimeSeconds Prometheus histogram
 func RecordDurations(instructionTimestamps []*InstructionTimestamp) {
 	var lastTime time.Time
 	for i, inst := range instructionTimestamps {

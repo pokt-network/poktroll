@@ -295,10 +295,10 @@ Access comprehensive metrics at [http://localhost:3003](http://localhost:3003):
 Use the instruction-level metrics to identify bottlenecks:
 
 **Common Bottlenecks:**
-1. **`http_client_do`**: Backend service performance or network latency
-2. **`pre_request_verification`**: Signature verification overhead
-3. **`serialize_http_response`**: Large response processing
-4. **`new_relay_request`**: Request parsing and validation
+1. `http_client_do` - Backend service performance or network latency
+2. `pre_request_verification` - Signature verification overhead
+3. `serialize_http_response` - Large response processing
+4. `new_relay_request` - Request parsing and validation
 
 **Analysis Steps:**
 1. **Compare against baseline**: nginx-chainid performance establishes upper bound
