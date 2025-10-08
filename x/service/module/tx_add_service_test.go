@@ -1,7 +1,10 @@
 package service_test
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -77,10 +80,13 @@ func TestCLI_AddService(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		desc         string
-		ownerAddress string
-		service      sharedtypes.Service
-		expectedErr  *sdkerrors.Error
+		desc             string
+		ownerAddress     string
+		service          sharedtypes.Service
+		expectedErr      *sdkerrors.Error
+		metadataBase64   string
+		metadataFile     []byte
+		expectedCLIError string
 	}{
 		{
 			desc:         "valid - add new service",
@@ -95,6 +101,25 @@ func TestCLI_AddService(t *testing.T) {
 				Name:                 svc1.Name,
 				ComputeUnitsPerRelay: 0, // this parameter is omitted when the test is run
 			},
+		},
+		{
+			desc:           "valid - metadata via base64",
+			ownerAddress:   account.Address.String(),
+			service:        sharedtypes.Service{Id: "svc-metadata-base64", Name: "svc base64", ComputeUnitsPerRelay: 1},
+			metadataBase64: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte("a"), 1024)),
+		},
+		{
+			desc:         "valid - metadata via file",
+			ownerAddress: account.Address.String(),
+			service:      sharedtypes.Service{Id: "svc-metadata-file", Name: "svc file", ComputeUnitsPerRelay: 1},
+			metadataFile: bytes.Repeat([]byte("b"), 1024),
+		},
+		{
+			desc:             "invalid - metadata exceeds limit",
+			ownerAddress:     account.Address.String(),
+			service:          sharedtypes.Service{Id: "svc-metadata-too-big", Name: "svc large", ComputeUnitsPerRelay: 1},
+			metadataBase64:   base64.StdEncoding.EncodeToString(bytes.Repeat([]byte("c"), sharedtypes.MaxServiceMetadataSizeBytes+1)),
+			expectedCLIError: "service metadata size",
 		},
 		{
 			desc:         "invalid - missing service id",
@@ -141,8 +166,26 @@ func TestCLI_AddService(t *testing.T) {
 
 			args := append(argsAndFlags, commonArgs...)
 
+			if test.metadataBase64 != "" {
+				args = append(args, fmt.Sprintf("--%s=%s", service.FlagMetadataBase64, test.metadataBase64))
+			}
+
+			if len(test.metadataFile) > 0 {
+				f, err := os.CreateTemp(t.TempDir(), "metadata-*.json")
+				require.NoError(t, err)
+				require.NoError(t, os.WriteFile(f.Name(), test.metadataFile, 0o600))
+				require.NoError(t, f.Close())
+				args = append(args, fmt.Sprintf("--%s=%s", service.FlagMetadataFile, f.Name()))
+			}
+
 			// Execute the command
 			addServiceOutput, err := clitestutil.ExecTestCLICmd(ctx, service.CmdAddService(), args)
+
+			if test.expectedCLIError != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), test.expectedCLIError)
+				return
+			}
 
 			// Validate the error if one is expected
 			if test.expectedErr != nil {

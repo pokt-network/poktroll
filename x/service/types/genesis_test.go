@@ -8,24 +8,32 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
+	ownerAddr := sample.AccAddressBech32()
 	svc1 := &sharedtypes.Service{
-		Id:   "svcId1",
-		Name: "svcName1",
+		Id:                   "svcId1",
+		Name:                 "svcName1",
+		OwnerAddress:         ownerAddr,
+		ComputeUnitsPerRelay: 1,
 	}
 
 	svc2 := &sharedtypes.Service{
-		Id:   "svcId2",
-		Name: "svcName2",
+		Id:                   "svcId2",
+		Name:                 "svcName2",
+		OwnerAddress:         ownerAddr,
+		ComputeUnitsPerRelay: 1,
 	}
 
 	svc3 := &sharedtypes.Service{
-		Id:   "svcId3",
-		Name: svc1.Name,
+		Id:                   "svcId3",
+		Name:                 svc1.Name,
+		OwnerAddress:         ownerAddr,
+		ComputeUnitsPerRelay: 1,
 	}
 
 	tests := []struct {

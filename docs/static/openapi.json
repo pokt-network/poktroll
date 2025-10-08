@@ -3773,6 +3773,10 @@
                 "owner_address": {
                     "description": "The owner address that created the service.\nIt is the address that receives rewards based on the Service's onchain usage\nIt is the only address that can update the service configuration (e.g. compute_units_per_relay),\nor make other updates to it.\n\nThe Bech32 address of the service owner / creator",
                     "type": "string"
+                },
+                "metadata": {
+                    "description": "Optional metadata describing the service API; exposed as base64 and limited to 100 KiB when decoded.",
+                    "$ref": "#/definitions/pocket.shared.Metadata"
                 }
             }
         },
@@ -3812,6 +3816,17 @@
                     "type": "string",
                     "format": "uint64",
                     "title": "The percentage of revenue share the recipient will receive"
+                }
+            }
+        },
+        "pocket.shared.Metadata": {
+            "type": "object",
+            "title": "Metadata message to hold additional metadata for a service",
+            "properties": {
+                "api_specs": {
+                    "description": "Base64 encoded API specification payload (<= 100 KiB when decoded)",
+                    "type": "string",
+                    "format": "byte"
                 }
             }
         },

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -126,6 +127,38 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 					Name:                 "service name",
 					ComputeUnitsPerRelay: sharedtypes.ComputeUnitsPerRelayMax,
 					OwnerAddress:         serviceOwnerAddress,
+				},
+			},
+			expectedErr: nil,
+		},
+		{
+			desc: "metadata exceeds limit",
+			msg: MsgAddService{
+				OwnerAddress: serviceOwnerAddress,
+				Service: sharedtypes.Service{
+					Id:                   "svc1",
+					Name:                 "service name",
+					ComputeUnitsPerRelay: 1,
+					OwnerAddress:         serviceOwnerAddress,
+					Metadata: &sharedtypes.Metadata{
+						ApiSpecs: bytes.Repeat([]byte("a"), sharedtypes.MaxServiceMetadataSizeBytes+1),
+					},
+				},
+			},
+			expectedErr: sharedtypes.ErrSharedInvalidServiceMetadata,
+		},
+		{
+			desc: "metadata within limit",
+			msg: MsgAddService{
+				OwnerAddress: serviceOwnerAddress,
+				Service: sharedtypes.Service{
+					Id:                   "svc1",
+					Name:                 "service name",
+					ComputeUnitsPerRelay: 1,
+					OwnerAddress:         serviceOwnerAddress,
+					Metadata: &sharedtypes.Metadata{
+						ApiSpecs: bytes.Repeat([]byte("a"), sharedtypes.MaxServiceMetadataSizeBytes),
+					},
 				},
 			},
 			expectedErr: nil,

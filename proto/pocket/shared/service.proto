@@ -28,6 +28,10 @@ message Service {
   // It is the only address that can update the service configuration (e.g. compute_units_per_relay),
   // or make other updates to it.
   string owner_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service owner / creator
+
+  // Optional metadata containing an API specification for the service.
+  // When exposed via JSON, this field is base64 encoded and MUST be <= 100 KiB when decoded.
+  Metadata metadata = 5;
 }
 
 // ApplicationServiceConfig holds the service configuration the application stakes for
@@ -90,3 +94,8 @@ message ConfigOption {
   string value = 2; // Config option value
 }
 
+// Metadata message to hold additional metadata for a service.
+// The raw bytes are stored on-chain and will be base64 encoded in JSON representations.
+message Metadata {
+  bytes api_specs = 1;
+}

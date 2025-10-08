@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -81,6 +82,46 @@ func TestIsValidService(t *testing.T) {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestServiceMetadata_ValidateBasic(t *testing.T) {
+	tests := []struct {
+		name     string
+		metadata *Metadata
+		wantErr  error
+	}{
+		{
+			name:     "nil metadata allowed",
+			metadata: nil,
+			wantErr:  nil,
+		},
+		{
+			name:     "empty payload rejected",
+			metadata: &Metadata{ApiSpecs: []byte{}},
+			wantErr:  ErrSharedInvalidServiceMetadata,
+		},
+		{
+			name:     "payload within size limit",
+			metadata: &Metadata{ApiSpecs: bytes.Repeat([]byte("a"), MaxServiceMetadataSizeBytes)},
+			wantErr:  nil,
+		},
+		{
+			name:     "payload over size limit",
+			metadata: &Metadata{ApiSpecs: bytes.Repeat([]byte("a"), MaxServiceMetadataSizeBytes+1)},
+			wantErr:  ErrSharedInvalidServiceMetadata,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.metadata.ValidateBasic()
+			if tc.wantErr != nil {
+				require.ErrorContains(t, err, tc.wantErr.Error())
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}

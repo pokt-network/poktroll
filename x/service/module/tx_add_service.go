@@ -4,8 +4,12 @@ package service
 // to update parameters of existing services. This will requiring updating `proto/pocket/service/tx.proto` and
 // all downstream code paths.
 import (
+	"encoding/base64"
+	"errors"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -54,12 +58,18 @@ $ pocketd tx service add-service "svc1" "service_one" 1 --keyring-backend test -
 			}
 
 			serviceOwnerAddress := clientCtx.GetFromAddress().String()
+			metadata, err := parseServiceMetadata(cmd)
+			if err != nil {
+				return err
+			}
+
 			msg := types.NewMsgAddService(
 				serviceOwnerAddress,
 				serviceIdStr,
 				serviceNameStr,
 				computeUnitsPerRelay,
 			)
+			msg.Service.Metadata = metadata
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -68,6 +78,57 @@ $ pocketd tx service add-service "svc1" "service_one" 1 --keyring-backend test -
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().String(FlagMetadataBase64, "", "Base64 encoded API specification for the service (mutually exclusive with --metadata-file)")
+	cmd.Flags().String(FlagMetadataFile, "", "Path to a file containing the service API specification (mutually exclusive with --metadata-base64)")
 
 	return cmd
+}
+
+const (
+	FlagMetadataBase64 = "metadata-base64"
+	FlagMetadataFile   = "metadata-file"
+)
+
+func parseServiceMetadata(cmd *cobra.Command) (*sharedtypes.Metadata, error) {
+	metadataBase64, err := cmd.Flags().GetString(FlagMetadataBase64)
+	if err != nil {
+		return nil, err
+	}
+
+	metadataFile, err := cmd.Flags().GetString(FlagMetadataFile)
+	if err != nil {
+		return nil, err
+	}
+
+	if metadataBase64 != "" && metadataFile != "" {
+		return nil, errors.New("--metadata-base64 and --metadata-file cannot be used together")
+	}
+
+	if metadataBase64 == "" && metadataFile == "" {
+		return nil, nil
+	}
+
+	var apiSpecs []byte
+	if metadataBase64 != "" {
+		metadataBase64 = strings.TrimSpace(metadataBase64)
+		apiSpecs, err = base64.StdEncoding.DecodeString(metadataBase64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode metadata-base64 value: %w", err)
+		}
+	} else {
+		apiSpecs, err = os.ReadFile(metadataFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read metadata file %q: %w", metadataFile, err)
+		}
+	}
+
+	if len(apiSpecs) > sharedtypes.MaxServiceMetadataSizeBytes {
+		return nil, fmt.Errorf("service metadata size %d exceeds max %d bytes", len(apiSpecs), sharedtypes.MaxServiceMetadataSizeBytes)
+	}
+
+	if len(apiSpecs) == 0 {
+		return nil, errors.New("service metadata cannot be empty")
+	}
+
+	return &sharedtypes.Metadata{ApiSpecs: apiSpecs}, nil
 }
