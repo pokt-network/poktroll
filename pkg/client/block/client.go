@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"cosmossdk.io/depinject"
 	cometclient "github.com/cometbft/cometbft/rpc/client"
@@ -14,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 )
 
 const (
@@ -29,6 +32,11 @@ const (
 	// TODO_TECHDEBT: add a `blocksReplayLimit` field to the blockReplayClient
 	// struct that defaults to this but can be overridden via an option.
 	defaultBlocksReplayLimit = 100
+
+	// blockUpdateStallThreshold is the duration after which a warning is logged
+	// and an alert is raised if no new block has been received.
+	// TODO_TECHDEBT: Make this value be fetched from the full node.
+	blockUpdateStallThreshold = 60 * time.Second
 )
 
 // NewBlockClient creates a new block client from the given dependencies.
@@ -52,6 +60,7 @@ func NewBlockClient(
 	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, 10)
 	blockClient := &blockReplayClient{
 		latestBlockReplayObs: latestBlockReplayObs,
+		blockUpdateNotifyCh:  make(chan struct{}, 1),
 		close:                cancel,
 	}
 
@@ -89,6 +98,9 @@ func NewBlockClient(
 	if err := blockClient.initializeChainVersion(ctx); err != nil {
 		return nil, err
 	}
+
+	// Start monitoring for stalled block updates in the background
+	go blockClient.monitorBlockUpdateStalls(ctx)
 
 	return blockClient, nil
 }
@@ -129,6 +141,14 @@ type blockReplayClient struct {
 	// the block query client & the events replay client. It is the "canonical"
 	// source of block notifications for the blockReplayClient.
 	latestBlockReplayObs observable.ReplayObservable[client.Block]
+
+	// lastBlockUpdateTimeMillis stores the Unix timestamp (in milliseconds) of when
+	// the last block was received. Used atomically for detecting stalled block updates.
+	lastBlockUpdateTimeMillis atomic.Int64
+
+	// blockUpdateNotifyCh is used to notify the monitoring goroutine when a new
+	// block arrives, allowing it to reset its timer.
+	blockUpdateNotifyCh chan struct{}
 
 	// close is a function that cancels the context of the blockReplayClient.
 	close context.CancelFunc
@@ -226,6 +246,7 @@ func (b *blockReplayClient) updateChainVersionAsync(ctx context.Context) {
 // - Asynchronously observes block event notifications from the EventsReplayClient's EventsSequence observable
 // - Publishes each block to latestBlockPublishCh
 // - Updates the chain version on each block
+// - Resets the block update timer and updates monitoring metrics
 func (b *blockReplayClient) asyncForwardBlockEvent(
 	ctx context.Context,
 	latestBlockPublishCh chan<- client.Block,
@@ -234,6 +255,19 @@ func (b *blockReplayClient) asyncForwardBlockEvent(
 		func(ctx context.Context, block client.Block) {
 			latestBlockPublishCh <- block
 			b.updateChainVersionAsync(ctx)
+
+			// Update block monitoring: reset timer and update metrics
+			height := block.Height()
+			b.lastBlockUpdateTimeMillis.Store(time.Now().UnixMilli())
+
+			// Update Prometheus metric with current block height
+			relayer.CaptureBlockHeight(height)
+
+			// Notify the monitoring goroutine to reset its timer (non-blocking)
+			select {
+			case b.blockUpdateNotifyCh <- struct{}{}:
+			default:
+			}
 		},
 	)
 }
@@ -265,6 +299,9 @@ func (b *blockReplayClient) getInitialBlockAsync(
 		return err
 	}
 
+	// Initialize block update monitoring timer
+	b.lastBlockUpdateTimeMillis.Store(time.Now().UnixMilli())
+
 	// At this point blockQueryResultCh was the first to receive the first block.
 	// Publish the initialBlock to the latestBlockPublishCh.
 	latestBlockPublishCh <- initialBlock
@@ -293,4 +330,45 @@ func (b *blockReplayClient) queryLatestBlockAsync(
 	}()
 
 	return errCh
+}
+
+// monitorBlockUpdateStalls monitors for stalled block updates and raises alerts.
+// It uses a timer that resets on each block update. When the timer expires without
+// a block update, it logs a warning with the last known block height.
+func (b *blockReplayClient) monitorBlockUpdateStalls(ctx context.Context) {
+	timer := time.NewTimer(blockUpdateStallThreshold)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-b.blockUpdateNotifyCh:
+			// Block received - reset the timer
+			if !timer.Stop() {
+				// Drain the channel if timer already fired
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+			timer.Reset(blockUpdateStallThreshold)
+		case <-timer.C:
+			// Timer expired - stall detected
+			lastUpdateMillis := b.lastBlockUpdateTimeMillis.Load()
+			lastUpdateTime := time.UnixMilli(lastUpdateMillis)
+			timeSinceLastUpdate := time.Since(lastUpdateTime)
+
+			// Get the last known block height
+			lastBlock := b.LastBlock(ctx)
+			lastHeight := lastBlock.Height()
+
+			b.logger.Warn().
+				Int64("last_block_height", lastHeight).
+				Msgf("Block update stalled: no new block received for %s", timeSinceLastUpdate)
+
+			// Reset timer to continue monitoring
+			timer.Reset(blockUpdateStallThreshold)
+		}
+	}
 }
