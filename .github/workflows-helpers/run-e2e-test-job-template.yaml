@@ -39,7 +39,10 @@ spec:
               pocketd q application list-application --node=$POCKET_NODE && \
               pocketd q supplier list-suppliers --node=$POCKET_NODE && \
               make acc_initialize_pubkeys && \
-              go test -v ./e2e/tests/... -tags=e2e,oneshot,manual
+              go test -v ./e2e/tests/... -tags=e2e
+              # TODO_IMPROVE: Find a way to run the oneshot manual
+              # tests in CI which are non-idempotent
+              # go test -v ./e2e/tests/... -tags=e2e,oneshot,manual
           env:
             - name: POCKET_NODE
               value: tcp://${NAMESPACE}-validator-pocketd:26657
