@@ -31,7 +31,7 @@ var (
 
 	// ringCurve is the elliptic curve used for the ring signatures.
 	// It is used to deserialize the ring signatures.
-	// It is used as a package-level variable to avoid re-initializing for every RelayRequest verification.
+	// DEV_NOTE: This is initialized as a package-level variable to avoid re-initializing for every RelayRequest verification.
 	ringCurve = ring_secp256k1.NewCurve()
 )
 
