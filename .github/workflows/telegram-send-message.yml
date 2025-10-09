@@ -60,6 +60,8 @@ jobs:
           CHAT_16="-775612675"
           # Korbit <> POKT
           CHAT_17="-1002811115444"
+          # The Poktopus Den
+          CHAT_18="-1001461397826"
 
           # Get the message and parse mode from the workflow inputs
           MESSAGE="$MESSAGE_CONTENT"
@@ -103,4 +105,5 @@ jobs:
             send_message "$CHAT_15" "POKT <> Upbit"
             send_message "$CHAT_16" "KuCoin <> POKT"
             send_message "$CHAT_17" "Korbit <> POKT"
+            send_message "$CHAT_18" "The Poktopus Den"
           fi

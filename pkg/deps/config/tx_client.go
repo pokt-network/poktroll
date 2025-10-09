@@ -47,10 +47,12 @@ func GetTxClientFromFlags(
 	}
 
 	// Construct dependencies for the tx client
+	// IMPORTANT: NewSupplyCometClientFn must come before NewSupplyBlockClientFn
+	// because BlockClient depends on CometClient via EventsReplayClient
 	deps, err := SupplyConfig(ctx, cmd, []SupplierFn{
 		NewSupplyLoggerFromCtx(ctx),
-		NewSupplyBlockClientFn(queryNodeRPCUrl),
 		NewSupplyCometClientFn(queryNodeRPCUrl),
+		NewSupplyBlockClientFn(queryNodeRPCUrl),
 	})
 	if err != nil {
 		return nil, err
