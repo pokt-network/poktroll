@@ -33,10 +33,10 @@ accounts:
     mnemonic: "blade light diagram grocery quit orchard patient wonder usual category later want offer increase blush this business protect village top cricket laundry holiday measure"
     coins:
       - 300000000upokt
-  - name: apptiny
+  - name: app5
     mnemonic: "worry pupil rival such jump pitch flame prosper tattoo eternal round receive cube crowd remove afraid garment brand toy nut guitar toy sausage fragile"
     coins:
-      - 1000000upokt # 1 POKT
+      - 300000000upokt
   - name: supplier1
     mnemonic: "cool industry busy tumble funny relax error state height like board wing goat emerge visual idle never unveil announce hill primary okay spatial frog"
     coins:
@@ -114,6 +114,8 @@ validators:
     config:
       moniker: "validator1"
       consensus:
+        # TODO_TECHDEBT: Add env-specific block times (2s E2E/CI, 30s Load/Prod)
+        # via config overlays or env vars (Make/Tilt); keep 30s default here.
         timeout_commit: "2s"
         timeout_propose: "2s"
       instrumentation:
@@ -283,6 +285,14 @@ genesis:
           stake:
             amount: "100000068" # ~100 POKT
             denom: upokt
+        - address: pokt1pn64d94e6u5g8cllsnhgrl6t96ysnjw59j5gst
+          delegatee_gateway_addresses:
+            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
+          service_configs:
+            - service_id: static
+          stake:
+            amount: "10000000000000"
+            denom: upokt
     # For ref, see proto/poktroll/supplier/params.proto
     supplier:
       params:
@@ -311,6 +321,14 @@ genesis:
                 - configs: []
                   rpc_type: WEBSOCKET
                   url: ws://relayminer1:8545
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: 100
+            - service_id: static
+              endpoints:
+                - configs: []
+                  rpc_type: JSON_RPC
+                  url: http://relayminer1:8545
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: 100
@@ -356,6 +374,10 @@ genesis:
         - id: rest
           name: "rest"
           compute_units_per_relay: 100
+          owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
+        - id: static
+          name: "static"
+          compute_units_per_relay: 1
           owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
     # For ref, see proto/poktroll/proof/params.proto
     proof:
@@ -414,5 +436,5 @@ genesis:
         supplier_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
         gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
-        compute_units_to_tokens_multiplier: 42_000_000 # Sets the cost of 1 compute unit to 42 uPOKT (denominated in pPOKT units).
-        compute_unit_cost_granularity: 1_000_000 # Sets compute unit pricing granularity to pPOKT (1e-6 uPOKT per unit).
+        compute_units_to_tokens_multiplier: 42000000 # Sets the cost of 1 compute unit to 42 uPOKT (denominated in pPOKT units).
+        compute_unit_cost_granularity: 1000000 # Sets compute unit pricing granularity to pPOKT (1e-6 uPOKT per unit).
