@@ -24,6 +24,7 @@ const (
 	delayedRelayRequestValidationTotal         = "delayed_relay_request_validation_total"
 	delayedRelayRequestValidationFailuresTotal = "delayed_relay_request_validation_failures_total"
 	delayedRelayRequestRateLimitingCheckTotal  = "delayed_relay_request_rate_limiting_check_total"
+	blockHeightCurrent                         = "block_height_current"
 	instructionTimeSeconds                     = "instruction_time_seconds"
 )
 
@@ -214,6 +215,21 @@ var (
 		Help:      "Total number of delayed validation rate limiting events, labeled by service ID.",
 	}, []string{"service_id", "supplier_operator_address"})
 
+	// BlockHeightCurrent is a Gauge metric for tracking the current block height.
+	// It is updated each time a new block is received by the RelayMiner.
+	// This metric enables monitoring of block progression over time and detecting
+	// when block updates have stalled.
+	//
+	// Usage:
+	// - Monitor block height progression over time in Grafana
+	// - Detect block update stalls by checking for flat lines
+	// - Alert when block height hasn't updated in expected timeframe
+	BlockHeightCurrent = prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		Subsystem: relayMinerProcess,
+		Name:      blockHeightCurrent,
+		Help:      "Current block height observed by the RelayMiner.",
+	}, []string{})
+
 	// InstructionTimeSeconds is a Histogram metric for tracking the duration of individual
 	// instructions during relay processing. It measures the time between consecutive
 	// instruction steps to identify performance bottlenecks and optimize relay handling.
@@ -311,4 +327,10 @@ func CaptureDelayedRelayRequestRateLimitingCheck(serviceId string, supplierOpera
 	DelayedRelayRequestRateLimitingCheckTotal.
 		With("service_id", serviceId, "supplier_operator_address", supplierOperatorAddress).
 		Add(1)
+}
+
+// CaptureBlockHeight updates the block height gauge with the current block height.
+// This metric is used to monitor block progression over time and detect stalled block updates.
+func CaptureBlockHeight(height int64) {
+	BlockHeightCurrent.Set(float64(height))
 }
