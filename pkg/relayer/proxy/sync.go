@@ -449,7 +449,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// Log and capture metrics for the relay request.
 	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("relay request served successfully")
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
-	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size())
+	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
 
 	// In case the current request is not validated yet perform a late validation before mining the relay.
 	// DEV_NOTE: If eager validation is enabled, then the session is already known.
