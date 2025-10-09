@@ -10,6 +10,7 @@ load("ext://execute_in_pod", "execute_in_pod")
 load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
 load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+load("./tiltfiles/static-nginx.Tiltfile", "provision_static_nginx")
 load("./tiltfiles/env.Tiltfile", "build_env", "build_cmd", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_CMD", "IGNITE_CGO_CFLAGS")
 
 
@@ -17,7 +18,7 @@ load("./tiltfiles/env.Tiltfile", "build_env", "build_cmd", "TARGET_GOOS", "TARGE
 analytics_settings(enable=False)
 
 # A list of directories where changes trigger a hot-reload of the validator
-hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
+hot_reload_dirs = ["app", "cmd", "x", "pkg", "telemetry"]
 
 # TODO_IMPROVE: Non urgent requirement, but we need to find a way to ensure that the Tiltfile works (e.g. through config checks)
 # so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
@@ -256,6 +257,11 @@ for x in range(localnet_config["relayminers"]["count"]):
     flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.websocket.backend_url=ws://anvil:8547/")
     supplier_number = supplier_number + 1
 
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=static")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://nginx-chainid/")
+    supplier_number = supplier_number + 1
+
     if localnet_config["rest"]["enabled"]:
        flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=rest")
        flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
@@ -443,6 +449,18 @@ if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
+
+provision_static_nginx()
+
+# Provision wrk2 load testing tool
+deployment_create(
+    "wrk2",
+    image="cylab/wrk2",
+    command=["sleep"],
+    args=["infinity"],
+)
+
+k8s_resource("wrk2", labels=["tools"])
 
 # Check if sibling pocketdex repo exists.
 # If it does, load the pocketdex.tilt file from the sibling repo.

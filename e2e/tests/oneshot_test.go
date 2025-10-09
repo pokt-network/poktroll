@@ -19,7 +19,10 @@ import (
 // TestOneshotTaggedFeatures runs ONLY the features specified by the
 // --features-path flag which ARE tagged with the @oneshot tag.
 func TestOneshotTaggedFeatures(t *testing.T) {
-	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).
+	// Use migrationSuite which embeds suite, providing access to both
+	// regular suite step definitions and migration-specific steps.
+	// This is necessary because migration features are tagged with @oneshot.
+	gocuke.NewRunner(t, &migrationSuite{}).Path(flagFeaturesPath).
 		// ONLY execute features tagged with the @oneshot tag.
 		Tags(fmt.Sprintf("%s and not %s", oneshotTag, manualTag)).
 		Run()
