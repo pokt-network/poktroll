@@ -247,6 +247,14 @@ This field is useful if the `Supplier` owner wants to set a default revenue shar
 for all the `service`s entries that do not provide one. This way, the operator
 does not have to repeat the same values for each `service` in the `services` section.
 
+:::warning Operator-Only Updates
+
+**Revenue share addresses and percentages can only be updated by the operator account.**
+The owner cannot modify revenue share configurations - only the operator has permission
+to update service configurations, which includes revenue share settings.
+
+:::
+
 This map cannot be empty but can be omitted, in which case the default revenue
 share falls back to `100%` of the rewards allocated to the `Supplier`'s `owner_address`.
 
@@ -373,6 +381,14 @@ It overrides the `default_rev_share_percent` if defined for the `service`.
 This map cannot be empty but can be omitted, in which case it falls back to the
 `default_rev_share_percent` top-level configuration entry.
 
+:::warning Operator-Only Updates
+
+**Revenue share addresses and percentages can only be updated by the operator account.**
+The owner cannot modify revenue share configurations - only the operator has permission
+to update service configurations, which includes revenue share settings.
+
+:::
+
 :::note
 
 The `shareholder_address`s MUST be valid Pocket addresses.
@@ -451,6 +467,15 @@ Both stake and services can be updated in a single transaction.
 
 - **Owner**: Can update stake amount only (services section must be empty)
 - **Operator**: Can update stake amount, service configs, or both
+
+:::warning Revenue Share Update Permissions
+
+**Revenue share addresses and percentages can only be updated by the operator account.**
+This includes both `default_rev_share_percent` and service-specific `rev_share_percent` configurations.
+The owner cannot modify revenue share settings - only the operator has permission to update
+service configurations, which includes all revenue share settings.
+
+:::
 
 ### Configuration Use Case Matrix
 

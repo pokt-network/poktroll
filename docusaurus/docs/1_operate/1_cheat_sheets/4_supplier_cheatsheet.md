@@ -269,6 +269,15 @@ Use your own service_id or [create a new one](1_service_cheatsheet.md).
 
 :::
 
+:::warning Revenue Share Update Permissions
+
+**Revenue share addresses and percentages can only be updated by the operator account.**
+In this example, both `owner_address` and `operator_address` are the same (custodial staking),
+so the same account can update both stake amounts and revenue share configurations.
+For non-custodial staking, only the operator can modify revenue share settings.
+
+:::
+
 ### 3. Stake your Supplier
 
 Submit the staking transaction:
