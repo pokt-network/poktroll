@@ -29,7 +29,12 @@ You can find a fully featured example configuration at [supplier_staking_config.
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
     - [`rev_share_percent`](#rev_share_percent)
-- [Configuration Use Case Matrix](#configuration-use-case-matrix)
+- [Staking Modes](#staking-modes)
+  - [1. Stake Only Updates](#1-stake-only-updates)
+  - [2. Service Configuration Updates](#2-service-configuration-updates)
+  - [3. Stake \& Service Config Updates](#3-stake--service-config-updates)
+  - [Staking Permission Rules](#staking-permission-rules)
+  - [Configuration Use Case Matrix](#configuration-use-case-matrix)
 
 ## Gov Param References & Values
 
@@ -384,7 +389,70 @@ If `rev_share_percent` is defined for a `service`, then the `owner_address` of t
 
 :::
 
-## Configuration Use Case Matrix
+## Staking Modes
+
+:::info Session Boundary Behavior
+
+All service configuration changes take effect at next session start to ensure
+current sessions remain stable and deterministic.
+
+:::
+
+The `pocketd tx stake-supplier` command supports different operational modes depending on what
+you provide in the configuration file and which account signs the transaction.
+
+There are three modes:
+
+1. **Stake-only updates**
+2. **Service configuration updates**
+3. **Combined updates**
+
+See `pocketd tx stake-supplier --help` for more details.
+
+### 1. Stake Only Updates
+
+If the `services` section is empty, only the stake amount changes.
+Service configuration history remains unchanged.
+
+**For example**:
+
+```yaml
+owner_address: $SUPPLIER_ADDR
+operator_address: $SUPPLIER_ADDR
+stake_amount: 1000069upokt
+```
+
+### 2. Service Configuration Updates
+
+If the `services` section is provided, new configs are scheduled to activate at next session start.
+
+Existing configs are either:
+
+- Replaced (if inactive and for the same service)
+- Marked for deactivation (if active or for different services)
+
+**For example**:
+
+```yaml
+owner_address: $SUPPLIER_ADDR
+operator_address: $SUPPLIER_ADDR
+services:
+  - service_id: "eth"
+    endpoints:
+      - publicly_exposed_url: http://$EXTERNAL_IP:8545 # must be public
+        rpc_type: JSON_RPC
+```
+
+### 3. Stake & Service Config Updates
+
+Both stake and services can be updated in a single transaction.
+
+### Staking Permission Rules
+
+- **Owner**: Can update stake amount only (services section must be empty)
+- **Operator**: Can update stake amount, service configs, or both
+
+### Configuration Use Case Matrix
 
 | Action            | Signer   | Service Configs Provided? | Stake Amount Provided? | Result / Behavior                                   |
 | ----------------- | -------- | ------------------------- | ---------------------- | --------------------------------------------------- |
