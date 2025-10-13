@@ -67,7 +67,7 @@ This section explains how to deploy a `deepseek` datanode and expose a `deepseek
 
 ##### 1. Datanode
 
-A datanode represents the process entity responsible for performing inference computations. In this example, we will use Ollama to run the DeepSeek R1 large language model (LLM) on Kubernetes, and then expose a flexible [API](API) that allows the RelayMiner to forward relay requests and return responses across the network.
+A datanode represents the process entity responsible for performing inference computations. In this example, we will use Ollama to run the DeepSeek R1 large language model (LLM) on Kubernetes, and then expose a flexible [API](https://docs.ollama.com/api) that allows the RelayMiner to forward relay requests and return responses across the network.
 
 First, create a Kubernetes manifest YAML file named `deepseek.yaml` with this content:
 
