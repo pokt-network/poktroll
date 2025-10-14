@@ -11,7 +11,7 @@ load("./tiltfiles/config.Tiltfile", "read_configs")
 load("./tiltfiles/pocketdex.Tiltfile", "check_and_load_pocketdex")
 load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
 load("./tiltfiles/static-nginx.Tiltfile", "provision_static_nginx")
-load("./tiltfiles/env.Tiltfile", "build_env", "build_cmd", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_CMD", "IGNITE_CGO_CFLAGS")
+load("./tiltfiles/env.Tiltfile", "build_env", "build_cmd", "TARGET_GOOS", "TARGET_GOARCH", "IGNITE_CMD", "CGO_DISABLED_ENV")
 
 
 # Avoid the header
@@ -157,8 +157,7 @@ if localnet_config["hot-reloading"]:
     # Given the complexity of containerized environments, CGO, static/dynamic linking, darwin/linux, etc.
     # it is not currently possible to enable CGO cross-compilation.
 
-    # Cross-compilation for container use - uses appropriate build tags and CGO settings.
-    # Automatically selects Decred (no CGO) for cross-compilation or Ethereum (CGO) for native builds.
+    # Cross-compilation for container use - uses pure-Go configuration for consistency across hosts.
     local_resource(
         "hot-reload: pocketd (bin)",
         "%s --output=./bin" % build_cmd(TARGET_GOOS, TARGET_GOARCH),
@@ -169,13 +168,14 @@ if localnet_config["hot-reloading"]:
     )
 
     # Hot reload the local pocketd binary used by the CLI (host architecture).
-    # Always uses CGO + ethereum_secp256k1 for optimal performance on host.
+    # CGO path disabled; rely on pure-Go build for stability across environments.
     local_resource(
         "hot-reload: pocketd (host)",
-        '%s %s -o $(go env GOPATH)/bin' % (IGNITE_CGO_CFLAGS, IGNITE_CMD),
+        '%s -o $(go env GOPATH)/bin' % IGNITE_CMD,
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
         resource_deps=[PROTO_RESOURCE],
+        env=CGO_DISABLED_ENV,
     )
 
 # Build an image with a pocketd binary

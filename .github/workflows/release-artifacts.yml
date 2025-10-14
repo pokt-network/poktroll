@@ -24,9 +24,6 @@ permissions:
 jobs:
   build-artifacts:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        cgo_variant: ['nocgo', 'cgo']
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,11 +33,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "1.24.3"
-
-      - name: Install cross-compilers for CGO (linux/amd64 + linux/arm64)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-x86-64-linux-gnu
 
       - name: install ignite
         # The ignite tarballs are named like ignite_29.0.0-rc.1_Linux_x86_64.tar.gz
@@ -53,21 +45,15 @@ jobs:
       # - name: Generate protobufs
       #   run: make proto_regen
 
-      - name: Build binaries for specific variant
+      - name: Build binaries (CGO disabled)
         run: |
           make ignite_update_ldflags
 
           # Build cosmovisor (needed by both variants)
           make cosmovisor_cross_compile
 
-          # Build specific variant
-          if [[ "${{ matrix.cgo_variant }}" == "cgo" ]]; then
-            echo "Building CGO-enabled binaries..."
-            make ignite_release_cgo_enabled
-          else
-            echo "Building CGO-disabled binaries..."
-            make ignite_release_cgo_disabled
-          fi
+          echo "Building CGO-disabled binaries..."
+          make ignite_release_cgo_disabled
 
           # Repackage and extract
           make ignite_release_repackage
@@ -94,13 +80,8 @@ jobs:
           echo "images=ghcr.io/pokt-network/pocketd,ghcr.io/pokt-network/poktrolld" >> $GITHUB_OUTPUT
 
           # CGO suffix and dockerfile selection
-          if [[ "${{ matrix.cgo_variant }}" == "cgo" ]]; then
-            echo "cgo_suffix=-cgo" >> $GITHUB_OUTPUT
-            echo "dockerfile=Dockerfile.release.cgo" >> $GITHUB_OUTPUT
-          else
-            echo "cgo_suffix=" >> $GITHUB_OUTPUT
-            echo "dockerfile=Dockerfile.release" >> $GITHUB_OUTPUT
-          fi
+          echo "cgo_suffix=" >> $GITHUB_OUTPUT
+          echo "dockerfile=Dockerfile.release" >> $GITHUB_OUTPUT
 
           # Event-specific tag suffix
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then

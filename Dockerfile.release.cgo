@@ -1,4 +1,4 @@
-# CGO-enabled release Dockerfile
+# CGO-enabled release Dockerfile (disabled; retained for reference only)
 FROM busybox:stable AS binary-selector
 ARG TARGETARCH
 

@@ -192,8 +192,7 @@ docker_test_build_local: ## Test Docker build locally with current architecture 
 	$(MAKE) cosmovisor_cross_compile
 	@echo "$(CYAN)Testing Docker build (CGO disabled)...$(RESET)"
 	docker build -f Dockerfile.release -t pocketd-test:nocgo .
-	@echo "$(CYAN)Testing Docker build (CGO enabled)...$(RESET)"
-	docker build -f Dockerfile.release.cgo -t pocketd-test:cgo .
+	@echo "$(YELLOW)Skipping CGO-enabled Docker build test (disabled).$(RESET)"
 	$(call print_success,Docker build test successful!)
 
 .PHONY: docker_test_build_multiplatform
@@ -208,9 +207,7 @@ docker_test_build_multiplatform: ## Test multi-platform Docker build locally (re
 	@echo "$(CYAN)Testing multi-platform Docker build (CGO disabled)...$(RESET)"
 	docker buildx build --platform linux/amd64,linux/arm64 \
 		-f Dockerfile.release -t pocketd-test:nocgo-multi . --progress=plain
-	@echo "$(CYAN)Testing multi-platform Docker build (CGO enabled)...$(RESET)"
-	docker buildx build --platform linux/amd64,linux/arm64 \
-		-f Dockerfile.release.cgo -t pocketd-test:cgo-multi . --progress=plain
+	@echo "$(YELLOW)Skipping CGO-enabled multi-platform Docker build test (disabled).$(RESET)"
 	$(call print_success,Multi-platform Docker build test successful!)
 
 .PHONY: docker_test_run
@@ -242,8 +239,8 @@ docker_test_quick: ## Quick Docker build test - builds minimal binaries if neede
 .PHONY: docker_test_clean
 docker_test_clean: ## Clean up test Docker images and build cache
 	@echo "$(CYAN)Cleaning up test Docker images...$(RESET)"
-	@docker rmi -f pocketd-test:nocgo pocketd-test:cgo \
-		pocketd-test:nocgo-multi pocketd-test:cgo-multi \
+	@docker rmi -f pocketd-test:nocgo \
+		pocketd-test:nocgo-multi \
 		pocketd-test:quick 2>/dev/null || true
 	@docker builder prune -f
 	@docker buildx rm poktroll-builder 2>/dev/null || true

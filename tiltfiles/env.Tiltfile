@@ -3,23 +3,21 @@ TARGET_GOOS = "linux"
 TARGET_GOARCH = "amd64"
 
 # Build configuration aligned with makefiles/ignite.mk
-# For local/development builds with CGO
-IGNITE_BUILD_TAGS_LOCAL = "--build.tags=ethereum_secp256k1"
-# For cross-platform builds without CGO (uses Decred implementation)
+# CGO-backed builds are disabled; use pure Go (Decred implementation) everywhere.
+IGNITE_BUILD_TAGS_LOCAL = ""
 IGNITE_BUILD_TAGS_CROSS = ""
 
 # Unified build commands for different contexts
 IGNITE_CMD_LOCAL = "ignite chain build %s --skip-proto --debug -v" % IGNITE_BUILD_TAGS_LOCAL
 IGNITE_CMD_CROSS = "ignite chain build %s --skip-proto --debug -v" % IGNITE_BUILD_TAGS_CROSS
 
-# Primary command for development (local + cross-compilation with CGO)
-IGNITE_CMD = IGNITE_CMD_LOCAL
+# Primary command for development (CGO disabled)
+IGNITE_CMD = IGNITE_CMD_CROSS
 
 HOT_RELOAD_LABELS = ["hot-reloading"]
 PROTO_RESOURCE = "hot-reload: generate protobufs"
 
-CGO_CFLAGS = "-Wno-implicit-function-declaration -Wno-error=implicit-function-declaration"
-IGNITE_CGO_CFLAGS = 'CGO_ENABLED=1 CGO_CFLAGS="%s"' % CGO_CFLAGS
+CGO_DISABLED_ENV = {"CGO_ENABLED": "0"}
 
 # --- tiny helper ---
 def _run(cmd):
@@ -60,22 +58,15 @@ def build_env(target_goos="linux", target_goarch="amd64"):
     need_cross = (target_goos != host_goos) or (target_goarch != host_arch)
     triple = _zig_triple(target_goos, target_goarch)
 
+    # CGO is disabled for all builds; rely on pure Go implementation.
+    env = {
+        "GOOS": target_goos,
+        "GOARCH": target_goarch,
+        "CGO_ENABLED": "0",
+    }
     if need_cross:
-        # For cross-compilation, disable CGO and use pure Go implementation (Decred)
-        # This avoids dynamic linking issues and works reliably in containers
-        return {
-            "GOOS": target_goos,
-            "GOARCH": target_goarch,
-            "CGO_ENABLED": "0",
-        }
-    else:
-        # For native builds, use CGO with ethereum_secp256k1 for optimal performance
-        return {
-            "GOOS": target_goos,
-            "GOARCH": target_goarch,
-            "CGO_ENABLED": "1",
-            "CGO_CFLAGS": CGO_CFLAGS,
-        }
+        return env
+    return env
 
 def build_cmd(target_goos="linux", target_goarch="amd64"):
     """Returns the appropriate ignite command with correct build tags for the target"""
@@ -85,9 +76,5 @@ def build_cmd(target_goos="linux", target_goarch="amd64"):
 
     need_cross = (target_goos != host_goos) or (target_goarch != host_arch)
 
-    if need_cross:
-        # Cross-compilation: use no build tags (Decred implementation with CGO_ENABLED=0)
-        return IGNITE_CMD_CROSS
-    else:
-        # Native compilation: use ethereum_secp256k1 tag with CGO
-        return IGNITE_CMD_LOCAL
+    # CGO-disabled command is used for both native and cross builds.
+    return IGNITE_CMD_CROSS
