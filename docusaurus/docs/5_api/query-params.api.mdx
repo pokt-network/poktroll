@@ -1,0 +1,64 @@
+---
+id: query-params
+title: "Parameters queries the parameters of the module."
+description: "Parameters queries the parameters of the module."
+sidebar_label: "Parameters queries the parameters of the module."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVcFu40YM/RWCZ2282BY96NRFELS5bN3UPdlGQI9oadYzHGWGk8Qw/O/FSI6hrI0GWB9sefTIx/dISgdUahPWS/w7c9zjusLQcyS1Qe4brMfjOUXyCSuMnPogiRPWB/zy+XP5aTiZaPsSgTV+hZSN4ZS22cEb/AYrNEGURUsE9b2zZuCYfU8l7IDJdOzpMt+E/+GUDWw6Zwbd9wzbEEE7hgE8G9HwML8Fz9qFptAXHNYYNt/ZKFbYx6JT7SilHwVesJ9SNby1wmngGKCsHNOZ1ocmO/6YxdPrY8OOW1JuHsv3C+2vsF7HvavC06v12YNkv+EIYQtnmHakQJCstI5XMjEbDAm8JQYNN7DobCp25sQNaIA+8jOLQs9xG6InMcXtlDmtxJb44njHENnRHqKVFpJthTRHhg2b4Et9IYCj2E4dSVrAWOGQVrHGbEV/+xWPFXorj0lpx5dO3AYrZ90EGnYs8GK1A4KGJXgrozKSBkiAfMiiNytZybe/Fnc1LDo+HcLWsmuKWBK4F4WXzpoOrO8dexYdfTU5afCnuVnJWVyZuKdsIzew2UMb2tDHoOHjno/k5eq9E8cKBwFX7pw/BbKl7PTKmglk4deejXIDHGOIP7dt/1+9CQ1PUFaUW47TNlrRX76MapSsSxM0xUh7rNAq+/Qx1+/j7Us7KqSmsaV+cvNpyGCR55SovRp4NvFipcf9fcoc7eVah+0PWz1OA9bY8lA2aYc1zvqw00/C+hLibvgTg3Ozqd3923PTyjZcme6OrEBrtcubGxP89YzwcPfPAr7O78usWXVF4p+LxbwcwW2QFByfOk5m6LiQL6CPEpeuPXNMYzGnK5CgkFjLzT4k9SSTlD9h3jvJ5x4pv+qsd2SlEOXoxqdwMXaJ02qL32/1VtNZHhox2LuusAtJS+ThsKHE/0Z3PJbjp+GdVi/XFT5TtLQp5i3Xxwo7poYj1ssD7nhfFsoY7kt3n8nlYXp/XJvjejIJf9wt8Hj8Dxu7k30=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the parameters of the module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/application/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the parameters of the module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"max_delegated_gateways":{"description":"max_delegated_gateways defines the maximum number of gateways that a single\napplication can delegate to. This is used to prevent performance issues\nin case the relay ring signature becomes too large.","type":"string","format":"uint64"},"min_stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

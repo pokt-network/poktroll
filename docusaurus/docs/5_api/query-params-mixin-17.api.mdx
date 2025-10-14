@@ -1,0 +1,64 @@
+---
+id: query-params-mixin-17
+title: "Parameters queries the parameters of the module."
+description: "Parameters queries the parameters of the module."
+sidebar_label: "Parameters queries the parameters of the module."
+hide_title: true
+hide_table_of_contents: true
+api: eJydVt9v2zgM/lcIPd0At9l6uDsgT1d0w1ZgBXJt76ktUkZmbK2y5Il0fiDI/36Q5KbukrW95SUxTX4kv4+UslGCFavxjfqno7BWd4XyLQUU4915qcbZPMGADV+YlXEf/lKFCsStd0ysxht18v59/CqJdTBtDFRjdQrcaU3M887Co/uxKpT2TshJjMC2tUanVKNvHMM2inVNDe7jDcq47NHA8A4ZZN0SzH0AqQmS8yh7w+XkDBqS2pcxffRTY+Vn30iLKlQbYrticittCtnPnu1Qe1syoLUpSzKSUGDwc5DaMDS+7Cy9nget9ctp4wPTFLX2nZOpaVofZOoXFJbBCO1X8ZaoSArCnFC6QDC3WMGyNrqO9o6pBPFADmeWRqXh+H3rYjOBjjKUcVVs5yJmAW3RNNEJ+nwMs3VqHjupfTCyPr51V52uAZ8gYGmsHd+6IzivnA8Ev5ljOgZLuKB3cPr1a8alEkpiMS5NAFzV6Jx3u0wj1OIDR5iPZEkoRdLKcK7R6RqNy4WePdZ52gen5LmYWK2jJTDJrrE9f5gH32RVg1+Ykkq44Coj/CzDdVQ80xqHPA0f5eLaLrSeiQuYdQJc+86WMCPoKS/BuJio7HRsfTAvM+8toVPbQj3XOTFmXDXN4pX70/Gy//+fi0c24hI/G4o+RdYnSwkNMWNFfOuy1vcXXCXKUkjP2X0B909knj5t/30B6Mrhy6suvqVw/+4wOUs0C+pXIVUwrZCnc8rr9YN/ocSIjZafhx3g5wVaIk7PSYUMCSDpv2KQGiUN/5l3EieUVqjFrsE7Aibdnvzx58MHYFM5CkM/lLgiLMnxLVQfwUcPzgvoRwS3Bi81hZ1T/yg1ujdAqm3/KVRJc+ysHDjYHXSOVi1poRIoBB9+7Xx/+YTUvqSBl3FCFQVVqLkPDUo2/X6iUqmCxg6FxxBwrQplhBp+Pdff+fXOjSUYV6lIA5alifWjnQxDEkU9a4cCdyQOmZs83RffOwqG+OA1QoNbJN9baqwqSmWj1GqsRq1/kCNHsvThIT0Eb+2oMVW+t0f9NVYo4+Z+X8KzdHBWRupudqx9cxgPLj9dXcPp5HywP1+uryfRFGeWvaVeb9RJb4dNdHoNOGq2oMC5mP5XmmMmiS9bz9KgG0D+AnXPWt4pJLSSUWvRpFOkCzbf+pHWGzWsNrL9WG+hdtQmERK5d4WqPUuM22xmyPRvsNttNH9Pf6TGN3eFWmAw8dCIT9tC1YQlBTW+2agHWsdl0praqOwCbZcm98eV2d4NpuDzp2u13f4HhBl9kA==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the parameters of the module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/migration/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the parameters of the module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"params holds all the parameters of this module.","type":"object","properties":{"allow_morse_account_import_overwrite":{"description":"allow_morse_account_import_overwrite is a feature flag which is used to enable/disable\nthe re-importing of Morse claimable accounts by the authority.\nSuch a re-import will:\n- Ignore (i.e. leave) ALL claimed destination Shannon accounts/actors\n- Delete ALL existing onchain MorseClaimableAccounts\n- Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts\nThis is useful for testing purposes, but should be disabled in production.","type":"boolean"},"morse_account_claiming_enabled":{"description":"morse_account_claiming_enabled is a feature flag which is used to enable/disable the processing of Morse account/actor claim messages\n(i.e. `MsgClaimMorseAccount`, `MorseClaimApplication`, and `MorseClaimSupplier`).","type":"boolean"},"waive_morse_claim_gas_fees":{"type":"boolean","title":"waive_morse_claim_gas_fees is a feature flag used to enable/disable the waiving of gas fees for txs that:\n- Contain exactly one secp256k1 signer\n- Contain at least one Morse account/actor claim messages\n- Do not contain any other messages other than Morse account/actor claim messages"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

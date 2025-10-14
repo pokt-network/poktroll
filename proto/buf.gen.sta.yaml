@@ -15,6 +15,7 @@ plugins:
     opt:
       - logtostderr=true
       - openapi_naming_strategy=simple
-      - simple_operation_ids=true
+      # Keep the proto-defined openapiv2_operation.operation_id values intact so
+      # Docusaurus can use friendly titles instead of go_package-prefixed ones.
       - ignore_comments=false
       - json_names_for_fields=false

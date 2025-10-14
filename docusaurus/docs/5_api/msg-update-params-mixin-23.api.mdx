@@ -1,0 +1,75 @@
+---
+id: msg-update-params-mixin-23
+title: "UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account."
+description: "UpdateParams defines a (governance) operation for updating the module"
+sidebar_label: "UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account."
+hide_title: true
+hide_table_of_contents: true
+api: eJztV0tPG0kQ/iuluixIE4PIbU7LRkjLgQ0izgkQas+UZzr0VE26qzEW8n9fdc8Y/IAQrVarPcSndnV1Pb56zhOqaQKW13gRGrwtUHryRq3weY1lIn7ta6N0abzpwoV9tHzyEQv09D1S0D+kXmL5hJWwEms6mr53tsoijr4F4UQLVUudSaeaQuVtn273xYMNoC3BRWiOtuijNtBlT6ACMV+CcQ76gcMoCFc0wQITE5Yos29UKRbY++STWgrZvKiteKvLfWuer9Z2mLr2FNLZKCQXvbjhppM6OoKDmuYmOg3JqMejRh4gsktP5IH8wltV4sMNo4J6yw2uChzs3jdi9LimuWUalGVWUvIB5uI39L/vbe9F5nedDcFyc9cTG/ea55/E8rNKAyr3xLCw2oKBmlg6yzmgYLgGw2A6iayTG77hvz5Pz0qYJrQyEeaWXJ0QNAznrLBobdWC7XpHHbEOLlUxqHTQkbZS33CwDRuNnoZQW081zJbQSCO9F5WfCGtWnk57SGcHXrlZrYoRnzG97novMzOz7tXseJN1nS2bJJmDgUAhJNAGlyw3YCBLuWE7B6u/BagkKBzYCU2gkq6PShDZ5mQLscuqD5P8GTlZZC2XScDVAFLCc9p6Cq24egMjjt2MPBY4F98ZxRJriTNHuOXxKOBO1xJ+5cVOXoQ4y6UjfDcn+gXPCM/wK/6LXr52C0v1kVaJEHrhMFh/cny8H5RTCLGqKIR5dLBmT7L+nRl1NUrc6tBrNRDUxypFJHdqeqQqai78G97Fp6MQTPNKD1+DmyfLK/4xRKbHniqlGsh78f/MzR9nRiU1bXBZVmq2e4pl/XgyZIoa68IGt/HeLLFAq9SF93X9Plzvp1qBpq5tst+4y80nGaIRwTdzdDdDt+B/KduDJg1rNlzRITyvPzmAOTdT/F5m7g2/jOPJUMDPa8PmNpBeDBvBuCuYqsrVj8nwVL9ppkjIaBhtscSjXqp70kluPpPdwsECUwyvXhavs0eT2sPOVrMGYXPFeHMNWNf/y6Ox7Dc3lbdn5PG78+TnFew32/ffphhbnssrrbk1lqGx2sbZpJLuqJd7/cCkC/H3+Y8X5+Dq7MsUTi/PUxFaTVjin9PpZSLBJ+EgjsaSMlUuKTZdYnpPcHLrgXwYjBlPwKIQSLPPErQzvCHyf5OdW0A+l5bSox71zlhO5kfvcl7lxL3G3cTFYsud9F3RplQvr/HpaWYCffVutUrk75H8Esvr2wIfjLcmbSnl9e2qwJZMTR7L6ye8p2WetrmxfZgmgxK7i7nX7Da5VbF+cVpV1OsPeW83qvHy85cpFjgbv2m63AHRm0UaRGaBJWL6Pkqvc1Vl2hM6w03MfQgHmen3N3j9ylc=
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.proof.Msg/UpdateParams"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+UpdateParams defines a (governance) operation for updating the module
+parameters. The authority defaults to the x/gov module account.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.","type":"object","properties":{"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"proof_missing_penalty":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"proof_request_probability":{"description":"proof_request_probability is the probability of a session requiring a proof\nif it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.","type":"number","format":"double"},"proof_requirement_threshold":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"proof_submission_fee":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}},"description":"MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.","type":"object"}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

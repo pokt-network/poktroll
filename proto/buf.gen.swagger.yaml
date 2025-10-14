@@ -15,7 +15,10 @@ plugins:
     opt:
       - logtostderr=true
       - openapi_naming_strategy=simple
-      - simple_operation_ids=true
+      # Allow operation_id annotations in the proto files to drive the generated
+      # OpenAPI operation identifiers. The simple_operation_ids flag forces the
+      # generator to override those annotations with go_package-derived names,
+      # which leads to unreadable sidebar entries in the Docusaurus docs.
       - include_package_in_tags=true
       - ignore_comments=false
       - json_names_for_fields=false

@@ -1,0 +1,72 @@
+---
+id: query-claim
+title: "Queries a list of Claim items."
+description: "Queries a list of Claim items."
+sidebar_label: "Queries a list of Claim items."
+hide_title: true
+hide_table_of_contents: true
+api: eJy9V21P3EYQ/iujjdSA6kKaRK3qT6GAklMboOESVQJ07HnnzhvsXbMzPnI93X+vZm0fvhiC1KrlA+DdeX1mnvF4pVjPSaUX6o8aw1JdJcpXGDRb70ZGpc3xYaFtqRJV6aBLZAyisVJOl6hSRUhkvZtYoxJlnUpVpTlXiQp4W9uARqUcakwUZTmWWqUrxcsqanKwbq7W6+TeWF1VhcUwacLwYaKNCUj0j21fiTBV3hGS3L988UL+GKQs2EoSVak6AKqzDIlmdQGd+J5KVOYdo2PR0BJZFqHZ/0yithq69dPPmLFgFSQDto3TLCL4gBhbLuQgQgyWgHMEwmB1Yf9CA40gEPsgTy7LtXUw8wGiSYIKnbFuDuxhilAFv0A3cF8F72eThS6sifFPiDXX8aoLYFRWPrB2nMI4twQzi4WB9x/Px+BdsRTjhAzTJURjvyFWGJ4dO6oDfhLDZ3J8budOcx2QDpw5LDwh8VlTse26JMrgTNcFq1SdHZ8cjU7eTj4d/D46OhiPTk9UotDVpfTlg5ftw/GRStToJD6pq3Wigvc8yTXlwwp/8J5BrmAWfAlU8t75+/PxMznf2d27dOPTo9PJx7PJyfGf450307DULsuDpbvcMibw7MfXv/y8m8IR5ksTNGOsVCzCc4Kwbb2rEy7QMe09kP3Mh1JL8tMlo1onGxblqA2GYfznzf27eC2NoqGw85zvUH5DoxYbQ0NrCzjXDJl2sTM0ERrQwdfO7F26EXfdVlpnS12ALn3tGPwMjGYNHcOks7qUv4OAHCwuEHRRdHIFLrRjkWuaNzrvJf0IJ3p82pB8kPY4R/gVs/zVS2hlJEDx01MfAhwBDQuboYylwVS45924oZtIgjXA0vodfMICH/rFQWcm08JnN5M8wj6M98THztB8/ZjOdVM8g8EuNNsFSkI718Q68DV8D9euLhsFmlQYJq2d691LpwnmfoHBoREidl0WxzKB5ogL2xI7jLpMovFN0dthogm0E1StxK6LlvLsgWxZFXa2hGlN1gnmhZ/bDKyDTBNeOrHt6nKKQTwNg4Us126OBKYOcTj1+uLSXTpBvUFDor7LbZZvQ4/OoEmas7ZNC03cuPoqu2+xyzr+6XW/gk03fD38a2dva4SKsDY+aGd8CaOjyKZ+WA946vro5HR8nMK9l452scxomrEQ23bqFwgLXdRIIPDON3Wc1rE81mVFbdAI3ByB2lA7826BzqLLtmZGLO+gMZ8AZZsD36xGtI9Grdfi9NE39BDYbcZ2ms8JOt1mRFE9LS0ztvyLQzX2SQTsXxgZzoX2p/f6GQTtoHb4pcJMbGEIPvwnG4E32JOyjnGO4asyvXqpYqisbUE9aR2CXspGxFjS077eNNcP7F3qnv5nfZUIUYlEev6g4gbEPnKyK1ps3kwUXyTtViNRCnQlcu5lq5xjDFIWg1TtV/6Gf3DIdz7cxIfgi2I/rhn7sYz7q3tirfdXj3bgOi6JMz8s6mEk2NxyXk/3Ml8+7BM+HJ+P4eBs1CPHu/H4TI7g0DvyBbYdoLPYAe3W+pRhqeICAzXBtP+B8yw7lVxWnrjUrmfySTC3EtxUiPEL71eFtk7M1qGI618E+kL1YxP8u+iSZkGU1FrWpFtLffo4568SlXtisb5aTTXhx1Cs13J8Gz8o0ourRC10sHoqcF6slLEk/xuVznRBOEhkwy+186FdQXbhnsjbCXZ8cMKGOFRVqlSibnC5/WUinxj/p+dHAVvLntoteRerVv4gy7DinqXBaJHvmA1/3h6P1Xr9N8rY2lE=
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Queries a list of Claim items."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/proof/claim/{session_id}/{supplier_operator_address}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Queries a list of Claim items.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"session_id","in":"path","required":true,"schema":{"type":"string"}},{"name":"supplier_operator_address","in":"path","required":true,"schema":{"type":"string"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"claim":{"type":"object","title":"Claim is the serialized object stored onchain for claims pending to be proven","properties":{"proof_validation_status":{"title":"Important: This field MUST only be set by proofKeeper#EnsureValidProofSignaturesAndClosestPath","type":"string","default":"PENDING_VALIDATION","enum":["PENDING_VALIDATION","VALIDATED","INVALID"]},"root_hash":{"description":"Root hash from smt.SMST#Root().\nTODO_UP_NEXT(@bryanchriswhite, #1497): Dehydrate the claim's root hash from onchain events.","type":"string","format":"byte"},"session_header":{"description":"SessionHeader is a lightweight header for a session that can be passed around.\nIt is the minimal amount of data required to hydrate & retrieve all data relevant to the session.","type":"object","properties":{"application_address":{"description":"The Bech32 address of the application.","type":"string"},"service_id":{"type":"string","title":"The service id this session is for"},"session_end_block_height":{"description":"Note that`session_end_block_height` is a derivative of (`start` + `num_blocks_per_session`)\nas governed by onchain params at the time of the session start.\nIt is stored as an additional field to simplify business logic in case\nthe number of blocks_per_session changes during the session.\n\nThe height at which this session ended, this is the last block of the session","type":"string","format":"int64"},"session_id":{"description":"A unique pseudorandom ID for this session","type":"string","title":"NOTE: session_id can be derived from the above values using onchain but is included in the header for convenience"},"session_start_block_height":{"type":"string","format":"int64","title":"The height at which this session started"}}},"supplier_operator_address":{"description":"Address of the supplier's operator that submitted this claim.\n\nthe address of the supplier's operator that submitted this claim","type":"string"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

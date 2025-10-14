@@ -1,0 +1,72 @@
+---
+id: msg-stake-gateway
+title: "MsgStakeGateway"
+description: "MsgStakeGateway"
+sidebar_label: "MsgStakeGateway"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsFu20YQ/ZXBnFKAkQyn6IGnOoGRGoVrIVZPsmCMuCNyI3KW2R1GFgR9QD8kP9YvKXYpWVQsJJf2EKA8LWdnZmfee0PuFpXKgPkMb0OJ8wxdy57UOrkxmEfjvdKK35PymjaYoedPHQd968wG8y0WTpRF45LatrZFih1/DE6iLRQVNxRXumkZc3SLj1woZtj6eJJaDinWGM8hDByDeislZqhW62iYVgxvuajeXMLeG9wStGIo98XtMgyx2JjFcCi8bWMxmOM7ZwUML61wAAJ1KxZYW62AwLC4xkqqG0gMkAA1rhMdPciD/HE3vc4hHt4bYWm5NmBD9LsRhXVliwps09bcsGhIJRVdUNdAw1o58yDBlkLaeQ4Q8bOeDSw2ULrStd6pG8U+vw1QOvwlPrsMUwNndnan2KlTqg9NuCV0k7vfp0P8Yk8RPyvlCG67oLBg+PuvL6Bu35P3LHpIoRXpSXhFfTwbeGWXQLL5CXfx6UUTm8ZcfcfJEFonoe/t8uLiJWVXELqi4BCWXQ0H94jTv6S4g2j+l+aPIM2jtmLaTtL6MXAI1skji3ms2JbVmSoyXDrfkGKOnRX95ecBb/d9PLAY6OOBDqidDIZYtaRsoD/ZSgmvLsAuQZwebXu5J8UbXlJX6xldC3TCTy0XMR977/x/Ie/CGR54WVEu2Q/RsKJvLnuSlGw9FDh5n771VrkJ3z/r1377HMtkjI31Uz0ZhiSIGg6ByrOBzyAOkXv5L+o1jDm2LqSySCvMcdy6YsU62tM3ug3l+KvICOeH45/s+onikJyM+1FAz5N7UPpxay/wYctWlu7MmFdkBUqrVbcYFa4Zt26lr4V17fwqvXhX1/Dh+n4KV5ObgUh/m04n0QTvnARX814jVCSNCDXR6XuJI8+f2Ye+mP0qqTewxs2IYEMySHkbSkiowRG2k56eaVN+0nFbk5U0nL6Oez0XM3zJBWZ4wsY8wyryl89wu11Q4D99vdtF86eO/Qbz2TzDz+QtLSIgs/kuw4rJsMd8tsUVb9JnNI3N62ksKbrXXVLy1yO0yw4RV0XBrX7Tdz6Q2OTufooZLvb3nibNF3paxzsRrTFHjJenGJ2GItm2WJOUXVI59jnj8w9+h1Js
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"MsgStakeGateway"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.gateway.Msg/StakeGateway"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+MsgStakeGateway
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"address":{"type":"string","title":"The Bech32 address of the gateway"},"stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}},"title":"The total amount of uPOKT the gateway is staking. Must be ≥ to the current amount that the gateway has staked (if any)"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"gateway":{"type":"object","properties":{"address":{"type":"string","title":"The Bech32 address of the gateway"},"stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}},"title":"The total amount of uPOKT the gateway has staked"},"unstake_session_end_height":{"type":"string","format":"uint64","title":"Session end height at which the gateway initiated unstaking (0 if not unstaking)"}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

@@ -1,0 +1,64 @@
+---
+id: query-params-mixin-22
+title: "Parameters queries the parameters of the module."
+description: "Parameters queries the parameters of the module."
+sidebar_label: "Parameters queries the parameters of the module."
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsFu40YM/RWCl7aAai/Sm05dBEGbQ1s3dU+OYYwlSprNiFRmOEkMw/9ezEgxnNhtij2vL5Yp8j3ykcPxHtW0AcsV/hnJ73BdoAzkjVrh2xrL0bww3vThN/ti+eoKC/QUBuFAAcs9Xn36lL5qCpW3QwrEEj9DiFVFITTRwav7DAushJVYU4QZBmerTDX/ElLYHkPVUW/O8U7SuJvQwIYjMuhuIGjEg3YE2Xk+esPd4hp60k7qRJ/8sETZfqFKscDBp3LVjqUMOeScfYKqqbFMIXNkV1Ly4UjbSx0d/Q8WL9JsehuC5XYzEBunu3PSa7F8pDSg8kAMz1Y7MFATS285aweGazAMppfIOrvne/79j+VNCcuOJiM0llydBDMMt6zw3NmqA9sPjnpiHUuqYlDpJ7HuOdiWjUZPSebHaD3VsN1BK60MXlQ+LnQkT0+TX1BvucVDgbmAC28Oh2LSJ3FS0M3gZWu21tlLGv2ra6o1t+nEJA0YCBRCEm0syXILBjLKPdsGrH4XoJKg8L2d0Qwq6YeoBJGtQiUcYp+pf0j4W3LynFkWCeBuFCnpuew8hU7c6chx7LfkscBGfG8US6wlbh3hm4ongI2+Inybi3dzEeI2Hx3hTUP0TZ5JnumTXBoTnV5YyQyR6WWgSqkG8l78123m/86+kppOvCwrtW/n3rL+dDVWo8a6cOJtvDc7LNAq9eFjrp/H1+dyFGjq2qb8jVuchmSJegrBtBcDjyKerf9x1z9G8vb8CpDm3Q0wTgOW2FJO22iHJc4HedAfmfRZ/EP+4cW5eR7s+XT5FGi5kQtz3RnL0Frt4nZWSX8ZC+5u/lrC58VtmjKrLhX363K5SCa4Fg7iaOq1qXKv2fTJ6SPg1K8n8mFMZnoCFoVAmneYBO0Nn0B+hWxvSj52R+lF54MzlhNR9G68q5OkKzzNNin9mu+0L7L4Wdh1gZ0ETTH7/dYE+tu7wyGZH/Nfn3K1LvDJeGvSVi5X60OBHZmaPJarPT7QLh2iqqIhdfTJuJgn9v1ROaxPuv/LzRIPh38AzR1brw==
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the parameters of the module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/proof/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the parameters of the module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"proof_missing_penalty":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"proof_request_probability":{"description":"proof_request_probability is the probability of a session requiring a proof\nif it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.","type":"number","format":"double"},"proof_requirement_threshold":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"proof_submission_fee":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

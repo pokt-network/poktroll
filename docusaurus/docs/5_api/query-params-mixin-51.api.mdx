@@ -1,0 +1,64 @@
+---
+id: query-params-mixin-51
+title: "Parameters queries the parameters of the module."
+description: "Parameters queries the parameters of the module."
+sidebar_label: "Parameters queries the parameters of the module."
+hide_title: true
+hide_table_of_contents: true
+api: eJzFV99PIzcQ/ldGlipaaS/hOPUlT80BvaKWJuXCE6CV1ztJfPHai38Eoij/ezXezWYhgeToifISYs94vvlm5ou9ZJ5PHOvdsH8C2gW7S5gp0XIvjb7IWa9aHnLLC3cpH6X+9SNLmEVXGu3Qsd6SnRwf00eOTlhZkiPrsT64IAQ6Nw4K1uYdljBhtEftyYOXpZIihup+c+S2ZE5MseDb57VgXNWngXTNyeAXJcLYWPBThGjcrazhangKBfqpySk82bEeM9k3FJ4lrLSUrpdVKmV02Y5eH5XjWGp0MUY0RY/WNWG9maE2hRQOCpMHhfsD5tykFh+4zVOe5xbdjuDbNpT5wxQtxrBn/cGRg9JYsgczBqG4LBy4kBXSe8yBW4RcOm9lFjzmnVt9qz+jmH46AWFcYRysgzd4yVhP2CphE2UyrlKpxyqWKi3RpjHENtSXbQlypA2tQO35BAkpr7AeueqTZwohDAd/joAXJmgP3kCGUEhNaRgNDr1XWKD2nVv9JUa7lNqP/rrswUCrBQSHOWSLGOvJPnAfF1HnDUft4zap61BkaFnCxsYW3FMFTMgUEhmEJOVKGdHkV6ezo3AUud/YDjemIHjpg607qalMXT6ND2qxzjn2lOvc6tEUwYUisqYUGdV7a8siOA94H7iCjz+anFs9GpwN0rOLr6P+36P09+vR9dV5D66wMHNqQunAaIFQ1R+a+lPVc+morjlITdUv0QfpF/tHo6UO29S2NuED/LSmDZ/xBg6rJqLk2j5ciNhfdd8fWP2cm53jeTCEs/4AqlH+zshEjXFot8Ovdw7GkCkjZtC4/Sw72IE5VzLn3tjjN1LjTLACU/Ogd4Fs7x4M1KGdS4FQOUPl/EZ0gWq/E1m98530NW5vwbNaC0mcVpdmwepKJdO2FuwWlPPo8zlYfUoeZ23xeFVWNgr7kqbU2WYo9QQIlIexNcXz4Tly4Dyf4cuKs8G4T3ueWB4u0T9IMp5T8s5y8Wr4d5CKV+PvkYlf3k0nXkX5v2jEAbz9R32o/xKW45gH5XfcrzUEjY8lCtIptNbYt12zX58oYXJsWZEqTp6Cltp/Oondjp5L5VrW3Fq+YAmTHgu3P9Zv1fby+RV0lTCe55LwczVsu1RKis7xyU7HhsStu3x1cb8PaOX2fd6M48rmDl89H+h+ixE291PWY93SzPwHjf7B2Fn8Yo1S3c0roFs/JxIm9XiHFJxOudQwkX4aso4wxe4D4er86wj6wwtqHekVZfjHaDSkJTg12hmFdcG5iAXXvCCjfQdT0eZoXQWm/g+08aS5UUmM8wXXrSPfwN2TlJsSeXz03VJxqSlQsKp6fRGvN6yNluhe403YhttYhsjuXcKmxnlyXC4z7vDaqtWKlu/ji7Z3c5ewObeSJpa+rRI2RZ7TpN8s2QwXNE5CYEm1nXMV8OmvRTU0q7tWH3w5H7HV6l/pqGq5
+sidebar_class_name: "get api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Parameters queries the parameters of the module."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/pokt-network/poktroll/tokenomics/params"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Parameters queries the parameters of the module.
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"description":"QueryParamsResponse is response type for the Query/Params RPC method.","type":"object","properties":{"params":{"description":"Params defines the parameters for the tokenomics module.","type":"object","properties":{"dao_reward_address":{"description":"dao_reward_address is where the DAO's portion of claims submitted are distributed.\n\nBech32 cosmos address","type":"string"},"global_inflation_per_claim":{"description":"global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount to be minted on settlement.\nGlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.","type":"number","format":"double"},"mint_allocation_percentages":{"description":"MintAllocationPercentages captures the distribution of newly minted tokens.\nThe sum of all new tokens minted must equal 1.\nGlobalMintTLM: Only used by the GlobalMintTLM at the end of claim settlement.\nTODO_DISTANT_FUTURE: Remove this once global inflation is disabled in perpetuity.","type":"object","properties":{"application":{"description":"application - % of newley minted tokens sent to the application account address.","type":"number","format":"double"},"dao":{"description":"dao - % of newley minted tokens sent to the DAO reward address.","type":"number","format":"double"},"proposer":{"description":"proposer - % of newley minted tokens sent to the block proposer (i.e. validator0 account address.","type":"number","format":"double"},"source_owner":{"description":"source_owner - % of newley minted tokens sent to the service source owner account address.","type":"number","format":"double"},"supplier":{"description":"supplier - % of newley minted tokens sent to the block supplier account address.","type":"number","format":"double"}}},"mint_equals_burn_claim_distribution":{"description":"MintEqualsBurnClaimDistribution captures the distribution of claimable tokens.\nThe sum of all tokens being burnt from the application's stake must equal 1.\nGlobalMintEqualsBurnTLM: Only used by the GlobalMintEqualsBurnTLM at the end of claim settlement.","type":"object","properties":{"application":{"description":"application - % of claimable tokens sent to the application account address.","type":"number","format":"double"},"dao":{"description":"dao - % of claimable tokens sent to the DAO reward address.","type":"number","format":"double"},"proposer":{"description":"proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.","type":"number","format":"double"},"source_owner":{"description":"source_owner - % of claimable tokens sent to the service source owner account address.","type":"number","format":"double"},"supplier":{"description":"supplier - % of claimable tokens sent to the block supplier account address.","type":"number","format":"double"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      
