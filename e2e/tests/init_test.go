@@ -589,8 +589,8 @@ func (s *suite) TheUserRunsRelayminerRelayForAppToSupplierWithPayload(appName, s
 	appAddr := accNameToAddrMap[appName]
 	supplierAddr := accNameToAddrMap[supplierName]
 
-	// For LocalNet, relayminer1 is exposed on localhost:8085 via Tiltfile port forwarding
-	// (see Tiltfile line 296: 8084 + actor_number where actor_number=1 for supplier1)
+	// For LocalNet, relayminer1 is exposed on localhost:8085 via Tiltfile port forwarding.
+	// (see Tiltfile: "8084 + actor_number where actor_number=1 for supplier1")
 	// TODO_IMPROVE: Make this configurable or dynamically determine the port
 	endpointUrl := "http://localhost:8085"
 
