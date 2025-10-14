@@ -602,7 +602,7 @@ func (s *suite) TheUserRunsRelayminerRelayForAppToSupplierWithPayload(appName, s
 		"--supplier=" + supplierAddr,
 		"--payload=" + payload,
 		"--supplier-public-endpoint-override=" + endpointUrl,
-		"--grpc-addr=localhost:9090",
+		"--grpc-addr=127.0.0.1:9090",
 		"--grpc-insecure=true",
 		keyRingFlag,
 		chainIdFlag,
