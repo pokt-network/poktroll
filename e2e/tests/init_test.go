@@ -584,6 +584,40 @@ func (s *suite) TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPa
 	s.TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPathAndData(appName, supplierName, numRelays, serviceId, path, "")
 }
 
+func (s *suite) TheUserRunsRelayMinerRelayForAppToSupplierWithPayload(appName, supplierName, payload string) {
+	// Get app and supplier addresses
+	appAddr := accNameToAddrMap[appName]
+	supplierAddr := accNameToAddrMap[supplierName]
+
+	// Get the supplier info to extract the first endpoint URL
+	supplier := s.getSupplierInfo(supplierName)
+	require.NotNil(s, supplier, "supplier %s not found", supplierName)
+	require.NotEmpty(s, supplier.Services, "supplier %s has no services", supplierName)
+
+	// Use the first service's first endpoint as the override
+	// This ensures we're hitting a real endpoint in LocalNet
+	endpointUrl := supplier.Services[0].Endpoints[0].Url
+
+	// Build the relayminer relay command with all required flags
+	args := []string{
+		"relayminer",
+		"relay",
+		"--app=" + appAddr,
+		"--supplier=" + supplierAddr,
+		"--payload=" + payload,
+		"--supplier-public-endpoint-override=" + endpointUrl,
+		"--grpc-addr=localhost:9090",
+		"--grpc-insecure=true",
+		keyRingFlag,
+		chainIdFlag,
+	}
+
+	// Execute the command
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error running relayminer relay from app %q to supplier %q due to: %v", appName, supplierName, err)
+	s.pocketd.result = res
+}
+
 func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
 	s.waitForNewBlockEvent(newEventTypeMatchFn(module, eventType))
 }
