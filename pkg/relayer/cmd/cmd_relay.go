@@ -312,7 +312,15 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	logger.Info().Msgf("✅ Retrieved private key for app %s", app.Address)
-	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
+
+	// Initialize the signer properly so that the private key hex is decoded into bytes.
+	// Previously this was constructed as a literal which left privateKeyBytes empty and
+	// caused: "Sign: error decoding private key to scalar: invalid scalar length".
+	appSigner, err := sdk.NewSignerFromHex(appPrivateKeyHex)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error initializing signer from private key hex")
+		return err
+	}
 
 	// Parse the endpoint URL
 	reqUrl, err := url.Parse(endpointUrl)
