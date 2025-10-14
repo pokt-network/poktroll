@@ -493,6 +493,14 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Info().Msgf("✅ Backend response status code: %v", backendHttpResponse.StatusCode)
 			logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
 			logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
+
+			// Print the JSON response to stdout for CLI users and testing
+			jsonOutput, err := json.MarshalIndent(jsonMap, "", "  ")
+			if err != nil {
+				logger.Error().Err(err).Msg("❌ Error marshaling JSON for stdout")
+			} else {
+				fmt.Println(string(jsonOutput))
+			}
 		}
 
 		// If "jsonrpc" key exists, try to further deserialize "result".

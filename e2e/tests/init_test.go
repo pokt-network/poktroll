@@ -584,19 +584,15 @@ func (s *suite) TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPa
 	s.TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPathAndData(appName, supplierName, numRelays, serviceId, path, "")
 }
 
-func (s *suite) TheUserRunsRelayMinerRelayForAppToSupplierWithPayload(appName, supplierName, payload string) {
+func (s *suite) TheUserRunsRelayminerRelayForAppToSupplierWithPayload(appName, supplierName, payload string) {
 	// Get app and supplier addresses
 	appAddr := accNameToAddrMap[appName]
 	supplierAddr := accNameToAddrMap[supplierName]
 
-	// Get the supplier info to extract the first endpoint URL
-	supplier := s.getSupplierInfo(supplierName)
-	require.NotNil(s, supplier, "supplier %s not found", supplierName)
-	require.NotEmpty(s, supplier.Services, "supplier %s has no services", supplierName)
-
-	// Use the first service's first endpoint as the override
-	// This ensures we're hitting a real endpoint in LocalNet
-	endpointUrl := supplier.Services[0].Endpoints[0].Url
+	// For LocalNet, relayminer1 is exposed on localhost:8085 via Tiltfile port forwarding
+	// (see Tiltfile line 296: 8084 + actor_number where actor_number=1 for supplier1)
+	// TODO_IMPROVE: Make this configurable or dynamically determine the port
+	endpointUrl := "http://localhost:8085"
 
 	// Build the relayminer relay command with all required flags
 	args := []string{
