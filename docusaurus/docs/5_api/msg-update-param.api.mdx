@@ -1,0 +1,72 @@
+---
+id: msg-update-param
+title: "MsgUpdateParam"
+description: "MsgUpdateParam"
+sidebar_label: "MsgUpdateParam"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsGO20YM/RWCpxZQ7CAtetCpm2CB7mGbReKcvMaC1tDSxJoZZYZa2zD87wVHXq82druX5FYfjBGHHJKP7420R6E6YTnH21TjosDQcSSxwd8YLNX4pTMkfEeRHBYY+VvPSd4Hs8Nyj1Xwwl50SV3X2iqHTr+m4NWWqoYd6Up2HWOJYfmVK8ECu6iJxHLKsemhCjaHGE5VtJ0egyV+CNaD4ZX1nIBAwpo9bKw0QGDYB2d9zgjkDZAHcqH3Mrn39/7vj7PrEmYNH42wstwasEn9brzAprFVA9Z1LTv2kkAahqpPEhw4liaYe59s7Un6yAm0cxvZwHIHdahDF4OECRavtZaTjyBIEq2v8VBgbuDCzuFQKCK99fLH7+f7Ba5CdCRY4tFF/XtpQrSyO8fwtKW9a49kTOSkaxLQCcbQDjsumL5l+MXwivpWIQmwndbhEXrfakh45LiJVoT9r6Pen3vy5PhiS9rUE4RYSuw5G1IXfBqQevf27XnxV5D6quKUVn0LT+6a+Qcxr1Nep/O8me/pRD0FJ7uycEywCnGE1+skcLR9MNxyTcLmQf83tLuQ9bLfiyocba3rHfjeLTlCWMHJLc+TIFlft3zvR7BARSqj4WCQMIFZY5PyoU9sdMpd5Ef2Ah3HzC5fMdiUek733mp84pw+cks70KHCSRuw5Co4rS8EaCnWfE6Ni6R11j8koTX/L/yTSo5SOSrwgiA89J63HVfCBjjGEH+GLqpgxjq2XrjmOB6j9fLbu6EbIdumkTfFSDss0Aq79HquP4ftczgKJGOs1k/t3TgkQ+Q4Jar/7bYZQBwjd/YuG2aNJXYh5apIGixx2oVqzTIZwTe5TfX0ZbAC+un5ZXi9JeXTdy+zJw48q+A4+hEZRjf9s9voOn82DnfrKNT6VbggnYash9pK0y8nVXDTLqzljWfZhLjODzG0LXy6/jyDq7sbJbIVLR3/ms3u1AQfgk+h5SOdqMp0OqZ/7WAt7JFjGoo5rsAHgcSim4q2Iz868jbVMKALT/C+aOk0YOGtTLuWrNeD+tgOV7iObY6Xx4YFjge3KLDRaZdz3O+XlPhLbA8HNX/rOe6wnC8KfKRoaamQzBeHAhsmwxHL+R7XvMuXU9bYm5lWpe5tn2n/vd4OxVPEVVVxJ//puxgR8u7j5xkWuDx+ZbksRoy00S8w2mCJqF9qGp0VlG17bMnXfZYEDmfq7x9eRX6/
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"MsgUpdateParam"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.application.Msg/UpdateParam"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+MsgUpdateParam
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"as_coin":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"as_uint64":{"type":"string","format":"uint64"},"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"name":{"type":"string"}}}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"max_delegated_gateways":{"description":"max_delegated_gateways defines the maximum number of gateways that a single\napplication can delegate to. This is used to prevent performance issues\nin case the relay ring signature becomes too large.","type":"string","format":"uint64"},"min_stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

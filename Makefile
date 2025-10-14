@@ -315,26 +315,14 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			--home=$(POCKETD_HOME) \
 			--node $(POCKET_NODE);)
 
-######################
-### Ignite Helpers ###
-######################
-
-# TODO_TECHDEBT(@olshansk): Change this to pocketd keys list
-
-
-
-
 ##################
 ### CI Helpers ###
 ##################
-
 
 .PHONY: trigger_ci
 trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
 	git commit --allow-empty -m "Empty commit"
 	git push
-
-
 
 #######################
 ### Keyring Helpers ###

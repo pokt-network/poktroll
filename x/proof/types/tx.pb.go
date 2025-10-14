@@ -522,11 +522,11 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// proof.MsgUpdateParams
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	CreateClaim(ctx context.Context, in *MsgCreateClaim, opts ...grpc.CallOption) (*MsgCreateClaimResponse, error)
 	SubmitProof(ctx context.Context, in *MsgSubmitProof, opts ...grpc.CallOption) (*MsgSubmitProofResponse, error)
+	// proof.MsgUpdateParam
 	UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ...grpc.CallOption) (*MsgUpdateParamResponse, error)
 }
 
@@ -576,11 +576,11 @@ func (c *msgClient) UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ..
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// proof.MsgUpdateParams
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	CreateClaim(context.Context, *MsgCreateClaim) (*MsgCreateClaimResponse, error)
 	SubmitProof(context.Context, *MsgSubmitProof) (*MsgSubmitProofResponse, error)
+	// proof.MsgUpdateParam
 	UpdateParam(context.Context, *MsgUpdateParam) (*MsgUpdateParamResponse, error)
 }
 

@@ -10,29 +10,31 @@ import "google/api/annotations.proto";
 import "cosmos_proto/cosmos.proto";
 
 import "pocket/session/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/session/types.proto";
 import "pocket/shared/service.proto";
 
-// Query defines the gRPC querier service.
 service Query {
 
-  // Parameters queries the parameters of the module.
+  // session.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/session/params";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QuerySessionParams"
+      summary: "session.QueryParams"
+    };
   }
 
-  // Queries the session given app_address, service and block_height.
   rpc GetSession (QueryGetSessionRequest) returns (QueryGetSessionResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/session/get_session";
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryGetSession"
+      summary: "session.QueryGetSession retrieves session information for an application and service."
+    };
   }
 }
-// QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
-
-// QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-
-  // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
@@ -45,4 +47,3 @@ message QueryGetSessionRequest {
 message QueryGetSessionResponse {
   Session session = 1;
 }
-

@@ -11,6 +11,7 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "pocket/supplier/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/shared/service.proto";
 import "pocket/shared/supplier.proto";
 
@@ -18,12 +19,32 @@ import "pocket/shared/supplier.proto";
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // UpdateParams defines a (governance) operation for updating the module
-  // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams    (MsgUpdateParams   ) returns (MsgUpdateParamsResponse   );
-  rpc StakeSupplier   (MsgStakeSupplier  ) returns (MsgStakeSupplierResponse  );
-  rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse);
-  rpc UpdateParam     (MsgUpdateParam    ) returns (MsgUpdateParamResponse    );
+  // supplier.MsgUpdateParams
+  rpc UpdateParams    (MsgUpdateParams   ) returns (MsgUpdateParamsResponse   ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgSupplierUpdateParams"
+      summary: "supplier.MsgUpdateParams updates all module parameters via governance."
+    };
+  };
+  rpc StakeSupplier   (MsgStakeSupplier  ) returns (MsgStakeSupplierResponse  ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgStakeSupplier"
+      summary: "supplier.MsgStakeSupplier stakes a supplier for specified services."
+    };
+  };
+  rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgUnstakeSupplier"
+      summary: "supplier.MsgUnstakeSupplier unstakes a supplier."
+    };
+  };
+  // supplier.MsgUpdateParam
+  rpc UpdateParam     (MsgUpdateParam    ) returns (MsgUpdateParamResponse    ) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgSupplierUpdateParam"
+      summary: "supplier.MsgUpdateParam updates a single module parameter via governance."
+    };
+  };
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -84,4 +105,3 @@ message MsgUpdateParamResponse {
   // Params params = 1;
   reserved 1;
 }
-

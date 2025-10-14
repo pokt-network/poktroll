@@ -741,14 +741,14 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// application.MsgUpdateParams
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	StakeApplication(ctx context.Context, in *MsgStakeApplication, opts ...grpc.CallOption) (*MsgStakeApplicationResponse, error)
 	UnstakeApplication(ctx context.Context, in *MsgUnstakeApplication, opts ...grpc.CallOption) (*MsgUnstakeApplicationResponse, error)
 	DelegateToGateway(ctx context.Context, in *MsgDelegateToGateway, opts ...grpc.CallOption) (*MsgDelegateToGatewayResponse, error)
 	UndelegateFromGateway(ctx context.Context, in *MsgUndelegateFromGateway, opts ...grpc.CallOption) (*MsgUndelegateFromGatewayResponse, error)
 	TransferApplication(ctx context.Context, in *MsgTransferApplication, opts ...grpc.CallOption) (*MsgTransferApplicationResponse, error)
+	// application.MsgUpdateParam
 	UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ...grpc.CallOption) (*MsgUpdateParamResponse, error)
 }
 
@@ -825,14 +825,14 @@ func (c *msgClient) UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ..
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	// UpdateParams defines a (governance) operation for updating the module
-	// parameters. The authority defaults to the x/gov module account.
+	// application.MsgUpdateParams
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	StakeApplication(context.Context, *MsgStakeApplication) (*MsgStakeApplicationResponse, error)
 	UnstakeApplication(context.Context, *MsgUnstakeApplication) (*MsgUnstakeApplicationResponse, error)
 	DelegateToGateway(context.Context, *MsgDelegateToGateway) (*MsgDelegateToGatewayResponse, error)
 	UndelegateFromGateway(context.Context, *MsgUndelegateFromGateway) (*MsgUndelegateFromGatewayResponse, error)
 	TransferApplication(context.Context, *MsgTransferApplication) (*MsgTransferApplicationResponse, error)
+	// application.MsgUpdateParam
 	UpdateParam(context.Context, *MsgUpdateParam) (*MsgUpdateParamResponse, error)
 }
 

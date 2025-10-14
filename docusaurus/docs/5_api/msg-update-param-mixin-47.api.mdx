@@ -1,0 +1,72 @@
+---
+id: msg-update-param-mixin-47
+title: "MsgUpdateParamMixin47"
+description: "MsgUpdateParamMixin47"
+sidebar_label: "MsgUpdateParamMixin47"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVk2P20YM/SsETy2grIO0QAGdug0W6B62MRLn5F0saImWJpY4ygy1tmH4vxcc+UNdb7O55BafxiSHw0fykdqhUhUxn+NdrPAhQ99xIHVebkvMTfi5K0l5SoHaO7dx8vsfmGHgrz1H/cuXW8x3WHhRFrUjdV3jiuRh8iV6MVksam7JTiXHIrjOtBfewUXQmuEuVpOx+PAW6LZjUA990gFBdFI1DJ1ZXWGGZoA5+sUXLhQz7IKBUccxBRYfC+/kMor33gmUvHTCEQjUr1hg7bQGgpLFt04SHCApgQSo9b3o1b3cyz8fZjc5zGo+CGHpuCkNCAncisK6dkUNru0abll0AFj0UX0LLWvty3uJrhLSPnBMUF3gEhZbqHzlu+DVfwe09LidDnZRg5MK9xkmAC9o9vsMqdfaB6fby5ycVMeiUFkGjnYmBSt38M2gaX3ZNwy/lLykvjGIHjaTyj9BL41d8U8c1sGpsvw6wnKOUajlF0PcJwA/sGOO+cZcQ897E8TOSxzS+u7t28vMXEPsi4JjXPYNHM3N13dz4Nu1TLHFy3cTsnjqU4OdTFk5RFj6MCrG6x3TOnmMSiv+SYcTHSwfTqrHJf/MypmBJxomdr/AB4FeeNNxoVwCh+DDj6BF4cvxjHCiXHHADJc+tKSD6Ld3Axol18SRNYVAW8zQKbfx9bf+HNSX6ciQytJZ/NRMx1dSilqOkar/m2SvzbLzbh1Kjjl2PqbgSGvMcdL5YsV6FXtLI4erZ1MPM7Skfjxv5psNWU89W37HPjhGdyr/qCFGm+FsNozpkZWTpX+BKTU5gcpp3S+uCt9OOr/SN8K69mGV/gTfNPDx5tMMrqe31rdOLUr8ezabmgjee4m+4UP3UJG65/D8a44tsCcOcQjmcALxCpHVlJbVlmTk8i5WMCQShv1xrsV/oJ3qqrzRSdeQE3PYh2YY3FamOb5QJsxwXKiHDGsrbT7H3W5BkT+HZr838deewxbz+UOGTxQcLSwv84d9hjVTyQHz+Q5XvE0DKfHqzcxCMvOmT63+nGP77Hjjuii402/aPoy6b/rh0wwzXBw+8dpEQAy0tr1Ja8wR7WvRbifWJNkOG5KqTzTAwaf9/gV1V62M
+sidebar_class_name: "post api-method"
+info_path: 5_api/http-api-console
+custom_edit_url: null
+proxy: https://corsproxy.io/
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"MsgUpdateParamMixin47"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/pocket.supplier.Msg/UpdateParam"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+MsgUpdateParamMixin47
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"description":"MsgUpdateParam is the Msg/UpdateParam request type to update a single param.","type":"object","properties":{"as_coin":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"authority":{"description":"authority is the address that controls the module (defaults to x/gov unless overwritten).","type":"string"},"name":{"type":"string"}}}}},"description":"MsgUpdateParam is the Msg/UpdateParam request type to update a single param.","required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A successful response.","content":{"application/json":{"schema":{"type":"object","properties":{"params":{"description":"Params defines the parameters for the module.","type":"object","properties":{"min_stake":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}},"staking_fee":{"description":"Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.","type":"object","properties":{"amount":{"type":"string"},"denom":{"type":"string"}}}}}}}}}},"default":{"description":"An unexpected error response.","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer","format":"int32"},"details":{"type":"array","items":{"type":"object","properties":{"@type":{"type":"string"}},"additionalProperties":{}}},"message":{"type":"string"}}}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

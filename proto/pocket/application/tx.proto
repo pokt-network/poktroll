@@ -13,20 +13,56 @@ import "gogoproto/gogo.proto";
 import "pocket/application/types.proto";
 import "pocket/application/params.proto";
 import "pocket/shared/service.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // Msg defines the Msg service.
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // UpdateParams defines a (governance) operation for updating the module
-  // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams          (MsgUpdateParams) returns (MsgUpdateParamsResponse);
-  rpc StakeApplication      (MsgStakeApplication) returns (MsgStakeApplicationResponse);
-  rpc UnstakeApplication    (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
-  rpc DelegateToGateway     (MsgDelegateToGateway) returns (MsgDelegateToGatewayResponse);
-  rpc UndelegateFromGateway (MsgUndelegateFromGateway) returns (MsgUndelegateFromGatewayResponse);
-  rpc TransferApplication   (MsgTransferApplication) returns (MsgTransferApplicationResponse);
-  rpc UpdateParam           (MsgUpdateParam) returns (MsgUpdateParamResponse);
+  // application.MsgUpdateParams
+  rpc UpdateParams          (MsgUpdateParams) returns (MsgUpdateParamsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgApplicationUpdateParams"
+      summary: "application.MsgUpdateParams updates all module parameters via governance."
+    };
+  };
+  rpc StakeApplication      (MsgStakeApplication) returns (MsgStakeApplicationResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgStakeApplication"
+      summary: "application.MsgStakeApplication stakes an application for specified services."
+    };
+  };
+  rpc UnstakeApplication    (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgUnstakeApplication"
+      summary: "application.MsgUnstakeApplication unstakes an application."
+    };
+  };
+  rpc DelegateToGateway     (MsgDelegateToGateway) returns (MsgDelegateToGatewayResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgDelegateToGateway"
+      summary: "application.MsgDelegateToGateway delegates an application to a gateway."
+    };
+  };
+  rpc UndelegateFromGateway (MsgUndelegateFromGateway) returns (MsgUndelegateFromGatewayResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgUndelegateFromGateway"
+      summary: "application.MsgUndelegateFromGateway removes a gateway delegation."
+    };
+  };
+  rpc TransferApplication   (MsgTransferApplication) returns (MsgTransferApplicationResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgTransferApplication"
+      summary: "application.MsgTransferApplication transfers application ownership."
+    };
+  };
+  // application.MsgUpdateParam
+  rpc UpdateParam           (MsgUpdateParam) returns (MsgUpdateParamResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "MsgApplicationUpdateParam"
+      summary: "application.MsgUpdateParam updates a single module parameter via governance."
+    };
+  };
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -125,4 +161,3 @@ message MsgUpdateParamResponse {
   // Params params = 1;
   reserved 1;
 }
-

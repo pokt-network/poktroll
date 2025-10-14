@@ -12,37 +12,41 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 import "pocket/gateway/params.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "pocket/gateway/types.proto";
 
 // Query defines the gRPC querier service.
 service Query {
 
-  // Parameters queries the parameters of the module.
+  // gateway.QueryParams
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/params";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryGatewayParams"
+      summary: "gateway.QueryParams"
+    };
   }
 
-  // Queries a list of Gateway items.
-  rpc Gateway    (QueryGetGatewayRequest) returns (QueryGetGatewayResponse) {
+  rpc Gateway (QueryGetGatewayRequest) returns (QueryGetGatewayResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway/{address}";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryGateway"
+      summary: "gateway.QueryGateway retrieves a specific gateway by address."
+    };
   }
+
   rpc AllGateways (QueryAllGatewaysRequest) returns (QueryAllGatewaysResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway";
-
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "QueryAllGateways"
+      summary: "gateway.QueryAllGateways lists gateways with pagination."
+    };
   }
 }
-// QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
-
-// QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-
-  // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
-
 message QueryGetGatewayRequest {
   string address = 1;
 }
@@ -59,4 +63,3 @@ message QueryAllGatewaysResponse {
   repeated Gateway gateways = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
-

@@ -21,7 +21,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_DelegateToGateway",
+                "operationId": "MsgDelegateToGateway",
                 "parameters": [
                     {
                         "name": "body",
@@ -53,7 +53,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_StakeApplication",
+                "operationId": "MsgStakeApplication",
                 "parameters": [
                     {
                         "name": "body",
@@ -85,7 +85,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_TransferApplication",
+                "operationId": "MsgTransferApplication",
                 "parameters": [
                     {
                         "name": "body",
@@ -117,7 +117,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UndelegateFromGateway",
+                "operationId": "MsgUndelegateFromGateway",
                 "parameters": [
                     {
                         "name": "body",
@@ -149,7 +149,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UnstakeApplication",
+                "operationId": "MsgUnstakeApplication",
                 "parameters": [
                     {
                         "name": "body",
@@ -181,7 +181,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParam",
+                "operationId": "MsgUpdateParam",
                 "parameters": [
                     {
                         "name": "body",
@@ -214,7 +214,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParams",
+                "operationId": "MsgUpdateParams",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -247,7 +247,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_StakeGateway",
+                "operationId": "MsgStakeGateway",
                 "parameters": [
                     {
                         "name": "body",
@@ -279,7 +279,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UnstakeGateway",
+                "operationId": "MsgUnstakeGateway",
                 "parameters": [
                     {
                         "name": "body",
@@ -311,7 +311,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin10",
+                "operationId": "MsgUpdateParamMixin10",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -345,7 +345,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin10",
+                "operationId": "MsgUpdateParamsMixin10",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -378,7 +378,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_ClaimMorseAccount",
+                "operationId": "MsgClaimMorseAccount",
                 "parameters": [
                     {
                         "description": "- Execute a claim (one-time minting of tokens on Shannon)\n- Claim the balance of a given Morse account per on-chain MorseClaimableAccounts\n- Mint claimed balance to the given Shannon account\n\nNOTE:\n- A transaction can contain ONE OR MORE Morse account/actor claim messages AND has EXACTLY ONE signer.\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts",
@@ -411,7 +411,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_ClaimMorseApplication",
+                "operationId": "MsgClaimMorseApplication",
                 "parameters": [
                     {
                         "description": "- Execute a claim (one-time minting of tokens on Shannon) of total tokens owned by a Morse account\n- Mint claimed tokens to the given Shannon account\n- Stake that Shannon account as an application for the given service_config and same stake amount\n\nNext free index: 7",
@@ -444,7 +444,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_ClaimMorseSupplier",
+                "operationId": "MsgClaimMorseSupplier",
                 "parameters": [
                     {
                         "description": "- Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account\n- Use the on-chain MorseClaimableAccounts for verification\n- Credit the minted tokens to the balance of the given Shannon account\n- Automatically stake that Shannon account as a supplier\n\nNOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the claimed balance\n\nNext free index: 9",
@@ -477,7 +477,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_ImportMorseClaimableAccounts",
+                "operationId": "MsgImportMorseClaimableAccounts",
                 "parameters": [
                     {
                         "description": "- Create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis)\n- Import Morse account state derived from Morse state export\n\nNext free index: 4",
@@ -510,7 +510,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_RecoverMorseAccount",
+                "operationId": "MsgRecoverMorseAccount",
                 "parameters": [
                     {
                         "description": "- Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account\n- Credit the minted tokens to the balance of the given Shannon account\n- Migrate unclaimable staked and liquid Morse tokens as liquid Shannon tokens\n\n- MAY ONLY be executed by the authority\n- ONLY intended for use on accounts with invalid addresses and/or known lost private keys\n\nNext free index: 4",
@@ -544,7 +544,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin18",
+                "operationId": "MsgUpdateParamsMixin18",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.\n\n- Used for updating the migration module parameters via governance\n- All parameters must be supplied\n\nNext free index: 3",
@@ -577,7 +577,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_CreateClaim",
+                "operationId": "MsgCreateClaim",
                 "parameters": [
                     {
                         "name": "body",
@@ -609,7 +609,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_SubmitProof",
+                "operationId": "MsgSubmitProof",
                 "parameters": [
                     {
                         "name": "body",
@@ -641,7 +641,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin23",
+                "operationId": "MsgUpdateParamMixin23",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -675,7 +675,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin23",
+                "operationId": "MsgUpdateParamsMixin23",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.",
@@ -708,7 +708,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_AddService",
+                "operationId": "MsgAddService",
                 "parameters": [
                     {
                         "description": "MsgAddService defines a message for adding a new message to the network.\nServices can be added by any actor in the network making them truly\npermissionless.",
@@ -741,7 +741,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin31",
+                "operationId": "MsgUpdateParamMixin31",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -775,7 +775,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin31",
+                "operationId": "MsgUpdateParamsMixin31",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -808,7 +808,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin35",
+                "operationId": "MsgUpdateParamMixin35",
                 "parameters": [
                     {
                         "name": "body",
@@ -841,7 +841,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin35",
+                "operationId": "MsgUpdateParamsMixin35",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -874,7 +874,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin42",
+                "operationId": "MsgUpdateParamMixin42",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -908,7 +908,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin42",
+                "operationId": "MsgUpdateParamsMixin42",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -941,7 +941,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_StakeSupplier",
+                "operationId": "MsgStakeSupplier",
                 "parameters": [
                     {
                         "name": "body",
@@ -973,7 +973,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UnstakeSupplier",
+                "operationId": "MsgUnstakeSupplier",
                 "parameters": [
                     {
                         "name": "body",
@@ -1005,7 +1005,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin47",
+                "operationId": "MsgUpdateParamMixin47",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -1039,7 +1039,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin47",
+                "operationId": "MsgUpdateParamsMixin47",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
@@ -1072,7 +1072,7 @@
                 "tags": [
                     "Msg"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin52",
+                "operationId": "MsgUpdateParamMixin52",
                 "parameters": [
                     {
                         "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
@@ -1106,7 +1106,7 @@
                     "Msg"
                 ],
                 "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
-                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin52",
+                "operationId": "MsgUpdateParamsMixin52",
                 "parameters": [
                     {
                         "description": "MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.",
@@ -1139,7 +1139,7 @@
                 "tags": [
                     "Query"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollQuery_AllApplications",
+                "operationId": "QueryAllApplications",
                 "parameters": [
                     {
                         "type": "string",
@@ -1203,7 +1203,7 @@
                     "Query"
                 ],
                 "summary": "Queries a list of Application items.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_Application",
+                "operationId": "QueryApplication",
                 "parameters": [
                     {
                         "type": "string",
@@ -1234,7 +1234,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_Params",
+                "operationId": "QueryParams",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -1256,7 +1256,7 @@
                 "tags": [
                     "Query"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollQuery_AllGateways",
+                "operationId": "QueryAllGateways",
                 "parameters": [
                     {
                         "type": "string",
@@ -1314,7 +1314,7 @@
                     "Query"
                 ],
                 "summary": "Queries a list of Gateway items.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_Gateway",
+                "operationId": "QueryGateway",
                 "parameters": [
                     {
                         "type": "string",
@@ -1345,7 +1345,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin9",
+                "operationId": "QueryParamsMixin9",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -1367,7 +1367,7 @@
                 "tags": [
                     "Query"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollQuery_MorseClaimableAccountAll",
+                "operationId": "QueryMorseClaimableAccountAll",
                 "parameters": [
                     {
                         "type": "string",
@@ -1425,7 +1425,7 @@
                     "Query"
                 ],
                 "summary": "Queries a list of MorseClaimableAccount items.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_MorseClaimableAccount",
+                "operationId": "QueryMorseClaimableAccount",
                 "parameters": [
                     {
                         "type": "string",
@@ -1456,7 +1456,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin17",
+                "operationId": "QueryParamsMixin17",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -1478,7 +1478,7 @@
                 "tags": [
                     "Query"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollQuery_AllClaims",
+                "operationId": "QueryAllClaims",
                 "parameters": [
                     {
                         "type": "string",
@@ -1552,7 +1552,7 @@
                     "Query"
                 ],
                 "summary": "Queries a list of Claim items.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_Claim",
+                "operationId": "QueryClaim",
                 "parameters": [
                     {
                         "type": "string",
@@ -1589,7 +1589,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin22",
+                "operationId": "QueryParamsMixin22",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -1611,7 +1611,7 @@
                 "tags": [
                     "Query"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollQuery_AllProofs",
+                "operationId": "QueryAllProofs",
                 "parameters": [
                     {
                         "type": "string",
@@ -1685,7 +1685,7 @@
                     "Query"
                 ],
                 "summary": "Queries a list of Proof items.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_Proof",
+                "operationId": "QueryProof",
                 "parameters": [
                     {
                         "type": "string",
@@ -1722,7 +1722,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin28",
+                "operationId": "QueryParamsMixin28",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -1744,7 +1744,7 @@
                 "tags": [
                     "Query"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollQuery_RelayMiningDifficultyAll",
+                "operationId": "QueryRelayMiningDifficultyAll",
                 "parameters": [
                     {
                         "type": "string",
@@ -1802,7 +1802,7 @@
                     "Query"
                 ],
                 "summary": "Queries a list of RelayMiningDifficulty items.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_RelayMiningDifficulty",
+                "operationId": "QueryRelayMiningDifficulty",
                 "parameters": [
                     {
                         "type": "string",
@@ -1832,7 +1832,7 @@
                 "tags": [
                     "Query"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollQuery_AllServices",
+                "operationId": "QueryAllServices",
                 "parameters": [
                     {
                         "type": "string",
@@ -1890,7 +1890,7 @@
                     "Query"
                 ],
                 "summary": "Queries a list of Service items.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_Service",
+                "operationId": "QueryService",
                 "parameters": [
                     {
                         "type": "string",
@@ -1922,7 +1922,7 @@
                     "Query"
                 ],
                 "summary": "Queries the session given app_address, service and block_height.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_GetSession",
+                "operationId": "QueryGetSession",
                 "parameters": [
                     {
                         "type": "string",
@@ -1966,7 +1966,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin34",
+                "operationId": "QueryParamsMixin34",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -1989,7 +1989,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin39",
+                "operationId": "QueryParamsMixin39",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2012,7 +2012,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin46",
+                "operationId": "QueryParamsMixin46",
                 "responses": {
                     "200": {
                         "description": "A successful response.",
@@ -2034,7 +2034,7 @@
                 "tags": [
                     "Query"
                 ],
-                "operationId": "GithubCompoktNetworkpoktrollQuery_AllSuppliers",
+                "operationId": "QueryAllSuppliers",
                 "parameters": [
                     {
                         "type": "string",
@@ -2104,7 +2104,7 @@
                     "Query"
                 ],
                 "summary": "Queries a list of Supplier items.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_Supplier",
+                "operationId": "QuerySupplier",
                 "parameters": [
                     {
                         "type": "string",
@@ -2142,7 +2142,7 @@
                     "Query"
                 ],
                 "summary": "Parameters queries the parameters of the module.",
-                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin51",
+                "operationId": "QueryParamsMixin51",
                 "responses": {
                     "200": {
                         "description": "A successful response.",

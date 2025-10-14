@@ -15,7 +15,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_DelegateToGateway
+      operationId: MsgDelegateToGateway
       parameters:
         - name: body
           in: body
@@ -35,7 +35,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_StakeApplication
+      operationId: MsgStakeApplication
       parameters:
         - name: body
           in: body
@@ -55,7 +55,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_TransferApplication
+      operationId: MsgTransferApplication
       parameters:
         - name: body
           in: body
@@ -75,7 +75,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UndelegateFromGateway
+      operationId: MsgUndelegateFromGateway
       parameters:
         - name: body
           in: body
@@ -95,7 +95,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UnstakeApplication
+      operationId: MsgUnstakeApplication
       parameters:
         - name: body
           in: body
@@ -115,7 +115,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParam
+      operationId: MsgUpdateParam
       parameters:
         - name: body
           in: body
@@ -138,7 +138,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParams
+      operationId: MsgUpdateParams
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -159,7 +159,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_StakeGateway
+      operationId: MsgStakeGateway
       parameters:
         - name: body
           in: body
@@ -179,7 +179,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UnstakeGateway
+      operationId: MsgUnstakeGateway
       parameters:
         - name: body
           in: body
@@ -199,7 +199,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin10
+      operationId: MsgUpdateParamMixin10
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -223,7 +223,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin10
+      operationId: MsgUpdateParamsMixin10
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -244,7 +244,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_ClaimMorseAccount
+      operationId: MsgClaimMorseAccount
       parameters:
         - description: |-
             - Execute a claim (one-time minting of tokens on Shannon)
@@ -273,7 +273,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_ClaimMorseApplication
+      operationId: MsgClaimMorseApplication
       parameters:
         - description: |-
             - Execute a claim (one-time minting of tokens on Shannon) of total tokens owned by a Morse account
@@ -299,7 +299,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_ClaimMorseSupplier
+      operationId: MsgClaimMorseSupplier
       parameters:
         - description: |-
             - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
@@ -328,7 +328,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_ImportMorseClaimableAccounts
+      operationId: MsgImportMorseClaimableAccounts
       parameters:
         - description: |-
             - Create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis)
@@ -353,7 +353,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_RecoverMorseAccount
+      operationId: MsgRecoverMorseAccount
       parameters:
         - description: |-
             - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
@@ -385,7 +385,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin18
+      operationId: MsgUpdateParamsMixin18
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
@@ -412,7 +412,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_CreateClaim
+      operationId: MsgCreateClaim
       parameters:
         - name: body
           in: body
@@ -432,7 +432,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_SubmitProof
+      operationId: MsgSubmitProof
       parameters:
         - name: body
           in: body
@@ -452,7 +452,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin23
+      operationId: MsgUpdateParamMixin23
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -476,7 +476,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin23
+      operationId: MsgUpdateParamsMixin23
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
           name: body
@@ -497,7 +497,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_AddService
+      operationId: MsgAddService
       parameters:
         - description: |-
             MsgAddService defines a message for adding a new message to the network.
@@ -521,7 +521,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin31
+      operationId: MsgUpdateParamMixin31
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -545,7 +545,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin31
+      operationId: MsgUpdateParamsMixin31
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -566,7 +566,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin35
+      operationId: MsgUpdateParamMixin35
       parameters:
         - name: body
           in: body
@@ -589,7 +589,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin35
+      operationId: MsgUpdateParamsMixin35
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -610,7 +610,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin42
+      operationId: MsgUpdateParamMixin42
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -634,7 +634,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin42
+      operationId: MsgUpdateParamsMixin42
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -655,7 +655,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_StakeSupplier
+      operationId: MsgStakeSupplier
       parameters:
         - name: body
           in: body
@@ -675,7 +675,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UnstakeSupplier
+      operationId: MsgUnstakeSupplier
       parameters:
         - name: body
           in: body
@@ -695,7 +695,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin47
+      operationId: MsgUpdateParamMixin47
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -719,7 +719,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin47
+      operationId: MsgUpdateParamsMixin47
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -740,7 +740,7 @@ paths:
     post:
       tags:
         - Msg
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamMixin52
+      operationId: MsgUpdateParamMixin52
       parameters:
         - description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
           name: body
@@ -764,7 +764,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the module
         parameters. The authority defaults to the x/gov module account.
-      operationId: GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin52
+      operationId: MsgUpdateParamsMixin52
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
           name: body
@@ -785,7 +785,7 @@ paths:
     get:
       tags:
         - Query
-      operationId: GithubCompoktNetworkpoktrollQuery_AllApplications
+      operationId: QueryAllApplications
       parameters:
         - type: string
           format: byte
@@ -842,7 +842,7 @@ paths:
       tags:
         - Query
       summary: Queries a list of Application items.
-      operationId: GithubCompoktNetworkpoktrollQuery_Application
+      operationId: QueryApplication
       parameters:
         - type: string
           name: address
@@ -862,7 +862,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_Params
+      operationId: QueryParams
       responses:
         "200":
           description: A successful response.
@@ -876,7 +876,7 @@ paths:
     get:
       tags:
         - Query
-      operationId: GithubCompoktNetworkpoktrollQuery_AllGateways
+      operationId: QueryAllGateways
       parameters:
         - type: string
           format: byte
@@ -927,7 +927,7 @@ paths:
       tags:
         - Query
       summary: Queries a list of Gateway items.
-      operationId: GithubCompoktNetworkpoktrollQuery_Gateway
+      operationId: QueryGateway
       parameters:
         - type: string
           name: address
@@ -947,7 +947,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin9
+      operationId: QueryParamsMixin9
       responses:
         "200":
           description: A successful response.
@@ -961,7 +961,7 @@ paths:
     get:
       tags:
         - Query
-      operationId: GithubCompoktNetworkpoktrollQuery_MorseClaimableAccountAll
+      operationId: QueryMorseClaimableAccountAll
       parameters:
         - type: string
           format: byte
@@ -1012,7 +1012,7 @@ paths:
       tags:
         - Query
       summary: Queries a list of MorseClaimableAccount items.
-      operationId: GithubCompoktNetworkpoktrollQuery_MorseClaimableAccount
+      operationId: QueryMorseClaimableAccount
       parameters:
         - type: string
           name: address
@@ -1032,7 +1032,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin17
+      operationId: QueryParamsMixin17
       responses:
         "200":
           description: A successful response.
@@ -1046,7 +1046,7 @@ paths:
     get:
       tags:
         - Query
-      operationId: GithubCompoktNetworkpoktrollQuery_AllClaims
+      operationId: QueryAllClaims
       parameters:
         - type: string
           format: byte
@@ -1107,7 +1107,7 @@ paths:
       tags:
         - Query
       summary: Queries a list of Claim items.
-      operationId: GithubCompoktNetworkpoktrollQuery_Claim
+      operationId: QueryClaim
       parameters:
         - type: string
           name: session_id
@@ -1131,7 +1131,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin22
+      operationId: QueryParamsMixin22
       responses:
         "200":
           description: A successful response.
@@ -1145,7 +1145,7 @@ paths:
     get:
       tags:
         - Query
-      operationId: GithubCompoktNetworkpoktrollQuery_AllProofs
+      operationId: QueryAllProofs
       parameters:
         - type: string
           format: byte
@@ -1206,7 +1206,7 @@ paths:
       tags:
         - Query
       summary: Queries a list of Proof items.
-      operationId: GithubCompoktNetworkpoktrollQuery_Proof
+      operationId: QueryProof
       parameters:
         - type: string
           name: session_id
@@ -1230,7 +1230,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin28
+      operationId: QueryParamsMixin28
       responses:
         "200":
           description: A successful response.
@@ -1244,7 +1244,7 @@ paths:
     get:
       tags:
         - Query
-      operationId: GithubCompoktNetworkpoktrollQuery_RelayMiningDifficultyAll
+      operationId: QueryRelayMiningDifficultyAll
       parameters:
         - type: string
           format: byte
@@ -1295,7 +1295,7 @@ paths:
       tags:
         - Query
       summary: Queries a list of RelayMiningDifficulty items.
-      operationId: GithubCompoktNetworkpoktrollQuery_RelayMiningDifficulty
+      operationId: QueryRelayMiningDifficulty
       parameters:
         - type: string
           name: serviceId
@@ -1314,7 +1314,7 @@ paths:
     get:
       tags:
         - Query
-      operationId: GithubCompoktNetworkpoktrollQuery_AllServices
+      operationId: QueryAllServices
       parameters:
         - type: string
           format: byte
@@ -1365,7 +1365,7 @@ paths:
       tags:
         - Query
       summary: Queries a list of Service items.
-      operationId: GithubCompoktNetworkpoktrollQuery_Service
+      operationId: QueryService
       parameters:
         - type: string
           description: 'TODO_IMPROVE: We could support getting services by name.'
@@ -1386,7 +1386,7 @@ paths:
       tags:
         - Query
       summary: Queries the session given app_address, service and block_height.
-      operationId: GithubCompoktNetworkpoktrollQuery_GetSession
+      operationId: QueryGetSession
       parameters:
         - type: string
           description: The Bech32 address of the application.
@@ -1415,7 +1415,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin34
+      operationId: QueryParamsMixin34
       responses:
         "200":
           description: A successful response.
@@ -1430,7 +1430,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin39
+      operationId: QueryParamsMixin39
       responses:
         "200":
           description: A successful response.
@@ -1445,7 +1445,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin46
+      operationId: QueryParamsMixin46
       responses:
         "200":
           description: A successful response.
@@ -1459,7 +1459,7 @@ paths:
     get:
       tags:
         - Query
-      operationId: GithubCompoktNetworkpoktrollQuery_AllSuppliers
+      operationId: QueryAllSuppliers
       parameters:
         - type: string
           format: byte
@@ -1521,7 +1521,7 @@ paths:
       tags:
         - Query
       summary: Queries a list of Supplier items.
-      operationId: GithubCompoktNetworkpoktrollQuery_Supplier
+      operationId: QuerySupplier
       parameters:
         - type: string
           description: 'TODO_TECHDEBT: Add the ability to query for a supplier by owner_id'
@@ -1549,7 +1549,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the parameters of the module.
-      operationId: GithubCompoktNetworkpoktrollQuery_ParamsMixin51
+      operationId: QueryParamsMixin51
       responses:
         "200":
           description: A successful response.
