@@ -169,16 +169,8 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	// For in-memory storage modes (SimpleMap or Pebble in-memory), use an empty string
-	// as the session metadata store directory, which creates a memory-backed Pebble store.
-	// Otherwise, use the storesDirectoryPath as the session metadata store directory.
-	// TODO(#1734): Design a solution for restoration even when using in-memory modes.
-	sessionSMTDir := ""
-	if rs.isInMemorySMT() {
-		rs.logger.Info().Msg("Using memory-backed session metadata store for in-memory SMT modes.")
-	} else {
-		sessionSMTDir = path.Join(rs.storesDirectoryPath, "sessions_metadata")
-	}
+	sessionSMTDir := path.Join(rs.storesDirectoryPath, "sessions_metadata")
+
 	// Initialize the session metadata store.
 	if rs.sessionSMTStore, err = pebble.NewKVStore(sessionSMTDir); err != nil {
 		return nil, err
@@ -215,13 +207,8 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Preserving the relayer's state across restarts
 	//   - Ensuring no active sessions are lost when the process is interrupted
 	//   - Maintaining accumulated work when interruptions occur
-	if rs.isInMemorySMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
-		rs.logger.Info().Msg("Skipping session data restoration for in-memory SMT modes.")
-	} else {
-		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
-			return err
-		}
+	if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
+		return err
 	}
 
 	// DEV_NOTE: must cast back to generic observable type to use with Map.
@@ -275,12 +262,6 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
 
-	// Skip persistence when using in-memory SMT modes as data is not saved to disk.
-	if rs.isInMemorySMT() {
-		// TODO(#1734): Design a solution for restoration even when using in-memory SMT modes.
-		rs.logger.Info().Msg("Skipping persistence of session data for in-memory SMT modes.")
-		return
-	}
 	rs.logger.Info().Msg("About to start persisting all session data to disk.")
 
 	// Lock the mutex before accessing and modifying the sessionsTrees map to ensure
@@ -308,7 +289,7 @@ func (rs *relayerSessionsManager) Stop() {
 				}
 
 				// Stop the session tree process and underlying key-value store.
-				if _, err := sessionTree.Flush(); err != nil {
+				if err := sessionTree.Close(); err != nil {
 					logger.Error().Err(err).Msg("❌️ Failed to flush session tree store during shutdown. ❗Check disk permissions and kvstore integrity. ❗Resources may not be properly cleaned up.")
 				}
 

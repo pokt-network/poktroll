@@ -199,6 +199,12 @@ type SessionTree interface {
 	// no longer needed while waiting for the proof submission window to open.
 	Flush() (SMSTRoot []byte, err error)
 
+	// Close gracefully releases runtime resources associated with this session tree
+	// without deleting any persisted evidence.
+	// It ensures any buffered mined relay entries in the write-ahead log (WAL) are
+	// flushed to disk and closes the underlying WAL file handle.
+	Close() error
+
 	// TODO_DISCUSS: This function should not be part of the interface as it is an optimization
 	// aiming to free up KVStore resources after the proof is no longer needed.
 	// Delete deletes the SMST from the KVStore.
