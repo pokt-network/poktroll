@@ -236,48 +236,56 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=image.repository=pocketd",
     ]
 
-    #############
-    # NOTE: To provide a proper configuration for the relayminer, we dynamically
-    # define the supplier configuration overrides for the relayminer helm chart
-    # so that every service enabled in the localnet configuration (ollama, rest)
-    # file are also declared in the relayminer.config.suppliers list.
-    #############
+    ############################################################################
+    ######## Dynamic supplier configuration overrides. ##########################
+    # To provide a proper configuration for the relayminer, we dynamically define
+    # the supplier configuration overrides for the relayminer helm chart.
+    # This is so that every service enabled in the localnet configuration (e.g. ollama, rest)
+    # are also declared in the relayminer.config.suppliers list.
+    ############################################################################
 
+    eagerValidation = str(localnet_config["relayminers"].get("eagerValidation", False))
+
+    # Service: Anvil
     supplier_number = 0
-
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvil")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.json_rpc.backend_url=http://anvil:8547/")
-    flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+str(localnet_config["relayminers"].get("eagerValidation", False)))
-    supplier_number = supplier_number + 1
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+eagerValidation)
 
+
+    # Service: Anvil WS
+    supplier_number = supplier_number + 1
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvilws")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].rpc_type_service_configs.websocket.backend_url=ws://anvil:8547/")
-    flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+str(localnet_config["relayminers"].get("eagerValidation", False)))
-    supplier_number = supplier_number + 1
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+eagerValidation)
 
+
+    # Service: Static
+    supplier_number = supplier_number + 1
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=static")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://nginx-chainid/")
-    flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+str(localnet_config["relayminers"].get("eagerValidation", False)))
-    supplier_number = supplier_number + 1
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+eagerValidation)
 
+    # Service: REST
     if localnet_config["rest"]["enabled"]:
-       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=rest")
-       flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
-       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://rest:10000/")
-       flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+str(localnet_config["relayminers"].get("eagerValidation", False)))
-       supplier_number = supplier_number + 1
+        supplier_number = supplier_number + 1
+        flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=rest")
+        flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+        flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://rest:10000/")
+        flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+eagerValidation)
 
+    # Service: Ollama
     if localnet_config["ollama"]["enabled"]:
-       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=ollama")
-       flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
-       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://ollama:11434/")
-       flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+str(localnet_config["relayminers"].get("eagerValidation", False)))
-       supplier_number = supplier_number + 1
+        supplier_number = supplier_number + 1
+        flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=ollama")
+        flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+        flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://ollama:11434/")
+        flags.append("--set=config.suppliers["+str(supplier_number)+"].enable_eager_relay_request_validation="+eagerValidation)
 
     helm_resource(
         "relayminer" + str(actor_number),

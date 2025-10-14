@@ -67,7 +67,8 @@ func NewRelayMiningSupervisor(
 	relayAuthenticator relayer.RelayAuthenticator,
 ) *RelayMiningSupervisor {
 	if downstream == nil {
-		// TECH_DEBT: should it panic?
+		// Panic is appropriate here since this is a programmer error (invalid constructor arg).
+		// TODO_FUTURE: Consider returning (nil, error) for better testability.
 		panic("RelayMiningSupervisor: downstream channel must not be nil")
 	}
 	if cfg.QueueSize <= 0 {
@@ -389,6 +390,16 @@ func (s *RelayMiningSupervisor) MarkSessionAsNonRewardable(sessionID string) (*S
 }
 
 // upsertSessionState inserts or updates session state and only downgrades rewardability.
+//
+// Note: This is intentionally optimistic. A TOCTOU race exists where:
+//   - Thread A loads session with Rewardable=true
+//   - Thread B downgrades to Rewardable=false
+//   - Thread A acts on stale Rewardable=true
+//
+// This is acceptable because:
+//   - Worst case: one extra relay is temporarily counted as rewardable
+//   - The mining supervisor will rollback via SetNonApplicableRelayReward
+//   - The atomic bool ensures eventual consistency
 func (s *RelayMiningSupervisor) upsertSessionState(sessionID string, endHeight int64, rewardable bool) *SessionCache {
 	if st, ok := s.knownSessions.Load(sessionID); ok {
 		if endHeight > st.EndHeight {

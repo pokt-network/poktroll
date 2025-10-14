@@ -287,7 +287,7 @@ func TestEnsurePerfBuffered_ReusesExisting_NoOpFlush(t *testing.T) {
 func BenchmarkPerf_Instance_Buffered(b *testing.B) {
 	ctx := WithPerfForService(context.Background(), "svc", PerfOptions{
 		RecordOnFinish: false,
-		BufferCap:      2048,
+		BufferCap:      2_048,
 	})
 	tr, _ := FromCtx(ctx)
 
@@ -303,7 +303,7 @@ func BenchmarkPerf_Instance_Buffered(b *testing.B) {
 func BenchmarkPerf_Span_Buffered(b *testing.B) {
 	ctx := WithPerfForService(context.Background(), "svc", PerfOptions{
 		RecordOnFinish: false,
-		BufferCap:      2048,
+		BufferCap:      2_048,
 	})
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -316,7 +316,7 @@ func BenchmarkPerf_Span_Buffered(b *testing.B) {
 func BenchmarkPerf_Pkg_Buffered(b *testing.B) {
 	ctx := WithPerfForService(context.Background(), "svc", PerfOptions{
 		RecordOnFinish: false,
-		BufferCap:      2048,
+		BufferCap:      2_048,
 	})
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

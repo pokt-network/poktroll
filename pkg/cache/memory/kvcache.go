@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/puzpuzpuz/xsync/v4"
+
+	"github.com/pokt-network/poktroll/pkg/cache"
 )
 
 var _ cache.KeyValueCache[any] = (*keyValueCache[any])(nil)
@@ -48,16 +49,17 @@ func NewKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*keyValueCache[T], 
 // Get retrieves the value from the cache with the given key.
 func (c *keyValueCache[T]) Get(key string) (T, bool) {
 	var zero T
-	v, ok := c.values.Load(key)
-	if !ok {
+	cachedValue, exists := c.values.Load(key)
+	if !exists {
 		return zero, false
 	}
-	if time.Since(v.cachedAt) > c.config.ttl {
-		// Opportunistic prune (no need for atomic compute here).
+	isCacheValueExpired := time.Since(cachedValue.cachedAt) > c.config.ttl
+	if isCacheValueExpired {
+		// Opportunistically pruning because we already checked if the cache value has expired.
 		c.values.Delete(key)
 		return zero, false
 	}
-	return v.value, true
+	return cachedValue.value, true
 }
 
 // Set adds or updates the value in the cache for the given key.

@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	//"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -292,7 +291,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			logger.Warn().Msg("mining channel full - dropping (protect tail)")
 		}
 	}
-	tr.Start(relayer.InstructionProxySyncEagerCheckRewardApplicability)
+	tr.Finish(relayer.InstructionProxySyncEagerCheckRewardApplicability)
 
 	return relayReq, nil
 }
