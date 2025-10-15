@@ -45,21 +45,25 @@ func init() {
 		defaultHome = "../../localnet/pocketd"
 	}
 
-	// Derive defaultGRPCURL from defaultRPCURL by extracting the host
-	// and using the defaultGRPCPort instead of the RPC port.
-	// E.g., "tcp://devnet-validator:26657" -> "devnet-validator:9090"
+	// Derive defaultGRPCURL from defaultRPCURL
 	grpcHost := defaultRPCHost
 	if defaultRPCURL != "" {
-		// Remove "tcp://" prefix if present
-		rpcURL := strings.TrimPrefix(defaultRPCURL, "tcp://")
-		// Extract host (before the colon)
-		if idx := strings.Index(rpcURL, ":"); idx != -1 {
-			grpcHost = rpcURL[:idx]
-		} else {
-			grpcHost = rpcURL
-		}
+		grpcHost = rpcToGrpcHost(defaultRPCURL)
 	}
 	defaultGRPCURL = fmt.Sprintf("%s:%d", grpcHost, defaultGRPCPort)
+}
+
+// rpcToGrpcHost converts a TCP RPC URL to a gRPC URL.
+// Extracts the host from the RPC URL and uses the defaultGRPCPort.
+// E.g., "tcp://devnet-validator:26657" -> "devnet-validator:9090"
+func rpcToGrpcHost(rpcHost string) string {
+	// Remove "tcp://" prefix if present
+	rpcURL := strings.TrimPrefix(rpcHost, "tcp://")
+	// Extract host (before the colon)
+	if idx := strings.Index(rpcURL, ":"); idx != -1 {
+		return rpcURL[:idx]
+	}
+	return rpcURL
 }
 
 // commandResult combines the stdout, stderr, and err of an operation

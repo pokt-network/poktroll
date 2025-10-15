@@ -219,7 +219,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowOpen() {
 	require.NoError(s.T(), err)
 
 	// Wait for manager to fully initialize before sending blocks
-	time.Sleep(500 * time.Millisecond)
+	waitSimulateIO()
 
 	// Advance to the block where the claim window opens
 	// The manager is now running and will process these blocks as they're published
@@ -229,12 +229,17 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowOpen() {
 	sessionTree = s.getActiveSessionTree()
 	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
 
-	// Wait for claim root to be created asynchronously via processClaimsAsync
+	// Wait for claim root to be created asynchronously via processClaimsAsync.
 	// Poll with timeout instead of fixed sleep to handle varying CI performance
 	// Use a long timeout as async claim processing involves multiple goroutines and observables
-	claimRootReady := waitForCondition(s.T(), func() bool {
-		return sessionTree.GetClaimRoot() != nil
-	}, 20*time.Second, 200*time.Millisecond)
+	timeout := 20 * time.Second
+	checkInterval := 200 * time.Millisecond
+	claimRootReady := waitForCondition(
+		s.T(),
+		func() bool { return sessionTree.GetClaimRoot() != nil },
+		timeout,
+		checkInterval,
+	)
 	require.True(s.T(), claimRootReady, "Claim root should be created within timeout after restart")
 
 	// Verify a claim root has been created after restart

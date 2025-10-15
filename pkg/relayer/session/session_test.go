@@ -276,7 +276,12 @@ func waitSimulateIO() {
 // waitForCondition polls for a condition to be true with a timeout.
 // This is used to wait for asynchronous operations to complete in tests.
 // Returns true if the condition becomes true within the timeout, false otherwise.
-func waitForCondition(t *testing.T, condition func() bool, timeout time.Duration, checkInterval time.Duration) bool {
+func waitForCondition(
+	t *testing.T,
+	condition func() bool,
+	timeout time.Duration,
+	checkInterval time.Duration,
+) bool {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
