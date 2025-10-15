@@ -5,15 +5,13 @@ package types
 
 import (
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
-
 	types "github.com/pokt-network/poktroll/x/session/types"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

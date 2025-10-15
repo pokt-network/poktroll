@@ -17,9 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// A custom delimiter used to separate chunks in a streaming response.
-const streamDelimiter = "||POKT_STREAM||"
-
 // Target streaming types
 var httpStreamingTypes = []string{
 	"text/event-stream",
