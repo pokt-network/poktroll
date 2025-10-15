@@ -589,10 +589,21 @@ func (s *suite) TheUserRunsRelayminerRelayForAppToSupplierWithPayload(appName, s
 	appAddr := accNameToAddrMap[appName]
 	supplierAddr := accNameToAddrMap[supplierName]
 
-	// For LocalNet, relayminer1 is exposed on localhost:8085 via Tiltfile port forwarding.
-	// (see Tiltfile: "8084 + actor_number where actor_number=1 for supplier1")
-	// TODO_IMPROVE: Make this configurable or dynamically determine the port
-	endpointUrl := "http://localhost:8085"
+	// Get the supplier's endpoint URL from the supplier map
+	supplier, ok := operatorAccNameToSupplierMap[supplierName]
+	require.True(s, ok, "supplier %s not found in operatorAccNameToSupplierMap", supplierName)
+	require.NotEmpty(s, supplier.Services, "supplier %s has no services configured", supplierName)
+
+	// Find the anvil service and get its first endpoint URL
+	var endpointUrl string
+	for _, serviceConfig := range supplier.Services {
+		if serviceConfig.ServiceId == "anvil" {
+			require.NotEmpty(s, serviceConfig.Endpoints, "supplier %s has no endpoints for service anvil", supplierName)
+			endpointUrl = serviceConfig.Endpoints[0].Url
+			break
+		}
+	}
+	require.NotEmpty(s, endpointUrl, "supplier %s has no anvil service endpoint", supplierName)
 
 	// Build the relayminer relay command with all required flags
 	args := []string{
@@ -602,7 +613,7 @@ func (s *suite) TheUserRunsRelayminerRelayForAppToSupplierWithPayload(appName, s
 		"--supplier=" + supplierAddr,
 		"--payload=" + payload,
 		"--supplier-public-endpoint-override=" + endpointUrl,
-		"--grpc-addr=127.0.0.1:9090",
+		"--grpc-addr=" + defaultGRPCURL,
 		"--grpc-insecure=true",
 		keyRingFlag,
 		chainIdFlag,

@@ -23,6 +23,8 @@ var (
 	defaultGRPCPort = 9090
 	// defaultRPCHost is the default RPC host that pocketd listens on
 	defaultRPCHost = "127.0.0.1"
+	// defaultGRPCURL used for grpc connections, derived from POCKET_NODE or defaultRPCHost
+	defaultGRPCURL string
 	// defaultHome is the default home directory for pocketd
 	defaultHome = os.Getenv("POCKETD_HOME")
 	// defaultPathURL used by curl commands to send relay requests
@@ -42,6 +44,22 @@ func init() {
 	if defaultHome == "" {
 		defaultHome = "../../localnet/pocketd"
 	}
+
+	// Derive defaultGRPCURL from defaultRPCURL by extracting the host
+	// and using the defaultGRPCPort instead of the RPC port.
+	// E.g., "tcp://devnet-validator:26657" -> "devnet-validator:9090"
+	grpcHost := defaultRPCHost
+	if defaultRPCURL != "" {
+		// Remove "tcp://" prefix if present
+		rpcURL := strings.TrimPrefix(defaultRPCURL, "tcp://")
+		// Extract host (before the colon)
+		if idx := strings.Index(rpcURL, ":"); idx != -1 {
+			grpcHost = rpcURL[:idx]
+		} else {
+			grpcHost = rpcURL
+		}
+	}
+	defaultGRPCURL = fmt.Sprintf("%s:%d", grpcHost, defaultGRPCPort)
 }
 
 // commandResult combines the stdout, stderr, and err of an operation
