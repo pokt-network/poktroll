@@ -13,7 +13,9 @@ var _ cache.KeyValueCache[any] = (*keyValueCache[any])(nil)
 
 // keyValueCache provides a concurrency-safe in-memory key/value cache implementation.
 type keyValueCache[T any] struct {
+	// config holds the configuration for the cache.
 	config keyValueCacheConfig
+
 	// values holds the cached values.
 	values *xsync.Map[string, cacheValue[T]]
 }
@@ -64,7 +66,10 @@ func (c *keyValueCache[T]) Get(key string) (T, bool) {
 
 // Set adds or updates the value in the cache for the given key.
 func (c *keyValueCache[T]) Set(key string, value T) {
-	c.values.Store(key, cacheValue[T]{value: value, cachedAt: time.Now()})
+	c.values.Store(key, cacheValue[T]{
+		value:    value,
+		cachedAt: time.Now(),
+	})
 
 	if c.config.maxKeys > 0 && int64(c.values.Size()) > c.config.maxKeys {
 		c.evictKey()
@@ -81,24 +86,27 @@ func (c *keyValueCache[T]) Clear() {
 	c.values = xsync.NewMap[string, cacheValue[T]]()
 }
 
-// evictKey removes one key/value pair from the cache, to make space for a new one,
-// according to the configured eviction policy.
+// evictKey removes one key/value pair from the cache to make space for a new one.
+// It evicts keys based on the following policy:
+// 1. Remove any expired entries (i.e. entries that have exceeded the configured TTL).
+// 2. If no expired entries are found, uses the configured eviction policy to determine which key to remove.
 func (c *keyValueCache[T]) evictKey() {
+	// There is more space in the cache than the configured maxKeys.
 	if c.config.maxKeys <= 0 || int64(c.values.Size()) <= c.config.maxKeys {
 		return
 	}
 
-	now := time.Now()
-
 	// 1) Prefer to evict any TTL-expired entry (cheap scan, remove one).
 	var expiredKey string
-	c.values.Range(func(k string, v cacheValue[T]) bool {
-		if now.Sub(v.cachedAt) > c.config.ttl {
-			expiredKey = k
-			return false // found one, stop
-		}
-		return true
-	})
+	now := time.Now()
+	c.values.Range(
+		func(k string, v cacheValue[T]) bool {
+			if now.Sub(v.cachedAt) > c.config.ttl {
+				expiredKey = k
+				return false // found one expired entry, stop
+			}
+			return true // continue
+		})
 	if expiredKey != "" {
 		c.values.Delete(expiredKey)
 		return
@@ -106,28 +114,33 @@ func (c *keyValueCache[T]) evictKey() {
 
 	// 2) Fall back to configured policy.
 	switch c.config.evictionPolicy {
+
+	// FIFO ≈ remove the oldest by cachedAt.
 	case FirstInFirstOut:
-		// FIFO ≈ remove the oldest by cachedAt.
 		var (
 			oldestKey string
 			oldestAt  time.Time
 			found     bool
 		)
-		c.values.Range(func(k string, v cacheValue[T]) bool {
-			if !found || v.cachedAt.Before(oldestAt) {
-				oldestKey, oldestAt, found = k, v.cachedAt, true
-			}
-			return true
-		})
+		c.values.Range(
+			func(k string, v cacheValue[T]) bool {
+				if !found || v.cachedAt.Before(oldestAt) {
+					oldestKey, oldestAt, found = k, v.cachedAt, true
+				}
+				return true
+			})
 		if found {
 			c.values.Delete(oldestKey)
 		}
+
+	// Not implemented in original; keep behavior.
 	case LeastRecentlyUsed:
-		// Not implemented in original; keep behavior.
 		panic("LRU eviction not implemented")
+
+	// Not implemented in original; keep behavior.
 	case LeastFrequentlyUsed:
-		// Not implemented in original; keep behavior.
 		panic("LFU eviction not implemented")
+
 	default:
 		panic(fmt.Sprintf("unsupported eviction policy: %d", c.config.evictionPolicy))
 	}

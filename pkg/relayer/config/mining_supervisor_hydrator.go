@@ -2,46 +2,60 @@ package config
 
 import "time"
 
+const (
+	MSDropPolicyNew    = "drop-new"
+	MSDropPolicyOldest = "drop-oldest"
+)
+
 func (relayMinerConfig *RelayMinerConfig) HydrateMiningSupervisor(
 	yamlMiningSupervisorConfig *YAMLMiningSupervisorConfig,
 ) error {
-	relayMinerConfig.MiningSupervisorConfig = &MiningSupervisorConfig{}
+	config := &MiningSupervisorConfig{}
 
+	// Relay Queue Size
 	if yamlMiningSupervisorConfig.QueueSize == 0 {
-		relayMinerConfig.MiningSupervisorConfig.QueueSize = DefaultMSQueueSize
+		config.QueueSize = DefaultMSQueueSize
 	} else {
-		relayMinerConfig.MiningSupervisorConfig.QueueSize = yamlMiningSupervisorConfig.QueueSize
+		config.QueueSize = yamlMiningSupervisorConfig.QueueSize
 	}
 
+	// Relay Workers
 	if yamlMiningSupervisorConfig.Workers == 0 {
-		relayMinerConfig.MiningSupervisorConfig.Workers = DefaultMSWorkers
+		config.Workers = DefaultMSWorkers
 	} else {
-		relayMinerConfig.MiningSupervisorConfig.Workers = yamlMiningSupervisorConfig.Workers
+		config.Workers = yamlMiningSupervisorConfig.Workers
 	}
 
+	// Enqueue Timeout
 	if yamlMiningSupervisorConfig.EnqueueTimeoutMs == 0 {
-		relayMinerConfig.MiningSupervisorConfig.EnqueueTimeout = time.Duration(DefaultMSEnqueueTimeout) * time.Millisecond
+		config.EnqueueTimeout = time.Duration(DefaultMSEnqueueTimeout) * time.Millisecond
 	} else {
-		relayMinerConfig.MiningSupervisorConfig.EnqueueTimeout = time.Duration(yamlMiningSupervisorConfig.EnqueueTimeoutMs) * time.Millisecond
+		config.EnqueueTimeout = time.Duration(yamlMiningSupervisorConfig.EnqueueTimeoutMs) * time.Millisecond
 	}
 
+	// Gauge Sample Interval
 	if yamlMiningSupervisorConfig.GaugeSampleIntervalMs == 0 {
-		relayMinerConfig.MiningSupervisorConfig.GaugeSampleInterval = time.Duration(DefaultMSGaugeSampleInterval) * time.Millisecond
+		config.GaugeSampleInterval = time.Duration(DefaultMSGaugeSampleInterval) * time.Millisecond
 	} else {
-		relayMinerConfig.MiningSupervisorConfig.GaugeSampleInterval = time.Duration(yamlMiningSupervisorConfig.GaugeSampleIntervalMs) * time.Millisecond
+		config.GaugeSampleInterval = time.Duration(yamlMiningSupervisorConfig.GaugeSampleIntervalMs) * time.Millisecond
 	}
 
+	// Drop Log Interval
 	if yamlMiningSupervisorConfig.DropLogIntervalMs == 0 {
-		relayMinerConfig.MiningSupervisorConfig.DropLogInterval = time.Duration(DefaultMSDropLogInterval) * time.Millisecond
+		config.DropLogInterval = time.Duration(DefaultMSDropLogInterval) * time.Millisecond
 	} else {
-		relayMinerConfig.MiningSupervisorConfig.DropLogInterval = time.Duration(yamlMiningSupervisorConfig.DropLogIntervalMs) * time.Millisecond
+		config.DropLogInterval = time.Duration(yamlMiningSupervisorConfig.DropLogIntervalMs) * time.Millisecond
 	}
 
-	if yamlMiningSupervisorConfig.DropPolicy == "" || (yamlMiningSupervisorConfig.DropPolicy != "drop-new" && yamlMiningSupervisorConfig.DropPolicy != "drop-oldest") {
-		relayMinerConfig.MiningSupervisorConfig.DropPolicy = DefaultMSDropPolicy
+	// Drop Policy
+	isDropPolicyConfigured := (yamlMiningSupervisorConfig.DropPolicy == "") ||
+		(yamlMiningSupervisorConfig.DropPolicy != MSDropPolicyNew && yamlMiningSupervisorConfig.DropPolicy != MSDropPolicyOldest)
+	if isDropPolicyConfigured {
+		config.DropPolicy = DefaultMSDropPolicy
 	} else {
-		relayMinerConfig.MiningSupervisorConfig.DropPolicy = yamlMiningSupervisorConfig.DropPolicy
+		config.DropPolicy = yamlMiningSupervisorConfig.DropPolicy
 	}
 
+	relayMinerConfig.MiningSupervisorConfig = config
 	return nil
 }

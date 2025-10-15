@@ -42,16 +42,15 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 
 // initializeProxyServers initializes the proxy servers for each server config.
 func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]relayer.RelayServer, err error) {
-	// build miner supervisor which should be the same for all servers
-	miningSup := NewRelayMiningSupervisor(
+	// Build miner supervisor.
+	// The same miner supervisor should be used for all servers.
+	relayMiningSupervisor := NewRelayMiningSupervisor(
 		rp.logger,
 		rp.servedRelaysPublishCh,
 		rp.miningSupervisorConfig,
 		rp.relayMeter,
 		rp.relayAuthenticator,
 	)
-
-	// Build a map of serviceId -> service for the supplier's advertised services
 
 	// Build a map of listenAddress -> RelayServer for each server defined in the config file
 	servers := make(map[string]relayer.RelayServer)
@@ -78,7 +77,7 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 				rp.blockClient,
 				rp.sharedQuerier,
 				rp.sessionQuerier,
-				miningSup,
+				relayMiningSupervisor,
 			)
 		default:
 			return nil, ErrRelayerProxyUnsupportedTransportType

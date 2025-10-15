@@ -71,7 +71,8 @@ type ProxyRelayMeter struct {
 
 	logger polylog.Logger
 
-	// Per-session relay cost memoization:
+	// Per-session relay cost memoization to capture the cost of a single relay.
+	// It caches the cost of a single relay based on (sessionID, serviceID).
 	// sessionID -> (serviceID -> coin)
 	relayCostBySession *xsync.Map[string, *xsync.Map[string, cosmostypes.Coin]]
 }
@@ -107,48 +108,46 @@ func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
 	return nil
 }
 
-// relayCostFor returns the per-relay cost for (sessionID, serviceID), caching
-// the result for the lifetime of the session.
+// relayCostFor returns the per-relay cost for a single relay.
+// It caches the result for the lifetime of the session inside the relay meter.
 func (rmtr *ProxyRelayMeter) relayCostFor(
 	ctx context.Context,
 	sessionID string,
 	serviceID string,
 ) (cosmostypes.Coin, error) {
 	// Fast path: find or create the per-session submap
-	svcMap, ok := rmtr.relayCostBySession.Load(sessionID)
+	svcToRelayCostMap, ok := rmtr.relayCostBySession.Load(sessionID)
 	if !ok {
 		// Create a new submap; a benign race here is fine
 		newMap := xsync.NewMap[string, cosmostypes.Coin]()
-		if actual, loaded := rmtr.relayCostBySession.LoadOrStore(sessionID, newMap); loaded {
-			svcMap = actual
+		if cachedMap, loaded := rmtr.relayCostBySession.LoadOrStore(sessionID, newMap); loaded {
+			svcToRelayCostMap = cachedMap
 		} else {
-			svcMap = newMap
+			svcToRelayCostMap = newMap
 		}
 	}
 
-	// Fast path: per-service coin
-	if coin, ok := svcMap.Load(serviceID); ok {
-		return coin, nil
+	// Fast path: per-service relayCost is cached and can be returned immediately.
+	if relayCost, ok := svcToRelayCostMap.Load(serviceID); ok {
+		return relayCost, nil
 	}
 
-	// Slow path: compute once, then store
+	// Slow path: per-service relayCost is not cached, so we need to compute it.
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
-
 	service, err := rmtr.serviceQuerier.GetService(ctx, serviceID)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
-
-	coin, err := getSingleRelayCostCoin(sharedParams, &service)
+	relayCost, err := getSingleRelayCostCoin(sharedParams, &service)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
 
-	svcMap.Store(serviceID, coin)
-	return coin, nil
+	svcToRelayCostMap.Store(serviceID, relayCost)
+	return relayCost, nil
 }
 
 // IsOverServicing returns whether the relay would result in over-servicing the application.
@@ -299,18 +298,19 @@ func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client
 		return
 	}
 
-	rmtr.sessionToRelayMeterMap.Range(func(sessionID string, meter *sessionRelayMeter) bool {
-		claimOpen := sharedtypes.GetClaimWindowOpenHeight(
-			sharedParams,
-			meter.sessionHeader.GetSessionEndBlockHeight(),
-		)
-		if block.Height() >= claimOpen {
-			// Drop both: meter state + per-session relay-cost memoization.
-			rmtr.sessionToRelayMeterMap.Delete(sessionID)
-			rmtr.relayCostBySession.Delete(sessionID)
-		}
-		return true
-	})
+	rmtr.sessionToRelayMeterMap.Range(
+		func(sessionID string, meter *sessionRelayMeter) bool {
+			claimOpen := sharedtypes.GetClaimWindowOpenHeight(
+				sharedParams,
+				meter.sessionHeader.GetSessionEndBlockHeight(),
+			)
+			if block.Height() >= claimOpen {
+				// Drop both: meter state + per-session relay-cost memoization.
+				rmtr.sessionToRelayMeterMap.Delete(sessionID)
+				rmtr.relayCostBySession.Delete(sessionID)
+			}
+			return true
+		})
 }
 
 // ensureRequestSessionRelayMeter ensures that the relay miner has a relay meter

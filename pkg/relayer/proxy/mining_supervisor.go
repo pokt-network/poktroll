@@ -9,13 +9,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/puzpuzpuz/xsync/v4"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/x/service/types"
-	"github.com/puzpuzpuz/xsync/v4"
 )
 
 // SessionCache stores fast-path per-session state.
