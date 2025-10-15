@@ -38,7 +38,7 @@ import (
 func (server *relayMinerHTTPServer) handleHttp(
 	ctx context.Context,
 	logger polylog.Logger,
-	instructionTimes *relayer.instructionTimes,
+	instructionTimes *relayer.InstructionTimer,
 	relayRequest *types.RelayRequest,
 	httpResponse *http.Response,
 	httpResponseWriter http.ResponseWriter,
@@ -47,6 +47,7 @@ func (server *relayMinerHTTPServer) handleHttp(
 
 	// Extract the metadata from the relay request
 	sessionMeta := relayRequest.Meta
+	supplierOperatorAddress := sessionMeta.SupplierOperatorAddress
 
 	// Initialize empty relay response with metadata only
 	sessionHeader := sessionMeta.SessionHeader
