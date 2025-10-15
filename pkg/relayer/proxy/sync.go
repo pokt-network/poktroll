@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	//"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -117,7 +116,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	tr.Start(relayer.InstructionProxySyncCheckSessionIsRewardable)
-	sessionIsRewardable := sessionCacheEntry.Rewardable.Load()
+	sessionIsRewardable := sessionCacheEntry.isRewardable.Load()
 	tr.Finish(relayer.InstructionProxySyncCheckSessionIsRewardable)
 	if !sessionIsRewardable {
 		return relayReq, ErrRelayerProxyRateLimited
@@ -292,7 +291,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			logger.Warn().Msg("mining channel full - dropping (protect tail)")
 		}
 	}
-	tr.Start(relayer.InstructionProxySyncEagerCheckRewardApplicability)
+	tr.Finish(relayer.InstructionProxySyncEagerCheckRewardApplicability)
 
 	return relayReq, nil
 }

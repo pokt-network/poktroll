@@ -99,7 +99,7 @@ func NewHTTPServer(
 	blockClient client.BlockClient,
 	sharedQueryClient client.SharedQueryClient,
 	sessionQueryClient client.SessionQueryClient,
-	miningSup *RelayMiningSupervisor,
+	relayMiningSupervisor *RelayMiningSupervisor,
 ) relayer.RelayServer {
 	// Create the HTTP server with comprehensive limits for security and stability.
 	httpServer := &http.Server{
@@ -134,7 +134,7 @@ func NewHTTPServer(
 		sharedQueryClient:              sharedQueryClient,
 		sessionQueryClient:             sessionQueryClient,
 		httpClient:                     httpClient,
-		miningSupervisor:               miningSup,
+		miningSupervisor:               relayMiningSupervisor,
 	}
 }
 

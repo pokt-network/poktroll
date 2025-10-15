@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"strconv"
+
 	//"sync"
 
 	"cosmossdk.io/depinject"
@@ -30,7 +31,7 @@ type sharedQuerier struct {
 	// blockHashCache caches blockQuerier.Block requests
 	blockHashCache cache.KeyValueCache[BlockHash]
 	// blockHashMutex to protect cache access patterns for block hashes
-	//blockHashMutex sync.Mutex
+	// blockHashMutex sync.Mutex
 
 	// paramsCache caches sharedQueryClient.Params requests
 	paramsCache client.ParamsCache[sharedtypes.Params]

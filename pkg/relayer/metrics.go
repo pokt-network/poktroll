@@ -182,7 +182,7 @@ var (
 		Subsystem: relayMinerProcess,
 		Name:      responseSizeBytes,
 		Help:      "Histogram of response sizes in bytes for performance analysis.",
-		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
+		Buckets:   []float64{100, 500, 1_000, 5_000, 10_000, 50_000},
 	}, []string{"service_id"})
 
 	// RelayRequestSizeBytes is a histogram metric for observing request size distribution.
@@ -194,7 +194,7 @@ var (
 		Subsystem: relayMinerProcess,
 		Name:      requestSizeBytes,
 		Help:      "Histogram of request sizes in bytes for performance analysis.",
-		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
+		Buckets:   []float64{100, 500, 1_000, 5_000, 10_000, 50_000},
 	}, []string{"service_id"})
 
 	// DelayedRelayRequestValidationTotal is a Counter metric for tracking delayed validation occurrences.

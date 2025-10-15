@@ -131,11 +131,8 @@ type RelayMinerConfig struct {
 	Servers                            map[string]*RelayMinerServerConfig
 	SmtStorePath                       string
 	Ping                               *RelayMinerPingConfig
-	// TECH_DEBT(@jorgecuesta): should this be moved into a per-service validation config? since could easily follow
-	// the same pattern of eager validation, where the needs of a service does not apply to all services.
-	EnableOverServicing bool
-
-	MiningSupervisorConfig *MiningSupervisorConfig
+	EnableOverServicing                bool // TODO_IMPROVE(@jorgecuesta): Move this to per-service validation config because different services may have different needs.
+	MiningSupervisorConfig             *MiningSupervisorConfig
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:

@@ -23,12 +23,12 @@ const DefaultEagerRelayRequestValidation = false
 
 // --- Defaults of Mining Supervisor ---
 
-const DefaultMSQueueSize = uint64(10000)
+const DefaultMSQueueSize = uint64(10_000)
 const DefaultMSWorkers = uint8(0)
 const DefaultMSEnqueueTimeout = uint8(0)
-const DefaultMSDropPolicy = "drop-new"
 const DefaultMSGaugeSampleInterval = uint64(200)
 const DefaultMSDropLogInterval = uint64(2)
+const DefaultMSDropPolicy = MSDropPolicyNew
 
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
 func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*RelayMinerConfig, error) {
