@@ -333,7 +333,7 @@ genesis:
               endpoints:
                 - configs: []
                   rpc_type: REST
-                  url: http://ollama:11434
+                  url: http://relayminer1:8545
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: 100
