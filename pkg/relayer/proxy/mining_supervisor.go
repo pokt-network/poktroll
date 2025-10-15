@@ -19,43 +19,53 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// SessionCache stores fast-path per-session state.
-// Rewardable starts true and is only ever downgraded to false.
-type SessionCache struct {
-	EndHeight  int64
-	Rewardable atomic.Bool
+// sessionCache stores fast-path per-session state.
+type sessionCache struct {
+	// The end height of the session.
+	sessionEndHeight int64
+
+	// isRewardable starts as true and is only ever downgraded to false.
+	isRewardable atomic.Bool
 }
 
-// RelayMiningSupervisor runs delayed validation/rewardability and forwards rewardable
-// relays to the downstream "observable"/miner. It uses one bounded queue, a worker pool,
-// and an xsync-backed session cache.
+// RelayMiningSupervisor runs delayed relay validation and rewardability checks.
+// It forwards rewardable relays to the downstream "observable" (i.e. miner).
+// It uses one bounded queue, a worker pool, and an xsync-backed session cache.
 type RelayMiningSupervisor struct {
-	logger     polylog.Logger
-	downstream chan<- *types.Relay // we don't own/close this
+	// downstreamMiner is the channel NOT owned by the supervisor that is responsible
+	// for the relay mining process.
+	// Once the supervisor has performed its duties in delayed validation & rewardability
+	// checks, it forwards the relay to the downstream miner.
+	downstreamMiner chan<- *types.Relay
 
-	queue chan *types.Relay // internal bounded queue
+	// logger is the logger for the supervisor.
+	logger polylog.Logger
+
+	// Internal bounded queue
+	queue chan *types.Relay
 	wg    sync.WaitGroup
 
+	// ctx is the context for the supervisor.
 	ctx     context.Context
 	cancel  context.CancelFunc
 	stopped atomic.Bool
 
-	// Options
+	// Options passed to the supervisor.
 	dropOldest          bool
 	enqueueTimeout      time.Duration
 	gaugeSampleInterval time.Duration
 	dropLogInterval     time.Duration
 
 	// Fast state
-	downstreamClosed atomic.Bool
-	lastDropLogNs    atomic.Int64 // rate-limit downstream drop logs
+	downstreamMinerClosed atomic.Bool
+	lastDropLogNs         atomic.Int64 // rate-limit downstream drop logs
 
 	// Dependencies
 	relayMeter         relayer.RelayMeter
 	relayAuthenticator relayer.RelayAuthenticator
 
 	// Sessions: sessionID -> *SessionCache
-	knownSessions *xsync.Map[string, *SessionCache]
+	knownSessions *xsync.Map[string, *sessionCache]
 }
 
 // NewRelayMiningSupervisor creates a new instance and starts workers + gauge sampler.
@@ -95,7 +105,7 @@ func NewRelayMiningSupervisor(
 
 	s := &RelayMiningSupervisor{
 		logger:              logger.With("component", "mining_supervisor"),
-		downstream:          downstream,
+		downstreamMiner:     downstream,
 		queue:               make(chan *types.Relay, cfg.QueueSize),
 		ctx:                 ctx,
 		cancel:              cancel,
@@ -103,7 +113,7 @@ func NewRelayMiningSupervisor(
 		enqueueTimeout:      cfg.EnqueueTimeout,
 		gaugeSampleInterval: cfg.GaugeSampleInterval,
 		dropLogInterval:     cfg.DropLogInterval,
-		knownSessions:       xsync.NewMap[string, *SessionCache](),
+		knownSessions:       xsync.NewMap[string, *sessionCache](),
 		relayMeter:          relayMeter,
 		relayAuthenticator:  relayAuthenticator,
 	}
@@ -163,7 +173,7 @@ func (s *RelayMiningSupervisor) Publish(ctx context.Context, r *types.Relay) boo
 		return false
 	}
 
-	if s.stopped.Load() || s.ctx.Err() != nil || s.downstreamClosed.Load() {
+	if s.stopped.Load() || s.ctx.Err() != nil || s.downstreamMinerClosed.Load() {
 		relayer.CaptureMiningQueueDropped(serviceIDOf(r), "stopped_or_closed")
 		return false
 	}
@@ -339,8 +349,8 @@ func (s *RelayMiningSupervisor) processRelay(r *types.Relay) {
 
 		if !ok {
 			relayer.CaptureMiningQueueDropped(serviceID, "downstream_closed_or_full")
-			s.maybeLogDrop("downstream_full", serviceID, len(s.downstream), cap(s.downstream))
-			s.downstreamClosed.Store(true)
+			s.maybeLogDrop("downstream_full", serviceID, len(s.downstreamMiner), cap(s.downstreamMiner))
+			s.downstreamMinerClosed.Store(true)
 			rewardable = ok // rollback to non-rewardable since we were not able to send downstream
 		}
 	}
@@ -361,7 +371,7 @@ func (s *RelayMiningSupervisor) safeSendDownstream(r *types.Relay) (ok bool) {
 		}
 	}()
 	select {
-	case s.downstream <- r:
+	case s.downstreamMiner <- r:
 		return true
 	default:
 		return false // buffer full / no reader
@@ -371,22 +381,22 @@ func (s *RelayMiningSupervisor) safeSendDownstream(r *types.Relay) (ok bool) {
 // --- Session cache (handler fast-path helpers) ---
 
 // GetSessionEntry returns cached state if present.
-func (s *RelayMiningSupervisor) GetSessionEntry(sessionID string) (*SessionCache, bool) {
+func (s *RelayMiningSupervisor) GetSessionEntry(sessionID string) (*sessionCache, bool) {
 	return s.knownSessions.Load(sessionID)
 }
 
 // MarkSessionAsKnown inserts/updates a session as known; rewardable stays true unless previously downgraded.
-func (s *RelayMiningSupervisor) MarkSessionAsKnown(sessionID string, endHeight int64) *SessionCache {
+func (s *RelayMiningSupervisor) MarkSessionAsKnown(sessionID string, endHeight int64) *sessionCache {
 	return s.upsertSessionState(sessionID, endHeight, true)
 }
 
 // MarkSessionAsNonRewardable permanently downgrades rewardability for a session.
-func (s *RelayMiningSupervisor) MarkSessionAsNonRewardable(sessionID string) (*SessionCache, error) {
+func (s *RelayMiningSupervisor) MarkSessionAsNonRewardable(sessionID string) (*sessionCache, error) {
 	st, ok := s.knownSessions.Load(sessionID)
 	if !ok {
 		return nil, fmt.Errorf("session %q not found", sessionID)
 	}
-	st.Rewardable.Store(false)
+	st.isRewardable.Store(false)
 	return st, nil
 }
 
@@ -401,18 +411,18 @@ func (s *RelayMiningSupervisor) MarkSessionAsNonRewardable(sessionID string) (*S
 //   - Worst case: one extra relay is temporarily counted as rewardable
 //   - The mining supervisor will rollback via SetNonApplicableRelayReward
 //   - The atomic bool ensures eventual consistency
-func (s *RelayMiningSupervisor) upsertSessionState(sessionID string, endHeight int64, rewardable bool) *SessionCache {
+func (s *RelayMiningSupervisor) upsertSessionState(sessionID string, endHeight int64, rewardable bool) *sessionCache {
 	if st, ok := s.knownSessions.Load(sessionID); ok {
-		if endHeight > st.EndHeight {
-			st.EndHeight = endHeight
+		if endHeight > st.sessionEndHeight {
+			st.sessionEndHeight = endHeight
 		}
 		if !rewardable {
-			st.Rewardable.Store(false)
+			st.isRewardable.Store(false)
 		}
 		return st
 	}
-	st := &SessionCache{EndHeight: endHeight}
-	st.Rewardable.Store(rewardable)
+	st := &sessionCache{sessionEndHeight: endHeight}
+	st.isRewardable.Store(rewardable)
 	s.knownSessions.Store(sessionID, st)
 	return st
 }
@@ -420,8 +430,8 @@ func (s *RelayMiningSupervisor) upsertSessionState(sessionID string, endHeight i
 // PruneOutdatedKnownSessions removes sessions whose EndHeight is before the current height (with +1 guard).
 // Call periodically (e.g., on new block events). Consider adding a grace window if late requests are common.
 func (s *RelayMiningSupervisor) PruneOutdatedKnownSessions(_ context.Context, block client.Block) {
-	s.knownSessions.Range(func(sessionID string, st *SessionCache) bool {
-		if st.EndHeight+1 < block.Height() {
+	s.knownSessions.Range(func(sessionID string, st *sessionCache) bool {
+		if st.sessionEndHeight+1 < block.Height() {
 			s.knownSessions.Delete(sessionID)
 		}
 		return true

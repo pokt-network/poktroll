@@ -116,7 +116,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	tr.Start(relayer.InstructionProxySyncCheckSessionIsRewardable)
-	sessionIsRewardable := sessionCacheEntry.Rewardable.Load()
+	sessionIsRewardable := sessionCacheEntry.isRewardable.Load()
 	tr.Finish(relayer.InstructionProxySyncCheckSessionIsRewardable)
 	if !sessionIsRewardable {
 		return relayReq, ErrRelayerProxyRateLimited
