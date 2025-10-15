@@ -169,3 +169,25 @@ func (server *relayMinerHTTPServer) handleHttpStream(
 	// Return the relay response, response size, and nil error.
 	return relayResponse, responseSize, nil
 }
+
+// ScanEvents is a bufio.SplitFunc that splits streaming data by the POKT stream delimiter.
+// This is used by clients to parse the signed relay response chunks from the stream.
+func ScanEvents(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	// Look for the POKT_STREAM delimiter
+	if i := strings.Index(string(data), streamDelimiter); i >= 0 {
+		// Return chunk without the delimiter
+		return i + len(streamDelimiter), data[0:i], nil
+	}
+
+	// If we're at EOF, return whatever we have
+	if atEOF {
+		return len(data), data, nil
+	}
+
+	// Request more data
+	return 0, nil, nil
+}
