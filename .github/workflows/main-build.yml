@@ -80,8 +80,12 @@ jobs:
           mkdir -p ./bin # Make sure the bin directory exists
           cp $(which ignite) ./bin # Copy ignite binary to the repo's bin directory
           cp $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
-          # If cosmovisor was built, it will already be in ./bin from the previous step; this is a no-op fallback:
-          test -f $(go env GOPATH)/bin/cosmovisor && cp $(go env GOPATH)/bin/cosmovisor ./bin || true
+          # Cosmovisor is optional in this workflow; copy it when present and log when it's missing.
+          if [ -f "$(go env GOPATH)/bin/cosmovisor" ]; then
+            cp $(go env GOPATH)/bin/cosmovisor ./bin
+          else
+            echo "Cosmovisor binary not found; we tried to copy it over but it wasn't available."
+          fi
           ls -la ./bin
 
       - name: Build and push Docker image

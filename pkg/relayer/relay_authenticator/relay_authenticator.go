@@ -8,6 +8,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/signer"
 )
 
 var _ relayer.RelayAuthenticator = (*relayAuthenticator)(nil)
@@ -19,10 +20,13 @@ type relayAuthenticator struct {
 	logger polylog.Logger
 
 	// signingKeyNames are the supplier operator key names in the Cosmos's keybase.
-	// They are used along with the keyring to get the supplier operator addresses
-	// and sign relay responses.
+	// They are used along with the keyring to get the supplier operator addresses.
 	signingKeyNames []string
 	keyring         keyring.Keyring
+	// signers is a map of supplier operator addresses to their corresponding signers.
+	// It is used to cache signers and avoid initializing a signer from the keyring
+	// for every incoming relay request.
+	signers map[string]signer.Signer
 
 	// sessionQuerier is the query client used to get the current session & session
 	// params from the blockchain, which are needed to check if the relay proxy
@@ -109,7 +113,7 @@ func (ra *relayAuthenticator) GetSupplierOperatorAddresses() []string {
 // TODO_TEST: Add tests for validating these configurations.
 func (ra *relayAuthenticator) validateConfig() error {
 	if len(ra.signingKeyNames) == 0 || ra.signingKeyNames[0] == "" {
-		return ErrRelayAuthenticatorUndefinedSigningKeyNames
+		return ErrRelayAuthenticatorUndefinedSigner
 	}
 
 	return nil
@@ -119,6 +123,8 @@ func (ra *relayAuthenticator) validateConfig() error {
 // with the supplier operator addresses as keys and the keyring signing key names as values.
 func (ra *relayAuthenticator) populateOperatorAddressToSigningKeyNameMap() error {
 	ra.operatorAddressToSigningKeyNameMap = make(map[string]string, len(ra.signingKeyNames))
+	ra.signers = make(map[string]signer.Signer, len(ra.signingKeyNames))
+
 	for _, operatorSigningKeyName := range ra.signingKeyNames {
 		supplierOperatorKey, err := ra.keyring.Key(operatorSigningKeyName)
 		if err != nil {
@@ -130,6 +136,11 @@ func (ra *relayAuthenticator) populateOperatorAddressToSigningKeyNameMap() error
 			return err
 		}
 
+		operatorSigner, err := signer.NewSimpleSigner(ra.keyring, operatorSigningKeyName)
+		if err != nil {
+			return err
+		}
+		ra.signers[supplierOperatorAddress.String()] = operatorSigner
 		ra.operatorAddressToSigningKeyNameMap[supplierOperatorAddress.String()] = operatorSigningKeyName
 	}
 
