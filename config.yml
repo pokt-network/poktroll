@@ -288,13 +288,13 @@ genesis:
             [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
           service_configs:
             - service_id: ollama
-          stake:
-            # DEV_NOTE: Value should be exactly 1upokt smaller than `application1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "100000068" # ~100 POKT
+              stake:
+                # DEV_NOTE: Value should be exactly 1upokt smaller than `application1_stake_config.yaml` so that the stake command causes a state change.
+                amount: "100000068" # ~100 POKT
             - service_id: static
-          stake:
-            amount: "10000000000000"
-            denom: upokt
+              stake:
+                amount: "10000000000000"
+                denom: upokt
     # For ref, see proto/poktroll/supplier/params.proto
     supplier:
       params:
