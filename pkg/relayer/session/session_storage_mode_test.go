@@ -48,7 +48,6 @@ type StorageModeTestSuite struct {
 	relayerSessionsManager relayer.RelayerSessionsManager
 	storesDirectoryPathOpt relayer.RelayerSessionsManagerOption
 
-	sessionTrees            session.SessionsTreesMap
 	activeSessionHeader     *sessiontypes.SessionHeader
 	supplierOperatorAddress string
 	service                 sharedtypes.Service
@@ -103,7 +102,6 @@ func (s *StorageModeTestSuite) SetupTest() {
 	s.createClaimCallCount = 0
 	s.submitProofCallCount = 0
 	s.claimToReturn = nil
-	s.sessionTrees = make(session.SessionsTreesMap)
 	s.latestBlock = nil
 
 	// Set up storage directory path based on test mode
@@ -212,7 +210,7 @@ func (s *StorageModeTestSuite) TestBasicClaimAndProofSubmission() {
 	require.Equal(s.T(), 1, s.submitProofCallCount, "SubmitProof should be called once for storage mode: %s", s.getStorageModeName())
 
 	// Verify the session tree has been removed after proof submission
-	require.Len(s.T(), s.sessionTrees, 0, "Session tree should be removed after proof submission for storage mode: %s", s.getStorageModeName())
+	require.False(s.T(), s.hasActiveSessionTree(), "Session tree should be removed after proof submission for storage mode: %s", s.getStorageModeName())
 }
 
 // TestProcessRestartDuringClaimWindow tests session persistence when restarted during claim window
@@ -247,7 +245,7 @@ func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 	// TODO_TECHDEBT(#1734): Remove this once we are better at managing in-memory sessions restarts
 	if s.isInMemorySMT() {
 		// In-memory modes don't persist across restarts, so session should be gone
-		require.Len(s.T(), s.sessionTrees, 0, "In-memory storage should not persist sessions across restarts for mode: %s", s.getStorageModeName())
+		require.False(s.T(), s.hasActiveSessionTree(), "In-memory storage should not persist sessions across restarts for mode: %s", s.getStorageModeName())
 		return
 	}
 
@@ -346,32 +344,38 @@ func (s *StorageModeTestSuite) getStorageModeName() string {
 
 // getActiveSessionTree retrieves the current active session tree for testing purposes
 func (s *StorageModeTestSuite) getActiveSessionTree() relayer.SessionTree {
-	// Extract session details from the active header
-	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
-	sessionId := s.activeSessionHeader.GetSessionId()
-
-	// Get the specific session tree for this supplier
-	supplierSessionTrees, ok := s.sessionTrees[s.supplierOperatorAddress]
+	sessionTree, ok := s.findActiveSessionTree()
 	require.True(s.T(), ok)
-
-	// Get all session trees for this session end height
-	sessionTreesWithEndHeight, ok := supplierSessionTrees[sessionEndHeight]
-	require.True(s.T(), ok)
-
-	// Get all session trees for this session ID
-	sessionTree, ok := sessionTreesWithEndHeight[sessionId]
-	require.True(s.T(), ok)
-
 	return sessionTree
+}
+
+func (s *StorageModeTestSuite) findActiveSessionTree() (relayer.SessionTree, bool) {
+	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
+	sessionID := s.activeSessionHeader.GetSessionId()
+
+	for _, snapshot := range s.relayerSessionsManager.SessionTreesSnapshots() {
+		if snapshot.SupplierOperatorAddress != s.supplierOperatorAddress {
+			continue
+		}
+		if snapshot.SessionEndHeight != sessionEndHeight {
+			continue
+		}
+		if snapshot.SessionID != sessionID {
+			continue
+		}
+		return snapshot.Tree, true
+	}
+
+	return nil, false
+}
+
+func (s *StorageModeTestSuite) hasActiveSessionTree() bool {
+	_, ok := s.findActiveSessionTree()
+	return ok
 }
 
 // setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing
 func (s *StorageModeTestSuite) setupNewRelayerSessionsManager() relayer.RelayerSessionsManager {
-	// Initialize a new session trees map
-	s.sessionTrees = make(session.SessionsTreesMap)
-	// Create an inspector that will monitor the session trees for testing
-	sessionTreesInspector := session.WithSessionTreesInspector(&s.sessionTrees)
-
 	// Create a new replay observable for blocks
 	s.blocksObs, s.blockPublishCh = channel.NewReplayObservable[client.Block](s.ctx, 20)
 
@@ -385,7 +389,7 @@ func (s *StorageModeTestSuite) setupNewRelayerSessionsManager() relayer.RelayerS
 	)
 
 	// Create a new relayer sessions manager with the configured dependencies
-	relayerSessionsManager, err := session.NewRelayerSessions(s.deps, s.storesDirectoryPathOpt, sessionTreesInspector)
+	relayerSessionsManager, err := session.NewRelayerSessions(s.deps, s.storesDirectoryPathOpt)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), relayerSessionsManager)
 

@@ -59,7 +59,7 @@ type ProxyRelayMeter struct {
 	overServicingEnabled bool
 
 	// relayMeterMu ensures that relay meter operations are thread-safe.
-	relayMeterMu sync.Mutex
+	relayMeterMu sync.RWMutex
 
 	// Clients to query onchain data.
 	applicationQuerier client.ApplicationQueryClient
@@ -110,9 +110,6 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 	ctx context.Context,
 	reqMeta servicetypes.RelayRequestMetadata,
 ) bool {
-	rmtr.relayMeterMu.Lock()
-	defer rmtr.relayMeterMu.Unlock()
-
 	// Create a context-specific logger to avoid concurrent access issues
 	logger := rmtr.logger.With(
 		"method", "IsOverServicing",
@@ -172,10 +169,11 @@ func (rmtr *ProxyRelayMeter) IsOverServicing(
 
 	appRelayMeter.numOverServicedRelays++
 
-	// Exponential backoff, only log over-servicing when numOverServicedRelays is a power of 2
+	// Exponential backoff: only log over-servicing when numOverServicedRelays is a power of 2
+	// This prevents log spam while still tracking the issue at exponentially growing intervals
 	if shouldLogOverServicing(appRelayMeter.numOverServicedRelays) {
 		logger.Warn().Msgf(
-			"overservicing enabled, application %q over-serviced %s",
+			"overservicing enabled, application %q over-serviced %d times",
 			appRelayMeter.app.GetAddress(),
 			appRelayMeter.numOverServicedRelays,
 		)
@@ -272,27 +270,45 @@ func (rmtr *ProxyRelayMeter) AllowOverServicing() bool {
 // It resets the relay meter's application stakes every new session so that new
 // application stakes can be metered.
 func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client.Block) {
-	rmtr.relayMeterMu.Lock()
-	defer rmtr.relayMeterMu.Unlock()
-
 	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
 	if err != nil {
 		return
 	}
 
-	// Delete the relay meters that correspond to settled sessions.
-	for _, sessionRelayMeter := range rmtr.sessionToRelayMeterMap {
+	// First pass: Read-only scan to identify sessions to delete
+	rmtr.relayMeterMu.RLock()
+	var sessionsToDelete []string
+	for sessionId, sessionRelayMeter := range rmtr.sessionToRelayMeterMap {
 		sessionClaimOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
 			sharedParams,
 			sessionRelayMeter.sessionHeader.GetSessionEndBlockHeight(),
 		)
 
 		if block.Height() >= sessionClaimOpenHeight {
-			// The session started its claim phase and the corresponding session relay meter
-			// is no longer needed.
-			delete(rmtr.sessionToRelayMeterMap, sessionRelayMeter.sessionHeader.GetSessionId())
+			sessionsToDelete = append(sessionsToDelete, sessionId)
 		}
 	}
+	rmtr.relayMeterMu.RUnlock()
+
+	// Second pass: Write lock only for deletions (if needed)
+	if len(sessionsToDelete) == 0 {
+		return
+	}
+
+	// !!! CRITICAL MUTEX !!!
+	// DEV_NOTE: This is a WRITE lock on relay-meter-wide mutex, shared across all served relays:
+	// - This critical section is delicate for performance.
+	// - Keep the work here minimal and fast.
+	// - Avoid unnecessary allocations, I/O, or blocking calls.
+	// - Prolonged holds will throttle relay throughput across the process.
+	// TODO_IMPROVE: Identify potential ways to avoid a write lock if possible.
+	rmtr.relayMeterMu.Lock()
+	for _, sessionId := range sessionsToDelete {
+		// The session started its claim phase and the corresponding session relay meter
+		// is no longer needed.
+		delete(rmtr.sessionToRelayMeterMap, sessionId)
+	}
+	rmtr.relayMeterMu.Unlock()
 }
 
 // ensureRequestSessionRelayMeter ensures that the relay miner has a relay meter
@@ -301,7 +317,10 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 	appAddress := reqMeta.GetSessionHeader().GetApplicationAddress()
 	sessionId := reqMeta.GetSessionHeader().GetSessionId()
 
+	rmtr.relayMeterMu.RLock()
 	relayMeter, ok := rmtr.sessionToRelayMeterMap[sessionId]
+	rmtr.relayMeterMu.RUnlock()
+
 	// If the application is seen for the first time in this session, calculate the
 	// max amount of stake the application can consume.
 	if !ok {
@@ -339,6 +358,7 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 			sharedParams,
 			sessionParams.GetNumSuppliersPerSession(),
 		)
+
 		relayMeter = &sessionRelayMeter{
 			app:           app,
 			consumedCoin:  cosmostypes.NewInt64Coin(pocket.DenomuPOKT, 0),
@@ -346,7 +366,9 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 			sessionHeader: reqMeta.SessionHeader,
 		}
 
+		rmtr.relayMeterMu.Lock()
 		rmtr.sessionToRelayMeterMap[sessionId] = relayMeter
+		rmtr.relayMeterMu.Unlock()
 	}
 
 	return relayMeter, nil

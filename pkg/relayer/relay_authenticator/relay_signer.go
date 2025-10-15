@@ -1,7 +1,6 @@
 package relay_authenticator
 
 import (
-	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -33,11 +32,10 @@ func (ra *relayAuthenticator) SignRelayResponse(relayResponse *types.RelayRespon
 	}
 
 	// create a simple signer for the request
-	operatorKeyName, ok := ra.operatorAddressToSigningKeyNameMap[supplierOperatorAddr]
+	signer, ok := ra.signers[supplierOperatorAddr]
 	if !ok {
-		return ErrRelayAuthenticatorUndefinedSigningKeyNames.Wrapf("unable to resolve the signing key name for supplier %s (available: %v)", supplierOperatorAddr, ra.getAvailableSupplierAddresses())
+		return ErrRelayAuthenticatorUndefinedSigner.Wrapf("unable to resolve signer for supplier %s (available: %v)", supplierOperatorAddr, ra.getAvailableSupplierAddresses())
 	}
-	signer := signer.NewSimpleSigner(ra.keyring, operatorKeyName)
 
 	// extract and hash the relay response's signable bytes
 	signableBz, err := relayResponse.GetSignableBytesHash()
