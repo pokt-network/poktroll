@@ -106,12 +106,6 @@ func (server *relayMinerHTTPServer) handleHttp(
 	responsePreparationEnd := time.Now()
 	instructionTimes.Record(relayer.InstructionRelayResponseGenerated)
 
-	// // Prepare a structure holding the relay request and response.
-	// relay := &types.Relay{
-	// 	Req: relayRequest,
-	// 	Res: relayResponse,
-	// }
-
 	// Add response preparation duration to the logger such that any log before errors will have
 	// as much request duration information as possible.
 	logger = logger.With(
