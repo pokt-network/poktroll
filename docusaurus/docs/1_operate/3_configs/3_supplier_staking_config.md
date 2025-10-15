@@ -7,7 +7,7 @@ This document describes the configuration file used by the `Supplier` actor
 to submit a `stake` transaction, **which is a prerequisite** for it to provide
 RPC services on Pocket Network.
 
-:::tip
+:::tip Copy-pasta example
 
 You can find a fully featured example configuration at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/pocketd/config/supplier1_stake_config.yaml).
 
@@ -23,12 +23,14 @@ You can find a fully featured example configuration at [supplier_staking_config.
   - [`operator_address`](#operator_address)
   - [`stake_amount`](#stake_amount)
   - [`default_rev_share_percent`](#default_rev_share_percent)
+    - [`default_rev_share_percent` configuration details](#default_rev_share_percent-configuration-details)
   - [`services`](#services)
     - [`service_id`](#service_id)
     - [`endpoints`](#endpoints)
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
     - [`rev_share_percent`](#rev_share_percent)
+    - [`rev_share_percent` configuration details](#rev_share_percent-configuration-details)
 - [Staking Modes](#staking-modes)
   - [1. Stake Only Updates](#1-stake-only-updates)
   - [2. Service Configuration Updates](#2-service-configuration-updates)
@@ -157,7 +159,7 @@ owner_address: <address>
 ```
 
 The `owner_address` is the address of the account that owns the `Supplier`s staked
-funds, which will be transferred to this account's balannce when the `Supplier`
+funds, which will be transferred to this account's balance when the `Supplier`
 unstakes and finishes unbonding.
 
 For custodial staking, the `owner_address` is the same as the `operator_address`.
@@ -203,15 +205,6 @@ as the `operator_address`.
 If the `operator_address` is the same as the `owner_address`, then the staking
 is custodial.
 
-:::warning
-
-Since the `operator_address` is the unique identifier of a `Supplier`, it cannot
-be changed once the `Supplier` is created. If it needs to be changed, then the
-corresponding `Supplier` has to be unstaked and a new one staked with the new
-`operator_address`.
-
-:::
-
 ### `stake_amount`
 
 | Scenario                   | Requirement  |
@@ -228,6 +221,16 @@ Defines the amount of `upokt` to stake for the `Supplier` account.
 This amount covers all the `service`s defined in the `services` section.
 
 ### `default_rev_share_percent`
+
+:::warning Revenue Share Update Permissions (Operator-Only)
+
+**Revenue share addresses and percentages CAN ONLY be updated by the OPERATOR account.**
+
+In this example, both `owner_address` and `operator_address` are the same (custodial staking).
+This means the same account can update both stake amounts and revenue share configurations.
+For non-custodial staking, only the operator can modify revenue share settings.
+
+:::
 
 | Scenario | Requirement  |
 | -------- | ------------ |
@@ -250,22 +253,16 @@ does not have to repeat the same values for each `service` in the `services` sec
 This map cannot be empty but can be omitted, in which case the default revenue
 share falls back to `100%` of the rewards allocated to the `Supplier`'s `owner_address`.
 
-:::note
+#### `default_rev_share_percent` configuration details
 
 The `shareholder_address`s MUST be valid Pocket addresses.
 
 The revenue share values MUST be strictly positive floats with a maximum value of
 100 and a total sum of 100 across all the `shareholder_address`es.
 
-:::
-
-:::warning
-
 If `default_rev_share_percent` is defined, then the `owner_address` of the `Supplier`
 MUST be **explicitly** defined in the map if they are to receive a share on the
 `service`s that fall back to the default.
-
-:::
 
 ### `services`
 
@@ -373,21 +370,16 @@ It overrides the `default_rev_share_percent` if defined for the `service`.
 This map cannot be empty but can be omitted, in which case it falls back to the
 `default_rev_share_percent` top-level configuration entry.
 
-:::note
+#### `rev_share_percent` configuration details
 
 The `shareholder_address`s MUST be valid Pocket addresses.
 
-The revenue share values MUST be strictly positive decimals with a maximum value
-of 100 and a total sum of 100 across all the `shareholder_address`es.
+The revenue share values MUST be strictly positive floats with a maximum value of
+100 and a total sum of 100 across all the `shareholder_address`es.
 
-:::
-
-:::warning
-
-If `rev_share_percent` is defined for a `service`, then the `owner_address` of the
-`Supplier` MUST be **explicitly** defined in the map if they are to receive a share.
-
-:::
+If `default_rev_share_percent` is defined, then the `owner_address` of the `Supplier`
+MUST be **explicitly** defined in the map if they are to receive a share on the
+`service`s that fall back to the default.
 
 ## Staking Modes
 
