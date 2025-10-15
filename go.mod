@@ -111,6 +111,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
+require github.com/puzpuzpuz/xsync/v4 v4.2.0
+
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
 	4d63.com/gochecknoglobals v0.2.2 // indirect

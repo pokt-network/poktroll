@@ -2,6 +2,7 @@ package config
 
 import (
 	"net/url"
+	"time"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -22,17 +23,17 @@ const (
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
 type YAMLRelayMinerConfig struct {
-	DefaultSigningKeyNames            []string                       `yaml:"default_signing_key_names"`
-	DefaultRequestTimeoutSeconds      uint64                         `yaml:"default_request_timeout_seconds"`
-	DefaultMaxBodySize                string                         `yaml:"default_max_body_size"`
-	Metrics                           YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
-	PocketNode                        YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
-	Pprof                             YAMLRelayMinerPprofConfig      `yaml:"pprof"`
-	SmtStorePath                      string                         `yaml:"smt_store_path"`
-	Suppliers                         []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
-	Ping                              YAMLRelayMinerPingConfig       `yaml:"ping"`
-	EnableOverServicing               bool                           `yaml:"enable_over_servicing"`
-	EnableEagerRelayRequestValidation bool                           `yaml:"enable_eager_relay_request_validation"`
+	DefaultSigningKeyNames                   []string                       `yaml:"default_signing_key_names"`
+	DefaultRequestTimeoutSeconds             uint64                         `yaml:"default_request_timeout_seconds"`
+	DefaultMaxBodySize                       string                         `yaml:"default_max_body_size"`
+	DefaultEnableEagerRelayRequestValidation bool                           `yaml:"default_enable_eager_relay_request_validation"`
+	Metrics                                  YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
+	PocketNode                               YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
+	Pprof                                    YAMLRelayMinerPprofConfig      `yaml:"pprof"`
+	SmtStorePath                             string                         `yaml:"smt_store_path"`
+	Suppliers                                []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
+	Ping                                     YAMLRelayMinerPingConfig       `yaml:"ping"`
+	EnableOverServicing                      bool                           `yaml:"enable_over_servicing"`
 
 	// TODO_IMPROVE: Add a EnableErrorPropagation flag to control whether errors (i.e. non-2XX HTTP status codes)
 	// are propagated back to the client or masked as internal errors.
@@ -44,6 +45,8 @@ type YAMLRelayMinerConfig struct {
 	//
 	// See this discussion for more details: https://github.com/pokt-network/poktroll/pull/1608/files#r2175684381
 	// EnableErrorPropagation bool `yaml:"enable_error_propagation"`
+
+	MiningSupervisor YAMLMiningSupervisorConfig `yaml:"mining_supervisor"`
 }
 
 // YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
@@ -71,14 +74,15 @@ type YAMLRelayMinerMetricsConfig struct {
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
-	ListenUrl             string                                         `yaml:"listen_url"`
-	ServiceConfig         YAMLRelayMinerSupplierServiceConfig            `yaml:"service_config"`
-	RPCTypeServiceConfigs map[string]YAMLRelayMinerSupplierServiceConfig `yaml:"rpc_type_service_configs"`
-	ServiceId             string                                         `yaml:"service_id"`
-	SigningKeyNames       []string                                       `yaml:"signing_key_names"`
-	RequestTimeoutSeconds uint64                                         `yaml:"request_timeout_seconds"`
-	MaxBodySize           string                                         `yaml:"max_body_size"`
-	XForwardedHostLookup  bool                                           `yaml:"x_forwarded_host_lookup"`
+	ListenUrl                         string                                         `yaml:"listen_url"`
+	ServiceConfig                     YAMLRelayMinerSupplierServiceConfig            `yaml:"service_config"`
+	RPCTypeServiceConfigs             map[string]YAMLRelayMinerSupplierServiceConfig `yaml:"rpc_type_service_configs"`
+	ServiceId                         string                                         `yaml:"service_id"`
+	SigningKeyNames                   []string                                       `yaml:"signing_key_names"`
+	RequestTimeoutSeconds             uint64                                         `yaml:"request_timeout_seconds"`
+	MaxBodySize                       string                                         `yaml:"max_body_size"`
+	XForwardedHostLookup              bool                                           `yaml:"x_forwarded_host_lookup"`
+	EnableEagerRelayRequestValidation *bool                                          `yaml:"enable_eager_relay_request_validation"`
 }
 
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
@@ -105,19 +109,33 @@ type YAMLRelayMinerPprofConfig struct {
 	Addr    string `yaml:"addr,omitempty"`
 }
 
+// YAMLMiningSupervisorConfig configures the in-process supervisor queue & workers.
+type YAMLMiningSupervisorConfig struct {
+	QueueSize             uint64 `yaml:"queue_size"`               // capacity between handler and workers
+	Workers               uint8  `yaml:"workers"`                  // number of workers for validation+forwarding
+	EnqueueTimeoutMs      uint64 `yaml:"enqueue_timeout_ms"`       // 0 = strictly non-blocking enqueue
+	DropPolicy            string `yaml:"drop_policy"`              // "drop-new" (default) or "drop-oldest"
+	GaugeSampleIntervalMs uint64 `yaml:"gauge_sample_interval_ms"` // queue length gauge sampling interval
+	DropLogIntervalMs     uint64 `yaml:"drop_log_interval_ms"`     // minimum interval between downstream-drop logs
+}
+
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
-	DefaultSigningKeyNames            []string
-	DefaultRequestTimeoutSeconds      uint64
-	DefaultMaxBodySize                int64
-	Metrics                           *RelayMinerMetricsConfig
-	PocketNode                        *RelayMinerPocketNodeConfig
-	Pprof                             *RelayMinerPprofConfig
-	Servers                           map[string]*RelayMinerServerConfig
-	SmtStorePath                      string
-	Ping                              *RelayMinerPingConfig
-	EnableOverServicing               bool
-	EnableEagerRelayRequestValidation bool
+	DefaultSigningKeyNames             []string
+	DefaultRequestTimeoutSeconds       uint64
+	DefaultMaxBodySize                 int64
+	DefaultEagerRelayRequestValidation bool
+	Metrics                            *RelayMinerMetricsConfig
+	PocketNode                         *RelayMinerPocketNodeConfig
+	Pprof                              *RelayMinerPprofConfig
+	Servers                            map[string]*RelayMinerServerConfig
+	SmtStorePath                       string
+	Ping                               *RelayMinerPingConfig
+	// TECH_DEBT(@jorgecuesta): should this be moved into a per-service validation config? since could easily follow
+	// the same pattern of eager validation, where the needs of a service does not apply to all services.
+	EnableOverServicing bool
+
+	MiningSupervisorConfig *MiningSupervisorConfig
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
@@ -159,27 +177,6 @@ type RelayMinerServerConfig struct {
 
 	// MaxBodySize sets the largest request or response body size (in bytes) that the RelayMiner will accept for this service.
 	MaxBodySize int64
-
-	// EnableEagerRelayRequestValidation enables immediate validation of all incoming relay requests.
-	//
-	// When enabled (true, eager validation):
-	// 1. All requests (known or unknown session) are validated immediately on receipt
-	// 2. The session becomes known for subsequent requests.
-	//
-	// When disabled (false, late validation):
-	// 1. Immediate validation is performed only for known sessions
-	// 2. For unknown sessions, validation is deferred after serving the backend request but before mining/rewarding.
-	//
-	// Known session background:
-	//   - The session ID is already present in the RelayMiner's in-memory cache
-	//   - Example: after the first request for that session was validated
-	//   - Related session data is cached until the session end height
-	// 	 - Allows subsequent relays in the same session to validate faster without needing to block at onchain queries
-	//
-	// Unknown session background:
-	//   - First encounter of a session ID
-	//   - Not yet cached.
-	EnableEagerRelayRequestValidation bool
 }
 
 // RelayMinerMetricsConfig is the structure resulting from parsing the metrics
@@ -251,6 +248,26 @@ type RelayMinerSupplierServiceConfig struct {
 	// ForwardPocketHeaders toggles if headers prefixed with 'Pocket-' should be forwarded to
 	// the backend service servicing the relay requests.
 	ForwardPocketHeaders bool
+	// EnableEagerRelayRequestValidation enables immediate validation of all incoming relay requests.
+	//
+	// When enabled (true, eager validation):
+	// 1. All requests (known or unknown session) are validated immediately on receipt
+	// 2. The session becomes known for subsequent requests.
+	//
+	// When disabled (false, late validation):
+	// 1. Immediate validation is performed only for known sessions
+	// 2. For unknown sessions, validation is deferred after serving the backend request but before mining/rewarding.
+	//
+	// Known session background:
+	//   - The session ID is already present in the RelayMiner's in-memory cache
+	//   - Example: after the first request for that session was validated
+	//   - Related session data is cached until the session end height
+	// 	 - Allows subsequent relays in the same session to validate faster without needing to block at onchain queries
+	//
+	// Unknown session background:
+	//   - First encounter of a session ID
+	//   - Not yet cached.
+	EnableEagerRelayRequestValidation bool
 }
 
 // RelayMinerSupplierServiceAuthentication is the structure resulting from parsing
@@ -266,4 +283,14 @@ type RelayMinerSupplierServiceAuthentication struct {
 type RelayMinerPprofConfig struct {
 	Enabled bool
 	Addr    string
+}
+
+// MiningSupervisorConfig configures the in-process supervisor queue & workers.
+type MiningSupervisorConfig struct {
+	QueueSize           uint64
+	Workers             uint8
+	EnqueueTimeout      time.Duration
+	DropPolicy          string
+	GaugeSampleInterval time.Duration
+	DropLogInterval     time.Duration
 }

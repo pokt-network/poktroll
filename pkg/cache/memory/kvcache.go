@@ -2,10 +2,10 @@ package memory
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
+	"github.com/puzpuzpuz/xsync/v4"
 )
 
 var _ cache.KeyValueCache[any] = (*keyValueCache[any])(nil)
@@ -13,11 +13,8 @@ var _ cache.KeyValueCache[any] = (*keyValueCache[any])(nil)
 // keyValueCache provides a concurrency-safe in-memory key/value cache implementation.
 type keyValueCache[T any] struct {
 	config keyValueCacheConfig
-
-	// valuesMu is used to protect values AND valueHistories from concurrent access.
-	valuesMu sync.RWMutex
 	// values holds the cached values.
-	values map[string]cacheValue[T]
+	values *xsync.Map[string, cacheValue[T]]
 }
 
 // cacheValue wraps cached values with a cachedAt for later comparison against
@@ -43,7 +40,7 @@ func NewKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*keyValueCache[T], 
 	}
 
 	return &keyValueCache[T]{
-		values: make(map[string]cacheValue[T]),
+		values: xsync.NewMap[string, cacheValue[T]](),
 		config: config,
 	}, nil
 }
@@ -51,94 +48,84 @@ func NewKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*keyValueCache[T], 
 // Get retrieves the value from the cache with the given key.
 func (c *keyValueCache[T]) Get(key string) (T, bool) {
 	var zero T
-	c.valuesMu.RLock()
-	defer c.valuesMu.RUnlock()
-
-	cachedValue, exists := c.values[key]
-	if !exists {
+	v, ok := c.values.Load(key)
+	if !ok {
 		return zero, false
 	}
-
-	isCacheValueExpired := time.Since(cachedValue.cachedAt) > c.config.ttl
-	if isCacheValueExpired {
-		// DEV_NOTE: Not pruning here to optimize concurrent speed:
-		// - Read lock alone would be insufficient for pruning
-		// - Next Set() call will overwrite the value
-		// - If values aren't subsequently set, maxKeys config will eventually trigger
-		//   pruning of TTL-expired values
+	if time.Since(v.cachedAt) > c.config.ttl {
+		// Opportunistic prune (no need for atomic compute here).
+		c.values.Delete(key)
 		return zero, false
 	}
-
-	return cachedValue.value, true
+	return v.value, true
 }
 
 // Set adds or updates the value in the cache for the given key.
 func (c *keyValueCache[T]) Set(key string, value T) {
-	c.valuesMu.Lock()
-	defer c.valuesMu.Unlock()
+	c.values.Store(key, cacheValue[T]{value: value, cachedAt: time.Now()})
 
-	c.values[key] = cacheValue[T]{
-		value:    value,
-		cachedAt: time.Now(),
+	if c.config.maxKeys > 0 && int64(c.values.Size()) > c.config.maxKeys {
+		c.evictKey()
 	}
-
-	// Evict after adding the new key/value.
-	c.evictKey()
 }
 
 // Delete removes a value from the cache.
 func (c *keyValueCache[T]) Delete(key string) {
-	c.valuesMu.Lock()
-	defer c.valuesMu.Unlock()
-
-	delete(c.values, key)
+	c.values.Delete(key)
 }
 
 // Clear removes all values from the cache.
 func (c *keyValueCache[T]) Clear() {
-	c.valuesMu.Lock()
-	defer c.valuesMu.Unlock()
-
-	c.values = make(map[string]cacheValue[T])
+	c.values = xsync.NewMap[string, cacheValue[T]]()
 }
 
 // evictKey removes one key/value pair from the cache, to make space for a new one,
 // according to the configured eviction policy.
 func (c *keyValueCache[T]) evictKey() {
-	isMaxKeysConfigured := c.config.maxKeys > 0
-	cacheMaxKeysReached := int64(len(c.values)) > c.config.maxKeys
-	if !isMaxKeysConfigured || !cacheMaxKeysReached {
+	if c.config.maxKeys <= 0 || int64(c.values.Size()) <= c.config.maxKeys {
 		return
 	}
 
+	now := time.Now()
+
+	// 1) Prefer to evict any TTL-expired entry (cheap scan, remove one).
+	var expiredKey string
+	c.values.Range(func(k string, v cacheValue[T]) bool {
+		if now.Sub(v.cachedAt) > c.config.ttl {
+			expiredKey = k
+			return false // found one, stop
+		}
+		return true
+	})
+	if expiredKey != "" {
+		c.values.Delete(expiredKey)
+		return
+	}
+
+	// 2) Fall back to configured policy.
 	switch c.config.evictionPolicy {
 	case FirstInFirstOut:
+		// FIFO ≈ remove the oldest by cachedAt.
 		var (
-			first      = true
-			oldestKey  string
-			oldestTime time.Time
+			oldestKey string
+			oldestAt  time.Time
+			found     bool
 		)
-		for key, value := range c.values {
-			if first || value.cachedAt.Before(oldestTime) {
-				oldestKey = key
-				oldestTime = value.cachedAt
+		c.values.Range(func(k string, v cacheValue[T]) bool {
+			if !found || v.cachedAt.Before(oldestAt) {
+				oldestKey, oldestAt, found = k, v.cachedAt, true
 			}
-			first = false
+			return true
+		})
+		if found {
+			c.values.Delete(oldestKey)
 		}
-		delete(c.values, oldestKey)
-		return
-
-	// DEV_NOTE: The following cases SHOULD NEVER happen, KeyValueCacheConfig#Validate, SHOULD prevent it.
 	case LeastRecentlyUsed:
-		// TODO_IMPROVE: Implement LRU eviction
-		// This will require tracking access times
+		// Not implemented in original; keep behavior.
 		panic("LRU eviction not implemented")
-
 	case LeastFrequentlyUsed:
-		// TODO_IMPROVE: Implement LFU eviction
-		// This will require tracking access times
+		// Not implemented in original; keep behavior.
 		panic("LFU eviction not implemented")
-
 	default:
 		panic(fmt.Sprintf("unsupported eviction policy: %d", c.config.evictionPolicy))
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -14,17 +15,25 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	relayRequest *servicetypes.RelayRequest,
 	supplierServiceId string,
 ) error {
+	// One buffered tracker per processed relay; flush at end.
+	ctxPerf, tr, flush := relayer.EnsurePerfBuffered(ctx, "")
+	defer flush()
 	// Get the block height at which the relayRequest should be processed.
 	// Check if the relayRequest is on time or within the session's grace period
 	// before attempting to verify the relayRequest signature.
-	sessionBlockHeight, err := ra.getTargetSessionBlockHeight(ctx, relayRequest)
+	tr.Start("relay_authenticator_get_target_session_block_height")
+	sessionBlockHeight, err := ra.getTargetSessionBlockHeight(ctxPerf, relayRequest)
+	tr.Finish("relay_authenticator_get_target_session_block_height")
 	if err != nil {
 		return err
 	}
 
 	// Verify the relayRequest metadata, signature, session header and other
 	// basic validation.
-	if err = ra.ringClient.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
+	tr.Start("relay_authenticator_verify_relay_request_signature")
+	err = ra.ringClient.VerifyRelayRequestSignature(ctx, relayRequest)
+	tr.Finish("relay_authenticator_verify_relay_request_signature")
+	if err != nil {
 		return err
 	}
 
@@ -49,12 +58,14 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 		Msg("verifying relay request session")
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
+	tr.Start("relay_authenticator_get_session")
 	session, err := ra.sessionQuerier.GetSession(
 		ctx,
 		appAddress,
 		supplierServiceId,
 		sessionBlockHeight,
 	)
+	tr.Finish("relay_authenticator_get_session")
 	if err != nil {
 		return err
 	}
@@ -156,7 +167,13 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	ctx context.Context,
 	relayRequest *servicetypes.RelayRequest,
 ) (sessionHeight int64, err error) {
-	currentBlock := ra.blockClient.LastBlock(ctx)
+	// One buffered tracker per processed relay; flush at end.
+	ctxPerf, tr, flush := relayer.EnsurePerfBuffered(ctx, "")
+	defer flush()
+
+	tr.Start("relay_authenticator_get_current_block_height")
+	currentBlock := ra.blockClient.LastBlock(ctxPerf)
+	tr.Finish("relay_authenticator_get_current_block_height")
 	currentHeight := currentBlock.Height()
 
 	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
@@ -166,7 +183,9 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	)
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
-	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
+	tr.Start("relay_authenticator_get_params")
+	sharedParams, err := ra.sharedQuerier.GetParams(ctxPerf)
+	tr.Finish("relay_authenticator_get_params")
 	if err != nil {
 		return 0, err
 	}

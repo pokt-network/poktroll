@@ -38,6 +38,20 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 			supplierConfig.RequestTimeoutSeconds = relayMinerConfig.DefaultRequestTimeoutSeconds
 		}
 
+		// if EnableEagerRelayRequestValidation is not specified, use the default from the relayMinerConfig, which can be defined or defaulted.
+		if yamlSupplierConfig.EnableEagerRelayRequestValidation != nil {
+			supplierConfig.ServiceConfig.EnableEagerRelayRequestValidation = *yamlSupplierConfig.EnableEagerRelayRequestValidation
+		} else {
+			supplierConfig.ServiceConfig.EnableEagerRelayRequestValidation = relayMinerConfig.DefaultEagerRelayRequestValidation
+		}
+
+		// Log validation type
+		if supplierConfig.ServiceConfig.EnableEagerRelayRequestValidation {
+			logger.Info().Msgf("Service %s has Relay request validation type: EAGER. Validate first, serve later.", yamlSupplierConfig.ServiceId)
+		} else {
+			logger.Info().Msgf("Service %s has Relay request validation type: LAZY. Serve first, validate later.", yamlSupplierConfig.ServiceId)
+		}
+
 		// Supplier operator name should be unique
 		if _, ok := existingSuppliers[yamlSupplierConfig.ServiceId]; ok {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(

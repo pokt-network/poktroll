@@ -40,7 +40,7 @@ func (sync *relayMinerHTTPServer) replyWithError(
 		relayRequest = &types.RelayRequest{
 			Meta: types.RelayRequestMetadata{
 				SessionHeader: &sessiontypes.SessionHeader{
-					ServiceId: UnknownServiceID,
+					ServiceId: relayer.UnknownServiceID,
 				},
 			},
 		}

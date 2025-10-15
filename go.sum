@@ -1336,6 +1336,8 @@ github.com/prometheus/procfs v0.3.0/go.mod h1:lV6e/gmhEcM9IjHGsFOCxxuZ+z1YqCvr4O
 github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0learggepc=
 github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
+github.com/puzpuzpuz/xsync/v4 v4.2.0 h1:dlxm77dZj2c3rxq0/XNvvUKISAmovoXF4a4qM6Wvkr0=
+github.com/puzpuzpuz/xsync/v4 v4.2.0/go.mod h1:VJDmTCJMBt8igNxnkQd86r+8KUeN1quSfNKu5bLYFQo=
 github.com/quasilyte/go-ruleguard v0.4.3-0.20240823090925-0fe6f58b47b1 h1:+Wl/0aFp0hpuHM3H//KMft64WQ1yX9LdJY64Qm/gFCo=
 github.com/quasilyte/go-ruleguard v0.4.3-0.20240823090925-0fe6f58b47b1/go.mod h1:GJLgqsLeo4qgavUoL8JeGFNS7qcisx3awV/w9eWTmNI=
 github.com/quasilyte/go-ruleguard/dsl v0.3.22 h1:wd8zkOhSNr+I+8Qeciml08ivDt1pSXe60+5DqOpCjPE=

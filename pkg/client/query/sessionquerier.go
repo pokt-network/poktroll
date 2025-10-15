@@ -3,7 +3,7 @@ package query
 import (
 	"context"
 	"fmt"
-	"sync"
+	//"sync"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
@@ -30,12 +30,12 @@ type sessionQuerier struct {
 	// sessionsCache caches sessionQueryClient.GetSession requests
 	sessionsCache cache.KeyValueCache[*sessiontypes.Session]
 	// sessionsMutex to protect cache access patterns for sessions
-	sessionsMutex sync.Mutex
+	//sessionsMutex sync.Mutex
 
 	// paramsCache caches sessionQueryClient.Params requests
 	paramsCache client.ParamsCache[sessiontypes.Params]
 	// paramsMutex to protect cache access patterns for params
-	paramsMutex sync.Mutex
+	//paramsMutex sync.Mutex
 }
 
 // NewSessionQuerier returns a new instance of a client.SessionQueryClient by
@@ -86,10 +86,6 @@ func (sessq *sessionQuerier) GetSession(
 		return session, nil
 	}
 
-	// Use mutex to prevent multiple concurrent cache updates
-	sessq.sessionsMutex.Lock()
-	defer sessq.sessionsMutex.Unlock()
-
 	// Double-check the cache after acquiring the lock
 	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
 		logger.Debug().Msgf("cache HIT for session key after lock (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
@@ -131,8 +127,8 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 	}
 
 	// Use mutex to prevent multiple concurrent cache updates
-	sessq.paramsMutex.Lock()
-	defer sessq.paramsMutex.Unlock()
+	//sessq.paramsMutex.Lock()
+	//defer sessq.paramsMutex.Unlock()
 
 	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if params, found := sessq.paramsCache.Get(); found {
