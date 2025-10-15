@@ -139,7 +139,9 @@ func (wal *minedRelaysWriteAheadLog) AppendMinedRelay(relayHash []byte, relayPay
 
 	if len(wal.bufferedLogBytes) > maxBufferedMinedRelaysBytesBeforeFlush {
 		wal.flushTicker.Reset(minedRelaysLogFlushInterval)
-		wal.flushBufferToDisk()
+		if err := wal.flushBufferToDisk(); err != nil {
+			wal.logger.Error().Err(err).Msg("❌️ Failed to flush mined relays WAL buffer to disk after exceeding size threshold")
+		}
 	}
 }
 
@@ -197,7 +199,9 @@ func (wal *minedRelaysWriteAheadLog) flushBufferToDisk() error {
 // runPeriodicFlushLoop wakes up on every ticker tick to flush any pending buffered entries.
 func (wal *minedRelaysWriteAheadLog) runPeriodicFlushLoop() {
 	for range wal.flushTicker.C {
-		wal.flushBufferToDisk()
+		if err := wal.flushBufferToDisk(); err != nil {
+			wal.logger.Error().Err(err).Msg("❌️ Periodic flush of mined relays WAL buffer failed")
+		}
 	}
 }
 
