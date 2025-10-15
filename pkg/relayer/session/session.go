@@ -27,25 +27,6 @@ import (
 // Ensure the relayerSessionsManager implements the RelayerSessions interface.
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
-// Session tree storage mode constants.
-//
-// TODO_TECHDEBT(#1734): Once in-memory modes are stabilized, do one of the following:
-// 1. Formalize this into a proper enum for storage types (disk, memory_simple, memory_pebble)
-// 2. Remove support for one approach based on performance/reliability testing
-const (
-	// ** DEV_NOTE: This is the current recommended mode for production. **
-	// InMemoryStoreFilename indicates SMTs should be stored using SimpleMap in memory.
-	// This provides pure Go map-based storage with no background processes or lifecycle management.
-	// Data will not be persisted to disk and will be lost on process restart.
-	InMemoryStoreFilename = ":memory:"
-
-	// InMemoryPebbleStoreFilename indicates SMTs should be stored using Pebble's in-memory VFS.
-	// This uses Pebble database engine but stores data in memory instead of disk.
-	// Has background processes and lifecycle management overhead compared to SimpleMap.
-	// Data will not be persisted to disk and will be lost on process restart.
-	InMemoryPebbleStoreFilename = ":memory_pebble:"
-)
-
 // SessionTreesMap is an alias type for a map of
 // supplierOperatorAddress ->  sessionEndHeight -> sessionId -> SessionTree.
 //
@@ -515,11 +496,6 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 // validateConfig validates the relayerSessionsManager's configuration.
 // TODO_TEST: Add unit tests to validate these configurations.
 func (rs *relayerSessionsManager) validateConfig() error {
-	// No error if RM is configured to use in-memory SMT (either SimpleMap or Pebble).
-	if rs.storesDirectoryPath == InMemoryStoreFilename || rs.storesDirectoryPath == InMemoryPebbleStoreFilename {
-		return nil
-	}
-
 	// Return an error if the stores directory path is undefined.
 	if rs.storesDirectoryPath == "" {
 		return ErrSessionTreeUndefinedStoresDirectoryPath
