@@ -30,6 +30,7 @@ You can find a fully featured example configuration at [supplier_staking_config.
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
     - [`rev_share_percent`](#rev_share_percent)
+    - [`rev_share_percent` configuration details](#rev_share_percent-configuration-details)
 - [Staking Modes](#staking-modes)
   - [1. Stake Only Updates](#1-stake-only-updates)
   - [2. Service Configuration Updates](#2-service-configuration-updates)
@@ -158,7 +159,7 @@ owner_address: <address>
 ```
 
 The `owner_address` is the address of the account that owns the `Supplier`s staked
-funds, which will be transferred to this account's balannce when the `Supplier`
+funds, which will be transferred to this account's balance when the `Supplier`
 unstakes and finishes unbonding.
 
 For custodial staking, the `owner_address` is the same as the `operator_address`.
@@ -369,29 +370,16 @@ It overrides the `default_rev_share_percent` if defined for the `service`.
 This map cannot be empty but can be omitted, in which case it falls back to the
 `default_rev_share_percent` top-level configuration entry.
 
-:::warning Operator-Only Updates
-
-**Revenue share addresses and percentages can only be updated by the operator account.**
-The owner cannot modify revenue share configurations - only the operator has permission
-to update service configurations, which includes revenue share settings.
-
-:::
-
-:::note
+#### `rev_share_percent` configuration details
 
 The `shareholder_address`s MUST be valid Pocket addresses.
 
-The revenue share values MUST be strictly positive decimals with a maximum value
-of 100 and a total sum of 100 across all the `shareholder_address`es.
+The revenue share values MUST be strictly positive floats with a maximum value of
+100 and a total sum of 100 across all the `shareholder_address`es.
 
-:::
-
-:::warning
-
-If `rev_share_percent` is defined for a `service`, then the `owner_address` of the
-`Supplier` MUST be **explicitly** defined in the map if they are to receive a share.
-
-:::
+If `default_rev_share_percent` is defined, then the `owner_address` of the `Supplier`
+MUST be **explicitly** defined in the map if they are to receive a share on the
+`service`s that fall back to the default.
 
 ## Staking Modes
 

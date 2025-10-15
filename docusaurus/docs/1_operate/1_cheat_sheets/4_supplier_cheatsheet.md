@@ -262,14 +262,14 @@ services:
 🚀
 ```
 
-:::warning Replace `service_id`
+:::note Replace `service_id`
 
 The example uses `service_id: anvil`.
 Use your own service_id or [create a new one](1_service_cheatsheet.md).
 
 :::
 
-:::warning Revenue Share Update Permissions
+:::warning Revenue Share Update Permissions (Operator-Only Updates)
 
 **Revenue share addresses and percentages CAN ONLY be updated by the OPERATOR account.**
 
