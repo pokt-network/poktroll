@@ -65,13 +65,6 @@ development purposes.
 
 :::
 
-If you want to deploy your own Gateway and Supplier, please follow the instructions
-in our [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example)
-example.
-
-If you want to deploy a Supplier & Gateway via a copy-pasta method without understanding
-anything, see the instructions [here](https://github.com/pokt-network/poktroll-docker-compose-example/blob/main/debian_cheasheet.md).
-
 ## Video Walkthrough
 
 You can access the video [here](https://www.youtube.com/watch?v=H-R5FqrCYQs).
@@ -167,7 +160,7 @@ make localnet_up
 
 The `make localnet_up` command will run the `make k8s_kind_up` target, which:
 
-- Creates a new `kind` cluster name `kind-pocket-localnet`
+- Creates a new `kind` cluster named `pocket-localnet` (the `kubectl` context will be `kind-pocket-localnet`).
 - Creates all namespaces required by the PATH Helm Charts
 
 :::tip
@@ -188,6 +181,16 @@ If you are in a hurry, specifically look for the `acc_initialize_pubkeys` step.
 :::
 
 If everything worked as expected, your screen should look similar to the following:
+
+**LocalNet Ports (defaults)**
+
+* Tilt UI: Port 10350 - http://localhost:10350 (Access the Tilt UI dashboard)
+* Grafana: Port 3003 - http://localhost:3003 (Monitor metrics with Grafana)
+* PATH Gateway (JSON-RPC): Port 3069 - http://localhost:3069/v1 (Send JSON-RPC requests to the PATH Gateway)
+* PATH Gateway (REST): Port 3070 - http://localhost:3070/v1/... (Interact with the PATH Gateway via REST API)
+* Anvil (ETH dev node): Port 8547 - http://localhost:8547 (JSON-RPC endpoint for Ethereum development)
+* CometBFT RPC (Pocket node): Port 26657 - http://localhost:26657/status (Query CometBFT RPC status)
+* Cosmos gRPC (Pocket node): Port 9090 - grpc://localhost:9090 (Access Cosmos gRPC services)
 
 ### 1.5 View Grafana Logs
 
@@ -435,8 +438,9 @@ The following is an example config to get you started:
 ```bash
 cat <<🚀 >> shannon_relayminer_config.yaml
 default_signing_key_names: [ "shannon_supplier" ]
-smt_store_path: $HOME/.pocket/smt
+
 smt_store_path: ":memory:"  # OR $HOME/.pocket/smt
+
 metrics:
   enabled: true
   addr: :9999 # you may need to change the metrics server port due to port conflicts.

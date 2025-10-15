@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -76,6 +77,7 @@ func isStreamingResponse(response *http.Response) bool {
 func (server *relayMinerHTTPServer) handleHttpStream(
 	ctx context.Context,
 	logger polylog.Logger,
+	_ *relayer.InstructionTimer,
 	relayRequest *types.RelayRequest,
 	response *http.Response,
 	writer http.ResponseWriter,

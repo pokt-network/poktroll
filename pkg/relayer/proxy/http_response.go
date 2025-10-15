@@ -24,6 +24,7 @@ import (
 //     relayer.CaptureResponsePreparationDuration.
 //  9. Send the relay response to the client via sendRelayResponse(...); map
 //     any error to an internal error and return.
+//
 // 10. Compute and return the relay response and its size.
 //
 // Notes:
@@ -31,49 +32,52 @@ import (
 // - For streaming/SSE/NDJSON, use dedicated streaming handlers.
 //
 // Returns:
-//  - Final relay response.
-//  - Total response size (bytes) for metrics.
-//  - Error if serialization, signing, or write fails.
+//   - Final relay response.
+//   - Total response size (bytes) for metrics.
+//   - Error if serialization, signing, or write fails.
 func (server *relayMinerHTTPServer) handleHttp(
 	ctx context.Context,
 	logger polylog.Logger,
+	instructionTimes *relayer.instructionTimes,
 	relayRequest *types.RelayRequest,
-	response *http.Response,
-	writer http.ResponseWriter,
+	httpResponse *http.Response,
+	httpResponseWriter http.ResponseWriter,
 ) (*types.RelayResponse, float64, error) {
 	backendServiceProcessingEnd := time.Now()
 
 	// Extract the metadata from the relay request
-	meta := relayRequest.Meta
+	sessionMeta := relayRequest.Meta
 
 	// Initialize empty relay response with metadata only
+	sessionHeader := sessionMeta.SessionHeader
 	relayResponse := &types.RelayResponse{
-		Meta: types.RelayResponseMetadata{SessionHeader: meta.SessionHeader},
+		Meta: types.RelayResponseMetadata{SessionHeader: sessionHeader},
 	}
 
-	// Serialize backend response (status code + headers + body)
-	serializedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, response, server.serverConfig.MaxBodySize)
+	// Serialize the service response to be sent back to the client.
+	// This will include the status code, headers, and body.
+	wrappedHTTPResponse, responseBz, err := SerializeHTTPResponse(logger, httpResponse, server.serverConfig.MaxBodySize)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed serializing the service response")
 		return nil, 0, err
 	}
-
-	// Close backend response body early to free connection pool resources
-	CloseBody(logger, response.Body)
+	// Early close backend response body to free up pool resources.
+	CloseBody(logger, httpResponse.Body)
+	instructionTimes.Record(relayer.InstructionSerializeHTTPResponse)
 
 	// Pass through all backend responses including errors.
 	// Allows clients to see real HTTP status codes from backend service.
 	// Log non-2XX status codes for monitoring but don't block response.
-	if response.StatusCode >= http.StatusMultipleChoices {
+	if httpResponse.StatusCode >= http.StatusMultipleChoices {
 		logger.Error().
-			Int("status_code", response.StatusCode).
+			Int("status_code", httpResponse.StatusCode).
+			Str("request_url", httpResponse.Request.URL.String()).
 			Str("request_payload_first_bytes", polylog.Preview(string(relayRequest.Payload))).
-			Str("response_payload_first_bytes", polylog.Preview(string(serializedHTTPResponse.BodyBz))).
+			Str("response_payload_first_bytes", polylog.Preview(string(wrappedHTTPResponse.BodyBz))).
 			Msg("backend service returned a non-2XX status code. Passing it through to the client.")
 	}
-
 	logger.Debug().
-		Str("relay_request_session_header", meta.SessionHeader.String()).
+		Str("relay_request_session_header", sessionHeader.String()).
 		Msg("building relay response protobuf from service response")
 
 	// Check context cancellation before building relay response to prevent signature race conditions
@@ -84,18 +88,28 @@ func (server *relayMinerHTTPServer) handleHttp(
 			ctxErr,
 		)
 	}
+	instructionTimes.Record(relayer.InstructionCheckDeadlineBeforeResponse)
 
 	// Build the relay response using the original service's response.
-	relayResponse, err = server.newRelayResponse(responseBz, meta.SessionHeader, meta.SupplierOperatorAddress)
+	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
+	// was verified to be valid and has to be the same as the relayResponse session header.
+	relayResponse, err = server.newRelayResponse(responseBz, sessionHeader, supplierOperatorAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("❌ Failed building the relay response")
-		// The client should not have knowledge about the RelayMiner's issues with building the relay response.
-		// Reply with an internal error so that the original error is not exposed to the client.
+		// The client should not have knowledge about the RelayMiner's issues with
+		// building the relay response. Reply with an internal error so that the
+		// original error is not exposed to the client.
 		return nil, 0, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
-
 	// Capture the time after response time for the relay.
 	responsePreparationEnd := time.Now()
+	instructionTimes.Record(relayer.InstructionRelayResponseGenerated)
+
+	// // Prepare a structure holding the relay request and response.
+	// relay := &types.Relay{
+	// 	Req: relayRequest,
+	// 	Res: relayResponse,
+	// }
 
 	// Add response preparation duration to the logger such that any log before errors will have
 	// as much request duration information as possible.
@@ -103,10 +117,11 @@ func (server *relayMinerHTTPServer) handleHttp(
 		"response_preparation_duration",
 		time.Since(backendServiceProcessingEnd).String(),
 	)
-	relayer.CaptureResponsePreparationDuration(meta.SessionHeader.ServiceId, backendServiceProcessingEnd)
+	relayer.CaptureResponsePreparationDuration(sessionMeta.SessionHeader.ServiceId, backendServiceProcessingEnd)
+	instructionTimes.Record(relayer.InstructionLoggerWithResponsePreparation)
 
 	// Send the relay response to the client.
-	err = server.sendRelayResponse(relayResponse, writer)
+	err = server.sendRelayResponse(relayResponse, httpResponseWriter)
 	logger = logger.With("send_response_duration", time.Since(responsePreparationEnd).String())
 	if err != nil {
 		clientError := ErrRelayerProxyInternalError.Wrap(err.Error())

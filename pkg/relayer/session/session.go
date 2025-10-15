@@ -830,3 +830,32 @@ func sessionSMTFromSessionTree(
 		SmtRoot:                 sessionTree.GetSMSTRoot(),
 	}
 }
+
+// SessionTreesSnapshots returns a point-in-time view of all session trees being
+// tracked by the relayer sessions manager.
+//
+// The snapshot is created while holding the internal sessionsTreesMu lock to
+// ensure the underlying map is not accessed concurrently. The resulting slice
+// can be safely used by callers without additional synchronization.
+//
+// DEV_NOTE: This is used for testing purposes only.
+func (rs *relayerSessionsManager) SessionTreesSnapshots() []relayer.SessionTreeSnapshot {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
+	snapshots := make([]relayer.SessionTreeSnapshot, 0)
+	for supplier, treesByEndHeight := range rs.sessionsTrees {
+		for sessionEndHeight, treesBySessionID := range treesByEndHeight {
+			for sessionID, tree := range treesBySessionID {
+				snapshots = append(snapshots, relayer.SessionTreeSnapshot{
+					SupplierOperatorAddress: supplier,
+					SessionEndHeight:        sessionEndHeight,
+					SessionID:               sessionID,
+					Tree:                    tree,
+				})
+			}
+		}
+	}
+
+	return snapshots
+}
