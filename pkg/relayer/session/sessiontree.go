@@ -104,6 +104,8 @@ func NewSessionTree(
 
 	// Create the SMST from the in-memory store and a nil value hasher so the proof would
 	// contain a non-hashed Relay that could be used to validate the proof onchain.
+	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec by finding
+	// all smt.NewSparseMerkleSumTrie() calls and unifying the configuration.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 	minedRelaysWAL, err := NewMinedRelaysWriteAheadLog(storePath, logger)

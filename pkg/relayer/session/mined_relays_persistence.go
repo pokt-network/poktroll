@@ -1,12 +1,16 @@
-// Context:
+package session
+
+// Background on mined relays persistence:
 // - The Session Merkle Trie (SMT/SMST) used by the relayer is backed by an in-memory map (SimpleMap).
-// - This is fast, but volatile: a crash or restart will drop any unclaimed, in-flight relays from RAM.
+// - This approach above is fast but volatile (i.e. has downsides).
+// - A crash or restart of the RelayMiner will drop any unclaimed, in-flight relays from RAM.
 //
-// This adds a backup path to avoid losing mined relays during crashes or restarts.:
+// The solution in this file adds a backup path to avoid losing (in-memory) mined relays during crashes or restarts:
 // - Buffer serialized relays in memory (for performance)
 // - Periodically and conditionally flush them to an append-only log on disk (a WAL)
 // - On restart, deterministically replay the WAL to reconstruct the in-memory SMST
-package session
+//
+// The WAL file is stored in the same directory as the SMST store.
 
 import (
 	"encoding/binary"
@@ -15,19 +19,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore"
+
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
+// TODO_TECHDEBT: Make these constants configurable by the RelayMiner
 const (
 	// maxBufferedMinedRelaysBytesBeforeFlush defines when to proactively flush the
 	// in-memory buffer to disk. It is a simple safety and responsiveness threshold:
 	// - Keeps memory usage bounded
 	// - Ensures timely persistence even if traffic is bursty
 	//
-	// TODO_TECHDEBT: Make this value configurable via RelayMinerConfig.
+
 	// High-throughput suppliers may need lower thresholds to prevent memory pressure.
 	// Low-resource environments may need lower thresholds to prevent OOM.
 	maxBufferedMinedRelaysBytesBeforeFlush = 10_000_000 // 10 MB
@@ -41,9 +47,10 @@ const (
 	// Testing environments may want faster flushes (e.g., 1s) for rapid iteration.
 	// Production may want longer intervals (e.g., 30s) to reduce I/O overhead.
 	minedRelaysLogFlushInterval = 10 * time.Second
+)
 
-	// Encoding constants for the on-disk WAL format
-
+// Internal constants for encoding the on-disk WAL format
+const (
 	// minedRelaysLogRelayPayloadLengthPrefixSizeBytes indicates the size of the
 	// little-endian uint32 prefix that encodes the mined relay payload length.
 	// This allows us to read frames efficiently during replay.
@@ -59,6 +66,7 @@ const (
 	minedRelaysLogComputeUnitsFieldSizeBytes = 8
 )
 
+// **** WAL Encoding Format ****
 // On-disk record layout (per mined relay), in little-endian order:
 // - [4 bytes]  PayloadLength: uint32, number of bytes in RelayPayload
 // - [8 bytes]  ComputeUnits:  uint64, weight of this relay
@@ -71,6 +79,7 @@ const (
 // - Read N bytes -> H
 // - Read L bytes -> P
 // - trie.Update(H, P, CU)
+// ****************************
 
 // minedRelaysWriteAheadLog provides an append-only, length-prefixed, write-ahead log (WAL) for mined relays.
 //
@@ -83,6 +92,7 @@ const (
 // - Flush to disk either:
 //   - Periodically via timer (every minedRelaysLogFlushInterval)
 //   - Immediately when buffer exceeds memory threshold (maxBufferedMinedRelaysBytesBeforeFlush)
+//
 // - On shutdown: flush remaining entries
 // - On restart: replay WAL to rebuild SMST state deterministically
 //
@@ -147,7 +157,6 @@ func NewMinedRelaysWriteAheadLog(logFilePath string, logger polylog.Logger) (*mi
 //   - Append to the in-memory buffer for batching (fast path)
 //   - If the buffer is getting large, reset the periodic timer and force a flush
 //     so recent relays are durably recorded on disk in case the process dies
-//
 func (wal *minedRelaysWriteAheadLog) AppendMinedRelay(relayHash []byte, relayPayload []byte, computeUnitsPerRelay uint64) {
 	serializedEntry := encodeMinedRelaysLogEntry(relayHash, relayPayload, computeUnitsPerRelay)
 
@@ -260,6 +269,8 @@ func reconstructSMTFromMinedRelaysLog(
 	defer file.Close()
 
 	// Create a new in-memory SMST backed by a SimpleMap and populate it by replaying the WAL
+	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec by finding
+	// all smt.NewSparseMerkleSumTrie() calls and unifying the configuration.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 	for {

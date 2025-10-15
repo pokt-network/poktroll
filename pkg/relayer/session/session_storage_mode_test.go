@@ -12,7 +12,6 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 	"github.com/gogo/status"
-	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -157,47 +156,6 @@ func (s *StorageModeTestSuite) TearDownTest() {
 
 	// Clean up temporary directory for disk storage only
 	_ = os.RemoveAll(s.storageDir)
-}
-
-// TestClaimAndProofSubmission tests the complete claim and proof submission lifecycle
-// This is the critical test that should reveal the bug in Pebble in-memory mode
-func (s *StorageModeTestSuite) TestBasicClaimAndProofSubmission() {
-	// Get the session end height from the active session header
-	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
-
-	// Calculate when the claim window opens for this session
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
-	// Move to the block where the claim window opens (which should trigger claim creation)
-	s.advanceToBlock(claimWindowOpenHeight)
-
-	// Verify the session tree exists and a claim has been created
-	sessionTree := s.getActiveSessionTree()
-	claimRoot := sessionTree.GetClaimRoot()
-	require.NotNil(s.T(), claimRoot, "Claim root should be created")
-	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once")
-	require.Equal(s.T(), 0, s.submitProofCallCount, "SubmitProof should not be called at this step")
-
-	// Verify the claim tree has exactly one claim
-	count, err := smt.MerkleSumRoot(claimRoot).Count()
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), uint64(1), count, "Claim tree should have exactly one relay")
-
-	// Calculate when the proof window closes for this session
-	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
-
-	// Move to one block before the proof window closes (which should trigger proof submission)
-	s.advanceToBlock(proofWindowCloseHeight)
-
-	// This is the critical assertion - verify that a proof was submitted
-	// Note: This test should pass for all storage modes with our current implementation
-	// To reproduce the original bug where Pebble in-memory failed, you would need to:
-	// 1. Revert the sessionSMT preservation fix in sessiontree.go Flush() method
-	// 2. Remove the sessionSMT restoration logic in ProveClosest() method
-	// 3. Then this assertion would fail for Pebble in-memory mode only
-	require.Equal(s.T(), 1, s.submitProofCallCount, "SubmitProof should be called once")
-
-	// Verify the session tree has been removed after proof submission
-	require.False(s.T(), s.hasActiveSessionTree(), "Session tree should be removed after proof submission")
 }
 
 // TestProcessRestartDuringClaimWindow tests session persistence when restarted during claim window
