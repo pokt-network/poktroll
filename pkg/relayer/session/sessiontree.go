@@ -93,6 +93,12 @@ func NewSessionTree(
 	}
 	logger.Info().Msgf("Using %s as the store path for session tree", storePath)
 
+	// Create the parent directories for the WAL file if they don't exist
+	storeDir := filepath.Dir(storePath)
+	if err := os.MkdirAll(storeDir, 0o755); err != nil {
+		return nil, fmt.Errorf("failed to create WAL directory %q: %w", storeDir, err)
+	}
+
 	// Update the logger with the store path
 	logger = logger.With("store_path", storePath)
 
