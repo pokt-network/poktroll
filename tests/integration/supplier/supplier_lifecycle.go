@@ -2,9 +2,9 @@ package integration_test
 
 // TODO_TEST: Test the whole supplier lifecycle using `NewCompleteIntegrationApp`
 // 1. Stake a supplier
-// 2. Check that is is not included in sessions
+// 2. Check that it is not included in sessions
 // 3. Wait until it is activated
-// 4. Check that is is included in sessions
+// 4. Check that it is included in sessions
 // 5. Unstake the supplier mid session
 // 6. Check that it is included in the current session
 // 7. Check that it is not included in the next session
