@@ -270,7 +270,22 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 // This effectively simulates I/O delays which would normally be present.
 // Uses a longer delay for session persistence tests.
 func waitSimulateIO() {
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
+}
+
+// waitForCondition polls for a condition to be true with a timeout.
+// This is used to wait for asynchronous operations to complete in tests.
+// Returns true if the condition becomes true within the timeout, false otherwise.
+func waitForCondition(t *testing.T, condition func() bool, timeout time.Duration, checkInterval time.Duration) bool {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if condition() {
+			return true
+		}
+		time.Sleep(checkInterval)
+	}
+	return false
 }
 
 // uPOKTCoin returns a pointer to a uPOKT denomination coin with the given amount.

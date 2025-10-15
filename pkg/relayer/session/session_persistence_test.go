@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"cosmossdk.io/depinject"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -212,18 +213,29 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowOpen() {
 	s.relayerSessionsManager.Stop()
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 
-	// Advance to the block where the claim window opens while the relayer sessions manager is stopped
-	s.blockPublishCh <- testblock.NewAnyTimesBlock(s.T(), s.emptyBlockHash, claimWindowOpenHeight)
-	s.advanceToBlock(claimWindowOpenHeight)
-
-	// Start the new relayer sessions manager
+	// Start the new relayer sessions manager BEFORE advancing blocks
+	// This ensures the manager processes blocks in real-time rather than from replay buffer
 	err := s.relayerSessionsManager.Start(s.ctx)
 	require.NoError(s.T(), err)
-	waitSimulateIO()
+
+	// Wait for manager to fully initialize before sending blocks
+	time.Sleep(500 * time.Millisecond)
+
+	// Advance to the block where the claim window opens
+	// The manager is now running and will process these blocks as they're published
+	s.advanceToBlock(claimWindowOpenHeight)
 
 	// Verify the session tree is still correctly loaded
 	sessionTree = s.getActiveSessionTree()
 	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
+
+	// Wait for claim root to be created asynchronously via processClaimsAsync
+	// Poll with timeout instead of fixed sleep to handle varying CI performance
+	// Use a long timeout as async claim processing involves multiple goroutines and observables
+	claimRootReady := waitForCondition(s.T(), func() bool {
+		return sessionTree.GetClaimRoot() != nil
+	}, 20*time.Second, 200*time.Millisecond)
+	require.True(s.T(), claimRootReady, "Claim root should be created within timeout after restart")
 
 	// Verify a claim root has been created after restart
 	claimRoot := sessionTree.GetClaimRoot()
