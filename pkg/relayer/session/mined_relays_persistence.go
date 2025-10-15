@@ -26,14 +26,20 @@ const (
 	// in-memory buffer to disk. It is a simple safety and responsiveness threshold:
 	// - Keeps memory usage bounded
 	// - Ensures timely persistence even if traffic is bursty
-	// TODO_TECHDEBT: Make this value configurable.
-	maxBufferedMinedRelaysBytesBeforeFlush = 10 * 1024 * 1024 // 10 MB
+	//
+	// TODO_TECHDEBT: Make this value configurable via RelayMinerConfig.
+	// High-throughput suppliers may need lower thresholds to prevent memory pressure.
+	// Low-resource environments may need lower thresholds to prevent OOM.
+	maxBufferedMinedRelaysBytesBeforeFlush = 10_000_000 // 10 MB
 
 	// minedRelaysLogFlushInterval is the periodic cadence for background buffer flushes.
 	// Even if the threshold is not hit, this ensures regular persistence:
 	// - Reduces potential loss window in case of abrupt termination
 	// - Smooths out I/O instead of writing every mined relay
-	// TODO_TECHDEBT: Make this value configurable.
+	//
+	// TODO_TECHDEBT: Make this value configurable via RelayMinerConfig.
+	// Testing environments may want faster flushes (e.g., 1s) for rapid iteration.
+	// Production may want longer intervals (e.g., 30s) to reduce I/O overhead.
 	minedRelaysLogFlushInterval = 10 * time.Second
 
 	// Encoding constants for the on-disk WAL format
@@ -67,15 +73,26 @@ const (
 // - trie.Update(H, P, CU)
 
 // minedRelaysWriteAheadLog provides an append-only, length-prefixed, write-ahead log (WAL) for mined relays.
-// - It is needed because the SMST lives in memory and would otherwise be lost on crash or restart.
-// - The WAL buffers entries in memory and periodically flushes to disk to reduce I/O overhead while ensuring recovery via replay.
-// - During a session, each successfully mined relay is serialized and appended to the WAL buffer
-// - The buffer is flushed either:
-//   - periodically (timer), or
-//   - immediately once the buffer crosses a memory threshold
 //
-// - On shutdown, flush any remaining entries
-// - On restart, replay the WAL to rebuild the SMST (and continue where it left off)
+// Why it exists:
+// - The SMST lives in memory for performance and would be lost on crash or restart
+// - WAL ensures crash recovery by persisting relay evidence to disk
+//
+// How it works:
+// - Buffer entries in memory to reduce I/O overhead
+// - Flush to disk either:
+//   - Periodically via timer (every minedRelaysLogFlushInterval)
+//   - Immediately when buffer exceeds memory threshold (maxBufferedMinedRelaysBytesBeforeFlush)
+// - On shutdown: flush remaining entries
+// - On restart: replay WAL to rebuild SMST state deterministically
+//
+// Lifecycle:
+// 1. NewMinedRelaysWriteAheadLog() - Opens/creates WAL file, starts flush timer
+// 2. AppendMinedRelay() - Adds relay to buffer (called per mined relay)
+// 3. Close() - Flushes buffer, closes file (keeps WAL for potential replay)
+// 4. CloseAndRemove() - Flushes, closes, and deletes WAL (after successful settlement)
+//
+// File location: <smtStoresBasePath>/mined_relays/<supplierAddr>/<sessionId>.wal
 type minedRelaysWriteAheadLog struct {
 	logger polylog.Logger
 
@@ -130,14 +147,16 @@ func NewMinedRelaysWriteAheadLog(logFilePath string, logger polylog.Logger) (*mi
 //   - Append to the in-memory buffer for batching (fast path)
 //   - If the buffer is getting large, reset the periodic timer and force a flush
 //     so recent relays are durably recorded on disk in case the process dies
+//
 func (wal *minedRelaysWriteAheadLog) AppendMinedRelay(relayHash []byte, relayPayload []byte, computeUnitsPerRelay uint64) {
 	serializedEntry := encodeMinedRelaysLogEntry(relayHash, relayPayload, computeUnitsPerRelay)
 
 	wal.bufferMu.Lock()
 	wal.bufferedLogBytes = append(wal.bufferedLogBytes, serializedEntry...)
+	bufferSize := len(wal.bufferedLogBytes)
 	wal.bufferMu.Unlock()
 
-	if len(wal.bufferedLogBytes) > maxBufferedMinedRelaysBytesBeforeFlush {
+	if bufferSize > maxBufferedMinedRelaysBytesBeforeFlush {
 		wal.flushTicker.Reset(minedRelaysLogFlushInterval)
 		if err := wal.flushBufferToDisk(); err != nil {
 			wal.logger.Error().Err(err).Msg("❌️ Failed to flush mined relays WAL buffer to disk after exceeding size threshold")
@@ -173,7 +192,11 @@ func (wal *minedRelaysWriteAheadLog) CloseAndRemove() error {
 	return os.Remove(wal.logFile.Name())
 }
 
-// flushBufferToDisk writes the buffered frames to the WAL file and syncs the data.
+// flushBufferToDisk writes the buffered frames to the WAL file and syncs the data to disk.
+//
+// Critical for durability: This function calls Sync() after Write() to ensure data hits
+// physical disk, not just the OS page cache. Without Sync(), a crash immediately after
+// Write() could lose recent entries, defeating the WAL's crash recovery guarantee.
 func (wal *minedRelaysWriteAheadLog) flushBufferToDisk() error {
 	wal.bufferMu.Lock()
 	defer wal.bufferMu.Unlock()
@@ -188,6 +211,13 @@ func (wal *minedRelaysWriteAheadLog) flushBufferToDisk() error {
 
 	if _, err := wal.logFile.Write(buffered); err != nil {
 		wal.logger.Error().Err(err).Msg("❌️ Failed to write mined relays WAL entries to file. ❗Check disk space and permissions. ❗Relay evidence may be lost on restart.")
+		return err
+	}
+
+	// Sync to disk to ensure durability (fsync). This is critical for crash recovery.
+	// Without it, writes may sit in OS page cache and never hit disk on abrupt shutdown.
+	if err := wal.logFile.Sync(); err != nil {
+		wal.logger.Error().Err(err).Msg("❌️ Failed to sync mined relays WAL to disk. ❗Relay evidence may be lost on crash.")
 		return err
 	}
 

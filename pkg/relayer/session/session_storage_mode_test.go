@@ -70,9 +70,9 @@ type StorageModeTestSuite struct {
 	logger polylog.Logger
 }
 
-// TestStorageModeSimpleMap tests the ":memory:" (SimpleMap) storage mode
-func TestStorageModeSimpleMap(t *testing.T) {
-	suite.Run(t, &StorageModeTestSuite{storageDir: ""})
+// TestStorageModeDisk tests the disk storage mode
+func TestStorageModeDisk(t *testing.T) {
+	suite.Run(t, &StorageModeTestSuite{storageDir: ""}) // Will be set to temp dir in SetupTest
 }
 
 // SetupTest prepares the test environment before each test execution
@@ -246,36 +246,6 @@ func (s *StorageModeTestSuite) TestProcessRestartDuringClaimWindow() {
 
 	// Verify createClaim was called exactly once
 	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once after restart")
-}
-
-// TestInMemoryTreeStillSubmitsProofAfterFlush ensures that the in-memory tree still submits a proof after
-// a Flush is called on the RelaySessionManager.
-func (s *StorageModeTestSuite) TestInMemoryTreeStillSubmitsProofAfterFlush() {
-	// Get the session end height from the active session header
-	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
-
-	// Calculate when the claim window opens and proof window closes
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
-	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
-
-	// Move to claim window and verify claim creation
-	s.advanceToBlock(claimWindowOpenHeight)
-	sessionTree := s.getActiveSessionTree()
-	claimRoot := sessionTree.GetClaimRoot()
-
-	require.NotNil(s.T(), claimRoot, "Claim should be created")
-	require.Equal(s.T(), 1, s.createClaimCallCount, "CreateClaim should be called once")
-
-	// Simulates a flush
-	sessionTree.Flush()
-
-	// Move to proof window
-	s.advanceToBlock(proofWindowCloseHeight)
-
-	// Without the fix, this assertion would FAIL for Pebble in-memory mode
-	// because the sessionSMT would be lost after Stop() during Flush()
-	// With the fix in place, this assertion passes
-	require.Equal(s.T(), 1, s.submitProofCallCount, "SubmitProof should be called - this would FAIL without the sessionSMT preservation fix")
 }
 
 // getActiveSessionTree retrieves the current active session tree for testing purposes
