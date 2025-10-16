@@ -9,8 +9,8 @@ IGNITE_BUILD_TAGS_LOCAL = "--build.tags=ethereum_secp256k1"
 IGNITE_BUILD_TAGS_CROSS = ""
 
 # Unified build commands for different contexts
-IGNITE_CMD_LOCAL = "ignite chain build --home $(HOME)/.pocket %s --skip-proto --debug -v" % IGNITE_BUILD_TAGS_LOCAL
-IGNITE_CMD_CROSS = "ignite chain build --home $(HOME)/.pocket %s --skip-proto --debug -v" % IGNITE_BUILD_TAGS_CROSS
+IGNITE_CMD_LOCAL = "ignite chain build %s --home $(HOME)/.pocket --skip-proto --debug -v" % IGNITE_BUILD_TAGS_LOCAL
+IGNITE_CMD_CROSS = "ignite chain build %s --home $(HOME)/.pocket %s --skip-proto --debug -v" % IGNITE_BUILD_TAGS_CROSS
 
 # Primary command for development (local + cross-compilation with CGO)
 IGNITE_CMD = IGNITE_CMD_LOCAL
