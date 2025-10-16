@@ -126,7 +126,7 @@ Assuming the majority of the block space is taken up by Proofs, The number of re
 
 #### Block Data Verification
 
-The [notebook here](./Pocket_Network_Statistical_Proofs.ipynb) originally authored by @RawthiL in [this gist](https://gist.github.com/RawthiL/05fbfaf76ddc199eda4a303559bff0b3) captures the that the Block Size composition is approximately:
+The [notebook here](./probabilistic_proofs/Pocket_Network_Morse_Probabilistic_Proofs.ipynb) originally authored by @RawthiL in [this gist](https://gist.github.com/RawthiL/05fbfaf76ddc199eda4a303559bff0b3) captures the that the Block Size composition is approximately:
 
 - Proofs : 67.06 %
 - Claims : 21.64 %
