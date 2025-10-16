@@ -184,13 +184,13 @@ If everything worked as expected, your screen should look similar to the followi
 
 **LocalNet Ports (defaults)**
 
-* Tilt UI: Port 10350 - http://localhost:10350 (Access the Tilt UI dashboard)
-* Grafana: Port 3003 - http://localhost:3003 (Monitor metrics with Grafana)
-* PATH Gateway (JSON-RPC): Port 3069 - http://localhost:3069/v1 (Send JSON-RPC requests to the PATH Gateway)
-* PATH Gateway (REST): Port 3070 - http://localhost:3070/v1/... (Interact with the PATH Gateway via REST API)
-* Anvil (ETH dev node): Port 8547 - http://localhost:8547 (JSON-RPC endpoint for Ethereum development)
-* CometBFT RPC (Pocket node): Port 26657 - http://localhost:26657/status (Query CometBFT RPC status)
-* Cosmos gRPC (Pocket node): Port 9090 - grpc://localhost:9090 (Access Cosmos gRPC services)
+- Tilt UI: Port 10350 - http://localhost:10350 (Access the Tilt UI dashboard)
+- Grafana: Port 3003 - http://localhost:3003 (Monitor metrics with Grafana)
+- PATH Gateway (JSON-RPC): Port 3069 - http://localhost:3069/v1 (Send JSON-RPC requests to the PATH Gateway)
+- PATH Gateway (REST): Port 3070 - http://localhost:3070/v1/... (Interact with the PATH Gateway via REST API)
+- Anvil (ETH dev node): Port 8547 - http://localhost:8547 (JSON-RPC endpoint for Ethereum development)
+- CometBFT RPC (Pocket node): Port 26657 - http://localhost:26657/status (Query CometBFT RPC status)
+- Cosmos gRPC (Pocket node): Port 9090 - grpc://localhost:9090 (Access Cosmos gRPC services)
 
 ### 1.5 View Grafana Logs
 
@@ -438,9 +438,7 @@ The following is an example config to get you started:
 ```bash
 cat <<🚀 >> shannon_relayminer_config.yaml
 default_signing_key_names: [ "shannon_supplier" ]
-
-smt_store_path: ":memory:"  # OR $HOME/.pocket/smt
-
+smt_store_path: /home/pocket/.pocket/smt
 metrics:
   enabled: true
   addr: :9999 # you may need to change the metrics server port due to port conflicts.

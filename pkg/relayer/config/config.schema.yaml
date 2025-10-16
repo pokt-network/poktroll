@@ -40,10 +40,6 @@ properties:
   smt_store_path:
     description: |
       Path to the Sparse Merkle Tree store directory.
-      Special values:
-      - ":memory:" - Uses SimpleMap for pure in-memory storage (recommended for high performance)
-      - ":memory_pebble:" - Uses Pebble with in-memory VFS (experimental, higher overhead)
-      - Any other string - Path to disk directory for persistent storage
     type: string
 
   # Enable over servicing (optional)

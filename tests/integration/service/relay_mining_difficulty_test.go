@@ -196,7 +196,6 @@ func prepareSMST(
 
 	// Generating an ephemeral tree & spec just so we can submit
 	// a proof of the right size.
-	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	kvStore, err := pebble.NewKVStore("")
 	require.NoError(t, err)
 	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
