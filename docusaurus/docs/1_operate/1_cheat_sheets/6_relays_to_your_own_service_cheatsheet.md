@@ -1,6 +1,6 @@
 ---
 sidebar_position: 6
-title: [WIP] E2E Relay Own Your Own Service
+title: "[WIP] E2E Relay Own Your Own Service"
 ---
 
 :::danger This is a WIP by @olshansk
