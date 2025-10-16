@@ -71,9 +71,11 @@ ignite_release_cgo_disabled: ignite_check_version ## CGO=0 release with default 
 	$(MAKE) _ignite_rename_archives
 
 # TODO_INVESTIGATE: CGO-enabled release targets disabled - https://github.com/pokt-network/poktroll/discussions/1822
+# To re-enable: Uncomment the target implementations below and comment out the stub targets
 .PHONY: ignite_release_cgo_enabled_linux_amd64
 ignite_release_cgo_enabled_linux_amd64:
 	@echo "CGO-enabled release (linux/amd64) is disabled."
+
 # ignite_release_cgo_enabled_linux_amd64: ignite_check_version ## CGO=1 release for linux/amd64 (_cgo suffix)
 # 	CC=$(CC_LINUX_AMD64) $(IGNITE_BASE_CGO_ENABLED) \
 # 		--release -t linux:amd64 \
@@ -83,6 +85,7 @@ ignite_release_cgo_enabled_linux_amd64:
 .PHONY: ignite_release_cgo_enabled_linux_arm64
 ignite_release_cgo_enabled_linux_arm64:
 	@echo "CGO-enabled release (linux/arm64) is disabled."
+
 # ignite_release_cgo_enabled_linux_arm64: ignite_check_version ## CGO=1 release for linux/arm64 (_cgo suffix)
 # 	CC=$(CC_LINUX_ARM64) $(IGNITE_BASE_CGO_ENABLED) \
 # 		--release -t linux:arm64 \
@@ -94,9 +97,11 @@ ignite_release_cgo_enabled: ignite_release_cgo_enabled_linux_amd64 ignite_releas
 	@echo "CGO-enabled release builds are intentionally skipped."
 
 # TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
+# To re-enable: Uncomment the line below to include both CGO and non-CGO variants
 .PHONY: ignite_release
 ignite_release: ignite_release_cgo_disabled ## Build production binaries for all architectures
 	@echo "Skipping CGO-enabled release artifacts (disabled)."
+
 # ignite_release: ignite_release_cgo_disabled ignite_release_cgo_enabled ## Build production binaries for all architectures
 
 ######################################

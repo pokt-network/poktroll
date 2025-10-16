@@ -313,16 +313,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Retrieved private key for app %s", app.Address)
 
-<<<<<<< Updated upstream
-	// Initialize the signer properly so that the private key hex is decoded into bytes.
-	// Previously this was constructed as a literal which left privateKeyBytes empty and
-	// caused: "Sign: error decoding private key to scalar: invalid scalar length".
-	appSigner, err := sdk.NewSignerFromHex(appPrivateKeyHex)
-	if err != nil {
-		logger.Error().Err(err).Msg("❌ Error initializing signer from private key hex")
-		return err
-	}
-=======
 	// TODO_INVESTIGATE: CGO-related signer initialization disabled - https://github.com/pokt-network/poktroll/discussions/1822
 	// Initialize the signer properly so that the private key hex is decoded into bytes.
 	// Previously this was constructed as a literal which left privateKeyBytes empty and
@@ -333,7 +323,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	// 	return err
 	// }
 	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
->>>>>>> Stashed changes
 
 	// Parse the endpoint URL
 	reqUrl, err := url.Parse(endpointUrl)
@@ -507,15 +496,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
 			logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
 
-<<<<<<< Updated upstream
-			// Print the JSON response to stdout for CLI users and testing
-			jsonOutput, err := json.MarshalIndent(jsonMap, "", "  ")
-			if err != nil {
-				logger.Error().Err(err).Msg("❌ Error marshaling JSON for stdout")
-			} else {
-				fmt.Println(string(jsonOutput))
-			}
-=======
 			// TODO_INVESTIGATE: JSON stdout output disabled (may be related to CGO changes) - https://github.com/pokt-network/poktroll/discussions/1822
 			// Print the JSON response to stdout for CLI users and testing
 			// jsonOutput, err := json.MarshalIndent(jsonMap, "", "  ")
@@ -524,7 +504,6 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			// } else {
 			// 	fmt.Println(string(jsonOutput))
 			// }
->>>>>>> Stashed changes
 		}
 
 		// If "jsonrpc" key exists, try to further deserialize "result".
