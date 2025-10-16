@@ -1,7 +1,13 @@
 ---
 title: Probabilistic Proofs (Shannon)
-sidebar_position: 5
+sidebar_position: 7
 ---
+
+:::warning Active WIP
+
+This is an active WIP from [#899](https://github.com/pokt-network/poktroll/pull/899) that is merge in for public iteration
+
+:::
 
 _tl;dr Probabilistic Proofs is a method to scale Pocket Network indefinitely._
 
@@ -9,7 +15,7 @@ _tl;dr Probabilistic Proofs is a method to scale Pocket Network indefinitely._
 
 This document describes the mechanism of Probabilistic Proofs, which is what allows
 Pocket Network to scale verifiable relay throughput to match an arbitrarily large demand.
-Precisely, it allows an unlimited number of ["sessions"](./session.md) which pair (Applications and Suppliers for a given Service) by requiring the creation of a single on-chain Claim
+Precisely, it allows an unlimited number of ["sessions"](1_session.md) which pair (Applications and Suppliers for a given Service) by requiring the creation of a single on-chain Claim
 for each such session, but only probabilistically requiring an on-chain proof if it's total reward amount is below a specific threshold.
 
 External stakeholders (i.e. DAO/Foundation) need to be involved in adjusting the
@@ -59,7 +65,7 @@ along with further research on the topic.
   - [Analogs between Model Parameters and onchain Governance Values](#analogs-between-model-parameters-and-onchain-governance-values)
   - [Parameter Analog for Penalty (`S`)](#parameter-analog-for-penalty-s)
   - [Parameter Analog for Reward (`R`)](#parameter-analog-for-reward-r)
-  - [TODO\_IN\_THIS\_PR: Explain `p`](#todo_in_this_pr-explain-p)
+  - [TODO_IN_THIS_PR: Explain `p`](#todo_in_this_pr-explain-p)
   - [Considerations during Parameter Adjustment](#considerations-during-parameter-adjustment)
     - [Selecting Optimal `p` and `S`](#selecting-optimal-p-and-s)
     - [Considerations for `Proof.ProofRequirementThreshold` an `ProofRequirementThreshold`](#considerations-for-proofproofrequirementthreshold-an-proofrequirementthreshold)
@@ -72,7 +78,7 @@ along with further research on the topic.
   - [Selecting `ProofRequirementThreshold`](#selecting-proofrequirementthreshold)
   - [Calculating `p`: `ProofRequestProbability`](#calculating-p-proofrequestprobability)
   - [Calculating `S`: `ProofMissingPenalty`](#calculating-s-proofmissingpenalty)
-- [TODO\_IN\_THIS\_PR: Above Threshold Attack Possibility](#todo_in_this_pr-above-threshold-attack-possibility)
+- [TODO_IN_THIS_PR: Above Threshold Attack Possibility](#todo_in_this_pr-above-threshold-attack-possibility)
 - [Future Work](#future-work)
 
 ## Relationship to Relay Mining
@@ -118,7 +124,7 @@ diff --"**minimizes**"--> ps
 _tl;dr Too many on-chain Proofs do not scale due to state bloat and excessive CPU usage._
 
 The core limiting factor to Pocket Network's scalability is the number of required on-chain Proofs.
-For details on how Proofs are generated and validated, see the [Claim & Proof lifecycle](./Claim_and_Proof_lifecycle.md) section.
+For details on how Proofs are generated and validated, see the [Claim & Proof lifecycle](2_claim_and_proof_lifecycle.md) section.
 
 For every session (i.e. `(Application, Supplier, Service)` tuple), it is possible to construct a
 Merkle Proof which proves the Claimed work done, which can be stored on-chain.
@@ -174,7 +180,7 @@ This discounts CPU usage needed to verify the Proofs.
 
 _tl;dr Require a Claim for every (App, Supplier, Service) tuple, but only require a Proof for a subset of these Claims and slash Suppliers that fail to provide a Proof when needed._
 
-The diagram below makes reference to some of the on-chain [Governance Params](./../governance/params.md).
+The diagram below makes reference to some of the on-chain [Governance Params](./../governance/2_gov_params.md).
 
 ```mermaid
 flowchart TD
@@ -623,7 +629,7 @@ Choose `R = 20` since it is greater than `p95` of all Claims collected in Morse.
 Units are in `POKT`.
 :::
 
-See the original proposal from Morse available in [probabilistic_proofs_morse.md](./probabilistic_proofs_morse.md)
+See the original proposal from Morse available in [probabilistic_proofs_morse.md](6_probabilistic_proofs_morse.md)
 and [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for supporting data.
 
 $$ R = 20 $$

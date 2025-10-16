@@ -6,7 +6,7 @@ sidebar_position: 6
 :::warning
 
 This document was copied over from the [pocket-core](https://github.com/pokt-network/pocket-core)
-repo for reference until Probabilistic Proofs are in production. Please see [Probabilisti Proofs (Shannon)](probabilistic_proofs_shannon_og.md) as the primary source of truth.
+repo for reference until Probabilistic Proofs are in production. Please see [Probabilisti Proofs (Shannon)](7_probabilistic_proofs_shannon.md) as the primary source of truth.
 
 :::
 

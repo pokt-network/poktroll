@@ -3,8 +3,6 @@ title: Claim & Proof Lifecycle
 sidebar_position: 2
 ---
 
-# Claim & Proof Lifecycle <!-- omit in toc -->
-
 :::warning
 
 This part of the documentation is just an INITIAL DRAFT and requires deep
@@ -16,7 +14,7 @@ to all readers.
 
 - [Introduction](#introduction)
 - [Session Windows \& Onchain Parameters](#session-windows--onchain-parameters)
-  - [References:](#references)
+    - [References:](#references)
   - [Claim Expiration](#claim-expiration)
 - [Session](#session)
   - [Session Duration](#session-duration)
@@ -142,7 +140,7 @@ gantt
 
 ### Claim Expiration
 
-If a claim requires a proof (as determined by [Probabilistic Proofs](probabilistic_proofs_shannon_og.md)) and a `Supplier` fails
+If a claim requires a proof (as determined by [Probabilistic Proofs](7_probabilistic_proofs_shannon.md)) and a `Supplier` fails
 to submit a `Proof` before the `Proof Window` closes, the claim will expire and the `Supplier` will forfeit any
 rewards for the work done.
 
@@ -155,7 +153,7 @@ Claims MUST expire (and therefore the proof window MUST close) for the following
 ## Session
 
 A session is a necessary prerequisite for the `Claim & Proof` lifecycle to work.
-See [Session](./session.md) for more details.
+See [Session](1_session.md) for more details.
 
 ### Session Duration
 
@@ -357,7 +355,7 @@ After the `Proof Window` opens, a `Supplier` has several blocks, a `Proof Window
 to submit a `SubmitProof` transaction containing a `Proof`. If it is submitted too
 early or too late, it will be rejected by the protocol.
 
-If a proof is required (as determined by [Probabilistic Proofs](probabilistic_proofs_shannon_og.md)) and a `Supplier` fails to
+If a proof is required (as determined by [Probabilistic Proofs](7_probabilistic_proofs_shannon.md)) and a `Supplier` fails to
 submit a `Proof` during the Proof Window, the Claim will expire, and the supplier will forfeit rewards for the claimed
 work done. See [Claim Expiration](#claim-expiration) for more.
 
