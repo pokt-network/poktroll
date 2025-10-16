@@ -382,6 +382,71 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
 	require.Equal(s.T(), 0, s.submitProofCallCount)
 }
 
+// TestWALRecoveryAfterMultipleRelays tests that the Write-Ahead Log (WAL) correctly
+// persists and recovers multiple relays after a relayer restart.
+// This validates that the WAL can handle batch persistence and complete recovery
+// of all mined relays, ensuring no data loss during crashes or shutdowns.
+func (s *SessionPersistenceTestSuite) TestWALRecoveryAfterMultipleRelays() {
+	// Verify the initial state: session tree exists with 1 relay from SetupTest
+	sessionTree := s.getActiveSessionTree()
+	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
+
+	smstRoot := sessionTree.GetSMSTRoot()
+	count, err := smstRoot.Count()
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), uint64(1), count, "Initial session tree should have 1 relay from setup")
+
+	// Add 4 more relays to the session, bringing the total to 5
+	// Each relay is written to the WAL for persistence
+	for range 4 {
+		s.minedRelaysPublishCh <- testrelayer.NewUnsignedMinedRelay(s.T(), s.activeSessionHeader, s.supplierOperatorAddress)
+		waitSimulateIO()
+	}
+
+	// Verify all 5 relays are now in the session tree
+	smstRoot = sessionTree.GetSMSTRoot()
+	count, err = smstRoot.Count()
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), uint64(5), count, "Session tree should have 5 relays before restart")
+
+	// Stop the relayer sessions manager to simulate a crash or shutdown
+	s.relayerSessionsManager.Stop()
+
+	// Create a new relayer sessions manager
+	// This creates new observables and channels needed for block publishing
+	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
+
+	// Advance to block 2 while the relayer is stopped
+	s.advanceToBlock(2)
+
+	// Start the new relayer sessions manager
+	// The WAL should be replayed to restore all 5 relays
+	err = s.relayerSessionsManager.Start(s.ctx)
+	require.NoError(s.T(), err)
+	waitSimulateIO()
+
+	// Verify the session tree was recovered from the WAL with all 5 relays
+	sessionTree = s.getActiveSessionTree()
+	require.Equal(s.T(), s.activeSessionHeader, sessionTree.GetSessionHeader())
+
+	smstRoot = sessionTree.GetSMSTRoot()
+	count, err = smstRoot.Count()
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), uint64(5), count, "Session tree should be recovered with all 5 relays from WAL")
+
+	// Add 2 more relays after recovery to verify the tree is still functional
+	for range 2 {
+		s.minedRelaysPublishCh <- testrelayer.NewUnsignedMinedRelay(s.T(), s.activeSessionHeader, s.supplierOperatorAddress)
+		waitSimulateIO()
+	}
+
+	// Verify the session tree now has 7 relays total (5 recovered + 2 new)
+	smstRoot = sessionTree.GetSMSTRoot()
+	count, err = smstRoot.Count()
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), uint64(7), count, "Session tree should have 7 relays total after adding 2 more post-recovery")
+}
+
 // getActiveSessionTree retrieves the current active session tree for testing purposes.
 // It navigates through the session trees map structure to find the specific session tree
 // for the active session header and supplier address.
