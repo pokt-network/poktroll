@@ -143,7 +143,7 @@ func TestReconstructSMTFromMinedRelaysLog_BasicReplay(t *testing.T) {
 	referenceKVStore := simplemap.NewSimpleMap()
 	expectedTrie := smt.NewSparseMerkleSumTrie(referenceKVStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
-	// TODO_AI: Add comment
+	// Track all appended relays to verify they can be retrieved after replay
 	type minedRelay struct {
 		hash    []byte
 		payload []byte
@@ -270,7 +270,7 @@ func TestMinedRelaysWAL_ThresholdFlush(t *testing.T) {
 	defer cleanup()
 
 	// Create payload larger than the threshold to trigger immediate flush in AppendMinedRelay.
-	bigPayload := make([]byte, maxBufferedMinedRelaysBytesBeforeFlush+1024)
+	bigPayload := make([]byte, maxBufferedMinedRelaysBytesBeforeFlush+1_024)
 	_, err := rand.Read(bigPayload)
 	require.NoError(t, err)
 

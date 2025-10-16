@@ -64,11 +64,6 @@ type relayerSessionsManager struct {
 	supplierClients *supplier.SupplierClientMap
 
 	// storesDirectoryPath points to a path on disk where KVStore data files are created.
-	// Special values:
-	// - ":memory:" - Uses SimpleMap for pure in-memory storage (recommended)
-	// - ":memory_pebble:" - Uses Pebble with in-memory VFS (experimental)
-	// Otherwise, session data is persisted to disk and can be restored after a process restart.
-	// TODO(#1734): Ensure in-memory modes avoid data loss on process restart.
 	storesDirectoryPath string
 
 	// sessionSMTStore is a key-value store used to persist the metadata of
