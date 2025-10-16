@@ -47,29 +47,6 @@ k8s_kind_up: check_kind
 		echo '[INFO] Kind cluster already exists. Skipping creation and switching to kind-pocket-localnet...'; \
 		kubectl config use-context kind-pocket-localnet; \
 	fi
-# Optional context for 'move_poktroll_to_pocket' to answer this question:
-# https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486
-#
-# When running 'ignite chain --help', it states:
-# > By default the validator node will be initialized in your $HOME directory in a hidden directory that matches the name of your project.
-# This DOES NOT reference: chain-id, app-id, or other "logical" things we expect it to be.
-# This DOES reference: the project name (i.e. the basename of the directory).
-# Until the 'poktroll' repository is renamed to 'pocket', the following will be required.
-# TODO_TECHDEBT: Once this repository is renamed from 'poktroll' to 'pocket, remove the helper below.
-
-.PHONY: move_poktroll_to_pocket
-# Internal Helper to move the .poktroll directory to .pocket
-move_poktroll_to_pocket:
-	@echo "###############################################"
-	@echo "TODO_MAINNET_MIGRATION(@olshansky): Manually moving HOME/.poktroll to HOME/.pocket. This is a temporary fix until ignite CLI uses the project (not chain) name. Ref: https://docs.ignite.com/nightly/references/cli"
-	@echo "Creating new .pocket directory if it doesn't exist..."
-	@mkdir -p $(HOME)/.pocket
-	@echo "Moving contents from .poktroll to .pocket..."
-	@rsync -av --quiet --remove-source-files $(HOME)/.poktroll/ $(HOME)/.pocket/
-	@echo "Removing old .poktroll directory..."
-	@rm -rf $(HOME)/.poktroll
-	@echo "Move completed successfully: .poktroll to .pocket!"
-	@echo "###############################################"
 
 .PHONY: localnet_regenesis
 localnet_regenesis: ignite_check_version check_yq ## Regenerate the localnet genesis file
@@ -77,8 +54,6 @@ localnet_regenesis: ignite_check_version check_yq ## Regenerate the localnet gen
 	@echo "Initializing chain..."
 	@set -e
 	@ignite chain init --skip-proto
-# DEV_NOTE: We want the following command to run every time localnet is spun up (i.e. localnet re-genesis)
-	$(MAKE) move_poktroll_to_pocket
 	AUTH_CONTENT=$$(cat ./tools/scripts/authz/localnet_genesis_authorizations.json | jq -r tostring); \
 	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' ${HOME}/.pocket/config/genesis.json;
 	@cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)

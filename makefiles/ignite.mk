@@ -17,7 +17,7 @@
 # ⚠️ The crypto backend is a BUILD-TIME configuration ⚠️
 # CGO=0 uses pure-Go secp256k1 (portable). CGO=1 uses Decred (C-backed).
 
-IGNITE_CMD ?= ignite chain build
+IGNITE_CMD ?= ignite chain build --home $(HOME)/.pocket
 IGNITE_BASE_CGO_ENABLED   := CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration" $(IGNITE_CMD) --build.tags="ethereum_secp256k1"
 IGNITE_BASE_CGO_DISABLED  := CGO_ENABLED=0 $(IGNITE_CMD)
 
