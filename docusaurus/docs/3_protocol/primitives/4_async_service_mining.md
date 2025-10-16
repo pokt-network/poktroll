@@ -1,4 +1,7 @@
-# Mining Asynchronous Services
+---
+title: Async Service Mining
+sidebar_position: 4
+---
 
 :::warning Active WIP
 
@@ -20,6 +23,7 @@ between requests and responses. The bridge must handle two common scenarios:
 
 In this scenario, a single request can trigger multiple responses over time.
 For example:
+
 - A client subscribes once to an event stream (eth_subscribe)
 - The client receives many event notifications over time through that single
   subscription
@@ -28,6 +32,7 @@ For example:
 
 In this scenario, multiple requests may be associated with fewer responses.
 For example:
+
 - A client uploads a large file in chunks, sending many requests
 - The server only occasionally sends progress updates
 

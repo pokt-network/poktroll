@@ -1,9 +1,7 @@
 ---
 title: Gateways
-sidebar_position: 4
+sidebar_position: 3
 ---
-
-# Gateways <!-- omit in toc -->
 
 :::warning
 
@@ -213,7 +211,7 @@ sequenceDiagram
 
 ## Relay Signatures
 
-As explained in the [Claim & Proof Lifecycle](./claim_and_proof_lifecycle.md) document,
+As explained in the [Claim & Proof Lifecycle](2_claim_and_proof_lifecycle.md) document,
 the `Application` that signs the relay request is the one whose stake is used to
 for access to services provided by the Pocket `Supplier` Network.
 
