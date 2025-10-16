@@ -125,14 +125,14 @@ If you know someone at [Grove](https://grove.city) who maintains Beta TestNet, y
 can ask them to run this command:
 
 ```bash
-pkd_beta_tx tx bank send faucet_beta $ADDR 6900000000042upokt
+pocketd tx --network=beta tx bank send faucet_beta $ADDR 6900000000042upokt
 ```
 
 :::
 
 ### 2.4. Back up Keys 🔑
 
-:::warning 
+:::warning
 
 Before you proceed ensure you have securely backed up your keys!!! Losing validator keys will result in SLASHING!
 
@@ -141,7 +141,6 @@ Before you proceed ensure you have securely backed up your keys!!! Losing valida
 - Back up your `validator` address key
 - Back up your `priv_validator_key.json` - used to sign blocks. Found in `/pocketd/config/`
 - Back up your `node_key.json` - used for P2P. Found in `/pocketd/config/`
-
 
 ## 3. Get the Validator's Public Key
 

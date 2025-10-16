@@ -585,7 +585,7 @@ such that 95% of Claims fall into the category of requiring a proof.
 
 :::note
 
-See [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for more details from Morse, supporting the fact that the majority of the block space is taken up by Proofs.
+See [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./probabilistic_proofs/Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for more details from Morse, supporting the fact that the majority of the block space is taken up by Proofs.
 
 :::
 
@@ -630,7 +630,7 @@ Units are in `POKT`.
 :::
 
 See the original proposal from Morse available in [probabilistic_proofs_morse.md](6_probabilistic_proofs_morse.md)
-and [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for supporting data.
+and [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./probabilistic_proofs/Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for supporting data.
 
 $$ R = 20 $$
 
