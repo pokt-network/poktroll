@@ -313,16 +313,14 @@ func runRelay(cmd *cobra.Command, args []string) error {
 	}
 	logger.Info().Msgf("✅ Retrieved private key for app %s", app.Address)
 
-	// TODO_INVESTIGATE: CGO-related signer initialization disabled - https://github.com/pokt-network/poktroll/discussions/1822
 	// Initialize the signer properly so that the private key hex is decoded into bytes.
 	// Previously this was constructed as a literal which left privateKeyBytes empty and
 	// caused: "Sign: error decoding private key to scalar: invalid scalar length".
-	// appSigner, err := sdk.NewSignerFromHex(appPrivateKeyHex)
-	// if err != nil {
-	// 	logger.Error().Err(err).Msg("❌ Error initializing signer from private key hex")
-	// 	return err
-	// }
-	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
+	appSigner, err := sdk.NewSignerFromHex(appPrivateKeyHex)
+	if err != nil {
+		logger.Error().Err(err).Msg("❌ Error initializing signer from private key hex")
+		return err
+	}
 
 	// Parse the endpoint URL
 	reqUrl, err := url.Parse(endpointUrl)
@@ -496,14 +494,13 @@ func runRelay(cmd *cobra.Command, args []string) error {
 			logger.Info().Msgf("✅ Response read %d bytes", len(respBz))
 			logger.Info().Msgf("✅ Deserialized response body as JSON map: %+v", jsonMap)
 
-			// TODO_INVESTIGATE: JSON stdout output disabled (may be related to CGO changes) - https://github.com/pokt-network/poktroll/discussions/1822
 			// Print the JSON response to stdout for CLI users and testing
-			// jsonOutput, err := json.MarshalIndent(jsonMap, "", "  ")
-			// if err != nil {
-			// 	logger.Error().Err(err).Msg("❌ Error marshaling JSON for stdout")
-			// } else {
-			// 	fmt.Println(string(jsonOutput))
-			// }
+			jsonOutput, err := json.MarshalIndent(jsonMap, "", "  ")
+			if err != nil {
+				logger.Error().Err(err).Msg("❌ Error marshaling JSON for stdout")
+			} else {
+				fmt.Println(string(jsonOutput))
+			}
 		}
 
 		// If "jsonrpc" key exists, try to further deserialize "result".

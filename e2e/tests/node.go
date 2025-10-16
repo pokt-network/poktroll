@@ -23,9 +23,8 @@ var (
 	defaultGRPCPort = 9090
 	// defaultRPCHost is the default RPC host that pocketd listens on
 	defaultRPCHost = "127.0.0.1"
-	// TODO_INVESTIGATE: defaultGRPCURL commented out due to CGO changes - https://github.com/pokt-network/poktroll/discussions/1822
 	// defaultGRPCURL used for grpc connections, derived from POCKET_NODE or defaultRPCHost
-	// defaultGRPCURL string
+	defaultGRPCURL string
 	// defaultHome is the default home directory for pocketd
 	defaultHome = os.Getenv("POCKETD_HOME")
 	// defaultPathURL used by curl commands to send relay requests
@@ -46,28 +45,26 @@ func init() {
 		defaultHome = "../../localnet/pocketd"
 	}
 
-	// TODO_INVESTIGATE: defaultGRPCURL initialization commented out due to CGO changes - https://github.com/pokt-network/poktroll/discussions/1822
 	// Derive defaultGRPCURL from defaultRPCURL
-	// grpcHost := defaultRPCHost
-	// if defaultRPCURL != "" {
-	// 	grpcHost = rpcToGrpcHost(defaultRPCURL)
-	// }
-	// defaultGRPCURL = fmt.Sprintf("%s:%d", grpcHost, defaultGRPCPort)
+	grpcHost := defaultRPCHost
+	if defaultRPCURL != "" {
+		grpcHost = rpcToGrpcHost(defaultRPCURL)
+	}
+	defaultGRPCURL = fmt.Sprintf("%s:%d", grpcHost, defaultGRPCPort)
 }
 
-// TODO_INVESTIGATE: rpcToGrpcHost commented out due to CGO changes - https://github.com/pokt-network/poktroll/discussions/1822
 // rpcToGrpcHost converts a TCP RPC URL to a gRPC URL.
 // Extracts the host from the RPC URL and uses the defaultGRPCPort.
 // E.g., "tcp://devnet-validator:26657" -> "devnet-validator:9090"
-// func rpcToGrpcHost(rpcHost string) string {
-// 	// Remove "tcp://" prefix if present
-// 	rpcURL := strings.TrimPrefix(rpcHost, "tcp://")
-// 	// Extract host (before the colon)
-// 	if idx := strings.Index(rpcURL, ":"); idx != -1 {
-// 		return rpcURL[:idx]
-// 	}
-// 	return rpcURL
-// }
+func rpcToGrpcHost(rpcHost string) string {
+	// Remove "tcp://" prefix if present
+	rpcURL := strings.TrimPrefix(rpcHost, "tcp://")
+	// Extract host (before the colon)
+	if idx := strings.Index(rpcURL, ":"); idx != -1 {
+		return rpcURL[:idx]
+	}
+	return rpcURL
+}
 
 // commandResult combines the stdout, stderr, and err of an operation
 type commandResult struct {
