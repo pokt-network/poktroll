@@ -192,7 +192,9 @@ docker_test_build_local: ## Test Docker build locally with current architecture 
 	$(MAKE) cosmovisor_cross_compile
 	@echo "$(CYAN)Testing Docker build (CGO disabled)...$(RESET)"
 	docker build -f Dockerfile.release -t pocketd-test:nocgo .
+	# TODO_INVESTIGATE: CGO Docker build test disabled - https://github.com/pokt-network/poktroll/discussions/1822
 	@echo "$(YELLOW)Skipping CGO-enabled Docker build test (disabled).$(RESET)"
+	# docker build -f Dockerfile.release.cgo -t pocketd-test:cgo .
 	$(call print_success,Docker build test successful!)
 
 .PHONY: docker_test_build_multiplatform
@@ -207,7 +209,10 @@ docker_test_build_multiplatform: ## Test multi-platform Docker build locally (re
 	@echo "$(CYAN)Testing multi-platform Docker build (CGO disabled)...$(RESET)"
 	docker buildx build --platform linux/amd64,linux/arm64 \
 		-f Dockerfile.release -t pocketd-test:nocgo-multi . --progress=plain
+	# TODO_INVESTIGATE: CGO multiplatform Docker build test disabled - https://github.com/pokt-network/poktroll/discussions/1822
 	@echo "$(YELLOW)Skipping CGO-enabled multi-platform Docker build test (disabled).$(RESET)"
+	# docker buildx build --platform linux/amd64,linux/arm64 \
+	# 	-f Dockerfile.release.cgo -t pocketd-test:cgo-multi . --progress=plain
 	$(call print_success,Multi-platform Docker build test successful!)
 
 .PHONY: docker_test_run

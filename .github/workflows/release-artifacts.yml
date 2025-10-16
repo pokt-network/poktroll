@@ -24,6 +24,10 @@ permissions:
 jobs:
   build-artifacts:
     runs-on: ubuntu-latest
+    # TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
+    # strategy:
+    #   matrix:
+    #     cgo_variant: ['nocgo', 'cgo']
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +37,12 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "1.24.3"
+
+      # TODO_INVESTIGATE: CGO cross-compilers disabled - https://github.com/pokt-network/poktroll/discussions/1822
+      # - name: Install cross-compilers for CGO (linux/amd64 + linux/arm64)
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y gcc-aarch64-linux-gnu gcc-x86-64-linux-gnu
 
       - name: install ignite
         # The ignite tarballs are named like ignite_29.0.0-rc.1_Linux_x86_64.tar.gz
@@ -45,6 +55,7 @@ jobs:
       # - name: Generate protobufs
       #   run: make proto_regen
 
+      # TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
       - name: Build binaries (CGO disabled)
         run: |
           make ignite_update_ldflags
@@ -52,8 +63,15 @@ jobs:
           # Build cosmovisor (needed by both variants)
           make cosmovisor_cross_compile
 
+          # TODO_INVESTIGATE: CGO variant selection disabled - https://github.com/pokt-network/poktroll/discussions/1822
+          # Build specific variant
+          # if [[ "${{ matrix.cgo_variant }}" == "cgo" ]]; then
+          #   echo "Building CGO-enabled binaries..."
+          #   make ignite_release_cgo_enabled
+          # else
           echo "Building CGO-disabled binaries..."
           make ignite_release_cgo_disabled
+          # fi
 
           # Repackage and extract
           make ignite_release_repackage
@@ -79,9 +97,15 @@ jobs:
           # Base images
           echo "images=ghcr.io/pokt-network/pocketd,ghcr.io/pokt-network/poktrolld" >> $GITHUB_OUTPUT
 
+          # TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
           # CGO suffix and dockerfile selection
+          # if [[ "${{ matrix.cgo_variant }}" == "cgo" ]]; then
+          #   echo "cgo_suffix=-cgo" >> $GITHUB_OUTPUT
+          #   echo "dockerfile=Dockerfile.release.cgo" >> $GITHUB_OUTPUT
+          # else
           echo "cgo_suffix=" >> $GITHUB_OUTPUT
           echo "dockerfile=Dockerfile.release" >> $GITHUB_OUTPUT
+          # fi
 
           # Event-specific tag suffix
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then

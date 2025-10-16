@@ -18,6 +18,7 @@
 # CGO=0 uses pure-Go secp256k1 (portable). CGO=1 uses Decred (C-backed).
 
 IGNITE_CMD ?= ignite chain build
+# TODO_INVESTIGATE: CGO build path disabled - https://github.com/pokt-network/poktroll/discussions/1822
 # NOTE(@automation): CGO build path is disabled; keep the explicit CGO_DISABLED command for all targets.
 #IGNITE_BASE_CGO_ENABLED   := CGO_ENABLED=1 CGO_CFLAGS="-Wno-implicit-function-declaration" $(IGNITE_CMD) --build.tags="ethereum_secp256k1"
 IGNITE_BASE_CGO_DISABLED  := CGO_ENABLED=0 $(IGNITE_CMD)
@@ -69,21 +70,34 @@ ignite_release_cgo_disabled: ignite_check_version ## CGO=0 release with default 
 		-o release
 	$(MAKE) _ignite_rename_archives
 
+# TODO_INVESTIGATE: CGO-enabled release targets disabled - https://github.com/pokt-network/poktroll/discussions/1822
 .PHONY: ignite_release_cgo_enabled_linux_amd64
 ignite_release_cgo_enabled_linux_amd64:
 	@echo "CGO-enabled release (linux/amd64) is disabled."
+# ignite_release_cgo_enabled_linux_amd64: ignite_check_version ## CGO=1 release for linux/amd64 (_cgo suffix)
+# 	CC=$(CC_LINUX_AMD64) $(IGNITE_BASE_CGO_ENABLED) \
+# 		--release -t linux:amd64 \
+# 		--release.prefix pocket_cgo \
+# 		-o release
 
 .PHONY: ignite_release_cgo_enabled_linux_arm64
 ignite_release_cgo_enabled_linux_arm64:
 	@echo "CGO-enabled release (linux/arm64) is disabled."
+# ignite_release_cgo_enabled_linux_arm64: ignite_check_version ## CGO=1 release for linux/arm64 (_cgo suffix)
+# 	CC=$(CC_LINUX_ARM64) $(IGNITE_BASE_CGO_ENABLED) \
+# 		--release -t linux:arm64 \
+# 		--release.prefix pocket_cgo \
+# 		-o release
 
 .PHONY: ignite_release_cgo_enabled
 ignite_release_cgo_enabled: ignite_release_cgo_enabled_linux_amd64 ignite_release_cgo_enabled_linux_arm64
 	@echo "CGO-enabled release builds are intentionally skipped."
 
+# TODO_INVESTIGATE: CGO builds disabled - https://github.com/pokt-network/poktroll/discussions/1822
 .PHONY: ignite_release
 ignite_release: ignite_release_cgo_disabled ## Build production binaries for all architectures
 	@echo "Skipping CGO-enabled release artifacts (disabled)."
+# ignite_release: ignite_release_cgo_disabled ignite_release_cgo_enabled ## Build production binaries for all architectures
 
 ######################################
 ### Ignite Release Post-Processing ###

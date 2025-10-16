@@ -1,3 +1,4 @@
+# TODO_INVESTIGATE: CGO-enabled release Dockerfile disabled - https://github.com/pokt-network/poktroll/discussions/1822
 # CGO-enabled release Dockerfile (disabled; retained for reference only)
 FROM busybox:stable AS binary-selector
 ARG TARGETARCH
