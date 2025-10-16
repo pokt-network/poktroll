@@ -8,12 +8,12 @@ import (
 
 // defaultPublishBufferSize is the buffer size of a observable's publish channel.
 //
-// DEV_NOTE: This was increased from 50 to 500 to prevent "missing supplier operator signature" errors during high load.
+// DEV_NOTE: This was increased from 50 to 1_000 to prevent "missing supplier operator signature" errors during high load.
 // The relay mining pipeline needs breathing room when processing spikes to avoid blocking channel sends
 // that cause request timeouts during signature generation.
 //
 // TODO: Consider making this configurable via RelayMiner config for high-throughput deployments
-const defaultPublishBufferSize = 500
+const defaultPublishBufferSize = 1_000
 
 var (
 	_ observable.Observable[any] = (*channelObservable[any])(nil)

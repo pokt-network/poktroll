@@ -10,8 +10,8 @@
 # - shannon-sdk: https://github.com/pokt-network/shannon-sdk
 #
 # These repos can choose between:
-# - CGO enabled cryptography (Decred implementation)
-# - CGO disabled cryptography (Ethereum implementation)
+# - CGO enabled cryptography (Ethereum implementation)
+# - CGO disabled cryptography (Decred implementation)
 
 
 # ⚠️ The crypto backend is a BUILD-TIME configuration ⚠️
