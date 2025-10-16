@@ -26,6 +26,7 @@ Visit the [Service FAQ](../4_faq/1_service_faq.md) for more information about in
   - [2. Query for the Service](#2-query-for-the-service)
   - [3. What do I do next?](#3-what-do-i-do-next)
 - [How do I update an existing service's `compute_units_per_relay`?](#how-do-i-update-an-existing-services-compute_units_per_relay)
+- [Experimental: How do I add API specifications to a service?](#experimental-how-do-i-add-api-specifications-to-a-service)
 
 ## Introduction
 
@@ -59,11 +60,7 @@ Use the `add-service` command to create a new service like so:
 ```bash
 pocketd tx service add-service \
     ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
-    --fees 300upokt --from ${SERVICE_OWNER} --network=beta \
-    [--experimental--metadata-file ./openapi.json | --experimental--metadata-base64 $(base64 ./openapi.json)]
-
-Attach an API specification to the service by providing **either** `--experimental--metadata-file` (raw bytes) **or**
-`--experimental--metadata-base64` (pre-encoded). These flags are mutually exclusive and the payload must decode to 100 KiB or less.
+    --fees 300upokt --from ${SERVICE_OWNER} --network=beta
 ```
 
 For example, assuming you have an account with the name $USER (`pocketd keys show $USER -a`), you can run the following for Beta TestNet:
@@ -72,8 +69,7 @@ For example, assuming you have an account with the name $USER (`pocketd keys sho
 pocketd tx service add-service \
    "svc-$USER" "service description for $USER" 13 \
     --fees 300upokt --from $USER \
-   --network=beta \
-   --experimental--metadata-file ./svc-$USER-openapi.json
+   --network=beta
 ```
 
 ### 2. Query for the Service
@@ -104,8 +100,7 @@ Provide the `SERVICE_ID` of the `Service` you want to update, but with a new val
 ```bash
 pocketd tx service add-service \
     ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${NEW_COMPUTE_UNITS_PER_RELAY} \
-    --fees 300upokt --from ${SERVICE_OWNER} --network=beta \
-    [--experimental--metadata-file ./openapi.json | --experimental--metadata-base64 $(base64 ./openapi.json)]
+    --fees 300upokt --from ${SERVICE_OWNER} --network=beta
 ```
 
 For example:
@@ -114,6 +109,68 @@ For example:
 pocketd tx service add-service \
    "svc-$USER" "service description for $USER" 20 \
     --fees 300upokt --from $USER \
-   --network=beta \
-   --experimental--metadata-base64 $(base64 -w0 ./svc-$USER-openapi.json)
+   --network=beta
 ```
+
+## Experimental: How do I add API specifications to a service?
+
+:::warning Experimental Feature
+
+The service metadata feature is experimental and subject to change.
+The metadata payload is limited to 100 KiB when decoded.
+
+:::
+
+You can attach an API specification (OpenAPI, OpenRPC, etc.) to a service when creating or updating it.
+The API specification is stored on-chain and can be used by applications, gateways, and suppliers to understand the service's interface.
+
+### Using a File
+
+To attach an API specification from a file:
+
+```bash
+pocketd tx service add-service \
+    ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
+    --experimental--metadata-file ./openapi.json \
+    --fees 300upokt --from ${SERVICE_OWNER} --network=beta
+```
+
+For example, to create a service for the Pocket network with its OpenAPI specification:
+
+```bash
+pocketd tx service add-service \
+   "pocket" "Pocket Network RPC" 1 \
+    --experimental--metadata-file ./docs/static/openapi.json \
+    --fees 300upokt --from $USER \
+   --network=beta
+```
+
+### Using Base64-Encoded Data
+
+Alternatively, you can provide the API specification as base64-encoded data:
+
+```bash
+pocketd tx service add-service \
+    ${SERVICE_ID} "${SERVICE_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
+    --experimental--metadata-base64 $(base64 -w0 ./openapi.json) \
+    --fees 300upokt --from ${SERVICE_OWNER} --network=beta
+```
+
+### Updating Service Metadata
+
+To update the metadata of an existing service, use the same `add-service` command with new metadata:
+
+```bash
+pocketd tx service add-service \
+   "pocket" "Pocket Network RPC" 1 \
+    --experimental--metadata-file ./docs/static/openapi-v2.json \
+    --fees 300upokt --from $USER \
+   --network=beta
+```
+
+### Important Notes
+
+- The `--experimental--metadata-file` and `--experimental--metadata-base64` flags are mutually exclusive.
+- The decoded payload must be 100 KiB or less.
+- The metadata is stored on-chain as raw bytes and base64-encoded in JSON representations.
+- Only the service owner can update the service metadata.

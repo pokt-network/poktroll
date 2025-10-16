@@ -1715,9 +1715,6 @@ definitions:
         type: string
   pocket.application.MsgDelegateToGatewayResponse:
     type: object
-    properties:
-      application:
-        $ref: '#/definitions/pocket.application.Application'
   pocket.application.MsgStakeApplication:
     type: object
     properties:
@@ -1735,9 +1732,6 @@ definitions:
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
   pocket.application.MsgStakeApplicationResponse:
     type: object
-    properties:
-      application:
-        $ref: '#/definitions/pocket.application.Application'
   pocket.application.MsgTransferApplication:
     type: object
     properties:
@@ -1747,9 +1741,6 @@ definitions:
         type: string
   pocket.application.MsgTransferApplicationResponse:
     type: object
-    properties:
-      application:
-        $ref: '#/definitions/pocket.application.Application'
   pocket.application.MsgUndelegateFromGateway:
     type: object
     properties:
@@ -1761,9 +1752,6 @@ definitions:
         type: string
   pocket.application.MsgUndelegateFromGatewayResponse:
     type: object
-    properties:
-      application:
-        $ref: '#/definitions/pocket.application.Application'
   pocket.application.MsgUnstakeApplication:
     type: object
     properties:
@@ -1771,9 +1759,6 @@ definitions:
         type: string
   pocket.application.MsgUnstakeApplicationResponse:
     type: object
-    properties:
-      application:
-        $ref: '#/definitions/pocket.application.Application'
   pocket.application.MsgUpdateParam:
     type: object
     properties:
@@ -1789,9 +1774,6 @@ definitions:
         type: string
   pocket.application.MsgUpdateParamResponse:
     type: object
-    properties:
-      params:
-        $ref: '#/definitions/pocket.application.Params'
   pocket.application.MsgUpdateParams:
     description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
@@ -1890,9 +1872,6 @@ definitions:
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
   pocket.gateway.MsgStakeGatewayResponse:
     type: object
-    properties:
-      gateway:
-        $ref: '#/definitions/pocket.gateway.Gateway'
   pocket.gateway.MsgUnstakeGateway:
     type: object
     properties:
@@ -1901,9 +1880,6 @@ definitions:
         title: The Bech32 address of the gateway
   pocket.gateway.MsgUnstakeGatewayResponse:
     type: object
-    properties:
-      gateway:
-        $ref: '#/definitions/pocket.gateway.Gateway'
   pocket.gateway.MsgUpdateParam:
     description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
     type: object
@@ -1917,9 +1893,6 @@ definitions:
         type: string
   pocket.gateway.MsgUpdateParamResponse:
     type: object
-    properties:
-      params:
-        $ref: '#/definitions/pocket.gateway.Params'
   pocket.gateway.MsgUpdateParams:
     description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
@@ -2040,36 +2013,6 @@ definitions:
           It reflects the "unbonding completion time" of the Morse node/supplier, but is called "unstaking time" to comply with necessary Morse data structures.
         type: string
         format: date-time
-  pocket.migration.MorseSupplierClaimSignerType:
-    description: |-
-      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED: Unspecified signer type
-       - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR: signer === addr === operator === owner
-      Custodial signer type
-      - The Morse node address is NOT EMPTY (i.e. operator)
-      - The Morse output address is EMPTY (i.e. owner)
-      - Implies that the operator and owner are THE SAME offchain identity
-       - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR: signer === operator === addr && owner !== operator
-      Non-custodial signer type
-      - The Morse node address is NOT EMPTY (i.e. operator)
-      - The Morse output address is NOT EMPTY (i.e. owner)
-      - Implies that the operator and owner are MOST LIKELY DIFFERENT offchain identities
-      - The operator is the one signing the supplier claim
-       - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER: signer === owner && owner !== addr
-      Owner non-custodial signer type
-      - The Morse node address is EMPTY (i.e. operator)
-      - The Morse output address is NOT EMPTY (i.e. owner)
-      - Implies that the operator and owner are MOST LIKELY different offchain identities
-      - The owner is the one signing the supplier claim
-    type: string
-    title: |-
-      MorseSupplierClaimSignerType
-      - Enum for Morse supplier claim signer type
-    default: MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED
-    enum:
-      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED
-      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_NODE_ADDR
-      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR
-      - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER
   pocket.migration.MsgClaimMorseAccount:
     description: |-
       - Execute a claim (one-time minting of tokens on Shannon)
@@ -2111,19 +2054,6 @@ definitions:
 
       Next free index: 4
     type: object
-    properties:
-      claimed_balance:
-        description: The balance which was claimed.
-        $ref: '#/definitions/cosmos.base.v1beta1.Coin'
-      morse_src_address:
-        type: string
-        title: |-
-          The hex-encoded address of the Morse account whose balance will be claimed.
-          E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-      session_end_height:
-        description: The session end height (on Shannon) in which the claim was committed (i.e. claimed).
-        type: string
-        format: int64
   pocket.migration.MsgClaimMorseApplication:
     description: |-
       - Execute a claim (one-time minting of tokens on Shannon) of total tokens owned by a Morse account
@@ -2172,25 +2102,6 @@ definitions:
 
       Next free index: 6
     type: object
-    properties:
-      application:
-        description: The application which was staked as a result of the claim.
-        $ref: '#/definitions/pocket.application.Application'
-      claimedApplicationStake:
-        description: |-
-          The stake of the application which was staked as a result of the claim.
-          If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
-        $ref: '#/definitions/cosmos.base.v1beta1.Coin'
-      claimed_balance:
-        description: The unstaked balance which was claimed.
-        $ref: '#/definitions/cosmos.base.v1beta1.Coin'
-      morse_src_address:
-        description: The hex-encoded address of the Morse account whose balance will be claimed.
-        type: string
-      session_end_height:
-        description: The session end height (on Shannon) in which the claim was committed (i.e. claimed).
-        type: string
-        format: int64
   pocket.migration.MsgClaimMorseSupplier:
     description: |-
       - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
@@ -2276,44 +2187,6 @@ definitions:
 
       Next free index: 10
     type: object
-    properties:
-      claim_signer_type:
-        title: |-
-          The type of supplier claim signer, indicating which actor executed the claim
-          and whether it was a custodial or non-custodial claim.
-          - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_ADDR
-          - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OPERATOR
-          - MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_CUSTODIAL_SIGNED_BY_OWNER
-        $ref: '#/definitions/pocket.migration.MorseSupplierClaimSignerType'
-      claimed_balance:
-        description: The unstaked balance which was claimed.
-        $ref: '#/definitions/cosmos.base.v1beta1.Coin'
-      claimed_supplier_stake:
-        $ref: '#/definitions/cosmos.base.v1beta1.Coin'
-      morse_node_address:
-        type: string
-        title: |-
-          The hex-encoded address of the Morse non-custodial (i.e. operator) account.
-          - Unstaked balance will be migrated 1:1
-          - Stake will be migrated 1:1 from morse_node_address to shannon_operator_address
-          - Morse non-custodial (i.e. operator) address.
-          If morse_output_address is not set, this is the custodial address.
-          - See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
-          E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-      morse_output_address:
-        description: |-
-          Hex-encoded address of the Morse output account/wallet associated with the Morse node/supplier.
-          - E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-          - Morse custodial (i.e. owner) address, which owns the staked tokens of the operator.
-            See 'pocket nodes --help' for more information. Note that this refers to the Morse CLI.
-        type: string
-      session_end_height:
-        description: The session end height (on Shannon) in which the claim was committed (i.e. claimed).
-        type: string
-        format: int64
-      supplier:
-        description: The supplier which was staked as a result of the claim.
-        $ref: '#/definitions/pocket.shared.Supplier'
   pocket.migration.MsgImportMorseClaimableAccounts:
     description: |-
       - Create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis)
@@ -2352,15 +2225,6 @@ definitions:
 
       Next free index: 3
     type: object
-    properties:
-      num_accounts:
-        description: Number of claimable accounts (EOAs) collected from Morse state export.
-        type: string
-        format: uint64
-      state_hash:
-        description: On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
-        type: string
-        format: byte
   pocket.migration.MsgRecoverMorseAccount:
     description: |-
       - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
@@ -2404,28 +2268,6 @@ definitions:
 
       Next free index: 5
     type: object
-    properties:
-      morse_src_address:
-        type: string
-        title: |-
-          EITHER:
-          - The hex-encoded address of the Morse account whose stake(s) and/or balances were recovered.
-            This address MAY be invalid but NEVER empty.
-            E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-          - The name of a Morse module account whose balance was recovered.
-            E.g. "dao" or "fee-collector"
-      recovered_balance:
-        description: The sum of any unstaked and staked balances which were recovered.
-        $ref: '#/definitions/cosmos.base.v1beta1.Coin'
-      session_end_height:
-        description: The session end height (on Shannon) in which the recovery was committed (i.e. recovered).
-        type: string
-        format: int64
-      shannon_dest_address:
-        description: |-
-          The bech32-encoded address of the Shannon account to which the Morse account's stake(s) and/or
-          balance(s) were recovered.
-        type: string
   pocket.migration.MsgUpdateParams:
     description: |-
       MsgUpdateParams is the Msg/UpdateParams request type.
@@ -2546,9 +2388,6 @@ definitions:
         type: string
   pocket.proof.MsgCreateClaimResponse:
     type: object
-    properties:
-      claim:
-        $ref: '#/definitions/pocket.proof.Claim'
   pocket.proof.MsgSubmitProof:
     type: object
     properties:
@@ -2562,9 +2401,6 @@ definitions:
         type: string
   pocket.proof.MsgSubmitProofResponse:
     type: object
-    properties:
-      proof:
-        $ref: '#/definitions/pocket.proof.Proof'
   pocket.proof.MsgUpdateParam:
     description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
     type: object
@@ -2590,9 +2426,6 @@ definitions:
       MsgUpdateParamResponse defines the response structure for executing a
       MsgUpdateParam message after a single param update.
     type: object
-    properties:
-      params:
-        $ref: '#/definitions/pocket.proof.Params'
   pocket.proof.MsgUpdateParams:
     description: MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
     type: object
@@ -2705,13 +2538,10 @@ definitions:
         description: The Bech32 address of the service owner.
         type: string
       service:
-        title: The Service being added to the network
+        title: The Service being added to the network, including optional experimental metadata
         $ref: '#/definitions/pocket.shared.Service'
   pocket.service.MsgAddServiceResponse:
     type: object
-    properties:
-      service:
-        $ref: '#/definitions/pocket.shared.Service'
   pocket.service.MsgUpdateParam:
     description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
     type: object
@@ -2734,9 +2564,6 @@ definitions:
       MsgUpdateParamResponse defines the response structure for executing a
       MsgUpdateParam message after a single param update.
     type: object
-    properties:
-      params:
-        $ref: '#/definitions/pocket.service.Params'
   pocket.service.MsgUpdateParams:
     description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
@@ -2849,9 +2676,6 @@ definitions:
         type: string
   pocket.session.MsgUpdateParamResponse:
     type: object
-    properties:
-      params:
-        $ref: '#/definitions/pocket.session.Params'
   pocket.session.MsgUpdateParams:
     description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
@@ -2979,6 +2803,18 @@ definitions:
     enum:
       - UNKNOWN_CONFIG
       - TIMEOUT
+  pocket.shared.Metadata:
+    description: |-
+      Metadata message to hold additional metadata for a service.
+      The raw bytes are stored on-chain and will be base64 encoded in JSON representations.
+    type: object
+    properties:
+      experimental_api_specs:
+        description: |-
+          EXPERIMENTAL: Serialized API spec limited to 100 KiB when decoded.
+          TODO(@future): support dedicated openapi_ / openrpc_ fields once formats stabilize.
+        type: string
+        format: byte
   pocket.shared.MsgUpdateParam:
     description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
     type: object
@@ -3001,9 +2837,6 @@ definitions:
       MsgUpdateParamResponse defines the response structure for executing a
       MsgUpdateParam message after a single param update.
     type: object
-    properties:
-      params:
-        $ref: '#/definitions/pocket.shared.Params'
   pocket.shared.MsgUpdateParams:
     description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
@@ -3130,6 +2963,7 @@ definitions:
        - WEBSOCKET: WebSocket
        - JSON_RPC: JSON-RPC
        - REST: REST
+       - COMET_BFT: CometBFT (REST + JSON-RPC)
     type: string
     title: Enum to define RPC types
     default: UNKNOWN_RPC
@@ -3139,6 +2973,7 @@ definitions:
       - WEBSOCKET
       - JSON_RPC
       - REST
+      - COMET_BFT
   pocket.shared.Service:
     type: object
     title: Service message to encapsulate unique and semantic identifiers for a service on the network
@@ -3155,6 +2990,11 @@ definitions:
         description: Unique identifier for the service
         type: string
         title: For example, what if we want to request a session for a certain service but with some additional configs that identify it?
+      metadata:
+        description: |-
+          Optional metadata containing an experimental API specification for the service.
+          When exposed via JSON, this field is base64 encoded and MUST be <= 100 KiB when decoded.
+        $ref: '#/definitions/pocket.shared.Metadata'
       name:
         description: (Optional) Human readable description of the service
         type: string
@@ -3168,9 +3008,6 @@ definitions:
 
           The Bech32 address of the service owner / creator
         type: string
-      metadata:
-        description: Optional experimental metadata describing the service API; exposed as base64 and limited to 100 KiB when decoded.
-        $ref: '#/definitions/pocket.shared.Metadata'
   pocket.shared.ServiceConfigUpdate:
     description: |-
       ServiceConfigUpdate tracks a change in a supplier's service configurations
@@ -3277,14 +3114,9 @@ definitions:
         items:
           type: object
           $ref: '#/definitions/pocket.shared.ServiceRevenueShare'
-  pocket.shared.Metadata:
-    type: object
-    title: Metadata message to hold additional metadata for a service
-    properties:
-      experimental_api_specs:
-        description: EXPERIMENTAL payload for API specs, limited to 100 KiB when decoded
+      service_id:
         type: string
-        format: byte
+        title: The Service ID for which the supplier is configured
   pocket.supplier.MsgStakeSupplier:
     type: object
     properties:
@@ -3308,9 +3140,6 @@ definitions:
         $ref: '#/definitions/cosmos.base.v1beta1.Coin'
   pocket.supplier.MsgStakeSupplierResponse:
     type: object
-    properties:
-      supplier:
-        $ref: '#/definitions/pocket.shared.Supplier'
   pocket.supplier.MsgUnstakeSupplier:
     type: object
     properties:
@@ -3322,9 +3151,6 @@ definitions:
         title: The Bech32 address of the message signer (i.e. owner or operator)
   pocket.supplier.MsgUnstakeSupplierResponse:
     type: object
-    properties:
-      supplier:
-        $ref: '#/definitions/pocket.shared.Supplier'
   pocket.supplier.MsgUpdateParam:
     description: MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
     type: object
@@ -3338,9 +3164,6 @@ definitions:
         type: string
   pocket.supplier.MsgUpdateParamResponse:
     type: object
-    properties:
-      params:
-        $ref: '#/definitions/pocket.supplier.Params'
   pocket.supplier.MsgUpdateParams:
     description: MsgUpdateParams is the Msg/UpdateParams request type.
     type: object
@@ -3436,7 +3259,11 @@ definitions:
         type: number
         format: double
       proposer:
-        description: proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.
+        description: |-
+          TODO_TECHDEBT: Rename "proposer" to "validators" to reflect the work done in #1753.
+          This will span all references to the term "proposer" across documentation, functions, protobufs, variables, tooling, etc..
+
+          proposer - % of claimable tokens sent to the block proposer (i.e. validator0) account address.
         type: number
         format: double
       source_owner:
@@ -3469,9 +3296,6 @@ definitions:
   pocket.tokenomics.MsgUpdateParamResponse:
     description: MsgUpdateParamResponse defines the response structure for executing a MsgUpdateParam message after a single param update.
     type: object
-    properties:
-      params:
-        $ref: '#/definitions/pocket.tokenomics.Params'
   pocket.tokenomics.MsgUpdateParams:
     description: MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
     type: object
@@ -3485,9 +3309,6 @@ definitions:
   pocket.tokenomics.MsgUpdateParamsResponse:
     description: MsgUpdateParamsResponse defines the response structure for executing a MsgUpdateParams message.
     type: object
-    properties:
-      params:
-        $ref: '#/definitions/pocket.tokenomics.Params'
   pocket.tokenomics.Params:
     description: Params defines the parameters for the tokenomics module.
     type: object

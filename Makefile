@@ -100,7 +100,7 @@ help: ## Prints all the targets in all the Makefiles
 	@echo "$(BOLD)$(CYAN)🚀 Poktroll Makefile Targets$(RESET)"
 	@echo ""
 	@echo "$(BOLD)=== 📋 Information & Discovery ===$(RESET)"
-	@grep -h -E '^(help|help-params|list):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@grep -h -E '^(help|help-params|help-unclassified|list):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BOLD)=== 🔨 Build & Run ===$(RESET)"
 	@grep -h -E '^(ignite_build|ignite_pocketd_build|ignite_serve|ignite_serve_reset|ignite_release.*|cosmovisor_start_node):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
@@ -135,6 +135,9 @@ help: ## Prints all the targets in all the Makefiles
 	@echo "$(BOLD)=== 🌉 Gateways ===$(RESET)"
 	@grep -h -E '^(gateway_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
+	@echo "$(BOLD)=== 🔧 Services ===$(RESET)"
+	@grep -h -E '^(service_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
 	@echo "$(BOLD)=== 📡 Relays & Claims ===$(RESET)"
 	@grep -h -E '^(relay_.*|claim_.*|ping_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
@@ -162,7 +165,9 @@ help: ## Prints all the targets in all the Makefiles
 	@echo "$(BOLD)=== 🤖 AI & Sync ===$(RESET)"
 	@grep -h -E '^(claudesync_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
-	@echo "$(BOLD)Use $(CYAN)make help-params$(RESET) to see parameter management commands"
+	@echo "$(YELLOW)💡 More Commands:$(RESET)"
+	@echo "   $(CYAN)make help-params$(RESET)         - Parameter management commands"
+	@echo "   $(CYAN)make help-unclassified$(RESET)   - Show unclassified targets"
 	@echo ""
 
 .PHONY: help-params
@@ -205,6 +210,19 @@ help-params: ## Show parameter management commands
 	@echo ""
 	@echo "$(BOLD)=== 🏛️ Consensus ===$(RESET)"
 	@grep -h -E '^(params_consensus_.*):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+
+.PHONY: help-unclassified
+help-unclassified: ## Show all unclassified targets
+	@echo ""
+	@echo "$(BOLD)$(CYAN)📦 Unclassified Targets$(RESET)"
+	@echo ""
+	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | sed 's/:.*//g' | sort -u > /tmp/all_targets.txt
+	@grep -h -E '^(help|help-params|help-unclassified|list|ignite_build|ignite_pocketd_build|ignite_serve|ignite_serve_reset|ignite_release.*|cosmovisor_start_node|go_develop|go_develop_and_test|proto_regen|go_mockgen|go_testgen_fixtures|go_testgen_accounts|go_imports|test_all|test_unit|test_e2e|test_integration|test_timing|test_govupgrade|test_e2e_relay|go_test_verbose|go_test|go_lint|go_vet|go_sec|gosec_version_fix|check_todos|localnet_up|localnet_up_quick|localnet_down|localnet_regenesis|localnet_cancel_upgrade|localnet_show_upgrade_plan|testnet_.*|acc_.*|pocketd_addr|pocketd_key|query_.*|app_.*|supplier_.*|gateway_.*|service_.*|relay_.*|claim_.*|ping_.*|session_.*|ibc_.*|release_.*|docker_test_.*|go_docs|docusaurus_.*|gen_.*_docs|install_.*|check_.*|grove_.*|act_.*|trigger_ci|docker_wipe|telegram_.*|claudesync_.*|params_.*):.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | sed 's/:.*//g' | sort -u > /tmp/classified_targets.txt
+	@comm -23 /tmp/all_targets.txt /tmp/classified_targets.txt | while read target; do \
+		grep -h -E "^$$target:.*?## .*\$$" $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | head -1 | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-40s$(RESET) %s\n", $$1, $$2}'; \
+	done
+	@rm -f /tmp/all_targets.txt /tmp/classified_targets.txt
 	@echo ""
 
 #######################
@@ -315,19 +333,9 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			--home=$(POCKETD_HOME) \
 			--node $(POCKET_NODE);)
 
-######################
-### Ignite Helpers ###
-######################
-
-# TODO_TECHDEBT(@olshansk): Change this to pocketd keys list
-
-
-
-
 ##################
 ### CI Helpers ###
 ##################
-
 
 .PHONY: trigger_ci
 trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
@@ -387,12 +395,19 @@ grove_staging_eth_block_height: ## Sends a relay through the staging grove gatew
 		-H 'Protocol: shannon-testnet' \
 		--data $(JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
 
-#################
-### Catch all ###
-#################
+###############################
+###  Global Error Handling  ###
+###############################
 
+# Catch-all for undefined targets - MUST be at END after all includes
 %:
-	@echo "Error: target '$@' not found."
+	@echo ""
+	@echo "$(RED)❌ Error: Unknown target '$(BOLD)$@$(RESET)$(RED)'$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)💡 Available targets:$(RESET)"
+	@echo "   Run $(CYAN)make help$(RESET) to see all available targets"
+	@echo "   Run $(CYAN)make help-unclassified$(RESET) to see unclassified targets"
+	@echo ""
 	@exit 1
 
 ###############
@@ -411,6 +426,7 @@ include ./makefiles/params.mk
 include ./makefiles/applications.mk
 include ./makefiles/suppliers.mk
 include ./makefiles/gateways.mk
+include ./makefiles/services.mk
 include ./makefiles/session.mk
 include ./makefiles/claims.mk
 include ./makefiles/relay.mk
