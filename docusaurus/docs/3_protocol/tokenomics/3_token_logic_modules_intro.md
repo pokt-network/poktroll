@@ -31,7 +31,7 @@ is described by the following pseudo-code:
 
 :::tip
 
-See the [relay mining docs](../primitives/relay_mining.md) or the [annotated presentation](https://olshansky.substack.com/p/annotated-presentation-relay-mining) for more information.
+See the [relay mining docs](../primitives/5_relay_mining.md) or the [annotated presentation](https://olshansky.substack.com/p/annotated-presentation-relay-mining) for more information.
 
 :::
 
