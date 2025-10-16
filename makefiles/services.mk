@@ -1,6 +1,12 @@
 ################
 ### Services ###
 ################
+#
+# Usage examples:
+#   make service_list
+#   SERVICE_ID=anvil make service_show
+#   SERVICE_ID=my-svc SERVICE_NAME="My Service" COMPUTE_UNITS=10 SERVICE_OWNER=app1 make service_add
+#   SERVICE_ID=my-svc SERVICE_NAME="My Service" COMPUTE_UNITS=10 SERVICE_OWNER=app1 METADATA_FILE=./api.json make service_add_with_metadata_file
 
 .PHONY: service_list
 service_list: ## List all services registered on the network

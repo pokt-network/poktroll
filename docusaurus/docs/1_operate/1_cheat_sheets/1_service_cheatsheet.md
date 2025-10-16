@@ -174,3 +174,5 @@ pocketd tx service add-service \
 - The decoded payload must be 100 KiB or less.
 - The metadata is stored on-chain as raw bytes and base64-encoded in JSON representations.
 - Only the service owner can update the service metadata.
+- To remove metadata from a service, update it without providing any metadata flags.
+- Updating metadata replaces the entire previous metadata (not a partial update).

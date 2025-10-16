@@ -41,6 +41,7 @@ func (k msgServer) AddService(
 	// Check if the service already exists or not.
 	foundService, found := k.GetService(ctx, msg.Service.Id)
 	if found {
+		// Verify the owner address matches the existing service owner
 		if foundService.OwnerAddress != msg.Service.OwnerAddress {
 			return nil, status.Error(
 				codes.InvalidArgument,
@@ -53,8 +54,14 @@ func (k msgServer) AddService(
 
 		// TODO_POST_MIGRATION: This logic will be replaced once the following PR is merged:
 		// https://github.com/pokt-network/poktroll/pull/1388
-		logger.Info(fmt.Sprintf("Updating ComputeUnitsPerRelay: %v", msg.Service.ComputeUnitsPerRelay))
+
+		// Update the service fields that are allowed to change
+		logger.Info(fmt.Sprintf("Updating service: ComputeUnitsPerRelay=%v, HasMetadata=%v",
+			msg.Service.ComputeUnitsPerRelay, msg.Service.Metadata != nil))
+
 		foundService.ComputeUnitsPerRelay = msg.Service.ComputeUnitsPerRelay
+		foundService.Metadata = msg.Service.Metadata
+
 		k.SetService(ctx, foundService)
 
 		isSuccessful = true

@@ -11,6 +11,8 @@ option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // Service message to encapsulate unique and semantic identifiers for a service on the network
+//
+// Next free index: 6
 message Service {
   // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
   string id = 1; // Unique identifier for the service
@@ -96,6 +98,8 @@ message ConfigOption {
 
 // Metadata message to hold additional metadata for a service.
 // The raw bytes are stored on-chain and will be base64 encoded in JSON representations.
+//
+// Next free index: 2
 message Metadata {
   // EXPERIMENTAL: Serialized API spec limited to 100 KiB when decoded.
   // TODO(@future): support dedicated openapi_ / openrpc_ fields once formats stabilize.

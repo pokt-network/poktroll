@@ -14,7 +14,7 @@ var validUrlSchemes = []string{"http", "https", "ws", "wss"}
 
 const (
 	// ComputeUnitsPerRelayMax is the maximum allowed compute_units_per_relay value when adding or updating a service.
-	ComputeUnitsPerRelayMax uint64 = 2 << 20 // 1048576 (2^20)
+	ComputeUnitsPerRelayMax uint64 = 2 << 20 // 1_048_576 (2^20)
 
 	// TODO_IMPROVE: Consider making these configurable via governance parameters.
 	// The current values were selected arbitrarily simply to avoid excessive onchain bloat.
@@ -29,7 +29,7 @@ const (
 	// MaxServiceMetadataSizeBytes is the maximum allowed size for the experimental metadata payload.
 	// This cap is enforced onchain to prevent excessively large API specifications from bloating state.
 	// The experimental metadata bytes cannot exceed this limit.
-	MaxServiceMetadataSizeBytes = 100 * 1024
+	MaxServiceMetadataSizeBytes = 100 * 1_024 // 102_400 bytes (100 KiB)
 
 	regexServiceId   = "^[a-zA-Z0-9_-]+$"  // Define the regex pattern to match allowed characters
 	regexServiceName = "^[a-zA-Z0-9-_ ]+$" // Define the regex pattern to match allowed characters (allows spaces)
@@ -72,6 +72,11 @@ func (s *Service) ValidateBasic() error {
 }
 
 // ValidateBasic performs basic validation of the metadata. Nil metadata is allowed.
+//
+// Note: This validation intentionally does NOT verify the content format (e.g., valid JSON, OpenAPI, etc.)
+// because the metadata is explicitly marked as "experimental" and may contain any serialized API spec format.
+// Future versions may add format-specific validation when dedicated fields are introduced.
+// See TODO(@future) in proto/pocket/shared/service.proto for planned openapi_ / openrpc_ fields.
 func (metadata *Metadata) ValidateBasic() error {
 	if metadata == nil {
 		return nil

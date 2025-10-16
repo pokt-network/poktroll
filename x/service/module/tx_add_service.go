@@ -184,7 +184,8 @@ func parseServiceMetadata(cmd *cobra.Command) (*sharedtypes.Metadata, error) {
 
 	// Validate metadata size does not exceed the maximum allowed (100 KiB)
 	if len(apiSpecs) > sharedtypes.MaxServiceMetadataSizeBytes {
-		return nil, fmt.Errorf("experimental service metadata size %d exceeds max %d bytes", len(apiSpecs), sharedtypes.MaxServiceMetadataSizeBytes)
+		// TODO_IMPROVE(@future): Add validation hints suggesting user compress or reduce spec size
+		return nil, fmt.Errorf("experimental service metadata size %d exceeds max %d bytes (100 KiB)", len(apiSpecs), sharedtypes.MaxServiceMetadataSizeBytes)
 	}
 
 	// Ensure metadata is not empty (if provided, it must contain data)
