@@ -1,6 +1,7 @@
 package migration
 
 import (
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
@@ -40,7 +41,8 @@ func TxCommands() *cobra.Command {
 	migrateCmd.AddCommand(cmd.ClaimSupplierBulkCmd())
 	migrateCmd.AddCommand(cmd.ImportMorseAccountsCmd())
 	migrateCmd.AddCommand(cmd.ValidateMorseAccountsCmd())
-	migrateCmd.PersistentFlags().StringVar(&logger.LogLevel, flags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
+	migrateCmd.AddCommand(cmd.RecoverMorseAccountCmd())
+	migrateCmd.PersistentFlags().StringVar(&logger.LogLevel, cosmosflags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
 	migrateCmd.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
 	return migrateCmd

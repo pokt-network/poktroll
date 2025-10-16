@@ -17,7 +17,17 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/x/migration/types"
+)
+
+var (
+	flagDestination string
+)
+
+const (
+	flagDestinationName = "destination"
+	flagDestinationDesc = "shannon destination address for the morse account migration"
 )
 
 // TODO_MAINNET_MIGRATION: Update the docs in https://dev.poktroll.com/operate/morse_migration/claiming
@@ -46,9 +56,24 @@ $ pocketd tx migration claim-accounts \
   --home ./localnet/pocketd \
   --keyring-backend test \
   --unsafe \
-  --unarmored-json`,
+  --unarmored-json
+
+3. Set the same Destination for many accounts and avoid creating new wallets for each account (like operators claiming remaining pocket on operation wallets):
+
+$ pocketd tx migration claim-accounts \
+  --input-file ./bulk-accounts.json \
+  --output-file ./bulk-accounts-output.json \
+  --from <SIGNING-ACCOUNT> \
+  --home ./localnet/pocketd \
+  --keyring-backend test \
+  --unsafe \
+  --unarmored-json \
+  --destination <SHANNON-ADDRESS> # MAKE SURE YOU HAVE THE PRIVATE KEYS FOR THIS ADDRESS
+`,
 		Short: "Claim many Morse accounts as unstaked accounts (i.e. non-actor, balance only account)",
 		Long: `Claim many Morse accounts as unstaked accounts (i.e. non-actor, balance only account).
+
+
 
 This automates the batch transition and mapping of accounts from Morse to Shannon, streamlining the migration process.
 
@@ -95,8 +120,7 @@ Example output file format:
 }
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
-		RunE:    runBulkClaimAccount,
-		PreRunE: logger.PreRunESetup,
+		RunE: runBulkClaimAccount,
 	}
 
 	// Prepare the input file path flag.
@@ -127,6 +151,12 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 		false,
 		"Export unarmored hex privkey. Requires --unsafe.")
 
+	// Shannon destination address for all funds
+	claimAcctBulkCmd.Flags().StringVar(&flagDestination, flagDestinationName, "", flagDestinationDesc)
+
+	// Flag for dry run mode.
+	claimAcctBulkCmd.Flags().BoolVar(&flagDryRunClaim, FlagDryRunClaim, false, FlagDryRunClaimDesc)
+
 	// Adds standard Cosmos SDK CLI tx flags.
 	cosmosflags.AddTxFlagsToCmd(claimAcctBulkCmd)
 
@@ -136,21 +166,25 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 // marshalAccountInfo serializes account info to JSON.
 // - Includes private key if both --unsafe and --unarmored-json are set.
 // - Otherwise, only address is included.
-func marshalAccountInfo(address string, privateKey []byte) ([]byte, error) {
+func marshalAccountInfo(address string, privateKey []byte, keyringName string) ([]byte, error) {
 	// Prepare the unsafe struct in the case both --unsafe and --unarmored-json are set.
 	unsafeStruct := struct {
-		Address    string `json:"address"`
-		PrivateKey string `json:"private_key"`
+		Address     string `json:"address"`
+		PrivateKey  string `json:"private_key"`
+		KeyringName string `json:"keyring,omitempty"`
 	}{
-		Address:    address,
-		PrivateKey: hex.EncodeToString(privateKey),
+		Address:     address,
+		PrivateKey:  hex.EncodeToString(privateKey),
+		KeyringName: keyringName,
 	}
 
 	// Prepare the safe struct in the case only --unarmored-json is set.
 	safeStruct := struct {
-		Address string `json:"address"`
+		Address     string `json:"address"`
+		KeyringName string `json:"keyring,omitempty"`
 	}{
-		Address: address,
+		Address:     address,
+		KeyringName: keyringName,
 	}
 
 	// Marshal the struct based on the flags.
@@ -194,6 +228,7 @@ type MigrationBatchResult struct {
 
 // runBulkClaimAccount executes the bulk claim operation for Morse accounts, mapping them to Shannon accounts and broadcasting the migration transaction.
 func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
+	logger.Logger.Info().Msg("Initializing claim accounts process...")
 	ctx := cmd.Context()
 
 	// Ensure that unsafe and unarmored-json flags are used together.
@@ -202,16 +237,18 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
+	logger.Logger.Info().Msg("Cosmos tx client successfully configured")
 
 	// Derive a cosmos-sdk client context from the cobra command.
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
 		return err
 	}
+	logger.Logger.Info().Msg("Cosmos client successfully configured")
 
 	// Read Morse private keys from file.
 	morseAccounts, err := readMorseAccountsPrivateKeysFile(ctx, clientCtx)
@@ -219,7 +256,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	logger.Logger.Info().
+	logger.Logger.Error().
 		Str("input_file", flagInputFilePath).
 		Str("output_file", flagOutputFilePath).
 		Msgf("About to start running MsgClaimMorseAccount for %d Morse accounts", len(morseAccounts))
@@ -256,7 +293,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 	// Write output JSON file to --output-file path.
 	defer func() {
 		outputJSON, _ := json.MarshalIndent(migrationBatchResult, "", "  ")
-		logger.Logger.Info().Msgf("writing migration output JSON to %s", flagOutputFilePath)
+		logger.Logger.Info().Msgf("Writing migration output JSON to %s", flagOutputFilePath)
 		writeErr := os.WriteFile(flagOutputFilePath, outputJSON, 0644)
 		if writeErr != nil {
 			logger.Logger.Error().Err(writeErr).
@@ -265,6 +302,10 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 		}
 	}()
 
+	logger.Logger.Info().
+		Str("input_file", flagInputFilePath).
+		Str("output_file", flagOutputFilePath).
+		Msg("Starting the claim process for each Morse account...")
 	// Loop through all EXISTING Morse accounts and map them to NEW Shannon accounts.
 	for _, morseAccount := range morseAccounts {
 		mapping, mappingErr := mappingAccounts(clientCtx, morseAccount)
@@ -281,7 +322,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 		if mapping.Error != "" {
 			logger.Logger.Error().Err(mappingErr).
 				Msgf(
-					"morse account: %s will not be migrated due to the following error: %s",
+					"Morse account: %s will not be migrated due to the following error: %s",
 					mapping.MorseAccount.Address.String(),
 					mapping.Error,
 				)
@@ -290,16 +331,24 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 
 		// Log the successful mapping will be claimed
 		logger.Logger.Info().Msgf(
-			"mapping morse account=%s to shannon account=%s",
+			"Mapping morse account=%s to shannon account=%s",
 			mapping.MorseAccount.Address.String(),
 			mapping.ShannonAccount.Address.String(),
 		)
 		claimMessages = append(claimMessages, mapping.MigrationMsg)
 	}
 
+	if flagDryRunClaim {
+		logger.Logger.Info().
+			Str("path", flagOutputFilePath).
+			Msg("tx IS NOT being broadcasted because: '--dry-run-claim=true'.")
+		return nil
+	}
+
 	// Sign and broadcast the claim Morse account message.
+	logger.Logger.Info().Int("messages", len(claimMessages)).Msg("Sign and broadcast transaction")
 	tx, eitherErr := txClient.SignAndBroadcast(ctx, claimMessages...)
-	broadcastErr, broadcastErrCh := eitherErr.SyncOrAsyncError()
+	broadcastErrCh, broadcastErr := eitherErr.SyncOrAsyncError()
 
 	// Handle a successful tx broadcast.
 	if tx != nil {
@@ -330,7 +379,7 @@ func runBulkClaimAccount(cmd *cobra.Command, _ []string) error {
 		logger.Logger.Info().
 			Int("tx_messages", len(claimMessages)).
 			Str("tx_hash", migrationBatchResult.TxHash).
-			Msg("morse accounts migration tx delivered successfully")
+			Msg("Morse accounts migration tx delivered successfully")
 	}
 
 	return nil
@@ -351,27 +400,28 @@ func readMorseAccountsPrivateKeysFile(
 	queryClient := types.NewQueryClient(clientCtx)
 
 	// Read the input file.
-	fileContents, err := os.ReadFile(flagInputFilePath)
-	if err != nil {
-		return nil, err
+	fileContents, fileReadErr := os.ReadFile(flagInputFilePath)
+	if fileReadErr != nil {
+		return nil, fileReadErr
 	}
 
 	// Unmarshal the Morse private keys from the input file.
 	var morsePrivateKeys []string
-	if err := json.Unmarshal(fileContents, &morsePrivateKeys); err != nil {
-		return nil, err
+	if unmarshallErr := json.Unmarshal(fileContents, &morsePrivateKeys); unmarshallErr != nil {
+		return nil, unmarshallErr
 	}
 
 	// Loop through all Morse private keys and validate their claimable status.
-	for _, morsePrivateKey := range morsePrivateKeys {
-		morseHexKey, err := hex.DecodeString(morsePrivateKey)
-		if err != nil {
-			return nil, err
+	for _, morsePrivateKeyHex := range morsePrivateKeys {
+		morseHexKey, morseHexKeyErr := hex.DecodeString(morsePrivateKeyHex)
+		if morseHexKeyErr != nil {
+			return nil, morseHexKeyErr
 		}
 		morsePrivateKey := ed25519.PrivKey(morseHexKey)
 		morseAddress := morsePrivateKey.PubKey().Address()
 		morseAddressStr := strings.ToUpper(morseAddress.String()) // uppercase for query
 
+		logger.Logger.Info().Str("address", morseAddressStr).Msg("Checking MorseClaimableAccount")
 		req := &types.QueryMorseClaimableAccountRequest{Address: morseAddressStr}
 		res, queryErr := queryClient.MorseClaimableAccount(ctx, req)
 		// if we are not able to validate the existence of the morse account, we return the error and stop the process
@@ -387,16 +437,27 @@ func readMorseAccountsPrivateKeysFile(
 			continue
 		}
 
+		if res.MorseClaimableAccount.MorseOutputAddress != "" {
+			// Ignore already-claimed Morse accounts during the bulk supplier migration.
+			// This is intentional behaviour assuming a human error of not removing a key from the input-file that has already been claimed.
+			logger.Logger.Warn().Msgf("Skipping accounts with morse address (%s) because it has staked balance: %v, please use `pocketd tx migration claim-supplier` instead", morseAddressStr, res.MorseClaimableAccount)
+			continue
+		}
+
 		// Morse account is in the snapshot and not yet claimed.
 		// Add it to migration list.
 		morseAccounts = append(morseAccounts, MorseAccountInfo{
 			PrivateKey: morsePrivateKey,
 			Address:    morseAddress,
 		})
+		logger.Logger.Info().Str("address", morseAddressStr).Msg("MorseClaimableAccount found!")
 	}
 
 	if len(morseAccounts) == 0 {
-		return nil, fmt.Errorf("Zero claimable Morse accounts found in the snapshot. Check the logs and the input file before trying again.")
+		return nil, fmt.Errorf(
+			"0/%d claimable Morse accounts found in the snapshot. Check the logs and the input file before trying again",
+			len(morsePrivateKeys),
+		)
 	}
 
 	return morseAccounts, nil
@@ -422,11 +483,36 @@ func mappingAccounts(
 		MorseAccount: morseAccount,
 	}
 
-	// Create a new Shannon account
-	// 1. Generate a secp256k1 private key
-	shannonPrivateKey := secp256k1.GenPrivKey()
-	// 2. Get the Cosmos shannonAddress (bech32 format) from a public key
-	shannonAddress := sdk.AccAddress(shannonPrivateKey.PubKey().Address())
+	var shannonPrivateKey *secp256k1.PrivKey
+	var shannonAddress sdk.AccAddress
+	var destinationReadErr error
+	var hasDestination bool
+
+	// Check if a shannon address was specified or if a new key should be generated
+	if flagDestination != "" {
+		shannonAddress, destinationReadErr = sdk.AccAddressFromBech32(flagDestination)
+		if destinationReadErr != nil {
+			return nil, fmt.Errorf("--destination address is not a valid shannon address %w", destinationReadErr)
+		}
+		hasDestination = true
+		logger.Logger.Info().
+			Str("shannon_dest_address", shannonAddress.String()).
+			Str("morse_address", hex.EncodeToString(morseAccount.Address)).
+			Msg("Assigning --destination value as shannon_dest_address")
+		// mock empty private key
+		shannonPrivateKey = &secp256k1.PrivKey{}
+	} else {
+		// Create a new Shannon account
+		// 1. Generate a secp256k1 private key
+		shannonPrivateKey = secp256k1.GenPrivKey()
+		// 2. Get the Cosmos shannonAddress (bech32 format) from a public key
+		shannonAddress = sdk.AccAddress(shannonPrivateKey.PubKey().Address())
+		logger.Logger.Info().
+			Str("shannon_dest_address", shannonAddress.String()).
+			Str("morse_address", hex.EncodeToString(morseAccount.Address)).
+			Msg("Generated new Shannon account")
+	}
+
 	// 3. Assign Shannon account to mapping.
 	morseShannonMapping.ShannonAccount = &ShannonAccountInfo{
 		Address:    shannonAddress,
@@ -444,16 +530,24 @@ func mappingAccounts(
 		return morseShannonMapping, nil
 	}
 
-	// Import Shannon private key into keyring.
-	name := morseShannonMapping.ShannonAccount.Address.String()
-	keyringErr := clientCtx.Keyring.ImportPrivKeyHex(
-		name,
-		hex.EncodeToString(morseShannonMapping.ShannonAccount.PrivateKey.Key),
-		"secp256k1",
-	)
-	if keyringErr != nil {
-		logger.Logger.Error().Msg("failed to import private key for shannon account, please check the logs and try again")
-		return morseShannonMapping, keyringErr
+	// If an explicit shannon dest address was not specified, the newly generated private key MUST be stored.
+	if !hasDestination {
+		// Import Shannon private key into keyring.
+		morseShannonMapping.ShannonAccount.KeyringName = morseShannonMapping.ShannonAccount.Address.String()
+		logger.Logger.Info().
+			Str("keyring_name", morseShannonMapping.ShannonAccount.KeyringName).
+			Str("morse_node_address", hex.EncodeToString(morseAccount.Address)).
+			Str("shannon_operator_address", morseShannonMapping.ShannonAccount.KeyringName).
+			Msg("Storing shannon operator address in thekeyring")
+		keyringErr := clientCtx.Keyring.ImportPrivKeyHex(
+			morseShannonMapping.ShannonAccount.KeyringName,
+			hex.EncodeToString(morseShannonMapping.ShannonAccount.PrivateKey.Key),
+			"secp256k1",
+		)
+		if keyringErr != nil {
+			logger.Logger.Error().Err(keyringErr).Msg("failed to import private key for shannon account. Please check the logs and try again")
+			return morseShannonMapping, keyringErr
+		}
 	}
 
 	// For debugging: record migration message attempted.

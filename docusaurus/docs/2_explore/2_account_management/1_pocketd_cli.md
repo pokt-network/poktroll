@@ -17,6 +17,12 @@ To upgrade `pocketd` to the latest version, run:
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --upgrade
 ```
 
+To upgrade a `pocketd` to a specific release (e.g. `v0.1.12-dev3`), run:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scripts/pocketd-install.sh | bash -s -- --tag v0.1.12-dev3 --upgrade
+```
+
 :::
 
 ## Table of Contents <!-- omit in toc -->
@@ -29,9 +35,10 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/scr
   - [From Source (danger zone)](#from-source-danger-zone)
     - [Installation dependencies](#installation-dependencies)
     - [Build from source](#build-from-source)
+  - [Building Release Binaries From Source](#building-release-binaries-from-source)
 - [Windows (why!?)](#windows-why)
 - [Publishing a new `pocketd` release](#publishing-a-new-pocketd-release)
-  - [1. Create a new `dev` git tag](#1-create-a-new-dev-git-tag)
+  - [1. Create a new `dev` or `rc` git tag](#1-create-a-new-dev-or-rc-git-tag)
   - [2. Draft a new GitHub release](#2-draft-a-new-github-release)
   - [3. Wait for the release artifacts to be built (5 - 20 minutes)](#3-wait-for-the-release-artifacts-to-be-built-5---20-minutes)
   - [4. Verify via the `pocketd-install.sh` script](#4-verify-via-the-pocketd-installsh-script)
@@ -136,25 +143,55 @@ For **ADVANCED** users only. Requires developer tools.
 
 #### Build from source
 
+Clone the repository
+
 ```bash
-# Clone the repository
 git clone https://github.com/pokt-network/poktroll.git pocket
 cd pocket
-
-# Optional: Checkout a specific version (recommended)
-# Replace v0.0.12 with your desired version from https://github.com/pokt-network/poktroll/releases
-git checkout v0.0.12
-
-# Build the binary
-make go_develop
-make ignite_pocketd_build
 ```
 
-**Verify installation:**
+And build the dependencies
+
+```bash
+make go_develop
+```
+
+Then, you have a few options:
+
+1. Use the `make` target helper to use ignite indirecly:
+
+   ```bash
+   make ignite_build_pocketd
+   ```
+
+2. Use `Ignite` to build the binary directly to the `GOPATH`:
+
+   ```bash
+   make ignite_build_pocketd
+   ```
+
+3. Use `Ignite` to build the binary directly to the current directory:
+
+   ```bash
+   make ignite_build
+   ```
+
+When you're done, verify the installation:
 
 ```bash
 pocketd version
 pocketd --help
+```
+
+### Building Release Binaries From Source
+
+The official binaries in our [GitHub releases](https://github.com/pokt-network/poktroll/releases)
+are built using [this GitHub workflow](https://github.com/pokt-network/poktroll/actions/workflows/release-artifacts.yml).
+
+You can build the release binaries locally for all CPU architectures like so:
+
+```bash
+make ignite_release
 ```
 
 ---
@@ -183,18 +220,21 @@ This section is intended **only for core protocol developers**.
 
 It is also only intended for for dev releases of the `pocketd` CLI.
 
-If you are publishing an official protocol upgrade accompanies by a CLI update, visit the [release procedure docs](../../4_develop//upgrades/2_release_procedure.md).
+If you are publishing an official protocol upgrade accompanies by a CLI update, visit the [release procedure docs](../../4_develop/upgrades/2_upgrade_preparation.md).
 
 :::
 
-### 1. Create a new `dev` git tag
+### 1. Create a new `dev` or `rc` git tag
 
 ```bash
 # Clone the repository if you haven't already
 git clone git@github.com:pokt-network/poktroll.git poktroll
 cd poktroll
 
-# Create a new dev git tag and follow the on-screen instructions
+# Create a new rc tag from `main` or `master` and follow the on-screen instructions
+make release_tag_rc
+# OR
+# Create a new dev tag from any branch and follow the on-screen instructions
 make release_tag_dev
 
 # Push the tag to GitHub

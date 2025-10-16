@@ -3,18 +3,30 @@ package query
 import (
 	"context"
 	"sync"
+	"time"
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
+
+// TODO_IMPROVE: Make this configurable (for the RelayMiner) and other users.
+//
+// TODO_CONSIDERATION: Evaluate what the right timeout should be to balance
+// offering long requests with not burning budget unnecessarily.
+//
+// For example: low default timeout (i.e. Fail fast approach):
+//   - attempts should return quickly so the retry strategy can try again.
+//   - If a single attempt needs > some timeout, the overall request (e.g. relay/miner flow)
+//     will likely hit its own deadline anyway; increasing this value just burns budget without improving
+const defaultQueryTimeout = 4 * time.Second
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)
 
@@ -37,6 +49,8 @@ type accQuerier struct {
 //
 // Required dependencies:
 // - clientCtx
+// - polylog.Logger
+// - cache.KeyValueCache[types.AccountI]
 func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error) {
 	aq := &accQuerier{}
 
@@ -82,8 +96,10 @@ func (aq *accQuerier) GetAccount(
 	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}
 	res, err := retry.Call(ctx, func() (*accounttypes.QueryAccountResponse, error) {
-		return aq.accountQuerier.Account(ctx, req)
-	}, retry.GetStrategy(ctx))
+		queryCtx, cancelQueryCtx := context.WithTimeout(ctx, defaultQueryTimeout)
+		defer cancelQueryCtx()
+		return aq.accountQuerier.Account(queryCtx, req)
+	}, retry.GetStrategy(ctx), logger)
 	if err != nil {
 		return nil, ErrQueryAccountNotFound.Wrapf("address: %s [%v]", address, err)
 	}

@@ -19,10 +19,7 @@ const (
 
 // Upgrade_NEXT handles the upgrade to release `vNEXT`.
 // This upgrade adds:
-// - the `compute_unit_cost_granularity` shared module param
-// - the `morse_account_claiming_enabled` migration module param
-//
-// https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
+// - Fix for supplier service config update logic before activation (issue #1794)
 var Upgrade_NEXT = Upgrade{
 	PlanName: Upgrade_NEXT_PlanName,
 	// No KVStore migrations in this upgrade.
@@ -35,10 +32,10 @@ var Upgrade_NEXT = Upgrade{
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
 		// Add new parameters by:
-		// 1. Inspecting the diff between vPREV...vNEXT
+		// 1. Inspecting the diff between vPREV..vNEXT
 		// 2. Manually inspect changes in ignite's config.yml
 		// 3. Update the upgrade handler here accordingly
-		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV...vNEXT
+		// Ref: https://github.com/pokt-network/poktroll/compare/vPREV..vNEXT
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			return vm, nil

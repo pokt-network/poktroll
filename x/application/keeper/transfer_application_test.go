@@ -27,11 +27,11 @@ func TestMergeAppSuite(t *testing.T) {
 }
 
 func (s *MergeAppDelegateesSuite) SetupTest() {
-	s.gateway1 = sample.AccAddress()
-	s.gateway2 = sample.AccAddress()
-	s.gateway3 = sample.AccAddress()
-	s.gateway4 = sample.AccAddress()
-	s.gateway5 = sample.AccAddress()
+	s.gateway1 = sample.AccAddressBech32()
+	s.gateway2 = sample.AccAddressBech32()
+	s.gateway3 = sample.AccAddressBech32()
+	s.gateway4 = sample.AccAddressBech32()
+	s.gateway5 = sample.AccAddressBech32()
 
 	s.T().Logf(`
 gateway1: %s

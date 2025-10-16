@@ -1,17 +1,16 @@
 package tx
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"sync"
+	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/json"
-	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -25,6 +24,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/encoding"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
@@ -45,6 +45,10 @@ const (
 	// events where the sender address matches the interpolated address.
 	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
 	txWithSenderAddrQueryFmt = "tm.event='Tx' AND message.sender='%s'"
+
+	// MUST set a timeout when using unordered transactions. 10 minutes is the maximum, use 9 for safety.
+	// See: https://docs.cosmos.network/v0.53/build/architecture/adr-070-unordered-account
+	txTimeoutTimestampDelay = time.Minute * 9
 )
 
 // TODO_TECHDEBT(@bryanchriswhite): Refactor this to use the EventsReplayClient
@@ -127,6 +131,11 @@ type txClient struct {
 	// should retry in the event that it encounters an error or its connection is interrupted.
 	// If connRetryLimit is < 0, it will retry indefinitely.
 	connRetryLimit int
+
+	// unordered is a flag which indicates whether the transactions should be sent unordered.
+	unordered bool
+
+	logger polylog.Logger
 }
 
 type (
@@ -154,6 +163,7 @@ type (
 //   - client.TxContext
 //   - client.EventsQueryClient
 //   - client.BlockClient
+//   - cometbft/rpc/client.Client
 //
 // Available options:
 //   - WithSigningKeyName
@@ -174,6 +184,7 @@ func NewTxClient(
 		deps,
 		&txnClient.txCtx,
 		&txnClient.blockClient,
+		&txnClient.logger,
 	); err != nil {
 		return nil, err
 	}
@@ -181,6 +192,9 @@ func NewTxClient(
 	for _, opt := range opts {
 		opt(txnClient)
 	}
+
+	// Set the unordered flag on the client context.
+	txnClient.txCtx = txnClient.txCtx.WithUnordered(txnClient.unordered)
 
 	if err = txnClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err
@@ -190,13 +204,12 @@ func NewTxClient(
 	eventQuery := fmt.Sprintf(txWithSenderAddrQueryFmt, txnClient.signingAddr)
 
 	// Initialize and events replay client.
-	txnClient.eventsReplayClient, err = events.NewEventsReplayClient[*abci.TxResult](
+	txnClient.eventsReplayClient, err = events.NewEventsReplayClient(
 		ctx,
 		deps,
 		eventQuery,
 		UnmarshalTxResult,
 		defaultTxReplayLimit,
-		events.WithConnRetryLimit[*abci.TxResult](txnClient.connRetryLimit),
 	)
 	if err != nil {
 		return nil, err
@@ -214,6 +227,15 @@ func NewTxClient(
 	return txnClient, nil
 }
 
+// TODO_REFACTOR(red-0ne): Improve transaction error handling architecture
+// The current approach returns an async error channel for all transactions, but this
+// adds unnecessary complexity. Based on our experience with Cosmos SDK's transaction
+// lifecycle, we should separate two distinct error types:
+// 1. Mempool inclusion errors - These occur immediately when broadcasting (synchronous)
+// 2. Transaction execution errors - These occur during block processing (asynchronous)
+// Creating distinct paths for these error types would simplify error handling throughout
+// the codebase and improve developer experience.
+//
 // SignAndBroadcastWithTimeoutHeight signs a set of Cosmos SDK messages, constructs
 // a transaction, and broadcasts it to the network. The function performs several
 // steps to ensure the messages and the resultant transaction are valid:
@@ -267,11 +289,24 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
+	// TODO_TECHDEBT(@bryanchriswhite): Set a timeout timestamp which is estimated
+	// to correspond to the timeout height.
+	txBuilder.SetTimeoutTimestamp(time.Now().Add(txTimeoutTimestampDelay))
+
+	offline := txnClient.txCtx.GetClientCtx().Offline
+	txBuilder.SetUnordered(txnClient.unordered)
+
+	// Override offline mode if unordered is set in order to prevent populating
+	// the sequence number. The account number WILL still be queried in TxContext#SignTx().
+	if txnClient.unordered {
+		offline = true
+	}
+
 	// sign transactions
 	err = txnClient.txCtx.SignTx(
 		txnClient.signingKeyName,
 		txBuilder,
-		false, false,
+		offline, false, txnClient.unordered,
 	)
 	if err != nil {
 		return nil, either.SyncErr(err)
@@ -297,7 +332,7 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		}
 
 		return response, txErr
-	}, retry.GetStrategy(ctx))
+	}, retry.GetStrategy(ctx), txnClient.logger)
 	if err != nil {
 		return nil, either.SyncErr(err)
 	}
@@ -423,11 +458,16 @@ func (txnClient *txClient) addPendingTransactions(
 	txnClient.txsMutex.Lock()
 	defer txnClient.txsMutex.Unlock()
 
+	// timeoutHeight is the height that is passed to txBuilder.SetTimeoutHeight
+	// - A transaction that is committed at timeoutHeight will be considered valid
+	// - txTimeoutPool tracks transactions that are expected to be rejected due to timeout
+	txExpirationHeight := timeoutHeight + 1
+
 	// Initialize txTimeoutPool map if necessary.
-	txsByHash, ok := txnClient.txTimeoutPool[timeoutHeight]
+	txsByHash, ok := txnClient.txTimeoutPool[txExpirationHeight]
 	if !ok {
 		txsByHash = make(map[string]chan error)
-		txnClient.txTimeoutPool[timeoutHeight] = txsByHash
+		txnClient.txTimeoutPool[txExpirationHeight] = txsByHash
 	}
 
 	// Initialize txErrorChans map in txTimeoutPool map if necessary.
@@ -479,7 +519,8 @@ func (txnClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 	txResultsCh := txResultsObs.Subscribe(ctx).Ch()
 	for txResult := range txResultsCh {
 		// Convert transaction hash into its normalized hex form.
-		txHashHex := encoding.TxHashBytesToNormalizedHex(comettypes.Tx(txResult.Tx).Hash())
+		txHash := comettypes.Tx(txResult.Tx).Hash()
+		txHashHex := encoding.TxHashBytesToNormalizedHex(txHash)
 
 		txnClient.txsMutex.Lock()
 		// Remove from the txTimeoutPool.
@@ -511,6 +552,20 @@ func (txnClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 			// > mempool but failed to gossip: validation failed
 			//
 			// Potential parse and send transaction error on txErrCh here.
+
+			txnClient.logger.Info().Msgf(
+				"[TX] Transaction with hash %q committed at height (%d)",
+				txHashHex,
+				txResult.Height,
+			)
+
+			if len(txResult.Result.Log) > 0 {
+				txnClient.logger.Error().Msgf(
+					"[TX] Transaction with hash %q failed: %s",
+					txHashHex,
+					txResult.Result.Log,
+				)
+			}
 
 			// Close and remove from txErrChans
 			close(txErrCh)
@@ -544,7 +599,8 @@ func (txnClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 		txnClient.txsMutex.Lock()
 
 		// Retrieve transactions associated with the current block's height.
-		txsByHash, ok := txnClient.txTimeoutPool[block.Height()]
+		currentHeight := block.Height()
+		txsByHash, ok := txnClient.txTimeoutPool[currentHeight]
 		if !ok {
 			// If no transactions are found for the current block height, continue.
 			txnClient.txsMutex.Unlock()
@@ -558,7 +614,7 @@ func (txnClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 			case err, ok := <-txErrCh:
 				if ok {
 					// Unexpected state: error channel should be closed after processing.
-					panic(fmt.Errorf("Expected txErrCh to be closed; received err: %w", err))
+					panic(fmt.Errorf("expected txErrCh to be closed; received err: %w", err))
 				}
 				// Remove the processed transaction.
 				delete(txsByHash, txHash)
@@ -567,23 +623,36 @@ func (txnClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 			default:
 			}
 
-			// Transaction was not processed by its subscription: handle timeout.
-			txErrCh <- txnClient.getTxTimeoutError(ctx, txHash) // Send a timeout error.
-			close(txErrCh)                                      // Close the error channel.
-			delete(txsByHash, txHash)                           // Remove the transaction.
+			// Check if the transaction was not processed by its subscription: handle timeout.
+			if err := txnClient.getTxTimeoutError(ctx, currentHeight, txHash); err != nil {
+				// Send a tx client timeout error.
+				txErrCh <- err
+			}
+			close(txErrCh)            // Close the error channel.
+			delete(txsByHash, txHash) // Remove the transaction.
 		}
 
 		// Clean up the txTimeoutPool for the current block height.
-		delete(txnClient.txTimeoutPool, block.Height())
+		delete(txnClient.txTimeoutPool, currentHeight)
 		txnClient.txsMutex.Unlock()
 	}
 }
 
+// TODO_CONSIDERATION: Simplify error handling by removing custom tx client timeout errors
+// We should consider relying solely on CosmosSDK's built-in ErrTxTimeoutHeight error,
+// which is already returned by the BroadcastTx() method when a transaction fails to be
+// committed before its timeout height. This would eliminate duplicate error handling
+// and reduce code complexity.
+//
 // getTxTimeoutError checks if a transaction with the specified hash has timed out.
 // The function decodes the provided hexadecimal hash into bytes and queries the
 // transaction using the byte hash. If any error occurs during this process,
 // appropriate wrapped errors are returned for easier debugging.
-func (txnClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex string) error {
+func (txnClient *txClient) getTxTimeoutError(
+	ctx context.Context,
+	currentHeight int64,
+	txHashHex string,
+) error {
 	// Decode the provided hex hash into bytes.
 	txHash, err := hex.DecodeString(txHashHex)
 	if err != nil {
@@ -592,12 +661,25 @@ func (txnClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex stri
 
 	// Query the transaction using the decoded byte hash.
 	txResponse, err := txnClient.txCtx.QueryTx(ctx, txHash, false)
-	if err != nil {
+	if err != nil || txResponse == nil {
 		return ErrQueryTx.Wrapf("with hash: %s: %s", txHashHex, err)
 	}
 
-	// Return a timeout error with details about the transaction.
-	return ErrTxTimeout.Wrapf("with hash %s: %s", txHashHex, txResponse.TxResult.Log)
+	if txResponse.TxResult.Code != 0 {
+		// Return a tx client timeout error with details about the transaction error log.
+		return ErrTxTimeout.Wrapf(
+			"with tx hash %s and height %d: %s",
+			txHashHex, currentHeight, txResponse.TxResult.Log,
+		)
+	}
+
+	// Transaction was successful even if it was expected to timeout.
+	txnClient.logger.Warn().Msgf(
+		"expecting tx with hash %s to timeout but was successful at height %d",
+		txHashHex, currentHeight,
+	)
+	return nil
+
 }
 
 // getFeeAmount calculates the transaction fee amount based on client settings.
@@ -662,29 +744,13 @@ func (txnClient *txClient) getFeeAmount(
 	return feeCoins, nil
 }
 
-// UnmarshalTxResult attempts to deserialize a slice of bytes into a TxResult
-// It checks if the given bytes correspond to a valid transaction event.
-// If the resulting TxResult has empty transaction bytes, it assumes that
-// the message was not a transaction results and returns an error.
-func UnmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
-	var rpcResponse rpctypes.RPCResponse
-
-	// Try to deserialize the provided bytes into an RPCResponse.
-	if err := json.Unmarshal(txResultBz, &rpcResponse); err != nil {
-		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
+// UnmarshalTxResult extracts an abci.TxResult from a coretypes.ResultEvent.
+func UnmarshalTxResult(resultEvt *coretypes.ResultEvent) (*abci.TxResult, error) {
+	// Attempt to cast the event data to EventDataTx
+	txResult, ok := resultEvt.Data.(comettypes.EventDataTx)
+	if !ok {
+		return nil, events.ErrEventsUnmarshalEvent.Wrapf("expected EventDataTx, got %T", resultEvt.Data)
 	}
 
-	var cometTxEvent CometTxEvent
-	// Try to deserialize the provided bytes into a CometTxEvent.
-	if err := json.Unmarshal(rpcResponse.Result, &cometTxEvent); err != nil {
-		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
-	}
-
-	// Check if the TxResult has empty transaction bytes, which indicates
-	// the message might not be a valid transaction event.
-	if bytes.Equal(cometTxEvent.Data.Value.TxResult.Tx, []byte{}) {
-		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an abci.TxResult")
-	}
-
-	return &cometTxEvent.Data.Value.TxResult, nil
+	return &txResult.TxResult, nil
 }

@@ -10,7 +10,8 @@ set -e
 
 # Default configuration
 DEFAULT_ENV="beta"
-PARAM_DIR="tools/scripts/params/bulk_params"
+# PARAM_DIR must be specified by the user if needed; no default is set
+PARAM_DIR=""
 GOV_PARAM_SCRIPT="./tools/scripts/params/gov_params.sh"
 
 # Parameter files to update
@@ -26,9 +27,16 @@ POCKET_PARAM_FILES=(
   slashing_params.json
 )
 
+# TODO(@olshansk): These are intentionally commented out to avoid accidental overwrite
+# of Cosmos default SDK values.
 COSMOS_PARAM_FILES=(
-  mint_params.json
-  staking_params.json
+  # mint_params.json
+  # staking_params.json
+  # auth_params.json
+  # bank_params.json
+  # gov_params.json
+  # slashing_params.json
+  # distribution_params.json
 )
 
 get_local_config() {
@@ -89,21 +97,21 @@ ENVIRONMENTS:
   main    Update parameters on main network
 
 OPTIONS:
-  -h, --help    Show this help message
-  -n, --dry-run Show commands that would be executed without running them
-  -v, --verbose Enable verbose output
-  --gov-only    Only run governance parameters (from gov_params.sh)
-  --state-only  Only run state shift parameters (default behavior)
+  -h, --help              Show this help message
+  -n, --dry-run           Show commands that would be executed without running them
+  -v, --verbose           Enable verbose output
+  --gov-only              Only run governance parameters (from gov_params.sh)
+  --state-only            Only run state shift parameters (default behavior)
+  --param-dir=DIR         Specify parameter directory (required for state/gov param updates)
 
 EXAMPLES:
-  $0                    # Update beta network with state shift params
-  $0 beta               # Same as above
-  $0 main               # Update main network
-  $0 beta --dry-run     # Show what would be executed on beta
-  $0 main --gov-only    # Run only governance params on main
+  $0 main --param-dir=tools/scripts/params/bulk_params_main   # Update main network with main-specific params
+  $0 beta --param-dir=tools/scripts/params/bulk_params_beta   # Update beta network with beta-specific params
+  $0 alpha --param-dir=tools/scripts/params/bulk_params_alpha # Update alpha network with alpha-specific params
+  $0 local --param-dir=./custom_params                        # Use custom parameter directory
 
 PARAMETER FILES:
-  State shift parameters from: $PARAM_DIR/
+  State shift parameters from: [specified directory, must be specified with --param-dir]
   Pocket parameters:
 $(printf "  - %s\n" "${POCKET_PARAM_FILES[@]}")
   Cosmos SDK parameters:
@@ -139,9 +147,10 @@ CONFIGURATION:
 
 NOTES:
   - Ensure you have the correct keyring access for the target environment
-  - All parameter files must exist in the specified directory
+  - All parameter files must exist in the specified directory (must be set with --param-dir)
   - Use --dry-run to verify commands before execution
   - For governance parameters, see $GOV_PARAM_SCRIPT for details
+  - You will be prompted for confirmation before executing transactions
 
 EOF
 }
@@ -172,6 +181,9 @@ validate_environment() {
 validate_files() {
   log "Validating parameter files..."
 
+  if [[ -z "$PARAM_DIR" ]]; then
+    error "PARAM_DIR is not set. Use --param-dir to specify the parameter directory."
+  fi
   if [[ ! -d "$PARAM_DIR" ]]; then
     error "Parameter directory not found: $PARAM_DIR"
   fi
@@ -225,6 +237,56 @@ run_command() {
   fi
 }
 
+prompt_confirmation() {
+  local env="$1"
+  local mode="$2"
+
+  echo ""
+  echo "========================================="
+  echo "⚠️  TRANSACTION CONFIRMATION REQUIRED ⚠️"
+  echo "========================================="
+  echo "Environment: $env"
+  echo "Mode: $mode"
+  echo "Parameter Directory: $PARAM_DIR"
+  echo "Chain ID: $(get_config_value "$env" "chain_id")"
+  echo "Node: $(get_config_value "$env" "node")"
+  echo "From Address: $(get_config_value "$env" "from")"
+  echo ""
+
+  if [[ "$mode" == "state" || "$mode" == "both" ]]; then
+    echo "Files to process:"
+    for file in "${POCKET_PARAM_FILES[@]}" "${COSMOS_PARAM_FILES[@]}"; do
+      echo "  - ${PARAM_DIR:-"(not set)"}/$file"
+    done
+  fi
+
+  if [[ "$mode" == "gov" || "$mode" == "both" ]]; then
+    echo "Governance script: $GOV_PARAM_SCRIPT"
+  fi
+
+  echo ""
+  echo "This will execute blockchain transactions that cannot be undone."
+  echo "========================================="
+
+  while true; do
+    read -p "Do you want to proceed? (yes/no): " yn
+    case $yn in
+    [Yy]es | [Yy])
+      echo "Proceeding with parameter updates..."
+      echo ""
+      break
+      ;;
+    [Nn]o | [Nn])
+      echo "Operation cancelled by user."
+      exit 0
+      ;;
+    *)
+      echo "Please answer 'yes' or 'no'."
+      ;;
+    esac
+  done
+}
+
 update_state_params() {
   local env="$1"
 
@@ -243,7 +305,6 @@ update_state_params() {
 
     local cmd="pocketd tx authz exec \"$PARAM_DIR/$file\" \
       --from=$from \
-      --keyring-backend=$keyring_backend \
       --chain-id=$chain_id \
       --node=\"$node\" \
       --yes \
@@ -261,7 +322,6 @@ update_state_params() {
 
     local cmd="pocketd tx authz exec \"$PARAM_DIR/$file\" \
       --from=$from \
-      --keyring-backend=$keyring_backend \
       --chain-id=$chain_id \
       --node=\"$node\" \
       --yes \
@@ -316,6 +376,18 @@ main() {
       mode="state"
       shift
       ;;
+    --param-dir=*)
+      PARAM_DIR="${1#*=}"
+      shift
+      ;;
+    --param-dir)
+      if [[ -n "$2" && "$2" != -* ]]; then
+        PARAM_DIR="$2"
+        shift 2
+      else
+        error "--param-dir requires a directory path"
+      fi
+      ;;
     local | alpha | beta | main)
       env="$1"
       env_provided=true
@@ -340,12 +412,23 @@ main() {
   echo "=== Parameter Update Configuration ==="
   echo "Environment: $env"
   echo "Mode: $mode"
+  echo "Parameter Directory: $PARAM_DIR"
   echo "Dry run: ${DRY_RUN:-false}"
   echo "Verbose: ${VERBOSE:-false}"
   echo "======================================"
 
+  # Validate that PARAM_DIR is set if mode is not gov-only
+  if [[ "$mode" != "gov" && -z "$PARAM_DIR" ]]; then
+    error "--param-dir must be specified for parameter updates."
+  fi
+
   # Validate files exist
   validate_files
+
+  # Prompt for confirmation (skip if dry run)
+  if [[ "${DRY_RUN:-false}" != "true" ]]; then
+    prompt_confirmation "$env" "$mode"
+  fi
 
   # Execute based on mode
   case "$mode" in

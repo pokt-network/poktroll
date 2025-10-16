@@ -12,11 +12,11 @@ import (
 	"cosmossdk.io/math"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	"github.com/cometbft/cometbft/libs/json"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pokt-network/smt"
@@ -30,10 +30,10 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -71,11 +71,6 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	// Prepare a new test keyring with a test signing key.
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
-	// Construct a new mock events query client
-	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
-		ctx, t, signingKey, txResultsBzPublishChMu, &txResultsBzPublishCh,
-	)
-
 	// Construct a new mock transactions context
 	txCtxMock := testtx.NewOneTimeTxTxContext(
 		t, keyring,
@@ -92,7 +87,6 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Construct a new depinject config with the mocks we created above.
 	txClientDeps := depinject.Supply(
-		eventsQueryClient,
 		txCtxMock,
 		blockClientMock,
 	)
@@ -113,7 +107,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
 	// We're using StakeApplication but it could have been any other message type.
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -122,7 +116,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Sign and broadcast the message.
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, errCh := eitherErr.SyncOrAsyncError()
+	errCh, err := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
 	// Construct the expected RPC response from the expected transaction bytes.
@@ -186,11 +180,6 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 				ctx  = context.Background()
 			)
 
-			// Construct a new mock events query client. Since we expect the
-			// NewTxClient call to fail, we don't need to set any expectations
-			// on this mock.
-			eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
-
 			// Construct a new mock transactions context.
 			txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, memKeyring)
 
@@ -200,9 +189,9 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 
 			// Construct a new depinject config with the mocks we created above.
 			txClientDeps := depinject.Supply(
-				eventsQueryClient,
 				txCtxMock,
 				blockClientMock,
+				polylog.DefaultContextLogger,
 			)
 
 			// Attempt to create the transactions client.
@@ -215,30 +204,11 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 
 func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	var (
-		// txResultsBzPublishChMu is a mutex that protects txResultsBzPublishCh from concurrent access
-		// as it is expected to be updated in a mock method but is also sent on in the test.
-		txResultsBzPublishChMu = new(sync.Mutex)
-		// txResultsBzPublishCh is the channel that the mock events query client
-		// will use to publish the transactions event bytes. It is not used in
-		// this test but is required to use the NewOneTimeTxEventsQueryClient
-		// helper.
-		txResultsBzPublishCh chan<- either.Bytes
-		// blocksPublishCh is the channel that the mock block client will use
-		// to publish the latest block. It is not used in this test but is
-		// required to use the NewOneTimeCommittedBlocksSequenceBlockClient
-		// helper.
 		blocksPublishCh chan client.Block
 		ctx             = context.Background()
 	)
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
-
-	// Construct a new mock events query client. Since we expect the
-	// NewTxClient call to fail, we don't need to set any expectations
-	// on this mock.
-	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
-		ctx, t, signingKey, txResultsBzPublishChMu, &txResultsBzPublishCh,
-	)
 
 	// Construct a new mock transaction context.
 	txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, keyring)
@@ -251,11 +221,20 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		t, blocksPublishCh,
 	)
 
+	// Set up the CometBFT HTTP client mock
+	ctrl := gomock.NewController(t)
+	cometHTTPClientMock := mockclient.NewMockClient(ctrl)
+	cometHTTPClientMock.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(make(chan coretypes.ResultEvent), nil).
+		AnyTimes()
+
 	// Construct a new depinject config with the mocks we created above.
 	txClientDeps := depinject.Supply(
-		eventsQueryClient,
 		txCtxMock,
+		cometHTTPClientMock,
 		blockClientMock,
+		polylog.DefaultContextLogger,
 	)
 
 	// Construct the transaction client.
@@ -277,7 +256,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	}
 
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, _ = eitherErr.SyncOrAsyncError()
+	_, err = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrInvalidMsg)
 
 	time.Sleep(10 * time.Millisecond)
@@ -289,16 +268,9 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 		// expectedErrMsg is the expected error message that will be returned
 		// by the transaction client. It is computed and assigned in the
 		// testtx.NewOneTimeErrCheckTxTxContext helper function.
-		expectedErrMsg string
-		// txResultsBzPublishChMu is a mutex that protects txResultsBzPublishCh from concurrent access
-		// as it is expected to be updated in a mock method but is also sent on in the test.
-		txResultsBzPublishChMu = new(sync.Mutex)
-		// txResultsBzPublishCh is the channel that the mock events query client
-		// will use to publish the transactions event bytes. It is used near the end of
-		// the test to mock the network signaling that the transactions was committed.
-		txResultsBzPublishCh chan<- either.Bytes
-		blocksPublishCh      chan client.Block
-		ctx                  = context.Background()
+		expectedErrMsg  string
+		blocksPublishCh chan client.Block
+		ctx             = context.Background()
 	)
 
 	if os.Getenv("INCLUDE_FLAKY_TESTS") != "true" {
@@ -312,10 +284,6 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	}
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
-
-	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
-		ctx, t, signingKey, txResultsBzPublishChMu, &txResultsBzPublishCh,
-	)
 
 	txCtxMock := testtx.NewOneTimeErrCheckTxTxContext(
 		t, keyring,
@@ -331,10 +299,18 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 		t, blocksPublishCh,
 	)
 
+	// Set up the CometBFT HTTP client mock
+	ctrl := gomock.NewController(t)
+	cometHTTPClientMock := mockclient.NewMockClient(ctrl)
+	cometHTTPClientMock.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(make(chan coretypes.ResultEvent), nil).
+		AnyTimes()
+
 	// Construct a new depinject config with the mocks we created above.
 	txClientDeps := depinject.Supply(
-		eventsQueryClient,
 		txCtxMock,
+		cometHTTPClientMock,
 		blockClientMock,
 	)
 
@@ -346,7 +322,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -355,27 +331,20 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 
 	// Sign and broadcast the message.
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, _ = eitherErr.SyncOrAsyncError()
+	_, err = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrCheckTx)
 	require.ErrorContains(t, err, expectedErrMsg)
 }
 
 func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	var (
-		timeoutHeight = int64(5)
+		timeoutHeight = int64(6)
 		// expectedErrMsg is the expected error message that will be returned
 		// by the transaction client. It is computed and assigned in the
 		// testtx.NewOneTimeErrCheckTxTxContext helper function.
-		expectedErrMsg string
-		// txResultsBzPublishChMu is a mutex that protects txResultsBzPublishCh from concurrent access
-		// as it is expected to be updated in a mock method but is also sent on in the test.
-		txResultsBzPublishChMu = new(sync.Mutex)
-		// txResultsBzPublishCh is the channel that the mock events query client
-		// will use to publish the transaction event bytes. It is used near the end of
-		// the test to mock the network signaling that the transaction was committed.
-		txResultsBzPublishCh chan<- either.Bytes
-		blocksPublishCh      = make(chan client.Block, timeoutHeight)
-		ctx                  = context.Background()
+		expectedErrMsg  string
+		blocksPublishCh = make(chan client.Block, timeoutHeight)
+		ctx             = context.Background()
 
 		// Trie related variables
 		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
@@ -383,10 +352,6 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	)
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
-
-	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
-		ctx, t, signingKey, txResultsBzPublishChMu, &txResultsBzPublishCh,
-	)
 
 	txCtxMock := testtx.NewOneTimeErrTxTimeoutTxContext(
 		t, keyring,
@@ -402,11 +367,20 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 		t, blocksPublishCh,
 	)
 
+	// Set up the CometBFT HTTP client mock
+	ctrl := gomock.NewController(t)
+	cometHTTPClientMock := mockclient.NewMockClient(ctrl)
+	cometHTTPClientMock.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(make(chan coretypes.ResultEvent), nil).
+		AnyTimes()
+
 	// Construct a new depinject config with the mocks we created above.
 	txClientDeps := depinject.Supply(
-		eventsQueryClient,
 		txCtxMock,
+		cometHTTPClientMock,
 		blockClientMock,
+		polylog.DefaultContextLogger,
 	)
 
 	// Construct the transaction client.
@@ -421,7 +395,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -430,7 +404,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 
 	// Sign and broadcast the message in a transaction.
 	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
-	err, errCh := eitherErr.SyncOrAsyncError()
+	errCh, err := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
 	for i := int64(0); i < timeoutHeight; i++ {
@@ -468,15 +442,6 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 		// - Same reference needs to be used across expectations set on the transactions context mock
 		expectedTxBz cometbytes.HexBytes
 
-		// txResultsBzPublishCh is the channel for mock events query client to publish transaction event bytes
-		// - Not used in this test
-		// - Required to use the NewOneTimeTxEventsQueryClient helper
-		txResultsBzPublishCh chan<- either.Bytes
-
-		// txResultsBzPublishChMu protects txResultsBzPublishCh from concurrent access
-		// - Expected to be updated in a mock method but also sent on in the test
-		txResultsBzPublishChMu = new(sync.Mutex)
-
 		// blocksPublishCh is the channel for mock block client to publish the latest block
 		// - Not used in this test
 		// - Required to use the NewOneTimeCommittedBlocksSequenceBlockClient helper
@@ -486,13 +451,6 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 	)
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
-
-	// Construct a new mock events query client. Since we expect the
-	// NewTxClient call to fail, we don't need to set any expectations
-	// on this mock.
-	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
-		ctx, t, signingKey, txResultsBzPublishChMu, &txResultsBzPublishCh,
-	)
 
 	// Instruct the tx client to return an error when submitting a transaction.
 	callStatus := &callStatus{
@@ -510,11 +468,20 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 		t, blocksPublishCh,
 	)
 
+	// Set up the CometBFT HTTP client mock
+	ctrl := gomock.NewController(t)
+	cometHTTPClientMock := mockclient.NewMockClient(ctrl)
+	cometHTTPClientMock.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(make(chan coretypes.ResultEvent), nil).
+		AnyTimes()
+
 	// Construct a new depinject config with the mocks we created above.
 	txClientDeps := depinject.Supply(
-		eventsQueryClient,
 		txCtxMock,
+		cometHTTPClientMock,
 		blockClientMock,
+		polylog.DefaultContextLogger,
 	)
 
 	// Construct the transaction client.
@@ -531,7 +498,7 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
 	// We're using StakeApplication but it could have been any other message type.
-	appStake := types.NewCoin(pocket.DenomuPOKT, math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin(pocket.DenomuPOKT, math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingAddr.String(), // Providing address to avoid panic from #GetSigners().
 		Stake:    &appStake,
@@ -699,6 +666,13 @@ func TestTxClient_GasConfig(t *testing.T) {
 			keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 			ctrl := gomock.NewController(t)
 
+			// Set up the CometBFT HTTP client mock
+			cometHTTPClientMock := mockclient.NewMockClient(ctrl)
+			cometHTTPClientMock.EXPECT().
+				Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(make(chan coretypes.ResultEvent), nil).
+				AnyTimes()
+
 			// Create a mock tx context that will capture the tx builder for inspection
 			txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, keyring)
 			var txBuilder cosmosclient.TxBuilder
@@ -715,28 +689,13 @@ func TestTxClient_GasConfig(t *testing.T) {
 					Return(uint64(100000), nil).AnyTimes()
 
 				// Other required methods to pass validation
-				txCtxMock.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				txCtxMock.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil).AnyTimes()
 				txCtxMock.EXPECT().EncodeTx(gomock.Any()).
 					Return([]byte("test-tx"), nil).AnyTimes()
 				txCtxMock.EXPECT().BroadcastTx(gomock.Any()).
 					Return(&cosmostypes.TxResponse{Code: 0, TxHash: "test-hash"}, nil).AnyTimes()
 			}
-
-			// Set up events query client mock
-			eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
-
-			// Add expectation for EventsBytes
-			eventsQueryClient.EXPECT().EventsBytes(
-				gomock.Any(),
-				gomock.Any(),
-			).DoAndReturn(func(ctx context.Context, query string) (client.EventsBytesObservable, error) {
-				obs, _ := channel.NewObservable[either.Bytes]()
-				return obs, nil
-			}).AnyTimes()
-
-			// Add expectation for Close
-			eventsQueryClient.EXPECT().Close().AnyTimes()
 
 			// Set up block client mock with CommittedBlocksSequence expectation
 			blockClientMock := mockclient.NewMockBlockClient(ctrl)
@@ -757,9 +716,10 @@ func TestTxClient_GasConfig(t *testing.T) {
 
 			// Create dependency injection config
 			deps := depinject.Supply(
-				eventsQueryClient,
+				cometHTTPClientMock,
 				txCtxMock,
 				blockClientMock,
+				polylog.DefaultContextLogger,
 			)
 
 			// Create the client

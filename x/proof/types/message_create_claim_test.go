@@ -25,7 +25,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: types.MsgCreateClaim{
 				SupplierOperatorAddress: "invalid_address",
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
@@ -35,12 +35,12 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrProofInvalidAddress,
 		},
 		{
-			desc: "valid supplier operator address but invalid session start height",
+			desc: "invalid session start height",
 
 			msg: types.MsgCreateClaim{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "svcId",
 					SessionStartBlockHeight: -1,
 					SessionEndBlockHeight:   101,
@@ -50,12 +50,12 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrProofInvalidSessionHeader,
 		},
 		{
-			desc: "valid supplier operator address and session start height but invalid session ID",
+			desc: "invalid session ID",
 
 			msg: types.MsgCreateClaim{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
@@ -65,12 +65,12 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrProofInvalidSessionHeader,
 		},
 		{
-			desc: "valid operator address, session start height, session ID but invalid service",
+			desc: "invalid service",
 
 			msg: types.MsgCreateClaim{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "invalid service id",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
@@ -80,12 +80,12 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrProofInvalidSessionHeader,
 		},
 		{
-			desc: "valid operator address, session start height, session ID, service but with 0 root hash length",
+			desc: "invalid 0 length root hash length",
 
 			msg: types.MsgCreateClaim{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
@@ -96,11 +96,11 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrProofInvalidClaimRootHash,
 		},
 		{
-			desc: "valid operator address, session start height, session ID, service but root hash too short",
+			desc: "invalid root hash, too short",
 			msg: types.MsgCreateClaim{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
@@ -111,11 +111,11 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrProofInvalidClaimRootHash,
 		},
 		{
-			desc: "valid operator address, session start height, session ID, service but root hash too long",
+			desc: "invalid root hash, too long",
 			msg: types.MsgCreateClaim{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
@@ -126,11 +126,11 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrProofInvalidClaimRootHash,
 		},
 		{
-			desc: "valid operator address, session start height, session ID, service and valid root hash length but with 0 relays count",
+			desc: "invalid root hash, 0 relays count",
 			msg: types.MsgCreateClaim{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
@@ -141,11 +141,11 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrProofInvalidClaimRootHash,
 		},
 		{
-			desc: "valid operator address, session start height, session ID, service and valid root hash length but with zero compute units",
+			desc: "invalid root hash, zero compute units",
 			msg: types.MsgCreateClaim{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
@@ -156,11 +156,11 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrProofInvalidClaimRootHash,
 		},
 		{
-			desc: "valid root hash",
+			desc: "valid create claim message",
 			msg: types.MsgCreateClaim{
-				SupplierOperatorAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddressBech32(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress:      sample.AccAddress(),
+					ApplicationAddress:      sample.AccAddressBech32(),
 					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
@@ -183,14 +183,14 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 	}
 }
 
-// tooShortSMSTRoot returns a valid SMST root with the given sum and count but
-// reduces the size to be one byte shorter than the expected size.
+// tooShortSMSTRoot returns an invalid SMST root hash with the given sum and count
+// by reducing the size of a valid SMST root hash by one byte,
 func tooShortSMSTRoot(t *testing.T) []byte {
 	return testproof.RandSmstRootWithSumAndCount(t, 1, 1)[:protocol.TrieRootSize-1]
 }
 
-// tooLongSMSTRoot returns a valid SMST root with the given sum and count but adds
-// an extra byte to make it longer than the expected size.
+// tooLongSMSTRoot returns an invalid SMST root hash with the given sum and count
+// by adding an extra byte to a valid SMST root hash.
 func tooLongSMSTRoot(t *testing.T) []byte {
 	smstRoot := testproof.RandSmstRootWithSumAndCount(t, 1, 1)
 

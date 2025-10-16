@@ -3,11 +3,11 @@ package types
 import (
 	"context"
 	"math/big"
-	"time"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // IsClaimed returns true if the MorseClaimableAccount has been claimed;
@@ -24,17 +24,23 @@ func (m *MorseClaimableAccount) IsUnbonding() bool {
 	return !m.UnstakingTime.IsZero()
 }
 
-// HasUnbonded indicates that the MorseClaimableAccount began unbonding on Morse
-// and the unbonding period has elapsed. E.g., the supplier was claimed > 21 days
-// after it began unbonding.
-func (m *MorseClaimableAccount) HasUnbonded() bool {
-	return m.IsUnbonding() && m.SecondsUntilUnbonded() <= 0
+// HasUnbonded indicates that:
+// 1. the MorseClaimableAccount began unbonding on Morse
+// 2. The unbonding period has elapsed.
+// For example, the supplier was claimed on Shannon > 21 days after it began unbonding on Morse.
+func (m *MorseClaimableAccount) HasUnbonded(ctx context.Context) bool {
+	return m.IsUnbonding() && m.SecondsUntilUnbonded(ctx) <= 0
 }
 
 // SecondsUntilUnbonded returns the number of seconds until the MorseClaimableAccount's
 // unbonding period will elapse.
-func (m *MorseClaimableAccount) SecondsUntilUnbonded() int64 {
-	return int64(time.Until(m.UnstakingTime).Seconds())
+func (m *MorseClaimableAccount) SecondsUntilUnbonded(ctx context.Context) int64 {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	absoluteUnstakingTime := m.UnstakingTime
+	absoluteBlockTime := sdkCtx.BlockTime()
+	durationUntilUnbonded := absoluteUnstakingTime.Sub(absoluteBlockTime)
+	secondsUntilUnbonded := durationUntilUnbonded.Seconds()
+	return int64(secondsUntilUnbonded)
 }
 
 // GetEstimatedUnbondingEndHeight returns the estimated block height at which the
@@ -47,7 +53,10 @@ func (m *MorseClaimableAccount) SecondsUntilUnbonded() int64 {
 // Returns:
 // - The estimated block height when unbonding will end.
 // - true if the unbonding period has not yet elapsed.
-func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Context) (height int64, isUnbonded bool) {
+func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(
+	ctx context.Context,
+	sharedParams sharedtypes.Params,
+) (height int64, isUnbonded bool) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	// Retrieve the estimated block duration for the current chain from a lookup table.
@@ -62,21 +71,24 @@ func (m *MorseClaimableAccount) GetEstimatedUnbondingEndHeight(ctx context.Conte
 	//   - Calculate the remaining duration until unstaking.
 	//   - If the duration is zero or negative, the unstaking period has elapsed.
 	//   - Return -1 to indicate that unbonding is complete.
-	durationUntilUnstakeCompletion := time.Until(m.UnstakingTime)
-	if durationUntilUnstakeCompletion <= 0 {
+	secondsUntilUnstakeCompletion := m.UnstakingTime.Sub(sdkCtx.BlockTime()).Seconds()
+	if secondsUntilUnstakeCompletion <= 0 {
 		return -1, true
 	}
 
 	// Calculate the estimated Shannon unstake session end height.
 	// I.e. the end height of the session after which the claimed
 	// Shannon supplier will be unstaked.
-	estimatedBlocksUntilUnstakeCompletion := big.NewRat(int64(durationUntilUnstakeCompletion), int64(estimatedBlockDuration))
-	estimatedUnstakeCompletionHeight := new(big.Rat).Add(
+	estimatedBlocksUntilUnstakeCompletion := big.NewRat(int64(secondsUntilUnstakeCompletion), int64(estimatedBlockDuration))
+	estimatedUnstakeCompletionHeightRat := new(big.Rat).Add(
 		big.NewRat(sdkCtx.BlockHeight(), 1),
 		estimatedBlocksUntilUnstakeCompletion,
 	)
-	return new(big.Int).Div(
-		estimatedUnstakeCompletionHeight.Num(),
-		estimatedUnstakeCompletionHeight.Denom(),
-	).Int64(), false
+	estimatedUnstakeCompletionHeight := new(big.Int).Div(
+		estimatedUnstakeCompletionHeightRat.Num(),
+		estimatedUnstakeCompletionHeightRat.Denom(),
+	).Int64()
+	expectedUnstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, estimatedUnstakeCompletionHeight)
+
+	return expectedUnstakeSessionEndHeight, false
 }

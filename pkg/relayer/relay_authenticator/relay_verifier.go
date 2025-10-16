@@ -3,6 +3,7 @@ package relay_authenticator
 import (
 	"context"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -66,7 +67,9 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	// - applicationAddress (which is used to verify the relayRequest signature)
 	if session.SessionId != sessionHeader.GetSessionId() {
 		return ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"session ID mismatch, expecting: %+v, got: %+v",
+			"session ID mismatch, expecting: %s, got: %s. "+
+				"This may indicate a full node synchronization issue. "+
+				"Please verify your full node is in sync and not overwhelmed with websocket connections.",
 			session.GetSessionId(),
 			relayRequest.Meta.GetSessionHeader().GetSessionId(),
 		)
@@ -75,7 +78,10 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
 	_, isSupplierOperatorAddressPresent := ra.operatorAddressToSigningKeyNameMap[meta.GetSupplierOperatorAddress()]
 	if !isSupplierOperatorAddressPresent {
-		return ErrRelayAuthenticatorMissingSupplierOperatorAddress
+		return ErrRelayAuthenticatorMissingSupplierOperatorAddress.Wrapf(
+			"supplier operator address %s is not present in the signing key names map",
+			meta.GetSupplierOperatorAddress(),
+		)
 	}
 
 	for _, supplier := range session.Suppliers {
@@ -88,6 +94,59 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 	return ErrRelayAuthenticatorInvalidSessionSupplier
 }
 
+// CheckRelayRewardEligibility verifies the relay's session hasn't expired for reward
+// purposes by ensuring the current block height hasn't reached the claim window yet.
+// Returns an error if the relay is no longer eligible for rewards.
+func (ra *relayAuthenticator) CheckRelayRewardEligibility(
+	ctx context.Context,
+	relayRequest *servicetypes.RelayRequest,
+) error {
+	currentBlock := ra.blockClient.LastBlock(ctx)
+	currentHeight := currentBlock.Height()
+
+	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"📊 Chain head at height %d (block hash: %X) during reward eligibility check",
+		currentHeight,
+		currentBlock.Hash(),
+	)
+
+	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+
+	sessionClaimOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
+		sharedParams,
+		relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight(),
+	)
+
+	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"⏳ Checking relay reward eligibility - relay must be processed before claim window opens at height %d",
+		sessionClaimOpenHeight,
+	)
+
+	// If current height is equal or greater than the claim window opening height,
+	// the relay is no longer eligible for rewards as the session has expired
+	// for reward purposes
+	if currentHeight >= sessionClaimOpenHeight {
+		return ErrRelayAuthenticatorInvalidSession.Wrapf(
+			"session expired, must be before claim window open height (%d), but current height is (%d). "+
+				"This may indicate a full node synchronization issue. "+
+				"Please verify your full node is in sync and not overwhelmed with websocket connections.",
+			sessionClaimOpenHeight,
+			currentHeight,
+		)
+	}
+
+	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"✅ Relay is eligible for rewards - current height (%d) < claim window open height (%d)",
+		currentHeight,
+		sessionClaimOpenHeight,
+	)
+
+	return nil
+}
+
 // getTargetSessionBlockHeight returns the block height at which the session
 // for the given relayRequest should be processed.
 //   - If the session is within the grace period, the session's end block height is returned.
@@ -97,7 +156,14 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	ctx context.Context,
 	relayRequest *servicetypes.RelayRequest,
 ) (sessionHeight int64, err error) {
-	currentHeight := ra.blockClient.LastBlock(ctx).Height()
+	currentBlock := ra.blockClient.LastBlock(ctx)
+	currentHeight := currentBlock.Height()
+
+	ra.logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msgf(
+		"📊 Chain head at height %d (block hash: %X) during session validation",
+		currentHeight,
+		currentBlock.Hash(),
+	)
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
 	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
@@ -116,7 +182,8 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 		}
 
 		return 0, ErrRelayAuthenticatorInvalidSession.Wrapf(
-			"session expired, expecting: %d, got: %d",
+			"session expired, expecting: %d, got: %d. "+
+				"This may indicate network delay or RelayMiner overload.",
 			sessionEndHeight,
 			currentHeight,
 		)

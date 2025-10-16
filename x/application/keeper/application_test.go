@@ -13,10 +13,13 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/application/keeper"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
+
+func init() {
+	cmd.InitSDKConfig()
+}
 
 // Test constants
 const (
@@ -51,20 +54,20 @@ const (
 var _ = strconv.IntSize
 
 // testAppModifier represents any function that can be used to modify an application being instantiated for testing purposes.
-type testAppModifier func(app *types.Application)
+type testAppModifier func(app *apptypes.Application)
 
-func createNApplications(keeper keeper.Keeper, ctx context.Context, n int, testAppModifiers ...testAppModifier) []types.Application {
-	apps := make([]types.Application, n)
+func createNApplications(k appkeeper.Keeper, ctx context.Context, n int, testAppModifiers ...testAppModifier) []apptypes.Application {
+	apps := make([]apptypes.Application, n)
 	for i := range apps {
 		apps[i].Address = strconv.Itoa(i)
 		// Setting pending undelegations since nullify.Fill() does not seem to do it.
-		apps[i].PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+		apps[i].PendingUndelegations = make(map[uint64]apptypes.UndelegatingGatewayList)
 
 		for _, modifier := range testAppModifiers {
 			modifier(&apps[i])
 		}
 
-		keeper.SetApplication(ctx, apps[i])
+		k.SetApplication(ctx, apps[i])
 	}
 	return apps
 }
@@ -72,21 +75,17 @@ func createNApplications(keeper keeper.Keeper, ctx context.Context, n int, testA
 // testAppModifierDelegateeAddr adds the supplied gateway address to the application's delegatee list if the application's address matches
 // the supplied address list.
 func withAppDelegateeGatewayAddr(delegateeGatewayAddr string, appsWithDelegationAddr []string) testAppModifier {
-	return func(app *types.Application) {
+	return func(app *apptypes.Application) {
 		if slices.Contains(appsWithDelegationAddr, app.Address) {
 			app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, delegateeGatewayAddr)
 		}
 	}
 }
 
-func init() {
-	cmd.InitSDKConfig()
-}
-
 // The module address is derived off of its semantic name.
 // This test is a helper for us to easily identify the underlying address.
 func TestModuleAddressApplication(t *testing.T) {
-	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
+	moduleAddress := authtypes.NewModuleAddress(apptypes.ModuleName)
 	require.Equal(t, "pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm", moduleAddress.String())
 }
 
@@ -127,7 +126,7 @@ func TestApplicationGetAllIterator(t *testing.T) {
 	allAppsIterator := keeper.GetAllApplicationsIterator(ctx)
 	defer allAppsIterator.Close()
 
-	retrievedApps := make([]types.Application, 0)
+	retrievedApps := make([]apptypes.Application, 0)
 	for ; allAppsIterator.Valid(); allAppsIterator.Next() {
 		app, err := allAppsIterator.Value()
 		require.NoError(t, err)
@@ -156,7 +155,7 @@ func TestApplication_GetAllUnstakingApplicationsIterator(t *testing.T) {
 
 	// Count unstaking applications from iterator
 	unstakingCount := 0
-	unstakingApps := make([]types.Application, 0)
+	unstakingApps := make([]apptypes.Application, 0)
 	for ; iterator.Valid(); iterator.Next() {
 		app, err := iterator.Value()
 		require.NoError(t, err)
@@ -179,8 +178,8 @@ func TestApplication_GetAllTransferringApplicationsIterator(t *testing.T) {
 	// Create 10 applications, 5 with pending transfers
 	apps := createNApplications(keeper, ctx, totalApplicationCount)
 	for i := transferringApplicationStartIndex; i < transferringApplicationEndIndex; i++ {
-		apps[i].PendingTransfer = &types.PendingApplicationTransfer{
-			DestinationAddress: sample.AccAddress(),
+		apps[i].PendingTransfer = &apptypes.PendingApplicationTransfer{
+			DestinationAddress: sample.AccAddressBech32(),
 			SessionEndHeight:   sessionEndHeight,
 		}
 		keeper.SetApplication(ctx, apps[i])
@@ -192,7 +191,7 @@ func TestApplication_GetAllTransferringApplicationsIterator(t *testing.T) {
 
 	// Count transferring applications from iterator
 	transferringCount := 0
-	transferringApps := make([]types.Application, 0)
+	transferringApps := make([]apptypes.Application, 0)
 	for ; iterator.Valid(); iterator.Next() {
 		app, err := iterator.Value()
 		require.NoError(t, err)
@@ -213,12 +212,12 @@ func TestApplication_GetDelegationsIterator(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
 
 	// Create a gateway address that some applications will delegate to
-	targetGatewayAddr := sample.AccAddress()
+	targetGatewayAddr := sample.AccAddressBech32()
 
 	// Create 10 applications, with 4 delegating to our test gateway
 	commonDelegateeGatewayAddrs := make([]string, commonDelegateeCount)
 	for i := 0; i < commonDelegateeCount; i++ {
-		commonDelegateeGatewayAddrs[i] = sample.AccAddress()
+		commonDelegateeGatewayAddrs[i] = sample.AccAddressBech32()
 	}
 	apps := createNApplications(keeper, ctx, totalApplicationCount)
 
@@ -240,7 +239,7 @@ func TestApplication_GetDelegationsIterator(t *testing.T) {
 
 	// Count delegating applications from iterator
 	delegatingCount := 0
-	delegatingApps := make([]types.Application, 0)
+	delegatingApps := make([]apptypes.Application, 0)
 	for ; iterator.Valid(); iterator.Next() {
 		app, err := iterator.Value()
 		require.NoError(t, err)
@@ -265,34 +264,34 @@ func TestApplication_GetUndelegationsIterator(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
 
 	// Create gateway addresses for undelegations
-	gateway1 := sample.AccAddress()
-	gateway2 := sample.AccAddress()
-	gateway3 := sample.AccAddress()
+	gateway1 := sample.AccAddressBech32()
+	gateway2 := sample.AccAddressBech32()
+	gateway3 := sample.AccAddressBech32()
 
 	// Create 5 applications with various undelegations
 	apps := createNApplications(keeper, ctx, undelegationAppsCount)
 
 	// Set up undelegations for app 0
-	height100Undelegations := types.UndelegatingGatewayList{
+	height100Undelegations := apptypes.UndelegatingGatewayList{
 		GatewayAddresses: []string{gateway3},
 	}
-	apps[0].PendingUndelegations = map[uint64]types.UndelegatingGatewayList{
+	apps[0].PendingUndelegations = map[uint64]apptypes.UndelegatingGatewayList{
 		sessionEndHeight: height100Undelegations,
 	}
 
 	// Set up undelegations for app 2
-	height150Undelegations := types.UndelegatingGatewayList{
+	height150Undelegations := apptypes.UndelegatingGatewayList{
 		GatewayAddresses: []string{gateway2},
 	}
-	apps[2].PendingUndelegations = map[uint64]types.UndelegatingGatewayList{
+	apps[2].PendingUndelegations = map[uint64]apptypes.UndelegatingGatewayList{
 		undelegationSessionEndHeight: height150Undelegations,
 	}
 
 	// Set up undelegations for app 4 with multiple heights and gateways
-	height200Undelegations := types.UndelegatingGatewayList{
+	height200Undelegations := apptypes.UndelegatingGatewayList{
 		GatewayAddresses: []string{gateway1, gateway2},
 	}
-	apps[4].PendingUndelegations = map[uint64]types.UndelegatingGatewayList{
+	apps[4].PendingUndelegations = map[uint64]apptypes.UndelegatingGatewayList{
 		sessionEndHeight:                        height100Undelegations,
 		alternativeUndelegationSessionEndHeight: height200Undelegations,
 	}

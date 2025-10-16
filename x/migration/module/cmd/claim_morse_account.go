@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
-	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -32,8 +32,7 @@ The unstaked balance amount of the onchain MorseAccount will be minted to the Sh
 This CLI will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
-		RunE:    runClaimAccount,
-		PreRunE: logger.PreRunESetup,
+		RunE: runClaimAccount,
 	}
 
 	// Add a string flag for providing a passphrase to decrypt the Morse keyfile.
@@ -124,14 +123,14 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
 	// Sign and broadcast the claim Morse account message.
 	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseAccount)
-	if err, _ = eitherErr.SyncOrAsyncError(); err != nil {
+	if _, err = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 

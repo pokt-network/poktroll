@@ -13,10 +13,17 @@ You can find a fully featured example configuration at [application1_stake_confi
 
 :::
 
+- [Gov Param References \& Values](#gov-param-references--values)
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`stake_amount`](#stake_amount)
   - [`service_ids`](#service_ids)
+
+## Gov Param References & Values
+
+- Application module governance params can be found [here](../../3_protocol/governance/2_gov_params.md).
+- Application module Beta parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_beta/application_params.json).
+- Application module Main parameter values can be found [here](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/params/bulk_params_main/application_params.json).
 
 ## Usage
 
@@ -69,7 +76,7 @@ The current protocol requires the `service_ids` list to contain **EXACTLY ONE** 
 to prevent `Application`s from over-servicing.
 
 A detailed explanation of why this is the case can be found in
-[Tokenomics/TLM](../../3_protocol/tokenomics/2_token_logic_modules.md).
+[Tokenomics/TLM](../../3_protocol/tokenomics/4_token_logic_modules_mint_equal_burn.md).
 
 :::
 

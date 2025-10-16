@@ -53,7 +53,7 @@ func (k Keeper) MorseClaimableAccount(
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	normalizedMorseAddress := encoding.NormalizeMorseHexAddress(req.Address)
+	normalizedMorseAddress := encoding.NormalizeMorseAddress(req.Address)
 	morseClaimableAccount, found := k.GetMorseClaimableAccount(
 		ctx,
 		normalizedMorseAddress,

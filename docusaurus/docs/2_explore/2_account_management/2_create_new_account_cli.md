@@ -30,29 +30,39 @@ pocketd keys show $USER -a
 
 This guide will walk you through creating a new wallet on the Pocket Network.
 
-- [What is a keyring backend?](#what-is-a-keyring-backend)
 - [Prerequisites: Install `pocketd`](#prerequisites-install-pocketd)
+- [Exporting \& Importing Hex Private Keys](#exporting--importing-hex-private-keys)
 - [Creating a new wallet Wallet](#creating-a-new-wallet-wallet)
 - [Backing Up Your Wallet](#backing-up-your-wallet)
 - [🔑 HD Derivation Path](#-hd-derivation-path)
-
-## What is a keyring backend?
-
-Before proceeding, it's critical to understand the implications of keyring backends
-for securing your wallet.
-
-By default, `--keyring-backend=test` is used for demonstration
-purposes in this documentation, suitable for initial testing.
-
-In production, operators should consider using a more secure keyring backend
-such as `os`, `file`, or `kwallet`. For more information on keyring backends,
-refer to the [Cosmos SDK Keyring documentation](https://docs.cosmos.network/main/user/run-node/keyring).
+- [Keyring Backends](#keyring-backends)
+  - [Keyring Directory Behavior: `--home`, `--keyring-backend`, and `--keyring-dir`](#keyring-directory-behavior---home---keyring-backend-and---keyring-dir)
 
 ## Prerequisites: Install `pocketd`
 
 Ensure you have `pocketd` installed on your system.
 
 Follow the [installation guide](1_pocketd_cli.md) specific to your operating system.
+
+## Exporting & Importing Hex Private Keys
+
+You can import a hex private key into your keyring like so:
+
+```bash
+pocketd keys import-hex <wallet_name> <hex_private_key>
+```
+
+And export a hex private key from your keyring like so:
+
+```bash
+pocketd keys export <wallet_name> --unsafe --unarmored-hex --yes
+```
+
+For more details, see:
+
+```bash
+pocketd keys --help
+```
 
 ## Creating a new wallet Wallet
 
@@ -115,3 +125,39 @@ pocketd keys add --help
 
 - **BIP-0044**: [bitcoin/bips/blob/master/bip-0044.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)
 - **SLIP-0044**: [satoshilabs/slips/blob/master/slip-0044.md](https://github.com/satoshilabs/slips/blob/master/slip-0044.md)
+
+## Keyring Backends
+
+Before proceeding, it's critical to understand the implications of keyring backends
+for securing your wallet.
+
+By default, `--keyring-backend=test` is used for demonstration
+purposes in this documentation, suitable for initial testing.
+
+In production, operators should consider using a more secure keyring backend
+such as `os`, `file`, or `kwallet`. For more information on keyring backends,
+refer to the [Cosmos SDK Keyring documentation](https://docs.cosmos.network/main/user/run-node/keyring).
+
+### Keyring Directory Behavior: `--home`, `--keyring-backend`, and `--keyring-dir`
+
+In the Cosmos SDK (and thus in `pocketd`):
+
+- `--home` sets the root directory for app state (default: `~/.pocket`)
+- `--keyring-backend` sets how keys are stored (`os`, `file`, `test`, `memory`)
+- `--keyring-dir` overrides where keys are stored, but still nests by backend
+
+**Example:**
+
+```bash
+pocketd keys list --home=. --keyring-backend=test --keyring-dir=./foo
+```
+
+This creates:
+
+```bash
+./foo/keyring-test/
+```
+
+So `--keyring-dir` works, but the backend (e.g. `test`) decides the final subfolder. That’s why you see `foo/keyring-test`.
+
+This creates the keyring directory inside of the path you provide to `--keyring-dir`, with a subfolder corresponding to the backend you choose.

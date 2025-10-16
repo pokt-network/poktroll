@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/base64"
-	json "encoding/json"
 	"os"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
@@ -16,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/flags"
-	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -42,15 +41,14 @@ For more documentation, refer to: https://dev.poktroll.com/operate/morse_migrati
 		Example: `
 	pocketd tx migration import-morse-accounts $HOME/morse-snapshot/msg_morse_import_accounts_166819_2025-04-29.json --from=pnf --home ./localnet/pocketd
 	pocketd tx migration import-morse-accounts $HOME/morse-snapshot/msg_morse_import_accounts_166819_2025-04-29.json --from=pnf`,
-		Args:    cobra.ExactArgs(1),
-		RunE:    runImportMorseAccounts,
-		PreRunE: logger.PreRunESetup,
+		Args: cobra.ExactArgs(1),
+		RunE: runImportMorseAccounts,
 	}
 
 	// Add Cosmos SDK standard flags to the command
 	cosmosflags.AddTxFlagsToCmd(importMorseAcctsCmd)
 
-	importMorseAcctsCmd.Flags().String(flags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
+	importMorseAcctsCmd.Flags().String(cosmosflags.FlagLogLevel, flags.DefaultLogLevel, flags.FlagLogLevelUsage)
 	importMorseAcctsCmd.Flags().String(flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 	importMorseAcctsCmd.Flags().BoolVar(&updateHashOnly, flagUpdateHashOnly, false, "Update the hash of the Morse account state JSON file after auto-unstaking accounts")
 
@@ -101,7 +99,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		msgImportMorseClaimableAccountsJSONBz, err = json.MarshalIndent(msgImportMorseClaimableAccounts, "", "  ")
+		msgImportMorseClaimableAccountsJSONBz, err = cmtjson.MarshalIndent(msgImportMorseClaimableAccounts, "", "  ")
 		if err != nil {
 			return err
 		}
@@ -154,14 +152,14 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	)
 
 	// Initialize the tx client.
-	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
+	txClient, err := config.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
 	// Sign and broadcast the claim Morse account message.
 	txResponse, eitherErr := txClient.SignAndBroadcast(ctx, &msgAuthzExec)
-	if err, _ = eitherErr.SyncOrAsyncError(); err != nil {
+	if _, err = eitherErr.SyncOrAsyncError(); err != nil {
 		return err
 	}
 

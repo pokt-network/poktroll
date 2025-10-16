@@ -74,6 +74,13 @@ type RelayAuthenticator interface {
 		serviceId string,
 	) error
 
+	// CheckRelayRewardEligibility verifies the Relay Request is still reward eligible.
+	// This is done by:
+	// - Retrieving the session header of the relay request
+	// - Ensuring the current block height hasn't reached the beginning of the claim window
+	// Returns an error if the relay is no longer eligible for rewards.
+	CheckRelayRewardEligibility(ctx context.Context, relayRequest *servicetypes.RelayRequest) error
+
 	// SignRelayResponse signs the relay response given a supplier operator address.
 	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierOperatorAddr string) error
 
@@ -104,9 +111,6 @@ type RelayServers []RelayServer
 // well as the respective and subsequent claim creation and proof submission.
 // This is largely accomplished by pipelining observables of relays and sessions
 // through a series of map operations.
-//
-// TODO_TECHDEBT: add architecture diagrams covering observable flows throughout
-// the relayer package.
 type RelayerSessionsManager interface {
 	// InsertRelays receives an observable of relays that should be included
 	// in their respective session's SMST (tree).
@@ -125,6 +129,30 @@ type RelayerSessionsManager interface {
 	// and/or ensure that the state at each pipeline stage is persisted to disk
 	// and exit as early as possible.
 	Stop()
+
+	// SessionTreesSnapshots returns a point-in-time view of all session trees the
+	// manager is currently tracking.
+	//
+	// The snapshots are safe to iterate without holding the internal session tree
+	// mutex, making it suitable for tests and diagnostics.
+	//
+	// DEV_NOTE: This is used for testing purposes only.
+	SessionTreesSnapshots() []SessionTreeSnapshot
+}
+
+// SessionTreeSnapshot captures the identifying information for a session tree
+// along with the tree itself.
+//
+// It is intended for diagnostic and testing scenarios where the caller needs a
+// consistent view of the manager's current session state without reaching into
+// its internal maps.
+//
+// DEV_NOTE: This is used for testing purposes only.
+type SessionTreeSnapshot struct {
+	SupplierOperatorAddress string
+	SessionEndHeight        int64
+	SessionID               string
+	Tree                    SessionTree
 }
 
 type RelayerSessionsManagerOption func(RelayerSessionsManager)
@@ -158,11 +186,17 @@ type SessionTree interface {
 	// a proof in byte format.
 	GetProofBz() []byte
 
-	// Flush gets the root hash of the SMST needed for submitting the claim;
-	// then commits the entire tree to disk and stops the KVStore.
-	// It should be called before submitting the claim onchain. This function frees up
-	// the in-memory resources used by the SMST that are no longer needed while waiting
-	// for the proof submission window to open.
+	// Flush should be used to safely free up resources used by the SMST without risking rewards.
+	// Flush can be seen as a safe version of "Stop" which is explicitly not exposed by this interface.
+	//
+	// It does the following:
+	// 1. Gets the root hash of the SMST needed for submitting the claim.
+	// 2. Commits the entire tree to disk (if disk storage is used)
+	// 3. Stops the KVStore.
+	//
+	// It should be called before submitting the claim onchain.
+	// This function frees up the in-memory resources used by the SMST that are
+	// no longer needed while waiting for the proof submission window to open.
 	Flush() (SMSTRoot []byte, err error)
 
 	// TODO_DISCUSS: This function should not be part of the interface as it is an optimization
@@ -183,10 +217,6 @@ type SessionTree interface {
 
 	// GetTrieSpec returns the trie spec of the SMST.
 	GetTrieSpec() smt.TrieSpec
-
-	// Stop stops the session tree and closes the KVStore.
-	// Calling Stop does not calculate the root hash of the SMST.
-	Stop() error
 }
 
 // RelayMeter is an interface that keeps track of the amount of stake consumed between
@@ -197,20 +227,15 @@ type RelayMeter interface {
 	// Start starts the relay meter.
 	Start(ctx context.Context) error
 
-	// AccumulateRelayReward adds the relay reward from the incoming request to session's accumulator.
-	// The relay cost is added optimistically, assuming that the relay WILL be volume / reward applicable.
-	//
-	// The reason why optimistic AccumulateRelayReward + SetNonApplicableRelayReward is used instead of
-	// a simpler AccumulateVolumeApplicableRelayReward is that when the relay is first seen
-	// we don't know if it will be volume / reward applicable until it is served.
-	//
-	// To rate limit or not the current relay, we need to always optimistically account all relays as being
-	// volume / reward applicable.
-	AccumulateRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+	// IsOverServicing returns whether the relay would result in over-servicing the application.
+	IsOverServicing(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) bool
 
 	// SetNonApplicableRelayReward updates the relay meter for the given relay request as
 	// non-applicable between a single Application and a single Supplier for a single session.
 	// The volume / reward applicability of the relay is unknown to the relay miner
 	// until the relay is served and the relay response signed.
-	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata)
+
+	// AllowOverServicing returns true if the relay meter is configured to allow over-servicing.
+	AllowOverServicing() bool
 }

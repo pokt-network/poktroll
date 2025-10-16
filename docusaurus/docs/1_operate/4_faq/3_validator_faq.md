@@ -161,7 +161,7 @@ Your Full Node must be fully synchronized before creating a Validator.
 **Monitor and follow**:
 
 - Upgrade notifications in [Pocket Network's Discord](https://discord.com/invite/pocket-network)
-- The [latest recommended version](../../4_develop/upgrades/4_upgrade_list.md) documentation
+- The [latest recommended version](../../4_develop/upgrades/6_upgrade_list.md) documentation
 
 ## What security practices should I follow?
 
@@ -174,7 +174,8 @@ Your Full Node must be fully synchronized before creating a Validator.
 
 ## What keys are important for Validators?
 
-  _BE ABSOLUTELY SURE YOU HAVE THESE BACKED UP!!!_
-  - You will need your validator address key (the address you staked from)
-  - Your `priv_validator_key.json` - found in `/pocketd/config`
-  - Your `node_key.json` - found in `/pocketd/config`
+_BE ABSOLUTELY SURE YOU HAVE THESE BACKED UP!!!_
+
+- You will need your validator address key (the address you staked from)
+- Your `priv_validator_key.json` - found in `/pocketd/config`
+- Your `node_key.json` - found in `/pocketd/config`

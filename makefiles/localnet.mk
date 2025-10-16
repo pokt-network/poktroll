@@ -41,11 +41,12 @@ k8s_kind_up: check_kind
 		kubectl create namespace path; \
 		kubectl create namespace monitoring; \
 		kubectl create namespace middleware; \
+		echo '[INFO] Installing Envoy Proxy and running helm update...'; \
+		helm repo update; \
 	else \
 		echo '[INFO] Kind cluster already exists. Skipping creation and switching to kind-pocket-localnet...'; \
 		kubectl config use-context kind-pocket-localnet; \
 	fi
-
 # Optional context for 'move_poktroll_to_pocket' to answer this question:
 # https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486
 #
@@ -78,7 +79,7 @@ localnet_regenesis: ignite_check_version check_yq ## Regenerate the localnet gen
 	@ignite chain init --skip-proto
 # DEV_NOTE: We want the following command to run every time localnet is spun up (i.e. localnet re-genesis)
 	$(MAKE) move_poktroll_to_pocket
-	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
+	AUTH_CONTENT=$$(cat ./tools/scripts/authz/localnet_genesis_authorizations.json | jq -r tostring); \
 	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' ${HOME}/.pocket/config/genesis.json;
 	@cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
 	@cp -r ${HOME}/.pocket/config $(POCKETD_HOME)/
@@ -94,3 +95,12 @@ localnet_cancel_upgrade: ## Cancels the planed upgrade on local node
 .PHONY: localnet_show_upgrade_plan
 localnet_show_upgrade_plan: ## Shows the upgrade plan on local node
 	pocketd query upgrade plan
+
+
+##########################
+### Ignite Development ###
+##########################
+
+.PHONY: ignite_acc_list
+ignite_acc_list: ## List all accounts in LocalNet
+	@ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)

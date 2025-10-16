@@ -9,7 +9,6 @@ import (
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/pocket"
 	"github.com/pokt-network/poktroll/cmd/logger"
@@ -30,24 +29,27 @@ type MorseAccountInfo struct {
 // - Includes private key if unsafe/unarmored flags are set.
 func (m MorseAccountInfo) MarshalJSON() ([]byte, error) {
 	addressStr := hex.EncodeToString(m.Address)
-	return marshalAccountInfo(addressStr, m.PrivateKey)
+	return marshalAccountInfo(addressStr, m.PrivateKey, "")
 }
 
 // ShannonAccountInfo holds Shannon account data.
 // - Address and private key are in bech32 format.
 type ShannonAccountInfo struct {
 	// Address is the Shannon account address in bech32 format.
-	Address sdk.AccAddress `json:"address"`
+	Address cosmostypes.AccAddress `json:"address"`
 
 	// PrivateKey is the Shannon account private key in secp256k1 format.
 	PrivateKey secp256k1.PrivKey `json:"private_key"`
+
+	// KeyringName is the name of the key in the keyring.
+	KeyringName string `json:"keyring_name"`
 }
 
 // MarshalJSON customizes ShannonAccountInfo JSON output.
 // - Includes private key if unsafe/unarmored flags are set.
 func (s ShannonAccountInfo) MarshalJSON() ([]byte, error) {
 	addressStr := s.Address.String()
-	return marshalAccountInfo(addressStr, s.PrivateKey.Bytes())
+	return marshalAccountInfo(addressStr, s.PrivateKey.Bytes(), s.KeyringName)
 }
 
 // newMorseImportWorkspace returns a new morseImportWorkspace with fields initialized to their zero values.

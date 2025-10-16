@@ -63,7 +63,6 @@ See: https://dev.poktroll.com/operate/morse_migration/state_transfer_playbook
 pocketd tx migration collect-morse-accounts "$MORSE_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --merge-state="$MORSE_TESTNET_STATE_EXPORT_PATH"
 `,
 		RunE:    runCollectMorseAccounts,
-		PreRunE: logger.PreRunESetup,
 		PostRun: signals.ExitWithCodeIfNonZero,
 	}
 

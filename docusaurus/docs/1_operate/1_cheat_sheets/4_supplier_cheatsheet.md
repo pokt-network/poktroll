@@ -27,11 +27,14 @@ Stake an onchain `Supplier` and run an offchain `RelayMiner` in less than an hou
   - [1. Get your public URL](#1-get-your-public-url)
   - [2. Configure your Supplier](#2-configure-your-supplier)
   - [3. Stake your Supplier](#3-stake-your-supplier)
+  - [4. Suppliers staked on behalf of Owners](#4-suppliers-staked-on-behalf-of-owners)
+    - [How to check if you have an onchain account](#how-to-check-if-you-have-an-onchain-account)
 - [RelayMiner Configuration](#relayminer-configuration)
   - [(Optional) Start the anvil node](#optional-start-the-anvil-node)
   - [1. Configure the RelayMiner](#1-configure-the-relayminer)
-  - [2. Start the RelayMiner](#2-start-the-relayminer)
-  - [3. Test the RelayMiner](#3-test-the-relayminer)
+  - [2. Ensure the RelayMiner is funded with an onchain public key](#2-ensure-the-relayminer-is-funded-with-an-onchain-public-key)
+  - [3. Start the RelayMiner](#3-start-the-relayminer)
+  - [4. Test the RelayMiner](#4-test-the-relayminer)
 
 ## High Level Architecture Diagram
 
@@ -259,10 +262,20 @@ services:
 🚀
 ```
 
-:::warning Replace `service_id`
+:::note Replace `service_id`
 
 The example uses `service_id: anvil`.
 Use your own service_id or [create a new one](1_service_cheatsheet.md).
+
+:::
+
+:::warning Revenue Share Update Permissions (Operator-Only Updates)
+
+**Revenue share addresses and percentages CAN ONLY be updated by the OPERATOR account.**
+
+In this example, both `owner_address` and `operator_address` are the same (custodial staking).
+This means the same account can update both stake amounts and revenue share configurations.
+For non-custodial staking, only the operator can modify revenue share settings.
 
 :::
 
@@ -281,6 +294,62 @@ And check the status onchain:
 ```bash
 pocketd query supplier show-supplier $SUPPLIER_ADDR $BETA_NODE_FLAGS
 ```
+
+### 4. Suppliers staked on behalf of Owners
+
+:::warning Critical must read for suppliers staked on behalf of owners
+
+Make sure to read this section if your supplier WAS NOT staked by the operator
+
+:::
+
+<details>
+<summary>Additional requirements for suppliers staked on behalf of owners</summary>
+
+**Problem**: Suppliers WITHOUT onchain public keys for their operators CANNOT sign Relay Responses and will be **sanctioned by PATH**.
+
+**Root Cause**: A supplier operator may have an onchain account, but it does not necessarily mean it has an onchain public key until it signs its first onchain transaction.
+
+**Solution**: Submit any onchain transaction where `--from` is the operator address.
+
+Any transaction will work. For example, a small transfer
+
+```bash
+pocketd tx bank send <your_supplier_operator_address> <some_address_you_own> 1upokt --from=<your_supplier_operator_address> ...
+```
+
+#### How to check if you have an onchain account
+
+```bash
+pocketd q auth account <your_supplier_operator_address> ...
+```
+
+Account without public key:
+
+```yaml
+account:
+  type: /cosmos.auth.v1beta1.BaseAccount
+  value:
+    account_number: "..."
+    address: pokt1...
+    sequence: "..."
+```
+
+Account with public key:
+
+```yaml
+account:
+  type: /cosmos.auth.v1beta1.BaseAccount
+  value:
+    account_number: "..."
+    address: pokt1...
+    public_key:
+      type: /cosmos.crypto.secp256k1.PubKey
+      value: Ap/Nr...
+    sequence: "..."
+```
+
+</details>
 
 ## RelayMiner Configuration
 
@@ -337,20 +406,35 @@ pprof:
 🚀
 ```
 
-### 2. Start the RelayMiner
+### 2. Ensure the RelayMiner is funded with an onchain public key
+
+The RelayMiner is responsible
+
+Supplier Public Key Issue Fix
+Problem: New suppliers without public keys on-chain can't validate relay responses during their first session, even after delivering claims.
+Root Cause: Igniter allows staking without operator signatures, leaving suppliers without required public keys.
+Solution:
+
+Ensure operators sign at least one transaction before staking
+First claim submission will set the public key on-chain
+Monitor for suppliers missing public keys
+
+Consequences: Session-long relay validation failures until public key is established.
+Status: Fleet re-staked, monitoring solution in development.
+
+### 3. Start the RelayMiner
 
 Start the RelayMiner (i.e. the offchain co-processor) server:
 
 ```bash
 pocketd \
   relayminer start \
-  --grpc-insecure=false \
   --log_level=debug \
   --config=/tmp/relayminer_config.yaml \
   --chain-id=$BETA_NETWORK
 ```
 
-### 3. Test the RelayMiner
+### 4. Test the RelayMiner
 
 After following the instructions in the [Gateway cheatsheet](5_gateway_cheatsheet.md).
 
@@ -364,7 +448,6 @@ pocketd relayminer relay \
   --supplier=$SUPPLIER_ADDR \
   --node=$BETA_RPC_URL \
   --grpc-addr=$BETA_GRPC_URL_RAW \
-  --grpc-insecure=false \
   --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}"
 ```
 

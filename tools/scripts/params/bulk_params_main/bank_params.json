@@ -1,0 +1,13 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/cosmos.bank.v1beta1.MsgUpdateParams",
+        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "params": {
+          "default_send_enabled": true
+        }
+      }
+    ]
+  }
+}

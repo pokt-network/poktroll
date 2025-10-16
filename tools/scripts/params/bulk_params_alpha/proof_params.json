@@ -1,0 +1,25 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.proof.MsgUpdateParams",
+        "authority": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
+        "params": {
+          "proof_request_probability": 0.25,
+          "proof_requirement_threshold": {
+            "denom": "upokt",
+            "amount": "20000000"
+          },
+          "proof_missing_penalty": {
+            "denom": "upokt",
+            "amount": "320000000"
+          },
+          "proof_submission_fee": {
+            "denom": "upokt",
+            "amount": "1000000"
+          }
+        }
+      }
+    ]
+  }
+}

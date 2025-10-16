@@ -102,7 +102,7 @@ func GetProofWindowCloseHeight(sharedParams *Params, queryHeight int64) int64 {
 // TODO_TECHDEBT(@red-0ne): Having claim distribution windows was
 // a requirement that was never determined to be necessary, but implemented regardless.
 // We are keeping around the functions but TBD whether it is deemed necessary. The results
-// of #711 are tengentially related to this requirement, after which the functions,
+// of #711 are tangentially related to this requirement, after which the functions,
 // helpers, comments and docs for claim distribution can either be repurposed or deleted.
 func GetEarliestSupplierClaimCommitHeight(
 	sharedParams *Params,
@@ -129,7 +129,7 @@ func GetEarliestSupplierClaimCommitHeight(
 // TODO_TECHDEBT(@red-0ne): Having proof distribution windows was
 // a requirement that was never determined to be necessary, but implemented regardless.
 // We are keeping around the functions but TBD whether it is deemed necessary. The results
-// of #711 are tengentially related to this requirement, after which the functions,
+// of #711 are tangentially related to this requirement, after which the functions,
 // helpers, comments and docs for claim distribution can either be repurposed or deleted.
 func GetEarliestSupplierProofCommitHeight(
 	sharedParams *Params,
@@ -158,7 +158,7 @@ func GetNextSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
 
 // IsSessionEndHeight returns true if the queryHeight is the last block of the session.
 func IsSessionEndHeight(sharedParams *Params, queryHeight int64) bool {
-	return queryHeight != GetSessionEndHeight(sharedParams, queryHeight)
+	return queryHeight == GetSessionEndHeight(sharedParams, queryHeight)
 }
 
 // IsSessionStartHeight returns true if the height is the first block of the session.

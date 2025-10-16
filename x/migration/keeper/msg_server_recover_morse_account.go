@@ -7,13 +7,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	"github.com/pokt-network/poktroll/x/migration/recovery"
-	"github.com/pokt-network/poktroll/x/migration/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecoverMorseAccount) (*types.MsgRecoverMorseAccountResponse, error) {
+func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *migrationtypes.MsgRecoverMorseAccount) (*migrationtypes.MsgRecoverMorseAccountResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Validate Morse account recovery message.
@@ -32,13 +32,15 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 		)
 	}
 
+	normalizedMorseSrcAddress := encoding.NormalizeMorseAddress(msg.GetMorseSrcAddress())
+
 	// Check if the morse account is listed in the recoverable accounts list.
-	if !recovery.IsMorseAddressRecoverable(msg.GetMorseSrcAddress()) {
+	if !recovery.IsMorseAddressRecoverable(normalizedMorseSrcAddress) {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			migrationtypes.ErrMorseRecoverableAccountClaim.Wrapf(
 				"morse account %q is not recoverable",
-				msg.GetMorseSrcAddress(),
+				normalizedMorseSrcAddress,
 			).Error(),
 		)
 	}
@@ -46,14 +48,14 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 	// Look up the onchain Morse claimable account.
 	morseClaimableAccount, isFound := k.GetMorseClaimableAccount(
 		sdkCtx,
-		msg.GetMorseSrcAddress(),
+		normalizedMorseSrcAddress,
 	)
 	if !isFound {
 		return nil, status.Error(
 			codes.NotFound,
 			migrationtypes.ErrMorseRecoverableAccountClaim.Wrapf(
 				"no morse recoverable account exists with address %q",
-				msg.GetMorseSrcAddress(),
+				normalizedMorseSrcAddress,
 			).Error(),
 		)
 	}
@@ -64,7 +66,7 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseRecoverableAccountClaim.Wrapf(
 				"morse address %q has already been recovered at height %d onto shannon address %q",
-				msg.GetMorseSrcAddress(),
+				normalizedMorseSrcAddress,
 				morseClaimableAccount.ClaimedAtHeight,
 				morseClaimableAccount.ShannonDestAddress,
 			).Error(),
@@ -97,9 +99,9 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	event := migrationtypes.EventMorseAccountRecovered{
 		SessionEndHeight:   sessionEndHeight,
-		RecoveredBalance:   recoveredBalance,
+		RecoveredBalance:   recoveredBalance.String(),
 		ShannonDestAddress: msg.GetShannonDestAddress(),
-		MorseSrcAddress:    msg.GetMorseSrcAddress(),
+		MorseSrcAddress:    normalizedMorseSrcAddress,
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
 		return nil, status.Error(
@@ -112,10 +114,5 @@ func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecove
 		)
 	}
 
-	return &types.MsgRecoverMorseAccountResponse{
-		SessionEndHeight:   sessionEndHeight,
-		RecoveredBalance:   recoveredBalance,
-		ShannonDestAddress: msg.GetShannonDestAddress(),
-		MorseSrcAddress:    msg.GetMorseSrcAddress(),
-	}, nil
+	return &migrationtypes.MsgRecoverMorseAccountResponse{}, nil
 }

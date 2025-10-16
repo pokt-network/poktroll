@@ -6,9 +6,10 @@ import (
 	"slices"
 
 	"cosmossdk.io/depinject"
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	ring_secp256k1 "github.com/pokt-network/go-dleq/secp256k1"
+	ringtypes "github.com/pokt-network/go-dleq/types"
 	"github.com/pokt-network/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -19,7 +20,20 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ crypto.RingClient = (*ringClient)(nil)
+var (
+	_ crypto.RingClient = (*ringClient)(nil)
+
+	// PlaceholderRingPubKey is a deterministic dummy public key used when an application
+	// has no delegated gateways.
+	// This ensures the ring has at least two keys without using duplicates.
+	PlaceholderRingPubKey  = secp256k1.GenPrivKeyFromSecret([]byte("placeholder_ring_key_for_apps_without_gateways")).PubKey()
+	PlaceholderRingAddress = PlaceholderRingPubKey.Address().String()
+
+	// ringCurve is the elliptic curve used for the ring signatures.
+	// It is used to deserialize the ring signatures.
+	// DEV_NOTE: This is initialized as a package-level variable to avoid re-initializing for every RelayRequest verification.
+	ringCurve = ring_secp256k1.NewCurve()
+)
 
 // ringClient is an implementation of the RingClient interface that uses the
 // client.ApplicationQueryClient to get application's delegation information
@@ -116,7 +130,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 
 	// Deserialize the request signature bytes back into a ring signature.
 	relayRequestRingSig := new(ring.RingSig)
-	if err := relayRequestRingSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
+	if err := relayRequestRingSig.Deserialize(ringCurve, signature); err != nil {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"error deserializing ring signature: %s", err,
 		)
@@ -184,13 +198,11 @@ func (rc *ringClient) getRingPubKeysForAddress(
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
 
-	// TODO_IMPROVE: The appAddress is added twice because a ring signature
-	// requires AT LEAST two pubKeys. If the Application has not delegated
-	// to any gateways, the app's own address needs to be used twice to
-	// create a ring. This is not a huge issue but an improvement should
-	// be investigated in the future.
+	// Ring signatures require at least two pubKeys.
+	// If the Application has not delegated to any gateways, use a placeholder
+	// deterministic address to avoid duplicate keys in the ring.
 	if len(delegateeGatewayAddresses) == 0 {
-		delegateeGatewayAddresses = append(delegateeGatewayAddresses, app.Address)
+		delegateeGatewayAddresses = append(delegateeGatewayAddresses, PlaceholderRingAddress)
 	}
 
 	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
@@ -215,6 +227,11 @@ func (rc *ringClient) addressesToPubKeys(
 ) ([]cryptotypes.PubKey, error) {
 	pubKeys := make([]cryptotypes.PubKey, len(addresses))
 	for i, addr := range addresses {
+		// Check if this is the dummy gateway address
+		if addr == PlaceholderRingAddress {
+			pubKeys[i] = PlaceholderRingPubKey
+			continue
+		}
 		acc, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, addr)
 		if err != nil {
 			return nil, err

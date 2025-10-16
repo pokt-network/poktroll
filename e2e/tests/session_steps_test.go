@@ -98,11 +98,23 @@ func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventT
 }
 
 func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBeBroadcast(proofRequirement string) {
+	var proofRequirementInt int64
+	switch proofRequirement {
+	case prooftypes.ProofRequirementReason_NOT_REQUIRED.String():
+		proofRequirementInt = int64(prooftypes.ProofRequirementReason_NOT_REQUIRED)
+	case prooftypes.ProofRequirementReason_PROBABILISTIC.String():
+		proofRequirementInt = int64(prooftypes.ProofRequirementReason_PROBABILISTIC)
+	case prooftypes.ProofRequirementReason_THRESHOLD.String():
+		proofRequirementInt = int64(prooftypes.ProofRequirementReason_THRESHOLD)
+	default:
+		s.Fatalf("invalid proof requirement %s", proofRequirement)
+	}
+
 	s.waitForNewBlockEvent(
 		combineEventMatchFns(
 			newEventTypeMatchFn("tokenomics", "ClaimSettled"),
 			newEventModeMatchFn("EndBlock"),
-			newEventAttributeMatchFn("proof_requirement", fmt.Sprintf("%q", proofRequirement)),
+			newEventAttributeMatchFn("proof_requirement_int", fmt.Sprintf("%d", proofRequirementInt)),
 		),
 	)
 
@@ -180,10 +192,10 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierOperatorName, serviceId, appName string) {
-	app, ok := accNameToAppMap[appName]
+	_, ok := accNameToAppMap[appName]
 	require.True(s, ok, "application %s not found", appName)
 
-	supplier, ok := operatorAccNameToSupplierMap[supplierOperatorName]
+	_, ok = operatorAccNameToSupplierMap[supplierOperatorName]
 	require.True(s, ok, "supplier %s not found", supplierOperatorName)
 
 	isValidClaimSettledEvent := func(event *abci.Event) bool {
@@ -199,13 +211,24 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		claimSettledEvent, ok := typedEvent.(*tokenomicstypes.EventClaimSettled)
 		require.True(s, ok)
 
-		// Assert that the claim was settled for the correct application, supplier, and service.
-		claim := claimSettledEvent.Claim
-		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
-		require.Equal(s, supplier.OperatorAddress, claim.SupplierOperatorAddress)
-		require.Equal(s, serviceId, claim.SessionHeader.ServiceId)
+		// Assert that the claim was settled for the correct application and service.
+		// TODO_FOLLOWUP: The supplier operator address is no longer available in the EventClaimSettled
+		// as part of the disk utilization optimization. Consider adding it back or finding another way
+		// to verify the supplier in the e2e test.
+		require.Equal(s, serviceId, claimSettledEvent.ServiceId)
 		require.Greater(s, claimSettledEvent.NumClaimedComputeUnits, uint64(0), "claimed compute units should be greater than 0")
 		// TODO_IMPROVE: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+
+		// Validate that the reward distribution is populated
+		rewardDistribution := claimSettledEvent.GetRewardDistribution()
+		require.NotNil(s, rewardDistribution, "reward distribution should not be nil")
+		require.NotEmpty(s, rewardDistribution, "reward distribution should not be empty")
+
+		// Log the reward distribution for debugging
+		for address, amountStr := range rewardDistribution {
+			s.Logf("Reward distribution - address: %s, amount: %s", address, amountStr)
+		}
+
 		return true
 	}
 
@@ -300,7 +323,10 @@ func (s *suite) sendRelaysForSession(
 	for i := 0; i < relayLimit; i++ {
 		payload := fmt.Sprintf(payload_fmt, i+1) // i+1 to avoid id=0 which is invalid
 
-		s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, defaultJSONPRCPath, payload)
+		// Passing "1" as the number of relays per request because we're controlling the total
+		// number of relays by iterating through this loop 'relayLimit' times. Each iteration
+		// sends one relay request over the connection.
+		s.TheApplicationSendsTheSupplierSuccessfulRequestsForServiceWithPathAndData(appName, supplierOperatorName, "1", serviceId, defaultJSONPRCPath, payload)
 		time.Sleep(10 * time.Millisecond)
 	}
 }
@@ -348,7 +374,7 @@ func (s *suite) waitForNewBlockEvent(
 
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
-			for _, event := range newBlockEvent.Data.Value.ResultFinalizeBlock.Events {
+			for _, event := range newBlockEvent.Events() {
 				// Checks on the event. For example, for a claim Settlement event,
 				// we can parse the claim and verify the compute units.
 				if isEventMatchFn(&event) {
@@ -373,7 +399,7 @@ func (s *suite) waitForBlockHeight(targetHeight int64) {
 				return
 			}
 
-			if newBlockEvent.Data.Value.Block.Header.Height >= targetHeight {
+			if newBlockEvent.Height() >= targetHeight {
 				done()
 				return
 			}

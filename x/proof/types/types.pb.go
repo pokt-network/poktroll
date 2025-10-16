@@ -180,6 +180,7 @@ type Claim struct {
 	// Session header this claim is for.
 	SessionHeader *types.SessionHeader `protobuf:"bytes,2,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
 	// Root hash from smt.SMST#Root().
+	// TODO_UP_NEXT(@bryanchriswhite, #1497): Dehydrate the claim's root hash from onchain events.
 	RootHash []byte `protobuf:"bytes,3,opt,name=root_hash,json=rootHash,proto3" json:"root_hash,omitempty"`
 	// Important: This field MUST only be set by proofKeeper#EnsureValidProofSignaturesAndClosestPath
 	ProofValidationStatus ClaimProofStatus `protobuf:"varint,4,opt,name=proof_validation_status,json=proofValidationStatus,proto3,enum=pocket.proof.ClaimProofStatus" json:"proof_validation_status,omitempty"`

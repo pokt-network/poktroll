@@ -53,6 +53,10 @@ var (
 
 		// Server-side errors that might occasionally resolve with retry
 		codes.Internal,
+
+		// Context canceled errors are often transient - the context may have been
+		// canceled due to timeouts or temporary conditions that can be resolved on retry
+		codes.Canceled,
 	}
 )
 
@@ -141,6 +145,7 @@ func Call[T any](
 	ctx context.Context,
 	work func() (T, error),
 	retryStrategy RetryStrategyFunc,
+	logger polylog.Logger,
 ) (T, error) {
 	var (
 		result T
@@ -164,18 +169,26 @@ func Call[T any](
 
 		// Non-retryable error: stop retrying and return the error
 		if ErrNonRetryable.Is(err) {
+			logger.Error().Msgf("🛑 non-retryable error encountered, giving up: %v", err)
 			return result, err
 		}
 
 		// Non-transient gRPC error: stop retrying and return the error
 		status, isGRPCError := status.FromError(err)
 		if isGRPCError && !slices.Contains(transientGRPCErrorCodes, status.Code()) {
+			logger.Error().Msgf("🛑 non-transient grpc error encountered, giving up: %v", err)
 			return result, err
 		}
 
 		if !retryStrategy(ctx, retryCount) {
+			logger.Error().Msgf("🛑 retry strategy exhausted, giving up after %d retries: %v", retryCount, err)
 			return result, err
 		}
+
+		logger.Warn().Msgf(
+			"🔄 retrying work function due to error: %v, retry count: %d",
+			err, retryCount,
+		)
 	}
 }
 

@@ -143,9 +143,15 @@ A helper that bulk updates all parameters for a given environment using the `.js
 
 ## Parameter Update Workflow
 
-### Step 1: Query Current Parameters
+### Step 1: Open a Pull Request
 
-First, check the current parameter values:
+First, open a pull request with the proposed parameter changes. 
+
+Example: https://github.com/pokt-network/poktroll/pull/1745 
+
+#### Query Current Parameters
+
+You can check the current parameter values with the helper script:
 
 ```bash
 ./tools/scripts/params/gov_params.sh query tokenomics --env beta
@@ -271,6 +277,14 @@ pocketd query tx --type=hash <TRANSACTION_HASH> --network=beta
 # Verify updated parameters
 ./tools/scripts/params/gov_params.sh query tokenomics --env beta
 ```
+
+### Step 6: Update and Merge Pull Request
+
+:::warning Get your PR Approved 
+Please ensure you have an approval on the PR from one of the repository maintainers.
+:::
+
+In order to keep the repository up to date with the current onchain parameters, please comment on the pull request with the transaction hash and merge the pull request opened in [Step 1](#step-1-open-a-pull-request).
 
 ## Troubleshooting
 

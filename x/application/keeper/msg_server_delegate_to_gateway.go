@@ -127,9 +127,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	}
 
 	isSuccessful = true
-	return &apptypes.MsgDelegateToGatewayResponse{
-		Application: &app,
-	}, nil
+	return &apptypes.MsgDelegateToGatewayResponse{}, nil
 }
 
 // updatePendingUndelegations removes the given gateway address from the application's

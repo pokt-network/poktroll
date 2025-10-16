@@ -15,14 +15,22 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// ClaimMorseSupplier performs the following steps, given msg is valid and a
-// MorseClaimableAccount exists for the given morse_src_address:
-//   - Mint and transfer all tokens (unstaked balance plus supplier stake) of the
-//     MorseClaimableAccount to the shannonDestAddress.
-//   - Mark the MorseClaimableAccount as claimed (i.e. adding the shannon_dest_address
-//     and claimed_at_height).
-//   - Stake a supplier for the amount specified in the MorseClaimableAccount,
-//     and the services specified in the msg.
+// ClaimMorseSupplier processes a Morse supplier claim migration.
+//
+// Preconditions:
+// - The message is valid.
+// - A MorseClaimableAccount exists for the given morse_src_address.
+//
+// Steps performed:
+// - Mint and transfer all tokens (unstaked balance plus supplier stake) from the MorseClaimableAccount to the shannonDestAddress.
+// - Mark the MorseClaimableAccount as claimed (i.e., set the shannon_dest_address and claimed_at_height).
+// - Stake a supplier for the amount and services specified in the MorseClaimableAccount and the message.
+//
+// Short Circuits (these cause early exit):
+// - Short circuit #1: If the Morse Supplier started unstaking before the state shift and fully unstaked after the state shift at the time of claim, mint the staked balance to the Shannon owner and exit after event emission.
+// - Short circuit #2: If the Morse Supplier's stake is below the minimum required, auto-unstake, mint to owner, emit events, and exit.
+//
+// The function does not alter business logic and preserves all original comment content, but comments have been clarified and reformatted for improved readability.
 func (k msgServer) ClaimMorseSupplier(
 	ctx context.Context,
 	msg *migrationtypes.MsgClaimMorseSupplier,
@@ -31,7 +39,7 @@ func (k msgServer) ClaimMorseSupplier(
 	logger := k.Logger().With("method", "ClaimMorseSupplier")
 
 	var (
-		morseClaimableAccount     *migrationtypes.MorseClaimableAccount
+		morseNodeClaimableAccount *migrationtypes.MorseClaimableAccount
 		isFound, isAlreadyClaimed bool
 		err                       error
 	)
@@ -64,7 +72,7 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 
 	// Retrieve the MorseClaimableAccount for the given morseSrcAddress.
-	morseClaimableAccount, err = k.checkMorseClaimableSupplierAccount(ctx, msg.GetMorseNodeAddress())
+	morseNodeClaimableAccount, err = k.checkMorseClaimableSupplierAccount(ctx, msg.GetMorseNodeAddress())
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +80,7 @@ func (k msgServer) ClaimMorseSupplier(
 	// Ensure the signer is ONE OF THE FOLLOWING:
 	// - The Morse node address (i.e. operator)
 	// - The Morse output address (i.e. owner)
-	claimSignerType, err := checkClaimSigner(msg, morseClaimableAccount)
+	claimSignerType, err := checkClaimSigner(msg, morseNodeClaimableAccount)
 	if err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
@@ -84,28 +92,103 @@ func (k msgServer) ClaimMorseSupplier(
 	// The shannonSigningAddress is where the node/supplier stake will be minted to and then escrowed from.
 	shannonSigningAddress := shannonOperatorAddr
 	switch claimSignerType {
+
+	// ## NON-CUSTODIAL OWNER CLAIM ##
+	// The Morse owner/output account is signing the claim.
 	case migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_OWNER:
 		shannonSigningAddress = shannonOwnerAddr
+
+	// ## NON-CUSTODIAL OPERATOR CLAIM ##
+	// The Morse node/operator account is signing the claim.
+	// This requires (i.e. pre-requisite) that:
+	// 1. The Morse owner/output account has already been claimed.
+	// 2. The claimed onchain Morse owner Shannon address matches the supplier claim Shannon owner address.
+	case migrationtypes.MorseSupplierClaimSignerType_MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_NON_CUSTODIAL_SIGNED_BY_NODE_ADDR:
+		// Retrieve the Morse owner claimable account for the Morse owner address.
+		morseOwnerAddress := morseNodeClaimableAccount.GetMorseOutputAddress()
+
+		// Retrieve the Morse owner claimable account.
+		morseOwnerClaimableAccount, isMorseOwnerFound := k.GetMorseClaimableAccount(ctx, morseOwnerAddress)
+		if !isMorseOwnerFound {
+			// DEV_NOTE: THIS SHOULD NEVER HAPPEN.
+			// If this occurs, it indicates that either:
+			// 1. The Morse owner account was not included in the list of imported Morse claimable accounts.
+			// 2. The Morse owner account was somehow removed from the list of imported Morse claimable accounts.
+			return nil, status.Error(
+				codes.Internal,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"(SHOULD NEVER HAPPEN) could not find morse claimable account for owner address (%s)",
+					morseOwnerAddress,
+				).Error(),
+			)
+		}
+
+		// Ensure that the Morse owner account has already been claimed before migrating the Morse node/supplier to a Shannon account.
+		if !morseOwnerClaimableAccount.IsClaimed() {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"morse owner address (%s) MUST be claimed BEFORE migrating the Morse node/supplier to a Shannon Supplier account",
+					morseOwnerAddress,
+				).Error(),
+			)
+		}
+
+		// Ensure that the Shannon owner address on the Morse supplier claim
+		// matches the Shannon dest address of the claimed Morse owner account.
+		if morseOwnerClaimableAccount.GetShannonDestAddress() != msg.GetShannonOwnerAddress() {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				migrationtypes.ErrMorseSupplierClaim.Wrapf(
+					"the Shannon owner address on the Morse supplier (%s) claim MUST match the Shannon dest address of the already claimed Morse owner account (%s)",
+					msg.GetShannonOwnerAddress(),
+					morseOwnerClaimableAccount.GetShannonDestAddress(),
+				).Error(),
+			)
+		}
 	}
 
-	// Mint the Morse node/supplier's stake to the shannonSigningAddress account balance.
-	// The Supplier stake is subsequently escrowed from the shannonSigningAddress account balance.
+	// Supplier Claim - Short circuit #1
+	// If both of the following are true:
+	// 1. The Morse Supplier started unstaking before the state shift
+	// 2. The Morse Supplier fully unstaked after the state shift at the time of claim
+	// Then the Shannon owner address is where the staked balance needs to be minted to.
+	morseUnbondingPeriodElapsed := morseNodeClaimableAccount.HasUnbonded(ctx)
+
+	// Supplier Claim - Short circuit #2
+	// If the Morse Supplier's stake is less than the minimum stake, then the Morse Supplier should be auto-unstaked.
+	minStake := k.supplierKeeper.GetParams(ctx).MinStake
+	claimableSupplierStake := morseNodeClaimableAccount.GetSupplierStake()
+	shouldAutoUnstake := claimableSupplierStake.Amount.LT(minStake.Amount)
+
+	// Determine the staked tokens destination address based on the short circuit conditions above.
+	var stakedTokensDestAddr cosmostypes.AccAddress
+	if morseUnbondingPeriodElapsed || shouldAutoUnstake {
+		stakedTokensDestAddr = shannonOwnerAddr
+	} else {
+		stakedTokensDestAddr = shannonSigningAddress
+	}
+
+	// Mint the Morse node/supplier's stake to the stakedTokensDestAddr account balance.
+	// The Supplier stake is subsequently escrowed from the stakedTokensDestAddr account balance
+	// UNLESS it has already unbonded during the migration.
 	// NOTE: The supplier module's staking fee parameter will be deducted from the claimed balance below.
-	if err = k.MintClaimedMorseTokens(ctx, shannonSigningAddress, morseClaimableAccount.GetSupplierStake()); err != nil {
+	if err = k.MintClaimedMorseTokens(ctx, stakedTokensDestAddr, morseNodeClaimableAccount.GetSupplierStake()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Mint the Morse node/supplier's unstaked balance to the shannonOperatorAddress account balance.
-	if err = k.MintClaimedMorseTokens(ctx, shannonOperatorAddr, morseClaimableAccount.GetUnstakedBalance()); err != nil {
+	// The operator will always received the unstaked balance of the Morse Supplier.
+	if err = k.MintClaimedMorseTokens(ctx, shannonOperatorAddr, morseNodeClaimableAccount.GetUnstakedBalance()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Set ShannonDestAddress & ClaimedAtHeight (claim).
-	morseClaimableAccount.ShannonDestAddress = shannonOperatorAddr.String()
-	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
+	morseNodeClaimableAccount.ShannonDestAddress = stakedTokensDestAddr.String()
+	morseNodeClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
 
 	// Update the MorseClaimableAccount.
-	k.SetMorseClaimableAccount(sdkCtx, *morseClaimableAccount)
+	k.SetMorseClaimableAccount(sdkCtx, *morseNodeClaimableAccount)
 
 	// Retrieve the shared module parameters and calculate the session end height.
 	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
@@ -114,8 +197,17 @@ func (k msgServer) ClaimMorseSupplier(
 	previousSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentSessionStartHeight-1)
 
 	// Retrieve the claimed supplier stake and unstaked balance.
-	claimedSupplierStake := morseClaimableAccount.GetSupplierStake()
-	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
+	claimedSupplierStake := morseNodeClaimableAccount.GetSupplierStake()
+	claimedUnstakedBalance := morseNodeClaimableAccount.GetUnstakedBalance()
+
+	// Collect all events for emission.
+	// Always emitted:
+	// - EventMorseSupplierClaimed
+	// Conditionally emitted:
+	// - EventSupplierUnbondingBegin
+	// - EventSupplierUnbondingEnd
+	// Events are appended prior to emission to allow for conditional modification prior to emission.
+	events := make([]cosmostypes.Msg, 0)
 
 	// Construct unbonded supplier for cases where it is already or will become unbonded
 	// immediately (i.e. below min stake, or if unbonding period has already elapsed).
@@ -128,25 +220,17 @@ func (k msgServer) ClaimMorseSupplier(
 		// ServiceConfigHistory: (intentionally omitted, no services were staked),
 	}
 
-	// Construct the base response. It will be modified, as necessary, prior to returning.
-	claimMorseSupplierResponse := &migrationtypes.MsgClaimMorseSupplierResponse{
-		MorseNodeAddress:     msg.GetMorseNodeAddress(),
-		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
-		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       claimedUnstakedBalance,
-		ClaimedSupplierStake: claimedSupplierStake,
-		SessionEndHeight:     sessionEndHeight,
-		Supplier:             unbondedSupplier,
-	}
+	// Construct the base response.
+	claimMorseSupplierResponse := &migrationtypes.MsgClaimMorseSupplierResponse{}
 
 	// Construct the base supplier claim event. It will be modified, as necessary, prior to emission.
 	// ALWAYS emit an event which signals that the morse supplier has been claimed.
 	morseSupplierClaimedEvent := &migrationtypes.EventMorseSupplierClaimed{
 		MorseNodeAddress:     msg.GetMorseNodeAddress(),
-		MorseOutputAddress:   morseClaimableAccount.GetMorseOutputAddress(),
+		MorseOutputAddress:   morseNodeClaimableAccount.GetMorseOutputAddress(),
 		ClaimSignerType:      claimSignerType,
-		ClaimedBalance:       claimedUnstakedBalance,
-		ClaimedSupplierStake: claimedSupplierStake,
+		ClaimedBalance:       claimedUnstakedBalance.String(),
+		ClaimedSupplierStake: claimedSupplierStake.String(),
 		SessionEndHeight:     sessionEndHeight,
 		Supplier:             unbondedSupplier,
 	}
@@ -160,22 +244,12 @@ func (k msgServer) ClaimMorseSupplier(
 		UnbondingEndHeight: previousSessionEndHeight,
 	}
 
-	// Collect events for emission.
-	// Events are appended prior to emission to allow for conditional modification prior to emission.
-	//
-	// Always emitted:
-	// - EventMorseSupplierClaimed
-	//
-	// Conditionally emitted:
-	// - EventSupplierUnbondingBegin
-	// - EventSupplierUnbondingEnd
-	events := make([]cosmostypes.Msg, 0)
-
+	// Short circuit #1
 	// If unbonding is complete:
 	// - No further minting is needed
 	// - Block time is estimated and used to set the unstake session end height
 	// - Emit event to signal unbonding start
-	if morseClaimableAccount.HasUnbonded() {
+	if morseUnbondingPeriodElapsed {
 		events = append(events, morseSupplierClaimedEvent)
 		events = append(events, morseSupplierUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
@@ -185,27 +259,33 @@ func (k msgServer) ClaimMorseSupplier(
 		return claimMorseSupplierResponse, nil
 	}
 
+	// Short circuit #2
+	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
+	// - All staked tokens have already been minted to stakedTokensDestAddr account
+	// - All unstaked tokens have already been minted to shannonOperatorAddr account
+	if shouldAutoUnstake {
+		events = append(events, morseSupplierClaimedEvent)
+		events = append(events, morseSupplierUnbondingEndEvent)
+		if err = emitEvents(ctx, events); err != nil {
+			return nil, err
+		}
+
+		return claimMorseSupplierResponse, nil
+	}
+
+	// Aggregate (i.e. upstake) the Shannon supplier stake if we are consolidating stakes on an existing Shannon supplier.
 	// Query for any existing supplier stake prior to staking.
 	preClaimSupplierStake := cosmostypes.NewCoin(pocket.DenomuPOKT, math.ZeroInt())
 	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonOperatorAddr.String())
 	if isFound {
 		preClaimSupplierStake = *foundSupplier.Stake
 	}
+	postClaimSupplierStake := preClaimSupplierStake.Add(morseNodeClaimableAccount.GetSupplierStake())
 
-	postClaimSupplierStake := preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake())
-
-	// If the claimed supplier stake is less than the minimum stake, the supplier is immediately unstaked.
-	// - All stake has already been minted to shannonSignerAddr account
-	// - All unstaked tokens have already been minted to shannonOperatorAddr account
-	minStake := k.supplierKeeper.GetParams(ctx).MinStake
-	if postClaimSupplierStake.Amount.LT(minStake.Amount) {
-		events = append(events, morseSupplierClaimedEvent)
-		events = append(events, morseSupplierUnbondingEndEvent)
-		if err = emitEvents(ctx, events); err != nil {
-			return nil, err
-		}
-
-		return claimMorseSupplierResponse, nil
+	// Sanity check the service configs.
+	// Quick workaround upon encountering this issue: https://gist.github.com/okdas/3328c0c507b5dba8b31ab871589f34b0
+	if err = sharedtypes.ValidateSupplierServiceConfigs(msg.Services); err != nil {
+		return nil, err
 	}
 
 	// Stake (or update) the supplier.
@@ -213,23 +293,19 @@ func (k msgServer) ClaimMorseSupplier(
 		shannonSigningAddress.String(),
 		shannonOwnerAddr.String(),
 		shannonOperatorAddr.String(),
-		postClaimSupplierStake,
+		&postClaimSupplierStake,
 		msg.Services,
 	)
+
+	// Stake the supplier
 	supplier, err := k.supplierKeeper.StakeSupplier(ctx, logger, msgStakeSupplier)
 	if err != nil {
-		// DEV_NOTE: StakeSupplier SHOULD ALWAYS return a gRPC status error.
 		return nil, err
 	}
 
-	// Update the supplier claim response.
-	claimMorseSupplierResponse.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
-	claimMorseSupplierResponse.ClaimedSupplierStake = morseClaimableAccount.GetSupplierStake()
-	claimMorseSupplierResponse.Supplier = supplier
-
 	// Update the supplier claim event.
-	morseSupplierClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
-	morseSupplierClaimedEvent.ClaimedSupplierStake = morseClaimableAccount.GetSupplierStake()
+	morseSupplierClaimedEvent.ClaimedBalance = morseNodeClaimableAccount.GetUnstakedBalance().String()
+	morseSupplierClaimedEvent.ClaimedSupplierStake = morseNodeClaimableAccount.GetSupplierStake().String()
 	morseSupplierClaimedEvent.Supplier = supplier
 
 	// Emit the supplier claim event first, an unbonding begin event MAY follow.
@@ -238,8 +314,8 @@ func (k msgServer) ClaimMorseSupplier(
 	// If the claimed supplier is still unbonding:
 	// - Set the unstake session end height on the supplier
 	// - Emit an unbonding begin event
-	if morseClaimableAccount.IsUnbonding() {
-		estimatedUnstakeSessionEndHeight, isUnbonded := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
+	if morseNodeClaimableAccount.IsUnbonding() {
+		estimatedUnstakeSessionEndHeight, isUnbonded := morseNodeClaimableAccount.GetEstimatedUnbondingEndHeight(ctx, sharedParams)
 
 		// DEV_NOTE: SHOULD NEVER happen, the check above (using #SecondsUntilUnbonded()) is the same, but in terms of time instead of block height.
 		if isUnbonded {

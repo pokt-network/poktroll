@@ -2,18 +2,21 @@
 
 # Script to help query and update module parameters for different environments.
 #
-# Usage: ./update_params.sh <command> [module_name] [options]
+# Usage: ./tools/scripts/params/gov_params.sh <command> [module_name] [options]
 #   <command>: Required. One of:
 #     query <module_name>     - Query parameters for a specific module
 #     query-all              - Query parameters for all available modules
 #     update <module_name>    - Generate update transaction for a module
 #     export-params <module_name> - Export parameters to a specified file
+#     export-all-params      - Export parameters for all modules to a directory
 #   [options]: Optional flags:
 #     --env <environment>: Target environment (local, alpha, beta, main). Default: beta
 #     --output-dir <dir>: Directory to save transaction files. Default: . (current directory)
 #     --output-file <file>: Specific output file path (export-params only)
+#     --export-dir <dir>: Directory to save exported parameter files (export-all-params only). Default: tools/scripts/params/bulk_params
 #     --network <network>: Network flag for query. Default: uses --env value
 #     --home <path>: Home directory for pocketd. Default: ~/.pocket
+#     --gov-key <key>: Override the FROM_KEY for transaction signing
 #     --no-prompt: Skip the edit prompt and just generate the template (update only)
 #
 # This script can:
@@ -21,9 +24,19 @@
 # 2. Display them in a pretty formatted output
 # 3. Generate transaction template files for parameter updates
 # 4. Export parameters to a specific file path for external tools
-# 5. Provide instructions for submitting transactions
+# 5. Export all module parameters to individual files in a directory
+# 6. Provide instructions for submitting transactions
 
-set -e
+# set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
 
 # Available modules list
 AVAILABLE_MODULES=(
@@ -95,13 +108,14 @@ get_message_type() {
 
 # Check if command is provided
 if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
-    echo "Usage: ./update_params.sh <command> [module_name] [options]"
+    echo "Usage: ./tools/scripts/params/gov_params.sh <command> [module_name] [options]"
     echo ""
     echo "Commands:"
     echo "  query <module_name>     - Query parameters for a specific module"
     echo "  query-all              - Query parameters for all available modules"
     echo "  update <module_name>    - Generate update transaction for a module"
     echo "  export-params <module_name> - Export parameters to a specified file"
+    echo "  export-all-params      - Export parameters for all modules to a directory"
     echo ""
     echo "Available modules:"
     for module in "${AVAILABLE_MODULES[@]}"; do
@@ -112,16 +126,20 @@ if [ -z "$1" ] || [[ "$1" == "help" ]] || [[ "$1" == "--help" ]]; then
     echo "  --env <environment>: Target environment (local, alpha, beta, main). Default: beta"
     echo "  --output-dir <dir>: Directory to save transaction files. Default: . (current directory)"
     echo "  --output-file <file>: Specific output file path (export-params only)"
+    echo "  --export-dir <dir>: Directory to save exported parameter files (export-all-params only). (REQUIRED for export-all-params)"
     echo "  --network <network>: Network flag for query. Default: uses --env value"
     echo "  --home <path>: Home directory for pocketd. Default: ~/.pocket"
+    echo "  --gov-key <key>: Override the FROM_KEY for transaction signing"
     echo "  --no-prompt: Skip the edit prompt and just generate the template (update only)"
     echo ""
     echo "Examples:"
-    echo "  ./update_params.sh query tokenomics"
-    echo "  ./update_params.sh query-all --env alpha"
-    echo "  ./update_params.sh update tokenomics --env local"
-    echo "  ./update_params.sh update auth --env beta --output-dir ./params"
-    echo "  ./update_params.sh export-params application --output-file tools/scripts/params/bulk_params/application_params.json"
+    echo "  ./tools/scripts/params/gov_params.sh query tokenomics"
+    echo "  ./tools/scripts/params/gov_params.sh query-all --env alpha"
+    echo "  ./tools/scripts/params/gov_params.sh update tokenomics --env local"
+    echo "  ./tools/scripts/params/gov_params.sh update auth --env beta --output-dir ./params"
+    echo "  ./tools/scripts/params/gov_params.sh update tokenomics --env beta --gov-key custom_key"
+    echo "  ./tools/scripts/params/gov_params.sh export-params application --output-file tools/scripts/params/bulk_params/application_params.json"
+    echo "  ./tools/scripts/params/gov_params.sh export-all-params --env beta --export-dir ./exported_params"
     exit 1
 fi
 
@@ -132,7 +150,7 @@ shift # Remove command from arguments
 if [ "$COMMAND" = "update" ] || [ "$COMMAND" = "export-params" ]; then
     if [ -z "$1" ] || [[ "$1" == --* ]]; then
         echo "Error: Module name is required for $COMMAND command" >&2
-        echo "Usage: ./update_params.sh $COMMAND <module_name> [options]"
+        echo "Usage: ./tools/scripts/params/gov_params.sh $COMMAND <module_name> [options]"
         exit 1
     fi
     MODULE_NAME="$1"
@@ -140,16 +158,16 @@ if [ "$COMMAND" = "update" ] || [ "$COMMAND" = "export-params" ]; then
 elif [ "$COMMAND" = "query" ]; then
     if [ -z "$1" ] || [[ "$1" == --* ]]; then
         echo "Error: Module name is required for query command" >&2
-        echo "Usage: ./update_params.sh query <module_name> [options]"
+        echo "Usage: ./tools/scripts/params/gov_params.sh query <module_name> [options]"
         exit 1
     fi
     MODULE_NAME="$1"
     shift # Remove module name from arguments
-elif [ "$COMMAND" = "query-all" ]; then
-    # No module name needed for query-all
+elif [ "$COMMAND" = "query-all" ] || [ "$COMMAND" = "export-all-params" ]; then
+    # No module name needed for query-all or export-all-params
     MODULE_NAME=""
 else
-    echo "Error: Unknown command '$COMMAND'. Use: query, query-all, update, or export-params" >&2
+    echo "Error: Unknown command '$COMMAND'. Use: query, query-all, update, export-params, or export-all-params" >&2
     exit 1
 fi
 
@@ -157,8 +175,10 @@ fi
 ENVIRONMENT="beta"
 OUTPUT_DIR="."
 OUTPUT_FILE=""
+EXPORT_DIR=""
 HOME_DIR="~/.pocket"
 NETWORK=""
+GOV_KEY=""
 NO_PROMPT=false
 
 # Parse optional arguments
@@ -176,12 +196,20 @@ while [[ "$#" -gt 0 ]]; do
         OUTPUT_FILE="$2"
         shift 2
         ;;
+    --export-dir)
+        EXPORT_DIR="$2"
+        shift 2
+        ;;
     --network)
         NETWORK="$2"
         shift 2
         ;;
     --home)
         HOME_DIR="$2"
+        shift 2
+        ;;
+    --gov-key)
+        GOV_KEY="$2"
         shift 2
         ;;
     --no-prompt)
@@ -206,7 +234,7 @@ local)
     AUTHORITY="pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
     FROM_KEY="pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
     CHAIN_ID="pocket"
-    NODE="--node=localhost:26657"
+    NODE="--node=http://localhost:26657"
     ;;
 alpha)
     AUTHORITY="pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h"
@@ -232,6 +260,16 @@ main)
     ;;
 esac
 
+# Override FROM_KEY if --gov-key is provided
+if [ -n "$GOV_KEY" ]; then
+    FROM_KEY="$GOV_KEY"
+fi
+
+# If local environment and HOME_DIR was not overridden, set HOME_DIR to ./localnet/poktrolld
+if [ "$ENVIRONMENT" = "local" ] && [ "$HOME_DIR" = "~/.pocket" ]; then
+    HOME_DIR="./localnet/pocketd"
+fi
+
 # Create output directory if it doesn't exist (only needed for update command)
 if [ "$COMMAND" = "update" ]; then
     mkdir -p "$OUTPUT_DIR"
@@ -240,22 +278,20 @@ fi
 # Function to query and display parameters for a single module
 query_module_params() {
     local module=$1
-    local show_header=${2:-true}
 
     # Build the query command
     local query_cmd="pocketd query $module params --home=$HOME_DIR"
     if [ "$NETWORK" != "local" ]; then
-        query_cmd="$query_cmd --network=$NETWORK"
+        query_cmd="$query_cmd $NODE"
     fi
     query_cmd="$query_cmd -o json"
+    echo $query_cmd
 
-    if [ "$show_header" = true ]; then
-        echo "========================================="
-        echo "Module: $module ($(get_module_description "$module"))"
-        echo "Environment: $ENVIRONMENT"
-        echo "Network: $NETWORK"
-        echo "========================================="
-    fi
+    echo "========================================="
+    echo "Module: $module ($(get_module_description "$module"))"
+    echo -e "Environment: ${CYAN}$ENVIRONMENT${NC}"
+    echo -e "Network: ${CYAN}$NETWORK${NC}"
+    echo "========================================="
 
     # Query parameters
     local params_output
@@ -264,9 +300,6 @@ query_module_params() {
 
     if [ $query_exit_code -ne 0 ] || [ -z "$params_output" ]; then
         echo "❌ Failed to query parameters for module '$module'"
-        if [ "$show_header" = true ]; then
-            echo "   This module may not exist or may not have queryable parameters"
-        fi
         return 1
     fi
 
@@ -300,7 +333,7 @@ query_all_modules() {
 
     for module in "${AVAILABLE_MODULES[@]}"; do
         echo "🔍 Checking module: $module..."
-        if query_module_params "$module" false; then
+        if query_module_params "$module"; then
             successful_modules+=("$module")
         else
             failed_modules+=("$module")
@@ -317,41 +350,34 @@ query_all_modules() {
     echo ""
 }
 
-# Function to export parameters to a specific file
-export_module_params() {
+# Function to export parameters for a single module (internal helper)
+export_single_module_params() {
     local module=$1
     local output_file=$2
+    local show_output=${3:-false}
 
     # Build the query command
     local query_cmd="pocketd query $module params --home=$HOME_DIR"
     if [ "$NETWORK" != "local" ]; then
-        query_cmd="$query_cmd --network=$NETWORK"
+        query_cmd="$query_cmd $NODE"
     fi
     query_cmd="$query_cmd -o json"
 
-    echo "========================================="
-    echo "Exporting $module parameters"
-    echo "Environment: $ENVIRONMENT"
-    echo "Network: $NETWORK"
-    echo "Output file: $output_file"
-    echo "========================================="
-    echo ""
-
     # Query current parameters
     local current_params
-    current_params=$(eval $query_cmd)
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to query parameters for module '$module'" >&2
-        exit 1
+    current_params=$(eval $query_cmd 2>/dev/null)
+    local query_exit_code=$?
+
+    if [ $query_exit_code -ne 0 ] || [ -z "$current_params" ]; then
+        return 1
     fi
 
     # Extract just the params object
     local params_only
-    params_only=$(echo "$current_params" | jq '.params')
+    params_only=$(echo "$current_params" | jq '.params' 2>/dev/null)
 
     if [ "$params_only" = "null" ] || [ -z "$params_only" ]; then
-        echo "❌ No parameters found for module '$module'"
-        exit 1
+        return 1
     fi
 
     # Create the directory if it doesn't exist
@@ -385,19 +411,94 @@ EOF
     echo "$transaction_content" | jq '.' >"$output_file"
 
     if [ $? -eq 0 ]; then
-        echo "✅ Successfully exported $module parameters to: $output_file"
-        echo ""
-        echo "Transaction structure:"
-        echo "$transaction_content" | jq '.'
-        echo ""
-        echo "The file contains the complete transaction structure with MsgUpdateParams."
-        echo "You can modify the 'params' section as needed for your parameter updates."
-        echo ""
-        echo "Message type used: $message_type"
+        if [ "$show_output" = true ]; then
+            echo "✅ Successfully exported $module parameters to: $output_file"
+            echo ""
+            echo "Transaction structure:"
+            echo "$transaction_content" | jq '.'
+            echo ""
+            echo "The file contains the complete transaction structure with MsgUpdateParams."
+            echo "You can modify the 'params' section as needed for your parameter updates."
+            echo ""
+            echo "Message type used: $message_type"
+        fi
+        return 0
     else
-        echo "❌ Failed to write parameters to: $output_file"
+        return 1
+    fi
+}
+
+# Function to export parameters to a specific file
+export_module_params() {
+    local module=$1
+    local output_file=$2
+
+    echo "========================================="
+    echo "Exporting $module parameters"
+    echo "Environment: $ENVIRONMENT"
+    echo "Network: $NETWORK"
+    echo "Output file: $output_file"
+    echo "========================================="
+    echo ""
+
+    if export_single_module_params "$module" "$output_file" true; then
+        echo ""
+    else
+        echo "❌ Failed to export parameters for module '$module'"
         exit 1
     fi
+}
+
+# Function to export all module parameters to a directory
+export_all_module_params() {
+    local export_dir=$1
+
+    echo "========================================="
+    echo "Exporting parameters for all modules"
+    echo "Environment: $ENVIRONMENT"
+    echo "Network: $NETWORK"
+    echo "Export directory: $export_dir"
+    echo "========================================="
+    echo ""
+
+    # Create the export directory if it doesn't exist
+    mkdir -p "$export_dir"
+
+    local successful_modules=()
+    local failed_modules=()
+
+    for module in "${AVAILABLE_MODULES[@]}"; do
+        local output_file="$export_dir/${module}_params.json"
+        echo "🔍 Exporting module: $module..."
+
+        if export_single_module_params "$module" "$output_file" false; then
+            successful_modules+=("$module")
+            echo "✅ Exported $module -> $output_file"
+        else
+            failed_modules+=("$module")
+            echo "❌ Failed to export $module (module may not exist or have queryable parameters)"
+        fi
+    done
+
+    echo ""
+    echo "========================================="
+    echo "Export Summary"
+    echo "========================================="
+    echo "✅ Successfully exported ${#successful_modules[@]} modules:"
+    for module in "${successful_modules[@]}"; do
+        echo "   - $module -> $export_dir/${module}_params.json"
+    done
+
+    if [ ${#failed_modules[@]} -gt 0 ]; then
+        echo ""
+        echo "❌ Failed to export ${#failed_modules[@]} modules: ${failed_modules[*]}"
+        echo "   (These modules may not exist or may not have queryable parameters)"
+    fi
+
+    echo ""
+    echo "All exported files are ready to use as transaction templates."
+    echo "You can modify the 'params' section in each file as needed for parameter updates."
+    echo ""
 }
 
 # Execute the requested command
@@ -412,11 +513,21 @@ case $COMMAND in
     # Validate that output file is specified
     if [ -z "$OUTPUT_FILE" ]; then
         echo "Error: --output-file is required for export-params command" >&2
-        echo "Usage: ./update_params.sh export-params <module_name> --output-file <path>"
-        echo "Example: ./update_params.sh export-params application --output-file tools/scripts/params/bulk_params/application_params.json"
+        echo "Usage: ./tools/scripts/params/gov_params.sh export-params <module_name> --output-file <path>"
+        echo "Example: ./tools/scripts/params/gov_params.sh export-params application --output-file tools/scripts/params/bulk_params/application_params.json"
         exit 1
     fi
     export_module_params "$MODULE_NAME" "$OUTPUT_FILE"
+    ;;
+"export-all-params")
+    # Validate that export dir is specified
+    if [ -z "$EXPORT_DIR" ]; then
+        echo "Error: --export-dir is required for export-all-params command" >&2
+        echo "Usage: ./tools/scripts/params/gov_params.sh export-all-params --export-dir <dir> [--env <environment>]"
+        echo "Example: ./tools/scripts/params/gov_params.sh export-all-params --env beta --export-dir ./exported_params"
+        exit 1
+    fi
+    export_all_module_params "$EXPORT_DIR"
     ;;
 "update")
     # Existing update logic starts here
@@ -424,15 +535,15 @@ case $COMMAND in
     # Build the query command
     QUERY_CMD="pocketd query $MODULE_NAME params --home=$HOME_DIR"
     if [ "$NETWORK" != "local" ]; then
-        QUERY_CMD="$QUERY_CMD --network=$NETWORK"
+        QUERY_CMD="$QUERY_CMD $NODE"
     fi
     QUERY_CMD="$QUERY_CMD -o json"
 
     echo "========================================="
     echo "Querying current $MODULE_NAME parameters"
-    echo "Environment: $ENVIRONMENT"
-    echo "Network: $NETWORK"
-    echo "Command: $QUERY_CMD"
+    echo -e "Environment: ${CYAN}$ENVIRONMENT${NC}"
+    echo -e "Network: ${CYAN}$NETWORK${NC}"
+    echo -e "Command: ${CYAN}$QUERY_CMD${NC}"
     echo "========================================="
     echo ""
 
@@ -474,8 +585,8 @@ case $COMMAND in
 EOF
 
     echo "========================================="
-    echo "Transaction template created: $OUTPUT_FILE_UPDATE"
-    echo "Message type used: $MESSAGE_TYPE"
+    echo -e "Transaction template created: ${CYAN}$OUTPUT_FILE_UPDATE${NC}"
+    echo -e "Message type used: ${CYAN}$MESSAGE_TYPE${NC}"
     echo "========================================="
     echo ""
 
@@ -513,10 +624,10 @@ EOF
     echo ""
     echo "To submit your parameter update transaction, run:"
     echo ""
-    echo "  pocketd tx authz exec $OUTPUT_FILE_UPDATE --from=$FROM_KEY --keyring-backend=test --chain-id=$CHAIN_ID $NODE --yes --home=$HOME_DIR --fees=200upokt"
+    echo -e "${CYAN}pocketd tx authz exec $OUTPUT_FILE_UPDATE --from=$FROM_KEY --keyring-backend=test --chain-id=$CHAIN_ID $NODE --yes --home=$HOME_DIR --gas=auto --fees=10upokt${NC}"
     echo ""
-    echo "Template file location: $OUTPUT_FILE_UPDATE"
-    echo "Message type used: $MESSAGE_TYPE"
+    echo -e "Template file location: ${CYAN}$OUTPUT_FILE_UPDATE${NC}"
+    echo -e "Message type used: ${CYAN}$MESSAGE_TYPE${NC}"
     echo ""
     echo "⚠️  IMPORTANT: Review your changes carefully before submitting!"
     echo "⚠️  Parameter updates affect the entire network and cannot be easily reverted."

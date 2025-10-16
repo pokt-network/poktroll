@@ -89,22 +89,15 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		// ServiceConfigs:       (intentionally omitted, no service was staked),
 	}
 
-	// Construct the base response.
-	// It will be modified, as necessary, prior to returning.
-	claimMorseAppResponse := &migrationtypes.MsgClaimMorseApplicationResponse{
-		MorseSrcAddress:         morseClaimableAccount.GetMorseSrcAddress(),
-		ClaimedBalance:          claimedUnstakedBalance,
-		ClaimedApplicationStake: claimedAppStake,
-		SessionEndHeight:        sessionEndHeight,
-		Application:             unbondedApp,
-	}
+	// Construct the response.
+	claimMorseAppResponse := &migrationtypes.MsgClaimMorseApplicationResponse{}
 
 	// Construct the base application claim event.
 	// It will be modified, as necessary, prior to emission.
 	morseAppClaimedEvent := &migrationtypes.EventMorseApplicationClaimed{
 		MorseSrcAddress:         msg.GetMorseSignerAddress(),
-		ClaimedBalance:          claimedUnstakedBalance,
-		ClaimedApplicationStake: claimedAppStake,
+		ClaimedBalance:          claimedUnstakedBalance.String(),
+		ClaimedApplicationStake: claimedAppStake.String(),
 		SessionEndHeight:        sessionEndHeight,
 		Application:             unbondedApp,
 	}
@@ -135,7 +128,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// - Use a lookup table to estimate block times per network
 	// - Calculate unstake session end height using shared parameters and block time
 	// - Emit events for Morse application claimed and unbonding started
-	if morseClaimableAccount.HasUnbonded() {
+	if morseClaimableAccount.HasUnbonded(ctx) {
 		events = append(events, morseAppClaimedEvent)
 		events = append(events, morseAppUnbondingEndEvent)
 		if err = emitEvents(ctx, events); err != nil {
@@ -178,14 +171,9 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, err
 	}
 
-	// Update the application claim response.
-	claimMorseAppResponse.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
-	claimMorseAppResponse.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake()
-	claimMorseAppResponse.Application = app
-
 	// Update the application claim event.
-	morseAppClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance()
-	morseAppClaimedEvent.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake()
+	morseAppClaimedEvent.ClaimedBalance = morseClaimableAccount.GetUnstakedBalance().String()
+	morseAppClaimedEvent.ClaimedApplicationStake = morseClaimableAccount.GetApplicationStake().String()
 	morseAppClaimedEvent.Application = app
 
 	// Emit the application claim event first.
@@ -196,7 +184,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// - Set the unstake session end height on the application
 	// - Emit an unbonding begin event
 	if morseClaimableAccount.IsUnbonding() {
-		estimatedUnstakeSessionEndHeight, isUnbonded := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx)
+		estimatedUnstakeSessionEndHeight, isUnbonded := morseClaimableAccount.GetEstimatedUnbondingEndHeight(ctx, sharedParams)
 
 		// DEV_NOTE: SHOULD NEVER happen, the check above is the same, but in terms of time instead of block height...
 		if isUnbonded {

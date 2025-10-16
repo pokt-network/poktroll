@@ -19,51 +19,56 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 	logger := k.Logger().With("method", "EndBlocker")
 
-	// NB: There are two main reasons why we settle expiring claims in the end
-	// instead of when a proof is submitted:
+	// DEV_NOTE: There are two primary reasons why claims are settled at the EndBlocker instead of proof submission:
 	// 1. Logic - Probabilistic proof allows claims to be settled (i.e. rewarded)
 	//    even without a proof to be able to scale to unbounded Claims & Proofs.
 	// 2. Implementation - This cannot be done from the `x/proof` module because
 	//    it would create a circular dependency.
-	settledResults, expiredResults, err := k.SettlePendingClaims(ctx)
+	settledResults, expiredResults, numDiscardedFaultyClaims, err := k.SettlePendingClaims(ctx)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not settle pending claims due to error %v", err))
 		return err
 	}
-
 	logger.Info(fmt.Sprintf(
-		"settled %d claims and expired %d claims",
+		"settled %d claims, expired %d claims, discarded %d faulty claims",
 		settledResults.GetNumClaims(),
 		expiredResults.GetNumClaims(),
+		numDiscardedFaultyClaims,
 	))
+	// Secondary warning log to alert of non-zero discarded faulty claims.
+	if numDiscardedFaultyClaims > 0 {
+		logger.Warn(fmt.Sprintf("discarded %d faulty claims", numDiscardedFaultyClaims))
+	}
 
-	// Update the relay mining difficulty for every service that settled pending
-	// claims based on how many estimated relays were serviced for it.
+	// Update the relay mining difficulty for every service that settled pending claims.
 	settledRelaysPerServiceIdMap, err := settledResults.GetRelaysPerServiceMap()
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not get settled relays per service map due to error %v", err))
+		logger.Error(fmt.Sprintf("could not get settledRelaysPerServiceIdMap due to error: %v", err))
 		return err
 	}
 	difficultyPerServiceMap, err := k.UpdateRelayMiningDifficulty(ctx, settledRelaysPerServiceIdMap)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not update relay mining difficulty due to error %v", err))
+		logger.Error(fmt.Sprintf("could not update relay mining difficulties due to error: %v", err))
 		return err
 	}
 	logger.Info(fmt.Sprintf(
-		"successfully updated the relay mining difficulty for %d services",
-		len(settledResults.GetServiceIds()),
+		"successfully updated relay mining difficulties for %d services",
+		len(difficultyPerServiceMap),
 	))
 
 	// Telemetry - emit telemetry for each service's relay mining difficulty.
 	for serviceId, newRelayMiningDifficulty := range difficultyPerServiceMap {
-		var newRelayMiningTargetHash [protocol.RelayHasherSize]byte
-		copy(newRelayMiningTargetHash[:], newRelayMiningDifficulty.TargetHash)
-
-		// NB: The difficulty integer is just a human readable interpretation of
-		// the target hash and is not actually used for business logic.
+		// DEV_NOTE: The difficulty integer is a human readable interpretation of
+		// the target hash intended for telemetry purposes only.
 		difficulty := protocol.GetRelayDifficultyMultiplierToFloat32(newRelayMiningDifficulty.TargetHash)
 		telemetry.RelayMiningDifficultyGauge(difficulty, serviceId)
 		telemetry.RelayEMAGauge(newRelayMiningDifficulty.NumRelaysEma, serviceId)
+		logger.Debug(fmt.Sprintf(
+			"Updated relay mining difficulty for service %q with difficulty %f and EMA %d",
+			serviceId,
+			difficulty,
+			newRelayMiningDifficulty.NumRelaysEma,
+		))
 	}
 
 	return nil

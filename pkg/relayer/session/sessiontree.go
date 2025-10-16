@@ -8,7 +8,9 @@ import (
 	"sync"
 
 	"github.com/pokt-network/smt"
+	"github.com/pokt-network/smt/kvstore"
 	"github.com/pokt-network/smt/kvstore/pebble"
+	"github.com/pokt-network/smt/kvstore/simplemap"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -53,7 +55,8 @@ type sessionTree struct {
 	compactProofBz []byte
 
 	// treeStore is the KVStore used to store the SMST.
-	treeStore pebble.PebbleKVStore
+	// This can be either an in-memory store or a disk-based store.
+	treeStore kvstore.MapStore
 
 	// storePath is the path to the KVStore used to store the SMST.
 	// It is created from the storePrefix and the session.sessionId.
@@ -68,39 +71,66 @@ type sessionTree struct {
 // removeFromRelayerSessions that removes the sessionTree from the RelayerSessionsManager.
 // It returns an error if the KVStore fails to be created.
 func NewSessionTree(
+	logger polylog.Logger,
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress string,
-	storesDirectory string,
-	logger polylog.Logger,
+	storesDirectoryPath string,
 ) (relayer.SessionTree, error) {
-	// Join the storePrefix and the session.sessionId and supplier's operator address to
-	// create a unique storePath.
+	logger = logger.With(
+		"session_id", sessionHeader.SessionId,
+		"application_address", sessionHeader.ApplicationAddress,
+		"service_id", sessionHeader.ServiceId,
+		"supplier_operator_address", supplierOperatorAddress,
+	)
 
-	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
-	// use one key store. KV databases are often optimized for writing into one database. They keys can
-	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
-	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionHeader.SessionId)
+	// TODO_IMPROVE(#621): Use single KV store per supplier with prefixed keys instead of one per session.
+	// Initialize the KVStore based on the storage type specified
+	storePath := storesDirectoryPath
+	var treeStore kvstore.MapStore
+	switch storesDirectoryPath {
+	case "":
+		return nil, fmt.Errorf("invalid storage path: empty string is not supported for disk storage")
 
-	// Make sure storePath does not exist when creating a new SessionTree
-	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
-		return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
+	case InMemoryStoreFilename:
+		// SimpleMap in-memory storage (pure Go map)
+		logger.Info().Msg("⚠️ TODO_TECHDEBT(#1734): Using SimpleMap in-memory store for session tree. Data will not be persisted on restart.⚠️")
+		treeStore = simplemap.NewSimpleMap()
+
+	case InMemoryPebbleStoreFilename:
+		// Pebble in-memory storage (with in-memory VFS)
+		logger.Info().Msg("⚠️ TODO_TECHDEBT(#1734): Using Pebble in-memory store for session tree. Data will not be persisted on restart. ⚠️")
+		pebbleStore, err := pebble.NewKVStore("") // Empty string triggers in-memory VFS in Pebble
+		if err != nil {
+			return nil, err
+		}
+		treeStore = pebbleStore
+
+	default:
+		// Treat anything else as disk-based persistent storage using Pebble
+		// This would improve RAM/IO efficiency as KV databases are optimized for this pattern.
+		storePath = filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionHeader.SessionId)
+
+		// Make sure storePath does not exist when creating a new SessionTree
+		if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
+			return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
+		}
+		logger.Info().Msgf("Using %s as the store path for session tree", storePath)
+
+		pebbleStore, err := pebble.NewKVStore(storePath)
+		if err != nil {
+			return nil, err
+		}
+		treeStore = pebbleStore
 	}
 
-	treeStore, err := pebble.NewKVStore(storePath)
-	if err != nil {
-		return nil, err
-	}
+	// Update the logger with the store path
+	logger = logger.With("store_path", storePath)
 
 	// Create the SMST from the KVStore and a nil value hasher so the proof would
 	// contain a non-hashed Relay that could be used to validate the proof onchain.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
-	logger = logger.With(
-		"store_path", storePath,
-		"session_id", sessionHeader.SessionId,
-		"supplier_operator_address", supplierOperatorAddress,
-	)
-
+	// Create the sessionTree
 	sessionTree := &sessionTree{
 		logger:                  logger,
 		sessionHeader:           sessionHeader,
@@ -121,15 +151,17 @@ func NewSessionTree(
 //
 // Returns a fully reconstructed SessionTree or an error if reconstruction fails
 func importSessionTree(
+	logger polylog.Logger,
 	sessionSMT *prooftypes.SessionSMT,
 	claim *prooftypes.Claim,
-	storesDirectory string,
-	logger polylog.Logger,
+	storesDirectoryPath string,
 ) (relayer.SessionTree, error) {
 	sessionId := sessionSMT.SessionHeader.SessionId
 	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
+	applicationAddress := sessionSMT.SessionHeader.ApplicationAddress
+	serviceId := sessionSMT.SessionHeader.ServiceId
 	smtRoot := sessionSMT.SmtRoot
-	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionId)
+	storePath := filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionId)
 
 	// Verify the storage path exists - if not, the session data is missing or corrupted
 	if _, err := os.Stat(storePath); err != nil {
@@ -147,8 +179,10 @@ func importSessionTree(
 	}
 
 	logger = logger.With(
-		"session_id", sessionId,
+		"service_id", serviceId,
+		"application_address", applicationAddress,
 		"supplier_operator_address", supplierOperatorAddress,
+		"session_id", sessionId,
 	)
 
 	// SCENARIO 1: Session has been claimed
@@ -157,10 +191,7 @@ func importSessionTree(
 	if claim != nil {
 		sessionTree.claimedRoot = claim.RootHash
 		sessionTree.isClaiming = true
-		logger.Info().Msgf(
-			"imported session tree with committed onchain claim - root hash: %x",
-			claim.RootHash,
-		)
+		logger.Info().Msg("imported a session tree WITH A PREVIOUSLY COMMITTED onchain claim")
 		return sessionTree, nil
 	}
 
@@ -179,10 +210,29 @@ func importSessionTree(
 
 	sessionTree.sessionSMT = trie
 	sessionTree.treeStore = treeStore
-	sessionTree.claimedRoot = nil  // explicitly set for posterity
-	sessionTree.isClaiming = false // explicitly set for posterity
 
-	logger.Info().Msg("the imported session tree with no committed onchain claim")
+	// When importing a session without an onchain claim, DO NOT set the claimedRoot.
+	// Setting claimedRoot blocks further updates via the Update() method.
+	//
+	// The session may have been flushed during shutdown, but we still want to allow
+	// updates after restart for sessions that haven't been claimed yet.
+	// The claim creation process will call Flush() when needed, which will set
+	// the claimedRoot at the appropriate time.
+	//
+	// This design allows:
+	// 1. Sessions to continue accumulating relays after restart
+	// 2. The claim creation process to work correctly by calling Flush()
+	// 3. The same root to be generated since the imported SMT has the persisted state
+	//
+	// TODO_CONSIDERATION: For sessions that were previously flushed during shutdown,
+	// consider restoring the claimedRoot synchronously during import to avoid race
+	// conditions in tests that expect GetClaimRoot() to return immediately after restart.
+	// This would require distinguishing between "flushed but not claimed" vs "never flushed"
+	// sessions, possibly by storing flush state in the session metadata.
+	sessionTree.claimedRoot = nil  // Keep nil to allow updates
+	sessionTree.isClaiming = false // Not yet in the claiming pipeline
+
+	logger.Info().Msg("imported a session tree WITHOUT A PREVIOUSLY COMMITTED onchain claim")
 
 	return sessionTree, nil
 }
@@ -226,6 +276,8 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
+	logger := st.logger.With("method", "ProveClosest")
+
 	// A claim need to be generated before a proof can be generated.
 	if st.claimedRoot == nil {
 		return nil, ErrSessionTreeNotClosed
@@ -241,23 +293,26 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return st.compactProof, nil
 	}
 
-	// Restore the KVStore from disk since it has been closed after the claim has been generated.
-	st.treeStore, err = pebble.NewKVStore(st.storePath)
+	// Restore the sessionSMT from the persisted or in-memory storage.
+	sessionSMT, err := st.restoreSessionSMT()
 	if err != nil {
 		return nil, err
 	}
-
-	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
+	if sessionSMT == nil {
+		logger.Error().Msg("🚨 SHOULD RARELY HAPPEN: sessionSMT is NULL after restoration attempt! Cannot generate proof! Claims exist but REWARDS WILL BE LOST! 🚨")
+		return nil, fmt.Errorf("sessionSMT is nil - cannot generate proof for session %s", st.sessionHeader.SessionId)
+	}
 
 	// Generate the proof and cache it along with the path for which it was generated.
 	// There is no ProveClosest variant that generates a compact proof directly.
 	// Generate a regular SparseMerkleClosestProof then compact it.
 	proof, err := sessionSMT.ProveClosest(path)
 	if err != nil {
+		logger.Error().Err(err).Msg("🚨 SHOULD RARELY HAPPEN: Proving the path in the sessionSMT failed! Cannot generate proof! Claims exist but REWARDS WILL BE LOST! 🚨")
 		return nil, err
 	}
 
-	compactProof, err = smt.CompactClosestProof(proof, &sessionSMT.TrieSpec)
+	compactProof, err = smt.CompactClosestProof(proof, sessionSMT.Spec())
 	if err != nil {
 		return nil, err
 	}
@@ -274,6 +329,44 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 	st.compactProofBz = compactProofBz
 
 	return st.compactProof, nil
+}
+
+// restoreSessionSMT restores the sessionSMT from the persisted or in-memory storage.
+func (st *sessionTree) restoreSessionSMT() (smt.SparseMerkleSumTrie, error) {
+	logger := st.logger.With("method", "restoreSessionSMT")
+
+	var sessionSMT smt.SparseMerkleSumTrie
+	switch st.storePath {
+
+	// Restoring from in-memory storage
+	case InMemoryStoreFilename, InMemoryPebbleStoreFilename:
+		// In memory storage: sessionSMT should still be available (preserved during Flush)
+		if st.sessionSMT != nil {
+			logger.Debug().Msgf("Found cached in memory sessionSMT for session %s. Restoring from in-memory store: %s", st.sessionHeader.SessionId, st.storePath)
+			return st.sessionSMT, nil
+		}
+		// Fallback: reimport from the active SimpleMap store
+		if st.treeStore != nil {
+			logger.Debug().Msgf("Found cached in memory treeStore for session %s. Restoring from in-memory store: %s", st.sessionHeader.SessionId, st.storePath)
+			sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
+			return sessionSMT, nil
+		}
+		// Should never happen
+		return nil, fmt.Errorf("cannot restore sessionSMT from SimpleMap store for session %s", st.sessionHeader.SessionId)
+
+	// Restoring from disk storage
+	default:
+		// Only supporting pebble storage for now
+		pebbleStore, pebbleErr := pebble.NewKVStore(st.storePath)
+		if pebbleErr != nil {
+			logger.Error().Err(pebbleErr).Msgf("🚨 SHOULD RARELY HAPPEN: Failed to restore sessionSMT from disk store for session %s and store path %s", st.sessionHeader.SessionId, st.storePath)
+			return nil, pebbleErr
+		}
+		st.treeStore = pebbleStore
+		sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
+	}
+
+	return sessionSMT, nil
 }
 
 // GetProofBz returns the marshaled proof for the session.
@@ -299,18 +392,45 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
+	logger := st.logger.With("method", "Flush")
+
 	// We already have the root hash, return it.
-	if st.claimedRoot != nil {
-		return st.claimedRoot, nil
+	if st.claimedRoot == nil {
+		st.claimedRoot = st.sessionSMT.Root()
 	}
 
-	st.claimedRoot = st.sessionSMT.Root()
+	// Post-flush cleanup: handle different storage types appropriately
+	switch st.storePath {
+	case InMemoryStoreFilename:
+		// SimpleMap: Keep everything in memory for later proof generation
+		// No lifecycle management needed - data persists in memory until process restart
+		// DEV_NOTE: DO NOT set either st.treeStore OR st.sessionSMT to nil here or proof generation will fail.
+		logger.Debug().Msg("SimpleMap session tree flushed - keeping data in memory for proof generation")
 
-	if err := st.Stop(); err != nil {
-		return nil, err
+	case InMemoryPebbleStoreFilename:
+		// Pebble in-memory: Stop the store but preserve the sessionSMT reference
+		// We can't restore data from disk later, so the SMT reference is crucial
+		if err := st.stop(); err != nil {
+			return nil, err
+		}
+		st.treeStore = nil
+
+		// DEV_NOTE: DO NOT set st.sessionSMT to nil here or proof generation will fail.
+		// The following test will fail if we set st.sessionSMT to nil:
+		// go test -count=1 -v ./pkg/relayer/session/... -run TestStorageModePebbleInMemory/TestOriginalBugReproduction
+		// st.sessionSMT = nil
+		logger.Debug().Msg("Pebble in-memory session tree stopped - sessionSMT preserved for proof generation")
+
+	default:
+		// Disk storage: Stop store and clear references (will be restored from disk for proofs)
+		if err := st.stop(); err != nil {
+			return nil, err
+		}
+		// DEV_NOTE: We can set both st.treeStore AND st.sessionSMT to nil here since we will be restoring from disk for proofs.
+		st.treeStore = nil
+		st.sessionSMT = nil
+		logger.Debug().Msg("Disk session tree stopped - data will be restored from disk for proof generation")
 	}
-
-	st.treeStore = nil
 
 	return st.claimedRoot, nil
 }
@@ -337,8 +457,15 @@ func (st *sessionTree) GetClaimRoot() []byte {
 // called only after the proof has been successfully submitted onchain and the servicer
 // has confirmed that it has been rewarded.
 func (st *sessionTree) Delete() error {
+	logger := st.logger.With("method", "Delete")
+
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
+	// After deletion, set treeStore to nil to:
+	// - Prevent double-close operations.
+	// - Avoid panics from future use of a closed kvstore instance.
+	// - Signal that the treeStore is no longer valid.
+	defer func() { st.treeStore = nil }()
 
 	st.isClaiming = false
 
@@ -346,18 +473,42 @@ func (st *sessionTree) Delete() error {
 	// This was intentionally removed to lower the IO load.
 	// When the database is closed, it is deleted it from disk right away.
 
-	if st.treeStore != nil {
-		if err := st.treeStore.Stop(); err != nil {
-			return err
-		}
-	} else {
-		st.logger.With(
-			"claim_root", fmt.Sprintf("%x", st.GetClaimRoot()),
-		).Info().Msg("KVStore is already stopped")
+	// Handle stopping the KVStore if it's still active
+	if st.treeStore == nil {
+		logger.Info().Msg("KVStore is already stopped")
+		return nil
 	}
 
-	// Delete the KVStore from disk
-	return os.RemoveAll(st.storePath)
+	switch st.storePath {
+
+	case InMemoryStoreFilename:
+		logger.Info().Msg("Clearing SimpleMap in-memory session tree KVStore.")
+		if st.treeStore == nil {
+			logger.Debug().Msg("SimpleMap treeStore is nil - nothing to clear")
+			return nil
+		}
+		return st.treeStore.ClearAll()
+
+	case InMemoryPebbleStoreFilename:
+		logger.Info().Msg("Clearing Pebble in-memory session tree KVStore.")
+		// Pebble in-memory stores need to be stopped
+		if pebbleStore, ok := st.treeStore.(pebble.PebbleKVStore); ok {
+			if err := pebbleStore.Stop(); err != nil {
+				return err
+			}
+		}
+
+	default:
+		// Disk-based stores need to be stopped
+		if pebbleStore, ok := st.treeStore.(pebble.PebbleKVStore); ok {
+			if err := pebbleStore.Stop(); err != nil {
+				return err
+			}
+		}
+		return os.RemoveAll(st.storePath)
+	}
+
+	return nil
 }
 
 // StartClaiming marks the session tree as being picked up for claiming,
@@ -381,11 +532,12 @@ func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
 }
 
-// Stop the KVStore and free up the in-memory resources used by the session tree.
-// Calling Stop:
+// stop the KVStore and free up the in-memory resources used by the session tree.
+//
+// Calling stop:
 // - DOES NOT calculate the root hash of the SMST.
 // - DOES commit the latest (current state) of the SMT to on-state storage.
-func (st *sessionTree) Stop() error {
+func (st *sessionTree) stop() error {
 	if st.treeStore == nil {
 		return nil
 	}
@@ -395,6 +547,24 @@ func (st *sessionTree) Stop() error {
 		return err
 	}
 
-	// Store the underlying key-value store in the session tree
-	return st.treeStore.Stop()
+	// Handle stopping based on storage type
+	switch st.storePath {
+	case InMemoryStoreFilename:
+		// SimpleMap in-memory storage: no stopping required
+		return nil
+
+	case InMemoryPebbleStoreFilename:
+		// Pebble in-memory storage: call Stop() if it's a PebbleKVStore
+		if pebbleStore, ok := st.treeStore.(pebble.PebbleKVStore); ok {
+			return pebbleStore.Stop()
+		}
+		return nil
+
+	default:
+		// Disk-based persistent storage: call Stop() if it's a PebbleKVStore
+		if pebbleStore, ok := st.treeStore.(pebble.PebbleKVStore); ok {
+			return pebbleStore.Stop()
+		}
+		return nil
+	}
 }
