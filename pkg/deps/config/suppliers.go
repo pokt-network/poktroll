@@ -771,10 +771,11 @@ func NewSupplyRelayerProxyFn(
 //
 // Parameters:
 //   - smtStorePath: Path to the sessions store
+//   - disableSMTPersistence: Flag to disable SMT persistence
 //
 // Returns:
 //   - config.SupplierFn: Supplier function for dependency injection
-func NewSupplyRelayerSessionsManagerFn(smtStorePath string) SupplierFn {
+func NewSupplyRelayerSessionsManagerFn(smtStorePath string, smtPersistenceDisabled bool) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -783,6 +784,7 @@ func NewSupplyRelayerSessionsManagerFn(smtStorePath string) SupplierFn {
 		relayerSessionsManager, err := session.NewRelayerSessions(
 			deps,
 			session.WithStoresDirectoryPath(smtStorePath),
+			session.WithDisableSMTPersistence(smtPersistenceDisabled),
 		)
 		if err != nil {
 			return nil, err

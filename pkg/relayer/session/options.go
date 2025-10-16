@@ -11,3 +11,10 @@ func WithStoresDirectoryPath(storesDirectoryPath string) relayer.RelayerSessions
 		relSessionMgr.(*relayerSessionsManager).storesDirectoryPath = storesDirectoryPath
 	}
 }
+
+// WithDisableSMTPersistence sets whether or not to persist the SMT of work sessions to disk.
+func WithDisableSMTPersistence(smtPersistenceDisabled bool) relayer.RelayerSessionsManagerOption {
+	return func(relSessionMgr relayer.RelayerSessionsManager) {
+		relSessionMgr.(*relayerSessionsManager).smtPersistenceDisabled = smtPersistenceDisabled
+	}
+}

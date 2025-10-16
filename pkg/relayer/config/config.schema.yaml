@@ -42,6 +42,24 @@ properties:
       Path to the Sparse Merkle Tree store directory.
     type: string
 
+  # Disable SMT persistence (optional)
+  disable_smt_persistence:
+    description: |
+      Disable SMT Write-Ahead Log (WAL) and recovery mechanisms.
+      When enabled (true):
+        - No WAL files are written to disk during relay processing
+        - Session trees are not recovered from disk on restart
+        - The RelayMiner operates in pure in-memory mode for SMTs
+
+      Use this when:
+        - You want to minimize disk I/O for performance
+        - You don't need to preserve session state across restarts
+        - You're running in an environment where disk persistence is undesirable
+
+      Default: false (persistence enabled)
+    type: boolean
+    default: false
+
   # Enable over servicing (optional)
   enable_over_servicing:
     description: "Flag to enable over servicing beyond the required relay count."

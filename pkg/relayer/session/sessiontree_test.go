@@ -298,7 +298,7 @@ func TestSessionTree_WAL_NewSessionTree_CreatesWALDirectory(t *testing.T) {
 	supplierAddr := sample.AccAddressBech32()
 
 	// Create session tree - should create WAL directory
-	sessionTree, err := session.NewSessionTree(logger, sessionHeader, supplierAddr, tmpDir)
+	sessionTree, err := session.NewSessionTree(logger, sessionHeader, supplierAddr, tmpDir, false)
 	require.NoError(t, err)
 	require.NotNil(t, sessionTree)
 
@@ -490,10 +490,10 @@ func createTestSessionTree(t *testing.T) (relayer.SessionTree, string, func()) {
 	}
 	supplierAddr := sample.AccAddressBech32()
 
-	sessionTree, err := session.NewSessionTree(logger, sessionHeader, supplierAddr, tmpDir)
+	sessionTree, err := session.NewSessionTree(logger, sessionHeader, supplierAddr, tmpDir, false)
 	require.NoError(t, err)
 
-	walPath := filepath.Join(tmpDir, minedRelaysWALDirectoryPath, supplierAddr, sessionHeader.SessionId)
+	walPath := filepath.Join(tmpDir, minedRelaysWALDirectoryPath, supplierAddr, sessionHeader.SessionId, ".wal")
 
 	cleanup := func() {
 		_ = sessionTree.Delete()

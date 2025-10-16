@@ -21,6 +21,7 @@ import (
 var _ relayer.SessionTree = (*sessionTree)(nil)
 
 const (
+	sessionMetadataDirName      = "sessions_metadata"
 	minedRelaysWALDirectoryPath = "mined_relays"
 	minedRelaysWALFileExtension = ".wal"
 )
@@ -76,6 +77,7 @@ func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress string,
 	storesDirectoryPath string,
+	smtPersistenceDisabled bool,
 ) (relayer.SessionTree, error) {
 	logger = logger.With(
 		"session_id", sessionHeader.SessionId,
@@ -86,35 +88,42 @@ func NewSessionTree(
 
 	treeStore := simplemap.NewSimpleMap()
 
-	storePath := filepath.Join(storesDirectoryPath, minedRelaysWALDirectoryPath, supplierOperatorAddress, sessionHeader.SessionId, minedRelaysWALFileExtension)
-
-	// Make sure storePath does not exist when creating a new SessionTree
-	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
-		return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
-	}
-	logger.Info().Msgf("Using %s as the store path for session tree", storePath)
-
-	// Create the parent directories for the WAL file if they don't exist
-	storeDir := filepath.Dir(storePath)
-	if err := os.MkdirAll(storeDir, 0o755); err != nil {
-		return nil, fmt.Errorf("failed to create WAL directory %q: %w", storeDir, err)
-	}
-
-	logger.Debug().Msgf("📁 Created mined relays WAL directory %q", storeDir)
-
-	// Update the logger with the store path
-	logger = logger.With("store_path", storePath)
-
 	// Create the SMST from the in-memory store and a nil value hasher so the proof would
 	// contain a non-hashed Relay that could be used to validate the proof onchain.
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec by finding
 	// all smt.NewSparseMerkleSumTrie() calls and unifying the configuration.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
-	minedRelaysWAL, err := NewMinedRelaysWriteAheadLog(storePath, logger)
-	if err != nil {
-		return nil, err
+	var (
+		minedRelaysWAL *minedRelaysWriteAheadLog
+		err            error
+	)
+	storePath := ""
+
+	if !smtPersistenceDisabled {
+		storePath = filepath.Join(storesDirectoryPath, minedRelaysWALDirectoryPath, supplierOperatorAddress, sessionHeader.SessionId+minedRelaysWALFileExtension)
+
+		// Make sure storePath does not exist when creating a new SessionTree
+		if _, err = os.Stat(storePath); err != nil && !os.IsNotExist(err) {
+			return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
+		}
+		logger.Info().Msgf("Using %s as the store path for session tree", storePath)
+
+		// Create the parent directories for the WAL file if they don't exist
+		storeDir := filepath.Dir(storePath)
+		if err := os.MkdirAll(storeDir, 0o755); err != nil {
+			return nil, fmt.Errorf("failed to create WAL directory %q: %w", storeDir, err)
+		}
+
+		logger.Debug().Msgf("📁 Created mined relays WAL directory %q", storeDir)
+
+		if minedRelaysWAL, err = NewMinedRelaysWriteAheadLog(storePath, logger); err != nil {
+			return nil, err
+		}
 	}
+
+	// Update the logger with the store path
+	logger = logger.With("store_path", storePath)
 
 	// Create the sessionTree
 	sessionTree := &sessionTree{
@@ -146,7 +155,7 @@ func importSessionTree(
 	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
 	applicationAddress := sessionSMT.SessionHeader.ApplicationAddress
 	serviceId := sessionSMT.SessionHeader.ServiceId
-	storePath := filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionId, minedRelaysWALFileExtension)
+	storePath := filepath.Join(storesDirectoryPath, supplierOperatorAddress, sessionId+minedRelaysWALFileExtension)
 
 	// Verify the storage path exists - if not, the session data is missing or corrupted
 	if _, err := os.Stat(storePath); err != nil {
@@ -240,8 +249,11 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 		return ErrSessionTreeClosed
 	}
 
-	// Append the mined relay to the write-ahead log to ensure recovery in case of crashes or restarts.
-	st.minedRelaysWAL.AppendMinedRelay(key, value, weight)
+	// Check if persistence is enabled before appending to the WAL
+	if st.minedRelaysWAL != nil {
+		// Append the mined relay to the write-ahead log to ensure recovery in case of crashes or restarts.
+		st.minedRelaysWAL.AppendMinedRelay(key, value, weight)
+	}
 
 	if err := st.sessionSMT.Update(key, value, weight); err != nil {
 		return ErrSessionUpdatingTree.Wrapf("error: %v", err)

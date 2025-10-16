@@ -73,6 +73,7 @@ func NewEmptySessionTree(
 		sessionTreeHeader,
 		supplierOperatorAddr,
 		testSessionTreeStoreDir,
+		true,
 	)
 	require.NoError(t, err)
 

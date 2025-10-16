@@ -131,22 +131,24 @@ Totals:
 `)
 
 	fmt.Printf(`
+
+==========================================
 ⚠️  SMT Store Path Configuration Notice ⚠️
-=========================================
+==========================================
 
 📦 Deprecated RelayMiner Config Values:
-------------------------------
+---------------------------------------
 The following values for 'smt_store_path' are DEPRECATED:
 - ':memory:'
 - ':memory_pebble:'
 
 🔄 Backwards Compatibility:
---------------------------
+---------------------------
 If your config uses these deprecated values, the RelayMiner will
 automatically fallback to the default persistent storage path: $HOME/.pocket/smt
 
 ✅ Recommended Action:
-------------------
+----------------------
 The RelayMiner will systematically use in-memory SMTs but will back them up to disk
 to ensure data persistence across restarts.
 
@@ -157,9 +159,10 @@ Example:
   smt_store_path: /home/your-user/.pocket/smt
 
 ⚡ Why This Matters:
--------------------
+--------------------
 Persistent storage ensures your session trees are preserved across
 RelayMiner restarts, improving reliability and performance.
+
 `)
 
 	// --- Parse relay miner configuration ---

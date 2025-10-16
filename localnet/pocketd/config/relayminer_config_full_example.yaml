@@ -7,6 +7,23 @@ default_signing_key_names: [supplier1]
 # Use an explicit path for persistent storage (recommended)
 smt_store_path: ":memory:" # OR ./path/to/smt_stores (e.g., /home/user/.pocket/smt)
 
+# Disable SMT persistence (Write-Ahead Log and recovery)
+# When set to true:
+#   - No WAL files are written to disk during relay processing
+#   - Session trees are not recovered from disk on restart
+#   - The RelayMiner operates in pure in-memory mode for SMTs
+#
+# Use this when:
+#   - You want to minimize disk I/O for performance
+#   - You don't need to preserve session state across restarts
+#   - You're running in an environment where disk persistence is undesirable
+#
+# NOTE: When disabled, all relay processing state is lost on restart.
+# Claims and proofs may be lost if the RelayMiner restarts before submission.
+#
+# Default: false (persistence enabled)
+disable_smt_persistence: false
+
 # Eager validation configuration for incoming relay requests
 # When enabled: All relay requests are validated immediately upon receipt against
 # the current session state, providing upfront validation and rate limiting.

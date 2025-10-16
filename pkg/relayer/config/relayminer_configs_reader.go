@@ -101,6 +101,20 @@ func ParseRelayMinerConfigs(logger polylog.Logger, configContent []byte) (*Relay
 			Msg("Deprecated smt_store_path value detected. Using default persistent storage path. Please update your config file.")
 	}
 
+	// DisableSmtPersistence controls whether the SMT Write-Ahead Log (WAL) and
+	// recovery mechanisms are disabled. When set to true:
+	// - No WAL files are written to disk during relay processing
+	// - Session trees are not recovered from disk on restart
+	// - The RelayMiner operates in pure in-memory mode for SMTs
+	//
+	// Use this option when:
+	// - You want to minimize disk I/O for performance
+	// - You don't need to preserve session state across restarts
+	// - You're running in an environment where disk persistence is undesirable
+	//
+	// Default: false (persistence enabled)
+	relayMinerConfig.DisableSMTPersistence = yamlRelayMinerConfig.DisableSMTPersistence
+
 	// EnableOverServicing is a flag that indicates whether the relay miner
 	// should enable over-servicing for the relays it serves.
 	//

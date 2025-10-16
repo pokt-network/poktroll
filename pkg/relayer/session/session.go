@@ -66,6 +66,9 @@ type relayerSessionsManager struct {
 	// storesDirectoryPath points to a path on disk where session related data files are created.
 	storesDirectoryPath string
 
+	// smtPersistenceDisabled indicates whether or not to persist the SMT of work sessions to disk.
+	smtPersistenceDisabled bool
+
 	// sessionSMTStore is a key-value store used to persist the metadata of
 	// sessions created in order to recover the active ones in case of a restart.
 	sessionSMTStore pebble.PebbleKVStore
@@ -145,7 +148,11 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	sessionSMTDir := path.Join(rs.storesDirectoryPath, "sessions_metadata")
+	if rs.smtPersistenceDisabled {
+		return rs, nil
+	}
+
+	sessionSMTDir := path.Join(rs.storesDirectoryPath, sessionMetadataDirName)
 
 	// Initialize the session metadata store.
 	if rs.sessionSMTStore, err = pebble.NewKVStore(sessionSMTDir); err != nil {
@@ -177,14 +184,19 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 		block.Hash(),
 	)
 
-	// Restore previously active sessions from persistent storage by rehydrating
-	// the session tree map.
-	// This is crucial for:
-	//   - Preserving the relayer's state across restarts
-	//   - Ensuring no active sessions are lost when the process is interrupted
-	//   - Maintaining accumulated work when interruptions occur
-	if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
-		return err
+	// Check whether SMT persistence is disabled via config.
+	if rs.smtPersistenceDisabled {
+		rs.logger.Info().Msg("⚠️ SMT persistence is DISABLED. Starting with no session persistence. ⚠️")
+	} else {
+		// Restore previously active sessions from persistent storage by rehydrating
+		// the session tree map.
+		// This is crucial for:
+		//   - Preserving the relayer's state across restarts
+		//   - Ensuring no active sessions are lost when the process is interrupted
+		//   - Maintaining accumulated work when interruptions occur
+		if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
+			return err
+		}
 	}
 
 	// DEV_NOTE: must cast back to generic observable type to use with Map.
@@ -244,6 +256,12 @@ func (rs *relayerSessionsManager) Stop() {
 	// thread safety during shutdown.
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
+
+	if rs.smtPersistenceDisabled {
+		rs.logger.Warn().Msg("⚠️ SMT persistence is DISABLED. All pending session data will be lost. ⚠️")
+
+		return
+	}
 
 	// Persist each active session's state to disk and properly close the associated
 	// key-value stores. This ensures that all accumulated relay data (including root
@@ -324,12 +342,16 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 	// sessionTreeWithSessionId map for the given supplier operator address.
 	if !ok {
 		var err error
-		sessionTree, err = NewSessionTree(rs.logger, sessionHeader, supplierOperatorAddress, rs.storesDirectoryPath)
+		sessionTree, err = NewSessionTree(rs.logger, sessionHeader, supplierOperatorAddress, rs.storesDirectoryPath, rs.smtPersistenceDisabled)
 		if err != nil {
 			return nil, err
 		}
 
 		sessionTreesWithEndHeight[sessionHeader.SessionId] = sessionTree
+
+		if rs.smtPersistenceDisabled {
+			return sessionTree, nil
+		}
 
 		// Persist the newly created session tree metadata to disk.
 		if err := rs.persistSessionMetadata(sessionTree); err != nil {

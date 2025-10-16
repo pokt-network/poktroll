@@ -3,6 +3,7 @@ grpcInsecure: true
 queryCaching: false
 config:
   smt_store_path: /root/.pocket/smt
+  disable_smt_persistence: false
   metrics:
     enabled: true
     addr: :9090
