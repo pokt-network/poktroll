@@ -184,7 +184,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 		block.Hash(),
 	)
 
-	// Check whether SMT persistence is disabled via config.
+	// Check whether SMT persistence is disabled.
 	if rs.smtPersistenceDisabled {
 		rs.logger.Info().Msg("⚠️ SMT persistence is DISABLED. Starting with no session persistence. ⚠️")
 	} else {
@@ -257,6 +257,7 @@ func (rs *relayerSessionsManager) Stop() {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
+	// Short circuit SMT persistence if it is disabled.
 	if rs.smtPersistenceDisabled {
 		rs.logger.Warn().Msg("⚠️ SMT persistence is DISABLED. All pending session data will be lost. ⚠️")
 

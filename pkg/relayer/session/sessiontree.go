@@ -97,9 +97,10 @@ func NewSessionTree(
 	var (
 		minedRelaysWAL *minedRelaysWriteAheadLog
 		err            error
+		storePath      string
 	)
-	storePath := ""
 
+	// Setup session tree persistence if not disabled
 	if !smtPersistenceDisabled {
 		storePath = filepath.Join(storesDirectoryPath, minedRelaysWALDirectoryPath, supplierOperatorAddress, sessionHeader.SessionId+minedRelaysWALFileExtension)
 

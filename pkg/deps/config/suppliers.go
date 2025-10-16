@@ -771,7 +771,7 @@ func NewSupplyRelayerProxyFn(
 //
 // Parameters:
 //   - smtStorePath: Path to the sessions store
-//   - disableSMTPersistence: Flag to disable SMT persistence
+//   - smtPersistenceDisabled: Flag to disable SMT persistence
 //
 // Returns:
 //   - config.SupplierFn: Supplier function for dependency injection
