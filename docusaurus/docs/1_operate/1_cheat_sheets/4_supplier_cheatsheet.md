@@ -195,27 +195,15 @@ source ~/.profile
 
 2. Fund your account by going to [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) or running:
 
-```bash
-pocketd tx bank send $FUNDING_ADDR $SUPPLIER_ADDR 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
-```
+   ```bash
+   pocketd tx bank send $FUNDING_ADDR $SUPPLIER_ADDR 100000000upokt --network=beta --fees=100upokt --unordered --timeout-duration=5s --yes
+   ```
 
 3. Check balance:
 
    ```bash
    pocketd query bank balances $SUPPLIER_ADDR $BETA_NODE_FLAGS
    ```
-
-4.
-
-```bash
-# Fund your account
-
-
-# Check balance
-pocketd query --network=beta bank balances $SUPPLIER_ADDR
-```
-
-</details>
 
 ## Supplier Configuration
 

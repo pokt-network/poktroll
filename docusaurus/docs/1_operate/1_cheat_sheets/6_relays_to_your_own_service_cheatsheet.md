@@ -36,6 +36,7 @@ Before starting, ensure you have:
 
 1. **Vultr service setup**: Follow the [Vultr instance creation guide](https://dev.poktroll.com/operate/playbooks/vultr?_highlight=vult#create-the-vultr-instance)
 2. **RC helpers configured**: Set up [RC helpers for Shannon environments](https://www.notion.so/buildwithgrove/Playbook-Streamlining-rc-helpers-for-Shannon-Alpha-Beta-Main-Network-Environments-152a36edfff680019314d468fad88864?source=copy_link)
+3. **Funding account**: You need a `$FUNDING_ADDR` environment variable set with an account that has sufficient POKT to fund test accounts
 
 ## Account Preparation
 
@@ -71,11 +72,14 @@ pocketd keys export olshansky_anvil_test_supplier --unsafe --unarmored-hex --yes
 
 ### Import Accounts to Vultr Instance
 
-SSH into your Vultr instance and import the accounts:
+SSH into your Vultr instance and import the accounts.
+
+Replace `<hex>` with the actual hex private keys exported in the previous step:
 
 ```bash
 ssh root@$VULTR_INSTANCE_IP
 
+# Import accounts using the hex private keys from previous step
 pocketd keys import-hex --keyring-backend=test olshansky_anvil_test_service_owner <hex>
 pocketd keys import-hex --keyring-backend=test olshansky_anvil_test_app <hex>
 pocketd keys import-hex --keyring-backend=test olshansky_anvil_test_gateway <hex>
@@ -86,9 +90,18 @@ pocketd keys import-hex --keyring-backend=test olshansky_anvil_test_supplier <he
 
 ### Create Service
 
+Create a new service on-chain for your Anvil test environment:
+
 ```bash
+# Format: pocketd tx service add-service <service_id> <name> <compute_units_per_relay>
 pocketd tx service add-service olshansky_anvil_test "Test service for olshansky by olshansky" 7 --keyring-backend=test --from=olshansky_anvil_test_service_owner --network=beta --yes --fees=200upokt
 ```
+
+:::note
+
+The value `7` represents compute units per relay for this service. Adjust based on your service's computational cost.
+
+:::
 
 ### Create Application
 
@@ -96,7 +109,7 @@ Create the application configuration:
 
 ```bash
 cat <<EOF > stake_app_config.yaml
-stake_amount: 60000000000upokt
+stake_amount: 60000000000upokt  # 60,000 POKT minimum for testnet
 service_ids:
   - "olshansky_anvil_test"
 EOF
@@ -122,13 +135,13 @@ Create the supplier configuration:
 cat <<EOF > stake_supplier_config.yaml
 owner_address: $(pocketd keys show olshansky_anvil_test_supplier -a --keyring-backend=test)
 operator_address: $(pocketd keys show olshansky_anvil_test_supplier -a --keyring-backend=test)
-stake_amount: 100000000upokt
+stake_amount: 100000000upokt  # 100 POKT minimum for testnet
 default_rev_share_percent:
   $(pocketd keys show olshansky_anvil_test_supplier -a --keyring-backend=test): 100
 services:
   - service_id: "olshansky_anvil_test"
     endpoints:
-      - publicly_exposed_url: http://$(curl ifconfig.me):8545
+      - publicly_exposed_url: http://$(curl ifconfig.me):8545  # Uses your public IP
         rpc_type: JSON_RPC
 EOF
 ```
@@ -164,8 +177,8 @@ cat <<EOF> start_anvil.sh
 #!/bin/bash
 
 # Run Anvil in background with nohup, redirecting output to anvil.log
-nohup anvil --port 8546 > anvil.log 2>&1 &
-echo "Anvil started on port 8546. Logs: anvil.log"
+nohup anvil --port 8545 > anvil.log 2>&1 &
+echo "Anvil started on port 8545. Logs: anvil.log"
 EOF
 
 chmod +x start_anvil.sh
@@ -177,10 +190,20 @@ Start Anvil:
 ./start_anvil.sh
 ```
 
+Verify Anvil is running:
+
+```bash
+# Check if Anvil process is running
+ps aux | grep anvil
+
+# View recent logs
+tail -20 anvil.log
+```
+
 Test the connection:
 
 ```bash
-curl -X POST http://127.0.0.1:8546 \
+curl -X POST http://127.0.0.1:8545 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc": "2.0", "id": 1, "method": "eth_blockNumber", "params": []}'
 ```
@@ -201,7 +224,7 @@ pocket_node:
 suppliers:
   - service_id: "olshansky_anvil_test" # change if not using Anvil
     service_config:
-      backend_url: "http://127.0.0.1:8546" # change if not using Anvil
+      backend_url: "http://127.0.0.1:8545" # change if not using Anvil
     listen_url: http://0.0.0.0:8545 # must match Supplier's public URL
 metrics:
   enabled: false
@@ -214,12 +237,23 @@ EOF
 
 ### Start RelayMiner
 
-Configure firewall and start the RelayMiner:
+Configure firewall to allow external connections on port 8545:
 
 ```bash
 sudo ufw allow 8545/tcp
+```
+
+Start the RelayMiner:
+
+```bash
 pocketd relayminer start --config=relay_miner_config.yaml --chain-id=pocket-beta --keyring-backend=test --grpc-insecure=false
 ```
+
+:::tip
+
+Consider running the RelayMiner in a `tmux` or `screen` session, or as a systemd service for production use.
+
+:::
 
 ## Testing
 
@@ -249,4 +283,17 @@ pocketd query txs --node=https://shannon-testnet-grove-rpc.beta.poktroll.com \
 
 ## Next Steps
 
-Your RelayMiner should now be running and processing relays. Monitor the logs and claims to ensure everything is working correctly.
+Your RelayMiner should now be running and processing relays.
+
+**Monitoring and troubleshooting:**
+
+- Monitor RelayMiner logs for incoming relay requests
+- Check Anvil logs at `anvil.log` for backend activity
+- Query claims periodically to verify relay processing
+- Use `pocketd query proof list-claims --network=beta` to see all recent claims
+
+**Common issues:**
+
+- **Port conflicts**: Ensure port 8545 is not already in use (`netstat -tlnp | grep 8545`)
+- **Firewall blocking**: Verify UFW allows port 8545 (`sudo ufw status`)
+- **Session not started**: Relays only work during active sessions; check session timing with `pocketd query session get-session`
